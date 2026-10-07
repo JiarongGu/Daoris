@@ -125,6 +125,12 @@ with the version and date at release.
 - A history clear that would only take left-over files says just that, instead of naming conversations
   and records it will not touch.
 - An abandon that left part of its work behind is said as an error rather than as done.
+- Knowledge search reads an index's lists an item at a time too, so a question about one fixture or
+  one method lands on its line.
+- A workspace's Branches tab looks for updates, counts and lists only that workspace's repositories,
+  not every checkout on the machine.
+- A note about an account's limit says whether it was the five-hour or the weekly limit, and which
+  agent's account it was; older notes keep reading as before.
 
 The first version: doctrine that installs, is checked, and flows back.
 

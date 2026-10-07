@@ -11903,3 +11903,31 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UXFIX5b — Settings' red words wear the danger ink** (web-settings; after UXFIX5). Three Settings sites still draw danger words in the fill's colour (`settings/AccountSettings.tsx:23`, `Logs.tsx:187`, `Sync.tsx:308`), allowed by name in `tokens.test.ts`'s `DANGER_TEXT_ELSEWHERE`. Swap them to `text-ink-danger` and drop their allowance rows (a swapped file that keeps its row fails the test). Contract: platform-ux §3. Proof: `tokens.test.ts` with the allowance empty.
 
 **Outcome** 2026-10-07: the three Settings red words (an account's unreadable settings file, a log's error level, a sync look the page stopped waiting for) wear `--ink-danger`; `tokens.test.ts`'s allowance is empty and checked to stay so; a story shows the account summary's problem. Detail: platform-ux §3; commits 441e1c10, 37dd2df2.
+
+
+## ORIENT2h2 — a declared index's lists read an item at a time (2026-10-07, D151)
+
+> - [ ] **ORIENT2h2 — a declared index's lists read an item at a time** (service; after ORIENT2h). Tables are rows since ORIENT2h, but a list is still one section per heading: *where is ParkStandIn* is answered by the fixtures list's 61-line section. Read a list item as an entry naming its line, titled by the headings above it and any parent item, so an item read alone keeps its place. Contract: D151's ORIENT2h note. Proof: the fixture question lands on its item first, naming its line.
+
+**Outcome** 2026-10-07: each item of a declared index's lists is its own entry naming its line(s), titled by its headings and its parents' labels; *where is ParkStandIn* answers with `fixtures.md:7`. Entries 573 → 6,629; 1,810 of 1,933 earlier ids unchanged. ORIENT2h's *sync verb* fixture renamed one class. Follow-up: ORIENT2h5. Detail: D151's ORIENT2h2 note; commits 0431ad52, edcceb8c.
+
+
+## BRSCOPE1 — a workspace's Branches tab holds only its own repositories (2026-10-07, D150)
+
+> - [ ] **BRSCOPE1 — a workspace's Branches tab holds only its own repositories** (web-shell; driver or modules if the sweep is asked machine-wide). Seen on the install (2026-10-07): lumachain's Branches tab says *另有 31 个有检出的仓库不持有 Daoris 的分支* (31 more checked-out repositories hold no Daoris branch) beside its header's 29 repositories; the list holds `Daoris` and `Daoris.Plugins`, which are not lumachain's. Scope the sweep, its counts and *Check for updates* to the workspace the page is about (WSP5), and say a machine-wide view where one is meant. Contract: D150's Git-inside-Repositories note, WSP1/WSP5, platform-ux §4. Proof: a test with two workspaces' checkouts where each tab counts its own; the install's shot.
+
+**Outcome** 2026-10-07: a workspace's Branches tab counts, looks at and leaves apart only its own checkouts: `TREES_SYNC_PLAN` and `TREES_SYNC` take `workspace`, the bridge sends it and keeps each look per workspace, and the page filters the machine's reading and the look's lists. Both the page and the route had lost the scope. Follow-up: BRSCOPE1a. Detail: D150's BRSCOPE1 note, FIX-LOG; commits 3e6b045d, 46ec9773.
+
+
+## ORIENT2h4 — the decision notes' fence read as Markdown does (2026-10-07, D151)
+
+> - [ ] **ORIENT2h4 — the decision notes' fence read as Markdown does** (tools, service). After ORIENT2h3's `MarkdownFence`, the digest's `fenced` (`tools/doc-duplicates.mjs`, and `tools/doc-shapes.mjs` alike) and its twin `DecisionNotes.Fenced` still toggle on any line starting with three backticks, so a longer fence quoting a decision note's label splits notes in both. Change both readers together. Contract: `twins.md`'s decision-notes row, D151's ORIENT2h3 note. Proof: a `decision-notes.json` row with a four-backtick fence, seen failing in both twins' tests.
+
+**Outcome** 2026-10-07: the decisions digest's `fenced` and the service's `DecisionNotes.Fenced` (now through `MarkdownFence`) read fences as CommonMark does, held by three new rows in `decision-notes.json`; `doc-shapes` reads fences through `fenced`; no tracked file reads differently (516 compared). Follow-up: ORIENT2h6. Detail: D151's ORIENT2h4 note, FIX-LOG; commit f859a15a.
+
+
+## AGT3d — a limit's note says what kind of limit it was (2026-10-07, D125)
+
+> - [ ] **AGT3d — a limit's note says what kind of limit it was** (driver, web-shell). Since AGT3c the travelling note carries the cooling line's `until` and `why` and never the agent's sentence, but neither the kind of limit (`window`: five-hour or weekly) nor whose account (`owner`), so a reader on another machine learns neither. The web adds `{{window}}` (worded by `harness.window.*`) and `{{owner}}` to `note.account.cooling` in both catalogues and `NOTE_VALUES`; the driver declares them on `NoteCodes.AccountCooling` and passes `CoolingEntry.Window`. Contract: D125's AGT3c note. Proof: `NoteCodesTests` and `note.test.ts` hold the entries; a limit-note test reads the window from the parts.
+
+**Outcome** 2026-10-07: a limit's cooling line says the kind of limit and whose account, under new codes `account.cooling-window` and `account.cooling-no-window` worded by `harness.window.*`; `account.cooling` keeps its old shape, so notes already on machines are still worded. Detail: D125's AGT3d note, the language design §4; commits 97ec4006, 9f9b27e3, 7105e6d3.

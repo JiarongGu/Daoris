@@ -81,10 +81,11 @@ public sealed class IndexEntriesTests : IDisposable
     }
 
     /// <summary>
-    /// ORIENT2e's proof, with ORIENT2h's rows: each heading of each file in the index's folder, and below it, is an
-    /// entry of the index's own kind, the repository's own, titled by the headings above it and keeping the lines
-    /// its text is; each table row is an entry of its own, titled by its section's headings and its label named by
-    /// its column, naming its line. A section that is only a table is its rows, and its header names no entry.
+    /// ORIENT2e's proof, with ORIENT2h's rows and ORIENT2h2's items: each heading of each file in the index's folder,
+    /// and below it, is an entry of the index's own kind, the repository's own, titled by the headings above it and
+    /// keeping the lines its text is; each table row is an entry of its own, titled by its section's headings and its
+    /// label named by its column, naming its line; each list item too, titled by its parents' labels and its own. A
+    /// section that is only a table is its rows, and its header names no entry.
     /// </summary>
     [Fact]
     public void The_declared_index_is_read_at_its_headings_and_its_tables_rows_as_index_entries_that_keep_their_lines()
@@ -98,7 +99,10 @@ public sealed class IndexEntriesTests : IDisposable
                 "Bridge routes › DAORIS.DRIVER (2) › Kept apart › Route: STATE @ docs/index/routes.md:14",
                 "Bridge routes › DAORIS.DRIVER (2) › Route: SESSION_GO_ON_NEW @ docs/index/routes.md:7",
                 "Bridge routes › DAORIS.DRIVER (2) › Route: STATE @ docs/index/routes.md:8",
-                "Outline of `src/Widget.cs` @ docs/index/outlines/src/Widget.cs.md:3-7",
+                "Outline of `src/Widget.cs` @ docs/index/outlines/src/Widget.cs.md:3",
+                "Outline of `src/Widget.cs` › 4-40 class Widget @ docs/index/outlines/src/Widget.cs.md:5",
+                "Outline of `src/Widget.cs` › 4-40 class Widget › 412-417 test CountAsync @ docs/index/outlines/src/Widget.cs.md:7",
+                "Outline of `src/Widget.cs` › 4-40 class Widget › 9-12 Widget() @ docs/index/outlines/src/Widget.cs.md:6",
                 "Where things are @ docs/index/README.md:3",
                 "Where things are › File: routes.md @ docs/index/README.md:7",
                 "Where things are › Kept by hand @ docs/index/README.md:11",
@@ -109,21 +113,22 @@ public sealed class IndexEntriesTests : IDisposable
     }
 
     /// <summary>
-    /// The entry's lines are its place in the index, never the lines its rows name: an outline's row names the
-    /// source file's lines, and the body keeps them as written for the session to open there.
+    /// The entry's lines are its place in the index, never the lines it names: an outline's item names the source
+    /// file's lines, and the body keeps them as written for the session to open there.
     /// </summary>
     [Fact]
     public void An_outline_s_lines_are_where_it_sits_in_the_index_not_the_lines_its_rows_name()
     {
         Family();
 
-        var outline = Assert.Single(Index(new RepositoryScanner().Scan(_root)), e => e.RelativePath.EndsWith("Widget.cs.md"));
+        var outline = Index(new RepositoryScanner().Scan(_root)).Where(e => e.RelativePath.EndsWith("Widget.cs.md")).ToList();
+        var item = Assert.Single(outline, e => e.Title.EndsWith("412-417 test CountAsync", StringComparison.Ordinal));
 
-        Assert.Equal(new LineSpan(3, 7), outline.Lines);
-        Assert.Contains("412-417 test CountAsync", outline.Body);
-        // The body is the file's lines 3 to 7, as written: line i of the body is line 3 + i of the file.
+        Assert.Equal(new LineSpan(7, 7), item.Lines);
+        // The body is the file's line 7, as written: the lines it names are its words, never its place.
         var file = File.ReadAllText(Path.Combine(_root, "docs", "index", "outlines", "src", "Widget.cs.md")).Split('\n');
-        Assert.Equal(file[2..7], outline.Body.Split('\n'));
+        Assert.Equal(file[6].Trim(), item.Body);
+        Assert.Equal([new LineSpan(3, 3), new LineSpan(5, 5), new LineSpan(6, 6), new LineSpan(7, 7)], outline.Select(e => e.Lines!.Value).ToList());
     }
 
     /// <summary>A file that opens with blank lines keeps its line numbers: the reader counts what it trimmed.</summary>
@@ -135,7 +140,7 @@ public sealed class IndexEntriesTests : IDisposable
 
         var only = Assert.Single(Index(new RepositoryScanner().Scan(_root)));
 
-        Assert.Equal("Fixtures", only.Title);
+        Assert.Equal("Fixtures › Stand", only.Title);
         Assert.Equal(new LineSpan(5, 5), only.Lines);
     }
 
@@ -217,7 +222,7 @@ public sealed class IndexEntriesTests : IDisposable
         var entries = new RepositoryScanner(documents: "docs").Scan(_root);
 
         Assert.DoesNotContain(entries, e => e.Kind != EntryKind.Index && e.RelativePath.StartsWith("docs/index/", StringComparison.Ordinal));
-        Assert.Equal(7, Index(entries).Count);
+        Assert.Equal(10, Index(entries).Count);
         Assert.All(Index(entries), e => Assert.NotNull(e.Lines));
     }
 
@@ -382,7 +387,10 @@ public sealed class IndexEntriesTests : IDisposable
             + "| `sync` | doctrine | `materialize.ts:811` commandSync | materialize the manifest's packs |\n"
             + "| `check` | doctrine | `drift.ts:292` commandCheck | drift and staleness |\n"
             + "| `upstream` | doctrine | `upstream.ts:40` commandUpstream | promote a local edit |\n");
-        foreach (var file in new[] { "HelpCoverageTests", "SyncConsole", "TreesConsole" })
+        // No class is named for the question's word (ORIENT2h2): read an item at a time, each item of such a class says
+        // it twice in its title, in its file's heading and its class's label, and in a fixture this small, where half
+        // the entries say "verb", the word alone decided. Left without its column, an outline's item still ranks first.
+        foreach (var file in new[] { "HelpCoverageTests", "LedgerConsole", "TreesConsole" })
         {
             Write($"docs/index/outlines/src/{file}.cs.md",
                 $"# Outline of `src/{file}.cs`\n\nGenerated; never edit by hand.\n\n- 10-400 class {file}\n"
@@ -485,6 +493,176 @@ public sealed class IndexEntriesTests : IDisposable
             index.Select(e => $"{e.Title} @ {e.Lines}").ToList());
         Assert.Contains("`FENCED`", index[0].Body);
         Assert.Equal("|  | `continued.ts:4` |", index[2].Body);
+    }
+
+    // ── a long list, an item at a time (ORIENT2h2) ──────────────────────────────────────────────
+
+    /// <summary>
+    /// Fixtures in the shape of this repository's own index: a section per suite, one of them a list of 61 items,
+    /// the item asked for inside it, and short lists beside it that name stand-ins too.
+    /// </summary>
+    private static (string Text, int Line) LongFixtures()
+    {
+        var lines = new List<string>
+        {
+            "# Test fixtures, stand-ins and kits",
+            "",
+            "Generated; never edit by hand. By suite: each helper file's types and their non-private members, each test "
+            + "file's shared or stand-in types, each with its line.",
+            "",
+            "## `src/Driver.Tests/`",
+            "",
+        };
+        var asked = 0;
+        for (var n = 0; n < 61; n++)
+        {
+            if (n == 1)
+            {
+                asked = lines.Count + 1;
+                lines.Add("- `AnswerContinuesTickTests.cs:284` class ParkStandIn");
+                continue;
+            }
+            lines.Add((n % 3) switch
+            {
+                0 => $"- `Step{n}Tests.cs:{100 + n}` class StandIn (private)",
+                1 => $"- `Step{n}Fixture.cs:{10 + n}` class Step{n}Fixture: Park {20 + n}, Answer {30 + n}",
+                _ => $"- `Step{n}Kit.cs:{10 + n}` the fixture where step {n} is parked",
+            });
+        }
+        foreach (var suite in new[] { "Cli/test", "Service.Tests", "Devkit.Tests", "Web/src/test" })
+        {
+            lines.AddRange(["", $"## `src/{suite}/`", ""]);
+            lines.AddRange(Enumerable.Range(0, 3).Select(n => $"- `{suite.Replace('/', '.')}{n}.cs:{5 + n}` class StandInPark{n}"));
+        }
+        return (string.Join('\n', lines) + "\n", asked);
+    }
+
+    /// <summary>
+    /// The row's proof (ORIENT2h2): a declared index with one long list and several short sections answers a
+    /// question about one item with that item first, by words alone, naming its line. Read at its headings, the
+    /// answer was the list's whole section, 61 lines for one.
+    /// </summary>
+    [Fact]
+    public async Task An_item_question_lands_on_the_item_in_a_long_list_naming_its_line()
+    {
+        var (fixtures, line) = LongFixtures();
+        Declare("""{"index":"docs/index/README.md"}""");
+        Write("docs/index/README.md", Readme);
+        Write("docs/index/fixtures.md", fixtures);
+        SessionOutlines();
+
+        var entries = new RepositoryScanner().Scan(_root);
+        var database = Path.Combine(_root, "knowledge.db");
+        try
+        {
+            await using var store = await SqliteKnowledgeStore.OpenAsync(database);
+            await store.ReplaceRepositoryAsync(entries[0].Repository, entries);
+            var search = new SqliteKnowledgeSearch(store);
+
+            foreach (var kinds in new[] { new HashSet<EntryKind> { EntryKind.Index }, null })
+            {
+                var first = (await search.SearchAsync(new KnowledgeQuery("where is the fixture ParkStandIn") { Kinds = kinds }))[0];
+
+                Assert.Equal(
+                    $"Test fixtures, stand-ins and kits › `src/Driver.Tests/` › AnswerContinuesTickTests.cs:284 @ docs/index/fixtures.md:{line}",
+                    $"{first.Entry.Title} @ {first.Entry.RelativePath}:{first.Entry.Lines}");
+                Assert.Equal("- `AnswerContinuesTickTests.cs:284` class ParkStandIn", first.Entry.Body);
+                Assert.Equal(line, first.ExcerptLine);
+            }
+        }
+        finally
+        {
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        }
+    }
+
+    /// <summary>
+    /// A nested item is an entry of its own, titled by its parent's label as well as the headings above it, so read
+    /// alone it keeps its place: an outline's method names its class. An item's label is its leading code span or
+    /// link text where it opens with one, and its text otherwise; its continuation lines are its own.
+    /// </summary>
+    [Fact]
+    public void A_nested_item_keeps_its_parent_s_label_in_its_title()
+    {
+        Declare("""{"index":"docs/index/README.md"}""");
+        Write("docs/index/outlines/src/Widget.cs.md",
+            "# Outline of `src/Widget.cs`\n"                    // 1
+            + "\n"                                              // 2
+            + "Generated; never edit by hand.\n"                // 3
+            + "\n"                                              // 4
+            + "- 4-40 class Widget\n"                           // 5
+            + "  - 9-12 Widget()\n"                             // 6
+            + "  - 412-417 test CountAsync\n"                   // 7
+            + "- [`Gadget`](src/Gadget.cs) the gadget, whose\n" // 8
+            + "  line wraps\n"                                  // 9
+            + "  - `Spin()` turns it\n"                         // 10
+            + "    - `Spin(int)` by so many\n");                // 11
+        Write("docs/index/README.md", "# Where things are\n");
+
+        var index = Index(new RepositoryScanner().Scan(_root));
+
+        Assert.Equal(
+            [
+                "Outline of `src/Widget.cs` @ 3",
+                "Outline of `src/Widget.cs` › 4-40 class Widget @ 5",
+                "Outline of `src/Widget.cs` › 4-40 class Widget › 9-12 Widget() @ 6",
+                "Outline of `src/Widget.cs` › 4-40 class Widget › 412-417 test CountAsync @ 7",
+                "Outline of `src/Widget.cs` › Gadget @ 8-9",
+                "Outline of `src/Widget.cs` › Gadget › Spin() @ 10",
+                "Outline of `src/Widget.cs` › Gadget › Spin() › Spin(int) @ 11",
+            ],
+            index.Select(e => $"{e.Title} @ {e.Lines}").ToList());
+        Assert.Equal("- 412-417 test CountAsync", index[3].Body);
+        Assert.Equal("- [`Gadget`](src/Gadget.cs) the gadget, whose\n  line wraps", index[4].Body);
+        Assert.Equal(index.Count, index.Select(e => e.Id).Distinct().Count());
+    }
+
+    /// <summary>
+    /// An item is read as markdown reads one: a line with no blank before it continues the item it follows, and after
+    /// a blank only a line indented to the item's text does; a fence indented into an item is the item's, a list
+    /// inside it included; an ordered item is an item, and a thematic break is none. Text of an item after its
+    /// nested items is a second run of it, anchored as a repeat, since an entry is one run of lines.
+    /// </summary>
+    [Fact]
+    public void An_item_s_continuation_lines_are_its_own_and_the_list_ends_where_markdown_ends_it()
+    {
+        Declare("""{"index":"docs/index/README.md"}""");
+        Write("docs/index/README.md",
+            "# Kits\n"                                          // 1
+            + "\n"                                              // 2
+            + "Each kit by file.\n"                             // 3
+            + "\n"                                              // 4
+            + "1. `setup-kit.mjs` writes the set-up,\n"         // 5
+            + "lazily continued\n"                              // 6
+            + "\n"                                              // 7
+            + "   and a second paragraph of it\n"               // 8
+            + "\n"                                              // 9
+            + "   ```\n"                                        // 10
+            + "   - not an item\n"                              // 11
+            + "   ```\n"                                        // 12
+            + "2) `proof-kit.mjs`\n"                            // 13
+            + "   - `openProof` opens one\n"                    // 14
+            + "\n"                                              // 15
+            + "   the proof kit's own words again\n"            // 16
+            + "\n"                                              // 17
+            + "- - -\n"                                         // 18
+            + "\n"                                              // 19
+            + "After the list.\n");                             // 20
+
+        var index = Index(new RepositoryScanner().Scan(_root));
+
+        Assert.Equal(
+            [
+                "Kits @ 3 #Kits",
+                "Kits › setup-kit.mjs @ 5-12 #Kits › setup-kit.mjs",
+                "Kits › proof-kit.mjs @ 13 #Kits › proof-kit.mjs",
+                "Kits › proof-kit.mjs › openProof @ 14 #Kits › proof-kit.mjs › openProof",
+                "Kits › proof-kit.mjs @ 16 #Kits › proof-kit.mjs (2)",
+                "Kits @ 18-20 #Kits (2)",
+            ],
+            index.Select(e => $"{e.Title} @ {e.Lines} #{e.Anchor}").ToList());
+        Assert.Contains("- not an item", index[1].Body);
+        Assert.Equal(index.Count, index.Select(e => e.Id).Distinct().Count());
     }
 
     /// <summary>

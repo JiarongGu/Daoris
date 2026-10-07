@@ -28,15 +28,20 @@ public sealed partial class KnowledgeLinesToolTests : IAsyncLifetime
         + "| `SESSION_GO_ON_NEW` | `DriverModule.Sessions.cs:97` |\n" // 7
         + "| `STATE` | `DriverModule.cs:38` |\n";              // 8
 
-    /// <summary>An outline is a list, which stays one section of several lines: what a range is cut from.</summary>
+    /// <summary>
+    /// An outline: its prose a section of several lines, what a range is cut from, and each of its items an entry
+    /// of its own line (ORIENT2h2).
+    /// </summary>
     private const string Outline =
         "# Outline of `src/Widget.cs`\n"                        // 1
         + "\n"                                                  // 2
-        + "Generated; never edit by hand.\n"                    // 3
-        + "\n"                                                  // 4
-        + "- 4-40 class Widget\n"                               // 5
-        + "  - 9-12 Widget()\n"                                 // 6
-        + "  - 412-417 test CountAsync\n";                      // 7
+        + "Generated; never edit by hand. Each item is a\n"     // 3
+        + "declaration and its lines: read it with offset\n"    // 4
+        + "and limit.\n"                                        // 5
+        + "\n"                                                  // 6
+        + "- 4-40 class Widget\n"                               // 7
+        + "  - 9-12 Widget()\n"                                 // 8
+        + "  - 412-417 test CountAsync\n";                      // 9
 
     private void Write(string relative, string content)
     {
@@ -95,21 +100,28 @@ public sealed partial class KnowledgeLinesToolTests : IAsyncLifetime
     {
         const string id = "atlas:docs/index/outlines/src/Widget.cs.md#Outline of `src/Widget.cs`";
 
-        var read = await _tools.GetAsync(id, lines: "6-6");
+        var read = await _tools.GetAsync(id, lines: "4-4");
 
-        Assert.Contains("`docs/index/outlines/src/Widget.cs.md:6`", read);
-        Assert.Contains("- 9-12 Widget()", read);
-        Assert.DoesNotContain("class Widget", read);
-        Assert.DoesNotContain("CountAsync", read);
+        Assert.Contains("`docs/index/outlines/src/Widget.cs.md:4`", read);
+        Assert.Contains("declaration and its lines", read);
+        Assert.DoesNotContain("Generated", read);
+        Assert.DoesNotContain("and limit", read);
 
         // Past the entry's own lines, the part inside is read; wholly outside, the entry's lines are named.
-        Assert.Contains("412-417 test CountAsync", await _tools.GetAsync(id, lines: "7-400"));
+        Assert.Contains("and limit.", await _tools.GetAsync(id, lines: "5-400"));
         var outside = await _tools.GetAsync(id, lines: "1-2");
-        Assert.Contains("lines 3-7 of `docs/index/outlines/src/Widget.cs.md`", outside);
-        Assert.DoesNotContain("Widget()", outside);
+        Assert.Contains("lines 3-5 of `docs/index/outlines/src/Widget.cs.md`", outside);
+        Assert.DoesNotContain("declaration", outside);
 
         Assert.Contains("is not a range of lines", await _tools.GetAsync(id, lines: "eight"));
-        Assert.Contains("- 4-40 class Widget", await _tools.GetAsync(id));
+        Assert.Contains("Generated; never edit by hand.", await _tools.GetAsync(id));
+        Assert.DoesNotContain("class Widget", await _tools.GetAsync(id));
+
+        // An item is its own line, titled by its parent's label, and its range reads it (ORIENT2h2).
+        var item = await _tools.GetAsync("atlas:docs/index/outlines/src/Widget.cs.md#Outline of `src/Widget.cs` › 4-40 class Widget › 9-12 Widget()", lines: "8");
+        Assert.Contains("`docs/index/outlines/src/Widget.cs.md:8`", item);
+        Assert.Contains("- 9-12 Widget()", item);
+        Assert.DoesNotContain("CountAsync", item);
 
         // A row is one line, and its range reads it (ORIENT2h).
         var row = await _tools.GetAsync("atlas:docs/index/routes.md#Bridge routes › DAORIS.DRIVER (2) › Route: SESSION_GO_ON_NEW", lines: "7");

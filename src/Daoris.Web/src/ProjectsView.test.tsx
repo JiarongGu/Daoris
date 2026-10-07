@@ -681,8 +681,8 @@ describe("a workspace's page (UX6g)", () => {
   });
 
   /**
-   * WSR6, WSR7: a look takes what the driver takes, every repository holding Daoris's branches here; this workspace's page
-   * lists and brings up to date its own rows alone, each waiting as long as the host may work.
+   * WSR6, WSR7: this workspace's page lists and brings up to date its own rows alone, each waiting as long as the host may
+   * work, and asks the driver for its own (BRSCOPE1), even where an older host answers the machine's look.
    */
   it("brings up to date only this workspace's rows of what the look listed", async () => {
     const plan = {
@@ -706,9 +706,90 @@ describe("a workspace's page (UX6g)", () => {
     await userEvent.click(updates.getByRole('button', { name: 'Bring up to date (2)' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC', expect.objectContaining({
-      payload: { only: ['engine:main', 'engine:daoris/s-step'] },
+      payload: { only: ['engine:main', 'engine:daoris/s-step'], workspace: 'aurora' },
     }));
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('2 of 2 done. What did not happen is still listed, with why.'));
+  });
+
+  /**
+   * BRSCOPE1 (WSP5, D150's UX6g note): a workspace's Branches tab holds its own repositories alone. The machine's reading
+   * of which checkouts hold Daoris's branches is filtered to it, the look is asked for it and kept under its name, and
+   * what the look leaves apart is its own. The driver answers here as the machine's, as a host before BRSCOPE1 does, so
+   * the page's own filter is what is held; the install's lumachain counted every checkout on the machine as its own.
+   */
+  it("counts, looks at and leaves apart only this workspace's checkouts, each workspace's tab its own", async () => {
+    let answer!: (plan: unknown) => void;
+    const looking = new Promise((resolve) => { answer = resolve; });
+    const machineWide = (holds: boolean) => (repository: string, workspace: string) => ({ repository, workspace, holds });
+    const holding = machineWide(true);
+    const none = machineWide(false);
+    machine({
+      TREES_SYNC_SCOPE: {
+        repositories: [
+          holding('engine', 'aurora'), none('game', 'aurora'),
+          holding('tools', 'forge'), none('Daoris.Plugins', 'forge'), none('Daoris', 'default'), holding('kiln', 'default'),
+        ],
+      },
+      TREES_SYNC_PLAN: looking,
+      TREES_SYNC: { lines: [], rebases: [], deletes: [], changed: 1 },
+    });
+    show(<ProjectsView notify={() => {}} />);
+    await chooseWorkspace('aurora');
+    await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
+
+    // Before a look, the machine's reading counted as this workspace's own: one holds Daoris's branches, one other does not.
+    const updates = within(await screen.findByRole('region', { name: 'Updates' }));
+    expect(await updates.findByText(/A look fetches the 1 repository that holds a branch of Daoris's/)).toBeInTheDocument();
+    expect(updates.getByText("1 other repository with a checkout here holds no branch of Daoris's")).toBeInTheDocument();
+    expect(updates.queryByText('Daoris')).toBeNull();
+    expect(updates.queryByText('Daoris.Plugins')).toBeNull();
+
+    // The look is asked for this workspace, and says it fetches its own one.
+    await userEvent.click(updates.getByRole('button', { name: 'Look for updates' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC_PLAN', expect.objectContaining({ payload: { workspace: 'aurora' } }));
+    expect(await updates.findByText('Looking at 1 repository: fetching it from origin.')).toBeInTheDocument();
+
+    answer({
+      lines: [
+        { repository: 'engine', workspace: 'aurora', line: 'main', kind: 'fast-forward', commits: 1, moves: true },
+        { repository: 'tools', workspace: 'forge', line: 'main', kind: 'up-to-date', commits: 0, moves: false },
+        { repository: 'kiln', workspace: 'default', line: 'main', kind: 'up-to-date', commits: 0, moves: false },
+      ],
+      rebases: [],
+      deletes: [],
+      looked: [holding('engine', 'aurora'), holding('tools', 'forge'), holding('kiln', 'default')],
+      apart: [none('game', 'aurora'), none('Daoris.Plugins', 'forge'), none('Daoris', 'default')],
+    });
+    expect(await updates.findByRole('group', { name: 'engine' })).toBeInTheDocument();
+    expect(updates.queryByRole('group', { name: 'tools' })).toBeNull();
+    expect(updates.queryByRole('group', { name: 'kiln' })).toBeNull();
+    expect(updates.getByText("1 other repository with a checkout here holds no branch of Daoris's")).toBeInTheDocument();
+
+    // Including every one it left apart is every one of this workspace's, asked for it.
+    await userEvent.click(updates.getByText("1 other repository with a checkout here holds no branch of Daoris's"));
+    const apart = within(updates.getByRole('group', { name: 'Repositories not looked at' }));
+    expect(apart.getByLabelText('game')).toBeInTheDocument();
+    expect(apart.queryByLabelText('Daoris')).toBeNull();
+    expect(apart.queryByLabelText('Daoris.Plugins')).toBeNull();
+    await userEvent.click(apart.getByLabelText('All 1'));
+    await userEvent.click(apart.getByRole('button', { name: 'Include and look (1)' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC_PLAN',
+      expect.objectContaining({ payload: { all: true, workspace: 'aurora' } }));
+
+    // The press is asked for this workspace too, and names only its own rows.
+    await userEvent.click(await updates.findByRole('button', { name: 'Bring up to date (1)' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC', expect.objectContaining({
+      payload: { only: ['engine:main'], workspace: 'aurora' },
+    }));
+
+    // Another workspace's tab counts its own, and aurora's look is not its answer.
+    await chooseWorkspace('forge');
+    await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
+    const forge = within(await screen.findByRole('region', { name: 'Updates' }));
+    expect(await forge.findByText(/A look fetches the 1 repository that holds a branch of Daoris's/)).toBeInTheDocument();
+    expect(forge.getByText("1 other repository with a checkout here holds no branch of Daoris's")).toBeInTheDocument();
+    expect(forge.getByRole('button', { name: 'Look for updates' })).toBeInTheDocument();
+    expect(forge.queryByRole('group', { name: 'engine' })).toBeNull();
   });
 
   /** WSR7: a look the page stopped waiting for is said in the section, where it was asked, not only in a toast. */

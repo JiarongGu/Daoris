@@ -35,7 +35,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/e2e/platform.spec.ts` | 56 | 957 |
 | `src/Daoris.Web/src/App.test.tsx` | 50 | 966 |
 | `src/Daoris.Web/src/App.tsx` | 66 | 1225 |
-| `src/Daoris.Web/src/ProjectsView.test.tsx` | 65 | 1191 |
+| `src/Daoris.Web/src/ProjectsView.test.tsx` | 70 | 1272 |
 | `src/Daoris.Web/src/QuestsView.test.tsx` | 59 | 1146 |
 | `src/Daoris.Web/src/agents/AgentPage.tsx` | 43 | 833 |
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 83 | 1636 |
@@ -103,7 +103,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs` | 42 | 750 |
 | `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 69 | 1451 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 67 | 1385 |
-| `src/Daoris.Service/README.md` | 59 | 615 |
+| `src/Daoris.Service/README.md` | 59 | 619 |
 
 ### CLI (`cli`)
 

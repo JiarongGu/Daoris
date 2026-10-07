@@ -104,13 +104,19 @@ export const useDiscardSessionBranch = () => {
   });
 };
 
-/** Where the last look at bringing repositories up to date is kept (WSR6). */
-const treesSyncKey = ['driver', 'trees-sync'] as const;
+/**
+ * Where the last look at bringing repositories up to date is kept (WSR6): one per workspace, so a workspace's page never
+ * shows another's look (BRSCOPE1, WSP5's rule that a query's scope rides its cache key). Null is the machine's.
+ */
+const treesSyncKey = (workspace: string | null) => ['driver', 'trees-sync', workspace] as const;
 
-/** What the last look was asked to take beyond the repositories holding Daoris's branches (WSR7, D112). */
-const treesSyncAskedKey = ['driver', 'trees-sync-asked'] as const;
+/** What the last look was asked to take beyond the repositories holding Daoris's branches (WSR7, D112), per workspace. */
+const treesSyncAskedKey = (workspace: string | null) => ['driver', 'trees-sync-asked', workspace] as const;
 
-/** Which repositories hold Daoris's branches, and which have a checkout and hold none (D112). */
+/**
+ * Which repositories hold Daoris's branches, and which have a checkout and hold none (D112): the machine's reading, each
+ * row naming its workspace, which a workspace's page filters to its own and Ask Daoris's sync card counts whole.
+ */
 const treesSyncScopeKey = ['driver', 'trees-sync-scope'] as const;
 
 /** What a look was asked to take beyond the repositories holding Daoris's branches, and how many it takes in all where known. */
@@ -119,14 +125,19 @@ export type SyncAsked = { include: SyncInclude; count: number | null };
 /** How many repositories a look's bound allows for when the machine's reading of how many it takes is not in yet. */
 const UNKNOWN_COUNT = 32;
 
+/** Whether a row is `workspace`'s, matched without case as the driver matches a workspace's name; every row with none. */
+const inWorkspace = (row: { workspace: string }, workspace: string | null) =>
+  workspace === null || row.workspace.toLowerCase() === workspace.toLowerCase();
+
 /**
- * How many repositories a look takes (D112): those holding Daoris's branches and those `include` names, from the
- * machine's last reading; null where that reading is not in yet.
+ * How many repositories a look takes (D112): those holding Daoris's branches and those `include` names, `workspace`'s
+ * alone where one is named (BRSCOPE1), from the machine's last reading; null where that reading is not in yet.
  */
-const lookCount = (client: QueryClient, include: SyncInclude): number | null => {
+const lookCount = (client: QueryClient, include: SyncInclude, workspace: string | null = null): number | null => {
   const scope = client.getQueryData<{ repositories?: SyncRepository[] }>(treesSyncScopeKey)?.repositories;
   return Array.isArray(scope)
-    ? scope.filter((each) => each.holds || include === 'all' || include.includes(each.repository)).length
+    ? scope.filter((each) => inWorkspace(each, workspace)
+      && (each.holds || include === 'all' || include.includes(each.repository))).length
     : null;
 };
 
@@ -137,14 +148,23 @@ const lookCount = (client: QueryClient, include: SyncInclude): number | null => 
 export const syncLookBound = (client: QueryClient, include: SyncInclude = []) =>
   lookBound(lookCount(client, include) ?? UNKNOWN_COUNT);
 
-/** The payload that asks a look to take `include` beside the default (D112): every one, or the ones named. */
-const scopePayload = (include: SyncInclude): Record<string, unknown> | undefined =>
-  include === 'all' ? { all: true } : include.length > 0 ? { also: include } : undefined;
+/**
+ * The payload that asks a look to take `include` beside the default (D112), every one or the ones named, and that names
+ * the workspace it is asked for, whose checkouts alone it then takes (BRSCOPE1).
+ */
+const scopePayload = (include: SyncInclude, workspace: string | null): Record<string, unknown> | undefined => {
+  const payload = {
+    ...(include === 'all' ? { all: true } : include.length > 0 ? { also: include } : {}),
+    ...(workspace === null ? {} : { workspace }),
+  };
+  return Object.keys(payload).length > 0 ? payload : undefined;
+};
 
 /**
  * Every repository with a checkout here, and whether it holds a branch of Daoris's (WSR7, D112): what a look takes by
  * default, and the rest, listed apart for the person to include. Read on the machine, never fetched, so it is asked
- * when the section shows. Desktop-only, like every look at this machine's checkouts.
+ * when the section shows. Desktop-only, like every look at this machine's checkouts. **The machine's whole, each row
+ * naming its workspace**: a workspace's page counts its own rows (BRSCOPE1).
  */
 export const useTreesSyncScope = () => {
   const { isAvailable } = useShenora();
@@ -170,14 +190,19 @@ export const useTreesSyncScope = () => {
  * **It waits as long as the host may fetch** (WSR7): a few repositories at a time, each within a fetch's bound. The
  * bridge's default 30 seconds gave up on a look that ran for minutes, and the host's answer reached nobody. Where the
  * machine's reading of how many it takes is not in yet, the bound is a workspace's worth.
+ *
+ * **A workspace's page asks for its own** (BRSCOPE1, WSP5): with `workspace`, the driver fetches that workspace's
+ * checkouts alone and leaves apart only its own, and the look is kept under its name. With none, the machine's.
  */
-export const useTreesSyncPlan = () => {
+export const useTreesSyncPlan = (workspace?: string) => {
   const client = useQueryClient();
+  const scoped = workspace ?? null;
+  const askedKey = treesSyncAskedKey(scoped);
   const plan = useQuery({
-    queryKey: treesSyncKey,
+    queryKey: treesSyncKey(scoped),
     queryFn: () => {
-      const asked = client.getQueryData<SyncAsked>(treesSyncAskedKey);
-      return call<SyncPlan>('TREES_SYNC_PLAN', scopePayload(asked?.include ?? []), {
+      const asked = client.getQueryData<SyncAsked>(askedKey);
+      return call<SyncPlan>('TREES_SYNC_PLAN', scopePayload(asked?.include ?? [], scoped), {
         timeoutMs: lookBound(asked?.count ?? UNKNOWN_COUNT),
       });
     },
@@ -187,8 +212,8 @@ export const useTreesSyncPlan = () => {
     staleTime: Infinity,
   });
   const asked = useQuery({
-    queryKey: treesSyncAskedKey,
-    queryFn: () => client.getQueryData<SyncAsked>(treesSyncAskedKey) ?? null,
+    queryKey: askedKey,
+    queryFn: () => client.getQueryData<SyncAsked>(askedKey) ?? null,
     enabled: false,
     staleTime: Infinity,
   });
@@ -197,7 +222,7 @@ export const useTreesSyncPlan = () => {
     asked: asked.data ?? undefined,
     /** Look: the default, and what `include` names beside it. */
     look: (include: SyncInclude) => {
-      client.setQueryData<SyncAsked>(treesSyncAskedKey, { include, count: lookCount(client, include) });
+      client.setQueryData<SyncAsked>(askedKey, { include, count: lookCount(client, include, scoped) });
       return plan.refetch();
     },
   };
@@ -206,9 +231,10 @@ export const useTreesSyncPlan = () => {
 /**
  * The press: only the rows the list showed, each judged again by the driver, which does not fetch again. The
  * branches it moved or deleted change the clean-up's list, the sessions' trees and which repositories hold Daoris's
- * branches, so those are asked again. It waits for each row's replay, one after another (WSR7).
+ * branches, so those are asked again. It waits for each row's replay, one after another (WSR7). Asked for a workspace,
+ * the driver judges that workspace's checkouts alone (BRSCOPE1), as its look did.
  */
-export const useTreesSync = () => {
+export const useTreesSync = (workspace?: string) => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (only: string[]) =>
@@ -217,7 +243,7 @@ export const useTreesSync = () => {
         rebases: { branch: RebaseBranch; replayed: boolean; message: string }[];
         deletes: { branch: LandedBranch; removed: boolean; message: string }[];
         changed: number;
-      }>('TREES_SYNC', { only }, { timeoutMs: pressBound(only.length) }),
+      }>('TREES_SYNC', workspace === undefined ? { only } : { only, workspace }, { timeoutMs: pressBound(only.length) }),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: keys.sweep });
       void client.invalidateQueries({ queryKey: keys.allSessions });
