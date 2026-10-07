@@ -279,12 +279,46 @@ public sealed class StagedBuildTests : IDisposable
         SwapOutcome outcome;
         using (new FileStream(Path.Combine(_install, "app", "Daoris.Desktop.App.dll"), FileMode.Open, FileAccess.Read, FileShare.None))
         {
-            outcome = new InstallSwap(_install, start: _ => 1, alive: _ => true).Run([]);
+            // A hold that outlasts the tries: two, a moment apart.
+            outcome = new InstallSwap(_install, start: _ => 1, alive: _ => true)
+            {
+                HeldTries = 2, HeldWait = TimeSpan.FromMilliseconds(1),
+            }.Run([]);
         }
 
         Assert.Equal(SwapPhase.RolledBack, outcome.Phase);
         Assert.Equal("busy", outcome.Reason);
         AssertTheBuildBefore();
+    }
+
+    /// <summary>
+    /// The scanner opens a new build's files and lets go within seconds; a move it refuses for a moment is tried again,
+    /// so an update is not rolled back for a hold that gives way (FIX-LOG 2026-10-07, the deployment rehearsal's update).
+    /// </summary>
+    [Fact]
+    public void A_file_held_in_app_for_a_moment_does_not_roll_the_swap_back()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        Stage();
+
+        var held = new FileStream(Path.Combine(_install, "app", "Daoris.Desktop.App.dll"), FileMode.Open, FileAccess.Read, FileShare.None);
+        var letGo = Task.Run(async () =>
+        {
+            await Task.Delay(300);
+            held.Dispose();
+        });
+        var outcome = new InstallSwap(_install, start: _ =>
+        {
+            Assert.True(StagedBuild.Confirm(_install, 4242));
+            return 4242;
+        }, alive: _ => true)
+        {
+            HeldTries = 50, HeldWait = TimeSpan.FromMilliseconds(50),
+        }.Run([]);
+        letGo.Wait();
+
+        Assert.Equal(SwapPhase.Installed, outcome.Phase);
+        Assert.Equal("new library", Read("app/Daoris.Desktop.App.dll"));
     }
 
     /// <summary>

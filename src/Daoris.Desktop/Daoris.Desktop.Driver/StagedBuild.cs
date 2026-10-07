@@ -481,6 +481,36 @@ public sealed class InstallSwap(
     /// <summary>How often the journal is read while waiting.</summary>
     public TimeSpan Poll { get; init; } = TimeSpan.FromMilliseconds(250);
 
+    /// <summary>
+    /// How many times a move a held file refuses is tried, <see cref="HeldWait"/> apart, before the swap rolls back as
+    /// <c>busy</c>: the scanner opens a new build's files and lets go within seconds (FIX-LOG 2026-10-07). Written here,
+    /// not through the driver's <c>AtomicFile</c>, because the launcher compiles this file alone.
+    /// </summary>
+    public int HeldTries { get; init; } = 50;
+
+    /// <summary>The wait between two tries of a held move.</summary>
+    public TimeSpan HeldWait { get; init; } = TimeSpan.FromMilliseconds(200);
+
+    /// <summary>A folder or a file moved, tried again while a held file refuses it; a missing one throws at once.</summary>
+    private void MoveHeld(string source, string target, bool overwrite = false)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                if (Directory.Exists(source)) Directory.Move(source, target);
+                else File.Move(source, target, overwrite);
+                return;
+            }
+            catch (Exception held) when (attempt < HeldTries
+                                         && (held is UnauthorizedAccessException
+                                             || held is IOException and not FileNotFoundException and not DirectoryNotFoundException))
+            {
+                Sleep(HeldWait);
+            }
+        }
+    }
+
     private DateTimeOffset Now => (clock ?? (() => DateTimeOffset.UtcNow))();
 
     private void Sleep(TimeSpan span) => (sleep ?? Thread.Sleep)(span);
@@ -615,8 +645,7 @@ public sealed class InstallSwap(
             var source = Full(from);
             var target = Full(to);
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            if (Directory.Exists(source)) Directory.Move(source, target);
-            else File.Move(source, target);
+            MoveHeld(source, target);
             moves.Add(new SwapMove(from, to));
             StagedBuild.WriteJournal(install, record with { Moves = moves.ToList() });
         }
@@ -676,8 +705,7 @@ public sealed class InstallSwap(
             var target = Full(back);
             if (!Directory.Exists(source) && !File.Exists(source)) continue;
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            if (Directory.Exists(source)) Directory.Move(source, target);
-            else File.Move(source, target, overwrite: true);
+            MoveHeld(source, target, overwrite: true);
         }
 
         TryDelete(Full(Under(StagedBuild.Folder, StagedBuild.Previous)));
@@ -704,8 +732,7 @@ public sealed class InstallSwap(
             {
                 var target = Path.Combine(failed, Path.GetFileName(entry));
                 TryDelete(target);
-                if (Directory.Exists(entry)) Directory.Move(entry, target);
-                else File.Move(entry, target, overwrite: true);
+                MoveHeld(entry, target, overwrite: true);
             }
 
             Directory.Delete(staged, recursive: true);
