@@ -15,8 +15,10 @@
  * ## What it writes
  *
  * `docs/index/`, every file generated and none edited by hand, as `docs/code-map.json` is (MAP3c):
- * `README.md` (what each file answers, and every large file), `routes.md`, `verbs.md`, `catalogues.md`,
- * `fixtures.md`, `decisions.md`, and `outlines/<path>.md` for each file over `LARGE`.
+ * `README.md` (the indexes kept by hand first, then what each generated file answers, and every large file),
+ * `routes.md`, `verbs.md`, `catalogues.md`, `fixtures.md`, `decisions.md`, and `outlines/<path>.md` for each file
+ * over `LARGE`. The README's order is the canon's `templates/index.md` (ORIENT2a2): an index kept by hand is named,
+ * never restated.
  *
  * By kind, not by lane: a lookup starts from what is sought (a route, a verb, a key, a fixture), and the
  * route table joins two lanes, the page's call and the module's handler. An outline is a file of its own,
@@ -45,7 +47,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { byNumber, declaredDecisions, fenced, isNoteLabel } from './doc-duplicates.mjs';
 import { isMain, writeAtomic } from './fsx.mjs';
-import { laneMatcher, readLanes } from './merge-branch.mjs';
+import { LANES_FILE, laneMatcher, readLanes } from './merge-branch.mjs';
 
 export const INDEX = 'docs/index';
 /** A file over this many bytes (LF endings) gets an outline: past it, reading the file whole is the cost measured. */
@@ -638,18 +640,26 @@ function outlineOf(path, text) {
 // ---------------------------------------------------------------------------------------------------
 // The files a session reads whole, and their outlines
 
+/** `daoris.json` at `root`, or an empty manifest where there is none. */
+function readManifest(root) {
+  const manifest = join(root, 'daoris.json');
+  return existsSync(manifest) ? JSON.parse(readFileSync(manifest, 'utf8')) ?? {} : {};
+}
+
+/** The path a role is declared at in the manifest's `documents`, `/`-separated, or null: a path, or `{ path }`. */
+function declaredPath(manifest, role) {
+  const entry = manifest.documents?.[role];
+  const path = typeof entry === 'string' ? entry : entry?.path;
+  return typeof path === 'string' ? path.replace(/\\/g, '/').replace(/\/+$/, '') : null;
+}
+
 /**
  * The records read by lookup, never whole, which get no outline: their headings are their entries, and a record is
  * searched for the identifier a row names (development-documents). The decisions have the digest instead.
  */
 function lookupRecords(root) {
-  const manifest = join(root, 'daoris.json');
-  const documents = existsSync(manifest) ? JSON.parse(readFileSync(manifest, 'utf8')).documents ?? {} : {};
-  const paths = Object.entries(documents)
-    .filter(([role]) => ['decisions', 'archive', 'fixes', 'changelog', 'backlog'].includes(role))
-    .map(([, entry]) => (typeof entry === 'string' ? entry : entry?.path))
-    .filter((path) => typeof path === 'string')
-    .map((path) => path.replace(/\\/g, '/').replace(/\/+$/, ''));
+  const manifest = readManifest(root);
+  const paths = ['decisions', 'archive', 'fixes', 'changelog', 'backlog'].map((role) => declaredPath(manifest, role)).filter(Boolean);
   return (path) => paths.some((record) => path === record || path.startsWith(`${record}/`)) || path.startsWith('docs/archive/');
 }
 
@@ -1247,11 +1257,56 @@ function decisionsPage(ctx) {
 // ---------------------------------------------------------------------------------------------------
 // The index's own page
 
+/** The code map (MAP3c): the projects, each with its path, written and checked by the devkit's `map`. */
+const CODE_MAP = 'docs/code-map.json';
+
+/**
+ * The indexes kept elsewhere, each named only when the tree holds it (ORIENT2a2, the canon's `templates/index.md`).
+ * `byHand` are the README's *Kept by hand* rows, listed before the generated files because nothing below restates
+ * theirs: the router, then the lanes map, whose lanes group the large files below. `generated` are the indexes
+ * another tool writes, named in the opening as the template names the knowledge's: the doctrine's `INDEX.md` and
+ * the code map.
+ */
+function keptElsewhere(ctx) {
+  const manifest = readManifest(ctx.root);
+  const router = declaredPath(manifest, 'router');
+  const byHand = [
+    router && ctx.has(router) && [router, 'every document, its kind, what it is for and where it stands'],
+    ctx.has(LANES_FILE) && [LANES_FILE, `each lane's id, title and summary, and the paths it owns: which part of the code a path is in, and how the files over ${LARGE / 1024} KB below are grouped`],
+  ].filter(Boolean);
+  const knowledge = `${(typeof manifest.target === 'string' ? manifest.target : '.claude').replace(/\\/g, '/').replace(/\/+$/, '')}/INDEX.md`;
+  const generated = [
+    ctx.has(knowledge) && `the knowledge and the skills in \`${knowledge}\`, written by \`daoris sync\``,
+    ctx.has(CODE_MAP) && `the projects in \`${CODE_MAP}\`, written by the devkit's \`map\``,
+  ].filter(Boolean);
+  return { byHand, generated };
+}
+
 function readmePage(ctx, large) {
+  const { byHand, generated } = keptElsewhere(ctx);
   const out = [
     '# The orientation index',
     '',
     `${GENERATED} Read here before searching: each row names a file and line to open, and a range to read with offset and limit. \`--check\` fails when the index is stale and runs at every merge, and the merge tool writes the index into each merge.`,
+  ];
+  if (generated.length) {
+    out.push('', `Listed elsewhere, by tools of their own: ${generated.join('; ')}. Open those for what they list: nothing here restates ${generated.length === 1 ? 'it' : 'them'}.`);
+  }
+  out.push('', '## Kept by hand', '');
+  if (byHand.length) {
+    out.push(
+      'Listed first, because nothing below restates their rows: open one of these for what it answers.',
+      '',
+      '| Index | Answers |',
+      '|---|---|',
+      ...byHand.map(([path, answers]) => `| \`${path}\` | ${answers} |`),
+    );
+  } else {
+    out.push('None: this tree keeps no index by hand.');
+  }
+  out.push(
+    '',
+    '## Generated',
     '',
     '| File | Answers |',
     '|---|---|',
@@ -1265,7 +1320,7 @@ function readmePage(ctx, large) {
     `## Files over ${LARGE / 1024} KB (${large.length})`,
     '',
     'Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.',
-  ];
+  );
   let lanes = null;
   try {
     lanes = readLanes(ctx.root)?.lanes ?? null;

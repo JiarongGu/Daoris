@@ -11714,3 +11714,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ORIENT2e — service indexes lines** (service). Heading-split `index` entries keep ranges, hits name them and `knowledge_get` accepts ranges. Contract: §3.1–§3.2, D151 §6. Proof: scanner/tool tests and tier line.
 
 **Outcome** 2026-10-07: the service reads a repository's declared `documents.index` split at every heading, as entries of a new kind `index`; every entry keeps its file's lines, a hit names `path:first-last`, and `knowledge_get` takes lines. Store schema 5. Follow-ups: ORIENT2e2, ORIENT2h, ORIENT2i. Detail: D151's ORIENT2e note; commit ce7b77e1.
+
+
+## ORIENT2a2 — Daoris's own index lists what is kept by hand (2026-10-07, D151)
+
+> - [ ] **ORIENT2a2 — Daoris's own index lists what is kept by hand** (tools). The canon's index template (ORIENT2a) puts *Kept by hand* first and the generated files under *Generated*, naming an index the repository already keeps rather than restating it; `tools/orient-index.mjs` writes Daoris's `docs/index/README.md` without that section. Add it (the knowledge index, the router), keeping the check. Contract: orientation design §2.4, D151's ORIENT2a note. Proof: `orient-index.test.mjs` and the index's check.
+
+**Outcome** 2026-10-07: `docs/index/README.md` opens with *Kept by hand* (the router and the lanes map), names the generated indexes kept elsewhere (`.claude/INDEX.md`, `docs/code-map.json`) above it, and keeps its generated rows unchanged; a tree with none says so. Detail: D151's ORIENT2a2 note; commit 8bb3ea71.
