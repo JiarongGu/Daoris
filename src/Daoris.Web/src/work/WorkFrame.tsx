@@ -1008,16 +1008,20 @@ export function WorkFrame({
       onAct={(act) => actions.run(act, attendedFacts)}
       asking={stopAsking === attended.id && live && asked ? (
         <StopAsk
+          // Keyed by the session: an ask open on one session, with its wait or its refusal, is never another's.
+          key={attended.id}
           sentence={t(asked.key, asked.values)}
           busy={actions.stopping}
-          onStop={() => actions.stopNow(attended, () => setStopAsking(null))}
-          onCancel={() => setStopAsking(null)}
+          onStop={(answered) => actions.stopNow(attended, answered)}
+          // A stop that lands after the person moved to another session closes only the ask it was pressed in.
+          onClose={() => setStopAsking((was) => (was === attended.id ? null : was))}
         />
       ) : deleteAsking === attended.id && headActs.includes('delete') ? (
         <DeleteAsk
+          key={attended.id}
           busy={actions.deleting}
-          onDelete={() => actions.deleteNow(attended, () => setDeleteAsking(null))}
-          onCancel={() => setDeleteAsking(null)}
+          onDelete={(answered) => actions.deleteNow(attended, answered)}
+          onClose={() => setDeleteAsking((was) => (was === attended.id ? null : was))}
         />
       ) : pausing && !pauseQuiet ? (
         <PauseAsk
@@ -1192,8 +1196,12 @@ export function WorkFrame({
             onReview={() => openView('review')}
             branch={branch}
             // Only this machine's own record: the clean-up's list is this machine's, and so is the branch it names.
+            // Told back to its ask (UXFIX2): a branch kept, or a refusal, is said inside it.
             onDiscardBranch={branch && here
-              ? () => discardBranch.mutate(branch, { onSuccess: sayDiscard(notify, t), onError: failure(notify) })
+              ? (answered) => discardBranch.mutate(branch, {
+                onSuccess: sayDiscard(notify, t, answered),
+                onError: (error) => answered.refused(sentence(error)),
+              })
               : undefined}
             discardingBranch={discardBranch.isPending}
             trace={attended && trace.available ? {

@@ -76,12 +76,12 @@ export const DiscardAsk: Story = {
       <DiscardBranchAsk
         branch={{ repository: 'engine', branch: 'daoris/s-9e0f1a2b', commits: 2, hasTree: false }}
         onDiscard={() => {}}
-        onCancel={() => {}}
+        onClose={() => {}}
       />
       <DiscardBranchAsk
         branch={{ repository: 'engine', branch: 'daoris/s-4a5b6c7d', commits: 1, hasTree: true }}
         onDiscard={() => {}}
-        onCancel={() => {}}
+        onClose={() => {}}
       />
     </div>
   ),

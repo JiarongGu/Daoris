@@ -24,6 +24,7 @@ import { sittingBecause } from './signals';
 import { failure, type Notify, useErrorNotify } from './ui';
 import type { HistoryDoor } from './work/history';
 import { useHistoryActs } from './work/historyActs';
+import type { Answered } from './work/InlineConfirm';
 import { ListMore } from './work/ListPane';
 import { type AbandonAnswer, wiredFor, type WorkDoor, type WorkTarget } from './work/pausing';
 import type { TraceDoor } from './work/HowItCameToBe';
@@ -248,15 +249,17 @@ export function useQuestsView({
     });
 
   // A quest made by mistake, deleted (D95): the list chooses nothing, on the service's sentence. A refusal is its
-  // sentence too, and the page stays on the quest, because nothing happened to it.
-  const onDelete = (quest: Quest) =>
+  // sentence too, said inside the ask that was pressed (UXFIX2), and the page stays on the quest, because nothing happened
+  // to it.
+  const onDelete = (quest: Quest, answered: Answered) =>
     remove.mutate(quest.id, {
       onSuccess: (result) => {
         notify(result.message);
+        answered.done();
         setHeld(null);
         onChoose(null);
       },
-      onError: failure(notify),
+      onError: (error) => answered.refused(sentence(error)),
     });
 
   // The person's yes to a departure (DRIFT1d2, D133 §4): the page stays on the quest as the answer left it, released, and
@@ -305,12 +308,15 @@ export function useQuestsView({
       plan: historyOf.plan?.id === quest.id ? historyOf.plan : null,
       failed: failedOf.plan?.id === quest.id ? failedOf.plan : null,
       busy: historyActs.busy,
-      onClear: (target, units, done) => historyActs.clear(target, units, () => {
-        done();
-        if (target.scope === 'quest') {
-          setHeld(null);
-          onChoose(null);
-        }
+      onClear: (target, units, answered) => historyActs.clear(target, units, {
+        done: () => {
+          answered.done();
+          if (target.scope === 'quest') {
+            setHeld(null);
+            onChoose(null);
+          }
+        },
+        refused: answered.refused,
       }),
     };
   };
@@ -340,7 +346,7 @@ export function useQuestsView({
         onRespond={(action, reason) => onRespond(quest, action, reason ?? null)}
         // The service's own door, so a browser on this machine says yes as the desktop does (D50).
         onAccept={() => onAccept(quest)}
-        onDelete={() => onDelete(quest)}
+        onDelete={(answered) => onDelete(quest, answered)}
         onDismiss={(machine, sequence) => onDismiss(quest, machine, sequence)}
         // A driver's verdicts and holds reach only a shell, so in a browser neither act is ever offered. Said as the
         // driver answered which it did (D126 §3.4), in the one sentence a session's *Try again* says too.

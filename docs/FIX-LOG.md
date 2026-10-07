@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — a wait on a lost take held the winner's quest
+
+### Service: a wait made after this machine's take still applied to the winner's quest when that take lost (WAITCLAIM1)
+- **Symptom:** seen in a probe by QUESTOP1, not on an install: machine A took a quest offline, its session asked another repository and waited, and machine B's take reached the remote first. After A's pass the quest was B's and waited on A's question on every machine, so B's driver held B's session on a question B never asked.
+- **Root cause:** `QuestStore.RebaseAsync` loses this machine's later pending operations after its own lost take only when they move a status (D69's rule, read from `QuestTransitions.Target`). A wait (D79) moves none, so it fell through to `QuestLog.Applies`, which a taken quest satisfies whoever took it.
+- **Fix:** a wait after this machine's lost take is lost with it, forgotten by `QuestLog.Lost`'s rule, and the take's conflict names the question after its own note. The rule and its reach are D69's WAITCLAIM1 note.
+- **Verify:** `QuestSyncTests.A_wait_made_on_a_take_that_lost_goes_with_the_take_and_the_loss_names_it` failed first (the conflict's note did not name the question, and the winner's quest waited on it), then passed; `A_wait_on_a_quest_this_machine_did_not_take_survives_the_pass_that_drops_a_lost_takes` holds that a wait on another machine's quest is kept. Not covered: a wait made after the pass that found the take lost (D69's note).
 ## 2026-10-07 — a delete said a held file went
 
 ### Driver, modules: *Delete…* said its whole sentence when a file stayed (SESSDEL1)

@@ -7,6 +7,7 @@ import { byTool, type AccountPlace } from './tools';
 import { accountName } from './agents/agents';
 import { keys } from './queries';
 import type { Notify } from './ui';
+import type { Answered } from './work/InlineConfirm';
 
 /** A process action a person started on a tool: an install, an update, a pin, or a sign-in. */
 export type HarnessRunAction = 'install' | 'update' | 'login' | 'login-new' | 'pin' | 'unpin' | 'profile-remove' | 'profile-default';
@@ -33,7 +34,11 @@ export type HarnessRun = {
   signingInNew: string | null;
   /** Whether anything is on its way or running: one at a time, by construction. */
   busy: boolean;
-  run: (harness: string, action: HarnessRunAction, profile?: string, version?: string, workspace?: string) => void;
+  /**
+   * Start one. An ask that pressed it (*Remove…*'s, UXFIX2) is told how it ended: `done` once it ended well or started a
+   * process whose end is news, `refused` with the sentence that would have been its toast.
+   */
+  run: (harness: string, action: HarnessRunAction, profile?: string, version?: string, workspace?: string, answered?: Answered) => void;
   /**
    * Follow an action the machine already started for the person (HELP6: Ask Daoris's Apply of an update
    * or a pin): its console shows under the tool doing it, and its end is said, as for one started here.
@@ -140,7 +145,7 @@ function useRunState(notify: Notify): HarnessRun {
     ended(news.action, news.profile ?? undefined, news.exitCode, news.problem, news.account, news.kept, news.places);
   });
 
-  const run: HarnessRun['run'] = (harness, action, profile, version, workspace) => {
+  const run: HarnessRun['run'] = (harness, action, profile, version, workspace, answered) => {
     // Never over one still running: whose end the news belongs to is the one thing this must not lose.
     if (inFlight !== null) return;
     setRunning(`${harness}:${action}`);
@@ -155,7 +160,21 @@ function useRunState(notify: Notify): HarnessRun {
       onSuccess: (result) => {
         if (result.started) {
           setInFlight(`${harness}:${action}`);
+          // Its end is news, said wherever the person is: the ask that pressed it has nothing more to wait for.
+          answered?.done();
           return;
+        }
+        // Ended inside the request: an ask that pressed it says a failed end inside itself, in the toast's own words, and
+        // closes on a good one, whose sentence is the toast's as before.
+        if (answered) {
+          const code = result.exitCode ?? 0;
+          if (code !== 0) {
+            setRunningProfile(null);
+            setSigningInNew(null);
+            answered.refused(t('harness.failed', { harness, action: t(`harness.${action}`), code }));
+            return;
+          }
+          answered.done();
         }
         // A default's edit says what sessions there run as now (LOOK2c), as the terminal's verb prints it: a workspace
         // cleared on the tool's own row runs as the machine's default where one is set, not in the tool's own home.
@@ -171,7 +190,8 @@ function useRunState(notify: Notify): HarnessRun {
       onError: (error: unknown) => {
         setRunningProfile(null);
         setSigningInNew(null);
-        notify(sentence(error), 'error');
+        if (answered) answered.refused(sentence(error));
+        else notify(sentence(error), 'error');
       },
     });
   };

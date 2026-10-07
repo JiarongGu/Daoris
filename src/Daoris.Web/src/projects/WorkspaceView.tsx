@@ -168,7 +168,7 @@ function DetailsPart({ workspace, repositories, notify, onOpenRepository, onOpen
         refusal={history.error ? sentence(history.error) : null}
         busy={historyActs.busy}
         doors={doors}
-        onClear={(units, done) => historyActs.clear({ scope: 'workspace', id: workspace }, units, () => done())}
+        onClear={(units, answered) => historyActs.clear({ scope: 'workspace', id: workspace }, units, answered)}
       />
     </>
   );
@@ -210,7 +210,11 @@ function BranchesPart({ workspace, notify }: { workspace: string; notify: Notify
         onSuccess: (done) => notify(t('settings.sweep.done', { removed: done.removed, count: only.length })),
         onError: failure(notify),
       })}
-      onDiscard={(branch) => discard.mutate(branch, { onSuccess: sayDiscard(notify, t), onError: failure(notify) })}
+      // Told back to its ask (UXFIX2): a branch kept, or a refusal, is said inside it.
+      onDiscard={(branch, answered) => discard.mutate(branch, {
+        onSuccess: sayDiscard(notify, t, answered),
+        onError: (error) => answered.refused(sentence(error)),
+      })}
       discarding={discard.isPending && discard.variables ? sweepKey(discard.variables) : null}
       sync={(
         <SyncSection

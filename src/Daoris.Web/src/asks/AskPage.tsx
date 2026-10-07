@@ -8,6 +8,7 @@ import type { AccountNamer } from '../tools';
 import { Button, Icon, type IconName, Inline, Menu, Pill, Prose, SelectField, SESSION_TONE } from '../ui';
 import { ClearAsk } from '../work/ClearAsk';
 import { clearOffered, type HistoryDoor } from '../work/history';
+import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import { Note } from '../work/Note';
 import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing';
 import { PageHead, PageSection, ViewMain } from '../work/ViewMain';
@@ -97,8 +98,11 @@ export function AskPage({
   busy?: boolean;
   onPublish: (to: string) => void;
   onClose: (reason: string) => void;
-  /** Delete the ask with every quest asked by it (D95) — absent where there is no door to do it. */
-  onDelete?: () => void;
+  /**
+   * Delete the ask with every quest asked by it (D95), told back to its ask (UXFIX2) — absent where there is no door to do
+   * it.
+   */
+  onDelete?: (answered: Answered) => void;
   onOpenQuest: (id: string) => void;
   /** The person's yes or no to a go-ahead its sessions asked (KNOWUSE1a) — absent where there is no door to give it. */
   onAnswerGoAhead?: (number: number, approved: boolean, words?: string) => void;
@@ -243,25 +247,24 @@ export function AskPage({
           plan={history.plan}
           meanIt={t('asks.record.clearMeanIt')}
           busy={waiting}
-          onClear={(units) => history.onClear({ scope: 'ask', id: ask.id }, units, () => setAsking(null))}
-          onCancel={() => setAsking(null)}
+          onClear={(units, answered) => history.onClear({ scope: 'ask', id: ask.id }, units, answered)}
+          onClose={() => setAsking(null)}
         />
       )}
 
       {deleting && deletable && (
         /* 🔴 Nothing gives a deleted record back (D95): the first press only asks, and says the quests
-           go too, the way removing an account says what it deletes. */
-        <div
-          role="group"
-          aria-label={t('asks.record.deleteTitle')}
-          className="mb-4 flex flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2"
-        >
-          <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft">{t('asks.record.deleteConfirm')}</span>
-          <Button variant="danger" disabled={busy} onClick={() => { setAsking(null); onDelete!(); }}>
-            {t('asks.record.deleteMeanIt')}
-          </Button>
-          <Button variant="ghost" disabled={busy} onClick={() => setAsking(null)}>{t('common.cancel')}</Button>
-        </div>
+           go too, the way removing an account says what it deletes. It stays open until the service answers, and
+           says a refusal inside itself (UXFIX2). */
+        <InlineConfirm
+          className="mb-4"
+          label={t('asks.record.deleteTitle')}
+          says={t('asks.record.deleteConfirm')}
+          meanIt={t('asks.record.deleteMeanIt')}
+          busy={busy}
+          onConfirm={onDelete!}
+          onClose={() => setAsking((was) => (was === 'delete' ? null : was))}
+        />
       )}
 
       {live && closing && (

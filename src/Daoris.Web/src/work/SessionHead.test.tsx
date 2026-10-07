@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import i18n from '../i18n';
 import type { GoAhead, Quest, Session } from '../api';
 import type { SweepBranch } from '../settings/Sweep';
+import type { Answered } from './InlineConfirm';
 import { SessionHead } from './SessionHead';
 
 // Props-only, like every molecule here: a parked session with its analysis, a record read over a
@@ -337,6 +339,9 @@ describe('the attended session\'s head', () => {
     expect(ask).toHaveTextContent('Discards daoris/s-43c14a70 in engine, and with it 2 commits no branch of yours holds. Nothing brings them back.');
     fireEvent.click(within(ask).getByRole('button', { name: 'Discard branch' }));
     expect(onDiscardBranch).toHaveBeenCalledOnce();
+    // UXFIX2: open, and waiting, until the discard answers.
+    expect(within(ask).getByRole('button', { name: 'Never mind' })).toBeDisabled();
+    act(() => (onDiscardBranch.mock.calls[0]![0] as Answered).done());
     expect(screen.queryByRole('group', { name: 'discard daoris/s-43c14a70' })).toBeNull();
 
     // The tree still here: the review's Discard is the door, so the head offers none.
@@ -347,6 +352,39 @@ describe('the attended session\'s head', () => {
     expect(screen.queryByRole('button', { name: 'Discard branch…' })).toBeNull();
     rerender(<SessionHead session={session({ state: 'failed' })} branch={gone} />);
     expect(screen.queryByRole('button', { name: 'Discard branch…' })).toBeNull();
+  });
+
+  /**
+   * UXFIX2 (the second-opinion review, `SessionHead.tsx:335`): the head's discard is the one inline confirmation. Its sentence
+   * takes the focus and describes the move; a branch the driver kept is said inside it, in its words, where it closed at
+   * once and refused in a toast; *Never mind* gives the focus back to *Discard branch…*.
+   */
+  it('says a kept branch inside the head’s discard ask, and gives the focus back to Discard branch… when put down', async () => {
+    const gone: SweepBranch = {
+      repository: 'engine', workspace: 'default', branch: 'daoris/s-43c14a70', hasTree: false,
+      kind: 'unlanded', commits: 2, removable: false, discardable: true,
+    };
+    let answered: Answered | undefined;
+    // The person's presses and the focus run on the page's own clock; nothing here reads the time.
+    vi.useRealTimers();
+    const user = userEvent.setup();
+    render(
+      <SessionHead session={session({ state: 'failed' })} branch={gone} onDiscardBranch={(told) => { answered = told; }} />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Discard branch…' }));
+    const ask = screen.getByRole('group', { name: 'discard daoris/s-43c14a70' });
+    const says = within(ask).getByText(/^Discards/);
+    await waitFor(() => expect(says).toHaveFocus());
+    expect(within(ask).getByRole('button', { name: 'Discard branch' })).toHaveAccessibleDescription(says.textContent!);
+
+    await user.click(within(ask).getByRole('button', { name: 'Discard branch' }));
+    act(() => answered!.refused('daoris/s-43c14a70 holds commits the driver could not judge, so it was kept.'));
+    expect(within(ask).getByRole('alert')).toHaveTextContent('daoris/s-43c14a70 holds commits the driver could not judge, so it was kept.');
+
+    await user.click(within(ask).getByRole('button', { name: 'Never mind' }));
+    expect(screen.queryByRole('group', { name: 'discard daoris/s-43c14a70' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Discard branch…' })).toHaveFocus();
   });
 
   /** REV3's lesson: an ask belongs to the branch it was asked about, so it never carries to another session's. */

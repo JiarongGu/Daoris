@@ -1,8 +1,9 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
 import i18n from '../i18n';
+import type { Answered } from '../work/InlineConfirm';
 import { SweepList, type LandedBranch, type SweepBranch } from './Sweep';
 
 // WSR3 (D88): every session branch with what it holds, listed first — then one press removes those
@@ -104,8 +105,34 @@ describe('discarding a failed attempt\'s branch from the session branches card',
 
     await userEvent.click(within(ask).getByRole('button', { name: 'Discard branch' }));
     expect(onDiscard).toHaveBeenCalledOnce();
-    expect(onDiscard).toHaveBeenCalledWith(expect.objectContaining({ repository: 'engine', branch: 'daoris/s-gone' }));
+    expect(onDiscard).toHaveBeenCalledWith(expect.objectContaining({ repository: 'engine', branch: 'daoris/s-gone' }), expect.anything());
     expect(onClean).not.toHaveBeenCalled();
+  });
+
+  /**
+   * UXFIX2 (the second-opinion review, `Sweep.tsx:218`): the press keeps the ask open and waiting until the driver answers,
+   * where it closed at once and refused in a toast. Its sentence takes the focus and describes the move; a branch the driver
+   * kept is said inside it, in the driver's words; it closes once the discard lands.
+   */
+  it('keeps the ask open while the discard is on its way, says why the driver kept it inside, and closes once it lands', async () => {
+    let answered: Answered | undefined;
+    drawDiscard({ onDiscard: (_branch, told) => { answered = told; } });
+
+    await userEvent.click(within(row('daoris/s-gone')).getByRole('button', { name: 'Discard branch…' }));
+    const ask = screen.getByRole('group', { name: 'discard daoris/s-gone' });
+    const says = within(ask).getByText(/^Discards/);
+    await waitFor(() => expect(says).toHaveFocus());
+    expect(within(ask).getByRole('button', { name: 'Discard branch' })).toHaveAccessibleDescription(says.textContent!);
+
+    await userEvent.click(within(ask).getByRole('button', { name: 'Discard branch' }));
+    expect(screen.getByRole('group', { name: 'discard daoris/s-gone' })).toBeInTheDocument();
+    expect(within(ask).getByRole('button', { name: 'Never mind' })).toBeDisabled();
+
+    act(() => answered!.refused('daoris/s-gone is checked out in a tree a session uses, so it was kept.'));
+    expect(within(ask).getByRole('alert')).toHaveTextContent('daoris/s-gone is checked out in a tree a session uses, so it was kept.');
+
+    await userEvent.click(within(ask).getByRole('button', { name: 'Discard branch' }));
+    act(() => answered!.done());
     expect(screen.queryByRole('group', { name: 'discard daoris/s-gone' })).toBeNull();
   });
 
@@ -117,15 +144,23 @@ describe('discarding a failed attempt\'s branch from the session branches card',
       .toHaveTextContent('Discards daoris/s-here in engine and its tree, and with them 1 commit no branch of yours holds. Nothing brings it back.');
   });
 
-  it('lets the person back out, with nothing pressed', async () => {
+  it('lets the person back out, with nothing pressed, and gives the focus back to its row’s Discard branch…', async () => {
     const { onDiscard } = drawDiscard();
 
-    await userEvent.click(within(row('daoris/s-gone')).getByRole('button', { name: 'Discard branch…' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Never mind' }));
+    const user = userEvent.setup();
+    await user.click(within(row('daoris/s-gone')).getByRole('button', { name: 'Discard branch…' }));
+    await user.click(screen.getByRole('button', { name: 'Never mind' }));
 
     expect(onDiscard).not.toHaveBeenCalled();
     expect(screen.queryByRole('group', { name: 'discard daoris/s-gone' })).toBeNull();
-    expect(within(row('daoris/s-gone')).getByRole('button', { name: 'Discard branch…' })).toBeInTheDocument();
+    expect(within(row('daoris/s-gone')).getByRole('button', { name: 'Discard branch…' })).toHaveFocus();
+
+    // Escape puts it down the same way.
+    await user.click(within(row('daoris/s-here')).getByRole('button', { name: 'Discard branch…' }));
+    await waitFor(() => expect(within(screen.getByRole('group', { name: 'discard daoris/s-here' })).getByText(/^Discards/)).toHaveFocus());
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('group', { name: 'discard daoris/s-here' })).toBeNull();
+    expect(within(row('daoris/s-here')).getByRole('button', { name: 'Discard branch…' })).toHaveFocus();
   });
 
   it('waits on a discard on its way, and offers none where nothing can press it', async () => {

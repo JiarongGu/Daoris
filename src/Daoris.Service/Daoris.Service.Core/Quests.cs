@@ -1389,7 +1389,8 @@ public sealed class QuestStore
     /// <summary>
     /// Replay one quest — accepted first, pending on top — and rewrite what did not survive, each kind by
     /// <see cref="QuestLog.Lost"/>: a move becomes a conflict, a publish of an ask already held is the same
-    /// ask again, and a follow-up that only a lost close published goes with it. Answers the conflicts made.
+    /// ask again, and a follow-up that only a lost close published goes with it. A wait made on this machine's
+    /// take that lost goes with the take, and the take's conflict names it (WAITCLAIM1). Answers the conflicts made.
     /// </summary>
     private async Task<IReadOnlyList<QuestOperation>> RebaseAsync(
         string id, SqliteTransaction transaction, CancellationToken ct)
@@ -1400,10 +1401,17 @@ public sealed class QuestStore
         // Once this machine's take has lost, its later moves on the quest were made on a claim it never
         // held (D69): an offline session that finished would otherwise close the quest over the winner's
         // take, because the table allows done from taken. Every pending operation is this machine's.
+        // A wait made on that take is part of its move (WAITCLAIM1): applied to the winner's quest, it would
+        // hold the winner's session on a question it never asked. It goes with the take, and the take's
+        // conflict, the loss this machine reports, names the question, so whoever asked learns the quest
+        // no longer waits on it.
         var claimLost = false;
+        (long Position, int Reported)? lostTake = null;
+        var waitsLost = new List<string>();
         foreach (var operation in await HistoryAsync(id, transaction, ct).ConfigureAwait(false))
         {
-            var lostClaim = claimLost && operation.Number is null && QuestTransitions.Target(operation.Kind) is not null;
+            var lostClaim = claimLost && operation.Number is null
+                && (QuestTransitions.Target(operation.Kind) is not null || operation.Kind == QuestOperationKind.Waited);
             if (!lostClaim && (operation.Number is not null || QuestLog.Applies(quest, operation)))
             {
                 quest = QuestLog.Applies(quest, operation) ? QuestLog.Step(quest, operation) : quest;
@@ -1419,6 +1427,10 @@ public sealed class QuestStore
             if (loss == QuestLoss.Forgotten)
             {
                 await ForgetOperationAsync(position, transaction, ct).ConfigureAwait(false);
+                if (lostClaim && operation is { Kind: QuestOperationKind.Waited, Note: { } on } && !waitsLost.Contains(on))
+                {
+                    waitsLost.Add(on);
+                }
 
                 // A yes that lost takes the step it published with it, as a lost close's does (DRIFT1d). A verdict on a
                 // done that lost needs nothing more here: the done came first in the history, and its conflict took the
@@ -1443,7 +1455,11 @@ public sealed class QuestStore
             await RewriteAsync(position, lost, transaction, ct).ConfigureAwait(false);
             quest = quest is null ? null : QuestLog.Step(quest, lost);
             conflicts.Add(lost);
-            claimLost |= operation.Kind == QuestOperationKind.Taken;
+            if (operation.Kind == QuestOperationKind.Taken)
+            {
+                claimLost = true;
+                lostTake = (position, conflicts.Count - 1);
+            }
 
             if (operation.Kind == QuestOperationKind.Done)
             {
@@ -1451,10 +1467,39 @@ public sealed class QuestStore
             }
         }
 
+        // The take's conflict names the waits that went with it, after its own note (WAITCLAIM1). It is rewritten before
+        // it is pushed, so every machine keeps the one note.
+        if (lostTake is { } take && waitsLost.Count > 0)
+        {
+            var named = conflicts[take.Reported] with { Note = WaitsWentWith(conflicts[take.Reported].Note, waitsLost) };
+            await RewriteAsync(take.Position, named, transaction, ct).ConfigureAwait(false);
+            conflicts[take.Reported] = named;
+            quest = quest is null ? null : quest with
+            {
+                Conflicts = quest.Conflicts
+                    .Select(c => c.Machine == named.Machine && c.Sequence == named.Sequence ? c with { Note = named.Note } : c)
+                    .ToList(),
+            };
+        }
+
         // A quest a fetched delete ended leaves the cache, as it left every other machine's (D95).
         if (quest is not null) await WriteCacheAsync(quest, transaction, ct).ConfigureAwait(false);
         else await DropCacheAsync(id, transaction, ct).ConfigureAwait(false);
         return conflicts;
+    }
+
+    /// <summary>
+    /// A lost take's note as it was given, then the waits that went with it (WAITCLAIM1): said on the conflict, which every
+    /// machine shows, so the words hold wherever they are read.
+    /// </summary>
+    internal static string WaitsWentWith(string? note, IReadOnlyList<string> questions)
+    {
+        var named = questions.Select(q => $"#{q}").ToList();
+        var said = named.Count == 1
+            ? $"This take's wait on {named[0]} went with it, so this quest does not wait on that question's answer."
+            : $"This take's waits on {string.Join(", ", named.Take(named.Count - 1))} and {named[^1]} went with it, "
+              + "so this quest does not wait on those questions' answers.";
+        return string.IsNullOrWhiteSpace(note) ? said : $"{note.TrimEnd()} {said}";
     }
 
     /// <summary>Take a quest's row out of the cache — the replay says there is no quest (D95).</summary>

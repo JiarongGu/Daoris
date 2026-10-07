@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '../i18n';
 import { ClearAsk } from './ClearAsk';
+import type { Answered } from './InlineConfirm';
 import {
   ASK_PLAN, FAILED_PLAN, QUEST_ALONE, QUEST_FORGOTTEN, QUEST_PLAN, WORKSPACE_KEPT, WORKSPACE_LEFT_OVER, WORKSPACE_PLAN,
 } from './historyFixtures';
@@ -18,36 +19,36 @@ const WORKSPACE = { scope: 'workspace', id: 'aurora' } as const;
 describe('a clear’s first press (design §5 step 1)', () => {
   it('says what a quest’s clear takes and that nothing brings it back, then the move and never mind', async () => {
     const clear = vi.fn();
-    const cancel = vi.fn();
-    render(<ClearAsk target={QUEST} plan={QUEST_PLAN} meanIt="Clear quest" onClear={clear} onCancel={cancel} />);
+    const close = vi.fn();
+    render(<ClearAsk target={QUEST} plan={QUEST_PLAN} meanIt="Clear quest" onClear={clear} onClose={close} />);
 
     const ask = screen.getByRole('group', { name: 'clear from this machine' });
     expect(ask).toHaveTextContent(
       'Clears #9a8b7c, its 3 sessions and what this machine kept of them: their words, transcripts and files, 2.1 MB. Nothing brings it back.');
     expect(within(ask).getAllByRole('button').map((button) => button.textContent)).toEqual(['Clear quest', 'Never mind']);
     await userEvent.click(within(ask).getByRole('button', { name: 'Never mind' }));
-    expect(cancel).toHaveBeenCalledOnce();
+    expect(close).toHaveBeenCalledOnce();
   });
 
   it('says the remote keeps the team’s copy where the quest is forgotten here, and a quest that goes alone', () => {
     const { rerender } = render(
-      <ClearAsk target={QUEST} plan={QUEST_FORGOTTEN} meanIt="Clear quest" onClear={() => {}} onCancel={() => {}} />,
+      <ClearAsk target={QUEST} plan={QUEST_FORGOTTEN} meanIt="Clear quest" onClear={() => {}} onClose={() => {}} />,
     );
     expect(screen.getByRole('group')).toHaveTextContent("The remote for aurora keeps the team’s copy; this machine will not fetch it again.");
 
-    rerender(<ClearAsk key="alone" target={QUEST} plan={QUEST_ALONE} meanIt="Clear quest" onClear={() => {}} onCancel={() => {}} />);
+    rerender(<ClearAsk key="alone" target={QUEST} plan={QUEST_ALONE} meanIt="Clear quest" onClear={() => {}} onClose={() => {}} />);
     expect(screen.getByRole('group')).toHaveTextContent('Clears #9a8b7c and what this machine kept of it: its words and files, 12 KB.');
   });
 
   it('says an ask’s work whole, and a quest’s failed sessions with the teammate’s it keeps', () => {
     const { unmount } = render(
-      <ClearAsk target={{ scope: 'ask', id: 'a1b2c3' }} plan={ASK_PLAN} meanIt="Clear ask" onClear={() => {}} onCancel={() => {}} />,
+      <ClearAsk target={{ scope: 'ask', id: 'a1b2c3' }} plan={ASK_PLAN} meanIt="Clear ask" onClear={() => {}} onClose={() => {}} />,
     );
     expect(screen.getByRole('group')).toHaveTextContent(
       'Clears ask #a1b2c3, the 2 quests it became, their 5 sessions and what this machine kept of them');
     unmount();
 
-    render(<ClearAsk target={{ scope: 'failed', id: '9a8b7c' }} plan={FAILED_PLAN} meanIt="Clear 2" onClear={() => {}} onCancel={() => {}} />);
+    render(<ClearAsk target={{ scope: 'failed', id: '9a8b7c' }} plan={FAILED_PLAN} meanIt="Clear 2" onClear={() => {}} onClose={() => {}} />);
     const ask = screen.getByRole('group');
     expect(ask).toHaveTextContent('Clears 2 failed sessions of #9a8b7c');
     expect(ask).toHaveTextContent('The quest and its other sessions stay.');
@@ -59,7 +60,7 @@ describe('a clear’s first press (design §5 step 1)', () => {
 describe('a workspace’s first press (design §6.1)', () => {
   it('lists the counts by kind, and every unit kept with its reason’s sentence and the door that frees it', async () => {
     const doors = { branches: vi.fn(), sync: vi.fn(), quest: vi.fn(), ask: vi.fn(), session: vi.fn() };
-    render(<ClearAsk target={WORKSPACE} plan={WORKSPACE_PLAN} meanIt="Clear 3" doors={doors} onClear={() => {}} onCancel={() => {}} />);
+    render(<ClearAsk target={WORKSPACE} plan={WORKSPACE_PLAN} meanIt="Clear 3" doors={doors} onClear={() => {}} onClose={() => {}} />);
 
     const going = screen.getByRole('list', { name: 'What goes' });
     expect(within(going).getAllByRole('listitem').map((row) => row.textContent)).toEqual([
@@ -83,14 +84,14 @@ describe('a workspace’s first press (design §6.1)', () => {
   });
 
   it('draws no door this page was not handed', () => {
-    render(<ClearAsk target={WORKSPACE} plan={WORKSPACE_PLAN} meanIt="Clear 3" onClear={() => {}} onCancel={() => {}} />);
+    render(<ClearAsk target={WORKSPACE} plan={WORKSPACE_PLAN} meanIt="Clear 3" onClear={() => {}} onClose={() => {}} />);
     expect(within(screen.getByRole('list', { name: 'What stays' })).queryAllByRole('button')).toEqual([]);
   });
 
   it('says a kept unit’s sentence in 中文, by its code and variant', () => {
     render(
       <I18nextProvider i18n={i18n.cloneInstance({ lng: 'zh' })}>
-        <ClearAsk target={WORKSPACE} plan={WORKSPACE_PLAN} meanIt="清除 3 项" onClear={() => {}} onCancel={() => {}} />
+        <ClearAsk target={WORKSPACE} plan={WORKSPACE_PLAN} meanIt="清除 3 项" onClear={() => {}} onClose={() => {}} />
       </I18nextProvider>,
     );
     const staying = screen.getByRole('list', { name: '会保留的部分' });
@@ -100,42 +101,80 @@ describe('a workspace’s first press (design §6.1)', () => {
   });
 
   it('takes the left-over files and the intake’s room with no unit', () => {
-    render(<ClearAsk target={WORKSPACE} plan={WORKSPACE_LEFT_OVER} meanIt="Clear 5" onClear={() => {}} onCancel={() => {}} />);
+    render(<ClearAsk target={WORKSPACE} plan={WORKSPACE_LEFT_OVER} meanIt="Clear 5" onClear={() => {}} onClose={() => {}} />);
     expect(within(screen.getByRole('list', { name: 'What goes' })).getAllByRole('listitem').map((row) => row.textContent))
       .toEqual(['3.1 MB left over from records already gone', 'the intake’s room, 40 KB']);
   });
 
   it('says nothing here can be cleared, with only Close, where every unit is kept', async () => {
-    const cancel = vi.fn();
-    render(<ClearAsk target={WORKSPACE} plan={WORKSPACE_KEPT} meanIt="Clear 0" onClear={() => {}} onCancel={cancel} />);
+    const close = vi.fn();
+    render(<ClearAsk target={WORKSPACE} plan={WORKSPACE_KEPT} meanIt="Clear 0" onClear={() => {}} onClose={close} />);
     const ask = screen.getByRole('group');
     expect(ask).toHaveTextContent('Nothing here can be cleared now: each is kept for the reason beside it.');
     expect(screen.queryByRole('list', { name: 'What goes' })).toBeNull();
     expect(within(ask).getAllByRole('button').map((button) => button.textContent)).toEqual(['Close']);
     await userEvent.click(within(ask).getByRole('button', { name: 'Close' }));
-    expect(cancel).toHaveBeenCalledOnce();
+    expect(close).toHaveBeenCalledOnce();
   });
 });
 
 describe('a clear’s second press (design §5 step 2)', () => {
   it('sends exactly the units the first press listed, held from when the list opened', async () => {
     const clear = vi.fn();
-    const { rerender } = render(<ClearAsk target={WORKSPACE} plan={WORKSPACE_PLAN} meanIt="Clear 3" onClear={clear} onCancel={() => {}} />);
+    const { rerender } = render(<ClearAsk target={WORKSPACE} plan={WORKSPACE_PLAN} meanIt="Clear 3" onClear={clear} onClose={() => {}} />);
     // The plan is read again while the list is open (a tick, a refetch): the press still sends what was listed.
-    rerender(<ClearAsk target={WORKSPACE} plan={WORKSPACE_KEPT} meanIt="Clear 3" onClear={clear} onCancel={() => {}} />);
+    rerender(<ClearAsk target={WORKSPACE} plan={WORKSPACE_KEPT} meanIt="Clear 3" onClear={clear} onClose={() => {}} />);
 
     await userEvent.click(screen.getByRole('button', { name: 'Clear 3' }));
-    expect(clear).toHaveBeenCalledWith([{ kind: 'ask', id: 'a1b2c3' }, { kind: 'quest', id: '0c1d2e' }, { kind: 'quest', id: '3f4a5b' }]);
+    expect(clear).toHaveBeenCalledWith(
+      [{ kind: 'ask', id: 'a1b2c3' }, { kind: 'quest', id: '0c1d2e' }, { kind: 'quest', id: '3f4a5b' }], expect.anything());
   });
 
   it('sends an empty list where only left-over files and the room go, and waits while a press is on its way', async () => {
     const clear = vi.fn();
-    const { rerender } = render(<ClearAsk target={WORKSPACE} plan={WORKSPACE_LEFT_OVER} meanIt="Clear 5" onClear={clear} onCancel={() => {}} />);
+    const { rerender } = render(<ClearAsk target={WORKSPACE} plan={WORKSPACE_LEFT_OVER} meanIt="Clear 5" onClear={clear} onClose={() => {}} />);
     await userEvent.click(screen.getByRole('button', { name: 'Clear 5' }));
-    expect(clear).toHaveBeenCalledWith([]);
+    expect(clear).toHaveBeenCalledWith([], expect.anything());
 
-    rerender(<ClearAsk target={WORKSPACE} plan={WORKSPACE_LEFT_OVER} meanIt="Clear 5" busy onClear={clear} onCancel={() => {}} />);
+    rerender(<ClearAsk target={WORKSPACE} plan={WORKSPACE_LEFT_OVER} meanIt="Clear 5" busy onClear={clear} onClose={() => {}} />);
     expect(screen.getByRole('button', { name: 'Clear 5' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Never mind' })).toBeDisabled();
+  });
+});
+
+/**
+ * UXFIX2 (the second-opinion review, `ClearAsk.tsx:101`): the clear's ask is the one inline confirmation. What it would take
+ * and keep takes the focus on opening and describes the move; the press keeps it open until the clear answers; a refusal is
+ * said inside it, word for word; it closes once the clear lands, or on *Never mind*.
+ */
+describe('a clear’s ask as the one inline confirmation (UXFIX2)', () => {
+  it('takes the focus to what goes and stays, which describes the move', async () => {
+    render(<ClearAsk target={WORKSPACE} plan={WORKSPACE_PLAN} meanIt="Clear 3" onClear={() => {}} onClose={() => {}} />);
+    const said = screen.getByRole('list', { name: 'What goes' }).closest('[tabindex="-1"]');
+    await waitFor(() => expect(said).toHaveFocus());
+    const move = screen.getByRole('button', { name: 'Clear 3' });
+    expect(move).toHaveAccessibleDescription(/^Clears from this machine what it kept of aurora’s finished work/);
+    expect(move).toHaveAccessibleDescription(/What goes 4 closed quests 1 ask 6 sessions/);
+    expect(move).toHaveAccessibleDescription(/3\.1 MB left over from records already gone/);
+    expect(move).toHaveAccessibleDescription(/a landing made still stands in engine/);
+  });
+
+  it('stays open and waiting until the clear answers, says a refusal inside itself, and closes once it lands', async () => {
+    const clear = vi.fn();
+    const close = vi.fn();
+    render(<ClearAsk target={QUEST} plan={QUEST_PLAN} meanIt="Clear quest" onClear={clear} onClose={close} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Clear quest' }));
+    const ask = screen.getByRole('group', { name: 'clear from this machine' });
+    expect(within(ask).getByRole('button', { name: 'Clear quest' })).toBeDisabled();
+    expect(within(ask).getByRole('button', { name: 'Never mind' })).toBeDisabled();
+
+    const answered = clear.mock.calls[0]![1] as Answered;
+    act(() => answered.refused('s1a2b3c4 is still running, so it was not cleared. Stop it first.'));
+    expect(within(ask).getByRole('alert')).toHaveTextContent('s1a2b3c4 is still running, so it was not cleared. Stop it first.');
+    expect(close).not.toHaveBeenCalled();
+
+    await userEvent.click(within(ask).getByRole('button', { name: 'Clear quest' }));
+    act(() => (clear.mock.calls[1]![1] as Answered).done());
+    expect(close).toHaveBeenCalledOnce();
   });
 });

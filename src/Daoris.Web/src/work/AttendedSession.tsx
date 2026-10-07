@@ -9,6 +9,7 @@ import type { SweepBranch } from '../settings/Sweep';
 import type { AccountNamer } from '../tools';
 import type { Resolution } from './AwaitingPerson';
 import { HowItCameToBe, type TraceDoor } from './HowItCameToBe';
+import type { Answered } from './InlineConfirm';
 import type { Relations } from './relations';
 import { SessionHead } from './SessionHead';
 import { SessionRelations } from './SessionRelations';
@@ -77,8 +78,8 @@ export function AttendedSession({
   onQuest?: (quest: Quest) => void;
   /** The branch its own tree left, as the clean-up judged it (SESS1 S10) — the head's. */
   branch?: SweepBranch | null;
-  /** Passed straight through to the head: that branch discarded once its tree is gone (LAND3b). */
-  onDiscardBranch?: () => void;
+  /** Passed straight through to the head: that branch discarded once its tree is gone (LAND3b), told back to its ask. */
+  onDiscardBranch?: (answered: Answered) => void;
   /** That discard is on its way. */
   discardingBranch?: boolean;
   /** The attended session, or null when the person has not chosen one. */

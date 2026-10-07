@@ -300,7 +300,8 @@ public static class QuestLog
         // still reads lost.
         QuestOperationKind.Conflict => QuestLoss.Kept,
         // Nothing left to say. A dismissal is lost only with its quest. A wait, once its quest is no longer taken: another
-        // machine closed or deleted it first (QUESTOP1). A delete that lost to a take, or that another machine's delete
+        // machine closed or deleted it first (QUESTOP1); or made on this machine's take that lost, which the take's
+        // conflict names (WAITCLAIM1, QuestStore.RebaseAsync). A delete that lost to a take, or that another machine's delete
         // already made (D95). A yes to a done nothing holds any more (DRIFT1d): its done lost, or another machine's yes came
         // first. A verdict on evidence nothing waits on any more (EVID1a): another machine's verdict found it first, or the
         // person accepted the done as it stood.
