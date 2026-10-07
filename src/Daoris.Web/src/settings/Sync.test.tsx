@@ -129,6 +129,23 @@ describe('bringing repositories up to date', () => {
     expect(within(row('feature/q1-first')).getByText('goes')).toBeInTheDocument();
   });
 
+  /** UXFIX4: its rows are the session branches card's, so a long name is heard and shown whole here too. */
+  it('names each row by the name it shows, whole, in rows that follow their own list’s width', () => {
+    const LONG = 'feature/0fda18-fix-the-api-gap-before-the-quarter-closes';
+    draw({
+      plan: { lines: [pull({ kind: 'up-to-date' })], rebases: [rebase({ branch: LONG, kind: 'replay', landed: true, commits: 1, replays: true })], deletes: [] },
+    });
+
+    for (const name of ['main', LONG]) {
+      const row = screen.getByRole('listitem', { name });
+      const shown = document.getElementById(row.getAttribute('aria-labelledby') ?? '');
+      expect(row).toContainElement(shown);
+      expect(shown!.textContent).toBe(name);
+      expect(shown!.querySelector('.truncate')).toBeNull();
+      expect(row.closest('ul')).toHaveClass('@container/branches');
+    }
+  });
+
   it('does only what it listed, on one press', async () => {
     const { onSync } = draw();
 

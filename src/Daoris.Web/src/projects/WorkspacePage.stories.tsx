@@ -1,6 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import type { StartWiring } from '../map/wiring';
+import { InTheme } from '../plugins/storyIcons';
 import type { LandedBranch, SweepBranch } from '../settings/Sweep';
 import { SweepList } from '../settings/Sweep';
 import { SyncSection } from '../settings/Sync';
@@ -116,7 +117,11 @@ function Page({ tab: first, setup = DEFAULTS_DAORIS, browser = false, wired = tr
             branch({ repository: 'billing', branch: 'daoris/s-9e0f1a2b', kind: 'unlanded', commits: 2 }),
             branch({ repository: 'reports', branch: 'daoris/s-7a8b9c0d', kind: 'in-use' }),
           ]}
-          landed={[landed({ branch: 'feature/report-totals-0fda18', kind: 'on-line', where: 'origin/develop', removable: true })]}
+          landed={[
+            landed({ branch: 'feature/report-totals-0fda18', kind: 'on-line', where: 'origin/develop', removable: true }),
+            // A long name, as a branch rule's slug makes one: whole at every width (UXFIX4).
+            landed({ branch: 'feature/report-totals-by-region-for-the-quarter-close-0fda19', kind: 'inside', where: 'feature/report-totals-0fda18', removable: true }),
+          ]}
           onLook={nothing}
           onClean={nothing}
           sync={(
@@ -170,6 +175,22 @@ export const DetailsNothingKept: Story = { args: { kept: WORKSPACE_EMPTY } };
 
 /** Branches: the clean-up across its repositories, and bringing them up to date before anyone has looked. */
 export const Branches: Story = { args: { tab: 'branches' } };
+
+/** The main area at a width: 600 px at a 680 px window, the list a strip beside it, and 400 px, its floor. */
+const mainAt = (width: number): Decorator => (Story) => <div className="flex" style={{ width }}><Story /></div>;
+const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
+
+/** Branches at a 680 px window (UXFIX4): each row's three columns, its long name whole over two lines. */
+export const BranchesAt680: Story = { args: { tab: 'branches' }, decorators: [mainAt(600)] };
+
+/** The same, in dark. */
+export const BranchesAt680Dark: Story = { args: { tab: 'branches' }, decorators: [mainAt(600), dark] };
+
+/** Branches at the main area's 400 px floor (UXFIX4): each row's sentence under its name, every name whole. */
+export const BranchesAtTheFloor: Story = { args: { tab: 'branches' }, decorators: [mainAt(400)] };
+
+/** The same, in dark. */
+export const BranchesAtTheFloorDark: Story = { args: { tab: 'branches' }, decorators: [mainAt(400), dark] };
 
 /** Setup at Daoris's defaults: both sections fold, each value marked as Daoris's. */
 export const SetupFolded: Story = { args: { tab: 'setup', wired: false } };
