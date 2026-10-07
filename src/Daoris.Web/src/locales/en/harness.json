@@ -31,7 +31,6 @@
   "harness.profile.keySave": "Save key",
   "harness.profile.keyHint": "Kept on this machine by Daoris, handed to the agent when a session starts, and shown back only as its last four characters.",
   "harness.profile.keyName": "API key {{handle}}",
-  "harness.profile.keyAdded": "Added {{profile}}, the API key {{handle}}.",
   "harness.pin.open": "Pin a version",
   "harness.login.again": "Sign in again",
   "harness.profile.removeTitle": "remove {{account}}",

@@ -478,6 +478,8 @@ public sealed class DriverLoop(
         {
             // Asked at every look, so an update staged or put off between looks holds or frees the next one (UPDATE1).
             Draining = () => Draining?.Invoke() == true,
+            // Where a run's failure nothing else awaits is written with its place, not left to the finalizer (ANSWER2).
+            Log = log,
         };
         await _watch.RunAsync(
             async (report, ticked) =>

@@ -5,7 +5,7 @@ import type { Account, AccountSettingsChange, Tool } from '../tools';
 import {
   Button, Chip, Icon, Inline, Menu, type MenuAct, Pill, Prose, SectionTitle, Tip,
 } from '../ui';
-import { type Answered, InlineConfirm } from '../work/InlineConfirm';
+import { type Answered, InlineConfirm, Refused } from '../work/InlineConfirm';
 import { PageHead, ViewMain } from '../work/ViewMain';
 import {
   type AccountScope, type AgentAccounts, cannotLeave, machineScope, ownLine, workspaceScope,
@@ -45,8 +45,11 @@ export type AddedAnswer = { name?: string; join: (string | null)[] };
  */
 export type { Answered };
 
-/** The questions that wait on their act's answer: a row's rename, a row's *Use in a workspace…*, the add flow's last step. */
-type Question = 'rename' | 'place' | 'added';
+/**
+ * The questions that wait on their act's answer: a row's rename, a row's *Use in a workspace…*, the add flow's last step, the
+ * key's field and an account's model and effort (ACCTUX3).
+ */
+type Question = 'rename' | 'place' | 'added' | 'key' | 'settings';
 
 /** Every press on an agent's page, each the terminal's twin (D50). */
 export type AgentActs = {
@@ -56,7 +59,8 @@ export type AgentActs = {
   onReadOne: (account: string) => void;
   /** A sign-in that makes a new account (D66 §3), step 2 of *Add an account…*. */
   onSignInNew: () => void;
-  onAddKey: (key: string) => void;
+  /** A key added as a new account (AGT3), told back to its field (ACCTUX3): it closes once the key is kept. */
+  onAddKey: (key: string, answered: Answered) => void;
   /** A sign-in to the account a row names, by its id (ACCT1). */
   onSignIn: (account: string) => void;
   /** *Try now*: an account's cool-off ended early, or the tool's own sign-in's with null. */
@@ -74,7 +78,8 @@ export type AgentActs = {
   onJoin: (account: string, join: (string | null)[], answered?: Answered) => void;
   /** The new account's name and lists, at the add flow's end; *Not now* ticks none, and the account says *no workspace*. */
   onAddedAnswer: (answer: AddedAnswer, answered: Answered) => void;
-  onSaveSettings: (account: string, label: string, change: AccountSettingsChange) => void;
+  /** An account's own model and effort saved (AGT6), told back to its editor (ACCTUX3): it closes once the save lands. */
+  onSaveSettings: (account: string, label: string, change: AccountSettingsChange, answered: Answered) => void;
   onDoor: (door: string, action: DoorAction) => void;
   onPin: (door: string, version: string) => void;
   scope: ScopeActs;
@@ -128,8 +133,11 @@ export function AgentPage({
   signInPanel?: ReactNode;
   /** A sign-in to a new account, running: the add flow's step 2, under the header. */
   signInNewPanel?: ReactNode;
-  /** The new account a sign-in kept, by its id and who signed in, waiting on the add flow's step 3. */
-  added?: { account: string; who: string | null } | null;
+  /**
+   * The new account a sign-in or a key added kept, by its id, who signed in and, for a key, its handle, waiting on the add
+   * flow's step 3: a key added asks the same question (the UX7 design §4.5, ACCTUX3).
+   */
+  added?: { account: string; who: string | null; key?: string | null } | null;
   /** The door whose action runs, whose block holds `doorConsole`. */
   doorRunning?: string | null;
   doorConsole?: ReactNode;
@@ -210,6 +218,16 @@ export function AgentPage({
     setRefused(null);
     (question === 'rename' ? setRenaming : setPlacing)(account);
   };
+  // The key's field and the model and effort editor ask so too (ACCTUX3): opened or put down, the last refusal goes.
+  const askKey = (open: boolean) => {
+    setRefused(null);
+    setKeying(open);
+    if (!open) setKeyDraft('');
+  };
+  const askSettings = (account: string | null) => {
+    setRefused(null);
+    setTuning(account);
+  };
   const toggle = (section: AgentSection) => setOpen((was) => {
     const next = new Set(was);
     if (next.has(section)) next.delete(section);
@@ -237,12 +255,15 @@ export function AgentPage({
     return () => watch.disconnect();
   }, [part]);
 
+  // ACCTUX3: the field closes and forgets the key once it is kept, never on the press, so a refused key stays to be corrected
+  // with why said under it (ACCTEDIT1's contract); kept, the add flow's last step asks its name and lists.
   const addKey = () => {
     const key = keyDraft.trim();
     if (!key) return;
-    setKeying(false);
-    setKeyDraft('');
-    acts.onAddKey(key);
+    acts.onAddKey(key, answered('key', '', () => {
+      setKeying(false);
+      setKeyDraft('');
+    }));
   };
 
   // *Add an account…*'s first step (D152 §4.5): the accounts a person signing one back in means, each signed out or unknown.
@@ -299,7 +320,7 @@ export function AgentPage({
             </Button>
           )}
           {tool.present && door.takesKey && !keying && (
-            <Button variant="ghost" disabled={busy} onClick={() => setKeying(true)}>
+            <Button variant="ghost" disabled={busy} onClick={() => askKey(true)}>
               <Icon name="account" size={13} />
               {t('harness.profile.addKey')}
             </Button>
@@ -365,7 +386,7 @@ export function AgentPage({
         onSelect: () => acts.scope.onOrder(workspace, scope.list.filter((each) => each !== name)),
       })),
       ...(settingsShown && account.settings && tool.settingsChoices
-        ? [{ id: 'settings', label: t('agents.account.settings'), onSelect: () => { setOpen((was) => new Set([...was, 'settings' as const])); setTuning(name); } }]
+        ? [{ id: 'settings', label: t('agents.account.settings'), onSelect: () => { setOpen((was) => new Set([...was, 'settings' as const])); askSettings(name); } }]
         : []),
       { id: 'rename', label: t('agents.account.rename'), disabled: busy, onSelect: () => ask('rename', name) },
       ...(signsIn && !account.key && state.state !== 'out'
@@ -404,7 +425,7 @@ export function AgentPage({
       case 'newKey':
         return {
           label: t('harness.profile.addKey'), ariaLabel: t('agents.act.newKeyFor', { account: label }), loud: act.loud,
-          onPress: () => setKeying(true), disabled: busy,
+          onPress: () => askKey(true), disabled: busy,
         };
       default:
         return {
@@ -493,8 +514,10 @@ export function AgentPage({
   const addedAccount = added ? accountOf(added.account) : undefined;
   const offeredName = addedAccount?.displayName?.trim() || added?.who || '';
   const addedFallback = added
-    ? accountName({ name: added.account, key: addedAccount?.key, account: added.who ?? addedAccount?.account })
+    ? accountName({ name: added.account, key: added.key ?? addedAccount?.key, account: added.who ?? addedAccount?.account })
     : '';
+  // A key added names no one signed in (AGT3): its step says the key was added, under the header's own *Add an API key*.
+  const addedKey = added?.key ?? null;
   const adding = (goingBack && !signInNewPanel && !added) || Boolean(signInNewPanel) || Boolean(added);
 
   return (
@@ -518,8 +541,9 @@ export function AgentPage({
               key={added.account}
               agent={tool.name}
               account={added.account}
-              title={t('agents.add.title')}
-              signedIn={added.who}
+              title={t(addedKey ? 'harness.profile.addKey' : 'agents.add.title')}
+              signedIn={addedKey ? undefined : added.who}
+              lead={addedKey ? t('agents.add.keyAdded', { handle: addedKey }) : undefined}
               offered={offeredName}
               fallback={addedFallback}
               choices={joinable(added.account)}
@@ -573,14 +597,15 @@ export function AgentPage({
               />
             )}
           </ul>
-          {/* Each account's own plan and terms apply (D130 point 12): one line at the list's foot that opens the paragraph. */}
+          {/* Each account's own plan and terms apply (D130 point 12): one line at the list's foot that opens the paragraph,
+              a target of 28 px (the platform language §6, ACCTUX2) where its line of text was about 16. */}
           {tool.accounts.length > 0 && (
-            <div className="mt-2">
+            <div className="mt-1">
               <button
                 type="button"
                 aria-expanded={termsOpen}
                 onClick={() => setTermsOpen((was) => !was)}
-                className="flex items-center gap-1 rounded-control text-meta text-ink-faint hover:text-ink"
+                className="flex min-h-7 items-center gap-1 rounded-control text-meta text-ink-faint hover:text-ink"
               >
                 {t('agents.terms.show')}
                 <Icon name={termsOpen ? 'chevronDown' : 'chevronRight'} size={12} />
@@ -602,7 +627,9 @@ export function AgentPage({
                 className="min-w-72 flex-1 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
               />
               <Button type="submit" variant="primary" disabled={busy || !keyDraft.trim()}>{t('harness.profile.keySave')}</Button>
-              <Button variant="ghost" onClick={() => { setKeying(false); setKeyDraft(''); }}>{t('common.cancel')}</Button>
+              {/* Held while the key is on its way, so a refusal is never said to nobody (ACCTEDIT1). */}
+              <Button variant="ghost" disabled={busy} onClick={() => askKey(false)}>{t('common.cancel')}</Button>
+              {refusalOf('key', '') && <Refused sentence={refusalOf('key', '')!} />}
               <span className="basis-full text-meta text-ink-faint">{t('harness.profile.keyHint')}</span>
             </form>
           )}
@@ -751,10 +778,13 @@ export function AgentPage({
                 <span className="min-w-0 text-body text-ink [overflow-wrap:anywhere]">{labelOf(account.name)}</span>
                 <AccountSettingsSummary settings={account.settings!} />
                 {tuning !== account.name && (
-                  <Button variant="ghost" className="ml-auto" disabled={busy} onClick={() => setTuning(account.name)}>
+                  <Button variant="ghost" className="ml-auto" disabled={busy} onClick={() => askSettings(account.name)}>
                     {t('harness.settings.open')}
                   </Button>
                 )}
+                {/* ACCTUX3: open until the save lands, never closed on the press, so a refused one keeps the choice made and
+                    says why under it (ACCTEDIT1's contract). Its way out waits with the save, so a refusal is never said to
+                    nobody; the form does not hold its own *Never mind* while it saves, so the page does. */}
                 {tuning === account.name && (
                   <AccountSettingsForm
                     harness={door.harness}
@@ -763,9 +793,14 @@ export function AgentPage({
                     settings={account.settings!}
                     choices={tool.settingsChoices!}
                     busy={settingsBusy}
-                    onSave={(change) => { acts.onSaveSettings(account.name, labelOf(account.name), change); setTuning(null); }}
-                    onCancel={() => setTuning(null)}
+                    onSave={(change) => acts.onSaveSettings(account.name, labelOf(account.name), change, answered('settings', account.name, () => {
+                      setTuning((was) => (was === account.name ? null : was));
+                    }))}
+                    onCancel={() => { if (!settingsBusy) askSettings(null); }}
                   />
+                )}
+                {tuning === account.name && refusalOf('settings', account.name) && (
+                  <Refused sentence={refusalOf('settings', account.name)!} />
                 )}
               </li>
             ))}
