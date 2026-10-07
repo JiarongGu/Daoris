@@ -301,11 +301,12 @@ public static class CoolingWords
     public static Noted ConversationOf(CoolingEntry entry, TimeZoneInfo zone) => Coded(entry, Conversation(entry, zone));
 
     /// <summary>
-    /// The cooling line by its code (AGT3d): <c>account.cooling</c> with the window its reset named, else
-    /// <c>account.cooling-no-window</c>, since a line whose entry says a value the part lacks is shown as recorded.
+    /// The cooling line by its code (AGT3d): <c>account.cooling-window</c> with the window its reset named, else
+    /// <c>account.cooling-no-window</c>, since a line whose entry says a value the part lacks is shown as recorded. Never
+    /// <c>account.cooling</c>, which keeps its old shape for the notes written before.
     /// </summary>
     private static Noted Coded(CoolingEntry entry, string text) => WindowOf(entry) is { } window
-        ? Noted.Of(NoteCodes.AccountCooling, text,
+        ? Noted.Of(NoteCodes.AccountCoolingWindow, text,
             ("until", NoteCodes.Moment(entry.Until)), ("why", CoolingWhy.Of(entry)), ("owner", entry.Agent), ("window", window))
         : Noted.Of(NoteCodes.AccountCoolingNoWindow, text,
             ("until", NoteCodes.Moment(entry.Until)), ("why", CoolingWhy.Of(entry)), ("owner", entry.Agent));

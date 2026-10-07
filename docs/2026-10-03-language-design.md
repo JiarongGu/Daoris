@@ -122,7 +122,9 @@ right (D116); the record's English stays as written. Ids render as the page draw
 
 | # | Code | Values | English | 中文 |
 |---|---|---|---|---|
-| 22 | `account.cooling` | until, why | The account it ran on is cooling until {{until}} ({{why}}); nothing starts on it until then. *`why` is `harness.cooling.why.*`'s four* | 它运行时用的账户冷却至 {{until}}（{{why}}），在此之前不会在它上面启动任何会话。 |
+| 22 | `account.cooling` | until, why | The account it ran on is cooling until {{until}} ({{why}}); nothing starts on it until then. *`why` is `harness.cooling.why.*`'s four. Written before AGT3d and worded still; written no more* | 它运行时用的账户冷却至 {{until}}（{{why}}），在此之前不会在它上面启动任何会话。 |
+| 22a | `account.cooling-window` | until, why, owner, window | The {{owner}} account it ran on hit its {{window}} limit and is cooling until {{until}} ({{why}}); nothing starts on it until then. *`window` is the window the reset named, worded by `harness.window.*` (AGT3d)* | 它运行时用的 {{owner}} 账户达到了{{window}}上限，冷却至 {{until}}（{{why}}），在此之前不会在它上面启动任何会话。 |
+| 22b | `account.cooling-no-window` | until, why, owner | The {{owner}} account it ran on is cooling until {{until}} ({{why}}); nothing starts on it until then. *A limit whose reset named no window (AGT3d)* | 它运行时用的 {{owner}} 账户冷却至 {{until}}（{{why}}），在此之前不会在它上面启动任何会话。 |
 | 23 | `account.refused` | owner | Its provider refused the {{owner}} account it ran on (401). Replace the key or sign in again, in Settings or with `daoris agent`, and Daoris starts sessions on it again. | 服务方拒绝了它运行时用的 {{owner}} 账户（401）。请在设置中或用 `daoris agent` 更换密钥或重新登录，Daoris 随后会再在它上面启动会话。 |
 | 24 | `account.refused-own` | owner | The same, for {{owner}}'s own sign-in. *(Today's English names the account, and the cleaner cuts it when it travels; the values never carry it)* | 同上，针对 {{owner}} 自身的登录。 |
 

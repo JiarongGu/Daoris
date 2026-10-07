@@ -139,10 +139,10 @@ public sealed class NoteSitesTests
             "the agent's turn failed with the quest still taken: The `claude-code` account it ran on hit its weekly limit and "
             + $"is cooling until {CoolingWords.When(until, TimeZoneInfo.Utc)}, as the agent said, and nothing starts on it until then.",
             conclusion.Note);
-        Assert.Equal(["ended.turn-failed-taken", "account.cooling"], NoteAssert.Codes(conclusion.Parts));
+        Assert.Equal(["ended.turn-failed-taken", "account.cooling-window"], NoteAssert.Codes(conclusion.Parts));
         NoteAssert.Holds(conclusion.Note, conclusion.Parts);
         var cooling = conclusion.Parts![^1];
-        Assert.Equal("account.cooling", cooling.Code);
+        Assert.Equal("account.cooling-window", cooling.Code);
         Assert.Equal(("2026-10-03T09:30:00Z", CoolingWhy.Stated), ((string?)cooling.Value("until"), (string?)cooling.Value("why")));
         // AGT3d: whose account and the kind of limit travel as facts, the page wording the window (`harness.window.*`).
         Assert.Equal(("claude-code", "weekly"), ((string?)cooling.Value("owner"), (string?)cooling.Value("window")));
@@ -172,7 +172,12 @@ public sealed class NoteSitesTests
         // A window longer than a word is a phrase, not a fact, and is said as none, as the log bounds it (`AccountLine`).
         var phrase = entry with { Window = new string('w', 41) };
         Assert.Equal("account.cooling-no-window", CoolingWords.NoteOf(phrase, TimeZoneInfo.Utc).Parts[0].Code);
-        Assert.Equal("account.cooling", CoolingWords.NoteOf(entry with { Window = "session" }, TimeZoneInfo.Utc).Parts[0].Code);
+        Assert.Equal("account.cooling-window", CoolingWords.NoteOf(entry with { Window = "session" }, TimeZoneInfo.Utc).Parts[0].Code);
+        // `account.cooling`'s own shape, its moment and why alone, is never written now: notes from before carry it.
+        Assert.DoesNotContain(
+            new[] { entry, phrase, entry with { Window = "weekly" } },
+            each => CoolingWords.NoteOf(each, TimeZoneInfo.Utc).Parts[0].Code == NoteCodes.AccountCooling.Code
+                || CoolingWords.ConversationOf(each, TimeZoneInfo.Utc).Parts[0].Code == NoteCodes.AccountCooling.Code);
     }
 
     [Fact]

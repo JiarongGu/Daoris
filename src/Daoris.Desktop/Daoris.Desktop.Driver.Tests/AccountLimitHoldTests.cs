@@ -152,7 +152,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         Assert.DoesNotContain("hit your", conclusion.Note);
         Assert.DoesNotContain("Europe/London", conclusion.Note);
         Assert.DoesNotContain(conclusion.Parts!, part => part.Code is null);
-        Assert.Equal(["ended.turn-failed-taken", "account.cooling"], NoteAssert.Codes(conclusion.Parts));
+        Assert.Equal(["ended.turn-failed-taken", "account.cooling-window"], NoteAssert.Codes(conclusion.Parts));
         NoteAssert.Holds(conclusion.Note, conclusion.Parts);
 
         // Another machine reads the parts as the feed carries them, and words the same moment in its own zone.
@@ -315,7 +315,7 @@ public sealed class AccountLimitHoldTests : IDisposable
 
         NoteAssert.Holds(said);
         var line = Assert.Single(said.Parts);
-        Assert.Equal(("account.cooling", said.Note), (line.Code, line.Text));
+        Assert.Equal(("account.cooling-window", said.Note), (line.Code, line.Text));
         Assert.Equal(("2026-10-03T10:17:00Z", CoolingWhy.Stated), ((string?)line.Value("until"), (string?)line.Value("why")));
         // AGT3d: whose account and the kind of limit, as the session record's line carries them.
         Assert.Equal(["until", "why", "owner", "window"], line.Values.Select(value => value.Key));

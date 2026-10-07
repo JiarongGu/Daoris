@@ -224,7 +224,9 @@ export const FailedItsBranchLeft: Story = {
 
 /**
  * Failed, its note by code (LANG1b, D142): Daoris's lines worded in the window's language, the agent's words beneath their
- * lead-in as written. The two stories above are records from before parts, shown as kept and marked.
+ * lead-in as written. The two stories above are records from before parts, shown as kept and marked. The cooling line is
+ * shown in the shape a note from before AGT3d keeps and in the shape written since, naming whose accounts and the kind of
+ * limit, both worded.
  */
 export const FailedByCode: Story = {
   args: {
@@ -235,6 +237,11 @@ export const FailedByCode: Story = {
         { code: 'ended.turn-failed-taken', values: {}, text: 'The agent’s turn failed with the quest still taken:' },
         { words: 'the ACP agent refused the call: rate limited until 16:00.', by: 'agent' },
         { code: 'account.cooling', values: { until: '2026-10-03T16:00:00Z', why: 'stated' }, text: 'The account it ran on is cooling until 2026-10-03 16:00 UTC (the agent said so); nothing starts on it until then.' },
+        {
+          code: 'account.cooling-window',
+          values: { until: '2026-10-03T16:00:00Z', why: 'stated', owner: 'claude-code', window: 'weekly' },
+          text: 'The `claude-code` account it ran on hit its weekly limit and is cooling until Oct 3, 16:00 (UTC), as the agent said, and nothing starts on it until then.',
+        },
       ],
     },
   },

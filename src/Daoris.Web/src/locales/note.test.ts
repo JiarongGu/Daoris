@@ -89,13 +89,16 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
 
   /**
    * AGT3d (D125's AGT3c note): a limit's cooling line carries whose accounts and the kind of limit, a window the page words
-   * by `harness.window.*`; a limit whose reset named none has a line of its own, since a value its entry says and the part
-   * lacks shows the line as recorded.
+   * by `harness.window.*`, by codes of their own. `account.cooling` keeps what it declared, its moment and why, so a note
+   * written before is still worded; a limit whose reset named no window has its own line, since a value its entry says and
+   * the part lacks shows the line as recorded.
    */
-  it('reads a limit’s window and owner on the cooling line, and the line without a window apart', () => {
-    const cooling = driver.find((code) => code.code === 'account.cooling');
+  it('reads a limit’s window and owner on codes of their own, and keeps the old cooling line as it was', () => {
+    const old = driver.find((code) => code.code === 'account.cooling');
+    const cooling = driver.find((code) => code.code === 'account.cooling-window');
     const none = driver.find((code) => code.code === 'account.cooling-no-window');
-    expect(cooling).toEqual({ code: 'account.cooling', values: ['until', 'why', 'owner', 'window'], key: 'note.account.cooling', writer: 'driver', why: 'cooling' });
+    expect(old).toEqual({ code: 'account.cooling', values: ['until', 'why'], key: 'note.account.cooling', writer: 'driver', why: 'cooling' });
+    expect(cooling).toEqual({ code: 'account.cooling-window', values: ['until', 'why', 'owner', 'window'], key: 'note.account.cooling-window', writer: 'driver', why: 'cooling' });
     expect(none).toEqual({ code: 'account.cooling-no-window', values: ['until', 'why', 'owner'], key: 'note.account.cooling-no-window', writer: 'driver', why: 'cooling' });
     expect(NOTE_VALUES.window).toBe('window');
     expect(NOTE_VALUES.owner).toBe('text');

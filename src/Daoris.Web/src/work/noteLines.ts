@@ -43,8 +43,10 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'ended.stopped': { values: [] },
   'ended.lost-claim': { values: [] },
   'ended.driver-closed': { values: [] },
-  // An account's line. A limit's names whose accounts and the window its reset named, or has a line of its own (AGT3d).
-  'account.cooling': { values: ['until', 'why', 'owner', 'window'], why: 'cooling' },
+  // An account's line. `account.cooling` is the shape notes from before AGT3d carry; since, a limit's line names whose
+  // accounts and the window its reset named, or has a line of its own where it named none.
+  'account.cooling': { values: ['until', 'why'], why: 'cooling' },
+  'account.cooling-window': { values: ['until', 'why', 'owner', 'window'], why: 'cooling' },
   'account.cooling-no-window': { values: ['until', 'why', 'owner'], why: 'cooling' },
   'account.refused': { values: ['owner'] },
   'account.refused-own': { values: ['owner'] },

@@ -119,17 +119,21 @@ public sealed class NoteCodesTests
 
     /// <summary>
     /// AGT3d (D125's AGT3c note): a limit's cooling line says whose account it was and, where the agent named one, the kind
-    /// of limit, so a reader on another machine learns both; a limit whose reset named no window has a line of its own, since
-    /// a value its entry needs and the part lacks shows the line as recorded (D142 point 4).
+    /// of limit, so a reader on another machine learns both, by codes of their own. <c>account.cooling</c> keeps what it
+    /// declared, since notes already on machines carry it and the page words a line only with every value its entry says
+    /// (D142 point 4); a limit whose reset named no window has its own line for the same reason.
     /// </summary>
     [Fact]
-    public void A_cooling_line_carries_its_owner_and_the_window_it_named()
+    public void A_cooling_line_carries_its_owner_and_the_window_it_named_and_the_old_code_keeps_its_values()
     {
-        Assert.Equal(["until", "why", "owner", "window"], NoteCodes.AccountCooling.Values);
+        Assert.Equal(["until", "why"], NoteCodes.AccountCooling.Values);
+        Assert.Equal(["until", "why", "owner", "window"], NoteCodes.AccountCoolingWindow.Values);
         Assert.Equal(["until", "why", "owner"], NoteCodes.AccountCoolingNoWindow.Values);
-        Assert.Same(NoteCodes.Cooling, NoteCodes.AccountCooling.Why);
-        Assert.Same(NoteCodes.Cooling, NoteCodes.AccountCoolingNoWindow.Why);
+        Assert.All(
+            [NoteCodes.AccountCooling, NoteCodes.AccountCoolingWindow, NoteCodes.AccountCoolingNoWindow],
+            code => Assert.Same(NoteCodes.Cooling, code.Why));
         // Its owner says whose account, never which: the fault is the account's limit, and no strike (AccountsOwn) reads it.
+        Assert.DoesNotContain(NoteCodes.AccountCoolingWindow, NoteCodes.AccountsOwn);
         Assert.DoesNotContain(NoteCodes.AccountCoolingNoWindow, NoteCodes.AccountsOwn);
     }
 

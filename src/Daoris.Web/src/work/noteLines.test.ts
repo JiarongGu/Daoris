@@ -121,7 +121,7 @@ describe('noteLines', () => {
    * (`harness.window.*`), and whose accounts, in either language; a window this build does not know is said as named.
    */
   it('words a limit’s window and whose account it was, in either language', () => {
-    const limit = (window: string) => coded('account.cooling', 'The `claude-code` account it ran on hit its … limit and is cooling until …', {
+    const limit = (window: string) => coded('account.cooling-window', 'The `claude-code` account it ran on hit its … limit and is cooling until …', {
       until: '2026-10-03T16:00:00Z', why: 'stated', owner: 'claude-code', window,
     });
 
@@ -139,9 +139,21 @@ describe('noteLines', () => {
     });
     expect(noteLines(zh, { parts: [none] }, 'zh')[0].text).toMatch(/^它运行时用的 codex 账户冷却至 .+（Daoris 的默认值：智能体没有说明时间），在此之前不会在它上面启动任何会话。$/);
 
-    // A line from before AGT3d carries neither, so it is shown as its record kept it (D142 point 4).
+  });
+
+  /**
+   * AGT3d: a code keeps what it declares, so a note already on a machine keeps being worded. A cooling line written before
+   * AGT3d is `account.cooling` with its moment and why alone, and the new shapes have codes of their own.
+   */
+  it('still words a cooling line written before AGT3d, in either language', () => {
     const before = coded('account.cooling', 'The account it ran on is cooling until …', { until: '2026-10-03T16:00:00Z', why: 'stated' });
-    expect(noteLines(zh, { parts: [before] }, 'zh')).toEqual([{ kind: 'recorded', text: 'The account it ran on is cooling until …' }]);
+
+    const [english] = noteLines(t, { parts: [before] }, 'en');
+    expect(english).toMatchObject({ kind: 'said' });
+    expect(english.text).toMatch(/^The account it ran on is cooling until .+ \(the agent said so\); nothing starts on it until then\.$/);
+    const [chinese] = noteLines(zh, { parts: [before] }, 'zh');
+    expect(chinese).toMatchObject({ kind: 'said' });
+    expect(chinese.text).toMatch(/^它运行时用的账户冷却至 .+（智能体如此说明），在此之前不会在它上面启动任何会话。$/);
   });
 
   /** A program's words pass through as written, as `DRIVER_REFUSED` passes the driver's sentence. */
