@@ -294,7 +294,7 @@ export function SyncSection({ plan, scope, included, looking, lookingAt, bringin
       )}
       {bringing && <p role="status" className="mt-2 text-small text-ink">{t('settings.sync.bringing')}</p>}
       {stopped && !busy && (
-        <p role="alert" className="mt-2 text-small text-st-declined">
+        <p role="alert" className="mt-2 text-small text-ink-danger">
           {t(stopped === 'look' ? 'settings.sync.stopped.look' : 'settings.sync.stopped.press')}
         </p>
       )}

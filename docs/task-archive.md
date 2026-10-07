@@ -11896,3 +11896,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SESSDEL1b — the delete's toast says what stayed** (web-shell). `SESSION_DELETE` now answers `stayed` by name (SESSDEL1), but `sessionActs.ts`'s toast still says everything went. Say which stayed, by name, in both catalogues. Contract: D126 §5.4 and its SESSDEL1 note. Proof: a `sessionActs.test.tsx` case with `stayed: ['transcript']`, en and zh.
 
 **Outcome** 2026-10-07: a delete whose answer has `stayed` says those items by name in both catalogues, in the error tone, and the ask still closes; with nothing kept it says what it said before. Follow-up: SESSDEL1c. Detail: commit 5d45ac77.
+
+
+## UXFIX5b — Settings' red words wear the danger ink (2026-10-07)
+
+> - [ ] **UXFIX5b — Settings' red words wear the danger ink** (web-settings; after UXFIX5). Three Settings sites still draw danger words in the fill's colour (`settings/AccountSettings.tsx:23`, `Logs.tsx:187`, `Sync.tsx:308`), allowed by name in `tokens.test.ts`'s `DANGER_TEXT_ELSEWHERE`. Swap them to `text-ink-danger` and drop their allowance rows (a swapped file that keeps its row fails the test). Contract: platform-ux §3. Proof: `tokens.test.ts` with the allowance empty.
+
+**Outcome** 2026-10-07: the three Settings red words (an account's unreadable settings file, a log's error level, a sync look the page stopped waiting for) wear `--ink-danger`; `tokens.test.ts`'s allowance is empty and checked to stay so; a story shows the account summary's problem. Detail: platform-ux §3; commits 441e1c10, 37dd2df2.
