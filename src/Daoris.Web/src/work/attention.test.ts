@@ -764,6 +764,19 @@ describe('what an account’s row offers', () => {
     })))).toEqual([{ act: 'sign-in', account: 'account-1' }, { act: 'sign-in', account: 'account-3' }]);
   });
 
+  /**
+   * UXFIX3: an account outside the list that no read answered may be signed out, so the row reads it first, in *Let … run
+   * …*'s place, and lets it in only once it reads ready.
+   */
+  it('reads an unread account outside the list first, where it would offer to let it run', () => {
+    const readFirst = { id: 'account-4', label: 'account-4' };
+    expect(attentionOffers(row('account-wait', facts({ named: [named('account-2', 'cooling'), named('account-5', 'unknown', null)], readFirst }))))
+      .toEqual([{ act: 'read', account: 'account-4' }, { act: 'read', account: 'account-5' }]);
+    expect(attentionOffers(row('account-wait', facts({ named: [named('account-1', 'out')], readFirst }))))
+      .toEqual([{ act: 'sign-in', account: 'account-1' }, { act: 'read', account: 'account-4' }]);
+    expect(attentionActs(row('account-wait', facts({ named: [named('account-2', 'cooling')], readFirst })))).not.toContain('let-run');
+  });
+
   /** A read that failed is a reading: *Read* is for an account never read (§6.3), as the agent's page offers it. */
   it('reads only an account never read, and signs in nothing where Daoris runs no sign-in', () => {
     expect(attentionOffers(row('account-wait', facts({ named: [named('account-5', 'unknown')] })))).toEqual([]);
@@ -778,21 +791,38 @@ describe('what an account’s row offers', () => {
   });
 });
 
-/** UX6d: the account rows are What needs you's holding work, the longest waiting first among the rest (§6.2). */
+/**
+ * UX6d: the account rows are What needs you's holding work, the longest waiting first among the rest (§6.2). UXFIX3: a
+ * signed-out account's row knows when it was read, not since when it holds work, so it has no wait to be sorted by: it comes
+ * after the rows that say how long, in the roster's order, wherever a reading moves its time.
+ */
 describe('what needs a person, with the accounts as last known', () => {
-  it('lists a signed-out account a list holds beside a parked session, the longest waiting first', () => {
-    const tools = byTool([{
-      harness: 'claude-code', present: true, product: 'Claude Code', signsIn: true, machineDefault: 'account-1',
-      profiles: [{ name: 'account-1', home: 'H/account-1', login: 'out', read: '2026-09-21T09:30:00Z' }],
-    }]);
+  const tools = (reads: Record<string, string>) => byTool([{
+    harness: 'claude-code', present: true, product: 'Claude Code', signsIn: true, machineDefault: 'account-1',
+    workspaceDefaults: [{ workspace: 'aurora', profile: 'account-2' }],
+    profiles: Object.entries(reads).map(([name, read]) => ({ name, home: `H/${name}`, login: 'out' as const, read })),
+  }]);
+  const derive = (reads: Record<string, string>) => needsAPerson(
+    [session({ state: 'awaiting-person' })], [], [registration('engine')], [], [], [], [], [],
+    { tools: tools(reads), use: null, waits: [] },
+  );
 
-    const rows = needsAPerson(
-      [session({ state: 'awaiting-person' })], [], [registration('engine')], [], [], [], [], [], { tools, use: null, waits: [] },
-    );
+  it('lists a signed-out account a list holds after a parked session, which says how long it waited', () => {
+    const rows = derive({ 'account-1': '2026-09-21T09:30:00Z' });
 
     expect(rows.map(({ kind, id }) => [kind, id])).toEqual([
-      ['signed-out', 'signed-out:claude-code/account-1'], ['parked', 's1a2b3c4'],
+      ['parked', 's1a2b3c4'], ['signed-out', 'signed-out:claude-code/account-1'],
     ]);
     expect(attentionGroups(rows).map(({ group }) => group)).toEqual(['holding']);
+  });
+
+  it('keeps a re-read account where it was: reading it again neither moves it nor makes it a wait', () => {
+    const before = derive({ 'account-1': '2026-09-21T09:30:00Z', 'account-2': '2026-09-21T08:00:00Z' });
+    const after = derive({ 'account-1': '2026-09-21T11:58:00Z', 'account-2': '2026-09-21T08:00:00Z' });
+
+    const order = (rows: Attention[]) => rows.map(({ id }) => id);
+    expect(order(after)).toEqual(order(before));
+    expect(order(after)).toEqual(['s1a2b3c4', 'signed-out:claude-code/account-1', 'signed-out:claude-code/account-2']);
+    expect(after.filter(({ kind }) => kind === 'signed-out').map(({ since }) => since)).toEqual([null, null]);
   });
 });

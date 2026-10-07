@@ -11,10 +11,10 @@ import { workspaceOf } from '../workspaces';
 import type { Attention } from './AttentionRow';
 import { questName } from './identity';
 
-// *What needs you*'s accounts (UX6d, D150 搂6.2鈥撀?.3; TOOL4m's row): a start waiting for accounts, and a signed-out account a
+// *What needs you*'s accounts (UX6d, D150 §6.2–§6.3; TOOL4m's row): a start waiting for accounts, and a signed-out account a
 // list or a default holds that no waiting start names. Pure: every fact is one the page already holds (the tick's waits and
 // considerations, the roster's last readings, the accounts' files), so nothing here asks the bridge, and no row starts a
-// process to find out (搂6.3).
+// process to find out (§6.3).
 
 /** What the page knows of the accounts, each answer as it holds it: none of them in a browser. */
 export type AccountsKnown = {
@@ -26,10 +26,10 @@ export type AccountsKnown = {
   waits?: readonly AccountWaitTick[] | null;
 };
 
-/** An account's state as last known, the four of D150 搂5.3 and a key's, which no sign-in names. */
+/** An account's state as last known, the four of D150 §5.3 and a key's, which no sign-in names. */
 export type NamedState = 'out' | 'cooling' | 'unknown' | 'in' | 'keyed';
 
-/** One account a row names (D150 搂5.3): its id (null for the tool's own sign-in), its name, its state, and when it was read. */
+/** One account a row names (D150 §5.3): its id (null for the tool's own sign-in), its name, its state, and when it was read. */
 export type NamedAccount = {
   id: string | null;
   label: string;
@@ -53,10 +53,16 @@ export type AccountRowFacts = {
   /** The accounts the row names, in the order a start would walk them. */
   named: NamedAccount[];
   /**
-   * A ready account outside the list the waiting start reads, which the person may let run the work (D130 搂3.3): the list
-   * the join adds it to (a workspace's, or null for this machine's) and the workspace that waits. Null where none is ready.
+   * A ready account outside the list the waiting start reads, which the person may let run the work (D130 §3.3): the list
+   * the join adds it to (a workspace's, or null for this machine's) and the workspace that waits. Null where none is known
+   * ready: read signed in, or a key (UXFIX3).
    */
   outside?: { id: string; label: string; list: string | null; workspace: string } | null;
+  /**
+   * Where none outside the list is known ready, one the join would take that has never been read (UXFIX3): it may be signed
+   * out, so the row offers to read it, in *Let … run …*'s place, and lets it run only once a reading says it is ready.
+   */
+  readFirst?: { id: string; label: string } | null;
 };
 
 /** One start the driver held on its accounts, gathered from the tick: what it holds, whose accounts, and why. */
@@ -122,7 +128,7 @@ function heldStarts(
 }
 
 /**
- * The scope a start in this workspace reads (D130 搂3.1): its own where it names a default or a list, else this machine's.
+ * The scope a start in this workspace reads (D130 §3.1): its own where it names a default or a list, else this machine's.
  * None where the held starts span workspaces, since then no one list is theirs.
  */
 function scopeOf(use: AgentAccounts | null, workspace: string | null): AccountScope | null {
@@ -131,7 +137,7 @@ function scopeOf(use: AgentAccounts | null, workspace: string | null): AccountSc
 }
 
 /**
- * The accounts that would serve a held start: its scope's list, else its default, else the tool's own sign-in (D125 搂3.7),
+ * The accounts that would serve a held start: its scope's list, else its default, else the tool's own sign-in (D125 §3.7),
  * less the account kept for conversations, which a driven start drops (D130 point 6) unless it would leave none; then
  * whatever the tick named that the list no longer holds, since that is what held it.
  */
@@ -150,7 +156,7 @@ function servingIds(scope: AccountScope | null, held: Held): (string | null)[] {
 }
 
 /**
- * One account as last known (搂5.3): the roster's reading with when, the accounts' files' cool-off. Where the roster has no
+ * One account as last known (§5.3): the roster's reading with when, the accounts' files' cool-off. Where the roster has no
  * reading, the tick's word stands: the start's own refusal said it signed out, or its wait said it cools. A reading the
  * roster holds is never overruled by the tick, since a sign-in since the look is newer.
  */
@@ -188,7 +194,7 @@ function namedAccount(
 }
 
 /**
- * Why the start waits, as the accounts that would serve it stand (搂6.3's *one line of why*): each cooling one until its
+ * Why the start waits, as the accounts that would serve it stand (§6.3's *one line of why*): each cooling one until its
  * reset, those read signed out together by when, those no read answered. One that reads signed in holds nothing and is not
  * said. Null where none is said.
  */
@@ -220,14 +226,16 @@ function whyLine(named: readonly NamedAccount[], now: Date): string | null {
 }
 
 /**
- * A ready account outside the list the start reads, which the person may let run the work (D130 搂3.3): one the join would
- * take (ACCT1's rules, `joinChoices`), neither cooling nor signed out, a reading of signed in or a key first. None where the
- * wait spans workspaces, since there is then no one list to add it to.
+ * The account outside the list the start reads that the person may let run the work (D130 §3.3): one the join would take
+ * (ACCT1's rules, `joinChoices`), **known ready**, a reading of signed in or a key. An account no read answered may be
+ * signed out, and *Let … run …* would widen what Daoris may spend on an account nobody looked at, so where none is known
+ * ready, one never read is offered to read first (UXFIX3, §6.3's *Read* for one never read); one whose last read failed is
+ * neither, as on a named account. None where the wait spans workspaces, since there is then no one list to add it to.
  */
 function outsideOf(
   tool: Tool | null, use: AgentAccounts | null, scope: AccountScope | null, held: Held, named: readonly NamedAccount[],
-): AccountRowFacts['outside'] {
-  if (!tool || !use || !scope || !held.workspace) return null;
+): Pick<AccountRowFacts, 'outside' | 'readFirst'> {
+  if (!tool || !use || !scope || !held.workspace) return { outside: null, readFirst: null };
   const target = scope.workspace ?? null;
   const states = accountStates(tool, use);
   const candidates = tool.accounts.filter((account) => {
@@ -236,9 +244,18 @@ function outsideOf(
     if (state === 'out' || state === 'cooling') return false;
     return joinChoices(tool, use, [], (name) => name, account.name).some((choice) => choice.workspace === target);
   });
-  const ready = (state: string | undefined) => state === 'in' || state === 'keyed';
-  const chosen = candidates.find((account) => ready(states.get(account.name)?.state)) ?? candidates[0];
-  return chosen ? { id: chosen.name, label: accountName(chosen), list: target, workspace: held.workspace } : null;
+  const ready = candidates.find((account) => {
+    const state = states.get(account.name)?.state;
+    return state === 'in' || state === 'keyed';
+  });
+  if (ready) {
+    return { outside: { id: ready.name, label: accountName(ready), list: target, workspace: held.workspace }, readFirst: null };
+  }
+  const unread = candidates.find((account) => {
+    const state = states.get(account.name);
+    return state?.state === 'unknown' && !state.read;
+  });
+  return { outside: null, readFirst: unread ? { id: unread.name, label: accountName(unread) } : null };
 }
 
 /** What a held start holds, as its row's title: one quest by its name, one intake as Sessions names it, else counted. */
@@ -286,18 +303,23 @@ function rowFacts(agent: string, tool: Tool | null): Omit<AccountRowFacts, 'name
 }
 
 /**
- * *What needs you*'s account rows (UX6d, D150 搂6.2), each holding work: **a start waiting for accounts**, saying the
+ * *What needs you*'s account rows (UX6d, D150 §6.2), each holding work: **a start waiting for accounts**, saying the
  * accounts that would serve it as last known with when each was read, and **a signed-out account a list or a default
- * holds** that no waiting start names, which a waiting start otherwise stands for (搂6.3, *one thing is listed once*).
+ * holds** that no waiting start names, which a waiting start otherwise stands for (§6.3, *one thing is listed once*).
  *
  * @remarks
- * 馃敶 **No row starts a process to find out** (搂6.3, D150 point 5): the waits are the tick's own, read from the cool-offs
- * and the refusals its starts met (D125 搂4); an account's state is the roster's last reading with its time, which opening a
+ * 🔴 **No row starts a process to find out** (§6.3, D150 point 5): the waits are the tick's own, read from the cool-offs
+ * and the refusals its starts met (D125 §4); an account's state is the roster's last reading with its time, which opening a
  * view never asks again (ROSTER1); its cool-off and its scope's list are the accounts' files. What no read answered is said
  * so, *unknown, never read*, and never guessed signed in or out.
  *
- * **TOOL4m's row**: the start waiting for an account, with *Let 鈥?run 鈥? (D130 搂3.3) where an account outside its list is
- * ready, which the row asks once before it adds the account to that list.
+ * **TOOL4m's row**: the start waiting for an account, with *Let … run …* (D130 §3.3) where an account outside its list is
+ * known ready, which the row asks once before it adds the account to that list, and *Read …* first where the one outside it
+ * has never been read (UXFIX3).
+ *
+ * **A signed-out account's row has no wait** (UXFIX3): what is known of it is when it was read, and a reading's time is
+ * not since when it has held work, so the row carries its reading (`read`) and no `since`. As a wait, reading the account
+ * again made an old blocker look newly waiting and moved it to the end of its group.
  */
 export function accountAttention(
   known: AccountsKnown,
@@ -327,7 +349,7 @@ export function accountAttention(
       circle: !inOne && Boolean(held.workspace),
       since: heldSince(held, use, quests, asks, now),
       detail: whyLine(accounts, now),
-      account: { ...rowFacts(held.agent, tool), named: accounts, outside: outsideOf(tool, use, scope, held, accounts) },
+      account: { ...rowFacts(held.agent, tool), named: accounts, ...outsideOf(tool, use, scope, held, accounts) },
     };
   });
 
@@ -344,11 +366,10 @@ export function accountAttention(
         kind: 'signed-out',
         title: accountName(account),
         where: facts.product,
-        since: state.read ?? now.toISOString(),
-        detail: [
-          state.read ? i18n.t('work.attention.signedOut.read', { when: clockOf(state.read, now) }) : null,
-          runs.length > 0 ? i18n.t('work.attention.signedOut.runs', { runs: list(runs) }) : null,
-        ].filter(Boolean).join(i18n.t('harness.said.sentences')) || null,
+        // When it was read, which its row says as *read …*; since when it holds work nobody knows (UXFIX3).
+        since: null,
+        read: state.read,
+        detail: runs.length > 0 ? i18n.t('work.attention.signedOut.runs', { runs: list(runs) }) : null,
         account: {
           ...facts,
           named: [{ id: account.name, label: accountName(account), state: 'out', read: state.read, until: null }],
@@ -356,7 +377,7 @@ export function accountAttention(
         },
       }];
     });
-    // The tool's own sign-in, while the starts run on it (D125 搂3.7): only the person signs it in, where they use the tool.
+    // The tool's own sign-in, while the starts run on it (D125 §3.7): only the person signs it in, where they use the tool.
     const own = ownState(tool, use);
     if (own.state === 'out' && own.holdsWork && !named.has(`${tool.name}/`)) {
       rows.push({
@@ -364,11 +385,9 @@ export function accountAttention(
         kind: 'signed-out',
         title: i18n.t('agents.account.own'),
         where: facts.product,
-        since: own.read ?? now.toISOString(),
-        detail: [
-          own.read ? i18n.t('work.attention.signedOut.read', { when: clockOf(own.read, now) }) : null,
-          i18n.t('work.attention.signedOut.own'),
-        ].filter(Boolean).join(i18n.t('harness.said.sentences')),
+        since: null,
+        read: own.read,
+        detail: i18n.t('work.attention.signedOut.own'),
         account: {
           ...facts,
           named: [{ id: null, label: i18n.t('agents.account.own'), state: 'out', read: own.read, until: null }],

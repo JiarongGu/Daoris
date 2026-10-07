@@ -198,6 +198,33 @@ describe('a start waiting for accounts', () => {
     expect(derive(known({ use, waits: [{ ...WAIT, workspace: null, signedOut: [] }] }))[0]!.account!.outside).toBeNull();
   });
 
+  /**
+   * UXFIX3: *Let … run …* widens what Daoris may spend, so it is offered only for an account known ready (read signed in, or
+   * a key). One no read answered may be signed out: the row offers to read it first, and lets it in once it reads ready.
+   */
+  it('lets in only an account known ready, and offers to read an unread one first', () => {
+    const use = answer([scope(), scope({ workspace: 'work', list: ['account-2'], begins: 'account-2' })]);
+    const profiles = (account4: Partial<NonNullable<ToolDoor['profiles']>[number]>) =>
+      door().profiles!.map((profile) => (profile.name === 'account-4' ? { ...profile, ...account4 } : profile));
+
+    const [unread] = derive({ tools: byTool([door({ profiles: profiles({ login: 'unknown', read: null }) })]), use, waits: [{ ...WAIT, signedOut: [] }] });
+    expect(unread!.account!.outside).toBeNull();
+    expect(unread!.account!.readFirst).toEqual({ id: 'account-4', label: 'account-4' });
+
+    // A read that failed is a reading: *Read* is for an account never read (§6.3), so neither is offered.
+    const [failed] = derive({ tools: byTool([door({ profiles: profiles({ login: 'unknown', read: READ }) })]), use, waits: [{ ...WAIT, signedOut: [] }] });
+    expect(failed!.account!.outside).toBeNull();
+    expect(failed!.account!.readFirst ?? null).toBeNull();
+
+    // A ready one is let in, whatever an unread one beside it.
+    const tools = byTool([door({
+      profiles: [...profiles({}), { name: 'account-0', home: 'H/account-0', login: 'unknown', read: null }],
+    })]);
+    const [ready] = derive({ tools, use, waits: [{ ...WAIT, signedOut: [] }] });
+    expect(ready!.account!.outside).toMatchObject({ id: 'account-4' });
+    expect(ready!.account!.readFirst ?? null).toBeNull();
+  });
+
   /** The tool's own sign-in is named as the person knows it, and has no sign-in of Daoris's. */
   it('names the tool’s own sign-in where nothing names an account', () => {
     const [row] = derive(known({ use: answer([scope()]), waits: [{ ...WAIT, account: null, name: null, signedOut: [] }] }));
@@ -217,15 +244,27 @@ describe('a start waiting for accounts', () => {
 });
 
 describe('a signed-out account a list holds', () => {
-  it('is a row of its own where no waiting start names it, saying when it was read and where it runs', () => {
+  /**
+   * UXFIX3: only when it was read is known, never since when it holds work, so the row says *read …* and no wait: reading
+   * it again moves its time, which as a wait made an old blocker look new.
+   */
+  it('is a row of its own where no waiting start names it, saying when it was read, never how long it waited', () => {
     const rows = derive(known());
 
     expect(rows.map(({ id }) => id)).toEqual(['signed-out:claude-code/account-1', 'signed-out:claude-code/account-3']);
     expect(rows[0]).toMatchObject({
-      kind: 'signed-out', title: 'account-1', where: 'Claude Code', since: READ,
-      detail: `Read signed out at ${clockOf(READ, NOW)}. It runs work in work.`,
+      kind: 'signed-out', title: 'account-1', where: 'Claude Code', since: null, read: READ,
+      detail: 'It runs work in work.',
     });
     expect(rows[0]!.account!.named).toEqual([expect.objectContaining({ id: 'account-1', state: 'out' })]);
+  });
+
+  it('says no wait however recently it was read again', () => {
+    const tools = byTool([door({
+      profiles: door().profiles!.map((profile) => (profile.name === 'account-1' ? { ...profile, read: NOW.toISOString() } : profile)),
+    })]);
+    const [row] = derive(known({ tools }));
+    expect(row).toMatchObject({ id: 'signed-out:claude-code/account-1', since: null, read: NOW.toISOString() });
   });
 
   /** §6.3: a start waiting only on signed-out accounts carries their Sign in, and they are not rows of their own. */
@@ -244,8 +283,8 @@ describe('a signed-out account a list holds', () => {
     const tools = byTool([door({ profiles: [], ownLogin: 'out', ownRead: READ })]);
     const [row] = derive({ tools, use: answer([scope()]), waits: [] });
     expect(row).toMatchObject({
-      id: 'signed-out:claude-code/', kind: 'signed-out', title: 'Your own sign-in', where: 'Claude Code', since: READ,
-      detail: `Read signed out at ${clockOf(READ, NOW)}. Daoris's starts run on it, since no account is named.`,
+      id: 'signed-out:claude-code/', kind: 'signed-out', title: 'Your own sign-in', where: 'Claude Code', since: null,
+      read: READ, detail: "Daoris's starts run on it, since no account is named.",
     });
   });
 });
