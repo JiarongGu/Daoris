@@ -785,11 +785,11 @@ public static class Planner
                 string.Equals(q.Id, awaits, StringComparison.OrdinalIgnoreCase));
             // A question closed done departing from what the person required stays on the open list, held for their yes
             // (DRIFT1d, D133 §4), and what waits on it waits with it: the sentence names whose move it is, and its door.
+            // One held for its evidence (EVID1b, D144 §6) is not the person's while the session that made the done runs, since
+            // its end reads the evidence; after it, the sentence names the cause and both doors, the check and the yes.
             if (question is { Held: true })
             {
-                return new(quest, StartVerdict.Waiting,
-                    $"waits on `#{question.Id}`, which `{question.To}` closed done departing from what you required — it "
-                    + $"resumes, in the same tree, once you accept that, your yes: `daoris-driver quest accept {question.Id}`.");
+                return new(quest, StartVerdict.Waiting, HeldQuestion(question));
             }
 
             if (question is not null)
@@ -803,6 +803,31 @@ public static class Planner
             return considered.Verdict == StartVerdict.Start
                 ? considered with { Reason = $"resuming in `{quest.To}` — `#{awaits}` is answered.", Resumes = prior }
                 : considered;
+        }
+
+        // Why a held question waits, and whose move it is (DRIFT1d; EVID1b, D144 §6). A host before evidence answers no cause,
+        // and its one hold was a departure. The check names a commit where no session here ended on the question, since a done
+        // no driven end read must be read at a commit the person names (D144 §3).
+        string HeldQuestion(QuestView question)
+        {
+            var yes = $"once you accept the done as it stands, your yes: `daoris-driver quest accept {question.Id}`.";
+            var named = snapshot.LastRun.ContainsKey(question.Id) ? "" : " --commit <sha>";
+            return question.Hold switch
+            {
+                EvidenceCodes.Unread when snapshot.Active.FirstOrDefault(s => string.Equals(s.Quest, question.Id, StringComparison.OrdinalIgnoreCase))
+                    is { } running =>
+                    $"waits on `#{question.Id}`, which `{question.To}` closed done: its evidence is read when session `{running.Id}` "
+                    + "ends — it resumes, in the same tree, once that evidence is found.",
+                EvidenceCodes.Unread =>
+                    $"waits on `#{question.Id}`, which `{question.To}` closed done, and its evidence is not read yet — it resumes, in "
+                    + $"the same tree, once the evidence is found, `daoris-driver quest check {question.Id}{named}`, or {yes}",
+                EvidenceCodes.MissingHold =>
+                    $"waits on `#{question.Id}`, which `{question.To}` closed done without the evidence it names — it resumes, in the "
+                    + $"same tree, once a later commit holds it, `daoris-driver quest check {question.Id} --commit <sha>`, or {yes}",
+                _ =>
+                    $"waits on `#{question.Id}`, which `{question.To}` closed done departing from what you required — it "
+                    + $"resumes, in the same tree, once you accept that, your yes: `daoris-driver quest accept {question.Id}`.",
+            };
         }
 
         // `into`: the earlier session whose tree a resume or a carry-on goes back into — the one tree a

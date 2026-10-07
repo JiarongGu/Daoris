@@ -1098,7 +1098,7 @@ public sealed partial class ServiceClient : IDisposable
     /// A requirement's evidence (EVID1a), each item exactly one of a path or a gate; an item naming both or neither is passed
     /// over, as half of a fact is none. Empty, never a list of its own, where it names none.
     /// </summary>
-    private static IReadOnlyList<QuestEvidenceItem> EvidenceOf(JsonElement requirement)
+    internal static IReadOnlyList<QuestEvidenceItem> EvidenceOf(JsonElement requirement)
     {
         if (requirement.ValueKind != JsonValueKind.Object || !requirement.TryGetProperty("evidence", out var items)
             || items.ValueKind != JsonValueKind.Array)

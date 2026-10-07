@@ -150,13 +150,20 @@ public static partial class EvidenceCheck
     }
 
     /// <summary>One item as the record says it: its requirement, what it names, its code and what the code means here.</summary>
-    internal static string Line(EvidenceRead item)
+    internal static string Line(EvidenceRead item) =>
+        item.Gate is { } gate
+            ? $"- requirement {item.Requirement} gate `{gate}`: {Said(item)}"
+            : $"- requirement {item.Requirement} `{item.Path}`: {Said(item)}";
+
+    /// <summary>
+    /// What one read came to, in words beside its code: <c>found</c> and whether this work changed it, the spelling a <c>case</c>
+    /// read found, where an <c>uncommitted</c> path is, and a gate's <c>no-queue</c>. The record and the trace say it alike.
+    /// </summary>
+    internal static string Said(EvidenceRead item)
     {
-        if (item.Gate is { } gate)
+        if (item.Gate is not null)
         {
-            return item.Result == EvidenceCodes.NoQueue
-                ? $"- requirement {item.Requirement} gate `{gate}`: no-queue, read from the landing queue, which does not run it here"
-                : $"- requirement {item.Requirement} gate `{gate}`: {item.Result}";
+            return item.Result == EvidenceCodes.NoQueue ? "no-queue, read from the landing queue, which does not run it here" : item.Result;
         }
 
         var said = item.Result switch
@@ -171,7 +178,7 @@ public static partial class EvidenceCheck
             false when item.Result == EvidenceCodes.Found => ", unchanged by this work",
             _ => "",
         };
-        return $"- requirement {item.Requirement} `{item.Path}`: {said}{changed}";
+        return said + changed;
     }
 
     /// <summary>

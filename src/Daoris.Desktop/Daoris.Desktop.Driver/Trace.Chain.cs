@@ -369,8 +369,14 @@ public sealed record TraceQuestLink(string Id)
     /// <summary>The quest its taker waits on (D79).</summary>
     public string? Awaits { get; init; }
 
-    /// <summary>Held: its done departed from what the person required, and waits for their yes.</summary>
+    /// <summary>Held: its done waits for the person's yes, or for its evidence (<see cref="Hold"/> says which).</summary>
     public bool Held { get; init; }
+
+    /// <summary>Why it is held (EVID1a, D144 §6): <c>departed</c>, <c>evidence-unread</c> or <c>evidence-missing</c>; null where nothing holds it or a host said none.</summary>
+    public string? Hold { get; init; }
+
+    /// <summary>What Daoris last read of its evidence (EVID1b, D144 §5), or null while nothing was.</summary>
+    public TraceEvidenceRead? Evidence { get; init; }
 
     /// <summary>When the person said yes to its departure.</summary>
     public DateTimeOffset? Accepted { get; init; }
@@ -398,6 +404,37 @@ public sealed record TraceRequirement(int Number, string Quote, string Check, st
 
     /// <summary>The person's words a departure relied on.</summary>
     public string? On { get; init; }
+
+    /// <summary>What Daoris reads itself to tell its check was met (EVID1a), each with what was last read of it (EVID1b).</summary>
+    public IReadOnlyList<TraceEvidenceItem> Evidence { get; init; } = [];
+}
+
+/// <summary>
+/// One evidence item a requirement names (EVID1a, D144 §2), with what was last read of it (EVID1b, §5): its kind and what it
+/// names, and its code with the object, whether the work changed it and a <c>case</c> read's spelling; the code null while unread.
+/// </summary>
+public sealed record TraceEvidenceItem(string Kind, string Named)
+{
+    public string? Result { get; init; }
+
+    public string? Object { get; init; }
+
+    public bool? Changed { get; init; }
+
+    public string? Spelled { get; init; }
+}
+
+/// <summary>
+/// What Daoris last read of a done's evidence (EVID1b, D144 §5), as the quest keeps it: the commit and how it was chosen, the
+/// session whose end was read (null for the terminal's), the machine that read it and when, and how many items were found.
+/// </summary>
+public sealed record TraceEvidenceRead(string Commit, string How, int Items, int Found)
+{
+    public string? Session { get; init; }
+
+    public string? Machine { get; init; }
+
+    public DateTimeOffset? At { get; init; }
 }
 
 public sealed record TraceStep(string To, string Title);
@@ -848,6 +885,13 @@ internal static partial class TraceChains
             PublishedBy = quest.PublishedBy,
             Awaits = quest.Awaits,
             Held = quest.Held,
+            Hold = quest.Hold,
+            Evidence = quest.Evidence is { } verdict
+                ? new TraceEvidenceRead(verdict.Commit, verdict.How, verdict.Items.Count, verdict.Count(EvidenceCodes.Found))
+                {
+                    Session = verdict.Session, Machine = verdict.Machine, At = verdict.At,
+                }
+                : null,
             Accepted = quest.Accepted,
             Note = quest.Note,
             Requirements =
@@ -856,7 +900,7 @@ internal static partial class TraceChains
                 {
                     var number = index + 1;
                     var answer = quest.Answers.FirstOrDefault(each => each.Requirement == number);
-                    return answer switch
+                    var required = answer switch
                     {
                         { Met: { } met } => new TraceRequirement(number, requirement.Quote, requirement.Check, TraceAnswers.Met) { Met = met },
                         { Departed: { } departed } => new TraceRequirement(number, requirement.Quote, requirement.Check, TraceAnswers.Departed)
@@ -867,12 +911,19 @@ internal static partial class TraceChains
                         _ => new TraceRequirement(number, requirement.Quote, requirement.Check,
                             quest.Status == "Done" ? TraceAnswers.Unanswered : TraceAnswers.NotYet),
                     };
+                    return required with { Evidence = [.. requirement.Evidence.Select(item => EvidenceItem(number, item, quest.Evidence))] };
                 }),
             ],
             Then = [.. quest.Then.Select(step => new TraceStep(step.To, step.Title))],
             Records = records,
         };
     }
+
+    /// <summary>One item a requirement names, with what the quest's last verdict read of it (EVID1b); unread where it read none.</summary>
+    private static TraceEvidenceItem EvidenceItem(int requirement, QuestEvidenceItem item, EvidenceVerdict? verdict) =>
+        verdict?.Items.FirstOrDefault(read => read.Requirement == requirement && read.Path == item.Path && read.Gate == item.Gate) is { } read
+            ? new TraceEvidenceItem(item.Kind, item.Named) { Result = read.Result, Object = read.Object, Changed = read.Changed, Spelled = read.Spelled }
+            : new TraceEvidenceItem(item.Kind, item.Named);
 
     /// <summary>The records that name a quest, oldest first, by id and state; null where the session records could not be read.</summary>
     private static IReadOnlyList<TraceRecordRef>? RecordsOn(string questId, TraceFacts facts) =>
