@@ -147,7 +147,12 @@ controls are in the frame design's §3.
   press opens a sentence saying what the second will do, beside the move and *never mind*. Every such ask is one
   component, `InlineConfirm` (UXFIX2): in the page, never a modal; the sentence takes the focus and describes the move;
   Escape and *never mind* give the focus back to what opened it; the press keeps it open and waiting, and a refusal is
-  said inside it, whole, rather than in a toast; it closes only on success or a cancel.
+  said inside it, whole, rather than in a toast; it closes only on success or a cancel. **While it waits it says so**
+  (UXFIX2c): a status beside the presses, there from the first so a reader hears it speak, inside nothing `aria-busy`,
+  since a reader may hold a busy element's words back until the wait is over; the move keeps its name. **Closed either way, the focus goes to the press drawn again**, and where none is (a delete took its
+  record, or nothing more is offered) to the nearest section or list that held it, never the page's body. A refusal
+  shrinks with its column and breaks anywhere, since a long id or a raw error otherwise widens it past the main area's
+  400 px floor.
 - **Pills** carry state: status text on its soft field with its hue — label always present. Declined's word is the
   danger ink on declined's field (UXFIX5).
 - **Chips** carry declarations (owns/accepts/packs): quiet line-bordered tokens; `accent` variant for

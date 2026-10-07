@@ -117,6 +117,8 @@ with the version and date at release.
 - A history clear that took nothing stays open and says why each thing was kept, a clear that took
   only part says so as an error, and the reading no longer claims there are no files when it only
   measured 0 B.
+- A confirmation says it is working once pressed, leaves the focus somewhere sensible once its act
+  lands, and a long refusal wraps instead of widening a narrow window.
 
 The first version: doctrine that installs, is checked, and flows back.
 

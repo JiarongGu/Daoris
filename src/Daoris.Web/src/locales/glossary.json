@@ -283,7 +283,7 @@
         "setup.copied", "setup.state.*", "signin.copied", "status.*",
         "wiring.held", "wiring.job.*", "wiring.ready", "wiring.versionUnknown", "work.attention.departure", "work.attention.go-ahead", "work.attention.intake",
         "work.attention.parked", "work.attention.review", "work.attention.rule", "work.attention.trust", "work.attention.account-wait",
-        "work.attention.signed-out", "work.code.copied", "work.code.plain",
+        "work.attention.signed-out", "work.code.copied", "work.code.plain", "work.confirm.pending",
         "work.composer.opening", "work.composer.queued", "work.conversation.thought",
         "work.conversation.worked", "work.conversation.working", "work.conversation.you", "work.find.none",
         "work.group.busy", "work.group.drivable", "work.group.held", "work.group.noCheckout",

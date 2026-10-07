@@ -406,6 +406,9 @@ describe('QuestsView', () => {
       // Gone, so the list chooses nothing, and the main area says how to choose.
       expect(await within(questMain()).findByText('Choose a quest or an ask')).toBeInTheDocument();
       expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBeNull();
+      // UXFIX2c: the ⋯ it was asked from went with the quest, so the focus goes to the main area that held it, never the
+      // page's body.
+      expect(questMain()).toHaveFocus();
     });
 
     /**

@@ -12,13 +12,21 @@ export type Answered = { done: () => void; refused: (sentence: string) => void }
 /**
  * Why an act was refused, in the sentence the person reads (ACCTEDIT1): said whole, where it was pressed, as a refused start
  * is said in its form (UX5 U68). A toast is for an error with no form to stand in (the platform language §4).
+ *
+ * @remarks
+ * It shrinks with its column and breaks anywhere (UXFIX2c): a refusal carries what nothing breaks, a long id or a raw error,
+ * which otherwise widened its flex or grid item past the main area's 400 px floor. Its own line holds it, so breaking inside
+ * a word cannot squeeze it to a character a line.
  */
 export function Refused({ sentence, id, className }: { sentence: string; id?: string; className?: string }) {
   return (
     <p
       id={id}
       role="alert"
-      className={cn('m-0 basis-full whitespace-pre-wrap border-l-[3px] border-warn pl-2.5 text-small text-ink-soft', className)}
+      className={cn(
+        'm-0 min-w-0 basis-full whitespace-pre-wrap wrap-anywhere border-l-[3px] border-warn pl-2.5 text-small text-ink-soft',
+        className,
+      )}
     >
       <Inline text={sentence} />
     </p>
@@ -51,17 +59,66 @@ function openedBy(node: Element | null): Opener | null {
   return noted(named ?? node);
 }
 
+/** A list: once the opener's own item went with its record, a press of the same name in it is a neighbour's. */
+const LIST = 'ul, ol, [role="list"], [role="listbox"]';
+
+/** What a page holds its records in: where the focus goes once no press is drawn again (UXFIX2c). */
+const HOLDS = `section, [role="region"], article, main, [role="main"], [role="tabpanel"], ${LIST}`;
+
 /**
  * The opener, or the press drawn again in its place: a first press is not offered twice while its ask is open (*Delete…*,
- * *Discard branch…*, *Clear history…*), so a cancel draws it anew, and the nearest of its old surroundings still on the page
- * holds the new one by its name.
+ * *Discard branch…*, *Clear history…*), so a cancel or a landed act draws it anew, and the nearest of its old surroundings
+ * still on the page holds the new one by its name.
  */
 function drawnAgain(opener: Opener): HTMLElement | null {
   if (opener.node.isConnected) return opener.node;
   const near = opener.around.find((at) => at.isConnected);
-  if (!near) return null;
+  if (!near || near.matches(LIST)) return null;
   return [...near.querySelectorAll<HTMLElement>(opener.node.tagName)]
     .find((each) => labelOf(each) === opener.label && !each.hasAttribute('disabled')) ?? null;
+}
+
+/** A holder drawn again in place of one gone: the one element in what still holds it of the same kind and name. */
+function likeOf(gone: HTMLElement, near: HTMLElement): HTMLElement | null {
+  const same = [...near.querySelectorAll<HTMLElement>(gone.tagName)].filter((each) =>
+    each.getAttribute('role') === gone.getAttribute('role') && each.getAttribute('aria-label') === gone.getAttribute('aria-label'));
+  return same.length === 1 ? same[0]! : null;
+}
+
+/**
+ * The nearest section or list the opener sat in that is still drawn (UXFIX2c): what still holds it, where that is a list or
+ * a section; else a holder that went and was drawn again in its place (a page's main area, drawn anew for *nothing chosen*
+ * once its record went); else a holder further up; else whatever still held it.
+ */
+function heldIn(opener: Opener): HTMLElement | null {
+  const at = opener.around.findIndex((each) => each.isConnected);
+  if (at < 0) return null;
+  const near = opener.around[at]!;
+  if (near.matches(HOLDS)) return near;
+  for (const gone of opener.around.slice(0, at)) {
+    const like = gone.matches(HOLDS) ? likeOf(gone, near) : null;
+    if (like) return like;
+  }
+  return opener.around.slice(at).find((each) => each.matches(HOLDS)) ?? near;
+}
+
+/**
+ * Where the focus goes as an ask is put down (UXFIX2c): the press drawn again; where none is (a delete took its record, or
+ * nothing more is offered), the nearest section or list that held it. Never the page's body, where a keyboard starts again
+ * from the top.
+ */
+function giveBack(opener: Opener) {
+  const again = drawnAgain(opener);
+  again?.focus();
+  if (again && again === document.activeElement) return;
+  const held = heldIn(opener);
+  if (!held) return;
+  if (!held.hasAttribute('tabindex')) {
+    // Focusable while it holds the focus, and no longer once the focus leaves, so a click inside it later lands as before.
+    held.setAttribute('tabindex', '-1');
+    held.addEventListener('blur', () => held.removeAttribute('tabindex'), { once: true });
+  }
+  held.focus({ preventScroll: true });
 }
 
 /**
@@ -82,6 +139,12 @@ function drawnAgain(opener: Opener): HTMLElement | null {
  *   `refused` says the sentence inside it, whole (`role="alert"`), and lets the move be pressed again. *Never mind* and
  *   Escape wait with the move, so a refusal is never said to nobody. An answer to an ask put down changes nothing; a `done`
  *   still closes an ask the page drew away while it waited, so the page's own hold on it lets go.
+ * - **While it waits it says so** (UXFIX2c): a status beside the presses, drawn from the first so a reader hears it speak
+ *   (`role="status"`, polite), and nothing around it busy, since a reader may hold back what a busy element says until the
+ *   wait is over and the status quiet again; the waiting presses and the status are the wait's signs. The move keeps its
+ *   name; the page's own `busy` is another act, so it says nothing.
+ * - **Landed, the focus goes where a cancel's does** (UXFIX2c): the press drawn again, and where none is, since a delete took
+ *   its record or nothing more is offered, the nearest section or list that held it, never the page's body.
  * - **A rich body** (a clear's *What goes* and *What stays*) is its explanation too: `block` lays it out as rows.
  */
 export function InlineConfirm({
@@ -125,7 +188,8 @@ export function InlineConfirm({
   const opener = useRef(first.opener);
   const alive = useRef(false);
   const turn = useRef(0);
-  const leaving = useRef<'cancel' | 'done' | null>(null);
+  // Put down by the person or by its act landing, rather than drawn away by the page: only then is the focus its to give.
+  const leaving = useRef(false);
   const waiting = busy || pending;
 
   // The explanation takes the focus. Pressed in a menu, the ask waits for the menu to close and give the focus back, which
@@ -155,20 +219,18 @@ export function InlineConfirm({
     alive.current = true;
     return () => {
       alive.current = false;
-      const how = leaving.current;
       const from = opener.current;
-      if (!how || !from) return;
+      if (!leaving.current || !from) return;
       const now = document.activeElement;
       if (now && now !== document.body && now.isConnected) return;
-      const to = how === 'cancel' ? drawnAgain(from) : from.node.isConnected ? from.node : null;
-      to?.focus();
+      giveBack(from);
     };
   }, []);
 
   const cancel = () => {
     // An answer still on its way to a press before this one is no longer the person's question.
     turn.current += 1;
-    leaving.current = 'cancel';
+    leaving.current = true;
     onClose();
   };
 
@@ -184,7 +246,7 @@ export function InlineConfirm({
       done: () => {
         if (mine !== turn.current) return;
         if (alive.current) {
-          leaving.current = 'done';
+          leaving.current = true;
           setPending(false);
         }
         onClose();
@@ -221,6 +283,10 @@ export function InlineConfirm({
       <Button variant="ghost" disabled={meanIt ? waiting : false} onClick={cancel}>
         {t(meanIt ? 'common.cancel' : 'common.close')}
       </Button>
+      {/* Drawn from the first, empty and out of the row, so it is a live region before it speaks (UXFIX2c). */}
+      <span role="status" aria-live="polite" className={pending ? 'self-center text-small text-ink-faint' : 'sr-only'}>
+        {pending ? t('work.confirm.pending') : null}
+      </span>
     </>
   );
 
