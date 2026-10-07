@@ -1219,6 +1219,16 @@ public sealed partial class Driver(
                 said: Said(adapter, selection, sessionId),
                 // A native run holds what the person says while it works, and goes on with it in its own conversation (MSG1b).
                 goOn: GoOnWith(adapter, target, selection, rules.File, handed),
+                // BGWAIT1: a turn that ends on the session's own background work, holding its quest as a park would, is not
+                // a question. Read from the quest as the conclusion reads it, by the conclusion's own rule.
+                waitsOnBackground: async token =>
+                {
+                    var now = await service.FindQuestAsync(quest.Id, token).ConfigureAwait(false);
+                    var status = now?.Status ?? "Open";
+                    return Observation.Parks(
+                        status, quest.Awaits, now?.Awaits, resumed: start.Resumes is not null,
+                        took: status == "Taken" && await service.TookAsync(sessionId, token).ConfigureAwait(false));
+                },
                 conclude: async (exitCode, used, turnFailed, ended) =>
                 {
                     if (used is not null)
@@ -1803,6 +1813,10 @@ public sealed partial class Driver(
     /// with the words, before the record concludes. Null on a door that cannot resume, which holds no words.
     /// </param>
     /// <param name="working">Told once the ledger has moved the record to working, and so holds its tree (LEFT2, MSG1b).</param>
+    /// <param name="waitsOnBackground">
+    /// On the protocol door, asked when a turn ends while the session's own background work runs (BGWAIT1): whether its
+    /// quest stands as a park would leave it, so the session waits for that work instead. Null never waits (D105 §3).
+    /// </param>
     private async Task<T> HoldAsync<T>(
         ISessionAdapter adapter, ProcessStartInfo info, SessionTarget target, string sessionId, string transcript,
         string cwd, string? harnessNotice, (string? File, object? Meta, HandedSection? Handed) rules, string? handed, string? refusesInput,
@@ -1810,7 +1824,7 @@ public sealed partial class Driver(
         IReadOnlyDictionary<string, string>? scope = null, string? preamble = null,
         IReadOnlyList<AcpMcpServer>? handedServers = null, bool drivesBrowser = false, Action<JsonElement>? said = null,
         ResumeAsk? resume = null, Noted? workingNote = null, Func<string, string, ProcessStartInfo?>? goOn = null,
-        Action? working = null)
+        Action? working = null, Func<CancellationToken, Task<bool>>? waitsOnBackground = null)
     {
         using var process = Process.Start(info)
             ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
@@ -1863,7 +1877,9 @@ public sealed partial class Driver(
         var acp = adapter.Wire == SessionWire.Acp
             // The posture rides with it, because it is the ADAPTER's (ACP3): three harnesses name the
             // same D37 boundary three different ways, and one of them does not name it on the wire.
-            ? CaptureAcpAsync(process, transcript, sessionId, cwd, prompt, adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta, handedServers ?? _servers, target.PersonSaid, inbox, said, keepAs, resume, account)
+            ? CaptureAcpAsync(
+                process, transcript, sessionId, cwd, prompt, adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta, handedServers ?? _servers,
+                target.PersonSaid, inbox, said, keepAs, resume, account, waitsOnBackground)
             : null;
         // What the native door's harness says in its own words, apart from its agent's, for its ending (AGT3c).
         var own = new HarnessWords();
@@ -2093,12 +2109,14 @@ public sealed partial class Driver(
     /// conversation going on, and an agent that would not resume it told to the resume, never as a turn that failed.
     /// </param>
     /// <param name="account">What the prompt was composed of (CONTEXT1), kept beside it on its event; null for a resume.</param>
+    /// <param name="waitsOnBackground">Whether a turn that ended on its own background work waits for it (BGWAIT1); null never.</param>
     private async Task<(AcpOutcome? Outcome, string? Failure)> CaptureAcpAsync(
         Process process, string transcript, string sessionId, string cwd, string prompt,
         string? posture, string? harnessNotice, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, object? meta = null,
         IReadOnlyList<AcpMcpServer>? servers = null, string? personSaid = null, DrivenInbox? inbox = null,
-        Action<JsonElement>? said = null, string? keepAs = null, ResumeAsk? resume = null, InstructionAccount? account = null)
+        Action<JsonElement>? said = null, string? keepAs = null, ResumeAsk? resume = null, InstructionAccount? account = null,
+        Func<CancellationToken, Task<bool>>? waitsOnBackground = null)
     {
         await using var file = new StreamWriter(transcript, append: resume is not null);
 
@@ -2196,7 +2214,8 @@ public sealed partial class Driver(
                     blocks: resume?.Blocks,
                     prompted: resume is null ? null : () => resume.Prompted = true,
                     // The files said with them, a link each after the blocks (MSG1d3, D137 §2.4).
-                    files: resume?.Files)
+                    files: resume?.Files,
+                    waitsOnBackground: waitsOnBackground)
                 .ConfigureAwait(false);
 
             Line($"— the turn ended: {outcome.StopReason}, after {outcome.Updates} update(s). The "

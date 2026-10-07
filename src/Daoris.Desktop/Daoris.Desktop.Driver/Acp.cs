@@ -334,6 +334,9 @@ public sealed partial class AcpSession(
     /// <summary>What the session runs beside itself (CONSOLE2), once it is open and when it is kept.</summary>
     private AcpStreams? _beside;
 
+    /// <summary>The background work its harness says it runs (BGWAIT1), read whether or not its streams are kept.</summary>
+    private readonly AcpBackground _background = new();
+
     /// <summary>
     /// The largest context reading this session has reported (TOOL3), or null when it reported none —
     /// what a conversation, which never runs <see cref="RunAsync"/>, counts toward its account (USAGE1).
@@ -443,11 +446,19 @@ public sealed partial class AcpSession(
     /// The files said with <paramref name="blocks"/>' words (MSG1d3, D137 §2.4), each a <c>resource_link</c> to where it is
     /// kept after the blocks, as a conversation's message carries what was attached (CONV4c). Null or empty for none.
     /// </param>
+    /// <param name="waitsOnBackground">
+    /// Asked when a turn ends while background work the harness says the session started still runs (BGWAIT1): whether the
+    /// session's quest stands as a park would leave it, so the turn's end would otherwise read as asking the person. Yes
+    /// keeps the session open until that work ends, by the wire's word, then goes on with a turn that says so. Null never
+    /// waits, and what it left running ends with the session (D105 §3).
+    /// </param>
     /// <exception cref="AcpResumeRefused">The agent offers no resume, or refused this one: nothing was prompted.</exception>
+    /// <exception cref="DriverException">The agent's stream ended while the session waited for its background work.</exception>
     public async Task<AcpOutcome> RunAsync(
         string cwd, string prompt, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null,
         DrivenInbox? inbox = null, Action<ChatMessage>? asked = null, string? resume = null,
-        IReadOnlyList<string>? blocks = null, Action? prompted = null, IReadOnlyList<KeptFile>? files = null)
+        IReadOnlyList<string>? blocks = null, Action? prompted = null, IReadOnlyList<KeptFile>? files = null,
+        Func<CancellationToken, Task<bool>>? waitsOnBackground = null)
     {
         _asked = asked;
         try
@@ -475,8 +486,19 @@ public sealed partial class AcpSession(
             // The person's words, one prompt each, in the order said — the session keeps its context. A word sent during
             // the turn is waited for until it is answered; one held is prompted now, and a turn stopped to send it ends
             // `cancelled` before it goes.
-            while (inbox?.NextOrClose() is { } next)
+            while (true)
             {
+                // A turn that ended while the session's own background work runs, where its quest would park it on the
+                // person, waits for that work and goes on with a turn that says it ended (BGWAIT1). Words held for the
+                // turn's end go first; words that go at once still go while it waits.
+                if (!Holds(inbox) && await AfterBackgroundAsync(waitsOnBackground, ct).ConfigureAwait(false) is { } wentOn)
+                {
+                    stopReason = wentOn;
+                    continue;
+                }
+
+                if (inbox?.NextOrClose() is not { } next) break;
+
                 if (next.Held is { } held)
                 {
                     stopReason = await SendPromptAsync(held.Prompt, held.Files, ct, sent: null, held).ConfigureAwait(false);
@@ -505,7 +527,7 @@ public sealed partial class AcpSession(
                 Note($"— {untaken} message(s) the person sent while it worked never reached it: it ended first.");
             }
 
-            // A driven session's end is its turn's (CONSOLE2): what it left running ends with it, and
+            // A driven session's end is its last turn's (CONSOLE2, BGWAIT1): what it left running ends with it, and
             // is said while the caller's transcript is still open, before the reader is let go.
             await EndStreamsAsync().ConfigureAwait(false);
             Release();
@@ -518,6 +540,58 @@ public sealed partial class AcpSession(
         _console.End();
         onLine(text);
         Emit(new SessionEvent { Kind = SessionEventKind.Note, Text = text });
+    }
+
+    /// <summary>Whether the person's words are held for the turn's end: those go before anything else.</summary>
+    private static bool Holds(DrivenInbox? inbox) => inbox?.State.Queued.Count > 0;
+
+    /// <summary>
+    /// A turn that ended while the session's own background work runs (BGWAIT1): not a question. Where the driver says its
+    /// quest would otherwise park it on the person, the session stays open until the harness says that work ended, and is
+    /// then told so in a turn of Daoris's own, whose stop reason this answers. Null where nothing runs, or nothing waits.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Why a turn of Daoris's own.</b> The harness wakes its agent itself when the work ends, with no prompt open
+    /// (CONSOLE2a), so that turn's end never reaches the wire as an answer. A prompt does: where the agent takes one during
+    /// a turn (STEER1) it is folded into a woken turn still running, and its answer is the end the run waits for.</para>
+    ///
+    /// <para><b>Bounded by the session's own bounds</b>: the person's stop and the timeout end the process, the reader with
+    /// it, and the wait with that; the driver's shutdown cancels it. Work that never ends (a dev server) is waited for until
+    /// one of those, as a park would have held its tree for the person (D83).</para>
+    /// </remarks>
+    /// <exception cref="DriverException">The agent's stream ended first: a failure of the door, never a clean turn's end.</exception>
+    private async Task<string?> AfterBackgroundAsync(Func<CancellationToken, Task<bool>>? waits, CancellationToken ct)
+    {
+        if (waits is null || _background.Running is not { Count: > 0 } running) return null;
+
+        bool waiting;
+        try
+        {
+            waiting = await waits(ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            // Unread is not a yes: the work ends with the session, as it always did (D105 §3), and the reason is said.
+            Note($"— its turn ended while its own background work runs, and whether its quest waits on that work could not "
+                 + $"be read: {error.Message}");
+            return null;
+        }
+
+        if (!waiting) return null;
+
+        Note($"— its turn ended while its own background work runs: {string.Join(", ", running.Select(name => $"`{name}`"))}. "
+             + "The session waits for that work, and goes on when it ends.");
+        var ended = await _background.EndedAsync(Ended, ct).ConfigureAwait(false)
+            ?? throw new DriverException(
+                "the ACP agent's stream ended while the session waited for its own background work — the agent exited, or it "
+                + "was ended.");
+
+        var said = string.Join("; ", ended.Select(work => $"`{work.Name}` ({work.State})"));
+        Note($"— its background work ended: {said}. The session goes on.");
+        return await SendPromptAsync(
+                $"Your background work has ended: {said}. Go on with your quest from where you left off.",
+                files: null, ct, sent: null, words: null)
+            .ConfigureAwait(false);
     }
 
     /// <summary>How many of the person's words are on the wire and not yet taken, forgotten as they are counted.</summary>
@@ -1015,9 +1089,13 @@ public sealed partial class AcpSession(
 
             Interlocked.Increment(ref _updates);
 
+            // The session's own background work (BGWAIT1), before the console takes the same frames for its streams.
+            var from = StringField(p, "sessionId");
+            if (from is null || from == _sessionId) _background.Take(update);
+
             // 🔴 Routed by whose it is (CONSOLE2): a subagent speaks under its own session id, and a
             // client that reads every update as the session's merges the child into the parent.
-            if (_beside is not null && _beside.Take(StringField(p, "sessionId"), _sessionId, update)) return;
+            if (_beside is not null && _beside.Take(from, _sessionId, update)) return;
 
             Measure(update);
             // The agent changed its own options — a model it fell back to, a switch it made (AGT6b): what

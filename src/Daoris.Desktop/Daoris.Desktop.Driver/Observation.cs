@@ -62,7 +62,7 @@ public static class Observation
     {
         // Ask and wait (D79): the session published a question to another repository and waits on it.
         // Its quest stays taken for the same tree to resume in, and that is a good ending.
-        "Taken" when awaitsAfter is { Length: > 0 } && !string.Equals(awaitsAfter, awaitsBefore, StringComparison.Ordinal)
+        "Taken" when Asks(awaitsBefore, awaitsAfter)
             => SessionConclusion.Of("completed", Exit(
                 Noted.Of(
                     NoteCodes.EndedAwaits,
@@ -86,8 +86,9 @@ public static class Observation
         // (STANDDOWN2): it took the quest itself, or resumed or carried on one this machine already
         // held. FG5's verify session did exactly this with three questions, and read "someone else has
         // it". Parked, it quotes what it said; the person's answer carries the quest on in the same tree.
-        // A park is never resumed by itself, so nothing here loops.
-        "Taken" when exitCode == 0 && (took || resumed || awaitsBefore is { Length: > 0 })
+        // A park is never resumed by itself, so nothing here loops. The rule is one (Parks): the protocol door reads it too, to
+        // keep a turn that ended on its own background work working instead (BGWAIT1).
+        "Taken" when exitCode == 0 && Parks(questStatus, awaitsBefore, awaitsAfter, resumed, took)
             // The words lead: wherever this note is shown, it already says the session is waiting.
             => SessionConclusion.Of("awaiting-person",
                 lastWords is { Length: > 0 } said
@@ -130,6 +131,21 @@ public static class Observation
             exitCode == 0 ? Noted.Of(NoteCodes.EndedUntouched, "exited without touching its quest.")
                           : Noted.Of(NoteCodes.EndedUntouchedExit, $"exit {exitCode} before taking its quest.", ("exit", exitCode))),
     };
+
+    /// <summary>
+    /// Whether a clean end with its quest so parks on the person (STANDDOWN2, D83): still taken, with no new question to
+    /// another repository (D79), by a session that took it itself, or resumed or carried on this machine's take. The
+    /// conclusion's rule, read also by the protocol door when a turn ends while the session's own background work runs
+    /// (BGWAIT1): a session that would park then waits for that work instead.
+    /// </summary>
+    public static bool Parks(string questStatus, string? awaitsBefore, string? awaitsAfter, bool resumed, bool took) =>
+        questStatus == "Taken"
+        && !Asks(awaitsBefore, awaitsAfter)
+        && (took || resumed || awaitsBefore is { Length: > 0 });
+
+    /// <summary>A NEW question to another repository (D79): what it waits on now, and not what it waited on before.</summary>
+    private static bool Asks(string? awaitsBefore, string? awaitsAfter) =>
+        awaitsAfter is { Length: > 0 } && !string.Equals(awaitsAfter, awaitsBefore, StringComparison.Ordinal);
 
     /// <summary>
     /// A line whose English says an exit that was not 0, with the exit as a part of its own beside it (LANG1a, the language
