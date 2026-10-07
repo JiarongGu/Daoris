@@ -123,6 +123,19 @@ public enum QuestClaim
     Lost,
 }
 
+/// <summary>What a rebase does with a pending operation that no longer applies after a fetch (D68 rule 2, sync design §8).</summary>
+public enum QuestLoss
+{
+    /// <summary>Dropped from the log: it was never anybody's decision, or it has nothing left to say.</summary>
+    Forgotten,
+
+    /// <summary>Rewritten as a conflict on the quest, kept for a person, naming the status it attempted.</summary>
+    Conflict,
+
+    /// <summary>Left as it is: a conflict already, on a quest another machine deleted (D95).</summary>
+    Kept,
+}
+
 /// <summary>A number a remote gave one operation, named by the machine and sequence that made it.</summary>
 public sealed record QuestAcceptance(string Machine, long Sequence, long Number);
 
@@ -269,5 +282,32 @@ public static class QuestLog
             Status = QuestTransitions.Target(operation.Kind)!.Value, Note = operation.Note, Updated = operation.At,
             Answers = operation.Answers ?? [],
         },
+    };
+
+    /// <summary>
+    /// What a rebase does with a pending operation of <paramref name="kind"/> that no longer applies (D68 rule 2, sync
+    /// design §8). Every kind has its rule here, and only a move becomes a conflict: a conflict names the status it
+    /// attempted, and the wire refuses one that names none (<see cref="QuestWire.Shape"/>), so a conflict made of
+    /// anything else would stop every later push of its circle (QUESTOP1). A kind with no rule throws rather than make one.
+    /// </summary>
+    public static QuestLoss Lost(QuestOperationKind kind) => kind switch
+    {
+        // The same ask, published first elsewhere: the first publish is the quest, and a second copy was nobody's decision.
+        QuestOperationKind.Published => QuestLoss.Forgotten,
+        // A move that lost to another machine's, or made on a take that lost (D69): kept for a person, never dropped.
+        QuestOperationKind.Taken or QuestOperationKind.Done or QuestOperationKind.Declined => QuestLoss.Conflict,
+        // It applies to any quest there is, so it is lost only with its quest (D95), and kept so that machine's claim
+        // still reads lost.
+        QuestOperationKind.Conflict => QuestLoss.Kept,
+        // Nothing left to say. A dismissal is lost only with its quest. A wait, once its quest is no longer taken: another
+        // machine closed or deleted it first (QUESTOP1). A delete that lost to a take, or that another machine's delete
+        // already made (D95). A yes to a done nothing holds any more (DRIFT1d): its done lost, or another machine's yes came
+        // first. A verdict on evidence nothing waits on any more (EVID1a): another machine's verdict found it first, or the
+        // person accepted the done as it stood.
+        QuestOperationKind.Dismissed or QuestOperationKind.Waited or QuestOperationKind.Deleted
+            or QuestOperationKind.Accepted or QuestOperationKind.Evidenced => QuestLoss.Forgotten,
+        _ => throw new ArgumentOutOfRangeException(
+            nameof(kind), kind,
+            "A rebase has no rule for this kind of quest operation; .claude/knowledge/quest-operations.md names every place a kind goes."),
     };
 }

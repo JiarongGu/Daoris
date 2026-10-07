@@ -1092,6 +1092,39 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Equal(5, rest.Through);
     }
 
+    // ——— A wait (D79): its taker's question, an operation that travels like every verb and moves no status.
+
+    /// <summary>
+    /// 🔴 A wait made on this machine after another machine closed the quest has nothing left to say, so the rebase drops
+    /// it, as it drops a wait on a quest that is gone. Rewritten as a conflict it would attempt no status, which the wire
+    /// refuses as half-made, and every later push of the circle with it (QUESTOP1).
+    /// </summary>
+    [Fact]
+    public async Task A_wait_on_a_quest_another_machine_closed_first_is_dropped_and_the_circle_still_pushes()
+    {
+        var quest = await Publish(_a);
+        await _a.MoveAsync(quest.Id, QuestStatus.Taken, "A's session.", Now.AddHours(1));
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        Assert.True((await _b.MoveAsync(quest.Id, QuestStatus.Declined, "Not ours after all.", Now.AddHours(2))).Moved);
+        await SyncAsync(_b);
+        var question = await Publish(_a, "A question for its owner");
+        Assert.True((await _a.WaitAsync(quest.Id, question.Id, Now.AddHours(3))).Moved);
+        var pass = await SyncAsync(_a);
+
+        Assert.Null(pass.Problem);
+        Assert.Empty(pass.Refused);
+        Assert.Empty(pass.Conflicts);
+        Assert.Empty(await _a.PendingAsync(Workspaces.Default, _ => true));
+        Assert.NotNull(await _remote.FindAsync(question.Id));
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var held = (await store.FindAsync(quest.Id))!;
+            Assert.Equal((QuestStatus.Declined, (string?)null, 0), (held.Status, held.Awaits, held.Conflicts.Count));
+        }
+    }
+
     // ——— A decline that applies only while open (PAUSE1c, D132 point 10, design §5.2): an abandon judged its decline
     // on an open quest, so one that reaches the remote after another machine's take is a conflict on the quest (D68
     // rule 2), and the take stands.
