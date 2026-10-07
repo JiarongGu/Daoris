@@ -6,6 +6,7 @@ import { type AccountScope, type AccountsAnswer, USE_DEFAULTS } from '../setting
 import type { AccountWaitTick, Consideration } from '../signals';
 import { byTool, type ToolDoor } from '../tools';
 import { accountAttention, type AccountsKnown } from './accountAttention';
+import { attentionOffers } from './attention';
 
 // *What needs you*'s accounts (UX6d, D150 §6.2–§6.3; TOOL4m's row): a start waiting for accounts and a signed-out account a
 // list holds, from what the page already holds. Pure, so every state is a fixture: nothing here asks the bridge anything.
@@ -240,6 +241,77 @@ describe('a start waiting for accounts', () => {
     expect(row!.account!.named.map(({ id, label, state }) => [id, label, state])).toEqual([
       ['account-2', 'home', 'cooling'], ['account-1', 'account-1', 'out'], ['account-3', 'account-3', 'out'],
     ]);
+  });
+});
+
+/**
+ * UX6d1's wait (D150's UX6d1 note): a start held on signed-out accounts with none cooling, one per agent, as the tick hands
+ * it. No time and no account: it waits for a sign-in, never a reset, and its accounts are the ones a sign-in frees.
+ */
+const HELD_SIGNED_OUT: AccountWaitTick = {
+  agent: 'claude-code', account: null, name: null, workspace: 'work', until: null, stated: false,
+  quests: [], asks: ['a1'], signedOut: ['account-1'],
+};
+
+describe('a start held on signed-out accounts with none cooling (UX6d2)', () => {
+  /** `work` runs on `account-1` alone; `account-4`, outside its list, was never read. */
+  const facts = (over: Partial<ToolDoor> = {}) => known({
+    tools: byTool([door({
+      profiles: door().profiles!.map((profile) => (profile.name === 'account-4' ? { ...profile, login: 'unknown', read: null } : profile)),
+      ...over,
+    })]),
+    use: answer([scope(), scope({ workspace: 'work', list: ['account-1'] })]),
+    waits: [HELD_SIGNED_OUT],
+  });
+
+  /**
+   * A wait with no `until` is no cool-off: it names the accounts it passed signed out with their sign-ins, and never the
+   * tool's own sign-in as cooling, which nothing said cools. *Read* first for the one outside its list never read (UXFIX3).
+   */
+  it('names its accounts and its ask, offers Sign in and Read, and never the tool’s own sign-in as cooling', () => {
+    const [row, ...rest] = derive(facts());
+
+    expect(rest).toEqual([]);
+    expect(row).toMatchObject({
+      id: 'wait:claude-code/:signed-out', kind: 'account-wait', title: 'Intake for ask #a1', where: 'work', circle: true,
+      since: '2026-10-05T10:25:00Z',
+    });
+    expect(row!.detail).toBe(`account-1 read signed out at ${clockOf(READ, NOW)}.`);
+    expect(row!.account!.named.map(({ id, state }) => [id, state])).toEqual([['account-1', 'out']]);
+    expect(row!.account!.outside ?? null).toBeNull();
+    expect(row!.account!.readFirst).toEqual({ id: 'account-4', label: 'account-4' });
+    expect(attentionOffers(row!)).toEqual([{ act: 'sign-in', account: 'account-1' }, { act: 'read', account: 'account-4' }]);
+  });
+
+  /** The tool's own sign-in read signed out, which this machine's empty list runs on, is its own row: the wait never names it. */
+  it('leaves the tool’s own signed-out sign-in its own row', () => {
+    const rows = derive(facts({ ownLogin: 'out', ownRead: READ }));
+    expect(rows.map(({ id }) => id)).toEqual(['wait:claude-code/:signed-out', 'signed-out:claude-code/']);
+  });
+
+  /** A cool-off of the tool's own sign-in names no account either: the two waits of one agent are two rows, two keys. */
+  it('is a row of its own beside a cool-off of the tool’s own sign-in for the same agent', () => {
+    const own: AccountWaitTick = {
+      agent: 'claude-code', account: null, name: null, workspace: 'aurora', until: UNTIL, stated: true,
+      quests: ['q2'], asks: [], signedOut: [],
+    };
+
+    const rows = derive({ ...facts(), waits: [own, HELD_SIGNED_OUT] }, [], [quest({ id: 'q2', to: 'game', workspace: 'aurora' })]);
+
+    expect(rows.map(({ id }) => id)).toEqual(['wait:claude-code/', 'wait:claude-code/:signed-out']);
+    expect(rows[0]!.account!.named.map(({ id, state }) => [id, state])).toEqual([[null, 'cooling']]);
+    expect(rows[0]!.detail).toBe(`Your own sign-in cools until ${moment(UNTIL)}.`);
+    expect(rows[1]!.account!.named.map(({ id, state }) => [id, state])).toEqual([['account-1', 'out']]);
+  });
+
+  /** A quest held so is the wait's (UX6d1), never a row of its own from its consideration beside it. */
+  it('lists a quest it holds once, under the wait', () => {
+    const held: Consideration = {
+      quest: 'q1', repository: 'engine', verdict: 'Blocked', reason: 'none ready',
+      signedOut: { agent: 'claude-code', accounts: ['account-1'] },
+    };
+    const rows = derive({ ...facts(), waits: [{ ...HELD_SIGNED_OUT, quests: ['q1'], asks: [] }] }, [held], [quest()], []);
+    expect(rows.map(({ id, title }) => [id, title])).toEqual([['wait:claude-code/:signed-out', 'Expose a streaming budget']]);
   });
 });
 

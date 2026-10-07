@@ -101,6 +101,8 @@ with the version and date at release.
   that would take records.
 - Knowledge search reads an index's tables a row at a time, so a question about one route or one
   command lands on its row and names its line.
+- What needs you lists an ask or a quest held because its accounts are signed out even when no
+  account is cooling, with *Sign in* or *Read* beside it.
 
 The first version: doctrine that installs, is checked, and flows back.
 

@@ -11791,3 +11791,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6d1 — a held intake with no account cooling reaches the page** (driver; modules forward it). `Driver.Waits` makes a wait only from a cool-off and `Considerations.Blocked` names quests alone, so an intake held on signed-out accounts with none cooling is only a `starts.waiting` log line and What needs you cannot list it. Contract: D150 §6.2, D130 §3.3, TOOL6g. Proof: a Driver report test for that hold; `TickWaitTests` for its shape.
 
 **Outcome** 2026-10-07: a start held on signed-out accounts with none cooling is a wait the tick forwards (no `until`, no account, its signed-out accounts named), holding quests and ask intakes alike; the readers tell it from a cool-off. The page reads it since UX6d2. Detail: D150's UX6d1 note; commits 946974d6, 6eede024.
+
+
+## UX6d2 — What needs you reads a wait with no time (2026-10-07, D150)
+
+> - [ ] **UX6d2 — What needs you reads a wait with no time** (web-shell; after UXFIX3; merges with UX6d1). UX6d1's driver reports a start held on signed-out accounts with none cooling as a wait with no `until` and no account, and `heldStarts` in `accountAttention.ts` reads every wait as a cool-off: the tool's own sign-in would list as cooling, `namedAccount` could hide its signed-out row, and the key `wait:${agent}/${account}` collides with an own-sign-in cool-off. Read a wait with no `until` as signed-out, with a key of its own; `AccountWaitTick.until` becomes optional. Contract: D150's UX6d1 note, design §6.2–§6.3. Proof: `accountAttention.test.ts` rows for a signed-out wait holding an intake, and one beside an own-sign-in cool-off.
+
+**Outcome** 2026-10-07: What needs you reads a wait with no `until` as signed-out: no cooling, so the tool's own sign-in is neither said cooling nor hidden from its own row, and its key `wait:{agent}/:signed-out` stays apart from an own-sign-in cool-off. Detail: D150's UX6d2 note; commit 28241629.

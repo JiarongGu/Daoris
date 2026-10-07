@@ -188,6 +188,9 @@ failed`): git's own files held for a moment, most likely by the scanner, the sam
 `speak` waits for the stub's `close` on every path; what still held the folder (a git the stub started, or the
 scanner) was not captured. The same test failed once more in HIST1c's verify another way, "turn failed: fetch failed"
 (the stub's request to its stand-in quest door), passing alone and rerun: the test, not the folder, is the repeat.
+`landing-plugins.test.ts` hung for over 25 minutes in UXFIX4's verify, its `land.mjs` child waiting with no children
+of its own while another worktree ran the same file; stopped, it passed alone (19/19, 91 s) and the next verify was
+green. No child had died, so the wait, not a held file, is the repeat; what the child waited on was not captured.
 
 *Fixed the same day:* `desktop-publish.test.ts`'s "retries a held rename at each package and launcher step" failed
 twice (AGENTREAD1's verify, ACCTQUOTE1d's merge gate) with a real EPERM. It handed `layCli` two tries with no wait, the
