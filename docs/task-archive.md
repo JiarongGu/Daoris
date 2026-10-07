@@ -11777,3 +11777,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **HIST1l — the service names which needs-you it meant** (service, driver). The driver rebuilds whether `needs-you` was a held done, a conflict, a parked session or a proposal from a second snapshot (`HistoryClearing.cs:492`); carry the variant on the wire, additive, keeping the inference for older hosts. Contract: design §6.3, the review. Proof: desk and route tests for each variant; the driver reads it.
 
 **Outcome** 2026-10-07: the history desk names what waits beside `needs-you` (`waits`: parked, held, conflict, ask, proposal), additively on both doors; the driver says its sentence from it, falling back to the records for an older host or an unknown word. Follow-up: HIST1m. Detail: D153's HIST1l note; commits d0101f41, 453660bf.
+
+
+## ORIENT2h — a declared index's tables are read a row at a time (2026-10-07, D151)
+
+> - [ ] **ORIENT2h — a declared index's tables are read a row at a time** (service). Heading-split sections lose long tables: *where is the SESSION_GO_ON_NEW handler* asked of kind `index` did not reach the 102-row section holding the row, five short sections outranking it (BM25 weighs one matching row against a long section; ORIENT1c's finding). Read a table's rows as entries naming their own line. Contract: D151's ORIENT2e note, ORIENT1c. Proof: the route question lands on its row first.
+
+**Outcome** 2026-10-07: a declared index's tables are read a row at a time: each row an `index` entry titled by its headings and its column-named label, naming its own line, so the route question lands on its row first; prose stays a section. 435 rows of 571 entries here. Follow-up: ORIENT2h2. Detail: D151's ORIENT2h note; commits faacada6, b72bfbeb.
