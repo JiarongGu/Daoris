@@ -52,6 +52,16 @@ const quest = (over: Partial<Quest> = {}): Quest => ({
 /** Open the head's folded *Details* (UX7c, D152 §7), where its reference facts are. */
 const details = () => fireEvent.click(screen.getByRole('button', { name: /^Details|^详情/ }));
 
+/** Every element between one and an ancestor of it, the ancestor included. */
+function ancestorsUpTo(element: Element, last: Element): Element[] {
+  const found: Element[] = [];
+  for (let at = element.parentElement; at; at = at.parentElement) {
+    found.push(at);
+    if (at === last) break;
+  }
+  return found;
+}
+
 describe('the attended session\'s head', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -88,6 +98,25 @@ describe('the attended session\'s head', () => {
 
     rerender(<SessionHead session={session({ state: 'completed' })} />);
     expect(screen.queryByText('Its work')).toBeNull();
+  });
+
+  /**
+   * UXFIX4b: the branch its tree left was cut to one line with nothing to read the rest by. It is shown whole as a branch
+   * row's name is (UXFIX4), wrapping after its separators on the line's own row, which wraps already.
+   */
+  it('shows the branch its tree left whole, wrapping after its separators, never cut to a line', () => {
+    const LONG = 'daoris/s-5a6b7c8d-a-chain-step-that-carries-a-long-slug-past-the-head';
+    render(<SessionHead session={session({ state: 'failed' })} branch={{
+      repository: 'engine', workspace: 'default', branch: LONG, hasTree: false, kind: 'unlanded', commits: 2, removable: false,
+    }} />);
+
+    const name = screen.getByText(LONG);
+    expect(name).toHaveAttribute('data-copy', LONG);
+    expect(name.querySelector('wbr')).not.toBeNull();
+    const line = name.closest('p')!;
+    const classes = [name, ...ancestorsUpTo(name, line)].flatMap((each) => [...each.classList]);
+    expect(classes.filter((each) => /^(?:truncate|text-ellipsis|whitespace-nowrap|overflow-hidden|line-clamp-\d+)$/.test(each))).toEqual([]);
+    expect(line).toHaveClass('flex-wrap');
   });
 
   /**

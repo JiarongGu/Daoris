@@ -114,7 +114,12 @@ D75), where its own rules live; this is what a view may assume of it.
   output) wraps `anywhere`, which breaks inside a word only when that one word will not fit (U8).
 - **A command breaks between its words**: `CodeText`, every code span, one box per word, since a line
   may break after any hyphen and a setting's terminal twin read `--no-` / `keep` in 中文 (LOOK5). A word
-  breaks inside only when it alone is wider than its line.
+  breaks inside only when it alone is wider than its line. **The marks after a span stay on its last word's line**
+  (UXFIX4b): Chromium breaks after any inline box, even before a comma, so a branch name filling its line at the 400 px
+  floor pushed `, whose work…` onto the next. A one-word span and its closing marks (`,` `.` `)`, `，` `。` `）`) are
+  one box, as text inside which no line breaks before such a mark, in either language. A command's last box is inside
+  its code and the marks are not code, so it sits alone in a group that does not wrap, which leaves the break after it
+  to the same rules, and it breaks inside at its line less an em a mark, so its marks are never pushed past the edge.
 - **Motion**: 140ms ease-out on overlays and hovers; `prefers-reduced-motion` disables it. No shimmer
   anywhere — loading placeholders are static two-tone.
 
@@ -137,7 +142,8 @@ controls are in the frame design's §3.
   `BranchRow`, on a list that is its own container: three columns where the list holds 30rem, and narrower the sentence
   under the name, since at the main area's 400 px floor three columns left the sentence what the name did not take. The
   name wraps after its separators, never cut to a line with the rest in a tip that neither a keyboard nor a reader
-  reaches, and the row is named by the text it shows.
+  reaches, and the row is named by the text it shows. A session head's branch is shown so too (UXFIX4b), on its
+  line's own wrapping row.
 - **Buttons**: `primary` (solid accent, paper text — the one loud control per view), default (raised +
   line), `ghost` (borderless, for in-card affordances), and `danger` for a move that ends or removes
   something: decline, close an ask, retire, remove an account, stop, discard. It wears the hue of the
