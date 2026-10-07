@@ -229,6 +229,45 @@ export const BandNarrow: StoryObj = {
 /** Narrow, in 中文. */
 export const BandNarrowChinese: StoryObj = { ...BandNarrow, decorators: [chinese] };
 
+/**
+ * An intake held on an account read signed out with none cooling (UX6d1, UX6d2): a wait for a sign-in, never a reset, so its
+ * line names no time and never the tool's own sign-in. Its sign-in, and *Read* first for the account outside `work`'s list
+ * no read answered (UXFIX3), whose readiness nobody knows.
+ */
+const SIGNED_OUT_WAIT: Attention = {
+  id: 'wait:claude-code/:signed-out', kind: 'account-wait', title: 'Intake for ask #0fda18', where: 'work', circle: true,
+  since: at(42), detail: `account-1 read signed out at ${readSaid}.`,
+  account: {
+    ...CLAUDE, outside: null, readFirst: { id: 'acct-5e6f7a8b', label: 'team seat' },
+    named: [{ id: 'account-1', label: 'account-1', state: 'out', read: READ, until: null }],
+  },
+};
+
+/** Beside it, a cool-off of the tool's own sign-in for the same agent: no account named either, and a row of its own. */
+const OWN_COOLING: Attention = {
+  id: 'wait:claude-code/', kind: 'account-wait', title: 'Expose a streaming budget on the chunk API', where: 'engine',
+  since: at(33), detail: `Your own sign-in cools until ${resetSaid}.`,
+  account: { ...CLAUDE, outside: null, named: [{ id: null, label: 'Your own sign-in', state: 'cooling', read: null, until: RESET }] },
+};
+
+/**
+ * Overview's *What needs you* where one agent holds two waits (UX6d2): the intake held on a signed-out account with none
+ * cooling, and a quest behind the tool's own sign-in's cool-off, each its own row under its own key; then an ask for the
+ * person's word.
+ */
+export const BandSignedOutWait: StoryObj = {
+  render: () => (
+    <Main width={1180}>
+      <AttentionRegion>
+        <AttentionList items={[SIGNED_OUT_WAIT, OWN_COOLING, PROPOSAL]} doors={DOORS} acts={ACTS} onSessions={() => {}} />
+      </AttentionRegion>
+    </Main>
+  ),
+};
+
+/** The same in dark. */
+export const BandSignedOutWaitDark: StoryObj = { ...BandSignedOutWait, decorators: [dark] };
+
 /** In a browser: the asks and quests it can know, their acts on the service's own doors, and no driver's rows. */
 export const BandInABrowser: StoryObj = {
   render: () => (
