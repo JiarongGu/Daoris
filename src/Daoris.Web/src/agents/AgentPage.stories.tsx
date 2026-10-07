@@ -12,7 +12,9 @@ import {
 // two read signed out and one cools, your own sign-in never read, each section folded to its line; the install's shape, a
 // row per state with its one act; the add flow's last step; *Read again* on its way; a proposal waiting, which opens *What
 // it may do*; an agent with one account and no settings Daoris knows; Codex's own sign-in with its windows read (CODEXUSE3);
-// one not installed; an API key; what each row knows (ACCTUX1), in both themes; and the main area with no page. Each at the main area's two widths: the frame's 52rem, and the 680 px window's main area, where rows stack.
+// one not installed; an API key; what each row knows (ACCTUX1), in both themes; the same read without a pointer (ACCTUX2), each
+// row's explanation opened, at 680 px and the main area's 400 px floor in both themes; and the main area with no page. Each at
+// the main area's two widths: the frame's 52rem, and the 680 px window's main area, where rows stack.
 
 const nothing = () => {};
 const ACTS: AgentActs = {
@@ -117,6 +119,34 @@ export const ReadingsNarrowDark: Story = {
 
 /** The same in 中文. */
 export const ReadingsChinese: Story = { args: Readings.args, decorators: [chinese] };
+
+const narrow: Decorator = (Story) => <div className="w-[37rem] max-w-full"><Story /></div>;
+/** The main area's floor, 400 px beside an open list and side bar (UXFIX2c). */
+const atFloor: Decorator = (Story) => <div className="w-[25rem] max-w-full"><Story /></div>;
+
+/** Each row's *About … state* pressed (ACCTUX2): why it cools, why a key reads unchecked or refused, said under the row. */
+const explainEach: Story['play'] = async ({ canvasElement }) => {
+  canvasElement.querySelectorAll<HTMLButtonElement>('li button[aria-label^="About "][aria-expanded="false"]')
+    .forEach((about) => about.click());
+};
+
+/**
+ * Read without a pointer (ACCTUX2), at the 680 px window's main area: who signed in said whole beside each name, and each
+ * row's explanation opened from its press, where it was a tip on hover alone.
+ */
+export const ReadingsExplainedNarrow: Story = { args: Readings.args, decorators: [narrow], play: explainEach };
+
+/** The same, in dark. */
+export const ReadingsExplainedNarrowDark: Story = { args: Readings.args, decorators: [narrow, dark], play: explainEach };
+
+/** At the main area's 400 px floor: who signed in wraps under its name rather than being cut, each explanation opened. */
+export const ReadingsExplainedFloor: Story = { args: Readings.args, decorators: [atFloor], play: explainEach };
+
+/** The same, in dark. */
+export const ReadingsExplainedFloorDark: Story = { args: Readings.args, decorators: [atFloor, dark], play: explainEach };
+
+/** The install's shape at the 400 px floor, in dark: each row stacked, who signed in wrapping, the terms' line a 28 px target. */
+export const TheInstallFloorDark: Story = { args: TheInstall.args, decorators: [atFloor, dark] };
 
 /** The main area with nothing chosen. */
 export const NothingChosen: StoryObj<typeof AgentMainNotice> = {

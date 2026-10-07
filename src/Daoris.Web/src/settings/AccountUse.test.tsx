@@ -119,6 +119,21 @@ describe('a scope\'s list', () => {
     expect(within(list).getAllByRole('listitem')[2]!.textContent).toContain('signed out');
   });
 
+  /**
+   * ACCTUX2: a target of 28 px at least (the platform language §6). Each arrow was its 13 px glyph and `px-1.5`, about 25 px
+   * wide; the button's own floor gives its height.
+   */
+  it('gives each move up and down a target of 28 px at least', () => {
+    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ list: ['account-1', 'account-2'], begins: 'account-1' })} accounts={CHOICES} acts={acts()} />);
+
+    const moves = screen.getAllByRole('button', { name: /^Move (up|down) · / });
+    expect(moves).toHaveLength(4);
+    for (const move of moves) {
+      const width = /(?:^|\s)min-w-(\d+)(?:\s|$)/.exec(move.className)?.[1];
+      expect(Number(width) * 4, move.getAttribute('aria-label') ?? '').toBeGreaterThanOrEqual(28);
+    }
+  });
+
   /** What the terminal refuses, the screen does not offer: the default's Use off is disabled, and its tip says why. */
   it('does not offer Use off on the scope\'s default or its kept account', () => {
     wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={MACHINE_NEAR} accounts={CHOICES} acts={acts()} />);

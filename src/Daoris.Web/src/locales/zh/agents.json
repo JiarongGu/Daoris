@@ -84,6 +84,7 @@
   "agents.section.hide": "收起{{section}}",
   "agents.account.own": "你自己的登录",
   "agents.account.more": "{{account}} 的更多操作",
+  "agents.account.about": "{{account}} 的状态说明",
   "agents.account.rename": "重命名…",
   "agents.account.addTo": "加入 {{workspace}} 的列表",
   "agents.account.addToMachine": "加入本机的列表",

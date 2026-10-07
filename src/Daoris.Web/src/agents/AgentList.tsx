@@ -115,8 +115,8 @@ function RowDoor({ chosen, onPress, children }: { chosen: boolean; onPress: () =
 }
 
 /**
- * The list closed to its strip: each agent's initial, the waiting mark on one with an account the person must act on, and
- * one not installed drawn faint (D118 §3a).
+ * The list closed to its strip: each agent's mark, a letter or two no neighbour wears (*CC*, *Co*; ACCTUX2), the waiting mark
+ * on one with an account the person must act on, and one not installed drawn faint (D118 §3a).
  */
 export function AgentStrip({ rows, chosen, onChoose }: {
   rows: readonly AgentRow[];
@@ -131,6 +131,7 @@ export function AgentStrip({ rows, chosen, onChoose }: {
           key={row.name}
           label={row.waiting > 0 ? `${row.product} · ${t('agents.list.waiting', { count: row.waiting })}` : `${row.product} · ${row.phrase}`}
           initialOf={row.product}
+          letters={row.mark}
           tone={row.waiting > 0 ? 'parked' : undefined}
           dimmed={!row.installed}
           current={chosen === row.name}

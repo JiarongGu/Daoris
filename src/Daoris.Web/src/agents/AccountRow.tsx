@@ -1,4 +1,4 @@
-import { Children, type ReactNode } from 'react';
+import { Children, type ReactNode, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Icon, Menu, type MenuAct, Pill, Tip, WhyGlyph } from '../ui';
 import { type AccountState, readLine, stateWhen, stateWord, type UsagePart } from './agents';
@@ -22,7 +22,8 @@ export const ACCOUNT_COLUMNS = 'm-0 list-none p-0 @min-[40rem]/main:grid @min-[4
 
 /**
  * The columns' names over the rows, drawn only where the row is one line: at 680 px a header would name columns that are not
- * there, and the stacked row names each fact by its place (the UX7 design §7). Hidden from a reader, whose row says each fact.
+ * there, and the stacked row names each fact by its place (the UX7 design §7). Hidden from a reader, whose row names each
+ * fact itself (`Fact`, ACCTUX2).
  */
 export function AccountColumnsHead() {
   const { t } = useTranslation();
@@ -37,6 +38,25 @@ export function AccountColumnsHead() {
   );
 }
 
+/** A fact's name for a reader, before its value on the row (ACCTUX2): the columns' names are drawn for the eye alone. */
+function Fact({ label }: { label: string }) {
+  return <span className="sr-only">{label}</span>;
+}
+
+/**
+ * Why a state reads as it does, where that is more than its word (ACCTUX2): a cool-off's end, how long and whose time it is,
+ * the agent's reset or Daoris's default; a key the tool says yes to whatever it is; a key its provider refused and what
+ * repairs it. Null where the word says it all.
+ */
+function stateWhy(t: (key: string) => string, state: AccountState, now?: Date): string | null {
+  switch (state.state) {
+    case 'cooling': return readLine(state, now);
+    case 'keyed': return t('harness.login.keyedTip');
+    case 'refused': return t('harness.login.refusedTip');
+    default: return null;
+  }
+}
+
 /**
  * **One account on its agent's page** (UX7b, D152 §4.2): one line at 1546 px, in the list's columns, and three short lines at
  * 680. Its name leads, the account's, with who signed in beside it where the two differ, in the same place on every row and
@@ -48,7 +68,12 @@ export function AccountColumnsHead() {
  * **A molecule**: every state arrives as props, and every press goes out. Nothing here asks the agent anything: a state is
  * what was last read, and reading again is the person's press (§5.3, ROSTER1). The panels a press opens on the row (a
  * sign-in, *Remove…*'s ask, *Use in a workspace…*'s question, a rename) arrive as children, so they sit under the row that
- * asked, across every column.
+ * asked, across every column. It holds one thing of its own: whether its state's explanation is open.
+ *
+ * **Read without a pointer** (ACCTUX2, the second opinion's account section): who signed in is said whole and wraps, where it
+ * was cut into a tip no key reached; each fact is named for a reader on its row, since the columns' names are not read; and
+ * why a state reads as it does (a cool-off's whose-time, a key's check or refusal) opens under the row from a press a
+ * keyboard reaches, where it was a tip on hover alone.
  */
 export function AccountRow({ name, who, id, home, why, state, runs, current, said, act, menu, now, children }: {
   /** What leads: the person's name for it, a key's handle, who signed in for a fresh id, its id, or *Your own sign-in*. */
@@ -77,54 +102,61 @@ export function AccountRow({ name, who, id, home, why, state, runs, current, sai
   children?: ReactNode;
 }) {
   const { t } = useTranslation();
+  const [explained, setExplained] = useState(false);
+  const explanationId = useId();
   const word = stateWord(state);
   const when = stateWhen(state, now);
-  // The tip says the whole of it: when it was read, or a cool-off's until, how long and why.
-  const tip = readLine(state, now) ?? when;
+  // Why the state reads so, opened under the row from its press; a state its word says whole has none.
+  const explanation = stateWhy(t, state, now);
+  // The time's tip says it whole where nothing else does: when it was read. A cool-off's is the explanation's.
+  const tip = explanation ? null : readLine(state, now);
   const nameTip = id && id !== name ? (home ? `${id} · ${home}` : id) : home;
   const named = <span className="min-w-0 text-body font-medium text-ink [overflow-wrap:anywhere]">{name}</span>;
+  const time = <span className="text-small text-ink-soft">{when}</span>;
   return (
     <li
       aria-label={name}
       // A line at 1546 px (D152 §4.2, a row at most 36 px): the act's own padding is the row's air, so the row adds little.
       className="grid grid-cols-[minmax(0,1fr)_auto_1.75rem] items-center gap-x-3 gap-y-0.5 border-t border-line py-1 @min-[40rem]/main:col-span-full @min-[40rem]/main:grid-cols-subgrid @min-[40rem]/main:py-0.5"
     >
-      <span className="col-start-1 row-start-1 flex min-w-0 items-baseline gap-x-2">
+      <span className="col-start-1 row-start-1 flex min-w-0 flex-wrap items-baseline gap-x-2">
         {nameTip ? <Tip content={nameTip}>{named}</Tip> : named}
         {why && <span className="self-center"><WhyGlyph why={why} /></span>}
-        {who && (
-          <Tip content={who}>
-            <span className="min-w-0 truncate text-small text-ink-soft">{who}</span>
-          </Tip>
-        )}
+        {/* Who signed in, whole, wrapping where the column is narrow: in a tip it was cut, and no key reached it (ACCTUX2). */}
+        {who && <span className="min-w-0 text-small text-ink-soft [overflow-wrap:anywhere]">{who}</span>}
       </span>
 
       {/* State and *Runs for*: one line under the name when the row stacks, two cells of the row when it does not. */}
       <span className="col-span-3 col-start-1 row-start-2 flex min-w-0 flex-wrap items-baseline gap-x-1.5 text-small text-ink-soft @min-[40rem]/main:contents">
         <span className="flex min-w-0 flex-wrap items-baseline gap-x-1.5 @min-[40rem]/main:col-start-2 @min-[40rem]/main:row-start-1">
+          <Fact label={t('agents.col.state')} />
           {/* 🔴 A key is never said to be signed in (AGT3): the tool says so for any key, a wrong one included. One its
-              provider refused says so, and its tip what repairs it (ACCTUX1). */}
-          {state.state === 'keyed' || state.state === 'refused'
-            ? (
-              <Tip content={t(state.state === 'keyed' ? 'harness.login.keyedTip' : 'harness.login.refusedTip')}>
-                <span><Pill tone={word.tone}>{word.label}</Pill></span>
-              </Tip>
-            )
-            : <Pill tone={word.tone}>{word.label}</Pill>}
+              provider refused says so, and its explanation what repairs it (ACCTUX1). */}
+          <Pill tone={word.tone}>{word.label}</Pill>
           {/* When it was read, or a hold's end, is a time the person acts on: the soft ink, not the faint (ACCTUX1). */}
-          {when && (
-            <Tip content={tip ?? when}>
-              <span className="text-small text-ink-soft">{when}</span>
-            </Tip>
+          {when && (tip ? <Tip content={tip}>{time}</Tip> : time)}
+          {explanation && (
+            <Button
+              variant="ghost"
+              aria-label={t('agents.account.about', { account: name })}
+              aria-expanded={explained}
+              aria-controls={explained ? explanationId : undefined}
+              onClick={() => setExplained((was) => !was)}
+              className="h-7 min-h-0 w-7 justify-center self-center px-0 text-ink-faint hover:text-ink"
+            >
+              <Icon name="info" size={13} />
+            </Button>
           )}
         </span>
         <span className="min-w-0 [overflow-wrap:anywhere] before:mr-1.5 before:text-ink-faint before:content-['·'] @min-[40rem]/main:col-start-3 @min-[40rem]/main:row-start-1 @min-[40rem]/main:before:content-none">
+          <Fact label={t('agents.col.runs')} />
           {runs}
         </span>
       </span>
 
       {current && (
         <span className="col-span-3 col-start-1 row-start-3 text-small text-ink-soft @min-[40rem]/main:col-span-1 @min-[40rem]/main:col-start-4 @min-[40rem]/main:row-start-1">
+          <Fact label={t('agents.col.now')} />
           {current}
         </span>
       )}
@@ -160,6 +192,11 @@ export function AccountRow({ name, who, id, home, why, state, runs, current, sai
         </span>
       )}
 
+      {explained && explanation && (
+        <p id={explanationId} className="col-span-full col-start-1 m-0 text-small text-ink-soft [overflow-wrap:anywhere]">
+          {explanation}
+        </p>
+      )}
       {said && said.length > 0 && (
         <span className="col-span-full col-start-1 text-small text-ink-soft [overflow-wrap:anywhere]">
           {said.map((part, at) => <span key={at} className={SAID_INK[part.tone]}>{part.text}</span>)}

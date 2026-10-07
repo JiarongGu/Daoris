@@ -84,6 +84,7 @@
   "agents.section.hide": "Hide {{section}}",
   "agents.account.own": "Your own sign-in",
   "agents.account.more": "More for {{account}}",
+  "agents.account.about": "About {{account}}'s state",
   "agents.account.rename": "Rename…",
   "agents.account.addTo": "Add to {{workspace}}'s list",
   "agents.account.addToMachine": "Add to this machine's list",

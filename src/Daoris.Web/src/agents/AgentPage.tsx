@@ -573,14 +573,15 @@ export function AgentPage({
               />
             )}
           </ul>
-          {/* Each account's own plan and terms apply (D130 point 12): one line at the list's foot that opens the paragraph. */}
+          {/* Each account's own plan and terms apply (D130 point 12): one line at the list's foot that opens the paragraph,
+              a target of 28 px (the platform language §6, ACCTUX2) where its line of text was about 16. */}
           {tool.accounts.length > 0 && (
-            <div className="mt-2">
+            <div className="mt-1">
               <button
                 type="button"
                 aria-expanded={termsOpen}
                 onClick={() => setTermsOpen((was) => !was)}
-                className="flex items-center gap-1 rounded-control text-meta text-ink-faint hover:text-ink"
+                className="flex min-h-7 items-center gap-1 rounded-control text-meta text-ink-faint hover:text-ink"
               >
                 {t('agents.terms.show')}
                 <Icon name={termsOpen ? 'chevronDown' : 'chevronRight'} size={12} />
