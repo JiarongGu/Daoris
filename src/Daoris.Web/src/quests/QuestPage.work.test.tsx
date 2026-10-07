@@ -8,7 +8,7 @@ import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
 import type { WorkDoor } from '../work/pausing';
 import { ABANDONED_ENTRY, PAUSABLE_QUEST, PAUSED_QUEST } from '../work/pausingFixtures';
-import { FAILED, OPEN, PAUSED_ITSELF, PAUSED_WITH_ASK, PAUSED_WITH_QUEST, STOPPED, TAKEN } from './fixtures';
+import { FAILED, OPEN, PAUSED_ITSELF, PAUSED_WITH_ASK, PAUSED_WITH_QUEST, STOPPED, TAKEN, TAKEN_ELSEWHERE } from './fixtures';
 import { QuestPage } from './QuestPage';
 
 // A quest's page with this machine's driver (PAUSE1e, D132 §7.1): *Pause…* and *Abandon…* in its header's ⋯ (UX7c, D152 §7),
@@ -264,5 +264,33 @@ describe("a quest's page words its session's note", () => {
     const record = screen.getByRole('region', { name: 'Session' });
     expect(within(record).getByText('the first attempt died')).toBeInTheDocument();
     expect(within(record).getByText('shown as recorded')).toBeInTheDocument();
+  });
+});
+
+/**
+ * CARRY2c (D80's CARRY2b note): a taken quest whose take is another machine's sits, and its page says why under *Sitting*.
+ * In 中文 that was the driver's English; the tick now names whose the take is, so the page words it from those facts, and a
+ * tick from an older shell, with no facts, still shows the driver's sentence. No Try again: nothing here can carry it on.
+ */
+describe("a quest's page says a take elsewhere", () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  it('in 中文 from the machine and session the tick names', async () => {
+    await i18n.changeLanguage('zh');
+    page({ quest: TAKEN, sitting: TAKEN_ELSEWHERE });
+
+    const sitting = screen.getByText('搁置').nextElementSibling as HTMLElement;
+    expect(sitting).toHaveTextContent('委托 #def456 已在 alice-laptop 上由会话 alice-laptop/ab12cd34 接下');
+    expect(sitting).toHaveTextContent('不会接续会话 s0f1r2s3');
+    expect(sitting).not.toHaveTextContent('taken on');
+    expect(within(sitting).queryByRole('button', { name: '重试' })).toBeNull();
+  });
+
+  it('in the driver’s words where the tick names no facts', async () => {
+    await i18n.changeLanguage('zh');
+    page({ quest: TAKEN, sitting: { ...TAKEN_ELSEWHERE, takenBy: undefined } });
+
+    const sitting = screen.getByText('搁置').nextElementSibling as HTMLElement;
+    expect(sitting).toHaveTextContent('Quest #def456 is taken on alice-laptop, by session alice-laptop/ab12cd34');
   });
 });

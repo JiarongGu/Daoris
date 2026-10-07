@@ -10,7 +10,7 @@ import { answer, QUEST_CHAIN } from '../work/traceFixtures';
 import {
   ACCEPTED, CHAINED, CJK, CONFLICTED, DECLINED, DELETABLE, DONE, EXHAUSTED, FAILED, HELD, HELD_BY_PERSON, HELD_CJK, LANED, MET,
   OPEN, PAUSED_ITSELF, PAUSED_WITH_ASK, PAUSED_WITH_QUEST, QUESTION, REFILED, REFILED_NAMED, REFILED_UNNAMED, REQUIRING, STARTING,
-  STOPPED, TAKEN, TRUST, WAITING, WAITS_FOR_ACCOUNT, WORKING,
+  STOPPED, TAKEN, TAKEN_ELSEWHERE, TRUST, WAITING, WAITS_FOR_ACCOUNT, WORKING,
 } from './fixtures';
 import { QuestPage, QuestsMainNotice } from './QuestPage';
 
@@ -65,6 +65,12 @@ export const WaitsForAnAccount: Story = { args: { sitting: WAITS_FOR_ACCOUNT } }
 
 /** Held by the person's stop (SESSUX1b, D126 §3.4): its sentence, and *Try again*, which releases it. */
 export const HeldByAStop: Story = { args: { sitting: STOPPED } };
+
+/** Taken on another machine after this machine's session was cut off (CARRY2b): whose take, and no *Try again*. */
+export const TakenElsewhere: Story = { args: { quest: TAKEN, sitting: TAKEN_ELSEWHERE } };
+
+/** The same in 中文, said from the machine and session the tick names (CARRY2c), never the driver's English. */
+export const TakenElsewhereChinese: Story = { ...TakenElsewhere, decorators: [chinese] };
 
 /** Taken, and waiting on a question its taker asked another repository (D79). */
 export const WaitingOnAQuestion: Story = { args: { quest: WAITING, question: { id: QUESTION.id, quest: QUESTION } } };
