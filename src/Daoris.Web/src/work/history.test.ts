@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import i18n from '../i18n';
 import {
-  clearList, clearOffered, clearSaid, historyPayload, historyPlanOf, keptDoor, readingSaid, reasonSaid,
+  clearList, clearOffered, clearRefusal, clearSaid, clearWent, goingSaid, historyPayload, historyPlanOf, keptDoor, readingSaid,
+  reasonSaid,
 } from './history';
 import {
-  ASK_PLAN, FAILED_NONE, FAILED_PLAN, QUEST_ASKED, QUEST_CLEARED, QUEST_PLAN, QUEST_TREE_HERE, WORKSPACE_CLEARED,
-  WORKSPACE_EMPTY, WORKSPACE_KEPT, WORKSPACE_LEFT_OVER, WORKSPACE_PLAN, WORKSPACE_RECORDS_ONLY,
+  ASK_PLAN, FAILED_NONE, FAILED_PLAN, QUEST_ASKED, QUEST_CLEARED, QUEST_PLAN, QUEST_TREE_HERE, WORKSPACE_ALL_KEPT,
+  WORKSPACE_CLEARED, WORKSPACE_EMPTY, WORKSPACE_KEPT, WORKSPACE_LEFT_OVER, WORKSPACE_PLAN, WORKSPACE_RECORDS_EMPTY_FILES,
+  WORKSPACE_RECORDS_ONLY,
 } from './historyFixtures';
 
 // What a clear lists, sends and says on the screen (HIST1e, D153; the history-clearing design §2.4, §5, §6.1): pure, so every
@@ -164,15 +166,27 @@ describe('the reading of what the home keeps (design §2.4)', () => {
   // HIST1k: the sentence was chosen from the bytes alone, so records with no file said "nothing" beside a live press.
   it('says the records a clear would take where they hold no file, and nothing only where nothing at all would go', () => {
     expect(clearOffered(WORKSPACE_RECORDS_ONLY)).toBe(true);
-    expect(readingSaid(en, WORKSPACE_RECORDS_ONLY.reading!).takes)
-      .toBe('A clear would take 1 closed quest: records only, no files here.');
-    expect(readingSaid(zh, WORKSPACE_RECORDS_ONLY.reading!).takes).toBe('清除会带走 1 条已关闭的委托：只有记录，本机没有相关文件。');
+    expect(readingSaid(en, WORKSPACE_RECORDS_ONLY.reading!).takes).toBe('A clear would take 1 closed quest: 0 B.');
+    expect(readingSaid(zh, WORKSPACE_RECORDS_ONLY.reading!).takes).toBe('清除会带走 1 条已关闭的委托：共 0 B。');
     // Left-over files that are empty still go, as the press would take them.
     const emptyFiles = { ...WORKSPACE_EMPTY.reading!, leftOver: { count: 2, bytes: 0 } };
     expect(clearOffered({ ...WORKSPACE_EMPTY, reading: emptyFiles })).toBe(true);
     expect(readingSaid(en, emptyFiles).takes).toBe('A clear would take 0 B: files no record holds any more.');
     // UXFIX5: the 中文 read "no record-held files are here any more", which says there are none to take.
     expect(readingSaid(zh, emptyFiles).takes).toBe('清除会带走 0 B：不再属于任何记录的文件。');
+  });
+
+  /**
+   * HIST1n (the second-opinion review's afternoon round, `history.ts:317`): 0 B was said as *records only, no files here*,
+   * which the reading does not prove, and beside left-over files of 0 B the next line and *What goes* say there are files.
+   * It now says what it read: the records, and their size.
+   */
+  it('says only the records and their size where they hold 0 B beside left-over files that hold nothing', () => {
+    const reading = WORKSPACE_RECORDS_EMPTY_FILES.reading!;
+    expect(readingSaid(en, reading).takes).toBe('A clear would take 1 closed quest: 0 B.');
+    expect(readingSaid(en, reading).leftOver).toBe('0 B left over from records already gone: any workspace’s clear takes it.');
+    expect(readingSaid(zh, reading).takes).toBe('清除会带走 1 条已关闭的委托：共 0 B。');
+    expect(goingSaid(en, clearList(WORKSPACE_RECORDS_EMPTY_FILES))).toEqual(['1 closed quest', '0 B left over from records already gone']);
   });
 
   it('sets the count apart from the Chinese around it where the clear takes records and files', () => {
@@ -187,14 +201,29 @@ describe('what the second press says (design §5, §6.1)', () => {
     expect(clearSaid(zh, QUEST_CLEARED)).toEqual([{ text: '已从本机清除 `#9a8b7c`。', tone: 'ok' }]);
   });
 
-  it('says how many of the listed units went, and how many changed since the list and were kept', () => {
+  /**
+   * HIST1n (the second-opinion review's afternoon round, `history.ts:395`): a press that cleared some of what it listed was
+   * said in the tone of one that cleared it all, so the kept units read as done.
+   */
+  it('says a partial clear as what went and what was kept, never as a plain success', () => {
+    expect(clearWent(WORKSPACE_CLEARED)).toBe(true);
     expect(clearSaid(en, WORKSPACE_CLEARED)).toEqual([{
-      text: 'Cleared 2 of 3 from aurora, 14.6 MB. 1 changed since the list and was kept.', tone: 'ok',
+      text: 'Cleared 2 of 3 from aurora, 14.6 MB. 1 changed since the list and was kept.', tone: 'error',
+    }]);
+    expect(clearSaid(zh, WORKSPACE_CLEARED)).toEqual([{
+      text: '已从 aurora 清除 3 项中的 2 项，共 14.6 MB。1 项在列出之后有了变化，已保留。', tone: 'error',
     }]);
   });
 
+  it('says a whole workspace clear as a success', () => {
+    const whole = { ...WORKSPACE_CLEARED, cleared: [...WORKSPACE_CLEARED.cleared, { kind: 'quest', id: '0c1d2e' }], changed: [] };
+    expect(clearSaid(en, whole)).toEqual([{ text: 'Cleared 3 of 3 from aurora, 14.6 MB.', tone: 'ok' }]);
+  });
+
   it('says a press that sent no unit took what was left over, and a file the disk kept', () => {
-    expect(clearSaid(en, { ...WORKSPACE_CLEARED, listed: 0, cleared: [], changed: [], bytes: 3 * 1024 * 1024, failed: 1 })).toEqual([
+    const leftOnly = { ...WORKSPACE_CLEARED, listed: 0, cleared: [], changed: [], bytes: 3 * 1024 * 1024, failed: 1 };
+    expect(clearWent(leftOnly)).toBe(true);
+    expect(clearSaid(en, leftOnly)).toEqual([
       { text: 'Cleared what was left over on this machine, 3 MB.', tone: 'ok' },
       { text: '1 file could not be removed; the next clear of a workspace takes it.', tone: 'error' },
     ]);
@@ -203,5 +232,40 @@ describe('what the second press says (design §5, §6.1)', () => {
   it('says a quest’s failed sessions by how many went', () => {
     expect(clearSaid(en, { ...QUEST_CLEARED, scope: 'failed', cleared: [{ kind: 'failed', id: '9a8b7c' }], quests: 0, sessions: 2 }))
       .toEqual([{ text: 'Cleared 2 failed sessions of `#9a8b7c` from this machine.', tone: 'ok' }]);
+  });
+});
+
+/**
+ * HIST1n (the second-opinion review's afternoon round, `historyActs.ts:31`): a workspace's press whose every unit changed
+ * since the list closed its ask as if it had cleared them. Nothing went, so the ask stays open and says why inside it.
+ */
+describe('a press that took nothing (UXFIX2’s answered contract)', () => {
+  it('went nowhere where no unit was cleared and nothing was freed', () => {
+    expect(clearWent(WORKSPACE_ALL_KEPT)).toBe(false);
+    expect(clearWent({ ...WORKSPACE_ALL_KEPT, leftOver: 2 })).toBe(true);
+    expect(clearWent({ ...WORKSPACE_ALL_KEPT, intake: true })).toBe(true);
+    expect(clearWent(QUEST_CLEARED)).toBe(true);
+  });
+
+  it('says that nothing was cleared, then each kept unit by its name and its reason, in each language', () => {
+    expect(clearRefusal(en, WORKSPACE_ALL_KEPT)).toBe([
+      'Nothing was cleared. 3 changed since the list and were kept.',
+      'Ask #a1b2c3: A rule proposal for ask #a1b2c3 is waiting on you, so it was not cleared.',
+      'Quest #0c1d2e: s0c1d2e3 is still running, so it was not cleared. Stop it first.',
+      'Quest #3f4a5b: Its last moves have not reached the remote for aurora, so it was not cleared. Sync, then clear it.',
+    ].join('\n'));
+    expect(clearRefusal(zh, WORKSPACE_ALL_KEPT)).toBe([
+      '没有清除任何东西。3 项在列出之后有了变化，已保留。',
+      '需求 #a1b2c3：需求 #a1b2c3 的一条规则提议正在等你处理，所以没有清除。',
+      '委托 #0c1d2e：s0c1d2e3 仍在运行，所以没有清除。请先停止它。',
+      '委托 #3f4a5b：它最近的变动还没到达 aurora 的远端，所以没有清除。请先同步，再清除。',
+    ].join('\n'));
+  });
+
+  it('says a file the disk kept where that was all the press met', () => {
+    expect(clearRefusal(en, { ...WORKSPACE_ALL_KEPT, listed: 0, changed: [], failed: 2 })).toBe([
+      'Nothing was cleared.',
+      '2 files could not be removed; the next clear of a workspace takes them.',
+    ].join('\n'));
   });
 });

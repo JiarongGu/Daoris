@@ -3,7 +3,9 @@ import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '../i18n';
-import { WORKSPACE_EMPTY, WORKSPACE_KEPT, WORKSPACE_LEFT_OVER, WORKSPACE_PLAN, WORKSPACE_RECORDS_ONLY } from '../work/historyFixtures';
+import {
+  WORKSPACE_EMPTY, WORKSPACE_KEPT, WORKSPACE_LEFT_OVER, WORKSPACE_PLAN, WORKSPACE_RECORDS_EMPTY_FILES, WORKSPACE_RECORDS_ONLY,
+} from '../work/historyFixtures';
 import type { Answered } from '../work/InlineConfirm';
 import { KeptHistory } from './KeptHistory';
 
@@ -95,9 +97,24 @@ describe('a workspace’s Kept on this machine (design §2.4)', () => {
   it('says what goes beside the press where the records it takes hold no file (HIST1k)', () => {
     render(<KeptHistory workspace="aurora" plan={WORKSPACE_RECORDS_ONLY} onClear={() => {}} />);
     const section = screen.getByRole('region');
-    expect(section).toHaveTextContent('A clear would take 1 closed quest: records only, no files here.');
+    expect(section).toHaveTextContent('A clear would take 1 closed quest: 0 B.');
     expect(section).not.toHaveTextContent('A clear would take nothing now.');
     expect(screen.getByRole('button', { name: 'Clear history…' })).toBeInTheDocument();
+  });
+
+  /**
+   * HIST1n (the second-opinion review's afternoon round): 0 B was said as *no files here* beside left-over files of 0 B, which
+   * the next line and *What goes* name. The reading says what it read, the records and their size, and nothing of files.
+   */
+  it('says the records and 0 B, and no claim about files, beside left-over files that hold nothing', async () => {
+    render(<KeptHistory workspace="aurora" plan={WORKSPACE_RECORDS_EMPTY_FILES} onClear={() => {}} />);
+    const section = screen.getByRole('region');
+    expect(section).toHaveTextContent('A clear would take 1 closed quest: 0 B.');
+    expect(section).toHaveTextContent('0 B left over from records already gone: any workspace’s clear takes it.');
+    expect(section).not.toHaveTextContent(/no files/);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Clear history…' }));
+    expect(within(section).getByRole('list', { name: 'What goes' })).toHaveTextContent('0 B left over from records already gone');
   });
 
   it('offers nothing where the plan lists nothing that may go, and says so', () => {

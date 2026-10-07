@@ -150,6 +150,15 @@ export const WORKSPACE_RECORDS_ONLY: HistoryPlan = {
   },
 };
 
+/**
+ * The same quest beside two left-over files that hold nothing (HIST1n): the reading has read records and 0 B, and says only
+ * that, since files of 0 B go too and *What goes* names them.
+ */
+export const WORKSPACE_RECORDS_EMPTY_FILES: HistoryPlan = {
+  ...WORKSPACE_RECORDS_ONLY,
+  reading: { ...WORKSPACE_RECORDS_ONLY.reading!, leftOver: { count: 2, bytes: 0 } },
+};
+
 /** Only what records already gone left behind, and the intake's room once no ask is held: the press sends no unit. */
 export const WORKSPACE_LEFT_OVER: HistoryPlan = {
   scope: 'workspace', id: 'aurora', units: [],
@@ -166,6 +175,20 @@ export const WORKSPACE_CLEARED: HistoryClearAnswer = {
   cleared: [{ kind: 'ask', id: 'a1b2c3' }, { kind: 'quest', id: '3f4a5b' }],
   quests: 3, asks: 1, sessions: 4, teammates: 0, forgotten: 0, bytes: Math.round(14.6 * MB), leftOver: 4, intake: false, failed: 0,
   changed: [{ kind: 'quest', id: '0c1d2e', keep: { code: 'HISTORY_LIVE', session: 's0c1d2e3' } }],
+};
+
+/**
+ * The workspace's second press where every unit it listed changed since the list and was kept, and nothing else went
+ * (HIST1n): the driver answered, and nothing left this machine.
+ */
+export const WORKSPACE_ALL_KEPT: HistoryClearAnswer = {
+  scope: 'workspace', id: 'aurora', listed: 3, cleared: [],
+  quests: 0, asks: 0, sessions: 0, teammates: 0, forgotten: 0, bytes: 0, leftOver: 0, intake: false, failed: 0,
+  changed: [
+    { kind: 'ask', id: 'a1b2c3', keep: { code: 'HISTORY_NEEDS_YOU', context: 'proposalAsk', ask: 'a1b2c3' } },
+    { kind: 'quest', id: '0c1d2e', keep: { code: 'HISTORY_LIVE', session: 's0c1d2e3' } },
+    { kind: 'quest', id: '3f4a5b', keep: { code: 'HISTORY_UNPUSHED', quest: '3f4a5b', workspace: 'aurora' } },
+  ],
 };
 
 /** One quest's second press. */
