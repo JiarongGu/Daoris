@@ -450,6 +450,34 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         Assert.False(File.Exists(Path.Combine(Home, "sessions", "chat1.events.jsonl")));
         Assert.False(File.Exists(Path.Combine(Home, "sessions", "chat1.log")));
         Assert.Empty(loop.Events.Openings(["chat1"]));
+        Assert.Empty(deleted.GetProperty("stayed").EnumerateArray());
+        Assert.DoesNotContain(JsonSerializer.Serialize(Home).Trim('"'), deleted.GetRawText(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// SESSDEL1 (D126 §5.4): a file the disk will not let go of stays, and the answer names it beside what went, by name and never
+    /// by path. A real file held open without delete sharing, so Windows only, as HIST1j's route test holds one.
+    /// </summary>
+    [Fact]
+    public async Task A_delete_whose_file_the_disk_keeps_answers_which_stayed()
+    {
+        if (!OperatingSystem.IsWindows()) return; // Only Windows refuses to remove a file a process holds open.
+        using var ledger = DeleteLedger(new Dictionary<string, string> { ["chat1"] = """{"deletable":true}""" });
+        var loop = await UpAsync(ledger);
+        loop.Events.Append("chat1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "a plan of mine" });
+        var transcript = Path.Combine(Home, "sessions", "chat1.log");
+        File.WriteAllText(transcript, "the transcript");
+
+        JsonElement deleted;
+        using (new FileStream(transcript, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            deleted = await AnswerAsync(new DriverModule(Bus, loop), "SESSION_DELETE", new { id = "chat1" });
+        }
+
+        Assert.Equal("chat1", deleted.GetProperty("deleted").GetString());
+        Assert.Equal(["record", "conversation"], deleted.GetProperty("removed").EnumerateArray().Select(each => each.GetString()));
+        Assert.Equal(["transcript"], deleted.GetProperty("stayed").EnumerateArray().Select(each => each.GetString()));
+        Assert.True(File.Exists(transcript));
         Assert.DoesNotContain(JsonSerializer.Serialize(Home).Trim('"'), deleted.GetRawText(), StringComparison.OrdinalIgnoreCase);
     }
 

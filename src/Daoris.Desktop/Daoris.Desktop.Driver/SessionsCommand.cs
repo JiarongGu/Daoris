@@ -53,6 +53,9 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     /// <summary>The markers every driver on the home leaves for a live process: whether something here runs a session.</summary>
     public SessionProcesses Processes { get; init; } = new(Path.Combine(Home, "sessions"));
 
+    /// <summary>How a delete removes a file from the home: the disk, or a test's that refuses a path as a held file does (SESSDEL1).</summary>
+    public Action<string, bool> Remover { get; init; } = SessionHomeFiles.FromDisk;
+
     /// <summary>How long a request is waited for: ten seconds (§7.1).</summary>
     public TimeSpan Wait { get; init; } = TimeSpan.FromSeconds(10);
 
@@ -1030,11 +1033,13 @@ public static class SessionsCommand
         return 0;
     }
 
+    /// <summary>The screen's owner at the terminal's door: 0 deleted, 1 refused, 2 deleted with a file the disk kept (SESSDEL1), as a clear's is.</summary>
     private static async Task<int> DeleteAsync(SessionsWorld world, string id, TextWriter output, CancellationToken ct)
     {
-        var outcome = await new SessionDeletion(world.Home).DeleteAsync(world.Service, id, PluginEvents.Terminal, world.Log, ct: ct).ConfigureAwait(false);
+        var outcome = await new SessionDeletion(world.Home, world.Remover)
+            .DeleteAsync(world.Service, id, PluginEvents.Terminal, world.Log, ct: ct).ConfigureAwait(false);
         output.WriteLine($"sessions: {outcome.Message}");
-        return outcome.Verdict == DeleteVerdict.Deleted ? 0 : 1;
+        return outcome.Verdict != DeleteVerdict.Deleted ? 1 : outcome.Stayed.Count > 0 ? 2 : 0;
     }
 
     private static string Sessions(int count) => $"{count.ToString(CultureInfo.InvariantCulture)} session{(count == 1 ? "" : "s")}";

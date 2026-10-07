@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — a delete said a held file went
+
+### Driver, modules: *Delete…* said its whole sentence when a file stayed (SESSDEL1)
+- **Symptom:** named in D153's HIST1j note, not seen on an install: a conversation deleted while a process held its transcript said, at the terminal, that its record, words, transcript and files had gone, and exited 0; the screen's answer named only what went.
+- **Root cause:** HIST1j made `SessionHomeFiles.Remove` answer what went and what failed, by path; `SessionDeletion` read only the names that went, and its sentence was fixed.
+- **Fix:** `Remove` also answers each session's names the disk kept (`Stayed`); the delete carries them, says them in its sentence as left over, `SESSION_DELETE` answers `stayed`, and `sessions delete` exits 2. D126's SESSDEL1 note has the detail.
+- **Verify:** `SessionDeletionTests`' two held-file cases and `SessionsCommandTests`' exit 2 case failed first on their names and sentences, `DriverModuleSessionsTests`' two on the missing `stayed`; then passed. Not covered: the page's toast, which does not read `stayed` yet.
+
 ## 2026-10-07 — a clear counted a held file as freed
 
 ### Driver, service: a clear of finished history counted bytes the disk kept, and the service hid its failed removals (HIST1j)
