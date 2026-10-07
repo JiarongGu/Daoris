@@ -13,6 +13,7 @@ import type { HarnessSettings, Toolchain } from '../src/toolchain.ts';
 import { CLAUDE_LATEST, CODEX_LATEST, CODEX_RELEASES, codexTarget } from '../src/channels.ts';
 import type { Fetcher } from '../src/channels.ts';
 import { COOLING_FILE, coolingWhen, machineZone } from '../src/cooling.ts';
+import { WINDOWS_FILE } from '../src/windows.ts';
 import { makeFixture } from './_fixture.ts';
 import { captureError } from './_fixture.ts';
 import { TAR_END, tarEntry } from './_tar.ts';
@@ -1084,6 +1085,39 @@ test('`agent list` says the machine\'s next start where it has no list: its defa
   fx.cleanup();
 });
 
+/**
+ * CODEXUSE1b: the driver reads a Codex account's windows from Codex's own app server and keeps them as a door's frame is
+ * kept (CODEXUSE1, `docs/2026-10-07-codex-usage-evidence.md`), so `agent list` printed the reading beneath the account and
+ * still said, beneath its list, that Codex's sessions do not say how near their limits are, and walked without near and pace.
+ */
+test('`agent list` reads a Codex account\'s kept reading as one that speaks: its use and next-start lines weigh its week (CODEXUSE1b)', () => {
+  const fx = makeFixture('harness-list-codex');
+  for (const name of ['account-1', 'account-2']) mkdirSync(profileHome(fx.root, 'codex', name), { recursive: true });
+  const stamp = (offset: number) => new Date(Date.now() + offset).toISOString().replace(/\.\d+Z$/, 'Z');
+  // As the driver keeps the server's answer (evidence §2): a use per window, its reset, when; no standing and no session.
+  writeFileSync(join(fx.root, WINDOWS_FILE), JSON.stringify({
+    codex: {
+      'account-1': {
+        session: { reset: stamp(3 * 3_600_000), used: 0.01, seen: stamp(-20 * 60_000) },
+        weekly: { reset: stamp(100 * 3_600_000), used: 0.15, seen: stamp(-20 * 60_000) },
+      },
+    },
+  }), 'utf8');
+
+  const out = listedWith(fx, { rotation: { codex: ['account-1', 'account-2'] } });
+  const codex = out.slice(out.search(/^\s*codex\s/m));
+
+  assert.match(codex, /account-1[^\n]*\n\s+said 20 min ago: 1% of its session limit used, resetting [^;]+; 15% of its weekly limit used, resetting [^\n]+\n/);
+  assert.match(codex, new RegExp('rotation\\s+account-1, then account-2\\n(?:.*\\n)*?'
+    + '\\s+switch before the limit: on, at 90% — a start passes an account Codex says is near its limit, or that has used 90% of a window\\n'
+    + '\\s+next start: the ready account its agent did not say is near; then the one running the fewest of Daoris\'s sessions; '
+    + 'then one whose week resets within a day; then the one furthest behind its week\'s pace; then the one Daoris started on '
+    + 'least recently; then this list\'s order, from `account-1`\\n'
+    + `\\s+${POINTER}\\n`));
+  assert.doesNotMatch(codex, /do not say how near their limits are|no account has said what it has left yet/);
+  fx.cleanup();
+});
+
 test('an unknown verb names the ones that exist', () => {
   const fx = makeFixture('harness-verb');
   const error = captureError(() => run(['frobnicate'], at(fx)));
@@ -1185,10 +1219,11 @@ test('every declared harness is pinned by name, binary, seam, and what a person 
   assert.deepEqual(trusting, ['claude-code', 'claude-code-acp']);
   assert.equal(TOOLCHAINS['claude-code']!.trustFile, '.claude.json');
 
-  // Whose sessions say how much of each window is used (TOOL6c) — the driver's `Windows` is its twin, declared by Claude Code
-  // alone (and the stub mirroring it, which the CLI does not know): its door reads its owner's, and Codex's door says none.
+  // Whose accounts say how much of each window is used (TOOL6c, CODEXUSE1b) — the driver's `Speaks` is its twin: Claude Code's
+  // `Windows`, its frame on the door (and the stub mirroring it, which the CLI does not know), and Codex's `Usage`, its own app
+  // server asked, declared on `codex-acp` since no `codex` adapter exists. Both are owners' here, and a door reads its owner's.
   const saying = Object.entries(TOOLCHAINS).filter(([, toolchain]) => toolchain.windows).map(([name]) => name);
-  assert.deepEqual(saying, ['claude-code']);
+  assert.deepEqual(saying, ['claude-code', 'codex']);
 });
 
 /**

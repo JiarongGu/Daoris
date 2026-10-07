@@ -49,7 +49,8 @@
 //      driven work another — the first problem said. Nothing counts accounts: no list is refused for its length.
 //
 // The driver's walk reads them (TOOL6b, TOOL6c): `use` and `keep` choose a start's account; `early` and `near` pass an
-// account its agent said is near, where the agent's door carries that word (`windows.json`, the toolchain's `windows`).
+// account its agent said is near, where the agent's door carries that word or its own server is asked it (`windows.json`,
+// the toolchain's `windows`; CODEXUSE1).
 
 import { atName, byName, findName, foldName } from './casefold.ts';
 import { shellWord } from './shellword.ts';
