@@ -262,6 +262,37 @@ public sealed class HistoryDeskTests : IAsyncLifetime
         Assert.NotNull(await _quests.FindAsync(taken.Id));
     }
 
+    /// <summary>
+    /// HIST1m: how the work in progress stands is named beside <c>open</c> (design §6.3), as HIST1l names what waits beside
+    /// <c>needs-you</c>, so the driver says the taken quest's sentence from the refusal itself and never from a second read of
+    /// the quest, which may have been taken or closed since: a quest still open, one taken, and the failed sessions of each.
+    /// </summary>
+    [Theory]
+    [InlineData("open", HistoryStands.Open)]
+    [InlineData("taken", HistoryStands.Taken)]
+    [InlineData("failed sessions of an open quest", HistoryStands.Open)]
+    [InlineData("failed sessions of a taken quest", HistoryStands.Taken)]
+    public async Task How_the_work_in_progress_stands_is_named_beside_its_word(string standing, HistoryStands stands)
+    {
+        var quest = (await Exchange().PublishAsync("Asker", "Homebody", $"Work in progress: {standing}", "why", Now)).Quest!;
+        if (stands == HistoryStands.Taken) await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddMinutes(1));
+        var unit = QuestUnit(quest.Id);
+        if (standing.StartsWith("failed", StringComparison.Ordinal))
+        {
+            await Served(quest, SessionState.Failed);
+            unit = FailedUnit(quest.Id);
+        }
+
+        var refusal = (await Desk().PlanAsync(unit)).Refusal!;
+        var pressed = Assert.Single(await Desk().ClearAsync([unit], Now.AddHours(1)));
+
+        Assert.Equal((HistoryRefusal.Open, quest.Id, stands), (refusal.Refusal, refusal.Quest, refusal.Stands));
+        Assert.Null(refusal.Waits);
+        Assert.Null(refusal.By);
+        Assert.False(pressed.Cleared);
+        Assert.Equal(stands, pressed.Unit.Refusal!.Stands);
+    }
+
     /// <summary>A quest an ask asked is cleared with its ask, never alone: the ask would read as a proposal again (H6).</summary>
     [Fact]
     public async Task A_quest_an_ask_asked_is_cleared_only_with_its_ask()
@@ -378,6 +409,8 @@ public sealed class HistoryDeskTests : IAsyncLifetime
         var pressed = Assert.Single(await Desk().ClearAsync([unit], Now.AddHours(1)));
 
         Assert.Equal((HistoryRefusal.NeedsYou, waits), (refusal.Refusal, refusal.Waits));
+        Assert.Null(refusal.Stands);
+        Assert.Null(refusal.By);
         Assert.Equal((quest, ask, session), (refusal.Quest, refusal.Ask, refusal.Session));
         Assert.Equal(message, refusal.Message);
         Assert.False(pressed.Cleared);
@@ -493,6 +526,76 @@ public sealed class HistoryDeskTests : IAsyncLifetime
         Assert.Equal($"Quest `#{open.Id}` was published by its session `{session.Id}` and is still open.", asked.Message);
         Assert.Equal((HistoryRefusal.Awaited, step.Id), (chained.Refusal, chained.Quest));
         Assert.Equal($"Quest `#{step.Id}`, its chain's next step, is still open and builds on its work.", chained.Message);
+    }
+
+    /// <summary>
+    /// HIST1m: the open work that names it is named beside <c>awaited</c> (design §6.3), so the driver says the chain's sentence
+    /// from the refusal itself and never from a second read of the quest it names, which may have had its answer since: an
+    /// open question a session of the work published, a taken quest awaiting its answer, a chain's open next step, and an
+    /// open question a failed session published, in a failed-sessions clear.
+    /// </summary>
+    [Theory]
+    [InlineData("question", HistoryAwaitedBy.Question)]
+    [InlineData("asker", HistoryAwaitedBy.Asker)]
+    [InlineData("step", HistoryAwaitedBy.Step)]
+    [InlineData("question of a failed session", HistoryAwaitedBy.Question)]
+    public async Task The_open_work_naming_it_is_named_beside_its_word(string naming, HistoryAwaitedBy by)
+    {
+        var (unit, quest, session) = await AwaitedAsync(naming);
+
+        var refusal = (await Desk().PlanAsync(unit)).Refusal!;
+        var pressed = Assert.Single(await Desk().ClearAsync([unit], Now.AddHours(1)));
+
+        Assert.Equal((HistoryRefusal.Awaited, by), (refusal.Refusal, refusal.By));
+        Assert.Equal((quest, session), (refusal.Quest, refusal.Session));
+        Assert.Null(refusal.Waits);
+        Assert.Null(refusal.Stands);
+        Assert.False(pressed.Cleared);
+        Assert.Equal(by, pressed.Unit.Refusal!.By);
+    }
+
+    /// <summary>The records for one of <see cref="The_open_work_naming_it_is_named_beside_its_word"/>'s rows: the unit, and the open quest and session its refusal names.</summary>
+    private async Task<(HistoryUnitRef Unit, string Quest, string? Session)> AwaitedAsync(string naming)
+    {
+        switch (naming)
+        {
+            case "question":
+            {
+                var asker = await Closed("The work that asked a question");
+                var session = await Served(asker);
+                var open = (await Exchange().PublishAsync(
+                    new QuestAsk("Homebody", "Asker", "Still being asked", "why") { PublishedBy = session.Id }, Now)).Quest!;
+                return (QuestUnit(asker.Id), open.Id, session.Id);
+            }
+
+            case "asker":
+            {
+                var question = await Closed("Which one, for a taken quest?", to: "Asker", from: "Homebody");
+                var waiting = (await Exchange().PublishAsync("Asker", "Homebody", "Waits on the answer", "why", Now)).Quest!;
+                await _quests.MoveAsync(waiting.Id, QuestStatus.Taken, null, Now.AddMinutes(1));
+                await _quests.WaitAsync(waiting.Id, question.Id, Now.AddMinutes(2));
+                return (QuestUnit(question.Id), waiting.Id, null);
+            }
+
+            case "step":
+            {
+                var parent = (await Exchange().PublishAsync(
+                    new QuestAsk("Asker", "Homebody", "The chain's first step", "why") { Then = [new QuestStep("Homebody", "Then verify {parent}", "b")] },
+                    Now)).Quest!;
+                await _quests.MoveAsync(parent.Id, QuestStatus.Taken, null, Now.AddMinutes(1));
+                var step = (await _quests.MoveAsync(parent.Id, QuestStatus.Done, "Landed.", Now.AddMinutes(2))).FollowUp!;
+                return (QuestUnit(parent.Id), step.Id, null);
+            }
+
+            default:
+            {
+                var quest = await Closed("A failed session asked a question");
+                var failed = await Served(quest, SessionState.Failed);
+                var open = (await Exchange().PublishAsync(
+                    new QuestAsk("Homebody", "Asker", "Asked by a failed session", "why") { PublishedBy = failed.Id }, Now)).Quest!;
+                return (FailedUnit(quest.Id), open.Id, failed.Id);
+            }
+        }
     }
 
     /// <summary>
