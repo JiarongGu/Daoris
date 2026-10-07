@@ -230,6 +230,9 @@ public sealed class DriverLoop(
     /// its quest says its accounts by <c>SignedOut</c>. A profile name rides this bridge only (D47 §4).</para>
     /// <para><b>Which accounts it passed not signed in</b> (TOOL6g): beside a wait or with none cooling, whose and which, so the
     /// page names each with its sign-in. Null where it passed none.</para>
+    /// <para><b>Whose take holds it</b> (CARRY2c): a <c>TakenElsewhere</c> verdict names the machine that took the quest and its
+    /// session where a teammate's record named them, or that it was taken here after the session ended, and the session here
+    /// not carried on. Null for every other verdict.</para>
     /// </remarks>
     /// <param name="park">The quest's park as the loop last read it (<see cref="QuestParkReader"/>), or null.</param>
     /// <param name="wait">The look's wait on a cooling account, where it holds this quest (<see cref="TickReport.Waits"/>), or null.</param>
@@ -262,6 +265,9 @@ public sealed class DriverLoop(
             SignedOut = consideration.SignedOut is { } passed ? new { passed.Agent, passed.Accounts, passed.Names } : null,
             // Held by an update's drain (UPDATE1, D139 §2): a fact the page says in the reader's language. Null otherwise.
             ForUpdate = InstallUpdate.IsHeldForUpdate(consideration) ? true : (bool?)null,
+            // Whose take holds it, where it is not this machine's (CARRY2c): the machine and its session where a record named
+            // them, a take made here, and the session here not carried on, so the page says it from facts. Null otherwise.
+            TakenBy = consideration.TakenBy is { } taken ? new { taken.Machine, taken.Session, taken.Here, taken.Last } : null,
         };
     }
 
