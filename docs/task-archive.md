@@ -12092,3 +12092,38 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CODEXACCT1b — the terminal's sign-in runs the pinned binary** (cli; after CODEXACCT1). The window's sign-in resolves explicit command → pin → PATH since CODEXACCT1, but `daoris agent login` still runs PATH's binary (`relay([...toolchain.binary, ...login])` in `toolchain.ts`) and asks PATH's binary its status at the end (`loginAt(toolchain.binary, …)` in `signInNew` and `signInTo`), so on a machine whose only `codex` is the pin (the owner's) the terminal cannot sign in. Resolve as `agent list` already does, refusing a pin with nothing installed. Contract: D57, D125's CODEXACCT1 note. Proof: a CLI test with only a pin, the login's command naming it.
 
 **Outcome** 2026-10-07: built inside CODEXACCT2: `daoris agent login` resolves its binary by `signInBinary` (the pin, else PATH), asks its status of the same binary, and refuses a pin with nothing installed before making a folder. Detail: D125's CODEXACCT2 note; commit 9772566a.
+
+
+## DEV3d — the rehearsal's restart of host b does not cut its lingering session (2026-10-08, D115)
+
+> - [ ] **DEV3d — the rehearsal's restart of host b does not cut its lingering session** (tools; driver if the stub's door should ride a restart). Kept by DEV3b's evidence at CARRY2d's merge (FIX-LOG): the lost-claim check failed again (403/404) with the take found lost (*held … kept on the quest as a conflict*), but the session ended `failed`, its stub crashed on `fetch failed … ECONNRESET` against host b (`localhost:5197`), because the phase restarts host b to bring it online (`tools/family-rehearsal.mjs`, the *b goes offline* / *reaches the remote again* restarts) while the stub's request to it is in flight, before the driver's pass could stop it. Restart host b only between the stub's requests (or have the stub retry a reset connection, as a real harness's door would ride a host restart), so the check proves the stop it names. Contract: D115's DEV3a/DEV3b notes, FIX-LOG. Proof: the phase passing in five runs under load; the evidence folder for any failure.
+
+**Outcome** 2026-10-07: the lost-claim phase had waited on a transcript the driver never flushes, so it always restarted host b at about 40 s, under a late take; the stub now writes its lingering to a file the phase reads, the wait is time-bounded, and host b restarts only while the stub lingers. Follow-up: TRANSCRIPT1. Detail: D115's DEV3d note, FIX-LOG; commit bc83cef9.
+
+
+## STUB3b — the stub's bound is not the machine's load (2026-10-08)
+
+> - [ ] **STUB3b — the stub's bound is not the machine's load** (cli). `setup-kit.test.ts`'s STUB3 cases (*a stub that stays without answering fails its row at the bound, and is stopped*, near line 807) failed three times on 2026-10-07 under parallel builds (EVID1b3's and CODEXUSE1's verifies, ACCTUX1's merge gate): the stub did not answer even `initialize` within the 1000 ms bound, so the row named three unanswered requests where the test expects two. Make the case independent of how fast a process starts under load (time the bound from the stub's first answer, or hold its start until it is ready), keeping what it proves: an unanswered request fails its row at the bound and the stub is stopped. Contract: STUB3's note, FIX-LOG FLAKE1. Proof: the case passing ten times beside a build.
+
+**Outcome** 2026-10-07: `speak()` times the answers' bound from the stub's first answer and gives the start its own bound (10 s), so a process starting slowly under load no longer fails STUB3; a slowed-start case reproduces the sighting and ten loaded runs passed. Detail: FIX-LOG STUB3b; commit a6dde2cb.
+
+
+## ACCTUX2 — the account view without a pointer, and two agents told apart (2026-10-08, D125)
+
+> - [ ] **ACCTUX2 — the account view without a pointer, and two agents told apart** (web-shell, web-settings). Same review: Claude Code and Codex collapse to the same `C` mark (`agents/AgentList.tsx:133`, `StripMark`'s first letter, `ui.tsx:462`; UX7 specifies `CC`/`Cx`); the email is truncated inside a tooltip on a span no key reaches, the reset-versus-cool-off explanation is hover-only, the column heads are hidden from assistive technology with no per-row labels (`AccountRow.tsx:24,89,103`); the terms toggle and the ~25 px reorder buttons are under the 28 px target (`AgentPage.tsx:560`, `settings/AccountUse.tsx:243`). Contract: platform-ux §4 and §6, UX7. Proof: vitest for the marks, labels and target boxes; stories at 680 px and the 400 px floor.
+
+**Outcome** 2026-10-07: each agent wears its own strip mark (CC, Co; a declared mark leads, none repeats a neighbour); who signed in wraps visibly, each fact is labelled for screen readers, and cool-off and key explanations open from a 28 px keyboard press; the terms toggle and move buttons are 28 px. Follow-up: AGENTMARK1. Detail: D125's ACCTUX2 note; commit 33163c8a.
+
+
+## ACCTUX3 — the add-key and model forms keep their drafts until the act lands (2026-10-08, D125)
+
+> - [ ] **ACCTUX3 — the add-key and model forms keep their drafts until the act lands** (web-shell). Same review: adding a key clears the draft at once and saving model/effort closes its editor at once (`agents/AgentPage.tsx:240,747`), so a refusal arrives after the place to correct it is gone, the failure ACCTEDIT1 fixed for rename and placement; and a key added ends in a toast rather than UX7's name-and-workspace step (`docs/2026-10-05-ux7-design.md:428`). Extend the `Answered` contract to both, and send an added key through the step. Contract: ACCTEDIT1, UX7 §4.5. Proof: vitest for a refused key add and a refused model save keeping their drafts, and the key's step.
+
+**Outcome** 2026-10-07: the key field and the model editor take ACCTEDIT1's `Answered`: each closes once its act lands, and a refusal keeps the key or choice with the driver's sentence under it; a key added goes to `PlaceAccount` for its name and lists instead of a toast. Follow-up: SETTINGSWAIT1. Detail: D125's ACCTUX3 note; commit 7dfc0fbd.
+
+
+## ANSWER2 — answering a parked session does not fail it (2026-10-08, D131)
+
+> - [ ] **ANSWER2 — answering a parked session does not fail it** (driver, modules; owner's real case 2026-10-08, urgent). Two driven sessions in `reports-infrastructure` parked to ask the person (20:38:58 and 20:40:04 UTC); the person answered each (`message.sent` `kind: answer`, `reach: resume`, 20:43:08 and 20:43:37); each then ended `failed` with *the service refused moving session `…` to working: Session `…` cannot move working → working* — the answer's path moved the record to working and the resume moved it again; an *unobserved task* `AggregateException` was logged beside each. The person's answer destroyed the session it answered. Make the resume idempotent on a record already working (or move it once), keep the answer delivered, and observe the task. Contract: D137/ANSWER1's notes (answer → resume one record), D126. Proof: a test answering a parked session through the modules' door and the driver's resume, the record moving to working once and the session carrying on; the unobserved task observed.
+
+**Outcome** 2026-10-07: an answered park goes on once: words wait only on parked or ended records (a working one was planned to go on again since MSG1b, a second run's move to working was refused and failed the record), a look claims a record for its one run, and a given-up run's capture is observed and logged. Follow-up: ANSWER2b. Detail: D131's ANSWER2 note, FIX-LOG; commits 90dee80a, df972c56, 046560f9.

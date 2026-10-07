@@ -31,7 +31,6 @@
   "harness.profile.keySave": "保存密钥",
   "harness.profile.keyHint": "由 Daoris 保存在本机，会话启动时交给智能体，之后只显示最后四个字符。",
   "harness.profile.keyName": "API 密钥 {{handle}}",
-  "harness.profile.keyAdded": "已添加 {{profile}}，即 API 密钥 {{handle}}。",
   "harness.pin.open": "固定版本",
   "harness.login.again": "重新登录",
   "harness.profile.removeTitle": "移除 {{account}}",

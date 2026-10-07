@@ -1,6 +1,7 @@
 /**
  * What a rehearsal keeps of a failed check (DEV3b): the print it read and the files it names, under a folder of the run's
- * own named for the check, so a rerun keeps the sighting it is rerun after:
+ * own named for the check, so a rerun keeps the sighting it is rerun after. And how a phase waits on a session and restarts
+ * the host it talks to (DEV3d): by the clock, and only between the session's requests.
  *
  *   node --test tools/rehearsal-kit.test.mjs
  *
@@ -10,8 +11,11 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
-import { checkFolderName, evidenceFolder, keepEvidence, makeChecker } from './rehearsal-kit.mjs';
+import {
+  checkFolderName, evidenceFolder, keepEvidence, makeChecker, restartBetweenRequests, waitFor,
+} from './rehearsal-kit.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const scratch = join(here, '..', 'local', 'scratch', 'rehearsal-kit-test');
@@ -166,4 +170,94 @@ test('a check with no evidence, or a checker with nowhere to keep it, keeps noth
   assert.deepEqual(unkept, ['  FAIL  no folder\n          detail']);
   assert.deepEqual(noEvidence, ['  FAIL  no evidence\n          detail']);
   assert.deepEqual(readdirSync(keep), []);
+});
+
+// DEV3d: the family rehearsal's lost-claim phase restarted host b with the lingering stub's take still in flight. Its wait
+// for the stub's lingering was 160 asks, which ran out before a session that started 41 s into its run under load had said
+// it, and the phase went on to the restart; the stub crashed on the reset connection before the driver could stop it.
+
+test('a wait answers what its ask found once it is ready, asking until then', async () => {
+  let asks = 0;
+  const waited = await waitFor(() => {
+    asks += 1;
+    return asks === 3 ? 'stub: lingering' : null;
+  }, { within: 5_000, every: 5 });
+
+  assert.equal(waited.ended, 'ready');
+  assert.equal(waited.value, 'stub: lingering');
+  assert.equal(asks, 3);
+});
+
+test('a wait is bounded by the clock, however long each ask takes, and says it ran out', async () => {
+  const began = Date.now();
+  const waited = await waitFor(async () => {
+    await sleep(40);
+    return false;
+  }, { within: 200, every: 5 });
+
+  assert.equal(waited.ended, 'timeout');
+  assert.ok(waited.ms >= 200, `it ran out after ${waited.ms} ms, before its bound`);
+  assert.ok(Date.now() - began < 1_000, `it ran out after ${Date.now() - began} ms, long past its bound`);
+});
+
+test('an ask that throws, as a host does while it restarts, is not ready, and the wait goes on', async () => {
+  let asks = 0;
+  const waited = await waitFor(() => {
+    asks += 1;
+    if (asks < 3) throw new Error('connect ECONNREFUSED');
+    return true;
+  }, { within: 5_000, every: 5 });
+
+  assert.equal(waited.ended, 'ready');
+  assert.equal(asks, 3);
+});
+
+test('a wait ends when what it waits beside settles first: a run that has ended will never say it', async () => {
+  const run = sleep(30).then(() => ({ code: 0 }));
+  const waited = await waitFor(() => false, { within: 10_000, every: 5, settled: run });
+
+  assert.equal(waited.ended, 'settled');
+  assert.ok(waited.ms < 5_000, `it waited ${waited.ms} ms past the run's end`);
+});
+
+test('a host is restarted only once the session using it is between requests, and the answer says it was', async () => {
+  const done = [];
+  let asks = 0;
+  const restarted = await restartBetweenRequests({
+    quiet: () => {
+      asks += 1;
+      done.push(`quiet ${asks >= 3}`);
+      return asks >= 3;
+    },
+    stop: () => { done.push('stop'); },
+    start: async () => {
+      done.push('start');
+      return 'host b';
+    },
+    within: 5_000,
+    every: 5,
+    gap: 5,
+  });
+
+  assert.deepEqual(done, ['quiet false', 'quiet false', 'quiet true', 'stop', 'start']);
+  assert.equal(restarted.quiet, true);
+  assert.equal(restarted.host, 'host b');
+});
+
+test('a session never between requests within the bound: the host is restarted after it, and the answer says so', async () => {
+  const began = Date.now();
+  let stoppedAt = -1;
+  const restarted = await restartBetweenRequests({
+    quiet: () => false,
+    stop: () => { stoppedAt = Date.now() - began; },
+    start: () => 'host b',
+    within: 150,
+    every: 5,
+    gap: 5,
+  });
+
+  assert.equal(restarted.quiet, false);
+  assert.ok(stoppedAt >= 150, `the host was stopped ${stoppedAt} ms in, before the bound`);
+  assert.ok(restarted.waited >= 150);
+  assert.equal(restarted.host, 'host b');
 });

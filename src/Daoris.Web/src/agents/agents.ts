@@ -378,11 +378,54 @@ export type AgentRow = {
   phrase: string;
   /** The accounts the person must act on, which wear the waiting mark. */
   waiting: number;
+  /** Its mark on the list's strip, a letter or two no agent above it wears (ACCTUX2): *CC*, *Co*. */
+  mark: string;
 };
+
+/** A strip mark's most letters: two fit the strip's 40 px at its size, a 中文 name's two characters included. */
+const MARK_LETTERS = 2;
+
+/**
+ * The mark an agent's declaration gives (ACCTUX2, the UX7 design §4.6's *CC*, *Cx*), as written and cut to a mark's letters;
+ * null where none does. Read from its doors defensively: a door carries it only once the roster declares one, which no
+ * shell does yet, so the first letters stand meanwhile.
+ */
+function declaredMark(tool: Tool): string | null {
+  for (const door of tool.doors as (Tool['doors'][number] & { mark?: unknown })[]) {
+    const letters = typeof door.mark === 'string' ? Array.from(door.mark.trim()).slice(0, MARK_LETTERS).join('') : '';
+    if (letters) return letters;
+  }
+  return null;
+}
+
+/**
+ * An agent's marks on the strip, each its own (ACCTUX2): the strip drew a first character, so Claude Code and Codex were both
+ * `C`. A declared mark leads; else each word's initial (*CC*, *DH*) or a lone word's first two letters (*Co*), the first a
+ * capital; and one a row above already wears gives way to the first letter and a later one of its name (*Cody* beside *Codex*
+ * is *Cd*), so no two rows look alike.
+ */
+function agentMarks(tools: readonly Tool[]): string[] {
+  const worn = new Set<string>();
+  return tools.map((tool) => {
+    const name = (tool.product ?? tool.name).trim();
+    const words = name.split(/\s+/).filter(Boolean).map((word) => Array.from(word));
+    const first = words[0]?.[0] ?? '?';
+    const capital = first.toUpperCase();
+    const lead = Array.from(capital).length === 1 ? capital : first;
+    const letters = words.length > 1
+      ? [lead, ...words.slice(1, MARK_LETTERS).map((word) => word[0]!)]
+      : [lead, ...(words[0] ?? []).slice(1, MARK_LETTERS)];
+    const later = words.flat().slice(1).map((letter) => `${lead}${letter}`);
+    const mark = [declaredMark(tool) ?? letters.join(''), ...later].find((each) => !worn.has(each)) ?? letters.join('');
+    worn.add(mark);
+    return mark;
+  });
+}
 
 /** Each agent once, whatever doors reach it, in the roster's order (§5.1). */
 export function agentRows(tools: readonly Tool[], answer: AccountsAnswer | null | undefined): AgentRow[] {
-  return tools.map((tool) => {
+  const marks = agentMarks(tools);
+  return tools.map((tool, at) => {
     const use = agentOf(answer, tool.name);
     const states = [...accountStates(tool, use).values()];
     const signedOut = states.filter((state) => state.state === 'out').length;
@@ -405,6 +448,7 @@ export function agentRows(tools: readonly Tool[], answer: AccountsAnswer | null 
       installed: tool.present,
       phrase,
       waiting: tool.present ? signedOutHeld(tool, use) : 0,
+      mark: marks[at]!,
     };
   });
 }

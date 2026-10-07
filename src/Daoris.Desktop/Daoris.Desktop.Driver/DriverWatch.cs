@@ -60,6 +60,9 @@ public sealed class DriverWatch(
     /// <summary>Handed to every look's driver beside <see cref="Runner"/>: <see cref="Driver.Stops"/>, that stand-in's stop (DEV3c).</summary>
     internal Func<string, Noted, bool>? Stops { get; init; }
 
+    /// <summary>Handed to every look's driver (<see cref="Driver.Log"/>): where a failure nothing else awaits is written (ANSWER2).</summary>
+    public MachineLog? Log { get; init; }
+
     /// <summary>
     /// Whether an update is draining this loop (UPDATE1, D139 §2), asked at every look: while it answers true, each look
     /// plans with <see cref="InstallUpdate.Drained"/>, so nothing new starts, and says the hold as the update's
@@ -165,7 +168,7 @@ public sealed class DriverWatch(
                     var report = await new Driver(
                             service, draining ? InstallUpdate.Drained(config) : config, AdapterSet.Built(), home, processes, sync, output,
                             _harnesses, usage, hooks, events, browser, Running)
-                        { Runner = Runner, Stops = Stops }
+                        { Runner = Runner, Stops = Stops, Log = Log }
                         .TickAsync(sessions.Token, failed: part =>
                         {
                             carried.AddRange(part.Events);

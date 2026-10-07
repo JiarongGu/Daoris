@@ -149,6 +149,11 @@ with the version and date at release.
   Daoris keeps, and reads whether each Codex account and your own sign-in are signed in.
 - Signing in to Codex shows a link and a one-time code to enter there, so it works where Windows has
   reserved the port Codex's browser sign-in listens on; `daoris agent login codex` uses the pinned Codex.
+- Claude Code and Codex have their own marks in the folded agent list, and an account's state and who
+  signed in can be read without hovering.
+- Adding an API key or saving an account's model keeps what you entered until it is saved, and says a
+  refusal there; a key added asks for its name and workspaces, as a sign-in does.
+- Answering a session that stopped to ask you no longer fails it: it carries on with your answer, once.
 
 The first version: doctrine that installs, is checked, and flows back.
 

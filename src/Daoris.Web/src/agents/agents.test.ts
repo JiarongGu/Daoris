@@ -161,6 +161,30 @@ describe('the list', () => {
     expect(rows[2]).toMatchObject({ phrase: 'not installed', installed: false });
   });
 
+  /**
+   * ACCTUX2: the strip drew each agent's first character, so Claude Code and Codex were both `C` (the UX7 design §4.6). A
+   * mark its declaration gives leads; else the first letters, each word's initial or a lone word's first two; and none
+   * repeats a mark above it in the list.
+   */
+  it('gives each agent a mark of its own: a declared one, else its first letters, never one already worn', () => {
+    const doors: ToolDoor[] = [
+      claude(),
+      { harness: 'codex-acp', accountOf: 'codex', product: 'Codex', present: true, wire: 'acp', profiles: [] },
+      { harness: 'dsh', product: 'DeepSeek Harness', present: false, profiles: [] },
+      { harness: 'cody', product: 'Cody', present: true, profiles: [] },
+      { harness: 'acme-agent', present: true, profiles: [] },
+    ];
+    expect(agentRows(byTool(doors), undefined).map((row) => row.mark)).toEqual(['CC', 'Co', 'DH', 'Cd', 'Ac']);
+
+    // A mark the agent's declaration gives is its own, as written, a letter or two of it.
+    const declared = doors.map((door) => (door.harness === 'codex-acp' ? { ...door, mark: ' Cx ' } : door));
+    expect(agentRows(byTool(declared), undefined).map((row) => row.mark)).toEqual(['CC', 'Cx', 'DH', 'Co', 'Ac']);
+    expect(agentRows(byTool([{ ...claude(), mark: 'Claude' } as ToolDoor]), undefined)[0]!.mark).toBe('Cl');
+
+    // A 中文 name gives its first two characters whole.
+    expect(agentRows(byTool([{ harness: 'yinqing', product: '引擎', present: true, profiles: [] }]), undefined)[0]!.mark).toBe('引擎');
+  });
+
   it('names an agent with no account of its own by its own sign-in', () => {
     const rows = agentRows(byTool([claude({ profiles: [], machineDefault: null, workspaceDefaults: [] })]), undefined);
     expect(rows[0]!.phrase).toBe('its own sign-in');

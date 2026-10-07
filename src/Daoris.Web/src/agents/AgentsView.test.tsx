@@ -1047,9 +1047,106 @@ describe('the Agents place', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
       payload: { harness: 'claude-code', action: 'key-add', key },
     });
-    await waitFor(() => expect(notify).toHaveBeenCalledWith('Added account-1, the API key …wxyz.'));
+    // Said where it was added, in the step that asks its name (ACCTUX3), rather than in a toast.
+    const asking = await screen.findByRole('region', { name: 'Add an API key' });
+    expect(within(asking).getByText('Added the API key …wxyz.')).toBeTruthy();
+    expect(notify).not.toHaveBeenCalled();
     expect(screen.queryByLabelText('API key for Claude Code')).toBeNull();
     expect(container.innerHTML).not.toContain(key);
+  });
+
+  /**
+   * ACCTUX3: the key's field emptied and closed on the press, so a key the driver refused was gone with the place to say why,
+   * the failure ACCTEDIT1 fixed for a rename. Refused, the field stays with the key in it and says why; a retry that lands
+   * closes it.
+   */
+  it('keeps a refused key in its field, says why in it, and closes once a retry lands', async () => {
+    const key = 'sk-ant-api03-page-test-wxyz';
+    let refuse = true;
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESS_ACTION') {
+        if (refuse) {
+          throw Object.assign(new Error('refused'), {
+            code: 'DRIVER_REFUSED', parameters: { message: '`claude-code` takes no key while a sign-in runs.' },
+          });
+        }
+        return { harness: 'claude-code', action: 'key-add', exitCode: 0, profile: 'acct-9c8d7e6f', key: '…wxyz' };
+      }
+      return type === 'HARNESSES'
+        ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], takesKey: true }, ROSTER.harnesses[1]] }
+        : WIRING;
+    });
+    const notify = vi.fn();
+    place(notify);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Add an API key' }));
+    fireEvent.change(screen.getByLabelText('API key for Claude Code'), { target: { value: key } });
+    await userEvent.click(screen.getByRole('button', { name: 'Save key' }));
+
+    const form = screen.getByLabelText('API key for Claude Code').closest('form')!;
+    expect(await within(form).findByRole('alert')).toHaveProperty('textContent', 'claude-code takes no key while a sign-in runs.');
+    expect(screen.getByLabelText('API key for Claude Code')).toHaveProperty('value', key);
+    expect(notify).not.toHaveBeenCalledWith(expect.anything(), 'error');
+
+    refuse = false;
+    await userEvent.click(within(form).getByRole('button', { name: 'Save key' }));
+    await waitFor(() => expect(screen.queryByLabelText('API key for Claude Code')).toBeNull());
+    expect(await screen.findByRole('region', { name: 'Add an API key' })).toBeTruthy();
+  });
+
+  /**
+   * ACCTUX3, the UX7 design §4.5: *a key added asks the same question* as a sign-in's last step, its name and the lists it
+   * joins; it ended in a toast, and the account in no list. Left empty, it is called by its key's handle.
+   */
+  it('asks a key added its name and lists, and keeps them, as a sign-in’s last step does', async () => {
+    const ACCOUNTS = {
+      agents: [{
+        agent: 'claude-code', speaks: true, own: {},
+        accounts: [{ name: 'personal', running: 0 }, { name: 'work', running: 0 }],
+        scopes: [
+          { workspace: null, default: 'personal', list: [], begins: 'personal', use: { use: 'goal', keep: null, early: true, near: 90 }, unknown: [], problem: null, near: [] },
+          { workspace: 'orbit', default: 'work', list: ['work'], begins: 'work', use: { use: 'goal', keep: null, early: true, near: 90 }, unknown: [], problem: null, near: [] },
+        ],
+      }],
+    };
+    invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
+      if (type === 'ACCOUNTS') return ACCOUNTS;
+      if (type === 'HARNESS_ACTION') {
+        const action = options?.payload?.action;
+        if (action === 'key-add') return { harness: 'claude-code', action, exitCode: 0, profile: 'acct-9c8d7e6f', key: '…wxyz' };
+        if (action === 'profile-rename') return { harness: 'claude-code', action, exitCode: 0, profile: 'acct-9c8d7e6f', name: 'spare-key' };
+        if (action === 'profile-join') {
+          return { harness: 'claude-code', action, exitCode: 0, profile: 'acct-9c8d7e6f', places: [{ workspace: 'orbit', list: true, default: false }] };
+        }
+      }
+      return type === 'HARNESSES'
+        ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], takesKey: true }, ROSTER.harnesses[1]] }
+        : WIRING;
+    });
+    const notify = vi.fn();
+    place(notify);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Add an API key' }));
+    fireEvent.change(screen.getByLabelText('API key for Claude Code'), { target: { value: 'sk-ant-api03-page-test-wxyz' } });
+    await userEvent.click(screen.getByRole('button', { name: 'Save key' }));
+
+    const asking = await screen.findByRole('region', { name: 'Add an API key' });
+    const name = within(asking).getByRole('textbox', { name: /Its name/ });
+    expect(name).toHaveProperty('value', '');
+    expect(name).toHaveProperty('placeholder', 'API key …wxyz');
+    expect(within(asking).queryByText(/Signed in/)).toBeNull();
+    await userEvent.type(name, 'spare-key');
+    await userEvent.click(within(asking).getByRole('checkbox', { name: 'orbit' }));
+    await userEvent.click(within(asking).getByRole('button', { name: 'Add to the lists' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'claude-code', action: 'profile-join', profile: 'acct-9c8d7e6f', join: ['orbit'] },
+    }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'claude-code', action: 'profile-rename', profile: 'acct-9c8d7e6f', name: 'spare-key' },
+    });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('spare-key runs work in orbit now.'));
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Add an API key' })).toBeNull());
   });
 
   /** 🔴 Cancel is no: an untyped button inside the key's form was a SUBMIT, and saved what it closed. */
@@ -1103,6 +1200,51 @@ describe('the Agents place', () => {
     });
     await waitFor(() => expect(notify).toHaveBeenCalledWith('work: saved — the next session reads it.'));
     expect(serviceCalls()).toEqual([]);
+    await waitFor(() => expect(within(row).queryByRole('group', { name: 'work: model and effort' })).toBeNull());
+  });
+
+  /**
+   * ACCTUX3: the editor closed on the press, so a save the driver refused lost the choice with the place to say why, the
+   * failure ACCTEDIT1 fixed for a rename. Refused, it stays open with the choice made and says why under it.
+   */
+  it("keeps a refused model save open with the choice made, and says why under it", async () => {
+    const CHOICES = { models: ['default', 'sonnet', 'opus'], efforts: ['low', 'medium', 'high', 'xhigh'] };
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SET_AGENT_SETTINGS') {
+        throw Object.assign(new Error('refused'), {
+          code: 'DRIVER_REFUSED', parameters: { message: '`work`\'s settings file could not be written.' },
+        });
+      }
+      return type === 'HARNESSES'
+        ? {
+          ...ROSTER,
+          harnesses: [{
+            ...ROSTER.harnesses[0],
+            settingsChoices: CHOICES,
+            profiles: [
+              { name: 'work', home: 'C:/somewhere/.daoris/harnesses/claude-code/work', login: 'in',
+                settings: { model: 'opus', effort: 'high', perModel: [], problem: null } },
+            ],
+          }, ROSTER.harnesses[1]],
+        }
+        : WIRING;
+    });
+    const notify = vi.fn();
+    place(notify);
+
+    await unfold('Model and effort');
+    const row = screen.getByText('model opus · effort high').closest('li')!;
+    await userEvent.click(within(row).getByRole('button', { name: 'Model & effort' }));
+    const form = within(row).getByRole('group', { name: 'work: model and effort' });
+    within(form).getByRole('combobox', { name: 'model' }).focus();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.click(await screen.findByRole('option', { name: 'sonnet' }));
+    await userEvent.click(within(form).getByRole('button', { name: 'Save' }));
+
+    expect(await within(row).findByRole('alert')).toHaveProperty('textContent', "work's settings file could not be written.");
+    expect(within(row).getByRole('group', { name: 'work: model and effort' })).toBeTruthy();
+    expect(within(form).getByRole('combobox', { name: 'model' })).toHaveTextContent('sonnet');
+    expect(notify).not.toHaveBeenCalledWith(expect.anything(), 'error');
   });
 
   /** A section appears only where the agent has that concept (§5.1): no settings Daoris does not know. */

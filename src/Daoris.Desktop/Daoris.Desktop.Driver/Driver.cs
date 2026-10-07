@@ -144,6 +144,12 @@ public sealed partial class Driver(
     /// </summary>
     internal Func<IWorkspaceSetupWorld>? SetupPlans { get; init; }
 
+    /// <summary>
+    /// The machine log (LOG1a, D94), where a failure nothing else awaits is written with its place: a run's capture once the
+    /// run was ended before awaiting it (ANSWER2). Null where nothing keeps one, as in a gate's driver; the console says it still.
+    /// </summary>
+    public MachineLog? Log { get; init; }
+
     /// <summary>What a session whose take lost is told, in its record (D68 §5).</summary>
     public const string LostClaim =
         "stopped by this machine's driver: another machine's take on the quest reached the remote first, so this "
@@ -361,14 +367,38 @@ public sealed partial class Driver(
         var intakes = await IntakesDueAsync(config.Cap - snapshot.Active.Count - starts.Count, events, ct)
             .ConfigureAwait(false);
 
+        // 🔴 One run per record the person's words wait on (ANSWER2, D131 §3): a run that took a record up is told it opened
+        // before its process starts and moves the record to working, so a look in between still reads it waiting and plans it
+        // again. A second run's move to working was refused (working → working) and failed the session the first was resuming.
+        // Claimed here for the run's whole life, so a later look begins nothing on it, and says why. After the intakes are
+        // counted, so the slot the record holds is counted as the plan counted it.
+        var goingOn = new Dictionary<string, string>(StringComparer.Ordinal);
+        var claimed = new List<Consideration>();
+        foreach (var start in starts)
+        {
+            if (start is { GoesOn: true, Resumes: { } record })
+            {
+                if (!_runs.TryGoOn(record.Session))
+                {
+                    events.Add($"going on  session {record.Session} (#{start.Quest.Id} → {start.Quest.To}): "
+                        + "a run of this machine's already goes on with the person's words in it.");
+                    continue;
+                }
+
+                goingOn[start.Quest.Id] = record.Session;
+            }
+
+            claimed.Add(start);
+        }
+
         // Every start begun at once, as before: sessions in different repositories, or in trees of their own, run
         // together. The look waits for each only until it has opened its record or come to nothing (DEV3), so a
         // hold, a refusal and an error before the spawn are still this look's to say, and every session it opened
         // is in the ledger before the next look plans. The rest of each run is the running set's.
         var run = Runner ?? ((start, opened, token) => RunAsync(start, snapshot.Repositories, untrusted, opened, token));
         var begun = await Task.WhenAll(
-                starts.Select(start => BeginAsync(
-                        new Begun(start.Quest.Id, null, start.Quest.To, start.Workspace, config.Adapter), opened => run(start, opened, ct)))
+                claimed.Select(start => BeginAsync(
+                        new Begun(start.Quest.Id, null, start.Quest.To, start.Workspace, config.Adapter), opened => ClaimedAsync(start, opened)))
                     .Concat(intakes.Select(ask => BeginAsync(
                         new Begun(null, ask.Id, $"ask #{ask.Id}", ask.Workspace, config.IntakeAdapter!),
                         opened => RunIntakeAsync(ask, untrusted, opened, ct)))))
@@ -405,6 +435,19 @@ public sealed partial class Driver(
 
         async Task<(Begun Started, StartRun? Came)> BeginAsync(Begun started, Func<Action, Task<StartRun>> start) =>
             (started, await _runs.StartAsync(start).ConfigureAwait(false));
+
+        // The run, and its claim on the record its words wait on let go once it has ended, however it ended (ANSWER2).
+        async Task<StartRun> ClaimedAsync(Consideration start, Action opened)
+        {
+            try
+            {
+                return await run(start, opened, ct).ConfigureAwait(false);
+            }
+            finally
+            {
+                if (goingOn.TryGetValue(start.Quest.Id, out var session)) _runs.WentOn(session);
+            }
+        }
     }
 
     /// <summary>What one start of a look was: a quest's or an ask's intake, where it would run, and on which adapter.</summary>
@@ -1827,8 +1870,19 @@ public sealed partial class Driver(
         var structured = acp is null ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble, target.PersonSaid, said, keepAs, resume, account, own) : null;
         Task capture = acp ?? structured ?? CaptureAsync(process, transcript, sessionId, ct, preamble);
 
-        await service.AdvanceAsync(
-            sessionId, "working", note: workingNote?.Note, transcript: transcript, ct: ct, parts: workingNote?.Parts).ConfigureAwait(false);
+        try
+        {
+            await service.AdvanceAsync(
+                sessionId, "working", note: workingNote?.Note, transcript: transcript, ct: ct, parts: workingNote?.Parts).ConfigureAwait(false);
+        }
+        catch
+        {
+            // 🔴 The record would not become this run's (ANSWER2: a second resume met working → working), so the run is ended
+            // here, and what was reading its output is observed: its failure is written with its reason, never left unawaited.
+            await AbandonedAsync(process, capture, sessionId, Log, output).ConfigureAwait(false);
+            throw;
+        }
+
         working?.Invoke();
 
         var exitCode = await WaitAsync(process, ct).ConfigureAwait(false);
@@ -1852,6 +1906,50 @@ public sealed partial class Driver(
 
         return await conclude(exitCode, used, turnFailed, Ending(acp is not null, structured is not null, exitCode, turnFailed, own, transcript))
             .ConfigureAwait(false);
+    }
+
+    /// <summary>Where a run's capture failed once the run was ended before awaiting it (ANSWER2): the machine log's <c>where</c>.</summary>
+    internal const string AbandonedRun = "a session's run, ended as its record would not move to working";
+
+    /// <summary>
+    /// How long a given-up run's capture is waited for before it is left to finish on its own, still observed: its process was
+    /// just ended, so its output closes at once, and a capture still open after this is stuck, not slow.
+    /// </summary>
+    internal static readonly TimeSpan AbandonedWait = TimeSpan.FromSeconds(10);
+
+    /// <summary>
+    /// A run's capture once the run gave up before awaiting it (ANSWER2), as when its record will not move to working: the
+    /// process ended, then the capture observed, and a failure there written with its reason, to the machine log as an
+    /// <c>error</c> naming its place and to the session's console. Left alone it reached the finalizer, an unobserved task's
+    /// AggregateException whose only place was <i>an unobserved task</i>, beside each session the double move failed.
+    /// </summary>
+    /// <remarks>
+    /// Waited for within <see cref="AbandonedWait"/>, as the ordinary path awaits a capture once its process exited; past it the
+    /// run goes on to say how it ended, and the capture is still observed whenever it finishes. Never throws.
+    /// </remarks>
+    internal static async Task AbandonedAsync(
+        Process? process, Task capture, string sessionId, MachineLog? log, SessionOutput? output, TimeSpan? within = null)
+    {
+        if (process is not null) SessionProcesses.EndIfRunning(process);
+        var observed = capture.ContinueWith(
+            done =>
+            {
+                if (done.Exception is not { } failed) return;
+                var error = failed.InnerExceptions.Count == 1 ? failed.InnerExceptions[0] : failed;
+                log?.Failed(AbandonedRun, error);
+                output?.Append(
+                    sessionId,
+                    $"— the run ended here, since its record would not move, failed as its output was read: {error.GetType().Name}: {error.Message}");
+            },
+            CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        try
+        {
+            await observed.WaitAsync(within ?? AbandonedWait).ConfigureAwait(false);
+        }
+        catch (TimeoutException)
+        {
+            // Still observed: the continuation above writes its failure whenever the capture ends.
+        }
     }
 
     /// <summary>

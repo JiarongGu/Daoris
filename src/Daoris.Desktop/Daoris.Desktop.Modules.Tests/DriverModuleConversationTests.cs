@@ -57,6 +57,33 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// ANSWER2 (D131's ANSWER2 note): the person's answer to a parked driven session through the box moves nothing. The say
+    /// door keeps it on the parked record and the loop is nudged; the driver's next look is what moves the record to working,
+    /// once (the driver's <c>AnswerGoesOnOnceTests</c>). The install's failures read as if the answer had moved it first: the
+    /// second move was a second look taking the same record up.
+    /// </summary>
+    [Fact]
+    public async Task An_answer_to_a_park_through_the_box_moves_nothing_and_nudges_the_loop()
+    {
+        var ledger = new Ledger
+        {
+            Records = Records(Record("s1", "awaiting-person")),
+            Say = id => (HttpStatusCode.OK, $$$"""
+                {"session":{"id":"{{{id}}}","state":"awaiting-person"},"message":"Kept for session `{{{id}}}` to go on with.",
+                 "said":{"id":"w1","text":"Port 8080.","at":"2026-10-08T20:43:08+00:00","files":[],"reopens":false}}
+                """),
+        };
+        var (loop, module) = await UpAsync(ledger);
+
+        var sent = await AnswerAsync(module, "SESSION_INPUT", new { id = "s1", text = "Port 8080." });
+
+        Assert.Equal((true, "resume"), (sent.GetProperty("sent").GetBoolean(), sent.GetProperty("reaches").GetString()));
+        Assert.Equal("/api/sessions/s1/say", Assert.Single(ledger.Posts).Path);
+        Assert.Empty(ledger.Moves);
+        Assert.Equal(1, loop.Nudges);
+    }
+
+    /// <summary>
     /// MSG1d (D137 §2.2): what never goes on is refused by its code, and nothing is posted: a teammate's record (whose
     /// process and conversation are on their machine), an intake, a session that stood down, Ask Daoris's own conversation
     /// (its panel opens a new one), a session whose quest went on in a later session here, and a record nothing holds.
@@ -408,6 +435,14 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
             get { lock (_posts) return [.. _posts]; }
         }
 
+        private readonly List<string> _moves = [];
+
+        /// <summary>Every move asked of the state door, as <c>id → state</c> (ANSWER2).</summary>
+        public IReadOnlyList<string> Moves
+        {
+            get { lock (_moves) return [.. _moves]; }
+        }
+
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var path = request.RequestUri!.AbsolutePath;
@@ -416,8 +451,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
             var (status, answer) = (request.Method.Method, parts) switch
             {
                 ("GET", ["api", "sessions"]) => (HttpStatusCode.OK, Records),
-                ("POST", ["api", "sessions", var id, "state"]) => (HttpStatusCode.OK,
-                    $$"""{"session":{"id":"{{Uri.UnescapeDataString(id)}}","state":"{{JsonDocument.Parse(body).RootElement.GetProperty("state").GetString()}}"},"message":"Moved."}"""),
+                ("POST", ["api", "sessions", var id, "state"]) => Moved(Uri.UnescapeDataString(id), JsonDocument.Parse(body).RootElement.GetProperty("state").GetString()),
                 ("POST", ["api", "sessions", var id, "say"]) => Heard(path, body, Say(Uri.UnescapeDataString(id))),
                 ("POST", _) => Heard(path, body, (HttpStatusCode.OK, """{"kept":true,"message":"Kept."}""")),
                 _ => (HttpStatusCode.NotFound, ""),
@@ -429,6 +463,13 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
         {
             lock (_posts) _posts.Add(("POST", path, body));
             return answer;
+        }
+
+        /// <summary>A record moved as asked, and the move heard.</summary>
+        private (HttpStatusCode, string) Moved(string id, string? state)
+        {
+            lock (_moves) _moves.Add($"{id} → {state}");
+            return (HttpStatusCode.OK, $$"""{"session":{"id":"{{id}}","state":"{{state}}"},"message":"Moved."}""");
         }
     }
 }
