@@ -78,8 +78,10 @@ internal sealed class HistoryStandIn : HttpMessageHandler
     }
 
     /// <param name="waits">What waits beside <c>needs-you</c> (HIST1l); null leaves the field out, as a host before it and every other word do.</param>
+    /// <param name="stands">How the work stands beside <c>open</c> (HIST1m); null leaves the field out, as <paramref name="waits"/>.</param>
+    /// <param name="by">The open work naming it beside <c>awaited</c> (HIST1m); null leaves the field out, as <paramref name="waits"/>.</param>
     public static JsonObject Refusal(string word, string? quest = null, string? ask = null, string? session = null, string? origin = null,
-        string? workspace = null, string? error = null, string? waits = null)
+        string? workspace = null, string? error = null, string? waits = null, string? stands = null, string? by = null)
     {
         var refusal = new JsonObject
         {
@@ -87,6 +89,8 @@ internal sealed class HistoryStandIn : HttpMessageHandler
             ["origin"] = origin, ["workspace"] = workspace,
         };
         if (waits is not null) refusal["waits"] = waits;
+        if (stands is not null) refusal["stands"] = stands;
+        if (by is not null) refusal["by"] = by;
         return refusal;
     }
 

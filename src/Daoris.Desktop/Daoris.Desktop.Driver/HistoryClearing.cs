@@ -16,6 +16,9 @@ public enum HistoryScope
     Failed,
 }
 
+// Every constant of HistoryKinds, HistoryWords, HistoryWaits, HistoryStands and HistoryAwaitedBy is held, with the service's
+// spellings, to one table: the service suite's fixtures/history-words.json, which HistoryWordsTwinTests reads (HIST1m).
+
 /// <summary>The kinds of unit, as the service's history door spells them (HIST1b).</summary>
 public static class HistoryKinds
 {
@@ -112,6 +115,35 @@ public static class HistoryWaits
 
     /// <summary>A rule proposal nobody settled: a session's where the refusal names one, else the ask's.</summary>
     public const string Proposal = "proposal";
+}
+
+/// <summary>
+/// How the work in progress stands, as the service names it beside <c>open</c> (HIST1m), for the reason <see cref="HistoryWaits"/>
+/// is read: the service judged it from the quest it read, and a second read here may find it taken or closed since.
+/// </summary>
+public static class HistoryStands
+{
+    /// <summary>The quest is still open: the word's own sentence.</summary>
+    public const string Open = "open";
+
+    /// <summary>The quest is taken.</summary>
+    public const string Taken = "taken";
+}
+
+/// <summary>
+/// The open work that names a unit, as the service names it beside <c>awaited</c> (HIST1m): judged from the quests the service
+/// read, so a quest that had its answer or closed between the two reads is not said in another's sentence.
+/// </summary>
+public static class HistoryAwaitedBy
+{
+    /// <summary>An open question a session of the work published.</summary>
+    public const string Question = "question";
+
+    /// <summary>A taken quest that asked it and waits on its answer: the word's own sentence.</summary>
+    public const string Asker = "asker";
+
+    /// <summary>A chain's open next step, which builds on its work.</summary>
+    public const string Step = "step";
 }
 
 /// <summary>
@@ -514,9 +546,10 @@ public static partial class HistoryClearing
         };
 
     /// <summary>
-    /// The service's word with its facts, and which of its sentences is meant: what the service named waiting beside
-    /// <c>needs-you</c> (HIST1l), else read from the records the word names (§1.2's table); never from the service's sentence,
-    /// which only a terminal prints.
+    /// The service's word with its facts, and which of its sentences is meant: what the service named beside the word (what
+    /// waits beside <c>needs-you</c>, HIST1l; how the work stands beside <c>open</c> and the open work beside <c>awaited</c>,
+    /// HIST1m), else read from the records the word names (§1.2's table); never from the service's sentence, which only a
+    /// terminal prints.
     /// </summary>
     private static HistoryKeep Said(HistoryRefusalView refusal, string kind, Facts facts) => new(refusal.Word, refusal.Message)
     {
@@ -532,6 +565,10 @@ public static partial class HistoryClearing
     {
         HistoryWords.Unknown => kind == HistoryKinds.Ask ? null : HistoryContexts.Quest,
         HistoryWords.Open when kind == HistoryKinds.Failed => HistoryContexts.Failed,
+        // How the service read the quest (HIST1m), as what waits below: a second read here may find it taken or closed since.
+        HistoryWords.Open when refusal.Stands is HistoryStands.Taken => HistoryContexts.Taken,
+        HistoryWords.Open when refusal.Stands is HistoryStands.Open => null,
+        // A host before it, or a word this build does not know: the quest read here says which.
         HistoryWords.Open => Is(facts.Quest(refusal.Quest)?.Status, "Taken") ? HistoryContexts.Taken : null,
         HistoryWords.Live => refusal.Origin is not null ? HistoryContexts.Teammate : null,
         // What the service named waiting (HIST1l), judged from the records it read: a second read here may have moved since.
@@ -550,7 +587,12 @@ public static partial class HistoryClearing
             facts.Quest(quest)?.Held == true ? HistoryContexts.Held : HistoryContexts.Conflict,
         HistoryWords.NeedsYou =>
             facts.Ask(refusal.Ask)?.State is { } state && (Is(state, "Open") || Is(state, "Proposed")) ? HistoryContexts.Ask : HistoryContexts.ProposalAsk,
-        // A question its session published names that session; a taken quest awaiting the answer waits; else a chain's step.
+        // The open work the service named (HIST1m): the quest read here may have had its answer, or closed, since.
+        HistoryWords.Awaited when refusal.By is HistoryAwaitedBy.Question => HistoryContexts.Published,
+        HistoryWords.Awaited when refusal.By is HistoryAwaitedBy.Asker => null,
+        HistoryWords.Awaited when refusal.By is HistoryAwaitedBy.Step => HistoryContexts.Chain,
+        // A host before it, or a word this build does not know. A question its session published names that session; a taken
+        // quest awaiting the answer waits; else a chain's step.
         HistoryWords.Awaited when refusal.Session is not null => HistoryContexts.Published,
         HistoryWords.Awaited => facts.Quest(refusal.Quest)?.Awaits is not null ? null : HistoryContexts.Chain,
         _ => null,

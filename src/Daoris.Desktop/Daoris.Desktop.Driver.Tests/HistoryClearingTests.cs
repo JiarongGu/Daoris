@@ -257,7 +257,7 @@ public sealed class HistoryClearingTests : IDisposable
         string kind, string? quest, string? ask, string? session, string waits, string? recordsSay, string? serviceMeant)
     {
         _ = recordsSay;
-        var (listed, pressed) = await NeedsYouAsync(kind, Refusal("needs-you", quest, ask, session, waits: waits));
+        var (listed, pressed) = await KeptAsync(kind, Refusal("needs-you", quest, ask, session, waits: waits));
 
         Assert.Equal((HistoryWords.NeedsYou, serviceMeant), (listed.Word, listed.Context));
         Assert.Equal((HistoryWords.NeedsYou, serviceMeant), (pressed.Word, pressed.Context));
@@ -280,7 +280,7 @@ public sealed class HistoryClearingTests : IDisposable
                      Refusal("needs-you", quest, ask, session, waits: "a-word-this-build-does-not-know"),
                  })
         {
-            var (listed, pressed) = await NeedsYouAsync(kind, refusal);
+            var (listed, pressed) = await KeptAsync(kind, refusal);
 
             Assert.Equal((HistoryWords.NeedsYou, recordsSay), (listed.Word, listed.Context));
             Assert.Equal((HistoryWords.NeedsYou, recordsSay), (pressed.Word, pressed.Context));
@@ -288,15 +288,85 @@ public sealed class HistoryClearingTests : IDisposable
     }
 
     /// <summary>
-    /// A unit of <paramref name="kind"/> the service keeps with <paramref name="refusal"/>, listed and then pressed against records
-    /// that read otherwise (<see cref="Waiting"/>): what the list said, and what the press counted as changed.
+    /// HIST1m: an <c>open</c> or an <c>awaited</c> refusal, the quest and session it names, what the service said beside it (in
+    /// <c>stands</c> or <c>by</c>), and two sentences: the one the records read beside it would mean, and the one the service
+    /// meant. Each row's records say the other thing, as a quest read after the service judged can, once it was taken, closed or
+    /// answered between the two reads, but the last: a question names the session that published it, which the records cannot
+    /// contradict.
     /// </summary>
-    private async Task<(HistoryKeep Listed, HistoryKeep Pressed)> NeedsYouAsync(string kind, System.Text.Json.Nodes.JsonObject refusal)
+    public static TheoryData<string, string, string?, string, string, string?, string?> Variants => new()
+    {
+        // The service saw qt still open; the records read it taken, as after a take, so they say a taken one's.
+        { "open", "qt", null, "stands", HistoryStands.Open, HistoryContexts.Taken, null },
+        // The service saw q1 taken; the records read it done, as after its done, so they say an open one's.
+        { "open", "q1", null, "stands", HistoryStands.Taken, null, HistoryContexts.Taken },
+        // The service saw qt waiting on the answer; the records read it waiting on nothing, as after the answer came, so they say a chain's step.
+        { "awaited", "qt", null, "by", HistoryAwaitedBy.Asker, HistoryContexts.Chain, null },
+        // The service saw qa as a chain's next step; the records read it waiting on an answer, so they say an asker's.
+        { "awaited", "qa", null, "by", HistoryAwaitedBy.Step, null, HistoryContexts.Chain },
+        // A question its session published: the records say the same, from the session the refusal names.
+        { "awaited", "qw", "s1", "by", HistoryAwaitedBy.Question, HistoryContexts.Published, HistoryContexts.Published },
+    };
+
+    /// <summary>
+    /// 🔴 HIST1m: how the work in progress stands and the open work naming it are read from the service's refusal (<c>stands</c>,
+    /// <c>by</c>), never rebuilt from a second read of the quest, which can have moved since the service judged: the sentence the
+    /// service meant is said, at the listing and at the press.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(Variants))]
+    public async Task Open_and_awaited_are_said_from_the_services_refusal_not_the_quest_read_after_it(
+        string word, string quest, string? session, string field, string said, string? recordsSay, string? serviceMeant)
+    {
+        _ = recordsSay;
+        var refusal = field == "stands" ? Refusal(word, quest, session: session, stands: said) : Refusal(word, quest, session: session, by: said);
+
+        var (listed, pressed) = await KeptAsync("quest", refusal);
+
+        Assert.Equal((word, serviceMeant), (listed.Word, listed.Context));
+        Assert.Equal((word, serviceMeant), (pressed.Word, pressed.Context));
+        Assert.Equal((quest, session), (listed.Quest, listed.Session));
+    }
+
+    /// <summary>
+    /// HIST1m: a host from before names neither, so how the work stands and what names it are read from the quest the word names, as
+    /// HIST1c read them; so is a word for either this build does not know.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(Variants))]
+    public async Task A_host_that_names_neither_is_read_from_the_quest_the_word_names(
+        string word, string quest, string? session, string field, string said, string? recordsSay, string? serviceMeant)
+    {
+        _ = (said, serviceMeant);
+        foreach (var refusal in new[]
+                 {
+                     Refusal(word, quest, session: session),
+                     field == "stands"
+                         ? Refusal(word, quest, session: session, stands: "a-word-this-build-does-not-know")
+                         : Refusal(word, quest, session: session, by: "a-word-this-build-does-not-know"),
+                 })
+        {
+            var (listed, pressed) = await KeptAsync("quest", refusal);
+
+            Assert.Equal((word, recordsSay), (listed.Word, listed.Context));
+            Assert.Equal((word, recordsSay), (pressed.Word, pressed.Context));
+        }
+    }
+
+    /// <summary>
+    /// A unit of <paramref name="kind"/> the service keeps with <paramref name="refusal"/>, listed and then pressed against records
+    /// that read otherwise (<see cref="Waiting"/>, <see cref="Variants"/>): what the list said, and what the press counted as changed.
+    /// </summary>
+    private async Task<(HistoryKeep Listed, HistoryKeep Pressed)> KeptAsync(string kind, System.Text.Json.Nodes.JsonObject refusal)
     {
         var service = new StandIn
         {
             Records = [Record("s1", "q1"), Record("parked1", "q1", state: "awaiting-person")],
-            Quests = [Quest("q1"), Quest("qh", held: true)],
+            Quests =
+            [
+                Quest("q1"), Quest("qh", held: true), Quest("qt", status: "Taken"), Quest("qa", status: "Taken", awaits: "q1"),
+                Quest("qw", status: "Open"),
+            ],
             Asks = [Ask("a1"), Ask("aopen", state: "Open")],
         };
         var id = kind == "ask" ? "a1" : "q1";
