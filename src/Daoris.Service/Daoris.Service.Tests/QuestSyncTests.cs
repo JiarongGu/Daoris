@@ -1269,6 +1269,162 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.NotNull(await _remote.FindAsync(question.Id));
     }
 
+    // ——— A remote judges a lost claim too (WAITCLAIM3, D69's note): a machine on a build before WAITCLAIM2 makes the move
+    // its own store would now refuse, and pushes it.
+
+    /// <summary>
+    /// What a machine on a build before WAITCLAIM2 writes for a move or a wait it makes after its take lost: the store's
+    /// own append, with no claim judged, so the operation is pending in its log as any move is and goes up with the next
+    /// pass. Written by hand because no verb of this build writes it.
+    /// </summary>
+    private static async Task WriteAsAnOlderBuildAsync(
+        SqliteConnection connection, QuestStore machine, string quest, QuestOperationKind kind, string note, DateTimeOffset at)
+    {
+        await using var append = connection.CreateCommand();
+        append.CommandText = """
+            INSERT INTO quest_log (quest, kind, machine, sequence, at, payload)
+            VALUES ($quest, $kind, $machine,
+                    (SELECT MAX(
+                       COALESCE((SELECT MAX(sequence) FROM quest_log WHERE machine = $machine), 0),
+                       COALESCE((SELECT sequence FROM quest_machine WHERE one = 1 AND id = $machine), 0)) + 1),
+                    $at, $payload)
+            """;
+        append.Parameters.AddWithValue("$quest", quest);
+        append.Parameters.AddWithValue("$kind", kind.ToString().ToLowerInvariant());
+        append.Parameters.AddWithValue("$machine", machine.Machine);
+        append.Parameters.AddWithValue("$at", at.ToString("O"));
+        append.Parameters.AddWithValue("$payload", System.Text.Json.JsonSerializer.Serialize(new { note }));
+        await append.ExecuteNonQueryAsync();
+    }
+
+    /// <summary>
+    /// 🔴 A machine on an older build goes on after its take lost and closes, declines or waits: its store does not refuse
+    /// it, so the next pass pushes it. The remote judges it by the claim the store judges by (QuestLog.Claim) and refuses
+    /// it for that quest, answering in the lost take's words: the winner's quest neither closes nor waits, on the remote
+    /// or the winner's machine. The older machine's pass reads the refusal, its claim reads lost so its driver stops the
+    /// session, and what it made stays pending there, since only its own build could rewrite it.
+    /// </summary>
+    [Theory]
+    [InlineData(QuestOperationKind.Done, "Finished after the take lost.")]
+    [InlineData(QuestOperationKind.Declined, "Not ours after all.")]
+    [InlineData(QuestOperationKind.Waited, null)]
+    public async Task A_move_or_a_wait_an_older_build_makes_after_its_take_lost_is_refused_at_the_remote_and_never_reaches_the_winner(
+        QuestOperationKind kind, string? said)
+    {
+        var quest = await Publish(_a);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        Assert.True((await _a.MoveAsync(quest.Id, QuestStatus.Taken, "A's session.", Now.AddHours(1))).Moved);
+        Assert.True((await _b.MoveAsync(quest.Id, QuestStatus.Taken, "B's session.", Now.AddHours(2))).Moved);
+        await SyncAsync(_a);
+        Assert.Equal(QuestStatus.Taken, Assert.Single((await SyncAsync(_b)).Conflicts).Attempted);
+        Assert.Equal(QuestClaim.Lost, await _b.ClaimAsync(quest.Id));
+
+        var question = await Publish(_b, "B's question for its owner");
+        var note = said ?? question.Id;
+        await WriteAsAnOlderBuildAsync(_connections[1], _b, quest.Id, kind, note, Now.AddHours(3));
+        var next = await SyncAsync(_b);
+        await SyncAsync(_a);
+
+        foreach (var store in new[] { _a, _remote })
+        {
+            var held = (await store.FindAsync(quest.Id))!;
+            Assert.Equal((QuestStatus.Taken, "A's session.", (string?)null), (held.Status, held.Note, held.Awaits));
+            var conflict = Assert.Single(held.Conflicts);
+            Assert.Equal((_b.Machine, QuestStatus.Taken, "B's session."), (conflict.Machine, conflict.Attempted, conflict.Note));
+            Assert.DoesNotContain(await store.HistoryAsync(quest.Id), o => o.Kind == kind);
+            Assert.Empty(await store.WaitingOnAsync(question.Id));
+        }
+
+        Assert.Null(next.Problem);
+        Assert.Empty(next.Conflicts);
+        var refused = Assert.Single(next.Refused);
+        Assert.Equal(quest.Id, refused.Quest);
+        Assert.StartsWith(
+            $"Quest `#{quest.Id}` was taken on another machine first: this machine's take lost and is kept on the quest as a conflict, ",
+            refused.Reason);
+        Assert.Contains(
+            kind == QuestOperationKind.Waited
+                ? $"so it does not wait on `#{question.Id}`. The remote kept nothing this push carried for the quest; `#{question.Id}` stays a quest of its own."
+                : $"so this `{kind.ToString().ToLowerInvariant()}` is not this machine's to make. The remote kept nothing this push carried for the quest.",
+            refused.Reason);
+        Assert.EndsWith("Stand down rather than doubling the work.", refused.Reason);
+        Assert.Equal(QuestClaim.Lost, await _b.ClaimAsync(quest.Id));
+        Assert.Equal(kind, Assert.Single(await _b.PendingAsync(Workspaces.Default, _ => true)).Kind);
+
+        // The question is a quest of its own and still went up: the refusal is for the raced quest alone.
+        Assert.NotNull(await _remote.FindAsync(question.Id));
+    }
+
+    /// <summary>
+    /// The remote's refusal reaches only a move made on a lost take (WAITCLAIM3). The winner's own wait and close land, as
+    /// does the losing machine's dismissal of its conflict, which is no move on the take.
+    /// </summary>
+    [Fact]
+    public async Task The_remote_keeps_the_winners_own_wait_and_close_and_the_losers_dismissal()
+    {
+        var quest = await Publish(_a);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        Assert.True((await _a.MoveAsync(quest.Id, QuestStatus.Taken, "A's session.", Now.AddHours(1))).Moved);
+        Assert.True((await _b.MoveAsync(quest.Id, QuestStatus.Taken, "B's session.", Now.AddHours(2))).Moved);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        var question = await Publish(_a, "A question for its owner");
+        Assert.True((await _a.WaitAsync(quest.Id, question.Id, Now.AddHours(3))).Moved);
+        var waited = await SyncAsync(_a);
+        Assert.Equal(question.Id, (await _remote.FindAsync(quest.Id))!.Awaits);
+        Assert.Equal(1, (await _b.DismissAsync(quest.Id, machine: null, sequence: null, Now.AddHours(4))).Dismissed);
+        var dismissed = await SyncAsync(_b);
+        Assert.True((await _a.MoveAsync(quest.Id, QuestStatus.Done, "Landed.", Now.AddHours(5))).Moved);
+        var closed = await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        Assert.Empty(waited.Refused.Concat(dismissed.Refused).Concat(closed.Refused));
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var held = (await store.FindAsync(quest.Id))!;
+            Assert.Equal((QuestStatus.Done, "Landed.", 0), (held.Status, held.Note, held.Conflicts.Count));
+        }
+    }
+
+    /// <summary>
+    /// An open quest is nobody's work (D95, WAITCLAIM3): published again after a delete, it takes a move from the machine
+    /// whose take lost to that delete, though that machine's claim on the quest read lost. Its take then holds, and its
+    /// close lands.
+    /// </summary>
+    [Fact]
+    public async Task The_remote_keeps_a_move_on_a_quest_published_again_from_the_machine_whose_take_lost_to_its_delete()
+    {
+        var quest = await Publish(_a);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        await _a.DeleteAsync(quest.Id, Now.AddHours(1), travels: true);
+        await _b.MoveAsync(quest.Id, QuestStatus.Taken, "B's session.", Now.AddHours(2));
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        Assert.Equal(QuestClaim.Lost, await _b.ClaimAsync(quest.Id));
+
+        Assert.Equal(quest.Id, (await Publish(_a, body: "Asked properly this time.")).Id);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        Assert.True((await _b.MoveAsync(quest.Id, QuestStatus.Taken, "B's second session.", Now.AddHours(3))).Moved);
+        var taken = await SyncAsync(_b);
+        Assert.True((await _b.MoveAsync(quest.Id, QuestStatus.Done, "Landed.", Now.AddHours(4))).Moved);
+        var closed = await SyncAsync(_b);
+        await SyncAsync(_a);
+
+        Assert.Empty(taken.Refused.Concat(closed.Refused));
+        Assert.Equal(QuestClaim.Held, await _b.ClaimAsync(quest.Id));
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var held = (await store.FindAsync(quest.Id))!;
+            Assert.Equal((QuestStatus.Done, "Landed."), (held.Status, held.Note));
+        }
+    }
+
     // ——— A decline that applies only while open (PAUSE1c, D132 point 10, design §5.2): an abandon judged its decline
     // on an open quest, so one that reaches the remote after another machine's take is a conflict on the quest (D68
     // rule 2), and the take stands.

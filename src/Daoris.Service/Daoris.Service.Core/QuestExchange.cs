@@ -1163,8 +1163,9 @@ public sealed class QuestExchange(
     /// <summary>
     /// A move or a wait refused because this machine's take lost (WAITCLAIM2), in one sentence for both: what happened to
     /// the take, then <paramref name="what"/>, what that means for this one, then the stand-down the take's own loss says.
+    /// A remote refusing such a push says it in the same words (WAITCLAIM3), and the pushing machine's pass relays them.
     /// </summary>
-    private static string LostTake(string id, string what) =>
+    internal static string LostTake(string id, string what) =>
         $"Quest `#{id}` was taken on another machine first: this machine's take lost and is kept on the quest as a conflict, "
         + $"{what} Stand down rather than doubling the work.";
 
