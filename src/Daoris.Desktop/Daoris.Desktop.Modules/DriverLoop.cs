@@ -226,7 +226,8 @@ public sealed class DriverLoop(
     /// <para><b>Which account it waits for</b> (TOOL4g, D125 §4): a quest held at spawn because every account its start may use
     /// is cooling waits for an account, not parked and with no Retry. The wait names whose account, which (null for the tool's
     /// own sign-in), until when, and whether the agent named the time, so the page says it in the reader's language. Null where
-    /// no wait of the look holds this quest. A profile name rides this bridge only (D47 §4).</para>
+    /// no wait of the look holds this quest on a cooling account: a wait on signed-out accounts alone has no time (UX6d1), and
+    /// its quest says its accounts by <c>SignedOut</c>. A profile name rides this bridge only (D47 §4).</para>
     /// <para><b>Which accounts it passed not signed in</b> (TOOL6g): beside a wait or with none cooling, whose and which, so the
     /// page names each with its sign-in. Null where it passed none.</para>
     /// </remarks>
@@ -239,7 +240,10 @@ public sealed class DriverLoop(
                      && string.Equals(park.Quest, consideration.Quest.Id, StringComparison.OrdinalIgnoreCase)
             ? park
             : null;
-        var waiting = wait is not null && wait.Quests.Contains(consideration.Quest.Id, StringComparer.OrdinalIgnoreCase) ? wait : null;
+        // A wait on signed-out accounts has no reset (UX6d1): its quest waits for a sign-in, which `SignedOut` says, never a time.
+        var waiting = wait is { Until: not null } && wait.Quests.Contains(consideration.Quest.Id, StringComparer.OrdinalIgnoreCase)
+            ? wait
+            : null;
         return new
         {
             Quest = consideration.Quest.Id,
@@ -270,6 +274,9 @@ public sealed class DriverLoop(
     /// only as the driver's toast and its log line, and the band could not say it waited (the TOOL6g note, TOOL4m's row).
     /// The asks are carried by id; where each would have run (<c>ask #id</c>) stays here, since the page names an intake by
     /// its ask.</para>
+    /// <para><b>And a start held on signed-out accounts with none cooling</b> (UX6d1): one per agent, its <c>until</c> and its
+    /// <c>account</c> null and <c>stated</c> false, its <c>signedOut</c> the accounts a sign-in frees. It waits for a person,
+    /// not a time.</para>
     /// <para><b>Facts, never the driver's English</b>: whose account, which and the name the person gave it (ACCT2b), the
     /// workspace where the held starts share one, until when and whether the agent named the time, what it holds, and the
     /// accounts the starts passed signed out (TOOL6g). The page says them in the reader's language. The adapter stays too:
@@ -294,12 +301,12 @@ public sealed class DriverLoop(
     /// <summary>
     /// What the waits SAY, as one string (UX6d), equal when the same accounts hold the same starts until the same time,
     /// whatever the order. The tick is forwarded when it changes, as it is for the considerations' signature: a wait that
-    /// begins or ends for an intake alone moves no consideration.
+    /// begins or ends for an intake alone moves no consideration. A wait on signed-out accounts signs with no time (UX6d1).
     /// </summary>
     public static string WaitsSignature(IEnumerable<AccountWait> waits) =>
         string.Join("\n", waits
             .Select(wait => string.Join("\t",
-                wait.Agent, wait.Account ?? "", wait.Workspace ?? "", wait.Until.ToUnixTimeSeconds(), wait.Stated,
+                wait.Agent, wait.Account ?? "", wait.Workspace ?? "", wait.Until?.ToUnixTimeSeconds(), wait.Stated,
                 string.Join(",", wait.Quests), string.Join(",", wait.Asks), string.Join(",", wait.SignedOut)))
             .OrderBy(line => line, StringComparer.Ordinal));
 

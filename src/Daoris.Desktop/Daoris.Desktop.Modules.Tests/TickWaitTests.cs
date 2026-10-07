@@ -6,7 +6,8 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <summary>
 /// A wait as the loop's tick hands it to the page (<see cref="DriverLoop.TickWait"/>, UX6d, D150 §6.2): starts held because
 /// every account they may use is cooling, one per account, so *What needs you* lists a start waiting for accounts, an ask's
-/// intake among them, which the considerations never carried (they name quests alone).
+/// intake among them, which the considerations never carried (they name quests alone). And starts held on signed-out
+/// accounts with none cooling, one per agent with no time (UX6d1).
 /// </summary>
 /// <remarks>
 /// 🔴 <b>No row starts a process to find out</b> (D150 §6.3): what the tick hands is the look's own wait, read from the
@@ -76,6 +77,45 @@ public sealed class TickWaitTests
         Assert.Equal(JsonValueKind.Null, shape.GetProperty("name").ValueKind);
         Assert.Equal(JsonValueKind.Null, shape.GetProperty("workspace").ValueKind);
         Assert.Empty(shape.GetProperty("signedOut").EnumerateArray());
+    }
+
+    /// <summary>A start held on signed-out accounts with none cooling (UX6d1): an intake among what it holds.</summary>
+    private static AccountWait SignedOut() =>
+        Wait() with { Account = null, Name = null, Until = null, Stated = false, Quests = [], Asks = ["a1"], Repositories = ["ask #a1"] };
+
+    /// <summary>
+    /// UX6d1: a wait for a person, not a time. No account cools, so there is none and no <c>until</c>, the agent named no time,
+    /// and the accounts a sign-in frees are named: the band lists an intake held so, which no consideration carries.
+    /// </summary>
+    [Fact]
+    public void A_wait_on_signed_out_accounts_hands_no_time_and_no_account_and_names_the_accounts()
+    {
+        var shape = JsonSerializer.SerializeToElement(DriverLoop.TickWait(SignedOut()), Wire);
+
+        Assert.Equal("claude-code", shape.GetProperty("agent").GetString());
+        Assert.Equal(JsonValueKind.Null, shape.GetProperty("account").ValueKind);
+        Assert.Equal(JsonValueKind.Null, shape.GetProperty("name").ValueKind);
+        Assert.Equal(JsonValueKind.Null, shape.GetProperty("until").ValueKind);
+        Assert.False(shape.GetProperty("stated").GetBoolean());
+        Assert.Equal("work", shape.GetProperty("workspace").GetString());
+        Assert.Empty(shape.GetProperty("quests").EnumerateArray());
+        Assert.Equal(["a1"], shape.GetProperty("asks").EnumerateArray().Select(each => each.GetString()));
+        Assert.Equal(["account-1", "account-3"], shape.GetProperty("signedOut").EnumerateArray().Select(each => each.GetString()));
+    }
+
+    /// <summary>
+    /// UX6d1: a wait on signed-out accounts moves the signature as it begins, as its accounts change and as one of them comes to
+    /// cool, so the tick reaches the page; with no time it signs as any wait does.
+    /// </summary>
+    [Fact]
+    public void A_wait_on_signed_out_accounts_moves_the_signature()
+    {
+        var signedOut = SignedOut();
+
+        Assert.NotEqual(DriverLoop.WaitsSignature([]), DriverLoop.WaitsSignature([signedOut]));
+        Assert.Equal(DriverLoop.WaitsSignature([signedOut, Wait()]), DriverLoop.WaitsSignature([Wait(), signedOut]));
+        Assert.NotEqual(DriverLoop.WaitsSignature([signedOut]), DriverLoop.WaitsSignature([signedOut with { SignedOut = ["account-1"] }]));
+        Assert.NotEqual(DriverLoop.WaitsSignature([signedOut]), DriverLoop.WaitsSignature([signedOut with { Until = Until }]));
     }
 
     /// <summary>
