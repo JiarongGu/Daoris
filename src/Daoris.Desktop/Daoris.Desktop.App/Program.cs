@@ -181,9 +181,15 @@ internal static class Program
         // terminal with it; each shell's job object ends with this process besides.
         builder.Services.AddSingleton<Daoris.Driver.ITerminalFactory, Daoris.Driver.PseudoConsoleTerminals>();
         builder.Services.AddIpcModule<TerminalModule>();
+        // How late the window's thread answers, and what held it (FREEZE1, D56's note): the strip is the caption, moved on
+        // that thread, so a late thread is a frozen bar while the page works on. Composed here for its middleware, which
+        // names the route on the thread; the form starts it once it is shown (MainForm).
+        builder.Services.AddSingleton(sp => new UiStallWatch(log, bus: sp.GetRequiredService<Shenora.Core.Events.IEventBus>()));
         // And every refusal the bridge answers, by its code: a middleware in the kit's application slot,
         // so every module's answer passes it. Registered before Build, whose own call is a TryAdd.
-        builder.Services.UseMessageDispatcher((_, dispatcher) => dispatcher.Use(RefusalLog.Middleware(log)));
+        builder.Services.UseMessageDispatcher((sp, dispatcher) => dispatcher
+            .Use(RefusalLog.Middleware(log))
+            .Use(sp.GetRequiredService<UiStallWatch>().Middleware));
 
         // The loop starts with the app, not with the window: the driver watches whether or not the
         // person is looking, which is the whole point of a driver.
