@@ -5,6 +5,15 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — a look that failed took its own lines with it
+
+### Driver: a stop made early in a look went unsaid when the look failed later (DEV3c)
+- **Symptom:** read from the code and DEV3b's note, not seen on a run: under `--until-idle` and the watch, a look that stopped a session for a lost take and then failed (the quest list down, its sync after the endings unreadable) left the record stood down and printed no `stop  session` line. A look that drained an ending before its own sync failed printed neither the ending nor its fact.
+- **Root cause:** `TickAsync` gathered every line and ending into lists it handed over only in the report it returned, and a look that threw returned none. DEV3a and DEV3b made each finished look and each pass beside `--once`'s sessions said as it ends; a look cut short had no such door.
+- **Fix:** `TickAsync` takes `failed`, handed what the look had said when it fails or is closed. `RunUntilIdleAsync` and `RunOnceAsync` hand it their `said`. `DriverWatch.RunAsync` takes `said` for a part of a look, which the headless host prints; with none, the part joins the next look's report, as the orphan sweep's lines do. D115's DEV3c note has the rest.
+- **Verify:** five `SessionsOutliveTheirLookTests` DEV3c cases over the stand-in ledger, each seen failing first (the until-idle stop case said the ending without the stop; the others said nothing; the two watch cases failed with the carry removed), and `DriverCommandTests.The_hosts_watch_prints_what_a_failed_look_had_said`, failing with the host's `said` removed; then the driver's fast half passed (4686). Not run: the family rehearsal, the `Process` half and the deployment rehearsal.
+- **Commit:** `bbe9510b`.
+
 ## 2026-10-07 — a losing session's stop that its run made and never said
 
 ### Driver: `--once` kept the passes beside its session for its end, and the rehearsal's bound ended it first (DEV3b)
