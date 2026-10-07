@@ -64,8 +64,9 @@ public sealed partial class DriverModule
                     {
                         Agent = agent,
                         // D130 §6: switching before the limit reads the agent's own word, which a door carries only where its
-                        // table reads it (TOOL6c). A door's readings are its owner's.
-                        Speaks = owner.Any(door => roster.WindowsOf(door.Door) is not null),
+                        // table reads it (TOOL6c), or the agent's own server answers where it does not (CODEXUSE1). A door's
+                        // readings are its owner's.
+                        Speaks = owner.Any(door => roster.Speaks(door.Door)),
                         Own = new
                         {
                             Cooling = CoolingShown(cooling.FirstOrDefault(entry => Same(entry.Agent, agent) && entry.Account is null)),
