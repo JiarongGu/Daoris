@@ -28,6 +28,16 @@ public sealed partial class KnowledgeLinesToolTests : IAsyncLifetime
         + "| `SESSION_GO_ON_NEW` | `DriverModule.Sessions.cs:97` |\n" // 7
         + "| `STATE` | `DriverModule.cs:38` |\n";              // 8
 
+    /// <summary>An outline is a list, which stays one section of several lines: what a range is cut from.</summary>
+    private const string Outline =
+        "# Outline of `src/Widget.cs`\n"                        // 1
+        + "\n"                                                  // 2
+        + "Generated; never edit by hand.\n"                    // 3
+        + "\n"                                                  // 4
+        + "- 4-40 class Widget\n"                               // 5
+        + "  - 9-12 Widget()\n"                                 // 6
+        + "  - 412-417 test CountAsync\n";                      // 7
+
     private void Write(string relative, string content)
     {
         var file = Path.Combine(_root, "atlas", relative.Replace('/', Path.DirectorySeparatorChar));
@@ -40,6 +50,7 @@ public sealed partial class KnowledgeLinesToolTests : IAsyncLifetime
         Write("daoris.json", """{"source":"s","packs":[],"documents":{"index":"docs/index/README.md","decisions":"docs/DECISIONS.md"}}""");
         Write("docs/index/README.md", "# Where things are\n\nGenerated; open the row you need.\n");
         Write("docs/index/routes.md", Routes);
+        Write("docs/index/outlines/src/Widget.cs.md", Outline);
         Write("docs/DECISIONS.md", "# Decisions\n\n## D1 — Why the handler is one\n\nOne handler per route, so a route is found once.\n");
         for (var n = 1; n <= 4; n++) Write($"docs/index/outlines/route{n}.md", $"# Outline of route {n}\n\n- 1-9 the handler of route {n}\n");
 
@@ -62,18 +73,19 @@ public sealed partial class KnowledgeLinesToolTests : IAsyncLifetime
 
     /// <summary>
     /// The row's proof at the door: the hit is an index entry naming <c>path:first-last</c> and its excerpt's line,
-    /// and with no model the answer still says it matched on words only (TIER1, the design's §3.5 tier line).
+    /// and with no model the answer still says it matched on words only (TIER1, the design's §3.5 tier line). A
+    /// table's row is the hit, naming its own line (ORIENT2h).
     /// </summary>
     [Fact]
     public async Task A_hit_names_its_kind_its_lines_and_its_excerpt_s_line_and_the_tier_line_closes_the_answer()
     {
         var said = await _tools.SearchAsync("SESSION_GO_ON_NEW", kinds: "index", workspace: "all");
 
-        Assert.Contains("### Bridge routes › DAORIS.DRIVER (2)", said);
-        Assert.Contains("`atlas` · Index · `docs/index/routes.md:5-8`", said);
+        Assert.Contains("### Bridge routes › DAORIS.DRIVER (2) › SESSION_GO_ON_NEW", said);
+        Assert.Contains("`atlas` · Index · `docs/index/routes.md:7`", said);
         var excerpt = ExcerptLine().Match(said);
         Assert.True(excerpt.Success, said);
-        Assert.InRange(int.Parse(excerpt.Groups[1].Value), 5, 8);
+        Assert.Equal(7, int.Parse(excerpt.Groups[1].Value));
         Assert.Contains("`lines`", said);
         Assert.Contains("_Matched on words only.", said);
     }
@@ -81,23 +93,29 @@ public sealed partial class KnowledgeLinesToolTests : IAsyncLifetime
     [Fact]
     public async Task Knowledge_get_reads_the_lines_a_hit_names_rather_than_the_entry_whole()
     {
-        const string id = "atlas:docs/index/routes.md#Bridge routes › DAORIS.DRIVER (2)";
+        const string id = "atlas:docs/index/outlines/src/Widget.cs.md#Outline of `src/Widget.cs`";
 
-        var read = await _tools.GetAsync(id, lines: "7-7");
+        var read = await _tools.GetAsync(id, lines: "6-6");
 
-        Assert.Contains("`docs/index/routes.md:7`", read);
-        Assert.Contains("| `SESSION_GO_ON_NEW` | `DriverModule.Sessions.cs:97` |", read);
-        Assert.DoesNotContain("STATE", read);
-        Assert.DoesNotContain("| Route | Handler |", read);
+        Assert.Contains("`docs/index/outlines/src/Widget.cs.md:6`", read);
+        Assert.Contains("- 9-12 Widget()", read);
+        Assert.DoesNotContain("class Widget", read);
+        Assert.DoesNotContain("CountAsync", read);
 
         // Past the entry's own lines, the part inside is read; wholly outside, the entry's lines are named.
-        Assert.Contains("`DriverModule.cs:38`", await _tools.GetAsync(id, lines: "8-400"));
-        var outside = await _tools.GetAsync(id, lines: "1-4");
-        Assert.Contains("lines 5-8 of `docs/index/routes.md`", outside);
-        Assert.DoesNotContain("SESSION_GO_ON_NEW", outside);
+        Assert.Contains("412-417 test CountAsync", await _tools.GetAsync(id, lines: "7-400"));
+        var outside = await _tools.GetAsync(id, lines: "1-2");
+        Assert.Contains("lines 3-7 of `docs/index/outlines/src/Widget.cs.md`", outside);
+        Assert.DoesNotContain("Widget()", outside);
 
         Assert.Contains("is not a range of lines", await _tools.GetAsync(id, lines: "eight"));
-        Assert.Contains("| `STATE` | `DriverModule.cs:38` |", await _tools.GetAsync(id));
+        Assert.Contains("- 4-40 class Widget", await _tools.GetAsync(id));
+
+        // A row is one line, and its range reads it (ORIENT2h).
+        var row = await _tools.GetAsync("atlas:docs/index/routes.md#Bridge routes › DAORIS.DRIVER (2) › SESSION_GO_ON_NEW", lines: "7");
+        Assert.Contains("`docs/index/routes.md:7`", row);
+        Assert.Contains("| `SESSION_GO_ON_NEW` | `DriverModule.Sessions.cs:97` |", row);
+        Assert.DoesNotContain("STATE", row);
     }
 
     /// <summary>

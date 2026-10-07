@@ -143,9 +143,10 @@ public static class IndexRows
 
     /// <summary>
     /// A table row's cells, trimmed, split at each pipe that is neither escaped nor inside code: an index's
-    /// cells hold commands, and a command's pipe is not a column.
+    /// cells hold commands, and a command's pipe is not a column. A declared index's rows are read by it too
+    /// (<see cref="IndexSections"/>, ORIENT2h), so a table is one table to both readers.
     /// </summary>
-    private static List<string> Cells(string row)
+    internal static List<string> Cells(string row)
     {
         var cells = new List<string>();
         var cell = new System.Text.StringBuilder();
@@ -177,10 +178,10 @@ public static class IndexRows
     }
 
     /// <summary>A separator cell: dashes, with a colon at either end for alignment.</summary>
-    private static bool IsRule(string cell) =>
+    internal static bool IsRule(string cell) =>
         cell.Trim(':').Length > 0 && cell.Trim(':').All(c => c == '-');
 
     /// <summary>Text without the marks that dress it — code's backticks and emphasis's doubled stars — for a title.</summary>
-    private static string Plain(string text) =>
+    internal static string Plain(string text) =>
         text.Replace("`", string.Empty).Replace("**", string.Empty).Trim();
 }
