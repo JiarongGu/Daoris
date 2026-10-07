@@ -32,7 +32,8 @@ namespace Daoris.Driver;
 ///
 /// <para>The file's shape: <c>{ "&lt;agent&gt;": { "&lt;account&gt;": { "weekly": { "reset": "…Z", "used": 0.14, "seen": "…Z",
 /// "session": "3f9c2a71" }, "session": { "reset": "…Z", "used": 0.88, "standing": "clear", "seen": "…Z" } } } }</c>, where a
-/// week a limit told has no <c>used</c>, and <c>standing</c> and <c>credits</c> sit on the window the frame named.</para>
+/// week a limit told has no <c>used</c>, and <c>standing</c> and <c>credits</c> sit on the window the frame named. The tool's
+/// own sign-in's reading, where its agent's server is asked it at a person's press (CODEXUSE3), sits under <see cref="Own"/>.</para>
 /// </remarks>
 public static class AccountWindows
 {
@@ -40,6 +41,13 @@ public static class AccountWindows
 
     /// <summary>The window a weekly limit's reset names, as the agent's table reads it.</summary>
     public const string Weekly = "weekly";
+
+    /// <summary>
+    /// The tool's own sign-in's key (CODEXUSE3): <c>""</c>, as <c>cooling.json</c> keys its cool-off (AGT3b's key), since no
+    /// account's directory is named nothing. A key added beside the accounts', never a new shape: its reading is read as an
+    /// account's is, and no list, default or walk names it, so it moves no start.
+    /// </summary>
+    public const string Own = "";
 
     /// <summary>How far a fixed weekly reset is carried each time it passes (C1).</summary>
     public static readonly TimeSpan Week = TimeSpan.FromDays(7);

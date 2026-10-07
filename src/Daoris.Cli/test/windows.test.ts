@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { TOOLCHAINS, accountLines } from '../src/toolchain.ts';
 import type { HarnessReport, HarnessSettings } from '../src/toolchain.ts';
-import { WINDOWS_FILE, age, saidLine, saidOf } from '../src/windows.ts';
+import { OWN_WINDOWS, WINDOWS_FILE, age, saidLine, saidOf } from '../src/windows.ts';
 import type { WindowSaid } from '../src/windows.ts';
 import { driverRows as csharpRows } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
@@ -33,7 +33,7 @@ function said(windows: WindowSaid[]): Record<string, unknown>[] {
 }
 
 // ——— Reading (§5.2): missing or unreadable is nothing said; a reading is gone at its reset; a week a limit told says no
-// use; names compare without case.
+// use; names compare without case; the tool's own sign-in is its own key, `OWN_WINDOWS` (CODEXUSE3).
 
 const READ_ROWS: [name: string, file: Cell, now: string, agent: string, account: string, said: Cell][] = [
   ['missing is nothing said', null, '2026-10-02T12:00:00Z', 'claude-code', 'account-1', null],
@@ -52,6 +52,8 @@ const READ_ROWS: [name: string, file: Cell, now: string, agent: string, account:
   ['a moment with an offset or a fraction is read in UTC, to the second', '{"claude-code":{"account-1":{"weekly":{"reset":"2026-10-07T03:03:00+05:45","used":0.25,"seen":"2026-10-02T11:00:00.5Z","session":"s2"}}}}', '2026-10-02T12:00:00Z', 'claude-code', 'account-1', '[{"window":"weekly","used":0.25,"reset":"2026-10-06T21:18:00Z","standing":null,"credits":false,"seen":"2026-10-02T11:00:00Z","session":"s2"}]'],
   ['a letter whose capital is two letters is not those two: straße is not STRASSE', '{"claude-code":{"straße":{"session":{"reset":"2026-10-02T14:00:00Z","used":0.5,"seen":"2026-10-02T11:00:00Z"}}}}', '2026-10-02T12:00:00Z', 'claude-code', 'STRASSE', null],
   ['a dotless i is not an I', '{"claude-code":{"ışık":{"session":{"reset":"2026-10-02T14:00:00Z","used":0.5,"seen":"2026-10-02T11:00:00Z"}}}}', '2026-10-02T12:00:00Z', 'claude-code', 'IŞIK', null],
+  ['the tool\'s own sign-in reads under its own key, beside the accounts and none of them', '{"codex":{"account-1":{"session":{"reset":"2026-10-02T14:00:00Z","used":0.5,"seen":"2026-10-02T11:00:00Z"}},"":{"weekly":{"reset":"2026-10-06T21:18:00Z","used":0.4,"seen":"2026-10-02T11:30:00Z"}}}}', '2026-10-02T12:00:00Z', 'codex', '', '[{"window":"weekly","used":0.4,"reset":"2026-10-06T21:18:00Z","standing":null,"credits":false,"seen":"2026-10-02T11:30:00Z","session":null}]'],
+  ['an account is not the tool\'s own sign-in', '{"codex":{"":{"weekly":{"reset":"2026-10-06T21:18:00Z","used":0.4,"seen":"2026-10-02T11:30:00Z"}}}}', '2026-10-02T12:00:00Z', 'codex', 'account-1', null],
 ];
 
 test('an account\'s windows read as the driver reads them (the twin\'s table)', () => {
@@ -129,6 +131,36 @@ test('`agent list` says beneath each account what it last said, and nothing for 
   fx.cleanup();
 });
 
+/**
+ * CODEXUSE3: the driver reads the tool's own sign-in's windows at a person's press and keeps them under its own key, so
+ * `agent list` says them beneath the agent, as it says its cool-off, and never as one of its accounts.
+ */
+test('`agent list` says what the tool\'s own sign-in last said beneath its agent, never as an account (CODEXUSE3)', () => {
+  const fx = makeFixture('windows-own');
+  const ahead = (hours: number) => new Date(Date.now() + hours * 3_600_000).toISOString().replace(/\.\d+Z$/, 'Z');
+  const seen = new Date(Date.now() - 3 * 3_600_000).toISOString().replace(/\.\d+Z$/, 'Z');
+  writeFileSync(join(fx.root, WINDOWS_FILE), JSON.stringify({
+    codex: { [OWN_WINDOWS]: { session: { reset: ahead(2), used: 0.01, seen }, weekly: { reset: ahead(100), used: 0.15, seen } } },
+  }), 'utf8');
+  const report: HarnessReport = {
+    harness: 'codex', present: true, version: 'codex-cli 0.160.0', problem: null, machineDefault: null, profiles: [],
+  };
+  const settings: HarnessSettings = {
+    defaults: {}, workspaces: {}, versions: {}, workspaceVersions: {},
+    rotation: {}, workspaceRotation: {}, rotationUse: {}, workspaceRotationUse: {}, rest: {},
+  };
+
+  const lines = accountLines('codex', TOOLCHAINS['codex']!, report, settings, fx.root, new Date(), 'UTC');
+
+  const own = lines.filter((line) => /said .* ago:/.test(line));
+  assert.equal(own.length, 1, lines.join('\n'));
+  assert.match(own[0]!, /^\s+its own sign-in: said 3 h ago: 1% of its session limit used, resetting .* \(UTC\); 15% of its weekly limit used, resetting .* \(UTC\)$/);
+  // It is no account: the agent still has none, and its starts still run on the own sign-in by no list.
+  assert.ok(lines.some((line) => /no accounts — sessions run in the agent's own configuration home/.test(line)), lines.join('\n'));
+  assert.ok(!lines.some((line) => /rotation/.test(line)), lines.join('\n'));
+  fx.cleanup();
+});
+
 // ——— The twin, held: the driver's table is this table, row for row and in this order.
 
 const DRIVER_TESTS = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests');
@@ -137,4 +169,11 @@ test('the driver’s table is this table, row for row and in this order', () => 
   const twin = readFileSync(join(DRIVER_TESTS, 'WindowsTwinTests.cs'), 'utf8').replace(/\r\n/g, '\n');
 
   assert.deepEqual(csharpRows(twin, 'An_account_s_windows_read_as_the_cli_reads_them', {}, 'WindowsTwinTests'), READ_ROWS);
+});
+
+test('the tool’s own sign-in’s key is the driver’s, and no account’s (CODEXUSE3)', () => {
+  const source = readFileSync(join(DRIVER_TESTS, '..', 'Daoris.Desktop.Driver', 'AccountWindows.cs'), 'utf8');
+
+  assert.equal(OWN_WINDOWS, '');
+  assert.match(source, /public const string Own = "";/);
 });
