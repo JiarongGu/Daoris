@@ -9,7 +9,7 @@ import {
   readNeeds, readOffers, readPluginSource,
 } from '../src/plugins.ts';
 import type { PluginSource } from '../src/plugins.ts';
-import { driverRows, heldSoFar } from './_csharp.ts';
+import { driverRows } from './_csharp.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
 /**
@@ -271,19 +271,14 @@ const UPDATE_REFUSALS: [string, string, (m: ReturnType<typeof machine>, source: 
     writeFileSync(join(pluginsRoot(m.home), 'acme.gate', SOURCE_FILE), JSON.stringify({ package: 'Acme.Gate', version: '1.0.0', sha512: SHA, source }));
   }, 'A newer package takes its place: `daoris plugin remove acme.gate`, then `daoris-driver plugins install <file.nupkg>`'],
   ['not an id', '../acme.gate', () => {}, 'is not a plugin id'],
+  // CASEFOLD1b: a door lowers an id before its shape check, the CLI by `toLowerCase` and the driver by `ToLowerInvariant`;
+  // measured over every code point on .NET 10, under ICU and in invariant mode, the two agree on which letters lower into
+  // an id's: `İ` is two letters here and itself there, and no letter of an id either way. And both shapes end at the id's
+  // very end, a final line break included: JavaScript's `$` does without the `m` flag, and the driver's `\z` since
+  // CASEFOLD1e.
   ['a dotted capital I lowers to no letter of an id', 'acme.İ', () => {}, 'is not a plugin id'],
   ['a line break after an id', 'acme.gate\u000A', () => {}, 'is not a plugin id'],
 ];
-
-/**
- * CASEFOLD1b's rows, which `PluginSourceTests` does not hold yet. A door lowers an id before its shape check, the CLI by
- * `toLowerCase` and the driver by `ToLowerInvariant`; measured over every code point on .NET 10, under ICU and in invariant
- * mode, the two agree on which letters lower into an id's: `İ` is two letters here and itself there, and no letter of an
- * id either way. The line break is where they part: .NET's `$` passes a final one, so the driver's `IsId` takes
- * `acme.gate` and a line break for an id, then finds no plugin. The twin check below holds each the driver adds, cell for
- * cell and in place.
- */
-const DRIVER_OWES = new Set(['a dotted capital I lowers to no letter of an id', 'a line break after an id']);
 
 test('update refuses a source that is gone, unsound, another plugin, a package, or one this build refuses', () => {
   for (const [name, id, arrange, says] of UPDATE_REFUSALS) {
@@ -313,8 +308,9 @@ test('the driver\'s record and update tables are these tables, row for row and i
   const source = readFileSync(DRIVER_TABLES, 'utf8').replace(/\r\n/g, '\n');
 
   assert.deepEqual(driverRows(source, 'The_record_reads_as_the_cli_reads_it', {}, 'PluginSourceTests'), RECORD_ROWS);
-  const refusals = driverRows(source, 'An_update_refuses_what_the_cli_refuses', {}, 'PluginSourceTests');
-  assert.deepEqual(refusals, heldSoFar(refusals, UPDATE_REFUSALS.map(([name, id, , says]) => [name, id, says]), DRIVER_OWES));
+  assert.deepEqual(
+    driverRows(source, 'An_update_refuses_what_the_cli_refuses', {}, 'PluginSourceTests'),
+    UPDATE_REFUSALS.map(([name, id, , says]) => [name, id, says]));
 });
 
 test('update names a plugin by its id, refused before it becomes a path', () => {

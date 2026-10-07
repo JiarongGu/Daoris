@@ -8,7 +8,7 @@ import {
   pausedAsk, pausedQuest, readDriverChoices, releasedFor, standingFor, writeAcrossProblem,
 } from '../src/driverconfig.ts';
 import type { RecordsReader } from '../src/strikes.ts';
-import { driverRows as csharpRows, heldSoFar } from './_csharp.ts';
+import { driverRows as csharpRows } from './_csharp.ts';
 import { makeFixture, captureError } from './_fixture.ts';
 
 /**
@@ -833,16 +833,6 @@ const RELEASED_ROWS: [name: string, file: string, quest: string, session: string
   ['a dotted capital I is not an i with a dot above', '{"released":{"İzmir":"s1"}}', 'i\u{307}zmir', null],
 ];
 
-/**
- * CASEFOLD1's rows, named alike in each of this file's twinned tables, which the driver's theories do not hold yet: a name
- * or an id compares as the driver's `OrdinalIgnoreCase` does (`casefold.ts`). Each twin check holds each row the driver
- * holds, cell for cell.
- */
-const DRIVER_OWES = new Set([
-  'a letter whose capital is two letters is not those two: straße is not STRASSE',
-  'a dotted capital I is not an i with a dot above',
-]);
-
 test('a release reads as the driver reads it (the twin\'s table)', () => {
   const fx = makeFixture('driver-released-read');
   for (const [name, file, quest, session] of RELEASED_ROWS) {
@@ -856,8 +846,7 @@ test('the driver’s release table is this table, row for row and in this order'
   const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
     'Daoris.Desktop.Driver.Tests', 'ReleasedTests.cs'), 'utf8').replace(/\r\n/g, '\n');
 
-  const rows = csharpRows(source, 'Released_reads_as_the_cli_reads_it', {}, 'ReleasedTests');
-  assert.deepEqual(rows, heldSoFar(rows, RELEASED_ROWS, DRIVER_OWES));
+  assert.deepEqual(csharpRows(source, 'Released_reads_as_the_cli_reads_it', {}, 'ReleasedTests'), RELEASED_ROWS);
 });
 
 /**
@@ -932,8 +921,7 @@ test('the driver’s standing table is this table, row for row and in this order
   const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
     'Daoris.Desktop.Driver.Tests', 'StandingTests.cs'), 'utf8').replace(/\r\n/g, '\n');
 
-  const rows = csharpRows(source, 'Standing_reads_as_the_cli_reads_it', {}, 'StandingTests');
-  assert.deepEqual(rows, heldSoFar(rows, STANDING_ROWS, DRIVER_OWES));
+  assert.deepEqual(csharpRows(source, 'Standing_reads_as_the_cli_reads_it', {}, 'StandingTests'), STANDING_ROWS);
 });
 
 /**
@@ -1045,8 +1033,7 @@ test('the driver’s language reading is this table, row for row and in this ord
   const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
     'Daoris.Desktop.Driver.Tests', 'SessionLanguageTests.cs'), 'utf8').replace(/\r\n/g, '\n');
 
-  const rows = csharpRows(source, 'Languages_read_as_the_cli_reads_them', {}, 'SessionLanguageTests');
-  assert.deepEqual(rows, heldSoFar(rows, LANGUAGE_ROWS, DRIVER_OWES));
+  assert.deepEqual(csharpRows(source, 'Languages_read_as_the_cli_reads_them', {}, 'SessionLanguageTests'), LANGUAGE_ROWS);
 });
 
 /**
@@ -1181,8 +1168,7 @@ test('the driver’s pause table is this table, row for row and in this order', 
   const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
     'Daoris.Desktop.Driver.Tests', 'PausedWorkTests.cs'), 'utf8').replace(/\r\n/g, '\n');
 
-  const rows = csharpRows(source, 'Pauses_read_as_the_cli_reads_them', {}, 'PausedWorkTests');
-  assert.deepEqual(rows, heldSoFar(rows, PAUSE_ROWS, DRIVER_OWES));
+  assert.deepEqual(csharpRows(source, 'Pauses_read_as_the_cli_reads_them', {}, 'PausedWorkTests'), PAUSE_ROWS);
 });
 
 /**

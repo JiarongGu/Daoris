@@ -89,7 +89,8 @@ export const NEEDS_HEADING = '## What it needs';
 // A plugin id's shape; the driver's `PluginCatalog.IsId` is its twin. A door that lowers an id first lowers it by
 // `toLowerCase` where the driver's uses `ToLowerInvariant`, and the two agree on every code point for this check (CASEFOLD1b,
 // measured on .NET 10 under ICU and in invariant mode): `İ` lowers to two letters here and keeps itself there, and is no
-// letter of an id either way. They part only at the end: .NET's `$` passes a final line break, which this refuses.
+// letter of an id either way. And both end at the id's very end: this `$`, without the `m` flag, refuses a final line
+// break, as the driver's `\z` does since CASEFOLD1e.
 const ID_SHAPE = /^[a-z0-9][a-z0-9.-]*$/;
 
 /**
