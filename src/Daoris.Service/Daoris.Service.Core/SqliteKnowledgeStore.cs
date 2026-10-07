@@ -29,7 +29,9 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
     //    rebuilt from the raw entries on open — the rows it held were never findable in 中文.
     // 4: the FTS rows carry each identifier's words beside it (`Text.Segment`, ORIENT1f): a row written
     //    before holds `ProbeLock` as one token, which a question in words never finds.
-    private const int SchemaVersion = 4;
+    // 5: entries keep the lines of their file they are (`first_line`, `last_line`, ORIENT2e), and the kinds
+    //    gain `Index`: an entry written before names no lines, which a hit then could not name.
+    private const int SchemaVersion = 5;
 
     private readonly SqliteConnection _connection;
 
@@ -83,7 +85,9 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
                 body          TEXT NOT NULL,
                 relative_path TEXT NOT NULL,
                 anchor        TEXT,
-                workspace     TEXT NOT NULL DEFAULT '{Workspaces.Default}'
+                workspace     TEXT NOT NULL DEFAULT '{Workspaces.Default}',
+                first_line    INTEGER,
+                last_line     INTEGER
             );
             CREATE INDEX IF NOT EXISTS ix_entries_repository ON entries(repository);
             -- The scoped search is the common read, and it filters on this before anything else.
@@ -141,8 +145,8 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
             insert.Transaction = (SqliteTransaction)transaction;
             insert.CommandText =
                 """
-                INSERT INTO entries (id, repository, kind, provenance, title, body, relative_path, anchor, workspace)
-                VALUES ($id, $repo, $kind, $prov, $title, $body, $path, $anchor, $workspace);
+                INSERT INTO entries (id, repository, kind, provenance, title, body, relative_path, anchor, workspace, first_line, last_line)
+                VALUES ($id, $repo, $kind, $prov, $title, $body, $path, $anchor, $workspace, $first, $last);
                 INSERT INTO entries_fts (id, title, body) VALUES ($id, $ftsTitle, $ftsBody);
                 """;
             insert.Parameters.AddWithValue("$id", entry.Id);
@@ -159,6 +163,8 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
             insert.Parameters.AddWithValue("$path", entry.RelativePath);
             insert.Parameters.AddWithValue("$anchor", (object?)entry.Anchor ?? DBNull.Value);
             insert.Parameters.AddWithValue("$workspace", Workspaces.Normalize(entry.Workspace));
+            insert.Parameters.AddWithValue("$first", (object?)entry.Lines?.First ?? DBNull.Value);
+            insert.Parameters.AddWithValue("$last", (object?)entry.Lines?.Last ?? DBNull.Value);
             await insert.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
@@ -191,11 +197,11 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
     }
 
     internal const string Columns =
-        "id, repository, kind, provenance, title, body, relative_path, anchor, workspace";
+        "id, repository, kind, provenance, title, body, relative_path, anchor, workspace, first_line, last_line";
 
     /// <summary>The same columns, in the same order, qualified for a join. <see cref="Read"/> reads by ordinal.</summary>
     internal const string QualifiedColumns =
-        "e.id, e.repository, e.kind, e.provenance, e.title, e.body, e.relative_path, e.anchor, e.workspace";
+        "e.id, e.repository, e.kind, e.provenance, e.title, e.body, e.relative_path, e.anchor, e.workspace, e.first_line, e.last_line";
 
     /// <summary>
     /// How many columns <see cref="Columns"/> selects — so anything reading PAST them (a computed rank)
@@ -218,7 +224,8 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
         reader.GetString(5),
         reader.GetString(6),
         reader.IsDBNull(7) ? null : reader.GetString(7),
-        reader.GetString(8));
+        reader.GetString(8),
+        reader.IsDBNull(9) || reader.IsDBNull(10) ? null : new LineSpan(reader.GetInt32(9), reader.GetInt32(10)));
 
     private static async Task<IReadOnlyList<KnowledgeEntry>> ReadAllAsync(SqliteCommand command, CancellationToken ct)
     {

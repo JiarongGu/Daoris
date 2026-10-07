@@ -108,7 +108,8 @@ public sealed class SemanticKnowledgeSearch(
                 // next refresh removes it, and returning an id that resolves to nothing reads as a bug.
                 if (entry is null || !query.Admits(entry)) continue;
 
-                hits.Add(new KnowledgeHit(entry, match.Score, Excerpt(entry, EntryPieces.StartOf(match.Id))));
+                var (excerpt, line) = Excerpt(entry, EntryPieces.StartOf(match.Id));
+                hits.Add(new KnowledgeHit(entry, match.Score, excerpt, entry.LineAt(line)));
                 if (hits.Count == query.Limit) return hits;
             }
 
@@ -118,10 +119,14 @@ public sealed class SemanticKnowledgeSearch(
 
     /// <summary>
     /// The passage of the piece that matched: a hit found by a long entry's later piece shows that
-    /// piece's opening, not the entry's, or the reader cannot see why it matched.
+    /// piece's opening, not the entry's, or the reader cannot see why it matched. With the line of the
+    /// body it starts on (ORIENT2e), the piece's own lines counted.
     /// </summary>
-    private static string Excerpt(KnowledgeEntry entry, int start) =>
-        start > 0 && start < entry.Body.Length
-            ? "…" + Text.Excerpt(entry.Body[start..])
-            : Text.Excerpt(entry.Body);
+    private static (string Text, int Line) Excerpt(KnowledgeEntry entry, int start)
+    {
+        if (start <= 0 || start >= entry.Body.Length) return Text.ExcerptAt(entry.Body);
+
+        var (text, line) = Text.ExcerptAt(entry.Body[start..]);
+        return ("…" + text, entry.Body.AsSpan(0, start).Count('\n') + line);
+    }
 }

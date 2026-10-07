@@ -84,6 +84,8 @@ with the version and date at release.
   reads as a stop.
 - Deleting a session names any of its files the disk kept, instead of saying all went; `daoris-driver
   sessions delete` exits 2 when one stayed.
+- Knowledge search reads a repository's declared index, a section at a time, and every result names
+  the lines of its file; asking for an entry can ask for a range of its lines.
 
 The first version: doctrine that installs, is checked, and flows back.
 

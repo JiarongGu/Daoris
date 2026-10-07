@@ -11707,3 +11707,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **EVID1b2 — the family rehearsal proves evidence** (tools; the parent runs it). Phase 7 needs an ask whose intake publishes a requirement with `evidence: [{ path }]` and whose work commits that file and closes done met (the session was handed the evidence line; `held:false`, `evidence.how` `session-end`, item `found` with a 40-hex object, the step published, the record's `evidence read at …` line), and a second whose file is written but not committed (`evidence-missing`, `uncommitted`, then `quest check --commit` exits 0 and publishes, and an earlier commit exits 1). Contract: D144's EVID1b note. Proof: the phase passing.
 
 **Outcome** 2026-10-07: phase 7 gains two asks naming a path as evidence: one commits it and closes met (read at session end, step published), the other writes it uncommitted and is held `evidence-missing` until `quest check --commit` at the note's commit exits 0 and publishes. Ten checks; the batch's family run proves them. Detail: D144's EVID1b2 note; commit bee9d301.
+
+
+## ORIENT2e — service indexes lines (2026-10-07, D151)
+
+> - [ ] **ORIENT2e — service indexes lines** (service). Heading-split `index` entries keep ranges, hits name them and `knowledge_get` accepts ranges. Contract: §3.1–§3.2, D151 §6. Proof: scanner/tool tests and tier line.
+
+**Outcome** 2026-10-07: the service reads a repository's declared `documents.index` split at every heading, as entries of a new kind `index`; every entry keeps its file's lines, a hit names `path:first-last`, and `knowledge_get` takes lines. Store schema 5. Follow-ups: ORIENT2e2, ORIENT2h, ORIENT2i. Detail: D151's ORIENT2e note; commit ce7b77e1.

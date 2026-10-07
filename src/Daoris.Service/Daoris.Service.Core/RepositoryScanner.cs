@@ -39,8 +39,17 @@ namespace Daoris.Knowledge;
 /// A deployment may name two more folders (ORIENT1c), read in every repository it registers and in none
 /// by default: a folder of documents, each markdown file under it split at its headings with its opening
 /// titled by its first heading; and a generated index, each table row and list item of a markdown file
-/// under it one entry (<see cref="IndexRows"/>). Both are read after the roles, so a file a role read is
-/// not read again, and the index is never read as documents.
+/// under it one entry (<see cref="IndexRows"/>). Both are read after the router and the logs, so a file a
+/// role read is not read again, and the index is never read as documents.
+///
+/// The declared index of where things are (ORIENT2e; D151 §6) is read after the deployment's index and before
+/// its documents: every markdown file in the folder its README is in, split at its headings
+/// (<see cref="IndexSections"/>), as entries of <see cref="EntryKind.Index"/>. A folder the deployment named
+/// as its index is read a row at a time, as it chose, and never at its headings beside.
+///
+/// Every entry keeps the lines of its file its body is (<see cref="KnowledgeEntry.Lines"/>, ORIENT2e), counted
+/// from the file's first line whatever the read trimmed above it, except a deployment's index row, which is its
+/// cells labelled by their columns and no line as written.
 /// </remarks>
 /// <param name="documents">The documents folder, repository-relative with forward slashes; null reads none.</param>
 /// <param name="index">The generated index's folder, the same; null reads none.</param>
@@ -126,9 +135,11 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
             {
                 Add(ScanFolder(repositoryRoot, name, router, EntryKind.Knowledge, indexed, byHeading: false));
             }
-            else if (ReadDocument(repositoryRoot, router) is { } body)
+            else if (ReadDocumentAt(repositoryRoot, router) is { } read)
             {
-                Add([new KnowledgeEntry(name, EntryKind.Knowledge, Provenance.Local, Path.GetFileNameWithoutExtension(router), body, router)]);
+                Add([new KnowledgeEntry(
+                    name, EntryKind.Knowledge, Provenance.Local, Path.GetFileNameWithoutExtension(router), read.Text, router,
+                    Lines: Whole(read))]);
             }
         }
 
@@ -153,12 +164,23 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
                 : ScanLog(repositoryRoot, name, found, kind));
         }
 
-        // What the deployment named (ORIENT1c), after every role: the index a row at a time, then the
-        // documents a section at a time, each file read once and the index never as a document.
+        // What the deployment named (ORIENT1c), after the roles that are files of their own: its index a row
+        // at a time, as it chose for that folder, before the declared index, so a deployment that names the
+        // declared index's own folder reads it as it always has (one file, one place).
         if (index is not null && Directory.Exists(Absolute(repositoryRoot, index)))
         {
             Add(ScanIndex(repositoryRoot, name, index, indexed));
         }
+
+        // The index of where things are, declared and never guessed (ORIENT2e; D151 §6), as the router is: a
+        // folder named like one may be anything. Every file of it the deployment did not read, at its headings.
+        if (layout.PathOf("index") is { } declaredIndex)
+        {
+            Add(ScanDeclaredIndex(repositoryRoot, name, declaredIndex, indexed));
+        }
+
+        // Then the deployment's documents a section at a time, each file read once and the index never as a
+        // document.
         if (documents is not null && Directory.Exists(Absolute(repositoryRoot, documents)))
         {
             Add(ScanDocumentFolder(repositoryRoot, name, documents, indexed));
@@ -198,17 +220,18 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     {
         // Through the one boundary: a README that is a link, or a link held as text, is some other
         // folder's word (D117 §5.5).
-        if (ReadDocument(root, relative) is not { } text) yield break;
+        if (ReadDocumentAt(root, relative) is not { } read) yield break;
 
         // The part a log drops is the part a newcomer reads first. Unanchored, so a reader following it
         // lands at the top of the file, and its id is never a section's.
-        var preamble = MarkdownSections.Preamble(text);
-        if (preamble.Length > 0)
+        var preamble = MarkdownSections.PreambleAt(read.Text);
+        if (preamble.Body.Length > 0)
         {
             yield return new KnowledgeEntry(
-                repository, EntryKind.Knowledge, Provenance.Local, Path.GetFileNameWithoutExtension(ReadmeFile), preamble, relative);
+                repository, EntryKind.Knowledge, Provenance.Local, Path.GetFileNameWithoutExtension(ReadmeFile), preamble.Body, relative,
+                Lines: Span(preamble, read.First));
         }
-        foreach (var entry in Sections(repository, EntryKind.Knowledge, relative, text)) yield return entry;
+        foreach (var entry in Sections(repository, EntryKind.Knowledge, relative, read)) yield return entry;
     }
 
     /// <summary>
@@ -233,14 +256,28 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     /// A document's text, or null when it is not one to index: absent, reached through a link, or a
     /// link held as text (D117 §5.5). Read once, through the same boundary every document goes through.
     /// </summary>
-    private static string? ReadDocument(string root, string relative)
+    private static string? ReadDocument(string root, string relative) => ReadDocumentAt(root, relative)?.Text;
+
+    /// <summary>
+    /// <see cref="ReadDocument"/>, and the line of the file its text starts on (ORIENT2e), so every entry read
+    /// from it names the file's own lines.
+    /// </summary>
+    private static (string Text, int First)? ReadDocumentAt(string root, string relative)
     {
         if (RepositoryLinks.Crosses(root, relative)) return null;
         var absolute = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
         if (!File.Exists(absolute)) return null;
-        var text = Text.ReadDocument(absolute);
-        return RepositoryLinks.HeldAsText(root, relative, text) ? null : text;
+        var read = Text.ReadDocumentAt(absolute);
+        return RepositoryLinks.HeldAsText(root, relative, read.Text) ? null : read;
     }
+
+    /// <summary>The lines a document read whole is; none for an empty one, which is no line's text.</summary>
+    private static LineSpan? Whole((string Text, int First) read) =>
+        read.Text.Length == 0 ? null : new LineSpan(read.First, read.First + LineSpan.LineCount(read.Text) - 1);
+
+    /// <summary>The lines of a file a section of its text is, the text starting on <paramref name="first"/>; none for an empty one.</summary>
+    private static LineSpan? Span(MarkdownSection section, int first) =>
+        section.First > 0 ? new LineSpan(first - 1 + section.First, first - 1 + section.Last) : null;
 
     /// <summary>
     /// Each declared room's instructions, as the repository's own knowledge (D117 §5.5): a folder's
@@ -258,9 +295,10 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
         {
             var relative = $"{room}/{RoomInstructions}";
             if (indexed.Contains(relative)) continue;
-            if (ReadDocument(root, relative) is not { } body) continue;
+            if (ReadDocumentAt(root, relative) is not { } read) continue;
 
-            yield return new KnowledgeEntry(repository, EntryKind.Knowledge, Provenance.Local, room, body, relative);
+            yield return new KnowledgeEntry(
+                repository, EntryKind.Knowledge, Provenance.Local, room, read.Text, relative, Lines: Whole(read));
         }
     }
 
@@ -286,21 +324,22 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
             var host = RepositoryLayout.Declared(span.Key);
             if (RepositoryLayout.Escapes(host) || RepositoryLinks.Crosses(root, host)) continue;
 
-            var rules = DoctrineRegion.Read(Path.Combine(root, span.Key));
+            var rules = DoctrineRegion.ReadAt(Path.Combine(root, span.Key));
             foreach (var entry in span.Value)
             {
-                if (!rules.TryGetValue(entry.Source, out var body)) continue;
+                if (!rules.TryGetValue(entry.Source, out var rule)) continue;
 
                 yield return new KnowledgeEntry(
                     repository,
                     EntryKind.Rule,
                     Provenance.Canonical,
                     Path.GetFileNameWithoutExtension(entry.Target),
-                    body,
+                    rule.Body,
                     // The file it actually lives in, with the rule as the anchor: a reader following
                     // this goes to the region and finds the rule, which is where it is.
                     span.Key,
-                    Path.GetFileNameWithoutExtension(entry.Target));
+                    Path.GetFileNameWithoutExtension(entry.Target),
+                    Lines: rule.Lines);
             }
         }
     }
@@ -322,15 +361,16 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
 
             var relative = $"{directory}/{fileName}";
             if (daorisLock.IsMirror(relative)) continue;
-            if (ReadDocument(root, relative) is not { } body) continue;
+            if (ReadDocumentAt(root, relative) is not { } read) continue;
 
             yield return new KnowledgeEntry(
                 repository,
                 kind,
                 daorisLock.ProvenanceOf(relative),
                 Path.GetFileNameWithoutExtension(fileName),
-                body,
-                relative);
+                read.Text,
+                relative,
+                Lines: Whole(read));
         }
     }
 
@@ -349,15 +389,16 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
             // 🔴 A mirror is a copy of its source for the one agent that reads only here (D117 §3.2):
             // indexed, it would put every skill in a search twice per repository.
             if (daorisLock.IsMirror(relative)) continue;
-            if (ReadDocument(root, relative) is not { } body) continue;
+            if (ReadDocumentAt(root, relative) is not { } read) continue;
 
             yield return new KnowledgeEntry(
                 repository,
                 EntryKind.Skill,
                 daorisLock.ProvenanceOf(relative),
                 skillName,
-                body,
-                relative);
+                read.Text,
+                relative,
+                Lines: Whole(read));
         }
     }
 
@@ -379,15 +420,15 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
         foreach (var relative in Records(root, folder).Order(StringComparer.Ordinal))
         {
             if (indexed.Contains(relative)) continue;
-            if (ReadDocument(root, relative) is not { } body) continue;
+            if (ReadDocumentAt(root, relative) is not { } read) continue;
 
-            var title = (byHeading ? MarkdownSections.FirstHeading(body) : null) ?? Path.GetFileNameWithoutExtension(relative);
+            var title = (byHeading ? MarkdownSections.FirstHeading(read.Text) : null) ?? Path.GetFileNameWithoutExtension(relative);
             if (byHeading && kind == EntryKind.Decision)
             {
-                foreach (var entry in Decision(repository, relative, title, body)) yield return entry;
+                foreach (var entry in Decision(repository, relative, title, read)) yield return entry;
                 continue;
             }
-            yield return new KnowledgeEntry(repository, kind, Provenance.Local, title, body, relative);
+            yield return new KnowledgeEntry(repository, kind, Provenance.Local, title, read.Text, relative, Lines: Whole(read));
         }
     }
 
@@ -401,10 +442,12 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     /// diluted the one that answered (D125's twenty-two). A label twice in one file is told apart by its count,
     /// as a heading twice is (REV3), so one file never yields one id twice.
     /// </remarks>
-    private static IEnumerable<KnowledgeEntry> Decision(string repository, string relative, string title, string text)
+    private static IEnumerable<KnowledgeEntry> Decision(string repository, string relative, string title, (string Text, int First) read)
     {
-        var (entry, notes) = DecisionNotes.Split(text);
-        yield return new KnowledgeEntry(repository, EntryKind.Decision, Provenance.Local, title, entry, relative);
+        // The entry is the text's lines from its first, and each note its own lines, as the digest counts them.
+        var (entry, notes) = DecisionNotes.Split(read.Text);
+        yield return new KnowledgeEntry(
+            repository, EntryKind.Decision, Provenance.Local, title, entry, relative, Lines: Whole((entry, read.First)));
 
         var name = Path.GetFileNameWithoutExtension(relative);
         var used = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -414,7 +457,60 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
             used[note.Label] = seen;
             yield return new KnowledgeEntry(
                 repository, EntryKind.Decision, Provenance.Local, $"{name} › {note.Label}", note.Body, relative,
-                seen == 1 ? note.Label : $"{note.Label} ({seen})");
+                seen == 1 ? note.Label : $"{note.Label} ({seen})",
+                Lines: new LineSpan(read.First - 1 + note.First, read.First - 1 + note.Last));
+        }
+    }
+
+    /// <summary>
+    /// The declared index of where things are (ORIENT2e; D151 §6, the orientation design §3.1): every markdown
+    /// file in the folder its README is in, and below, split at its headings (<see cref="IndexSections"/>), as
+    /// entries of the index's own kind, the repository's own, each keeping its lines.
+    /// </summary>
+    /// <remarks>
+    /// The folder the README is in, since the index is the folder and the README only names its files; a declared
+    /// folder is that folder. A README at the repository's root is read alone: its folder is the whole repository,
+    /// and the index is the small, reviewed statement of where things are, never every file beside it. A section
+    /// is anchored by its title, a title twice in one file told apart by its count (REV3); text before any heading
+    /// is the file's own, unanchored.
+    /// </remarks>
+    private static IEnumerable<KnowledgeEntry> ScanDeclaredIndex(
+        string root, string repository, string declared, ISet<string> indexed)
+    {
+        IEnumerable<string> files;
+        if (Directory.Exists(Absolute(root, declared)))
+        {
+            files = Records(root, declared);
+        }
+        else if (File.Exists(Absolute(root, declared)))
+        {
+            var slash = declared.LastIndexOf('/');
+            files = slash < 0 ? [declared] : Records(root, declared[..slash]);
+        }
+        else
+        {
+            yield break;
+        }
+
+        foreach (var relative in files.Order(StringComparer.Ordinal))
+        {
+            if (indexed.Contains(relative)) continue;
+            if (ReadDocumentAt(root, relative) is not { } read) continue;
+
+            var used = new Dictionary<string, int>(StringComparer.Ordinal);
+            foreach (var section in IndexSections.Read(read.Text, relative, read.First))
+            {
+                string? anchor = null;
+                if (!section.Opening)
+                {
+                    var seen = used.GetValueOrDefault(section.Title) + 1;
+                    used[section.Title] = seen;
+                    anchor = seen == 1 ? section.Title : $"{section.Title} ({seen})";
+                }
+                yield return new KnowledgeEntry(
+                    repository, EntryKind.Index, Provenance.Local, section.Title, section.Body, relative, anchor,
+                    Lines: section.Lines);
+            }
         }
     }
 
@@ -422,6 +518,11 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     /// A generated index (ORIENT1c): each table row and list item of each markdown file one entry, and the
     /// file's prose one more, so a search for where something is lands on the row that says so.
     /// </summary>
+    /// <remarks>
+    /// Entries of the index's kind (ORIENT2e), as the declared index's sections are, so a search by kind finds
+    /// them and a search naming none holds them to two. A row is its cells labelled by their columns, not its
+    /// file's line as written, so it names no lines; its cells name the places themselves.
+    /// </remarks>
     private static IEnumerable<KnowledgeEntry> ScanIndex(
         string root, string repository, string folder, ISet<string> indexed)
     {
@@ -433,7 +534,7 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
             foreach (var row in IndexRows.Read(text, Path.GetFileNameWithoutExtension(relative)))
             {
                 yield return new KnowledgeEntry(
-                    repository, EntryKind.Knowledge, Provenance.Local, row.Title, row.Body, relative, row.Anchor);
+                    repository, EntryKind.Index, Provenance.Local, row.Title, row.Body, relative, row.Anchor);
             }
         }
     }
@@ -450,17 +551,18 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
         {
             if (indexed.Contains(relative)) continue;
             if (index is not null && RepositoryLayout.Within(relative.ToLowerInvariant(), index.ToLowerInvariant())) continue;
-            if (ReadDocument(root, relative) is not { } text) continue;
+            if (ReadDocumentAt(root, relative) is not { } read) continue;
 
             // An opening that is only the title says nothing a section does not.
-            var opening = MarkdownSections.Preamble(text);
-            if (opening.Split('\n').Any(line => line.Trim().Length > 0 && !line.TrimStart().StartsWith('#')))
+            var opening = MarkdownSections.PreambleAt(read.Text);
+            if (opening.Body.Split('\n').Any(line => line.Trim().Length > 0 && !line.TrimStart().StartsWith('#')))
             {
                 yield return new KnowledgeEntry(
                     repository, EntryKind.Knowledge, Provenance.Local,
-                    MarkdownSections.FirstHeading(text) ?? Path.GetFileNameWithoutExtension(relative), opening, relative);
+                    MarkdownSections.FirstHeading(read.Text) ?? Path.GetFileNameWithoutExtension(relative), opening.Body, relative,
+                    Lines: Span(opening, read.First));
             }
-            foreach (var entry in Sections(repository, EntryKind.Knowledge, relative, text)) yield return entry;
+            foreach (var entry in Sections(repository, EntryKind.Knowledge, relative, read)) yield return entry;
         }
     }
 
@@ -488,20 +590,24 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     {
         // Through the one boundary every document goes through: a log reached through a link, or a link
         // held as text, is some other folder's (LAYOUT4).
-        if (ReadDocument(root, relativePath) is not { } text) yield break;
+        if (ReadDocumentAt(root, relativePath) is not { } read) yield break;
 
         // A log is always the repository's own: canonical files are rules, knowledge and skills.
-        foreach (var entry in Sections(repository, kind, relativePath, text)) yield return entry;
+        foreach (var entry in Sections(repository, kind, relativePath, read)) yield return entry;
     }
 
-    /// <summary>One local entry per section of a file split at its headings, each anchored by its heading.</summary>
-    private static IEnumerable<KnowledgeEntry> Sections(string repository, EntryKind kind, string relativePath, string text)
+    /// <summary>
+    /// One local entry per section of a file split at its headings, each anchored by its heading and keeping the
+    /// lines of the file its body is (ORIENT2e).
+    /// </summary>
+    private static IEnumerable<KnowledgeEntry> Sections(
+        string repository, EntryKind kind, string relativePath, (string Text, int First) read)
     {
         // 🔴 An anchor is unique within its file (REV3). Two sections under one heading — date-only fix
         // headings do it — shared an id, and the store's primary key threw on the second, failing the
         // whole refresh. The first keeps the id it always had; each repeat is told apart by its count.
         var used = new Dictionary<string, int>(StringComparer.Ordinal);
-        foreach (var section in MarkdownSections.Split(text))
+        foreach (var section in MarkdownSections.Split(read.Text))
         {
             if (section.Body.Length == 0) continue;
             var seen = used.GetValueOrDefault(section.Heading) + 1;
@@ -513,7 +619,8 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
                 section.Heading,
                 section.Body,
                 relativePath,
-                seen == 1 ? section.Heading : $"{section.Heading} ({seen})");
+                seen == 1 ? section.Heading : $"{section.Heading} ({seen})",
+                Lines: Span(section, read.First));
         }
     }
 }

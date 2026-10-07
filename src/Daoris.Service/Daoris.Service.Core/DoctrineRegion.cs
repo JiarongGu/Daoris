@@ -33,17 +33,27 @@ public static class DoctrineRegion
     /// Source path to body, empty when the file has no region. The source is <c>pack/source</c>,
     /// spelled as the provenance line spells it, which is what a lock entry's own fields reconstruct.
     /// </returns>
-    public static IReadOnlyDictionary<string, string> Read(string file)
+    public static IReadOnlyDictionary<string, string> Read(string file) =>
+        ReadAt(file).ToDictionary(rule => rule.Key, rule => rule.Value.Body, StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// <see cref="Read"/>, with the lines of the file each rule's body is (ORIENT2e): from its first line that
+    /// holds anything after its provenance line to its last before the next.
+    /// </summary>
+    public static IReadOnlyDictionary<string, (string Body, LineSpan? Lines)> ReadAt(string file)
     {
-        var empty = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var empty = new Dictionary<string, (string Body, LineSpan? Lines)>(StringComparer.OrdinalIgnoreCase);
         if (!File.Exists(file)) return empty;
 
         string[] lines;
+        int top;
         try
         {
             // Through the same read boundary every document goes through, so a CRLF checkout and an
             // LF one index the same bytes — the property `Text.ReadDocument` exists to make true.
-            lines = Text.ReadDocument(file).Split('\n');
+            var read = Text.ReadDocumentAt(file);
+            lines = read.Text.Split('\n');
+            top = read.First;
         }
         catch (IOException)
         {
@@ -58,9 +68,9 @@ public static class DoctrineRegion
         var end = Array.FindIndex(lines, start + 1, line => line.Trim() == Close);
         if (end < 0) return empty;
 
-        var rules = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var rules = new Dictionary<string, (string Body, LineSpan? Lines)>(StringComparer.OrdinalIgnoreCase);
         string? current = null;
-        var body = new List<string>();
+        var body = new List<(int Line, string Text)>();
 
         for (var at = start + 1; at < end; at++)
         {
@@ -72,7 +82,7 @@ public static class DoctrineRegion
                 continue;
             }
 
-            if (current is not null) body.Add(line);
+            if (current is not null) body.Add((top + at, line));
         }
 
         Flush();
@@ -80,7 +90,11 @@ public static class DoctrineRegion
 
         void Flush()
         {
-            if (current is not null && body.Count > 0) rules[current] = string.Join("\n", body).Trim();
+            if (current is not null && body.Count > 0)
+            {
+                var rule = MarkdownSections.Build(current, body);
+                rules[current] = (rule.Body, rule.First > 0 ? new LineSpan(rule.First, rule.Last) : null);
+            }
             body.Clear();
         }
     }

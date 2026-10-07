@@ -92,6 +92,9 @@ public static class FeedDigest
             Field(text, entry.Body);
             Field(text, entry.RelativePath);
             Field(text, entry.Anchor);
+            // Its lines (ORIENT2e), only when it names them: a section that moved is content a hit names, and
+            // an entry that names none hashes as it did before lines were kept.
+            if (entry.Lines is { } lines) Field(text, $"lines {lines}");
         }
 
         return Of(text.ToString());

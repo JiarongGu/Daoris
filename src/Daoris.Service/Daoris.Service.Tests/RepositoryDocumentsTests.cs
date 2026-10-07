@@ -283,9 +283,15 @@ public sealed class RepositoryDocumentsTests : IDisposable
         null, false,
         "brief - 1300|room - 600|decisions docs/DECISIONS.md -|backlog TASKS.md 6600|archive docs/archive -|gates daoris.gates.json -")]
     [InlineData("an object with a path and no ceiling", """{"router":{"path":"docs/README.md"}}""", null, false, "router docs/README.md -")]
+    [InlineData(
+        "the index of where things are, a path, after the router",
+        """{"decisions":"docs/decisions","index":"docs/index/README.md","router":"docs/README.md"}""",
+        null, false,
+        "router docs/README.md -|index docs/index/README.md -|decisions docs/decisions -")]
     // REFUSED_ROWS: the CLI refuses the manifest; this side reads the role as undeclared.
     [InlineData("a list", """["docs/DECISIONS.md"]""", null, false, "")]
     [InlineData("an unknown role, naming the known ones", """{"roadmap":"ROADMAP.md"}""", null, false, "")]
+    [InlineData("a ceiling alone on the index, which takes a path", """{"index":{"words":100}}""", null, false, "")]
     [InlineData("a tier the index already lists", """{"knowledge":"docs/notes"}""", null, false, "")]
     [InlineData("a skill, the same", """{"skill":"x"}""", null, false, "")]
     [InlineData("a path on the brief", """{"brief":"BRIEF.md"}""", null, false, "")]
@@ -312,6 +318,7 @@ public sealed class RepositoryDocumentsTests : IDisposable
         false, "")]
     // This side's own edges.
     [InlineData("a refused role beside a good one: the good one is read", """{"decisions":"../x.md","fixes":"docs/FIX-LOG.md"}""", null, false, "fixes docs/FIX-LOG.md -")]
+    [InlineData("a refused index beside a good router: the router is read", """{"index":{"words":100},"router":"docs/README.md"}""", null, false, "router docs/README.md -")]
     [InlineData("a ceiling the CLI reads as a whole number, in another spelling", """{"backlog":{"path":"TASKS.md","words":1e3},"router":{"path":"docs/README.md","words":2500.0}}""", null, false, "router docs/README.md 2500|backlog TASKS.md 1000")]
     [InlineData("a null for a role", """{"decisions":null}""", null, false, "")]
     [InlineData("a null path on the room is still a path named", """{"room":{"path":null}}""", null, false, "")]

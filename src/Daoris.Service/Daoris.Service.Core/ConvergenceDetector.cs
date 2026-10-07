@@ -34,7 +34,7 @@ public sealed record ConvergenceCandidate(
 /// value depends on the comparison in use, and a threshold copied from a different one is a guess
 /// wearing a number.
 /// </param>
-/// <param name="Kinds">Restrict to these kinds. Null means every kind.</param>
+/// <param name="Kinds">Restrict to these kinds. Null means every kind but the index of where things are (ORIENT2e).</param>
 /// <param name="MaxCandidates">How many groups to return.</param>
 /// <param name="Workspace">
 /// The circle to look within (D48). Null spans every workspace — which is rarely what is wanted here:
@@ -83,7 +83,9 @@ public sealed class ConvergenceDetector(
 
         var considered = (await store.AllAsync(ct).ConfigureAwait(false))
             .Where(e => e.Provenance == Provenance.Local)
-            .Where(e => options.Kinds is null || options.Kinds.Contains(e.Kind))
+            // The index of where things are is no lesson (ORIENT2e): two generated from one template read alike
+            // and have learned nothing together, so it converges only when it is asked for by kind.
+            .Where(e => options.Kinds is null ? e.Kind != EntryKind.Index : options.Kinds.Contains(e.Kind))
             .Where(e => options.Workspace is null || Workspaces.Same(options.Workspace, e.Workspace))
             .ToList();
 

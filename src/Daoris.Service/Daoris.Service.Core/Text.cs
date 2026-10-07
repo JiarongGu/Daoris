@@ -302,9 +302,22 @@ public static partial class Text
     /// onto one line. The frontmatter is still searched; a hit found only there shows the prose's
     /// opening, as a semantic hit does.
     /// </remarks>
-    public static string Excerpt(string body, IEnumerable<string>? terms = null, int window = 180)
+    public static string Excerpt(string body, IEnumerable<string>? terms = null, int window = 180) =>
+        ExcerptAt(body, terms, window).Text;
+
+    /// <summary>
+    /// <see cref="Excerpt"/>, and the line of the body it starts on, counted from 0 (ORIENT2e): what a hit names
+    /// as the line its excerpt starts on, once the entry's own first line is added.
+    /// </summary>
+    /// <remarks>
+    /// The line of the first character the excerpt shows: the frontmatter it skipped is counted, and a window
+    /// that opens on a line's end starts on the next line, as the excerpt's text does.
+    /// </remarks>
+    public static (string Text, int Line) ExcerptAt(string body, IEnumerable<string>? terms = null, int window = 180)
     {
-        body = WithoutMarkup(WithoutFrontmatter(body ?? string.Empty));
+        var (rest, skipped) = WithoutFrontmatter(body ?? string.Empty);
+        // Markup goes within lines, never a newline, so a line of this is the same line of the rest.
+        body = WithoutMarkup(rest);
 
         var index = -1;
         foreach (var term in terms ?? [])
@@ -315,31 +328,43 @@ public static partial class Text
 
         if (index < 0)
         {
-            return body.Length <= window
+            return (body.Length <= window
                 ? Flatten(body)
-                : Flatten(body[..window]) + "…";
+                : Flatten(body[..window]) + "…", skipped + LineOf(body, 0, window));
         }
 
         // Start a little before the match so the term has context on both sides rather than sitting
         // at the very edge of the window.
         var start = Math.Max(0, index - window / 3);
         var length = Math.Min(window, body.Length - start);
-        return (start > 0 ? "…" : string.Empty)
+        return ((start > 0 ? "…" : string.Empty)
              + Flatten(body.Substring(start, length))
-             + (start + length < body.Length ? "…" : string.Empty);
+             + (start + length < body.Length ? "…" : string.Empty), skipped + LineOf(body, start, start + length));
+    }
+
+    /// <summary>The line, from 0, of the first character between two places that is not white space: where a window shows from.</summary>
+    private static int LineOf(string text, int start, int end)
+    {
+        var at = start;
+        while (at < Math.Min(end, text.Length) && char.IsWhiteSpace(text[at])) at++;
+        if (at >= Math.Min(end, text.Length)) at = start;
+        return text.AsSpan(0, Math.Min(at, text.Length)).Count('\n');
     }
 
     /// <summary>
     /// A body without its leading frontmatter block — a <c>---</c> line, fields, and a closing <c>---</c>
-    /// line. A body that only opens with a rule and never closes one keeps everything.
+    /// line — and how many lines went with it. A body that only opens with a rule and never closes one keeps
+    /// everything.
     /// </summary>
-    private static string WithoutFrontmatter(string body)
+    private static (string After, int Skipped) WithoutFrontmatter(string body)
     {
-        if (!body.StartsWith("---\n", StringComparison.Ordinal)) return body;
+        if (!body.StartsWith("---\n", StringComparison.Ordinal)) return (body, 0);
         var close = body.IndexOf("\n---", 3, StringComparison.Ordinal);
-        if (close < 0) return body;
+        if (close < 0) return (body, 0);
         var after = body.IndexOf('\n', close + 4);
-        return after < 0 ? string.Empty : body[(after + 1)..].TrimStart();
+        if (after < 0) return (string.Empty, 0);
+        var rest = body[(after + 1)..].TrimStart();
+        return (rest, body.AsSpan(0, body.Length - rest.Length).Count('\n'));
     }
 
     /// <summary>
@@ -371,8 +396,18 @@ public static partial class Text
     /// is not a property of the system. Normalizing at the read boundary makes it one, and makes the
     /// two halves of this project agree on what a document's bytes are.
     /// </remarks>
-    public static string ReadDocument(string path) =>
-        File.ReadAllText(path).TrimStart('﻿').ReplaceLineEndings("\n").Trim();
+    public static string ReadDocument(string path) => ReadDocumentAt(path).Text;
+
+    /// <summary>
+    /// <see cref="ReadDocument"/>, and the line of the file its text starts on, counted from 1 (ORIENT2e): the
+    /// lines the trim took from the top are still the file's, so every line an entry names is counted from them.
+    /// </summary>
+    public static (string Text, int First) ReadDocumentAt(string path)
+    {
+        var text = File.ReadAllText(path).TrimStart('﻿').ReplaceLineEndings("\n");
+        var lead = text.Length - text.TrimStart().Length;
+        return (text.Trim(), 1 + text.AsSpan(0, lead).Count('\n'));
+    }
 }
 
 /// <summary>One term a question asks (ORIENT1f): a word, or adjacent words joined, and how many words it stands for.</summary>

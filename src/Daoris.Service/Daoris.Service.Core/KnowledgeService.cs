@@ -176,27 +176,62 @@ public sealed class KnowledgeService(
     /// <summary>Whether semantic recall is available, which depends on an embedder being configured.</summary>
     public bool SemanticEnabled => embedder is not null && vectors is not null;
 
-    public async Task<IReadOnlyList<KnowledgeHit>> SearchAsync(KnowledgeQuery query, CancellationToken ct = default)
-    {
-        await EnsureIndexedAsync(ct).ConfigureAwait(false);
-        return await search.SearchAsync(query, ct).ConfigureAwait(false);
-    }
+    /// <summary>
+    /// How many index entries a search that names no kinds answers with (ORIENT2e; the orientation design §3.1),
+    /// so a question about why something was decided is not crowded out by rows of identifiers.
+    /// </summary>
+    public const int IndexEntriesUnasked = 2;
+
+    /// <summary>Every kind but the index: what a search naming no kinds fills its places with once two index entries hold theirs.</summary>
+    private static readonly IReadOnlySet<EntryKind> AllButIndex =
+        Enum.GetValues<EntryKind>().Where(kind => kind != EntryKind.Index).ToHashSet();
+
+    public async Task<IReadOnlyList<KnowledgeHit>> SearchAsync(KnowledgeQuery query, CancellationToken ct = default) =>
+        (await AnswerAsync(query, ct).ConfigureAwait(false)).Hits;
 
     /// <summary>
     /// Search, and say which tier ANSWERED (TIER1, D24): a door reports this, never
     /// <see cref="SemanticEnabled"/>, which is only what was configured.
     /// </summary>
     /// <remarks>
-    /// A composition that is not the hybrid is the lexical search alone — the factory builds nothing
-    /// else — so it answers by words, and a failure there propagates as it always has.
+    /// <para>A composition that is not the hybrid is the lexical search alone — the factory builds nothing
+    /// else — so it answers by words, and a failure there propagates as it always has.</para>
+    ///
+    /// <para>A search that names no kinds answers with the best <see cref="IndexEntriesUnasked"/> index entries, at
+    /// the places they rank, and fills the rest from every other kind in the order the same search ranks them
+    /// (ORIENT2e): here, in Core, so every door answers one question alike. The answer says when more matched.</para>
     /// </remarks>
     public async Task<SearchAnswer> AnswerAsync(KnowledgeQuery query, CancellationToken ct = default)
     {
         await EnsureIndexedAsync(ct).ConfigureAwait(false);
-        return search is IAnsweringSearch answering
+        var answer = await AnswerAnyAsync(query, ct).ConfigureAwait(false);
+        if (query.Kinds is not null) return answer;
+
+        var kept = new List<KnowledgeHit>();
+        var index = 0;
+        foreach (var hit in answer.Hits)
+        {
+            if (hit.Entry.Kind == EntryKind.Index && ++index > IndexEntriesUnasked) continue;
+            kept.Add(hit);
+        }
+        if (index <= IndexEntriesUnasked) return answer;
+
+        // What ranks below the window: every other kind, in the order the same search gives it. An entry the
+        // window already holds keeps its place; the rest come after, as they would have ranked.
+        var rest = await AnswerAnyAsync(query with { Kinds = AllButIndex }, ct).ConfigureAwait(false);
+        var held = kept.Select(hit => hit.Entry.Id).ToHashSet(StringComparer.Ordinal);
+        kept.AddRange(rest.Hits.Where(hit => held.Add(hit.Entry.Id)).Take(Math.Max(0, query.Limit - kept.Count)));
+
+        var failures = new[] { answer.Failure, rest.Failure }.OfType<string>().Distinct(StringComparer.Ordinal).ToList();
+        return new SearchAnswer(
+            kept, answer.Lexical && rest.Lexical, answer.Semantic && rest.Semantic,
+            failures.Count == 0 ? null : string.Join("; ", failures), MoreIndex: true);
+    }
+
+    private async Task<SearchAnswer> AnswerAnyAsync(KnowledgeQuery query, CancellationToken ct) =>
+        search is IAnsweringSearch answering
             ? await answering.AnswerAsync(query, ct).ConfigureAwait(false)
             : new SearchAnswer(await search.SearchAsync(query, ct).ConfigureAwait(false), Lexical: true, Semantic: false);
-    }
 
     public async Task<KnowledgeEntry?> FindAsync(string id, CancellationToken ct = default)
     {
