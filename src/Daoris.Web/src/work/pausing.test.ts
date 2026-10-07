@@ -274,7 +274,7 @@ describe('the notices', () => {
     expect(abandonNotice(partial).tone).not.toBe('ok');
     expect(abandonNotice(partial)).toEqual({ key: 'work.abandon.done.changed', values: { went: 9, count: 10, changed: 1 }, tone: 'error' });
     // One the disk kept changed nothing since the list, and still did not all go.
-    const failed = { ...partial, changed: [], failed: [{ piece: 'tree:s1', why: 'failed' }] } as AbandonAnswer;
+    const failed: AbandonAnswer = { ...partial, changed: [], failed: [{ piece: 'tree:s1', why: 'in-use' }] };
     expect(abandonNotice(failed)).toEqual({ key: 'work.abandon.done.all', values: { went: 9, count: 10 }, tone: 'error' });
   });
 });
