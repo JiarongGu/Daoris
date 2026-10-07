@@ -128,6 +128,80 @@ public sealed class DriverModuleWorkTests : DriverModuleBridge
         Assert.Equal(("q1", "NotDrivable"), (hold.GetProperty("quest").GetString(), hold.GetProperty("verdict").GetString()));
     }
 
+    /// <summary>
+    /// CARRY2d: a resume's holds carried the verdict and the driver's English alone, so 中文 showed English for a stop, a pause,
+    /// a park and a take elsewhere. Each hold now carries its facts beside the unchanged sentence, by the tick's own names and
+    /// shapes (<c>heldBy</c>, <c>pausedBy</c>, <c>strikes</c>, <c>takenBy</c>), so the page says it as it says a sitting quest;
+    /// each fact is null for every verdict but its own, and nothing is reshaped.
+    /// </summary>
+    [Fact]
+    public void Each_hold_a_resume_names_carries_the_facts_its_sentence_is_said_from()
+    {
+        var wire = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
+        System.Text.Json.JsonElement Shown(WorkHold hold) => System.Text.Json.JsonSerializer.SerializeToElement(DriverModule.WorkHoldShown(hold), wire);
+        const string StopSaid = "you stopped session `b3f0re00`; Try again carries it on — `daoris driver retry q8 --session b3f0re00`.";
+        const string Null = nameof(System.Text.Json.JsonValueKind.Null);
+
+        var stopped = Shown(new WorkHold("q8", StartVerdict.Stopped, StopSaid) { HeldBy = "b3f0re00" });
+        var paused = Shown(new WorkHold("q9", StartVerdict.Paused, "you paused `#q9`; Resume starts it — `daoris-driver quest resume q9`.")
+        {
+            PausedBy = new PausedBy(WorkScope.Quest, "q9"),
+        });
+        var parked = Shown(new WorkHold("q10", StartVerdict.Exhausted, "3 session(s) have failed on `#q10` without landing anything.") { Strikes = 3 });
+        var taken = Shown(new WorkHold("q11", StartVerdict.TakenElsewhere, "Quest `#q11` is taken on `laptop`, by session `laptop/s7`.")
+        {
+            TakenBy = new TakenBy("cut0ff00", "laptop", "laptop/s7"),
+        });
+        var here = Shown(new WorkHold("q11", StartVerdict.TakenElsewhere, "Quest `#q11` was taken here.") { TakenBy = new TakenBy("cut0ff00", Here: true) });
+        var held = Shown(new WorkHold("q1", StartVerdict.Held, "`game` is held by the person."));
+
+        Assert.Equal(("q8", "Stopped", StopSaid),
+            (stopped.GetProperty("quest").GetString(), stopped.GetProperty("verdict").GetString(), stopped.GetProperty("reason").GetString()));
+        Assert.Equal("b3f0re00", stopped.GetProperty("heldBy").GetString());
+        Assert.Equal(("quest", "q9"),
+            (paused.GetProperty("pausedBy").GetProperty("scope").GetString(), paused.GetProperty("pausedBy").GetProperty("id").GetString()));
+        Assert.Equal(3, parked.GetProperty("strikes").GetInt32());
+        var whose = taken.GetProperty("takenBy");
+        Assert.Equal(("laptop", "laptop/s7", false, "cut0ff00"),
+            (whose.GetProperty("machine").GetString(), whose.GetProperty("session").GetString(), whose.GetProperty("here").GetBoolean(), whose.GetProperty("last").GetString()));
+        Assert.True(here.GetProperty("takenBy").GetProperty("here").GetBoolean());
+        Assert.Equal(Null, here.GetProperty("takenBy").GetProperty("machine").ValueKind.ToString());
+        // A hold whose sentence needs no fact names none, and each fact rides its own verdict alone.
+        Assert.Equal([Null, Null, Null, Null],
+            new[] { "heldBy", "pausedBy", "strikes", "takenBy" }.Select(fact => held.GetProperty(fact).ValueKind.ToString()));
+        Assert.Equal([Null, Null, Null], new[] { "pausedBy", "strikes", "takenBy" }.Select(fact => stopped.GetProperty(fact).ValueKind.ToString()));
+        Assert.Equal([Null, Null, Null], new[] { "heldBy", "strikes", "takenBy" }.Select(fact => paused.GetProperty(fact).ValueKind.ToString()));
+    }
+
+    /// <summary>
+    /// CARRY2d, through the route: a stop the person made before the pause still holds its quest once the work resumes, and the
+    /// page is handed whose stop it is by its session, beside the driver's sentence, so 中文 says it from that fact.
+    /// </summary>
+    [Fact]
+    public async Task A_resume_hands_the_page_the_session_whose_stop_still_holds_a_quest()
+    {
+        using var ledger = new LoopbackHost();
+        var quest = """{"id":"q8","from":"ask #a1","to":"engine","title":"The work of #q8","body":"A body.","status":"Taken"}""";
+        ledger.Serve("/api/quests?includeClosed=true", Bytes($"[{quest}]"));
+        ledger.Serve("/api/quests", Bytes($"[{quest}]"));
+        ledger.Serve("/api/sessions?includeClosed=true", Bytes(
+            """[{"id":"b3f0re00","quest":"q8","repository":"engine","adapter":"claude-code","state":"stopped","kind":"driven","created":"2026-10-03T09:05:00Z","updated":"2026-10-03T09:06:00Z"}]"""));
+        ledger.Serve("/api/sessions", Bytes("[]"));
+        ledger.Serve("/api/asks/a1", Bytes("""{"id":"a1","workspace":"aurora","sentence":"Add the note field","state":"Published","tier":"named"}"""));
+        ledger.Serve("/api/registry", Bytes($$"""[{"repository":"engine","adopted":true,"registered":true,"root":"{{Home.Replace('\\', '/')}}/engine","workspace":"aurora"}]"""));
+        (DriverConfig.Empty with { Drivable = ["engine"] })
+            .WithPausedAsk("a1", new WorkPause(DateTimeOffset.UtcNow, new Dictionary<string, string>()))
+            .Save(DriverConfigPath);
+        var module = await UpAsync(ledger);
+
+        var resumed = await AnswerAsync(module, "WORK_RESUME", new { ask = "a1" });
+
+        var hold = Assert.Single(resumed.GetProperty("holds").EnumerateArray());
+        Assert.Equal(("q8", "Stopped", "b3f0re00"),
+            (hold.GetProperty("quest").GetString(), hold.GetProperty("verdict").GetString(), hold.GetProperty("heldBy").GetString()));
+        Assert.Contains("session `b3f0re00`", hold.GetProperty("reason").GetString());
+    }
+
     /// <summary>A resume of what is not paused is said, never refused (D48 §6), and writes nothing.</summary>
     [Fact]
     public async Task A_resume_of_what_is_not_paused_is_said_and_writes_nothing()
