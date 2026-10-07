@@ -317,6 +317,9 @@ once in ORIENT2h6's merge gate (no web file changed), with three worktrees build
 under the same load in one day: a page test that renders the whole shell is the shape to look at. A third, the same
 evening: `WorkFrame.test.tsx`'s "hands the words back into the box, and names the files, when a send does not arrive"
 timed out (20 s) once in CARRY2d's web run and passed in the next.
+The full set on `99b2a858` (2026-10-08) caught `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one`
+(modules, Process half) failing in the full run and passing alone, with one worktree building beside it; the plugin-kit
+repeat FLAKE1's row names.
 
 *Fixed the same day:* `desktop-publish.test.ts`'s "retries a held rename at each package and launcher step" failed
 twice (AGENTREAD1's verify, ACCTQUOTE1d's merge gate) with a real EPERM. It handed `layCli` two tries with no wait, the
