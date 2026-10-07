@@ -259,7 +259,7 @@ public sealed class AccountNamesSaidTests : IDisposable
 
         var conclusion = Driver(service, roster).AccountRefused(
             new SessionConclusion("failed", "exit 1 before taking its quest."), AdapterSet.Built().Resolve("stub"),
-            new HarnessSelection(null, "account-1"), transcript);
+            new HarnessSelection(null, "account-1"), HarnessEnding.Transcript(1, transcript));
 
         Assert.Contains("the `stub` account `account-1` (401)", conclusion.Note);
         Assert.DoesNotContain("work", conclusion.Note);

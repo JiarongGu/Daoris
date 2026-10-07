@@ -179,10 +179,101 @@ public static class Observation
     public static Noted Failure(string message) => Noted.Said(message, NoteBy.Program);
 
     /// <summary>
-    /// Did the tool say its provider refused the account's credential (AGT3b)? Read from its own last
-    /// words, by the pattern its toolchain declares; null declares none, and nothing is observed.
+    /// Did the harness say its provider refused the account's credential (AGT3b)? Read by the pattern its toolchain declares,
+    /// from what the harness itself reported as the run's failure, and only where it reported one (AGT3c): its door's
+    /// failure, or its own lines beside a failure or an exit that was not 0. Never from words its agent could write, which on
+    /// any door but one that carries only text are not among them. Null declares no pattern, and nothing is observed.
     /// </summary>
-    public static bool Refused(IEnumerable<string> lastLines, string? pattern) =>
-        pattern is { Length: > 0 }
-        && lastLines.Any(line => line.Contains(pattern, StringComparison.OrdinalIgnoreCase));
+    public static bool Refused(HarnessEnding ended, string? pattern)
+    {
+        if (pattern is not { Length: > 0 } || !ended.Failed) return false;
+        bool Says(string? text) => text?.Contains(pattern, StringComparison.OrdinalIgnoreCase) == true;
+        return Says(ended.Failure) || ended.Lines.Any(Says);
+    }
+}
+
+/// <summary>
+/// What a harness itself said about how its run ended, apart from its agent's words (AGT3c): the process's exit, its door's
+/// failure, and the lines it wrote that its agent could not. What a refused credential is read from (AGT3b), as a limit and a
+/// refused sign-in are read from the door's failure (D125 point 1, ROSTER1b).
+/// </summary>
+/// <param name="Exit">The process's exit code; null where the timeout killed it.</param>
+/// <param name="Failure">
+/// The door's failure in the harness's words: the protocol door's refused call (ACPEND1), or the native door's failed
+/// <c>result</c>. Null where the door said the turn ended.
+/// </param>
+/// <param name="Lines">
+/// The harness's own last lines: on the native door its stderr and what it printed outside its protocol. A door that carries
+/// only text gives nothing but its transcript, so its transcript's last lines are these, the agent's words among them: there,
+/// only the exit, which the harness sets, tells a failure (<see cref="Transcript"/>). None on the protocol door, whose failure
+/// is its door's.
+/// </param>
+public sealed record HarnessEnding(int? Exit, string? Failure, IReadOnlyList<string> Lines)
+{
+    /// <summary>How many of the harness's last lines are kept: where a tool says why it gave up.</summary>
+    public const int LinesKept = 40;
+
+    /// <summary>Whether the harness itself said the run failed: its door's failure, or an exit that was not 0.</summary>
+    public bool Failed => Failure is { Length: > 0 } || Exit is { } exit && exit != 0;
+
+    /// <summary>
+    /// A door that carries only text (AGT3c): its transcript's last lines, both its streams, beside the process's exit. Its
+    /// agent's words are among them and cannot be told apart, so only an exit that was not 0 lets them be read. Unreadable
+    /// is none.
+    /// </summary>
+    public static HarnessEnding Transcript(int? exit, string transcript)
+    {
+        try
+        {
+            return new(exit, null, [.. File.ReadLines(transcript).TakeLast(LinesKept)]);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return new(exit, null, []);
+        }
+    }
+}
+
+/// <summary>
+/// What a native run's harness wrote that its agent could not (AGT3c), kept as its output passes: its stderr and the lines it
+/// printed outside its protocol, the last <see cref="HarnessEnding.LinesKept"/> of them, and the words its failed turn gave.
+/// One per session, begun again by each run, so the conclusion reads the run that ended last.
+/// </summary>
+public sealed class HarnessWords
+{
+    private readonly object _gate = new();
+    private readonly Queue<string> _lines = new();
+    private string? _failure;
+
+    /// <summary>A run begins: what the run before it said is not this one's ending.</summary>
+    public void Begin()
+    {
+        lock (_gate)
+        {
+            _lines.Clear();
+            _failure = null;
+        }
+    }
+
+    /// <summary>A line the harness wrote itself: on its stderr, or outside its protocol.</summary>
+    public void Said(string line)
+    {
+        lock (_gate)
+        {
+            _lines.Enqueue(line);
+            while (_lines.Count > HarnessEnding.LinesKept) _lines.Dequeue();
+        }
+    }
+
+    /// <summary>A turn the harness said failed, in its words.</summary>
+    public void Failed(string failure)
+    {
+        lock (_gate) _failure = failure;
+    }
+
+    /// <summary>The run's ending, with the process's exit.</summary>
+    public HarnessEnding Ended(int? exit)
+    {
+        lock (_gate) return new(exit, _failure, [.. _lines]);
+    }
 }
