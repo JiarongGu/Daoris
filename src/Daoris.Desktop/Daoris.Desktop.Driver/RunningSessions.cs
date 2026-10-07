@@ -33,6 +33,26 @@ public sealed class RunningSessions
     /// </summary>
     internal ConcurrentDictionary<string, string> Live { get; } = new(StringComparer.Ordinal);
 
+    // The records a run of this loop takes up with the person's words, from the look that began it until it ends (ANSWER2).
+    private readonly HashSet<string> _goingOn = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Claim a record the person's words wait on for the one run that takes it up (ANSWER2, D131 §3: one record, one harness
+    /// conversation): false where a run of this loop already has it. That run is told it opened before its process starts and
+    /// moves the record to working, so a look in between still reads the record waiting and would begin a second run on it,
+    /// whose move to working the ledger refuses, failing the session the first run is resuming.
+    /// </summary>
+    internal bool TryGoOn(string session)
+    {
+        lock (_gate) return _goingOn.Add(session);
+    }
+
+    /// <summary>The run that took the record up has ended, however it ended: words said to it later go on in a run of their own.</summary>
+    internal void WentOn(string session)
+    {
+        lock (_gate) _goingOn.Remove(session);
+    }
+
     /// <summary>How many runs are still going: started, opened, and not yet concluded.</summary>
     public int Running
     {

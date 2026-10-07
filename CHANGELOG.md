@@ -153,6 +153,7 @@ with the version and date at release.
   signed in can be read without hovering.
 - Adding an API key or saving an account's model keeps what you entered until it is saved, and says a
   refusal there; a key added asks for its name and workspaces, as a sign-in does.
+- Answering a session that stopped to ask you no longer fails it: it carries on with your answer, once.
 
 The first version: doctrine that installs, is checked, and flows back.
 

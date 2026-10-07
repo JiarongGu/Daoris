@@ -215,6 +215,61 @@ public sealed class SessionMessagesPlanTests
     }
 
     /// <summary>
+    /// 🔴 ANSWER2, the owner's case on the install: a resumed run moves its record to working, and takes the person's words
+    /// off it only as it concludes, so for the whole run the record works with the words still on it. A look meanwhile does not
+    /// plan it to go on a second time, whose move to working the ledger refuses (working → working) and whose failure failed
+    /// the session the person had answered: the record runs, and its quest is the running session's as any working one's is.
+    /// </summary>
+    [Theory]
+    [InlineData("Taken")]
+    [InlineData("Open")]
+    [InlineData("Done")]
+    public void A_record_already_going_on_with_the_words_is_not_planned_to_go_on_again(string status)
+    {
+        var going = new PriorSession("s1", "D:/trees/s-1", "working", Continuations.Working, "Game", Answer: "Port 8080.")
+        {
+            Said = [Word with { Text = "Port 8080.", Reopens = false }],
+            Adapter = "claude-code-acp",
+        };
+        var quest = Quest("q1", status);
+        var snapshot = new Snapshot(
+            status == "Done" ? [] : [quest], [Repo], [new SessionView("s1", "Game", "working") { Tree = "D:/trees/s-1", Quest = "q1" }])
+        {
+            Closed = status == "Done" ? [quest] : [],
+            LastRun = new Dictionary<string, PriorSession> { ["q1"] = going },
+        };
+
+        var plan = Planner.Plan(snapshot, Config());
+
+        Assert.DoesNotContain(plan, c => c.Verdict == StartVerdict.Start || c.GoesOn);
+        if (status == "Open")
+        {
+            Assert.Equal((StartVerdict.RepositoryBusy, "session `s1` is already working on `#q1`."), (Assert.Single(plan).Verdict, plan[0].Reason));
+        }
+
+        Assert.False(going.WordsWaiting);
+    }
+
+    /// <summary>
+    /// ANSWER2: a record running with the person's words on it holds no closed quest beside the open ones, since nothing waits
+    /// to go on there; once it ends with them still on it (a refusal on the wire sends it back), they wait again.
+    /// </summary>
+    [Fact]
+    public void A_closed_quest_whose_session_runs_with_the_words_is_not_carried_beside_the_open_ones()
+    {
+        var last = new Dictionary<string, PriorSession> { ["q1"] = Written("working"), ["q2"] = Written("completed", "s2") };
+
+        var closed = ServiceClient.ReadClosed("""
+            [{ "id": "q1", "from": "Asker", "to": "Game", "title": "One", "body": "", "status": "Done" },
+             { "id": "q2", "from": "Asker", "to": "Game", "title": "Two", "body": "", "status": "Done" }]
+            """, last, open: []);
+
+        Assert.Equal(["q2"], closed.Select(quest => quest.Id));
+        Assert.True(Written("completed").WordsWaiting);
+        Assert.All(new[] { "queued", "starting", "working" }, state => Assert.False(Written(state).WordsWaiting));
+    }
+
+    /// <summary>
     /// The last run reads the words waiting on each record, one by one with their ids, and an intake's ask; a host from before
     /// <c>said</c> answers none, which is not the same as nothing waiting.
     /// </summary>

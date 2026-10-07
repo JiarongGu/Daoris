@@ -7,7 +7,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The service's doors a look crosses, standing in: the open quests, the registry, the session ledger,
-/// where this machine's claim on a quest stands (DEV3), and the asks an intake answers (UX6d1). In-process, reached through the real client over a
+/// where this machine's claim on a quest stands (DEV3), the asks an intake answers (UX6d1), and the say and taken doors a
+/// park the person answers goes on through (ANSWER2). In-process, reached through the real client over a
 /// handler, so a look is driven with no port and no process, and the suite's fast half can hold it.
 /// </summary>
 /// <remarks>
@@ -130,6 +131,47 @@ internal sealed class StandInLedger : HttpMessageHandler
         lock (_gate) _quests.Single(q => q["id"]!.GetValue<string>() == id)["status"] = status;
     }
 
+    /// <summary>
+    /// A driven session of this machine's that took <paramref name="quest"/> and parked to ask the person (D83), in its own
+    /// tree, with no words on it yet (ANSWER2): what the say door keeps the person's answer on.
+    /// </summary>
+    public void Park(string session, string quest, string tree)
+    {
+        lock (_gate)
+        {
+            var asked = _quests.Single(q => q["id"]!.GetValue<string>() == quest);
+            asked["status"] = "Taken";
+            _clock = _clock.AddSeconds(1);
+            _sessions.Add(new JsonObject
+            {
+                ["id"] = session, ["quest"] = quest, ["repository"] = asked["to"]!.GetValue<string>(), ["state"] = "awaiting-person",
+                ["kind"] = "driven", ["adapter"] = "stub", ["tree"] = tree, ["created"] = _clock.ToString("O"),
+                ["note"] = "Which port should it listen on?", ["said"] = new JsonArray(),
+            });
+        }
+    }
+
+    /// <summary>Every state a record was moved to through the state door, in order (ANSWER2).</summary>
+    public IReadOnlyList<string> MovesOf(string id)
+    {
+        lock (_gate) return [.. _moves.GetValueOrDefault(id) ?? []];
+    }
+
+    private readonly Dictionary<string, List<string>> _moves = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Where the ledger lets a running record move from each of its active states (D46 §4), for the sentence it refuses a
+    /// move with. The stand-in refuses only a move to the state a running record is already in, the refusal a second run on
+    /// the same record meets (ANSWER2); its own runs move a record queued → working, which the real ledger never takes.
+    /// </summary>
+    private static readonly Dictionary<string, string> From = new(StringComparer.Ordinal)
+    {
+        ["queued"] = "starting, stood-down, failed, stopped",
+        ["starting"] = "working, stood-down, failed, stopped",
+        ["working"] = "awaiting-person, completed, declined, stood-down, failed, stopped",
+        ["awaiting-person"] = "working, completed, declined, stopped",
+    };
+
     public JsonObject Session(string id)
     {
         lock (_gate) return (JsonObject)_sessions.Single(s => s["id"]!.GetValue<string>() == id).DeepClone();
@@ -229,7 +271,26 @@ internal sealed class StandInLedger : HttpMessageHandler
                 {
                     var id = path["/api/sessions/".Length..^"/state".Length];
                     var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
-                    session["state"] = body!["state"]!.GetValue<string>();
+                    var from = session["state"]!.GetValue<string>();
+                    var to = body!["state"]!.GetValue<string>();
+                    if (from == to && From.TryGetValue(from, out var onward))
+                    {
+                        // In the ledger's own words (SessionLedger.AdvanceAsync), which the driver's refusal quotes whole.
+                        return Answer(HttpStatusCode.Conflict, new JsonObject
+                        {
+                            ["error"] = $"Session `{id}` cannot move {from} → {to}. From {from}: {onward}.",
+                        });
+                    }
+
+                    session["state"] = to;
+                    if (!_moves.TryGetValue(id, out var moves)) _moves[id] = moves = [];
+                    moves.Add(to);
+                    // A session that parks again asks anew (ANSWER1b): a move into a park clears the words waiting (MSG1a).
+                    if (to == "awaiting-person" && session["said"] is not null)
+                    {
+                        session["said"] = new JsonArray();
+                        session.Remove("answer");
+                    }
                     if (body["note"] is { } note)
                     {
                         session["note"] = note.GetValue<string>();
@@ -242,6 +303,52 @@ internal sealed class StandInLedger : HttpMessageHandler
                     // Kept once said, as the service keeps it (TOOL4c).
                     if (body["limit"] is { } limit && limit.GetValue<bool>()) session["limit"] = true;
                     return Answer(HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "moved" });
+                }
+
+                // The say door (MSG1a), the one the screen's answer and a terminal's words reach through `ServiceClient.SayAsync`:
+                // words kept on a parked or ended record, verbatim and in order, `answer` their join; a running record is
+                // refused `running`, since its words reach it through the driver that runs it.
+                case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/say", StringComparison.Ordinal):
+                {
+                    var id = path["/api/sessions/".Length..^"/say".Length];
+                    var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
+                    var state = session["state"]!.GetValue<string>();
+                    if (state is "queued" or "starting" or "working")
+                    {
+                        return Answer(HttpStatusCode.Conflict, new JsonObject
+                        {
+                            ["error"] = $"Session `{id}` is {state}: words to a running session reach it through the driver that runs it, not its record.",
+                            ["refusal"] = "running",
+                        });
+                    }
+
+                    if (session["said"] is not JsonArray said) session["said"] = said = [];
+                    _clock = _clock.AddSeconds(1);
+                    var word = new JsonObject
+                    {
+                        ["id"] = $"w{said.Count + 1}", ["text"] = body!["text"]!.GetValue<string>().Trim(), ["at"] = _clock.ToString("O"),
+                        ["files"] = new JsonArray(), ["reopens"] = state != "awaiting-person",
+                    };
+                    said.Add(word);
+                    session["answer"] = string.Join("\n\n", said.Select(each => each!["text"]!.GetValue<string>()));
+                    return Answer(HttpStatusCode.OK, new JsonObject
+                    {
+                        ["session"] = session.DeepClone(), ["message"] = $"Kept for session `{id}` to go on with.", ["said"] = word.DeepClone(),
+                    });
+                }
+
+                // The taken door (MSG1a): the words a session took leave its record by their ids.
+                case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/taken", StringComparison.Ordinal):
+                {
+                    var id = path["/api/sessions/".Length..^"/taken".Length];
+                    var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
+                    var taken = body!["said"]!.AsArray().Select(word => word!.GetValue<string>()).ToHashSet(StringComparer.Ordinal);
+                    var left = (session["said"] as JsonArray ?? []).Where(word => !taken.Contains(word!["id"]!.GetValue<string>()))
+                        .Select(word => word!.DeepClone()).ToList();
+                    session["said"] = new JsonArray([.. left]);
+                    if (left.Count == 0) session.Remove("answer");
+                    else session["answer"] = string.Join("\n\n", left.Select(word => word["text"]!.GetValue<string>()));
+                    return Answer(HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "taken" });
                 }
 
                 case ("GET", _) when path.StartsWith("/api/quests/", StringComparison.Ordinal) && path.EndsWith("/claim", StringComparison.Ordinal):
