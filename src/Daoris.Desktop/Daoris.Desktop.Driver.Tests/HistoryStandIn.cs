@@ -77,12 +77,18 @@ internal sealed class HistoryStandIn : HttpMessageHandler
         return unit;
     }
 
+    /// <param name="waits">What waits beside <c>needs-you</c> (HIST1l); null leaves the field out, as a host before it and every other word do.</param>
     public static JsonObject Refusal(string word, string? quest = null, string? ask = null, string? session = null, string? origin = null,
-        string? workspace = null, string? error = null) => new()
+        string? workspace = null, string? error = null, string? waits = null)
+    {
+        var refusal = new JsonObject
         {
             ["refusal"] = word, ["error"] = error ?? $"the desk's {word} sentence", ["quest"] = quest, ["ask"] = ask, ["session"] = session,
             ["origin"] = origin, ["workspace"] = workspace,
         };
+        if (waits is not null) refusal["waits"] = waits;
+        return refusal;
+    }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
     {

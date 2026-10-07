@@ -26,9 +26,9 @@ public enum EntryKind
     TaskOutcome,
 
     /// <summary>
-    /// One section of a repository's declared index of where things are (ORIENT2e; D151 §6): the rows under one
-    /// heading of a generated file, each naming a place in the code or the records. Last, so the kinds stored
-    /// before it keep their numbers.
+    /// One entry of a repository's declared index of where things are (ORIENT2e; D151 §6): the prose or the list
+    /// under one heading of a generated file, or one row of its tables (ORIENT2h), each naming a place in the code
+    /// or the records. Last, so the kinds stored before it keep their numbers.
     /// </summary>
     Index,
 }

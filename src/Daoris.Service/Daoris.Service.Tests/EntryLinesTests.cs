@@ -145,6 +145,26 @@ public sealed class EntryLinesTests : IDisposable
     }
 
     /// <summary>
+    /// A declared index's row is its line as written (ORIENT2h), so it names that line, and the prose around its
+    /// table names its own: a range reads the row a hit named.
+    /// </summary>
+    [Fact]
+    public void A_declared_index_s_rows_and_its_prose_keep_their_lines()
+    {
+        Write("daoris.json", """{"source":"s","packs":[],"documents":{"index":"docs/index/README.md"}}""");
+        Write("docs/index/README.md",
+            "# Routes\n\nGenerated.\n\n| Route | Handler |\n|---|---|\n|  `STATE`  | `Module.cs:38` |\n| `OPEN` | `Module.cs:41` |\n\nBy module.\n");
+
+        var entries = new RepositoryScanner().Scan(_root);
+
+        Assert.Equal(
+            ["Routes @ docs/index/README.md:3", "Routes › Route: STATE @ docs/index/README.md:7", "Routes › Route: OPEN @ docs/index/README.md:8", "Routes @ docs/index/README.md:10"],
+            Of(entries, EntryKind.Index));
+        AssertVerbatim(entries);
+        Assert.Equal((new LineSpan(7, 7), "|  `STATE`  | `Module.cs:38` |"), entries.Single(e => e.Title == "Routes › Route: STATE").Cut(new LineSpan(1, 9)));
+    }
+
+    /// <summary>
     /// A deployment's index row is its cells labelled by their columns (ORIENT1c), which is not its file's line as
     /// written, so it names no lines: absent, never a line whose text a range would misreport.
     /// </summary>

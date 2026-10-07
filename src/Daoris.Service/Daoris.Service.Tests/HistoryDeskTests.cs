@@ -357,6 +357,110 @@ public sealed class HistoryDeskTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// HIST1l: which thing waits on the person is named beside the word (design §6.3), so the driver says the sentence meant from
+    /// the refusal itself and never from a second read of the records, which may have moved since: a parked session, a done
+    /// held for a yes, a conflict nobody dismissed, an ask proposed or open, a rule proposal of the work's session or for the
+    /// ask, and a failed session's proposal in a failed-sessions clear.
+    /// </summary>
+    [Theory]
+    [InlineData("parked")]
+    [InlineData("held")]
+    [InlineData("conflict")]
+    [InlineData("ask")]
+    [InlineData("proposal")]
+    [InlineData("proposal for the ask")]
+    [InlineData("proposal of a failed session")]
+    public async Task What_waits_on_the_person_is_named_beside_its_word(string waiting)
+    {
+        var (unit, waits, quest, ask, session, message) = await WaitingAsync(waiting);
+
+        var refusal = (await Desk().PlanAsync(unit)).Refusal!;
+        var pressed = Assert.Single(await Desk().ClearAsync([unit], Now.AddHours(1)));
+
+        Assert.Equal((HistoryRefusal.NeedsYou, waits), (refusal.Refusal, refusal.Waits));
+        Assert.Equal((quest, ask, session), (refusal.Quest, refusal.Ask, refusal.Session));
+        Assert.Equal(message, refusal.Message);
+        Assert.False(pressed.Cleared);
+        Assert.Equal(waits, pressed.Unit.Refusal!.Waits);
+    }
+
+    /// <summary>The records for one of <see cref="What_waits_on_the_person_is_named_beside_its_word"/>'s rows, and what the refusal names.</summary>
+    private async Task<(HistoryUnitRef Unit, HistoryWaiting Waits, string? Quest, string? Ask, string? Session, string Message)> WaitingAsync(
+        string waiting)
+    {
+        var change = new RuleChange("add", "machine", null, "deny", "Bash(rm:*)", null, null);
+        switch (waiting)
+        {
+            case "parked":
+            {
+                var quest = await Closed("A session parked to ask the person");
+                var parked = await Served(quest, SessionState.AwaitingPerson);
+                return (QuestUnit(quest.Id), HistoryWaiting.Parked, null, null, parked.Id, $"Session `{parked.Id}` waits on you.");
+            }
+
+            case "held":
+            {
+                var held = (await Exchange().PublishAsync("Asker", "Homebody", "Done another way, held", "why", Now)).Quest!;
+                await _quests.MoveAsync(held.Id, QuestStatus.Taken, null, Now.AddMinutes(1));
+                await _quests.MoveAsync(
+                    held.Id, QuestStatus.Done, "Done another way.", Now.AddMinutes(2),
+                    answers: [new QuestAnswer(1, null, "The words asked for the other way.", "the other way")]);
+                return (QuestUnit(held.Id), HistoryWaiting.Held, held.Id, null, null,
+                    $"Quest `#{held.Id}` is done and waits for you to accept it.");
+            }
+
+            case "conflict":
+            {
+                // Another machine's move lost to a third's: a closed quest still takes a conflict a fetch brings (QuestLog).
+                var id = "c0ffeec0ffee";
+                var published = new Quest(id, "Asker", "Homebody", "A move lost on another machine", "why", QuestStatus.Open, null, Now, Now, Workspaces.Default);
+                await _quests.IntegrateAsync(Workspaces.Default,
+                [
+                    new QuestOperation(id, QuestOperationKind.Published, "m2", 1, Now, Published: published, Number: 1),
+                    new QuestOperation(id, QuestOperationKind.Taken, "m2", 2, Now.AddMinutes(1), Number: 2),
+                    new QuestOperation(id, QuestOperationKind.Done, "m2", 3, Now.AddMinutes(2), "Landed.", Number: 3),
+                    new QuestOperation(id, QuestOperationKind.Conflict, "m3", 1, Now.AddMinutes(3), "late", Attempted: QuestStatus.Taken, Number: 4),
+                ], 4);
+                return (QuestUnit(id), HistoryWaiting.Conflict, id, null, null, $"A conflict on `#{id}` waits on you.");
+            }
+
+            case "ask":
+            {
+                var proposed = (await Asking().AskAsync(new AskRequest(Workspaces.Default, "Somebody should look at that"), Now)).Ask!;
+                return (AskUnit(proposed.Id), HistoryWaiting.Ask, null, proposed.Id, null,
+                    $"Ask `#{proposed.Id}` waits for you to publish or close it.");
+            }
+
+            case "proposal":
+            {
+                var quest = await Closed("A session of the work proposed a rule");
+                var session = await Served(quest);
+                _proposals.Propose(change, "it should not", session.Id, null, null, Now);
+                return (QuestUnit(quest.Id), HistoryWaiting.Proposal, null, null, session.Id,
+                    $"A rule proposal from session `{session.Id}` waits on you.");
+            }
+
+            case "proposal for the ask":
+            {
+                var done = (await Asking().AskAsync(new AskRequest(Workspaces.Default, "Fix the other thing") { To = "Homebody" }, Now)).Ask!;
+                await _quests.MoveAsync(done.Quests[0], QuestStatus.Taken, null, Now.AddMinutes(1));
+                await _quests.MoveAsync(done.Quests[0], QuestStatus.Done, "Fixed.", Now.AddMinutes(2));
+                _proposals.Propose(change, "its intake asked", null, done.Id, null, Now);
+                return (AskUnit(done.Id), HistoryWaiting.Proposal, null, done.Id, null, $"A rule proposal for ask `#{done.Id}` waits on you.");
+            }
+
+            default:
+            {
+                var quest = await Closed("A failed session proposed a rule");
+                var failed = await Served(quest, SessionState.Failed);
+                _proposals.Propose(change, "it should not", failed.Id, null, null, Now);
+                return (FailedUnit(quest.Id), HistoryWaiting.Proposal, null, null, failed.Id,
+                    $"A rule proposal from session `{failed.Id}` waits on you.");
+            }
+        }
+    }
+
+    /// <summary>
     /// 🔴 Open work naming it keeps it (design §1.2): a taken quest waiting on its answer would be stranded (H7), an open
     /// question its session published belongs to the work, and a chain's open next step builds on its last session here.
     /// </summary>
@@ -608,6 +712,16 @@ public sealed class HistoryDeskTests : IAsyncLifetime
     [InlineData(HistoryRefusal.NotOurs, "not-ours")]
     public void A_refusal_is_spelled_as_its_word(HistoryRefusal refusal, string word) =>
         Assert.Equal(word, HistoryKept.Spell(refusal));
+
+    /// <summary>What waits on the person is spelled as the driver reads it (HIST1l): one lower-case word each.</summary>
+    [Theory]
+    [InlineData(HistoryWaiting.Parked, "parked")]
+    [InlineData(HistoryWaiting.Held, "held")]
+    [InlineData(HistoryWaiting.Conflict, "conflict")]
+    [InlineData(HistoryWaiting.Ask, "ask")]
+    [InlineData(HistoryWaiting.Proposal, "proposal")]
+    public void What_waits_is_spelled_as_its_word(HistoryWaiting waiting, string word) =>
+        Assert.Equal(word, HistoryKept.Spell(waiting));
 
     [Theory]
     [InlineData("quest", HistoryUnitKind.Quest)]
