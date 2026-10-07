@@ -46,7 +46,61 @@ public enum LoginState
 /// organisation and a tier beside it still has neither kept. Null asks nobody's name.
 /// </param>
 public sealed record LoginQuestion(
-    IReadOnlyList<string> Arguments, string LoggedIn, string LoggedOut, string? Account = null);
+    IReadOnlyList<string> Arguments, string LoggedIn, string LoggedOut, string? Account = null)
+{
+    /// <summary>
+    /// What one answer says (CODEXACCT1, read in one place so a table can hold it): yes where <see cref="LoggedIn"/> matches,
+    /// with who where <see cref="Account"/> reads one; else no where <see cref="LoggedOut"/> matches; else unknown. Matched
+    /// without case, the yes first, since it is the specific one.
+    /// </summary>
+    public (LoginState Login, string? Account) Read(string output) =>
+        Matches(output, LoggedIn) ? (LoginState.In, Who(output, Account))
+        : (Matches(output, LoggedOut) ? LoginState.Out : LoginState.Unknown, null);
+
+    /// <summary>The first group of the account pattern, trimmed — or null when there is none to read.</summary>
+    private static string? Who(string output, string? pattern)
+    {
+        if (pattern is null) return null;
+        try
+        {
+            var match = Regex.Match(output, pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(2));
+            return match.Success && match.Groups.Count > 1 && match.Groups[1].Value.Trim() is { Length: > 0 } who
+                ? who
+                : null;
+        }
+        catch (Exception error) when (error is ArgumentException or RegexMatchTimeoutException)
+        {
+            return null;
+        }
+    }
+
+    private static bool Matches(string output, string pattern)
+    {
+        try
+        {
+            return Regex.IsMatch(output, pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(2));
+        }
+        catch (Exception error) when (error is ArgumentException or RegexMatchTimeoutException)
+        {
+            // A pattern this build cannot run is no evidence, exactly like an answer it cannot read.
+            return false;
+        }
+    }
+}
+
+/// <summary>
+/// What one of a harness's own commands runs as (D57 rule 4; <see cref="HarnessProbe.CommandOf"/>): the command and its
+/// arguments' head, the pin's executable where it came from a pin, and the version pinned.
+/// </summary>
+/// <param name="Harness">Whose command: the name its pin and its <c>driver.json</c> command are kept under.</param>
+/// <param name="Run">The binary, then any arguments it is declared with; empty where <see cref="Missing"/>.</param>
+/// <param name="Managed">The pinned executable, or null for a named command or <c>PATH</c>'s.</param>
+/// <param name="Pinned">The version this machine pins, or null.</param>
+public sealed record HarnessCommand(string Harness, IReadOnlyList<string> Run, string? Managed, string? Pinned)
+{
+    /// <summary>Pinned with nothing installed at the pin: nobody to run, and never a fall back to <c>PATH</c>.</summary>
+    public bool Missing => Pinned is not null && Managed is null;
+}
 
 /// <summary>
 /// What Daoris knows about a harness AS A TOOL (D49 §4) — where its binary is, how to ask its version,
@@ -1137,32 +1191,22 @@ public static class HarnessProbe
         // managed pin, then PATH. A presence answer computed from PATH while a pin is set is an answer
         // about a different program — measured both ways: the selector vetoed a working pin as "not
         // installed", and the CLI twin reported the machine's own binary as the pinned one.
-        var resolved = toolchain.Command(command);
-        string? pinned = null;
-        var isManaged = false;
-        if (command is not { Count: > 0 }
-            && settings.ResolveVersion(adapter, workspace: null, chosen: null) is { } version_)
+        var run = CommandOf(adapter, toolchain, command, settings, home);
+        var resolved = run.Run;
+        var isManaged = run.Managed is not null;
+        if (run.Missing)
         {
-            pinned = version_;
-            if (HarnessSettings.ManagedBinary(home, adapter, pinned, toolchain.Binary) is { } managed)
-            {
-                resolved = [managed, .. toolchain.Binary.Skip(1)];
-                isManaged = true;
-            }
-            else
-            {
-                // Pinned with nothing installed at it: absent, naming the version. Never a fall back
-                // to PATH — running a different version than the one asked for and reporting success
-                // is the failure the pin exists to prevent.
-                return new HarnessReport(
-                    adapter, false, null,
-                    $"pinned to {pinned} on this machine, and nothing is installed at that version — "
-                    + $"`daoris agent pin {adapter} {pinned}` installs it, and "
-                    + $"`daoris agent unpin {adapter}` goes back to PATH",
-                    toolchain.ProfileVariable,
-                    settings.Defaults.TryGetValue(toolchain.Owner(adapter), out var pinnedDefault) ? pinnedDefault : null,
-                    []);
-            }
+            // Pinned with nothing installed at it: absent, naming the version. Never a fall back
+            // to PATH — running a different version than the one asked for and reporting success
+            // is the failure the pin exists to prevent.
+            return new HarnessReport(
+                adapter, false, null,
+                $"pinned to {run.Pinned} on this machine, and nothing is installed at that version — "
+                + $"`daoris agent pin {adapter} {run.Pinned}` installs it, and "
+                + $"`daoris agent unpin {adapter}` goes back to PATH",
+                toolchain.ProfileVariable,
+                settings.Defaults.TryGetValue(toolchain.Owner(adapter), out var pinnedDefault) ? pinnedDefault : null,
+                []);
         }
 
         var version = toolchain.ProbeByPresence
@@ -1264,21 +1308,35 @@ public static class HarnessProbe
         HarnessSettings settings, string home, string? profileHome, CancellationToken ct, string? lockPath,
         IReadOnlyDictionary<string, string>? key, Func<bool>? busy = null, (LoginState Login, string? Account) kept = default)
     {
-        var resolved = toolchain.Command(command);
-        if (command is not { Count: > 0 }
-            && settings.ResolveVersion(adapter, workspace: null, chosen: null) is { } pinned)
-        {
-            // The pin, as the probe resolves it; nothing installed at it is nobody to ask.
-            if (HarnessSettings.ManagedBinary(home, adapter, pinned, toolchain.Binary) is not { } managed)
-            {
-                return new LoginAnswer(LoginState.Unknown, null, false);
-            }
+        // The pin, as the probe resolves it; nothing installed at it is nobody to ask.
+        var run = CommandOf(adapter, toolchain, command, settings, home);
+        return run.Missing
+            ? new LoginAnswer(LoginState.Unknown, null, false)
+            : await LoginAsync(run.Run, toolchain, profileHome, managed: run.Managed is not null, ct, key, lockPath, busy, kept)
+                .ConfigureAwait(false);
+    }
 
-            resolved = [managed, .. toolchain.Binary.Skip(1)];
-            return await LoginAsync(resolved, toolchain, profileHome, managed: true, ct, key, lockPath, busy, kept).ConfigureAwait(false);
+    /// <summary>
+    /// What one of a harness's own commands runs as (D57 rule 4, the order every spawn takes): the command <c>driver.json</c>
+    /// names for <paramref name="adapter"/>, then this machine's pin of it, then its declared binary on <c>PATH</c>. A pin
+    /// with nothing installed at it is <see cref="HarnessCommand.Missing"/>: nobody to run, never <c>PATH</c>'s.
+    /// </summary>
+    /// <remarks>
+    /// The status question and a sign-in both take it (CODEXACCT1), so a sign-in runs the binary its end's question asks:
+    /// the screen's ran <c>PATH</c>'s, and a machine whose only <c>codex</c> is the pin could not sign one in.
+    /// </remarks>
+    public static HarnessCommand CommandOf(
+        string adapter, HarnessToolchain toolchain, IReadOnlyList<string>? command, HarnessSettings settings, string home)
+    {
+        if (command is { Count: > 0 }) return new HarnessCommand(adapter, command, null, null);
+        if (settings.ResolveVersion(adapter, workspace: null, chosen: null) is not { } pinned)
+        {
+            return new HarnessCommand(adapter, toolchain.Binary, null, null);
         }
 
-        return await LoginAsync(resolved, toolchain, profileHome, managed: false, ct, key, lockPath, busy, kept).ConfigureAwait(false);
+        return HarnessSettings.ManagedBinary(home, adapter, pinned, toolchain.Binary) is { } managed
+            ? new HarnessCommand(adapter, [managed, .. toolchain.Binary.Skip(1)], managed, pinned)
+            : new HarnessCommand(adapter, [], null, pinned);
     }
 
     /// <summary>
@@ -1311,41 +1369,10 @@ public static class HarnessProbe
             .ConfigureAwait(false);
         if (!answer.Ran) return new LoginAnswer(LoginState.Unknown, null, true);
 
-        // Matched in this order because a "logged in" pattern is the specific one; and neither
-        // matching leaves it unknown rather than out, which is what keeps a reworded status line from
-        // refusing a spawn that would have worked.
-        if (Matches(answer.Output, question.LoggedIn)) return new LoginAnswer(LoginState.In, Who(answer.Output, question.Account), true);
-        return new LoginAnswer(Matches(answer.Output, question.LoggedOut) ? LoginState.Out : LoginState.Unknown, null, true);
-    }
-
-    /// <summary>The first group of the account pattern, trimmed — or null when there is none to read.</summary>
-    private static string? Who(string output, string? pattern)
-    {
-        if (pattern is null) return null;
-        try
-        {
-            var match = Regex.Match(output, pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(2));
-            return match.Success && match.Groups.Count > 1 && match.Groups[1].Value.Trim() is { Length: > 0 } who
-                ? who
-                : null;
-        }
-        catch (Exception error) when (error is ArgumentException or RegexMatchTimeoutException)
-        {
-            return null;
-        }
-    }
-
-    private static bool Matches(string output, string pattern)
-    {
-        try
-        {
-            return Regex.IsMatch(output, pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(2));
-        }
-        catch (Exception error) when (error is ArgumentException or RegexMatchTimeoutException)
-        {
-            // A pattern this build cannot run is no evidence, exactly like an answer it cannot read.
-            return false;
-        }
+        // Read with the "logged in" pattern first, because it is the specific one; and neither matching leaves it unknown
+        // rather than out, which is what keeps a reworded status line from refusing a spawn that would have worked.
+        var (login, who) = question.Read(answer.Output);
+        return new LoginAnswer(login, who, true);
     }
 
     /// <summary>The runtime's error code for a binary that is not there — ERROR_FILE_NOT_FOUND and ENOENT alike.</summary>
@@ -2013,11 +2040,23 @@ public sealed partial class HarnessRoster(AdapterSet adapters, string? settingsP
     private async Task PressAsync(string name, HarnessToolchain toolchain, string owner, DriverConfig config, bool own)
     {
         var prior = Composed(name, toolchain, new Binary(true, null, null));
+        // 🔴 A door onto an agent this build carries no door of (CODEXACCT1: `codex-acp`, `codex`) asks its binary as itself,
+        // and its accounts and the tool's own sign-in as that agent asks them, with the agent's own binary: no press of the
+        // agent's would, and the door has no status question. Its press read nothing, so the own sign-in said *never read*.
+        var holder = HolderOf(name, toolchain);
         var report = await HarnessProbe.ProbeAsync(
             name, toolchain, config.Commands.GetValueOrDefault(name), Settings, Home, CancellationToken.None,
-            busy: account => Busy(owner, account), prior: prior, own: own, clock: Clock,
+            busy: account => Busy(owner, account), prior: prior, own: own && holder is null,
+            asks: holder is null ? null : _ => false, clock: Clock,
             answered: (account, login, who, at) => Keep(owner, account, login, who, at)).ConfigureAwait(false);
         _binaries[name] = new Binary(report.Present, report.Version, report.Problem);
+        if (holder is { } agent)
+        {
+            await HarnessProbe.ProbeAsync(
+                agent.Name, agent.Toolchain, config.Commands.GetValueOrDefault(agent.Name), Settings, Home, CancellationToken.None,
+                busy: account => Busy(owner, account), prior: prior, own: own, clock: Clock,
+                answered: (account, login, who, at) => Keep(owner, account, login, who, at)).ConfigureAwait(false);
+        }
         // And each account's windows, where its agent's server is asked them (CODEXUSE1), and the own sign-in's where the
         // press was for it too (CODEXUSE3).
         await PressUsageAsync(name, owner, config, own, CancellationToken.None).ConfigureAwait(false);
@@ -2258,23 +2297,66 @@ public sealed partial class HarnessRoster(AdapterSet adapters, string? settingsP
         return (answer.Login, answer.Account);
     }
 
-    /// <summary>The toolchain that answers for this adapter's accounts (AGT7) — its owner's, when carried.</summary>
-    public HarnessToolchain? AccountToolchain(string adapter) =>
-        Toolchain(adapter) is { } toolchain ? AccountAgent(adapters.Resolve(adapter).Name, toolchain).Toolchain : null;
+    /// <summary>The toolchain that answers for this adapter's accounts (AGT7) — its owner's, when carried or declared.</summary>
+    public HarnessToolchain? AccountToolchain(string adapter) => AccountAgentOf(adapter)?.Toolchain;
 
     /// <summary>
-    /// Which adapter answers for a door's ACCOUNTS (AGT7): its owner when this build carries one — the
-    /// owner has the login question and the key variable — else the door itself.
+    /// The agent that answers for this adapter's accounts, by name and toolchain (AGT7, CODEXACCT1): what a sign-in on the
+    /// door runs, with that agent's configured command, and what its accounts are asked with. Null for an adapter that
+    /// declares no toolchain.
     /// </summary>
+    public (string Name, HarnessToolchain Toolchain)? AccountAgentOf(string adapter) =>
+        Toolchain(adapter) is { } toolchain ? AccountAgent(adapters.Resolve(adapter).Name, toolchain) : null;
+
+    /// <summary>
+    /// What a sign-in on this door runs as (CODEXACCT1): its account agent's binary, resolved as that agent's status question
+    /// resolves it (<see cref="HarnessProbe.CommandOf"/>, D57 rule 4): the command named for it, its pin, else <c>PATH</c>'s.
+    /// The install's only <c>codex</c> is its pin, so a sign-in on <c>PATH</c>'s could not start there. Null for an
+    /// adapter that declares no toolchain.
+    /// </summary>
+    public HarnessCommand? SignInCommand(string adapter, DriverConfig config) =>
+        AccountAgentOf(adapter) is { } agent
+            ? HarnessProbe.CommandOf(agent.Name, agent.Toolchain, config.Commands.GetValueOrDefault(agent.Name), Settings, Home)
+            : null;
+
+    /// <summary>
+    /// Which agent answers for a door's ACCOUNTS (AGT7): its owner when this build carries a door of it — the owner has the
+    /// login question and the key variable — else the owner as the set declares it where it carries no door of it
+    /// (<see cref="AdapterSet.Holder"/>, CODEXACCT1: <c>codex</c> for <c>codex-acp</c>), else the door itself.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 A declared owner is no adapter: its name is never handed to <see cref="ReportAsync"/> or a press, which resolve
+    /// adapters. <see cref="HolderOf"/> says which agent that is.
+    /// </remarks>
     private (string Name, HarnessToolchain Toolchain) AccountAgent(string name, HarnessToolchain toolchain)
     {
         var owner = toolchain.Owner(name);
-        return !string.Equals(owner, name, StringComparison.OrdinalIgnoreCase)
-            && adapters.Names.Contains(owner, StringComparer.OrdinalIgnoreCase)
-            && adapters.Resolve(owner).Toolchain is { } ownerToolchain
-                ? (adapters.Resolve(owner).Name, ownerToolchain)
-                : (name, toolchain);
+        if (string.Equals(owner, name, StringComparison.OrdinalIgnoreCase)) return (name, toolchain);
+        if (adapters.Names.Contains(owner, StringComparer.OrdinalIgnoreCase) && adapters.Resolve(owner).Toolchain is { } ownerToolchain)
+        {
+            return (adapters.Resolve(owner).Name, ownerToolchain);
+        }
+
+        return adapters.Holder(owner) is { } holder ? (owner, holder) : (name, toolchain);
     }
+
+    /// <summary>
+    /// The agent a door asks its accounts through where this build carries no door of it (CODEXACCT1), or null where the
+    /// door answers for its accounts itself or its owner's own door does: what a press on the door asks with, since no
+    /// press of the owner's would.
+    /// </summary>
+    private (string Name, HarnessToolchain Toolchain)? HolderOf(string name, HarnessToolchain toolchain)
+    {
+        var agent = AccountAgent(name, toolchain);
+        return string.Equals(agent.Name, name, StringComparison.OrdinalIgnoreCase)
+               || adapters.Names.Contains(agent.Name, StringComparer.OrdinalIgnoreCase)
+            ? null
+            : agent;
+    }
+
+    /// <summary>The adapter whose report says a door's accounts (AGT7): its owner's door where this build carries one, else itself.</summary>
+    private string ReportingDoor(string name, HarnessToolchain toolchain) =>
+        AccountAgent(name, toolchain).Name is var agent && adapters.Names.Contains(agent, StringComparer.OrdinalIgnoreCase) ? agent : name;
 
     /// <summary>Every harness this build knows, probed — what a roster surface renders.</summary>
     /// <remarks>
@@ -2543,9 +2625,11 @@ public sealed partial class HarnessRoster(AdapterSet adapters, string? settingsP
         // The account's state is its owner's answer when this build carries the owner — a door
         // declares no login question of its own, which is what `accountOf` says.
         var asker = AccountAgent(resolved.Name, toolchain);
-        var accounts = asker.Name == resolved.Name
+        // A report is an adapter's: an owner declared for a door it has none of (CODEXACCT1) reads its accounts in the door's.
+        var reporting = ReportingDoor(resolved.Name, toolchain);
+        var accounts = reporting == resolved.Name
             ? report
-            : await ReportAsync(asker.Name, config, refresh: false, ct).ConfigureAwait(false);
+            : await ReportAsync(reporting, config, refresh: false, ct).ConfigureAwait(false);
 
         // The walk (TOOL4f, D125 §3.3): the first account still ready once the agent has said who is signed in, in the
         // order the start tries them. Signed out (a key gone included) is walked past as cooling and refused are.
@@ -2881,7 +2965,7 @@ public sealed partial class HarnessRoster(AdapterSet adapters, string? settingsP
             .ToList();
         if (others.Count == 0) return [];
 
-        var report = await ReportAsync(AccountAgent(adapter, toolchain).Name, config, refresh: false, ct).ConfigureAwait(false);
+        var report = await ReportAsync(ReportingDoor(adapter, toolchain), config, refresh: false, ct).ConfigureAwait(false);
         return report is { Present: false } ? [] : [.. others.Where(name => LoginOf(report, name) != LoginState.Out)];
     }
 
@@ -3303,27 +3387,17 @@ public static class HarnessActions
     /// (<paramref name="fresh"/>) opens one. The install's owner signed in to bring a signed-out account back and got a new
     /// account no list held.</para>
     /// </remarks>
+    /// <param name="run">
+    /// What the agent runs as (<see cref="HarnessProbe.CommandOf"/>, D57 rule 4): its named command, its pin, else
+    /// <c>PATH</c>'s, as its status question asks it (CODEXACCT1).
+    /// </param>
     /// <param name="fresh">Whether this sign-in opens a new account's folder; false signs in to one that must be there.</param>
     public static async Task<int> LoginAsync(
-        HarnessToolchain toolchain, IReadOnlyList<string>? command, string profileHome,
+        HarnessToolchain toolchain, HarnessCommand run, string profileHome,
         Action<string> write, CancellationToken ct = default, Action<HarnessRun>? started = null, bool fresh = false)
     {
-        if (toolchain.LoginArguments is not { Count: > 0 } login)
-        {
-            throw new DriverException(
-                "that agent declares no sign-in flow — sign in with its own tooling, pointing its "
-                + "configuration-home variable at the account's directory.");
-        }
-
-        if (!fresh && !Directory.Exists(profileHome))
-        {
-            throw new DriverException(
-                "that account is not on this machine, so nothing was signed in and no account was made. Sign in to a new "
-                + "account instead, or name one that is here.");
-        }
-
-        var code = await RunAsync([.. toolchain.Command(command), .. login], toolchain, profileHome, write, ct, started)
-            .ConfigureAwait(false);
+        var info = PrepareLogin(toolchain, run, profileHome, fresh);
+        var code = await RunAsync(info, [.. run.Run, .. toolchain.LoginArguments!], write, ct, started).ConfigureAwait(false);
         if (code == 0)
         {
             // And it is marked, so a start held on the account signed out asks it again (TOOL6g).
@@ -3342,12 +3416,54 @@ public static class HarnessActions
     }
 
     /// <summary>
+    /// The sign-in's start, prepared and not started (CODEXACCT1): the agent's own flow on the binary <paramref name="run"/>
+    /// names, its pin's environment where it is the pin (AGT2), the account's folder made and named in the agent's variable.
+    /// Refused, with nothing made, for an agent with no sign-in flow, an account that is not here (ACCT1), and a pin with
+    /// nothing installed at it, which is never <c>PATH</c>'s instead (D57).
+    /// </summary>
+    public static ProcessStartInfo PrepareLogin(HarnessToolchain toolchain, HarnessCommand run, string profileHome, bool fresh)
+    {
+        if (toolchain.LoginArguments is not { Count: > 0 } login)
+        {
+            throw new DriverException(
+                "that agent declares no sign-in flow — sign in with its own tooling, pointing its "
+                + "configuration-home variable at the account's directory.");
+        }
+
+        if (!fresh && !Directory.Exists(profileHome))
+        {
+            throw new DriverException(
+                "that account is not on this machine, so nothing was signed in and no account was made. Sign in to a new "
+                + "account instead, or name one that is here.");
+        }
+
+        if (run.Missing)
+        {
+            throw new DriverException(
+                $"`{run.Harness}` is pinned to {run.Pinned} on this machine, and nothing is installed at that version, so "
+                + $"nothing was signed in — `daoris agent pin {run.Harness} {run.Pinned}` installs it, and "
+                + $"`daoris agent unpin {run.Harness}` goes back to PATH.");
+        }
+
+        return Prepare([.. run.Run, .. login], toolchain, profileHome, run.Managed);
+    }
+
+    /// <summary>
     /// Spawn and relay. Both streams, line by line, in the order they arrive — the same shape the
     /// session console takes, because this is a process like any other.
     /// </summary>
-    internal static async Task<int> RunAsync(
+    internal static Task<int> RunAsync(
         IReadOnlyList<string> command, HarnessToolchain toolchain, string? profileHome,
-        Action<string> write, CancellationToken ct, Action<HarnessRun>? started = null)
+        Action<string> write, CancellationToken ct, Action<HarnessRun>? started = null) =>
+        RunAsync(Prepare(command, toolchain, profileHome), command, write, ct, started);
+
+    /// <summary>
+    /// A harness action's start: its streams redirected as UTF-8, the tools' environment, and the account and binary
+    /// through the one seam every spawn takes (<see cref="HarnessProbe.Apply"/>), with the pin's environment where
+    /// <paramref name="managed"/> is the pin's executable (AGT2).
+    /// </summary>
+    private static ProcessStartInfo Prepare(
+        IReadOnlyList<string> command, HarnessToolchain toolchain, string? profileHome, string? managed = null)
     {
         var info = new ProcessStartInfo
         {
@@ -3369,8 +3485,15 @@ public static class HarnessActions
         // An agent action is a child like a session (TOOLS5): the tools' PATH, before the file is resolved on it.
         Tools.Hand(info);
         // Resolves the file Windows can start too (WindowsShim, USE1f): one line for every spawn.
-        HarnessProbe.Apply(info, toolchain, profileHome);
+        HarnessProbe.Apply(info, toolchain, profileHome, binary: managed);
+        return info;
+    }
 
+    /// <summary>Start <paramref name="info"/>, said as <paramref name="command"/>, and relay it to its end.</summary>
+    private static async Task<int> RunAsync(
+        ProcessStartInfo info, IReadOnlyList<string> command, Action<string> write, CancellationToken ct,
+        Action<HarnessRun>? started)
+    {
         write($"$ {string.Join(' ', command)}");
 
         Process process;

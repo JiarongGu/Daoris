@@ -145,6 +145,8 @@ with the version and date at release.
   says until when Daoris waits, apart from when its limit resets; and its usage is easier to read.
 - Codex's own sign-in shows its five-hour and weekly use after *Read again*, without signing in an
   account for Daoris and without spending usage.
+- Agents → Codex offers *Add an account…* and *Sign in*, running Codex's own sign-in into an account
+  Daoris keeps, and reads whether each Codex account and your own sign-in are signed in.
 
 The first version: doctrine that installs, is checked, and flows back.
 

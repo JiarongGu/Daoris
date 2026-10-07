@@ -628,6 +628,58 @@ describe('the Agents place', () => {
   });
 
   /**
+   * CODEXACCT1: Codex's one door is `codex-acp`, which signs its accounts in with `codex login` (the roster's `signsIn`, its
+   * agent's flow, AGT7), so Agents → Codex offers *Add an account…* as the terminal's `daoris agent login codex --new` does:
+   * a signed-out account's own sign-in first, then a new account on the door, whose end asks its name, since Codex names
+   * nobody. Its own sign-in reads as `codex login status` answered it.
+   */
+  it('Agents → Codex adds an account through its one door, as the terminal does, and asks its name at the end', async () => {
+    const CODEX = {
+      settingsPath: ROSTER.settingsPath,
+      adapter: 'claude-code',
+      harnesses: [{
+        harness: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI', wire: 'acp',
+        present: true, version: 'codex-acp 1.12.0', problem: null, machineDefault: null, pinned: null, managed: null, pinnable: true,
+        signsIn: true, takesKey: false, ownLogin: 'in', ownRead: READ, workspaceDefaults: [],
+        profiles: [{ name: 'account-1', home: 'C:/somewhere/.daoris/harnesses/codex/account-1', login: 'out', read: READ }],
+      }],
+    };
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESS_ACTION') return { harness: 'codex-acp', action: 'login-new', started: true, profile: 'acct-5e6f7a8b' };
+      return type === 'HARNESSES' ? CODEX : WIRING;
+    });
+    const notify = vi.fn();
+    place(notify, { first: 'codex' });
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Codex' })).toBeTruthy();
+    expect(within(screen.getByRole('listitem', { name: 'Your own sign-in' })).getByText('signed in')).toBeTruthy();
+    // No key: Daoris holds none Codex is measured to take (D67 §1).
+    expect(screen.queryByRole('button', { name: 'Add an API key' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Add an account…' }));
+    const back = screen.getByRole('region', { name: 'Add an account' });
+    expect(within(back).getByRole('button', { name: 'Sign in to account-1' })).toBeTruthy();
+
+    await userEvent.click(within(back).getByRole('button', { name: 'Add a new account' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'codex-acp', action: 'login-new' },
+    });
+    expect(await screen.findByText('Signing in to another Codex account')).toBeTruthy();
+
+    await act(async () => {
+      eventHandlers.get('DAORIS.HARNESS_ENDED')!({
+        harness: 'codex-acp', action: 'login-new', profile: 'acct-5e6f7a8b', exitCode: 0, problem: null,
+        account: null, kept: true, places: [],
+      });
+    });
+
+    expect(notify).toHaveBeenCalledWith(
+      "Signed in — the tool did not say who, so the account is listed as acct-5e6f7a8b. No list holds it yet: its agent's page asks where it runs.");
+    const asking = await screen.findByRole('region', { name: 'Add an account' });
+    expect(within(asking).getByText('Signed in — the tool did not say who.')).toBeTruthy();
+    expect(within(asking).getByRole('textbox', { name: /Its name/ })).toBeTruthy();
+  });
+
+  /**
    * D152 §4.2 and ACCT2: one name leads, the account's, the person's where they gave one, with who signed in beside it where
    * the two differ, never one as title and the other faint; a fresh id the person never chose never leads.
    */

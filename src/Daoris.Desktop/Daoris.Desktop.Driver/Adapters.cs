@@ -1525,8 +1525,9 @@ public sealed class CodexAcpAdapter : ISessionAdapter
         ProfileVariable: "CODEX_HOME",
         Install: ["npm", "install", "-g", "@agentclientprotocol/codex-acp"],
         Package: "@agentclientprotocol/codex-acp",
-        // No login of its own: it runs `codex` and reads the home `codex` logged into.
-        AccountOf: "codex",
+        // No login of its own: it runs `codex` and reads the home `codex` logged into, whose sign-in and status question
+        // are declared for `codex` itself (`CodexAccounts`, CODEXACCT1), since no `codex` door exists to carry them.
+        AccountOf: CodexAccounts.Agent,
         ProfileMustExist: true,
         // What Codex says when an account's limit refuses a turn (TOOL4k), read in its source: declared here, since
         // no `codex` adapter exists to own it, and reaching this door only as the error's data (ACPDATA1).
@@ -1805,10 +1806,28 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
 /// because a driver that quietly spawned a different harness than the person configured is the same
 /// failure as a repository that asked for one layout and received another.
 /// </summary>
-public sealed class AdapterSet(IReadOnlyDictionary<string, ISessionAdapter> adapters)
+/// <param name="holders">
+/// The agents whose accounts a door runs as (<see cref="HarnessToolchain.AccountOf"/>) where this set carries no door of that
+/// agent, each by its toolchain (CODEXACCT1): see <see cref="Holder"/>. None by default, so a set a test builds asks nobody.
+/// </param>
+public sealed class AdapterSet(
+    IReadOnlyDictionary<string, ISessionAdapter> adapters, IReadOnlyDictionary<string, HarnessToolchain>? holders = null)
 {
     /// <summary>Every adapter this build has, in a stable order — what a roster enumerates.</summary>
     public IReadOnlyList<string> Names => [.. adapters.Keys.OrderBy(k => k, StringComparer.Ordinal)];
+
+    /// <summary>
+    /// The toolchain of an agent whose accounts a door runs as, where this set carries no door of it (CODEXACCT1): its own
+    /// binary, sign-in, status question and account seam, so a door onto it signs its accounts in and asks them as the
+    /// agent itself does, the way <c>claude-code-acp</c> reaches <c>claude-code</c>'s (AGT7). Null for an agent this set
+    /// carries a door of, which answers for itself, and for one nobody declared.
+    /// </summary>
+    /// <remarks>
+    /// Not a door: it is no adapter, the roster lists it nowhere, and no session starts on it (D23: an adapter arrives
+    /// deliberately). A plugin's door that names the same agent reads the same holder.
+    /// </remarks>
+    public HarnessToolchain? Holder(string agent) =>
+        !adapters.ContainsKey(agent) && holders is not null && holders.TryGetValue(agent, out var held) ? held : null;
 
     /// <summary>The plugin a harness came from (D64), or null for one this build carries.</summary>
     public string? DeclaredBy(string name) =>
@@ -1832,7 +1851,7 @@ public sealed class AdapterSet(IReadOnlyDictionary<string, ISessionAdapter> adap
             }
         }
 
-        return new AdapterSet(joined);
+        return new AdapterSet(joined, holders);
     }
 
     public ISessionAdapter Resolve(string name)
@@ -1863,5 +1882,9 @@ public sealed class AdapterSet(IReadOnlyDictionary<string, ISessionAdapter> adap
         // in its own vocabulary, and each arrives beside what was already here.
         ["dsh"] = new DshAdapter(),
         ["codex-acp"] = new CodexAcpAdapter(),
+    }, new Dictionary<string, HarnessToolchain>(StringComparer.OrdinalIgnoreCase)
+    {
+        // The agent `codex-acp` runs as, with no door of its own here (CODEXACCT1): its sign-in and status question.
+        [CodexAccounts.Agent] = CodexAccounts.Toolchain,
     });
 }
