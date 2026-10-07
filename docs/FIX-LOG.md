@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — an evidence read that failed said missing
+
+### Driver: a lookup git or the disk did not answer read as absence, and held a done for a fact nobody read (EVID1b3)
+- **Symptom:** found by the second-opinion review of 2026-10-07 and verified in the code, not seen on an install. An `ls-tree` git did not answer during the case walk, or a folder of the tree the disk would not list, read as `missing` or `uncommitted`. `EvidenceCheck` posted that verdict, so the done stayed held `evidence-missing`.
+- **Root cause:** `EvidenceReader.SpelledAsync` took a failed listing as an empty folder, and `InTree` turned an `IOException` or `UnauthorizedAccessException` into false. Only the object lookup told a failure from absence. The base's lookup took a failure as an unsaid change.
+- **Fix:** each lookup comes to found, absent or unread. An unread anywhere in an item's read makes the read unread, and nothing is posted, as for the object lookup. The unread names the folder from the tree's root and why. The tree's listing is a seam beside git's. D144's EVID1b3 note has the detail.
+- **Verify:** `EvidenceReaderTests`: a walk failing at the root and beneath it, a folder refused and one that failed, and a base lookup git did not answer each failed first as a verdict, then passed. Not covered: a real folder the disk refuses, since a deny on listing did not stop this machine's test process.
+
 ## 2026-10-07 — a wait on a lost take held the winner's quest
 
 ### Service: a wait made after this machine's take still applied to the winner's quest when that take lost (WAITCLAIM1)
