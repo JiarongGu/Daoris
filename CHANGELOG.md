@@ -103,6 +103,8 @@ with the version and date at release.
   command lands on its row and names its line.
 - What needs you lists an ask or a quest held because its accounts are signed out even when no
   account is cooling, with *Sign in* or *Read* beside it.
+- Branch rows stack their sentence under the branch's name when their list is narrow, and a long
+  branch name wraps whole instead of being cut.
 
 The first version: doctrine that installs, is checked, and flows back.
 
