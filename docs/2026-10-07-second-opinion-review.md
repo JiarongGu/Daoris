@@ -133,7 +133,6 @@ words with no bar and never 0%; plan, ordinary usage, spend control and reset cr
 redeemed by Daoris until redeeming is supported and confirmed through `InlineConfirm`. Its mock-ups, the readings
 illustrative:
 
-```text
 **About 1000px — list open, two window cells side by side**
 
 ```text
@@ -207,7 +206,6 @@ The bars are schematic: a real 1% fill stays 1%, without a minimum-width blob. T
 |    | > Ways in                                                   |
 |    | > Usage · Daoris's sessions only                            |
 +----+-------------------------------------------------------------+
-```
 ```
 
 **It said to keep:** one roster per agent across its ways in; chosen names, *no workspace* and the separate *Your own
