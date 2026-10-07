@@ -427,6 +427,95 @@ public sealed class QuestEvidenceTests : IAsyncLifetime
         Assert.DoesNotContain(await _quests.HistoryAsync(quest.Id), operation => operation.Kind == QuestOperationKind.Evidenced);
     }
 
+    // ——— REFAC3: one judge of a verdict's shape, which both doors call.
+
+    private static QuestEvidenceVerdict Verdict(
+        IReadOnlyList<QuestEvidenceRead> items, string commit = Commit, string how = "session-end") => new(commit, how, items);
+
+    private static readonly QuestEvidenceRead Reported =
+        new(1, "docs/report-bridge.md", null, "found") { Object = Blob, Changed = true };
+
+    private static readonly QuestEvidenceRead Unfound = new(1, "docs/report-bridge.md", null, "missing");
+
+    private static readonly QuestEvidenceRead Cased = new(1, "docs/report-bridge.md", null, "case");
+
+    /// <summary>
+    /// REFAC3's table: each verdict shape, whether both doors take it, the field the one judge of its shape faults (none
+    /// for a whole verdict, whether or not it reads what the done waits on), and words the exchange's refusal holds. Read
+    /// against <see cref="Built"/>'s quest, done meeting both requirements, the first naming <c>docs/report-bridge.md</c>.
+    /// </summary>
+    private static readonly Dictionary<string, (QuestEvidenceVerdict Verdict, bool Taken, QuestVerdictField? Field, string? Said)> Shapes = new()
+    {
+        // Whole, and reading what the done waits on.
+        ["found"] = (Verdict([Reported]) with { Session = "s1a2b3c4" }, true, null, null),
+        ["missing"] = (Verdict([Unfound]), true, null, null),
+        ["uncommitted"] = (Verdict([Unfound with { Result = "uncommitted" }]), true, null, null),
+        ["case, spelled"] = (Verdict([Cased with { Spelled = "docs/Report-Bridge.md" }]), true, null, null),
+        ["case, unspelled"] = (Verdict([Cased]), true, null, null),
+        ["a sha-256 commit in capitals"] = (Verdict([Reported], commit: new string('A', 64)), true, null, null),
+        ["the terminal's, no session"] = (Verdict([Reported], how: "terminal"), true, null, null),
+
+        // Not one in shape, at either door.
+        ["a short commit"] = (Verdict([Reported], commit: "a1b2c3d"), false, QuestVerdictField.Commit, "full id"),
+        ["a commit not hex"] = (Verdict([Reported], commit: new string('g', 40)), false, QuestVerdictField.Commit, "full id"),
+        ["an unknown how"] = (Verdict([Reported], how: "guessed"), false, QuestVerdictField.How, "`session-end`, `sweep` or `terminal`"),
+        ["a session not an id"] = (Verdict([Reported]) with { Session = "s1 a2" }, false, QuestVerdictField.Session, "session"),
+        ["requirement 0"] = (Verdict([Reported with { Requirement = 0 }]), false, QuestVerdictField.Requirement, "numbered from 1"),
+        ["a path and a gate"] = (Verdict([Reported with { Gate = "web" }]), false, QuestVerdictField.PathOrGate, "exactly one of `path` or `gate`"),
+        ["neither"] = (Verdict([Reported with { Path = null }]), false, QuestVerdictField.PathOrGate, "exactly one of `path` or `gate`"),
+        ["a machine's path"] = (Verdict([Reported with { Path = "/srv/checkouts/reports/docs/report-bridge.md" }]), false, QuestVerdictField.Path, "starts with `/`"),
+        ["a drive"] = (Verdict([Reported with { Path = "D:/checkouts/reports/docs/report-bridge.md" }]), false, QuestVerdictField.Path, "names a drive"),
+        ["a gate misnamed"] = (Verdict([new QuestEvidenceRead(1, null, "web gate", "found")]), false, QuestVerdictField.Gate, "not a gate's name"),
+        ["an unknown result"] = (Verdict([Reported with { Result = "gone" }]), false, QuestVerdictField.Result, "`gone`"),
+        ["a gate's result on a path"] = (Verdict([Reported with { Result = "no-queue" }]), false, QuestVerdictField.Result, "`no-queue`"),
+        ["an object not an id"] = (Verdict([Reported with { Object = "D:/checkouts/reports/blob" }]), false, QuestVerdictField.Object, "full object id"),
+
+        // `spelled` is a `case` read's alone, and names the path in another case (D144 §3).
+        ["spelled on a missing read"] = (Verdict([Unfound with { Spelled = "docs/Report-Bridge.md" }]), false, QuestVerdictField.Spelled, "only a `case` read"),
+        ["spelled on a found read"] = (Verdict([Reported with { Spelled = "docs/Report-Bridge.md" }]), false, QuestVerdictField.Spelled, "only a `case` read"),
+        ["spelled as a machine's path"] = (Verdict([Cased with { Spelled = "/srv/checkouts/reports/docs/Report-Bridge.md" }]), false, QuestVerdictField.Spelled, "starts with `/`"),
+        ["spelled as another path"] = (Verdict([Cased with { Spelled = "docs/other.md" }]), false, QuestVerdictField.Spelled, "only in case"),
+        ["spelled as the path itself"] = (Verdict([Cased with { Spelled = "docs/report-bridge.md" }]), false, QuestVerdictField.Spelled, "only in case"),
+
+        // Whole, and not what the done waits on: the exchange's coverage and the replay's refuse it alike.
+        ["nothing read"] = (Verdict([]), false, null, "requirement 1: `docs/report-bridge.md`"),
+        ["read twice"] = (Verdict([Reported, Reported]), false, null, "read twice"),
+        ["a path not named"] = (Verdict([Reported with { Path = "docs/other.md" }]), false, null, "`docs/other.md`"),
+        ["a requirement naming none"] = (Verdict([Reported with { Requirement = 2 }]), false, null, "requirement 2"),
+        ["no such requirement"] = (Verdict([Reported, Reported with { Requirement = 3, Path = "docs/x.md" }]), false, null, "requirement 3"),
+        ["a gate not named"] = (Verdict([new QuestEvidenceRead(1, null, "web", "found")]), false, null, "`web`"),
+    };
+
+    public static IEnumerable<object[]> VerdictShapes => Shapes.Keys.Select(shape => new object[] { shape });
+
+    /// <summary>
+    /// 🔴 REFAC3: each verdict shape is taken or refused alike at both doors that read one: the exchange, which the
+    /// evidence door hands what was posted, and the wire, which reads another machine's verdict from its push and
+    /// replays it. Before REFAC3 they disagreed on <c>spelled</c>, which only the exchange kept to a <c>case</c> read.
+    /// A shape fault is the one judge's, so the wire refuses it as not whole; a whole verdict that reads something else
+    /// is the coverage's, so the wire reads it and the replay does not apply it.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(VerdictShapes))]
+    public async Task A_verdict_is_taken_or_refused_alike_at_both_doors(string shape)
+    {
+        var (verdict, taken, field, said) = Shapes[shape];
+        var (_, quest) = await Built(chain: false);
+        await Done(quest);
+        var history = await _quests.HistoryAsync(quest.Id);
+
+        var pushed = QuestWire.ReadPush(QuestWire.Push(0,
+            [.. history, new QuestOperation(quest.Id, QuestOperationKind.Evidenced, "m2", 1, Now.AddMinutes(1), Evidence: verdict)]));
+        var replayed = pushed is { } read ? QuestLog.Replay(read.Operations) : null;
+        var posted = await _exchange.EvidenceAsync(quest.Id, verdict, Now.AddMinutes(1));
+
+        Assert.Equal((taken, taken), (replayed?.Evidence is not null, posted.Refusal == QuestRespondRefusal.None));
+        Assert.Equal(taken ? QuestRespondRefusal.None : QuestRespondRefusal.BadVerdict, posted.Refusal);
+        if (said is not null) Assert.Contains(said, posted.Message);
+        Assert.Equal(field, verdict.JudgeShape()?.Field);
+        Assert.Equal(field is not null, pushed is null);
+    }
+
     // ——— A chain step inherits the evidence where it is a fact about the same tree.
 
     /// <summary>

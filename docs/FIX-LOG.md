@@ -20,6 +20,13 @@ repository.
 - **Root cause:** HIST1d's `HistoryCommand.Door` interpolated the workspace as it was; ACCTQUOTE1b had spelled every driver command that named a workspace before HIST1d added one.
 - **Fix:** `Door` spells the workspace through `ShellWord.Of(…, ShellWord.Workspace)`; D153's HIST1i note says why a quest's or an ask's id needs no spelling.
 - **Verify:** `HistoryCommandTests.A_workspace_in_a_printed_command_is_spelled_for_any_shell`, a spaced and an `R&D` row, failed first on the reading's line, then passed. Not covered: a command a later verb adds goes through `ShellWord` only if its author sends it there.
+## 2026-10-07 — an evidence verdict judged twice, differently
+
+### Service: the wire took a `spelled` the evidence door refused (REFAC3)
+- **Symptom:** read from the code by a second opinion (`docs/2026-10-07-second-opinion-review.md`), not seen on an install: a verdict whose item named `spelled` on a `missing` or `found` read was refused at `POST /api/quests/{id}/evidence` but read whole from another machine's push, and replayed.
+- **Root cause:** EVID1a wrote the verdict's field rules twice, in `QuestEvidenceVerdict.Judged` for the wire and `QuestExchange.JudgeVerdict` for the door, and only the door kept `spelled` to a `case` read. Neither checked that the spelling is the same path in another case.
+- **Fix:** `QuestEvidenceVerdict.JudgeShape`, one judge of the shape both call, returning the field at fault (`QuestVerdictFault`); coverage stays the exchange's and the replay's. D144's REFAC3 note names what is refused now.
+- **Verify:** `QuestEvidenceTests.A_verdict_is_taken_or_refused_alike_at_both_doors`: thirty-one shapes through both doors; the two disagreeing rows failed first (taken on the wire, refused at the door), and the two new `spelled` rows failed at both. Not covered: no reader writes a verdict yet (EVID1b).
 
 ## 2026-10-07 — a deleted conversation's files left behind
 

@@ -161,8 +161,10 @@ public enum QuestRespondRefusal
     NotAwaitingEvidence,
 
     /// <summary>
-    /// A verdict that is not one (EVID1a): no full commit id, a way of reading or a result nobody wrote, an item the quest
-    /// does not wait on or one read twice, or an item it waits on left unread — the answer names which.
+    /// A verdict that is not one (EVID1a): not one in shape, by the judge the wire calls too (REFAC3,
+    /// <see cref="QuestEvidenceVerdict.JudgeShape"/>) — no full commit id, a way of reading or a result nobody wrote, a
+    /// spelling off a <c>case</c> read — or an item the quest does not wait on, one read twice, or an item it waits on
+    /// left unread. The answer names which.
     /// </summary>
     BadVerdict,
 }
@@ -1246,44 +1248,23 @@ public sealed class QuestExchange(
 
     /// <summary>
     /// Why <paramref name="verdict"/> does not read exactly what <paramref name="quest"/> waits on, naming the first fault
-    /// and every item left unread — or null when it does.
+    /// and every item left unread — or null when it does. Its shape is the one judge's (REFAC3,
+    /// <see cref="QuestEvidenceVerdict.JudgeShape"/>), which the wire calls too; what it reads is judged here, against the
+    /// quest, as the replay's <see cref="QuestEvidenceVerdict.Covers"/> judges it.
     /// </summary>
     private static string? JudgeVerdict(Quest quest, QuestEvidenceVerdict verdict)
     {
-        if (!QuestEvidenceCodes.IsObjectId(verdict.Commit))
-        {
-            return $"A verdict names the commit it read by its full id (40 or 64 hex characters), and `{Clip(verdict.Commit ?? "")}` is not one.";
-        }
-
-        if (!QuestEvidenceCodes.How.Contains(verdict.How ?? ""))
-        {
-            return $"A verdict says how its commit was chosen: `session-end`, `sweep` or `terminal`, and `{Clip(verdict.How ?? "")}` is none of them.";
-        }
-
-        if (verdict.Session is not null && !QuestEvidenceCodes.IsSessionId(verdict.Session))
-        {
-            return $"A verdict names the session whose end it read by its id, and `{Clip(verdict.Session)}` is not one.";
-        }
+        if (verdict.JudgeShape() is { } fault) return Worded(fault, verdict);
 
         var wanted = quest.EvidenceWanted;
         var read = new HashSet<(int, string?, string?)>();
         foreach (var (item, index) in verdict.Items.Select((item, index) => (item, index + 1)))
         {
             var which = $"Item {index}";
-            if ((item.Path is null) == (item.Gate is null))
-            {
-                return $"{which} names exactly one of `path` or `gate`, as the requirement's evidence does.";
-            }
-
-            if (item.Path is { } path && QuestEvidence.JudgePath(path) is { } why)
-            {
-                return $"{which}, `{Clip(path)}`, is not a repository-relative path: {why}.";
-            }
-
             var named = item.Path ?? item.Gate!;
             if (!wanted.Any(each => each.Requirement == item.Requirement && item.Names(each.Item)))
             {
-                return item.Requirement < 1 || item.Requirement > quest.Requirements.Count
+                return item.Requirement > quest.Requirements.Count
                     ? $"{which} reads requirement {item.Requirement}, and quest `#{quest.Id}` carries {quest.Requirements.Count}."
                     : $"{which} reads `{Clip(named)}` for requirement {item.Requirement}, which its done does not wait on: "
                       + "a verdict reads each item of each requirement the done met, as the requirement names it.";
@@ -1292,23 +1273,6 @@ public sealed class QuestExchange(
             if (!read.Add((item.Requirement, item.Path, item.Gate)))
             {
                 return $"{which} reads `{Clip(named)}` for requirement {item.Requirement}, which is read twice: read each once.";
-            }
-
-            var codes = item.Path is not null ? QuestEvidenceCodes.PathResults : QuestEvidenceCodes.GateResults;
-            if (!codes.Contains(item.Result ?? ""))
-            {
-                return $"{which} says `{Clip(item.Result ?? "")}` of `{Clip(named)}`, and a {(item.Path is not null ? "path" : "gate")} "
-                       + $"is read as one of {string.Join(", ", codes.Select(code => $"`{code}`"))}.";
-            }
-
-            if (item.Object is not null && !QuestEvidenceCodes.IsObjectId(item.Object))
-            {
-                return $"{which} names the object found at `{Clip(named)}`, and `{Clip(item.Object)}` is not a full object id.";
-            }
-
-            if (item.Spelled is not null && (item.Result != "case" || QuestEvidence.JudgePath(item.Spelled) is not null))
-            {
-                return $"{which} names how the commit spells `{Clip(named)}`, which only a `case` read does, as a repository-relative path.";
             }
         }
 
@@ -1319,6 +1283,40 @@ public sealed class QuestExchange(
               + $"{(unread.Count == 1 ? "one" : unread.Count.ToString(System.Globalization.CultureInfo.InvariantCulture))} unread:\n\n"
               + string.Join("\n", unread.Select(each => $"- requirement {each.Requirement}: `{each.Item.Named}`"))
               + "\n\nRead each in the commit, and say what each was found to be.";
+    }
+
+    /// <summary>A verdict's shape fault as the evidence door answers it: which field, on which item, and why.</summary>
+    private static string Worded(QuestVerdictFault fault, QuestEvidenceVerdict verdict)
+    {
+        if (fault.Item is not { } number)
+        {
+            return fault.Field switch
+            {
+                QuestVerdictField.Commit =>
+                    $"A verdict names the commit it read by its full id (40 or 64 hex characters), and `{Clip(verdict.Commit ?? "")}` is not one.",
+                QuestVerdictField.How =>
+                    $"A verdict says how its commit was chosen: `session-end`, `sweep` or `terminal`, and `{Clip(verdict.How ?? "")}` is none of them.",
+                _ => $"A verdict names the session whose end it read by its id, and `{Clip(verdict.Session ?? "")}` is not one.",
+            };
+        }
+
+        var item = verdict.Items[number - 1];
+        var which = $"Item {number}";
+        var named = item.Path ?? item.Gate ?? "";
+        return fault.Field switch
+        {
+            QuestVerdictField.Requirement => $"{which} reads requirement {item.Requirement}, and requirements are numbered from 1.",
+            QuestVerdictField.PathOrGate => $"{which} names exactly one of `path` or `gate`, as the requirement's evidence does.",
+            QuestVerdictField.Path => $"{which}, `{Clip(named)}`, is not a repository-relative path: {fault.Why}.",
+            QuestVerdictField.Gate => $"{which}, `{Clip(named)}`, is not a gate's name: {fault.Why}.",
+            QuestVerdictField.Result =>
+                $"{which} says `{Clip(item.Result ?? "")}` of `{Clip(named)}`, and a {(item.Path is not null ? "path" : "gate")} is read as one of "
+                + string.Join(", ", (item.Path is not null ? QuestEvidenceCodes.PathResults : QuestEvidenceCodes.GateResults).Select(code => $"`{code}`"))
+                + ".",
+            QuestVerdictField.Object =>
+                $"{which} names the object found at `{Clip(named)}`, and `{Clip(item.Object ?? "")}` is not a full object id.",
+            _ => $"{which} says the commit spells `{Clip(named)}` as `{Clip(item.Spelled ?? "")}`, read `{Clip(item.Result ?? "")}`: {fault.Why}.",
+        };
     }
 
     /// <summary>
