@@ -66,6 +66,28 @@ describe('CommandCenter', () => {
   });
 
   /**
+   * UXFIX1b: a target of 28 px at least, the platform language's floor (§6), where `h-6` drew it 24 px tall; and no
+   * taller than the 36 px strip it sits in (`AppStrip`'s `h-9`), so the strip keeps its height and centres it. A minimum
+   * rather than a fixed height, as the menu bar's names have (UXFIX1); jsdom lays nothing out, so this holds the classes
+   * and the window shows the box.
+   */
+  it('is a target of 28 px at least, and no taller than the strip', () => {
+    render(<CommandCenter scope="testbed" onOpen={() => {}} label="Search and run commands" />);
+    /** A Tailwind spacing class's size in px, on the 4 px step. */
+    const px = (prefix: string) => {
+      const step = new RegExp(`(?:^|\\s)${prefix}-(\\d+(?:\\.\\d+)?)(?:\\s|$)`).exec(open().className)?.[1];
+      return step === undefined ? undefined : Number(step) * 4;
+    };
+
+    expect(px('min-h')).toBeGreaterThanOrEqual(28);
+    expect(px('min-h')).toBeLessThanOrEqual(36);
+    // Narrowed to its glyph alone, it is still a target as wide as it is tall.
+    expect(px('min-w')).toBeGreaterThanOrEqual(28);
+    // One rule for its height: a fixed one under the floor beside the minimum would say 24 px and draw 28.
+    expect(px('h')).toBeUndefined();
+  });
+
+  /**
    * 🔴 Narrowed to its least (a 500px window, UX5 U15), the pill clipped its own words: `defau`,
    * cut mid-letter, with the shortcut pushed out of sight. The shortcut goes first below 12rem of
    * pill, then the detail, then the scope ends in an ellipsis. jsdom has no container queries, so
