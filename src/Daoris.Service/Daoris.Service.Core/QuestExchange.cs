@@ -130,7 +130,10 @@ public enum QuestRespondRefusal
     /// <summary>No quest under that id.</summary>
     NotFound,
 
-    /// <summary>Somebody got there first — the losing side of the race stands down (D47 §5).</summary>
+    /// <summary>
+    /// Somebody got there first — the losing side of the race stands down (D47 §5). Also a done, a decline or a wait this
+    /// machine makes on a quest whose take it lost (WAITCLAIM2): made on a claim it never held.
+    /// </summary>
     AlreadyTaken,
 
     /// <summary>Done and Declined are terminal: one title is one quest forever (D46 §3).</summary>
@@ -1064,6 +1067,16 @@ public sealed class QuestExchange(
                 move.Quest);
         }
 
+        // A close on the winner's take, made after the pass that found this machine's take lost (WAITCLAIM2): the stand-down
+        // the take's own loss says, since the session making it may not have heard that yet.
+        if (move.ClaimLost)
+        {
+            return new(
+                QuestRespondRefusal.AlreadyTaken,
+                LostTake(move.Quest.Id, $"so this {action.ToLowerInvariant()} is not this machine's to make. Nothing moved."),
+                Quest: null);
+        }
+
         // A decline made while open, refused because somebody took the quest first (PAUSE1c): said as the decline it
         // is, never as the take race's stand-down, which is a taker's sentence.
         if (whileOpen && move.Quest.Status == QuestStatus.Taken)
@@ -1125,6 +1138,16 @@ public sealed class QuestExchange(
             return new(QuestRespondRefusal.NotFound, $"No quest `#{id}`. Ids come from `quest_list`.", Quest: null);
         }
 
+        // A wait on the winner's take, made after the pass that found this machine's take lost (WAITCLAIM2): the take's
+        // stand-down, not a malformed wait, and the question the session asked is still asked.
+        if (move.ClaimLost)
+        {
+            return new(
+                QuestRespondRefusal.AlreadyTaken,
+                LostTake(id, $"so it does not wait on `#{on}` here. Nothing moved; `#{on}` stays a quest of its own."),
+                Quest: null);
+        }
+
         if (!move.Moved)
         {
             return Refused($"Quest `#{id}` is {move.Quest.Status} — only a quest its taker is working can wait, "
@@ -1136,6 +1159,14 @@ public sealed class QuestExchange(
             + "now. The driver starts it again in the same tree once `#" + on + "` is answered, with the answer "
             + "in the instruction.", move.Quest);
     }
+
+    /// <summary>
+    /// A move or a wait refused because this machine's take lost (WAITCLAIM2), in one sentence for both: what happened to
+    /// the take, then <paramref name="what"/>, what that means for this one, then the stand-down the take's own loss says.
+    /// </summary>
+    private static string LostTake(string id, string what) =>
+        $"Quest `#{id}` was taken on another machine first: this machine's take lost and is kept on the quest as a conflict, "
+        + $"{what} Stand down rather than doubling the work.";
 
     /// <summary>The chain's next step a close or a yes published (D65 §4), said so whoever moved it knows whose it now is.</summary>
     private static string Then(Quest? followUp) => followUp is { } next
