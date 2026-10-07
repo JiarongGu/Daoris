@@ -409,6 +409,8 @@ const BASE = ['universal', 'code-map', 'orient-index', 'cli'];
 const ALL = repoPlan.map((gate) => gate.name);
 // GATE5: the real-process halves and the deployment rehearsal, 30 to 70 minutes a merge, run only in the full set.
 const LONG = ['driver-process', 'modules-process', 'deployment'];
+/** The kept names' table (SESSDEL1c): among the driver's tests, and the page's twin reads it too. */
+const KEPT_NAMES = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/kept-names.json';
 
 test('the long gates are the real-process halves and the deployment rehearsal, read from what each runs', () => {
   assert.deepEqual(repoPlan.filter((gate) => tool.isLongGate(gate)).map((gate) => gate.name), LONG);
@@ -453,6 +455,8 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ["the digest's note table", ['tools/orient-index-fixtures/decision-notes.json'], [...BASE, 'service']],
     // HIST1m: the history words' table sits among the service's tests, and the driver's twin reads it too.
     ["the history words' table", ['src/Daoris.Service/Daoris.Service.Tests/fixtures/history-words.json'], [...BASE, 'service', 'driver']],
+    // SESSDEL1c: the kept names' table sits among the driver's tests, and the page's twin reads it too.
+    ["the kept names' table", [KEPT_NAMES], [...BASE, 'driver', 'web']],
     ["the service's tests", ['src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs'], [...BASE, 'service']],
     ['release tooling', ['tools/release-rehearsal.mjs'], [...BASE, 'rehearse']],
     ['the CLI', ['src/Daoris.Cli/src/cli.ts'], [...BASE, 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
@@ -848,6 +852,120 @@ function sourceRootReads(file: string, text: string, files: readonly string[]): 
       if (tracked.has(path)) reads.add(path);
       else if (folders.has(path)) reads.add(`${path}/${probe}`);
       else for (const name of run) if (name && !name.includes('/') && folders.has(`${root}/${name}`)) reads.add(`${root}/${name}/${probe}`);
+    }
+  }
+  return [...reads];
+}
+
+/**
+ * Reads of the driver's declarations by the page's twins, which no rule sends to the web gate: a row for them would run the
+ * web gate, a rehearsal's time, at each change to those files, which is the parent's call (SESSDEL1c's hand-back). Named
+ * exactly, so a new read outside the page is placed on purpose, and a row that places these fails here until it drops them.
+ */
+const OWED_PAGE_READS = [
+  'src/Daoris.Desktop/Daoris.Desktop.Driver/AutoLanding.cs',
+  'src/Daoris.Desktop/Daoris.Desktop.Driver/InstructionAccount.cs',
+  'src/Daoris.Desktop/Daoris.Desktop.Driver/Landing.cs',
+  'src/Daoris.Desktop/Daoris.Desktop.Driver/NoteCodes.cs',
+  'src/Daoris.Desktop/Daoris.Desktop.Driver/SessionEvents.cs',
+  'src/Daoris.Desktop/Daoris.Desktop.Driver/Trace.Chain.cs',
+];
+
+/**
+ * SESSDEL1c: MOD9's incident from the page's side. The page's vitests run in the web gate alone, so a file outside the page a
+ * vitest reads (a twin's table, a writer's declarations) is one whose change must reach the web gate, or a merge changing it
+ * passes and the full set fails. The kept names' table sits among the driver's tests, whose rule reaches the driver's
+ * suites alone.
+ */
+test("every file outside the page a page's vitest reads is one whose change reaches the web gate (SESSDEL1c)", () => {
+  const files = trackedFiles();
+  const reads = new Set<string>();
+  for (const file of files.filter((path) => /^src\/Daoris\.Web\/src\/.+\.test\.tsx?$/.test(path))) {
+    for (const read of pageReads(file, readFileSync(join(repoRoot, file), 'utf8'), files)) reads.add(read);
+  }
+  const unreached = [...reads].filter((read) => !runs([read]).includes('web')).sort();
+  assert.deepEqual(unreached, OWED_PAGE_READS, 'each a file a vitest reads, and a merge changing it does not run the web gate');
+  assert.ok(reads.has(KEPT_NAMES), "the scan does not see the page's twin read the kept names' table");
+  assert.ok(reads.size >= 8, `the scan found only ${reads.size} reads: its pattern no longer matches how the page's tests read the repository`);
+});
+
+test("the page's scan reads through node:fs from the page, the repository or the test, and never a path a test only says (SESSDEL1c)", () => {
+  const files = [
+    'src/Daoris.Cli/test/fixtures/shell-words.json', KEPT_NAMES,
+    'src/Daoris.Desktop/Daoris.Desktop.Driver/Landing.cs', 'src/Daoris.Desktop/Daoris.Desktop.Driver/Trace.Chain.cs',
+    'src/Daoris.Service/Daoris.Service.Core/NoteParts.cs', 'src/Daoris.Web/src/tokens.css', 'src/Daoris.Web/src/format.ts',
+    'docs/code-map.json',
+  ];
+  const at = 'src/Daoris.Web/src/work/twin.test.ts';
+  const reading = [
+    "import { readFileSync } from 'node:fs';",
+    "import { list } from '../format';",
+    // From where vitest runs, the page; from the repository; one literal of a run that names a file; a helper's files by name.
+    "const table = join(process.cwd(), '..', 'Daoris.Cli', 'test', 'fixtures', 'shell-words.json');",
+    "const root = join(process.cwd(), '..', '..');",
+    "const kept = readFileSync(join(root, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'fixtures', 'kept-names.json'), 'utf8');",
+    "const ledger = declared('service', 'src/Daoris.Service/Daoris.Service.Core/NoteParts.cs');",
+    "const driver = (file: string) => readFileSync(join(root, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver', file), 'utf8');",
+    "const chain = driver('Trace.Chain.cs') + driver('Landing.cs');",
+    // The page's own files are the web gate's already.
+    "const css = readFileSync(join(process.cwd(), 'src', 'tokens.css'), 'utf8');",
+  ].join('\n');
+  assert.deepEqual(pageReads(at, reading, files), [
+    'src/Daoris.Cli/test/fixtures/shell-words.json', KEPT_NAMES, 'src/Daoris.Service/Daoris.Service.Core/NoteParts.cs',
+    'src/Daoris.Desktop/Daoris.Desktop.Driver/Trace.Chain.cs', 'src/Daoris.Desktop/Daoris.Desktop.Driver/Landing.cs',
+  ]);
+  // A folder it names no file of is read for any file in it.
+  assert.deepEqual(pageReads(at, "import { readdirSync } from 'node:fs';\nreaddirSync(join(root, 'src', 'Daoris.Cli', 'test', 'fixtures'));", files),
+    ['src/Daoris.Cli/test/fixtures/probe.txt']);
+  // A test that does not read the disk only says a path, as a map's data; an import out of the page is a read whatever it imports.
+  assert.deepEqual(pageReads(at, "import { render } from '@testing-library/react';\nexpect(map.source).toBe('docs/code-map.json');", files), []);
+  assert.deepEqual(pageReads(at, "import table from '../../../Daoris.Cli/test/fixtures/shell-words.json';", files),
+    ['src/Daoris.Cli/test/fixtures/shell-words.json']);
+
+  // What the scan above then asks of the lane table: without SESSDEL1c's row, the kept names' table reaches no web gate.
+  const without = tool.REACH.filter((rule) => !rule.paths?.includes(KEPT_NAMES));
+  const reached = (reach: readonly Rule[]) => tool.selectGates(repoPlan, [KEPT_NAMES], { lanes: repoLanes, reach })
+    .gates.filter((entry) => entry.run).map((entry) => entry.gate.name);
+  assert.equal(reached(without).includes('web'), false);
+  assert.equal(reached(tool.REACH).includes('web'), true);
+});
+
+/**
+ * SESSDEL1c: the paths outside the page a page's vitest reads. A read from disk goes through `node:fs`, so a test that does not
+ * import it reads nothing from disk: a path it says (`docs/code-map.json`, a map's data) is no read. In one that does, a read
+ * is a run of string literals, joined, naming a tracked file or folder from where vitest runs, the page
+ * (`join(process.cwd(), '..', 'Daoris.Cli', …)`), from the repository (`join(root, 'src', …)`) or from the test's own folder;
+ * or, where the run names nothing, one literal of it that does (`declared('service', 'src/…/NoteParts.cs')`). A folder is read
+ * for each file in it the test names (`driver('Trace.Chain.cs')`), else for any file in it. A relative import naming a file
+ * outside the page is a read in any test. The page's own files are no read: the web gate runs with them.
+ */
+function pageReads(file: string, text: string, files: readonly string[]): string[] {
+  const page = 'src/Daoris.Web';
+  const tracked = new Set(files);
+  const folders = new Set(files.flatMap((path) => path.split('/').slice(0, -1).map((_, i, parts) => parts.slice(0, i + 1).join('/'))));
+  const outside = (path: string) => path.includes('/') && !path.startsWith('..') && path !== page && !path.startsWith(`${page}/`);
+  const reads = new Set<string>();
+  for (const match of text.matchAll(/(?:\bfrom\s+|\bimport\s*\(\s*)'(\.{1,2}\/[^'?]+)'/g)) {
+    const path = posix.normalize(posix.join(posix.dirname(file), match[1]!));
+    const found = ['', '.ts', '.tsx', '.mjs', '.js', '.json'].map((extension) => `${path}${extension}`).find((candidate) => tracked.has(candidate));
+    if (found && outside(found)) reads.add(found);
+  }
+  if (!/\bfrom\s+'(?:node:)?fs(?:\/promises)?'/.test(text)) return [...reads];
+  const resolve = (path: string) => [page, '.', posix.dirname(file)]
+    .map((base) => posix.normalize(posix.join(base, path)))
+    .find((candidate) => outside(candidate) && (tracked.has(candidate) || folders.has(candidate)));
+  const literals = [...text.matchAll(/'([^'\\\r\n]*)'/g)].map((match) => match[1]!);
+  for (const match of text.matchAll(/'([^'\\\r\n]*)'((?:\s*,\s*'[^'\\\r\n]*')*)/g)) {
+    const run = [match[1]!, ...[...match[2]!.matchAll(/'([^']*)'/g)].map((part) => part[1]!)];
+    const whole = resolve(run.join('/'));
+    const found = whole ? [whole] : run.filter((one) => one.includes('/')).map(resolve).filter((path): path is string => path !== undefined);
+    for (const path of found) {
+      if (tracked.has(path)) {
+        reads.add(path);
+        continue;
+      }
+      const named = literals.filter((name) => name && !name.includes('/') && tracked.has(`${path}/${name}`));
+      for (const name of named.length > 0 ? named : ['probe.txt']) reads.add(`${path}/${name}`);
     }
   }
   return [...reads];
