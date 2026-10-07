@@ -229,6 +229,12 @@
   --text-wordmark--line-height: 1.2;
   --text-value: 1.625rem;       /* 26px — a stat tile's number */
   --text-value--line-height: 1.15;
+
+  /* A mark at rest is still (FREEZE1, D41's motion rule). Tailwind's pulse runs for ever, and the live dot that wears it
+     kept the window drawing at the display's rate for as long as a session was live (601 frames in 5 s, its GPU process a
+     quarter of a core). It pulses as a turn begins, three times, and settles; the word beside it says the rest. The
+     keyframes stay Tailwind's. `motion.test.ts` holds the count in the built stylesheet. */
+  --animate-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) 3;
 }
 
 @keyframes drawer-in {

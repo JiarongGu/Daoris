@@ -156,6 +156,8 @@ with the version and date at release.
 - Answering a session that stopped to ask you no longer fails it: it carries on with your answer, once.
 - A session that ended with work still on its branch, even a failed one or one finished at a
   checkpoint, offers *Accept…* on its page to land that work, and the Branches tab says so.
+- The window no longer redraws continuously for a pulsing status dot, and it logs when its own thread
+  is held, so a frozen title bar can be traced.
 
 The first version: doctrine that installs, is checked, and flows back.
 

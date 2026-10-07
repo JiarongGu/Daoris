@@ -47,7 +47,8 @@ public sealed class MainForm : OptimizedForm
         IEventBus eventBus,
         DriverLoop driver,
         HostSupervisor supervisor,
-        ILogger<ChromiumView>? viewLog = null)
+        ILogger<ChromiumView>? viewLog = null,
+        UiStallWatch? watch = null)
         : base(new OptimizedFormOptions
         {
             FramelessChrome = true,
@@ -126,6 +127,30 @@ public sealed class MainForm : OptimizedForm
 
         Load += async (_, _) => await BringUpAsync();
         FormClosed += (_, _) => _notifier.Dispose();
+
+        // How late this window's thread answers, and what held it (FREEZE1, D56's note): a press on the strip is handed
+        // to this thread to move the window, so a late thread is a frozen bar. Looked at from the moment it is shown.
+        if (watch is not null)
+        {
+            Load += (_, _) => watch.Start(Post);
+            FormClosed += (_, _) => watch.Dispose();
+        }
+    }
+
+    /// <summary>Run <paramref name="action"/> on this window's thread later, or false where there is no window to run it on.</summary>
+    private bool Post(Action action)
+    {
+        if (IsDisposed || !IsHandleCreated) return false;
+        try
+        {
+            BeginInvoke(action);
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            // The handle went between the look and the post.
+            return false;
+        }
     }
 
     /// <summary>What the OS is set to, for the first paint — the page corrects it a round trip later.</summary>
