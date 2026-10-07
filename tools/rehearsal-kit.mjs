@@ -8,6 +8,7 @@
 import { execSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
 
 /**
  * Every run leaves a transcript under `_fixtures/rehearsal-logs/`, outside anything a passing run
@@ -150,6 +151,55 @@ export function capture(command, cwd, { env = {}, timeout = 0, input } = {}) {
       out: `${error.stdout ?? ''}${error.stderr ?? ''}${timedOut ? '\n[killed: exceeded the timeout]' : ''}`,
     };
   }
+}
+
+/**
+ * Ask `ready` every `every` ms until it answers something truthy, `within` ms have passed, or `settled` settles first
+ * (DEV3d). Bounded by the clock rather than by a count of asks, because under load each ask is slow and a count ran out
+ * before a late session had said what the phase waited for. An ask that throws (a host refusing while it restarts) is not
+ * ready. Each ask is awaited whole, so a slow one can carry the wait past `within` by its own length.
+ *
+ * @returns {Promise<{ ended: 'ready' | 'timeout' | 'settled', value?: unknown, ms: number }>} `settled` when what the
+ * wait ran beside (a run) ended first, since it will never say it then.
+ */
+export async function waitFor(ready, { within, every = 250, settled } = {}) {
+  const began = Date.now();
+  let over = false;
+  const ending = settled ? Promise.resolve(settled).then(() => { over = true; }, () => { over = true; }) : null;
+  for (;;) {
+    let value;
+    try {
+      value = await ready();
+    } catch {
+      value = undefined;
+    }
+
+    const ms = Date.now() - began;
+    if (value) return { ended: 'ready', value, ms };
+    if (over) return { ended: 'settled', ms };
+    if (ms >= within) return { ended: 'timeout', ms };
+    const pause = sleep(Math.min(every, within - ms));
+    await (ending ? Promise.race([pause, ending]) : pause);
+  }
+}
+
+/**
+ * Restart a host only between the requests of a session that talks to it (DEV3d): `quiet` is asked, by `waitFor`, until it
+ * says no request of the session's is in flight, and then the host is stopped, `gap` ms pass and it is started again.
+ * A restart cuts a request in flight off at the session's end, which then fails as a crash, not as anything the phase means
+ * to prove. `quiet` must stay true for as long as the restart takes: a session that lingers between requests is how.
+ *
+ * A session never quiet within `within` still has its host restarted after the bound, because the phases after need the
+ * host, and the answer says so for the check that reads the session to name.
+ *
+ * @returns {Promise<{ quiet: boolean, waited: number, host: unknown }>} `host` is what `start` answered.
+ */
+export async function restartBetweenRequests({ quiet, stop, start, within, every = 250, gap = 700 }) {
+  const waited = await waitFor(quiet, { within, every });
+  await stop();
+  await sleep(gap);
+  const host = await start();
+  return { quiet: waited.ended === 'ready', waited: waited.ms, host };
 }
 
 /**

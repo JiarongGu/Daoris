@@ -5,6 +5,31 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-08 — the lost-claim phase restarted host b under the lingering session's take
+
+### Tools: the family rehearsal waited on a transcript that holds nothing until the session ends (DEV3d)
+- **Symptom:** the family rehearsal's *…its driver stops its own losing session* failed at CARRY2d's merge (403/404),
+  DEV3b's evidence kept (`_fixtures/rehearsal-logs/family-2026-10-07T12-45-51-960Z/`): the take was found lost, and the
+  session had already ended `failed`, its note host b's refused connection and its transcript the stub's `fetch failed …
+  ECONNRESET`. The run spawned at 12:50:11, the session started at 12:50:52, and host b restarted at 12:51:00.
+- **Root cause:** the phase waited for the stub's `stub: lingering` by reading the session's transcript, which the driver
+  writes through a buffered `StreamWriter` it does not flush (`Driver.CaptureAsync`, `PumpAsync`), so a transcript of a
+  few lines reaches the disk only as the session ends. The wait never saw the line, always ran out its 160 asks (about 40 s, plus each ask), and the phase then restarted host b,
+  whatever the session was doing. Unloaded, the session was lingering by then. Under load, its look's sync alone spent 12 s
+  against the absent remote, it started 41 s in, and the restart cut off its take, which host b answers only after its push
+  fails. The first check passed anyway: it asked only that the session was working and the claim unconfirmed, which the
+  host records before it answers.
+- **Fix:** the stub writes `stub: lingering`, and a minute later `stub: lingered`, to a file per quest under the scratch
+  (`stub-said/`) as it prints them. The wait reads that file (`waitFor` in `tools/rehearsal-kit.mjs`), bounded at two
+  minutes by the clock and ending with the run, and the first check requires the line. Host b comes back through
+  `restartBetweenRequests`, only while the stub has said it lingers and not that it lingered, and the lost-claim check's
+  detail says whether it did. The stub does not retry a reset: the reset hides whether its take reached the host. D115's
+  DEV3d note.
+- **Verify:** `tools/rehearsal-kit.test.mjs` (10 → 16) failed first on the missing exports. A wait counted in asks failed
+  its clock case, and a restart that did not wait failed both restart cases. A scratch run of the stub against a stand-in
+  quest door read the line from its file while it lingered. A .NET 10 probe of the driver's writer read 0 bytes on disk
+  while it was open and 17 once disposed. Not run: the family rehearsal.
+
 ## 2026-10-08 — the publish's last bare rename
 
 ### Tools: laying out the plugin offers stopped a publish on a held staging folder
@@ -318,6 +343,8 @@ the quest as a conflict*), then *failed session …: No connection could be made
 transcript is the stub's `fetch failed … ECONNRESET`, and host b's log shows it started at 12:48:01, 12:50:10 and
 12:51:00. The phase restarts host b to bring it online while the lingering stub's request to it is in flight, so the stub
 crashed before the driver's pass could stop it. Not a driver defect: the rehearsal's ordering. DEV3d carries it.
+*Read 2026-10-08 (DEV3d above):* the phase's wait for the lingering line read a transcript the driver writes only as the
+session ends, so it always ran out at about 40 s and restarted host b then; the session started 41 s into its run.
 `SettingsView.doors.test.tsx`'s "closes on a press of the Settings place…" timed out (20 s) once in SESSDEL1c's web run
 with two other worktrees building; it passed alone (5/5) and in both later full runs.
 `setupStart.test.tsx`'s "opens a fresh machine on Get started, and counts the setup in the status bar" timed out (20 s)
