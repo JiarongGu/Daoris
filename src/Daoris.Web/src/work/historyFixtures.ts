@@ -169,6 +169,28 @@ export const WORKSPACE_LEFT_OVER: HistoryPlan = {
   },
 };
 
+/**
+ * Only left-over files, as the install had them (HIST1o): no finished work may go and no intake's room is here, so the press
+ * takes 1.3 KB of files no record holds, and its opening says only that.
+ */
+export const WORKSPACE_FILES_ONLY: HistoryPlan = {
+  scope: 'workspace', id: 'aurora', units: [],
+  reading: {
+    ...WORKSPACE_EMPTY.reading!,
+    takes: { quests: 0, asks: 0, sessions: 0, teammates: 0, bytes: Math.round(1.3 * KB) },
+    leftOver: { count: 2, bytes: Math.round(1.3 * KB) },
+  },
+};
+
+/** Only the intake's room, once no ask is held and nothing is left over: the press sends no unit. */
+export const WORKSPACE_ROOM_ONLY: HistoryPlan = {
+  scope: 'workspace', id: 'aurora', units: [],
+  reading: {
+    ...WORKSPACE_EMPTY.reading!, intake: 40 * KB,
+    takes: { quests: 0, asks: 0, sessions: 0, teammates: 0, bytes: 40 * KB },
+  },
+};
+
 /** The workspace's second press: two of the three went, one changed since the list and stayed. */
 export const WORKSPACE_CLEARED: HistoryClearAnswer = {
   scope: 'workspace', id: 'aurora', listed: 3,

@@ -389,14 +389,10 @@ const DANGER_AS_TEXT = /(?<![\w-])text-st-declined(?![\w-])/g;
 const DANGER_AS_CSS_TEXT = /(?<![\w-])color\s*:\s*var\(--st-declined\)/g;
 
 /**
- * Files that still draw red words in the fill's colour, each with its reason. The Settings domains are the
- * web-settings lane's, and UXFIX5 ran in the shell's: their swap is that lane's change, and each row goes with it.
+ * Files that still draw red words in the fill's colour, each with its reason. Empty since UXFIX5b swapped the three
+ * Settings sites UXFIX5 left to their own lane, and held empty: a red word in the fill's colour is fixed, not allowed.
  */
-const DANGER_TEXT_ELSEWHERE: Record<string, string> = {
-  './settings/AccountSettings.tsx': "an account's problem, the web-settings lane's to swap (UXFIX5)",
-  './settings/Logs.tsx': "an error line of the machine log, the web-settings lane's to swap (UXFIX5)",
-  './settings/Sync.tsx': "a sync's refusal, the web-settings lane's to swap (UXFIX5)",
-};
+const DANGER_TEXT_ELSEWHERE: Record<string, string> = {};
 
 /** Every place a source draws danger as text in `--st-declined`: a `text-` class, or a stylesheet's `color`. */
 export function dangerAsText(files: [path: string, source: string][]): string[] {
@@ -461,6 +457,10 @@ describe('the danger ink', () => {
 
   it('holds: every red word in the platform wears the danger ink', () => {
     expect(dangerAsText([...components, ...modules, ...stylesheets])).toEqual([]);
+  });
+
+  it('holds: no file is allowed the fill as text any more, so a new red word cannot be waved through (UXFIX5b)', () => {
+    expect(DANGER_TEXT_ELSEWHERE).toEqual({});
   });
 
   it('holds: each file still allowed the fill as text still draws it there, so a row goes when its swap lands', () => {

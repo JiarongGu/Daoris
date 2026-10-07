@@ -259,8 +259,22 @@ describe('the notices', () => {
 
   it('says an abandon as how many of the listed pieces went, and how many changed since the list', () => {
     const went = { scope: 'ask', id: 'a1', did: 'abandoned', listed: 10, went: 9, changed: [{ piece: 'quest:q1', why: 'gone', changed: true }] } as AbandonAnswer;
-    expect(abandonNotice(went)).toEqual({ key: 'work.abandon.done.changed', values: { went: 9, count: 10, changed: 1 }, tone: 'ok' });
+    expect(abandonNotice(went)).toMatchObject({ key: 'work.abandon.done.changed', values: { went: 9, count: 10, changed: 1 } });
     expect(abandonNotice({ ...went, went: 10, changed: [] })).toEqual({ key: 'work.abandon.done.all', values: { went: 10, count: 10 }, tone: 'ok' });
     expect(abandonNotice({ ...went, did: 'nothing' })).toEqual({ key: 'work.abandon.nothing', values: {}, tone: 'ok' });
+  });
+
+  /**
+   * PAUSE1h: a partial abandon was said in the `ok` tone, the shape HIST1n found in a partial clear (D153's HIST1n note).
+   * Only an abandon that took every piece it listed is a plain success; one that kept some, because they changed since the
+   * list or the disk would not let them go (the driver's `went` is what was listed less both), says so in the error's tone.
+   */
+  it('says a partial abandon in the error’s tone, never as a plain success', () => {
+    const partial = { scope: 'ask', id: 'a1', did: 'abandoned', listed: 10, went: 9, changed: [{ piece: 'quest:q1', why: 'gone', changed: true }] } as AbandonAnswer;
+    expect(abandonNotice(partial).tone).not.toBe('ok');
+    expect(abandonNotice(partial)).toEqual({ key: 'work.abandon.done.changed', values: { went: 9, count: 10, changed: 1 }, tone: 'error' });
+    // One the disk kept changed nothing since the list, and still did not all go.
+    const failed: AbandonAnswer = { ...partial, changed: [], failed: [{ piece: 'tree:s1', why: 'in-use' }] };
+    expect(abandonNotice(failed)).toEqual({ key: 'work.abandon.done.all', values: { went: 9, count: 10 }, tone: 'error' });
   });
 });

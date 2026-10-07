@@ -242,6 +242,11 @@ where 0 was expected, under its 600 ms wait, once in AGT3c's full fast run after
 times and in a full rerun (4656/4656). A fast-half test waiting on a clock is the shape to look at.
 `setup-kit.test.ts:807` (STUB3) failed once in EVID1b3's verify: its stub did not answer `initialize` within 1000 ms,
 right after a dotnet run on the same machine; it passed alone and the next verify was green.
+`merge-branch.test.ts`'s "--passed counts a verdict no path changed since reaches" failed once at the web batch's merge
+gate (UXFIX2d…SESSDEL1b, which touch no CLI or tools file): "git could not write the checkout's tree" on its scratch
+repository, with three worktrees building beside it; the same git-on-scratch shape as the `--rerun` sightings above.
+`landing-plugins.test.ts:267` failed once in UXFIX5b's verify: its fixture's `git config user.email` exited -1
+(4294967295), a spawn failure; the file passed 19/19 alone and the next verify was green. A third git-spawn shape.
 
 *Fixed the same day:* `desktop-publish.test.ts`'s "retries a held rename at each package and launcher step" failed
 twice (AGENTREAD1's verify, ACCTQUOTE1d's merge gate) with a real EPERM. It handed `layCli` two tries with no wait, the
