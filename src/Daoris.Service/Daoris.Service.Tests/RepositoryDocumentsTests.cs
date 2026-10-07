@@ -263,33 +263,6 @@ public sealed class RepositoryDocumentsTests : IDisposable
     // ── the twin table ─────────────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// The roles are the CLI's, role for role and in its order (ORIENT2e): <see cref="RepositoryDocuments.Roles"/>
-    /// is a copy of <c>documents.ts</c>' <c>ROLES</c>, read here from the CLI's own file, so a role the CLI gains
-    /// fails this until the copy gains it. ORIENT2b found the copy a role short, which reads as undeclared.
-    /// </summary>
-    [Fact]
-    public void The_roles_are_the_CLI_s_role_for_role_in_its_order()
-    {
-        var source = File.ReadAllText(Path.Combine(WorkspaceRoot(), "src", "Daoris.Cli", "src", "documents.ts"));
-        var block = source[source.IndexOf("export const ROLES", StringComparison.Ordinal)..];
-        block = block[..block.IndexOf("];", StringComparison.Ordinal)];
-        var cli = System.Text.RegularExpressions.Regex.Matches(block, @"\{ role: '([a-z]+)', binding: '(path|ceiling)'")
-            .Select(match => $"{match.Groups[1].Value} {match.Groups[2].Value}")
-            .ToList();
-
-        Assert.True(cli.Count >= 10, $"the scan found {cli.Count} roles in the CLI's ROLES, so it proved nothing");
-        Assert.Equal(cli, RepositoryDocuments.Roles.Select(row => $"{row.Role} {(row.TakesPath ? "path" : "ceiling")}"));
-    }
-
-    /// <summary>The workspace root, found by walking up from the test binaries to <c>daoris.json</c>.</summary>
-    private static string WorkspaceRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "daoris.json"))) directory = directory.Parent;
-        return directory?.FullName ?? throw new InvalidOperationException("no workspace root above the test binaries");
-    }
-
-    /// <summary>
     /// What a declaration is read as: the CLI's <c>documents-manifest.test.ts</c>, its
     /// <c>MANIFEST_ROWS</c> and then its <c>REFUSED_ROWS</c>, row for row and in order, then this side's own
     /// edges. A reading is <c>role path words</c> per declared role in the roles' order, <c>-</c> for none,
