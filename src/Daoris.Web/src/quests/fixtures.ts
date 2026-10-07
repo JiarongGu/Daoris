@@ -153,6 +153,16 @@ export const EXHAUSTED: Consideration = {
   quest: OPEN.id, repository: 'engine', verdict: 'Exhausted',
   reason: '3 sessions failed on this quest, so it is parked. `daoris driver retry abc123` starts it again.',
 };
+/**
+ * Taken on another machine after this machine's session on it was cut off (CARRY2b), naming whose take it is as the tick's
+ * facts (CARRY2c): the machine and its session, and the session here that is not carried on.
+ */
+export const TAKEN_ELSEWHERE: Consideration = {
+  quest: TAKEN.id, repository: 'engine', verdict: 'TakenElsewhere',
+  takenBy: { machine: 'alice-laptop', session: 'alice-laptop/ab12cd34', here: false, last: 's0f1r2s3' },
+  reason: 'Quest `#def456` is taken on `alice-laptop`, by session `alice-laptop/ab12cd34`: the take is theirs, so session `s0f1r2s3` is not carried on over it.',
+};
+
 /** Held by the person's stop (SESSUX1b), naming the session the tick says holds it (SESSUX1d). */
 export const STOPPED: Consideration = {
   quest: OPEN.id, repository: 'engine', verdict: 'Stopped', heldBy: 's1a2b3c4',

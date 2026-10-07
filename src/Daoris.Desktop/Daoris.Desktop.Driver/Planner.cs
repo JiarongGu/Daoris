@@ -240,6 +240,20 @@ public sealed record QuestTake(string Claim, bool Took = false, string? Teammate
 }
 
 /// <summary>
+/// Whose take holds a quest that sits <see cref="StartVerdict.TakenElsewhere"/> (CARRY2c), as facts: so the page says the
+/// sentence in the reader's language from them, as it says a stop's from <see cref="Consideration.HeldBy"/>, and never by
+/// reading the driver's English, which stays the terminal's and an older page's.
+/// </summary>
+/// <param name="Last">The session this machine last ran on the quest, which is not carried on over the take.</param>
+/// <param name="Machine">
+/// The machine that took it, as a teammate's record names it (the origin of its <c>origin/id</c>); null where no record of
+/// theirs came, and for a take made here.
+/// </param>
+/// <param name="Session">That teammate's session, as <c>origin/id</c>, where a record names one; null otherwise.</param>
+/// <param name="Here">Taken on this machine after <paramref name="Last"/> ended, which no record here marks: a chat's or work outside Daoris.</param>
+public sealed record TakenBy(string Last, string? Machine = null, string? Session = null, bool Here = false);
+
+/// <summary>
 /// One of the person's words waiting on a record (MSG1a, D137 §2.4), as the service answers it to this machine: its id,
 /// which the record's events say again where the session took it, the words, when, its files' names, and whether it was
 /// said after the record ended.
@@ -509,6 +523,13 @@ public sealed record Consideration(
     public PausedBy? PausedBy { get; init; }
 
     /// <summary>
+    /// For a quest whose take is not this machine's (<see cref="StartVerdict.TakenElsewhere"/>): whose it is, the machine and
+    /// its session where a record names them, and the session here not carried on (CARRY2c), so the page says the sentence
+    /// from facts. Null for every other verdict.
+    /// </summary>
+    public TakenBy? TakenBy { get; init; }
+
+    /// <summary>
     /// For a start the person's words make (MSG1b, D137 §2.2): <see cref="Resumes"/> is the record they wait on, parked or
     /// ended, which goes on in its own conversation where it can, and else hands them on.
     /// </summary>
@@ -757,7 +778,8 @@ public static class Planner
         // A take that is not this machine's (CARRY2b), as the ledger judges it (CARRY2) and in its words: another machine's by
         // the claim, named by a teammate's record where one came, or one made here after the session ended that no record
         // here marks, a chat's or work outside Daoris. An unmarked take made while the session ran is still its own, as the
-        // ledger reads it: the HTTP door marks none. Null where the take is this machine's, or was not read.
+        // ledger reads it: the HTTP door marks none. Null where the take is this machine's, or was not read. Whose it is rides
+        // beside the sentence as facts (CARRY2c), from the same reading, so the page's words and the driver's never disagree.
         Consideration? TakenElsewhere(QuestView quest, PriorSession cutOff)
         {
             if (!snapshot.Takes.TryGetValue(quest.Id, out var take)) return null;
@@ -765,14 +787,21 @@ public static class Planner
             var over = $"the take is theirs, so session `{cutOff.Session}` is not carried on over it.";
             if (!take.Here)
             {
+                var machine = take.Teammate?.Split('/')[0];
                 return new(quest, StartVerdict.TakenElsewhere, take.Teammate is { } teammate
-                    ? $"Quest `#{quest.Id}` is taken on `{teammate.Split('/')[0]}`, by session `{teammate}`: {over}"
-                    : $"Quest `#{quest.Id}` is taken on another machine: {over}");
+                    ? $"Quest `#{quest.Id}` is taken on `{machine}`, by session `{teammate}`: {over}"
+                    : $"Quest `#{quest.Id}` is taken on another machine: {over}")
+                {
+                    TakenBy = new TakenBy(cutOff.Session, machine, take.Teammate),
+                };
             }
 
             return !take.Took && quest.Updated is { } taken && cutOff.Updated is { } ended && taken > ended
                 ? new(quest, StartVerdict.TakenElsewhere,
                     $"Quest `#{quest.Id}` was taken here after session `{cutOff.Session}` ended, by a chat or by work outside Daoris: {over}")
+                {
+                    TakenBy = new TakenBy(cutOff.Session, Here: true),
+                }
                 : null;
         }
 
