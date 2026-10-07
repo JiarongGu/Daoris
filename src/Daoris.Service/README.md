@@ -65,7 +65,9 @@ entry. Since **ORIENT2h2** a list is read an item at a time, for the same reason
 its list's 61-line section. An item is its line and its continuation lines, as markdown reads them, titled by the
 headings, its parents' labels and its own (`Outline of … › 300-2333 class QuestStore › 688-724 PublishAsync()`), so a
 nested item read alone keeps its place; its label is its leading code span or link text, or its text where it opens
-with neither. The prose around a table or a list stays a section, each run of it an entry. A README declared at the root is read alone, a declared folder is that folder, and an undeclared folder named
+with neither. Since **ORIENT2h5** an item's id is its title without the lines each label leads with
+(`… › class QuestStore › PublishAsync()`; a fixture's `Tests.cs:284` is `Tests.cs`), in a deployment's index too, so
+an edit above the lines it names leaves its id as it was; the title keeps them, for the person who reads it. The prose around a table or a list stays a section, each run of it an entry. A README declared at the root is read alone, a declared folder is that folder, and an undeclared folder named
 like an index is never guessed. A folder a deployment names as its index (`DAORIS_KNOWLEDGE_INDEX`) is read a row at a
 time first, as that deployment chose, and those rows are of the kind `index` too. A search that names no kinds answers
 with at most two index entries, at their ranks, and fills the rest from every other kind; the answer says when more
