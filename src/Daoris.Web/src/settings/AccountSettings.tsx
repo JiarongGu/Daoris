@@ -20,7 +20,7 @@ const offered = (values: readonly string[], held: string | null) =>
  */
 export function AccountSettingsSummary({ settings }: { settings: AccountSettings }) {
   const { t } = useTranslation();
-  if (settings.problem) return <span className="text-meta text-st-declined">{settings.problem}</span>;
+  if (settings.problem) return <span className="text-meta text-ink-danger">{settings.problem}</span>;
 
   // NAME1b: the choice's name is sentence case; inside this line the value is a fragment of its own.
   const unset = t('harness.settings.summary.default');
