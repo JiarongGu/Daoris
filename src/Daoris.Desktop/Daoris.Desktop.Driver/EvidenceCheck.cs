@@ -107,6 +107,36 @@ public static partial class EvidenceCheck
         return outcome;
     }
 
+    /// <summary>
+    /// The record's evidence at a session's end (D46 §4, D144 §3, §5): <paramref name="commits"/>, and beneath them what was read
+    /// of its done's evidence, where <paramref name="quest"/> waits on some. A quest that waits on none, or that the service no
+    /// longer answers, ends as it did: git is asked nothing more and nothing is posted. Never throws but for the caller's own
+    /// cancellation, since the record is written whatever the read came to.
+    /// </summary>
+    /// <param name="at">Where and how: the tree's HEAD at a session's end or the sweep, with its base and its session.</param>
+    public static Task<string?> AtEndAsync(
+        ServiceClient service, QuestView? quest, EvidenceAt at, string? commits, CancellationToken ct = default) =>
+        AtEndAsync(service, quest, at, commits, WorkingTree.ReadGitAsync, ct);
+
+    /// <inheritdoc cref="AtEndAsync(ServiceClient, QuestView?, EvidenceAt, string?, CancellationToken)"/>
+    internal static async Task<string?> AtEndAsync(
+        ServiceClient service, QuestView? quest, EvidenceAt at, string? commits, WorkingTree.GitRead git, CancellationToken ct)
+    {
+        if (quest is not { AwaitsEvidence: true }) return commits;
+
+        string bundle;
+        try
+        {
+            bundle = (await RunAsync(service, quest, at, git, ct).ConfigureAwait(false)).Bundle;
+        }
+        catch (Exception error) when (!ct.IsCancellationRequested)
+        {
+            bundle = $"evidence not read: {OneLine(error.Message)}";
+        }
+
+        return commits is { Length: > 0 } ? $"{commits}\n{bundle}" : bundle;
+    }
+
     /// <summary>The record's lines for one read (D144 §5): the commit and how, then each item; or why nothing was read.</summary>
     private static string Bundle(EvidenceReading reading, EvidencePosted posted)
     {

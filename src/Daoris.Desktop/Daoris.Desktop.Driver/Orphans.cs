@@ -34,6 +34,10 @@ public sealed record OrphanEnded(string Id, string Repository)
 /// what ended it is not known, only that nothing runs it, and the note says exactly that. The sweep's stop
 /// is <b>interrupted</b> (D104), not the person's, so a take it ended is carried on; the person's stop on
 /// one record is theirs, since they asked about that one, and never is.</para>
+///
+/// <para><b>A lost done's evidence is read as it ends</b> (EVID1b, D144 §3): where the record's quest closed done and waits on
+/// its evidence, the tree's HEAD is read by the same code a session's end reads it with, posted as the sweep's, and kept on
+/// the record it ends beneath the commits since its base. Any other record ends as before.</para>
 /// </remarks>
 public static class Orphans
 {
@@ -46,8 +50,14 @@ public static class Orphans
 
     /// <param name="only">One record the person asked to stop, or null for the sweep.</param>
     /// <returns>The records ended, in the order the service listed them.</returns>
-    public static async Task<IReadOnlyList<OrphanEnded>> EndAsync(
-        ServiceClient service, SessionProcesses processes, string? only = null, CancellationToken ct = default)
+    public static Task<IReadOnlyList<OrphanEnded>> EndAsync(
+        ServiceClient service, SessionProcesses processes, string? only = null, CancellationToken ct = default) =>
+        EndAsync(service, processes, WorkingTree.ReadGitAsync, only, ct);
+
+    /// <inheritdoc cref="EndAsync(ServiceClient, SessionProcesses, string?, CancellationToken)"/>
+    /// <param name="git">How a lost done's tree is read (EVID1b): the review's seam, which a test stands git in at.</param>
+    internal static async Task<IReadOnlyList<OrphanEnded>> EndAsync(
+        ServiceClient service, SessionProcesses processes, WorkingTree.GitRead git, string? only = null, CancellationToken ct = default)
     {
         var ended = new List<OrphanEnded>();
         foreach (var session in await service.ActiveSessionsAsync(ct).ConfigureAwait(false))
@@ -56,9 +66,10 @@ public static class Orphans
             var claimsProcess = session.State == "working" || (only is not null && session.State == "starting");
             if (!claimsProcess || processes.AliveOnThisMachine(session.Id)) continue;
 
+            var evidence = await LostDoneAsync(service, session, git, ct).ConfigureAwait(false);
             try
             {
-                await service.AdvanceAsync(session.Id, "stopped", Noted, ct: ct, interrupted: only is null).ConfigureAwait(false);
+                await service.AdvanceAsync(session.Id, "stopped", Noted, evidence: evidence, ct: ct, interrupted: only is null).ConfigureAwait(false);
                 ended.Add(new OrphanEnded(session.Id, session.Repository) { Quest = session.Quest, Tree = session.Tree });
             }
             catch (DriverException)
@@ -68,5 +79,37 @@ public static class Orphans
         }
 
         return ended;
+    }
+
+    /// <summary>
+    /// What the record of a lost session gains as it ends (EVID1b): where its quest closed done and waits on its evidence, the
+    /// commits since its base and what was read at its tree's HEAD; null for every other, which ends as before. A quest the
+    /// service does not answer is not read: the sweep's work is ending the record.
+    /// </summary>
+    private static async Task<string?> LostDoneAsync(ServiceClient service, SessionView session, WorkingTree.GitRead git, CancellationToken ct)
+    {
+        if (session is not { Quest: { Length: > 0 } questId, Tree: { Length: > 0 } tree }) return null;
+
+        QuestView? quest;
+        try
+        {
+            quest = await service.FindQuestAsync(questId, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
+        {
+            return null;
+        }
+
+        if (quest is not { AwaitsEvidence: true }) return null;
+
+        // The range only from a base the record names as a commit, since from none `git log` would list the whole history; and
+        // only in a tree that is the top of its own repository, since git walks up (the read below says why it read nothing).
+        var since = session.BaseCommit is { } baseCommit && WorkingTree.IsCommitId(baseCommit) ? baseCommit : null;
+        var commits = since is not null && await WorkingTree.IsTopLevelAsync(tree, git, ct).ConfigureAwait(false)
+            ? await WorkingTree.CommitsSinceAsync(tree, since, git, ct).ConfigureAwait(false)
+            : null;
+        return await EvidenceCheck.AtEndAsync(
+                service, quest, new EvidenceAt(tree, EvidenceCodes.Sweep) { Base = since, Session = session.Id }, commits, git, ct)
+            .ConfigureAwait(false);
     }
 }

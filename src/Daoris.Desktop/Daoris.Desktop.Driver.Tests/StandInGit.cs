@@ -15,6 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 internal sealed class StandInGit(string top)
 {
     private readonly Dictionary<string, (string? Parent, IReadOnlyDictionary<string, string> Files)> _commits = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _names = new(StringComparer.Ordinal);
 
     /// <summary>The commit HEAD names, or null for a repository with none.</summary>
     public string? Head { get; private set; }
@@ -30,6 +31,7 @@ internal sealed class StandInGit(string top)
     {
         var id = Id("commit " + name);
         _commits[id] = (Head, files.ToDictionary(file => file.Path, file => Id("blob " + file.Content), StringComparer.Ordinal));
+        _names[id] = name;
         Head = id;
         return id;
     }
@@ -69,6 +71,20 @@ internal sealed class StandInGit(string top)
                 return files.Keys.Any(file => file.StartsWith(path + "/", StringComparison.Ordinal))
                     ? (0, Tree(commit, path) + "\n")
                     : (1, "");
+            }
+
+            case ["log", "--oneline", var range]:
+            {
+                // `X..HEAD`, or `HEAD` alone: each commit after X, newest first, as its abbreviation and its name.
+                var stop = range.Contains("..", StringComparison.Ordinal) ? Resolve(range[..range.IndexOf("..", StringComparison.Ordinal)]) : null;
+                if (range.Contains("..", StringComparison.Ordinal) && stop is null) return (128, "");
+                var lines = new StringBuilder();
+                for (var at = Head; at is not null && at != stop; at = _commits[at].Parent)
+                {
+                    lines.Append($"{at[..7]} {_names[at]}\n");
+                }
+
+                return (0, lines.ToString());
             }
 
             case ["ls-tree", "-z", var treeish]:
