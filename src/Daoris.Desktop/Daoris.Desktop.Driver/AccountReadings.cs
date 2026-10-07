@@ -23,8 +23,8 @@ public sealed record RecordedFrame(string Frame, string Seen, string Channel, st
 /// <para><b>An entry grows only with a recorded frame</b> (§5.2): every window it names, every status word and the credits
 /// field appear in one of <see cref="Recorded"/>, which <c>AccountReadingsTests</c> holds. The frame's shape is Claude Code's
 /// <c>rate_limit_info</c>, the one shape recorded (limit-signals evidence §1.2), so the table holds its words, not a second
-/// grammar for another agent's: Codex's door forwards none of Codex's limits (§4), and a Codex entry waits for a door that
-/// does.</para>
+/// grammar for another agent's: Codex's door forwards none of Codex's limits (§4), so its windows are asked of its own
+/// server instead (<see cref="CodexUsage"/>, CODEXUSE1) and read into the same <see cref="WindowReading"/>.</para>
 /// <para><b>How a clear word with no number ranks</b> (§5.2's last question) does not arise: the evidence found the number
 /// on every frame (§1.1), so a reading is ranked by its numbers and its word together (<see cref="AccountReadings.Near"/>).</para>
 /// </remarks>

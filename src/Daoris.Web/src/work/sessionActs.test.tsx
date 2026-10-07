@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -16,8 +18,20 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import type { Session } from '../api';
+import { list } from '../format';
 import i18n from '../i18n';
+import { en, zh } from '../locales';
 import { type SessionDoors, useSessionActs } from './sessionActs';
+
+/**
+ * The names `SESSION_DELETE`'s `stayed` carries (SESSDEL1c, `.claude/knowledge/twins.md`): one table with the driver, its tests'
+ * `fixtures/kept-names.json`, which its `KeptNamesTwinTests` holds `SessionHomeFiles`' names to. Each its driver's name and its
+ * word on the wire.
+ */
+const KEPT = (JSON.parse(readFileSync(
+  join(process.cwd(), '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'fixtures', 'kept-names.json'), 'utf8')) as {
+  names: Record<string, string>;
+}).names;
 
 const DRIVER_STATE = { drivable: ['engine'], holds: [], trees: [], running: [], notify: true, strikes: 3, forgiven: {} };
 
@@ -183,6 +197,29 @@ describe('the acts on a session', () => {
     act(() => result.current.deleteNow(session({ id: 'c0ffee00', quest: null, kind: 'chat', state: 'completed' })));
     await waitFor(() => expect(notify).toHaveBeenCalledWith(
       'Deleted c0ffee00: its record, and its words, transcript and files on this machine, are gone.'));
+  });
+
+  /**
+   * SESSDEL1c: the page words the driver's names, and kept its own copy of them with no test holding the two together. Both
+   * catalogues word exactly the shared table's names, `other` aside (a name a later driver adds), and the toast says each in
+   * the catalogue's words rather than as the name it is: a name on one side alone fails here or in the driver's twin.
+   */
+  it.each([['en', en], ['zh', zh]] as const)('words exactly the names the driver’s table holds, in %s', (_, catalogue) => {
+    const prefix = 'work.delete.kept.';
+    const worded = Object.keys(catalogue).filter((key) => key.startsWith(prefix)).map((key) => key.slice(prefix.length));
+    expect(worded.filter((name) => name !== 'other').sort()).toEqual(Object.values(KEPT).sort());
+  });
+
+  it.each(['en', 'zh'])('says each of the table’s names in the catalogue’s words in %s, never as the name itself', async (language) => {
+    await i18n.changeLanguage(language);
+    const names = Object.values(KEPT);
+    invoke.mockImplementation(async () => ({ deleted: 'c0ffee00', removed: ['record'], stayed: names }));
+    const { result, notify } = acts();
+
+    act(() => result.current.deleteNow(session({ id: 'c0ffee00', quest: null, kind: 'chat', state: 'completed' })));
+
+    const what = list(names.map((name) => i18n.t(`work.delete.kept.${name}`)));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(i18n.t('work.delete.stayed', { id: 'c0ffee00', what }), 'error'));
   });
 
   /** PAUSE1e (D132 §7.1): a pause is the frame's to ask, naming its quest or its ask; Resume goes to the work's owner at once. */

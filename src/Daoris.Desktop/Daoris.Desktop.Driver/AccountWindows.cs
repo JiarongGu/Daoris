@@ -8,7 +8,8 @@ namespace Daoris.Driver;
 /// <c>windows.json</c> under the home (TOOL6b, TOOL6c; D130 §5.2, §16.3 steps 2, 4 and 5, §16.4): what is known of each
 /// account's windows, per agent (the account's owner, AGT7) and account: the weekly reset a limit told, which a start reads
 /// to spend a week's allowance before it lapses, and what the agent last said about each window on the door its session ran
-/// on — its use, its reset, its standing — which near and pace read.
+/// on, or its own server answered where no door carries it (CODEXUSE1) — its use, its reset, its standing — which near and
+/// pace read.
 /// </summary>
 /// <remarks>
 /// <para><b>A weekly reset, once told, is that account's</b>: the maker fixes it at one time each week (C1), so where the
