@@ -84,6 +84,12 @@ using Daoris.Driver;
 //                 accept a done's departure from what you required (DRIFT1d, D133 §4): what the departure
 //                 held — the chain's next step, a quest waiting on it — goes on, and the yes travels like any
 //                 verb. Nothing else answers a quest here, since a quest is answered by the session that takes it.
+//   quest check <id> [--commit <sha>]
+//                 read a done's evidence again (EVID1b, D144 §3, §5): each path a met requirement names, at the commit
+//                 a driven end here read, or the one named, which must be that commit or come after it on the same
+//                 history; with no driven end on record, the commit must be named. Posts what it read to the evidence
+//                 door as the terminal's, and prints it: 0 when all is found, 1 when anything is missing or unread, 2
+//                 when a store did not answer. The quest page's Check again is EVID1c's door to the same read.
 //
 //   history [--workspace <name>] [--json]
 //   history clear --workspace <name> [--yes]
@@ -273,7 +279,7 @@ try
     // departure from what the person required (DRIFT1d, D133 §4): the quest page's yes and Ask Daoris's are owed. Pausing,
     // resuming and abandoning one quest's work (PAUSE1b, PAUSE1d, D132 §7.2): the quest's page is the other door. Clearing a
     // closed quest's work, or its failed sessions, from this machine (HIST1d, D153, the history-clearing design §6.2): the quest's
-    // page is the other door.
+    // page is the other door. Reading a done's evidence again (EVID1b, D144 §5): the quest page's Check again is EVID1c's.
     if (args is ["quest", .. var questArgs])
     {
         if (WorkCommand.Asks(WorkScope.Quest, questArgs))
@@ -286,11 +292,18 @@ try
             return await Daoris.Driver.Host.HistoryConsole.RunAsync(WorkScope.Quest, questArgs, log);
         }
 
+        // A done's evidence read again (EVID1b, D144 §5): the quest page's Check again is EVID1c's door to the same read.
+        if (QuestCheckCommand.Asks(questArgs))
+        {
+            return await Daoris.Driver.Host.QuestCheckConsole.RunAsync(questArgs, log);
+        }
+
         if (questArgs is not [("delete" or "accept") and var verb, var questId])
         {
             Console.Error.WriteLine(
                 "usage: daoris-driver quest delete <id>  ·  quest accept <id>  ·  quest pause <id>  ·  quest resume <id>  ·  "
-                + "quest abandon <id> [--reason \"…\" --yes]  ·  quest clear <id> [--failed] [--yes]");
+                + "quest abandon <id> [--reason \"…\" --yes]  ·  quest clear <id> [--failed] [--yes]  ·  "
+                + "quest check <id> [--commit <sha>]");
             return 2;
         }
 
