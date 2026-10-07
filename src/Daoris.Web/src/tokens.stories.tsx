@@ -44,6 +44,9 @@ function Gallery() {
         <Swatch name="st-taken" variable="--st-taken" note="in progress" />
         <Swatch name="st-done" variable="--st-done" />
         <Swatch name="st-declined" variable="--st-declined" />
+        <Swatch name="ink-open" variable="--ink-open" note="open's words; a fill keeps st-open" />
+        <Swatch name="ink-taken" variable="--ink-taken" note="taken's words" />
+        <Swatch name="ink-done" variable="--ink-done" note="done's words" />
         <p className="mt-2 max-w-xl text-small text-ink-soft">
           Light passes the six validator checks at worst adjacent deutan ΔE 13.3 (normal 21.0); dark is
           its own validated set at 9.2 / 17.5 — not a filter. The red/green pair is separated by

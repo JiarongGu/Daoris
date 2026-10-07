@@ -23,6 +23,13 @@
      tokens.test.ts holds it at 4.5:1 on every surface and on declined's soft field over each, in both themes. In light
      the fill already reads, so the two are one value. A fill, a border and a mark keep --st-declined. */
   --ink-danger: #9e2f24;
+  /* Every other status hue drawn as words has its ink the same way (UXFIX5c): its pill's word, a count, a diff's added
+     lines. Open's and done's fills read 2.8 to 3.8:1 as text in light, and taken's 4.1:1 on its field; each ink keeps
+     its fill's OKLCH hue and moves in lightness until it reads 4.6:1 at worst. A fill, a border, a mark and the
+     terminal's colours keep the st- hues. */
+  --ink-open: #8b5c02;
+  --ink-taken: #2765ab;
+  --ink-done: #017545;
   --page: #faf9f6;
   /* One step below the page (LOOK6): the box a move asks once in (stop, pause, delete, remove), and the command
      center on the strip. tokens.test.ts holds it under the page in both themes, and every ink readable on it. */
@@ -59,6 +66,9 @@
     --ink-soft: #a9a69c;
     --ink-faint: #7a7770;
     --ink-danger: #ee6955;
+    --ink-open: #c68b31;
+    --ink-taken: #619ce2;
+    --ink-done: #43aa7b;
     --page: #16161a;
     --sunken: #0f0f12;
     --raised: #1e1e23;
@@ -96,6 +106,9 @@
   --ink-soft: #5b5a55;
   --ink-faint: #8a887f;
   --ink-danger: #9e2f24;
+  --ink-open: #8b5c02;
+  --ink-taken: #2765ab;
+  --ink-done: #017545;
   --page: #faf9f6;
   --sunken: #f3f1ec;
   --raised: #ffffff;
@@ -124,6 +137,9 @@
   --ink-soft: #a9a69c;
   --ink-faint: #7a7770;
   --ink-danger: #ee6955;
+  --ink-open: #c68b31;
+  --ink-taken: #619ce2;
+  --ink-done: #43aa7b;
   --page: #16161a;
   --sunken: #0f0f12;
   --raised: #1e1e23;
@@ -162,6 +178,9 @@
   --color-ink-soft: var(--ink-soft);
   --color-ink-faint: var(--ink-faint);
   --color-ink-danger: var(--ink-danger);
+  --color-ink-open: var(--ink-open);
+  --color-ink-taken: var(--ink-taken);
+  --color-ink-done: var(--ink-done);
   --color-accent: var(--accent);
   --color-accent-ink: var(--accent-ink);
   --color-accent-soft: var(--accent-soft);

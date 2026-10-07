@@ -318,7 +318,7 @@ function Left({ branch, onReview, onDiscard, discarding = false }: {
     <>
       <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small">
         <span className="text-ink-faint">{t('work.head.itsWork')}</span>
-        <span className={theirs ? 'text-st-open' : 'text-ink-soft'}>{landed(t, branch)}</span>
+        <span className={theirs ? 'text-ink-open' : 'text-ink-soft'}>{landed(t, branch)}</span>
         {/* Whole, as a branch row's name is (UXFIX4b): it wraps after its separators on this line's own row, never cut. */}
         <PathText path={branch.branch} className="min-w-0 text-meta text-ink-faint" />
         {theirs && onReview && (

@@ -798,7 +798,7 @@ describe('the attention band', () => {
     const bar = screen.getByRole('navigation', { name: 'Views' });
     const overview = within(bar).getByRole('button', { name: 'Overview' });
     await waitFor(() => expect(within(overview).getByText('2')).toBeInTheDocument());
-    expect(within(overview).getByText('2').className).toContain('text-st-open');
+    expect(within(overview).getByText('2').className).toContain('text-ink-open');
   });
 
   /**
