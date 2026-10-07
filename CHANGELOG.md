@@ -131,6 +131,8 @@ with the version and date at release.
   not every checkout on the machine.
 - A note about an account's limit says whether it was the five-hour or the weekly limit, and which
   agent's account it was; older notes keep reading as before.
+- A comma or full stop after a command or branch name no longer starts a line of its own, and a
+  session's header shows a long branch name whole.
 
 The first version: doctrine that installs, is checked, and flows back.
 

@@ -673,21 +673,34 @@ export function Prose({ className, children }: { className?: string; children: R
  * a lone backtick stays the character it is, and nothing else is parsed. A setting's hint, a tip and
  * a toast take this on their own, because each is always a sentence. Anywhere else a caller asks for
  * it, since content is shown as it is.
+ *
+ * **The marks a sentence goes on with right after a span are drawn by the span** (UXFIX4b), kept on its last word's line.
  */
 export function Inline({ text }: { text: string }) {
   const parts = text.split(/`([^`\n]+)`/);
   return (
     <>
-      {parts.map((part, i) => (i % 2 === 1
+      {parts.map((part, i) => {
         // Mono at the sentence's own size and colour, so a command reads as one without shouting.
-        ? <CodeText key={i} text={part} />
-        : part))}
+        if (i % 2 === 1) return <CodeText key={i} text={part} trail={CLOSING.exec(parts[i + 1]!)?.[0]} />;
+        // The marks the span before this part drew are not drawn twice.
+        return i > 0 ? part.replace(CLOSING, '') : part;
+      })}
     </>
   );
 }
 
+/**
+ * The marks that close what comes before them, which a line never begins with: a closing bracket or quote, and a stop, in
+ * either language (UXFIX4b).
+ */
+const CLOSING = /^[\p{Pe}\p{Pf},.;:!?，。、；：！？]+/u;
+
 /** One word of a code span: moved whole to the next line, and broken inside only when it alone is wider than the line. */
 const CODE_WORD = 'inline-block max-w-full wrap-break-word';
+
+/** A group the line never breaks inside: around the last word of a span of several, so the marks after it stay on its line. */
+const HELD = 'whitespace-nowrap';
 
 /**
  * A command or a name set as code, which breaks only between its words: every code span the console shows, a
@@ -704,14 +717,43 @@ const CODE_WORD = 'inline-block max-w-full wrap-break-word';
  * cannot squeeze a command to a character a line, where `anywhere` would let it.
  *
  * A span of one word is that word's box itself, and a span of several holds one box per word.
+ *
+ * **The marks after a span stay on its last word's line** (UXFIX4b): at the branch list's 400 px floor a long name filled
+ * its line and the comma after it opened the next, `, whose work…`, since Chromium may break after any inline box, even
+ * before a comma. A span of one word followed by marks is a box holding the code and the marks, and inside it the text's
+ * own rules hold, which never break before a closing mark in either language. A span of several cannot hold them, since
+ * its last box is inside the code and the marks are not code: that box is alone in a group that does not wrap, which
+ * leaves the break after it to the same rules, and it breaks inside at its line less an em a mark, so a word filling its
+ * line leaves them room rather than pushing them past the edge. A box whose word breaks inside is as wide as its line,
+ * so there the marks stand at its edge. A span no mark follows is drawn as it was.
  */
-export function CodeText({ text, className }: { text: string; className?: string }) {
+export function CodeText({ text, className, trail }: {
+  text: string;
+  className?: string;
+  /** The closing marks the sentence goes on with right after the span, drawn by it. */
+  trail?: string;
+}) {
   const words = text.split(/(\s+)/).filter(Boolean);
-  if (words.length < 2) return <code className={cn('font-mono', CODE_WORD, className)}>{text}</code>;
+  if (words.length < 2) {
+    if (!trail) return <code className={cn('font-mono', CODE_WORD, className)}>{text}</code>;
+    return <span className={CODE_WORD}><code className={cn('font-mono', className)}>{text}</code>{trail}</span>;
+  }
+  const last = words.reduce((found, word, i) => (/^\s+$/.test(word) ? found : i), -1);
   return (
-    <code className={cn('font-mono', className)}>
-      {words.map((word, i) => (/^\s+$/.test(word) ? word : <span key={i} className={CODE_WORD}>{word}</span>))}
-    </code>
+    <>
+      <code className={cn('font-mono', className)}>
+        {words.map((word, i) => {
+          if (/^\s+$/.test(word)) return word;
+          if (!trail || i !== last) return <span key={i} className={CODE_WORD}>{word}</span>;
+          return (
+            <span key={i} className={HELD}>
+              <span className={cn(CODE_WORD, 'whitespace-normal')} style={{ maxWidth: `calc(100% - ${trail.length}em)` }}>{word}</span>
+            </span>
+          );
+        })}
+      </code>
+      {trail}
+    </>
   );
 }
 

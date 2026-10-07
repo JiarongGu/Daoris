@@ -6,7 +6,7 @@ import type { AccountNamer } from '../tools';
 import { GoAheadList } from '../asks/GoAheadList';
 import { ago, elapsed, sessionTool, stamp } from '../format';
 import {
-  answeredPark, Button, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
+  answeredPark, Button, PathText, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
 } from '../ui';
 import { cn } from '../lib/cn';
 import { AnsweredPark } from './AnsweredPark';
@@ -319,7 +319,8 @@ function Left({ branch, onReview, onDiscard, discarding = false }: {
       <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small">
         <span className="text-ink-faint">{t('work.head.itsWork')}</span>
         <span className={theirs ? 'text-st-open' : 'text-ink-soft'}>{landed(t, branch)}</span>
-        <span className="min-w-0 truncate font-mono text-meta text-ink-faint">{branch.branch}</span>
+        {/* Whole, as a branch row's name is (UXFIX4b): it wraps after its separators on this line's own row, never cut. */}
+        <PathText path={branch.branch} className="min-w-0 text-meta text-ink-faint" />
         {theirs && onReview && (
           <Button className="px-2 py-0.5 text-small" onClick={onReview}>{t('work.head.review')}</Button>
         )}

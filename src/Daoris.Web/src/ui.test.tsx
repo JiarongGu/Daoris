@@ -341,11 +341,20 @@ describe('a code span breaks only between its words', () => {
   });
 
   it('makes a span of one word its own box, so a flag alone never breaks either', () => {
-    const { container } = render(<p><Inline text="Or `--no-keep`, a flag." /></p>);
+    const { container } = render(<p><Inline text="Or `--no-keep` as a flag." /></p>);
     const code = container.querySelector('code')!;
     expect(code.textContent).toBe('--no-keep');
     expect(code.children).toHaveLength(0);
     unbreakable(code);
+  });
+
+  it('makes a span of one word and the comma after it one box, the flag still whole', () => {
+    const { container } = render(<p><Inline text="Or `--no-keep`, a flag." /></p>);
+    const code = container.querySelector('code')!;
+    expect(code.textContent).toBe('--no-keep');
+    expect(code.children).toHaveLength(0);
+    unbreakable(code.parentElement!);
+    expect(code.parentElement!.textContent).toBe('--no-keep,');
   });
 
   it('is the same span a screen sets as code itself, with its own size and ink', () => {
@@ -354,6 +363,83 @@ describe('a code span breaks only between its words', () => {
     expect(code.className).toContain('text-meta');
     expect(boxesOf(code).words.map((word) => word.textContent)).toEqual(['daoris', 'agent', 'settings', 'claude-code', '--account', 'work']);
     boxesOf(code).words.forEach(unbreakable);
+  });
+});
+
+/**
+ * UXFIX4b, seen at the branch list's 400 px floor: a long branch name filled its line and the comma after it opened the
+ * next one, `, whose work…`, since Chromium may break after any inline box, even before a comma. jsdom lays nothing out,
+ * so what is held is the structure that leaves the line nowhere to break there, measured in Chromium through the Sweep
+ * floor stories: a word and the marks after it are one box, as text inside which no line breaks before a closing mark;
+ * and where the marks cannot share the word's box, the last of a command's words, its box is the only box in a no-wrap
+ * group, which leaves the break after it to the same rules, and it leaves the marks room on its line.
+ */
+describe('a code span keeps the punctuation after it on its line', () => {
+  const LONG = 'feature/0fda18-fix-the-api-gap-before-the-quarter-closes';
+
+  /** The box a one-word span and the marks after it share: the code, then the marks as text, nothing else. */
+  const sharing = (code: Element, marks: string) => {
+    const box = code.parentElement!;
+    expect(box).toHaveClass('inline-block', 'max-w-full', 'wrap-break-word');
+    expect([...box.childNodes]).toHaveLength(2);
+    expect(box.firstChild).toBe(code);
+    expect(code.nextSibling?.nodeType).toBe(Node.TEXT_NODE);
+    expect(code.nextSibling!.textContent).toBe(marks);
+    // The code is the word alone: the marks are drawn beside it, never as code.
+    expect(code).not.toHaveClass('inline-block');
+    return box;
+  };
+
+  it('draws a one-word span and the comma after it as one box, the sentence unchanged', () => {
+    const { container } = render(<p><Inline text={`Inside \`${LONG}\`, whose work is on the line.`} /></p>);
+    const code = container.querySelector('code')!;
+    expect(code.textContent).toBe(LONG);
+    expect(sharing(code, ',').textContent).toBe(`${LONG},`);
+    expect(container.textContent).toBe(`Inside ${LONG}, whose work is on the line.`);
+  });
+
+  it('keeps 中文 punctuation with its span too', () => {
+    const { container } = render(<p><Inline text={`它生长自 \`${LONG}\`，而后者的工作尚未到达主线。`} /></p>);
+    const code = container.querySelector('code')!;
+    expect(sharing(code, '，').textContent).toBe(`${LONG}，`);
+    expect(container.textContent).toBe(`它生长自 ${LONG}，而后者的工作尚未到达主线。`);
+  });
+
+  it('keeps every closing mark that follows', () => {
+    const { container } = render(<p><Inline text={`见 (\`${LONG}\`).`} /></p>);
+    const code = container.querySelector('code')!;
+    expect(sharing(code, ').').textContent).toBe(`${LONG}).`);
+    expect(container.textContent).toBe(`见 (${LONG}).`);
+  });
+
+  it('groups a command’s last word, its other words still breaking between them, the marks right after it', () => {
+    const { container } = render(<p><Inline text="Also `daoris agent rules`: the same file." /></p>);
+    const code = container.querySelector('code')!;
+    expect(code.textContent).toBe('daoris agent rules');
+    const group = code.querySelector('.whitespace-nowrap')!;
+    expect(group.parentElement).toBe(code);
+    expect(group.children).toHaveLength(1);
+    const last = group.firstElementChild as HTMLElement;
+    expect(last.textContent).toBe('rules');
+    // Still a word that breaks inside when it alone is wider than its line, less the room its mark takes.
+    expect(last).toHaveClass('inline-block', 'wrap-break-word', 'whitespace-normal');
+    expect(last.style.maxWidth).toBe('calc(100% - 1em)');
+    // The words before it are boxes of their own with the spaces loose between them, so the line breaks between words.
+    const [daoris, agent] = [...code.children];
+    expect([daoris!.textContent, agent!.textContent]).toEqual(['daoris', 'agent']);
+    expect(daoris).toHaveClass('inline-block', 'max-w-full');
+    expect(daoris!.parentElement).toBe(code);
+    expect(code.nextSibling!.textContent!.startsWith(':')).toBe(true);
+    expect(container.textContent).toBe('Also daoris agent rules: the same file.');
+  });
+
+  it('leaves a span no mark follows as it was: its own box, in no group', () => {
+    const { container } = render(<p><Inline text={`Inside \`${LONG}\` whose work is on the line, then \`a b\``} /></p>);
+    const [one, two] = [...container.querySelectorAll('code')];
+    expect(one!.parentElement).toBe(container.firstElementChild);
+    expect(one).toHaveClass('inline-block', 'max-w-full');
+    expect(two!.querySelector('.whitespace-nowrap')).toBeNull();
+    expect(two!.nextSibling).toBeNull();
   });
 });
 
