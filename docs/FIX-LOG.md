@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — the comma after a long code span opened the next line
+
+### Web: a closing mark after a code span wrapped alone, and a session head cut its branch (UXFIX4b)
+- **Symptom:** UXFIX4's Sweep stories, at a 680 px window and at the main area's 400 px floor: a branch name filling its line was followed by a line starting `, whose work is on the line.`, and *Its work is on …* ended in a line holding only `.`. A session head cut its branch to one line with nothing to read the rest by.
+- **Root cause:** LOOK5 set each word of a code span in an `inline-block` box so that no line breaks after a hyphen inside a flag, and Chromium offers a break after any inline box, even before a comma, where text alone never breaks. A box whose word breaks inside is as wide as its line, so nothing after it fits there. The head's name kept the `truncate` UXFIX4 took off the branch rows.
+- **Fix:** `Inline` hands the closing marks after a span to `CodeText`. A one-word span and its marks are one box, the code then the marks as text, and inside it no line breaks before a closing mark in either language. A command's last box is inside its code, which the marks are not, so it sits alone in a `whitespace-nowrap` group, which leaves the break after it to the text's rules, and leaves an em a mark of room on its line. Measured first and rejected: a no-wrap group around a word that broke inside keeps the mark at the box's far edge, past the word by the line's unused width, and past the column's edge with no room; a word joiner before the mark changes nothing in Chromium. The head shows its branch with `PathText`. platform-ux §3 has the rule.
+- **Verify:** four cases in `ui.test.tsx` and the whole-branch case in `SessionHead.test.tsx` failed first, then passed with the web suite (4514). In Chromium through Storybook, the Sweep `At680*` and `AtTheFloor*` stories put 12 marks at a line's start before; after, none, each 0 px after its word's last glyph and inside its column. Not covered: engines other than Chromium; after a command's last word wider than its line, its marks still stand at the box's edge.
+
 ## 2026-10-07 — a session whose take had lost closed the winner's quest
 
 ### Service: a wait or a close made after the pass that found this machine's take lost applied to the winner's quest (WAITCLAIM2)
