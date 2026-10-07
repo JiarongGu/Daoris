@@ -388,6 +388,8 @@ export const BASELINE = Object.freeze(['universal', 'code-map', 'orient-index', 
 // The .NET suites with a test that reads the page's catalogues or sources: MOD9's incident was two of them.
 const PAGE_READERS = ['service', 'driver', 'modules'];
 const DESKTOP_SUITES = ['driver', 'modules', 'driver-process', 'modules-process'];
+// What the CLI's sources reach; a narrow rule for one of its files names these as well, since the first rule decides.
+const CLI_READERS = ['driver', 'rehearse', 'rehearse-family', 'web', 'deployment'];
 
 /**
  * Which gates can see a changed path, beyond the baseline: the first rule that places the path decides.
@@ -433,6 +435,11 @@ export const REACH = Object.freeze([
   { paths: ['src/Daoris.Cli/test/fixtures/name-case.json'], gates: ['driver'], why: "the driver's NameCaseTests reads the shared name-case table (CASEFOLD1d)" },
   { paths: ['tools/orient-index-fixtures/**'], gates: ['service'], why: "the service's DecisionNotes twin reads the digest's note table (ORIENT1h)" },
   {
+    paths: ['src/Daoris.Cli/src/documents.ts'],
+    gates: ['service', ...CLI_READERS],
+    why: "the CLI's own, and the service's roles twin reads its ROLES from the file (ORIENT2e2)",
+  },
+  {
     paths: ['.claude/knowledge/adoption.md'],
     gates: ['service', 'driver'],
     why: "the driver's SetupBrief twin reads the playbook's steps (LAYOUT7, MOD9b), and the service's suite scans this repository's documents",
@@ -455,7 +462,7 @@ export const REACH = Object.freeze([
   },
   {
     lane: 'cli',
-    gates: ['driver', 'rehearse', 'rehearse-family', 'web', 'deployment'],
+    gates: CLI_READERS,
     why: "the release rehearsal packs it, the family rehearsal and the page's end-to-end suite run it, the install carries it, and the driver's tests read its permissions",
   },
   { lane: 'tools', gates: [], why: "the rest of the tooling, which the CLI's suite tests" },

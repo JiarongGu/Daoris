@@ -446,6 +446,8 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ["the digest's note table", ['tools/orient-index-fixtures/decision-notes.json'], [...BASE, 'service']],
     ['release tooling', ['tools/release-rehearsal.mjs'], [...BASE, 'rehearse']],
     ['the CLI', ['src/Daoris.Cli/src/cli.ts'], [...BASE, 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
+    // ORIENT2e2: the service's roles twin reads the CLI's ROLES from its file, so that file reaches the service too.
+    ["the CLI's roles", ['src/Daoris.Cli/src/documents.ts'], [...BASE, 'service', 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     ['the merge tool and its tests', ['tools/merge-branch.mjs', 'src/Daoris.Cli/test/merge-branch.test.ts'], BASE],
     ['the service', ['src/Daoris.Service/Daoris.Service.Core/Asks.cs'],
       [...BASE, 'service', 'devkit', 'driver', 'rehearse-family', 'web', 'deployment']],

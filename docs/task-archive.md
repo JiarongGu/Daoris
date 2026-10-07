@@ -11798,3 +11798,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6d2 — What needs you reads a wait with no time** (web-shell; after UXFIX3; merges with UX6d1). UX6d1's driver reports a start held on signed-out accounts with none cooling as a wait with no `until` and no account, and `heldStarts` in `accountAttention.ts` reads every wait as a cool-off: the tool's own sign-in would list as cooling, `namedAccount` could hide its signed-out row, and the key `wait:${agent}/${account}` collides with an own-sign-in cool-off. Read a wait with no `until` as signed-out, with a key of its own; `AccountWaitTick.until` becomes optional. Contract: D150's UX6d1 note, design §6.2–§6.3. Proof: `accountAttention.test.ts` rows for a signed-out wait holding an intake, and one beside an own-sign-in cool-off.
 
 **Outcome** 2026-10-07: What needs you reads a wait with no `until` as signed-out: no cooling, so the tool's own sign-in is neither said cooling nor hidden from its own row, and its key `wait:{agent}/:signed-out` stays apart from an own-sign-in cool-off. Detail: D150's UX6d2 note; commit 28241629.
+
+
+## ORIENT2e2 — the index's lines everywhere (2026-10-07, D151)
+
+> - [ ] **ORIENT2e2 — the index's lines everywhere** (driver, cli, tools). After ORIENT2e: the driver's `RemoteSyncPayloads.Entries` should copy `firstLine`/`lastLine` into the feed (a shared deployment's entries name no lines); the comment above `ROLES`' `index` row in `documents.ts` is stale; and the service's roles twin test (withdrawn) needs `src/Daoris.Cli/src/documents.ts` sent to the service gate in the merge tool's lane table, then restored. Contract: D151's ORIENT2e note. Proof: a feed test with lines; the restored twin test.
+
+**Outcome** 2026-10-07: the driver's entries feed carries `firstLine`/`lastLine` where the local answer names them; the merge tool sends `documents.ts` to the service gate (one `CLI_READERS` list), so the service's roles twin test reading the CLI's `ROLES` is restored; `ROLES`' stale comment corrected. Detail: D151's ORIENT2e2 note; commits ba2a0993…610583cf.
