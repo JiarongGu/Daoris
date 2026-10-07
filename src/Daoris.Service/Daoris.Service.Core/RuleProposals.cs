@@ -49,8 +49,12 @@ public sealed class RuleProposalBox(string? home)
     /// <summary>The folder under the home that holds one file per proposal.</summary>
     public const string Folder = "proposals";
 
-    /// <summary>The same shape the driver's and the CLI's rules hold — judged again when a proposal is applied.</summary>
-    private static readonly Regex Shape = new(@"^[A-Za-z][A-Za-z0-9_-]*(\([^\r\n]+\))?$", RegexOptions.CultureInvariant);
+    /// <summary>
+    /// The same shape the driver's and the CLI's rules hold — judged again when a proposal is applied. <c>\z</c>, since
+    /// .NET's <c>$</c> also passes a final line break the CLI's refuses, and the connector hands the rule untrimmed
+    /// (PERMSHAPE1).
+    /// </summary>
+    private static readonly Regex Shape = new(@"^[A-Za-z][A-Za-z0-9_-]*(\([^\r\n]+\))?\z", RegexOptions.CultureInvariant);
 
     public string? Home { get; } = home;
 

@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { commandHarness, profileHome, readHarnessSettings, withDefault, writeHarnessSettings } from '../src/toolchain.ts';
 import { resolveRotation, rotationProblem, withRotation, withoutAccount } from '../src/rotation.ts';
-import { driverRows as csharpRows, heldSoFar } from './_csharp.ts';
+import { driverRows as csharpRows } from './_csharp.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
 /**
@@ -58,32 +58,6 @@ const ORDER_ROWS: [name: string, file: string, agent: string, workspace: Cell, o
   ['a workspace written twice in any case is one, holding the later\'s orders', '{"workspaceRotation":{"work":{"claude-code":["account-1"]},"WORK":{"claude-code":["account-2"]}}}', 'claude-code', 'work', '["account-2"]', 'workspace'],
   ['a workspace whose capital is two letters is not those two: straße has no order of STRASSE\'s', '{"rotation":{"claude-code":["account-1"]},"workspaceRotation":{"STRASSE":{"claude-code":["account-2"]}}}', 'claude-code', 'straße', '["account-1"]', 'machine'],
 ];
-
-/**
- * CASEFOLD1's rows, which `RotationTwinTests` does not hold yet: names compare as the driver's `OrdinalIgnoreCase` does
- * (`casefold.ts`), so a name full case mapping would widen or lower to two letters is read as its own. The twin check below
- * holds each the driver holds, cell for cell.
- */
-const DRIVER_OWES = new Set([
-  'a letter whose capital is two letters is not those two: straße is not STRASSE',
-  'a dotted capital I is not an i with a dot above',
-]);
-
-/**
- * CASEFOLD1c's rows, which `RotationTwinTests` does not hold yet either: a workspace is found, edited and read once in any
- * case, as the driver's dictionaries hold one (`OrdinalIgnoreCase`): spelled as first written, holding the last read.
- */
-const ORDERS_OWED = new Set([
-  ...DRIVER_OWES,
-  'a workspace is found in any case',
-  'a workspace written twice in any case is one, holding the later\'s orders',
-  'a workspace whose capital is two letters is not those two: straße has no order of STRASSE\'s',
-]);
-const EDITS_OWED = new Set([
-  'a workspace order set in another case replaces the one there, as first written',
-  'a workspace order cleared in another case',
-]);
-const FILES_OWED = new Set(['a workspace written twice in any case is written once, as first written, holding the later\'s']);
 
 test('an order resolves as the driver resolves it: the workspace\'s, else the machine\'s, else none', () => {
   const fx = makeFixture('rotation-resolve');
@@ -290,13 +264,9 @@ test('the driver’s tables are these tables, row for row and in this order', ()
   const source = readFileSync(DRIVER_TABLE, 'utf8').replace(/\r\n/g, '\n');
   const rows = (method: string) => csharpRows(source, method, {}, 'RotationTwinTests');
 
-  const orders = rows('An_order_resolves_as_the_cli_resolves_it');
-  const problems = rows('An_order_is_refused_as_the_cli_refuses_it');
-  const edits = rows('An_order_is_set_and_cleared_as_the_cli_writes_it');
-  const files = rows('Both_twins_write_the_same_file');
-  assert.deepEqual(orders, heldSoFar(orders, ORDER_ROWS, ORDERS_OWED));
-  assert.deepEqual(edits, heldSoFar(edits, EDIT_ROWS, EDITS_OWED));
-  assert.deepEqual(problems, heldSoFar(problems, PROBLEM_ROWS, DRIVER_OWES));
+  assert.deepEqual(rows('An_order_resolves_as_the_cli_resolves_it'), ORDER_ROWS);
+  assert.deepEqual(rows('An_order_is_set_and_cleared_as_the_cli_writes_it'), EDIT_ROWS);
+  assert.deepEqual(rows('An_order_is_refused_as_the_cli_refuses_it'), PROBLEM_ROWS);
   assert.deepEqual(rows('An_account_removed_leaves_the_wiring_as_the_cli_leaves_it'), REMOVE_ROWS);
-  assert.deepEqual(files, heldSoFar(files, FILE_ROWS, FILES_OWED));
+  assert.deepEqual(rows('Both_twins_write_the_same_file'), FILE_ROWS);
 });

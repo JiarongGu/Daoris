@@ -74,7 +74,11 @@ test('169 knowledge documents and 18 skills leave the region\'s bytes unchanged'
   const index = fx.repoFx.read(INDEX);
   assert.equal(index.match(/^\| `\.claude\/knowledge\//gm)!.length, 170);
   assert.equal(index.match(/^\| `\.claude\/skills\//gm)!.length, 19);
-  assert.equal(fx.cli('check').code, 0, fx.cli('check').out);
+  // The 166 are listed by their headings, and `check` says how many once (WSSETUP14c, D128 §3.1–§3.2).
+  assert.equal(index.match(/^\| `\.claude\/knowledge\/topic-\d+\.md` _\(local\)_ \| Topic \d+ \|$/gm)!.length, 166);
+  const check = fx.cli('check');
+  assert.equal(check.code, 0, check.out);
+  assert.match(check.out, /frontmatter {2}166 knowledge documents have none; the index lists them by their first heading — advisory/);
   fx.cleanup();
 });
 

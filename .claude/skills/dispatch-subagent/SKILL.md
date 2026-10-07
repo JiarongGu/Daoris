@@ -94,7 +94,8 @@ Follow the dispatch-subagent skill's subagent half.
    line. The merge tool's commit check refuses a commit without that line. Leave nothing uncommitted in
    the worktree: the check refuses that too. Never push, and never rewrite history.
 3. The hand-back carries:
-   - the **branch** and its **commits** (sha and subject)
+   - the **branch**, exactly as `git branch --show-current` prints it in your worktree (two hand-backs named a
+     sibling's branch, read off another worktree's folder), and its **commits** (sha and subject)
    - the **files** changed, grouped by lane
    - **the shape built**, in a paragraph a reviewer can hold the diff against
    - the **decision number** taken, or none

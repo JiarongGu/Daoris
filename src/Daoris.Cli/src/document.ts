@@ -97,6 +97,29 @@ export function parseFrontmatter(
   return { meta, body: text.slice(end) };
 }
 
+/**
+ * A document's first heading, of any level, or null when it has none: what a room's row says it is about
+ * (D117 §2.2), and what the index lists a knowledge document without frontmatter by (WSSETUP14c, D128
+ * §3.1). One reading for both, so the two never disagree about which line is a heading.
+ *
+ * @remarks
+ * Below a leading frontmatter block, where a `#` line is a comment among the fields, and outside a
+ * fence. A closing run of `#` is dropped only after a space, as Markdown does, so `C#` keeps its `#`.
+ */
+export function firstHeading(text: string): string | null {
+  const start = frontmatterEnd(text);
+  let fenced = false;
+  for (const line of (start === -1 ? text : text.slice(start)).split('\n')) {
+    if (/^\s*(```|~~~)/.test(line)) {
+      fenced = !fenced;
+      continue;
+    }
+    const heading = fenced ? null : /^#{1,6}[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$/.exec(line);
+    if (heading) return heading[1]!;
+  }
+  return null;
+}
+
 /** A document's body with its frontmatter removed and the edges trimmed — what a span carries (D59). */
 export function stripFrontmatter(text: string): string {
   const { meta, body } = parseFrontmatter(text, []);

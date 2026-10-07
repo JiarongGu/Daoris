@@ -18,7 +18,7 @@
 import type { CanonFile, Harness, LockEntry } from './types.ts';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { makeHeader, parseFrontmatter, SKILL_FIELDS, stripFrontmatter } from './document.ts';
+import { firstHeading, frontmatterEnd, makeHeader, parseFrontmatter, SKILL_FIELDS, stripFrontmatter } from './document.ts';
 import { readText } from './fsx.ts';
 import { DEFAULT_HARNESS, HARNESSES, regionIn } from './harness.ts';
 import { findRegion } from './region.ts';
@@ -62,6 +62,8 @@ export interface IndexInput {
 
 const RULE_HEAD = '| Rule | Applies when | Enforces |\n|---|---|---|';
 const KNOWLEDGE_HEAD = '| Document | Applies when | Enforces |\n|---|---|---|';
+const BARE_HEADING = '## Knowledge without frontmatter';
+const BARE_HEAD = '| Document | Its first heading |\n|---|---|';
 const SKILL_HEAD = '| Skill | Use when |\n|---|---|';
 const ROOM_HEAD = '| Room | About |\n|---|---|';
 const WHERE_HEAD = '| Role | Where | Its job |\n|---|---|---|';
@@ -88,6 +90,13 @@ function metaOf(document: TierDocument, required: readonly string[] = ['applies_
   if (document.meta) return required.every((field) => document.meta![field]) ? document.meta : null;
   return parseFrontmatter(document.text, required).meta;
 }
+
+/**
+ * A document with no frontmatter block at all, which the index lists by its first heading and `check`
+ * counts (WSSETUP14c, D128 §3.1–§3.2). One answer for both, so the count is the table's rows.
+ */
+export const withoutFrontmatter = (document: TierDocument): boolean =>
+  !document.meta && frontmatterEnd(document.text) === -1;
 
 /** The roster says which rows are this repository's own, because those are never synced. */
 function mark(document: TierDocument): string {
@@ -230,11 +239,24 @@ export function renderIndex(input: IndexInput): string {
     '',
     KNOWLEDGE_HEAD,
   ];
-  for (const document of input.knowledge) {
+  const bare = input.knowledge.filter(withoutFrontmatter);
+  for (const document of input.knowledge.filter((each) => !withoutFrontmatter(each))) {
     const meta = metaOf(document);
     lines.push(meta
       ? `| ${at(document)} | ${meta.applies_when} | ${meta.enforces} |`
       : `| ${at(document)} | ⚠ needs frontmatter | ⚠ needs frontmatter |`);
+  }
+
+  // 🔴 A document with no frontmatter at all is listed by what it says it is about (WSSETUP14c, D128
+  // §3.1): the first set-up met 166 of them, and a row reading *needs frontmatter* twice told a reader
+  // nothing. Its heading is the document's own words, never a guessed *applies when* (§3.4). A block
+  // missing a field keeps the warning above, since there the field is what is wrong. Only when there is
+  // one, so an index whose documents are all described is what it was.
+  if (bare.length) {
+    lines.push('', BARE_HEADING, '', BARE_HEAD);
+    for (const document of bare) {
+      lines.push(`| ${at(document)} | ${firstHeading(document.text)?.replace(/\|/g, '\\|') ?? '—'} |`);
+    }
   }
 
   lines.push('', '## Skills', '', SKILL_HEAD);

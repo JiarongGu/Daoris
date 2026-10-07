@@ -7,7 +7,7 @@ import { TOOLCHAINS, accountLines } from '../src/toolchain.ts';
 import type { HarnessReport, HarnessSettings } from '../src/toolchain.ts';
 import { WINDOWS_FILE, age, saidLine, saidOf } from '../src/windows.ts';
 import type { WindowSaid } from '../src/windows.ts';
-import { driverRows as csharpRows, heldSoFar } from './_csharp.ts';
+import { driverRows as csharpRows } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 
 /**
@@ -53,15 +53,6 @@ const READ_ROWS: [name: string, file: Cell, now: string, agent: string, account:
   ['a letter whose capital is two letters is not those two: straße is not STRASSE', '{"claude-code":{"straße":{"session":{"reset":"2026-10-02T14:00:00Z","used":0.5,"seen":"2026-10-02T11:00:00Z"}}}}', '2026-10-02T12:00:00Z', 'claude-code', 'STRASSE', null],
   ['a dotless i is not an I', '{"claude-code":{"ışık":{"session":{"reset":"2026-10-02T14:00:00Z","used":0.5,"seen":"2026-10-02T11:00:00Z"}}}}', '2026-10-02T12:00:00Z', 'claude-code', 'IŞIK', null],
 ];
-
-/**
- * CASEFOLD1's rows, which `WindowsTwinTests` does not hold yet: names compare as the driver's `OrdinalIgnoreCase` does
- * (`casefold.ts`). The twin check below holds each the driver holds, cell for cell.
- */
-const DRIVER_OWES = new Set([
-  'a letter whose capital is two letters is not those two: straße is not STRASSE',
-  'a dotless i is not an I',
-]);
 
 test('an account\'s windows read as the driver reads them (the twin\'s table)', () => {
   for (const [index, [name, file, now, agent, account, expected]] of READ_ROWS.entries()) {
@@ -145,6 +136,5 @@ const DRIVER_TESTS = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '
 test('the driver’s table is this table, row for row and in this order', () => {
   const twin = readFileSync(join(DRIVER_TESTS, 'WindowsTwinTests.cs'), 'utf8').replace(/\r\n/g, '\n');
 
-  const rows = csharpRows(twin, 'An_account_s_windows_read_as_the_cli_reads_them', {}, 'WindowsTwinTests');
-  assert.deepEqual(rows, heldSoFar(rows, READ_ROWS, DRIVER_OWES));
+  assert.deepEqual(csharpRows(twin, 'An_account_s_windows_read_as_the_cli_reads_them', {}, 'WindowsTwinTests'), READ_ROWS);
 });
