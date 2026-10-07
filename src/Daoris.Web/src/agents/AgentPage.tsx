@@ -8,7 +8,7 @@ import {
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import { PageHead, ViewMain } from '../work/ViewMain';
 import {
-  type AccountScope, type AgentAccounts, cannotLeave, machineScope, offeredLine, ownLine, saidLine, workspaceScope,
+  type AccountScope, type AgentAccounts, cannotLeave, machineScope, ownLine, workspaceScope,
 } from '../settings/accounts';
 import { AccountSettingsForm, AccountSettingsSummary } from '../settings/AccountSettings';
 import { type AccountChoice, type ScopeActs, ScopeEditor, WorkspaceScope } from '../settings/AccountUse';
@@ -18,7 +18,7 @@ import { type BackAccount, PlaceAccount, RenameAccount, ReSignIn } from './AddAc
 import {
   type AccountAct, type AccountState, type AgentPart, type AgentUsage, accountAct, accountName, accountStates, accountWho,
   doorsSummary, joinChoices, latestRead, ownRunsFor, ownState, rulesSummary, runsFor, runsForLine, settingsSummary,
-  usageSummary, useSummary, versionOnly, workspacesSummary,
+  usageLine, usageSummary, useSummary, versionOnly, workspacesSummary,
 } from './agents';
 
 /** The sections that fold (D150 §1 rule 4): the accounts never do. */
@@ -396,6 +396,13 @@ export function AgentPage({
           label: t('harness.cooling.tryNow'), ariaLabel: t('harness.cooling.tryNowFor', { account: label }),
           onPress: () => acts.onTryNow(id, label), disabled: busy,
         };
+      // A key its provider refused (ACCTUX1): the header's own key field, opened under the list, since no door yet puts a
+      // new key into the same account; the pill's tip says the rest of the repair.
+      case 'newKey':
+        return {
+          label: t('harness.profile.addKey'), ariaLabel: t('agents.act.newKeyFor', { account: label }), loud: act.loud,
+          onPress: () => setKeying(true), disabled: busy,
+        };
       default:
         return {
           label: t('agents.act.place'), ariaLabel: t('agents.act.placeFor', { account: label }),
@@ -410,14 +417,14 @@ export function AgentPage({
     const runs = runsFor(tool, use, account.name);
     const facts = use?.accounts.find((each) => each.name === account.name);
     // *Use in a workspace…* only where there is a list to join; an older shell's page names none.
-    const act = accountAct(state, { signsIn: signsIn && !account.key, present: tool.present, runs: runs.length });
+    const act = accountAct(state, {
+      signsIn: signsIn && !account.key, present: tool.present, runs: runs.length, takesKey: Boolean(door.takesKey),
+    });
     const offered = act?.act === 'place' && joinable(account.name).length === 0 ? null : act;
-    // What its agent last said, and since when it is offered again, under that row alone; a cool-off says its reset in the
-    // state's column already, so the second line does not say it twice.
-    const said = [
-      facts?.said && facts.said.windows.length > 0 && state.state !== 'cooling' ? saidLine(facts.said) : null,
-      facts?.offered && !facts.cooling ? offeredLine(facts.offered) : null,
-    ].filter(Boolean).join(' · ') || null;
+    // What its agent last said, and since when it is offered again, under that row alone; a cool-off's column says its hold's
+    // end, so each reset the agent reported is said here beside its window, and one Daoris chose the length of says the
+    // reset is unknown (ACCTUX1).
+    const said = usageLine(facts, state);
     return (
       <AccountRow
         key={account.home}
@@ -464,6 +471,7 @@ export function AgentPage({
             agent={tool.name}
             account={account.name}
             current={account.displayName?.trim() || null}
+            fallback={accountName({ ...account, displayName: null })}
             busy={busy}
             refusal={refusalOf('rename', account.name)}
             onSave={(named) => acts.onRename(account.name, named, answered('rename', account.name, () => {
@@ -477,9 +485,13 @@ export function AgentPage({
     );
   };
 
-  // The add flow's step 3 offers the name the person gave at the sign-in, else who signed in (ACCT2), else none.
+  // The add flow's step 3 offers the name the person gave at the sign-in, else who signed in (ACCT2), else none; and says
+  // what it is called left empty, which is the row's own namer's answer with no name given (ACCTUX1).
   const addedAccount = added ? accountOf(added.account) : undefined;
   const offeredName = addedAccount?.displayName?.trim() || added?.who || '';
+  const addedFallback = added
+    ? accountName({ name: added.account, key: addedAccount?.key, account: added.who ?? addedAccount?.account })
+    : '';
   const adding = (goingBack && !signInNewPanel && !added) || Boolean(signInNewPanel) || Boolean(added);
 
   return (
@@ -506,6 +518,7 @@ export function AgentPage({
               title={t('agents.add.title')}
               signedIn={added.who}
               offered={offeredName}
+              fallback={addedFallback}
               choices={joinable(added.account)}
               busy={busy}
               refusal={refusalOf('added', added.account)}
@@ -548,6 +561,9 @@ export function AgentPage({
                 why={ownLine(tool.ownAccount, use?.own.cooling)}
                 state={own}
                 runs={runsForLine(ownRunsFor(tool, use, scopeWorkspaces))}
+                // No window of the tool's own sign-in is read apart from the accounts' (TOOL6c), so its line says only that a
+                // cool-off Daoris chose the length of has no known reset (ACCTUX1).
+                said={usageLine(null, own)}
                 act={actOf(own.state === 'cooling' || own.state === 'unknown' ? accountAct(own, { signsIn: false, present: tool.present, runs: 1 }) : null, null, ownLabel)}
                 menu={ownMenu}
                 now={now}

@@ -169,14 +169,17 @@ describe('what is said', () => {
     ];
 
     expect(nextLine(waits('2026-10-06T09:00:00Z', passed), list, labelOf)).toMatch(
-      /^No account here is ready, so the next start waits until .+\. Signing in to work@example\.invalid, account-2 starts it sooner, from its row below\.$/);
+      /^No account here is ready, so the next start waits until .+\. Signing in to work@example\.invalid, account-2 starts it sooner\.$/);
     expect(nextLine(waits(null, passed.slice(1)), list, labelOf)).toBe(
       'No account here is ready, and none comes ready by itself: the next start waits for you. Signing in to '
-      + 'work@example.invalid, account-2 starts it, from its row below.');
+      + 'work@example.invalid, account-2 starts it.');
     expect(nextLine(waits('2026-10-06T09:00:00Z', passed.slice(0, 1)), list, labelOf)).not.toMatch(/Signing in/);
 
     await i18n.changeLanguage('zh');
     expect(nextLine(waits(null, passed.slice(1)), list, labelOf)).toContain('登录 work@example.invalid、account-2');
+    // ACCTUX1: the accounts come before the editor this is said in, so neither language points below.
+    expect(nextLine(waits('2026-10-06T09:00:00Z', passed), list, labelOf)).not.toMatch(/下方|对应的行/);
+    expect(nextLine(waits(null, passed.slice(1)), list, labelOf)).not.toMatch(/下方|对应的行/);
   });
 
   /** TOOL6e: what holds every other account, cooling with until when, and the accounts a scope does not use, together. */

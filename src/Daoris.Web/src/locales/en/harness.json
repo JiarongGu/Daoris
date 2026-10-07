@@ -52,6 +52,8 @@
   "harness.login.unknown": "unknown",
   "harness.login.keyed": "unchecked",
   "harness.login.keyedTip": "The tool says signed in for any key, a wrong one included. A key is checked the first time a session uses it.",
+  "harness.login.refused": "key refused",
+  "harness.login.refusedTip": "Its provider refused this key when a session ran on it, so no start runs on it. Nothing puts a new key into this account yet: add a new API key in its place, put it in this account's lists, then remove this one.",
   "harness.profileOut": "{{name}} (signed out)",
   "harness.done": "{{harness}}: {{action}} finished.",
   "harness.default.machine": "This machine runs {{harness}} as {{account}} by default.",

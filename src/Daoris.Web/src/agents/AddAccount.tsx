@@ -87,7 +87,7 @@ function choiceDetail(t: ReturnType<typeof useTranslation>['t'], choice: JoinCho
  * them (ACCTEDIT1).
  */
 export function PlaceAccount({
-  agent, account, title, signedIn, offered, choices, busy = false, refusal = null, cancelLabel, onDone, onCancel,
+  agent, account, title, signedIn, offered, fallback = account, choices, busy = false, refusal = null, cancelLabel, onDone, onCancel,
 }: {
   /** The agent's id and the account's, which the terminal's twin names. */
   agent: string;
@@ -98,6 +98,11 @@ export function PlaceAccount({
   signedIn?: string | null;
   /** The name offered in its field (step 3); absent asks no name. */
   offered?: string;
+  /**
+   * What it is called with its field left empty (ACCTUX1): the row's namer with no name given, which for a fresh id is who
+   * signed in or a key's handle; its id where nothing else names it, as the hint said of every account before.
+   */
+  fallback?: string;
   choices: readonly JoinChoice[];
   busy?: boolean;
   /** Why the last answer was refused, said under the question until it is answered again or closed; null when none was. */
@@ -151,10 +156,13 @@ export function PlaceAccount({
               onChange={(event) => setName(event.target.value)}
               spellCheck={false}
               autoComplete="off"
-              placeholder={account}
+              placeholder={fallback}
               className={FIELD}
             />
-            <span className="basis-full text-meta text-ink-faint">{t('agents.add.nameHint', { id: account })}</span>
+            {/* The name it is called left empty, and where that is not its id, the id a terminal types (ACCTUX1). */}
+            <span className="basis-full text-meta text-ink-faint">
+              {t(fallback === account ? 'agents.add.nameHint' : 'agents.add.nameHintId', { name: fallback, id: account })}
+            </span>
           </label>
         )}
         {choices.length > 0 && (
@@ -200,15 +208,18 @@ export function PlaceAccount({
 
 /**
  * A rename, under its row (ACCT2's screen twin of `daoris agent profile rename`): the name in a field, *Save the name* and
- * *Never mind*. Emptying it gives the account no name of its own, and it reads as its id again. It stays open until the
+ * *Never mind*. Emptying it gives the account no name of its own, and it reads as it would unnamed (`fallback`, ACCTUX1):
+ * who signed in or a key's handle for a fresh id, else its id. It stays open until the
  * organism says the name landed: refused, the name typed stays in the field and the refusal is said under it (ACCTEDIT1),
  * and *Never mind* is the one other way out, held while the answer is on its way so a refusal is never said to nobody.
  */
-export function RenameAccount({ agent, account, current, busy = false, refusal = null, onSave, onCancel }: {
+export function RenameAccount({ agent, account, current, fallback = account, busy = false, refusal = null, onSave, onCancel }: {
   agent: string;
   account: string;
   /** Its name now, null where it has none. */
   current: string | null;
+  /** What it is called with no name of its own, its empty field's placeholder; its id unless the row's namer says otherwise. */
+  fallback?: string;
   busy?: boolean;
   /** Why the last save was refused, said under the field until it is saved again or closed; null when none was. */
   refusal?: string | null;
@@ -238,7 +249,7 @@ export function RenameAccount({ agent, account, current, busy = false, refusal =
           onChange={(event) => setName(event.target.value)}
           spellCheck={false}
           autoComplete="off"
-          placeholder={account}
+          placeholder={fallback}
           className={FIELD}
         />
       </label>

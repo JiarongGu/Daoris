@@ -215,17 +215,17 @@ export function coolingLine(cooling: AccountCooling, now: Date = new Date()): st
 }
 
 /** A window by its name, in the reader's language; a name this build does not know is said as it is. */
-function windowName(window: string): string {
+export function windowName(window: string): string {
   return i18n.t(`harness.window.${window}`, { defaultValue: window });
 }
 
 /** A share as a whole percent, in the reader's own figures. */
-function percent(share: number): string {
+export function percent(share: number): string {
   return `${Math.round(share * 100)}%`;
 }
 
-/** The session window, then the week, then any other, as a person reads them. */
-function ordered(windows: readonly WindowSaid[]): WindowSaid[] {
+/** The session window, then the week, then any other, as a person reads them; an account's row reads them so too (ACCTUX1). */
+export function orderedWindows(windows: readonly WindowSaid[]): WindowSaid[] {
   const rank = (window: string) => ({ session: 0, weekly: 1 } as Record<string, number>)[window.toLowerCase()] ?? 2;
   return [...windows].sort((a, b) => rank(a.window) - rank(b.window));
 }
@@ -243,7 +243,7 @@ export function saidLine(said: AccountSaid | null | undefined): string {
   if (reached) parts.push(i18n.t('harness.said.reached', { window: windowName(reached.window) }));
   else if (warned) parts.push(i18n.t('harness.said.warned', { window: windowName(warned.window) }));
   if (said.windows.some((each) => each.credits)) parts.push(i18n.t('harness.said.credits'));
-  for (const each of ordered(said.windows)) {
+  for (const each of orderedWindows(said.windows)) {
     if (typeof each.used === 'number') {
       parts.push(i18n.t('harness.said.window', { used: percent(each.used), window: windowName(each.window), when: moment(each.reset) }));
     }

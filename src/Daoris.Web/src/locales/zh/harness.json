@@ -52,6 +52,8 @@
   "harness.login.unknown": "未知",
   "harness.login.keyed": "未验证",
   "harness.login.keyedTip": "无论密钥对错，工具都会报告已登录。密钥要到会话第一次使用时才会被验证。",
+  "harness.login.refused": "密钥被拒绝",
+  "harness.login.refusedTip": "会话使用这个密钥时，它的服务商拒绝了它，所以不会有启动运行在它上面。目前还不能把新密钥放进这个账户：请添加一个新的 API 密钥代替它，把它加入这个账户所在的列表，再移除这个账户。",
   "harness.profileOut": "{{name}}（已退出登录）",
   "harness.done": "{{harness}}：{{action}}已完成。",
   "harness.default.machine": "本机默认以 {{account}} 运行 {{harness}}。",

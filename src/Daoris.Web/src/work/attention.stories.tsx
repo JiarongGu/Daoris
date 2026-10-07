@@ -268,6 +268,43 @@ export const BandSignedOutWait: StoryObj = {
 /** The same in dark. */
 export const BandSignedOutWaitDark: StoryObj = { ...BandSignedOutWait, decorators: [dark] };
 
+/**
+ * A key its provider refused (ACCTUX1): it read *unchecked* and was no row at all. A list holds it, so it is a signed-out row
+ * of its own, saying the key was refused and that its repair is a new key on its agent's page, with no sign-in, which a key
+ * has none of; and a start waiting on its accounts names it refused beside one read signed out.
+ */
+const KEY_REFUSED: Attention = {
+  id: 'signed-out:claude-code/acct-0a1b2c3d', kind: 'signed-out', title: 'API key …k3y9', where: 'Claude Code', since: null,
+  read: READ, detail: "Key refused: add a new API key on Claude Code's page in its place. It runs work in this machine.",
+  account: { ...CLAUDE, outside: null, named: [{ id: 'acct-0a1b2c3d', label: 'API key …k3y9', state: 'refused', read: READ, until: null }] },
+};
+
+const WAIT_ON_REFUSED: Attention = {
+  id: 'wait:claude-code/:signed-out', kind: 'account-wait', title: 'Intake for ask #0fda18', where: 'work', circle: true,
+  since: at(42), detail: `account-1 read signed out at ${readSaid}; API key …k3y9: key refused.`,
+  account: {
+    ...CLAUDE, outside: null,
+    named: [
+      { id: 'account-1', label: 'account-1', state: 'out', read: READ, until: null },
+      { id: 'acct-0a1b2c3d', label: 'API key …k3y9', state: 'refused', read: READ, until: null },
+    ],
+  },
+};
+
+/** Overview's *What needs you* holding a refused key: its own row, and a waiting start naming it. */
+export const BandKeyRefused: StoryObj = {
+  render: () => (
+    <Main width={1180}>
+      <AttentionRegion>
+        <AttentionList items={[WAIT_ON_REFUSED, KEY_REFUSED]} doors={DOORS} acts={ACTS} onSessions={() => {}} />
+      </AttentionRegion>
+    </Main>
+  ),
+};
+
+/** The same in dark. */
+export const BandKeyRefusedDark: StoryObj = { ...BandKeyRefused, decorators: [dark] };
+
 /** In a browser: the asks and quests it can know, their acts on the service's own doors, and no driver's rows. */
 export const BandInABrowser: StoryObj = {
   render: () => (

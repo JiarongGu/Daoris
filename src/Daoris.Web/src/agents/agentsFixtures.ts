@@ -128,6 +128,61 @@ export const INSTALL_USE: AgentAccounts = {
 /** The install's two workspaces. */
 export const INSTALL_WORKSPACES = ['forge', 'work'];
 
+/**
+ * What an account's row knows (ACCTUX1), each in this machine's list so each holds work: a key its provider refused; *reserve*
+ * cooling for Daoris's default hour, since its agent named no reset; *team* cooling until the reset its agent named, its two
+ * windows read; and an account the owner named for the email it signs in as, its windows read, said once.
+ */
+const READINGS_DOOR: ToolDoor = {
+  ...CLAUDE, machineDefault: null, workspaceDefaults: [], version: '2.1.288 (Claude Code)',
+  profiles: [
+    { name: 'acct-0a1b2c3d', home: 'C:/somewhere/data/harnesses/claude-code/acct-0a1b2c3d', login: 'out', key: '…k3y9', read: READ },
+    { name: 'acct-1b2c3d4e', displayName: 'reserve', home: 'C:/somewhere/data/harnesses/claude-code/acct-1b2c3d4e', login: 'in',
+      account: 'reserve@example.invalid', read: READ },
+    { name: 'account-2', displayName: 'team', home: 'C:/somewhere/data/harnesses/claude-code/account-2', login: 'in',
+      account: 'team@example.invalid', read: READ },
+    { name: 'Gmail', displayName: 'you@example.invalid', home: 'C:/somewhere/data/harnesses/claude-code/Gmail', login: 'in',
+      account: 'you@example.invalid', read: READ },
+  ],
+};
+
+export const READINGS_TOOL: Tool = byTool([READINGS_DOOR])[0]!;
+
+export const READINGS_USE: AgentAccounts = {
+  agent: 'claude-code',
+  speaks: true,
+  own: {},
+  accounts: [
+    { name: 'acct-0a1b2c3d', running: 0 },
+    {
+      name: 'acct-1b2c3d4e', running: 0,
+      cooling: { until: minutesFrom(48), stated: false, window: null, seen: READ, assumedZone: false, notBelieved: false },
+    },
+    {
+      name: 'account-2', running: 0,
+      cooling: { until: minutesFrom(4 * 60 + 2), stated: true, window: 'session', seen: READ, assumedZone: false, notBelieved: false },
+      said: {
+        seen: READ,
+        windows: [
+          { window: 'session', used: 1, reset: minutesFrom(4 * 60), standing: 'refused', credits: false, seen: READ },
+          { window: 'weekly', used: 0.94, reset: minutesFrom(3 * 24 * 60), credits: false, seen: READ },
+        ],
+      },
+    },
+    {
+      name: 'Gmail', running: 1,
+      said: {
+        seen: READ,
+        windows: [
+          { window: 'session', used: 0.01, reset: minutesFrom(4 * 60 + 20), credits: false, seen: READ },
+          { window: 'weekly', used: 0.15, reset: minutesFrom(6 * 24 * 60), credits: false, seen: READ },
+        ],
+      },
+    },
+  ],
+  scopes: [scopeOf({ list: ['Gmail', 'account-2', 'acct-1b2c3d4e', 'acct-0a1b2c3d'], begins: 'Gmail', use: USE_DEFAULTS })],
+};
+
 /** Daoris's four defaults on, one rule of the person's for every session, one proposal waiting. */
 export const RULES: AgentRulesState = {
   path: 'C:/somewhere/data/permissions.json',

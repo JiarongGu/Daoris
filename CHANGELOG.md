@@ -141,6 +141,8 @@ with the version and date at release.
   itself without spending usage, and rotation switches before their limits as it does for Claude Code.
 - After *Resume*, what still holds a quest reads in Chinese too.
 - `daoris agent list` and `profile use` weigh a Codex account's usage windows, as they do Claude Code's.
+- An account whose API key was refused says *key refused* and asks for a new key; a cooling account
+  says until when Daoris waits, apart from when its limit resets; and its usage is easier to read.
 
 The first version: doctrine that installs, is checked, and flows back.
 
