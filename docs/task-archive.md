@@ -11721,3 +11721,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ORIENT2a2 — Daoris's own index lists what is kept by hand** (tools). The canon's index template (ORIENT2a) puts *Kept by hand* first and the generated files under *Generated*, naming an index the repository already keeps rather than restating it; `tools/orient-index.mjs` writes Daoris's `docs/index/README.md` without that section. Add it (the knowledge index, the router), keeping the check. Contract: orientation design §2.4, D151's ORIENT2a note. Proof: `orient-index.test.mjs` and the index's check.
 
 **Outcome** 2026-10-07: `docs/index/README.md` opens with *Kept by hand* (the router and the lanes map), names the generated indexes kept elsewhere (`.claude/INDEX.md`, `docs/code-map.json`) above it, and keeps its generated rows unchanged; a tree with none says so. Detail: D151's ORIENT2a2 note; commit 8bb3ea71.
+
+
+## WAITCLAIM1 — a wait made on a take that lost (2026-10-07, D69)
+
+> - [ ] **WAITCLAIM1 — a wait made on a take that lost** (service; decide first). Found by QUESTOP1: a wait this machine made after its own take, when that take loses the race, is still applied by the rebase to the winner's quest, which then waits on the loser's question. Decide whether D69's lost-claim rule, which drops a losing move, covers a wait too, and record it. Contract: D79, D69, `QuestLog.Lost` and `.claude/knowledge/quest-operations.md`. Proof: a sync test of the race, and the decision's note.
+
+**Outcome** 2026-10-07: decided and built: a wait made after this machine's own take goes with that take when it loses the race; the rebase forgets it and the take's conflict names the question after its own note. A wait on a quest this machine did not take is kept. Follow-up: WAITCLAIM2. Detail: D69's WAITCLAIM1 note, FIX-LOG; commits c5b9979a, 1bd2c977.
