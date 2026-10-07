@@ -431,6 +431,52 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Equal(("declined", "Not this way."), (declining.State("p4rk3d00"), declining.Note("p4rk3d00")));
     }
 
+    /// <summary>
+    /// 🔴 QUESTCLOSE1 (D126's note): the owner finished two driven sessions at a checkpoint on the install, and each quest
+    /// stayed taken with nothing to close it. A finish at a checkpoint leaves its quest taken, and the terminal says so right
+    /// after it with the door that closes it; the person's done through that door closes the quest with their words.
+    /// </summary>
+    [Fact]
+    public async Task A_finish_at_a_checkpoint_leaves_its_quest_closable_and_the_persons_done_closes_it_with_their_note()
+    {
+        var ledger = Family();
+
+        var (exit, said) = await RunAsync(ledger, ["finish", "p4rk3d00"]);
+
+        Assert.Equal(0, exit);
+        Assert.Equal(("completed", "The person finished this at a checkpoint."), (ledger.State("p4rk3d00"), ledger.Note("p4rk3d00")));
+        Assert.Equal("Taken", ledger.QuestStatus("q1"));
+        Assert.Contains("  its quest #q1 is still taken: daoris-driver quest done q1 [--note \"…\"] marks it done as yours.\n", said);
+
+        using var service = ledger.Client();
+        var output = new StringWriter();
+        var ask = QuestDoneCommand.Read(["done", "q1", "--note", "The write-up is in the shared folder."], out var problem);
+        Assert.True(problem is null, problem);
+        var done = await QuestDoneCommand.RunAsync(ask!, service, output);
+
+        Assert.Equal(0, done);
+        Assert.Equal("Done", ledger.QuestStatus("q1"));
+        // Their words go to the person's own door, never respond's: the service writes the sentence that says the done was
+        // theirs before them (QuestPersonDoneTests), and answers none of the quest's requirements.
+        Assert.Equal("The write-up is in the shared folder.", ledger.DoneWords("q1"));
+        Assert.Equal("daoris-driver: Quest `#q1` is now Done: you marked it done.\n", output.ToString().ReplaceLineEndings("\n"));
+        // The session's record still says the person finished it.
+        Assert.Equal("The person finished this at a checkpoint.", ledger.Note("p4rk3d00"));
+    }
+
+    /// <summary>A finish whose quest is already closed, and a decline, say nothing of closing it: there is nothing to close.</summary>
+    [Fact]
+    public async Task A_finish_whose_quest_is_closed_and_a_decline_name_no_door_to_close_it()
+    {
+        var closed = Family();
+        closed.CloseQuest("q1");
+        var (_, finished) = await RunAsync(closed, ["finish", "p4rk3d00"]);
+        var (_, declined) = await RunAsync(Family(), ["decline", "p4rk3d00", "--reason", "Not this way."]);
+
+        Assert.DoesNotContain("quest done", finished);
+        Assert.DoesNotContain("quest done", declined);
+    }
+
     /// <summary>Finish and decline answer a session that waits on you; an intake is answered through its ask.</summary>
     [Theory]
     [InlineData("w0rk1ng0", "not waiting on you")]
@@ -604,6 +650,15 @@ public sealed class SessionsCommandTests : IDisposable
 
         public bool Interrupted(string id) { lock (_gate) return (bool?)Of(id)["interrupted"] ?? false; }
 
+        private JsonObject QuestOf(string id) => _quests.Single(each => (string?)each["id"] == id);
+
+        public string QuestStatus(string id) { lock (_gate) return (string)QuestOf(id)["status"]!; }
+
+        /// <summary>The words the person's done door was given for a quest (QUESTCLOSE1), or null where it was not asked.</summary>
+        public string? DoneWords(string id) { lock (_gate) return (string?)QuestOf(id)["doneWords"]; }
+
+        public void CloseQuest(string id) { lock (_gate) QuestOf(id)["status"] = "Done"; }
+
         public void Move(string id, string state, string note)
         {
             lock (_gate)
@@ -640,6 +695,27 @@ public sealed class SessionsCommandTests : IDisposable
                         // A checkout here, so a plan the listing makes can start what this machine drives (MSG1f3's cool-off).
                         ["root"] = "/work/engine",
                     }));
+                }
+
+                // The person's done door (QUESTCLOSE1): an open or taken quest closes, as the service's own does.
+                if (request.Method == HttpMethod.Post && path.StartsWith("/api/quests/", StringComparison.Ordinal)
+                    && path.EndsWith("/done", StringComparison.Ordinal))
+                {
+                    var quest = QuestOf(Uri.UnescapeDataString(path["/api/quests/".Length..^"/done".Length]));
+                    if ((string)quest["status"]! is not ("Open" or "Taken"))
+                    {
+                        return Answer(HttpStatusCode.Conflict, new JsonObject
+                        {
+                            ["error"] = $"Quest `#{quest["id"]}` is {quest["status"]} — a closed quest does not move; a new ask is a new title.",
+                        });
+                    }
+
+                    quest["status"] = "Done";
+                    quest["doneWords"] = (string?)body?["note"];
+                    return Answer(HttpStatusCode.OK, new JsonObject
+                    {
+                        ["quest"] = quest.DeepClone(), ["message"] = $"Quest `#{quest["id"]}` is now Done: you marked it done.",
+                    });
                 }
 
                 var rest = path["/api/sessions/".Length..];

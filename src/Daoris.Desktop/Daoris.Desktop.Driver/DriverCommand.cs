@@ -64,6 +64,9 @@ public static class DriverCommand
           quest delete <id>  ·  quest accept <id>
               delete a quest nobody has started on, or accept a done's departure from what you required, so what
               it held (the chain's next step, a quest waiting on it) goes on.
+          quest done <id> [--note "…"]
+              mark a quest done as yours, as a finish at a checkpoint that left it taken says: its record says you
+              marked it done, with your words, and answers none of its requirements one by one.
           quest check <id> [--commit <sha>]
               read a done's evidence again: at the commit a driven end here read, or the one named, which must come
               after it on the same history. 0 when all is found, 1 when anything is missing or unread.

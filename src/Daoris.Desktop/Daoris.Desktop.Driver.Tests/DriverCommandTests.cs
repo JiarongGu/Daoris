@@ -315,6 +315,23 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
+    /// QUESTCLOSE1 (D126's note, D50): <c>quest done</c> is the person's done at a terminal, the quest page's <i>Mark done…</i>
+    /// beside it, routed by the host to the library's words before the quest's other words, which would take it as a usage
+    /// mistake. The words are the library's, which <c>QuestDoneCommandTests</c> holds.
+    /// </summary>
+    [Fact]
+    public void The_host_routes_the_persons_done_to_the_librarys_words()
+    {
+        var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
+        var done = program.IndexOf("QuestDoneCommand.Asks(questArgs)", StringComparison.Ordinal);
+        var questUsage = program.IndexOf("usage: daoris-driver quest delete <id>", StringComparison.Ordinal);
+        Assert.True(done > 0 && questUsage > done, $"`quest done` asked for at {done}, the quest's usage at {questUsage}");
+        Assert.Contains("QuestDoneCommand.Read(questArgs, out var doneProblem)", program);
+        Assert.Contains("QuestDoneCommand.RunAsync(doneAsk, doneClient, Console.Out)", program);
+        Assert.Contains("quest done <id> [--note \\\"…\\\"]", program[questUsage..]);
+    }
+
+    /// <summary>
     /// HIST1d (D153 point 7, the history-clearing design §6.2, D50): the history verbs are doors the usage names, routed by the
     /// host to its console inside the one catch, with this host's log, where a clear's line says the terminal's door. <c>quest
     /// clear</c> and <c>ask --clear</c> are asked for before the quest's other words and an ask's words, which would take them as
