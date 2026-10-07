@@ -12078,3 +12078,31 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CODEXACCT1 — the window adds a Codex account, as the terminal does** (driver, modules, web-shell; owner, 2026-10-08). On the install Agents → Codex offers no *Add an account…*: the page shows it only where the door declares a login flow (`DriverModule.Agents.cs:89`), and Codex reaches the driver only through `codex-acp`, which declares none (no `codex` adapter), while the CLI's `codex` entry has `login` and `loginCheck` (D50's two doors differ). Measured: `codex login` (browser, or `--device-auth`), `codex login status` → `Logged in using ChatGPT` / `Not logged in` (exit 0), `--with-api-key` from stdin. Declare Codex's sign-in, status and key door for the owner `codex`; never copy `~/.codex`'s credentials. Contract: D125, D50, D67, UX7. Proof: the modules' `signsIn` for codex; a roster status test; a stand-in login into a new account folder; a vitest for the page's *Add an account…*.
 
 **Outcome** 2026-10-07: Agents → Codex adds an account as the terminal does: the driver declares Codex's sign-in and status question on the agent `codex` (a holder `codex-acp` reaches), `codex login` runs into a Daoris-owned folder on the binary its status question asks (named command, then the pin, then PATH), then the naming step. No API-key path for Codex (CODEXKEY1). Detail: D125's CODEXACCT1 note; commits 456845f4…75c0871e.
+
+
+## CODEXACCT2 — Codex's sign-in uses its device code (2026-10-08, D125)
+
+> - [ ] **CODEXACCT2 — Codex's sign-in uses its device code** (driver, cli, modules; owner, 2026-10-08). The owner's *Add an account…* on Agents → Codex failed: `codex login` (browser callback) exits 1 with `Error logging in: … forbidden by its access permissions. (os error 10013)` because Windows reserves its callback port (1455 in the excluded range 1435–1534, Hyper-V/WinNAT's, moving on reboot). `codex login --device-auth` works there: a link (`https://auth.openai.com/codex/device`) and a one-time code, no port. Sign in with it in both doors, readable in the console panel; fixes CODEXACCT1b in the same change. Contract: D125's CODEXACCT1 note, D50, D57. Proof: the twin declaration with `--device-auth`; a stand-in sign-in's start info; the CLI's login on a pin.
+
+**Outcome** 2026-10-07: Codex signs in with `codex login --device-auth` in both doors, needing no port Windows reserves (the callback's 1455 was, os error 10013); the panel shows its link and one-time code, each with a copy button; `daoris agent login` runs the pinned binary as `agent list` does (CODEXACCT1b). Detail: D125's CODEXACCT2 note; commits 9772566a…133706a3.
+
+
+## CODEXACCT1b — the terminal's sign-in runs the pinned binary (2026-10-08, D125)
+
+> - [ ] **CODEXACCT1b — the terminal's sign-in runs the pinned binary** (cli; after CODEXACCT1). The window's sign-in resolves explicit command → pin → PATH since CODEXACCT1, but `daoris agent login` still runs PATH's binary (`relay([...toolchain.binary, ...login])` in `toolchain.ts`) and asks PATH's binary its status at the end (`loginAt(toolchain.binary, …)` in `signInNew` and `signInTo`), so on a machine whose only `codex` is the pin (the owner's) the terminal cannot sign in. Resolve as `agent list` already does, refusing a pin with nothing installed. Contract: D57, D125's CODEXACCT1 note. Proof: a CLI test with only a pin, the login's command naming it.
+
+**Outcome** 2026-10-07: built inside CODEXACCT2: `daoris agent login` resolves its binary by `signInBinary` (the pin, else PATH), asks its status of the same binary, and refuses a pin with nothing installed before making a folder. Detail: D125's CODEXACCT2 note; commit 9772566a.
+
+
+## DEV3d — the rehearsal's restart of host b does not cut its lingering session (2026-10-08, D115)
+
+> - [ ] **DEV3d — the rehearsal's restart of host b does not cut its lingering session** (tools; driver if the stub's door should ride a restart). Kept by DEV3b's evidence at CARRY2d's merge (FIX-LOG): the lost-claim check failed again (403/404) with the take found lost (*held … kept on the quest as a conflict*), but the session ended `failed`, its stub crashed on `fetch failed … ECONNRESET` against host b (`localhost:5197`), because the phase restarts host b to bring it online (`tools/family-rehearsal.mjs`, the *b goes offline* / *reaches the remote again* restarts) while the stub's request to it is in flight, before the driver's pass could stop it. Restart host b only between the stub's requests (or have the stub retry a reset connection, as a real harness's door would ride a host restart), so the check proves the stop it names. Contract: D115's DEV3a/DEV3b notes, FIX-LOG. Proof: the phase passing in five runs under load; the evidence folder for any failure.
+
+**Outcome** 2026-10-07: the lost-claim phase had waited on a transcript the driver never flushes, so it always restarted host b at about 40 s, under a late take; the stub now writes its lingering to a file the phase reads, the wait is time-bounded, and host b restarts only while the stub lingers. Follow-up: TRANSCRIPT1. Detail: D115's DEV3d note, FIX-LOG; commit bc83cef9.
+
+
+## STUB3b — the stub's bound is not the machine's load (2026-10-08)
+
+> - [ ] **STUB3b — the stub's bound is not the machine's load** (cli). `setup-kit.test.ts`'s STUB3 cases (*a stub that stays without answering fails its row at the bound, and is stopped*, near line 807) failed three times on 2026-10-07 under parallel builds (EVID1b3's and CODEXUSE1's verifies, ACCTUX1's merge gate): the stub did not answer even `initialize` within the 1000 ms bound, so the row named three unanswered requests where the test expects two. Make the case independent of how fast a process starts under load (time the bound from the stub's first answer, or hold its start until it is ready), keeping what it proves: an unanswered request fails its row at the bound and the stub is stopped. Contract: STUB3's note, FIX-LOG FLAKE1. Proof: the case passing ten times beside a build.
+
+**Outcome** 2026-10-07: `speak()` times the answers' bound from the stub's first answer and gives the start its own bound (10 s), so a process starting slowly under load no longer fails STUB3; a slowed-start case reproduces the sighting and ten loaded runs passed. Detail: FIX-LOG STUB3b; commit a6dde2cb.

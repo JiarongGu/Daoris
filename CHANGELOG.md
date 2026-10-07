@@ -147,6 +147,8 @@ with the version and date at release.
   account for Daoris and without spending usage.
 - Agents → Codex offers *Add an account…* and *Sign in*, running Codex's own sign-in into an account
   Daoris keeps, and reads whether each Codex account and your own sign-in are signed in.
+- Signing in to Codex shows a link and a one-time code to enter there, so it works where Windows has
+  reserved the port Codex's browser sign-in listens on; `daoris agent login codex` uses the pinned Codex.
 
 The first version: doctrine that installs, is checked, and flows back.
 

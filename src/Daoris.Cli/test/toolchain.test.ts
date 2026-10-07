@@ -1337,6 +1337,99 @@ test('a pin with nothing installed at it probes as absent rather than as PATH', 
   fx.cleanup();
 });
 
+// ——— CODEXACCT2, CODEXACCT1b: Codex signs in by its device code, on the binary `agent list` asks.
+
+/**
+ * 🔴 Measured with 0.160.0 (D125's CODEXACCT2 note): `codex login` waits for its browser callback on a local port, and
+ * Windows reserves that port on the owner's machine, so it exits 1 there (os error 10013). `codex login --device-auth`
+ * prints a link and a one-time code and needs no port. The driver's `CodexAccounts` reads this entry and holds itself to it.
+ */
+test('Codex signs in by its device code, which listens on no port of this machine (CODEXACCT2)', () => {
+  assert.deepEqual(TOOLCHAINS.codex!.login, ['login', '--device-auth']);
+  // Its status question is unchanged: the sign-in's end still asks `codex login status`.
+  assert.deepEqual(TOOLCHAINS.codex!.loginCheck!.args, ['login', 'status']);
+});
+
+/**
+ * A stand-in `codex`, pinned in npm's layout at `version` and nowhere on PATH: each call is logged with the folder it was
+ * handed as `CODEX_HOME`, its device-code sign-in leaves `auth.json` there, and its status question answers in the words
+ * `codex login status` printed (0.160.0).
+ */
+function pinnedCodex(fx: { root: string }, version: string): { binary: string; asked: () => string[] } {
+  const script = join(fx.root, 'codex-stand-in.mjs');
+  const log = join(fx.root, 'codex-asked.log');
+  writeFileSync(script, [
+    "import { appendFileSync, existsSync, writeFileSync } from 'node:fs';",
+    "import { basename, join } from 'node:path';",
+    "const home = process.env.CODEX_HOME ?? '';",
+    'const args = process.argv.slice(2);',
+    `appendFileSync(${JSON.stringify(log)}, basename(home) + ' ' + args.join(' ') + '\\n');`,
+    "if (args[0] === 'login' && args[1] === 'status') {",
+    "  console.log(existsSync(join(home, 'auth.json')) ? 'Logged in using ChatGPT' : 'Not logged in');",
+    '  process.exit(0);',
+    '}',
+    "if (args[0] === 'login' && args[1] === '--device-auth' && args.length === 2 && home) {",
+    "  writeFileSync(join(home, 'auth.json'), '{}');",
+    '  process.exit(0);',
+    '}',
+    'process.exit(1);',
+  ].join('\n'), 'utf8');
+
+  const settings = readHarnessSettings(at(fx));
+  writeHarnessSettings(at(fx), { ...settings, versions: { ...settings.versions, codex: version } });
+  const bin = join(managedHome(fx.root, 'codex', version), 'node_modules', '.bin');
+  mkdirSync(bin, { recursive: true });
+  const windows = process.platform === 'win32';
+  const binary = join(bin, windows ? 'codex.cmd' : 'codex');
+  writeFileSync(binary, windows
+    ? `@"${process.execPath}" "${script}" %*\r\n`
+    : `#!/bin/sh\nexec "${process.execPath}" "${script}" "$@"\n`, 'utf8');
+  if (!windows) chmodSync(binary, 0o755);
+  return { binary, asked: () => (existsSync(log) ? readFileSync(log, 'utf8').split('\n').filter(Boolean) : []) };
+}
+
+/**
+ * 🔴 CODEXACCT1b: the owner's machine has `codex` only as its pin, and the terminal's sign-in ran `PATH`'s, so it could not
+ * start. It runs the binary `agent list` asks now: the pin, its device-code sign-in into a new folder, and the end's
+ * status question on the same pin. Nothing is on PATH, so a regression fails here and runs no real `codex`.
+ */
+test('`agent login codex --new` with only a pin signs in on the pinned codex, by its device code (CODEXACCT1b)', async () => {
+  const fx = makeFixture('harness-sign-in-codex-pin');
+  const codex = pinnedCodex(fx, '0.160.0');
+
+  const made = await pathless(fx, async () => run(['login', 'codex', '--new'], at(fx)));
+
+  assert.equal(made.code, 0, made.out);
+  const [account] = profiles(fx.root, 'codex');
+  assert.match(account!, /^acct-[0-9a-f]{8}$/);
+  assert.ok(existsSync(join(profileHome(fx.root, 'codex', account!), 'auth.json')));
+  assert.ok(made.out.includes(`$ ${codex.binary} login --device-auth`), made.out);
+  assert.deepEqual(codex.asked(), [`${account} login --device-auth`, `${account} login status`]);
+  assert.match(made.out, /`codex` did not say who/);
+
+  // Signing back in to it runs the same pin, into its own folder (ACCT1).
+  const again = await pathless(fx, async () => run(['login', 'codex', '--profile', account!], at(fx)));
+  assert.equal(again.code, 0, again.out);
+  assert.deepEqual(codex.asked().slice(2), [`${account} login --device-auth`, `${account} login status`]);
+  fx.cleanup();
+});
+
+/** Pinned with nothing installed at the pin: refused naming the pin, with nothing made, and never `PATH`'s instead (D57). */
+test('`agent login codex --new` on a pin with nothing installed is refused naming the pin, and makes nothing', async () => {
+  const fx = makeFixture('harness-sign-in-codex-pin-missing');
+  writeHarnessSettings(at(fx), { ...readHarnessSettings(at(fx)), versions: { codex: '0.160.0' } });
+
+  for (const argv of [['login', 'codex', '--new'], ['login', 'codex', '--profile', 'acct-0a1b2c3d']]) {
+    if (argv.includes('--profile')) mkdirSync(profileHome(fx.root, 'codex', 'acct-0a1b2c3d'), { recursive: true });
+    const refused = await pathless(fx, async () => captureError(() => run(argv, at(fx))));
+
+    assert.match(refused.message, /`codex` is pinned to 0\.160\.0 on this machine, and nothing is installed at that version/);
+    assert.match(refused.message, /`daoris agent pin codex 0\.160\.0` installs it/);
+  }
+  assert.deepEqual(profiles(fx.root, 'codex'), ['acct-0a1b2c3d']);
+  fx.cleanup();
+});
+
 // ——— AGT2b: the two makers that publish their own channel are pinned from it; npm stays for the rest.
 
 test('Claude Code and Codex pin from their makers’ own channels, and everything else from npm', () => {

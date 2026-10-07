@@ -38,7 +38,7 @@ public sealed class CodexAccountProcessTests : IDisposable
               console.log(fs.existsSync(path.join(home, 'auth.json')) ? 'Logged in using ChatGPT' : 'Not logged in');
               process.exit(0);
             }
-            if (verb === 'login' && sub === undefined) {
+            if (verb === 'login' && sub === '--device-auth' && process.argv.length === 4) {
               fs.writeFileSync(path.join(home, 'auth.json'), '{}');
               console.log('Successfully logged in');
               process.exit(0);
@@ -103,8 +103,8 @@ public sealed class CodexAccountProcessTests : IDisposable
     }
 
     /// <summary>
-    /// *Add an account…*'s sign-in: <c>codex login</c> into a new folder Daoris owns, with that folder as its
-    /// <c>CODEX_HOME</c>, and the end's question reads it signed in. Never the tool's own home.
+    /// *Add an account…*'s sign-in: <c>codex login --device-auth</c> (CODEXACCT2) into a new folder Daoris owns, with that
+    /// folder as its <c>CODEX_HOME</c>, and the end's question reads it signed in. Never the tool's own home.
     /// </summary>
     [Fact]
     public async Task A_sign_in_to_a_new_codex_account_runs_codex_login_into_its_own_folder()
@@ -122,7 +122,7 @@ public sealed class CodexAccountProcessTests : IDisposable
         Assert.Equal(0, code);
         Assert.True(File.Exists(Path.Combine(home, "auth.json")));
         Assert.False(File.Exists(Path.Combine(Own, "auth.json")));
-        Assert.Contains($"{fresh} login", Asked);
+        Assert.Contains($"{fresh} login --device-auth", Asked);
         Assert.Equal(LoginState.In, login);
         Assert.Equal(LoginState.In, AccountReads.Of(_home, "codex").Accounts[fresh].Login);
     }

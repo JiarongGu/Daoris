@@ -28,6 +28,11 @@ import { Button, Dot, Icon, MonoWell } from './ui';
  *
  * `login-new` is signing in to ANOTHER account (D66 §3): the same three steps, with no account to
  * name yet — who it is, is what the sign-in finds out.
+ *
+ * A device code (CODEXACCT2) runs the second step the other way: Codex signs in by `--device-auth`, since its browser
+ * sign-in waits on a local port that Windows reserves on some machines. It opens no page and asks nothing on its
+ * input; it prints a link and, on the line after the sentence asking for it, a one-time code the person enters on that
+ * page. So the first step says to open the link, and the second shows the code to copy, as the link is copied.
  */
 export function SignIn({
   id, harness, profile, action = 'login', tool,
@@ -44,7 +49,7 @@ export function SignIn({
   const input = useHarnessInput();
   const cancel = useHarnessCancel();
   const [code, setCode] = useState('');
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<'link' | 'code' | null>(null);
 
   // What the tool has said so far, read for the two facts the steps need: where to sign in, and
   // whether it has asked for the code yet. Both are the harness's own words, matched loosely —
@@ -55,16 +60,17 @@ export function SignIn({
   const url = lines.map((line) => line.text.match(/https?:\/\/\S+/)?.[0]).find(Boolean);
   const opened = lines.some((line) => /opening.*browser/i.test(line.text));
   const asked = lines.some((line) => /paste.*code/i.test(line.text));
+  const device = deviceCode(lines.map((line) => line.text));
   const sent = input.isSuccess;
 
-  const copy = async () => {
-    if (!url) return;
+  const copy = async (what: 'link' | 'code', text: string | null | undefined) => {
+    if (!text) return;
     try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
+      await navigator.clipboard.writeText(text);
+      setCopied(what);
+      window.setTimeout(() => setCopied(null), 1500);
     } catch {
-      // No clipboard here: the link is on the page to select by hand.
+      // No clipboard here: the link and the code are on the page to select by hand.
     }
   };
 
@@ -100,7 +106,7 @@ export function SignIn({
         <li className="grid grid-cols-[1.25rem_1fr] gap-x-2">
           <span className="text-small font-semibold text-ink-faint">1</span>
           <div className="min-w-0">
-            <p className="m-0 text-body text-ink">{t('signin.step.open')}</p>
+            <p className="m-0 text-body text-ink">{t(device ? 'signin.step.openLink' : 'signin.step.open')}</p>
             {url ? (
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 {/* Always the system's browser, whatever links are set to (BRW7): an account's sign-in is
@@ -113,9 +119,9 @@ export function SignIn({
                   <Icon name="external" size={12} />
                   <span className="truncate">{url}</span>
                 </ExternalLink>
-                <Button variant="ghost" onClick={copy}>
+                <Button variant="ghost" onClick={() => copy('link', url)}>
                   <Icon name="copy" size={12} />
-                  {copied ? t('signin.copied') : t('signin.copy')}
+                  {copied === 'link' ? t('signin.copied') : t('signin.copy')}
                 </Button>
                 <span className="text-meta text-ink-faint">{t('signin.step.openHint')}</span>
               </div>
@@ -130,7 +136,7 @@ export function SignIn({
         <li className="grid grid-cols-[1.25rem_1fr] gap-x-2">
           <span className="text-small font-semibold text-ink-faint">2</span>
           <div className="min-w-0">
-            <p className="m-0 text-body text-ink">{t('signin.step.code')}</p>
+            <p className="m-0 text-body text-ink">{t(device && !asked ? 'signin.step.enter' : 'signin.step.code')}</p>
             {asked ? (
               sent ? (
                 <p className="m-0 mt-0.5 text-small text-ink-soft">{t('signin.sent')}</p>
@@ -150,6 +156,14 @@ export function SignIn({
                   </Button>
                 </form>
               )
+            ) : device ? (
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <span className="select-all font-mono text-body font-semibold text-ink">{device}</span>
+                <Button variant="ghost" onClick={() => copy('code', device)}>
+                  <Icon name="copy" size={12} />
+                  {copied === 'code' ? t('signin.copied') : t('signin.copyCode')}
+                </Button>
+              </div>
             ) : (
               <p className="m-0 mt-0.5 text-small text-ink-faint">{t('signin.codeLater')}</p>
             )}
@@ -177,4 +191,17 @@ export function SignIn({
       </details>
     </section>
   );
+}
+
+/**
+ * The one-time code a tool shows for the person to enter on its page (CODEXACCT2): the word on the first line with words
+ * after the one asking for it, or null where none is shown. Matched loosely, as the link and the prompt are, since the
+ * sentence is the tool's to change; measured on Codex 0.160.0 as `2. Enter this one-time code (expires in 15 minutes)`
+ * and the code indented on the next line.
+ */
+function deviceCode(texts: readonly string[]): string | null {
+  const asking = texts.findIndex((text) => /one-time code/i.test(text));
+  if (asking < 0) return null;
+  const shown = texts.slice(asking + 1).find((text) => text.trim())?.trim();
+  return shown && /^\S+$/.test(shown) ? shown : null;
 }

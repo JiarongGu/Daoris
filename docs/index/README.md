@@ -87,7 +87,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleSessionsTests.cs` | 42 | 710 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs` | 48 | 875 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs` | 62 | 1149 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs` | 62 | 1151 |
 
 ### Service (`service`)
 
@@ -116,14 +116,14 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/src/driverconfig.ts` | 75 | 1425 |
 | `src/Daoris.Cli/src/materialize.ts` | 47 | 936 |
 | `src/Daoris.Cli/src/plugins.ts` | 68 | 1356 |
-| `src/Daoris.Cli/src/toolchain.ts` | 138 | 2699 |
+| `src/Daoris.Cli/src/toolchain.ts` | 140 | 2738 |
 | `src/Daoris.Cli/test/desktop-publish.test.ts` | 49 | 895 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 46 | 818 |
 | `src/Daoris.Cli/test/driverconfig.test.ts` | 75 | 1460 |
 | `src/Daoris.Cli/test/merge-branch.test.ts` | 179 | 2780 |
 | `src/Daoris.Cli/test/rotation-use.test.ts` | 44 | 550 |
-| `src/Daoris.Cli/test/setup-kit.test.ts` | 44 | 820 |
-| `src/Daoris.Cli/test/toolchain.test.ts` | 89 | 1741 |
+| `src/Daoris.Cli/test/setup-kit.test.ts` | 47 | 874 |
+| `src/Daoris.Cli/test/toolchain.test.ts` | 94 | 1834 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 71 | 1226 |
 
 ### Tools (`tools`)
@@ -133,7 +133,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/deployment-rehearsal.mjs` | 93 | 1645 |
 | `tools/desktop-publish.mjs` | 54 | 975 |
 | `tools/desktop.mjs` | 48 | 998 |
-| `tools/family-rehearsal.mjs` | 312 | 5570 |
+| `tools/family-rehearsal.mjs` | 314 | 5598 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
 | `tools/merge-branch.mjs` | 129 | 2357 |
 | `tools/orient-index.mjs` | 66 | 1435 |
