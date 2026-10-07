@@ -5,6 +5,15 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-08 — a turn that handed off to background work parked on the person
+
+### Driver: a driven turn that ended on its own background work read as asking the person (BGWAIT1)
+- **Symptom:** the owner's install: a driven `claude-code-acp` session sat *awaiting the person*, its note quoting *"Gates are running in the background (lint → prettier → …); I'll pick up when they finish."* The agent had backgrounded its gates and ended its turn holding its quest, expecting to be woken when they finished.
+- **Root cause:** two rules, each right alone. D105 §3 closes a driven session right after its prompt's answer, whatever it left running, and the harness's own wake when that work ends (CONSOLE2a) is cut off with it. D83's conclusion then reads a clean exit holding the session's own take as a park, quoting its last words. Nothing between them read the harness's `async_task_*` frames, which said the work was still running when the turn ended.
+- **Fix:** `AcpBackground` keeps the tasks the session's own id announces, and `AcpSession.RunAsync` takes `waitsOnBackground`. A turn that ends while one runs asks the driver whether the quest stands as a park would leave it (`Observation.Parks`, the conclusion's rule made one method); yes keeps the session open until the wire ends that work, then prompts it that the work ended. D83's BGWAIT1 note has the rest, and what it does not cover (the headless loop, the native door, an answered park's resumed run).
+- **Verify:** `AcpBackgroundTests` (seven) and `ObservationTests`' park-rule table failed first against an unused parameter and a `false` rule, then passed; the held-words case failed with its ordering removed; the driver's fast half passed (4805). Not run: the `Process` half and the family rehearsal, whose stubs send no task frames.
+- **Commit:** `480e1afd`.
+
 ## 2026-10-08 — the publish's last bare rename
 
 ### Tools: laying out the plugin offers stopped a publish on a held staging folder
