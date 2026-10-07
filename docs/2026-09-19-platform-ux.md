@@ -66,7 +66,7 @@ D75), where its own rules live; this is what a view may assume of it.
 - **Surfaces**: `--page`, `--raised` (cards, controls), `--overlay` (drawers, toasts — one step above
   raised), `--line` and `--line-strong`, and `--sunken` one step below the page for the box a move asks once in and
   the command center, while a field stays raised (LOOK6: thirteen files asked for it and none drew; `tokens.test.ts`
-  now holds every `bg-`, `border-` and `text-` colour a token, and every ink readable on every surface). **Ink**: `--ink`, `--ink-soft`, `--ink-faint`, `--ink-danger`. **A field is
+  now holds every `bg-`, `border-` and `text-` colour a token, and every ink readable on every surface). **Ink**: `--ink`, `--ink-soft`, `--ink-faint`, and each status hue's ink for its words, `--ink-open`, `--ink-taken`, `--ink-done` and `--ink-danger`. **A field is
   outlined with `--line-strong`, a container with `--line`**: a `--line` field on a `--raised` card is
   very nearly invisible in dark, a form whose fields you cannot find. **A mark that is content wears an
   ink**, never a container's line: the code map's arrows at `--line-strong` were 1.6:1, and stepped
@@ -92,14 +92,29 @@ D75), where its own rules live; this is what a view may assume of it.
   *What needs you*'s card and rows, the map's ring and word. It had three hues, one of them declined's
   red, and a session waiting on its person read as one that had failed. **Red is only ever an
   outcome**: declined, failed, a failed tool call.
-- **Red drawn as words wears the danger ink, `--ink-danger`** (UXFIX5, the 2026-10-07 second opinion): a danger
-  button's label, a declined pill's word, a failed mark's word, a refusal, a removed count, a diff's deletion. A status
-  hue is computed as a fill, and declined's dark red drawn as text read 3.95:1 on the sunken box a move asks in, 3.18:1
-  on an overlay and 2.94:1 on its own soft field there, under the 4.5:1 text floor. The ink keeps the hue (OKLCH 30°)
-  and is lifted until it holds 4.5:1 on every surface and on declined's soft field over each, in both themes: `#ee6955`
-  in dark, at worst 4.61:1; in light the fill already reads at 5.5:1 or more, so the two are one value. A fill, a border
-  and a mark keep `--st-declined`. `tokens.test.ts` computes it and fails on a red word in the fill's colour. The other
-  three hues drawn as words are held to no floor yet: in light, open's and done's read 3.0 to 3.8:1.
+- **A status hue drawn as words wears its ink** (UXFIX5, UXFIX5c, the 2026-10-07 second opinion). Red is
+  `--ink-danger`: a danger button's label, a declined pill's word, a failed mark's word, a refusal, a removed count, a
+  diff's deletion. Open's, taken's and done's words are `--ink-open`, `--ink-taken` and `--ink-done`: a pill's word, a
+  waiting mark's word, a waiting count, the map's *waiting on you*, a diff's letters and added count, code's strings and
+  numbers. A status hue is computed as a fill, and as text it fell under the 4.5:1 text floor: declined's dark red read
+  3.95:1 on the sunken box a move asks in, 3.18:1 on an overlay and 2.94:1 on its own soft field there; open's and
+  done's words read 2.8 to 3.8:1 in light, taken's 4.1:1 on its field over the sunken box, and in dark the three read
+  4.1 to 4.4:1 on their fields over an overlay. An ink keeps its fill's OKLCH hue, within a degree, and moves in
+  lightness until it holds 4.5:1, with a tenth to spare, on every surface and on its own soft field over each, in both
+  themes. Where the fill already reads, the two are one value: declined's, in light. Measured at worst, each on its own
+  field, over the sunken box in light and over an overlay in dark:
+
+  | Ink | Light | At worst | Dark | At worst |
+  |---|---|---|---|---|
+  | `--ink-open` | `#8b5c02` | 4.62:1 | `#c68b31` | 4.61:1 |
+  | `--ink-taken` | `#2765ab` | 4.63:1 | `#619ce2` | 4.64:1 |
+  | `--ink-done` | `#017545` | 4.61:1 | `#43aa7b` | 4.63:1 |
+  | `--ink-danger` | `#9e2f24`, the fill | 5.53:1 | `#ee6955` | 4.61:1 |
+
+  A fill, a border, a mark (a dot, a ring, an icon, a plan's check) and the terminal's colours keep the `--st-` hue.
+  `tokens.test.ts` computes every ink and fails on a status word in its fill's colour, whether a `text-` class, a
+  stylesheet's `color` or an SVG word's `fill`. A mark that takes its colour as a word does is named there with its
+  reason.
 - **Open's hue is the person's alone** (D126 §2.3, SESSUX1c): among sessions, *waiting on you* and *parked* (a parked
   quest's last session) wear it, and nothing else does. `queued` wore it too and left the word to tell the two apart;
   it is neutral, keeping its idle mark. *Awaiting reply* is neutral: nothing runs, and nothing waits on the person.
@@ -155,8 +170,8 @@ controls are in the frame design's §3.
   record, or nothing more is offered) to the nearest section or list that held it, never the page's body. A refusal
   shrinks with its column and breaks anywhere, since a long id or a raw error otherwise widens it past the main area's
   400 px floor.
-- **Pills** carry state: status text on its soft field with its hue — label always present. Declined's word is the
-  danger ink on declined's field (UXFIX5).
+- **Pills** carry state: status text on its soft field with its hue — label always present. Each word is its hue's
+  ink on that hue's field, and declined's is the danger ink (UXFIX5, UXFIX5c).
 - **Chips** carry declarations (owns/accepts/packs): quiet line-bordered tokens; `accent` variant for
   what a project *accepts*, because that is the actionable half. A phrase stays in the body face
   (U37).

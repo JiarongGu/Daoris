@@ -6,9 +6,9 @@ import { cn } from '../lib/cn';
 import { questName } from '../work/identity';
 import type { ChainStep } from './chain';
 
-/** A quest's status, in the words and the hue its pill wears (D41: never hue alone). */
+/** A quest's status, in the words and the ink its pill's word wears (D41: never hue alone; UXFIX5c). */
 const WORD: Record<Quest['status'], string> = {
-  Open: 'text-st-open', Taken: 'text-st-taken', Done: 'text-st-done', Declined: 'text-ink-danger',
+  Open: 'text-ink-open', Taken: 'text-ink-taken', Done: 'text-ink-done', Declined: 'text-ink-danger',
 };
 
 /**

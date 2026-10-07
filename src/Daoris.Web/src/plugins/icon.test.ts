@@ -148,10 +148,12 @@ describe('the identity hues', () => {
     }
   });
 
-  it('stand at least ΔE 20 from every status hue and the accent, so a monogram never reads as a state', () => {
+  it('stand at least ΔE 20 from every status hue, its ink and the accent, so a monogram never reads as a state', () => {
+    // A state's word wears its hue's ink (UXFIX5c), and a monogram is a glyph beside such words, so the inks count too.
+    const states = ['--st-open', '--st-taken', '--st-done', '--st-declined', '--ink-open', '--ink-taken', '--ink-done', '--ink-danger'];
     for (const [theme, tokens] of Object.entries(THEMES)) {
       for (const hue of IDENT_HUES) {
-        for (const status of ['--st-open', '--st-taken', '--st-done', '--st-declined', '--accent']) {
+        for (const status of [...states, '--accent']) {
           const apart = deltaE(rgb(tokens[`--ident-${hue}`]!), rgb(tokens[status]!));
           expect(apart, `${theme} ${hue} against ${status}: ${apart.toFixed(1)}`).toBeGreaterThanOrEqual(20);
         }

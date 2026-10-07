@@ -23,8 +23,8 @@ describe('the primitives', () => {
 
   it('a warned tile wears the warning on its note, never on its value', () => {
     render(<Tile label="Open quests" value={3} note="oldest has sat 12d" warn />);
-    expect(screen.getByText('oldest has sat 12d').className).toContain('st-open');
-    expect(screen.getByText('3').className).not.toContain('st-open');
+    expect(screen.getByText('oldest has sat 12d').className).toContain('ink-open');
+    expect(screen.getByText('3').className).not.toMatch(/(?:st|ink)-open/);
   });
 
   it('an empty state offers the action that would change the fact', () => {
