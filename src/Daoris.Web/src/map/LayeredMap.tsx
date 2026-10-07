@@ -26,12 +26,12 @@ const CHAIN_LANE = 20;
 /** The sizes the sizing menu offers by name, as a map tool's zoom menu does. */
 const PRESETS = [0.5, 1, 2] as const;
 
-/** One way to size the map: its name, a tick when it is the size now, and its key where it has one. */
-function SizeItem({ label, keys, current = false, onSelect }: { label: string; keys?: string; current?: boolean; onSelect: () => void }) {
+/** A way to change the map's size: an act, its name and its key, its tick column kept empty so it lines up with the sizes. */
+function SizeItem({ label, keys, onSelect }: { label: string; keys: string; onSelect: () => void }) {
   return (
-    <Menu.Item tick={current} onSelect={onSelect}>
+    <Menu.Item tick={false} onSelect={onSelect}>
       <span className="flex-1 truncate">{label}</span>
-      {keys && <kbd className="font-mono text-meta text-ink-faint">{keys}</kbd>}
+      <kbd className="font-mono text-meta text-ink-faint">{keys}</kbd>
     </Menu.Item>
   );
 }
@@ -270,14 +270,15 @@ export function LayeredMap({ topology, selected, onSelect, tools }: {
             <SizeItem label={t('map.zoomOut')} keys="-" onSelect={() => zoomAt(1 / ZOOM.step)} />
             <Menu.Separator />
             <SizeItem label={t('map.fit')} keys="0" onSelect={() => move(fitted(true))} />
-            {PRESETS.map((scale) => (
-              <SizeItem
-                key={scale}
-                label={`${scale * 100}%`}
-                current={percent === scale * 100}
-                onSelect={() => zoomTo(scale)}
-              />
-            ))}
+            {/* The sizes by name are one choice among three, so the one the map is at is said as well as drawn
+                (UXFIX1b): a radio row each, `aria-checked` on the size now, and on none at a size between them. */}
+            <Menu.RadioGroup aria-label={t('map.sizes')} value={String(percent)}>
+              {PRESETS.map((scale) => (
+                <Menu.RadioItem key={scale} value={String(scale * 100)} onSelect={() => zoomTo(scale)}>
+                  <span className="flex-1 truncate">{`${scale * 100}%`}</span>
+                </Menu.RadioItem>
+              ))}
+            </Menu.RadioGroup>
           </Menu.Content>
         </Menu.Root>
       </div>
