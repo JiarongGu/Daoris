@@ -21,6 +21,8 @@
   "note.ended.lost-claim": "被本机驱动停止：另一台机器先在远端接下了这个委托，这个会话的工作会与之重复。",
   "note.ended.driver-closed": "运行期间驱动被停止，会话进程随之结束。",
   "note.account.cooling": "它运行时用的账户冷却至 {{until}}（{{why}}），在此之前不会在它上面启动任何会话。",
+  "note.account.cooling-window": "它运行时用的 {{owner}} 账户达到了{{window}}上限，冷却至 {{until}}（{{why}}），在此之前不会在它上面启动任何会话。",
+  "note.account.cooling-no-window": "它运行时用的 {{owner}} 账户冷却至 {{until}}（{{why}}），在此之前不会在它上面启动任何会话。",
   "note.account.refused": "服务方拒绝了它运行时用的 {{owner}} 账户（401）。请在设置中或用 `daoris agent` 更换密钥或重新登录，Daoris 随后会再在它上面启动会话。",
   "note.account.refused-own": "服务方拒绝了 {{owner}} 自身的登录（401）。请在设置中或用 `daoris agent` 更换密钥或重新登录，Daoris 随后会再在它上面启动会话。",
   "note.account.signed-out": "智能体以登录为由拒绝了它运行时用的 {{owner}} 账户，所以该账户显示为未登录；在它重新登录之前，不会再在它上面启动任何会话。可在「智能体」中该智能体的页面上或用 `daoris agent` 登录。",

@@ -7,7 +7,11 @@ import { Note } from './Note';
 // in the reader's language, in English and in 中文; a split note, the lead-in worded and the agent's question beneath it
 // as written; a code this page does not know; a record from before parts; a program's words; and one run for a row.
 
-/** A driven session that went on with its answer and ended with its quest still taken, on an account now cooling. */
+/**
+ * A driven session that went on with its answer and ended with its quest still taken, on an account now cooling: the
+ * cooling line in the shape a note from before AGT3d keeps, then in the shape written since, naming whose accounts and the
+ * kind of limit (D125's AGT3d note), so both are seen worded.
+ */
 const ENDED: NotePart[] = [
   {
     code: 'ended.answered-unfinished',
@@ -18,6 +22,11 @@ const ENDED: NotePart[] = [
     code: 'account.cooling',
     values: { until: '2026-10-03T16:00:00Z', why: 'stated' },
     text: 'The account it ran on is cooling until 2026-10-03 16:00 UTC (the agent said so); nothing starts on it until then.',
+  },
+  {
+    code: 'account.cooling-window',
+    values: { until: '2026-10-03T16:00:00Z', why: 'stated', owner: 'claude-code', window: 'weekly' },
+    text: 'The `claude-code` account it ran on hit its weekly limit and is cooling until Oct 3, 16:00 (UTC), as the agent said, and nothing starts on it until then.',
   },
 ];
 const ENDED_NOTE = ENDED.map((part) => ('text' in part ? part.text : '')).join(' ');

@@ -259,9 +259,12 @@ public sealed class ProtocolChatTests : IDisposable
 
         var turns = events.Page(id).Events.Where(e => e.Kind == SessionEventKind.Turn).Select(e => e.StopReason).ToList();
         Assert.Equal(["error", "end_turn"], turns);
-        var said = Assert.Single(events.Page(id).Events, e => e.Parts is { Count: > 0 } parts && parts[^1].Code == "account.cooling");
-        Assert.StartsWith("The account this conversation runs on is cooling until", said.Text);
+        // The stub's refusal names no reset, so no window: the line without one, naming whose accounts (AGT3d).
+        var said = Assert.Single(
+            events.Page(id).Events, e => e.Parts is { Count: > 0 } parts && parts[^1].Code == "account.cooling-no-window");
+        Assert.StartsWith("The `stub` account this conversation runs on is cooling until", said.Text);
         Assert.Equal((said.Text, CoolingWhy.Default), (said.Parts![^1].Text, (string?)said.Parts[^1].Value("why")));
+        Assert.Equal("stub", (string?)said.Parts[^1].Value("owner"));
         Assert.True(runner.Finish(id));
     }
 

@@ -130,20 +130,54 @@ public sealed class NoteSitesTests
     public void A_cooling_account_s_line_carries_its_moment_and_why_by_code_and_names_no_account()
     {
         var until = new DateTimeOffset(2026, 10, 3, 9, 30, 0, TimeSpan.Zero);
-        var entry = new CoolingEntry("claude-code", "work", until, Stated: true, Window: null, Seen: until, Session: "s1");
+        var entry = new CoolingEntry("claude-code", "work", until, Stated: true, Window: "weekly", Seen: until, Session: "s1");
         var conclusion = Observation.Conclude(0, "Taken", turnFailed: "Usage limit reached")
             .Unsaid("Usage limit reached")
             .Then(" ", CoolingWords.NoteOf(entry, TimeZoneInfo.Utc));
 
         Assert.Equal(
-            "the agent's turn failed with the quest still taken: " + CoolingWords.Note(entry, TimeZoneInfo.Utc),
+            "the agent's turn failed with the quest still taken: The `claude-code` account it ran on hit its weekly limit and "
+            + $"is cooling until {CoolingWords.When(until, TimeZoneInfo.Utc)}, as the agent said, and nothing starts on it until then.",
             conclusion.Note);
-        Assert.Equal(["ended.turn-failed-taken", "account.cooling"], NoteAssert.Codes(conclusion.Parts));
+        Assert.Equal(["ended.turn-failed-taken", "account.cooling-window"], NoteAssert.Codes(conclusion.Parts));
         NoteAssert.Holds(conclusion.Note, conclusion.Parts);
         var cooling = conclusion.Parts![^1];
-        Assert.Equal("account.cooling", cooling.Code);
+        Assert.Equal("account.cooling-window", cooling.Code);
         Assert.Equal(("2026-10-03T09:30:00Z", CoolingWhy.Stated), ((string?)cooling.Value("until"), (string?)cooling.Value("why")));
+        // AGT3d: whose account and the kind of limit travel as facts, the page wording the window (`harness.window.*`).
+        Assert.Equal(("claude-code", "weekly"), ((string?)cooling.Value("owner"), (string?)cooling.Value("window")));
         Assert.DoesNotContain(cooling.Values, value => value.Value is string text && text.Contains("work", StringComparison.Ordinal));
+        Assert.DoesNotContain("work", conclusion.Note);
+    }
+
+    /// <summary>
+    /// AGT3d: a limit whose reset named no window (Codex's, a spend limit with no reset) says whose account and no kind, by a
+    /// code of its own, so the page words it rather than showing the line as recorded for a value it lacks.
+    /// </summary>
+    [Fact]
+    public void A_cooling_line_whose_limit_named_no_window_says_its_owner_by_its_own_code()
+    {
+        var until = new DateTimeOffset(2026, 10, 3, 9, 30, 0, TimeSpan.Zero);
+        var entry = new CoolingEntry("codex", null, until, Stated: false, Window: null, Seen: until, Session: "s1");
+
+        var line = CoolingWords.NoteOf(entry, TimeZoneInfo.Utc);
+
+        Line(line,
+            $"The `codex` account it ran on is cooling until {CoolingWords.When(until, TimeZoneInfo.Utc)}, Daoris's default: the "
+            + "agent named no time, and nothing starts on it until then.",
+            "account.cooling-no-window");
+        Assert.Equal(["until", "why", "owner"], line.Parts[0].Values.Select(value => value.Key));
+        Assert.Equal(("codex", CoolingWhy.Default), ((string?)line.Parts[0].Value("owner"), (string?)line.Parts[0].Value("why")));
+
+        // A window longer than a word is a phrase, not a fact, and is said as none, as the log bounds it (`AccountLine`).
+        var phrase = entry with { Window = new string('w', 41) };
+        Assert.Equal("account.cooling-no-window", CoolingWords.NoteOf(phrase, TimeZoneInfo.Utc).Parts[0].Code);
+        Assert.Equal("account.cooling-window", CoolingWords.NoteOf(entry with { Window = "session" }, TimeZoneInfo.Utc).Parts[0].Code);
+        // `account.cooling`'s own shape, its moment and why alone, is never written now: notes from before carry it.
+        Assert.DoesNotContain(
+            new[] { entry, phrase, entry with { Window = "weekly" } },
+            each => CoolingWords.NoteOf(each, TimeZoneInfo.Utc).Parts[0].Code == NoteCodes.AccountCooling.Code
+                || CoolingWords.ConversationOf(each, TimeZoneInfo.Utc).Parts[0].Code == NoteCodes.AccountCooling.Code);
     }
 
     [Fact]

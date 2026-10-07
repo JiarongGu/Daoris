@@ -126,16 +126,29 @@ const lines = (text) => text.replace(/\r\n/g, '\n').split('\n');
 
 /**
  * Whether a fenced block holds each line, its fences too: a fence's lines are text, never a heading or a
- * label (as `doc-shapes` reads a fence). The orientation index reads headings and notes the same way.
+ * label. `doc-shapes` and the orientation index read headings and notes by this one function.
+ *
+ * Read as CommonMark reads a fence (ORIENT2h4, after the service's ORIENT2h3 `MarkdownFence`): a fence opens on a
+ * run of three or more backticks or tildes, after any indent, and closes only on a run of the same character at
+ * least as long with nothing after it but spaces. A backtick run with a backtick after it on its line is code
+ * inline and opens nothing. A fence never closed holds the rest of the file. Toggling on any line that opened with
+ * three backticks closed a four-backtick fence on the example it quoted, so a label quoted there split a note.
+ * The service's `DecisionNotes` reads a decision's fences by the same rule with code of its own; both are held to
+ * `orient-index-fixtures/decision-notes.json`.
  */
 export function fenced(text) {
-  let open = false;
+  let marker = '';
+  let length = 0;
   return text.map((line) => {
-    if (/^\s*```/.test(line)) {
-      open = !open;
+    const trimmed = line.trimStart();
+    const run = /^(?:`+|~+)/.exec(trimmed)?.[0] ?? '';
+    if (!marker) {
+      if (run.length < 3 || (run[0] === '`' && trimmed.indexOf('`', run.length) >= 0)) return false;
+      [marker, length] = [run[0], run.length];
       return true;
     }
-    return open;
+    if (run[0] === marker && run.length >= length && trimmed.slice(run.length).trim() === '') marker = '';
+    return true;
   });
 }
 

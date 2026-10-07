@@ -50,7 +50,10 @@ public sealed class AcpTurnFailureTickTests : IDisposable
         Assert.True(record["limit"]!.GetValue<bool>());
         // A limit's note carries its facts, the cooling line; the agent's own words stay in its transcript (AGT3c).
         var note = record["note"]!.GetValue<string>();
-        Assert.StartsWith("the agent's turn failed with the quest still taken: The account it ran on is cooling until", note);
+        Assert.StartsWith(
+            "the agent's turn failed with the quest still taken: The `stub` account it ran on hit its session limit and is cooling "
+            + "until",
+            note);
         Assert.DoesNotContain("spend limit", note);
         Assert.Contains("spend limit", File.ReadAllText(Path.Combine(_home, "sessions", "s1.log")));
     }

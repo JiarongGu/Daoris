@@ -87,7 +87,10 @@ public sealed class AccountLimitTickTests : IDisposable
         // The note travels, so it carries the facts and never the agent's sentence, which its transcript keeps (AGT3c).
         Assert.DoesNotContain("You've hit your individual spend limit", refused["note"]!.GetValue<string>());
         Assert.Contains("You've hit your individual spend limit", File.ReadAllText(Path.Combine(_home, "sessions", "s2.log")));
-        Assert.Contains($"The account it ran on is cooling until Oct 3, 16:02 ({Zone.Id}), as the agent said", refused["note"]!.GetValue<string>());
+        // Whose accounts and the kind of limit, never which account (AGT3d).
+        Assert.Contains(
+            $"The `stub` account it ran on hit its weekly limit and is cooling until Oct 3, 16:02 ({Zone.Id}), as the agent said",
+            refused["note"]!.GetValue<string>());
         var cooling = roster.CoolingOf("acp-stub", null)!;
         Assert.Equal(("stub", (string?)null, Until, true, "s2"), (cooling.Agent, cooling.Account, cooling.Until, cooling.Stated, cooling.Session));
         Assert.Equal("weekly", cooling.Window);

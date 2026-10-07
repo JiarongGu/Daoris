@@ -307,17 +307,24 @@ public sealed class AccountCoolingTests : IDisposable
             CoolingWords.Hold(Entry(stated: stated, assumedZone: assumed, notBelieved: notBelieved), Zone));
     }
 
+    /// <summary>
+    /// The note travels, so it names no account (D125 §3.6). It names whose accounts they are, the agent's, and the kind of
+    /// limit where the reset named one (AGT3d), as the page words them from the line's values.
+    /// </summary>
     [Fact]
     public void The_record_s_note_names_no_account_since_the_note_travels()
     {
         var note = CoolingWords.Note(Entry(), Zone);
 
         Assert.Equal(
-            $"The account it ran on is cooling until Oct 3, 16:02 ({Zone.Id}), as the agent said, and nothing starts on it "
-            + "until then.",
+            $"The `claude-code` account it ran on hit its weekly limit and is cooling until Oct 3, 16:02 ({Zone.Id}), as the "
+            + "agent said, and nothing starts on it until then.",
             note);
         Assert.DoesNotContain("account-1", note);
-        Assert.DoesNotContain("claude-code", note);
+        Assert.Equal(
+            $"The `claude-code` account it ran on is cooling until Oct 3, 16:02 ({Zone.Id}), as the agent said, and nothing "
+            + "starts on it until then.",
+            CoolingWords.Note(Entry(account: null, window: null), Zone));
     }
 
     // ——— The roster: read before any probe (§3.3, §4).

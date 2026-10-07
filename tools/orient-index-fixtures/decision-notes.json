@@ -127,6 +127,87 @@
         "D9:17-17 2026-10-05 — a dated heading long enough to be cut where a row would run past…",
         "D9:19-19 LAND3, built 2026-10-04: a landing tidies every branch."
       ]
+    },
+    {
+      "id": "D11",
+      "why": "a four-backtick fence quoting a three-backtick example holds the label inside it, and closes only on four (ORIENT2h4)",
+      "lines": [
+        "## D11 — A longer fence quotes a shorter one (2026-10-07)",
+        "",
+        "Body.",
+        "",
+        "**Built 2026-10-07 (LONG1): a note that quotes an example.** Its text.",
+        "",
+        "````markdown",
+        "```markdown",
+        "",
+        "**Amended 2026-10-08 (QUOTED): a label inside a longer fence, never a note**",
+        "```",
+        "````",
+        "",
+        "After the fence, the note above still.",
+        "",
+        "**Amended 2026-10-09 (LONG2): the next note.** Its text.",
+        ""
+      ],
+      "entry": "D11:1-3",
+      "notes": [
+        "D11:5-14 Built 2026-10-07 (LONG1): a note that quotes an example.",
+        "D11:16-16 Amended 2026-10-09 (LONG2): the next note."
+      ]
+    },
+    {
+      "id": "D12",
+      "why": "a tilde fence holds the label inside it, and a backtick run inside it closes nothing (ORIENT2h4)",
+      "lines": [
+        "## D12 — A tilde fence (2026-10-07)",
+        "",
+        "Body.",
+        "",
+        "**Built 2026-10-07 (TILDE1): a note over a tilde fence.** Its text.",
+        "",
+        "~~~text",
+        "A tilde fence, holding a backtick one:",
+        "",
+        "**Amended 2026-10-08 (TILDED): a label inside a tilde fence, never a note**",
+        "```",
+        "~~~",
+        "",
+        "**Amended 2026-10-09 (TILDE2): the next note.** Its text.",
+        ""
+      ],
+      "entry": "D12:1-3",
+      "notes": [
+        "D12:5-12 Built 2026-10-07 (TILDE1): a note over a tilde fence.",
+        "D12:14-14 Amended 2026-10-09 (TILDE2): the next note."
+      ]
+    },
+    {
+      "id": "D13",
+      "why": "a backtick run with a backtick after it on its line is code and opens nothing, and a run with text after it closes nothing (ORIENT2h4)",
+      "lines": [
+        "## D13 — What opens and closes a fence (2026-10-07)",
+        "",
+        "Body.",
+        "",
+        "```a``` is code inline, and opens no fence.",
+        "",
+        "**Built 2026-10-07 (EDGE2): a note after inline code.** Its text.",
+        "",
+        "```text",
+        "```js",
+        "",
+        "**Amended 2026-10-08 (CLOSED): still inside, as a run with text closes nothing**",
+        "```",
+        "",
+        "**Amended 2026-10-09 (EDGE3): the next note.** Its text.",
+        ""
+      ],
+      "entry": "D13:1-5",
+      "notes": [
+        "D13:7-13 Built 2026-10-07 (EDGE2): a note after inline code.",
+        "D13:15-15 Amended 2026-10-09 (EDGE3): the next note."
+      ]
     }
   ],
 

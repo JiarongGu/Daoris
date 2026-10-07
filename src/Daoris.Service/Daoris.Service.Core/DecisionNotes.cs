@@ -20,7 +20,8 @@ public sealed record DecisionNote(string Label, int First, int Last, string Body
 /// that note (D24's ORIENT1c note). The digest already lists every note with its lines; the index now holds each
 /// as an entry of its own.</para>
 ///
-/// <para><b>A note</b> starts at a line after the decision's opening paragraph, outside a fence, after a blank
+/// <para><b>A note</b> starts at a line after the decision's opening paragraph, outside a fence (read as markdown
+/// reads one, <see cref="MarkdownFence"/>), after a blank
 /// line, that is a <c>###</c> heading with a date in it, or a line that opens with an emphasised span which is
 /// dated or in a form the record writes undated (<see cref="Label"/>, the digest's <c>noteLabel</c> and
 /// <c>doc-duplicates</c>' <c>isNoteLabel</c>). It runs to the line before the next note. The opening is never a
@@ -159,23 +160,18 @@ public static partial class DecisionNotes
     }
 
     /// <summary>
-    /// Whether a fenced block holds each line, its fences too, as the digest reads a fence: a line opening with
-    /// three backticks, after any indent, opens or closes one.
+    /// Whether a fenced block holds each line, its fences too, read as markdown reads a fence by the service's one
+    /// rule, <see cref="MarkdownFence"/> (ORIENT2h4). The digest's <c>doc-duplicates</c> <c>fenced</c> reads it by
+    /// the same rule with code of its own, and the twin table holds the two together: a four-backtick fence quoting
+    /// a label, a tilde fence, a backtick run that is code inline and a run that closes nothing.
     /// </summary>
+    /// <remarks>Toggling on any line opening with three backticks closed a longer fence on the example it quoted,
+    /// so a label quoted inside split a note in two.</remarks>
     private static bool[] Fenced(string[] lines)
     {
+        var fence = new MarkdownFence();
         var inFence = new bool[lines.Length];
-        var open = false;
-        for (var i = 0; i < lines.Length; i++)
-        {
-            if (lines[i].TrimStart().StartsWith("```", StringComparison.Ordinal))
-            {
-                open = !open;
-                inFence[i] = true;
-                continue;
-            }
-            inFence[i] = open;
-        }
+        for (var i = 0; i < lines.Length; i++) inFence[i] = fence.Holds(lines[i]);
         return inFence;
     }
 
