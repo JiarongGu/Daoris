@@ -122,4 +122,31 @@ public class MarkdownSectionsTests
         Assert.NotEmpty(name);
         Assert.Equal(expected, MarkdownSections.Preamble(doc));
     }
+
+    /// <summary>
+    /// ORIENT2h3: a fence opens on three or more backticks or tildes and closes only on a run of the same character at
+    /// least as long with nothing after it, as CommonMark reads one. Toggled on any line opening with three, a fence
+    /// quoting a shorter one closed on the quote, and the example's headings split the document.
+    /// </summary>
+    [Theory]
+    [InlineData("a longer fence holds a shorter one", "## Real\n\n````\n```\n## Example\n```\n````\n\nAfter.", "Real")]
+    [InlineData("a tilde fence is not closed by backticks", "## Real\n\n~~~\n```\n## Example\n~~~\n\nAfter.", "Real")]
+    [InlineData("a fence with words after it closes nothing", "## Real\n\n```\n```js\n## Example\n```\n\nAfter.", "Real")]
+    [InlineData("a closing fence may be longer", "## Real\n\n```\n## Example\n`````\n\n## Next\n\nBody.", "Real|Next")]
+    [InlineData("a fence left open runs to the end", "## Real\n\n````\n## Example\n```\n", "Real")]
+    [InlineData("backticks closed on their own line are code, not a fence", "## Real\n\n```a``` is code.\n\n## Next\n\nBody.", "Real|Next")]
+    [InlineData("two backticks are no fence", "## Real\n\n``\n\n## Next\n\nBody.", "Real|Next")]
+    [InlineData("a fence indented in a list item is a fence", "## Real\n\n- An item:\n\n    ```\n## Example\n    ```\n\n## Next\n\nBody.", "Real|Next")]
+    public void A_fence_closes_as_commonmark_closes_it(string name, string doc, string headings)
+    {
+        Assert.NotEmpty(name);
+        Assert.Equal(headings, string.Join('|', MarkdownSections.Split(doc).Select(s => s.Heading)));
+    }
+
+    /// <summary>ORIENT2h3: a record's title is read past a longer fence's quoted example, as a section is.</summary>
+    [Fact]
+    public void The_first_heading_is_read_past_a_longer_fence_s_quoted_example()
+    {
+        Assert.Equal("Real", MarkdownSections.FirstHeading("````\n```\n# Example\n```\n````\n\n# Real\n"));
+    }
 }

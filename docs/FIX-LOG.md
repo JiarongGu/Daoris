@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — an anchor given twice, and a fence closed on its quote
+
+### Service: a title that was another's counted anchor failed the refresh, and a fence closed on a shorter one inside it (ORIENT2h3)
+- **Symptom:** found by the second-opinion review of 2026-10-07 and verified in the code, not seen on an install: headings `A`, `A`, `A (2)` in one file were anchored `A`, `A (2)`, `A (2)`, and the store's insert failed the repository's whole refresh on the shared id; a four-backtick fence quoting a three-backtick example closed on the example's first fence, and the heading and the table inside it became a section and index rows.
+- **Root cause:** each reader that splits a file counted titles in a dictionary of its own and built `title (n)` from the count, never checking the anchors it had already given (`RepositoryScanner`'s sections, declared index and decision notes, `IndexRows`' rows). Each reader also toggled a fence on any line opening with three backticks or tildes, so the closing line's character and length were never compared with the opening's (`MarkdownSections`, `IndexSections`, `IndexRows`).
+- **Fix:** one allocator, `EntryAnchors`, which reserves each anchor and counts a taken one on to the next free, keeping every anchor that was unique; one fence scanner, `MarkdownFence`, which closes only on the opening's character at least as long, as CommonMark does. Each reader keeps its own section and table policy. D151's ORIENT2h3 note has the choices.
+- **Verify:** `IndexEntriesTests`' and `RepositoryScannerTests`' refreshes of the three headings failed on the store's unique constraint first, then passed with distinct ids; the fenced-example cases in `IndexEntriesTests`, `CheckoutDocumentsTests` and `MarkdownSectionsTests` failed first, then passed. Every id this checkout and both examples yield, 1,948 and 8,996 by the two readings, is unchanged. Not covered: `DecisionNotes.Fenced` and its twin in `tools/doc-duplicates.mjs` still toggle on three backticks.
+
 ## 2026-10-07 — a wait on a lost take held the winner's quest
 
 ### Service: a wait made after this machine's take still applied to the winner's quest when that take lost (WAITCLAIM1)

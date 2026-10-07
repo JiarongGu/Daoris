@@ -154,6 +154,66 @@ public sealed class RepositoryScannerTests : IDisposable
         Assert.All(fixes, e => Assert.Equal("2026-09-25", e.Title));
     }
 
+    /// <summary>
+    /// 🔴 ORIENT2h3: counting titles is not reserving anchors. A title that is literally another title's counted
+    /// anchor, <c>A</c>, <c>A</c>, <c>A (2)</c>, gave <c>A</c>, <c>A (2)</c>, <c>A (2)</c>: two entries shared an id
+    /// and the store's insert failed the whole refresh, as REV3's did. Every reader that anchors by a count gets the
+    /// next free anchor, and the anchors a title had while every id was unique are kept.
+    /// </summary>
+    [Theory]
+    [InlineData("a log's sections")]
+    [InlineData("a decision's dated notes")]
+    [InlineData("a deployment index's rows")]
+    public async Task A_title_that_is_another_s_counted_anchor_gets_the_next_free_one_and_the_refresh_succeeds(string reader)
+    {
+        var (scanner, path, anchors) = reader switch
+        {
+            "a log's sections" => Log(),
+            "a decision's dated notes" => Notes(),
+            _ => Rows(),
+        };
+
+        var entries = scanner.Scan(_root);
+        var database = Path.Combine(_root, "knowledge.db");
+        try
+        {
+            await using var store = await SqliteKnowledgeStore.OpenAsync(database);
+            await store.ReplaceRepositoryAsync(entries[0].Repository, entries);
+
+            var stored = (await store.AllAsync()).Where(e => e.RelativePath == path).ToList();
+            Assert.Equal(anchors, entries.Where(e => e.RelativePath == path).Select(e => e.Anchor).ToList());
+            Assert.Equal(anchors.Length, stored.Select(e => e.Id).Distinct().Count());
+        }
+        finally
+        {
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        }
+
+        (RepositoryScanner, string, string?[]) Log()
+        {
+            Write("docs/FIX-LOG.md", "## A\n\nOne.\n\n## A\n\nTwo.\n\n## A (2)\n\nThree.\n");
+            return (new RepositoryScanner(), "docs/FIX-LOG.md", ["A", "A (2)", "A (2) (2)"]);
+        }
+
+        (RepositoryScanner, string, string?[]) Notes()
+        {
+            DeclareFolders("""{"decisions":"docs/decisions"}""");
+            Write("docs/decisions/D7.md",
+                "## D7 — one (2026-10-01)\n\n**Decision.** Why.\n\n"
+                + "**Built 2026-10-02.** One.\n\n**Built 2026-10-02.** Two.\n\n**Built 2026-10-02. (2)** Three.\n");
+            return (new RepositoryScanner(), "docs/decisions/D7.md",
+                [null, "Built 2026-10-02.", "Built 2026-10-02. (2)", "Built 2026-10-02. (2) (2)"]);
+        }
+
+        (RepositoryScanner, string, string?[]) Rows()
+        {
+            Write("docs/index/routes.md",
+                "# Routes\n\n| Route | Handler |\n|---|---|\n| `A` | `x.cs:1` |\n| `A` | `y.cs:1` |\n| `A (2)` | `z.cs:1` |\n");
+            return (new RepositoryScanner(documents: null, index: "docs/index"), "docs/index/routes.md",
+                ["Routes: A", "Routes: A (2)", "Routes: A (2) (2)"]);
+        }
+    }
+
     // ── a folder of records (DOC8c; D134 §5, docs/2026-10-03-decisions-record-design.md §3.5) ────────
     //
     // Since DOC8a this repository's decisions are a folder, one file each, and the scanner titled each by
