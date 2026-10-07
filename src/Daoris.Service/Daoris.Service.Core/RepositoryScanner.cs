@@ -43,8 +43,8 @@ namespace Daoris.Knowledge;
 /// role read is not read again, and the index is never read as documents.
 ///
 /// The declared index of where things are (ORIENT2e; D151 §6) is read after the deployment's index and before
-/// its documents: every markdown file in the folder its README is in, split at its headings, each table row an
-/// entry of its own naming its line (<see cref="IndexSections"/>, ORIENT2h), as entries of
+/// its documents: every markdown file in the folder its README is in, split at its headings, each table row and
+/// each list item an entry of its own naming its lines (<see cref="IndexSections"/>, ORIENT2h, ORIENT2h2), as entries of
 /// <see cref="EntryKind.Index"/>. A folder the deployment named as its index is read a row at a time with its
 /// cells labelled, as it chose, and never at its headings beside.
 ///
@@ -464,16 +464,17 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
 
     /// <summary>
     /// The declared index of where things are (ORIENT2e; D151 §6, the orientation design §3.1): every markdown
-    /// file in the folder its README is in, and below, split at its headings and each table row an entry of its
-    /// own (<see cref="IndexSections"/>, ORIENT2h), as entries of the index's own kind, the repository's own, each
-    /// keeping its lines.
+    /// file in the folder its README is in, and below, split at its headings, each table row and each list item an
+    /// entry of its own (<see cref="IndexSections"/>, ORIENT2h, ORIENT2h2), as entries of the index's own kind, the
+    /// repository's own, each keeping its lines.
     /// </summary>
     /// <remarks>
     /// The folder the README is in, since the index is the folder and the README only names its files; a declared
     /// folder is that folder. A README at the repository's root is read alone: its folder is the whole repository,
-    /// and the index is the small, reviewed statement of where things are, never every file beside it. A section
-    /// or a row is anchored by its title, a title twice in one file told apart by its count (REV3) and never given an
-    /// anchor already given (<see cref="EntryAnchors"/>, ORIENT2h3); text before any heading is the file's own, unanchored.
+    /// and the index is the small, reviewed statement of where things are, never every file beside it. A section,
+    /// a row or an item is anchored by its title, a title twice in one file told apart by its count (REV3) and never
+    /// given an anchor already given (<see cref="EntryAnchors"/>, ORIENT2h3); text before any heading is the file's
+    /// own, unanchored.
     /// </remarks>
     private static IEnumerable<KnowledgeEntry> ScanDeclaredIndex(
         string root, string repository, string declared, ISet<string> indexed)
@@ -501,9 +502,10 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
             var anchors = new EntryAnchors();
             foreach (var section in IndexSections.Read(read.Text, relative, read.First))
             {
-                // The file's opening is the file, unanchored; prose before any heading after a table is a second run
-                // of it, and anchored as a repeat, so no two entries share an id (REV3). A row is anchored with the
-                // sections, since a row's title can be a subsection's (ORIENT2h3: each anchor reserved).
+                // The file's opening is the file, unanchored; prose before any heading after a table or a list is a
+                // second run of it, and anchored as a repeat, so no two entries share an id (REV3), as is an item's text
+                // after its nested items (ORIENT2h2). A row or an item is anchored with the sections, since its title
+                // can be a subsection's (ORIENT2h3: each anchor reserved).
                 var anchor = anchors.Next(section.Title);
                 if (section.Opening && anchor == section.Title) anchor = null;
                 yield return new KnowledgeEntry(
