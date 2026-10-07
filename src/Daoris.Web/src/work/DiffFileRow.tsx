@@ -10,11 +10,11 @@ import { type DiffLayout, PatchView } from './PatchView';
 
 /** How a status reads as a mark. Never colour alone (D41 §6) — the letter is the label. */
 const MARK: Record<string, { letter: string; tone: string }> = {
-  added: { letter: 'A', tone: 'text-st-done' },
-  modified: { letter: 'M', tone: 'text-st-taken' },
+  added: { letter: 'A', tone: 'text-ink-done' },
+  modified: { letter: 'M', tone: 'text-ink-taken' },
   deleted: { letter: 'D', tone: 'text-ink-danger' },
-  renamed: { letter: 'R', tone: 'text-st-open' },
-  copied: { letter: 'C', tone: 'text-st-open' },
+  renamed: { letter: 'R', tone: 'text-ink-open' },
+  copied: { letter: 'C', tone: 'text-ink-open' },
 };
 
 /**
@@ -94,7 +94,7 @@ export function DiffFileRow({ file, open, viewed, layout = 'unified', onToggle, 
             ? <span className="text-ink-faint">{t('work.review.binary')}</span>
             : (
               <>
-                <span className="text-st-done">+{file.added}</span>
+                <span className="text-ink-done">+{file.added}</span>
                 {' '}
                 <span className="text-ink-danger">−{file.removed}</span>
               </>

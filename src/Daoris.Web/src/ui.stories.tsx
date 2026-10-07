@@ -68,6 +68,38 @@ export const Danger: StoryObj = { render: () => <DangerWords /> };
 export const DangerDark: StoryObj = { render: () => <InTheme theme="dark"><DangerWords /></InTheme> };
 
 /**
+ * Every other status hue drawn as words (UXFIX5c): each pill's word, a waiting mark's word, a diff's added count and its
+ * letters, and a sentence, in each hue's ink on the four surfaces; the line, the field and the mark stay the hue.
+ * `tokens.test.ts` computes each at 4.6:1 or more on its own field; these are where the eye checks it.
+ */
+function StatusWords() {
+  const surfaces = [['bg-page', 'page'], ['bg-sunken', 'sunken'], ['bg-raised', 'raised'], ['bg-overlay', 'overlay']] as const;
+  return (
+    <div className="grid gap-2">
+      {surfaces.map(([surface, name]) => (
+        <div key={name} className={`flex flex-wrap items-center gap-3 rounded-card border border-line p-3 ${surface}`}>
+          <span className="w-14 font-mono text-meta text-ink-faint">{name}</span>
+          <Pill tone="open">Open</Pill>
+          <Pill tone="taken">Taken</Pill>
+          <Pill tone="done">Done</Pill>
+          <Dot tone="parked" label="waiting on you" />
+          <span className="font-mono text-meta">
+            <span className="text-ink-done">A</span> <span className="text-ink-taken">M</span>{' '}
+            <span className="text-ink-open">R</span> <span className="text-ink-done">+12</span>
+          </span>
+          <p className="m-0 text-small text-ink-done">Every step passed.</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export const StatusInks: StoryObj = { render: () => <StatusWords /> };
+
+/** The same in dark, where the hues as words read 4.1 to 4.4:1 on their fields over an overlay, and the inks 4.6 or more. */
+export const StatusInksDark: StoryObj = { render: () => <InTheme theme="dark"><StatusWords /></InTheme> };
+
+/**
  * A setting is a row (2026-09-23): the four shapes the Machine view uses — a switch, a number, a
  * path that is read rather than set, and a row whose value earned a warning beneath it.
  */

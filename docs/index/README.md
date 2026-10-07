@@ -40,7 +40,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/agents/AgentPage.tsx` | 43 | 833 |
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 83 | 1636 |
 | `src/Daoris.Web/src/ui.test.tsx` | 42 | 854 |
-| `src/Daoris.Web/src/ui.tsx` | 75 | 1614 |
+| `src/Daoris.Web/src/ui.tsx` | 75 | 1615 |
 | `src/Daoris.Web/src/work/ConversationView.test.tsx` | 43 | 817 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 188 | 3708 |
 | `src/Daoris.Web/src/work/WorkFrame.tsx` | 73 | 1387 |
@@ -132,7 +132,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/deployment-rehearsal.mjs` | 93 | 1645 |
 | `tools/desktop-publish.mjs` | 53 | 972 |
 | `tools/desktop.mjs` | 48 | 998 |
-| `tools/family-rehearsal.mjs` | 308 | 5521 |
+| `tools/family-rehearsal.mjs` | 312 | 5570 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
 | `tools/merge-branch.mjs` | 127 | 2333 |
 | `tools/orient-index.mjs` | 66 | 1435 |
@@ -142,8 +142,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 48 | 115 |
-| `docs/2026-09-19-platform-ux.md` | 56 | 596 |
+| `.claude/knowledge/twins.md` | 49 | 116 |
+| `docs/2026-09-19-platform-ux.md` | 57 | 611 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 52 | 349 |
 | `docs/2026-09-25-rev3-review.md` | 51 | 407 |

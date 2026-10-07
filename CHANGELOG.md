@@ -133,6 +133,9 @@ with the version and date at release.
   agent's account it was; older notes keep reading as before.
 - A comma or full stop after a command or branch name no longer starts a line of its own, and a
   session's header shows a long branch name whole.
+- Status words (open, taken, done) are easier to read in both themes, as danger words already were.
+- `daoris-driver trees clean` and `trees sync` take `--workspace <name>`, as a workspace's Branches tab
+  does, and refuse a word they do not know instead of ignoring it.
 
 The first version: doctrine that installs, is checked, and flows back.
 

@@ -339,7 +339,7 @@ function QuestStep({ quest, doors }: { quest: TraceQuestLink; doors: Doors }) {
               <li key={requirement.number} className="grid min-w-0 gap-0.5">
                 <Said meta={`${requirement.number} · ${t('work.trace.quest.check', { check: requirement.check })}`}>{requirement.quote}</Said>
                 <p className="m-0 text-small text-ink-soft [overflow-wrap:anywhere]">
-                  <span className={cn(requirement.answer === 'met' ? 'text-st-done' : requirement.answer === 'departed' ? 'text-st-open' : 'text-ink-faint')}>
+                  <span className={cn(requirement.answer === 'met' ? 'text-ink-done' : requirement.answer === 'departed' ? 'text-ink-open' : 'text-ink-faint')}>
                     {t(`work.trace.answer.${requirement.answer}`)}
                   </span>
                   {requirement.met && `${t('work.trace.colon')}${requirement.met}`}

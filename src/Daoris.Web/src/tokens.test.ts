@@ -317,10 +317,14 @@ describe('the chosen themes', () => {
  * **Every surface is readable in every ink, and the sunken one lies below the page** (D41 §3; LOOK6). The status and
  * identity hues were computed and the surfaces under the inks were not, until a fourth surface arrived for the box a
  * move asks once in. Body and secondary ink reach 4.5:1 on every surface; the faint ink, which carries meta and a
- * field's placeholder beside a label that says the same, reaches 3:1. Computed from `tokens.css`, in both themes.
+ * field's placeholder beside a label that says the same, reaches 3:1; each status hue's ink, which a word in that hue
+ * wears, reaches 4.5:1 (UXFIX5, UXFIX5c). Computed from `tokens.css`, in both themes.
  */
 const SURFACES = ['--page', '--sunken', '--raised', '--overlay'];
-const INK_FLOORS: [ink: string, floor: number][] = [['--ink', 4.5], ['--ink-soft', 4.5], ['--ink-faint', 3], ['--ink-danger', 4.5]];
+const INK_FLOORS: [ink: string, floor: number][] = [
+  ['--ink', 4.5], ['--ink-soft', 4.5], ['--ink-faint', 3],
+  ['--ink-open', 4.5], ['--ink-taken', 4.5], ['--ink-done', 4.5], ['--ink-danger', 4.5],
+];
 
 /** Relative luminance of a `#rrggbb` colour (WCAG 2). */
 export function luminance(hex: string): number {
@@ -378,28 +382,60 @@ describe('the surfaces', () => {
 });
 
 /**
- * 🔴 **Red drawn as words wears the danger ink, never the fill's colour** (UXFIX5, from the 2026-10-07 second opinion).
- * The status hues were computed to tell four states apart as fills, borders and marks. Declined's dark red drawn as a
- * danger button's label, a refusal's sentence or a declined pill's word measured 3.95:1 on the sunken box a move asks
- * once in, 3.18:1 on an overlay and 2.94:1 on its own soft field there: under the 4.5:1 text floor, in the theme
- * nobody had measured it in. `--ink-danger` is the red a word wears, held to the text floor on every surface and on
- * declined's soft field over each, in both themes; a fill, a border and a mark keep `--st-declined`.
+ * 🔴 **A status word wears its hue's ink, never the fill's colour** (UXFIX5, UXFIX5c, from the 2026-10-07 second
+ * opinion). The status hues were computed to tell four states apart as fills, borders and marks. Declined's dark red
+ * drawn as a danger button's label, a refusal's sentence or a declined pill's word measured 3.95:1 on the sunken box a
+ * move asks once in, 3.18:1 on an overlay and 2.94:1 on its own soft field there. Open's and done's words read 2.8 to
+ * 3.8:1 in light, and taken's 4.1:1 on its field over the sunken box; in dark the three read 4.1 to 4.4:1 on their
+ * fields over an overlay. All under the 4.5:1 text floor. Each hue's ink is the colour its word wears, held to the text
+ * floor on every surface and on its own soft field over each, in both themes; a fill, a border and a mark keep the hue.
  */
-const DANGER_AS_TEXT = /(?<![\w-])text-st-declined(?![\w-])/g;
-const DANGER_AS_CSS_TEXT = /(?<![\w-])color\s*:\s*var\(--st-declined\)/g;
+const STATUS_INKS: [hue: string, fill: string, ink: string][] = [
+  ['open', '--st-open', '--ink-open'],
+  ['taken', '--st-taken', '--ink-taken'],
+  ['done', '--st-done', '--ink-done'],
+  ['declined', '--st-declined', '--ink-danger'],
+];
+
+const STATUS_AS_TEXT = /(?<![\w-])text-st-(?:open|taken|done|declined)(?![\w-])/g;
+const STATUS_AS_CSS_TEXT = /(?<![\w-])color\s*:\s*var\(--st-(?:open|taken|done|declined)\)/g;
+/** An SVG word takes its colour from `fill`, as the map's *waiting on you* does; a shape's fill is a mark and is left. */
+const STATUS_AS_SVG_TEXT = /<text\b[^>]*?(?<![\w-])(fill-st-(?:open|taken|done|declined))(?![\w-])/g;
 
 /**
- * Files that still draw red words in the fill's colour, each with its reason. Empty since UXFIX5b swapped the three
- * Settings sites UXFIX5 left to their own lane, and held empty: a red word in the fill's colour is fixed, not allowed.
+ * Where a source may still draw a status hue through its colour, each hit with its reason and each allowed once, so a
+ * second hit of the same class in that file still fails. A mark keeps its hue (platform-ux §3), and an icon or a glyph
+ * takes its colour as a word does, so the scan is told which they are. A word in a file a branch in flight holds waits
+ * for that branch, and its row goes when the swap lands. A red word is allowed nowhere (UXFIX5b).
  */
-const DANGER_TEXT_ELSEWHERE: Record<string, string> = {};
+const HUE_AS_COLOUR: Record<string, { hits: string[]; reason: string }> = {
+  './work/frame.tsx': { hits: ['text-st-open'], reason: "a mark: the status bar's setup icon, beside its words in the ink" },
+  './work/ConversationView.tsx': {
+    hits: ['text-st-done'], reason: "a mark: a finished plan entry's check, aria-hidden beside its words",
+  },
+};
 
-/** Every place a source draws danger as text in `--st-declined`: a `text-` class, or a stylesheet's `color`. */
-export function dangerAsText(files: [path: string, source: string][]): string[] {
-  return files
-    .filter(([path]) => !(path in DANGER_TEXT_ELSEWHERE))
-    .flatMap(([path, source]) => [...(source.match(DANGER_AS_TEXT) ?? []), ...(source.match(DANGER_AS_CSS_TEXT) ?? [])]
-      .map((hit) => `${path} draws danger as text in the fill's colour: ${hit}`));
+/** Each status hue a source draws through its colour: a `text-` class, a stylesheet's `color`, or an SVG word's `fill`. */
+function huesAsColour(source: string): string[] {
+  return [
+    ...(source.match(STATUS_AS_TEXT) ?? []),
+    ...(source.match(STATUS_AS_CSS_TEXT) ?? []),
+    ...[...source.matchAll(STATUS_AS_SVG_TEXT)].map((match) => match[1]!),
+  ];
+}
+
+/** Every status word a source draws in its fill's colour, less the hits `HUE_AS_COLOUR` allows that file, each once. */
+export function statusAsText(files: [path: string, source: string][]): string[] {
+  return files.flatMap(([path, source]) => {
+    const allowed = [...(HUE_AS_COLOUR[path]?.hits ?? [])];
+    return huesAsColour(source)
+      .filter((hit) => {
+        const at = allowed.indexOf(hit);
+        if (at >= 0) allowed.splice(at, 1);
+        return at < 0;
+      })
+      .map((hit) => `${path} draws a status word in its fill's colour: ${hit}`);
+  });
 }
 
 /** A colour laid over a surface at an opacity, as the browser composites `bg-st-declined/10`: per sRGB channel. */
@@ -409,45 +445,123 @@ export function over(colour: string, surface: string, alpha: number): string {
     .toString(16).padStart(2, '0')).join('')}`;
 }
 
+/** A `#rrggbb` colour's OKLCH hue angle in degrees: what an ink keeps of its fill while its lightness moves. */
+export function hueAngle(hex: string): number {
+  const [r, g, b] = [1, 3, 5].map((at) => {
+    const c = parseInt(hex.slice(at, at + 2), 16) / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  }) as [number, number, number];
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  const a = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s;
+  const bAxis = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
+  return ((Math.atan2(bAxis, a) * 180) / Math.PI + 360) % 360;
+}
+
+/** The angle between two hues, the short way round. */
+const hueApart = (a: number, b: number) => Math.abs((((a - b) % 360) + 540) % 360 - 180);
+
 /** The stylesheets beside the sources, read from disk: a raw import of a stylesheet answers an empty string. */
 const stylesheets = Object.keys(import.meta.glob('./**/*.css'))
   .map((path) => [path, readFileSync(join(process.cwd(), 'src', path), 'utf8')] as [string, string]);
 
-describe('the danger ink', () => {
+describe('the status inks', () => {
   const themes = () => {
     const read = palettes(tokensCss);
     return { light: read['system-light'], dark: read['system-dark'] };
   };
+  const field = (tokens: Record<string, string>, fill: string, surface: string) => over(tokens[fill]!, tokens[surface]!, 0.1);
 
   it("catches declined's fill drawn as words in dark — the check itself, in the measure the review took", () => {
     const { dark } = themes();
     const sunken = contrast(dark['--st-declined']!, dark['--sunken']!);
     expect(sunken).toBeGreaterThan(3.9);
     expect(sunken).toBeLessThan(4.5);
-    expect(contrast(dark['--st-declined']!, over(dark['--st-declined']!, dark['--overlay']!, 0.1))).toBeLessThan(3);
+    expect(contrast(dark['--st-declined']!, field(dark, '--st-declined', '--overlay'))).toBeLessThan(3);
     expect(over('#000000', '#ffffff', 0.1)).toBe('#e6e6e6');
   });
 
-  it("holds: the danger ink reaches the text floor on declined's soft field over every surface, in both themes", () => {
+  it("catches open's, taken's and done's fills drawn as words — the check itself, in the measures UXFIX5c took", () => {
+    const { light, dark } = themes();
+    // Light: open and done under the floor on every surface, taken on its own field over the sunken box.
+    for (const fill of ['--st-open', '--st-done']) {
+      for (const surface of SURFACES) expect(contrast(light[fill]!, light[surface]!), `light ${fill} on ${surface}`).toBeLessThan(3.8);
+    }
+    expect(contrast(light['--st-taken']!, field(light, '--st-taken', '--sunken'))).toBeLessThan(4.2);
+    // Dark: each on its own field over an overlay.
+    for (const fill of ['--st-open', '--st-taken', '--st-done']) {
+      const ratio = contrast(dark[fill]!, field(dark, fill, '--overlay'));
+      expect(ratio, `dark ${fill} on its field over --overlay`).toBeGreaterThan(4.1);
+      expect(ratio, `dark ${fill} on its field over --overlay`).toBeLessThan(4.5);
+    }
+  });
+
+  it("holds: each hue's ink reaches the text floor on that hue's soft field over every surface, in both themes", () => {
     for (const [theme, tokens] of Object.entries(themes())) {
-      for (const surface of SURFACES) {
-        const field = over(tokens['--st-declined']!, tokens[surface]!, 0.1);
-        const ratio = contrast(tokens['--ink-danger']!, field);
-        expect(ratio, `${theme} --ink-danger on declined's soft field over ${surface}: ${ratio.toFixed(2)}`)
-          .toBeGreaterThanOrEqual(4.5);
+      for (const [hue, fill, ink] of STATUS_INKS) {
+        for (const surface of SURFACES) {
+          const ratio = contrast(tokens[ink]!, field(tokens, fill, surface));
+          expect(ratio, `${theme} ${ink} on ${hue}'s soft field over ${surface}: ${ratio.toFixed(2)}`).toBeGreaterThanOrEqual(4.5);
+        }
       }
     }
   });
 
-  it("catches danger drawn as text in the fill's colour, behind a variant and in a stylesheet, and leaves a fill and a border", () => {
-    expect(dangerAsText([['./work/Composer.tsx', '<p className="m-0 text-small text-st-declined">']]))
-      .toEqual(["./work/Composer.tsx draws danger as text in the fill's colour: text-st-declined"]);
-    expect(dangerAsText([['./ui.tsx', "'border-st-declined hover:text-st-declined text-st-declined/80'"]])).toHaveLength(2);
-    expect(dangerAsText([['./work/code.css', '.hljs-deletion {\n  color: var(--st-declined);\n}']])).toHaveLength(1);
-    // And what must keep passing: the ink itself, the fill, the border, a mark, and a word that holds the prefix.
-    expect(dangerAsText([['./ui.tsx', [
+  it('reads a hue the way OKLCH does — the angle itself, on colours whose angle is known', () => {
+    expect(hueAngle('#ff0000')).toBeCloseTo(29.23, 1);
+    expect(hueAngle('#0000ff')).toBeCloseTo(264.05, 1);
+    expect(hueApart(359, 1)).toBeCloseTo(2, 5);
+    // A hue moved by a quarter turn is caught: an ink that kept its lightness and lost its hue.
+    expect(hueApart(hueAngle('#2c9a62'), hueAngle('#2f6db3'))).toBeGreaterThan(90);
+  });
+
+  it("holds: each ink keeps its fill's hue within a degree, so only its lightness moved", () => {
+    for (const [theme, tokens] of Object.entries(themes())) {
+      for (const [, fill, ink] of STATUS_INKS) {
+        const apart = hueApart(hueAngle(tokens[ink]!), hueAngle(tokens[fill]!));
+        expect(apart, `${theme} ${ink} against ${fill}: ${apart.toFixed(2)}°`).toBeLessThanOrEqual(1);
+      }
+    }
+  });
+
+  it('holds: an ink is its fill wherever the fill already reads, so nothing that passed was moved', () => {
+    for (const [theme, tokens] of Object.entries(themes())) {
+      for (const [, fill, ink] of STATUS_INKS) {
+        const reads = SURFACES.every((surface) =>
+          contrast(tokens[fill]!, tokens[surface]!) >= 4.5 && contrast(tokens[fill]!, field(tokens, fill, surface)) >= 4.5);
+        if (reads) expect(tokens[ink], `${theme} ${ink}: ${fill} already reads`).toBe(tokens[fill]);
+      }
+    }
+    // Declined's light red is the case that reads, and the one this holds today.
+    expect(themes().light['--ink-danger']).toBe(themes().light['--st-declined']);
+  });
+
+  it("catches a status word in its fill's colour, behind a variant, in a stylesheet and on the map, and leaves a fill and a border", () => {
+    expect(statusAsText([['./work/Composer.tsx', '<p className="m-0 text-small text-st-declined">']]))
+      .toEqual(["./work/Composer.tsx draws a status word in its fill's colour: text-st-declined"]);
+    expect(statusAsText([['./ui.tsx', "'border-st-open text-st-open bg-st-open/10' 'text-st-taken' 'text-st-done'"]]))
+      .toHaveLength(3);
+    expect(statusAsText([['./ui.tsx', "'border-st-declined hover:text-st-declined text-st-declined/80'"]])).toHaveLength(2);
+    expect(statusAsText([['./work/code.css', '.hljs-string {\n  color: var(--st-done);\n}']])).toHaveLength(1);
+    // The shape the map's word took: an SVG word wears `fill`, on one line and over several.
+    expect(statusAsText([['./map/LayeredMap.tsx',
+      "<text x={left + 14} y={card.y + 14} className={cn('text-meta', there === 'parked' ? 'fill-st-open' : 'fill-ink-soft')}>"]]))
+      .toEqual(["./map/LayeredMap.tsx draws a status word in its fill's colour: fill-st-open"]);
+    expect(statusAsText([['./map/MapCanvas.tsx', "<text\n  x={x}\n  className={cn('text-meta', parked ? 'fill-st-open' : 'fill-ink-soft')}\n>"]]))
+      .toHaveLength(1);
+    // A mark is allowed once in its file: a word beside it in the same hue still fails.
+    expect(statusAsText([['./work/frame.tsx', '<Icon name="plan" size={12} className="text-st-open" />']])).toEqual([]);
+    expect(statusAsText([['./work/frame.tsx', '<Icon className="text-st-open" /><span className="text-st-open">2</span>']]))
+      .toHaveLength(1);
+    // And what must keep passing: the inks themselves, a fill, a border, a mark's stroke or a shape's fill, and a word
+    // that holds the prefix.
+    expect(statusAsText([['./ui.tsx', [
       "'border border-st-declined text-ink-danger hover:enabled:bg-st-declined/10 border-l-st-declined'",
-      "'bg-st-declined context-text-st-declined' background-color: var(--st-declined); border-color: var(--st-declined);",
+      "'text-ink-open text-ink-taken text-ink-done fill-ink-open bg-st-open stroke-st-taken border-l-st-open'",
+      '<circle className="fill-st-done" /> <rect className="fill-st-open" />',
+      "'bg-st-declined context-text-st-done' background-color: var(--st-open); border-color: var(--st-taken);",
+      '--color-st-done: var(--st-done);',
     ].join(' ')]])).toEqual([]);
   });
 
@@ -455,18 +569,20 @@ describe('the danger ink', () => {
     expect(stylesheets.map(([path]) => path)).toEqual(expect.arrayContaining(['./tokens.css', './work/code.css']));
   });
 
-  it('holds: every red word in the platform wears the danger ink', () => {
-    expect(dangerAsText([...components, ...modules, ...stylesheets])).toEqual([]);
+  it('holds: every status word in the platform wears its hue\'s ink', () => {
+    expect(statusAsText([...components, ...modules, ...stylesheets])).toEqual([]);
   });
 
-  it('holds: no file is allowed the fill as text any more, so a new red word cannot be waved through (UXFIX5b)', () => {
-    expect(DANGER_TEXT_ELSEWHERE).toEqual({});
+  it('holds: no file is allowed a red word, so a new one cannot be waved through (UXFIX5b)', () => {
+    for (const [path, { hits }] of Object.entries(HUE_AS_COLOUR)) {
+      expect(hits.filter((hit) => hit.endsWith('-declined') || hit.includes('--st-declined')), path).toEqual([]);
+    }
   });
 
-  it('holds: each file still allowed the fill as text still draws it there, so a row goes when its swap lands', () => {
-    for (const path of Object.keys(DANGER_TEXT_ELSEWHERE)) {
-      const source = components.find(([each]) => each === path)?.[1] ?? '';
-      expect(source.match(DANGER_AS_TEXT), `${path} no longer draws danger in the fill's colour: drop its row`).not.toBeNull();
+  it('holds: each hit still allowed is still drawn there, so a row goes when its swap lands', () => {
+    for (const [path, { hits }] of Object.entries(HUE_AS_COLOUR)) {
+      const drawn = huesAsColour(components.find(([each]) => each === path)?.[1] ?? '');
+      for (const hit of hits) expect(drawn, `${path} no longer draws ${hit}: drop it from its row`).toContain(hit);
     }
   });
 });

@@ -191,9 +191,10 @@ export function Button({
 
 const PILL_TONE: Record<string, string> = {
   neutral: 'border-line text-ink-soft bg-raised',
-  open: 'border-st-open text-st-open bg-st-open/10',
-  taken: 'border-st-taken text-st-taken bg-st-taken/10',
-  done: 'border-st-done text-st-done bg-st-done/10',
+  // Each word is its hue's ink on its own soft field (UXFIX5c): open's and done's hues read 2.8 to 3.4:1 there in light.
+  open: 'border-st-open text-ink-open bg-st-open/10',
+  taken: 'border-st-taken text-ink-taken bg-st-taken/10',
+  done: 'border-st-done text-ink-done bg-st-done/10',
   // Declined's word is the danger ink on its own soft field (UXFIX5), which the hue itself read at 3.2:1 in dark.
   declined: 'border-st-declined text-ink-danger bg-st-declined/10',
 };
@@ -372,7 +373,7 @@ const DOT_TONE: Record<string, { mark: string; word: string }> = {
   live: { mark: 'bg-accent motion-safe:animate-pulse', word: 'text-accent' },
   // Waiting on a person is the status palette's waiting hue, the one `WaitingCard` and the map wear.
   // It wore declined's red, and a session waiting on its person read as one that had failed (UX5 U1).
-  parked: { mark: 'bg-st-open', word: 'text-st-open' },
+  parked: { mark: 'bg-st-open', word: 'text-ink-open' },
   // A failure is an outcome, and red is its hue: a tool call that failed, never a session's liveness.
   failed: { mark: 'bg-st-declined', word: 'text-ink-danger' },
   // Ended is completed, failed, declined and stopped at once, so it wears no outcome's hue: done's
@@ -596,7 +597,7 @@ export function Card({ id, warn, accent, className, children }: {
 export function WaitingCard({ title, children }: { title: ReactNode; children?: ReactNode }) {
   return (
     <section className="rounded-card border border-line border-l-[3px] border-l-st-open bg-raised px-[1.15rem] py-3.5">
-      <h3 className="m-0 text-small font-semibold text-st-open">{title}</h3>
+      <h3 className="m-0 text-small font-semibold text-ink-open">{title}</h3>
       {children}
     </section>
   );
@@ -623,7 +624,7 @@ export function Tile({ label, value, note, warn }: {
     >
       <span className="text-small text-ink-soft">{label}</span>
       <span className="text-value font-semibold leading-[1.15] tracking-[-0.01em]">{value}</span>
-      <span className={cn('text-small', warn ? 'text-st-open' : 'text-ink-faint')}>{note}</span>
+      <span className={cn('text-small', warn ? 'text-ink-open' : 'text-ink-faint')}>{note}</span>
     </div>
   );
 }
@@ -1354,7 +1355,7 @@ export function CountBadge({ count, tone = 'accent' }: {
         // sits inside the circle, and two grow it into a pill as they should.
         'absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full border bg-page px-0.5',
         'font-mono text-meta leading-none tabular-nums',
-        tone === 'open' ? 'border-st-open text-st-open' : 'border-accent text-accent',
+        tone === 'open' ? 'border-st-open text-ink-open' : 'border-accent text-accent',
       )}
     >
       {count > 99 ? '99+' : count}

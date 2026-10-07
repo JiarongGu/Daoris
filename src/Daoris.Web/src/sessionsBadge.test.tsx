@@ -114,7 +114,7 @@ describe("Sessions' badge", () => {
     start(CONSIDERED);
 
     await waitFor(() => expect(within(sessionsButton()).getByText('2')).toBeInTheDocument());
-    expect(within(sessionsButton()).getByText('2').className).toContain('text-st-open');
+    expect(within(sessionsButton()).getByText('2').className).toContain('text-ink-open');
   });
 
   it('counts the sessions alone before a tick has said what is parked', async () => {
