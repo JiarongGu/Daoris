@@ -11868,3 +11868,31 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **MOD9c — the lane scan sees reads from a source root** (cli, tools). The driver's `NoConsoleWindowTests` and `PullRequestOccasionTests` read the modules' and the app's sources through `SourceRoot()`, which the scan does not see, and the modules lane does not reach `driver`, so a change there fails them only in the full set, never at a merge. Contract: MOD9, parallel-development design §3, D115's MOD9b note. Proof: the scan fails until those reads reach `driver`.
 
 **Outcome** 2026-10-07: the lane scan resolves source-root helpers (`SourceRoot()`) and reads under them; it found five unplaced reads, the driver's `NoConsoleWindowTests` and `PullRequestOccasionTests` scanning the modules' and app's C#, now sent to `driver` by one `**/*.cs` row (`MODULES_READERS`). Follow-up: MOD9d. Detail: D115's MOD9c note; commits 0ce4c3d6, b7343f00.
+
+
+## UXFIX2d — an ask opens whole in view (2026-10-07)
+
+> - [ ] **UXFIX2d — an ask opens whole in view** (web-shell). Seen on the install (2026-10-07, 1546 px, dark): a workspace's *Clear history…* near the page's foot opens its ask with the focus on the explanation, which scrolls only that line into view; the list and both presses stay below the fold behind the panel. On opening, bring the whole ask into view (`block: 'nearest'` on the ask) before focusing its explanation without scrolling again. Contract: platform-ux §4's one-inline-confirmation rule. Proof: a vitest that the ask's container is scrolled into view on open; the install's shot.
+
+**Outcome** 2026-10-07: an inline ask scrolls its whole group into view (`block: 'nearest'`) before focusing its explanation without scrolling again, on the direct and the menu-opened path. Detail: platform-ux §4; commit 1db6fc4a.
+
+
+## HIST1o — the clear's opening sentence says only what goes (2026-10-07, D153)
+
+> - [ ] **HIST1o — the clear's opening sentence says only what goes** (web-shell). Seen on the install (2026-10-07): with no finished work kept and only 1.3 KB of left-over files to take, the ask opens with *从本机清除 lumachain 已完成的工作所保留的一切：它们的对话内容、记录文本和文件，共 1.3 KB* ("everything lumachain's finished work keeps: its conversations, record texts and files"), while its own list says only the left-over files go. Word the opening from the plan's units, as the list already is, in both catalogues. Contract: history-clearing design §6.1, HIST1n. Proof: vitest for a plan of left-over files alone, and one with units.
+
+**Outcome** 2026-10-07: a workspace clear with no unit to take opens with only what goes (the left-over files, the intake's room, or both) in both catalogues; where a unit goes the sentence is unchanged. Detail: D153's HIST1o note; commit 41d8c873.
+
+
+## PAUSE1h — a partial abandon does not read as success (2026-10-07)
+
+> - [ ] **PAUSE1h — a partial abandon does not read as success** (web-shell). HIST1n judged a clear's answer before closing its ask; `pausing.ts`'s `abandonNotice` still says a partial abandon (`work.abandon.done.changed`) in the `ok` tone, the same shape. Say it in the error's tone, as a partial clear now is. Contract: platform-ux §4 as UXFIX2 amended it, D153's HIST1n note. Proof: a `pausing.test.ts` case for a partial abandon whose tone is not `ok`.
+
+**Outcome** 2026-10-07: `abandonNotice` says `ok` only when the abandon took every listed piece; a changed or disk-kept piece is said in the error tone, as HIST1n made a partial clear. Detail: commits 5f6c67b0, 55a7d005.
+
+
+## SESSDEL1b — the delete's toast says what stayed (2026-10-07)
+
+> - [ ] **SESSDEL1b — the delete's toast says what stayed** (web-shell). `SESSION_DELETE` now answers `stayed` by name (SESSDEL1), but `sessionActs.ts`'s toast still says everything went. Say which stayed, by name, in both catalogues. Contract: D126 §5.4 and its SESSDEL1 note. Proof: a `sessionActs.test.tsx` case with `stayed: ['transcript']`, en and zh.
+
+**Outcome** 2026-10-07: a delete whose answer has `stayed` says those items by name in both catalogues, in the error tone, and the ask still closes; with nothing kept it says what it said before. Follow-up: SESSDEL1c. Detail: commit 5d45ac77.

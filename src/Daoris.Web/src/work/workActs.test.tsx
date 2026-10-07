@@ -72,8 +72,9 @@ describe('the acts on a work', () => {
 
     act(() => result.current.abandon({ scope: 'ask', id: 'a1b2c3' }, 'It went the wrong way.', ['quest:9a8b7c'], done));
 
+    // A partial abandon, said in the error's tone (PAUSE1h).
     await waitFor(() => expect(notify).toHaveBeenCalledWith(
-      'Abandoned ask #a1b2c3: 5 of 6 pieces; 1 changed since the list and stayed.', 'ok'));
+      'Abandoned ask #a1b2c3: 5 of 6 pieces; 1 changed since the list and stayed.', 'error'));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORK_ABANDON', expect.objectContaining({
       payload: { ask: 'a1b2c3', reason: 'It went the wrong way.', pieces: ['quest:9a8b7c'] },
     }));

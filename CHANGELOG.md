@@ -121,6 +121,10 @@ with the version and date at release.
   lands, and a long refusal wraps instead of widening a narrow window.
 - A session whose quest was taken first on another machine can no longer close or decline it, or
   make it wait, after this machine learned its take lost; it is told to stand down instead.
+- A confirmation opened near the bottom of a page now comes fully into view, its buttons included.
+- A history clear that would only take left-over files says just that, instead of naming conversations
+  and records it will not touch.
+- An abandon that left part of its work behind is said as an error rather than as done.
 
 The first version: doctrine that installs, is checked, and flows back.
 

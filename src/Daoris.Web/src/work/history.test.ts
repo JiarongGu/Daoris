@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import i18n from '../i18n';
 import {
-  clearList, clearOffered, clearRefusal, clearSaid, clearWent, goingSaid, historyPayload, historyPlanOf, keptDoor, readingSaid,
-  reasonSaid,
+  clearLead, clearList, clearOffered, clearRefusal, clearSaid, clearWent, goingSaid, historyPayload, historyPlanOf, keptDoor,
+  readingSaid, reasonSaid,
 } from './history';
 import {
   ASK_PLAN, FAILED_NONE, FAILED_PLAN, QUEST_ASKED, QUEST_CLEARED, QUEST_PLAN, QUEST_TREE_HERE, WORKSPACE_ALL_KEPT,
-  WORKSPACE_CLEARED, WORKSPACE_EMPTY, WORKSPACE_KEPT, WORKSPACE_LEFT_OVER, WORKSPACE_PLAN, WORKSPACE_RECORDS_EMPTY_FILES,
-  WORKSPACE_RECORDS_ONLY,
+  WORKSPACE_CLEARED, WORKSPACE_EMPTY, WORKSPACE_FILES_ONLY, WORKSPACE_KEPT, WORKSPACE_LEFT_OVER, WORKSPACE_PLAN,
+  WORKSPACE_RECORDS_EMPTY_FILES, WORKSPACE_RECORDS_ONLY, WORKSPACE_ROOM_ONLY,
 } from './historyFixtures';
 
 // What a clear lists, sends and says on the screen (HIST1e, D153; the history-clearing design §2.4, §5, §6.1): pure, so every
@@ -59,6 +59,39 @@ describe('what the first press lists, and the second sends (design §5)', () => 
     expect(list.units).toEqual([{ kind: 'failed', id: '9a8b7c' }]);
     expect(list.sessions).toBe(2);
     expect(list.kept).toEqual([{ code: 'HISTORY_NOT_OURS', session: 'laptop/f9e8d7c6', machine: 'laptop' }]);
+  });
+});
+
+/**
+ * HIST1o (seen on the install, 2026-10-07): with no finished work to take and only 1.3 KB of left-over files, a workspace's
+ * ask opened with *everything its finished work keeps: their words, transcripts and files*, while its own list said only the
+ * left-over files went. The opening is worded from the plan's units, as the list is: the finished work only where a unit goes.
+ */
+describe('a workspace’s opening says only what goes (HIST1o)', () => {
+  const WORKSPACE = { scope: 'workspace', id: 'aurora' } as const;
+
+  it('says only the left-over files where no unit goes, in both languages', () => {
+    const list = clearList(WORKSPACE_FILES_ONLY);
+    expect(clearLead(en, WORKSPACE, list)).toBe('Clears from this machine only the files left over from records already gone, 1.3 KB.');
+    expect(clearLead(zh, WORKSPACE, list)).toBe('从本机清除的只有已不存在的记录留下的文件，共 1.3 KB。');
+  });
+
+  it('names the intake’s room where it goes beside the files, or alone', () => {
+    expect(clearLead(en, WORKSPACE, clearList(WORKSPACE_LEFT_OVER))).toBe(
+      'Clears from this machine only the files left over from records already gone and the intake’s room for aurora, 3.1 MB.');
+    expect(clearLead(zh, WORKSPACE, clearList(WORKSPACE_LEFT_OVER))).toBe(
+      '从本机清除的只有已不存在的记录留下的文件和 aurora 的受理目录，共 3.1 MB。');
+    expect(clearLead(en, WORKSPACE, clearList(WORKSPACE_ROOM_ONLY))).toBe(
+      'Clears from this machine only the intake’s room for aurora, 40 KB.');
+    expect(clearLead(zh, WORKSPACE, clearList(WORKSPACE_ROOM_ONLY))).toBe('从本机清除的只有 aurora 的受理目录，共 40 KB。');
+  });
+
+  it('says the finished work where a unit goes, in both languages', () => {
+    const list = clearList(WORKSPACE_PLAN);
+    expect(clearLead(en, WORKSPACE, list)).toBe(
+      'Clears from this machine what it kept of aurora’s finished work: their words, transcripts and files, 20.6 MB.');
+    expect(clearLead(zh, WORKSPACE, list)).toBe(
+      '从本机清除 aurora 已完成的工作所保留的一切：它们的对话内容、记录文本和文件，共 20.6 MB。');
   });
 });
 

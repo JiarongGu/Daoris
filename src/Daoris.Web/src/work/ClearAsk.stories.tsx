@@ -6,15 +6,15 @@ import { chinese } from '../storyLanguage';
 import { ClearAsk, type KeptDoors } from './ClearAsk';
 import { clearRefusal } from './history';
 import {
-  ASK_PLAN, FAILED_PLAN, QUEST_ALONE, QUEST_FORGOTTEN, QUEST_PLAN, WORKSPACE_ALL_KEPT, WORKSPACE_KEPT, WORKSPACE_LEFT_OVER,
-  WORKSPACE_PLAN,
+  ASK_PLAN, FAILED_PLAN, QUEST_ALONE, QUEST_FORGOTTEN, QUEST_PLAN, WORKSPACE_ALL_KEPT, WORKSPACE_FILES_ONLY, WORKSPACE_KEPT,
+  WORKSPACE_LEFT_OVER, WORKSPACE_PLAN,
 } from './historyFixtures';
 
 // A clear's first press (HIST1e, D153; the history-clearing design §5, §6.1), as it asks under a quest's or an ask's header
 // and in a workspace's Details: what it takes and that nothing brings it back, or that the remote keeps the team's copy;
 // for a workspace the counts by kind and every unit kept with its reason and door; a teammate's failed session kept; only
-// left-over files; nothing to take; on its way; pressed and every unit kept (HIST1n). At the main area's width beside the
-// install's 1546 px window and at 680 px, in both languages and both themes.
+// left-over files, said as only those (HIST1o); nothing to take; on its way; pressed and every unit kept (HIST1n). At the
+// main area's width beside the install's 1546 px window and at 680 px, in both languages and both themes.
 
 const nothing = () => {};
 const QUEST = { scope: 'quest', id: '9a8b7c' } as const;
@@ -104,6 +104,14 @@ export const WorkspaceKeptAtThePressNarrowDark: Story = { ...WorkspaceKeptAtTheP
 
 /** Only what records already gone left, and the intake's room: the press sends no unit. */
 export const LeftOverOnly: Story = { args: { target: WORKSPACE, plan: WORKSPACE_LEFT_OVER, meanIt: 'Clear 5' } };
+
+/** Only left-over files, as the install had them (HIST1o): the opening says only those, never the finished work's words. */
+export const LeftOverFilesOnly: Story = { args: { target: WORKSPACE, plan: WORKSPACE_FILES_ONLY, meanIt: 'Clear' } };
+
+/** The same in 中文, in dark. */
+export const LeftOverFilesOnlyChineseDark: Story = {
+  ...LeftOverFilesOnly, args: { ...LeftOverFilesOnly.args, meanIt: '清除' }, decorators: [chinese, dark],
+};
 
 /** Nothing may go: said, with only *Close*, and each unit kept with its reason. */
 export const NothingToClear: Story = { args: { target: WORKSPACE, plan: WORKSPACE_KEPT, meanIt: 'Clear 0', doors: DOORS } };
