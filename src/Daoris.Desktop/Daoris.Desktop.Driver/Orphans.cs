@@ -95,7 +95,9 @@ public static class Orphans
         {
             quest = await service.FindQuestAsync(questId, ct).ConfigureAwait(false);
         }
-        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
+                                          // The client's own timeout: a host that took the question and stalled.
+                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
         {
             return null;
         }
