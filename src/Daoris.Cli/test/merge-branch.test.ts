@@ -411,6 +411,9 @@ const ALL = repoPlan.map((gate) => gate.name);
 const LONG = ['driver-process', 'modules-process', 'deployment'];
 /** The kept names' table (SESSDEL1c): among the driver's tests, and the page's twin reads it too. */
 const KEPT_NAMES = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/kept-names.json';
+/** The driver's sources whose declarations the page's twin vitests parse (MOD9e): SESSDEL1c's scan found them. */
+const PAGE_PARSED = ['NoteCodes.cs', 'SessionEvents.cs', 'InstructionAccount.cs', 'Trace.Chain.cs', 'AutoLanding.cs', 'Landing.cs']
+  .map((file) => `src/Daoris.Desktop/Daoris.Desktop.Driver/${file}`);
 
 test('the long gates are the real-process halves and the deployment rehearsal, read from what each runs', () => {
   assert.deepEqual(repoPlan.filter((gate) => tool.isLongGate(gate)).map((gate) => gate.name), LONG);
@@ -433,6 +436,9 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
       [...BASE, 'driver', 'modules', 'driver-process', 'modules-process', 'rehearse-family', 'deployment']],
     ['ServiceHostLocator', ['src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceHostLocator.cs'],
       [...BASE, 'driver', 'modules', 'driver-process', 'modules-process', 'rehearse-family', 'deployment']],
+    // MOD9e: the page's twin vitests parse these driver sources' declarations, so a change to one runs the web gate as well.
+    ...PAGE_PARSED.map((path): [string, string[], string[]] => [`${path.split('/').at(-1)}, which a page twin parses`, [path],
+      [...BASE, 'driver', 'modules', 'driver-process', 'modules-process', 'rehearse-family', 'web', 'deployment']]),
     ["the driver's tests", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/LandingTests.cs'], [...BASE, 'driver', 'driver-process']],
     // GATE6: a browser test is the web gate's alone; no .NET suite reads it (the test below holds that).
     ['a browser test', ['src/Daoris.Web/e2e/platform.spec.ts'], [...BASE, 'web']],
@@ -1070,18 +1076,11 @@ function probeFor(text: string): string {
 }
 
 /**
- * Reads of the driver's declarations by the page's twins, which no rule sends to the web gate: a row for them would run the
- * web gate, a rehearsal's time, at each change to those files, which is the parent's call (SESSDEL1c's hand-back). Named
- * exactly, so a new read outside the page is placed on purpose, and a row that places these fails here until it drops them.
+ * Reads outside the page by the page's twins that no rule sends to the web gate, each named exactly with its reason, so a new
+ * read is placed on purpose or owed here, and a row that places one fails this test until the row drops it. None is owed: the
+ * six driver sources SESSDEL1c's scan found are placed by MOD9e's row (`PAGE_PARSED`).
  */
-const OWED_PAGE_READS = [
-  'src/Daoris.Desktop/Daoris.Desktop.Driver/AutoLanding.cs',
-  'src/Daoris.Desktop/Daoris.Desktop.Driver/InstructionAccount.cs',
-  'src/Daoris.Desktop/Daoris.Desktop.Driver/Landing.cs',
-  'src/Daoris.Desktop/Daoris.Desktop.Driver/NoteCodes.cs',
-  'src/Daoris.Desktop/Daoris.Desktop.Driver/SessionEvents.cs',
-  'src/Daoris.Desktop/Daoris.Desktop.Driver/Trace.Chain.cs',
-];
+const OWED_PAGE_READS: string[] = [];
 
 /**
  * SESSDEL1c: MOD9's incident from the page's side. The page's vitests run in the web gate alone, so a file outside the page a
@@ -1098,7 +1097,16 @@ test("every file outside the page a page's vitest reads is one whose change reac
   const unreached = [...reads].filter((read) => !runs([read]).includes('web')).sort();
   assert.deepEqual(unreached, OWED_PAGE_READS, 'each a file a vitest reads, and a merge changing it does not run the web gate');
   assert.ok(reads.has(KEPT_NAMES), "the scan does not see the page's twin read the kept names' table");
+  for (const path of PAGE_PARSED) assert.ok(reads.has(path), `the scan does not see a page twin parse ${path}`);
   assert.ok(reads.size >= 8, `the scan found only ${reads.size} reads: its pattern no longer matches how the page's tests read the repository`);
+
+  // MOD9e: what the scan asks of the lane table, with the row taken away: the six reach the driver's gates and no vitest.
+  const without = tool.REACH.filter((rule) => !rule.paths?.some((path) => PAGE_PARSED.includes(path)));
+  for (const path of PAGE_PARSED) {
+    const reached = (reach: readonly Rule[]) => tool.selectGates(repoPlan, [path], { lanes: repoLanes, reach }).gates.filter((entry) => entry.run).map((entry) => entry.gate.name);
+    assert.deepEqual(reached(without), ['universal', 'code-map', 'orient-index', 'cli', 'driver', 'modules', 'rehearse-family'], path);
+    assert.deepEqual(reached(tool.REACH), ['universal', 'code-map', 'orient-index', 'cli', 'driver', 'modules', 'rehearse-family', 'web'], path);
+  }
 });
 
 test("the page's scan reads through node:fs from the page, the repository or the test, and never a path a test only says (SESSDEL1c)", () => {

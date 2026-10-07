@@ -392,6 +392,8 @@ const DESKTOP_SUITES = ['driver', 'modules', 'driver-process', 'modules-process'
 const CLI_READERS = ['driver', 'rehearse', 'rehearse-family', 'web', 'deployment'];
 // What the modules lane's sources reach, named by its narrow rule for the C# sources as well (MOD9c).
 const MODULES_READERS = ['modules', 'modules-process', 'deployment'];
+// What the driver lane's sources reach, named by its narrow rule for the sources the page's twins parse as well (MOD9e).
+const DRIVER_READERS = [...DESKTOP_SUITES, 'rehearse-family', 'deployment'];
 
 /**
  * Which gates can see a changed path, beyond the baseline: the first rule that places the path decides.
@@ -466,6 +468,17 @@ export const REACH = Object.freeze([
     gates: [...MODULES_READERS, 'driver'],
     why: "the modules' own, and the driver's NoConsoleWindow and PullRequestOccasion scans read every C# source of the modules and the app (MOD9c)",
   },
+  // MOD9e: the page's twin vitests parse these sources' declarations, so they are named by file: the web gate is a
+  // rehearsal's time, and the driver's other sources reach no vitest.
+  {
+    paths: [
+      'src/Daoris.Desktop/Daoris.Desktop.Driver/NoteCodes.cs', 'src/Daoris.Desktop/Daoris.Desktop.Driver/SessionEvents.cs',
+      'src/Daoris.Desktop/Daoris.Desktop.Driver/InstructionAccount.cs', 'src/Daoris.Desktop/Daoris.Desktop.Driver/Trace.Chain.cs',
+      'src/Daoris.Desktop/Daoris.Desktop.Driver/AutoLanding.cs', 'src/Daoris.Desktop/Daoris.Desktop.Driver/Landing.cs',
+    ],
+    gates: [...DRIVER_READERS, 'web'],
+    why: "the driver's own, and the page's note, conversation, handed and trace vitests parse their declarations (MOD9e)",
+  },
   { paths: ['src/Daoris.Cli/test/**'], gates: [], why: "the CLI's tests, which verify runs at every merge" },
   // GATE6: a fix to a browser test was re-gated by the web gate alone, and the stage then voided every other verdict.
   { paths: ['src/Daoris.Web/e2e/**'], gates: ['web'], why: "the page's end-to-end specs, which only the web gate runs: no .NET suite reads them" },
@@ -473,7 +486,7 @@ export const REACH = Object.freeze([
   { lane: 'web-settings', gates: ['web', ...PAGE_READERS], why: "the page's own suites, and the .NET suites that read its catalogues and sources (MOD9's incident)" },
   {
     lane: 'driver',
-    gates: [...DESKTOP_SUITES, 'rehearse-family', 'deployment'],
+    gates: DRIVER_READERS,
     why: 'the modules build on it, the family rehearsal drives its headless host, and the deployed shell runs its loop (D60): ServiceHostLocator, the staged build, a session',
   },
   { lane: 'modules', gates: MODULES_READERS, why: 'the application, its launcher and the modules it hosts: the deployed shell (D60)' },
