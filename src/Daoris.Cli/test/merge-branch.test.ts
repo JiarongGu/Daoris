@@ -464,8 +464,9 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     // SESSDEL1c: the kept names' table sits among the driver's tests, and the page's twin reads it too.
     ["the kept names' table", [KEPT_NAMES], [...BASE, 'driver', 'web']],
     ["the service's tests", ['src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs'], [...BASE, 'service']],
-    // ORIENT2h6: the fence table sits among the CLI's fixtures, and the driver's SelfDescription twin reads it too.
-    ['the fence table', ['src/Daoris.Cli/test/fixtures/fence-cases.json'], [...BASE, 'driver']],
+    // ORIENT2h6: the fence table sits among the CLI's fixtures, and the driver's SelfDescription twin reads it too, and
+    // since ORIENT2h6b the service's MarkdownFence twin.
+    ['the fence table', ['src/Daoris.Cli/test/fixtures/fence-cases.json'], [...BASE, 'service', 'driver']],
     ['release tooling', ['tools/release-rehearsal.mjs'], [...BASE, 'rehearse']],
     ['the CLI', ['src/Daoris.Cli/src/cli.ts'], [...BASE, 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     // ORIENT2e2: the service's roles twin reads the CLI's ROLES from its file, so that file reaches the service too.

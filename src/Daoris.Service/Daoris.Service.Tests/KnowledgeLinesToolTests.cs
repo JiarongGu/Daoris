@@ -117,8 +117,9 @@ public sealed partial class KnowledgeLinesToolTests : IAsyncLifetime
         Assert.Contains("Generated; never edit by hand.", await _tools.GetAsync(id));
         Assert.DoesNotContain("class Widget", await _tools.GetAsync(id));
 
-        // An item is its own line, titled by its parent's label, and its range reads it (ORIENT2h2).
-        var item = await _tools.GetAsync("atlas:docs/index/outlines/src/Widget.cs.md#Outline of `src/Widget.cs` › 4-40 class Widget › 9-12 Widget()", lines: "8");
+        // An item is its own line, titled by its parent's label, and its range reads it (ORIENT2h2); its id is past
+        // the lines it and its parent lead with (ORIENT2h5).
+        var item = await _tools.GetAsync("atlas:docs/index/outlines/src/Widget.cs.md#Outline of `src/Widget.cs` › class Widget › Widget()", lines: "8");
         Assert.Contains("`docs/index/outlines/src/Widget.cs.md:8`", item);
         Assert.Contains("- 9-12 Widget()", item);
         Assert.DoesNotContain("CountAsync", item);

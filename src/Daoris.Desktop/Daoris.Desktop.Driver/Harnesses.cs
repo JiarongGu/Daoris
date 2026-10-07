@@ -165,7 +165,12 @@ public sealed record HarnessToolchain(
     // `SignInRefusals.Read` and never from the transcript, as `Limits` is. Declared only by a tool seen refusing one, each
     // pattern standing on a recorded sentence. A door onto another agent reads its owner's (AGT7). Null reads every failure
     // as a failure. Not a twin: the CLI concludes no session.
-    SignInWords? SignIn = null)
+    SignInWords? SignIn = null,
+    // How this tool is asked an account's windows where its door carries none (CODEXUSE1): its own server under the account's
+    // home, read into the same readings `Windows` fills and kept in `windows.json`. Declared only where an answer was recorded;
+    // a door onto another agent reads its owner's (AGT7). Null asks nothing. Not a twin: the CLI asks no server, and reads
+    // what this kept from `windows.json`.
+    UsageQuestion? Usage = null)
 {
     /// <summary>The command this harness actually runs as: the machine's configured one, or the declared one.</summary>
     public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>
@@ -1629,13 +1634,14 @@ public sealed record StartWiring(
 /// are the directories on disk now. Its binary is asked once a process, never against an account's home: whether it is
 /// there and its version. A yes is trusted and a no is asked again: an absent agent's binary at once, and a signed-out
 /// account on its own once its word is <see cref="SignedOutAskedAgain"/> old or a sign-in marked it (TOOL6g), since a start
-/// held on it is tried at every look, or once after a refusal of a reading that said signed in (TOOL6h).</para>
+/// held on it is tried at every look, or once after a refusal of a reading that said signed in (TOOL6h). An account's windows,
+/// where its agent's server is asked them, are read at a press and at a start's walk too (CODEXUSE1, Harnesses.Usage.cs).</para>
 ///
 /// <para><b>The wiring file is re-read, never held.</b> Same rule as `driver.json`: the file is the
 /// truth and the surfaces are editors over it (D50), so a profile default changed from a terminal
 /// takes effect on the next spawn without restarting anything.</para>
 /// </remarks>
-public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = null)
+public sealed partial class HarnessRoster(AdapterSet adapters, string? settingsPath = null)
 {
     // What each adapter's binary answered when last asked (ROSTER1): whether it is there, its version, why not. Asked of the
     // binary alone, once a process, and again at a press or where the binary may have changed.
@@ -1976,6 +1982,8 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             // Asked the way its owner asks when this build carries the owner (AGT7): a door declares no login question.
             var asker = AccountAgent(name, toolchain);
             await AskOneAsync(asker.Name, asker.Toolchain, owner, named, config, ct).ConfigureAwait(false);
+            // And its windows, where its agent's server is asked them (CODEXUSE1).
+            await AskUsageAsync(name, owner, named, config, ct).ConfigureAwait(false);
         }
         else if (refresh)
         {
@@ -2010,6 +2018,8 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             busy: account => Busy(owner, account), prior: prior, own: own, clock: Clock,
             answered: (account, login, who, at) => Keep(owner, account, login, who, at)).ConfigureAwait(false);
         _binaries[name] = new Binary(report.Present, report.Version, report.Problem);
+        // And each account's windows, where its agent's server is asked them (CODEXUSE1).
+        await PressUsageAsync(name, owner, config, CancellationToken.None).ConfigureAwait(false);
     }
 
     /// <summary>What the binary last answered, asked once a process, or again where <paramref name="again"/>; never an account.</summary>
@@ -2434,6 +2444,13 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         var circle = string.IsNullOrWhiteSpace(workspace) ? null : workspace.Trim();
         var scope = settings.ResolveScope(owner, circle);
         var picked = string.IsNullOrWhiteSpace(chosen) ? null : chosen.Trim();
+
+        // Where the agent's door carries none of its windows, its own server is asked them first, for each account of the list
+        // the start could take whose last reading is stale (CODEXUSE1): a start, never a look or a panel, which count nothing.
+        if (counts && picked is null && scope.List.Count > 0)
+        {
+            await FreshenAsync(resolved.Name, owner, scope.List, config, ct).ConfigureAwait(false);
+        }
 
         // The accounts this start may use, in the order it tries them (TOOL6b, D130 §16.3; D125 §3.3 under `order`). A pick,
         // a scope that names one account, and the tool's own sign-in are the one account, and nothing more is read.
