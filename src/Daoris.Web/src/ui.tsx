@@ -416,7 +416,7 @@ export function DotMark({ tone = 'idle', className }: { tone?: keyof typeof DOT_
 
 /**
  * One item on a list closed to its strip (FRAME6's session strip row, made general by D118 §5): the first
- * character of its name and its mark, one press away. What it is and how it stands are its accessible
+ * character of its name, or the letters it is given, and its mark, one press away. What it is and how it stands are its accessible
  * name and its tip, since the strip has no room for the words and a mark is never hue alone (D41 §6).
  *
  * @remarks
@@ -424,11 +424,16 @@ export function DotMark({ tone = 'idle', className }: { tone?: keyof typeof DOT_
  * The first character is taken whole, by code point, so a 中文 name shows its first character rather than
  * half of one.
  */
-export function StripMark({ label, initialOf, face, tone, dimmed = false, current = false, onPress }: {
+export function StripMark({ label, initialOf, letters, face, tone, dimmed = false, current = false, onPress }: {
   /** Its accessible name and its tip: what it is and how it stands. */
   label: string;
   /** The name whose first character the strip shows. */
   initialOf: string;
+  /**
+   * A short mark drawn as written in place of that character, its case kept, where neighbours' first characters would be
+   * one: an agent's *CC* beside *Cx* (ACCTUX2, the UX7 design §4.6).
+   */
+  letters?: string;
   /**
    * What it is drawn as instead of its initial, decoration its label names: a plugin's icon (PLUGUI2, D140 §2). The
    * face is drawn faint itself where it is dimmed.
@@ -458,8 +463,8 @@ export function StripMark({ label, initialOf, face, tone, dimmed = false, curren
           {/* The same 2px accent rail the activity bar gives its current place. */}
           {current && <span aria-hidden className="absolute inset-y-1 left-0 w-0.5 rounded-full bg-accent" />}
           {face ?? (
-            <span aria-hidden className={cn('text-small font-semibold uppercase', dimmed && 'text-ink-faint')}>
-              {Array.from(initialOf)[0] ?? '?'}
+            <span aria-hidden className={cn('text-small font-semibold', !letters && 'uppercase', dimmed && 'text-ink-faint')}>
+              {letters || (Array.from(initialOf)[0] ?? '?')}
             </span>
           )}
           {tone && <DotMark tone={tone} className="absolute right-1 top-1" />}

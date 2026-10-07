@@ -277,6 +277,24 @@ describe('the strip mark', () => {
     inStrip(<StripMark label="引擎" initialOf="引擎" tone="parked" />);
     expect(screen.getByRole('button', { name: '引擎' })).toHaveTextContent('引');
   });
+
+  /**
+   * ACCTUX2: Claude Code and Codex both showed `C`. A mark of its own (UX7's *CC*, *Cx*) is drawn as given, its case kept,
+   * in place of the first character, and faint where it is dimmed.
+   */
+  it('draws letters it is given as written, in place of the initial', () => {
+    const { container } = inStrip(<>
+      <StripMark label="Claude Code" initialOf="Claude Code" letters="CC" />
+      <StripMark label="Codex" initialOf="Codex" letters="Cx" dimmed />
+    </>);
+    expect(screen.getByRole('button', { name: 'Claude Code' })).toHaveTextContent(/^CC$/);
+    const codex = screen.getByText('Cx');
+    expect(screen.getByRole('button', { name: 'Codex' })).toContainElement(codex);
+    expect(codex).not.toHaveClass('uppercase');
+    expect(codex).toHaveClass('text-ink-faint');
+    expect(codex).toHaveAttribute('aria-hidden', 'true');
+    expect(container.querySelectorAll('button')).toHaveLength(2);
+  });
 });
 
 /**

@@ -163,6 +163,13 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, install = false, 
   const busy = acting || act.isPending || accountUse.isPending || ruleAct.isPending || settle.isPending;
   // The new account this agent's sign-in kept, waiting on its name and its lists (UX7b): the add flow's step 3.
   const addedHere = added && added.harness === door ? added : null;
+  // A key added here asks the same question (the UX7 design §4.5, ACCTUX3): by its id and its key's handle, held while the
+  // page is, since it ends inside the request on this page; set aside, its row says *no workspace* with *Use in a workspace…*.
+  const [keyAdded, setKeyAdded] = useState<{ profile: string; key: string | null } | null>(null);
+  // The step answers the key's first, the newer press; a sign-in's waits behind it, held above every view.
+  const answering = keyAdded
+    ? { profile: keyAdded.profile, who: null, key: keyAdded.key, settle: () => setKeyAdded(null) }
+    : addedHere ? { profile: addedHere.profile, who: addedHere.account, key: null, settle: settleAdded } : null;
 
   // The list's Install (AGENTS2): the account-owning door's installer, as the first Install under *Ways in* runs it. Taken
   // once, by a ref, since a development build runs an effect twice and the run's own guard learns of the first only later.
@@ -219,10 +226,12 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, install = false, 
     onReadAgain: () => read.mutate({ agent: tool.name }, { onError }),
     onReadOne: (account) => read.mutate({ agent: tool.name, profile: account }, { onError }),
     onSignInNew: () => run(door, 'login-new'),
-    onAddKey: (key) => act.mutate({ harness: door, action: 'key-add', key }, {
-      onSuccess: (result) => notify(t('harness.profile.keyAdded', { profile: result.profile, handle: result.key })),
-      onError,
-    }),
+    // ACCTUX3: told back to the key's field, which closes once the key is kept and says a refusal in it; kept, the account
+    // goes to the add flow's last step for its name and lists, where a toast said it was added and left it in no list.
+    onAddKey: (key, answered) => told((async () => {
+      const result = await act.mutateAsync({ harness: door, action: 'key-add', key });
+      if (result.profile) setKeyAdded({ profile: result.profile, key: result.key ?? null });
+    })(), answered),
     onSignIn: (account) => run(door, 'login', account),
     onTryNow: (account, label) => accountUse.mutate(
       { harness: door, action: 'ready', ...(account ? { profile: account } : { own: true }) },
@@ -235,20 +244,21 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, install = false, 
     // The add flow's end (D152 §4.5): its name kept where the field holds one other than its id, then the lists joined;
     // either refused leaves the question up, so nothing the person typed is lost, and says why in it.
     onAddedAnswer: ({ name, join: lists }, answered) => {
-      if (!addedHere) return;
-      const account = addedHere.profile;
+      if (!answering) return;
+      const account = answering.profile;
       const current = tool.accounts.find((each) => each.name === account)?.displayName?.trim() || null;
       const wanted = name?.trim() || null;
       told((async () => {
         const called = wanted !== current && (wanted !== null || current !== null) ? await rename(account, wanted) : current;
         if (lists.length > 0) await join(account, lists, called ?? undefined);
-        settleAdded();
+        answering.settle();
       })(), answered);
     },
-    onSaveSettings: (account, label, change) => tune.mutate({ harness: door, profile: account, ...change }, {
-      onSuccess: () => notify(t('harness.settings.saved', { account: label })),
-      onError,
-    }),
+    // ACCTUX3: told back to its editor, which closes once the save lands and says a refusal under it, the choice kept.
+    onSaveSettings: (account, label, change, answered) => told((async () => {
+      await tune.mutateAsync({ harness: door, profile: account, ...change });
+      notify(t('harness.settings.saved', { account: label }));
+    })(), answered),
     onDoor: (harness, action) => run(harness, action),
     onPin: (harness, version) => run(harness, 'pin', undefined, version),
     scope,
@@ -303,7 +313,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, install = false, 
       signInNewPanel={signingInNew === door
         ? <SignIn id={`${door}:login-new`} harness={door} action="login-new" tool={product} />
         : null}
-      added={addedHere ? { account: addedHere.profile, who: addedHere.account } : null}
+      added={answering ? { account: answering.profile, who: answering.who, key: answering.key } : null}
       doorRunning={doorRunning}
       doorConsole={running && doorRunning ? <SessionConsole id={running} /> : null}
       acts={acts}

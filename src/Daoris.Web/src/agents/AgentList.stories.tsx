@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { InTheme } from '../plugins/storyIcons';
 import { agentRows } from './agents';
 import { AgentList, AgentStrip } from './AgentList';
 import { CLAUDE_USE, CODEX_USE, TOOLS } from './agentsFixtures';
@@ -32,11 +33,25 @@ export const AllInstalled: Story = { args: { rows: ROWS.filter((row) => row.inst
 /** Nothing chosen. */
 export const NothingChosen: Story = { args: { chosen: null } };
 
-/** Closed to its strip: each agent's initial, the waiting mark, one not installed faint. */
+/**
+ * Closed to its strip, as at 680 px: each agent's mark of its own (ACCTUX2: *CC* and *Co*, where the first letter drew both
+ * `C`), the waiting mark, one not installed faint.
+ */
 export const Strip: StoryObj<typeof AgentStrip> = {
   render: () => (
     <div className="w-[56px] border border-line bg-page">
       <AgentStrip rows={ROWS} chosen="claude-code" onChoose={nothing} />
     </div>
+  ),
+};
+
+/** The same in dark. */
+export const StripDark: StoryObj<typeof AgentStrip> = {
+  render: () => (
+    <InTheme theme="dark">
+      <div className="w-[56px] border border-line bg-page">
+        <AgentStrip rows={ROWS} chosen="claude-code" onChoose={nothing} />
+      </div>
+    </InTheme>
   ),
 };

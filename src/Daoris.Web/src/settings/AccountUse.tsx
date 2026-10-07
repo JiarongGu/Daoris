@@ -236,11 +236,12 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
                 )}
                 {coolingOf(row.name) && <Pill tone="neutral">{t('harness.cooling.pill')}</Pill>}
                 {account?.login === 'out' && !account.keyed && <Pill tone="neutral">{t('harness.login.out')}</Pill>}
+                {/* Each arrow a target of 28 px at least (the platform language §6, ACCTUX2): its glyph and padding were 25. */}
                 {row.used && (
                   <span className="ml-auto flex gap-0.5">
                     <Button
                       variant="ghost"
-                      className="px-1.5"
+                      className="min-w-7 justify-center px-1.5"
                       disabled={busy || index === 0}
                       aria-label={`${t('harness.use.up')} · ${labelOf(row.name)}`}
                       onClick={() => acts.onOrder(where, moved(scope.list, row.name, -1))}
@@ -249,7 +250,7 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
                     </Button>
                     <Button
                       variant="ghost"
-                      className="px-1.5"
+                      className="min-w-7 justify-center px-1.5"
                       disabled={busy || index === scope.list.length - 1}
                       aria-label={`${t('harness.use.down')} · ${labelOf(row.name)}`}
                       onClick={() => acts.onOrder(where, moved(scope.list, row.name, 1))}

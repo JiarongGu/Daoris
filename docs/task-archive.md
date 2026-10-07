@@ -12106,3 +12106,17 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **STUB3b — the stub's bound is not the machine's load** (cli). `setup-kit.test.ts`'s STUB3 cases (*a stub that stays without answering fails its row at the bound, and is stopped*, near line 807) failed three times on 2026-10-07 under parallel builds (EVID1b3's and CODEXUSE1's verifies, ACCTUX1's merge gate): the stub did not answer even `initialize` within the 1000 ms bound, so the row named three unanswered requests where the test expects two. Make the case independent of how fast a process starts under load (time the bound from the stub's first answer, or hold its start until it is ready), keeping what it proves: an unanswered request fails its row at the bound and the stub is stopped. Contract: STUB3's note, FIX-LOG FLAKE1. Proof: the case passing ten times beside a build.
 
 **Outcome** 2026-10-07: `speak()` times the answers' bound from the stub's first answer and gives the start its own bound (10 s), so a process starting slowly under load no longer fails STUB3; a slowed-start case reproduces the sighting and ten loaded runs passed. Detail: FIX-LOG STUB3b; commit a6dde2cb.
+
+
+## ACCTUX2 — the account view without a pointer, and two agents told apart (2026-10-08, D125)
+
+> - [ ] **ACCTUX2 — the account view without a pointer, and two agents told apart** (web-shell, web-settings). Same review: Claude Code and Codex collapse to the same `C` mark (`agents/AgentList.tsx:133`, `StripMark`'s first letter, `ui.tsx:462`; UX7 specifies `CC`/`Cx`); the email is truncated inside a tooltip on a span no key reaches, the reset-versus-cool-off explanation is hover-only, the column heads are hidden from assistive technology with no per-row labels (`AccountRow.tsx:24,89,103`); the terms toggle and the ~25 px reorder buttons are under the 28 px target (`AgentPage.tsx:560`, `settings/AccountUse.tsx:243`). Contract: platform-ux §4 and §6, UX7. Proof: vitest for the marks, labels and target boxes; stories at 680 px and the 400 px floor.
+
+**Outcome** 2026-10-07: each agent wears its own strip mark (CC, Co; a declared mark leads, none repeats a neighbour); who signed in wraps visibly, each fact is labelled for screen readers, and cool-off and key explanations open from a 28 px keyboard press; the terms toggle and move buttons are 28 px. Follow-up: AGENTMARK1. Detail: D125's ACCTUX2 note; commit 33163c8a.
+
+
+## ACCTUX3 — the add-key and model forms keep their drafts until the act lands (2026-10-08, D125)
+
+> - [ ] **ACCTUX3 — the add-key and model forms keep their drafts until the act lands** (web-shell). Same review: adding a key clears the draft at once and saving model/effort closes its editor at once (`agents/AgentPage.tsx:240,747`), so a refusal arrives after the place to correct it is gone, the failure ACCTEDIT1 fixed for rename and placement; and a key added ends in a toast rather than UX7's name-and-workspace step (`docs/2026-10-05-ux7-design.md:428`). Extend the `Answered` contract to both, and send an added key through the step. Contract: ACCTEDIT1, UX7 §4.5. Proof: vitest for a refused key add and a refused model save keeping their drafts, and the key's step.
+
+**Outcome** 2026-10-07: the key field and the model editor take ACCTEDIT1's `Answered`: each closes once its act lands, and a refusal keeps the key or choice with the driver's sentence under it; a key added goes to `PlaceAccount` for its name and lists instead of a toast. Follow-up: SETTINGSWAIT1. Detail: D125's ACCTUX3 note; commit 7dfc0fbd.
