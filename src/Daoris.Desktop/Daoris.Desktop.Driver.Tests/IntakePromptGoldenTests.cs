@@ -78,4 +78,25 @@ public sealed class IntakePromptGoldenTests
         Assert.Contains("belongs in the body, never in a requirement", prompt);
         Assert.Contains("A `then` step carries the quest's requirements", prompt);
     }
+
+    /// <summary>
+    /// EVID1b (D144 §2): the intake names a requirement's evidence, a path, only where the work plainly leaves a file the person
+    /// can name, never one it would guess at; and no gate, which is refused until the landing queue reads gates (EVID1d). Said
+    /// after the requirements it belongs to, and before what an unsettled ask does.
+    /// </summary>
+    [Fact]
+    public void The_intake_names_evidence_only_where_the_work_plainly_leaves_a_file_the_person_can_name()
+    {
+        var prompt = IntakePrompt.Compose(Bare).ReplaceLineEndings(" ").Replace("\n", " ", StringComparison.Ordinal);
+        var flat = string.Join(' ', prompt.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+
+        Assert.Contains("plainly turns on a file or folder the work leaves, one the person can name, name it as that requirement's `evidence`", flat);
+        Assert.Contains("`{ \"path\": \"docs/report.md\" }`", flat);
+        Assert.Contains("Daoris reads each in the work's last commit when its session ends", flat);
+        Assert.Contains("Name no path you would be guessing at, and no `gate`: a gate is not taken yet.", flat);
+        var requirements = flat.IndexOf("A `then` step carries the quest's requirements", StringComparison.Ordinal);
+        var evidence = flat.IndexOf("`evidence`", StringComparison.Ordinal);
+        var unsettled = flat.IndexOf("When they do not settle it", StringComparison.Ordinal);
+        Assert.True(requirements < evidence && evidence < unsettled, flat);
+    }
 }

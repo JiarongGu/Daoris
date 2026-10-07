@@ -49,6 +49,12 @@ documents give it a meaning, quote the word and say in the check what it require
 reading of their words belongs in the body, never in a requirement; a quote they did not say is
 refused, naming it. A `then` step carries the quest's requirements with it.
 
+Where a requirement's check plainly turns on a file or folder the work leaves, one the person
+can name, name it as that requirement's `evidence`: `{ "path": "docs/report.md" }`, relative to
+that repository's root with forward slashes, at most five. Daoris reads each in the work's last
+commit when its session ends, and a met answer without it waits for the person. Name no path
+you would be guessing at, and no `gate`: a gate is not taken yet.
+
 When they do not settle it — nothing points at one repository, or more than one could —
 do not guess, and publish nothing. End by saying plainly what you would need to know; the
 person decides.
