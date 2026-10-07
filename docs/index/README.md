@@ -96,15 +96,15 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Asks.cs` | 48 | 928 |
 | `src/Daoris.Service/Daoris.Service.Core/History.cs` | 40 | 824 |
 | `src/Daoris.Service/Daoris.Service.Core/KnowledgeService.cs` | 51 | 1021 |
-| `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 90 | 1703 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 128 | 2357 |
+| `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 90 | 1704 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 129 | 2363 |
 | `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 62 | 1198 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 63 | 1146 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 80 | 1461 |
 | `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 96 | 1733 |
 | `src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs` | 42 | 750 |
 | `src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs` | 44 | 839 |
-| `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 69 | 1451 |
+| `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 78 | 1607 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 67 | 1385 |
 | `src/Daoris.Service/README.md` | 60 | 622 |
 

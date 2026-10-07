@@ -37,6 +37,12 @@ repository.
 
 ## 2026-10-07 — a session whose take had lost closed the winner's quest
 
+### Service: a remote applied a move pushed by a machine on an older build whose take had lost (WAITCLAIM3)
+- **Symptom:** named by WAITCLAIM2's note, not seen on an install: a machine on a build before WAITCLAIM2 closed, declined or waited after the pass that found its take lost, and its next pass pushed it. The remote kept it, so the winner's quest was Done on the loser's note, Declined, or waited on the loser's question, on every machine.
+- **Root cause:** `QuestStore.ReceiveAsync` judged a push by `QuestLog.Applies` alone, which allows a done, a decline and a wait on any taken quest, whoever took it. WAITCLAIM2's claim rule lived in the store's verbs, so it held only on machines of its build.
+- **Fix:** `QuestLog.OnALostTake` is the one rule the store's verbs and `ReceiveAsync` ask; the remote refuses such an operation for that quest in the lost take's words (`QuestExchange.LostTake`), and the pass relays them under `refused`. D69's WAITCLAIM3 note has the choice and what it rejected.
+- **Verify:** `QuestSyncTests.A_move_or_a_wait_an_older_build_makes_after_its_take_lost_is_refused_at_the_remote_and_never_reaches_the_winner` failed first for a done, a decline and a wait, then passed with the service suite (1548) and the HTTP suite (87). Not covered: the older machine keeps its move pending and is refused at each pass; the family rehearsal, read and not run.
+
 ### Service: a wait or a close made after the pass that found this machine's take lost applied to the winner's quest (WAITCLAIM2)
 - **Symptom:** found by WAITCLAIM1 and left open in D69's note, not seen on an install: machine A's take lost in one pass, and its session, not yet stopped by A's driver, waited on a question and closed done. A's next pass pushed both, so on every machine the winner's quest was Done on A's note and waited on A's question.
 - **Root cause:** D69's rule and WAITCLAIM1 lose this machine's later moves and waits only in `QuestStore.RebaseAsync`, and only while they are pending as it rewrites the take. Once the take was a numbered conflict, `MoveAsync` and `WaitAsync` judged by the table alone, which allows done and a wait on any taken quest, whoever took it.

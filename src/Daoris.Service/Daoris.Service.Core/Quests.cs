@@ -1014,13 +1014,14 @@ public sealed class QuestStore
             // would not apply — a decline made while open (PAUSE1c) on a quest no longer open among them.
             var open = whileOpen && status == QuestStatus.Declined;
             var standing = QuestLog.Replay(history);
-            if (!QuestLog.Applies(standing, new QuestOperation(id, kind, Machine, 0, now, note, WhileOpen: open)))
+            var judged = new QuestOperation(id, kind, Machine, 0, now, note, WhileOpen: open);
+            if (!QuestLog.Applies(standing, judged))
             {
                 return new QuestMove(held, Moved: false);
             }
 
             // A close on the winner's take, made here after the pass that found this machine's take lost (WAITCLAIM2).
-            if (OnALostTake(standing, history)) return new QuestMove(held, Moved: false) { ClaimLost = true };
+            if (QuestLog.OnALostTake(standing, history, judged)) return new QuestMove(held, Moved: false) { ClaimLost = true };
 
             var operation = await AppendAsync(
                 id, kind, now, note, null, transaction, inside,
@@ -1139,7 +1140,10 @@ public sealed class QuestStore
             }
 
             // A wait on the winner's take, made here after the pass that found this machine's take lost (WAITCLAIM2).
-            if (OnALostTake(quest, history)) return new QuestMove(quest, Moved: false) { ClaimLost = true };
+            if (QuestLog.OnALostTake(quest, history, new QuestOperation(id, QuestOperationKind.Waited, Machine, 0, now, on)))
+            {
+                return new QuestMove(quest, Moved: false) { ClaimLost = true };
+            }
 
             var operation = await AppendAsync(
                 id, QuestOperationKind.Waited, now, on, null, transaction, inside).ConfigureAwait(false);
@@ -1424,7 +1428,8 @@ public sealed class QuestStore
         // hold the winner's session on a question it never asked. It goes with the take, and the take's
         // conflict, the loss this machine reports, names the question, so whoever asked learns the quest
         // no longer waits on it. A move or a wait made after the pass that rewrote the take never meets this
-        // rule: the store's verbs refuse it as the claim reads (WAITCLAIM2), so it is never pending here.
+        // rule: the store's verbs refuse it as the claim reads (WAITCLAIM2), so it is never pending here. One an
+        // older build wrote is, and applies here as the table allows; the remote refuses it as it arrives (WAITCLAIM3).
         var claimLost = false;
         (long Position, int Reported)? lostTake = null;
         var waitsLost = new List<string>();
@@ -1660,20 +1665,6 @@ public sealed class QuestStore
         }, ct);
 
     /// <summary>
-    /// Whether a move or a wait judged on <paramref name="standing"/> would be made on a take this machine lost (WAITCLAIM2):
-    /// the quest is taken, by the take that beat this machine's, and the rebase already made this machine's a conflict.
-    /// </summary>
-    /// <remarks>
-    /// The pass that finds a take lost leaves the session running until its driver's next look stops it, and the session
-    /// does not know. The rebase loses what this machine made BEFORE that pass (D69, WAITCLAIM1); a move or a wait made
-    /// after it would apply to the winner's quest and be pushed, so the store refuses it here, inside the write, as the
-    /// claim reads. Nothing is written, so no machine's log holds an operation that was never this machine's to make.
-    /// Only a taken quest is judged: an open one is nobody's work, whatever an earlier incarnation of it held (D95).
-    /// </remarks>
-    private bool OnALostTake(Quest? standing, IReadOnlyList<QuestOperation> history) =>
-        standing is { Status: QuestStatus.Taken } && QuestLog.Claim(history, Machine) == QuestClaim.Lost;
-
-    /// <summary>
     /// How a circle's pass ended (SYNC6a). A pass that reached the remote moves <see cref="QuestStanding.Synced"/>;
     /// one that hit a wall keeps it and names the wall, because when the circle last synced and why
     /// the last try did not are two facts.
@@ -1791,7 +1782,8 @@ public sealed class QuestStore
     /// <summary>
     /// Judge a push, quest by quest (design §8): <b>behind</b> when anything reached the quest after
     /// <paramref name="base"/> that this push did not carry; <b>refused</b> when an operation does not
-    /// apply through the table or a publish fails <paramref name="judge"/>; otherwise every operation is
+    /// apply through the table, is made on a take its machine lost (<see cref="QuestLog.OnALostTake"/>,
+    /// WAITCLAIM3), or is a publish that fails <paramref name="judge"/>; otherwise every operation is
     /// kept under the machine that made it and numbered.
     /// </summary>
     /// <param name="base">The number the pushing machine rebased on — its cursor.</param>
@@ -1858,6 +1850,20 @@ public sealed class QuestStore
                                 ? $"`{KindText(filed.Kind)}` applies to quest `#{group.Key}` only while it is open (`whileOpen`), "
                                   + $"and it is {quest.Status} here, so the quest stays {quest.Status}."
                                 : $"`{KindText(filed.Kind)}` does not apply to quest `#{group.Key}`, which is {quest.Status}.";
+                    }
+
+                    // A done, a decline or a wait from a machine whose take on the quest lost (WAITCLAIM3): made after the
+                    // pass that found the take lost, by a build whose store does not refuse it (WAITCLAIM2). The table
+                    // allows it, and applied it would close or hold the winner's quest. Refused by the rule the store
+                    // judges by, in the words the store's refusal is answered in, so the pushing machine's pass relays the
+                    // lost take and its stand-down.
+                    if (why is null && QuestLog.OnALostTake(quest, [.. history, .. staged], filed))
+                    {
+                        why = QuestExchange.LostTake(group.Key, filed.Kind == QuestOperationKind.Waited
+                            ? $"so it does not wait on `#{filed.Note}`. The remote kept nothing this push carried for the quest; "
+                              + $"`#{filed.Note}` stays a quest of its own."
+                            : $"so this `{KindText(filed.Kind)}` is not this machine's to make. The remote kept nothing this push "
+                              + "carried for the quest.");
                     }
 
                     if (why is not null) break;

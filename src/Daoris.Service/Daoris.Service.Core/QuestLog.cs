@@ -248,8 +248,8 @@ public static class QuestLog
     /// <summary>
     /// Where <paramref name="machine"/>'s claim on a quest stands, read from the quest's operations (D68 §4, D69): held once
     /// a remote numbered its take, unconfirmed while the take is only here, lost once a rebase made it a conflict, and none
-    /// when it never took the quest. <see cref="QuestStore.ClaimAsync"/> answers from it, and the store's verbs judge by it
-    /// inside their write (WAITCLAIM2), so the driver and the store read one claim.
+    /// when it never took the quest. <see cref="QuestStore.ClaimAsync"/> answers from it, and the store's verbs and a remote
+    /// judge by it (<see cref="OnALostTake"/>; WAITCLAIM2, WAITCLAIM3), so the driver, the store and the remote read one claim.
     /// </summary>
     public static QuestClaim Claim(IEnumerable<QuestOperation> history, string machine)
     {
@@ -262,6 +262,24 @@ public static class QuestLog
 
         return claim;
     }
+
+    /// <summary>
+    /// Whether <paramref name="operation"/>, judged on <paramref name="standing"/>, is made on a take its machine lost: a
+    /// done, a decline or a wait on a taken quest, where that machine's <see cref="Claim"/> in <paramref name="history"/>
+    /// reads lost. The take that beat it stands, so the operation is made on a claim its machine never held.
+    /// </summary>
+    /// <remarks>
+    /// One rule for both places that judge it. The store's verbs refuse such an operation inside their write
+    /// (WAITCLAIM2): the pass that finds a take lost leaves the session running until its driver's next look stops it,
+    /// and the session does not know. A remote refuses it as a push arrives (WAITCLAIM3), because a machine on a build
+    /// that does not refuse it locally still pushes it, and applied it would move the winner's quest. A dismissal, a yes
+    /// and a verdict are no move on the take. An open quest is nobody's work, whatever an earlier incarnation of it held
+    /// (D95). And a machine whose take was numbered reads held, never lost, so a winner's own moves are never judged here.
+    /// </remarks>
+    public static bool OnALostTake(Quest? standing, IEnumerable<QuestOperation> history, QuestOperation operation) =>
+        standing is { Status: QuestStatus.Taken }
+        && (QuestTransitions.Target(operation.Kind) is not null || operation.Kind == QuestOperationKind.Waited)
+        && Claim(history, operation.Machine) == QuestClaim.Lost;
 
     /// <summary>The quest after an operation that <see cref="Applies"/> — none after a delete.</summary>
     public static Quest? Step(Quest? quest, QuestOperation operation) => operation.Kind switch

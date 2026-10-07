@@ -11952,3 +11952,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UXFIX4b — punctuation stays with the code span it follows** (web-shell; after UXFIX4). A one-word code span that fills its line (a long branch name in a narrow sentence) pushes the punctuation after it onto a line of its own, because `CodeText` is inline-block: at the Sweep floor `…-quarter-closes` is followed by a line starting `, whose work…`. Keep trailing punctuation with the span. Also `work/SessionHead.tsx:322` still truncates a branch name in a session's header. Contract: platform-ux §3 (*a command breaks between its words*), §4's UXFIX4 bullet. Proof: the Sweep floor stories; a vitest on the span's following text.
 
 **Outcome** 2026-10-07: the marks after a code span stay on its last word's line: a one-word span and its marks are one box, and a command's last word sits alone in a no-wrap group with room for them (no mark began a line across 257 spans in 144 stories); a session head shows its branch whole with `PathText`. Detail: platform-ux §3, FIX-LOG; commits d108ea71, 83e5cf55.
+
+
+## WAITCLAIM3 — a remote refuses a move from a machine whose take lost (2026-10-07, D69)
+
+> - [ ] **WAITCLAIM3 — a remote refuses a move from a machine whose take lost** (service; after WAITCLAIM2). WAITCLAIM2 refuses such a done, decline or wait inside the store's write on the machine that makes it; a remote still judges a push by the transition table alone, so a machine on an older build can still push one. Refuse it at `ReceiveAsync` by the same `QuestLog.Claim`, answering the pusher as a lost claim. Contract: D69's WAITCLAIM2 note ("What the gates do not cover"). Proof: a two-machine sync test where an older machine's done after its lost take is refused at the remote.
+
+**Outcome** 2026-10-07: a remote refuses a done, decline or wait pushed by a machine whose take lost, by the same rule as the store's verbs (`QuestLog.OnALostTake`), answering under `refused` in the lost take's words; the winner's quest neither closes nor waits. Follow-up: WAITCLAIM4. Detail: D69's WAITCLAIM3 note, FIX-LOG; commits 86682011, 62a5da05.
