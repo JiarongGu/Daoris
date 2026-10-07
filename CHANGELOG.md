@@ -119,6 +119,8 @@ with the version and date at release.
   measured 0 B.
 - A confirmation says it is working once pressed, leaves the focus somewhere sensible once its act
   lands, and a long refusal wraps instead of widening a narrow window.
+- A session whose quest was taken first on another machine can no longer close or decline it, or
+  make it wait, after this machine learned its take lost; it is told to stand down instead.
 
 The first version: doctrine that installs, is checked, and flows back.
 
