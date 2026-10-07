@@ -177,8 +177,13 @@ function DetailsPart({ workspace, repositories, notify, onOpenRepository, onOpen
 /**
  * Branches: the clean-up (WSR3, D88) and bringing up to date (WSR6), moved from Settings → Workspace. The clean-up lists
  * this workspace's session branches, and its press removes only what it listed. A look reaches the network as the person,
- * so it is asked by its own press; the driver's look takes every repository holding Daoris's branches here, so what it
- * fetches and leaves apart is said as the machine's, and what it lists and brings up to date is this workspace's.
+ * so it is asked by its own press.
+ *
+ * @remarks
+ * **Everything here is this workspace's** (BRSCOPE1, WSP5). The clean-up's list and the machine's reading of which
+ * checkouts hold Daoris's branches are the machine's answers, read once for every page, and filtered to it. The look and
+ * the press are asked for it, so the driver fetches and judges its checkouts alone, and what the look leaves apart is
+ * its own. The rows are filtered again, so a host before BRSCOPE1, whose look is the machine's, still shows only its own.
  */
 function BranchesPart({ workspace, notify }: { workspace: string; notify: Notify }) {
   const { t } = useTranslation();
@@ -187,8 +192,8 @@ function BranchesPart({ workspace, notify }: { workspace: string; notify: Notify
   // A failed or superseded attempt's branch, discarded by its own press (LAND3b): `daoris-driver trees remove … --force`.
   const discard = useDiscardSessionBranch();
   const syncScope = useTreesSyncScope();
-  const syncPlan = useTreesSyncPlan();
-  const sync = useTreesSync();
+  const syncPlan = useTreesSyncPlan(workspace);
+  const sync = useTreesSync(workspace);
   useErrorNotify(plan.error, notify);
   // A look the page stopped waiting for is said in the section, where it was asked (WSR7); every other failure is the
   // driver's own sentence, in a toast.
@@ -220,13 +225,14 @@ function BranchesPart({ workspace, notify }: { workspace: string; notify: Notify
         <SyncSection
           plan={answered
             ? {
-                ...looked,
                 lines: mine(looked.lines, workspace),
                 rebases: mine(looked.rebases, workspace),
                 deletes: mine(looked.deletes, workspace),
+                ...(Array.isArray(looked.looked) ? { looked: mine(looked.looked, workspace) } : {}),
+                ...(Array.isArray(looked.apart) ? { apart: mine(looked.apart, workspace) } : {}),
               }
             : undefined}
-          scope={Array.isArray(scope) ? scope : undefined}
+          scope={Array.isArray(scope) ? mine(scope, workspace) : undefined}
           included={syncPlan.asked?.include}
           looking={syncPlan.isFetching}
           lookingAt={syncPlan.asked?.count}

@@ -127,6 +127,8 @@ with the version and date at release.
 - An abandon that left part of its work behind is said as an error rather than as done.
 - Knowledge search reads an index's lists an item at a time too, so a question about one fixture or
   one method lands on its line.
+- A workspace's Branches tab looks for updates, counts and lists only that workspace's repositories,
+  not every checkout on the machine.
 
 The first version: doctrine that installs, is checked, and flows back.
 
