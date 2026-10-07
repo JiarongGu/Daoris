@@ -22,7 +22,10 @@ public sealed record SessionEnded(
 /// <param name="Line">The console line a person reads, which the report carries.</param>
 /// <param name="Opened">Whether a session record was opened for it — what a look counts as progress.</param>
 /// <param name="Ended">What it ended as and whose decision that was, when it ended here; null for a hold, a refusal or a park.</param>
-/// <param name="Held">The hold's own sentence when it was held before a record opened, which the report carries as the quest's verdict.</param>
+/// <param name="Held">
+/// The hold's own sentence when it was held before a record opened, which the report carries as the quest's verdict, and a
+/// wait the start is among as its sentence: a quest's and an ask's intake's alike (UX6d1).
+/// </param>
 /// <param name="Cooling">The account's cool-off, when that is what held it (TOOL4d): what the report's waits are gathered from.</param>
 internal sealed record StartRun(string Line, bool Opened, SessionEnded? Ended = null, string? Held = null, CoolingEntry? Cooling = null)
 {
@@ -76,7 +79,8 @@ public sealed record TickReport(
     /// The starts this look held because the account each would run on is cooling (TOOL4d, D125 §4), one per account:
     /// the agent, the account, the first ready time and what was held. <see cref="Events"/> says each hold for a person;
     /// this says the wait for a screen, which shows those quests as waiting for an account rather than parked, and for
-    /// the attention watch, which says it once.
+    /// the attention watch, which says it once. Then the starts held on accounts not signed in with none cooling, one per
+    /// agent with no time (UX6d1): an ask's intake among them, which no consideration carries.
     /// </summary>
     public IReadOnlyList<AccountWait> Waits { get; init; } = [];
 }
@@ -381,7 +385,8 @@ public sealed partial class Driver(
 
     /// <summary>
     /// The starts this look held on a cooling account, one wait per account (TOOL4d, D125 §4), each written to the
-    /// machine log the first look it appears in and never again until a new cool-off.
+    /// machine log the first look it appears in and never again until a new cool-off; then the starts it held on accounts not
+    /// signed in with none cooling, one wait per agent with no time (UX6d1), written once per set of accounts.
     /// </summary>
     private IReadOnlyList<AccountWait> Waits(IEnumerable<(Begun Started, StartRun? Came)> begun)
     {
@@ -414,22 +419,38 @@ public sealed partial class Driver(
                 wait.Adapter, wait.Account, wait.Workspace, wait.Until, wait.Quests.Count + wait.Asks.Count, wait.SignedOut));
         }
 
-        // A start held on accounts not signed in with none cooling waits for a person, not a time (TOOL6g): the line is written
-        // with no time, once per agent and set of accounts.
-        foreach (var agent in begun
-                     .Where(each => each.Came is { Cooling: null, SignedOut: not null })
-                     .GroupBy(each => each.Came!.SignedOut!.Agent, StringComparer.OrdinalIgnoreCase))
+        // A start held on accounts not signed in with none cooling waits for a person, not a time (TOOL6g): a wait with no time
+        // and no account, naming the accounts a sign-in frees, its quests and its asks' intakes among what it holds (UX6d1). The
+        // tick hands it to the page as it hands a cool-off's, since a consideration names quests alone, and an intake held so
+        // was the log's line and nothing else. One per agent, as the line is.
+        var signedOut = begun
+            .Where(each => each.Came is { Cooling: null, SignedOut: not null })
+            .GroupBy(each => each.Came!.SignedOut!.Agent, StringComparer.OrdinalIgnoreCase)
+            .Select(agent =>
+            {
+                var held = agent.ToList();
+                var workspaces = held.Select(each => each.Started.Workspace).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                return new AccountWait(
+                    held[0].Started.Adapter, held[0].Came!.SignedOut!.Agent, null, workspaces.Count == 1 ? workspaces[0] : null,
+                    Until: null, Stated: false, held[0].Came!.Held ?? "")
+                {
+                    Quests = [.. held.Select(each => each.Started.Quest).OfType<string>()],
+                    Asks = [.. held.Select(each => each.Started.Ask).OfType<string>()],
+                    Repositories = [.. held.Select(each => each.Started.Where).Distinct(StringComparer.OrdinalIgnoreCase)],
+                    SignedOut = SignedOutOf(held),
+                };
+            })
+            .ToList();
+
+        // The line is written with no time, once per agent and set of accounts. Kept apart from a cool-off of the tool's own
+        // sign-in, whose account is null too: no profile name has a colon.
+        foreach (var wait in signedOut.Where(wait => _harnesses.NewWait(wait.Agent, ":signed-out", null, wait.SignedOut)))
         {
-            var held = agent.ToList();
-            var accounts = SignedOutOf(held);
-            // Kept apart from a cool-off of the tool's own sign-in, whose account is null too: no profile name has a colon.
-            if (!_harnesses.NewWait(agent.Key, ":signed-out", null, accounts)) continue;
-            var workspaces = held.Select(each => each.Started.Workspace).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
             service.AccountSaid(AccountLine.Waiting(
-                held[0].Started.Adapter, null, workspaces.Count == 1 ? workspaces[0] : null, until: null, held.Count, accounts));
+                wait.Adapter, null, wait.Workspace, until: null, wait.Quests.Count + wait.Asks.Count, wait.SignedOut));
         }
 
-        return waits;
+        return [.. waits, .. signedOut];
 
         static IReadOnlyList<string> SignedOutOf(IEnumerable<(Begun Started, StartRun? Came)> held) =>
             [.. held.SelectMany(each => each.Came?.SignedOut?.Accounts ?? []).Distinct(StringComparer.OrdinalIgnoreCase)];

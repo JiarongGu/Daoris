@@ -91,7 +91,8 @@ public sealed partial class Driver
     {
         var adapterName = config.IntakeAdapter!;
         var named = $"ask #{ask.Id} in {ask.Workspace}";
-        StartRun Hold(string why) => new($"held  intake for {named}: {why}", false);
+        // The hold's own sentence beside its line, as a quest's hold carries it: what a wait the intake is among says (UX6d1).
+        StartRun Hold(string why) => new($"held  intake for {named}: {why}", false, Held: why);
 
         // Asked BEFORE the record, like every hold a driven spawn asks: a record for a spawn that could
         // never happen would mark the ask served and explain nothing.

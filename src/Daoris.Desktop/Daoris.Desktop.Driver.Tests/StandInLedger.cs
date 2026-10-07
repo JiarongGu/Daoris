@@ -6,8 +6,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The service's doors a look crosses, standing in: the open quests, the registry, the session ledger and
-/// where this machine's claim on a quest stands (DEV3). In-process, reached through the real client over a
+/// The service's doors a look crosses, standing in: the open quests, the registry, the session ledger,
+/// where this machine's claim on a quest stands (DEV3), and the asks an intake answers (UX6d1). In-process, reached through the real client over a
 /// handler, so a look is driven with no port and no process, and the suite's fast half can hold it.
 /// </summary>
 /// <remarks>
@@ -23,6 +23,7 @@ internal sealed class StandInLedger : HttpMessageHandler
     private readonly List<JsonObject> _quests = [];
     private readonly List<JsonObject> _registry = [];
     private readonly List<JsonObject> _sessions = [];
+    private readonly List<JsonObject> _asks = [];
     private readonly Dictionary<string, int> _claims = new(StringComparer.Ordinal);
     private DateTimeOffset _clock = new(2026, 10, 1, 9, 0, 0, TimeSpan.Zero);
 
@@ -80,6 +81,22 @@ internal sealed class StandInLedger : HttpMessageHandler
             {
                 ["id"] = id, ["from"] = "game", ["to"] = to, ["title"] = title ?? $"The work of #{id}",
                 ["body"] = "Stand-in work.", ["status"] = "Open",
+            });
+        }
+    }
+
+    /// <summary>
+    /// An ask proposed in <paramref name="workspace"/> and served by no intake yet, the newest (UX6d1): a look whose config
+    /// names an intake's adapter starts one for it.
+    /// </summary>
+    public void Ask(string id, string workspace = "default")
+    {
+        lock (_gate)
+        {
+            _asks.Insert(0, new JsonObject
+            {
+                ["id"] = id, ["workspace"] = workspace, ["sentence"] = $"The words of ask #{id}.", ["state"] = "Proposed",
+                ["tier"] = "named",
             });
         }
     }
@@ -148,6 +165,10 @@ internal sealed class StandInLedger : HttpMessageHandler
 
                 case ("GET", "/api/registry"):
                     return Answer(HttpStatusCode.OK, new JsonArray([.. _registry.Select(r => r.DeepClone())]));
+
+                // Newest first, as the service answers them.
+                case ("GET", "/api/asks"):
+                    return Answer(HttpStatusCode.OK, new JsonArray([.. _asks.Select(a => a.DeepClone())]));
 
                 case ("GET", "/api/sessions"):
                     return Answer(HttpStatusCode.OK, new JsonArray([.. _sessions
