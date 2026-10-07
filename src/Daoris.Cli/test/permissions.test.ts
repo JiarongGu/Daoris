@@ -272,7 +272,8 @@ test('a tool name with an optional specifier is a rule, and anything else is ref
   for (const rule of ['WebFetch', 'Bash(npm run test:*)', 'Edit(/src/**)', 'mcp__daoris-knowledge__quest_list', 'WebFetch(domain:example.com)']) {
     assert.equal(ruleRefusal(rule), null, rule);
   }
-  for (const rule of ['', '   ', 'Bash(', 'rm -rf /', '(npm test)', 'Bash(npm test)\nWebFetch']) {
+  // `Bash` and a final line break is the driver's row too (PERMSHAPE1): JavaScript's `$` already ends at the very end.
+  for (const rule of ['', '   ', 'Bash(', 'rm -rf /', '(npm test)', 'Bash(npm test)\nWebFetch', 'Bash\n']) {
     const refused = ruleRefusal(rule);
     assert.ok(refused, JSON.stringify(rule));
     assert.match(refused!, /Bash\(npm run test:\*\)/);

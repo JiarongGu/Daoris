@@ -25,6 +25,8 @@ with the version and date at release.
   agent anything.
 - Below about 620 px the window's seven menus fold into one menu, reached and walked by keyboard as
   the bar is. A conversation's notes that an account is signed out or cooling read in Chinese too.
+- A permission rule followed by a line break is refused at every door, as the terminal already refused
+  it; the window could write one into the rules file before.
 - The terminal compares account, workspace and other names without case exactly as the driver does,
   so a name like `straße` is never mistaken for `STRASSE` at one door and not the other.
 - `daoris agent list` and a terminal sign-in keep what they learn about an account's sign-in, so the

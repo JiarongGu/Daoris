@@ -149,8 +149,12 @@ public static class PermissionRules
             Hook: TreeGuard.Matcher),
     ];
 
-    /// <summary>A tool name, then an optional parenthesised specifier on the same line — the harness's own shape.</summary>
-    private static readonly Regex Shape = new(@"^[A-Za-z][A-Za-z0-9_-]*(\([^\r\n]+\))?$", RegexOptions.CultureInvariant);
+    /// <summary>
+    /// A tool name, then an optional parenthesised specifier on the same line — the harness's own shape, which the CLI's
+    /// <c>SHAPE</c> and the service's <c>RuleProposalBox</c> twin. <c>\z</c>, since .NET's <c>$</c> also passes a final
+    /// line break the CLI's refuses, and the screen's door hands the rule untrimmed (PERMSHAPE1).
+    /// </summary>
+    private static readonly Regex Shape = new(@"^[A-Za-z][A-Za-z0-9_-]*(\([^\r\n]+\))?\z", RegexOptions.CultureInvariant);
 
     public static string PathOf(string home) => Path.Combine(home, FileName);
 
