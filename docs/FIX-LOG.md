@@ -305,11 +305,18 @@ refused it. (localhost:5191))*, so that run's pass did not reach the remote, and
 never showed. The rerun's log replaced the failing one before it was kept; the lines quoted here are what was read.
 DEV3b carries it. *Read 2026-10-07 (DEV3b above):* the same run made the stop in a pass beside its session, whose lines
 `--once` kept for its end, and the rehearsal's 90 s bound most likely ended it first; a failed check's evidence is now kept.
+*Again at CARRY2d's merge (403/404), with DEV3b's evidence kept:* the run printed the take found lost (*held … kept on
+the quest as a conflict*), then *failed session …: No connection could be made … (localhost:5197)*; the session's
+transcript is the stub's `fetch failed … ECONNRESET`, and host b's log shows it started at 12:48:01, 12:50:10 and
+12:51:00. The phase restarts host b to bring it online while the lingering stub's request to it is in flight, so the stub
+crashed before the driver's pass could stop it. Not a driver defect: the rehearsal's ordering. DEV3d carries it.
 `SettingsView.doors.test.tsx`'s "closes on a press of the Settings place…" timed out (20 s) once in SESSDEL1c's web run
 with two other worktrees building; it passed alone (5/5) and in both later full runs.
 `setupStart.test.tsx`'s "opens a fresh machine on Get started, and counts the setup in the status bar" timed out (20 s)
 once in ORIENT2h6's merge gate (no web file changed), with three worktrees building beside it. Two page tests timing out
-under the same load in one day: a page test that renders the whole shell is the shape to look at.
+under the same load in one day: a page test that renders the whole shell is the shape to look at. A third, the same
+evening: `WorkFrame.test.tsx`'s "hands the words back into the box, and names the files, when a send does not arrive"
+timed out (20 s) once in CARRY2d's web run and passed in the next.
 
 *Fixed the same day:* `desktop-publish.test.ts`'s "retries a held rename at each package and launcher step" failed
 twice (AGENTREAD1's verify, ACCTQUOTE1d's merge gate) with a real EPERM. It handed `layCli` two tries with no wait, the

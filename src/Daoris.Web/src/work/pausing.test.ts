@@ -257,6 +257,23 @@ describe('the notices', () => {
     expect(resumeNotices({ ...resumed, did: 'not-paused', released: [] })).toEqual([{ key: 'work.pause.notPaused', values: {}, tone: 'ok' }]);
   });
 
+  /**
+   * CARRY2d: the hold a resume names carries the facts its sentence is said from (`heldBy`, `pausedBy`, `strikes`,
+   * `takenBy`, the tick's own), and the notice hands them on whole, so the act says it in the reader's language.
+   */
+  it('hands on the facts a hold is said from with its sentence', () => {
+    const stopped: ResumeAnswer = {
+      scope: 'ask', id: 'a1', did: 'resumed', released: [],
+      holds: [{ quest: 'q8', verdict: 'Stopped', reason: 'you stopped session `b3f0re00`.', heldBy: 'b3f0re00' }],
+    };
+    const taken: ResumeAnswer = {
+      ...stopped,
+      holds: [{ quest: 'q11', verdict: 'TakenElsewhere', reason: 'Quest `#q11` is taken on another machine.', takenBy: { machine: null, session: null, here: false, last: 'cut0ff00' } }],
+    };
+    expect(resumeNotices(stopped)[1].hold).toEqual(stopped.holds![0]);
+    expect(resumeNotices(taken)[1].hold?.takenBy).toEqual({ machine: null, session: null, here: false, last: 'cut0ff00' });
+  });
+
   it('says an abandon as how many of the listed pieces went, and how many changed since the list', () => {
     const went = { scope: 'ask', id: 'a1', did: 'abandoned', listed: 10, went: 9, changed: [{ piece: 'quest:q1', why: 'gone', changed: true }] } as AbandonAnswer;
     expect(abandonNotice(went)).toMatchObject({ key: 'work.abandon.done.changed', values: { went: 9, count: 10, changed: 1 } });

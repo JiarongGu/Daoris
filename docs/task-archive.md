@@ -12029,3 +12029,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ORIENT2h6b — the service's fence reader reads the shared fence table** (service, tools; after ORIENT2h6). The CLI's, the driver's and the tools' fence readers are held to `src/Daoris.Cli/test/fixtures/fence-cases.json`; the service's `MarkdownFence` is held only through `decision-notes.json` by way of the tools' `fenced`. Have `MarkdownFenceTests` (or `MarkdownSectionsTests`' fence theory) read the table row for row, with the REACH row naming `service`. Contract: D151's ORIENT2h6 note, `twins.md`'s fence row. Proof: the service's reader held to the table.
 
 **Outcome** 2026-10-07: `MarkdownFenceTests` holds the service's `MarkdownFence` to `fence-cases.json` row for row, and the table's REACH row names the service, so all four fence readers share one table. Detail: D151's ORIENT2h6b note, `twins.md`; commit 10f2dceb.
+
+
+## CARRY2d — a resume's hold reads in Chinese (2026-10-07, D80)
+
+> - [ ] **CARRY2d — a resume's hold reads in Chinese** (modules, web-shell; after CARRY2c). A resume's report of what still holds a quest of its work (`WorkHold`, `DriverModule.Work.cs:233`) carries only the verdict and the English sentence, so 中文 shows English there, as it does for a stop and a pause. Carry the facts (CARRY2c's `takenBy` for a take elsewhere, and their own for a stop and a pause) and word them from both catalogues. Contract: D80's CARRY2c note ("Not covered"). Proof: a modules test for the forwarded facts; a vitest rendering each hold in 中文.
+
+**Outcome** 2026-10-07: a resume's report of what still holds a quest carries each hold's facts (the stop's session, whose pause, a park's count, whose take) beside the unchanged sentence; the page words each in 中文 by `sittingSentence`, and the driver's sentence stands for an older host. A park's facts came too. Detail: D80's CARRY2d note; commits e7b06251…2141ce8f.

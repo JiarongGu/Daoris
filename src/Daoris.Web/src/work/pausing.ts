@@ -1,4 +1,5 @@
 import type { Quest } from '../api';
+import type { Consideration } from '../signals';
 
 // Pausing and abandoning an ask's work or a quest's on the screen (PAUSE1e, D132, `docs/2026-10-02-pause-and-clean-up-design.md`
 // §2.6, §3.1, §3.2, §4.2, §7.1): the shapes the driver answers (`bridge/work.ts` asks them) and what each says, as catalogue
@@ -119,11 +120,19 @@ export type PauseAnswer = {
   kept: { session: string; quest?: string | null; why: string; machine?: string | null }[];
 };
 
+/**
+ * One quest a resume leaves held (design §2.4): the planner's verdict and the driver's sentence, and the facts the page says
+ * it from (CARRY2d), by the tick's own names: the stop's session (`heldBy`), whose pause (`pausedBy`), how many failed
+ * (`strikes`) and whose take (`takenBy`), so `sittingSentence` words a hold as it words a sitting quest. Each is absent for
+ * every verdict but its own, and from a host older than the facts, where the driver's sentence stands.
+ */
+export type ResumeHold = Pick<Consideration, 'quest' | 'verdict' | 'reason' | 'heldBy' | 'pausedBy' | 'strikes' | 'takenBy'>;
+
 /** `WORK_RESUME`'s answer: what it released, and what still holds each quest by the planner's verdict (null: unread). */
 export type ResumeAnswer = {
   scope: WorkScopeName; id: string; did: 'resumed' | 'not-paused';
   released: { quest?: string | null; session: string }[];
-  holds: { quest: string; verdict: string; reason: string }[] | null;
+  holds: ResumeHold[] | null;
 };
 
 /** `WORK_ABANDON`'s answer: what went, what stayed, what changed since the list, and each shared decline's answer. */
@@ -162,8 +171,8 @@ export type WorkDoor = {
 /** A sentence the page says, as a catalogue key and its values; the caller adds `what`, the scope's own name. */
 export type Line = { key: string; values?: Record<string, unknown> };
 
-/** A notice: a line, its tone, and for a quest a resume left held, the hold whose sentence it names. */
-export type WorkNotice = Line & { tone: 'ok' | 'error'; hold?: { quest: string; verdict: string; reason: string } };
+/** A notice: a line, its tone, and for a quest a resume left held, the hold whose sentence it names, with its facts. */
+export type WorkNotice = Line & { tone: 'ok' | 'error'; hold?: ResumeHold };
 
 /** The catalogue's `t`, as far as these lines need it. */
 export type Translate = (key: string, options?: Record<string, unknown>) => string;

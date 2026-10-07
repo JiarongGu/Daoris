@@ -230,9 +230,31 @@ public sealed partial class DriverModule
             outcome.Id,
             Did = outcome.Verdict == ResumeVerdict.Resumed ? "resumed" : "not-paused",
             Released = outcome.Released.Select(stop => new { stop.Quest, stop.Session }).ToArray(),
-            Holds = outcome.Holds?.Select(hold => new { hold.Quest, Verdict = hold.Verdict.ToString(), hold.Reason }).ToArray(),
+            Holds = outcome.Holds?.Select(WorkHoldShown).ToArray(),
         };
     }
+
+    /// <summary>
+    /// One quest a resume leaves held, as the page receives it (design §2.4): the quest, the verdict and the driver's sentence,
+    /// and beside them the facts the page says that sentence from in the reader's language (CARRY2d), by the tick's own names
+    /// and shapes (<see cref="DriverLoop.TickConsideration"/>), so <c>sittingSentence</c> words a hold as it words a sitting
+    /// quest. Each is null for every verdict but its own, which the bridge leaves out; the sentence stays, unchanged, for an
+    /// older page. Public for the fast half's table.
+    /// </summary>
+    public static object WorkHoldShown(WorkHold hold) => new
+    {
+        hold.Quest,
+        Verdict = hold.Verdict.ToString(),
+        hold.Reason,
+        // The person's stop by its session (SESSUX1d); its tree stays here.
+        hold.HeldBy,
+        // Another pause, an ask's or the quest's own (PAUSE1b).
+        PausedBy = hold.PausedBy is { } pause ? new { Scope = pause.Word, pause.Id } : null,
+        // A park by the count its sentence says (SESSUX1i).
+        hold.Strikes,
+        // A take that is not this machine's (CARRY2c): the machine and its session, a take made here, the session not carried on.
+        TakenBy = hold.TakenBy is { } taken ? new { taken.Machine, taken.Session, taken.Here, taken.Last } : null,
+    };
 
     /// <summary>The ask or the quest a work route names: exactly one of <c>ask</c> and <c>quest</c>.</summary>
     /// <exception cref="DriverException">Neither, or both: the driver's sentence, said verbatim.</exception>

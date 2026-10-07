@@ -150,8 +150,28 @@ public sealed record PauseOutcome(WorkScope Scope, string Id, PauseVerdict Verdi
     public IReadOnlyList<WorkKept> Kept { get; init; } = [];
 }
 
-/// <summary>A quest of the work something still holds after a resume (design §2.4): the planner's verdict and sentence.</summary>
-public sealed record WorkHold(string Quest, StartVerdict Verdict, string Reason);
+/// <summary>
+/// A quest of the work something still holds after a resume (design §2.4): the planner's verdict and sentence, and the facts
+/// the page says that sentence from in the reader's language (CARRY2d), as the tick's consideration carries them. The sentence
+/// stays the terminal's and an older page's; each fact is null for every verdict but its own.
+/// </summary>
+public sealed record WorkHold(string Quest, StartVerdict Verdict, string Reason)
+{
+    /// <summary>For the person's stop (<see cref="StartVerdict.Stopped"/>): the session they stopped, as the tick's <c>heldBy</c>.</summary>
+    public string? HeldBy { get; init; }
+
+    /// <summary>For another pause (<see cref="StartVerdict.Paused"/>): whose it is, an ask's or the quest's own.</summary>
+    public PausedBy? PausedBy { get; init; }
+
+    /// <summary>
+    /// For a park on its failed sessions (<see cref="StartVerdict.Exhausted"/>): how many failed, the count its sentence says,
+    /// which is the records' failures less the person's mark (<see cref="DriverConfig.ForgivenAt"/>).
+    /// </summary>
+    public int? Strikes { get; init; }
+
+    /// <summary>For a take that is not this machine's (<see cref="StartVerdict.TakenElsewhere"/>): whose it is (CARRY2c).</summary>
+    public TakenBy? TakenBy { get; init; }
+}
 
 /// <summary>What a resume did.</summary>
 public sealed record ResumeOutcome(WorkScope Scope, string Id, ResumeVerdict Verdict)
@@ -519,7 +539,7 @@ public static class WorkPausing
             return
             [
                 .. plan.Where(consideration => Holding.Contains(consideration.Verdict) && work.Has(consideration.Quest.Id))
-                    .Select(consideration => new WorkHold(consideration.Quest.Id, consideration.Verdict, consideration.Reason)),
+                    .Select(consideration => Hold(consideration, config)),
             ];
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
@@ -528,4 +548,19 @@ public static class WorkPausing
             return null;
         }
     }
+
+    /// <summary>
+    /// One hold with the facts its sentence is said from (CARRY2d), read from the same consideration as the sentence, so the
+    /// page's words and the driver's never disagree: a park's count is the one its sentence says, the failures less the mark.
+    /// </summary>
+    private static WorkHold Hold(Consideration consideration, DriverConfig config) =>
+        new(consideration.Quest.Id, consideration.Verdict, consideration.Reason)
+        {
+            HeldBy = consideration.Verdict == StartVerdict.Stopped ? consideration.HeldBy?.Session : null,
+            PausedBy = consideration.Verdict == StartVerdict.Paused ? consideration.PausedBy : null,
+            Strikes = consideration is { Verdict: StartVerdict.Exhausted, Failures: { } failures }
+                ? failures - config.ForgivenAt(consideration.Quest.Id)
+                : null,
+            TakenBy = consideration.Verdict == StartVerdict.TakenElsewhere ? consideration.TakenBy : null,
+        };
 }

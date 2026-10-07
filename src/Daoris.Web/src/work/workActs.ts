@@ -16,8 +16,9 @@ import {
  * **An organism**: it holds the bridge's hooks, so the pages and the header, which each press it, hold none. What each act
  * says is `pausing.ts`'s rule, said here in the catalogue's words with the scope's own name: a pause in one line, and a
  * failure for each session it meant to stop and could not; a resume, and what still holds a quest of it by its hold's own
- * sentence, translated by its verdict (UX5 U27); an abandon as how many of the listed pieces went. A refusal is the
- * catalogue's sentence for its code.
+ * sentence, translated by its verdict (UX5 U27) and worded from the facts the host hands beside it (CARRY2d), the driver's
+ * sentence where an older host hands none; an abandon as how many of the listed pieces went. A refusal is the catalogue's
+ * sentence for its code.
  */
 export function useWorkActs({ notify }: { notify: Notify }) {
   const { t } = useTranslation();
@@ -27,6 +28,7 @@ export function useWorkActs({ notify }: { notify: Notify }) {
 
   const tell = (notices: readonly WorkNotice[], target: WorkTarget) => {
     for (const notice of notices) {
+      // The hold whole, its facts with it (CARRY2d): the one rule that words a sitting quest words a resume's hold.
       const why = notice.hold ? { why: sittingSentence({ ...notice.hold, repository: '' }) } : {};
       notify(t(notice.key, { ...notice.values, ...why, what: scopeName(t, target) }), notice.tone);
     }
