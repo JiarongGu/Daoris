@@ -104,20 +104,46 @@ export function parseFrontmatter(
  *
  * @remarks
  * Below a leading frontmatter block, where a `#` line is a comment among the fields, and outside a
- * fence. A closing run of `#` is dropped only after a space, as Markdown does, so `C#` keeps its `#`.
+ * fence as `markdownFence` reads one. A closing run of `#` is dropped only after a space, as Markdown
+ * does, so `C#` keeps its `#`.
  */
 export function firstHeading(text: string): string | null {
   const start = frontmatterEnd(text);
-  let fenced = false;
+  const holds = markdownFence();
   for (const line of (start === -1 ? text : text.slice(start)).split('\n')) {
-    if (/^\s*(```|~~~)/.test(line)) {
-      fenced = !fenced;
-      continue;
-    }
-    const heading = fenced ? null : /^#{1,6}[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$/.exec(line);
+    const heading = holds(line) ? null : /^#{1,6}[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$/.exec(line);
     if (heading) return heading[1]!;
   }
   return null;
+}
+
+/**
+ * A reader of a markdown file's fences, handed every line in order: whether a fenced block holds each, its opening and
+ * closing lines included, so a fence's text is never a heading.
+ *
+ * @remarks
+ * Read as CommonMark reads a fence (ORIENT2h6, after the service's ORIENT2h3 `MarkdownFence` and the tools' ORIENT2h4
+ * `fenced`): a run of three or more backticks or tildes after any indent opens one, and only a run of the same
+ * character at least as long, with nothing after it but spaces, closes it. A backtick run with a backtick later on its
+ * line is code inline and opens nothing. A fence never closed holds the rest of the file. Toggling on any three of
+ * either closed a four-backtick fence on the example it quoted, so the example's heading named the document. The
+ * driver's `SelfDescription.Fence` reads a README by the same rule with code of its own; both, and the tools' `fenced`,
+ * are held to `test/fixtures/fence-cases.json`.
+ */
+export function markdownFence(): (line: string) => boolean {
+  let marker = '';
+  let length = 0;
+  return (line) => {
+    const text = line.trimStart();
+    const run = /^(?:`+|~+)/.exec(text)?.[0] ?? '';
+    if (!marker) {
+      if (run.length < 3 || (run[0] === '`' && text.includes('`', run.length))) return false;
+      [marker, length] = [run[0]!, run.length];
+      return true;
+    }
+    if (run[0] === marker && run.length >= length && text.slice(run.length).trim() === '') marker = '';
+    return true;
+  };
 }
 
 /** A document's body with its frontmatter removed and the edges trimmed — what a span carries (D59). */
