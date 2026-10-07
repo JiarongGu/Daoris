@@ -338,6 +338,61 @@ public sealed class WorkPausingTests : IDisposable
         Assert.Contains("session `b3f0re00`", Assert.Single(outcome.Holds!, hold => hold.Quest == "q8").Reason);
     }
 
+    /// <summary>
+    /// CARRY2d: a resume named what still holds a quest by the verdict and the driver's English alone, so the page could word
+    /// no hold that names a session, a pause, a count or a machine in another language. Each hold now carries its facts from
+    /// the planner's own consideration, the same reading as its sentence: the person's stop by its session, another pause by
+    /// whose it is, a park by the count its sentence says (the records' failures less the person's mark), and a take
+    /// elsewhere by whose it is (CARRY2c). A hold whose sentence needs nothing carries none, and every sentence is as it was.
+    /// </summary>
+    [Fact]
+    public async Task Resume_names_what_still_holds_with_the_facts_each_hold_is_said_from()
+    {
+        var ledger = new Ledger(
+            [
+                Record("b3f0re00", "stopped", "q8", minutes: 5),
+                Record("f41l0000", "failed", "q10", minutes: 1),
+                Record("f41l0001", "failed", "q10", minutes: 2),
+                Record("f41l0002", "failed", "q10", minutes: 3),
+                Record("f41l0003", "failed", "q10", minutes: 4),
+                Record("cut0ff00", "failed", "q11", minutes: 6),
+                Record("laptop/s7", "working", "q11", minutes: 8),
+            ],
+            [
+                Quest("q1", "Open", to: "game"), Quest("q8", "Taken"), Quest("q9", "Open"), Quest("q10", "Open"),
+                Quest("q11", "Taken"),
+            ],
+            ["a1"])
+        {
+            // q11's take is another machine's: its claim here is none, and the teammate's record names whose.
+            Claims = { ["q11"] = "none" },
+        };
+        (DriverConfig.Empty with { Drivable = ["engine", "game"], Holds = ["game"] })
+            .WithPausedAsk("a1", new WorkPause(Now, NoStops))
+            .WithPausedQuest("q9", new WorkPause(Now, NoStops))
+            .WithForgiven("q10", 1)
+            .Save(ConfigPath);
+        using var service = ledger.Client();
+
+        var outcome = await WorkPausing.ResumeAsync(World(service), WorkScope.Ask, "a1", PluginEvents.Terminal);
+
+        var holds = outcome.Holds!.ToDictionary(hold => hold.Quest);
+        Assert.Equal(
+            ["q10:Exhausted", "q11:TakenElsewhere", "q1:Held", "q8:Stopped", "q9:Paused"],
+            holds.Values.Select(hold => $"{hold.Quest}:{hold.Verdict}").Order(StringComparer.Ordinal));
+        Assert.Equal("b3f0re00", holds["q8"].HeldBy);
+        Assert.Equal(new PausedBy(WorkScope.Quest, "q9"), holds["q9"].PausedBy);
+        Assert.Equal(3, holds["q10"].Strikes);
+        Assert.StartsWith("3 session(s) have failed", holds["q10"].Reason, StringComparison.Ordinal);
+        Assert.Equal(new TakenBy("cut0ff00", "laptop", "laptop/s7"), holds["q11"].TakenBy);
+        Assert.StartsWith("Quest `#q11` is taken on `laptop`", holds["q11"].Reason, StringComparison.Ordinal);
+        // Each fact belongs to its verdict alone: the repository's hold (q1) carries none.
+        Assert.All(holds.Values.Where(hold => hold.Verdict != StartVerdict.Stopped), hold => Assert.Null(hold.HeldBy));
+        Assert.All(holds.Values.Where(hold => hold.Verdict != StartVerdict.Paused), hold => Assert.Null(hold.PausedBy));
+        Assert.All(holds.Values.Where(hold => hold.Verdict != StartVerdict.Exhausted), hold => Assert.Null(hold.Strikes));
+        Assert.All(holds.Values.Where(hold => hold.Verdict != StartVerdict.TakenElsewhere), hold => Assert.Null(hold.TakenBy));
+    }
+
     /// <summary>A resume of what is not paused changes nothing and says so: information, never a refusal (D48 §6).</summary>
     [Fact]
     public async Task A_resume_of_what_is_not_paused_says_so_and_changes_nothing()
@@ -456,6 +511,9 @@ public sealed class WorkPausingTests : IDisposable
         /// <summary>A record's move does not reach the service: the connection fails, as a service that went away fails it.</summary>
         public bool Unreachable { get; set; }
 
+        /// <summary>This machine's claim on a quest, by its id (CARRY2d); a quest not named here has no claim door, as before.</summary>
+        public Dictionary<string, string> Claims { get; } = new(StringComparer.OrdinalIgnoreCase);
+
         public ServiceClient Client() => new("http://ledger.test", null, new HttpClient(this, disposeHandler: false));
 
         private JsonObject Of(string id) => _records.Single(each => (string?)each["id"] == id);
@@ -508,6 +566,9 @@ public sealed class WorkPausingTests : IDisposable
                                 ["id"] = ask, ["workspace"] = "default", ["sentence"] = "Add the note field", ["state"] = "Published", ["tier"] = "named",
                             })
                             : Answer(HttpStatusCode.NotFound, new JsonObject { ["error"] = $"No ask `#{ask}`." });
+                    case ("GET", _) when path.StartsWith("/api/quests/", StringComparison.Ordinal) && path.EndsWith("/claim", StringComparison.Ordinal)
+                                         && Claims.TryGetValue(Uri.UnescapeDataString(path["/api/quests/".Length..^"/claim".Length]), out var claim):
+                        return Answer(HttpStatusCode.OK, new JsonObject { ["claim"] = claim });
                     case ("POST", _) when path.EndsWith("/state", StringComparison.Ordinal):
                         var moved = Of(Uri.UnescapeDataString(path["/api/sessions/".Length..^"/state".Length]));
                         moved["state"] = body!["state"]!.GetValue<string>();
