@@ -642,6 +642,14 @@ const WAVE_QUOTE = 'should wave';
 const REQUIRED_CHECK = "The newcomer's history holds a commit answering the quest.";
 const MET = 'The stub landed a commit answering the quest.';
 const DEPARTED = 'The stub cannot wave, so it landed a commit instead.';
+// What Daoris reads itself (EVID1b2, D144 §2–§3): an ask to keep a note, whose intake names the note's path as its
+// requirement's evidence, and an ask to keep a late one, whose quest the working stub closes met before the note is committed.
+const NOTE_SENTENCE = 'the newcomer should keep a note in notes/kept.md, and a check should follow';
+const NOTE_QUOTE = 'should keep a note in notes/kept.md';
+const NOTE_PATH = 'notes/kept.md';
+const LATE_NOTE_SENTENCE = 'the newcomer should keep a late note in notes/late.md, and a check should follow';
+const LATE_NOTE_QUOTE = 'should keep a late note in notes/late.md';
+const LATE_NOTE_PATH = 'notes/late.md';
 
 // The stub agent: a session with real mechanics and no model (D46 §8). It claims its own quest
 // through the same HTTP door a real session's connector would use, works (a commit), and closes —
@@ -649,8 +657,8 @@ const DEPARTED = 'The stub cannot wave, so it landed a commit instead.';
 const stubAgent = join(scratch, 'stub-agent.mjs');
 writeFileSync(stubAgent, `
 import { execSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 
 // The stub is a fake BINARY as well as a fake session (D49 §4): before anything else it answers the
 // two questions the toolchain probe asks any harness — its version, and whether a configuration home
@@ -690,26 +698,33 @@ if (intakeFor) {
   // is the departure's (DRIFT1d): its quest's title is the working stub's cue to depart, as a title asking to be
   // declined is its cue to decline.
   const waving = /should wave/i.test(process.env.DAORIS_TARGET ?? '');
+  // An ask to keep a note names the note's path as its requirement's evidence (EVID1b2, D144 §2): a file the work plainly
+  // leaves. A late note's quest is titled as the working stub's cue to close it met before the note is committed.
+  const note = /should keep a late note/i.test(process.env.DAORIS_TARGET ?? '')
+    ? ${JSON.stringify({ quote: LATE_NOTE_QUOTE, path: LATE_NOTE_PATH, title: 'Keep a late note, which the stub forgets to commit' })}
+    : /should keep a note/i.test(process.env.DAORIS_TARGET ?? '')
+      ? ${JSON.stringify({ quote: NOTE_QUOTE, path: NOTE_PATH, title: 'Keep a note, as the intake decided' })}
+      : null;
   const publish = (quote) => fetch(url + '/api/asks/' + intakeFor + '/publish', {
     method: 'POST',
     headers: { 'content-type': 'application/json', ...(key ? { authorization: 'Bearer ' + key } : {}) },
     body: JSON.stringify({
       to: 'newcomer',
-      title: waving ? 'Wave, though the stub departs from it' : 'Say hello, as the intake decided',
+      title: note?.title ?? (waving ? 'Wave, though the stub departs from it' : 'Say hello, as the intake decided'),
       body: 'The intake read the circle, and the newcomer is who this belongs to.',
       then: [{
         to: 'newcomer',
-        title: waving ? 'Verify {parent} waved' : 'Verify {parent} said hello',
+        title: note ? 'Verify {parent} kept its note' : waving ? 'Verify {parent} waved' : 'Verify {parent} said hello',
         body: 'Check what {parent} landed.',
       }],
       session,
-      requirements: [{ quote, check: ${JSON.stringify(REQUIRED_CHECK)} }],
+      requirements: [{ quote, check: ${JSON.stringify(REQUIRED_CHECK)}, ...(note ? { evidence: [{ path: note.path }] } : {}) }],
     }),
   });
 
   // A quote the person never said is refused, naming it, and nothing is published (DRIFT1c). The stub says what the
   // host answered, so the gate reads the refusal out of the intake's own transcript.
-  if (!waving) {
+  if (!waving && !note) {
     const unsaid = await publish(${JSON.stringify(UNSAID_QUOTE)});
     const answered = await unsaid.text();
     let error = answered;
@@ -720,7 +735,7 @@ if (intakeFor) {
     }
   }
 
-  const published = await publish(waving ? ${JSON.stringify(WAVE_QUOTE)} : ${JSON.stringify(SAID_QUOTE)});
+  const published = await publish(note?.quote ?? (waving ? ${JSON.stringify(WAVE_QUOTE)} : ${JSON.stringify(SAID_QUOTE)}));
   console.log('stub: intake publish answered ' + published.status);
   process.exit(published.ok ? 0 : 1);
 }
@@ -801,16 +816,33 @@ const required = [...target.replace(/\\r\\n/g, '\\n').matchAll(/^- Requirement (
 for (const requirement of required) {
   console.log('stub: handed requirement ' + requirement.number + ': "' + requirement.quote + '"');
 }
+// What Daoris reads itself of a requirement (EVID1b, D144 §2), as its target hands it beneath the check: said back, so the
+// gate reads the sentence the session was handed. Each path it names is a note the stub leaves: in its commit, or, where the
+// title says the stub forgets, in the tree after the commit, so the read at the session's end finds it uncommitted.
+const evidenceSaid = [...target.replace(/\\r\\n/g, '\\n')
+  .matchAll(/^ {2}Evidence: (Daoris reads .+? in your branch's last commit when you end\\.)/gm)].map((match) => match[1]);
+for (const sentence of evidenceSaid) console.log('stub: handed evidence: ' + sentence);
+const notes = evidenceSaid.flatMap((sentence) => [...sentence.matchAll(/\`([^\`]+)\`/g)].map((match) => match[1]));
+const forgets = /forgets to commit/i.test(title);
+const leaveNotes = () => {
+  for (const note of notes) {
+    mkdirSync(dirname(note), { recursive: true });
+    writeFileSync(note, 'A note the stub left, as the requirement names.\\n');
+    console.log('stub: left ' + note + (forgets ? ' uncommitted' : ' in its commit'));
+  }
+};
 
 if (/decline/i.test(title)) {
   await respond('decline', 'The stub declines what asks to be declined.');
   process.exit(0);
 }
 
+if (!forgets) leaveNotes();
 writeFileSync('answered-' + id + '.md', '# ' + title + '\\n\\nAnswered by the stub session.\\n');
 const git = 'git -c user.name="Stub Session" -c user.email="stub@example.invalid"';
 execSync(git + ' add -A', { stdio: 'ignore' });
 execSync(git + ' commit -q -m "stub: answer quest ' + id + '"', { stdio: 'ignore' });
+if (forgets) leaveNotes();
 
 // A done answers each requirement by its number (DRIFT1d). One answering none is refused, naming each, and nothing
 // closes; then each is met, or departed where the title asks the stub to depart, with the reason and the person's
@@ -1083,7 +1115,7 @@ check(
 // step inherits them.
 const stubLines = (said) => said.split('\n').filter((line) => line.startsWith('stub:')).join('\n');
 // EVID1a: every requirement reads its evidence, `[]` where it names none.
-const requiredAs = (quote) => JSON.stringify([{ quote, check: REQUIRED_CHECK, evidence: [] }]);
+const requiredAs = (quote, evidence = []) => JSON.stringify([{ quote, check: REQUIRED_CHECK, evidence }]);
 const askedBySettled = newcomerQuests.filter((q) => q.from === `ask #${settledAskId}`);
 check(
   'a requirement quoting words the person never said is refused at the intake’s publish, naming them, and nothing of it is published',
@@ -1167,6 +1199,140 @@ check(
   waveYesAgain.code === 1 && /already accepted/.test(waveYesAgain.out)
     && waveStepDone?.status === 'Done' && answeredMet(waveStepDone) && waveDoneAsk?.state === 'Done',
   `${waveYesAgain.out}\n${waveStepRun.out}\n${JSON.stringify({ waveStepDone, ask: waveDoneAsk?.state })}`,
+);
+
+// WHAT DAORIS READS ITSELF (EVID1b, D144 §2–§3): an ask to keep a note, whose intake names the note's path as its requirement's
+// evidence. The session working the quest is handed what Daoris reads beneath the requirement, commits the note with its
+// answer and closes met, which holds the done until the note is read. The driver reads the path at the tree's HEAD when that
+// session ends and posts the verdict; found, it lifts the hold and publishes the step the done held, which the loop drives like
+// any, its inherited evidence read the same way.
+const askedByNote = async (askId) => ((await api('GET', '/api/quests?repository=newcomer&includeClosed=true')).json ?? [])
+  .filter((q) => q.from === `ask #${askId}`);
+const noteRecordOf = async (questId) => ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? [])
+  .find((s) => questId && s.quest === questId);
+const noteSaidIn = (record) => (existsSync(record?.transcript ?? '') ? readFileSync(record.transcript, 'utf8') : '');
+const isFullId = (id) => /^[0-9a-f]{40}$/.test(id ?? '');
+const noteAsk = askVerb(`--workspace default "${NOTE_SENTENCE}"`);
+const noteAskId = /ask\s+#([0-9a-f]{6})/.exec(noteAsk.out)?.[1] ?? '';
+const noteRun = intakeDrive();
+const noteAsked = noteAskId === '' ? [] : await askedByNote(noteAskId);
+const noteQuest = noteAsked.find((q) => !q.parent);
+const noteStep = noteAsked.find((q) => noteQuest && q.parent === noteQuest.id);
+const noteRecord = await noteRecordOf(noteQuest?.id);
+const noteSaid = noteSaidIn(noteRecord);
+check(
+  'an intake names a path as a requirement’s evidence, and the quest keeps it beside the person’s words and the check',
+  noteQuest?.title === 'Keep a note, as the intake decided'
+    && JSON.stringify(noteQuest.requirements) === requiredAs(NOTE_QUOTE, [{ path: NOTE_PATH }]),
+  `${noteAsk.out}\n${noteRun.out}\n${JSON.stringify(noteAsked.map((q) => ({ id: q.id, title: q.title, requirements: q.requirements })))}`,
+);
+check(
+  `…its session was handed what Daoris reads, "Daoris reads \`${NOTE_PATH}\` in your branch's last commit when you end.", and committed the note`,
+  noteSaid.includes(`stub: handed evidence: Daoris reads \`${NOTE_PATH}\` in your branch's last commit when you end.`)
+    && noteSaid.includes(`stub: left ${NOTE_PATH} in its commit`),
+  stubLines(noteSaid) || JSON.stringify(noteRecord),
+);
+const noteRead = noteQuest?.evidence;
+const noteObject = noteRead?.items?.[0]?.object;
+check(
+  '…its done met is read when that session ends, at the done’s commit, and found: held:false and no hold, how session-end, the session named, the note’s object named',
+  answeredMet(noteQuest) && noteQuest.status === 'Done' && (noteQuest.hold ?? null) === null && noteQuest.awaitsEvidence === false
+    && noteRecord?.state === 'completed' && noteRead?.how === 'session-end' && noteRead.session === noteRecord.id
+    && isFullId(noteRead.commit) && noteRead.items?.length === 1 && noteRead.items[0].requirement === 1
+    && noteRead.items[0].path === NOTE_PATH && noteRead.items[0].result === 'found' && isFullId(noteObject)
+    && run(`git rev-parse ${noteRead.commit}:${NOTE_PATH}`, newcomer).out.trim() === noteObject
+    && run(`git log --oneline -1 ${noteRead.commit}`, newcomer).out.includes(`stub: answer quest ${noteQuest.id}`),
+  `${noteRun.out}\n${JSON.stringify({ quest: noteQuest, record: noteRecord?.id })}`,
+);
+check(
+  '…the record’s evidence says what was read, beneath its commits: "evidence read at <sha> (session-end): 1 of 1 found, kept"',
+  (noteRecord?.evidence ?? '').includes(`evidence read at ${noteRead?.commit} (session-end): 1 of 1 found, kept`)
+    && noteRecord.evidence.includes(`- requirement 1 \`${NOTE_PATH}\`: found`),
+  noteRecord?.evidence ?? JSON.stringify(noteRecord),
+);
+const noteDoneAsk = noteAskId === '' ? null : (await api('GET', `/api/asks/${noteAskId}`)).json;
+check(
+  '…and the found verdict published the step the done held, which inherits the evidence in the same repository and is driven to done, its own read found, so the ask reads done',
+  noteStep?.title === `Verify #${noteQuest?.id} kept its note` && noteStep.status === 'Done' && answeredMet(noteStep)
+    && JSON.stringify(noteStep.requirements) === requiredAs(NOTE_QUOTE, [{ path: NOTE_PATH }])
+    && noteStep.evidence?.how === 'session-end' && noteStep.evidence.items?.[0]?.result === 'found'
+    && noteDoneAsk?.state === 'Done',
+  `${noteRun.out}\n${JSON.stringify({ noteStep, ask: noteDoneAsk?.state })}`,
+);
+
+// MISSING EVIDENCE WAITS FOR THE PERSON (EVID1b, D144 §3, §6): an ask to keep a late note, whose working stub closes met with
+// the note written and not committed. The read at the session's end finds it in the tree and not in the commit, so the done
+// stays held, its step unpublished. Once the note is committed, the terminal's check reads it at that commit, lifts the hold and
+// publishes the step. A commit before the done is refused first: a check reads the done's commit or one after it, and once the
+// hold lifts nothing waits on a check, so the refusal is asked for while it holds.
+const lateNoteAsk = askVerb(`--workspace default "${LATE_NOTE_SENTENCE}"`);
+const lateNoteAskId = /ask\s+#([0-9a-f]{6})/.exec(lateNoteAsk.out)?.[1] ?? '';
+const lateNoteRun = intakeDrive();
+const [lateNoteQuest, ...lateNoteMore] = lateNoteAskId === '' ? [] : await askedByNote(lateNoteAskId);
+const lateNoteRecord = await noteRecordOf(lateNoteQuest?.id);
+const lateNoteSaid = noteSaidIn(lateNoteRecord);
+const lateNoteRead = lateNoteQuest?.evidence;
+const lateNoteHeldAsk = lateNoteAskId === '' ? null : (await api('GET', `/api/asks/${lateNoteAskId}`)).json;
+check(
+  'a met done whose note was left uncommitted is held for the person: hold evidence-missing, the item uncommitted, its step unpublished, its ask not done',
+  lateNoteQuest?.title === 'Keep a late note, which the stub forgets to commit' && lateNoteMore.length === 0
+    && lateNoteQuest.status === 'Done' && lateNoteQuest.held === true && lateNoteQuest.hold === 'evidence-missing'
+    && lateNoteQuest.awaitsEvidence === true && lateNoteQuest.answers?.[0]?.met === MET
+    && lateNoteSaid.includes(`stub: handed evidence: Daoris reads \`${LATE_NOTE_PATH}\` in your branch's last commit when you end.`)
+    && lateNoteSaid.includes(`stub: left ${LATE_NOTE_PATH} uncommitted`)
+    && lateNoteRead?.how === 'session-end' && lateNoteRead.session === lateNoteRecord?.id && isFullId(lateNoteRead.commit)
+    && lateNoteRead.items?.length === 1 && lateNoteRead.items[0].path === LATE_NOTE_PATH
+    && lateNoteRead.items[0].result === 'uncommitted' && lateNoteHeldAsk?.state === 'Published',
+  `${lateNoteAsk.out}\n${lateNoteRun.out}\n${stubLines(lateNoteSaid)}\n`
+    + `${JSON.stringify({ lateNoteQuest, lateNoteMore, ask: lateNoteHeldAsk?.state })}`,
+);
+check(
+  '…its record’s evidence says the note is in the tree and not in the commit: "evidence read at <sha> (session-end): 0 of 1 found, kept"',
+  (lateNoteRecord?.evidence ?? '').includes(`evidence read at ${lateNoteRead?.commit} (session-end): 0 of 1 found, kept`)
+    && lateNoteRecord.evidence.includes(`- requirement 1 \`${LATE_NOTE_PATH}\`: uncommitted, in the tree and not in the commit`),
+  lateNoteRecord?.evidence ?? JSON.stringify(lateNoteRecord),
+);
+
+// The person commits the note, then checks from a terminal: at the commit before the done's, then at the one holding the note.
+const lateNoteDone = isFullId(lateNoteRead?.commit) ? lateNoteRead.commit : '';
+const lateNoteBefore = lateNoteDone === '' ? '' : run(`git rev-parse ${lateNoteDone}~1`, newcomer).out.trim();
+run(`git ${GIT_ID} add ${LATE_NOTE_PATH}`, newcomer);
+run(`git ${GIT_ID} commit -q -m "the person commits the late note"`, newcomer);
+const lateNoteCommitted = run('git rev-parse HEAD', newcomer).out.trim();
+const checkLateNote = (commit) =>
+  driver({ serviceUrl: BASE, config: intakeConfig, mode: `quest check ${lateNoteQuest?.id ?? ''} --commit ${commit}` });
+const lateNoteTooEarly = checkLateNote(lateNoteBefore);
+const [lateNoteStillHeld, ...lateNoteStillMore] = lateNoteAskId === '' ? [] : await askedByNote(lateNoteAskId);
+check(
+  '`daoris-driver quest check <id> --commit <a commit before the done>` exits 1: it does not come after the done’s commit, and nothing is read',
+  isFullId(lateNoteBefore) && lateNoteTooEarly.code === 1
+    && lateNoteTooEarly.out.includes(`does not come after the done's commit \`${lateNoteDone.slice(0, 8)}\``)
+    && lateNoteStillHeld?.hold === 'evidence-missing' && lateNoteStillHeld.evidence?.commit === lateNoteDone
+    && lateNoteStillMore.length === 0,
+  `${lateNoteTooEarly.out}\n${JSON.stringify({ lateNoteBefore, lateNoteStillHeld, lateNoteStillMore })}`,
+);
+const lateNoteFound = checkLateNote(lateNoteCommitted);
+const lateNoteAfter = lateNoteAskId === '' ? [] : await askedByNote(lateNoteAskId);
+const lateNoteReleased = lateNoteAfter.find((q) => lateNoteQuest && q.id === lateNoteQuest.id);
+const lateNoteStep = lateNoteAfter.find((q) => lateNoteQuest && q.parent === lateNoteQuest.id);
+check(
+  '`daoris-driver quest check <id> --commit <sha>` exits 0 once the note is committed: found, how terminal, the hold lifted and the held step published',
+  isFullId(lateNoteCommitted) && lateNoteCommitted !== lateNoteDone && lateNoteFound.code === 0
+    && lateNoteFound.out.includes(`evidence read at ${lateNoteCommitted} (terminal): 1 of 1 found, kept`)
+    && lateNoteReleased?.held === false && (lateNoteReleased.hold ?? null) === null
+    && lateNoteReleased.evidence?.how === 'terminal' && lateNoteReleased.evidence.commit === lateNoteCommitted
+    && (lateNoteReleased.evidence.session ?? null) === null && lateNoteReleased.evidence.items?.[0]?.result === 'found'
+    && lateNoteStep?.status === 'Open' && lateNoteStep.title === `Verify #${lateNoteQuest?.id} kept its note`,
+  `${lateNoteFound.out}\n${JSON.stringify({ lateNoteCommitted, lateNoteReleased, lateNoteStep })}`,
+);
+const lateNoteStepRun = intakeDrive();
+const lateNoteStepDone = (lateNoteAskId === '' ? [] : await askedByNote(lateNoteAskId)).find((q) => q.id === lateNoteStep?.id);
+const lateNoteDoneAsk = lateNoteAskId === '' ? null : (await api('GET', `/api/asks/${lateNoteAskId}`)).json;
+check(
+  '…and the loop drives the step to done, its inherited evidence found when its session ends, so the ask reads done and the tree is clean',
+  lateNoteStepDone?.status === 'Done' && answeredMet(lateNoteStepDone) && lateNoteStepDone.evidence?.items?.[0]?.result === 'found'
+    && lateNoteDoneAsk?.state === 'Done' && run('git status --porcelain', newcomer).out.trim() === '',
+  `${lateNoteStepRun.out}\n${JSON.stringify({ lateNoteStepDone, ask: lateNoteDoneAsk?.state })}`,
 );
 
 const unsettledAsk = askVerb('--workspace default "an unsettled question nobody has declared an answer to"');
