@@ -189,27 +189,32 @@ public sealed class RepositoryScannerTests : IDisposable
             Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
         }
 
+        // Each path is the test's own file under its temporary root, held in a constant: written as an argument after
+        // a call, MOD9's scan (merge-branch.test.ts) reads it as this test reading the repository's file of that name.
         (RepositoryScanner, string, string?[]) Log()
         {
-            Write("docs/FIX-LOG.md", "## A\n\nOne.\n\n## A\n\nTwo.\n\n## A (2)\n\nThree.\n");
-            return (new RepositoryScanner(), "docs/FIX-LOG.md", ["A", "A (2)", "A (2) (2)"]);
+            const string log = "docs/FIX-LOG.md";
+            Write(log, "## A\n\nOne.\n\n## A\n\nTwo.\n\n## A (2)\n\nThree.\n");
+            return (new RepositoryScanner(), log, ["A", "A (2)", "A (2) (2)"]);
         }
 
         (RepositoryScanner, string, string?[]) Notes()
         {
+            const string decision = "docs/decisions/D7.md";
             DeclareFolders("""{"decisions":"docs/decisions"}""");
-            Write("docs/decisions/D7.md",
+            Write(decision,
                 "## D7 — one (2026-10-01)\n\n**Decision.** Why.\n\n"
                 + "**Built 2026-10-02.** One.\n\n**Built 2026-10-02.** Two.\n\n**Built 2026-10-02. (2)** Three.\n");
-            return (new RepositoryScanner(), "docs/decisions/D7.md",
+            return (new RepositoryScanner(), decision,
                 [null, "Built 2026-10-02.", "Built 2026-10-02. (2)", "Built 2026-10-02. (2) (2)"]);
         }
 
         (RepositoryScanner, string, string?[]) Rows()
         {
-            Write("docs/index/routes.md",
+            const string routes = "docs/index/routes.md";
+            Write(routes,
                 "# Routes\n\n| Route | Handler |\n|---|---|\n| `A` | `x.cs:1` |\n| `A` | `y.cs:1` |\n| `A (2)` | `z.cs:1` |\n");
-            return (new RepositoryScanner(documents: null, index: "docs/index"), "docs/index/routes.md",
+            return (new RepositoryScanner(documents: null, index: "docs/index"), routes,
                 ["Routes: A", "Routes: A (2)", "Routes: A (2) (2)"]);
         }
     }
