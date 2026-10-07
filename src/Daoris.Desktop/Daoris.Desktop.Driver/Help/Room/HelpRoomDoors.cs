@@ -55,13 +55,15 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "and on a branch `--plugin <id>`: an installed plugin that pushes it and opens the pull request, and "
             + "`--auto-accept`: a quest's done lands it with no press)"),
         // WSR6: after a pull request merges — the line pulled, what merged deleted, what still works replayed onto it. It
-        // takes the repositories holding Daoris's branches, and the others where included (WSR7, D112).
+        // takes the repositories holding Daoris's branches, and the others where included (WSR7, D112); one workspace's
+        // alone with `--workspace`, as its Branches tab does (BRSCOPE1a).
         ("bring a repository up to date after its pull request merged: fetch and fast-forward the line, delete the branches "
             + "whose work reached it, replay the branches still at work onto it (Daoris fetches, never pushes; it takes the "
             + "repositories holding Daoris's branches, and another where named or included)",
-            "Settings → Workspace → Session branches → Updates", "`daoris-driver trees sync [--repository <name>] [--all] [--yes]`"),
+            "Settings → Workspace → Session branches → Updates",
+            "`daoris-driver trees sync [--repository <name>] [--workspace <name>] [--all] [--yes]`"),
         ("clean up session branches whose work landed, and branches a landing made whose work reached the line",
-            "Settings → Workspace → Session branches", "`daoris-driver trees clean`"),
+            "Settings → Workspace → Session branches", "`daoris-driver trees clean [--workspace <name>]`"),
         // LAND3: a failed or superseded attempt's branch holds commits on no branch of the person's, so only they discard it.
         ("discard a failed or superseded session's branch, with its tree where it is still here",
             "Sessions → the session's review → Discard, while its tree is here",

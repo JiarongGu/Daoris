@@ -94,13 +94,41 @@ public sealed class DriverCommandTests
     [Fact]
     public void The_usage_names_bringing_a_repository_up_to_date()
     {
-        Assert.Contains("| sync [--repository <name>] [--all] [--yes]", DriverCommand.Usage);
+        Assert.Contains("| sync [--repository <name>] [--workspace <name>] [--all] [--yes]", DriverCommand.Usage);
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
         Assert.Contains("case [\"sync\", ..]", program);
-        Assert.Contains("args.Contains(\"--all\") ? SyncScope.Everything", program);
-        Assert.Contains("| sync [--repository <name>] [--all] [--yes]]", program);
+        Assert.Contains("var scope = TreesCommand.Scope(ask);", program);
+        Assert.Contains("| sync [--repository <name>] [--workspace <name>] [--all] [--yes]]", program);
         // WSR7: what was not fetched is said once, first, on the list and on the press alike.
         Assert.Equal(2, program.Split("SyncWords.NotFetched(").Length - 1);
+    }
+
+    /// <summary>
+    /// BRSCOPE1a (D150's BRSCOPE1 note, D50, WSP5): the terminal's clean-up and bringing up to date take one workspace's checkouts
+    /// where the words name one, as its Branches tab does, and the usage says so. Each reads its words before the service is
+    /// asked, refuses a workspace the registry does not name, and hands its look and its press the checkouts
+    /// <see cref="TreesCommand.Take"/> took, which <c>TreesCommandTests</c> holds; the press each list suggests carries it.
+    /// </summary>
+    [Fact]
+    public void The_terminals_clean_up_and_bringing_up_to_date_take_one_workspaces_checkouts()
+    {
+        Assert.Contains("| clean [--workspace <name>] [--yes]", DriverCommand.Usage);
+        Assert.Contains("--workspace takes one workspace's checkouts alone", DriverCommand.Usage);
+
+        var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
+        int Count(string text) => console.Split(text).Length - 1;
+        Assert.Contains("| clean [--workspace <name>] [--yes]", console);
+        Assert.Equal(2, Count("if (TreesCommand.Read(args, out var problem) is not { } ask) return Usage(problem);"));
+        Assert.Equal(2, Count("var taken = TreesCommand.Take(await service.RegistryAsync().ConfigureAwait(false), ask);"));
+        Assert.Equal(2, Count("if (taken.Refusal is { } refusal)"));
+        Assert.Equal(2, Count("var repositories = taken.Repositories;"));
+        Assert.Contains("asking.CleanPlanAsync(repositories, inUse)", console);
+        Assert.Contains("trees.CleanAsync(repositories, inUse)", console);
+        Assert.Contains("trees.SyncAsync(repositories, inUse, only: null, fetch: true,", console);
+        Assert.Equal(2, Count("TreesCommand.Press(ask)"));
+        // No look reads the registry's checkouts itself any more: the one rule is the library's.
+        Assert.DoesNotContain("args.Contains(\"--yes\")", console);
+        Assert.DoesNotContain(".Where(row => !string.IsNullOrWhiteSpace(row.Root))", console);
     }
 
     /// <summary>
