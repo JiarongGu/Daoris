@@ -143,6 +143,8 @@ with the version and date at release.
 - `daoris agent list` and `profile use` weigh a Codex account's usage windows, as they do Claude Code's.
 - An account whose API key was refused says *key refused* and asks for a new key; a cooling account
   says until when Daoris waits, apart from when its limit resets; and its usage is easier to read.
+- Codex's own sign-in shows its five-hour and weekly use after *Read again*, without signing in an
+  account for Daoris and without spending usage.
 
 The first version: doctrine that installs, is checked, and flows back.
 

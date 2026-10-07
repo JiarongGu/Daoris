@@ -2018,8 +2018,9 @@ public sealed partial class HarnessRoster(AdapterSet adapters, string? settingsP
             busy: account => Busy(owner, account), prior: prior, own: own, clock: Clock,
             answered: (account, login, who, at) => Keep(owner, account, login, who, at)).ConfigureAwait(false);
         _binaries[name] = new Binary(report.Present, report.Version, report.Problem);
-        // And each account's windows, where its agent's server is asked them (CODEXUSE1).
-        await PressUsageAsync(name, owner, config, CancellationToken.None).ConfigureAwait(false);
+        // And each account's windows, where its agent's server is asked them (CODEXUSE1), and the own sign-in's where the
+        // press was for it too (CODEXUSE3).
+        await PressUsageAsync(name, owner, config, own, CancellationToken.None).ConfigureAwait(false);
     }
 
     /// <summary>What the binary last answered, asked once a process, or again where <paramref name="again"/>; never an account.</summary>

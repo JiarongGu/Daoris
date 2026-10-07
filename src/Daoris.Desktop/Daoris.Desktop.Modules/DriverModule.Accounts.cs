@@ -30,8 +30,8 @@ public sealed partial class DriverModule
 
     /// <summary>
     /// Every agent with accounts this build knows, by its accounts' owner (AGT7): whether its sessions say how near their
-    /// limits are, the tool's own sign-in's cool-off, each account's facts, and each scope — the machine's first, then each
-    /// workspace that names a default or a list of its own.
+    /// limits are, the tool's own sign-in's cool-off and what it last said of its windows (CODEXUSE3), each account's facts,
+    /// and each scope — the machine's first, then each workspace that names a default or a list of its own.
     /// </summary>
     /// <param name="running">Daoris's sessions running now per <c>owner/account</c>, lower case; null where none were read.</param>
     public static object AccountsAnswer(HarnessRoster roster, IReadOnlyDictionary<string, int>? running, DateTimeOffset now)
@@ -71,6 +71,9 @@ public sealed partial class DriverModule
                         {
                             Cooling = CoolingShown(cooling.FirstOrDefault(entry => Same(entry.Agent, agent) && entry.Account is null)),
                             Offered = offered.FirstOrDefault(entry => Same(entry.Agent, agent) && entry.Account is null)?.Until,
+                            // What its agent last said of its windows (CODEXUSE3), read at a person's press and kept under its
+                            // own key: beside the accounts, never one of them, so no scope's near reads it.
+                            Said = SaidShown(Safe(() => AccountWindows.SaidOf(roster.Home, agent, AccountWindows.Own, now))),
                         },
                         Accounts = accounts.Select(account => new
                         {

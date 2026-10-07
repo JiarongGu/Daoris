@@ -40,7 +40,7 @@ public sealed class WindowsTwinTests : IDisposable
     })]);
 
     // ——— Reading (§5.2): missing or unreadable is nothing said; a reading is gone at its reset; a week a limit told says no
-    // use; names compare without case.
+    // use; names compare without case; the tool's own sign-in is its own key, "" (CODEXUSE3).
 
     [Theory]
     [InlineData("missing is nothing said", null, "2026-10-02T12:00:00Z", "claude-code", "account-1", null)]
@@ -59,6 +59,8 @@ public sealed class WindowsTwinTests : IDisposable
     [InlineData("a moment with an offset or a fraction is read in UTC, to the second", """{"claude-code":{"account-1":{"weekly":{"reset":"2026-10-07T03:03:00+05:45","used":0.25,"seen":"2026-10-02T11:00:00.5Z","session":"s2"}}}}""", "2026-10-02T12:00:00Z", "claude-code", "account-1", """[{"window":"weekly","used":0.25,"reset":"2026-10-06T21:18:00Z","standing":null,"credits":false,"seen":"2026-10-02T11:00:00Z","session":"s2"}]""")]
     [InlineData("a letter whose capital is two letters is not those two: straße is not STRASSE", """{"claude-code":{"straße":{"session":{"reset":"2026-10-02T14:00:00Z","used":0.5,"seen":"2026-10-02T11:00:00Z"}}}}""", "2026-10-02T12:00:00Z", "claude-code", "STRASSE", null)]
     [InlineData("a dotless i is not an I", """{"claude-code":{"ışık":{"session":{"reset":"2026-10-02T14:00:00Z","used":0.5,"seen":"2026-10-02T11:00:00Z"}}}}""", "2026-10-02T12:00:00Z", "claude-code", "IŞIK", null)]
+    [InlineData("the tool's own sign-in reads under its own key, beside the accounts and none of them", """{"codex":{"account-1":{"session":{"reset":"2026-10-02T14:00:00Z","used":0.5,"seen":"2026-10-02T11:00:00Z"}},"":{"weekly":{"reset":"2026-10-06T21:18:00Z","used":0.4,"seen":"2026-10-02T11:30:00Z"}}}}""", "2026-10-02T12:00:00Z", "codex", "", """[{"window":"weekly","used":0.4,"reset":"2026-10-06T21:18:00Z","standing":null,"credits":false,"seen":"2026-10-02T11:30:00Z","session":null}]""")]
+    [InlineData("an account is not the tool's own sign-in", """{"codex":{"":{"weekly":{"reset":"2026-10-06T21:18:00Z","used":0.4,"seen":"2026-10-02T11:30:00Z"}}}}""", "2026-10-02T12:00:00Z", "codex", "account-1", null)]
     public void An_account_s_windows_read_as_the_cli_reads_them(string name, string? file, string now, string agent, string account, string? said)
     {
         if (file is not null) File.WriteAllText(AccountWindows.PathOf(_home), file);

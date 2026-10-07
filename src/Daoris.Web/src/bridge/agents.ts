@@ -221,6 +221,9 @@ export const useRefreshHarnesses = () => {
       client.setQueryData(keys.harnesses, roster);
       // Looking again also lets a refused account through (AGT3b), which changes what a start takes.
       void client.invalidateQueries({ queryKey: keys.allStarts });
+      // And a press reads windows its agent's own server answers, an account's and the own sign-in's (CODEXUSE1,
+      // CODEXUSE3), into the accounts' files: said once it answers, not at the next tick.
+      void client.invalidateQueries({ queryKey: keys.accounts });
     },
   });
 };

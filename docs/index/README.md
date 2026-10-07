@@ -37,8 +37,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/App.tsx` | 66 | 1225 |
 | `src/Daoris.Web/src/ProjectsView.test.tsx` | 70 | 1272 |
 | `src/Daoris.Web/src/QuestsView.test.tsx` | 59 | 1146 |
-| `src/Daoris.Web/src/agents/AgentPage.tsx` | 44 | 849 |
-| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 84 | 1638 |
+| `src/Daoris.Web/src/agents/AgentPage.tsx` | 44 | 852 |
+| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 86 | 1678 |
 | `src/Daoris.Web/src/ui.test.tsx` | 42 | 854 |
 | `src/Daoris.Web/src/ui.tsx` | 75 | 1615 |
 | `src/Daoris.Web/src/work/ConversationView.test.tsx` | 43 | 817 |
@@ -69,7 +69,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 80 | 1520 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 141 | 2435 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 51 | 967 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 189 | 3502 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 189 | 3503 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 57 | 1008 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 86 | 1581 |
@@ -116,7 +116,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/src/driverconfig.ts` | 75 | 1425 |
 | `src/Daoris.Cli/src/materialize.ts` | 47 | 936 |
 | `src/Daoris.Cli/src/plugins.ts` | 68 | 1356 |
-| `src/Daoris.Cli/src/toolchain.ts` | 138 | 2695 |
+| `src/Daoris.Cli/src/toolchain.ts` | 138 | 2699 |
 | `src/Daoris.Cli/test/desktop-publish.test.ts` | 49 | 895 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 46 | 818 |
 | `src/Daoris.Cli/test/driverconfig.test.ts` | 75 | 1460 |

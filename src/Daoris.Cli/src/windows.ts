@@ -28,6 +28,13 @@ import { readJsonObject } from './fsx.ts';
 
 export const WINDOWS_FILE = 'windows.json';
 
+/**
+ * The tool's own sign-in's key (CODEXUSE3): `""`, as `cooling.json` keys its cool-off, since no account's directory is named
+ * nothing. The driver keeps its reading there when a person's press asks its agent's server for it (`AccountWindows.Own`,
+ * held by `windows.test.ts`); it is read as an account's is, and is none of them.
+ */
+export const OWN_WINDOWS = '';
+
 /** One window as the driver keeps it: its use where said, its reset, its standing and credits, when, and on which session. */
 export interface WindowSaid {
   window: string;
