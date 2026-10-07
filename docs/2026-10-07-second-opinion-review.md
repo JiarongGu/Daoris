@@ -87,3 +87,21 @@ UX6d1, MOD9b, ORIENT2a2). It found no regression in REFAC1–3 and no defect in 
 **It said to leave alone:** REFAC1–3's centralizations; the twins across artifacts, C#-to-C# included; REACH's
 dependency rows beside lane ownership; a deployment's index rows having no source lines, where a declared index's
 rows keep theirs; and WAITCLAIM1's line between a wait on this machine's losing take and one made without a take.
+
+## Second round, the afternoon: UI/UX
+
+Against a snapshot holding UXFIX1–5, UXFIX1b, HIST1k, UXFIX3 and UX6d2, the last of them merged and not yet committed,
+read from source as before. It judged the first round's fixes: the menus' roles, `Segmented`'s focus, the account rows,
+`BranchRow` and the danger ink landed well; UXFIX2's foundation and HIST1k's sentence each left a gap. Every finding
+below was checked against the source.
+
+| Finding | Verified | Row |
+|---|---|---|
+| A clear that took nothing closes as success: `useHistoryActs` calls `done()` on every answer and `clearSaid` says a wholly-kept workspace clear in an `ok` tone (`historyActs.ts:31`, `history.ts:395`) | ✓ | HIST1n |
+| On success the focus returns only to the opener node, which `KeptHistory` removed while asking, so it falls to the body; cancel already finds the press drawn again (`InlineConfirm.tsx:163`) | ✓ | UXFIX2c |
+| Pending is two disabled presses with no status or `aria-busy`, so nothing says the act started (`InlineConfirm.tsx:175`) | ✓ | UXFIX2c |
+| The shared `Refused` has no `min-w-0` or anywhere-wrapping, so an unbroken token can widen the 400 px main area (`InlineConfirm.tsx:16`) | ✓ | UXFIX2c |
+| *records only, no files here* is said whenever bytes are 0, beside left-over files of 0 B (`history.ts:317`, both catalogues) | ✓ | HIST1n |
+
+**Cross-cutting, adopted:** judge an operation's outcome before closing its ask, as the branch discard already does
+(`Sweep.tsx:41`); keep long raw identifiers in the shared refusal's stories.
