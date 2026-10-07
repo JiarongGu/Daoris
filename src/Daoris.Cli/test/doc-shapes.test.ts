@@ -10,6 +10,7 @@ import { makeFixture } from './_fixture.ts';
 // @ts-expect-error — untyped workspace tooling; the same seam dogfood.test.ts documents
 const shapes = await import('../../../tools/doc-shapes.mjs') as {
   words: (text: string) => number;
+  fenced: (text: string[]) => boolean[];
   readShapes: (text: string) => {
     shapes: { backlogRow: number; routerRow: number; archiveOutcome: number; archiveCutOver: string | null };
     errors: string[];
@@ -21,6 +22,8 @@ const shapes = await import('../../../tools/doc-shapes.mjs') as {
 };
 // @ts-expect-error — untyped workspace tooling
 const budgets = await import('../../../tools/doc-budgets.mjs') as { words: (text: string) => number };
+// @ts-expect-error — untyped workspace tooling
+const duplicates = await import('../../../tools/doc-duplicates.mjs') as { fenced: (text: string[]) => boolean[] };
 
 const CONFIG = 'tools/doc-shapes.json';
 const config = (over: Record<string, unknown> = {}) =>
@@ -29,6 +32,10 @@ const many = (n: number, word = 'word') => Array.from({ length: n }, () => word)
 
 test('a word is counted as doc-budgets counts one, by the same function', () => {
   assert.equal(shapes.words, budgets.words);
+});
+
+test('a fence is read as doc-duplicates reads one, by the same function', () => {
+  assert.equal(shapes.fenced, duplicates.fenced);
 });
 
 test('a backlog row is its item and its indented lines, blank lines inside it too, named by its identifier', () => {
@@ -84,6 +91,20 @@ test('an archive entry is a second-level heading, dated by the last date it name
     { id: 'NEW2', date: '2026-10-04', outcome: 6 },
     { id: 'Undated', date: null, outcome: 1 },
   ]);
+});
+
+test('a fence is read as markdown reads one: a longer fence quoting a shorter one, and a tilde fence, hold their headings', () => {
+  // ORIENT2h4: a three-backtick line inside a four-backtick fence closes nothing, and a tilde fence fences.
+  const text = [
+    '# Archive', '',
+    '## LONG1 — quotes an example (2026-10-07)', '', '**Outcome.** Quoted.', '',
+    '````markdown', '```markdown', '## QUOTED — inside the longer fence, not an entry', '```', '````', '',
+    '## TILDE1 — a tilde fence (2026-10-07)', '', '**Outcome.** Fenced.', '',
+    '~~~text', '## TILDED — inside a tilde fence, not an entry', '~~~', '',
+    '## AFTER1 — after both fences (2026-10-08)', '', '**Outcome.** Read.',
+  ].join('\n');
+
+  assert.deepEqual(shapes.archiveEntries(text).map((entry) => entry.id), ['LONG1', 'TILDE1', 'AFTER1']);
 });
 
 test('the configuration reads, and each way it cannot read is named', () => {

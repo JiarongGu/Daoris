@@ -200,13 +200,15 @@ public sealed partial class DriverModule
     /// <remarks>
     /// <b>A row that is not done is an answer, not an error</b>, as the clean-up's are: a conflict, a checkout with work
     /// in flight, a branch on its remote. Each comes back as its row with the sentence the tree layer wrote.
+    /// <para><b>A workspace's page asks for its own</b> (BRSCOPE1, WSP5): with `workspace`, the look fetches, and the press
+    /// judges, that workspace's checkouts alone, and what it leaves apart is its own. With none, every checkout here.</para>
     /// </remarks>
     [DriverRoute("TREES_SYNC_PLAN")]
     [DriverRoute("TREES_SYNC")]
     private async Task<object?> TreesSyncAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var named = Optional(request, "repository");
-        var (repositories, inUse) = await CheckoutsAndSessionsAsync(named, cancellationToken);
+        var (repositories, inUse) = await CheckoutsAndSessionsAsync(named, cancellationToken, Optional(request, "workspace"));
         var trees = new SessionTrees(_loop.Home);
         // Which repositories it takes (D112): those holding Daoris's branches, and the ones the person included — every
         // one (`all`), the ones ticked (`also`), or the one named. The press takes each a listed row names besides.
@@ -264,6 +266,8 @@ public sealed partial class DriverModule
 
     // Which repositories a look would take (WSR7, D112): every one with a checkout here, and whether it holds a branch
     // of Daoris's. Read on the machine, never fetched, so the screen can say what a look will fetch before it is asked.
+    // The machine's whole, each row naming its workspace: a workspace's page counts its own rows (BRSCOPE1), and Ask
+    // Daoris's sync card, whose look is the machine's, waits by the whole.
     [DriverRoute("TREES_SYNC_SCOPE")]
     private async Task<object?> TreesSyncScopeAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -299,23 +303,33 @@ public sealed partial class DriverModule
     };
 
     /// <summary>
-    /// Every repository with a checkout here — or the one named — and the trees sessions still running or waiting
-    /// name: what the clean-up and bringing up to date both judge by, from the service, so they wait for the driver.
+    /// Every repository with a checkout here — or the one named, or one workspace's — and the trees sessions still running
+    /// or waiting name: what the clean-up and bringing up to date both judge by, from the service, so they wait for the driver.
     /// </summary>
     private async Task<(List<(string Repository, string? Workspace, string? Root)> Repositories, HashSet<string> InUse)> CheckoutsAndSessionsAsync(
-        string? repository, CancellationToken cancellationToken)
+        string? repository, CancellationToken cancellationToken, string? workspace = null)
     {
         var service = _loop.Service ?? throw NotReady();
         var registry = await service.RegistryAsync(cancellationToken);
         var inUse = await InUseAsync(service, cancellationToken);
-        var repositories = registry
+        return (Checkouts(registry, repository, workspace), inUse);
+    }
+
+    /// <summary>
+    /// The registry's rows with a checkout here, by name: the one <paramref name="repository"/> names where it names one, and
+    /// <paramref name="workspace"/>'s alone where it names one (BRSCOPE1, WSP5), matched without case, a row with no
+    /// workspace read as the default's, as <see cref="RemoteTarget.Workspace"/> reads it for every door.
+    /// </summary>
+    public static List<(string Repository, string? Workspace, string? Root)> Checkouts(
+        IEnumerable<RepoView> registry, string? repository, string? workspace) =>
+        registry
             .Where(row => !string.IsNullOrWhiteSpace(row.Root))
             .Where(row => repository is null || string.Equals(row.Repository, repository, StringComparison.OrdinalIgnoreCase))
+            .Where(row => workspace is null
+                || string.Equals(RemoteTarget.Workspace(row.Workspace), RemoteTarget.Workspace(workspace), StringComparison.OrdinalIgnoreCase))
             .OrderBy(row => row.Repository, StringComparer.Ordinal)
             .Select(row => (row.Repository, (string?)row.Workspace, row.Root))
             .ToList();
-        return (repositories, inUse);
-    }
 
     /// <summary>The trees sessions still running or waiting name, as the service's ledger says now.</summary>
     private static async Task<HashSet<string>> InUseAsync(ServiceClient service, CancellationToken cancellationToken) =>

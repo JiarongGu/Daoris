@@ -195,7 +195,9 @@ public sealed class AccountRotationTickTests : IDisposable
         Assert.Equal(("failed", "account-1"), (cut["state"]!.GetValue<string>(), cut["profile"]!.GetValue<string>()));
         Assert.True(cut["limit"]!.GetValue<bool>());
         var cutNote = cut["note"]!.GetValue<string>();
-        Assert.Contains($"The account it ran on is cooling until Oct 3, 16:02 ({Zone.Id}), as the agent said", cutNote);
+        Assert.Contains(
+            $"The `stub` account it ran on hit its weekly limit and is cooling until Oct 3, 16:02 ({Zone.Id}), as the agent said",
+            cutNote);
         Assert.DoesNotContain("account-1", cutNote);
         var tree = cut["tree"]!.GetValue<string>();
 
