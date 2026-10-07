@@ -32,8 +32,8 @@ public sealed partial class KnowledgeTools
             text.Append($"; and its index under `{index}/`, a row each, so asking where something is (a route, a command, ")
                 .Append("a key, a fixture, a method) lands on the row that names its file and line");
         }
-        text.Append(". Ask `knowledge_search` before searching the files, and `knowledge_get` reads an entry whole. ")
-            .Append("A reading older than a minute is read again at the next search.");
+        text.Append(". Ask `knowledge_search` before searching the files, and `knowledge_get` reads an entry whole, ")
+            .Append("or only the lines a hit names. A reading older than a minute is read again at the next search.");
         text.Append(semantic
             ? " Answers match by words and by meaning."
             : " Answers match by words only: no model is named here, so use the words the repository would use.");

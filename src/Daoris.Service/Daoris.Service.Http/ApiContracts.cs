@@ -17,12 +17,15 @@ public sealed record ProvenanceResponse(
     string Commit, string ShortCommit, DateTimeOffset CommittedAt, string Branch, string? Origin);
 public sealed record RepositoryResponse(
     string Name, int Total, int Local, int Canonical, string Workspace, ProvenanceResponse? Fed);
+// The lines (ORIENT2e): the entry's first and last line in its file, and the line its excerpt starts on, beside
+// the fields every client already reads. Null where the entry names none (a row read with its columns, a feed
+// that named none), never a guess.
 public sealed record HitResponse(
     string Id, string Repository, string Kind, string Title, string Path, string? Excerpt, double Score,
-    string Workspace);
+    string Workspace, int? FirstLine = null, int? LastLine = null, int? ExcerptLine = null);
 public sealed record EntryResponse(
     string Id, string Repository, string Kind, string Provenance, string Title, string Path, string Body,
-    string? Anchor, string Workspace);
+    string? Anchor, string Workspace, int? FirstLine = null, int? LastLine = null);
 public sealed record ConvergenceEntryResponse(
     string Id, string Repository, string Kind, string Title, string Path);
 public sealed record ConvergenceResponse(
@@ -303,7 +306,10 @@ public sealed record AdvanceSessionRequest(
     string? State, string? Note, string? Evidence, string? Transcript, bool? Interrupted = null, bool? Limit = null,
     JsonElement? NoteParts = null);
 public sealed record SessionActionResponse(SessionResponse Session, string Message);
-public sealed record FeedEntryRecord(string? Kind, string? Title, string? Body, string? RelativePath, string? Anchor);
+// `FirstLine` and `LastLine` (ORIENT2e): the lines of its file an entry is, as `/api/entries` answers them, taken
+// only where they can be its body's; a feed that names none is read as before.
+public sealed record FeedEntryRecord(
+    string? Kind, string? Title, string? Body, string? RelativePath, string? Anchor, int? FirstLine = null, int? LastLine = null);
 // The three provenance fields are the feed's claim about WHICH point in the history it speaks for
 // (D48 §6). Nullable on the wire and judged at the door: a feed that names no commit cannot be
 // compared with what is held, and a wholesale replacement that cannot be compared is the flapping

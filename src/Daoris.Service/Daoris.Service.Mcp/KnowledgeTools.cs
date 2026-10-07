@@ -86,12 +86,15 @@ public sealed partial class KnowledgeTools(
     [McpServerTool(Name = "knowledge_search")]
     [Description(
         "Search engineering knowledge across every repository in this family: decisions and their "
-        + "reasoning, recorded fixes and root causes, completed task outcomes, rules and skills. "
-        + "Use it before solving a problem that another repository may already have solved, or to "
-        + "find out why something was done the way it was.")]
+        + "reasoning, recorded fixes and root causes, completed task outcomes, rules and skills, and "
+        + "where things are, from each repository's own index of where things are. "
+        + "Use it before solving a problem that another repository may already have solved, to "
+        + "find out why something was done the way it was, or to find where something is before searching "
+        + "the files. Each hit names its file and lines, so read those lines rather than the file.")]
     public async Task<string> SearchAsync(
         [Description("What to look for, in plain words.")] string query,
-        [Description("Restrict to kinds: rule, knowledge, skill, decision, fix, task. Comma-separated; omit for all.")]
+        [Description("Restrict to kinds: rule, knowledge, skill, decision, fix, task, index. Comma-separated; omit for all, "
+            + "which answers with at most two index entries.")]
         string? kinds = null,
         [Description("Restrict to repositories by name. Comma-separated; omit for all.")]
         string? repositories = null,
@@ -137,14 +140,25 @@ public sealed partial class KnowledgeTools(
         text.AppendLine($"{hits.Count} result(s) for \"{query}\"{Scoped(scope)}:\n");
         foreach (var hit in hits)
         {
+            // Its file and lines (ORIENT2e), so the read that follows is a range and not the file; the excerpt
+            // says the line it starts on.
+            var place = hit.Entry.Lines is { } lines ? $"{hit.Entry.RelativePath}:{lines}" : hit.Entry.RelativePath;
             text.AppendLine($"### {hit.Entry.Title}");
-            text.AppendLine($"`{hit.Entry.Repository}` · {hit.Entry.Kind} · `{hit.Entry.RelativePath}`");
+            text.AppendLine($"`{hit.Entry.Repository}` · {hit.Entry.Kind} · `{place}`");
             text.AppendLine($"id: `{hit.Entry.Id}`");
-            if (hit.Excerpt is { Length: > 0 }) text.AppendLine($"\n> {hit.Excerpt}");
+            if (hit.Excerpt is { Length: > 0 })
+            {
+                text.AppendLine(hit.ExcerptLine is { } line ? $"\n> line {line}: {hit.Excerpt}" : $"\n> {hit.Excerpt}");
+            }
             text.AppendLine();
         }
 
-        text.AppendLine("Call `knowledge_get` with an id for the full text.");
+        text.AppendLine("Call `knowledge_get` with an id for the full text, and with `lines` for only the lines a hit names.");
+        if (answer.MoreIndex)
+        {
+            text.AppendLine($"More index entries matched than the {KnowledgeService.IndexEntriesUnasked} named here: "
+                          + "search with kinds `index` for where things are.");
+        }
         // Which tier ANSWERED, on EVERY result and not only on an empty one (D24) — the answer's, not
         // the configuration's (TIER1). A caller who gets results has no way to know the semantic half
         // was absent, and will read "these are the matches" as complete rather than as
@@ -163,21 +177,46 @@ public sealed partial class KnowledgeTools(
         service.SemanticEnabled && answer.Failure is { Length: > 0 } failure ? $" ({failure}.)" : "";
 
     [McpServerTool(Name = "knowledge_get")]
-    [Description("Read one knowledge entry in full, by the id returned from knowledge_search.")]
+    [Description("Read one knowledge entry in full, by the id returned from knowledge_search; or only the lines a hit "
+        + "names, so a long entry is read as a passage and not whole.")]
     public async Task<string> GetAsync(
         [Description("The entry id, e.g. `Lyntai:docs/DECISIONS.md#D12 — ...`")] string id,
+        [Description("Only these lines of the entry's file, as a hit names them: `12-30`, or `12` for one line. "
+            + "Omit for the whole entry.")]
+        string? lines = null,
         CancellationToken ct = default)
     {
         var entry = await service.FindAsync(id, ct).ConfigureAwait(false);
         if (entry is null) return $"No entry with id `{id}`. Ids come from `knowledge_search`.";
 
-        return $"""
-                # {entry.Title}
+        var whole = entry.Lines is { } span ? $"{entry.RelativePath}:{span}" : entry.RelativePath;
+        if (string.IsNullOrWhiteSpace(lines)) return Read(entry, whole, entry.Body);
 
-                `{entry.Repository}` · {entry.Kind} · {entry.Provenance} · `{entry.RelativePath}`
+        // A range is the file's lines as a hit names them (ORIENT2e), read from the entry indexed: refused when it
+        // is no range, said when it misses the entry, and the whole entry when it names no lines to cut at.
+        if (LineSpan.Parse(lines) is not { } range)
+        {
+            return $"`{lines}` is not a range of lines: write `12-30`, or `12` for one line, as a hit names them.";
+        }
+        if (entry.Lines is not { } own)
+        {
+            return $"`{entry.Id}` names no lines of its file (it is not its file's lines as written), so here it is whole.\n\n"
+                 + Read(entry, whole, entry.Body);
+        }
+        if (entry.Cut(range) is not { } cut)
+        {
+            return $"Lines {range} are outside `{entry.Id}`, which is lines {own} of `{entry.RelativePath}`. "
+                 + "Ask for a range inside them, or search for the entry that holds those lines.";
+        }
+        return Read(entry, $"{entry.RelativePath}:{cut.Lines}", cut.Text);
 
-                {entry.Body}
-                """;
+        static string Read(KnowledgeEntry entry, string place, string text) => $"""
+            # {entry.Title}
+
+            `{entry.Repository}` · {entry.Kind} · {entry.Provenance} · `{place}`
+
+            {text}
+            """;
     }
 
     [McpServerTool(Name = "knowledge_repositories")]

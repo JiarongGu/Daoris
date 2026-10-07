@@ -79,7 +79,8 @@ public sealed class SqliteKnowledgeSearch(SqliteKnowledgeStore store) : IKnowled
             // The rank rides one past the entry's own columns — so it moves whenever they do. It moved
             // once already, when entries gained their workspace.
             var score = match is null ? 0 : -reader.GetDouble(RankOrdinal);
-            hits.Add(new KnowledgeHit(entry, score, Text.Excerpt(entry.Body, asked)));
+            var (excerpt, line) = Text.ExcerptAt(entry.Body, asked);
+            hits.Add(new KnowledgeHit(entry, score, excerpt, entry.LineAt(line)));
         }
 
         return hits;

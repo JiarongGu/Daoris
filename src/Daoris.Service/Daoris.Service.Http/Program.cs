@@ -332,7 +332,8 @@ app.MapGet("/api/search", async (
 
     return Results.Ok(hits.Select(h => new HitResponse(
         h.Entry.Id, h.Entry.Repository, h.Entry.Kind.ToString(), h.Entry.Title,
-        h.Entry.RelativePath, h.Excerpt, h.Score, h.Entry.Workspace)));
+        h.Entry.RelativePath, h.Excerpt, h.Score, h.Entry.Workspace,
+        h.Entry.Lines?.First, h.Entry.Lines?.Last, h.ExcerptLine)));
 });
 
 app.MapGet("/api/entry", async (ComposedService s, string id, CancellationToken ct) =>
@@ -1342,12 +1343,13 @@ if (mode == ServiceMode.Shared)
             if (!Enum.TryParse<EntryKind>(entry.Kind ?? "", ignoreCase: true, out var kind) || !Enum.IsDefined(kind))
             {
                 return Results.BadRequest(new ErrorResponse(
-                    $"unknown kind '{entry.Kind}' — one of: rule, knowledge, skill, decision, fix, taskoutcome"));
+                    $"unknown kind '{entry.Kind}' — one of: rule, knowledge, skill, decision, fix, taskoutcome, index"));
             }
 
             entries.Add(new KnowledgeEntry(
                 body.Repository, kind, Provenance.Local, entry.Title ?? "", entry.Body ?? "",
-                entry.RelativePath ?? "", entry.Anchor));
+                entry.RelativePath ?? "", entry.Anchor,
+                Lines: LineSpan.Of(entry.FirstLine, entry.LastLine, entry.Body ?? "")));
         }
 
         var outcome = await s.Service.FeedAsync(
@@ -1640,7 +1642,8 @@ static AskResponse ToAsk(Ask a, QuestFiles? files, bool machineLocal)
 
 static EntryResponse ToEntry(KnowledgeEntry entry) => new(
     entry.Id, entry.Repository, entry.Kind.ToString(), entry.Provenance.ToString(),
-    entry.Title, entry.RelativePath, entry.Body, entry.Anchor, entry.Workspace);
+    entry.Title, entry.RelativePath, entry.Body, entry.Anchor, entry.Workspace,
+    entry.Lines?.First, entry.Lines?.Last);
 
 // The transcript is a machine-local path, guarded exactly as the registration's root is (D47 §4):
 // answered only to a caller on this machine. The evidence stays — commits are the reviewable record

@@ -54,7 +54,7 @@ public sealed class HybridKnowledgeSearch(IKnowledgeSearch lexical, IKnowledgeSe
         if (semanticHits.Count == 0) return Answered(Truncate(lexicalHits, query.Limit));
         if (lexicalHits.Count == 0) return Answered(Truncate(semanticHits, query.Limit));
 
-        var fused = new Dictionary<string, (KnowledgeEntry Entry, double Score, string? Excerpt)>(StringComparer.Ordinal);
+        var fused = new Dictionary<string, (KnowledgeEntry Entry, double Score, KnowledgeHit Shown)>(StringComparer.Ordinal);
         Accumulate(fused, lexicalHits);
         Accumulate(fused, semanticHits);
 
@@ -62,12 +62,13 @@ public sealed class HybridKnowledgeSearch(IKnowledgeSearch lexical, IKnowledgeSe
             .OrderByDescending(v => v.Score)
             .ThenBy(v => v.Entry.Id, StringComparer.Ordinal)
             .Take(query.Limit)
-            .Select(v => new KnowledgeHit(v.Entry, v.Score, v.Excerpt))
+            .Select(v => new KnowledgeHit(v.Entry, v.Score, v.Shown.Excerpt, v.Shown.ExcerptLine))
             .ToList());
     }
 
+    /// <param name="fused">Each entry's fused score, and the hit whose excerpt it shows, with that excerpt's line.</param>
     private static void Accumulate(
-        Dictionary<string, (KnowledgeEntry Entry, double Score, string? Excerpt)> fused,
+        Dictionary<string, (KnowledgeEntry Entry, double Score, KnowledgeHit Shown)> fused,
         IReadOnlyList<KnowledgeHit> hits)
     {
         for (var rank = 0; rank < hits.Count; rank++)
@@ -77,12 +78,13 @@ public sealed class HybridKnowledgeSearch(IKnowledgeSearch lexical, IKnowledgeSe
             if (fused.TryGetValue(hit.Entry.Id, out var existing))
             {
                 // Keep the excerpt that already showed a matched passage: the lexical side knows
-                // WHERE it matched and the semantic side does not.
-                fused[hit.Entry.Id] = (existing.Entry, existing.Score + contribution, existing.Excerpt ?? hit.Excerpt);
+                // WHERE it matched and the semantic side does not. Its line goes with it (ORIENT2e).
+                fused[hit.Entry.Id] = (existing.Entry, existing.Score + contribution,
+                    existing.Shown.Excerpt is null ? hit : existing.Shown);
             }
             else
             {
-                fused[hit.Entry.Id] = (hit.Entry, contribution, hit.Excerpt);
+                fused[hit.Entry.Id] = (hit.Entry, contribution, hit);
             }
         }
     }

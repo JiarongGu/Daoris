@@ -111,6 +111,34 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains("evidence", publish);
     }
 
+    /// <summary>
+    /// ORIENT2e (the orientation design §3.1–§3.2): the search says it finds where things are and its kinds name
+    /// the index, and the reader takes the lines a hit names, so a session asks for the range and not the file.
+    /// </summary>
+    [Fact]
+    public void The_search_names_the_index_and_the_reader_takes_the_lines_a_hit_names()
+    {
+        var search = Descriptions().Where(d => d.Tool == "knowledge_search").Select(d => d.Text).ToList();
+        var get = Descriptions().Where(d => d.Tool == "knowledge_get").Select(d => d.Text).ToList();
+
+        Assert.Contains(search, text => text.Contains("where things are"));
+        Assert.Contains(search, text => text.StartsWith("Restrict to kinds:") && text.Contains("index"));
+        Assert.Contains(search, text => text.Contains("lines"));
+        Assert.Contains(get, text => text.Contains("lines") && text.Contains("12-30"));
+        Assert.Contains(
+            typeof(KnowledgeTools).GetMethod(nameof(KnowledgeTools.GetAsync))!.GetParameters(),
+            parameter => parameter.Name == "lines" && parameter.HasDefaultValue);
+    }
+
+    /// <summary>A server over one checkout says a reading may be a hit's lines, not only an entry whole.</summary>
+    [Fact]
+    public void A_server_over_one_checkout_says_the_reader_takes_a_hit_s_lines()
+    {
+        var options = new Daoris.Knowledge.ServiceOptions("root", "db", Repository: Path.Combine(Path.GetTempPath(), "atlas"));
+
+        Assert.Contains("the lines a hit names", KnowledgeTools.Instructions(options, semantic: false));
+    }
+
     /// <summary>A server over a family of repositories says nothing more than its tools do, as before.</summary>
     [Fact]
     public void A_server_over_a_family_gives_no_instructions()

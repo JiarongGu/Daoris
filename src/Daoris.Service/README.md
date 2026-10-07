@@ -36,7 +36,8 @@ Since **D122** (DOC5) the scanner also reads where a repository says its records
 `documents`. The declared decisions, fixes and archive are each the first candidate for their log, a file
 or a folder of records, so a log at a name no candidate knows is found, and found once. A record in a
 folder is titled by its first heading, or by its file name where it has none (D134, DOC8c). The declared
-router is indexed as one document. A declaration adds a path and is never required. One the CLI
+router is indexed as one document, and the declared index of where things are at its headings (ORIENT2e, below). A
+declaration adds a path and is never required. One the CLI
 refuses is read as none, so the scanner reads its candidates as it did before (`RepositoryDocuments`, a
 twin of the CLI's `documents.ts`).
 
@@ -48,6 +49,29 @@ two are held to one table, `tools/orient-index-fixtures/decision-notes.json`, ro
 `DecisionNotesTests` holds this side, `tools/orient-index.test.mjs` the digest's. Measured when it was built,
 over this repository's 152 decisions the split gave the digest's 291 note rows, the same lines and labels in the
 same order. A fix, an outcome and a decisions log in one file keep their notes inside.
+
+Since **ORIENT2e** (D151 §6, `docs/2026-10-04-orientation-everywhere-design.md` §3.1–§3.2) the scanner reads a
+repository's **declared index of where things are** (`documents.index`, the role ORIENT2b added; `RepositoryDocuments`
+lists it after the router, as the CLI does): every markdown file in the folder the declared README is in, and below,
+split at every heading (`IndexSections`), as entries of a kind of their own, `index`, the repository's own. Each is
+titled by the headings above it (`Bridge routes › DAORIS.DRIVER (102)`), and text before any heading by the file's
+path. A README declared at the root is read alone, a declared folder is that folder, and an undeclared folder named
+like an index is never guessed. A folder a deployment names as its index (`DAORIS_KNOWLEDGE_INDEX`) is read a row at a
+time first, as that deployment chose, and those rows are of the kind `index` too. A search that names no kinds answers
+with at most two index entries, at their ranks, and fills the rest from every other kind; the answer says when more
+matched (`SearchAnswer.MoreIndex`). Convergence leaves the index out unless it is asked for by kind: two indexes
+generated from one template have learned nothing together.
+
+**Every entry keeps the lines of its file it is** (`KnowledgeEntry.Lines`): a whole document, a section, a decision and
+each of its notes, a README's opening, a rule out of the region, an index section. Line `i` of the body is line
+`first + i` of the file, counted from the file's first line whatever the read trimmed above it. A deployment's index
+row is its cells labelled by their columns, not its file's line as written, so it names none, and neither does a fed
+entry whose feed named none or named lines its body cannot be. A hit names `path:first-last` and the line its excerpt
+starts on (`KnowledgeHit.ExcerptLine`, from `Text.ExcerptAt`), the frontmatter it skipped counted; `knowledge_get`
+reads a range from the entry as indexed, never from the disk, so a deployment fed by another machine reads it too. The
+store keeps them (`first_line`, `last_line`; schema 5, so an older index is rebuilt when it opens), `/api/search`
+answers `firstLine`, `lastLine` and `excerptLine` beside every field it had, `/api/entry` and `/api/entries` the first
+two, and `/api/feed/entries` takes them, digesting them only where an entry names them.
 
 Since **D124** (WSSETUP8), until a repository adopts, the scanner reads its root `README.md`, in any case,
 as the repository's own word. Each section split at level-two headings is one local knowledge entry carrying
@@ -335,8 +359,8 @@ bare, and `daoris-knowledge-http-<rid>.tar.gz` carrying its web bundle beside th
 
 | Tool | Answers |
 |---|---|
-| `knowledge_search` | What has this family already learned about X? |
-| `knowledge_get` | The full text of one entry |
+| `knowledge_search` | What has this family already learned about X, and where is it? Each hit names `path:first-last` and the line its excerpt starts on; `kinds` takes `index`, and with no kinds an answer holds at most two index entries and says when more matched (ORIENT2e) |
+| `knowledge_get` | The full text of one entry, or with `lines` (`12-30`, or `12`) only the lines a hit names: the part of the range inside the entry, read from what was indexed; a range outside it is refused naming the entry's lines, and an entry that names none is answered whole, saying so (ORIENT2e) |
 | `knowledge_repositories` | What is searchable, and how much each repository contributes |
 | `knowledge_convergence` | Which repositories learned the same lesson independently? |
 | `knowledge_refresh` | Re-read every repository from disk — and retire what is no longer there: a repository renamed or removed leaves the index instead of being served forever (on a host that reads its registered roots, the registry decides — retiring the last repository empties the index, POLISH5; a fed host never refreshes) |
@@ -423,7 +447,7 @@ Configuration is by environment, and every variable is optional — the defaults
 | `DAORIS_KNOWLEDGE_DB` | Where the index lives. Default: `$DAORIS_HOME/knowledge.db` |
 | `DAORIS_KNOWLEDGE_REPOSITORY` | The one checkout a workspace's own server serves (ORIENT1c): the bootstrap registers it alone, and each process re-reads it at its first use and once its reading is a minute old. Not a folder, and a host refuses to start. Unset: the folder of repositories, read once |
 | `DAORIS_KNOWLEDGE_DOCUMENTS` | A repository-relative folder read in each registered checkout, each markdown file split at its headings (ORIENT1c). Unset reads none. One that leaves the repository is refused |
-| `DAORIS_KNOWLEDGE_INDEX` | A repository-relative folder holding a generated index, each table row and list item one entry (ORIENT1c). Unset reads none |
+| `DAORIS_KNOWLEDGE_INDEX` | A repository-relative folder holding a generated index, each table row and list item one entry of the kind `index`, naming no lines (ORIENT1c; ORIENT2e). Read before a declared index, so a folder named here is read a row at a time even where the repository declares it. Unset reads none |
 | `DAORIS_EMBED_MODEL` | Names an embedding model to **enable semantic search**. Unset = lexical only |
 | `DAORIS_EMBED_URL` | Embedding endpoint. Default: `http://localhost:11434` (Ollama) |
 | `DAORIS_EMBED_WINDOW` | The most characters one embedded text carries, the title included: the deployment's statement of its embedder's window (D123). A longer entry is embedded in pieces this long, each its own vector. Default: `2000`. Below `200`, or not a whole number, and a host refuses to start. Characters only approximate tokens, so leave margin for code and for 中文 |

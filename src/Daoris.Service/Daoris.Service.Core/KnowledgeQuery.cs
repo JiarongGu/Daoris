@@ -61,7 +61,7 @@ public sealed record KnowledgeQuery(string Text = "")
             if (!Enum.TryParse<EntryKind>(normalized, ignoreCase: true, out var kind) || int.TryParse(normalized, out _))
             {
                 throw new ArgumentException(
-                    $"'{name}' is not a kind of knowledge — one of: rule, knowledge, skill, decision, fix, task.");
+                    $"'{name}' is not a kind of knowledge — one of: rule, knowledge, skill, decision, fix, task, index.");
             }
 
             kinds.Add(kind);
@@ -86,15 +86,22 @@ public sealed record KnowledgeQuery(string Text = "")
 /// The passage that matched, so a caller can show why without loading the whole entry. A result list
 /// that cannot show its reasoning gets treated as an oracle, which is exactly what it is not.
 /// </param>
-public sealed record KnowledgeHit(KnowledgeEntry Entry, double Score, string? Excerpt = null);
+/// <param name="ExcerptLine">
+/// The line of the entry's file its excerpt starts on (ORIENT2e); null where the entry names no lines.
+/// </param>
+public sealed record KnowledgeHit(KnowledgeEntry Entry, double Score, string? Excerpt = null, int? ExcerptLine = null);
 
 /// <summary>
 /// A search's hits, and which halves ANSWERED it (TIER1, D24) — never which were configured. A half
 /// that threw did not answer, and nothing answering is not nothing matching.
 /// </summary>
 /// <param name="Failure">Why a half did not answer, in its own words; null when every half did.</param>
+/// <param name="MoreIndex">
+/// Whether more index entries matched than a search naming no kinds answers with (ORIENT2e), so a door can say
+/// how to ask for them.
+/// </param>
 public sealed record SearchAnswer(
-    IReadOnlyList<KnowledgeHit> Hits, bool Lexical, bool Semantic, string? Failure = null)
+    IReadOnlyList<KnowledgeHit> Hits, bool Lexical, bool Semantic, string? Failure = null, bool MoreIndex = false)
 {
     /// <summary>The tier as a token for a wire: `lexical+semantic`, `lexical`, `semantic`, or `none`.</summary>
     public string Tier => (Lexical, Semantic) switch

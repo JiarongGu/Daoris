@@ -76,7 +76,8 @@ public sealed class CheckoutDocumentsTests : IDisposable
         var entries = new RepositoryScanner(documents: null, index: "docs/index").Scan(_root);
 
         var row = Assert.Single(entries, e => e.Title == "SESSION_GO_ON_NEW");
-        Assert.Equal(EntryKind.Knowledge, row.Kind);
+        // The index's own kind (ORIENT2e), as a declared index's sections are: asked for by `index`.
+        Assert.Equal(EntryKind.Index, row.Kind);
         Assert.Equal(Provenance.Local, row.Provenance);
         Assert.Equal("docs/index/routes.md", row.RelativePath);
         Assert.Contains("Handler: `DriverModule.Sessions.cs:97` SessionGoOnNewAsync", row.Body);

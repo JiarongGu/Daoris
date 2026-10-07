@@ -43,7 +43,9 @@ public sealed class LexicalKnowledgeSearch(IKnowledgeStore store) : IKnowledgeSe
         {
             ct.ThrowIfCancellationRequested();
             var score = Score(entry, terms, joined);
-            if (score > 0) hits.Add(new KnowledgeHit(entry, score, Text.Excerpt(entry.Body, asked.Select(term => term.Term))));
+            if (score <= 0) continue;
+            var (excerpt, line) = Text.ExcerptAt(entry.Body, asked.Select(term => term.Term));
+            hits.Add(new KnowledgeHit(entry, score, excerpt, entry.LineAt(line)));
         }
 
         return hits

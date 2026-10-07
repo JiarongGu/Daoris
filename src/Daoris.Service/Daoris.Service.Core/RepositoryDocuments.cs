@@ -9,8 +9,8 @@ namespace Daoris.Knowledge;
 /// <remarks>
 /// <para><b>A declaration adds a path; it is never required</b> (§5). The scanner still needs no
 /// configuration, and a repository that declares nothing is read exactly as before. One that declares its
-/// decisions, fixes or archive has that path read before the scanner's candidates, and its router read as
-/// a document (<see cref="RepositoryScanner"/>).</para>
+/// decisions, fixes or archive has that path read before the scanner's candidates, its router read as
+/// a document, and its index of where things are read at its headings (ORIENT2e, <see cref="RepositoryScanner"/>).</para>
 ///
 /// <para>🔴 <b>A twin</b> (<c>.claude/knowledge/twins.md</c>, *the development documents*): the CLI's
 /// <c>checkDocuments</c> (<c>src/Daoris.Cli/src/documents.ts</c>) reads the same field, and the two share
@@ -38,6 +38,9 @@ public static class RepositoryDocuments
         ("brief", false),
         ("room", false),
         ("router", true),
+        // ORIENT2e (D151 points 4 and 6): the generated index of where things are, after the router as the CLI
+        // lists it (ORIENT2b); the scanner reads every file in its folder as entries of its own kind.
+        ("index", true),
         ("decisions", true),
         ("backlog", true),
         ("archive", true),
