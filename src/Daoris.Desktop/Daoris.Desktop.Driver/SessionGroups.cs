@@ -162,6 +162,28 @@ public sealed record TreeWork(int? Commits, int? Uncommitted)
 }
 
 /// <summary>
+/// What an ended session's own tree offers to land (LAND4): the commits on it no branch of the person's holds, by D88's
+/// proof, whatever the session's ending, with the branch and the tree they are on. The press is the review's Accept, at any
+/// of its doors, so everything a landing checks is checked there; this only says there is work a press would land.
+/// </summary>
+/// <param name="Branch">The session's branch, <c>daoris/</c> and its tree's name, as the layout names it (D51).</param>
+/// <param name="Tree">The tree's name under its repository's folder: never a path.</param>
+/// <param name="Commits">The commits a landing would carry: a proven count, above zero.</param>
+/// <param name="Uncommitted">Its uncommitted paths, which a branch leaves behind; null where git could not say.</param>
+public sealed record LandOffer(string Branch, string Tree, int Commits, int? Uncommitted)
+{
+    /// <summary>
+    /// The offer a judged tree makes, or null: only commits git counted, above zero. Uncommitted work alone lands nothing, and
+    /// a count git could not give offers no press, though it stays to review (the clean-up's keep, D88).
+    /// </summary>
+    public static LandOffer? Of(string tree, TreeWork work)
+    {
+        if (work.Commits is not > 0 || SessionGroups.Normal(tree).Split('/')[^1] is not { Length: > 0 } name) return null;
+        return new LandOffer(SessionTrees.SessionPrefix + name, name, work.Commits.Value, work.Uncommitted);
+    }
+}
+
+/// <summary>
 /// The groups a session is listed in by state (D126 §2.1), in the order the person acts on them, and Archived: the
 /// public spelling the page and <c>daoris-driver sessions --group</c> share.
 /// </summary>
@@ -309,6 +331,13 @@ public sealed record SessionGrouping(string Session, string Group, string Shown)
 
     /// <summary>For a session to review: what its own tree holds.</summary>
     public TreeWork? Work { get; init; }
+
+    /// <summary>
+    /// What its own tree offers to land (LAND4), in whichever group it rests bar Working: an ended session of this machine's,
+    /// the newest on its tree, nothing live there, with commits no branch of the person's holds. Null otherwise. Its page
+    /// offers Accept beside it, and its review does, whatever its ending.
+    /// </summary>
+    public LandOffer? Lands { get; init; }
 
     /// <summary>
     /// Whether this session's stop holds its quest here (SESSUX1b, D126 §2.2): the person stopped it, it is its quest's
@@ -505,8 +534,9 @@ public static class SessionGroups
     }
 
     /// <summary>
-    /// The trees <see cref="Read"/> would put to review if they held work: an ended session's own tree, this home's, the
-    /// newest session on it, held by nothing live and gone back into by no quest. Only these are worth a git walk.
+    /// The trees <see cref="Read"/> would put to review, or offer to land, if they held work: an ended session's own tree, this
+    /// home's, the newest session on it and held by nothing live. LAND4 asks a tree its quest goes back into too (a cut-off's,
+    /// a parked quest's, an asker's), since its commits are offered to land whatever its ending. Only these are worth a git walk.
     /// </summary>
     /// <param name="held">Whether a path is a tree this home opened (<see cref="SessionTrees.Holds"/>): the only kind looked at.</param>
     public static IReadOnlyList<string> TreesToJudge(
@@ -518,7 +548,7 @@ public static class SessionGroups
         foreach (var record in look.Records)
         {
             if (only is not null && !only.Contains(record.Id, StringComparer.Ordinal)) continue;
-            if (facts.ReviewableTree(record) is not { } tree || !seen.Add(Normal(tree)) || !Held(held, tree)) continue;
+            if (facts.LandableTree(record) is not { } tree || !seen.Add(Normal(tree)) || !Held(held, tree)) continue;
             trees.Add(tree);
         }
 
@@ -769,7 +799,22 @@ public static class SessionGroups
                     StringComparer.OrdinalIgnoreCase);
         }
 
+        /// <summary>
+        /// Where a session is listed, and what its own tree offers to land (LAND4) wherever it rests bar Working: a session that
+        /// goes on, or runs, is about to write into that tree again.
+        /// </summary>
         public SessionGrouping Place(SessionRecord record)
+        {
+            var row = PlaceInGroup(record);
+            return row.Group != SessionGroup.Working
+                   && LandableTree(record) is { } tree
+                   && _look.Trees.TryGetValue(Normal(tree), out var work)
+                   && LandOffer.Of(tree, work) is { } offer
+                ? row with { Lands = offer }
+                : row;
+        }
+
+        private SessionGrouping PlaceInGroup(SessionRecord record)
         {
             var archived = _look.Archived.ContainsKey(record.Id);
             var row = new SessionGrouping(record.Id, SessionGroup.Ended, record.State)
@@ -859,14 +904,24 @@ public static class SessionGroups
         }
 
         /// <summary>
-        /// The tree an ended session of this machine's would be reviewed in, were there work in it: its own, the newest
-        /// session on it, held by nothing live, its quest not parked and not going back into it. Null for any other.
+        /// The tree an ended session of this machine's would offer to land, were there commits in it (LAND4): its own, the newest
+        /// session on it, held by nothing live. Whatever its ending, and whether or not its quest goes back into it: the person
+        /// may land what it committed before a carry-on writes more. Null for any other.
         /// </summary>
-        public string? ReviewableTree(SessionRecord record)
+        public string? LandableTree(SessionRecord record)
         {
             if (record.Live || record.Teammate || record.Tree is not { } tree) return null;
             var key = Normal(tree);
-            if (!_newestOnTree.TryGetValue(key, out var newest) || newest != record.Id || _liveTrees.Contains(key)) return null;
+            return _newestOnTree.TryGetValue(key, out var newest) && newest == record.Id && !_liveTrees.Contains(key) ? tree : null;
+        }
+
+        /// <summary>
+        /// The tree an ended session of this machine's would be reviewed in, were there work in it: its landable tree, its quest
+        /// not parked and not going back into it. Null for any other.
+        /// </summary>
+        public string? ReviewableTree(SessionRecord record)
+        {
+            if (LandableTree(record) is not { } tree) return null;
 
             // Parked comes first, and a quest the planner still considers while it is taken goes back into this
             // session's tree: its carry-on (D80) or its resume (D79), whatever holds that start for now. Bar the person's

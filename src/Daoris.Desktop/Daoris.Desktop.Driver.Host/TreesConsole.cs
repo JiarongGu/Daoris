@@ -176,9 +176,18 @@ internal static class TreesConsole
                         return 0;
                     }
 
+                    // LAND4: the session each kept branch's tree is, so its landing is offered beside the discard, as on its page.
+                    var records = plan.Sessions.Any(item => item.Kind == SweepKind.Unlanded && item.Tree is not null)
+                        ? await service.SessionRecordsAsync().ConfigureAwait(false)
+                        : [];
                     foreach (var item in plan.Sessions)
                     {
                         Console.WriteLine($"  {(item.Removable ? "goes " : "kept ")} {Describe(item)}");
+                        if (SessionTrees.LandingOffered(item, SessionTrees.SessionOfTree(records, item.Tree)) is { } landing)
+                        {
+                            Console.WriteLine($"         {landing}");
+                        }
+
                         if (Offered(item) is { } offer) Console.WriteLine($"         {offer}");
                     }
                     // The branches landings made (WSR5), in a group of their own: each goes where its work reached the line.
