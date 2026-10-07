@@ -29,7 +29,8 @@ public static class RepositoryDocuments
 {
     /// <summary>
     /// The roles the manifest may declare, in the order everything lists them: a copy of the CLI's
-    /// <c>ROLES</c> (its <c>role</c> and <c>binding</c>), kept in step by hand. <c>brief</c> and <c>room</c>
+    /// <c>ROLES</c> (its <c>role</c> and <c>binding</c>), kept in step by hand and held to it by
+    /// <c>RepositoryDocumentsTests</c>, which reads the CLI's file (ORIENT2e). <c>brief</c> and <c>room</c>
     /// take a ceiling and no path. <c>knowledge</c> and <c>skill</c> are roles the CLI refuses here, since
     /// the index lists them from the target, so they are absent, as an unknown role is.
     /// </summary>
