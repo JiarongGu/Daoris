@@ -158,10 +158,10 @@ public sealed class EntryLinesTests : IDisposable
         var entries = new RepositoryScanner().Scan(_root);
 
         Assert.Equal(
-            ["Routes @ docs/index/README.md:3", "Routes › STATE @ docs/index/README.md:7", "Routes › OPEN @ docs/index/README.md:8", "Routes @ docs/index/README.md:10"],
+            ["Routes @ docs/index/README.md:3", "Routes › Route: STATE @ docs/index/README.md:7", "Routes › Route: OPEN @ docs/index/README.md:8", "Routes @ docs/index/README.md:10"],
             Of(entries, EntryKind.Index));
         AssertVerbatim(entries);
-        Assert.Equal((new LineSpan(7, 7), "|  `STATE`  | `Module.cs:38` |"), entries.Single(e => e.Title == "Routes › STATE").Cut(new LineSpan(1, 9)));
+        Assert.Equal((new LineSpan(7, 7), "|  `STATE`  | `Module.cs:38` |"), entries.Single(e => e.Title == "Routes › Route: STATE").Cut(new LineSpan(1, 9)));
     }
 
     /// <summary>

@@ -4,7 +4,7 @@ namespace Daoris.Knowledge;
 /// One entry of a file of a repository's declared index: a run of prose under a heading, or one row of a table; where
 /// it sits, its text, and the lines it is.
 /// </summary>
-/// <param name="Title">The headings above it and its own, joined by <c>›</c>, then a row's label; the file's path for text before any heading.</param>
+/// <param name="Title">The headings above it and its own, joined by <c>›</c>, then a row's label named by its column (<c>Route: STATE</c>); the file's path for text before any heading.</param>
 /// <param name="Body">The text under its heading, trimmed, its heading left out; a row's line as written.</param>
 /// <param name="Lines">The lines of the file the body is: line <c>i</c> of the body is line <c>First + i</c>.</param>
 /// <param name="Opening">Whether it is prose before any heading: the file's own, which no heading names.</param>
@@ -25,10 +25,13 @@ public readonly record struct IndexSection(string Title, string Body, LineSpan L
 /// section a matching row is weighed against every row beside it. Measured on this repository's index, a route's
 /// row in a 102-row section did not reach the first page for a question naming the route, below five short
 /// sections (D151's ORIENT2e note), which is ORIENT1c's finding about sections met again. A row is titled by its
-/// section's headings and its label, so the title's weight goes to the name the question asked for, and its body
-/// is its line as written, so it names that line. The header and its separator are the table's, never a row and
-/// never prose: a column's name is in every row of it and tells one from another in none. The prose around a
-/// table stays a section, each run of it between tables an entry of its own, since an entry is one run of lines.</para>
+/// section's headings and its label, named by its column as ORIENT1c names a cell
+/// (<c>Bridge routes › DAORIS.DRIVER (102) › Route: SESSION_GO_ON_NEW</c>), so the title's weight goes to the name
+/// the question asked for and to what the name is: the header is no line of the row, and without the column's
+/// name <i>sync verb</i> did not reach the <c>sync</c> row when measured. Its body is its line as written, so it
+/// names that line. The header and its separator are no entry: a column's name tells no row from another. The
+/// prose around a table stays a section, each run of it between tables an entry of its own, since an entry is one
+/// run of lines.</para>
 ///
 /// <para>The headings and the table are read as <see cref="MarkdownSections"/> and <see cref="IndexRows"/> read
 /// them, at the start of a line and never inside a fence. Each entry keeps its lines, so a hit names
@@ -77,12 +80,16 @@ public static class IndexSections
             else if (!inFence && TableAt(lines, at))
             {
                 Flush();
+                var columns = IndexRows.Cells(lines[at].Trim()).Select(IndexRows.Plain).ToList();
                 // Past the header and its separator, each line that opens with a pipe is a row, to the first that does not.
                 for (at += 2; at < lines.Length && lines[at].TrimStart().StartsWith('|'); at++)
                 {
                     if (Label(lines[at]) is not { } label) continue;
+                    // Named by its column (ORIENT2h): the header is no line of the row, and a question names what a row is.
+                    var column = label.Column < columns.Count ? columns[label.Column] : string.Empty;
+                    var named = column.Length > 0 ? $"{column}: {label.Text}" : label.Text;
                     var line = firstLine + at;
-                    sections.Add(new IndexSection($"{title} › {label}", lines[at].Trim(), new LineSpan(line, line), Label: label));
+                    sections.Add(new IndexSection($"{title} › {named}", lines[at].Trim(), new LineSpan(line, line), Label: label.Text));
                 }
                 at--;   // the line that ended the table is read by the loop's own step
                 continue;
@@ -125,9 +132,17 @@ public static class IndexSections
     }
 
     /// <summary>
-    /// What a row is about: its first cell with text, without its code marks, as a generated index puts the name it
-    /// answers for first; null for a row with none, which names nothing.
+    /// What a row is about, and the column it is in: its first cell with text, without its code marks, as a generated
+    /// index puts the name it answers for first; null for a row with none, which names nothing.
     /// </summary>
-    private static string? Label(string row) =>
-        IndexRows.Cells(row.Trim()).Select(IndexRows.Plain).FirstOrDefault(cell => cell.Length > 0);
+    private static (int Column, string Text)? Label(string row)
+    {
+        var cells = IndexRows.Cells(row.Trim());
+        for (var column = 0; column < cells.Count; column++)
+        {
+            var text = IndexRows.Plain(cells[column]);
+            if (text.Length > 0) return (column, text);
+        }
+        return null;
+    }
 }

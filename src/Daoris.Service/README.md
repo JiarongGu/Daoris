@@ -56,11 +56,12 @@ lists it after the router, as the CLI does): every markdown file in the folder t
 split at every heading (`IndexSections`), as entries of a kind of their own, `index`, the repository's own. Each is
 titled by the headings above it (`Bridge routes › DAORIS.DRIVER (102)`), and text before any heading by the file's
 path. Since **ORIENT2h** a table is read a row at a time: each row an entry of its own, titled by its section's
-headings and its label, its first cell with text (`Bridge routes › DAORIS.DRIVER (102) › SESSION_GO_ON_NEW`), its
-body its line as written, so it names that line. Read as part of its section, one matching row was weighed against a
-long section, and a route's row in a 102-row table lost to short sections (D151's ORIENT2e note). The header and its
-separator are no entry; the prose around a table stays a section, each run of it an entry; a list, an outline's,
-stays in its section. A README declared at the root is read alone, a declared folder is that folder, and an undeclared folder named
+headings and its label, its first cell with text named by its column
+(`Bridge routes › DAORIS.DRIVER (102) › Route: SESSION_GO_ON_NEW`), its body its line as written, so it names that
+line. Read as part of its section, one matching row was weighed against a long section, and a route's row in a 102-row
+table lost to short sections (D151's ORIENT2e note); the column's name is in the title because the header is no line of
+the row, and without it *sync verb* missed the `sync` row (D151's ORIENT2h note). The header and its separator are no
+entry; the prose around a table stays a section, each run of it an entry; a list, an outline's, stays in its section. A README declared at the root is read alone, a declared folder is that folder, and an undeclared folder named
 like an index is never guessed. A folder a deployment names as its index (`DAORIS_KNOWLEDGE_INDEX`) is read a row at a
 time first, as that deployment chose, and those rows are of the kind `index` too. A search that names no kinds answers
 with at most two index entries, at their ranks, and fills the rest from every other kind; the answer says when more

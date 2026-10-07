@@ -83,8 +83,8 @@ public sealed class IndexEntriesTests : IDisposable
     /// <summary>
     /// ORIENT2e's proof, with ORIENT2h's rows: each heading of each file in the index's folder, and below it, is an
     /// entry of the index's own kind, the repository's own, titled by the headings above it and keeping the lines
-    /// its text is; each table row is an entry of its own, titled by its section's headings and its label, naming
-    /// its line. A section that is only a table is its rows, and its header names no entry.
+    /// its text is; each table row is an entry of its own, titled by its section's headings and its label named by
+    /// its column, naming its line. A section that is only a table is its rows, and its header names no entry.
     /// </summary>
     [Fact]
     public void The_declared_index_is_read_at_its_headings_and_its_tables_rows_as_index_entries_that_keep_their_lines()
@@ -95,13 +95,13 @@ public sealed class IndexEntriesTests : IDisposable
 
         Assert.Equal(
             [
-                "Bridge routes › DAORIS.DRIVER (2) › Kept apart › STATE @ docs/index/routes.md:14",
-                "Bridge routes › DAORIS.DRIVER (2) › SESSION_GO_ON_NEW @ docs/index/routes.md:7",
-                "Bridge routes › DAORIS.DRIVER (2) › STATE @ docs/index/routes.md:8",
+                "Bridge routes › DAORIS.DRIVER (2) › Kept apart › Route: STATE @ docs/index/routes.md:14",
+                "Bridge routes › DAORIS.DRIVER (2) › Route: SESSION_GO_ON_NEW @ docs/index/routes.md:7",
+                "Bridge routes › DAORIS.DRIVER (2) › Route: STATE @ docs/index/routes.md:8",
                 "Outline of `src/Widget.cs` @ docs/index/outlines/src/Widget.cs.md:3-7",
                 "Where things are @ docs/index/README.md:3",
+                "Where things are › File: routes.md @ docs/index/README.md:7",
                 "Where things are › Kept by hand @ docs/index/README.md:11",
-                "Where things are › routes.md @ docs/index/README.md:7",
             ],
             index.Select(e => $"{e.Title} @ {e.RelativePath}:{e.Lines}").Order(StringComparer.Ordinal).ToList());
         Assert.All(index, e => Assert.Equal(Provenance.Local, e.Provenance));
@@ -351,12 +351,55 @@ public sealed class IndexEntriesTests : IDisposable
                 new KnowledgeQuery("where is the SESSION_GO_ON_NEW handler") { Kinds = new HashSet<EntryKind> { EntryKind.Index } });
 
             var first = hits[0];
-            Assert.Equal("Bridge routes › DAORIS.DRIVER (102) › SESSION_GO_ON_NEW", first.Entry.Title);
+            Assert.Equal("Bridge routes › DAORIS.DRIVER (102) › Route: SESSION_GO_ON_NEW", first.Entry.Title);
             Assert.Equal($"docs/index/routes.md:{line}", $"{first.Entry.RelativePath}:{first.Entry.Lines}");
             Assert.Equal(line, first.ExcerptLine);
             Assert.Equal(
                 "| `SESSION_GO_ON_NEW` | `DriverModule.Sessions.cs:28` SessionGoOnNewAsync | `bridge/sessions.ts:17` useSessionGoOnNew |",
                 first.Entry.Body);
+        }
+        finally
+        {
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        }
+    }
+
+    /// <summary>
+    /// A question that names what a row is, in its column's word, reaches the row: the header is no line of the row,
+    /// so the title names the label's column. Without it, <i>sync verb</i> ranked outlines that say both words above
+    /// the <c>sync</c> row, which says one (measured on this repository's index, D151's ORIENT2h note).
+    /// </summary>
+    [Fact]
+    public async Task A_question_in_the_column_s_word_reaches_the_row_its_title_names_by_that_column()
+    {
+        Declare("""{"index":"docs/index/README.md"}""");
+        Write("docs/index/README.md", Readme);
+        Write("docs/index/verbs.md",
+            "# Terminal verbs\n\nGenerated; never edit by hand. Where each terminal verb is routed and handled, by program.\n\n"
+            + "## `daoris` (the CLI)\n\n| Verb | Class | Handler | Usage |\n|---|---|---|---|\n"
+            + "| `analyze` | doctrine | `analyze.ts:268` commandAnalyze | what adopting would do here |\n"
+            + "| `init` | doctrine | `commands.ts:55` commandInit | detect what this repo has |\n"
+            + "| `sync` | doctrine | `materialize.ts:811` commandSync | materialize the manifest's packs |\n"
+            + "| `check` | doctrine | `drift.ts:292` commandCheck | drift and staleness |\n"
+            + "| `upstream` | doctrine | `upstream.ts:40` commandUpstream | promote a local edit |\n");
+        foreach (var file in new[] { "HelpCoverageTests", "SyncConsole", "TreesConsole" })
+        {
+            Write($"docs/index/outlines/src/{file}.cs.md",
+                $"# Outline of `src/{file}.cs`\n\nGenerated; never edit by hand.\n\n- 10-400 class {file}\n"
+                + "  - 20-40 Every verb has a door()\n  - 41-60 The sync verb's console()\n  - 61-80 Status()\n");
+        }
+
+        var entries = new RepositoryScanner().Scan(_root);
+        var database = Path.Combine(_root, "knowledge.db");
+        try
+        {
+            await using var store = await SqliteKnowledgeStore.OpenAsync(database);
+            await store.ReplaceRepositoryAsync(entries[0].Repository, entries);
+
+            var hits = await new SqliteKnowledgeSearch(store).SearchAsync(
+                new KnowledgeQuery("sync verb") { Kinds = new HashSet<EntryKind> { EntryKind.Index } });
+
+            Assert.Equal("Terminal verbs › `daoris` (the CLI) › Verb: sync @ 11", $"{hits[0].Entry.Title} @ {hits[0].Entry.Lines}");
         }
         finally
         {
@@ -395,10 +438,10 @@ public sealed class IndexEntriesTests : IDisposable
         Assert.Equal(
             [
                 "docs/index/README.md @ 1 #",
-                "docs/index/README.md › routes.md @ 5 #docs/index/README.md › routes.md",
+                "docs/index/README.md › File: routes.md @ 5 #docs/index/README.md › File: routes.md",
                 "docs/index/README.md @ 6 #docs/index/README.md (2)",
                 "Verbs @ 10 #Verbs",
-                "Verbs › sync @ 14 #Verbs › sync",
+                "Verbs › Verb: sync @ 14 #Verbs › Verb: sync",
                 "Verbs @ 16 #Verbs (2)",
             ],
             index.Select(e => $"{e.Title} @ {e.Lines} #{e.Anchor}").ToList());
@@ -407,8 +450,8 @@ public sealed class IndexEntriesTests : IDisposable
 
     /// <summary>
     /// A table is a header with a separator under it, as markdown reads one: a pipe with none is prose, and a table
-    /// inside a fence is the fence's text. A row is labelled by its first cell with text, and a row with none names
-    /// nothing; a pipe inside code is no column.
+    /// inside a fence is the fence's text. A row is labelled by its first cell with text, named by that cell's column,
+    /// and a row with none names nothing; a pipe inside code is no column.
     /// </summary>
     [Fact]
     public void Only_a_table_s_rows_are_rows_each_labelled_by_its_first_cell_with_text()
@@ -436,8 +479,8 @@ public sealed class IndexEntriesTests : IDisposable
         Assert.Equal(
             [
                 "Where things are @ 3-9",
-                "Where things are › git log | head @ 13",
-                "Where things are › continued.ts:4 @ 14",
+                "Where things are › Command: git log | head @ 13",
+                "Where things are › Does: continued.ts:4 @ 14",
             ],
             index.Select(e => $"{e.Title} @ {e.Lines}").ToList());
         Assert.Contains("`FENCED`", index[0].Body);
