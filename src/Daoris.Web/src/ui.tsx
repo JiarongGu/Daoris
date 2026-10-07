@@ -989,6 +989,12 @@ export function CheckField({ checked, onChange, label, hideLabel, disabled, clas
  * A choice of a few, all in view (D66: the theme, the language) — a radiogroup of buttons, the arrow
  * keys moving the choice the way every radiogroup's do. For two to four options that fit a line: a
  * select would hide what a person is choosing between.
+ *
+ * @remarks
+ * **The focus moves with the choice** (UXFIX1), as the WAI-ARIA radio group's does: the chosen option is
+ * the group's one tab stop, and an arrow chooses the next and focuses it. Left on the option it came from,
+ * Space chose that one again and a screen reader stayed on an option no longer chosen (Knowledge's
+ * *Search · Convergence*).
  */
 export function Segmented<T extends string>({ label, value, options, onChange, fill = false }: {
   /** The group's accessible name — the row's label, since the options alone say nothing of what. */
@@ -999,9 +1005,15 @@ export function Segmented<T extends string>({ label, value, options, onChange, f
   /** Spread over its row, each option an equal share: a list's head, Knowledge's two modes (UX6i). */
   fill?: boolean;
 }) {
-  const move = (by: number) => {
-    const at = options.findIndex((option) => option.value === value);
-    onChange(options[(at + by + options.length) % options.length]!.value);
+  const radios = useRef<(HTMLButtonElement | null)[]>([]);
+
+  const move = (from: EventTarget, by: number) => {
+    // From the option holding the focus, so a second arrow before the owner has taken the first choice moves on from it.
+    const focused = radios.current.indexOf(from as HTMLButtonElement);
+    const at = focused >= 0 ? focused : options.findIndex((option) => option.value === value);
+    const next = (at + by + options.length) % options.length;
+    onChange(options[next]!.value);
+    radios.current[next]?.focus();
   };
 
   return (
@@ -1009,16 +1021,17 @@ export function Segmented<T extends string>({ label, value, options, onChange, f
       role="radiogroup"
       aria-label={label}
       onKeyDown={(event) => {
-        if (event.key === 'ArrowRight' || event.key === 'ArrowDown') move(1);
-        else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') move(-1);
+        if (event.key === 'ArrowRight' || event.key === 'ArrowDown') move(event.target, 1);
+        else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') move(event.target, -1);
         else return;
         event.preventDefault();
       }}
       className={cn('rounded-control border border-line-strong bg-raised p-0.5', fill ? 'flex w-full' : 'inline-flex')}
     >
-      {options.map((option) => (
+      {options.map((option, index) => (
         <button
           key={option.value}
+          ref={(node) => { radios.current[index] = node; }}
           type="button"
           role="radio"
           aria-checked={value === option.value}
@@ -1115,8 +1128,13 @@ function MenuContent({ highlight = 'raised', className, children, ...props }: Co
 
 /**
  * An act. `tick` says the tick column: absent, the row has none; false, it is reserved and empty; true, the row is the
- * current one, ticked and in the full ink, as the size a map is at or the workspace a window is scoped to. It stays a
- * `menuitem`: choosing it acts, where a checkbox item toggles.
+ * current one, ticked and in the full ink, as the size a map is at. It stays a `menuitem`: choosing it acts, where a
+ * checkbox item toggles.
+ *
+ * @remarks
+ * **Its tick is drawn, not said**: a screen reader hears a `menuitem` with no state. Where the person must hear what is
+ * current, a toggle is a `CheckboxItem` and a choice among rows a `RadioItem` in a `RadioGroup`, each with `aria-checked`,
+ * as the menu bar's regions, places and workspaces are (UXFIX1).
  */
 function MenuRow({ tick, className, children, ...props }: ComponentProps<typeof DropdownMenu.Item> & { tick?: boolean }) {
   const row = useMenuRow(className, tick && 'text-ink');

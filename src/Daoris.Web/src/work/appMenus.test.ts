@@ -61,6 +61,27 @@ describe('the menus, row by row', () => {
     ]);
   });
 
+  /** UXFIX1: a row carries what its tick means from the table, so the menu can say it: a toggle, a choice, or none. */
+  it('carries what each tick means: a region a toggle, a place and a workspace a choice, a door none', () => {
+    const view = menuRows(entries(), 'view');
+    for (const [id, shown] of [['view.list', true], ['view.panel', true], ['view.side', false]] as const) {
+      expect(view.find((row) => row.id === id), id).toMatchObject({ checked: shown });
+      expect(view.find((row) => row.id === id), id).not.toHaveProperty('radio');
+    }
+    expect(view.find((row) => row.id === 'view.commands')).not.toHaveProperty('checked');
+
+    const go = menuRows(entries(), 'go');
+    expect(go.filter((row) => row.radio).map((row) => [row.id, row.checked])).toEqual([
+      ['go.overview', false], ['go.sessions', false], ['go.quests', true], ['go.projects', false], ['go.map', false],
+      ['go.knowledge', false], ['go.agents', false], ['go.plugins', false],
+    ]);
+    expect(go.find((row) => row.id === 'go.nextRegion')).not.toHaveProperty('checked');
+
+    expect(menuRows(entries(), 'workspace').filter((row) => row.radio).map((row) => [row.id, row.checked])).toEqual([
+      ['workspace.scope:*', true], ['workspace.scope:work', false], ['workspace.scope:forge', false],
+    ]);
+  });
+
   it('holds only what a browser may know in a browser', () => {
     const browser = entries({ attached: false });
     expect(labels(menuRows(browser, 'workspace'))).toEqual(['New ask…', 'New quest…', 'Every workspace · 2', 'work', 'forge', 'Settings']);

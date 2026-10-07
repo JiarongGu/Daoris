@@ -11728,3 +11728,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **WAITCLAIM1 — a wait made on a take that lost** (service; decide first). Found by QUESTOP1: a wait this machine made after its own take, when that take loses the race, is still applied by the rebase to the winner's quest, which then waits on the loser's question. Decide whether D69's lost-claim rule, which drops a losing move, covers a wait too, and record it. Contract: D79, D69, `QuestLog.Lost` and `.claude/knowledge/quest-operations.md`. Proof: a sync test of the race, and the decision's note.
 
 **Outcome** 2026-10-07: decided and built: a wait made after this machine's own take goes with that take when it loses the race; the rebase forgets it and the take's conflict names the question after its own note. A wait on a quest this machine did not take is kept. Follow-up: WAITCLAIM2. Detail: D69's WAITCLAIM1 note, FIX-LOG; commits c5b9979a, 1bd2c977.
+
+
+## UXFIX1 — keyboard and screen-reader gaps in the new controls (2026-10-07)
+
+> - [ ] **UXFIX1 — keyboard and screen-reader gaps in the new controls** (web-shell). From the second-opinion review: `Segmented` moves the value on arrows but not the focus (Knowledge's mode switch, `ui.tsx:1002`); the folded menu's trigger is about 23 px, under the 28 px floor (`AppMenu.tsx:119`); menu checkmarks are visual only (`AppMenu.tsx:103`, `ui.tsx:1121`). Contract: platform-ux §3, the review. Proof: vitest on the focused element and the menu roles; the trigger's box measured in a story.
+
+**Outcome** 2026-10-07: the menu bar's ticks are announced: toggles are `menuitemcheckbox`, a run of choices `menuitemradio` in one group, each `aria-checked`, from the command table's `radio`; the bar's names and the fold's button are 28 px targets; `Segmented` moves the focus with its choice. Detail: commits 7ef05a38, 24c6b4e7, ef478759.

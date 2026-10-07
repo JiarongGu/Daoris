@@ -1,10 +1,11 @@
-import type { ReactElement } from 'react';
+import { type ReactElement, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
 import { KnowledgeModes, KnowledgeStrip } from './KnowledgeModes';
+import type { KnowledgeMode } from './modes';
 
 // Knowledge's list head (UX6i, D150 §2.2): a two-way choice, Search · Convergence, and the strip's stand-in for it. A
 // molecule: the mode in front arrives, and every press goes out.
@@ -32,6 +33,34 @@ describe("Knowledge's list head", () => {
     chosen.focus();
     await userEvent.keyboard('{ArrowLeft}');
     expect(onMode).toHaveBeenCalledWith('search');
+  });
+
+  /**
+   * UXFIX1: switching from Search to Convergence by the arrows takes the focus along, so Space keeps Convergence and a
+   * screen reader is on the mode now chosen, not on Search.
+   */
+  it('takes the focus to the mode the arrows chose, so Space keeps it', async () => {
+    const onMode = vi.fn();
+    function Held() {
+      const [mode, setMode] = useState<KnowledgeMode>('search');
+      return <KnowledgeModes mode={mode} onMode={(next) => { onMode(next); setMode(next); }} />;
+    }
+    render(<Held />);
+    const user = userEvent.setup();
+    const radio = (name: string) => within(choice()).getByRole('radio', { name });
+    await user.tab();
+    expect(document.activeElement).toBe(radio('Search'));
+
+    await user.keyboard('{ArrowRight}');
+    expect(document.activeElement).toBe(radio('Convergence'));
+    expect(radio('Convergence')).toHaveAttribute('aria-checked', 'true');
+    await user.keyboard(' ');
+    expect(onMode).toHaveBeenLastCalledWith('convergence');
+    expect(radio('Convergence')).toHaveAttribute('aria-checked', 'true');
+
+    await user.keyboard('{ArrowLeft}');
+    expect(document.activeElement).toBe(radio('Search'));
+    expect(onMode).toHaveBeenLastCalledWith('search');
   });
 
   it('says both modes in 中文 by the names their places had', async () => {

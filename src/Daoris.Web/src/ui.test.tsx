@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import { type ReactElement, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -699,6 +699,55 @@ describe('the segmented choice', () => {
 
     fireEvent.keyDown(screen.getByRole('radiogroup'), { key: 'ArrowRight' });
     fireEvent.keyDown(screen.getByRole('radiogroup'), { key: 'ArrowLeft' });
+    expect(chosen).toEqual(['light', 'dark']);
+  });
+
+  /**
+   * UXFIX1: the focus moves with the choice, as the WAI-ARIA radio group's does. Left on the option it came from, Space
+   * chose that one again and a screen reader stayed on an option no longer chosen. Every `Segmented` is this atom (only
+   * `ui.tsx` builds a radio), so this holds Knowledge's mode, Settings' rows and the review's choices alike.
+   */
+  it('moves the focus with the choice on every arrow, so the chosen option holds it and Space keeps it', async () => {
+    function Held() {
+      const [value, setValue] = useState<'system' | 'light' | 'dark'>('system');
+      return (
+        <Segmented
+          label="theme" value={value} onChange={setValue}
+          options={[{ value: 'system', label: 'System' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]}
+        />
+      );
+    }
+    render(<Held />);
+    const user = userEvent.setup();
+    const radio = (name: string) => screen.getByRole('radio', { name });
+    await user.tab();
+    expect(document.activeElement).toBe(radio('System'));
+
+    const steps = [
+      ['{ArrowRight}', 'Light'], ['{ArrowDown}', 'Dark'], ['{ArrowRight}', 'System'], ['{ArrowLeft}', 'Dark'], ['{ArrowUp}', 'Light'],
+    ] as const;
+    for (const [key, name] of steps) {
+      await user.keyboard(key);
+      expect(document.activeElement, `after ${key}`).toBe(radio(name));
+      expect(radio(name)).toHaveAttribute('aria-checked', 'true');
+      expect(radio(name)).toHaveAttribute('tabindex', '0');
+    }
+
+    await user.keyboard(' ');
+    expect(radio('Light')).toHaveAttribute('aria-checked', 'true');
+    expect(document.activeElement).toBe(radio('Light'));
+  });
+
+  /** UXFIX1: an arrow moves on from the option that holds the focus, so a choice its owner has not taken yet is not lost. */
+  it('moves on from the focused option while the value it chose is still on its way', async () => {
+    const chosen: string[] = [];
+    render(<Theme onChange={(value) => chosen.push(value)} />);
+    const user = userEvent.setup();
+    await user.tab();
+    await user.keyboard('{ArrowRight}');
+    expect(document.activeElement).toBe(screen.getByRole('radio', { name: 'Light' }));
+    await user.keyboard('{ArrowRight}');
+    expect(document.activeElement).toBe(screen.getByRole('radio', { name: 'Dark' }));
     expect(chosen).toEqual(['light', 'dark']);
   });
 

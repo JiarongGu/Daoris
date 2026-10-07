@@ -33,13 +33,13 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `src/Daoris.Web/e2e/platform.spec.ts` | 56 | 957 |
-| `src/Daoris.Web/src/App.test.tsx` | 49 | 960 |
+| `src/Daoris.Web/src/App.test.tsx` | 50 | 966 |
 | `src/Daoris.Web/src/App.tsx` | 66 | 1225 |
 | `src/Daoris.Web/src/ProjectsView.test.tsx` | 63 | 1161 |
 | `src/Daoris.Web/src/QuestsView.test.tsx` | 56 | 1100 |
 | `src/Daoris.Web/src/agents/AgentPage.tsx` | 43 | 832 |
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 81 | 1603 |
-| `src/Daoris.Web/src/ui.tsx` | 72 | 1552 |
+| `src/Daoris.Web/src/ui.tsx` | 73 | 1570 |
 | `src/Daoris.Web/src/work/ConversationView.test.tsx` | 43 | 817 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 185 | 3671 |
 | `src/Daoris.Web/src/work/WorkFrame.tsx` | 73 | 1379 |

@@ -88,6 +88,8 @@ with the version and date at release.
   the lines of its file; asking for an entry can ask for a range of its lines.
 - A question asked on a quest whose take this machine then lost to another machine no longer holds
   the winner's quest; the lost take's conflict names the question instead.
+- The menu bar says which of its rows are ticked to a screen reader, its names and the folded menu's
+  button are easier to hit, and arrowing through a segmented choice moves the focus with it.
 
 The first version: doctrine that installs, is checked, and flows back.
 
