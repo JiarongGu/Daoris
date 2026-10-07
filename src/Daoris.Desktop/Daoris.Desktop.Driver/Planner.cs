@@ -214,7 +214,18 @@ public sealed record PriorSession(
     /// Whether the person's words wait for it to go on with (MSG1b, D137 §2.2): its <c>said</c> holds any, parked or ended;
     /// from a host before <c>said</c>, an answered park is the one case that waits.
     /// </summary>
-    public bool WordsWaiting => Said is { } said ? said.Count > 0 : AnsweredPark;
+    /// <remarks>
+    /// 🔴 <b>Never while it runs</b> (ANSWER2): a resumed run moves its record to working and takes the words off it only as
+    /// it concludes, so for the whole run they are still on it. Read as waiting, a look took the record up a second time,
+    /// whose move to working the ledger refused (working → working), and the driver failed the session it was resuming.
+    /// </remarks>
+    public bool WordsWaiting => !Running && (Said is { } said ? said.Count > 0 : AnsweredPark);
+
+    /// <summary>
+    /// Queued, starting or working: a run has the record (D46 §4), so the words on it are on their way to the session, and
+    /// nothing waits for a look to take it up (ANSWER2). A park is not running: it waits on the person.
+    /// </summary>
+    public bool Running => State.ToLowerInvariant() is "queued" or "starting" or "working";
 
     /// <summary>The words it goes on with, in order: each of <see cref="Said"/>, or a host's answer from before <c>said</c>.</summary>
     public IReadOnlyList<SaidWordView> Waiting =>

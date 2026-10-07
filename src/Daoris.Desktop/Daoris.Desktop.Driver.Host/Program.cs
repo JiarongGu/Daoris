@@ -484,14 +484,14 @@ try
         // single run that let go of them would leave them working with nothing watching. Each part is printed
         // as it is said (DEV3a), each pass beside the sessions as it ends (DEV3b), so a stop or an ending already
         // made is never lost with the process.
-        await new Driver(service, config, AdapterSet.Built(), home, processes, sync, hooks: hooks, events: events)
+        await new Driver(service, config, AdapterSet.Built(), home, processes, sync, hooks: hooks, events: events) { Log = log }
             .RunOnceAsync(closing.Token, said: report => Print(report));
     }
     else if (untilIdle)
     {
         // Each look printed as it ends, and what ended before a failure or a close lets go (DEV3a), where every
         // look used to be printed only once the whole run returned; a look that failed, what it had said (DEV3c).
-        await new Driver(service, config, AdapterSet.Built(), home, processes, sync, hooks: hooks, events: events)
+        await new Driver(service, config, AdapterSet.Built(), home, processes, sync, hooks: hooks, events: events) { Log = log }
             .RunUntilIdleAsync(closing.Token, said: report => Print(report));
     }
     else
@@ -510,7 +510,8 @@ try
         // keeps only its reporting half. A null onError lets a failed tick propagate to the catch
         // below, which is this door's exit-2 contract; what that look had said before it failed, a
         // stop among it, is printed first (DEV3c).
-        watching = new DriverWatch(service, configPath, home, processes, sync, hooks: hooks, events: events);
+        // The machine log rides each look, where a run's failure nothing else awaits is written with its place (ANSWER2).
+        watching = new DriverWatch(service, configPath, home, processes, sync, hooks: hooks, events: events) { Log = log };
         await watching.RunAsync(
             async (report, ticked) =>
             {
