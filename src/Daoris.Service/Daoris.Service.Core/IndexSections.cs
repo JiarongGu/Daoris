@@ -34,7 +34,8 @@ public readonly record struct IndexSection(string Title, string Body, LineSpan L
 /// run of lines.</para>
 ///
 /// <para>The headings and the table are read as <see cref="MarkdownSections"/> and <see cref="IndexRows"/> read
-/// them, at the start of a line and never inside a fence. Each entry keeps its lines, so a hit names
+/// them, at the start of a line and never inside a fence, which closes as CommonMark closes one
+/// (<see cref="MarkdownFence"/>, ORIENT2h3). Each entry keeps its lines, so a hit names
 /// <c>path:first-last</c> and a range reads part of it. A row in an index names lines in another file (an
 /// outline's <c>412-417 test …</c>); the entry's lines are where the row sits in the index, and the body keeps the
 /// row's own as written. A list stays in its section: an outline's item means nothing without the items above it,
@@ -56,18 +57,21 @@ public static class IndexSections
         var title = fallbackTitle;
         var opening = true;
         var body = new List<(int Line, string Text)>();
-        var inFence = false;
+        var fence = new MarkdownFence();
         var lines = (markdown ?? string.Empty).Replace("\r\n", "\n").Split('\n');
 
         for (var at = 0; at < lines.Length; at++)
         {
             var raw = lines[at];
-            var trimmed = raw.TrimStart();
-            if (trimmed.StartsWith("```", StringComparison.Ordinal) || trimmed.StartsWith("~~~", StringComparison.Ordinal))
+            // A fence's text is its section's (ORIENT2h3: closed as CommonMark closes it). A row opens with a pipe and a
+            // fence never does, so the rows a table reads past below leave the fence as it was.
+            if (fence.Holds(raw))
             {
-                inFence = !inFence;
+                body.Add((firstLine + at, raw));
+                continue;
             }
-            else if (!inFence && Heading(raw) is { } heading)
+
+            if (Heading(raw) is { } heading)
             {
                 Flush();
                 opening = false;
@@ -77,7 +81,7 @@ public static class IndexSections
                 if (title.Length == 0) title = fallbackTitle;
                 continue;
             }
-            else if (!inFence && TableAt(lines, at))
+            if (TableAt(lines, at))
             {
                 Flush();
                 var columns = IndexRows.Cells(lines[at].Trim()).Select(IndexRows.Plain).ToList();

@@ -3,7 +3,7 @@ namespace Daoris.Knowledge;
 /// <summary>One entry of a generated index: a table row, a list item, or the file's prose.</summary>
 /// <param name="Title">The row's first cell or the item's text, without its code marks; the file's heading for its prose.</param>
 /// <param name="Body">The row with each cell labelled by its column, or the item with the items above it; then where it sits.</param>
-/// <param name="Anchor">Unique within the file; null for the file's prose, which is the file itself.</param>
+/// <param name="Anchor">Unique within the file (<see cref="EntryAnchors"/>); null for the file's prose, which is the file itself.</param>
 public readonly record struct IndexRow(string Title, string Body, string? Anchor);
 
 /// <summary>
@@ -19,7 +19,7 @@ public readonly record struct IndexRow(string Title, string Body, string? Anchor
 /// the file's title and the section's heading, so a search for a module's name finds its routes. A list item
 /// carries the items above it, since an outline's method means nothing without its class. A heading, a
 /// fence and the rows of a table are read as <see cref="MarkdownSections"/> reads them: at the start of a
-/// line and never inside a fence.</para>
+/// line and never inside a fence, which closes as CommonMark closes one (<see cref="MarkdownFence"/>).</para>
 /// </remarks>
 public static class IndexRows
 {
@@ -30,36 +30,29 @@ public static class IndexRows
     {
         var rows = new List<IndexRow>();
         var prose = new List<string>();
-        var used = new Dictionary<string, int>(StringComparer.Ordinal);
+        var anchors = new EntryAnchors();
         string? title = null;
         string? heading = null;
         List<string>? headers = null;
         var expectSeparator = false;
         var parents = new List<(int Indent, string Text)>();
-        var inFence = false;
+        var fence = new MarkdownFence();
 
         string Where() => string.Join(" › ", new[] { title, heading }.OfType<string>().Distinct(StringComparer.Ordinal));
 
         void Emit(string rowTitle, string line)
         {
             if (rowTitle.Length == 0) return;
-            var key = $"{heading ?? title ?? fallbackTitle}: {rowTitle}";
-            var seen = used.GetValueOrDefault(key) + 1;
-            used[key] = seen;
             var where = Where();
-            rows.Add(new IndexRow(rowTitle, where.Length == 0 ? line : $"{line}\n\nIn {where}", seen == 1 ? key : $"{key} ({seen})"));
+            rows.Add(new IndexRow(
+                rowTitle, where.Length == 0 ? line : $"{line}\n\nIn {where}", anchors.Next($"{heading ?? title ?? fallbackTitle}: {rowTitle}")));
         }
 
         foreach (var raw in (markdown ?? string.Empty).Replace("\r\n", "\n").Split('\n'))
         {
             var trimmed = raw.Trim();
-            if (trimmed.StartsWith("```", StringComparison.Ordinal) || trimmed.StartsWith("~~~", StringComparison.Ordinal))
-            {
-                inFence = !inFence;
-                prose.Add(raw);
-                continue;
-            }
-            if (inFence)
+            // A fence's text is the file's prose, its tables and items included (ORIENT2h3: closed as CommonMark closes it).
+            if (fence.Holds(raw))
             {
                 prose.Add(raw);
                 continue;

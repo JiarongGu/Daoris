@@ -193,4 +193,37 @@ public sealed class CheckoutDocumentsTests : IDisposable
 
         Assert.Contains("Command: `a \\| b` and `c|d`", row.Body);
     }
+
+    /// <summary>
+    /// ORIENT2h3: a fence is closed only by a fence of its own character at least as long, as CommonMark reads one. A
+    /// four-backtick fence quoting a three-backtick example closed on the example's first fence, and the example's
+    /// table became rows.
+    /// </summary>
+    [Fact]
+    public void A_longer_fence_holds_a_shorter_one_and_no_row_inside_it_is_read()
+    {
+        Write("docs/index/verbs.md", """
+            # Verbs
+
+            ````markdown
+            ```
+            ## Example
+
+            | Verb | Command |
+            |---|---|
+            | `fenced` | `x` |
+            ```
+            ````
+
+            | Verb | Command |
+            |---|---|
+            | `sync` | `daoris sync` |
+            """);
+
+        var entries = new RepositoryScanner(documents: null, index: "docs/index").Scan(_root);
+
+        Assert.Equal(["Verbs", "sync"], entries.Select(e => e.Title).ToList());
+        Assert.Contains("| `fenced` | `x` |", entries[0].Body);
+        Assert.Contains("In Verbs", entries[1].Body);
+    }
 }

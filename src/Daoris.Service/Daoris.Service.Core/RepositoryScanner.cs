@@ -441,7 +441,8 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     /// <remarks>
     /// A question about one note landed on the whole decision, or past it, while every other note's words
     /// diluted the one that answered (D125's twenty-two). A label twice in one file is told apart by its count,
-    /// as a heading twice is (REV3), so one file never yields one id twice.
+    /// as a heading twice is (REV3), and a label that is another's counted anchor gets the next free one
+    /// (<see cref="EntryAnchors"/>, ORIENT2h3), so one file never yields one id twice.
     /// </remarks>
     private static IEnumerable<KnowledgeEntry> Decision(string repository, string relative, string title, (string Text, int First) read)
     {
@@ -451,14 +452,12 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
             repository, EntryKind.Decision, Provenance.Local, title, entry, relative, Lines: Whole((entry, read.First)));
 
         var name = Path.GetFileNameWithoutExtension(relative);
-        var used = new Dictionary<string, int>(StringComparer.Ordinal);
+        var anchors = new EntryAnchors();
         foreach (var note in notes)
         {
-            var seen = used.GetValueOrDefault(note.Label) + 1;
-            used[note.Label] = seen;
             yield return new KnowledgeEntry(
                 repository, EntryKind.Decision, Provenance.Local, $"{name} › {note.Label}", note.Body, relative,
-                seen == 1 ? note.Label : $"{note.Label} ({seen})",
+                anchors.Next(note.Label),
                 Lines: new LineSpan(read.First - 1 + note.First, read.First - 1 + note.Last));
         }
     }
@@ -473,8 +472,8 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     /// The folder the README is in, since the index is the folder and the README only names its files; a declared
     /// folder is that folder. A README at the repository's root is read alone: its folder is the whole repository,
     /// and the index is the small, reviewed statement of where things are, never every file beside it. A section
-    /// or a row is anchored by its title, a title twice in one file told apart by its count (REV3); text before any
-    /// heading is the file's own, unanchored.
+    /// or a row is anchored by its title, a title twice in one file told apart by its count (REV3) and never given an
+    /// anchor already given (<see cref="EntryAnchors"/>, ORIENT2h3); text before any heading is the file's own, unanchored.
     /// </remarks>
     private static IEnumerable<KnowledgeEntry> ScanDeclaredIndex(
         string root, string repository, string declared, ISet<string> indexed)
@@ -499,17 +498,14 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
             if (indexed.Contains(relative)) continue;
             if (ReadDocumentAt(root, relative) is not { } read) continue;
 
-            var used = new Dictionary<string, int>(StringComparer.Ordinal);
+            var anchors = new EntryAnchors();
             foreach (var section in IndexSections.Read(read.Text, relative, read.First))
             {
                 // The file's opening is the file, unanchored; prose before any heading after a table is a second run
-                // of it, and anchored as a repeat, so no two entries share an id (REV3). A row is counted with the
-                // sections, since a row's title can be a subsection's.
-                var seen = used.GetValueOrDefault(section.Title) + 1;
-                used[section.Title] = seen;
-                var anchor = section.Opening && seen == 1 ? null
-                    : seen == 1 ? section.Title
-                    : $"{section.Title} ({seen})";
+                // of it, and anchored as a repeat, so no two entries share an id (REV3). A row is anchored with the
+                // sections, since a row's title can be a subsection's (ORIENT2h3: each anchor reserved).
+                var anchor = anchors.Next(section.Title);
+                if (section.Opening && anchor == section.Title) anchor = null;
                 yield return new KnowledgeEntry(
                     repository, EntryKind.Index, Provenance.Local, section.Title, section.Body, relative, anchor,
                     Lines: section.Lines);
@@ -608,13 +604,12 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     {
         // 🔴 An anchor is unique within its file (REV3). Two sections under one heading — date-only fix
         // headings do it — shared an id, and the store's primary key threw on the second, failing the
-        // whole refresh. The first keeps the id it always had; each repeat is told apart by its count.
-        var used = new Dictionary<string, int>(StringComparer.Ordinal);
+        // whole refresh. The first keeps the id it always had; each repeat is told apart by its count, and
+        // a heading that is another's counted anchor gets the next free one (ORIENT2h3).
+        var anchors = new EntryAnchors();
         foreach (var section in MarkdownSections.Split(read.Text))
         {
             if (section.Body.Length == 0) continue;
-            var seen = used.GetValueOrDefault(section.Heading) + 1;
-            used[section.Heading] = seen;
             yield return new KnowledgeEntry(
                 repository,
                 kind,
@@ -622,7 +617,7 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
                 section.Heading,
                 section.Body,
                 relativePath,
-                seen == 1 ? section.Heading : $"{section.Heading} ({seen})",
+                anchors.Next(section.Heading),
                 Lines: Span(section, read.First));
         }
     }
