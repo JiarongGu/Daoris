@@ -45,7 +45,7 @@ export function AttentionList({ items, doors = {}, acts, acting = null, held, be
         <Tip content={t('work.attention.hint')}>
           <h2 className="m-0 text-title font-semibold">{t('work.attention.title')}</h2>
         </Tip>
-        <span className="font-mono text-meta tabular-nums text-st-open">{items.length}</span>
+        <span className="font-mono text-meta tabular-nums text-ink-open">{items.length}</span>
       </header>
       {attentionGroups(items).map(({ group, items: rows }) => {
         const shown = group === 'ready' ? rows.slice(0, READY_SHOWN) : rows;

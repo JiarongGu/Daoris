@@ -11959,3 +11959,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **WAITCLAIM3 — a remote refuses a move from a machine whose take lost** (service; after WAITCLAIM2). WAITCLAIM2 refuses such a done, decline or wait inside the store's write on the machine that makes it; a remote still judges a push by the transition table alone, so a machine on an older build can still push one. Refuse it at `ReceiveAsync` by the same `QuestLog.Claim`, answering the pusher as a lost claim. Contract: D69's WAITCLAIM2 note ("What the gates do not cover"). Proof: a two-machine sync test where an older machine's done after its lost take is refused at the remote.
 
 **Outcome** 2026-10-07: a remote refuses a done, decline or wait pushed by a machine whose take lost, by the same rule as the store's verbs (`QuestLog.OnALostTake`), answering under `refused` in the lost take's words; the winner's quest neither closes nor waits. Follow-up: WAITCLAIM4. Detail: D69's WAITCLAIM3 note, FIX-LOG; commits 86682011, 62a5da05.
+
+
+## UXFIX5c — every status hue has an ink for words (2026-10-07)
+
+> - [ ] **UXFIX5c — every status hue has an ink for words** (web-shell, web-settings). After UXFIX5 only danger has a text ink: open and done drawn as words read 3.0–3.8:1 in light (pills, ChainLine, +counts) and 4.1–4.4:1 in dark on soft fields over an overlay. Give each status hue an ink held to 4.5:1 as `--ink-danger` is, leaving the terminal's ANSI mapping alone. Contract: platform-ux §3. Proof: `tokens.test.ts` floors per hue; stories in both themes.
+
+**Outcome** 2026-10-07: open, taken and done words wear their own inks (`--ink-open`, `--ink-taken`, `--ink-done`), each its fill's hue with lightness moved until it reads 4.6:1 or better on every surface and its own soft field in both themes; `tokens.test.ts` scans every status hue drawn as words. Detail: platform-ux §3; commit d330e4db.

@@ -14,7 +14,7 @@
 .hljs-regexp,
 .hljs-symbol,
 .hljs-addition {
-  color: var(--st-done);
+  color: var(--ink-done);
 }
 
 .hljs-number,
@@ -22,7 +22,7 @@
 .hljs-attribute,
 .hljs-variable,
 .hljs-template-variable {
-  color: var(--st-taken);
+  color: var(--ink-taken);
 }
 
 .hljs-comment,

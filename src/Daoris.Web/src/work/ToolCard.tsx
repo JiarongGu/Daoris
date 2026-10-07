@@ -129,7 +129,7 @@ export function ToolCard({ call, tree }: {
     <>
       {counts && (
         <span className="shrink-0 font-mono text-meta">
-          <span className="text-st-done">+{counts.added}</span>{' '}
+          <span className="text-ink-done">+{counts.added}</span>{' '}
           <span className="text-ink-danger">−{counts.removed}</span>
         </span>
       )}

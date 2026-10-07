@@ -503,7 +503,7 @@ export function LayeredMap({ topology, selected, onSelect, tools }: {
                   {node.id}
                 </text>
                 {there && (
-                  <text x={left + 14} y={card.y + 14} className={cn('text-meta', there === 'parked' ? 'fill-st-open' : 'fill-ink-soft')}>
+                  <text x={left + 14} y={card.y + 14} className={cn('text-meta', there === 'parked' ? 'fill-ink-open' : 'fill-ink-soft')}>
                     {t(there === 'parked' ? 'map.parked' : 'map.working')}{howMany(node.sessions)}
                   </text>
                 )}
