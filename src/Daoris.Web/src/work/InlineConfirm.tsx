@@ -148,10 +148,15 @@ function giveBack(opener: Opener) {
  * - **Landed, the focus goes where a cancel's does** (UXFIX2c): the press drawn again, and where none is, since a delete took
  *   its record or nothing more is offered, the nearest section or list that held it, never the page's body.
  * - **A rich body** (a clear's *What goes* and *What stays*) is its explanation too: `block` lays it out as rows.
+ * - **The move wears danger's hue**, since it is a destructive edit's; an outward-facing act that destroys nothing (a
+ *   landing, LAND4) asks the same way with the primary's (`tone`), so the hue never says something goes when nothing does.
  */
 export function InlineConfirm({
   label, says, meanIt, block = false, busy = false, ready = true, refused = null, children, onConfirm, onClose, className,
+  tone = 'danger',
 }: {
+  /** The move's hue: danger's for a destructive edit, the default; the primary's for an act that destroys nothing. */
+  tone?: 'danger' | 'primary';
   /** The ask's name, as a reader hears the group: *delete this quest*. */
   label: string;
   /** What the second press does: a sentence, or a body of rows. It takes the focus on opening and describes the move. */
@@ -282,7 +287,7 @@ export function InlineConfirm({
     <>
       {meanIt && (
         <Button
-          variant="danger"
+          variant={tone}
           disabled={waiting || !ready}
           aria-describedby={refusal ? `${saysId} ${refusalId}` : saysId}
           onClick={confirm}

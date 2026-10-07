@@ -2983,6 +2983,48 @@ describe('acting on what a session landed', () => {
     expect(notify).not.toHaveBeenCalledWith(expect.stringContaining('it is gone already'), 'error');
   });
 
+  /**
+   * LAND4 (D102's LAND4 note, the owner's case): a failed session's commits stayed in its tree and nothing offered to land
+   * them. Where the driver's reader says what its tree offers to land, its page says the commits, the branch and the tree
+   * beside what it left, and *Accept…* asks once, saying where the rule puts it, then presses the review's own landing; the
+   * driver's sentence is said once it landed, and a refusal inside the ask.
+   */
+  it('offers a failed session’s commits to land on its page, and lands them through the review’s own door', async () => {
+    SESSIONS = [{ ...IN_A_TREE, state: 'failed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
+    let landed = { session: 's1a2b3c4', done: true, message: 'put its work on `feature/kepak` — 1 commit(s).' };
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_GROUPS') {
+        return { sessions: [{ session: 's1a2b3c4', group: 'ended', shown: 'failed', archived: false, teammate: false,
+          lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] };
+      }
+      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/kepak', source: 'workspace' };
+      if (type === 'LAND_SESSION_TREE') return landed;
+      if (type === 'SESSION_DIFF') return DIFF;
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+
+    show('s1a2b3c4', notify);
+    await userEvent.click(await screen.findByRole('button', { name: 'Accept…' }));
+    expect(screen.getByText('in its tree s-4e6837ed')).toBeTruthy();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', expect.anything());
+    const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
+    await within(ask).findByText(/on a new branch/);
+    expect(ask).toHaveTextContent('Accepting puts this work on a new branch, feature/kepak, for you to push and open a pull request from.');
+
+    await userEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', { payload: { id: 's1a2b3c4' }, timeoutMs: 6 * 60_000 });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('put its work on `feature/kepak` — 1 commit(s).'));
+    await vi.waitFor(() => expect(screen.queryByRole('group', { name: 'accept daoris/s-4e6837ed' })).toBeNull());
+
+    // A refusal is the driver's sentence, said inside the ask, which stays open.
+    landed = { session: 's1a2b3c4', done: false, message: 'the session\'s tree has uncommitted work — 2 path(s) — which a branch would leave behind.' };
+    await userEvent.click(await screen.findByRole('button', { name: 'Accept…' }));
+    await userEvent.click(within(screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' })).getByRole('button', { name: 'Accept' }));
+    expect(await within(screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' })).findByRole('alert'))
+      .toHaveTextContent('which a branch would leave behind.');
+  });
+
   it('accepts by asking the driver to land the work, and renders whatever it says back', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_DIFF') return DIFF;

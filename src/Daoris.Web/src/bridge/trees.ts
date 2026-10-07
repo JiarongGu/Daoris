@@ -298,6 +298,9 @@ export const useLandSessionTree = () => {
         void client.invalidateQueries({ queryKey: keys.allSessions });
         // A branch just made may now be handed on (WSR5b) — its plugin failed, or the rule names none.
         void client.invalidateQueries({ queryKey: keys.handOff(result.session) });
+        // LAND4: the clean-up's list said its branch held work no branch of the person's did, which a session's head reads
+        // once the reader offers nothing to land; it holds none now.
+        void client.invalidateQueries({ queryKey: keys.sweep });
       }
     },
   });

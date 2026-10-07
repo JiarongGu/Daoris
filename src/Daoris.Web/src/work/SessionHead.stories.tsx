@@ -223,6 +223,33 @@ export const FailedItsBranchLeft: Story = {
 };
 
 /**
+ * Failed, its tree still here holding a commit no branch of the person's holds (LAND4, the owner's case): what it left, its
+ * branch and its tree, with *Accept…*, which asks once under the line, saying where the rule puts it.
+ */
+export const FailedItsWorkToLand: Story = {
+  args: {
+    session: {
+      ...SESSION, state: 'failed', created: at(40), updated: at(31), note: 'the process exited 1 with the quest unexplained.',
+    },
+    lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 },
+    landing: { form: 'branch', target: 'feature/streaming-budget', plugin: 'azure-devops-pull-request' },
+    onReview: () => {},
+    onLand: () => {},
+  },
+};
+
+/** Finished at a checkpoint by the person, its commits not landed yet (LAND4): the same offer, with no word that it did not finish. */
+export const FinishedAtACheckpointToLand: Story = {
+  args: {
+    ...FailedItsWorkToLand.args,
+    session: {
+      ...SESSION, state: 'completed', created: at(40), updated: at(31), note: 'The person finished this at a checkpoint.',
+    },
+    lands: { branch: 'daoris/s-56cb4d29', tree: 's-56cb4d29', commits: 2, uncommitted: 0 },
+  },
+};
+
+/**
  * UXFIX4b: the same with a long branch name, at the main area's 400 px floor less a page's gutters. The name is whole,
  * wrapping after its separators on the line's own row, where it was cut to one line with nothing to read the rest by.
  */

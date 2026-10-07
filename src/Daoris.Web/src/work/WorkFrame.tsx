@@ -9,7 +9,7 @@ import {
   NO_TURNS, useChatTurns, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionStreams, useSessionWhere,
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
-  useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch,
+  useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree,
 } from '../shell';
 import { sayDiscard } from '../settings/Sweep';
 import { doorOf, toolOf } from '../tools';
@@ -958,6 +958,11 @@ export function WorkFrame({
 
   // The attended session's page header (§3.2): its acts by the one rule, its stop asking under it (§3.3).
   const grouping = attended ? (groups.data ?? []).find((row) => row.session === attended.id) ?? null : null;
+  // What its own tree offers to land, whatever its ending (LAND4), as the driver's reader said it, and where accepting would
+  // put it: the review's own plan, asked only where there is something to land, under the review's key.
+  const lands = attended && here && grouping?.lands ? grouping.lands : null;
+  const landing = useLanding(lands ? attended!.id : null);
+  const land = useLandSessionTree();
   const attendedFacts: ActFacts | null = attended
     ? { session: attended, quest, grouping, root: rootOf(attended.repository), where: where[attended.id] }
     : null;
@@ -1204,6 +1209,21 @@ export function WorkFrame({
               })
               : undefined}
             discardingBranch={discardBranch.isPending}
+            // LAND4: commits its tree holds, offered to land beside what it left; the press is the review's Accept, its
+            // sentence said once it landed and a refusal said inside the ask (UXFIX2).
+            lands={lands}
+            landing={landing.data}
+            onLand={lands && attended ? (answered) => land.mutate(attended.id, {
+              onSuccess: (result) => {
+                if (!result.done) {
+                  answered.refused(result.message);
+                  return;
+                }
+                notify(result.message);
+                answered.done();
+              },
+              onError: (error) => answered.refused(sentence(error)),
+            }) : undefined}
             trace={attended && trace.available ? {
               open: tracing === attended.id,
               onToggle: () => setTracing(tracing === attended.id ? null : attended.id),
