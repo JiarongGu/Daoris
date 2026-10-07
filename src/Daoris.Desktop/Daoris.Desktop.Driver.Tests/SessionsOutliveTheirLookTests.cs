@@ -571,6 +571,73 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
         Assert.Equal(new LoopEnded(0, "driver: stopped.", Failed: false), DriverCommand.Cancelled(closed, closing.IsCancellationRequested));
     }
 
+    // ——— DEV3b (D115's DEV3b note on the losing session): a stop made by a pass beside the sessions is said as that pass ends, so
+    // the run that made it says so whatever ends the process after: the family rehearsal's run had stopped its session, its record
+    // said so, and its print held only its look, the passes' lines kept back for its end.
+
+    /// <summary>
+    /// 🔴 The family rehearsal's lost-claim case, as it failed after DEV3a: the look's sync cannot reach the remote, a later pass
+    /// beside the session can, finds the take lost and stops the session. The stop is said as that pass ends, while the stopped
+    /// run still writes how it ended, and before anything after it can end the run; each line is said once, and the said parts
+    /// are the report.
+    /// </summary>
+    [Fact]
+    public async Task Run_once_says_a_stop_a_later_pass_made_as_that_pass_ends_when_the_first_could_not_reach_the_remote()
+    {
+        const string Away = "the remote could not be reached (No connection could be made because the target machine actively refused it. (localhost:5191))";
+        using var sync = RemoteSyncSet.Watching(
+            StandInLedger.Url, null, () => new Dictionary<string, RemoteTarget> { ["default"] = new("http://remote.test", "dk_test") }, _ledger);
+        _ledger.Publish("q1", "engine");
+        _ledger.SyncProblem = Away;
+        _ledger.Claim = "unconfirmed";
+        var (driver, runs) = Driver(Config(), sync);
+        var landed = new TaskCompletionSource();
+        runs.StopLands = landed.Task;
+        // The remote comes back once a pass beside the session has met it away, and this machine's take has lost there.
+        runs.OnOpen = quest => _ = Task.Run(async () =>
+        {
+            await Poll.Until(() => _ledger.SyncPasses >= 2, () => $"{quest}: {_ledger.SyncPasses} pass(es)", Bound);
+            _ledger.SyncProblem = null;
+            _ledger.Claim = "lost";
+        });
+        var said = new List<TickReport>();
+        bool Stopped()
+        {
+            lock (said) return said.Any(each => each.Events.Any(line => line.StartsWith("stop  session s1 (#q1): ", StringComparison.Ordinal)));
+        }
+
+        var run = driver.RunOnceAsync(_closing.Token, said: each =>
+        {
+            lock (said) said.Add(each);
+        });
+        try
+        {
+            await Poll.Until(Stopped, () => { lock (said) return string.Join(" | ", said.SelectMany(each => each.Events)); }, Bound);
+            // A pass more while the stopped run still writes how it ended, which asks again and stops nothing again.
+            var asked = _ledger.ClaimsAsked("q1");
+            await Poll.Until(() => _ledger.ClaimsAsked("q1") > asked, () => $"{_ledger.ClaimsAsked("q1")} claim question(s)", Bound);
+
+            Assert.False(run.IsCompleted);
+            Assert.Equal("working", State("s1"));
+        }
+        finally
+        {
+            landed.TrySetResult();
+        }
+
+        var report = await run.WaitAsync(Bound);
+
+        Assert.Equal($"sync  default: quests: {Away}", report.Events[0]);
+        Assert.Single(report.Events, line => line == $"stop  session s1 (#q1): {Daoris.Driver.Driver.LostClaim}");
+        Assert.Contains(report.Events, line => line.StartsWith("stood-down  session s1 (#q1 → engine)", StringComparison.Ordinal));
+        Assert.Equal(("stood-down", "ended.lost-claim"), (State("s1"), _ledger.Session("s1")["noteParts"]![0]!["code"]!.GetValue<string>()));
+        lock (said)
+        {
+            Assert.Equal(report.Events, said.SelectMany(each => each.Events));
+            Assert.Equal(report.Concluded, said.SelectMany(each => each.Concluded));
+        }
+    }
+
     private string State(string session) => _ledger.Session(session)["state"]!.GetValue<string>();
 
     /// <summary>A look's or a watch's end, waited for within the bound, whatever it ended on.</summary>
@@ -599,6 +666,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
             service, config, adapters, _home, sync: sync, harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")))
         {
             Runner = runs.Runner,
+            Stops = runs.Stops,
         };
         runs.Keeping = driver.Running;
         return (driver, runs);
