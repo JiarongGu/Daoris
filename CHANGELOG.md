@@ -99,6 +99,8 @@ with the version and date at release.
   row says when it was last read rather than how long it has waited.
 - A workspace's history reading no longer says a clear would take nothing beside a *Clear history…*
   that would take records.
+- Knowledge search reads an index's tables a row at a time, so a question about one route or one
+  command lands on its row and names its line.
 
 The first version: doctrine that installs, is checked, and flows back.
 

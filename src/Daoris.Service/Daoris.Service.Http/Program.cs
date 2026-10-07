@@ -1712,7 +1712,8 @@ static HistoryUnitResponse ToHistoryUnit(HistoryUnit unit) => new(
     [.. unit.Kept.Select(ToHistoryRefusal)]);
 
 static HistoryRefusalResponse ToHistoryRefusal(HistoryKept kept) => new(
-    HistoryKept.Spell(kept.Refusal), kept.Message, kept.Quest, kept.Ask, kept.Session, kept.Origin, kept.Workspace);
+    HistoryKept.Spell(kept.Refusal), kept.Message, kept.Quest, kept.Ask, kept.Session, kept.Origin, kept.Workspace,
+    kept.Waits is { } waits ? HistoryKept.Spell(waits) : null);
 
 // A caller on this machine — which is what "the root never leaves the machine" means in practice. A
 // null remote address is the in-process test server, which is this process and therefore local.

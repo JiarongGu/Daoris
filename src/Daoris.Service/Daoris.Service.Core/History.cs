@@ -52,6 +52,29 @@ public enum HistoryRefusal
     NotOurs,
 }
 
+/// <summary>
+/// Which thing waits on the person, where a unit stays for <see cref="HistoryRefusal.NeedsYou"/> (HIST1l): named by the desk
+/// that judged it, so the driver says the sentence meant from the refusal itself rather than from a second read of the
+/// records, which may have moved between the two.
+/// </summary>
+public enum HistoryWaiting
+{
+    /// <summary>A session of the work parked to ask the person.</summary>
+    Parked,
+
+    /// <summary>A done held for the person's yes.</summary>
+    Held,
+
+    /// <summary>A conflict on a quest of the work that nobody dismissed.</summary>
+    Conflict,
+
+    /// <summary>The ask, proposed or open: the person has yet to publish or close it.</summary>
+    Ask,
+
+    /// <summary>A rule proposal nobody settled: from a session of the work where it names one, else for the ask.</summary>
+    Proposal,
+}
+
 /// <summary>A unit as a press names it: its kind and its quest's or ask's id.</summary>
 public sealed record HistoryUnitRef(HistoryUnitKind Kind, string Id)
 {
@@ -85,6 +108,9 @@ public sealed record HistoryKept(HistoryRefusal Refusal, string Message)
     /// <summary>The workspace whose remote has yet to take a move or a record of it.</summary>
     public string? Workspace { get; init; }
 
+    /// <summary>What waits on the person, for <see cref="HistoryRefusal.NeedsYou"/> only (HIST1l); null for every other word.</summary>
+    public HistoryWaiting? Waits { get; init; }
+
     /// <summary>The refusal's word on the wire, kebab-case as every word there: <c>needs-you</c>, <c>not-ours</c>.</summary>
     public static string Spell(HistoryRefusal refusal) => refusal switch
     {
@@ -92,6 +118,9 @@ public sealed record HistoryKept(HistoryRefusal Refusal, string Message)
         HistoryRefusal.NotOurs => "not-ours",
         _ => refusal.ToString().ToLowerInvariant(),
     };
+
+    /// <summary>What waits, as the wire's <c>waits</c> says it: <c>parked</c>, <c>held</c>, <c>conflict</c>, <c>ask</c>, <c>proposal</c>.</summary>
+    public static string Spell(HistoryWaiting waiting) => waiting.ToString().ToLowerInvariant();
 }
 
 /// <summary>
@@ -525,14 +554,14 @@ public sealed class HistoryDesk(
     {
         foreach (var session in work.Sessions.Where(session => session.Origin is null && session.State == SessionState.AwaitingPerson))
         {
-            return new HistoryKept(HistoryRefusal.NeedsYou, $"Session `{session.Id}` waits on you.") { Session = session.Id };
+            return Waiting(HistoryWaiting.Parked, $"Session `{session.Id}` waits on you.") with { Session = session.Id };
         }
 
         foreach (var (quest, _, _) in work.Quests)
         {
             if (quest.Held)
             {
-                return new HistoryKept(HistoryRefusal.NeedsYou, $"Quest `#{quest.Id}` is done and waits for you to accept it.")
+                return Waiting(HistoryWaiting.Held, $"Quest `#{quest.Id}` is done and waits for you to accept it.") with
                 {
                     Quest = quest.Id,
                 };
@@ -540,13 +569,13 @@ public sealed class HistoryDesk(
 
             if (quest.Conflicts.Count > 0)
             {
-                return new HistoryKept(HistoryRefusal.NeedsYou, $"A conflict on `#{quest.Id}` waits on you.") { Quest = quest.Id };
+                return Waiting(HistoryWaiting.Conflict, $"A conflict on `#{quest.Id}` waits on you.") with { Quest = quest.Id };
             }
         }
 
         if (ask is { State: AskState.Open or AskState.Proposed })
         {
-            return new HistoryKept(HistoryRefusal.NeedsYou, $"Ask `#{ask.Id}` waits for you to publish or close it.") { Ask = ask.Id };
+            return Waiting(HistoryWaiting.Ask, $"Ask `#{ask.Id}` waits for you to publish or close it.") with { Ask = ask.Id };
         }
 
         var own = work.Sessions.Where(session => session.Origin is null).Select(session => session.Id).ToHashSet(StringComparer.Ordinal);
@@ -557,15 +586,21 @@ public sealed class HistoryDesk(
     /// <summary>A rule proposal still waiting that <paramref name="made"/> says the work made, if any.</summary>
     private static HistoryKept? Proposed(Wiring wiring, Func<RuleProposalNote, bool> made) =>
         wiring.Proposals.FirstOrDefault(note => note.Pending && made(note)) is { } pending
-            ? new HistoryKept(
-                HistoryRefusal.NeedsYou,
+            ? Waiting(
+                HistoryWaiting.Proposal,
                 pending.Session is { } session
                     ? $"A rule proposal from session `{session}` waits on you."
-                    : $"A rule proposal for ask `#{pending.Ask}` waits on you.")
+                    : $"A rule proposal for ask `#{pending.Ask}` waits on you.") with
             {
                 Session = pending.Session, Ask = pending.Ask,
             }
             : null;
+
+    /// <summary>
+    /// A <see cref="HistoryRefusal.NeedsYou"/> that names what waits (HIST1l): the one way the desk says the word, so none of
+    /// its sentences reaches the wire without the variant the driver reads in place of the records.
+    /// </summary>
+    private static HistoryKept Waiting(HistoryWaiting waits, string message) => new(HistoryRefusal.NeedsYou, message) { Waits = waits };
 
     /// <summary>
     /// A record of this machine's, of a repository joined in its wired workspace, written after the last push: the team's

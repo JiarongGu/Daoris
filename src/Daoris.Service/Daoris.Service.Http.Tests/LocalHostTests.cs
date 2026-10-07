@@ -1137,7 +1137,139 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         var outcome = pressed.Json.GetProperty("units")[0];
         Assert.Equal((200, false), (pressed.Status, outcome.GetProperty("cleared").GetBoolean()));
         Assert.Equal("open", outcome.GetProperty("unit").GetProperty("refusal").GetProperty("refusal").GetString());
+        Assert.False(refusal.TryGetProperty("waits", out _));
         Assert.True(await ListedAsync(quest));
+    }
+
+    /// <summary>
+    /// HIST1l: a <c>needs-you</c> names what waits beside its word, in <c>waits</c>, at both doors, so the driver says the sentence
+    /// meant without reading the records again (design §6.3). Additive: the word is unchanged, and no other word carries it.
+    /// </summary>
+    [Theory]
+    [InlineData("parked", "parked")]
+    [InlineData("held", "held")]
+    [InlineData("conflict", "conflict")]
+    [InlineData("ask", "ask")]
+    [InlineData("proposal", "proposal")]
+    [InlineData("proposal for the ask", "proposal")]
+    [InlineData("proposal of a failed session", "proposal")]
+    public async Task A_needs_you_names_what_waits_beside_its_word(string waiting, string waits)
+    {
+        var tidy = new List<Action>();
+        try
+        {
+            var query = await WaitingAsync(waiting, tidy);
+
+            var listed = await host.GetAsync($"/api/history?{query}");
+            var unit = listed.Json.GetProperty("units")[0];
+            var pressed = await host.PostAsync("/api/history/clear", new
+            {
+                units = new[] { new { kind = unit.GetProperty("kind").GetString(), id = unit.GetProperty("id").GetString() } },
+            });
+
+            Assert.Equal((200, 200), (listed.Status, pressed.Status));
+            var refusal = unit.GetProperty("refusal");
+            Assert.Equal(("needs-you", waits), (refusal.GetProperty("refusal").GetString(), refusal.GetProperty("waits").GetString()));
+            var kept = pressed.Json.GetProperty("units")[0];
+            Assert.False(kept.GetProperty("cleared").GetBoolean());
+            Assert.Equal(waits, kept.GetProperty("unit").GetProperty("refusal").GetProperty("waits").GetString());
+        }
+        finally
+        {
+            foreach (var each in tidy) each();
+        }
+    }
+
+    /// <summary>
+    /// The records for one of <see cref="A_needs_you_names_what_waits_beside_its_word"/>'s rows; the history door's query. What
+    /// would reach another test on this shared host (a parked session holds its repository, a proposal waits) goes to
+    /// <paramref name="tidy"/>.
+    /// </summary>
+    private async Task<string> WaitingAsync(string waiting, List<Action> tidy)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var proposals = new RuleProposalBox(host.Home);
+        var change = new RuleChange("add", "machine", null, "deny", "Bash(rm:*)", null, null);
+        async Task<Session> ServedAsync(string quest, SessionState state)
+        {
+            var session = await host.Composed.Sessions.CreateAsync(quest, "Keeper", "stub", now, workspace: Workspaces.Default);
+            tidy.Add(() => host.Composed.Sessions.DeleteAsync(session.Id).GetAwaiter().GetResult());
+            return (await host.Composed.Sessions.SetStateAsync(session.Id, state, null, null, null, now))!;
+        }
+
+        void Propose(string why, string? session, string? ask)
+        {
+            var (id, said) = proposals.Propose(change, why, session, ask, null, now);
+            Assert.True(id is not null, said);
+            tidy.Add(() => proposals.Forget(id));
+        }
+
+        switch (waiting)
+        {
+            case "parked":
+            {
+                var quest = await ClosedAsync("A quest whose session parked to ask, so its history stays");
+                await ServedAsync(quest, SessionState.AwaitingPerson);
+                return $"quest={quest}";
+            }
+
+            case "held":
+            {
+                var quest = await PublishAsync("A quest done another way, held for a yes, so its history stays");
+                Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
+                await host.Composed.Quests.MoveAsync(
+                    quest, QuestStatus.Done, "Done another way.", now,
+                    answers: [new QuestAnswer(1, null, "The words asked for the other way.", "the other way")]);
+                return $"quest={quest}";
+            }
+
+            case "conflict":
+            {
+                // Another machine's move lost to a third's, as a fetch brings it: a closed quest still takes a conflict. In a
+                // workspace of its own, so the default one's cursor stays where the other tests left it.
+                const string id = "c0ffeec0ffee";
+                var published = new Quest(id, "Asker", "Keeper", "A move lost on another machine", "why", QuestStatus.Open, null, now, now, "conflicted");
+                await host.Composed.Quests.IntegrateAsync("conflicted",
+                [
+                    new QuestOperation(id, QuestOperationKind.Published, "m2", 1, now, Published: published, Number: 1),
+                    new QuestOperation(id, QuestOperationKind.Taken, "m2", 2, now, Number: 2),
+                    new QuestOperation(id, QuestOperationKind.Done, "m2", 3, now, "Landed.", Number: 3),
+                    new QuestOperation(id, QuestOperationKind.Conflict, "m3", 1, now, "late", Attempted: QuestStatus.Taken, Number: 4),
+                ], 4);
+                return $"quest={id}";
+            }
+
+            case "ask":
+            {
+                var ask = (await host.Composed.Asks.AskAsync(new AskRequest(Workspaces.Default, "Somebody should look at the history"), now)).Ask!;
+                tidy.Add(() => host.Composed.Asks.DeleteAsync(ask.Id, now).GetAwaiter().GetResult());
+                return $"ask={ask.Id}";
+            }
+
+            case "proposal":
+            {
+                var quest = await ClosedAsync("A quest whose session proposed a rule, so its history stays");
+                Propose("it should not", (await ServedAsync(quest, SessionState.Completed)).Id, null);
+                return $"quest={quest}";
+            }
+
+            case "proposal for the ask":
+            {
+                var ask = (await host.Composed.Asks.AskAsync(
+                    new AskRequest(Workspaces.Default, "Fix the history's other thing") { To = "Keeper" }, now)).Ask!;
+                Assert.Equal(200, (await host.PostAsync($"/api/quests/{ask.Quests[0]}/respond", new { action = "take" })).Status);
+                Assert.Equal(200, (await host.PostAsync($"/api/quests/{ask.Quests[0]}/respond", new { action = "done", reason = "Fixed." })).Status);
+                Propose("its intake asked", null, ask.Id);
+                return $"ask={ask.Id}";
+            }
+
+            default:
+            {
+                var quest = await ClosedAsync("A quest whose failed session proposed a rule");
+                Propose("it should not", (await ServedAsync(quest, SessionState.Failed)).Id, null);
+                return $"quest={quest}&failed=true";
+            }
+        }
     }
 
     /// <summary>A listing names exactly one scope, and a press names each unit by a kind it knows and an id: anything else is 400.</summary>

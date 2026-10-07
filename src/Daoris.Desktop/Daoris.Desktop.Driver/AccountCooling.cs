@@ -410,14 +410,21 @@ public sealed record AccountLine(string Event, IReadOnlyList<(string Key, object
 /// ready time, and what was held. The tick report carries it, so a screen shows a quest as waiting for an account rather
 /// than parked, and the attention watch says it once.
 /// </summary>
+/// <remarks>
+/// <b>Or held on accounts not signed in with none cooling</b> (UX6d1, TOOL6g): a wait for a person, not a time, with no
+/// <see cref="Until"/> and no <see cref="Account"/>, its <see cref="SignedOut"/> the accounts a sign-in frees. One per agent,
+/// as the log's <c>starts.waiting</c> line is, so an ask's intake held so reaches the page, which a consideration (quests
+/// alone) never carried.
+/// </remarks>
 /// <param name="Adapter">The adapter the held starts ride.</param>
 /// <param name="Agent">Whose accounts: the owner a door runs as (AGT7).</param>
-/// <param name="Account">The profile's name, or null for the tool's own home.</param>
+/// <param name="Account">The profile's name, or null for the tool's own home; null too for a wait on signed-out accounts.</param>
 /// <param name="Workspace">The workspace the held starts belong to, where they share one; else null.</param>
-/// <param name="Until">When the account is offered again: the first ready time.</param>
+/// <param name="Until">When the account is offered again: the first ready time. Null where none cools and a sign-in is the wait.</param>
+/// <param name="Stated">Whether the agent named <paramref name="Until"/>; false where there is none.</param>
 /// <param name="Sentence">The hold's sentence, which each held quest's reason carries.</param>
 public sealed record AccountWait(
-    string Adapter, string Agent, string? Account, string? Workspace, DateTimeOffset Until, bool Stated, string Sentence)
+    string Adapter, string Agent, string? Account, string? Workspace, DateTimeOffset? Until, bool Stated, string Sentence)
 {
     /// <summary>The quests held, in plan order.</summary>
     public IReadOnlyList<string> Quests { get; init; } = [];
@@ -430,7 +437,7 @@ public sealed record AccountWait(
 
     /// <summary>
     /// The accounts the held starts passed not signed in (TOOL6g), in the order the walk tried them: a sign-in starts them
-    /// sooner than the reset. Empty where none was.
+    /// sooner than the reset, or at all where none cools (UX6d1). Empty where none was.
     /// </summary>
     public IReadOnlyList<string> SignedOut { get; init; } = [];
 

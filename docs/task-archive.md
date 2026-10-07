@@ -11763,3 +11763,31 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **HIST1k — the reading never says nothing beside a clear** (web-shell). `readingSaid` picks "takes nothing" from `takes.bytes` alone (`history.ts:314`), while `clearList` offers *Clear history…* for a closed quest with records and no files. Choose the sentence from the units' counts too. Contract: design §6.1, the review. Proof: a vitest with records and zero bytes.
 
 **Outcome** 2026-10-07: `readingSaid` chooses from the counts as well as the bytes: records alone say so, files alone say what they free even at 0 B, and *nothing* is said only where no clear is offered. Detail: D153's HIST1k note; commit 2455281a.
+
+
+## MOD9b — the lane scan sees .NET reads under tools (2026-10-07, D115)
+
+> - [ ] **MOD9b — the lane scan sees .NET reads under tools** (cli, tools). MOD9's scan in `merge-branch.test.ts` matches only .NET reads of paths starting `"src", "Daoris.…"`, so `DecisionNotesTests` reading `tools/orient-index-fixtures/` was not asked for a lane row; it was remembered (ORIENT1h). Match `"tools", …` too. Contract: MOD9, parallel-development design §3. Proof: the scan fails until such a fixture reaches its suite.
+
+**Outcome** 2026-10-07: the lane scan sees .NET reads under every top-level folder, not only `src/`; it found two missing REACH rows, both the driver's (`examples/plugins/**` for `PluginOfferTests`, `.claude/knowledge/adoption.md` for `SetupBriefTests`), now added. Reads from a source root are MOD9c. Detail: D115's MOD9b note; commits f468a49d, c1e635ba.
+
+
+## HIST1l — the service names which needs-you it meant (2026-10-07, D153)
+
+> - [ ] **HIST1l — the service names which needs-you it meant** (service, driver). The driver rebuilds whether `needs-you` was a held done, a conflict, a parked session or a proposal from a second snapshot (`HistoryClearing.cs:492`); carry the variant on the wire, additive, keeping the inference for older hosts. Contract: design §6.3, the review. Proof: desk and route tests for each variant; the driver reads it.
+
+**Outcome** 2026-10-07: the history desk names what waits beside `needs-you` (`waits`: parked, held, conflict, ask, proposal), additively on both doors; the driver says its sentence from it, falling back to the records for an older host or an unknown word. Follow-up: HIST1m. Detail: D153's HIST1l note; commits d0101f41, 453660bf.
+
+
+## ORIENT2h — a declared index's tables are read a row at a time (2026-10-07, D151)
+
+> - [ ] **ORIENT2h — a declared index's tables are read a row at a time** (service). Heading-split sections lose long tables: *where is the SESSION_GO_ON_NEW handler* asked of kind `index` did not reach the 102-row section holding the row, five short sections outranking it (BM25 weighs one matching row against a long section; ORIENT1c's finding). Read a table's rows as entries naming their own line. Contract: D151's ORIENT2e note, ORIENT1c. Proof: the route question lands on its row first.
+
+**Outcome** 2026-10-07: a declared index's tables are read a row at a time: each row an `index` entry titled by its headings and its column-named label, naming its own line, so the route question lands on its row first; prose stays a section. 435 rows of 571 entries here. Follow-up: ORIENT2h2. Detail: D151's ORIENT2h note; commits faacada6, b72bfbeb.
+
+
+## UX6d1 — a held intake with no account cooling reaches the page (2026-10-07, D150)
+
+> - [ ] **UX6d1 — a held intake with no account cooling reaches the page** (driver; modules forward it). `Driver.Waits` makes a wait only from a cool-off and `Considerations.Blocked` names quests alone, so an intake held on signed-out accounts with none cooling is only a `starts.waiting` log line and What needs you cannot list it. Contract: D150 §6.2, D130 §3.3, TOOL6g. Proof: a Driver report test for that hold; `TickWaitTests` for its shape.
+
+**Outcome** 2026-10-07: a start held on signed-out accounts with none cooling is a wait the tick forwards (no `until`, no account, its signed-out accounts named), holding quests and ask intakes alike; the readers tell it from a cool-off. The page reads it since UX6d2. Detail: D150's UX6d1 note; commits 946974d6, 6eede024.

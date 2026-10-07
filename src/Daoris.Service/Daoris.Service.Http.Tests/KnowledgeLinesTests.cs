@@ -33,13 +33,14 @@ public sealed class KnowledgeLinesTests(IndexedHost host) : IClassFixture<Indexe
         var hit = Assert.Single(found.Json.EnumerateArray());
         Assert.Equal("Index", hit.GetProperty("kind").GetString());
         Assert.Equal("docs/index/routes.md", hit.GetProperty("path").GetString());
-        Assert.Equal(5, hit.GetProperty("firstLine").GetInt32());
-        Assert.Equal(8, hit.GetProperty("lastLine").GetInt32());
-        Assert.InRange(hit.GetProperty("excerptLine").GetInt32(), 5, 8);
+        // The route's row, its own line (ORIENT2h).
+        Assert.Equal(7, hit.GetProperty("firstLine").GetInt32());
+        Assert.Equal(7, hit.GetProperty("lastLine").GetInt32());
+        Assert.Equal(7, hit.GetProperty("excerptLine").GetInt32());
 
         var entry = await host.GetAsync($"/api/entry?id={Uri.EscapeDataString(hit.GetProperty("id").GetString()!)}");
-        Assert.Equal(5, entry.Json.GetProperty("firstLine").GetInt32());
-        Assert.Equal(8, entry.Json.GetProperty("lastLine").GetInt32());
+        Assert.Equal(7, entry.Json.GetProperty("firstLine").GetInt32());
+        Assert.Equal(7, entry.Json.GetProperty("lastLine").GetInt32());
 
         // What a sync feeds from carries them, so a feed can pass them on.
         var entries = await host.GetAsync("/api/entries?repository=atlas");

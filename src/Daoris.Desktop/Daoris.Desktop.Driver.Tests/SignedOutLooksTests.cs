@@ -147,7 +147,11 @@ public sealed class SignedOutLooksTests : IDisposable
             + "--profile account-2`, `daoris agent login stub --profile gmail`, or Agents → the agent's page → Accounts.",
             sitting.Reason);
         Assert.Equal(["account-1", "account-2", "gmail"], sitting.SignedOut!.Accounts);
-        Assert.Empty(last.Waits);
+        // A wait for a person, not a time (UX6d1): no account and no reset, the accounts a sign-in frees named.
+        var wait = Assert.Single(last.Waits);
+        Assert.Equal(((string?)null, (DateTimeOffset?)null, false), (wait.Account, wait.Until, wait.Stated));
+        Assert.Equal(["q1"], wait.Quests);
+        Assert.Equal(["account-1", "account-2", "gmail"], wait.SignedOut);
 
         // Written once in three looks, with no time and the accounts by name.
         var line = Assert.Single(lines, l => l.Event == "starts.waiting");

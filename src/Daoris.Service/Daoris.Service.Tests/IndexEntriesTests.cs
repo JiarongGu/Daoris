@@ -81,11 +81,13 @@ public sealed class IndexEntriesTests : IDisposable
     }
 
     /// <summary>
-    /// The row's proof: each heading of each file in the index's folder, and below it, is an entry of the index's
-    /// own kind, the repository's own, titled by the headings above it and keeping the lines its text is.
+    /// ORIENT2e's proof, with ORIENT2h's rows: each heading of each file in the index's folder, and below it, is an
+    /// entry of the index's own kind, the repository's own, titled by the headings above it and keeping the lines
+    /// its text is; each table row is an entry of its own, titled by its section's headings and its label named by
+    /// its column, naming its line. A section that is only a table is its rows, and its header names no entry.
     /// </summary>
     [Fact]
-    public void The_declared_index_is_read_at_its_headings_as_index_entries_that_keep_their_lines()
+    public void The_declared_index_is_read_at_its_headings_and_its_tables_rows_as_index_entries_that_keep_their_lines()
     {
         Family();
 
@@ -93,10 +95,12 @@ public sealed class IndexEntriesTests : IDisposable
 
         Assert.Equal(
             [
-                "Bridge routes › DAORIS.DRIVER (2) @ docs/index/routes.md:5-8",
-                "Bridge routes › DAORIS.DRIVER (2) › Kept apart @ docs/index/routes.md:12-14",
+                "Bridge routes › DAORIS.DRIVER (2) › Kept apart › Route: STATE @ docs/index/routes.md:14",
+                "Bridge routes › DAORIS.DRIVER (2) › Route: SESSION_GO_ON_NEW @ docs/index/routes.md:7",
+                "Bridge routes › DAORIS.DRIVER (2) › Route: STATE @ docs/index/routes.md:8",
                 "Outline of `src/Widget.cs` @ docs/index/outlines/src/Widget.cs.md:3-7",
-                "Where things are @ docs/index/README.md:3-7",
+                "Where things are @ docs/index/README.md:3",
+                "Where things are › File: routes.md @ docs/index/README.md:7",
                 "Where things are › Kept by hand @ docs/index/README.md:11",
             ],
             index.Select(e => $"{e.Title} @ {e.RelativePath}:{e.Lines}").Order(StringComparer.Ordinal).ToList());
@@ -213,7 +217,7 @@ public sealed class IndexEntriesTests : IDisposable
         var entries = new RepositoryScanner(documents: "docs").Scan(_root);
 
         Assert.DoesNotContain(entries, e => e.Kind != EntryKind.Index && e.RelativePath.StartsWith("docs/index/", StringComparison.Ordinal));
-        Assert.Equal(5, Index(entries).Count);
+        Assert.Equal(7, Index(entries).Count);
         Assert.All(Index(entries), e => Assert.NotNull(e.Lines));
     }
 
@@ -257,5 +261,229 @@ public sealed class IndexEntriesTests : IDisposable
     {
         Assert.Equal(new HashSet<EntryKind> { EntryKind.Index }, KnowledgeQuery.ParseKinds("index"));
         Assert.Contains("task, index", Assert.Throws<ArgumentException>(() => KnowledgeQuery.ParseKinds("indexes")).Message);
+    }
+
+    // ── a long table, a row at a time (ORIENT2h) ────────────────────────────────────────────────
+
+    /// <summary>
+    /// Routes in the shape of this repository's own index: short sections of a few routes each, as its log,
+    /// registry, remotes, terminal, update and windows modules are, and one of 102, the row asked for inside it.
+    /// </summary>
+    private static (string Text, int Line) LongRoutes()
+    {
+        var lines = new List<string>
+        {
+            "# Bridge routes",
+            "",
+            "Generated; never edit by hand. Every route the page sends a module, the handler that answers it and the "
+            + "bridge function that sends it.",
+        };
+        foreach (var (module, routes) in new (string, string[])[]
+        {
+            ("LOG", ["EVENT", "LINES", "OPEN_FOLDER"]),
+            ("REGISTRY", ["PICK_FOLDER", "WRITE_DECLARATION"]),
+            ("REMOTES", ["REMOVE", "SET", "STATE"]),
+            ("TERMINAL", ["CLOSE", "INPUT", "OPEN", "RESIZE", "SHELLS"]),
+            ("UPDATE", ["DISMISS", "SET", "STATE"]),
+            ("WINDOWS", ["OPEN", "OPEN_BROWSER", "SET_THEME"]),
+        })
+        {
+            var file = module[0] + module[1..].ToLowerInvariant();
+            lines.AddRange(["", $"## DAORIS.{module} ({routes.Length})", "", "| Route | Handler | Sent by |", "|---|---|---|"]);
+            lines.AddRange(routes.Select((route, n) =>
+                $"| `{route}` | `{file}Module.cs:{40 + n}` | `bridge/{module.ToLowerInvariant()}.ts:{20 + n}` use{file}{n} |"));
+        }
+
+        string[] sessions =
+        [
+            "SESSION_ARCHIVE", "SESSION_DELETE", "SESSION_DIFF", "SESSION_FILE", "SESSION_FILES", "SESSION_GO_AHEAD",
+            "SESSION_GO_ON_NEW", "SESSION_GROUPS", "SESSION_HISTORY", "SESSION_INPUT", "SESSION_OPENINGS",
+            "SESSION_OPTIONS", "SESSION_QUEUE", "SESSION_SEARCH", "SESSION_START_FROM", "SESSION_STREAMS",
+            "STOP_SESSION", "TAIL_SESSION", "RESOLVE_SESSION", "PLUGIN_NEW",
+        ];
+        lines.AddRange(["", "## DAORIS.DRIVER (102)", "", "| Route | Handler | Sent by |", "|---|---|---|"]);
+        var asked = 0;
+        for (var n = 0; n < 102; n++)
+        {
+            var route = n < sessions.Length ? sessions[n] : $"WORK_STEP{n}";
+            var words = string.Concat(route.Split('_').Select(word => word[0] + word[1..].ToLowerInvariant()));
+            if (route == "SESSION_GO_ON_NEW") asked = lines.Count + 1;
+            lines.Add($"| `{route}` | `DriverModule.Sessions.cs:{10 + n * 3}` {words}Async | `bridge/sessions.ts:{5 + n * 2}` use{words} |");
+        }
+
+        return (string.Join('\n', lines) + "\n", asked);
+    }
+
+    /// <summary>Outlines that name sessions throughout, as a driver's outlines do, so the words are common ones.</summary>
+    private void SessionOutlines()
+    {
+        foreach (var file in new[] { "Sessions", "SessionLedger", "SessionGroups", "ChatRunner" })
+        {
+            Write($"docs/index/outlines/src/{file}.cs.md",
+                $"# Outline of `src/{file}.cs`\n\nGenerated; never edit by hand.\n\n- 10-400 class {file}\n"
+                + "  - 20-40 NewSessionAsync()\n  - 41-60 SessionStateAsync()\n  - 61-80 GoOnAsync()\n");
+        }
+    }
+
+    /// <summary>
+    /// The row's proof: a declared index with one long table and several short sections answers a route question
+    /// with the route's row first, by words alone (BM25, as a deployment with no model answers), naming its line.
+    /// Read at its headings, the 102-row section lost to the short sections: one matching row weighed against a
+    /// long section (ORIENT2e's measurement, ORIENT1c's finding).
+    /// </summary>
+    [Fact]
+    public async Task A_route_question_lands_on_the_route_s_row_in_a_long_table_naming_its_line()
+    {
+        var (routes, line) = LongRoutes();
+        Declare("""{"index":"docs/index/README.md"}""");
+        Write("docs/index/README.md", Readme);
+        Write("docs/index/routes.md", routes);
+        SessionOutlines();
+
+        var entries = new RepositoryScanner().Scan(_root);
+        var database = Path.Combine(_root, "knowledge.db");
+        try
+        {
+            await using var store = await SqliteKnowledgeStore.OpenAsync(database);
+            await store.ReplaceRepositoryAsync(entries[0].Repository, entries);
+
+            var hits = await new SqliteKnowledgeSearch(store).SearchAsync(
+                new KnowledgeQuery("where is the SESSION_GO_ON_NEW handler") { Kinds = new HashSet<EntryKind> { EntryKind.Index } });
+
+            var first = hits[0];
+            Assert.Equal("Bridge routes › DAORIS.DRIVER (102) › Route: SESSION_GO_ON_NEW", first.Entry.Title);
+            Assert.Equal($"docs/index/routes.md:{line}", $"{first.Entry.RelativePath}:{first.Entry.Lines}");
+            Assert.Equal(line, first.ExcerptLine);
+            Assert.Equal(
+                "| `SESSION_GO_ON_NEW` | `DriverModule.Sessions.cs:28` SessionGoOnNewAsync | `bridge/sessions.ts:17` useSessionGoOnNew |",
+                first.Entry.Body);
+        }
+        finally
+        {
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        }
+    }
+
+    /// <summary>
+    /// A question that names what a row is, in its column's word, reaches the row: the header is no line of the row,
+    /// so the title names the label's column. Without it, <i>sync verb</i> ranked outlines that say both words above
+    /// the <c>sync</c> row, which says one (measured on this repository's index, D151's ORIENT2h note).
+    /// </summary>
+    [Fact]
+    public async Task A_question_in_the_column_s_word_reaches_the_row_its_title_names_by_that_column()
+    {
+        Declare("""{"index":"docs/index/README.md"}""");
+        Write("docs/index/README.md", Readme);
+        Write("docs/index/verbs.md",
+            "# Terminal verbs\n\nGenerated; never edit by hand. Where each terminal verb is routed and handled, by program.\n\n"
+            + "## `daoris` (the CLI)\n\n| Verb | Class | Handler | Usage |\n|---|---|---|---|\n"
+            + "| `analyze` | doctrine | `analyze.ts:268` commandAnalyze | what adopting would do here |\n"
+            + "| `init` | doctrine | `commands.ts:55` commandInit | detect what this repo has |\n"
+            + "| `sync` | doctrine | `materialize.ts:811` commandSync | materialize the manifest's packs |\n"
+            + "| `check` | doctrine | `drift.ts:292` commandCheck | drift and staleness |\n"
+            + "| `upstream` | doctrine | `upstream.ts:40` commandUpstream | promote a local edit |\n");
+        foreach (var file in new[] { "HelpCoverageTests", "SyncConsole", "TreesConsole" })
+        {
+            Write($"docs/index/outlines/src/{file}.cs.md",
+                $"# Outline of `src/{file}.cs`\n\nGenerated; never edit by hand.\n\n- 10-400 class {file}\n"
+                + "  - 20-40 Every verb has a door()\n  - 41-60 The sync verb's console()\n  - 61-80 Status()\n");
+        }
+
+        var entries = new RepositoryScanner().Scan(_root);
+        var database = Path.Combine(_root, "knowledge.db");
+        try
+        {
+            await using var store = await SqliteKnowledgeStore.OpenAsync(database);
+            await store.ReplaceRepositoryAsync(entries[0].Repository, entries);
+
+            var hits = await new SqliteKnowledgeSearch(store).SearchAsync(
+                new KnowledgeQuery("sync verb") { Kinds = new HashSet<EntryKind> { EntryKind.Index } });
+
+            Assert.Equal("Terminal verbs › `daoris` (the CLI) › Verb: sync @ 11", $"{hits[0].Entry.Title} @ {hits[0].Entry.Lines}");
+        }
+        finally
+        {
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        }
+    }
+
+    /// <summary>
+    /// The prose around a table stays prose, each run of it an entry of its own since an entry is one run of lines,
+    /// and a second run before any heading is anchored apart from the file's opening, so no two share an id (REV3).
+    /// </summary>
+    [Fact]
+    public void Prose_around_a_table_is_a_run_each_and_every_entry_has_its_own_id()
+    {
+        Declare("""{"index":"docs/index/README.md"}""");
+        Write("docs/index/README.md",
+            "Generated; never edit.\n"                          // 1
+            + "\n"                                              // 2
+            + "| File | Answers |\n"                            // 3
+            + "|:---|---:|\n"                                   // 4
+            + "| `routes.md` | the routes |\n"                  // 5
+            + "Read the row, then the lines.\n"                 // 6
+            + "\n"                                              // 7
+            + "## Verbs\n"                                      // 8
+            + "\n"                                              // 9
+            + "Each verb's file.\n"                             // 10
+            + "\n"                                              // 11
+            + "| Verb | File |\n"                               // 12
+            + "|---|---|\n"                                     // 13
+            + "| `sync` | `sync.ts:5` |\n"                      // 14
+            + "\n"                                              // 15
+            + "Paths are under `src/`.\n");                     // 16
+
+        var index = Index(new RepositoryScanner().Scan(_root));
+
+        Assert.Equal(
+            [
+                "docs/index/README.md @ 1 #",
+                "docs/index/README.md › File: routes.md @ 5 #docs/index/README.md › File: routes.md",
+                "docs/index/README.md @ 6 #docs/index/README.md (2)",
+                "Verbs @ 10 #Verbs",
+                "Verbs › Verb: sync @ 14 #Verbs › Verb: sync",
+                "Verbs @ 16 #Verbs (2)",
+            ],
+            index.Select(e => $"{e.Title} @ {e.Lines} #{e.Anchor}").ToList());
+        Assert.Equal(index.Count, index.Select(e => e.Id).Distinct().Count());
+    }
+
+    /// <summary>
+    /// A table is a header with a separator under it, as markdown reads one: a pipe with none is prose, and a table
+    /// inside a fence is the fence's text. A row is labelled by its first cell with text, named by that cell's column,
+    /// and a row with none names nothing; a pipe inside code is no column.
+    /// </summary>
+    [Fact]
+    public void Only_a_table_s_rows_are_rows_each_labelled_by_its_first_cell_with_text()
+    {
+        Declare("""{"index":"docs/index/README.md"}""");
+        Write("docs/index/README.md",
+            "# Where things are\n"                              // 1
+            + "\n"                                              // 2
+            + "| not a table |\n"                               // 3
+            + "\n"                                              // 4
+            + "```\n"                                           // 5
+            + "| Route | Handler |\n"                            // 6
+            + "|---|---|\n"                                     // 7
+            + "| `FENCED` | `X.cs:1` |\n"                        // 8
+            + "```\n"                                           // 9
+            + "\n"                                              // 10
+            + "| Command | Does |\n"                            // 11
+            + "|---|---|\n"                                     // 12
+            + "| `git log | head` | reads the history |\n"      // 13
+            + "|  | `continued.ts:4` |\n"                       // 14
+            + "| | |\n");                                       // 15
+
+        var index = Index(new RepositoryScanner().Scan(_root));
+
+        Assert.Equal(
+            [
+                "Where things are @ 3-9",
+                "Where things are › Command: git log | head @ 13",
+                "Where things are › Does: continued.ts:4 @ 14",
+            ],
+            index.Select(e => $"{e.Title} @ {e.Lines}").ToList());
+        Assert.Contains("`FENCED`", index[0].Body);
+        Assert.Equal("|  | `continued.ts:4` |", index[2].Body);
     }
 }

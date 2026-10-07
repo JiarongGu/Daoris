@@ -22,6 +22,12 @@ public sealed record HistoryRefusalView(string Word, string Message)
     public string? Origin { get; init; }
 
     public string? Workspace { get; init; }
+
+    /// <summary>
+    /// What waits on the person, beside <c>needs-you</c> only (HIST1l): one of <see cref="HistoryWaits"/>. Null from a host before
+    /// it, which names nothing waiting.
+    /// </summary>
+    public string? Waits { get; init; }
 }
 
 /// <summary>One unit as the service's history door judged it (HIST1b's <c>HistoryDesk</c>, the history-clearing design §6.3).</summary>
@@ -166,5 +172,7 @@ public sealed partial class ServiceClient
         Session = Text(refusal, "session"),
         Origin = Text(refusal, "origin"),
         Workspace = Text(refusal, "workspace"),
+        // Additive (HIST1l): absent beside every other word, and from a host before it.
+        Waits = Text(refusal, "waits"),
     };
 }
