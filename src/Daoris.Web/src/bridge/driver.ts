@@ -164,8 +164,9 @@ export const useUntrusted = () => useQuery({
 });
 
 /**
- * The starts the driver held on cooling accounts, an ask's intake among them (UX6d), as of its last tick — written by the
- * tick like `useConsidered`, and empty in a browser and before the first tick.
+ * The starts the driver held on cooling accounts, an ask's intake among them (UX6d), and on signed-out accounts with none
+ * cooling (UX6d1), as of its last tick — written by the tick like `useConsidered`, and empty in a browser and before the
+ * first tick.
  */
 export const useWaits = () => useQuery({
   queryKey: keys.waits,

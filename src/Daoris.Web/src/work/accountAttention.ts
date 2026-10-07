@@ -22,7 +22,7 @@ export type AccountsKnown = {
   tools: readonly Tool[];
   /** The accounts' files (`ACCOUNTS`): each scope's list and default, each account's cool-off. */
   use?: AccountsAnswer | null;
-  /** The starts the last tick held on cooling accounts, an intake's among them (the tick's `waits`). */
+  /** The starts the last tick held on their accounts, cooling or signed out, an intake's among them (the tick's `waits`). */
   waits?: readonly AccountWaitTick[] | null;
 };
 
@@ -79,18 +79,27 @@ type Held = {
 };
 
 /**
- * The starts held on their accounts: each of the tick's waits (one per account, an intake's among them), then each quest a
- * consideration says waits that no wait holds, which is a start held on signed-out accounts alone (TOOL6g) or a shell whose
- * tick carries no waits. Quests held alike, in one workspace, are one start's wait.
+ * The starts held on their accounts: each of the tick's waits (one per cooling account, then one per agent for the starts
+ * held on signed-out accounts with none cooling, an intake's among them), then each quest a consideration says waits that no
+ * wait holds, which is a shell whose tick carries no waits, or none of that kind (before UX6d1). Quests held alike, in one
+ * workspace, are one start's wait.
+ *
+ * @remarks
+ * **A wait with no `until` is no cool-off** (UX6d1, UX6d2): nothing cools, so it names no account, and its accounts are those
+ * its starts passed signed out. Read as one, its null account would be the tool's own sign-in, said cooling and kept off its
+ * own signed-out row. Its key is its own: a cool-off of the own sign-in for the same agent names no account either, and
+ * the driver's watch keys the two apart the same way (no profile name has a colon).
  */
 function heldStarts(
   waits: readonly AccountWaitTick[], considered: readonly Consideration[], quests: readonly Quest[],
   registry: readonly Registration[],
 ): Held[] {
   const held: Held[] = waits.map((wait) => ({
-    key: `wait:${wait.agent}/${wait.account ?? ''}`,
+    key: wait.until ? `wait:${wait.agent}/${wait.account ?? ''}` : `wait:${wait.agent}/:signed-out`,
     agent: wait.agent,
-    cooling: { account: wait.account ?? null, name: wait.name ?? null, until: wait.until, stated: wait.stated },
+    cooling: wait.until
+      ? { account: wait.account ?? null, name: wait.name ?? null, until: wait.until, stated: wait.stated }
+      : null,
     signedOut: (wait.signedOut ?? []).map((id) => ({ id, name: null })),
     quests: wait.quests ?? [],
     asks: wait.asks ?? [],

@@ -87,24 +87,30 @@ export interface Consideration {
 
 /**
  * Starts the look held because every account they may use is cooling (TOOL4d, D125 §4), one per account, as the tick hands
- * them to the page (UX6d, D150 §6.2). Shape of the tick's `waits`, read defensively: the bridge leaves a null out.
+ * them to the page (UX6d, D150 §6.2); then the starts it held on signed-out accounts with none cooling, one per agent, with
+ * no time and no account (UX6d1). Shape of the tick's `waits`, read defensively: the bridge leaves a null out.
  *
  * @remarks
  * A consideration names a quest alone; this names an ask's intake too, which waited on its accounts with nothing on the page
- * saying so. Facts only, the driver's sentence left with the driver: the page says them in the reader's language.
+ * saying so. Facts only, the driver's sentence left with the driver: the page says them in the reader's language. **A wait
+ * with no `until` is no cool-off** (UX6d2): it waits for a sign-in, its accounts its `signedOut`, and its null account is no
+ * account at all, never the tool's own sign-in.
  */
 export interface AccountWaitTick {
   /** Whose accounts: the owner a door runs as (AGT7). */
   agent: string;
-  /** The account whose cool-off ends first, or null for the tool's own sign-in. */
+  /**
+   * The account whose cool-off ends first, or null for the tool's own sign-in; null too, and no account, where no `until` is
+   * (UX6d1).
+   */
   account?: string | null;
   /** The name the person gave it (ACCT2b), null where none. */
   name?: string | null;
   /** The workspace the held starts belong to, where they share one. */
   workspace?: string | null;
-  /** When that account is offered again. */
-  until: string;
-  /** Whether the agent named that time. */
+  /** When that account is offered again; absent or null where none cools and a sign-in is the wait (UX6d1). */
+  until?: string | null;
+  /** Whether the agent named that time; false where there is none. */
   stated: boolean;
   /** The quests held. */
   quests?: string[];
