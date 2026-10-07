@@ -1,9 +1,9 @@
 import i18n from '../i18n';
-import { clockOf, moment } from '../format';
+import { ago, clockOf, moment } from '../format';
 import type { Account, AccountPlace, Tool } from '../tools';
 import {
   type AccountCooling, type AccountFacts, type AccountScope, type AccountsAnswer, type AgentAccounts, agentOf, coolingLine,
-  machineScope, workspaceScope,
+  machineScope, offeredLine, orderedWindows, percent, windowName, workspaceScope,
 } from '../settings/accounts';
 import type { AgentRulesState } from '../settings/AgentRules';
 import { OPEN_STATES } from '../settings/proposals';
@@ -21,8 +21,10 @@ export type AgentUsage = { harness: string; profile: string | null; sessions: nu
 /**
  * An account's state as last known (D150 §5.3): signed in, signed out, cooling until a time, or unknown. An API key says
  * its handle and has no sign-in (`keyed`): the tool says signed in for any key, so that word would claim what nobody read.
+ * A key read signed out is one its provider refused (`refused`, ACCTUX1): only a refusal reads a key out (AGT3b, ROSTER1b),
+ * since a read hands the key and the tool says yes for any.
  */
-export type AccountStateName = 'in' | 'out' | 'cooling' | 'unknown' | 'keyed';
+export type AccountStateName = 'in' | 'out' | 'cooling' | 'unknown' | 'keyed' | 'refused';
 
 export type AccountState = {
   state: AccountStateName;
@@ -35,18 +37,24 @@ export type AccountState = {
 };
 
 /**
- * One account's state from what the roster and the accounts' files last said: signed out first, since a sign-in is the
- * person's and a reset frees nothing; then a cool-off; then a key, which no sign-in names; then the agent's word.
+ * One account's state from what the roster and the accounts' files last said: signed out first, or for a key refused, since
+ * a sign-in or a new key is the person's and a reset frees neither (ACCTUX1: the refusal is kept whatever the account is);
+ * then a cool-off; then a key, which no sign-in names; then the agent's word.
  */
 export function accountState(
   account: Pick<Account, 'login' | 'read' | 'key'>, facts: Pick<AccountFacts, 'cooling'> | null, holdsWork: boolean,
 ): AccountState {
   const cooling = facts?.cooling ?? null;
   const read = account.read ?? null;
-  const state: AccountStateName = account.login === 'out' && !account.key
-    ? 'out'
+  const state: AccountStateName = account.login === 'out'
+    ? (account.key ? 'refused' : 'out')
     : cooling ? 'cooling' : account.key ? 'keyed' : account.login === 'in' ? 'in' : 'unknown';
   return { state, read, cooling, holdsWork };
+}
+
+/** Whether a state waits on the person as a sign-out does (ACCTUX1): signed out, or a key its provider refused. */
+export function waitsOnPerson(state: Pick<AccountState, 'state'>): boolean {
+  return state.state === 'out' || state.state === 'refused';
 }
 
 /** Whether a default or a list names the account: the machine's or a workspace's (D130 §3.1). */
@@ -76,19 +84,20 @@ export function accountStates(tool: Tool, use: AgentAccounts | null | undefined)
 }
 
 /**
- * The accounts the person must act on (D150 §2.1, the activity bar's badge): each signed out where it holds work, the
- * tool's own sign-in among them while the starts run on it.
+ * The accounts the person must act on (D150 §2.1, the activity bar's badge): each signed out or with its key refused where it
+ * holds work, the tool's own sign-in among them while the starts run on it.
  */
 export function signedOutHeld(tool: Tool, use: AgentAccounts | null | undefined): number {
-  const named = [...accountStates(tool, use).values()].filter((state) => state.state === 'out' && state.holdsWork).length;
+  const named = [...accountStates(tool, use).values()].filter((state) => waitsOnPerson(state) && state.holdsWork).length;
   const own = ownState(tool, use);
   return named + (own.state === 'out' && own.holdsWork ? 1 : 0);
 }
 
-/** A state's word and its pill's tone (§5.3): open's hue only for a signed-out account that holds work. */
+/** A state's word and its pill's tone (§5.3): open's hue only for an account that waits on the person and holds work. */
 export function stateWord(state: AccountState): { label: string; tone: 'open' | 'neutral' } {
   switch (state.state) {
     case 'out': return { label: i18n.t('harness.login.out'), tone: state.holdsWork ? 'open' : 'neutral' };
+    case 'refused': return { label: i18n.t('harness.login.refused'), tone: state.holdsWork ? 'open' : 'neutral' };
     case 'cooling': return { label: i18n.t('harness.cooling.pill'), tone: 'neutral' };
     case 'in': return { label: i18n.t('harness.login.in'), tone: 'neutral' };
     case 'keyed': return { label: i18n.t('harness.login.keyed'), tone: 'neutral' };
@@ -108,14 +117,69 @@ export function readLine(state: AccountState, now: Date = new Date()): string | 
 }
 
 /**
- * When, beside the state's word in its column (D152 §4.2): *signed in · 01:31*, *unknown · never read*, *cooling · resets 6
- * Oct 22:02*. The time alone, since the column and the list's head say what it is; its tip says the whole (`readLine`).
+ * When, beside the state's word in its column (D152 §4.2): *signed in · 01:31*, *unknown · never read*, *cooling · until 6
+ * Oct 22:02*. The time alone, since the column and the list's head say what it is; its tip says the whole (`readLine`). A
+ * cool-off is a hold, said until its end whoever chose the time (ACCTUX1): *resets …* claimed a reset where Daoris chose the
+ * wait because the agent named none, and a reported reset is said beside its window (`usageLine`).
  */
 export function stateWhen(state: AccountState, now: Date = new Date()): string {
-  if (state.state === 'cooling') return i18n.t('agents.state.resets', { when: moment(state.cooling!.until) });
+  if (state.state === 'cooling') return i18n.t('agents.state.until', { when: moment(state.cooling!.until) });
   if (!state.read) return i18n.t('agents.read.never');
   const when = clockOf(state.read, now);
   return state.state === 'unknown' ? i18n.t('agents.read.failed', { when }) : when;
+}
+
+/**
+ * A piece of what an account's agent last said, by what it is (ACCTUX1): a `reading` a person acts on (a window's share, the
+ * agent's own word), a `when` (a reset, when it was said, since when it is offered again), or the `join` between them.
+ */
+export type UsagePart = { text: string; tone: 'reading' | 'when' | 'join' };
+
+/**
+ * What an account's agent last said, as its row's second line (TOOL6c, D130 §5.2; ACCTUX1): its own word where it gave one,
+ * credits, and each window's share with its reset beside it, then when it said so; since when it is offered again; and, for
+ * a cool-off whose length Daoris chose because the agent named no reset, that the reset is unknown, where no window reported
+ * one. A reset is said only beside the window that reported it: the state's column says the hold's end. Null says nothing,
+ * as *nothing said yet* is not said on a row (D152 §4.2). The words are the CLI's `saidLine`'s, in pieces, so a share can
+ * wear the ink and a time the soft ink.
+ */
+export function usageLine(facts: Pick<AccountFacts, 'said' | 'offered'> | null | undefined, state: AccountState): UsagePart[] | null {
+  const said = facts?.said && facts.said.windows.length > 0 ? facts.said : null;
+  const comma: UsagePart = { text: i18n.t('agents.said.comma'), tone: 'join' };
+  const resets = (reset: string): UsagePart => ({ text: i18n.t('agents.said.resets', { when: moment(reset) }), tone: 'when' });
+  const groups: UsagePart[][] = [];
+  if (said) {
+    const reached = said.windows.find((each) => each.standing === 'refused');
+    const standing = reached ?? said.windows.find((each) => each.standing === 'near');
+    if (standing) {
+      const word: UsagePart = {
+        text: i18n.t(reached ? 'harness.said.reached' : 'harness.said.warned', { window: windowName(standing.window) }), tone: 'reading',
+      };
+      // A window the agent gave no share for says its reset beside its own word, where nothing else would say it.
+      groups.push(typeof standing.used === 'number' ? [word] : [word, comma, resets(standing.reset)]);
+    }
+    if (said.windows.some((each) => each.credits)) groups.push([{ text: i18n.t('harness.said.credits'), tone: 'reading' }]);
+    for (const each of orderedWindows(said.windows)) {
+      if (typeof each.used !== 'number') continue;
+      groups.push([
+        { text: i18n.t('agents.said.used', { used: percent(each.used), window: windowName(each.window) }), tone: 'reading' },
+        comma, resets(each.reset),
+      ]);
+    }
+    if (groups.length === 0) groups.push([{ text: i18n.t('harness.said.clear'), tone: 'reading' }]);
+  }
+  const resetSaid = groups.some((group) => group.some((part) => part.tone === 'when'));
+  const times: UsagePart[] = [
+    ...(said ? [{ text: i18n.t('agents.said.at', { age: ago(said.seen) }), tone: 'when' as const }] : []),
+    ...(state.state === 'cooling' && !state.cooling!.stated && !resetSaid
+      ? [{ text: i18n.t('agents.said.resetUnknown'), tone: 'when' as const }] : []),
+    ...(facts?.offered && state.state !== 'cooling' ? [{ text: offeredLine(facts.offered), tone: 'when' as const }] : []),
+  ];
+  const parts = [
+    ...groups.flatMap((group, at) => (at > 0 ? [{ text: i18n.t('harness.said.join'), tone: 'join' as const }, ...group] : group)),
+    ...times.flatMap((part, at) => (at > 0 || groups.length > 0 ? [{ text: ' · ', tone: 'join' as const }, part] : [part])),
+  ];
+  return parts.length > 0 ? parts : null;
 }
 
 /** The latest moment any of an agent's accounts was read, for its Accounts section's head; null where none was. */
@@ -142,11 +206,27 @@ export function accountName(account: Named): string {
   return account.name;
 }
 
-/** Who signed in, said beside the name in the same place on every row where the two differ; null where they are one. */
+/**
+ * A name as the driver compares one, for the page's own judgement of whether two are the same words: each code point to its
+ * one capital, never a wider one (D125's AGENTREAD1c and CASEFOLD1 notes). The page decides only what to show by it, so the
+ * driver's exceptions (`ı`, `ſ`, and the Greek letters with a subscript iota) are left to the driver.
+ */
+function folded(name: string): string {
+  return Array.from(name.trim(), (letter) => {
+    const capital = letter.toUpperCase();
+    return Array.from(capital).length === 1 ? capital : letter;
+  }).join('');
+}
+
+/**
+ * Who signed in, said beside the name in the same place on every row where the two differ; null where they are one. A name
+ * that is its identity in another case is one (ACCTNAME1's page half: the owner named each account by its email), since
+ * every name here is compared without case.
+ */
 export function accountWho(account: Named): string | null {
   if (account.key) return null;
   const who = account.account?.trim();
-  return who && who !== accountName(account) ? who : null;
+  return who && folded(who) !== folded(accountName(account)) ? who : null;
 }
 
 /** A version as its number alone (D152 §4.1): the product name a binary prints after it, in brackets, is dropped. */
@@ -217,18 +297,21 @@ export function runsForLine(runs: readonly RunsFor[]): string {
 }
 
 /** The one act a row's state asks for (D152 §4.2): its name, and whether it is loud, which is where it holds work. */
-export type AccountAct = { act: 'signIn' | 'read' | 'tryNow' | 'place'; loud: boolean };
+export type AccountAct = { act: 'signIn' | 'read' | 'tryNow' | 'place' | 'newKey'; loud: boolean };
 
 /**
  * An account's one act by its state (D152 §4.2): *Sign in* when signed out, *Read* (that account alone) when unknown, *Try
  * now* when cooling, *Use in a workspace…* when nothing runs on it; none once a workspace runs on it. Unknown gets an act:
  * on the install the account a list held read unknown, offered nothing, and the person reached for the header instead.
+ * A key its provider refused is repaired by a key (ACCTUX1): the page's own *Add an API key*, where the agent takes one,
+ * since no door yet puts a new key into the same account.
  */
 export function accountAct(
-  state: AccountState, agent: { signsIn: boolean; present: boolean; runs: number },
+  state: AccountState, agent: { signsIn: boolean; present: boolean; runs: number; takesKey?: boolean },
 ): AccountAct | null {
   switch (state.state) {
     case 'out': return agent.signsIn && agent.present ? { act: 'signIn', loud: state.holdsWork } : null;
+    case 'refused': return agent.takesKey && agent.present ? { act: 'newKey', loud: state.holdsWork } : null;
     case 'unknown': return agent.present ? { act: 'read', loud: state.holdsWork } : null;
     case 'cooling': return { act: 'tryNow', loud: false };
     default: return agent.runs === 0 ? { act: 'place', loud: false } : null;
@@ -293,6 +376,7 @@ export function agentRows(tools: readonly Tool[], answer: AccountsAnswer | null 
     const use = agentOf(answer, tool.name);
     const states = [...accountStates(tool, use).values()];
     const signedOut = states.filter((state) => state.state === 'out').length;
+    const refused = states.filter((state) => state.state === 'refused').length;
     // An agent with no account of Daoris's own runs on its own sign-in, where it has one; one with no sign-in at all (a
     // plugin's agent) is said to be installed and nothing more.
     const phrase = !tool.present
@@ -302,6 +386,7 @@ export function agentRows(tools: readonly Tool[], answer: AccountsAnswer | null 
         : [
           i18n.t('agents.row.accounts', { count: tool.accounts.length }),
           ...(signedOut > 0 ? [i18n.t('agents.row.signedOut', { count: signedOut })] : []),
+          ...(refused > 0 ? [i18n.t('agents.row.refused', { count: refused })] : []),
         ].join(' · ');
     return {
       name: tool.name,

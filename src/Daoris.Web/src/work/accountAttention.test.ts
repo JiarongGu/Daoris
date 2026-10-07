@@ -226,6 +226,34 @@ describe('a start waiting for accounts', () => {
     expect(ready!.account!.readFirst ?? null).toBeNull();
   });
 
+  /**
+   * ACCTUX1: a key its provider refused read *unchecked*, so it could be let in as ready. It is never offered: nothing
+   * comes ready by a press but a new key.
+   */
+  it('never lets in a key its provider refused, nor offers to read it first', () => {
+    const use = answer([scope(), scope({ workspace: 'work', list: ['account-2'], begins: 'account-2' })]);
+    const tools = byTool([door({
+      profiles: door().profiles!.map((profile) => (profile.name === 'account-4' ? { ...profile, login: 'out', key: '…abcd' } : profile)),
+    })]);
+    const [row] = derive({ tools, use, waits: [{ ...WAIT, signedOut: [] }] });
+    expect(row!.account!.outside ?? null).toBeNull();
+    expect(row!.account!.readFirst ?? null).toBeNull();
+  });
+
+  /** ACCTUX1: a refused key the start would run on is said as refused, and offered no sign-in, which no key has. */
+  it('says a key its start would run on as refused, with no sign-in for it', () => {
+    const tools = byTool([door({
+      profiles: door().profiles!.map((profile) => (profile.name === 'account-3' ? { ...profile, key: '…abcd' } : profile)),
+    })]);
+    const [row] = derive(known({ tools, waits: [{ ...WAIT, signedOut: ['account-1'] }] }));
+    expect(row!.account!.named.map(({ id, label, state }) => [id, label, state])).toEqual([
+      ['account-2', 'home', 'cooling'], ['account-1', 'account-1', 'out'], ['account-3', 'API key …abcd', 'refused'],
+    ]);
+    expect(row!.detail).toBe(
+      `home cools until ${moment(UNTIL)}; account-1 read signed out at ${clockOf(READ, NOW)}; API key …abcd: key refused.`);
+    expect(attentionOffers(row!).filter(({ act }) => act === 'sign-in')).toEqual([{ act: 'sign-in', account: 'account-1' }]);
+  });
+
   /** The tool's own sign-in is named as the person knows it, and has no sign-in of Daoris's. */
   it('names the tool’s own sign-in where nothing names an account', () => {
     const [row] = derive(known({ use: answer([scope()]), waits: [{ ...WAIT, account: null, name: null, signedOut: [] }] }));
@@ -329,6 +357,26 @@ describe('a signed-out account a list holds', () => {
       detail: 'It runs work in work.',
     });
     expect(rows[0]!.account!.named).toEqual([expect.objectContaining({ id: 'account-1', state: 'out' })]);
+  });
+
+  /**
+   * ACCTUX1: a key its provider refused read *unchecked*, so a list that held it had no row, and the badge did not count it.
+   * It waits on the person as a sign-out does, so it is a signed-out row, saying the key was refused and where its repair
+   * is: no sign-in, which a key has none of, but its agent's page, where a new key is added.
+   */
+  it('is a row of its own for a key its provider refused, saying so and where it is repaired', () => {
+    const tools = byTool([door({
+      profiles: door().profiles!.map((profile) => (profile.name === 'account-3' ? { ...profile, key: '…abcd' } : profile)),
+    })]);
+    const rows = derive(known({ tools }));
+
+    expect(rows.map(({ id }) => id)).toEqual(['signed-out:claude-code/account-1', 'signed-out:claude-code/account-3']);
+    expect(rows[1]).toMatchObject({
+      kind: 'signed-out', title: 'API key …abcd', where: 'Claude Code', since: null, read: READ,
+      detail: "Key refused: add a new API key on Claude Code's page in its place. It runs work in work.",
+    });
+    expect(rows[1]!.account!.named).toEqual([expect.objectContaining({ id: 'account-3', state: 'refused' })]);
+    expect(attentionOffers(rows[1]!)).toEqual([]);
   });
 
   it('says no wait however recently it was read again', () => {

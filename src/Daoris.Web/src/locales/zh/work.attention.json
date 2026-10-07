@@ -56,6 +56,7 @@
   "work.attention.accounts.outUnread": "{{accounts}} 已退出登录",
   "work.attention.accounts.never": "{{accounts}} 状态未知，从未读取",
   "work.attention.accounts.failed": "{{accounts}} 上次读取失败，{{when}}",
+  "work.attention.accounts.refused": "{{accounts}}：密钥被拒绝",
   "work.attention.accounts.join": "；",
   "work.attention.accounts.line": "{{clauses}}。",
   "work.attention.held.quests": "{{count}} 个委托",
@@ -66,6 +67,7 @@
   "work.attention.held.both_other": "{{quests}}和 {{count}} 个需求的受理会话",
   "work.attention.signedOut.runs": "它为 {{runs}} 运行工作。",
   "work.attention.signedOut.own": "没有指定账户，Daoris 的启动都在它上面运行。",
+  "work.attention.signedOut.refused": "密钥被拒绝：请在 {{product}} 的页面上添加一个新的 API 密钥代替它。",
   "work.attention.act.letRun": "允许 {{account}} 运行 {{workspace}}…",
   "work.attention.ask.letRun": "{{account}} 将加入 {{workspace}} 的列表，此后 Daoris 可以在它上面启动 {{workspace}} 的工作，并使用该账户的额度。终端里：{{command}}",
   "work.attention.ask.letRunMachine": "{{account}} 将加入本机的列表——{{workspace}} 以及所有没有指定自己账户的工作区都在这个列表上运行——此后 Daoris 可以在它上面启动这些工作，并使用该账户的额度。终端里：{{command}}"

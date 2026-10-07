@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import i18n from '../i18n';
+import { ago, moment } from '../format';
 import { byTool, type ToolDoor } from '../tools';
 import { scopeOf, THREE } from '../settings/accountsFixtures';
 import type { AgentAccounts } from '../settings/accounts';
 import {
   accountAct, accountName, accountState, accountWho, agentRows, doorsSummary, heldBy, joinChoices, ownRunsFor, ownState,
-  readLine, rulesSummary, runsFor, runsForLine, settingsSummary, signedOutHeld, stateWhen, stateWord, usageSummary,
+  readLine, rulesSummary, runsFor, runsForLine, settingsSummary, signedOutHeld, stateWhen, stateWord, usageLine, usageSummary,
   useSummary, versionOnly, workspacesSummary,
 } from './agents';
 
@@ -45,10 +46,41 @@ describe('an account’s state, as last known', () => {
     const cooling = { until: '2026-10-06T04:42:00.000Z', stated: true, window: 'weekly', seen: TEN, assumedZone: false, notBelieved: false };
     const state = accountState({ login: 'in', read: TEN }, { cooling }, true);
     expect(state.state).toBe('cooling');
-    // The word on its pill, and its reset beside it in the column; the tip says until when, how long and why.
+    // The word on its pill, and the hold's end beside it in the column; the tip says until when, how long and why.
     expect(stateWord(state).label).toBe('cooling');
-    expect(stateWhen(state, NOW)).toMatch(/^resets /);
+    expect(stateWhen(state, NOW)).toMatch(/^until /);
     expect(readLine(state, NOW)).toMatch(/^Cooling until .+ · in /);
+  });
+
+  /**
+   * ACCTUX1: the cool-off is a hold, and where Daoris chose its length because the agent named no reset, *resets …* claimed a
+   * reset nobody reported. The column says until when it holds, in either language, whoever chose the time.
+   */
+  it('says a cool-off as a hold until its end, never a reset, whoever chose the time', () => {
+    const chosen = { until: '2026-10-06T04:42:00.000Z', stated: false, window: null, seen: TEN, assumedZone: false, notBelieved: false };
+    const state = accountState({ login: 'in', read: TEN }, { cooling: chosen }, true);
+    expect(stateWhen(state, NOW)).toMatch(/^until /);
+    expect(stateWhen(state, NOW)).not.toMatch(/reset/);
+    i18n.changeLanguage('zh');
+    expect(stateWhen(state, NOW)).toMatch(/^至 /);
+    expect(stateWhen(state, NOW)).not.toMatch(/重置/);
+  });
+
+  /**
+   * ACCTUX1: a key its provider refused reads signed out, and saying it *unchecked* told the person nothing was wrong. A
+   * refusal is kept whatever the account is, ahead of a cool-off as a sign-out is, since a reset frees neither.
+   */
+  it('says a key its provider refused as Key refused, ahead of a cool-off, in open’s hue while it holds work', () => {
+    const cooling = { until: '2026-10-06T04:42:00.000Z', stated: true, window: null, seen: TEN, assumedZone: false, notBelieved: false };
+    const refused = accountState({ login: 'out', read: TEN, key: '…abcd' }, null, true);
+    expect(refused).toMatchObject({ state: 'refused', read: TEN, holdsWork: true });
+    expect(accountState({ login: 'out', read: TEN, key: '…abcd' }, { cooling }, true).state).toBe('refused');
+    expect(stateWord(refused)).toEqual({ label: 'key refused', tone: 'open' });
+    expect(stateWord(accountState({ login: 'out', read: TEN, key: '…abcd' }, null, false)).tone).toBe('neutral');
+    // A key the tool merely says is signed in, as it does for any key, stays unchecked.
+    expect(accountState({ login: 'in', read: TEN, key: '…abcd' }, null, true).state).toBe('keyed');
+    i18n.changeLanguage('zh');
+    expect(stateWord(refused).label).toBe('密钥被拒绝');
   });
 
   it('says when beside the word: the clock alone, never read, or that the last read failed', () => {
@@ -90,6 +122,18 @@ describe('which accounts hold work', () => {
     const [tool] = byTool([claude()]);
     expect(signedOutHeld(tool!, THREE)).toBe(2);
     expect(signedOutHeld(tool!, { ...THREE, scopes: [scopeOf()] })).toBe(1);
+  });
+
+  /** ACCTUX1: a refused key holding work waits on the person as a signed-out account does, so the badge counts it. */
+  it('counts a refused key that holds work, and says it in the list’s phrase', () => {
+    const [tool] = byTool([claude({
+      profiles: [
+        { name: 'account-1', home: 'h/1', login: 'out', account: 'you@work', read: TEN },
+        { name: 'account-2', home: 'h/2', login: 'out', key: '…abcd', read: TEN },
+      ],
+    })]);
+    expect(signedOutHeld(tool!, THREE)).toBe(2);
+    expect(agentRows([tool!], { agents: [THREE] })[0]!.phrase).toBe('2 accounts · 1 signed out · 1 key refused');
   });
 
   it("counts the tool's own sign-in too while starts run on it and it reads signed out", () => {
@@ -136,6 +180,16 @@ describe('an account’s name, as a person reads it (ACCT2)', () => {
     const same = { ...named, displayName: 'spare@example.invalid' };
     expect(accountName(same)).toBe('spare@example.invalid');
     expect(accountWho(same)).toBeNull();
+  });
+
+  /**
+   * ACCTNAME1's page half: the owner named each account by the email it signs in as, so a name and its identity that differ
+   * only in case, or in the spaces around them, are one name said once, as every name here is compared without case.
+   */
+  it('says a name that is its identity once, whatever its case', () => {
+    expect(accountWho({ name: 'Gmail', displayName: 'You@Example.invalid', account: 'you@example.invalid' })).toBeNull();
+    expect(accountWho({ name: 'Gmail', displayName: ' you@example.invalid', account: 'you@example.invalid ' })).toBeNull();
+    expect(accountWho({ name: 'Gmail', displayName: 'you@example.invalid', account: 'me@example.invalid' })).toBe('me@example.invalid');
   });
 
   it('never leads with a fresh id the person never chose: who signed in stands for it until they name it', () => {
@@ -198,7 +252,7 @@ describe('where an account runs (ACCT1)', () => {
 });
 
 describe('the one act an account’s state asks for (D152 §4)', () => {
-  const state = (name: 'in' | 'out' | 'unknown' | 'cooling' | 'keyed', holdsWork = true) => ({
+  const state = (name: 'in' | 'out' | 'unknown' | 'cooling' | 'keyed' | 'refused', holdsWork = true) => ({
     state: name, read: null, holdsWork,
     cooling: name === 'cooling' ? { until: TEN, stated: true, seen: TEN, assumedZone: false, notBelieved: false } : null,
   });
@@ -218,6 +272,88 @@ describe('the one act an account’s state asks for (D152 §4)', () => {
   it('offers no sign-in where the agent has none, nor a read where it is not installed', () => {
     expect(accountAct(state('out'), { signsIn: false, present: true, runs: 1 })).toBeNull();
     expect(accountAct(state('unknown'), { signsIn: true, present: false, runs: 1 })).toBeNull();
+  });
+
+  /**
+   * ACCTUX1: a refused key is repaired by a key, never a sign-in: the page's own *Add an API key*, loud where it holds work.
+   * Nothing puts a new key into the same account yet, so where the agent takes no key from Daoris there is no act to offer.
+   */
+  it('is Add an API key when its key was refused, and none where the agent takes no key', () => {
+    expect(accountAct(state('refused'), { signsIn: false, present: true, runs: 1, takesKey: true })).toEqual({ act: 'newKey', loud: true });
+    expect(accountAct(state('refused', false), { signsIn: false, present: true, runs: 1, takesKey: true }))
+      .toEqual({ act: 'newKey', loud: false });
+    expect(accountAct(state('refused'), { signsIn: true, present: true, runs: 1 })).toBeNull();
+    expect(accountAct(state('refused'), { signsIn: false, present: false, runs: 1, takesKey: true })).toBeNull();
+  });
+});
+
+/**
+ * ACCTUX1: what an account's agent last said, as the row's second line, read beside its state. Each window's share is a reading
+ * a person acts on, so it wears the ink; its reset and when it was said are times, and wear the soft ink. A reset is said
+ * beside the window that reported it, and a cool-off whose length Daoris chose says the reset is unknown.
+ */
+describe('what an account’s agent last said, on its row', () => {
+  beforeEach(() => i18n.changeLanguage('en'));
+  const SEEN = '2026-10-04T11:00:00.000Z';
+  const RESET = '2026-10-04T15:00:00.000Z';
+  const WEEK = '2026-10-09T17:00:00.000Z';
+  const said = {
+    seen: SEEN,
+    windows: [
+      { window: 'weekly', used: 0.15, reset: WEEK, credits: false, seen: SEEN },
+      { window: 'session', used: 0.88, reset: RESET, standing: 'near', credits: false, seen: SEEN },
+    ],
+  };
+  const signedIn = accountState({ login: 'in', read: TEN }, null, true);
+  const cooling = (stated: boolean) => accountState({ login: 'in', read: TEN }, {
+    cooling: { until: '2026-10-04T16:02:00.000Z', stated, window: stated ? 'session' : null, seen: TEN, assumedZone: false, notBelieved: false },
+  }, true);
+  const text = (parts: ReturnType<typeof usageLine>) => (parts ?? []).map((part) => part.text).join('');
+
+  it('says each window’s share in the ink, and its reset and when it was said in the soft ink', () => {
+    const parts = usageLine({ said }, signedIn)!;
+    expect(parts.filter((part) => part.tone === 'reading').map((part) => part.text)).toEqual([
+      'near its five-hour limit, by its own word', '88% of its five-hour limit used', '15% of its weekly limit used',
+    ]);
+    expect(parts.filter((part) => part.tone === 'when').map((part) => part.text)).toEqual([
+      `resets ${moment(RESET)}`, `resets ${moment(WEEK)}`, `said ${ago(SEEN)}`,
+    ]);
+    expect(text(parts)).toBe(
+      `near its five-hour limit, by its own word; 88% of its five-hour limit used, resets ${moment(RESET)}; `
+      + `15% of its weekly limit used, resets ${moment(WEEK)} · said ${ago(SEEN)}`);
+  });
+
+  it('says nothing where its agent said nothing and nothing holds it', () => {
+    expect(usageLine({}, signedIn)).toBeNull();
+    expect(usageLine({ said: { seen: SEEN, windows: [] } }, signedIn)).toBeNull();
+  });
+
+  it('says a cool-off’s reset unknown where Daoris chose the wait and no window reported one', () => {
+    expect(text(usageLine({}, cooling(false)))).toBe('reset unknown');
+    expect(usageLine({}, cooling(false))!.every((part) => part.tone === 'when')).toBe(true);
+    // The agent named the time: the hold says it, and no reset is said apart from a window that reported one.
+    expect(usageLine({}, cooling(true))).toBeNull();
+    // A window that reported a reset says it beside itself, cooling or not.
+    expect(text(usageLine({ said }, cooling(false)))).toContain(`88% of its five-hour limit used, resets ${moment(RESET)}`);
+    expect(text(usageLine({ said }, cooling(false)))).not.toContain('reset unknown');
+  });
+
+  it('says a window its agent named a reset for with no share, beside its own word', () => {
+    const reached = { seen: SEEN, windows: [{ window: 'weekly', used: null, reset: WEEK, standing: 'refused', credits: false, seen: SEEN }] };
+    expect(text(usageLine({ said: reached }, cooling(false))))
+      .toBe(`its weekly limit reached, by its own word, resets ${moment(WEEK)} · said ${ago(SEEN)}`);
+  });
+
+  it('says since when it is offered again, as a time', () => {
+    const parts = usageLine({ offered: TEN }, signedIn)!;
+    expect(parts).toEqual([{ text: `offered again since ${moment(TEN)}`, tone: 'when' }]);
+  });
+
+  it('says it in 中文, tight, its times set apart', () => {
+    i18n.changeLanguage('zh');
+    expect(text(usageLine({ said }, signedIn))).toBe(
+      `它自己说接近5 小时上限；5 小时上限已用 88%，${moment(RESET)} 重置；每周上限已用 15%，${moment(WEEK)} 重置 · ${ago(SEEN)}报告`);
+    expect(text(usageLine({}, cooling(false)))).toBe('重置时间未知');
   });
 });
 

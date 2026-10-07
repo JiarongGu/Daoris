@@ -1,6 +1,6 @@
 import i18n from '../i18n';
 import type { Ask, Quest, Registration } from '../api';
-import { accountName, accountState, accountStates, joinChoices, ownState, runsFor } from '../agents/agents';
+import { accountName, accountState, accountStates, joinChoices, ownState, runsFor, waitsOnPerson } from '../agents/agents';
 import { clockOf, list, moment } from '../format';
 import {
   type AccountCooling, type AccountScope, type AccountsAnswer, type AgentAccounts, agentOf, machineScope, workspaceScope,
@@ -26,8 +26,11 @@ export type AccountsKnown = {
   waits?: readonly AccountWaitTick[] | null;
 };
 
-/** An account's state as last known, the four of D150 §5.3 and a key's, which no sign-in names. */
-export type NamedState = 'out' | 'cooling' | 'unknown' | 'in' | 'keyed';
+/**
+ * An account's state as last known, the four of D150 §5.3 and a key's, which no sign-in names: unchecked, or refused by its
+ * provider (ACCTUX1), which waits on the person as a sign-out does and is repaired by a new key, never a sign-in.
+ */
+export type NamedState = 'out' | 'cooling' | 'unknown' | 'in' | 'keyed' | 'refused';
 
 /** One account a row names (D150 §5.3): its id (null for the tool's own sign-in), its name, its state, and when it was read. */
 export type NamedAccount = {
@@ -193,10 +196,12 @@ function namedAccount(
     ? accountState(account, { cooling }, true).state
     : cooling ? 'cooling' : 'unknown';
   const out = known === 'unknown' && (passed || holds === 'signedOut' || holds === 'refused');
+  // A key the walk says its provider refused is refused, whatever the tool last said of it (ACCTUX1, AGT3b).
+  const refused = known === 'keyed' && holds === 'refused';
   return {
     id,
     label: account ? accountName(account) : tickedName ?? id,
-    state: out ? 'out' : known,
+    state: refused ? 'refused' : out ? 'out' : known,
     read: account?.read ?? null,
     until: cooling?.until ?? null,
   };
@@ -204,8 +209,8 @@ function namedAccount(
 
 /**
  * Why the start waits, as the accounts that would serve it stand (§6.3's *one line of why*): each cooling one until its
- * reset, those read signed out together by when, those no read answered. One that reads signed in holds nothing and is not
- * said. Null where none is said.
+ * hold's end, those read signed out together by when, keys their provider refused together (ACCTUX1), those no read
+ * answered. One that reads signed in holds nothing and is not said. Null where none is said.
  */
 function whyLine(named: readonly NamedAccount[], now: Date): string | null {
   const clauses: string[] = [];
@@ -215,11 +220,14 @@ function whyLine(named: readonly NamedAccount[], now: Date): string | null {
   const byWhen = new Map<string, string[]>();
   const together = (key: string, label: string) => byWhen.set(key, [...(byWhen.get(key) ?? []), label]);
   for (const account of named.filter((one) => one.state === 'out')) together(`out\n${account.read ?? ''}`, account.label);
+  for (const account of named.filter((one) => one.state === 'refused')) together('refused\n', account.label);
   for (const account of named.filter((one) => one.state === 'unknown')) together(`unknown\n${account.read ?? ''}`, account.label);
   for (const [key, labels] of byWhen) {
     const [state, read] = key.split('\n') as [string, string];
     const accounts = list(labels);
-    if (state === 'out') {
+    if (state === 'refused') {
+      clauses.push(i18n.t('work.attention.accounts.refused', { accounts }));
+    } else if (state === 'out') {
       clauses.push(read
         ? i18n.t('work.attention.accounts.out', { accounts, when: clockOf(read, now) })
         : i18n.t('work.attention.accounts.outUnread', { accounts }));
@@ -239,7 +247,9 @@ function whyLine(named: readonly NamedAccount[], now: Date): string | null {
  * (ACCT1's rules, `joinChoices`), **known ready**, a reading of signed in or a key. An account no read answered may be
  * signed out, and *Let … run …* would widen what Daoris may spend on an account nobody looked at, so where none is known
  * ready, one never read is offered to read first (UXFIX3, §6.3's *Read* for one never read); one whose last read failed is
- * neither, as on a named account. None where the wait spans workspaces, since there is then no one list to add it to.
+ * neither, as on a named account. A key its provider refused is never a candidate (ACCTUX1): it read *unchecked*, and so
+ * ready, though no start runs on it until a new key. None where the wait spans workspaces, since there is then no one list to
+ * add it to.
  */
 function outsideOf(
   tool: Tool | null, use: AgentAccounts | null, scope: AccountScope | null, held: Held, named: readonly NamedAccount[],
@@ -249,8 +259,8 @@ function outsideOf(
   const states = accountStates(tool, use);
   const candidates = tool.accounts.filter((account) => {
     if (named.some((one) => one.id === account.name)) return false;
-    const state = states.get(account.name)?.state;
-    if (state === 'out' || state === 'cooling') return false;
+    const state = states.get(account.name);
+    if (!state || waitsOnPerson(state) || state.state === 'cooling') return false;
     return joinChoices(tool, use, [], (name) => name, account.name).some((choice) => choice.workspace === target);
   });
   const ready = candidates.find((account) => {
@@ -368,8 +378,14 @@ export function accountAttention(
     const facts = rowFacts(tool.name, tool);
     const rows = tool.accounts.flatMap((account): Attention[] => {
       const state = states.get(account.name)!;
-      if (state.state !== 'out' || !state.holdsWork || named.has(`${tool.name}/${account.name}`)) return [];
+      if (!waitsOnPerson(state) || !state.holdsWork || named.has(`${tool.name}/${account.name}`)) return [];
       const runs = runsFor(tool, use, account.name).map((place) => place.workspace ?? i18n.t('agents.runs.machine'));
+      // A key its provider refused says so, and where it is repaired: its agent's page, where a new key is added (ACCTUX1).
+      const refused = state.state === 'refused';
+      const detail = [
+        ...(refused ? [i18n.t('work.attention.signedOut.refused', { product: facts.product })] : []),
+        ...(runs.length > 0 ? [i18n.t('work.attention.signedOut.runs', { runs: list(runs) })] : []),
+      ].join(i18n.t('harness.said.sentences'));
       return [{
         id: `signed-out:${tool.name}/${account.name}`,
         kind: 'signed-out',
@@ -378,10 +394,10 @@ export function accountAttention(
         // When it was read, which its row says as *read …*; since when it holds work nobody knows (UXFIX3).
         since: null,
         read: state.read,
-        detail: runs.length > 0 ? i18n.t('work.attention.signedOut.runs', { runs: list(runs) }) : null,
+        detail: detail || null,
         account: {
           ...facts,
-          named: [{ id: account.name, label: accountName(account), state: 'out', read: state.read, until: null }],
+          named: [{ id: account.name, label: accountName(account), state: refused ? 'refused' : 'out', read: state.read, until: null }],
           outside: null,
         },
       }];

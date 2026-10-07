@@ -1,16 +1,18 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
+import { InTheme } from '../plugins/storyIcons';
+import { chinese } from '../storyLanguage';
 import type { AgentActs } from './AgentPage';
 import { AgentMainNotice, AgentPage } from './AgentPage';
 import {
-  CLAUDE_TOOL, CLAUDE_USE, CODEX_TOOL, CODEX_USE, DSH_TOOL, INSTALL_TOOL, INSTALL_USE, INSTALL_WORKSPACES, READ, RULES, USAGE,
-  WORKSPACES,
+  CLAUDE_TOOL, CLAUDE_USE, CODEX_TOOL, CODEX_USE, DSH_TOOL, INSTALL_TOOL, INSTALL_USE, INSTALL_WORKSPACES, READ, READINGS_TOOL,
+  READINGS_USE, RULES, USAGE, WORKSPACES,
 } from './agentsFixtures';
 
 // An agent's page (UX7b, D152 §4; first UX6e, D150 §5.2) in the main area: the design's Claude Code, three accounts of which
 // two read signed out and one cools, your own sign-in never read, each section folded to its line; the install's shape, a
 // row per state with its one act; the add flow's last step; *Read again* on its way; a proposal waiting, which opens *What
-// it may do*; an agent with one account and no settings Daoris knows; one not installed; an API key; and the main area
-// with no page. Each at the main area's two widths: the frame's 52rem, and the 680 px window's main area, where rows stack.
+// it may do*; an agent with one account and no settings Daoris knows; one not installed; an API key; what each row knows
+// (ACCTUX1), in both themes; and the main area with no page. Each at the main area's two widths: the frame's 52rem, and the 680 px window's main area, where rows stack.
 
 const nothing = () => {};
 const ACTS: AgentActs = {
@@ -84,6 +86,28 @@ export const ApiKey: Story = {
     use: { ...CLAUDE_USE, accounts: [{ name: 'account-4', running: 0 }], scopes: [CLAUDE_USE.scopes[0]!] },
   },
 };
+
+const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
+
+/**
+ * What each row knows (ACCTUX1): a key its provider refused says *key refused* with *Add an API key*; *reserve*, cooling for
+ * Daoris's default because its agent named no reset, says until when and *reset unknown*; *team*, cooling until the reset its
+ * agent named, says each window's share in the ink and its reset beside it in the soft ink; and an account named for its
+ * email says it once.
+ */
+export const Readings: Story = { args: { tool: READINGS_TOOL, use: READINGS_USE, workspaces: ['work'], usage: [] } };
+
+/** The same in dark, where the faint ink the readings wore was the hardest to read. */
+export const ReadingsDark: Story = { args: Readings.args, decorators: [dark] };
+
+/** The same at the 680 px window's main area, each row stacked, in dark. */
+export const ReadingsNarrowDark: Story = {
+  args: Readings.args,
+  decorators: [(Story) => <div className="w-[37rem] max-w-full"><Story /></div>, dark],
+};
+
+/** The same in 中文. */
+export const ReadingsChinese: Story = { args: Readings.args, decorators: [chinese] };
 
 /** The main area with nothing chosen. */
 export const NothingChosen: StoryObj<typeof AgentMainNotice> = {

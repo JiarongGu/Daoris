@@ -1434,7 +1434,9 @@ describe('how accounts are used', () => {
 
     const personal = await screen.findByRole('listitem', { name: 'personal' });
     expect(await within(personal).findByText('cooling')).toBeTruthy();
-    expect(within(personal).getByText(/^resets /)).toBeTruthy();
+    // The hold's end, never a reset the column cannot know was reported (ACCTUX1).
+    expect(within(personal).getByText(/^until /)).toBeTruthy();
+    expect(within(personal).queryByText(/^resets /)).toBeNull();
     // *Now* says what runs on it; *nothing said yet* and *0 sessions* are not said (D152 §2 rule 4).
     expect(within(personal).getByText('1 session')).toBeTruthy();
     expect(within(screen.getByRole('main')).queryByText(/nothing said yet|0 sessions|sessions running/)).toBeNull();

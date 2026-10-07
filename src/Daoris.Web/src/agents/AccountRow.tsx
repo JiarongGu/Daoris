@@ -1,7 +1,14 @@
 import { Children, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Icon, Menu, type MenuAct, Pill, Tip, WhyGlyph } from '../ui';
-import { type AccountState, readLine, stateWhen, stateWord } from './agents';
+import { type AccountState, readLine, stateWhen, stateWord, type UsagePart } from './agents';
+
+/**
+ * The ink each piece of what its agent said wears (ACCTUX1): a share is a reading a person acts on, so the ink; a reset and
+ * when it was said are times, so the soft ink, which the line's own colour gives its joins. At 11 px in the faint ink the
+ * whole line read 3.38:1 in light, as metadata, which it is not.
+ */
+const SAID_INK: Record<UsagePart['tone'], string | undefined> = { reading: 'text-ink', when: 'text-ink-soft', join: undefined };
 
 // The columns' wide form is the main area at 40rem and over, a container query on it (D118 §3b), never the window: at the
 // install's 800 px main area the columns fit, and at 680 px the row stacks. Every class names it whole, `@min-[40rem]/main:`,
@@ -59,8 +66,8 @@ export function AccountRow({ name, who, id, home, why, state, runs, current, sai
   runs: string;
   /** *Now*: *1 session* while something runs on it; null leaves the cell blank. */
   current?: string | null;
-  /** What its agent last said, the row's second line; null says nothing. */
-  said?: string | null;
+  /** What its agent last said, the row's second line, in pieces each wearing its ink (`usageLine`); null says nothing. */
+  said?: readonly UsagePart[] | null;
   /** The one act its state asks for. */
   act?: { label: string; ariaLabel?: string; onPress: () => void; disabled?: boolean; loud?: boolean };
   /** Its ⋯: the rest of what is done to it; none draws no ⋯. */
@@ -95,13 +102,19 @@ export function AccountRow({ name, who, id, home, why, state, runs, current, sai
       {/* State and *Runs for*: one line under the name when the row stacks, two cells of the row when it does not. */}
       <span className="col-span-3 col-start-1 row-start-2 flex min-w-0 flex-wrap items-baseline gap-x-1.5 text-small text-ink-soft @min-[40rem]/main:contents">
         <span className="flex min-w-0 flex-wrap items-baseline gap-x-1.5 @min-[40rem]/main:col-start-2 @min-[40rem]/main:row-start-1">
-          {/* 🔴 A key is never said to be signed in (AGT3): the tool says so for any key, a wrong one included. */}
-          {state.state === 'keyed'
-            ? <Tip content={t('harness.login.keyedTip')}><span><Pill tone={word.tone}>{word.label}</Pill></span></Tip>
+          {/* 🔴 A key is never said to be signed in (AGT3): the tool says so for any key, a wrong one included. One its
+              provider refused says so, and its tip what repairs it (ACCTUX1). */}
+          {state.state === 'keyed' || state.state === 'refused'
+            ? (
+              <Tip content={t(state.state === 'keyed' ? 'harness.login.keyedTip' : 'harness.login.refusedTip')}>
+                <span><Pill tone={word.tone}>{word.label}</Pill></span>
+              </Tip>
+            )
             : <Pill tone={word.tone}>{word.label}</Pill>}
+          {/* When it was read, or a hold's end, is a time the person acts on: the soft ink, not the faint (ACCTUX1). */}
           {when && (
             <Tip content={tip ?? when}>
-              <span className="text-small text-ink-faint">{when}</span>
+              <span className="text-small text-ink-soft">{when}</span>
             </Tip>
           )}
         </span>
@@ -147,7 +160,11 @@ export function AccountRow({ name, who, id, home, why, state, runs, current, sai
         </span>
       )}
 
-      {said && <span className="col-span-full col-start-1 text-meta text-ink-faint [overflow-wrap:anywhere]">{said}</span>}
+      {said && said.length > 0 && (
+        <span className="col-span-full col-start-1 text-small text-ink-soft [overflow-wrap:anywhere]">
+          {said.map((part, at) => <span key={at} className={SAID_INK[part.tone]}>{part.text}</span>)}
+        </span>
+      )}
       {/* Only a panel that is open takes a line: the row's children are its closed panels' `false` as often as not. */}
       {Children.toArray(children).length > 0 && (
         <div className="col-span-full col-start-1 flex min-w-0 flex-col gap-2 pb-1 pt-1">{children}</div>
