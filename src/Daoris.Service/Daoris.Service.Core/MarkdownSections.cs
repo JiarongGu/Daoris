@@ -20,7 +20,9 @@ public static class MarkdownSections
     /// Headings are only recognised at the start of a line and outside fenced code blocks — a
     /// document about markdown, or one quoting a changelog, otherwise splits itself apart at
     /// headings that were only ever examples. This repository's own decision log contains exactly
-    /// such a fence, so the naive version fails on the first real input.
+    /// such a fence, so the naive version fails on the first real input. A fence closes as CommonMark
+    /// closes one, on its own character at least as long (<see cref="MarkdownFence"/>, ORIENT2h3), so a
+    /// fence quoting a shorter one holds the quote whole.
     /// </remarks>
     public static IReadOnlyList<MarkdownSection> Split(string markdown, int level = 2) => Walk(markdown, level).Sections;
 
@@ -60,16 +62,10 @@ public static class MarkdownSections
             if (close > 0) start = close + 1;
         }
 
-        var inFence = false;
+        var fence = new MarkdownFence();
         foreach (var raw in lines.Skip(start))
         {
-            var trimmed = raw.TrimStart();
-            if (trimmed.StartsWith("```", StringComparison.Ordinal) || trimmed.StartsWith("~~~", StringComparison.Ordinal))
-            {
-                inFence = !inFence;
-                continue;
-            }
-            if (inFence) continue;
+            if (fence.Holds(raw)) continue;
 
             var hashes = raw.Length - raw.TrimStart('#').Length;
             if (hashes is < 1 or > 6 || raw.Length == hashes || raw[hashes] != ' ') continue;
@@ -88,18 +84,13 @@ public static class MarkdownSections
         var sections = new List<MarkdownSection>();
         string? heading = null;
         var body = new List<(int Line, string Text)>();
-        var inFence = false;
+        var fence = new MarkdownFence();
         var line = 0;
 
         foreach (var raw in (markdown ?? string.Empty).Replace("\r\n", "\n").Split('\n'))
         {
             line++;
-            var trimmed = raw.TrimStart();
-            if (trimmed.StartsWith("```", StringComparison.Ordinal) || trimmed.StartsWith("~~~", StringComparison.Ordinal))
-            {
-                inFence = !inFence;
-            }
-            else if (!inFence && raw.StartsWith(marker, StringComparison.Ordinal))
+            if (!fence.Holds(raw) && raw.StartsWith(marker, StringComparison.Ordinal))
             {
                 if (heading is not null) sections.Add(Build(heading, body));
                 heading = raw[marker.Length..].Trim();

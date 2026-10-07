@@ -107,6 +107,11 @@ with the version and date at release.
   branch name wraps whole instead of being cut.
 - Red words (danger buttons, refusals, removed counts) are easier to read in the dark theme, and a
   workspace's history reading says why each thing is kept in fewer words.
+- An agent whose own output quotes a refused-key error no longer marks its account refused, and a
+  note about an account's limit no longer repeats the agent's own sentence to other machines.
+- A repository whose documents repeat a heading next to one already numbered, such as `A`, `A` and
+  `A (2)`, no longer fails its knowledge refresh, and a table quoted inside a longer code fence is no
+  longer read as part of the index.
 
 The first version: doctrine that installs, is checked, and flows back.
 
