@@ -114,6 +114,9 @@ with the version and date at release.
   longer read as part of the index.
 - A quest's evidence that could not be read (git did not answer, or a folder was refused) is said as
   not read, instead of as missing.
+- A history clear that took nothing stays open and says why each thing was kept, a clear that took
+  only part says so as an error, and the reading no longer claims there are no files when it only
+  measured 0 B.
 
 The first version: doctrine that installs, is checked, and flows back.
 

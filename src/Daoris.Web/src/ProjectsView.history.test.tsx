@@ -18,7 +18,7 @@ vi.mock('@shenora/react', () => ({
 
 import { DRIVER_STATE, respond, show, WIRING } from './test/shellHarness';
 import { chooseWorkspace, ProjectsView, repositoryMain } from './test/projectsView';
-import { WORKSPACE_CLEARED, WORKSPACE_EMPTY, WORKSPACE_PLAN } from './work/historyFixtures';
+import { WORKSPACE_ALL_KEPT, WORKSPACE_CLEARED, WORKSPACE_EMPTY, WORKSPACE_PLAN } from './work/historyFixtures';
 
 const REGISTRY = [
   { repository: 'engine', adopted: true, registered: true, summary: 'the engine', owns: [], accepts: [], packs: [], entries: 1, workspace: 'aurora' },
@@ -72,10 +72,35 @@ describe("a workspace's history on its Details", () => {
         units: [{ kind: 'ask', id: 'a1b2c3' }, { kind: 'quest', id: '0c1d2e' }, { kind: 'quest', id: '3f4a5b' }],
       },
     })));
-    await waitFor(() => expect(notify).toHaveBeenCalledWith('Cleared 2 of 3 from aurora, 14.6 MB. 1 changed since the list and was kept.', 'ok'));
+    // Two of three went: the list closes, and says what went and what was kept in no plain success's tone (HIST1n).
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Cleared 2 of 3 from aurora, 14.6 MB. 1 changed since the list and was kept.', 'error'));
     // The reading is asked again, so the page says what is kept now.
     await waitFor(() => expect(invoke.mock.calls.filter(([, type]) => type === 'HISTORY_PLAN').length).toBeGreaterThan(1));
     expect(within(repositoryMain()).queryByRole('group', { name: 'clear from this machine' })).toBeNull();
+  });
+
+  /**
+   * HIST1n (the second-opinion review's afternoon round, `historyActs.ts:31`): a press whose every unit changed since the list
+   * closed its list as though it had cleared them, in a success's tone. Nothing went, so the list stays, saying why inside it.
+   */
+  it('keeps the list open, its reasons inside, where every unit it listed was kept', async () => {
+    answering({ HISTORY_PLAN: WORKSPACE_PLAN, HISTORY_CLEAR: WORKSPACE_ALL_KEPT });
+    const notify = vi.fn();
+    show(<ProjectsView notify={notify} />);
+    const page = await chooseWorkspace('aurora');
+
+    const kept = await within(page).findByRole('region', { name: 'Kept on this machine' });
+    await userEvent.click(within(kept).getByRole('button', { name: 'Clear history…' }));
+    const ask = within(kept).getByRole('group', { name: 'clear from this machine' });
+    await userEvent.click(within(ask).getByRole('button', { name: 'Clear 3' }));
+
+    const refusal = await within(ask).findByRole('alert');
+    expect(refusal).toHaveTextContent('Nothing was cleared. 3 changed since the list and were kept.');
+    expect(refusal).toHaveTextContent('Quest #0c1d2e: s0c1d2e3 is still running, so it was not cleared. Stop it first.');
+    expect(refusal).toHaveTextContent('Quest #3f4a5b: Its last moves have not reached the remote for aurora');
+    expect(within(kept).getByRole('group', { name: 'clear from this machine' })).toBe(ask);
+    expect(within(ask).getByRole('button', { name: 'Never mind' })).toBeEnabled();
+    expect(notify).not.toHaveBeenCalled();
   });
 
   it('opens Branches from a reason the clean-up frees, and a kept quest’s page through the application’s door', async () => {

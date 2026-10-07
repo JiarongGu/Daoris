@@ -35,7 +35,6 @@
   "history.reading.holds": "{{what}}：共 {{size}}。",
   "history.reading.none": "这里没有保留已完成的工作。",
   "history.reading.takes": "清除会带走 {{what}}：共 {{size}}。",
-  "history.reading.takesRecords": "清除会带走 {{what}}：只有记录，本机没有相关文件。",
   "history.reading.takesFiles": "清除会带走 {{size}}：不再属于任何记录的文件。",
   "history.reading.takesNothing": "现在清除不会带走任何东西。",
   "history.reading.kept.HISTORY_OPEN": "{{count}} 项保留：仍未关闭或已被接下",
@@ -62,6 +61,7 @@
   "history.cleared.none": "没有清除任何东西。",
   "history.cleared.changed": "{{count}} 项在列出之后有了变化，已保留。",
   "history.cleared.changed_other": "{{count}} 项在列出之后有了变化，已保留。",
+  "history.cleared.keptWhy": "{{unit}}：{{why}}",
   "history.cleared.failedFiles": "{{count}} 个文件没能移除；下次清除工作区时会带走它。",
   "history.cleared.failedFiles_other": "{{count}} 个文件没能移除；下次清除工作区时会带走它们。"
 }

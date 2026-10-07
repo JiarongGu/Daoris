@@ -1,17 +1,20 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../storyLanguage';
 import { ClearAsk, type KeptDoors } from './ClearAsk';
+import { clearRefusal } from './history';
 import {
-  ASK_PLAN, FAILED_PLAN, QUEST_ALONE, QUEST_FORGOTTEN, QUEST_PLAN, WORKSPACE_KEPT, WORKSPACE_LEFT_OVER, WORKSPACE_PLAN,
+  ASK_PLAN, FAILED_PLAN, QUEST_ALONE, QUEST_FORGOTTEN, QUEST_PLAN, WORKSPACE_ALL_KEPT, WORKSPACE_KEPT, WORKSPACE_LEFT_OVER,
+  WORKSPACE_PLAN,
 } from './historyFixtures';
 
 // A clear's first press (HIST1e, D153; the history-clearing design §5, §6.1), as it asks under a quest's or an ask's header
 // and in a workspace's Details: what it takes and that nothing brings it back, or that the remote keeps the team's copy;
 // for a workspace the counts by kind and every unit kept with its reason and door; a teammate's failed session kept; only
-// left-over files; nothing to take; on its way. At the main area's width beside the install's 1546 px window and at 680 px,
-// in both languages and both themes.
+// left-over files; nothing to take; on its way; pressed and every unit kept (HIST1n). At the main area's width beside the
+// install's 1546 px window and at 680 px, in both languages and both themes.
 
 const nothing = () => {};
 const QUEST = { scope: 'quest', id: '9a8b7c' } as const;
@@ -75,6 +78,29 @@ export const WorkspaceNarrowChinese: Story = { ...WorkspaceChinese, decorators: 
 
 /** At 680 px, in dark. */
 export const WorkspaceNarrowDark: Story = { ...Workspace, decorators: [dark, narrow] };
+
+/** A workspace's clear whose press the driver answers as every unit kept (HIST1n), as `useHistoryActs` says it. */
+function KeptAtThePress(props: ComponentProps<typeof ClearAsk>) {
+  const { t } = useTranslation();
+  return <ClearAsk {...props} onClear={(_units, answered) => answered.refused(clearRefusal(t, WORKSPACE_ALL_KEPT))} />;
+}
+
+/** Presses the clear's move, so the answer it gets is said inside it. */
+const pressClear: Story['play'] = async ({ canvasElement }) => {
+  [...canvasElement.querySelectorAll('button')].find((button) => /^(Clear|清除) 3/.test(button.textContent ?? ''))?.click();
+};
+
+/**
+ * Pressed, where every unit it listed changed since the list and was kept (HIST1n): nothing went, so it stays open, saying
+ * so and each kept unit by its name and reason, a line each, in the refusal's rail.
+ */
+export const WorkspaceKeptAtThePress: Story = { ...Workspace, render: (args) => <KeptAtThePress {...args} />, play: pressClear };
+
+/** The same in 中文. */
+export const WorkspaceKeptAtThePressChinese: Story = { ...WorkspaceKeptAtThePress, args: WorkspaceChinese.args, decorators: [chinese] };
+
+/** At 680 px, in dark. */
+export const WorkspaceKeptAtThePressNarrowDark: Story = { ...WorkspaceKeptAtThePress, decorators: [dark, narrow] };
 
 /** Only what records already gone left, and the intake's room: the press sends no unit. */
 export const LeftOverOnly: Story = { args: { target: WORKSPACE, plan: WORKSPACE_LEFT_OVER, meanIt: 'Clear 5' } };

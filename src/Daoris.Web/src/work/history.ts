@@ -306,7 +306,11 @@ export type ReadingSaid = {
 /**
  * What a clear would take now, said from the reading's counts as well as its bytes (HIST1k): a unit that goes takes its
  * records whether or not they hold a file, and every workspace's clear takes the left-over files however small, so "nothing"
- * is said only where `clearList` would offer no press. Records and files, records alone, or files alone each say so.
+ * is said only where `clearList` would offer no press. Records say their size, 0 B included, and files alone say theirs.
+ *
+ * @remarks
+ * **Only what the reading read** (HIST1n): 0 B is a size, not a count of files, so it is never said as *no files here*,
+ * which beside left-over files of 0 B denied what the next line and *What goes* name.
  */
 function takesSaid(t: Translate, reading: HistoryReading): string {
   const what = counted(t, {
@@ -314,7 +318,7 @@ function takesSaid(t: Translate, reading: HistoryReading): string {
     sessions: number(reading.takes?.sessions), teammates: number(reading.takes?.teammates),
   });
   const bytes = number(reading.takes?.bytes);
-  if (what) return t(bytes > 0 ? 'history.reading.takes' : 'history.reading.takesRecords', { what, size: size(bytes) });
+  if (what) return t('history.reading.takes', { what, size: size(bytes) });
   if (bytes > 0 || number(reading.leftOver?.count) > 0) return t('history.reading.takesFiles', { size: size(bytes) });
   return t('history.reading.takesNothing');
 }
@@ -388,9 +392,43 @@ export function goingSaid(t: Translate, list: ClearList): string[] {
 export type ClearNotice = { text: string; tone: 'ok' | 'error' };
 
 /**
- * What the second press says (design §5, §6.1): a quest or an ask cleared from this machine; a quest's failed sessions by
- * how many went; a workspace by how many of the listed units went and what it freed, and how many changed since the list
- * and were kept. A file the disk would not let go of is said apart, since the next workspace's clear takes it.
+ * Whether a second press took anything (HIST1n): a unit cleared, the left-over files or the intake's room taken, or bytes
+ * freed. An answer is no success merely by arriving: one that took nothing keeps its ask open (UXFIX2), as a discard the
+ * driver kept does (`settings/Sweep.tsx`'s `sayDiscard`).
+ */
+export const clearWent = (answer: HistoryClearAnswer): boolean =>
+  (answer.cleared?.length ?? 0) > 0 || number(answer.leftOver) > 0 || answer.intake === true || number(answer.bytes) > 0;
+
+/**
+ * What a press that took nothing says inside its ask (HIST1n), in the catalogue's words: that nothing was cleared and how
+ * many changed since the list, then each unit kept, a line each, by its name and its reason's sentence for its code and
+ * variant, and a file the disk kept. The reasons are the answer's own, read when the press was judged, not the list's.
+ */
+export function clearRefusal(t: Translate, answer: HistoryClearAnswer): string {
+  const changed = answer.changed ?? [];
+  const lead = changed.length > 0
+    ? t('history.join', { first: t('history.cleared.none'), second: t('history.cleared.changed', { count: changed.length }) })
+    : t('history.cleared.none');
+  return [
+    lead,
+    ...changed.map((each) => {
+      const unit = t(`history.unit.${each.kind}`, { id: each.id });
+      return each.keep ? t('history.cleared.keptWhy', { unit, why: reasonSaid(t, each.keep) }) : unit;
+    }),
+    ...(number(answer.failed) > 0 ? [t('history.cleared.failedFiles', { count: answer.failed })] : []),
+  ].join('\n');
+}
+
+/**
+ * What the second press says once something went (design §5, §6.1): a quest or an ask cleared from this machine; a quest's
+ * failed sessions by how many went; a workspace by how many of the listed units went and what it freed, and how many
+ * changed since the list and were kept. A file the disk would not let go of is said apart, since the next workspace's clear
+ * takes it.
+ *
+ * @remarks
+ * **A partial clear is not a plain success** (HIST1n): where a listed unit was kept, the sentence says what went and what
+ * was kept in the error's tone, as a pause says a session it could not stop; only a press that took all it listed says
+ * `ok`. Its ask still closes, since something went, and the reading, asked again, says what keeps the rest with its door.
  */
 export function clearSaid(t: Translate, answer: HistoryClearAnswer): ClearNotice[] {
   const cleared = answer.cleared?.length ?? 0;
@@ -409,8 +447,9 @@ export function clearSaid(t: Translate, answer: HistoryClearAnswer): ClearNotice
     text = t(`history.cleared.${answer.scope}`, { id: answer.id });
   }
   if (changed > 0) text = t('history.join', { first: text, second: t('history.cleared.changed', { count: changed }) });
+  const whole = clearWent(answer) && changed === 0 && cleared >= number(answer.listed);
   return [
-    { text, tone: 'ok' },
+    { text, tone: whole ? 'ok' : 'error' },
     ...(number(answer.failed) > 0 ? [{ text: t('history.cleared.failedFiles', { count: answer.failed }), tone: 'error' as const }] : []),
   ];
 }

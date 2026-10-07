@@ -35,7 +35,6 @@
   "history.reading.holds": "{{what}}: {{size}}.",
   "history.reading.none": "Nothing finished is kept here.",
   "history.reading.takes": "A clear would take {{what}}: {{size}}.",
-  "history.reading.takesRecords": "A clear would take {{what}}: records only, no files here.",
   "history.reading.takesFiles": "A clear would take {{size}}: files no record holds any more.",
   "history.reading.takesNothing": "A clear would take nothing now.",
   "history.reading.kept.HISTORY_OPEN": "{{count}} kept: still open or taken",
@@ -62,6 +61,7 @@
   "history.cleared.none": "Nothing was cleared.",
   "history.cleared.changed": "{{count}} changed since the list and was kept.",
   "history.cleared.changed_other": "{{count}} changed since the list and were kept.",
+  "history.cleared.keptWhy": "{{unit}}: {{why}}",
   "history.cleared.failedFiles": "{{count}} file could not be removed; the next clear of a workspace takes it.",
   "history.cleared.failedFiles_other": "{{count}} files could not be removed; the next clear of a workspace takes them."
 }
