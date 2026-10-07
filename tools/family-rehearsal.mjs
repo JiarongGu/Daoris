@@ -3936,6 +3936,55 @@ check(
   emptyListed.out + emptyCleaned.out,
 );
 
+// One workspace's branches from a terminal (BRSCOPE1a, D150's BRSCOPE1 note, D50, WSP5), as its Branches tab looks at them:
+// a session branch holding nothing in each of two workspaces' checkouts, newcomer's in `default` and foundry's in `tools`
+// (section 9 wired it). Each look given a workspace lists, and its press removes, that workspace's alone; bringing up to date
+// looks at none of the other's; and a workspace the registry does not name is refused, naming it, with nothing changed. The
+// press is `tools`' alone: its checkouts are repositories of their own, where the examples' roots in `default` are not, and git
+// walks UP from a folder that is not one.
+run('git branch daoris/s-rehearse-default', newcomer);
+run('git branch daoris/s-rehearse-tools', foundry);
+const branchRow = (repository) => new RegExp(`\\b${repository}\\s+daoris/`);
+const toolsListed = run(`dotnet "${driverDll}" trees clean --workspace tools`, scratch, cleanEnv);
+const defaultListed = run(`dotnet "${driverDll}" trees clean --workspace default`, scratch, cleanEnv);
+check(
+  '`daoris-driver trees clean --workspace <name>` lists that workspace’s session branches alone, and its press carries the workspace',
+  toolsListed.code === 0 && /goes\s+foundry\s+daoris\/s-rehearse-tools\s+nothing beyond/.test(toolsListed.out)
+    && !branchRow('newcomer').test(toolsListed.out)
+    && toolsListed.out.includes('`daoris-driver trees clean --workspace tools --yes` removes them')
+    && defaultListed.code === 0 && /goes\s+newcomer\s+daoris\/s-rehearse-default\s+nothing beyond/.test(defaultListed.out)
+    && !branchRow('foundry').test(defaultListed.out),
+  toolsListed.out + defaultListed.out,
+);
+const toolsCleaned = run(`dotnet "${driverDll}" trees clean --workspace tools --yes`, scratch, cleanEnv);
+check(
+  '…and `--yes` removes that workspace’s branch alone: the other workspace’s stands',
+  toolsCleaned.code === 0 && /removed\s+foundry\s+daoris\/s-rehearse-tools/.test(toolsCleaned.out)
+    && !branchRow('newcomer').test(toolsCleaned.out) && /trees: removed 1 of 1\./.test(toolsCleaned.out)
+    && run('git branch --list "daoris/*"', foundry).out.trim() === ''
+    && /daoris\/s-rehearse-default/.test(run('git branch --list "daoris/*"', newcomer).out),
+  toolsCleaned.out,
+);
+const toolsSynced = run(`dotnet "${driverDll}" trees sync --workspace tools`, scratch, cleanEnv);
+check(
+  '`daoris-driver trees sync --workspace <name>` looks at that workspace’s checkouts alone, never the other’s branch',
+  toolsSynced.code === 0
+    && /trees: no repository of workspace `tools` with a checkout here holds a branch of Daoris's\./.test(toolsSynced.out)
+    && /not looked at, since they hold no branch of Daoris's \(\d+\): [^\n]*\bfoundry\b/.test(toolsSynced.out)
+    && !/newcomer/.test(toolsSynced.out),
+  toolsSynced.out,
+);
+const nowhereCleaned = run(`dotnet "${driverDll}" trees clean --workspace nowhere --yes`, scratch, cleanEnv);
+const nowhereSynced = run(`dotnet "${driverDll}" trees sync --workspace nowhere --yes`, scratch, cleanEnv);
+check(
+  '…and a workspace the registry does not name is refused by both, naming it, with nothing changed',
+  nowhereCleaned.code === 1 && /trees: there is no workspace `nowhere` on this machine — one of [^\n]*`tools`/.test(nowhereCleaned.out)
+    && nowhereSynced.code === 1 && /trees: there is no workspace `nowhere` on this machine/.test(nowhereSynced.out)
+    && /daoris\/s-rehearse-default/.test(run('git branch --list "daoris/*"', newcomer).out),
+  nowhereCleaned.out + nowhereSynced.out,
+);
+run('git branch -D daoris/s-rehearse-default', newcomer);
+
 // Leave the root as section 7 left it — later phases assume the dirty file is theirs to manage.
 rmSync(join(newcomer, 'work-in-flight.txt'), { force: true });
 
