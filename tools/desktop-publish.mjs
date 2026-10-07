@@ -50,7 +50,7 @@
  */
 import { execSync, spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
-import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, posix, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 // The tar reader the CLI carries (AGT2b): what unpacks the doctrine tool's package (D124 §1.2).
@@ -164,10 +164,13 @@ export const OFFERED_PLUGINS = Object.freeze(['github-pull-request', 'azure-devo
  * `<install>/app/plugin-offers/`, which is replaced wholesale — staged beside, then swapped — so a stale
  * file or an offer dropped since does not survive a republish. Nothing is written under the home.
  *
+ * The swap goes through `renameHeld`: a scanner holding the staging folder just copied stopped a deployment rehearsal's
+ * publish with EPERM (2026-10-08), the one rename the held-folder sweep had left bare.
+ *
  * @returns the ids laid out, in the order offered.
  * @throws when an offered example has no `plugin.json`, before anything is replaced.
  */
-export function layOffers(examples, install) {
+export function layOffers(examples, install, renameOptions = {}) {
   const missing = OFFERED_PLUGINS.filter((id) => !existsSync(join(examples, id, 'plugin.json')));
   if (missing.length > 0) {
     throw new Error(`desktop-publish: no plugin.json for the offered ${missing.join(', ')} under ${examples}`);
@@ -180,7 +183,7 @@ export function layOffers(examples, install) {
   rmSync(staged, { recursive: true, force: true });
   for (const id of OFFERED_PLUGINS) copyTree(join(examples, id), join(staged, id));
   rmSync(target, { recursive: true, force: true });
-  renameSync(staged, target);
+  renameHeld(staged, target, renameOptions);
   return [...OFFERED_PLUGINS];
 }
 

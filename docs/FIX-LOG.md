@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-08 — the publish's last bare rename
+
+### Tools: laying out the plugin offers stopped a publish on a held staging folder
+- **Symptom:** the deployment rehearsal, rerun on its own after the full set on `99b2a858`, failed at its first step: `publish:desktop --service` threw EPERM renaming `app/.plugin-offers-staging` to `app/plugin-offers`, and every later check failed with it. The same step runs when the owner's install is republished.
+- **Root cause:** `layOffers` (`tools/desktop-publish.mjs`) swapped the staging folder in with a bare `renameSync`, a moment after copying the offers into it, when the scanner may still hold the folder. The held-folder sweep (FIX-LOG 2026-10-07) moved the package, launcher and stage renames onto `renameHeld` and left this one.
+- **Fix:** the swap goes through `renameHeld` with the step's options, as the others do; the file imports no `renameSync` now, so no rename in it is bare.
+- **Verify:** a `desktop-publish.test.ts` case where the first swap is refused as held failed first (thrown), then passed (tried again, the offers laid); the file's 42 tests pass; the deployment rehearsal reruns on the fix.
+
 ## 2026-10-07 — a document's first heading and a README's description read a fence's text
 
 ### CLI and driver: the first heading and a README's description closed a longer fence on a shorter one inside it (ORIENT2h6)

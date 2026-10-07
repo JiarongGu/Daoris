@@ -537,6 +537,30 @@ test('a republish replaces the offers whole: a stale file and an offer dropped s
   assert.deepEqual(readdirSync(join(install, SHELL_HOME[0])), [PLUGIN_OFFERS[1]], 'nothing left staged beside it');
 });
 
+test('laying out the offers waits for a held staging folder, as the other publish steps do (deployment rehearsal 2026-10-08)', () => {
+  const examples = folder();
+  for (const id of OFFERED_PLUGINS) {
+    mkdirSync(join(examples, id), { recursive: true });
+    writeFileSync(join(examples, id, 'plugin.json'), `{ "id": "${id}" }\n`);
+  }
+  const install = folder();
+  let attempts = 0;
+
+  const laid = layOffers(examples, install, {
+    tries: 2,
+    waitMs: 0,
+    rename: (from: string, to: string) => {
+      attempts += 1;
+      if (attempts === 1) throw Object.assign(new Error('folder held'), { code: 'EPERM' });
+      renameHeld(from, to);
+    },
+  });
+
+  assert.equal(attempts, 2, 'the held swap is tried again, not thrown');
+  assert.deepEqual(laid, [...OFFERED_PLUGINS]);
+  assert.deepEqual(readdirSync(join(install, ...PLUGIN_OFFERS)).sort(), [...OFFERED_PLUGINS].sort());
+});
+
 test('an offer missing from the examples stops the publish, naming it, and the offers stand as they were', () => {
   const examples = folder();
   mkdirSync(join(examples, 'github-pull-request'), { recursive: true });
