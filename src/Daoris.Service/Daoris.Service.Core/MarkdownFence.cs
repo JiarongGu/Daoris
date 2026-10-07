@@ -17,6 +17,11 @@ namespace Daoris.Knowledge;
 ///
 /// <para>Each reader keeps its own policy for what it does with a fenced line, its sections and its tables; only
 /// where a fence starts and stops is shared, so a fence is one fence to every reader.</para>
+///
+/// <para>A TWIN (<c>.claude/knowledge/twins.md</c>'s fence row) of the CLI's <c>markdownFence</c>
+/// (<c>src/document.ts</c>), the tools' <c>fenced</c> (<c>tools/doc-duplicates.mjs</c>) and the driver's
+/// <c>SelfDescription.Fence</c>, each the rule in code of its own: all four are held to the CLI's
+/// <c>test/fixtures/fence-cases.json</c>, row for row, this one by <c>MarkdownFenceTests</c> (ORIENT2h6b).</para>
 /// </remarks>
 internal sealed class MarkdownFence
 {
