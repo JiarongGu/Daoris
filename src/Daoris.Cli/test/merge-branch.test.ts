@@ -411,6 +411,9 @@ const ALL = repoPlan.map((gate) => gate.name);
 const LONG = ['driver-process', 'modules-process', 'deployment'];
 /** The kept names' table (SESSDEL1c): among the driver's tests, and the page's twin reads it too. */
 const KEPT_NAMES = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/kept-names.json';
+/** The driver's sources whose declarations the page's twin vitests parse (MOD9e): SESSDEL1c's scan found them. */
+const PAGE_PARSED = ['NoteCodes.cs', 'SessionEvents.cs', 'InstructionAccount.cs', 'Trace.Chain.cs', 'AutoLanding.cs', 'Landing.cs']
+  .map((file) => `src/Daoris.Desktop/Daoris.Desktop.Driver/${file}`);
 
 test('the long gates are the real-process halves and the deployment rehearsal, read from what each runs', () => {
   assert.deepEqual(repoPlan.filter((gate) => tool.isLongGate(gate)).map((gate) => gate.name), LONG);
@@ -433,6 +436,9 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
       [...BASE, 'driver', 'modules', 'driver-process', 'modules-process', 'rehearse-family', 'deployment']],
     ['ServiceHostLocator', ['src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceHostLocator.cs'],
       [...BASE, 'driver', 'modules', 'driver-process', 'modules-process', 'rehearse-family', 'deployment']],
+    // MOD9e: the page's twin vitests parse these driver sources' declarations, so a change to one runs the web gate as well.
+    ...PAGE_PARSED.map((path): [string, string[], string[]] => [`${path.split('/').at(-1)}, which a page twin parses`, [path],
+      [...BASE, 'driver', 'modules', 'driver-process', 'modules-process', 'rehearse-family', 'web', 'deployment']]),
     ["the driver's tests", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/LandingTests.cs'], [...BASE, 'driver', 'driver-process']],
     // GATE6: a browser test is the web gate's alone; no .NET suite reads it (the test below holds that).
     ['a browser test', ['src/Daoris.Web/e2e/platform.spec.ts'], [...BASE, 'web']],
@@ -640,11 +646,17 @@ test('every tool a rehearsal imports or starts is one whose change reaches that 
  * MOD9's incident, as a test: two C# tests read the web's catalogues, and a batch called "web only"
  * skipped them. Every repository path a .NET test reads must be one whose change reaches that test's
  * suite, which a merge then runs, and its Process half when the reading class is a Process class,
- * which the full set runs (GATE5). A read is a path under `src/Daoris.…`, or under any other top-level
- * folder (`treeReads`, MOD9b): the service's twin read the digest's note table under `tools/`, and the
- * scan, seeing `src/` alone, never asked for the row that sends its change there (ORIENT1h). Or it is a
- * path under a source root (`sourceRootReads`, MOD9c): the driver's console and occasion scans read the
- * modules' and the app's sources from `SourceRoot()`, which neither pattern saw.
+ * which the full set runs (GATE5). A read is a path under `src/Daoris.…` (`srcReads`), or under any other
+ * top-level folder (`treeReads`, MOD9b): the service's twin read the digest's note table under `tools/`,
+ * and the scan, seeing `src/` alone, never asked for the row that sends its change there (ORIENT1h). Or it
+ * is a path under a source root (`sourceRootReads`, MOD9c): the driver's console and occasion scans read
+ * the modules' and the app's sources from `SourceRoot()`, which neither pattern saw. Or it is read through
+ * a local holding a repository folder (`localReads`, MOD9d).
+ *
+ * MOD9d: each read must also be a file or folder this repository tracks, and one a rule of the lane table
+ * places. A read no rule placed reached every gate, so the checks after it passed while holding nothing:
+ * three modules tests read the whole desktop tree, `src/Daoris.Desktop`, through a local, and a driver test's
+ * scratch workspace in this repository's layout read as `src/Daoris.Desktop/app/bin`.
  */
 test("every repository file a .NET suite reads is one whose change reaches that suite (MOD9's incident)", () => {
   const suites: [string, string, string | null][] = [
@@ -655,33 +667,49 @@ test("every repository file a .NET suite reads is one whose change reaches that 
     ['src/Daoris.Devkit/Daoris.Devkit.Tests/', 'devkit', null],
   ];
   const files = trackedFiles();
+  const folders = folderSet(files);
   let reads = 0;
   let outsideSrc = 0;
   let rooted = 0;
+  let throughLocals = 0;
+  const problems: string[] = [];
   for (const file of files.filter((path) => path.endsWith('.cs'))) {
     const suite = suites.find(([folder]) => file.startsWith(folder));
     if (!suite) continue;
     const text = readFileSync(join(repoRoot, file), 'utf8');
     const isProcess = /\[Trait\(Category\.Name, Category\.Process\)\]/.test(text);
-    const found: string[] = [];
-    for (const match of text.matchAll(/"src",\s*"(Daoris\.[A-Za-z.]+)"((?:,\s*"[^"]*")*)/g)) {
-      const segments = ['src', match[1]!, ...[...match[2]!.matchAll(/"([^"]*)"/g)].map((part) => part[1]!)];
-      found.push(/\.(cs|ts|tsx|mjs|js|json|css|md|props|txt)$/.test(segments.at(-1)!) ? segments.join('/') : `${segments.join('/')}/probe.txt`);
-    }
+    const found = srcReads(text, files);
     const outside = treeReads(text, files);
-    outsideSrc += outside.length;
     const fromRoot = sourceRootReads(file, text, files);
     rooted += fromRoot.length;
-    for (const read of [...found, ...outside, ...fromRoot]) {
+    const fromLocals = localReads(text, files);
+    throughLocals += fromLocals.length;
+    outsideSrc += [...outside, ...fromLocals].filter((read) => !read.startsWith('src/')).length;
+    for (const read of [...found, ...outside, ...fromRoot, ...fromLocals]) {
       reads += 1;
-      assert.ok(runs([read]).includes(suite[1]), `${file} reads ${read}, and a merge changing it does not run ${suite[1]}`);
-      if (isProcess && suite[2]) assert.ok(reaches([read]).includes(suite[2]), `${file} (a Process class) reads ${read}, and a change there does not reach ${suite[2]}`);
+      // MOD9d: a read no rule places reaches every gate, so the two checks below pass while holding nothing.
+      if (!isReal(read, files, folders)) problems.push(`${file} reads ${read}, which is no file or folder this repository tracks`);
+      else if (tool.selectGates(repoPlan, [read], { lanes: repoLanes }).unplaced.length) problems.push(`${file} reads ${read}, which no rule of the lane table places`);
+      else if (!runs([read]).includes(suite[1])) problems.push(`${file} reads ${read}, and a merge changing it does not run ${suite[1]}`);
+      else if (isProcess && suite[2] && !reaches([read]).includes(suite[2])) problems.push(`${file} (a Process class) reads ${read}, and a change there does not reach ${suite[2]}`);
     }
   }
+  assert.deepEqual(problems, [], 'each a read the lane table does not hold');
   assert.ok(reads >= 10, `the scan found only ${reads} reads: its pattern no longer matches how the tests read the repository`);
   assert.ok(outsideSrc >= 3, `the scan found only ${outsideSrc} reads outside src/: its pattern no longer matches how the tests read the repository`);
   assert.ok(rooted >= 10, `the scan found only ${rooted} reads from a source root: its pattern no longer matches how the tests read their sources`);
+  assert.ok(throughLocals >= 10, `the scan found only ${throughLocals} reads through a local: its pattern no longer matches how the tests read through one`);
 });
+
+/** Every folder that holds a tracked file, at any depth. */
+function folderSet(files: readonly string[]): Set<string> {
+  return new Set(files.flatMap((path) => path.split('/').slice(0, -1).map((_, i, parts) => parts.slice(0, i + 1).join('/'))));
+}
+
+/** MOD9d: a read names something here, a tracked file or a file in a tracked folder (`probe.txt`, `probe.cs`), or it holds nothing. */
+function isReal(read: string, files: readonly string[], folders: ReadonlySet<string>): boolean {
+  return files.includes(read) || (/\/probe\.(?:txt|cs)$/.test(read) && folders.has(posix.dirname(read)));
+}
 
 test('the scan sees a read under any top-level folder, and never a name, a sentence or a folder the test made (MOD9b)', () => {
   const files = [
@@ -690,7 +718,7 @@ test('the scan sees a read under any top-level folder, and never a name, a sente
   ];
   const source = [
     'File.ReadAllText(Path.Combine(Root(), "tools", "orient-index-fixtures", "decision-notes.json"));',
-    'var examples = Path.Combine(WorkspaceRoot.Folder, "examples", "plugins");',
+    'foreach (var plugin in Directory.EnumerateDirectories(Path.Combine(WorkspaceRoot.Folder, "examples", "plugins"))) { }',
     'return Path.Combine(at?.FullName ?? throw new InvalidOperationException("no root above the test"),',
     '    ".claude", "knowledge", "adoption.md");',
     // A folder the test made in this repository's own layout, by a local, a field or a property: not this repository.
@@ -726,15 +754,18 @@ test('the scan sees a read under any top-level folder, and never a name, a sente
  * read of `src/` is: a bare name is a folder the test made, often in this repository's own layout (`room`, `_home`), and
  * a string is the start of a longer run. A folder read is a file in it. A top-level folder alone (`"tools"`) is a
  * workspace's name far more often than a read, and a top-level file (`daoris.json`, the marker the tests walk up to) is
- * not read this way; neither is taken.
+ * not read this way; neither is taken. A run that is a local's whole initializer is no read itself (MOD9d): what is read
+ * through the local is (`localReads`).
  */
 function treeReads(text: string, files: readonly string[]): string[] {
   const tracked = new Set(files);
-  const folders = new Set(files.flatMap((file) => file.split('/').slice(0, -1).map((_, i, parts) => parts.slice(0, i + 1).join('/'))));
+  const folders = folderSet(files);
+  const { declarations } = localRoots(text, files);
   const reads: string[] = [];
   for (const match of text.matchAll(/,\s*"([^"\\\s]+)"((?:\s*,\s*"[^"\\]*")*)/g)) {
+    if (declarations.some(([start, end]) => match.index >= start && match.index < end)) continue;
     const base = text.slice(0, match.index).trimEnd();
-    if (base.endsWith('"') || /(?:^|[^\w.!?])@?[A-Za-z_]\w*$/.test(base)) continue;
+    if (base.endsWith('"') || BARE_NAME.test(base)) continue;
     const path = [match[1]!, ...[...match[2]!.matchAll(/"([^"]*)"/g)].map((part) => part[1]!)].join('/');
     const top = path.split('/')[0]!;
     if (top === 'src' || !folders.has(top) || top === path) continue;
@@ -831,7 +862,7 @@ test('the scan resolves a source root as its walk does, and reads under it what 
  */
 function sourceRootReads(file: string, text: string, files: readonly string[]): string[] {
   const tracked = new Set(files);
-  const folders = new Set(files.flatMap((path) => path.split('/').slice(0, -1).map((_, i, parts) => parts.slice(0, i + 1).join('/'))));
+  const folders = folderSet(files);
   const roots: string[] = [];
   let rest = text;
   for (const helper of text.matchAll(/^([ \t]*)(?:(?:private|internal|public|protected)\s+)?static\s+string\s+\w+\(\)\s*\r?\n\1\{([\s\S]*?)\r?\n\1\}/gm)) {
@@ -845,8 +876,7 @@ function sourceRootReads(file: string, text: string, files: readonly string[]): 
     roots.push([at, ...[...added.matchAll(/"([^"]*)"/g)].map((part) => part[1]!)].join('/'));
     rest = rest.replace(helper[0], '');
   }
-  const patterns = [...rest.matchAll(/\b(?:Enumerate|Get)Files\s*\([^;]*?"([^"]*\*[^"]*)"/g)].map((match) => match[1]!);
-  const probe = patterns.length > 0 && patterns.every((pattern) => pattern.endsWith('.cs')) ? 'probe.cs' : 'probe.txt';
+  const probe = probeFor(rest);
   const reads = new Set<string>();
   for (const root of roots) {
     for (const match of rest.matchAll(/"([^"\\\r\n]*)"((?:\s*,\s*"[^"\\\r\n]*")*)/g)) {
@@ -860,19 +890,198 @@ function sourceRootReads(file: string, text: string, files: readonly string[]): 
   return [...reads];
 }
 
+test('the scan reads through a local holding a repository folder, and never through a folder the test made (MOD9d)', () => {
+  const files = [
+    'src/Daoris.Desktop/Directory.Packages.props', 'src/Daoris.Desktop/Daoris.Desktop.App/Program.cs',
+    'src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs', 'src/Daoris.Desktop/Daoris.Desktop.Launcher/Program.cs',
+    'src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpGoProposals.cs', 'src/Daoris.Web/src/bridge/call.ts',
+    'src/Daoris.Service/Daoris.Service.Http/Program.cs', 'examples/plugins/github-pull-request/plugin.json', 'daoris.json',
+  ];
+  const desktopTree = 'src/Daoris.Desktop/probe.txt';
+
+  // The project list a scan hands to a local holding the desktop tree. The tree spans lanes, so it is no read itself, and
+  // neither is a path named relative to it, nor a mention in a comment.
+  const projects = [
+    '    private static readonly string[] Projects = ["Daoris.Desktop.Modules", "Daoris.Desktop.Launcher"];',
+    '        var root = Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop");',
+    '        foreach (var project in Projects)',
+    '            foreach (var file in Directory.EnumerateFiles(Path.Combine(root, project), "*.cs", SearchOption.AllDirectories))',
+    '                missing.Add(Path.GetRelativePath(root, file)); // relative to the root, as Assert.Empty(root) would say',
+  ].join('\n');
+  assert.deepEqual(srcReads(projects, files), []);
+  assert.deepEqual(localReads(projects, files), ['src/Daoris.Desktop/Daoris.Desktop.Modules/probe.cs', 'src/Daoris.Desktop/Daoris.Desktop.Launcher/probe.cs']);
+
+  // Files named through a local and through a narrower local on it; a check that a retired project is gone names nothing.
+  const named = [
+    '        var desktop = Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop");',
+    '        var app = Path.Combine(desktop, "Daoris.Desktop.App");',
+    '        var program = File.ReadAllText(Path.Combine(app, "Program.cs"));',
+    '        Assert.False(File.Exists(Path.Combine(desktop, "Daoris.Desktop.Browser", "Daoris.Desktop.Browser.csproj")));',
+    '        Assert.DoesNotContain("CefSharp", File.ReadAllText(Path.Combine(desktop, "Directory.Packages.props")));',
+  ].join('\n');
+  assert.deepEqual(srcReads(named, files), []);
+  assert.deepEqual(localReads(named, files), ['src/Daoris.Desktop/Directory.Packages.props', 'src/Daoris.Desktop/Daoris.Desktop.App/Program.cs']);
+
+  // An expression-bodied helper, an interpolated name and a local handed on whole: a folder read for a file the scan cannot name.
+  const whole = [
+    '    private static string Page => Path.Combine(HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Web", "src");',
+    '        foreach (var file in Directory.GetFiles(Path.Combine(Page, "bridge"), "*.ts")) { }',
+    '        var folder = Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver", "Help", "Proposals");',
+    '        Assert.Matches("IHelpProposalKind", File.ReadAllText(Path.Combine(folder, $"{name}.cs")));',
+    '        var host = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Service", "Daoris.Service.Http");',
+    '        Assert.True(Directory.Exists(host));',
+    '        var examples = Path.Combine(Repository(), "examples", "plugins");',
+    '        PluginOffers.Needs(Path.Combine(examples, id));',
+    '        PluginOffers.Needs(Path.Combine(examples, "github-pull-request"));',
+  ].join('\n');
+  assert.deepEqual(srcReads(whole, files), []);
+  assert.deepEqual(treeReads(whole, files), []);
+  assert.deepEqual(localReads(whole, files), [
+    'src/Daoris.Web/src/bridge/probe.txt', 'src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/probe.txt',
+    'src/Daoris.Service/Daoris.Service.Http/probe.txt', 'examples/plugins/github-pull-request/probe.txt',
+  ]);
+
+  // A folder the test made: a scratch workspace on a field the test set, in this repository's own layout. No read at all.
+  const scratch = [
+    '    private readonly string _root = Path.Combine(',
+    '        Path.GetTempPath(), "daoris-locator-" + Guid.NewGuid().ToString("N")[..8]);',
+    '        var workspace = Path.Combine(_root, "workspace");',
+    '        var deep = Path.Combine(workspace, "src", "Daoris.Desktop", "app", "bin");',
+    '        var project = Path.Combine(workspace, "src", "Daoris.Service", "Daoris.Service.Http");',
+    '        File.WriteAllText(Path.Combine(workspace, "daoris.json"), "{}");',
+  ].join('\n');
+  assert.deepEqual([...srcReads(scratch, files), ...treeReads(scratch, files), ...localReads(scratch, files)], []);
+  // What was read before is the repository's own root, from a call or a member, as every other read of `src/` is.
+  assert.deepEqual(srcReads('File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.App", "Program.cs"));', files),
+    ['src/Daoris.Desktop/Daoris.Desktop.App/Program.cs']);
+
+  // What the scan then asks of the lane table: the desktop tree no rule places, and what is read through it is placed.
+  const unplaced = (path: string) => tool.selectGates(repoPlan, [path], { lanes: repoLanes }).unplaced;
+  assert.deepEqual(unplaced(desktopTree), [desktopTree]);
+  for (const read of [...localReads(projects, files), ...localReads(named, files)]) {
+    assert.deepEqual(unplaced(read), [], read);
+    assert.ok(runs([read]).includes('modules'), read);
+  }
+});
+
 /**
- * Reads of the driver's declarations by the page's twins, which no rule sends to the web gate: a row for them would run the
- * web gate, a rehearsal's time, at each change to those files, which is the parent's call (SESSDEL1c's hand-back). Named
- * exactly, so a new read outside the page is placed on purpose, and a row that places these fails here until it drops them.
+ * MOD9 and MOD9d: the paths a .NET source reads under `src/Daoris.…`, a run of string literals from `"src"`. Its base, the
+ * argument before the run, is a call or a member (`RepositoryRoot()`, `WorkspaceRoot.Folder`), as `treeReads` takes it: a
+ * bare name is a folder the test made (`Path.Combine(workspace, "src", "Daoris.Desktop", "app", "bin")`, a scratch workspace
+ * on a field the test set) or a local holding a repository folder, whose reads `localReads` takes; and a string is the middle
+ * of a longer run. A run that is a local's whole initializer is no read itself, since what is read through the local is. A
+ * run that names no file is a folder read, a file in it.
  */
-const OWED_PAGE_READS = [
-  'src/Daoris.Desktop/Daoris.Desktop.Driver/AutoLanding.cs',
-  'src/Daoris.Desktop/Daoris.Desktop.Driver/InstructionAccount.cs',
-  'src/Daoris.Desktop/Daoris.Desktop.Driver/Landing.cs',
-  'src/Daoris.Desktop/Daoris.Desktop.Driver/NoteCodes.cs',
-  'src/Daoris.Desktop/Daoris.Desktop.Driver/SessionEvents.cs',
-  'src/Daoris.Desktop/Daoris.Desktop.Driver/Trace.Chain.cs',
-];
+function srcReads(text: string, files: readonly string[]): string[] {
+  const { declarations } = localRoots(text, files);
+  const reads: string[] = [];
+  for (const match of text.matchAll(/"src",\s*"(Daoris\.[A-Za-z.]+)"((?:,\s*"[^"]*")*)/g)) {
+    if (declarations.some(([start, end]) => match.index >= start && match.index < end)) continue;
+    const base = text.slice(0, match.index).trimEnd().replace(/,$/, '').trimEnd();
+    if (base.endsWith('"') || BARE_NAME.test(base)) continue;
+    const segments = ['src', match[1]!, ...[...match[2]!.matchAll(/"([^"]*)"/g)].map((part) => part[1]!)];
+    reads.push(/\.(cs|ts|tsx|mjs|js|json|css|md|props|txt)$/.test(segments.at(-1)!) ? segments.join('/') : `${segments.join('/')}/probe.txt`);
+  }
+  return reads;
+}
+
+/** A base that is a name alone, a local, a field or a parameter, rather than a call or a member: MOD9b's folder the test made. */
+const BARE_NAME = /(?:^|[^\w.!?])@?[A-Za-z_]\w*$/;
+
+/**
+ * MOD9d: the locals, fields and expression-bodied helpers of a .NET source that hold a folder of this repository, each by
+ * name, and where each is declared. One is declared as `Path.Combine` of a base and a run of string literals whose joined
+ * path is a tracked folder below the top level: `var root = Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop")`, or
+ * `static string Page => Path.Combine(…)`. The base is the repository's root, a call or a member as for every other read
+ * (never a temporary folder's), or another such local (`Path.Combine(desktop, "Daoris.Desktop.App")`). A local on anything
+ * else (a field the test set to a scratch folder, a parameter) holds a folder the test made.
+ */
+function localRoots(text: string, files: readonly string[]): { roots: Map<string, string[]>; declarations: [number, number][] } {
+  const folders = folderSet(files);
+  const roots = new Map<string, string[]>();
+  const declarations: [number, number][] = [];
+  const found = [...text.matchAll(/\b(?:var|(?:static\s+)?(?:readonly\s+)?string)\s+(\w+)\s*(?:\(\s*\))?\s*=>?\s*Path\.Combine\(\s*([^,;"]+?)\s*((?:,\s*"[^"\\\r\n]*")+)\s*\)\s*;/g)];
+  const settled = new Set<number>();
+  for (let more = true; more;) {
+    more = false;
+    for (const [i, match] of found.entries()) {
+      if (settled.has(i)) continue;
+      const base = match[2]!;
+      const under = /^@?[A-Za-z_]\w*$/.test(base) ? roots.get(base) : /(?:\)|\.\w+)$/.test(base) && !/temp/i.test(base) ? [''] : [];
+      if (!under) continue;
+      settled.add(i);
+      const run = [...match[3]!.matchAll(/"([^"]*)"/g)].map((part) => part[1]!);
+      const held = under.map((at) => [at, ...run].filter(Boolean).join('/')).filter((path) => path.includes('/') && folders.has(path));
+      if (!held.length) continue;
+      roots.set(match[1]!, [...(roots.get(match[1]!) ?? []), ...held]);
+      declarations.push([match.index, match.index + match[0].length]);
+      more = true;
+    }
+  }
+  return { roots, declarations };
+}
+
+/**
+ * MOD9d: the paths a .NET source reads through a local holding a repository folder (`localRoots`), which the `src/` pattern
+ * read as the whole folder: `src/Daoris.Desktop`, which no rule places, since it holds every desktop lane. A use the code
+ * makes, never one in a comment or a string, is read by its shape:
+ * - `Path.Combine(local, "Program.cs")`: the run of string literals joined under the folder, when it names a tracked file
+ *   or folder; a path that names nothing here (a check that a retired project is gone) is no read.
+ * - `Path.Combine(local, project)` or `Path.Combine(local, $"{name}.cs")`: a name the scan cannot read. The folders directly
+ *   under the local's that the file names are read, the project list a scan hands it (as MOD9c reads a source root's), and
+ *   with none named, any file in the local's folder.
+ * - the base of a narrower local, whose own uses are read, or `Path.GetRelativePath(local, …)`, which names a path and reads
+ *   nothing: no read.
+ * - any other use (handed to a read, an enumeration, a return or a helper): any file in the local's folder.
+ * A folder is read for its C# sources when every search pattern the file enumerates names C# sources (MOD9c).
+ */
+function localReads(text: string, files: readonly string[]): string[] {
+  const tracked = new Set(files);
+  const folders = folderSet(files);
+  const { roots, declarations } = localRoots(text, files);
+  const probe = probeFor(text);
+  // Strings blanked, then comments, keeping every offset: a name in a sentence or a comment is no use.
+  const code = text.replace(/"(?:[^"\\\r\n]|\\.)*"/g, (literal) => `"${' '.repeat(literal.length - 2)}"`).replace(/\/\/[^\r\n]*/g, (comment) => ' '.repeat(comment.length));
+  const literals = [...text.matchAll(/"([^"\\\r\n]*)"/g)].map((match) => match[1]!);
+  const reads = new Set<string>();
+  for (const [name, held] of roots) {
+    for (const use of code.matchAll(new RegExp(`(?<![\\w.$@])${name}\\b(?:\\s*\\(\\s*\\))?`, 'g'))) {
+      if (declarations.some(([start, end]) => use.index >= start && use.index < end)) continue;
+      const before = code.slice(0, use.index);
+      if (/Path\.GetRelativePath\(\s*$/.test(before)) continue;
+      if (!/Path\.Combine\(\s*$/.test(before)) {
+        for (const folder of held) reads.add(`${folder}/${probe}`);
+        continue;
+      }
+      const args = /^\s*((?:,\s*"[^"\\\r\n]*")*)\s*(,)?/.exec(text.slice(use.index + use[0].length))!;
+      const run = [...args[1]!.matchAll(/"([^"]*)"/g)].map((part) => part[1]!);
+      for (const folder of held) {
+        if (run.length) {
+          const path = `${folder}/${run.join('/')}`;
+          if (tracked.has(path)) reads.add(path);
+          else if (folders.has(path)) reads.add(`${path}/${probe}`);
+          continue;
+        }
+        const named = args[2] ? literals.filter((one) => one && !one.includes('/') && folders.has(`${folder}/${one}`)) : [];
+        for (const one of named.length ? named : ['']) reads.add([folder, one, probe].filter(Boolean).join('/'));
+      }
+    }
+  }
+  return [...reads];
+}
+
+/** MOD9c: a folder a file reads is read for its C# sources when every search pattern the file enumerates names C# sources. */
+function probeFor(text: string): string {
+  const patterns = [...text.matchAll(/\b(?:Enumerate|Get)Files\s*\([^;]*?"([^"]*\*[^"]*)"/g)].map((match) => match[1]!);
+  return patterns.length > 0 && patterns.every((pattern) => pattern.endsWith('.cs')) ? 'probe.cs' : 'probe.txt';
+}
+
+/**
+ * Reads outside the page by the page's twins that no rule sends to the web gate, each named exactly with its reason, so a new
+ * read is placed on purpose or owed here, and a row that places one fails this test until the row drops it. None is owed: the
+ * six driver sources SESSDEL1c's scan found are placed by MOD9e's row (`PAGE_PARSED`).
+ */
+const OWED_PAGE_READS: string[] = [];
 
 /**
  * SESSDEL1c: MOD9's incident from the page's side. The page's vitests run in the web gate alone, so a file outside the page a
@@ -889,7 +1098,16 @@ test("every file outside the page a page's vitest reads is one whose change reac
   const unreached = [...reads].filter((read) => !runs([read]).includes('web')).sort();
   assert.deepEqual(unreached, OWED_PAGE_READS, 'each a file a vitest reads, and a merge changing it does not run the web gate');
   assert.ok(reads.has(KEPT_NAMES), "the scan does not see the page's twin read the kept names' table");
+  for (const path of PAGE_PARSED) assert.ok(reads.has(path), `the scan does not see a page twin parse ${path}`);
   assert.ok(reads.size >= 8, `the scan found only ${reads.size} reads: its pattern no longer matches how the page's tests read the repository`);
+
+  // MOD9e: what the scan asks of the lane table, with the row taken away: the six reach the driver's gates and no vitest.
+  const without = tool.REACH.filter((rule) => !rule.paths?.some((path) => PAGE_PARSED.includes(path)));
+  for (const path of PAGE_PARSED) {
+    const reached = (reach: readonly Rule[]) => tool.selectGates(repoPlan, [path], { lanes: repoLanes, reach }).gates.filter((entry) => entry.run).map((entry) => entry.gate.name);
+    assert.deepEqual(reached(without), ['universal', 'code-map', 'orient-index', 'cli', 'driver', 'modules', 'rehearse-family'], path);
+    assert.deepEqual(reached(tool.REACH), ['universal', 'code-map', 'orient-index', 'cli', 'driver', 'modules', 'rehearse-family', 'web'], path);
+  }
 });
 
 test("the page's scan reads through node:fs from the page, the repository or the test, and never a path a test only says (SESSDEL1c)", () => {
