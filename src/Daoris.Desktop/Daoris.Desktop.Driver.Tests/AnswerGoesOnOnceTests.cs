@@ -154,6 +154,25 @@ public sealed class AnswerGoesOnOnceTests : IDisposable
                                  + "IOException: The process cannot access the file 's1.log' because it is being used by another process.");
     }
 
+    /// <summary>
+    /// A capture still open past the bound does not hold the run from saying how it ended: it is left to finish on its own, and
+    /// its failure is still written when it comes.
+    /// </summary>
+    [Fact]
+    public async Task A_given_up_runs_capture_still_open_past_the_bound_is_written_when_it_fails()
+    {
+        using var log = new MachineLog(_home, "desktop");
+        var output = new SessionOutput();
+        var capture = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        await Daoris.Driver.Driver.AbandonedAsync(null, capture.Task, "s1", log, output, within: TimeSpan.FromMilliseconds(50)).WaitAsync(Bound);
+        Assert.Empty(output.Tail("s1").Lines);
+        capture.SetException(new IOException("the pipe closed late"));
+
+        await Poll.Until(() => output.Tail("s1").Lines.Count == 1, within: Bound);
+        Assert.EndsWith("IOException: the pipe closed late", output.Tail("s1").Lines[0].Text);
+    }
+
     /// <summary>A capture that ended cleanly, or was cancelled with its run, is no failure: nothing is written.</summary>
     [Fact]
     public async Task A_given_up_runs_capture_that_ended_cleanly_writes_nothing()

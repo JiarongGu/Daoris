@@ -1911,8 +1911,11 @@ public sealed partial class Driver(
     /// <summary>Where a run's capture failed once the run was ended before awaiting it (ANSWER2): the machine log's <c>where</c>.</summary>
     internal const string AbandonedRun = "a session's run, ended as its record would not move to working";
 
-    /// <summary>How long a given-up run's capture is waited for before it is left to finish on its own, still observed.</summary>
-    internal static readonly TimeSpan AbandonedWait = TimeSpan.FromSeconds(30);
+    /// <summary>
+    /// How long a given-up run's capture is waited for before it is left to finish on its own, still observed: its process was
+    /// just ended, so its output closes at once, and a capture still open after this is stuck, not slow.
+    /// </summary>
+    internal static readonly TimeSpan AbandonedWait = TimeSpan.FromSeconds(10);
 
     /// <summary>
     /// A run's capture once the run gave up before awaiting it (ANSWER2), as when its record will not move to working: the
