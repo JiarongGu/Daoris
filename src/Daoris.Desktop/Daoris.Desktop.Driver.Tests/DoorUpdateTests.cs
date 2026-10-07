@@ -23,7 +23,7 @@ public sealed class DoorUpdateTests : IDisposable
     private const string AcpPackage = "@agentclientprotocol/claude-agent-acp";
 
     // Scratch in the repository's own gitignored `_fixtures/`, never OS temp.
-    private readonly string _home = Path.Combine(Root(), "_fixtures", "door-update", Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "door-update", Guid.NewGuid().ToString("N")[..8]);
 
     private readonly List<string> _said = [];
 
@@ -313,19 +313,7 @@ public sealed class DoorUpdateTests : IDisposable
         return ["node", script];
     }
 
-    /// <summary>The worktree's root, found by its manifest — the tests run from <c>bin/Debug/net10.0</c>.</summary>
-    private static string Root()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "daoris.json")))
-        {
-            directory = directory.Parent;
-        }
-
-        return directory?.FullName ?? throw new InvalidOperationException("no workspace root above the test binaries");
-    }
-
-    private static string VendorFixtures() => Path.Combine(Root(), "src", "Daoris.Cli", "test", "fixtures", "vendor");
+    private static string VendorFixtures() => Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "test", "fixtures", "vendor");
 
     /// <summary>A transport over a table of URLs, and the URLs it was asked for, in order.</summary>
     private sealed class Served(Dictionary<string, byte[]> files) : HttpMessageHandler

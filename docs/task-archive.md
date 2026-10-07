@@ -11686,3 +11686,24 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CANONREAD2 — the scratch rule names a harness with no file-writing tool** (canon, examples). `no-tmp-for-repo-files` says to compose finals with the file-writing tools, and a harness with none gets no direction, as CANONREAD1 found for reading. Say what such a harness writes with, keeping the rule's point (never via OS temp, never by console redirection that mangles non-ASCII). Contract: `canon-authoring.md`, D48 §2a, CANONREAD1's changelog entry. Proof: canon tests, examples re-synced, core bytes measured.
 
 **Outcome** 2026-10-07: `no-tmp-for-repo-files` says that where a harness has no file-writing tool, a program writes the file through a language's file API (BOM-less UTF-8, the repository's line endings, read back once written), never console redirection, and a helper script is scratch. Core 20,547 → 20,887 bytes; examples re-synced. Detail: `canon/CHANGELOG.md`; commit 469503e9.
+
+
+## SESSDEL1 — Delete… says what the disk kept (2026-10-07, D126)
+
+> - [ ] **SESSDEL1 — Delete… says what the disk kept** (driver, modules). Since HIST1j `SessionHomeFiles.Remove` returns what failed, but `SessionDeletion` still says its success sentence when a file stayed. Say which stayed, as a clear does. Contract: D126 §5.4, D153's HIST1j note. Proof: a `SessionDeletionTests` case with a held file through the remover seam.
+
+**Outcome** 2026-10-07: `SessionHomeFiles.Remove` answers the names the disk kept; `SessionDeletion` says them as left over, `SESSION_DELETE` answers `stayed`, and `sessions delete` exits 2 when one stayed. The record's removal is unchanged; the page's toast is SESSDEL1b. Detail: D126's SESSDEL1 note; commit 83750272.
+
+
+## REFAC1 — one owner per rule within each artifact (2026-10-07)
+
+> - [ ] **REFAC1 — one owner per rule within each artifact** (cli, driver, modules). From the second-opinion review: plugin-id validation lives in two places per artifact (`driverconfig.ts`/`plugins.ts`; `Landing.cs`/`Plugins.cs` — CASEFOLD1e fixed two regexes), `HistoryKept` in the modules repeats `HistoryCodes.Of`, and two driver tests walk to `daoris.json` alike. Route each through its one owner, keeping each caller's trimming. Twins across languages stay separate. Contract: the review's refactors 1, 2, 8. Proof: existing tests green; a test that a second copy is gone where cheap.
+
+**Outcome** 2026-10-07: a plugin id's shape has one owner per artifact (the CLI's `isPluginId`, the driver's `PluginCatalog.IsId`); the shell's `HistoryKept` raises `HistoryAnswers.Reason`'s code through `Refusals.Declared`; five driver tests share one `WorkspaceRoot` helper. Source scans hold each. Detail: D153's REFAC1 note; commit 8c0f82af.
+
+
+## EVID1b2 — the family rehearsal proves evidence (2026-10-07, D144)
+
+> - [ ] **EVID1b2 — the family rehearsal proves evidence** (tools; the parent runs it). Phase 7 needs an ask whose intake publishes a requirement with `evidence: [{ path }]` and whose work commits that file and closes done met (the session was handed the evidence line; `held:false`, `evidence.how` `session-end`, item `found` with a 40-hex object, the step published, the record's `evidence read at …` line), and a second whose file is written but not committed (`evidence-missing`, `uncommitted`, then `quest check --commit` exits 0 and publishes, and an earlier commit exits 1). Contract: D144's EVID1b note. Proof: the phase passing.
+
+**Outcome** 2026-10-07: phase 7 gains two asks naming a path as evidence: one commits it and closes met (read at session end, step published), the other writes it uncommitted and is held `evidence-missing` until `quest check --commit` at the note's commit exits 0 and publishes. Ten checks; the batch's family run proves them. Detail: D144's EVID1b2 note; commit bee9d301.

@@ -82,6 +82,8 @@ with the version and date at release.
   as resuming later with its reset time.
 - `daoris-driver` exits 2 naming the timeout when the service does not answer in time; only Ctrl+C
   reads as a stop.
+- Deleting a session names any of its files the disk kept, instead of saying all went; `daoris-driver
+  sessions delete` exits 2 when one stayed.
 
 The first version: doctrine that installs, is checked, and flows back.
 

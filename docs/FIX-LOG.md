@@ -12,6 +12,13 @@ repository.
 - **Root cause:** `QuestStore.RebaseAsync` loses this machine's later pending operations after its own lost take only when they move a status (D69's rule, read from `QuestTransitions.Target`). A wait (D79) moves none, so it fell through to `QuestLog.Applies`, which a taken quest satisfies whoever took it.
 - **Fix:** a wait after this machine's lost take is lost with it, forgotten by `QuestLog.Lost`'s rule, and the take's conflict names the question after its own note. The rule and its reach are D69's WAITCLAIM1 note.
 - **Verify:** `QuestSyncTests.A_wait_made_on_a_take_that_lost_goes_with_the_take_and_the_loss_names_it` failed first (the conflict's note did not name the question, and the winner's quest waited on it), then passed; `A_wait_on_a_quest_this_machine_did_not_take_survives_the_pass_that_drops_a_lost_takes` holds that a wait on another machine's quest is kept. Not covered: a wait made after the pass that found the take lost (D69's note).
+## 2026-10-07 — a delete said a held file went
+
+### Driver, modules: *Delete…* said its whole sentence when a file stayed (SESSDEL1)
+- **Symptom:** named in D153's HIST1j note, not seen on an install: a conversation deleted while a process held its transcript said, at the terminal, that its record, words, transcript and files had gone, and exited 0; the screen's answer named only what went.
+- **Root cause:** HIST1j made `SessionHomeFiles.Remove` answer what went and what failed, by path; `SessionDeletion` read only the names that went, and its sentence was fixed.
+- **Fix:** `Remove` also answers each session's names the disk kept (`Stayed`); the delete carries them, says them in its sentence as left over, `SESSION_DELETE` answers `stayed`, and `sessions delete` exits 2. D126's SESSDEL1 note has the detail.
+- **Verify:** `SessionDeletionTests`' two held-file cases and `SessionsCommandTests`' exit 2 case failed first on their names and sentences, `DriverModuleSessionsTests`' two on the missing `stayed`; then passed. Not covered: the page's toast, which does not read `stayed` yet.
 
 ## 2026-10-07 — a clear counted a held file as freed
 
