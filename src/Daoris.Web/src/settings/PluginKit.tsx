@@ -174,7 +174,7 @@ export function TrialReport({ trial }: { trial: PluginTrialResult }) {
           </li>
         ))}
       </ul>
-      <p className={`m-0 mt-2 text-small font-medium ${trial.passed ? 'text-st-done' : 'text-warn'}`}>
+      <p className={`m-0 mt-2 text-small font-medium ${trial.passed ? 'text-ink-done' : 'text-warn'}`}>
         <Inline text={trial.summary} />
       </p>
       {trial.said.length > 0 && (

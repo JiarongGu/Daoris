@@ -126,10 +126,11 @@ describe('ActivityBar', () => {
     expect(screen.getAllByRole('button', { current: 'page' })).toHaveLength(1);
   });
 
-  /** The one status on the bar wears the status hue; a quantity wears the accent. */
+  /** The one status on the bar wears the status hue, its digits in that hue's ink (UXFIX5c); a quantity wears the accent. */
   it('colours a count by what it is', () => {
     render(<ActivityBar label="Views" items={VIEWS} active="overview" onSelect={() => {}} />);
-    expect(screen.getByText('1').className).toContain('text-st-open');
+    expect(screen.getByText('1').className).toContain('border-st-open');
+    expect(screen.getByText('1').className).toContain('text-ink-open');
     expect(screen.getByText('3').className).toContain('text-accent');
   });
 

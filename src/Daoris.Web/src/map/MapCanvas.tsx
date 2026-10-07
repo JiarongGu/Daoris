@@ -605,7 +605,7 @@ export function MapCanvas({ topology, selected, onSelect }: {
               {there && (
                 <text
                   x={label.x} y={label.y + label.next} textAnchor={label.anchor}
-                  className={cn('text-meta', there === 'parked' ? 'fill-st-open' : 'fill-ink-soft')}
+                  className={cn('text-meta', there === 'parked' ? 'fill-ink-open' : 'fill-ink-soft')}
                 >
                   {t(there === 'parked' ? 'map.parked' : 'map.working')}{howMany(node.sessions)}
                 </text>

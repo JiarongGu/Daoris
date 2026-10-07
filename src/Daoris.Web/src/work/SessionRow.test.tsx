@@ -273,7 +273,7 @@ describe("a row as the list's reader places it", () => {
     );
 
     const word = screen.getByText('parked');
-    expect(word.className).toContain('text-st-open');
+    expect(word.className).toContain('text-ink-open');
     expect(screen.queryByText('failed')).toBeNull();
     expect(screen.getByText(/after 3 failed sessions/)).toBeInTheDocument();
   });
@@ -292,7 +292,7 @@ describe("a row as the list's reader places it", () => {
       />,
     );
 
-    expect(screen.getByText('awaiting reply').className).not.toContain('st-open');
+    expect(screen.getByText('awaiting reply').className).not.toMatch(/(?:st|ink)-open/);
     expect(screen.getByText(/waits on #q9q9q9, asked of game/)).toBeInTheDocument();
 
     rerender(<SessionRow session={session({ state: 'completed' })} grouping={placed({ group: 'later', shown: 'awaiting-reply', awaits: 'q9q9q9' })} />);

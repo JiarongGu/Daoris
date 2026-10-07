@@ -86,8 +86,9 @@ describe('the workspace map', () => {
       expect(await screen.findByRole('button', { name: 'engine, 1 open, a session waiting on you' })).toBeTruthy();
       const word = screen.getByText('waiting on you');
       expect(screen.queryByText('working')).toBeNull();
-      // UX5 U1: the hue the rail's dot and the band's card give the same fact, not the notice tone.
-      expect(word.getAttribute('class')).toContain('fill-st-open');
+      // UX5 U1: the hue the rail's dot and the band's card give the same fact, not the notice tone; the word in that
+      // hue's ink and the ring in the hue itself (UXFIX5c).
+      expect(word.getAttribute('class')).toContain('fill-ink-open');
       expect(word.closest('g')!.querySelector('circle[stroke-dasharray]')!.getAttribute('class'))
         .toContain('stroke-st-open');
     } finally {
@@ -116,7 +117,9 @@ describe('the workspace map', () => {
     show();
     await userEvent.click(await screen.findByRole('button', { name: /^engine, 1 open/ }));
     const detail = screen.getByText('quests to it').closest('div')!.parentElement!;
-    expect(within(detail).getByText('working').getAttribute('class')).toContain('text-st-taken');
+    // The pill's line in the hue, its word in that hue's ink (UXFIX5c).
+    expect(within(detail).getByText('working').getAttribute('class')).toContain('border-st-taken');
+    expect(within(detail).getByText('working').getAttribute('class')).toContain('text-ink-taken');
 
     SESSIONS[0] = { ...SESSIONS[0]!, state: 'awaiting-person' };
     try {
@@ -125,7 +128,8 @@ describe('the workspace map', () => {
       await userEvent.click(await screen.findByRole('button', { name: /^engine, 1 open/ }));
       const parked = screen.getByText('quests to it').closest('div')!.parentElement!;
       const word = within(parked).getByText('waiting on you');
-      expect(word.getAttribute('class')).toContain('text-st-open');
+      expect(word.getAttribute('class')).toContain('border-st-open');
+      expect(word.getAttribute('class')).toContain('text-ink-open');
       expect(word.getAttribute('class')).not.toContain('accent');
     } finally {
       SESSIONS[0] = { ...SESSIONS[0]!, state: 'working' };
