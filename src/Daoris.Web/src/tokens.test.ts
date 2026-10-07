@@ -320,7 +320,7 @@ describe('the chosen themes', () => {
  * field's placeholder beside a label that says the same, reaches 3:1. Computed from `tokens.css`, in both themes.
  */
 const SURFACES = ['--page', '--sunken', '--raised', '--overlay'];
-const INK_FLOORS: [ink: string, floor: number][] = [['--ink', 4.5], ['--ink-soft', 4.5], ['--ink-faint', 3]];
+const INK_FLOORS: [ink: string, floor: number][] = [['--ink', 4.5], ['--ink-soft', 4.5], ['--ink-faint', 3], ['--ink-danger', 4.5]];
 
 /** Relative luminance of a `#rrggbb` colour (WCAG 2). */
 export function luminance(hex: string): number {
@@ -373,6 +373,100 @@ describe('the surfaces', () => {
   it('holds: the sunken surface lies below the page in both themes, so the well reads as one', () => {
     for (const [theme, tokens] of Object.entries(themes())) {
       expect(luminance(tokens['--sunken']!), `${theme} --sunken against --page`).toBeLessThan(luminance(tokens['--page']!));
+    }
+  });
+});
+
+/**
+ * 🔴 **Red drawn as words wears the danger ink, never the fill's colour** (UXFIX5, from the 2026-10-07 second opinion).
+ * The status hues were computed to tell four states apart as fills, borders and marks. Declined's dark red drawn as a
+ * danger button's label, a refusal's sentence or a declined pill's word measured 3.95:1 on the sunken box a move asks
+ * once in, 3.18:1 on an overlay and 2.94:1 on its own soft field there: under the 4.5:1 text floor, in the theme
+ * nobody had measured it in. `--ink-danger` is the red a word wears, held to the text floor on every surface and on
+ * declined's soft field over each, in both themes; a fill, a border and a mark keep `--st-declined`.
+ */
+const DANGER_AS_TEXT = /(?<![\w-])text-st-declined(?![\w-])/g;
+const DANGER_AS_CSS_TEXT = /(?<![\w-])color\s*:\s*var\(--st-declined\)/g;
+
+/**
+ * Files that still draw red words in the fill's colour, each with its reason. The Settings domains are the
+ * web-settings lane's, and UXFIX5 ran in the shell's: their swap is that lane's change, and each row goes with it.
+ */
+const DANGER_TEXT_ELSEWHERE: Record<string, string> = {
+  './settings/AccountSettings.tsx': "an account's problem, the web-settings lane's to swap (UXFIX5)",
+  './settings/Logs.tsx': "an error line of the machine log, the web-settings lane's to swap (UXFIX5)",
+  './settings/Sync.tsx': "a sync's refusal, the web-settings lane's to swap (UXFIX5)",
+};
+
+/** Every place a source draws danger as text in `--st-declined`: a `text-` class, or a stylesheet's `color`. */
+export function dangerAsText(files: [path: string, source: string][]): string[] {
+  return files
+    .filter(([path]) => !(path in DANGER_TEXT_ELSEWHERE))
+    .flatMap(([path, source]) => [...(source.match(DANGER_AS_TEXT) ?? []), ...(source.match(DANGER_AS_CSS_TEXT) ?? [])]
+      .map((hit) => `${path} draws danger as text in the fill's colour: ${hit}`));
+}
+
+/** A colour laid over a surface at an opacity, as the browser composites `bg-st-declined/10`: per sRGB channel. */
+export function over(colour: string, surface: string, alpha: number): string {
+  const channel = (hex: string, at: number) => parseInt(hex.slice(at, at + 2), 16);
+  return `#${[1, 3, 5].map((at) => Math.round(alpha * channel(colour, at) + (1 - alpha) * channel(surface, at))
+    .toString(16).padStart(2, '0')).join('')}`;
+}
+
+/** The stylesheets beside the sources, read from disk: a raw import of a stylesheet answers an empty string. */
+const stylesheets = Object.keys(import.meta.glob('./**/*.css'))
+  .map((path) => [path, readFileSync(join(process.cwd(), 'src', path), 'utf8')] as [string, string]);
+
+describe('the danger ink', () => {
+  const themes = () => {
+    const read = palettes(tokensCss);
+    return { light: read['system-light'], dark: read['system-dark'] };
+  };
+
+  it("catches declined's fill drawn as words in dark — the check itself, in the measure the review took", () => {
+    const { dark } = themes();
+    const sunken = contrast(dark['--st-declined']!, dark['--sunken']!);
+    expect(sunken).toBeGreaterThan(3.9);
+    expect(sunken).toBeLessThan(4.5);
+    expect(contrast(dark['--st-declined']!, over(dark['--st-declined']!, dark['--overlay']!, 0.1))).toBeLessThan(3);
+    expect(over('#000000', '#ffffff', 0.1)).toBe('#e6e6e6');
+  });
+
+  it("holds: the danger ink reaches the text floor on declined's soft field over every surface, in both themes", () => {
+    for (const [theme, tokens] of Object.entries(themes())) {
+      for (const surface of SURFACES) {
+        const field = over(tokens['--st-declined']!, tokens[surface]!, 0.1);
+        const ratio = contrast(tokens['--ink-danger']!, field);
+        expect(ratio, `${theme} --ink-danger on declined's soft field over ${surface}: ${ratio.toFixed(2)}`)
+          .toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+
+  it("catches danger drawn as text in the fill's colour, behind a variant and in a stylesheet, and leaves a fill and a border", () => {
+    expect(dangerAsText([['./work/Composer.tsx', '<p className="m-0 text-small text-st-declined">']]))
+      .toEqual(["./work/Composer.tsx draws danger as text in the fill's colour: text-st-declined"]);
+    expect(dangerAsText([['./ui.tsx', "'border-st-declined hover:text-st-declined text-st-declined/80'"]])).toHaveLength(2);
+    expect(dangerAsText([['./work/code.css', '.hljs-deletion {\n  color: var(--st-declined);\n}']])).toHaveLength(1);
+    // And what must keep passing: the ink itself, the fill, the border, a mark, and a word that holds the prefix.
+    expect(dangerAsText([['./ui.tsx', [
+      "'border border-st-declined text-ink-danger hover:enabled:bg-st-declined/10 border-l-st-declined'",
+      "'bg-st-declined context-text-st-declined' background-color: var(--st-declined); border-color: var(--st-declined);",
+    ].join(' ')]])).toEqual([]);
+  });
+
+  it('is reading the stylesheets too — a scan of none would hold nothing', () => {
+    expect(stylesheets.map(([path]) => path)).toEqual(expect.arrayContaining(['./tokens.css', './work/code.css']));
+  });
+
+  it('holds: every red word in the platform wears the danger ink', () => {
+    expect(dangerAsText([...components, ...modules, ...stylesheets])).toEqual([]);
+  });
+
+  it('holds: each file still allowed the fill as text still draws it there, so a row goes when its swap lands', () => {
+    for (const path of Object.keys(DANGER_TEXT_ELSEWHERE)) {
+      const source = components.find(([each]) => each === path)?.[1] ?? '';
+      expect(source.match(DANGER_AS_TEXT), `${path} no longer draws danger in the fill's colour: drop its row`).not.toBeNull();
     }
   });
 });

@@ -113,14 +113,43 @@ describe('the reading of what the home keeps (design §2.4)', () => {
     expect(said.takes).toBe('A clear would take 4 closed quests, 1 ask, 6 sessions, 1 copy of a teammate’s record: 20.6 MB.');
     // In the order a person meets them (design §1.2), each with the door the workspace's page holds.
     expect(said.kept.map((each) => [each.code, each.text, each.door])).toEqual([
-      ['HISTORY_LIVE', '1 kept: a session is still running', null],
+      ['HISTORY_LIVE', '1 kept: a session still running', null],
       ['HISTORY_NEEDS_YOU', '2 kept: waiting on you', null],
       ['HISTORY_LANDING_STANDS', '1 kept: a landing’s branch still stands', { to: 'branches' }],
-      ['HISTORY_UNPUSHED', '1 kept: its last moves have not reached the remote', { to: 'sync' }],
+      ['HISTORY_UNPUSHED', '1 kept: last moves not yet synced', { to: 'sync' }],
     ]);
     expect(said.conversations).toBe('3 conversations that served no quest, 1.2 MB: only Delete… in Sessions takes them, one at a time.');
-    expect(said.leftOver).toBe('3.1 MB on this machine is left over from records already gone; every workspace’s clear takes it.');
-    expect(said.log).toBe('The machine log holds 2.4 MB and keeps its own 30 days; a clear never touches it.');
+    expect(said.leftOver).toBe('3.1 MB left over from records already gone: any workspace’s clear takes it.');
+    expect(said.log).toBe('The machine log, 2.4 MB, keeps its own 30 days; a clear never touches it.');
+  });
+
+  /**
+   * UXFIX5 (the second-opinion review, `en/history.json:44`): the English read slower than its 中文, *an ask asked it,
+   * and clears it with its own*. Each reason now leads with what keeps it in a few words, as 中文 does, and reads the
+   * same for one unit or many, since a reason's line has one form for every count.
+   */
+  it('says each reason in a few words that read for one unit or many, and one this window does not know', () => {
+    const reasons = (count: number) => readingSaid(en, { ...WORKSPACE_EMPTY.reading!, keptBy: {
+      HISTORY_OPEN: count, HISTORY_LIVE: count, HISTORY_NEEDS_YOU: count, HISTORY_AWAITED: count, HISTORY_ASKED: count,
+      HISTORY_TREE_HERE: count, HISTORY_LANDING_STANDS: count, HISTORY_UNPUSHED: count, HISTORY_NOT_OURS: count,
+      HISTORY_UNKNOWN: count, HISTORY_NEWER: count,
+    } }).kept.map((each) => each.text);
+    expect(reasons(2)).toEqual([
+      '2 kept: still open or taken',
+      '2 kept: a session still running',
+      '2 kept: waiting on you',
+      '2 kept: open work waits on it',
+      '2 kept: from an ask, cleared with the ask',
+      '2 kept: a session’s tree still here',
+      '2 kept: a landing’s branch still stands',
+      '2 kept: last moves not yet synced',
+      '2 kept: a teammate’s record',
+      '2 kept: no longer on this machine',
+      '2 kept: a reason unknown to this window',
+    ]);
+    expect(reasons(1)[4]).toBe('1 kept: from an ask, cleared with the ask');
+    expect(readingSaid(zh, { ...WORKSPACE_EMPTY.reading!, keptBy: { HISTORY_ASKED: 3 } }).kept[0]!.text)
+      .toBe('3 项保留：由需求提出，随需求一起清除');
   });
 
   it('says nothing finished is kept, and that a clear would take nothing, in 中文 too', () => {
@@ -136,12 +165,14 @@ describe('the reading of what the home keeps (design §2.4)', () => {
   it('says the records a clear would take where they hold no file, and nothing only where nothing at all would go', () => {
     expect(clearOffered(WORKSPACE_RECORDS_ONLY)).toBe(true);
     expect(readingSaid(en, WORKSPACE_RECORDS_ONLY.reading!).takes)
-      .toBe('A clear would take 1 closed quest: records only, with no files on this machine.');
+      .toBe('A clear would take 1 closed quest: records only, no files here.');
     expect(readingSaid(zh, WORKSPACE_RECORDS_ONLY.reading!).takes).toBe('清除会带走 1 条已关闭的委托：只有记录，本机没有相关文件。');
     // Left-over files that are empty still go, as the press would take them.
     const emptyFiles = { ...WORKSPACE_EMPTY.reading!, leftOver: { count: 2, bytes: 0 } };
     expect(clearOffered({ ...WORKSPACE_EMPTY, reading: emptyFiles })).toBe(true);
-    expect(readingSaid(en, emptyFiles).takes).toBe('A clear would take 0 B: files no record here holds any more.');
+    expect(readingSaid(en, emptyFiles).takes).toBe('A clear would take 0 B: files no record holds any more.');
+    // UXFIX5: the 中文 read "no record-held files are here any more", which says there are none to take.
+    expect(readingSaid(zh, emptyFiles).takes).toBe('清除会带走 0 B：不再属于任何记录的文件。');
   });
 
   it('sets the count apart from the Chinese around it where the clear takes records and files', () => {

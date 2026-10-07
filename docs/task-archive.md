@@ -11812,3 +11812,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UXFIX4 — branch rows at narrow widths** (web-settings, web-shell). Both branch lists keep three columns to the main area's 400 px floor, and a truncated branch name cannot be read whole (`Sweep.tsx:188,244`). Stack by container width and make the full name available. Contract: platform-ux §4, the review. Proof: stories at 680 and 400 px, both themes.
 
 **Outcome** 2026-10-07: a workspace's branch rows (session, landed, bringing up to date) are one `BranchRow` on a list that is its own container: three columns from 30rem, the sentence under the name below that; the name wraps whole after its separators and names the row. Follow-up: UXFIX4b. Detail: platform-ux §4; commit 17b9e3c6.
+
+
+## UXFIX5 — danger text contrast and history's English (2026-10-07)
+
+> - [ ] **UXFIX5 — danger text contrast and history's English** (web-shell; consider). Dark danger labels are about 3.95:1 (`ui.tsx:161`, `tokens.css:120`); add a danger-text token checked for text. History's English is harder to scan than its 中文 (`en/history.json:44`). Contract: platform-ux's palette rule, the review. Proof: the token's contrast in `tokens.test.ts`; reworded strings in both catalogues.
+
+**Outcome** 2026-10-07: red drawn as words wears a new `--ink-danger` (dark #ee6955, 4.61:1 at worst; light unchanged), held by `tokens.test.ts` on every surface; fills keep the fill colour. History's kept lines lead with the reason; 中文 takesFiles' drift fixed. Follow-ups: UXFIX5b, UXFIX5c. Detail: platform-ux §3/§4; commits c6735108, 1f264471.

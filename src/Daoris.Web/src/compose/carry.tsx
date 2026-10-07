@@ -175,7 +175,7 @@ export function CarryFields({ carry, filesLabel, leftOff, dragging, busy = false
           {chooser.input}
         </div>
         {leftOff && (
-          <p role="status" className="m-0 text-body text-st-declined">
+          <p role="status" className="m-0 text-body text-ink-danger">
             {t(`carry.${leftOff}`, { max: MAX_FILES, size: size(MAX_FILE_BYTES) })}
           </p>
         )}

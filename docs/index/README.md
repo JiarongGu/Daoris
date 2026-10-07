@@ -39,7 +39,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/QuestsView.test.tsx` | 59 | 1143 |
 | `src/Daoris.Web/src/agents/AgentPage.tsx` | 43 | 833 |
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 83 | 1636 |
-| `src/Daoris.Web/src/ui.tsx` | 73 | 1570 |
+| `src/Daoris.Web/src/ui.tsx` | 73 | 1572 |
 | `src/Daoris.Web/src/work/ConversationView.test.tsx` | 43 | 817 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 188 | 3708 |
 | `src/Daoris.Web/src/work/WorkFrame.tsx` | 73 | 1387 |
@@ -140,7 +140,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `.claude/knowledge/twins.md` | 46 | 113 |
-| `docs/2026-09-19-platform-ux.md` | 53 | 573 |
+| `docs/2026-09-19-platform-ux.md` | 54 | 583 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 52 | 349 |
 | `docs/2026-09-25-rev3-review.md` | 51 | 407 |

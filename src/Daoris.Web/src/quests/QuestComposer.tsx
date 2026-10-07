@@ -146,7 +146,7 @@ export function QuestComposer({ draft, onChange, receivers, nobody = false, caut
             className="min-h-[1.9rem] rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink aria-[invalid=true]:border-st-declined"
           />
           {characters(draft.short ?? '') > SHORT_TITLE_MAX && (
-            <span className="text-small text-st-declined">{t('quests.field.shortTooLong', { count: SHORT_TITLE_MAX })}</span>
+            <span className="text-small text-ink-danger">{t('quests.field.shortTooLong', { count: SHORT_TITLE_MAX })}</span>
           )}
         </label>
         {caution && (

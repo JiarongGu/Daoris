@@ -257,7 +257,7 @@ export function Composer({
       onSubmit={(event) => { event.preventDefault(); say(); }}
       {...(live && attachments ? attach.handlers : {})}
     >
-      {refusal && <p className="m-0 text-small text-st-declined">{refusal}</p>}
+      {refusal && <p className="m-0 text-small text-ink-danger">{refusal}</p>}
       {!live && writing && <p className="m-0 text-small text-ink-soft">{t('work.composer.over')}</p>}
 
       {live && queued.length > 0 && (
@@ -305,7 +305,7 @@ export function Composer({
         </ul>
       )}
       {attach.leftOff && (
-        <p role="status" className="m-0 text-small text-st-declined">
+        <p role="status" className="m-0 text-small text-ink-danger">
           {t(`carry.${attach.leftOff}`, { max: MAX_FILES, size: size(MAX_FILE_BYTES) })}
         </p>
       )}

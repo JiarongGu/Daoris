@@ -66,7 +66,7 @@ D75), where its own rules live; this is what a view may assume of it.
 - **Surfaces**: `--page`, `--raised` (cards, controls), `--overlay` (drawers, toasts — one step above
   raised), `--line` and `--line-strong`, and `--sunken` one step below the page for the box a move asks once in and
   the command center, while a field stays raised (LOOK6: thirteen files asked for it and none drew; `tokens.test.ts`
-  now holds every `bg-`, `border-` and `text-` colour a token, and every ink readable on every surface). **Ink**: `--ink`, `--ink-soft`, `--ink-faint`. **A field is
+  now holds every `bg-`, `border-` and `text-` colour a token, and every ink readable on every surface). **Ink**: `--ink`, `--ink-soft`, `--ink-faint`, `--ink-danger`. **A field is
   outlined with `--line-strong`, a container with `--line`**: a `--line` field on a `--raised` card is
   very nearly invisible in dark, a form whose fields you cannot find. **A mark that is content wears an
   ink**, never a container's line: the code map's arrows at `--line-strong` were 1.6:1, and stepped
@@ -92,6 +92,14 @@ D75), where its own rules live; this is what a view may assume of it.
   *What needs you*'s card and rows, the map's ring and word. It had three hues, one of them declined's
   red, and a session waiting on its person read as one that had failed. **Red is only ever an
   outcome**: declined, failed, a failed tool call.
+- **Red drawn as words wears the danger ink, `--ink-danger`** (UXFIX5, the 2026-10-07 second opinion): a danger
+  button's label, a declined pill's word, a failed mark's word, a refusal, a removed count, a diff's deletion. A status
+  hue is computed as a fill, and declined's dark red drawn as text read 3.95:1 on the sunken box a move asks in, 3.18:1
+  on an overlay and 2.94:1 on its own soft field there, under the 4.5:1 text floor. The ink keeps the hue (OKLCH 30°)
+  and is lifted until it holds 4.5:1 on every surface and on declined's soft field over each, in both themes: `#ee6955`
+  in dark, at worst 4.61:1; in light the fill already reads at 5.5:1 or more, so the two are one value. A fill, a border
+  and a mark keep `--st-declined`. `tokens.test.ts` computes it and fails on a red word in the fill's colour. The other
+  three hues drawn as words are held to no floor yet: in light, open's and done's read 3.0 to 3.8:1.
 - **Open's hue is the person's alone** (D126 §2.3, SESSUX1c): among sessions, *waiting on you* and *parked* (a parked
   quest's last session) wear it, and nothing else does. `queued` wore it too and left the word to tell the two apart;
   it is neutral, keeping its idle mark. *Awaiting reply* is neutral: nothing runs, and nothing waits on the person.
@@ -133,13 +141,15 @@ controls are in the frame design's §3.
 - **Buttons**: `primary` (solid accent, paper text — the one loud control per view), default (raised +
   line), `ghost` (borderless, for in-card affordances), and `danger` for a move that ends or removes
   something: decline, close an ask, retire, remove an account, stop, discard. It wears the hue of the
-  outcome it causes, and never marks a state (U18). **The move comes first, then *never mind*,** in
+  outcome it causes, and never marks a state (U18): its line and its hover field in declined's hue, its label in the
+  danger ink (UXFIX5). **The move comes first, then *never mind*,** in
   every drawer's footer and every confirming pair (U38). **A destructive edit asks once**: its first
   press opens a sentence saying what the second will do, beside the move and *never mind*. Every such ask is one
   component, `InlineConfirm` (UXFIX2): in the page, never a modal; the sentence takes the focus and describes the move;
   Escape and *never mind* give the focus back to what opened it; the press keeps it open and waiting, and a refusal is
   said inside it, whole, rather than in a toast; it closes only on success or a cancel.
-- **Pills** carry state: status text on its soft field with its hue — label always present.
+- **Pills** carry state: status text on its soft field with its hue — label always present. Declined's word is the
+  danger ink on declined's field (UXFIX5).
 - **Chips** carry declarations (owns/accepts/packs): quiet line-bordered tokens; `accent` variant for
   what a project *accepts*, because that is the actionable half. A phrase stays in the body face
   (U37).

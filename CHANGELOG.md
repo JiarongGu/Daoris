@@ -105,6 +105,8 @@ with the version and date at release.
   account is cooling, with *Sign in* or *Read* beside it.
 - Branch rows stack their sentence under the branch's name when their list is narrow, and a long
   branch name wraps whole instead of being cut.
+- Red words (danger buttons, refusals, removed counts) are easier to read in the dark theme, and a
+  workspace's history reading says why each thing is kept in fewer words.
 
 The first version: doctrine that installs, is checked, and flows back.
 

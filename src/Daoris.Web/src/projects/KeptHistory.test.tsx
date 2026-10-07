@@ -23,13 +23,13 @@ describe('a workspace’s Kept on this machine (design §2.4)', () => {
     expect(section).toHaveTextContent('11 closed quests, 2 asks, 14 sessions, 1 copy of a teammate’s record: 23.6 MB.');
     expect(section).toHaveTextContent('A clear would take 4 closed quests, 1 ask, 6 sessions, 1 copy of a teammate’s record: 20.6 MB.');
     expect(section).toHaveTextContent('3 conversations that served no quest, 1.2 MB: only Delete… in Sessions takes them, one at a time.');
-    expect(section).toHaveTextContent('3.1 MB on this machine is left over from records already gone');
-    expect(section).toHaveTextContent('The machine log holds 2.4 MB and keeps its own 30 days; a clear never touches it.');
+    expect(section).toHaveTextContent('3.1 MB left over from records already gone: any workspace’s clear takes it.');
+    expect(section).toHaveTextContent('The machine log, 2.4 MB, keeps its own 30 days; a clear never touches it.');
 
     const kept = within(section).getByRole('list', { name: 'What stays' });
     expect(within(kept).getAllByRole('listitem').map((row) => row.firstChild?.textContent)).toEqual([
-      '1 kept: a session is still running', '2 kept: waiting on you', '1 kept: a landing’s branch still stands',
-      '1 kept: its last moves have not reached the remote',
+      '1 kept: a session still running', '2 kept: waiting on you', '1 kept: a landing’s branch still stands',
+      '1 kept: last moves not yet synced',
     ]);
     await userEvent.click(within(kept).getByRole('button', { name: 'Open branches' }));
     expect(doors.branches).toHaveBeenCalledOnce();
@@ -85,7 +85,7 @@ describe('a workspace’s Kept on this machine (design §2.4)', () => {
   it('sends no unit where only left-over files and the intake’s room go', async () => {
     const clear = vi.fn();
     render(<KeptHistory workspace="aurora" plan={WORKSPACE_LEFT_OVER} onClear={clear} />);
-    expect(screen.getByRole('region')).toHaveTextContent('A clear would take 3.1 MB: files no record here holds any more.');
+    expect(screen.getByRole('region')).toHaveTextContent('A clear would take 3.1 MB: files no record holds any more.');
 
     await userEvent.click(screen.getByRole('button', { name: 'Clear history…' }));
     await userEvent.click(screen.getByRole('button', { name: 'Clear 5' }));
@@ -95,7 +95,7 @@ describe('a workspace’s Kept on this machine (design §2.4)', () => {
   it('says what goes beside the press where the records it takes hold no file (HIST1k)', () => {
     render(<KeptHistory workspace="aurora" plan={WORKSPACE_RECORDS_ONLY} onClear={() => {}} />);
     const section = screen.getByRole('region');
-    expect(section).toHaveTextContent('A clear would take 1 closed quest: records only, with no files on this machine.');
+    expect(section).toHaveTextContent('A clear would take 1 closed quest: records only, no files here.');
     expect(section).not.toHaveTextContent('A clear would take nothing now.');
     expect(screen.getByRole('button', { name: 'Clear history…' })).toBeInTheDocument();
   });

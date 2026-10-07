@@ -521,7 +521,7 @@ function RunView({ items, open: startsOpen, tree, reveal }: {
         <Icon name={shown ? 'chevronDown' : 'chevronRight'} size={13} />
         {said}
         {failed > 0 && (
-          <span className="text-st-declined">{`· ${t('work.conversation.failed', { count: failed })}`}</span>
+          <span className="text-ink-danger">{`· ${t('work.conversation.failed', { count: failed })}`}</span>
         )}
       </button>
       {shown && items.map((item) => (
