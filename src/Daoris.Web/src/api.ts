@@ -500,6 +500,11 @@ export const api = {
   // The person's yes to a done's departure from what they required (DRIFT1d2, D133 §4): what it held goes on. A local
   // host's door, as a delete is; `daoris-driver quest accept` is the terminal's twin.
   acceptQuest: (id: string) => post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/accept`, {}),
+  // The person marks a quest done (QUESTCLOSE1, D126's note): their done, with their words where they wrote any, which the
+  // service keeps after the sentence saying the done was theirs. A local host's door, as the yes is; `daoris-driver quest
+  // done` is the terminal's twin. Never respond's door, which is an agent's done.
+  personDone: (id: string, note: string | null) =>
+    post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/done`, note ? { note } : {}),
   // A person dismissing one conflict (SYNC6c), by the name every machine knows it by.
   dismissConflict: (id: string, machine: string, sequence: number) =>
     post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/conflicts/dismiss`, { machine, sequence }),

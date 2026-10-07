@@ -116,7 +116,7 @@ describe('the right-click menu, on the window', () => {
     const body = await questPage();
 
     rightClick(body);
-    expect(await menuActs('Actions for Expose a streaming budget')).toEqual(['Take', 'Mark done', 'Decline…', 'Copy quest ID']);
+    expect(await menuActs('Actions for Expose a streaming budget')).toEqual(['Take', 'Mark done…', 'Decline…', 'Copy quest ID']);
     await userEvent.keyboard('{Escape}');
 
     rightClick(within(screen.getByRole('main')).getByRole('link', { name: TICKET }));

@@ -11,7 +11,7 @@ import {
 import { cn } from '../lib/cn';
 import { AnsweredPark } from './AnsweredPark';
 import { AwaitingIntake } from './AwaitingIntake';
-import { AwaitingPerson, type Resolution } from './AwaitingPerson';
+import { AwaitingPerson, type QuestClose, type Resolution } from './AwaitingPerson';
 import { DetailsFold } from './DetailsFold';
 import type { Answered } from './InlineConfirm';
 import { useCut } from './ViewMain';
@@ -110,10 +110,10 @@ export function SessionHead({
   opening?: string | null;
   resolving?: boolean;
   /**
-   * How a parked session is finished or declined. Absent where nothing can act — a browser, or a story. Its stop is the
-   * page header's, its one owner (D126 §3.3).
+   * How a parked session is finished or declined, and a finish's close of its quest (QUESTCLOSE1). Absent where nothing can
+   * act — a browser, or a story. Its stop is the page header's, its one owner (D126 §3.3).
    */
-  onResolve?: (state: Resolution, note: string | null) => void;
+  onResolve?: (state: Resolution, note: string | null, close?: QuestClose) => void;
   /**
    * Open the ask an intake serves (INT4g) — a parked one's answer is there, not on the session.
    * Absent where nothing can open it.
@@ -150,6 +150,8 @@ export function SessionHead({
           key={session.id}
           note={session.note}
           parts={session.noteParts}
+          // The quest it serves, which its finish may close as the person's (QUESTCLOSE1): only its own, and a driven one's.
+          quest={session.kind !== 'chat' && quest && quest.id === session.quest ? quest : null}
           pending={resolving}
           onResolve={onResolve}
           // A driven session parked to ask the person has no process left to message (STANDDOWN2).

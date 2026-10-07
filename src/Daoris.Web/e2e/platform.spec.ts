@@ -56,12 +56,19 @@ async function make(page: Page, kind: 'Ask' | 'New quest') {
 }
 
 /**
- * *Mark done* on a quest nobody has taken: its head keeps it in its ⋯ (UX7c, D152 §7), since taking is the open quest's
- * next step; a taken quest's *Mark done* is its loud button.
+ * *Mark done…* on a quest nobody has taken: its head keeps it in its ⋯ (UX7c, D152 §7), since taking is the open quest's
+ * next step; a taken quest's *Mark done…* is its loud button. Either asks once under the header (QUESTCLOSE1), and the
+ * ask's *Mark done* sends the person's done.
  */
 async function markDoneOpen(page: Page) {
   await record(page).getByRole('button', { name: 'More actions' }).click();
-  await page.getByRole('menuitem', { name: 'Mark done', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Mark done…', exact: true }).click();
+  await confirmDone(page);
+}
+
+/** The person's done asked under the header (QUESTCLOSE1), sent with no note. */
+async function confirmDone(page: Page) {
+  await record(page).getByRole('group', { name: 'mark this quest done' }).getByRole('button', { name: 'Mark done', exact: true }).click();
 }
 
 /** Quests' ⋯ holds its filters: *Include closed* is a toggle there (D118 §2). */
@@ -282,9 +289,10 @@ test('a quest travels: composed, published, taken, finished', async ({ page }) =
   await record(page).getByRole('button', { name: 'Take', exact: true }).click();
   await expect(page.getByText(/is now Taken/).first()).toBeVisible();
 
-  // The page stays on the quest as it now stands: taken, so *Mark done* is its next step.
+  // The page stays on the quest as it now stands: taken, so *Mark done…* is its next step, asking once (QUESTCLOSE1).
   await expect(record(page).getByRole('button', { name: 'Take', exact: true })).toHaveCount(0);
-  await record(page).getByRole('button', { name: 'Mark done', exact: true }).click();
+  await record(page).getByRole('button', { name: 'Mark done…', exact: true }).click();
+  await confirmDone(page);
   await expect(page.getByText(/is now Done/).first()).toBeVisible();
 
   // Closed work leaves the default list and returns on request, from the list's ⋯; its page stays, done.

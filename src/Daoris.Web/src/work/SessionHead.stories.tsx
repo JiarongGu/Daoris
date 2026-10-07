@@ -70,6 +70,24 @@ export const Parked: Story = {
   },
 };
 
+/** Presses the parked card's *Finish…* and chooses to mark its quest done (QUESTCLOSE1), as a person would. */
+const finishMarkingDone: Story['play'] = async ({ canvasElement }) => {
+  const press = (name: string) => [...canvasElement.querySelectorAll<HTMLButtonElement>('button')]
+    .find((button) => button.textContent === name)?.click();
+  press('Finish…');
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  canvasElement.querySelectorAll<HTMLButtonElement>('[role="radio"]')[1]?.click();
+};
+
+/**
+ * Finishing a park whose quest is still taken (QUESTCLOSE1, D126's note): *Finish…* asks, in the same act, what becomes of
+ * the quest, *Leave it as it is* by default or *Mark it done as yours* with the person's note. Here it was chosen.
+ */
+export const FinishingMarksItsQuestDone: Story = {
+  args: { ...Parked.args, onResolve: () => {} },
+  play: finishMarkingDone,
+};
+
 /**
  * Answered (ANSWER1c, D131): the park above, once the person answered, for up to one look of the driver's. The record is
  * still parked with the answer set; the head shows the answer, says the same session goes on with it, and offers none

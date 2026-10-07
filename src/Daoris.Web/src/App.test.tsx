@@ -362,7 +362,7 @@ describe('the shell in a browser, over two workspaces', () => {
       expect(screen.getByText('This quest')).toBeInTheDocument();
       const take = await screen.findByRole('menuitem', { name: 'Take' });
       expect(take).not.toHaveAttribute('aria-disabled');
-      expect(screen.getByRole('menuitem', { name: 'Mark done' })).not.toHaveAttribute('aria-disabled');
+      expect(screen.getByRole('menuitem', { name: 'Mark done…' })).not.toHaveAttribute('aria-disabled');
       await user.click(take);
       await waitFor(() => expect(fetchMock.mock.calls.some(([url, init]) =>
         String(url).endsWith('/api/quests/q9a8b7/respond') && (init as RequestInit | undefined)?.method === 'POST')).toBe(true));

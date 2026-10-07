@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../i18n';
 import { AwaitingPerson } from './AwaitingPerson';
@@ -112,6 +112,78 @@ describe('a session parked at a checkpoint', () => {
     await i18n.changeLanguage('zh');
     show();
     expect(screen.getByRole('button', { name: '完成' })).toBeInTheDocument();
+    await i18n.changeLanguage('en');
+  });
+});
+
+/**
+ * QUESTCLOSE1 (D126's note): on the install the person finished two driven sessions at a checkpoint and each quest stayed
+ * taken, with nothing to close it. A finish whose session holds a quest still open or taken asks, in the same act, what
+ * becomes of that quest: left as it is, the default, or marked done as the person's, with their note.
+ */
+describe('finishing a session that holds a quest (QUESTCLOSE1)', () => {
+  const QUEST = { id: 'e7c990e60493', status: 'Taken' as const };
+
+  it('asks what becomes of its quest, leaving it as it is unless the person says otherwise', async () => {
+    const resolve = vi.fn();
+    show({ onResolve: resolve, quest: QUEST });
+
+    expect(screen.queryByRole('button', { name: 'Finish' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Finish…' }));
+    expect(screen.getByText('Finishing ends this session. Its quest #e7c990e60493 stays as it is unless you mark it done now.'))
+      .toBeInTheDocument();
+    const choice = screen.getByRole('radiogroup', { name: 'Its quest' });
+    expect(within(choice).getByRole('radio', { name: 'Leave it as it is' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.queryByLabelText(/your note on the quest/)).toBeNull();
+    expect(resolve).not.toHaveBeenCalled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Finish' }));
+    expect(resolve).toHaveBeenCalledWith('completed', null);
+  });
+
+  it('marks its quest done as the person’s, with their note, in the same press', async () => {
+    const resolve = vi.fn();
+    show({ onResolve: resolve, quest: QUEST });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Finish…' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'Mark it done as yours' }));
+    await userEvent.type(screen.getByLabelText(/your note on the quest/), '  The write-up is in the shared folder.  ');
+    await userEvent.click(screen.getByRole('button', { name: 'Finish' }));
+
+    expect(resolve).toHaveBeenCalledWith('completed', null, { as: 'done', note: 'The write-up is in the shared folder.' });
+  });
+
+  it('sends no words where none were written, and Never mind finishes nothing', async () => {
+    const resolve = vi.fn();
+    show({ onResolve: resolve, quest: QUEST });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Finish…' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'Mark it done as yours' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Never mind' }));
+    expect(resolve).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Decline…' })).toBeInTheDocument();
+
+    // Asked again, it starts from leaving the quest as it is.
+    await userEvent.click(screen.getByRole('button', { name: 'Finish…' }));
+    expect(screen.getByRole('radio', { name: 'Leave it as it is' })).toHaveAttribute('aria-checked', 'true');
+    await userEvent.click(screen.getByRole('radio', { name: 'Mark it done as yours' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Finish' }));
+    expect(resolve).toHaveBeenCalledWith('completed', null, { as: 'done', note: null });
+  });
+
+  it('asks in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    const resolve = vi.fn();
+    show({ onResolve: resolve, quest: QUEST });
+
+    await userEvent.click(screen.getByRole('button', { name: '完成…' }));
+    expect(screen.getByText('完成会了结这个会话。除非你现在把它标为完成，它的委托 #e7c990e60493 保持原样。')).toBeInTheDocument();
+    const choice = screen.getByRole('radiogroup', { name: '它的委托' });
+    expect(within(choice).getByRole('radio', { name: '保持原样' })).toHaveAttribute('aria-checked', 'true');
+    await userEvent.click(within(choice).getByRole('radio', { name: '以你的名义标为完成' }));
+    await userEvent.type(screen.getByLabelText(/你对委托的备注/), '已放在共享文件夹。');
+    await userEvent.click(screen.getByRole('button', { name: '完成' }));
+    expect(resolve).toHaveBeenCalledWith('completed', null, { as: 'done', note: '已放在共享文件夹。' });
     await i18n.changeLanguage('en');
   });
 });

@@ -15,7 +15,7 @@ import { DetailsFold } from '../work/DetailsFold';
 import { clearOffered, type HistoryDoor, type HistoryTarget } from '../work/history';
 import { questFacts } from '../work/headFacts';
 import { HowItCameToBe, type TraceDoor } from '../work/HowItCameToBe';
-import { questName } from '../work/identity';
+import { questName, sessionOrigin } from '../work/identity';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import { Note } from '../work/Note';
 import { QuestRequirements } from './Requirements';
@@ -112,6 +112,11 @@ function Fact({ name, children }: { name: string; children: ReactNode }) {
  *   from this machine…* and *Clear failed sessions…* in its ⋯, each where its plan says something may go and absent where
  *   it does not (a quest an ask asked is cleared on the ask's page), listing under the header first and clearing on the
  *   second press exactly what it listed (§5). A browser has no driver, and offers neither.
+ * - **The person's done is theirs** (QUESTCLOSE1, D126's note): *Mark done…* asks once under the header, with their note,
+ *   and sends their done, which the service writes as theirs and which answers none of their requirements one by one; the
+ *   ask says so where it carries some. A taken quest whose last session here ended in a way nothing carries on (finished or
+ *   declined at a checkpoint) says so under *Sitting*, with *Mark done…* there: on the install such a quest sat taken with
+ *   nothing on its page that said why or closed it.
  */
 export function QuestPage({
   quest, lanes, question, sitting, hold, chain = [], session,
@@ -153,7 +158,11 @@ export function QuestPage({
   dismissing?: boolean;
   /** The person's yes to a departure is on its way (DRIFT1d2). */
   accepting?: boolean;
-  onRespond: (action: 'take' | 'done' | 'decline', reason?: string) => void;
+  /**
+   * Take, decline with its reason, or the person's done (QUESTCLOSE1) with their note, or null for none, told back to its
+   * ask (UXFIX2) so a refusal is said inside it.
+   */
+  onRespond: (action: 'take' | 'done' | 'decline', reason?: string | null, answered?: Answered) => void;
   /** Delete the quest (D95), told back to its ask (UXFIX2) — absent where there is no door to do it. */
   onDelete?: (answered: Answered) => void;
   onDismiss: (machine: string, sequence: number) => void;
@@ -187,10 +196,12 @@ export function QuestPage({
   const { t } = useTranslation();
   // One question asks under the header at a time: a decline's reason, a delete's sentence, a pause's, the abandon's list, a
   // clear's list.
-  const [asking, setAsking] = useState<'decline' | 'delete' | 'pause' | 'abandon' | 'clear' | 'clearFailed' | null>(null);
+  const [asking, setAsking] = useState<'done' | 'decline' | 'delete' | 'pause' | 'abandon' | 'clear' | 'clearFailed' | null>(null);
   // The plan the abandon's list showed, held from when it opened: the second press sends exactly what it listed (§3.1).
   const [listed, setListed] = useState<WorkPlan | null>(null);
   const [reason, setReason] = useState('');
+  // The person's words on their done (QUESTCLOSE1), kept while its ask is open.
+  const [doneNote, setDoneNote] = useState('');
   const declining = asking === 'decline';
   // A delete asks once (D95): the first press arms it, and only the second removes the record.
   const deleting = asking === 'delete';
@@ -214,6 +225,13 @@ export function QuestPage({
   const ownPause = pausedBy?.scope === 'quest' && pausedBy.id === quest.id;
   // Its own pause where the tick has no verdict for it (its session waits on you, D132 §2.1): said from the plan, with Resume.
   const pausedUnseen = offers.paused && !pausedBy;
+  // Taken, and its last session here ended in a way nothing here carries on (QUESTCLOSE1): finished or declined at a
+  // checkpoint, no answer waiting. The planner says nothing of it, so the page does, with the person's done beside it. A
+  // failure, a stop and an answered park are the driver's to say (a carry-on, a park, *Try again*), and a teammate's record
+  // is not this machine's take.
+  const endedHere = quest.status === 'Taken' && !because && !hold && !pausedUnseen && session != null
+    && sessionOrigin(session) === null
+    && ((session.state === 'completed' && !session.answer) || session.state === 'declined');
 
   // A pause that stops nothing applies at once, with its notice, since nothing is lost (§2.6).
   const onPauseFirst = () => {
@@ -226,7 +244,7 @@ export function QuestPage({
   const headActs: QuestAct[] = [
     ...(!(moving || offers.abandon) ? [] : [
       ...(quest.status === 'Open' ? ['take' as const] : []),
-      ...(moving ? ['done' as const] : []),
+      ...(moving && asking !== 'done' ? ['done' as const] : []),
       ...(offers.pause && moving && asking !== 'pause' ? ['pause' as const] : []),
       ...(moving && !declining ? ['decline' as const] : []),
       ...(offers.abandon && asking !== 'abandon' ? ['abandon' as const] : []),
@@ -256,7 +274,7 @@ export function QuestPage({
   const press = (act: QuestAct) => {
     switch (act) {
       case 'take': onRespond('take'); return;
-      case 'done': onRespond('done'); return;
+      case 'done': setAsking('done'); return;
       case 'pause': onPauseFirst(); return;
       case 'decline': setAsking('decline'); return;
       case 'abandon': setListed(work!.plan); setAsking('abandon'); return;
@@ -401,6 +419,36 @@ export function QuestPage({
         />
       )}
 
+      {asking === 'done' && moving && (
+        /* The person's done (QUESTCLOSE1): it asks once, since a done does not move again, with their note, which the
+           record keeps after the sentence saying the done was theirs. Open until the service answers, a refusal said inside
+           it (UXFIX2). */
+        <InlineConfirm
+          className="mb-4"
+          label={t('quests.detail.doneTitle')}
+          says={requirements.length > 0
+            ? t('quests.requirements.join', {
+              first: t('quests.detail.doneConfirm', { id: quest.id }), second: t('quests.detail.doneRequirements'),
+            })
+            : t('quests.detail.doneConfirm', { id: quest.id })}
+          meanIt={t('quests.detail.doneMeanIt')}
+          busy={busy}
+          onConfirm={(answered) => onRespond('done', doneNote.trim() || null, answered)}
+          onClose={() => {
+            setAsking((was) => (was === 'done' ? null : was));
+            setDoneNote('');
+          }}
+        >
+          <input
+            aria-label={t('quests.detail.doneNote')}
+            placeholder={t('quests.detail.doneNote')}
+            value={doneNote}
+            onChange={(e) => setDoneNote(e.target.value)}
+            className="min-h-[1.9rem] min-w-0 basis-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
+          />
+        </InlineConfirm>
+      )}
+
       {declining && moving && (
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2">
           <input
@@ -510,6 +558,18 @@ export function QuestPage({
             {(because?.verdict === 'Exhausted' || because?.verdict === 'Stopped') && onRetry && (
               <span className="mt-1.5 block">
                 <Button disabled={retrying} onClick={() => press('retry')}>{t('quests.detail.retry')}</Button>
+              </span>
+            )}
+          </Fact>
+        )}
+        {endedHere && (
+          /* QUESTCLOSE1: no verdict says why it sits, since nothing here carries a finished session's quest on, so the page
+             says it, with the person's done where it is read, as Try again stands under a stop's sentence. */
+          <Fact name={t('quests.detail.sitting')}>
+            <Inline text={t('quests.detail.endedTaken', { session: session!.id })} />
+            {asking !== 'done' && (
+              <span className="mt-1.5 block">
+                <Button disabled={waiting} onClick={() => press('done')}>{t(QUEST_ACT.done.label)}</Button>
               </span>
             )}
           </Fact>

@@ -30,7 +30,7 @@ describe('the menus, row by row', () => {
     const run = menuRows(entries(), 'run');
     expect(labels(run)).toEqual([
       'Start a session…', 'Answer…', 'Try again', 'Review', 'Stop…', 'Open in its own window',
-      'Take', 'Mark done', 'Try again', 'Pause…', 'Resume', 'Decline…', 'Archive what ended…',
+      'Take', 'Mark done…', 'Try again', 'Pause…', 'Resume', 'Decline…', 'Archive what ended…',
     ]);
     expect(run.map((row) => Boolean(row.separated))).toEqual([
       false, true, false, false, false, false, true, false, false, false, false, false, true,

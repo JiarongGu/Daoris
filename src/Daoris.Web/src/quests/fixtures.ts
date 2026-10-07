@@ -147,6 +147,17 @@ export const WORKING: Session = {
 };
 export const FAILED: Session = { ...WORKING, id: 's0f1r2s3', state: 'failed', note: 'the first attempt died', evidence: undefined, created: hoursAgo(4), updated: hoursAgo(3) };
 
+/**
+ * The install's case (QUESTCLOSE1, 2026-10-08): a taken quest's driven session the person finished at a checkpoint, its
+ * record completed by them and the quest still taken, with nothing here to carry it on.
+ */
+export const FINISHED_HERE: Session = {
+  id: 'f1n15h3d', quest: TAKEN.id, repository: 'engine', adapter: 'claude-code', state: 'completed', kind: 'driven',
+  note: 'The person finished this at a checkpoint.',
+  noteParts: [{ code: 'stopped.checkpoint-finished', text: 'The person finished this at a checkpoint.' }],
+  created: hoursAgo(3), updated: hoursAgo(1),
+};
+
 /** Why the driver leaves a quest waiting, as its last tick said (D46 §3). */
 export const HELD_BY_PERSON: Consideration = { quest: OPEN.id, repository: 'engine', verdict: 'Held', reason: '`engine` is held by the person.' };
 export const EXHAUSTED: Consideration = {

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { SessionConsole } from '../SessionConsole';
 import { sentence } from '../format';
 import { buildChain } from '../map/chain';
-import { useAnswerSession, useAsks, useQuests, useRegistry, useSessions } from '../queries';
+import { useAnswerSession, useAsks, usePersonDone, useQuests, useRegistry, useSessions } from '../queries';
 import {
   type TurnStop, useCancelTurn, useEndChat, useHarnesses, useResolveSession, useSendMessage,
   NO_TURNS, useChatTurns, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionStreams, useSessionWhere,
@@ -32,7 +32,7 @@ import { SessionConversation } from './SessionConversation';
 import type { Usage } from './conversation';
 import { isIntake, ownTree, sessionOrigin, sessionTitle } from './identity';
 import { doorLabel } from '../tools';
-import type { Resolution } from './AwaitingPerson';
+import type { QuestClose, Resolution } from './AwaitingPerson';
 import { Composer } from './Composer';
 import { DiffPane } from './DiffPane';
 import { useDraft } from './drafts';
@@ -280,6 +280,8 @@ export function WorkFrame({
 
   const startChat = useStartChat();
   const resolve = useResolveSession();
+  // The person's done on the quest a finish at a checkpoint leaves (QUESTCLOSE1): the service's own door for it.
+  const personDone = usePersonDone();
   const answer = useAnswerSession();
   const send = useSendMessage();
   const end = useEndChat();
@@ -588,12 +590,21 @@ export function WorkFrame({
 
   // The person's answer to a parked session (design §4). The refusal — a move that is not theirs,
   // a decline with nothing in it — is the host's own sentence and reaches them word for word.
-  const onResolve = (state: Resolution, note: string | null) => {
+  // A finish that closes its quest (QUESTCLOSE1) sends the person's done once the finish stood: the session first, as the
+  // driver moves the process before the record, then the quest, whose refusal is the service's sentence, the finish kept.
+  const onResolve = (state: Resolution, note: string | null, close?: QuestClose) => {
     if (!attended) return;
+    const closing = state === 'completed' && close?.as === 'done' ? attended.quest ?? null : null;
     resolve.mutate({ id: attended.id, state, note: note ?? undefined }, {
-      onSuccess: () => notify(t('work.awaiting.resolved', {
-        id: attended.id, state: t(`sessionState.${state}`),
-      })),
+      onSuccess: () => {
+        notify(t('work.awaiting.resolved', { id: attended.id, state: t(`sessionState.${state}`) }));
+        if (closing) {
+          personDone.mutate({ id: closing, note: close!.note }, {
+            onSuccess: (result) => notify(result.message),
+            onError: failure(notify),
+          });
+        }
+      },
       onError: failure(notify),
     });
   };
@@ -1181,7 +1192,7 @@ export function WorkFrame({
             // An agent on the roster has accounts, so a record naming none ran on the tool's own sign-in (D125 §3.7).
             ownSignIn={Boolean(attended && roster.some((row) => row.harness === attended.adapter))}
             nameOf={nameOf}
-            resolving={resolve.isPending || answer.isPending || parkGoAhead.isPending}
+            resolving={resolve.isPending || answer.isPending || parkGoAhead.isPending || personDone.isPending}
             onResolve={here ? onResolve : undefined}
             onAnswerSession={here && !answering ? onAnswerSession : undefined}
             onAnswerAsk={here ? onAnswerAsk : undefined}

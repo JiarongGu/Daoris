@@ -1,6 +1,12 @@
 {
   "work.awaiting.hint": "Only a person can clear this. What you choose is written on the record, and the note is what whoever reads it later has to go on.",
   "work.awaiting.finish": "Finish",
+  "work.awaiting.finishAsk": "Finish…",
+  "work.awaiting.finishQuest": "Finishing ends this session. Its quest #{{quest}} stays as it is unless you mark it done now.",
+  "work.awaiting.questChoice": "Its quest",
+  "work.awaiting.questLeave": "Leave it as it is",
+  "work.awaiting.questDone": "Mark it done as yours",
+  "work.awaiting.questNote": "your note on the quest (optional) — its record says you marked it done",
   "work.awaiting.decline": "Decline…",
   "work.awaiting.declineConfirm": "Decline with this reason",
   "work.awaiting.declinePlaceholder": "the reason — the part whoever reads this record can act on",

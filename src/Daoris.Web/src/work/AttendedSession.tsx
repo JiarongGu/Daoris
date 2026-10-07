@@ -7,7 +7,7 @@ import { ChainLine } from '../map/ChainLine';
 import { ChainStrip } from '../map/ChainStrip';
 import type { SweepBranch } from '../settings/Sweep';
 import type { AccountNamer } from '../tools';
-import type { Resolution } from './AwaitingPerson';
+import type { QuestClose, Resolution } from './AwaitingPerson';
 import { HowItCameToBe, type TraceDoor } from './HowItCameToBe';
 import type { Answered } from './InlineConfirm';
 import type { Relations } from './relations';
@@ -93,7 +93,7 @@ export function AttendedSession({
   lastTurn?: string | null;
   resolving?: boolean;
   /** Passed straight through to the head, where a parked session's moves live (design §4); its stop is the page header's. */
-  onResolve?: (state: Resolution, note: string | null) => void;
+  onResolve?: (state: Resolution, note: string | null, close?: QuestClose) => void;
   /** Passed straight through too: where an intake's answer is, its ask (INT4g). */
   onAnswerAsk?: (ask: string) => void;
   /** And the answer to a driven session that parked to ask the person (STANDDOWN2). */
