@@ -107,6 +107,52 @@ test('every shipped canon skill carries the frontmatter the harness needs', () =
 });
 
 /**
+ * A template beside a canon skill that its entry file never names, or one it names that is not there
+ * (ORIENT2a). A skill's templates arrive in every adopter, and a session reaches one only through the
+ * skill's own words: an unnamed template is shipped and never copied, and a named one that is gone sends
+ * the session to a file that does not exist. Both are silent, so they are held here.
+ */
+function templateProblems(sources: readonly string[], read: (source: string) => string): string[] {
+  const problems: string[] = [];
+  const entries = sources.filter((source) => source.endsWith('/SKILL.md'));
+  for (const entry of entries) {
+    const folder = entry.slice(0, -'/SKILL.md'.length);
+    const beside = sources.filter((source) => source.startsWith(`${folder}/templates/`))
+      .map((source) => source.slice(folder.length + 1));
+    const named = [...new Set([...read(entry).matchAll(/`(templates\/[^`<>\s]+)`/g)].map((match) => match[1]!))];
+    for (const template of beside) {
+      if (!named.includes(template)) problems.push(`${entry} never names ${template}, which ships beside it`);
+    }
+    for (const template of named) {
+      if (!beside.includes(template)) problems.push(`${entry} names ${template}, which is not there`);
+    }
+  }
+  return problems;
+}
+
+test('the template scan finds a template nobody names, and a name with no template', () => {
+  const files: Record<string, string> = {
+    'core/skills/writer/SKILL.md': '---\nname: writer\ndescription: d\n---\n\n| row | `templates/row.md` |\n| gone | `templates/gone.md` |\n',
+    'core/skills/writer/templates/row.md': '# A row\n',
+    'core/skills/writer/templates/stray.md': '# A stray\n',
+    'core/skills/plain/SKILL.md': '---\nname: plain\ndescription: d\n---\n\nNo templates, and none named.\n',
+  };
+  assert.deepEqual(templateProblems(Object.keys(files), (source) => files[source]!), [
+    'core/skills/writer/SKILL.md never names templates/stray.md, which ships beside it',
+    'core/skills/writer/SKILL.md names templates/gone.md, which is not there',
+  ]);
+});
+
+test('every template beside a canon skill is named by it, and every template it names is there', () => {
+  const canon = readCanon(join(repoRoot, 'canon'));
+  const skills = [...canon.packs.values()].flatMap((pack) => pack.files).filter((file) => isSkill(file.source));
+  const templates = skills.filter((file) => file.source.includes('/templates/'));
+  assert.ok(templates.length >= 2, `the scan found ${templates.length} templates, so it proved nothing`);
+
+  assert.deepEqual(templateProblems(skills.map((file) => file.source), (source) => readText(join(repoRoot, 'canon', source))), []);
+});
+
+/**
  * The skill files whose frontmatter pre-approves tools (D122, finding 3; DOC3).
  *
  * A project skill's `allowed-tools` is honoured for the turn that invokes it, and the harness's maker
