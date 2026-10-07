@@ -145,7 +145,9 @@ controls are in the frame design's §3.
   danger ink (UXFIX5). **The move comes first, then *never mind*,** in
   every drawer's footer and every confirming pair (U38). **A destructive edit asks once**: its first
   press opens a sentence saying what the second will do, beside the move and *never mind*. Every such ask is one
-  component, `InlineConfirm` (UXFIX2): in the page, never a modal; the sentence takes the focus and describes the move;
+  component, `InlineConfirm` (UXFIX2): in the page, never a modal; it opens whole in view, its nearest edge first, and
+  only then the sentence takes the focus, without scrolling again (UXFIX2d: a focus alone showed one line of an ask near
+  the page's foot); the sentence describes the move;
   Escape and *never mind* give the focus back to what opened it; the press keeps it open and waiting, and a refusal is
   said inside it, whole, rather than in a toast; it closes only on success or a cancel. **While it waits it says so**
   (UXFIX2c): a status beside the presses, there from the first so a reader hears it speak, inside nothing `aria-busy`,

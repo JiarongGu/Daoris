@@ -101,6 +101,63 @@ describe('an inline confirmation', () => {
     expect(within(ask).getByRole('button', { name: 'Delete quest' })).toHaveAccessibleDescription(SAYS);
   });
 
+  /**
+   * UXFIX2d (seen on the install at 1546 px, dark): a workspace's *Clear history…* near the page's foot opened its ask with
+   * the focus on its explanation, which scrolled only that line into view; its list and both presses stayed below the fold.
+   * Opening brings the whole ask into view, nearest edge first, then gives the explanation the focus without scrolling again.
+   */
+  describe('opens whole in view (UXFIX2d)', () => {
+    afterEach(() => { vi.restoreAllMocks(); });
+
+    /** The ask's own scroll into view, and the explanation's focus, each as it was called and in which order. */
+    function watch() {
+      const scroll = vi.spyOn(Element.prototype, 'scrollIntoView');
+      const focus = vi.spyOn(HTMLElement.prototype, 'focus');
+      return {
+        scrolled: (node: Element) => scroll.mock.calls.filter((_, i) => scroll.mock.instances[i] === node).map(([how]) => how),
+        focused: (node: Element) => focus.mock.calls.filter((_, i) => focus.mock.instances[i] === node).map(([how]) => how),
+        // Absent, a scroll comes after and a focus before everything, so the order fails rather than passes.
+        order: (node: Element) => ({
+          scroll: scroll.mock.invocationCallOrder.find((_, i) => scroll.mock.instances[i] === node) ?? Infinity,
+          focus: focus.mock.invocationCallOrder.find((_, i) => focus.mock.instances[i] === node) ?? -Infinity,
+        }),
+      };
+    }
+
+    it('scrolls the whole ask into view on opening, then focuses its explanation without scrolling again', async () => {
+      const seen = watch();
+      render(<Page />);
+      await userEvent.click(screen.getByRole('button', { name: 'Delete…' }));
+      const ask = screen.getByRole('group', { name: 'delete this quest' });
+      const told = within(ask).getByText(SAYS);
+      await waitFor(() => expect(told).toHaveFocus());
+
+      expect(seen.scrolled(ask)).toEqual([{ block: 'nearest' }]);
+      expect(seen.focused(told)).toEqual([{ preventScroll: true }]);
+      expect(seen.order(ask).scroll).toBeLessThan(seen.order(told).focus);
+    });
+
+    it('waits for a menu to close before it scrolls, and scrolls the ask, not the explanation', async () => {
+      const user = userEvent.setup();
+      render(<MenuPage />);
+      screen.getByRole('button', { name: 'More actions' }).focus();
+      await user.keyboard('{Enter}');
+      const seen = watch();
+      await user.click(screen.getByRole('menuitem', { name: 'Delete…' }));
+      const ask = await screen.findByRole('group', { name: 'delete this quest' });
+      const told = within(ask).getByText(SAYS);
+      await waitFor(() => expect(told).toHaveFocus());
+
+      expect(seen.scrolled(ask)).toEqual([{ block: 'nearest' }]);
+      expect(seen.scrolled(told)).toEqual([]);
+      expect(seen.focused(told)).toEqual([{ preventScroll: true }]);
+      expect(seen.order(ask).scroll).toBeLessThan(seen.order(told).focus);
+      // The menu gave the focus back to its trigger first, and the ask still takes it as what opened it.
+      await user.keyboard('{Escape}');
+      expect(screen.getByRole('button', { name: 'More actions' })).toHaveFocus();
+    });
+  });
+
   it('is put down by Never mind, and gives the focus back to the press that opened it, drawn again', async () => {
     const user = userEvent.setup();
     render(<Page />);

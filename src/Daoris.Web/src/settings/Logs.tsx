@@ -183,8 +183,9 @@ export function LogList({ reading, filters, busy, onFilters, onOpenFolder, onRef
               <span className="truncate font-mono text-meta text-ink-soft">{line.source}</span>
               <span className={cn(
                 'truncate text-meta',
-                // A failure wears an outcome's hue, as a failed tool call does; the rest stay quiet.
-                line.level === 'error' ? 'font-medium text-st-declined' : line.level === 'warn' ? 'font-medium text-ink' : 'text-ink-faint',
+                // A failure wears an outcome's hue, as a failed tool call does, in the danger ink a red word wears
+                // (UXFIX5b); the rest stay quiet.
+                line.level === 'error' ? 'font-medium text-ink-danger' : line.level === 'warn' ? 'font-medium text-ink' : 'text-ink-faint',
               )}
               >
                 {level(line.level)}

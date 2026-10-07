@@ -6,7 +6,8 @@ import i18n from '../i18n';
 import { ClearAsk } from './ClearAsk';
 import type { Answered } from './InlineConfirm';
 import {
-  ASK_PLAN, FAILED_PLAN, QUEST_ALONE, QUEST_FORGOTTEN, QUEST_PLAN, WORKSPACE_KEPT, WORKSPACE_LEFT_OVER, WORKSPACE_PLAN,
+  ASK_PLAN, FAILED_PLAN, QUEST_ALONE, QUEST_FORGOTTEN, QUEST_PLAN, WORKSPACE_FILES_ONLY, WORKSPACE_KEPT, WORKSPACE_LEFT_OVER,
+  WORKSPACE_PLAN,
 } from './historyFixtures';
 
 // A clear's first press (HIST1e, D153; the history-clearing design §5, §6.1), as a molecule: it lists what the clear would
@@ -104,6 +105,37 @@ describe('a workspace’s first press (design §6.1)', () => {
     render(<ClearAsk target={WORKSPACE} plan={WORKSPACE_LEFT_OVER} meanIt="Clear 5" onClear={() => {}} onClose={() => {}} />);
     expect(within(screen.getByRole('list', { name: 'What goes' })).getAllByRole('listitem').map((row) => row.textContent))
       .toEqual(['3.1 MB left over from records already gone', 'the intake’s room, 40 KB']);
+  });
+
+  /**
+   * HIST1o (seen on the install): with only left-over files to take, the ask opened with what the finished work keeps, its
+   * words, transcripts and files, while its own list said only the left-over files went. It opens with what goes.
+   */
+  it('opens with only the left-over files where no unit goes, in both languages, and with the finished work where one does', () => {
+    const { unmount } = render(
+      <ClearAsk target={WORKSPACE} plan={WORKSPACE_FILES_ONLY} meanIt="Clear" onClear={() => {}} onClose={() => {}} />,
+    );
+    const ask = screen.getByRole('group', { name: 'clear from this machine' });
+    expect(ask).toHaveTextContent(
+      'Clears from this machine only the files left over from records already gone, 1.3 KB. Nothing brings it back.');
+    expect(ask).not.toHaveTextContent('finished work');
+    expect(within(screen.getByRole('list', { name: 'What goes' })).getAllByRole('listitem').map((row) => row.textContent))
+      .toEqual(['1.3 KB left over from records already gone']);
+    unmount();
+
+    const zh = render(
+      <I18nextProvider i18n={i18n.cloneInstance({ lng: 'zh' })}>
+        <ClearAsk target={WORKSPACE} plan={WORKSPACE_FILES_ONLY} meanIt="清除" onClear={() => {}} onClose={() => {}} />
+      </I18nextProvider>,
+    );
+    const zhAsk = screen.getByRole('group', { name: '从本机清除' });
+    expect(zhAsk).toHaveTextContent('从本机清除的只有已不存在的记录留下的文件，共 1.3 KB。清除后无法找回。');
+    expect(zhAsk).not.toHaveTextContent('已完成的工作');
+    zh.unmount();
+
+    render(<ClearAsk target={WORKSPACE} plan={WORKSPACE_PLAN} meanIt="Clear 3" onClear={() => {}} onClose={() => {}} />);
+    expect(screen.getByRole('group', { name: 'clear from this machine' })).toHaveTextContent(
+      'Clears from this machine what it kept of aurora’s finished work: their words, transcripts and files, 20.6 MB.');
   });
 
   it('says nothing here can be cleared, with only Close, where every unit is kept', async () => {

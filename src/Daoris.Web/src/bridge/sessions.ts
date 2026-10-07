@@ -191,8 +191,11 @@ export const useArchiveSessions = () => {
   });
 };
 
-/** What a delete answered (SESSUX1f, D126 §5.4): the session, and what went by name; nothing machine-local. */
-export type DeleteAnswer = { deleted: string; removed?: string[] };
+/**
+ * What a delete answered (SESSUX1f, D126 §5.4): the session, what went by name, and what the disk would not let go of by
+ * the same names, left over (SESSDEL1), empty or absent when everything went; nothing machine-local.
+ */
+export type DeleteAnswer = { deleted: string; removed?: string[]; stayed?: string[] };
 
 /**
  * *Delete…* (SESSUX1f, D126 §5.4): a conversation that served no quest, its record through the ledger and what this

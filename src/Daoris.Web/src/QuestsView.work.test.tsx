@@ -84,7 +84,8 @@ describe('pausing and abandoning in the shell', () => {
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORK_ABANDON', expect.objectContaining({
       payload: { ask: 'a1b2c3', reason: 'Taking another approach.', pieces: PAUSABLE_ASK.abandon.pieces },
     })));
-    await waitFor(() => expect(notify).toHaveBeenCalledWith('Abandoned ask #a1b2c3: 5 of 6 pieces; 1 changed since the list and stayed.', 'ok'));
+    // A partial abandon, said in the error's tone (PAUSE1h).
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Abandoned ask #a1b2c3: 5 of 6 pieces; 1 changed since the list and stayed.', 'error'));
     expect(await within(page).findByRole('region', { name: 'What went' })).toHaveTextContent('#5e4f3d was taken on another machine');
   });
 

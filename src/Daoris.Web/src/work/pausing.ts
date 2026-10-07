@@ -414,11 +414,19 @@ export function resumeNotices(answer: ResumeAnswer): WorkNotice[] {
   return notices;
 }
 
-/** What an abandon says (design §3.1): how many of the pieces the list held went, and how many changed since and were kept. */
+/**
+ * What an abandon says (design §3.1): how many of the pieces the list held went, and how many changed since and were kept.
+ *
+ * @remarks
+ * **A partial abandon is not a plain success** (PAUSE1h, as HIST1n made a partial clear): only one that took every piece it
+ * listed says `ok`. One that kept some, because they changed since the list or the disk would not let them go (the driver's
+ * `went` is what was listed less both), says so in the error's tone; the page's *What stayed* says which.
+ */
 export function abandonNotice(answer: AbandonAnswer): WorkNotice {
   if (answer.did === 'nothing') return { key: 'work.abandon.nothing', values: {}, tone: 'ok' };
   const changed = answer.changed?.length ?? 0;
+  const tone = changed === 0 && answer.went >= answer.listed ? 'ok' : 'error';
   return changed > 0
-    ? { key: 'work.abandon.done.changed', values: { went: answer.went, count: answer.listed, changed }, tone: 'ok' }
-    : { key: 'work.abandon.done.all', values: { went: answer.went, count: answer.listed }, tone: 'ok' };
+    ? { key: 'work.abandon.done.changed', values: { went: answer.went, count: answer.listed, changed }, tone }
+    : { key: 'work.abandon.done.all', values: { went: answer.went, count: answer.listed }, tone };
 }
