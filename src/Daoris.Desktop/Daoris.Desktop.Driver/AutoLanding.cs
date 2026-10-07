@@ -455,9 +455,8 @@ public static class AutoLandingNotes
 /// </summary>
 public sealed record LandingLine(string Event, IReadOnlyList<(string Key, object? Value)> Data)
 {
-    /// <summary>What a plugin's id may be in a line: the catalogue's own shape, never a phrase.</summary>
-    private static readonly System.Text.RegularExpressions.Regex PluginId =
-        new("^[a-z0-9][a-z0-9.-]{0,119}$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+    /// <summary>The longest plugin id a line carries: an id of the catalogue's own shape, never a phrase, and never a long one.</summary>
+    private const int PluginIdLimit = 120;
 
     /// <summary>One try: whose, where, its code, what it carried or what held it, and whether the plugin pushed.</summary>
     public static LandingLine Auto(
@@ -465,6 +464,9 @@ public sealed record LandingLine(string Event, IReadOnlyList<(string Key, object
         new("landing.auto",
         [
             ("session", session), ("repository", repository), ("workspace", workspace), ("code", code), ("commits", commits),
-            ("uncommitted", uncommitted), ("plugin", plugin is not null && PluginId.IsMatch(plugin) ? plugin : null), ("pushed", pushed),
+            ("uncommitted", uncommitted),
+            // The shape is asked of its one owner (REFAC1); the line adds only its bound.
+            ("plugin", plugin is { Length: <= PluginIdLimit } && PluginCatalog.IsId(plugin) ? plugin : null),
+            ("pushed", pushed),
         ]);
 }

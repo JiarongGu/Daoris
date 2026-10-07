@@ -53,6 +53,12 @@ public sealed record DeleteOutcome(string Session, DeleteVerdict Verdict, string
     /// <c>archived</c>), in that order.
     /// </summary>
     public IReadOnlyList<string> Removed { get; init; } = [];
+
+    /// <summary>
+    /// What the disk would not let go of, by the same names, in the same order (SESSDEL1): left over, and said in
+    /// <see cref="Message"/>. Empty when everything went. The record's removal never waits on it: the ledger has already said yes.
+    /// </summary>
+    public IReadOnlyList<string> Stayed { get; init; } = [];
 }
 
 /// <summary>
@@ -75,8 +81,12 @@ public sealed record DeleteOutcome(string Session, DeleteVerdict Verdict, string
 /// choice of a new session, its spawn files, its held words, its closed automatic landing and its archive mark (§5.1; the
 /// history-clearing design §2.2). <b>Never</b> a tree, a branch, its usage or the machine log, which gains
 /// <c>session.deleted</c> with no word of it (§7.4).</para>
+///
+/// <para><b>What the disk would not let go of stays, and is said</b> (SESSDEL1): by name in <see cref="DeleteOutcome.Stayed"/>,
+/// and in the sentence, as a clear says what it left over (D153's HIST1j note). The record is gone all the same.</para>
 /// </remarks>
-public sealed class SessionDeletion(string home)
+/// <param name="remover">The disk, which a test hands one that refuses a path as a held file does (HIST1j's seam).</param>
+public sealed class SessionDeletion(string home, Action<string, bool>? remover = null)
 {
     public const string ByAsk = "ask";
     public const string ByQuest = "quest";
@@ -123,15 +133,52 @@ public sealed class SessionDeletion(string home)
         if (!deleted.Taken) return Refused(id, deleted);
 
         // HIST1c: the one helper a clear also calls, so a delete takes every file §2.2 lists, the four it once left included.
-        var removed = new List<string> { "record" };
-        removed.AddRange(new SessionHomeFiles(home).Remove([id], events).Went[id]);
+        var files = new SessionHomeFiles(home, remover).Remove([id], events);
+        var stayed = files.Stayed[id];
 
         log?.Info("session.deleted", ("session", id), ("kind", KindOf(record)), ("door", door));
-        return new(id, DeleteVerdict.Deleted, $"Deleted session `{id}`: its record, and its words, transcript and files on this machine.")
+        return new(id, DeleteVerdict.Deleted, stayed.Count == 0
+            ? $"Deleted session `{id}`: its record, and its words, transcript and files on this machine."
+            : LeftOver(id, stayed))
         {
-            Removed = removed,
+            Removed = ["record", .. files.Went[id]],
+            Stayed = stayed,
         };
     }
+
+    /// <summary>
+    /// A delete whose files the disk did not all let go of (SESSDEL1): which stayed, by the words for each name, and that they are
+    /// left over, as a clear says of its own; the next clear of a workspace is promised only where it takes every one of them.
+    /// </summary>
+    private static string LeftOver(string id, IReadOnlyList<string> stayed)
+    {
+        var said = stayed.Select(Said).ToList();
+        var plural = said.Count > 1 || said[0].Plural;
+        var list = said.Count == 1 ? said[0].Words : $"{string.Join(", ", said.SkipLast(1).Select(each => each.Words))} and {said[^1].Words}";
+        var taken = stayed.All(SessionHomeFiles.TakenWhenLeftOver)
+            ? $"; the next clear of a workspace takes {(plural ? "them" : "it")}"
+            : "";
+        return $"Deleted session `{id}`: its record, and what this machine kept of it but {list}, which the disk would not let go of "
+               + $"and {(plural ? "are" : "is")} left over{taken}.";
+    }
+
+    /// <summary>A name of what the home keeps of a session, as a person reads it, and whether it reads as more than one.</summary>
+    private static (string Words, bool Plural) Said(string name) => name switch
+    {
+        SessionHomeFiles.Conversation => ("its words", true),
+        SessionHomeFiles.Transcript => ("its transcript", false),
+        SessionHomeFiles.Files => ("its files", true),
+        SessionHomeFiles.Harness => ("its agent's conversation id", false),
+        SessionHomeFiles.Marker => ("its process marker", false),
+        SessionHomeFiles.Mark => ("its go-on mark", false),
+        SessionHomeFiles.Choice => ("its choice of a new session", false),
+        SessionHomeFiles.Spawn => ("its spawn files", true),
+        SessionHomeFiles.Held => ("its held words", true),
+        SessionHomeFiles.Landing => ("its closed automatic landing", false),
+        SessionHomeFiles.Archived => ("its archive mark", false),
+        // A name a later inventory adds is said as it is named.
+        _ => ($"its {name}", false),
+    };
 
     /// <summary>
     /// This machine's half (§5.4): its own tree still here, or a landing that names it. Null when neither holds it. A tree

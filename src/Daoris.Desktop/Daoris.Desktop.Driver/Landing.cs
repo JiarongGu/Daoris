@@ -293,12 +293,6 @@ public static class LandingRules
     private static readonly Regex Placeholder = new(@"\{([^{}]*)\}", RegexOptions.CultureInvariant);
 
     /// <summary>
-    /// What a plugin's id may be — the catalogue's own shape, so a rule never names a path. <c>\z</c>, as the catalogue's,
-    /// since .NET's <c>$</c> also passes a final line break the CLI's <c>PLUGIN_ID</c> refuses (CASEFOLD1e).
-    /// </summary>
-    private static readonly Regex PluginId = new(@"^[a-z0-9][a-z0-9.-]*\z", RegexOptions.CultureInvariant);
-
-    /// <summary>
     /// What is wrong with a rule's shape, in a sentence, or null when it can land work. Whether its plugin
     /// is on this machine is <see cref="PluginProblem"/>'s question: a file stays readable wherever it is.
     /// </summary>
@@ -314,7 +308,8 @@ public static class LandingRules
             "only a branch rule accepts automatically — a merge writes into your checkout, and with no press nothing would "
             + "stand between the work and the line. `branch <pattern> --auto-accept` is the form that does.",
         LandingForm.Merge => null,
-        LandingForm.Branch => Problem(rule.Pattern ?? "") ?? (rule.Plugin is { } plugin && !PluginId.IsMatch(plugin)
+        // A plugin's id is the catalogue's own shape, asked of its one owner (REFAC1), so a rule never names a path.
+        LandingForm.Branch => Problem(rule.Pattern ?? "") ?? (rule.Plugin is { } plugin && !PluginCatalog.IsId(plugin)
             ? $"`{plugin}` is not a plugin id — one is lowercase letters, digits, dots and dashes, like `example.github-pull-request`."
             : null),
         _ => $"`{rule.Form}` is not a way work lands here — `{LandingForm.Merge}` or `{LandingForm.Branch}`. "

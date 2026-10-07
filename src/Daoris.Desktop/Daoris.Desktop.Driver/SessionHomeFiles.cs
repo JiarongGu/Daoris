@@ -38,10 +38,16 @@ public sealed record HistoryBytes(long Conversations, long Transcripts, long Fil
 /// bytes that went with them, by kind; and each path the disk would not let go of, which stays, left over (the history-clearing
 /// design §2.3).
 /// </summary>
+/// <param name="Stayed">
+/// Each session's names the disk kept, in the same order and words as <paramref name="Went"/> (SESSDEL1), so a delete can say which
+/// stayed. A file several sessions share (the held words, the closed automatic landings, the archive marks) that would not be read
+/// or written again is named for each session it was asked of, since what it held of each stays.
+/// </param>
 public sealed record SessionFilesRemoved(
     IReadOnlyDictionary<string, IReadOnlyList<string>> Went,
     IReadOnlyDictionary<string, HistoryBytes> Bytes,
-    IReadOnlyList<string> Failed);
+    IReadOnlyList<string> Failed,
+    IReadOnlyDictionary<string, IReadOnlyList<string>> Stayed);
 
 /// <summary>
 /// Every file the home keeps of one session (HIST1c, D153 point 6, the history-clearing design §2.2), held in one inventory that
@@ -156,11 +162,13 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     public SessionFilesRemoved Remove(IReadOnlyCollection<string> ids, SessionEvents? events)
     {
         var removed = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        var stayed = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         var bytes = new Dictionary<string, HistoryBytes>(StringComparer.Ordinal);
         var failed = new List<string>();
         foreach (var id in ids)
         {
             removed.TryAdd(id, []);
+            stayed.TryAdd(id, []);
             bytes.TryAdd(id, HistoryBytes.None);
         }
 
@@ -170,36 +178,45 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
             foreach (var file in Inventory)
             {
                 var path = PathOf(file, id);
+                var refused = failed.Count;
                 // The conversation goes through the loop's record where there is one, so its numbering is forgotten too.
                 var (gone, went) = file.Name == Conversation && events is not null
                     ? Take(path, () => events.Forget(id), failed)
                     : Take(path, file.Folder, failed);
                 bytes[id] += file.Counts(went);
-                if (gone && !removed[id].Contains(file.Name)) removed[id].Add(file.Name);
+                if (gone) Named(removed[id], file.Name);
+                if (failed.Count > refused) Named(stayed[id], file.Name);
             }
         }
 
         if (sessions.Count > 0)
         {
-            Each(HeldWordsFile.PathOf(home), () => HeldWordsFile.Forget(home, sessions), Held);
-            Each(new AutoLandings(home).FilePath, () => new AutoLandings(home).Forget(sessions), Landing);
+            Each(HeldWordsFile.PathOf(home), sessions, () => HeldWordsFile.Forget(home, sessions), Held);
+            Each(new AutoLandings(home).FilePath, sessions, () => new AutoLandings(home).Forget(sessions), Landing);
         }
 
         // Every id, a teammate's included: this machine marks their records archived too (D126 §5.2), by the record's id.
         var all = removed.Keys.ToList();
         if (all.Count > 0)
         {
-            Each(new SessionArchive(home).FilePath, () =>
+            Each(new SessionArchive(home).FilePath, all, () =>
             {
                 var answer = new SessionArchive(home).Unarchive(all);
                 return all.Where(id => !answer.NotArchived.Contains(id, StringComparer.Ordinal)).ToList();
             }, Archived);
         }
 
-        return new SessionFilesRemoved(
-            removed.ToDictionary(pair => pair.Key, pair => (IReadOnlyList<string>)pair.Value, StringComparer.Ordinal), bytes, failed);
+        return new SessionFilesRemoved(Listed(removed), bytes, failed, Listed(stayed));
 
-        void Each(string file, Func<IReadOnlyCollection<string>> forget, string name)
+        static void Named(List<string> names, string name)
+        {
+            if (!names.Contains(name)) names.Add(name);
+        }
+
+        static IReadOnlyDictionary<string, IReadOnlyList<string>> Listed(Dictionary<string, List<string>> names) =>
+            names.ToDictionary(pair => pair.Key, pair => (IReadOnlyList<string>)pair.Value, StringComparer.Ordinal);
+
+        void Each(string file, IReadOnlyCollection<string> asked, Func<IReadOnlyCollection<string>> forget, string name)
         {
             try
             {
@@ -211,9 +228,18 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
                 failed.Add(file);
+                // SESSDEL1: the file is shared, so what it held of each session asked of it stays.
+                foreach (var id in asked) Named(stayed[id], name);
             }
         }
     }
+
+    /// <summary>
+    /// Whether a workspace's clear takes a file by this name once it is left over (SESSDEL1): the inventory's own files, which the
+    /// left-over scan finds by the names they carry (the history-clearing design §2.3). Not a shared file's entries, which no scan
+    /// reads.
+    /// </summary>
+    internal static bool TakenWhenLeftOver(string name) => Inventory.Any(file => file.Name == name);
 
     /// <summary>
     /// Remove one path of the home, a file or a folder whole, through this home's remover (HIST1j): whether it went, and the bytes

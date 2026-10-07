@@ -142,9 +142,9 @@ public sealed class PluginCatalogTests : IDisposable
 
     /// <summary>
     /// CASEFOLD1e: an id's shape holds to its very end. .NET's <c>$</c> also matches before a final line break, where the
-    /// CLI's <c>ID_SHAPE</c> and <c>PLUGIN_ID</c> do not, so <c>acme.gate</c> and a line break was an id here and none there:
-    /// a door's argument, a source folder's manifest and a landing rule's plugin alike. The shape ends at <c>\z</c>, as
-    /// <see cref="PluginTools"/>' tool id does, and <see cref="LandingRules"/>' copy with it.
+    /// CLI's shape does not, so <c>acme.gate</c> and a line break was an id here and none there: a door's argument, a source
+    /// folder's manifest and a landing rule's plugin alike. The shape ends at <c>\z</c>, and since REFAC1
+    /// <see cref="LandingRules"/> and <see cref="PluginTools"/> ask <see cref="PluginCatalog.IsId"/> rather than keep a copy.
     /// </summary>
     [Fact]
     public void An_id_followed_by_a_line_break_is_no_id_as_the_cli_reads_it()
@@ -161,6 +161,27 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.Equal("`id` must be lowercase letters, digits, dots and dashes — `acme.gate\n` is not.", problem);
         Assert.Null(LandingRules.Problem(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: "acme.gate")));
         Assert.StartsWith("`acme.gate\n` is not a plugin id", landing);
+    }
+
+    /// <summary>
+    /// REFAC1 (the second-opinion review of 2026-10-07): a plugin id's shape has one owner in the driver,
+    /// <see cref="PluginCatalog.IsId"/>, which a landing rule's plugin, a plugin's tool id and the log's landing line ask too;
+    /// CASEFOLD1e had to mend the same pattern in two places. Only <c>Plugins.cs</c> spells it. The CLI's
+    /// <c>isPluginId</c> is the twin, which its own suite holds the same way.
+    /// </summary>
+    [Fact]
+    public void Only_the_catalogue_spells_a_plugin_ids_shape()
+    {
+        var driver = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver");
+        string Built(string folder) => $"{Path.DirectorySeparatorChar}{folder}{Path.DirectorySeparatorChar}";
+
+        var spelled = Directory.EnumerateFiles(driver, "*.cs", SearchOption.AllDirectories)
+            .Where(path => !path.Contains(Built("obj"), StringComparison.Ordinal) && !path.Contains(Built("bin"), StringComparison.Ordinal))
+            .Where(path => File.ReadAllText(path).Contains("[a-z0-9][a-z0-9.-]", StringComparison.Ordinal))
+            .Select(path => Path.GetFileName(path))
+            .Order(StringComparer.Ordinal);
+
+        Assert.Equal(["Plugins.cs"], spelled);
     }
 
     [Fact]

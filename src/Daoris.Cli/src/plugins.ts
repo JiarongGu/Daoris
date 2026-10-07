@@ -94,6 +94,15 @@ export const NEEDS_HEADING = '## What it needs';
 const ID_SHAPE = /^[a-z0-9][a-z0-9.-]*$/;
 
 /**
+ * Whether a name has a plugin id's shape: lowercase letters, digits, dots and dashes, never leading with a dot or a dash. The
+ * one owner of the shape in this package (REFAC1): the catalogue's ids, a server's and a tool's names, `plugin`'s words and a
+ * landing rule's plugin (`driverconfig.ts`) are all asked here, each caller trimming or lowering first as it always did.
+ */
+export function isPluginId(id: string): boolean {
+  return ID_SHAPE.test(id);
+}
+
+/**
  * The harness names this build carries, which a plugin may not declare. The toolchain table plus the
  * two gate stubs that have no toolchain — the same set the driver's `AdapterSet.Built()` names.
  *
@@ -324,7 +333,7 @@ export function readManifest(folderName: string, folder: string, asWritten = fal
     }
   }
 
-  if (!ID_SHAPE.test(id)) {
+  if (!isPluginId(id)) {
     return { manifest: empty(folderName), problem: `\`id\` must be lowercase letters, digits, dots and dashes — \`${id}\` is not.` };
   }
   if (id !== folderName) {
@@ -372,7 +381,7 @@ export function readManifest(folderName: string, folder: string, asWritten = fal
     if (!Array.isArray(handed)) return { manifest: empty(id), problem: '`servers` must be an array.' };
     for (const row of handed) {
       const name = text(row, 'name')?.trim();
-      if (!name || !ID_SHAPE.test(name)) {
+      if (!name || !isPluginId(name)) {
         return { manifest: empty(id), problem: 'a declared server needs a `name` — lowercase letters, digits, dots and dashes; it is what the agent calls it.' };
       }
       const command = strings(row, 'command', base);
@@ -491,7 +500,7 @@ function toolDeclared(row: unknown, at: number, seen: Set<string>): PluginTool {
 
   const id = fields.id;
   if (!filled(id)) return notRead(null, `tool ${at} in \`tools\` needs an \`id\`: a tool's name in lowercase, like \`az\`.`);
-  if (!ID_SHAPE.test(id)) {
+  if (!isPluginId(id)) {
     return notRead(null, `tool ${at} in \`tools\` has the \`id\` \`${id}\`, which is not one: lowercase letters, digits, dots and dashes, like \`az\`.`);
   }
   if (seen.has(id)) return notRead(id, `tool \`${id}\` is declared twice in \`tools\`; the first is read.`);
@@ -789,7 +798,7 @@ export function readPluginSource(installFolder: string): { source: PluginSource 
   if (pkg !== null && offer !== null) return unread('it names both a package and an offer');
   if (folder !== null && offer !== null) return unread('it names both a folder and an offer');
   if (folder !== null) return isAbsolute(folder) ? { source: { folder }, problem: null } : unread('its folder is not a whole path');
-  if (offer !== null) return ID_SHAPE.test(offer) ? { source: { offer }, problem: null } : unread('its offer is not a plugin id');
+  if (offer !== null) return isPluginId(offer) ? { source: { offer }, problem: null } : unread('its offer is not a plugin id');
   if (pkg === null) return unread('it names no folder, offer or package');
 
   // A package's record (PLUGDIST1a), each field judged in the driver's order and words.
@@ -951,7 +960,7 @@ const NOT_AN_ID = (id: string) => `\`${id}\` is not a plugin id — one is lower
 export function planUpdate(home: string, id: string, reserved: Iterable<string> = reservedHarnesses()):
   { plan: UpdatePlan | null; refusal: string | null } {
   const refuse = (refusal: string) => ({ plan: null, refusal });
-  if (!ID_SHAPE.test(id.toLowerCase())) return refuse(NOT_AN_ID(id));
+  if (!isPluginId(id.toLowerCase())) return refuse(NOT_AN_ID(id));
   const entry = readPlugins(home, reserved).plugins.find((plugin) => same(basename(plugin.folder), id));
   if (!entry) return refuse(`no plugin \`${id}\` on this machine — \`daoris plugin list\` shows what there is.`);
   const installed = basename(entry.folder);
@@ -1067,7 +1076,7 @@ function requireId(argv: string[], verb: string): string {
   }
   // 🔴 Before the id becomes a path: `remove` joins it under plugins/ and deletes recursively, so `..`
   // was the whole home and `.` every plugin's kept data (REV3). An installed id always has this shape.
-  if (!ID_SHAPE.test(id.toLowerCase())) throw new DaorisError(NOT_AN_ID(id));
+  if (!isPluginId(id.toLowerCase())) throw new DaorisError(NOT_AN_ID(id));
   return id;
 }
 
@@ -1164,7 +1173,7 @@ export function commandPlugin({ argv, write }: CommandArgs): ExitCode {
         if (!wanted || wanted.startsWith('--')) {
           throw new DaorisError('`--offer` names one of Daoris\'s own plugins by its id — `daoris plugin list` shows what this install offers.');
         }
-        if (!ID_SHAPE.test(wanted.toLowerCase())) throw new DaorisError(NOT_AN_ID(wanted));
+        if (!isPluginId(wanted.toLowerCase())) throw new DaorisError(NOT_AN_ID(wanted));
         const offers = readOffers(home);
         const offer = offers.find((each) => same(each.id, wanted));
         if (!offer) {

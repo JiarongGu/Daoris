@@ -282,8 +282,9 @@ public sealed partial class DriverModule
     /// <see cref="Refusals"/> said in the catalogue's words, read by the ledger's word, never its sentence. The page offers
     /// the act only where <c>SESSION_GROUPS</c> says <c>deletable</c>, so a refusal answers a race.</para>
     ///
-    /// <para><b>Nothing machine-local comes back</b>: the id and the names of what went. <c>session.deleted</c> is written
-    /// to the machine log with no word of it.</para>
+    /// <para><b>Nothing machine-local comes back</b>: the id, the names of what went and the names of what the disk would not let
+    /// go of (<c>stayed</c>, SESSDEL1, empty when everything went), never a path. <c>session.deleted</c> is written to the machine
+    /// log with no word of it.</para>
     /// </remarks>
     [DriverRoute("SESSION_DELETE")]
     private async Task<object?> SessionDeleteAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -296,7 +297,7 @@ public sealed partial class DriverModule
         if (outcome.Verdict != DeleteVerdict.Deleted) throw NotDeleted(outcome);
 
         _loop.Nudge();
-        return new { Deleted = id, outcome.Removed };
+        return new { Deleted = id, outcome.Removed, outcome.Stayed };
     }
 
     /// <summary>
