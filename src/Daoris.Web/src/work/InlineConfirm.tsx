@@ -133,6 +133,8 @@ function giveBack(opener: Opener) {
  * - **The explanation takes the focus on opening and describes the move** (`aria-describedby`), so a keyboard reaches the
  *   move having heard what goes. A first press made from a menu leaves with its menu, which gives the focus back to its
  *   trigger a beat later; the ask waits that beat and takes the trigger as what opened it.
+ * - **It opens whole in view** (UXFIX2d): the ask is scrolled into view, nearest edge first, before the explanation takes
+ *   the focus without scrolling again, so an ask opened near the page's foot shows its presses, not one line.
  * - **Escape and *Never mind* put it down** and give the focus back to what opened it, or to the same press drawn again
  *   where it was not offered twice while the ask was open.
  * - **The press keeps it open and waiting** until the act answers (ACCTEDIT1's `done`/`refused`): `done` closes it, and
@@ -192,12 +194,20 @@ export function InlineConfirm({
   const leaving = useRef(false);
   const waiting = busy || pending;
 
-  // The explanation takes the focus. Pressed in a menu, the ask waits for the menu to close and give the focus back, which
-  // it does a beat after it goes, and only where nothing took the focus while it was open: taking it at once would leave the
-  // focus nowhere to return to. Whatever the menu gave it to is what opened the ask.
+  // The whole ask comes into view, then the explanation takes the focus without scrolling again (UXFIX2d): a focus alone
+  // scrolled only the explanation's line into view, and an ask opened near the page's foot left its list and presses below
+  // the fold. `nearest` moves the page least: an ask already in view stays put, and one taller than the view shows its top.
+  const show = () => {
+    own.current?.scrollIntoView?.({ block: 'nearest' });
+    told.current?.focus({ preventScroll: true });
+  };
+
+  // Pressed in a menu, the ask waits for the menu to close and give the focus back, which it does a beat after it goes, and
+  // only where nothing took the focus while it was open: taking it at once would leave the focus nowhere to return to.
+  // Whatever the menu gave it to is what opened the ask.
   useEffect(() => {
     if (!first.closing) {
-      told.current?.focus();
+      show();
       return undefined;
     }
     let after = 0;
@@ -205,7 +215,7 @@ export function InlineConfirm({
       after = window.setTimeout(() => {
         const now = document.activeElement;
         if (now && now !== document.body && !own.current?.contains(now) && !now.closest(CLOSES_ITSELF)) opener.current = noted(now);
-        told.current?.focus();
+        show();
       }, 0);
     }, 0);
     return () => {
