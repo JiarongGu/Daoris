@@ -675,19 +675,20 @@ public sealed partial class DriverModule
         }
 
         var profileHome = HarnessSettings.ProfileHome(home, owner, fresh ?? target ?? profile ?? "default");
-        // 🔴 A sign-in is its accounts' agent's (AGT7, CODEXACCT1): a door onto another agent runs that agent's own flow, with
-        // its binary and the command named for it. `codex-acp` has no flow of its own and runs `codex login`; refused as a door
-        // with none, Agents → Codex offered no account while `daoris agent login codex --new` made one (D50).
+        // 🔴 A sign-in is its accounts' agent's (AGT7, CODEXACCT1): a door onto another agent runs that agent's own flow, on the
+        // binary its status question asks: the command named for it, its pin, else PATH's (D57 rule 4). `codex-acp` has no flow
+        // of its own and runs `codex login`; refused as a door with none, Agents → Codex offered no account while `daoris agent
+        // login codex --new` made one (D50), and the install's only `codex` is its pin.
         var signing = action is "login" or "login-new" ? _loop.Harnesses.AccountAgentOf(harness) : null;
         var signingToolchain = signing?.Toolchain ?? toolchain;
-        var signingCommand = signing is { } agent ? config.Commands.GetValueOrDefault(agent.Name) : command;
+        var signingRun = signing is null ? null : _loop.Harnesses.SignInCommand(harness, config);
         Func<Task<int>> run = action switch
         {
             "install" => () => HarnessActions.InstallAsync(toolchain, stream, CancellationToken.None, track),
             "update" => () => UpdateAsync(harness, toolchain, command, stream, CancellationToken.None, track),
-            "login" => () => SignInToAsync(owner, target!, signingToolchain, signingCommand, profileHome, stream, track, lists),
+            "login" => () => SignInToAsync(owner, target!, signingToolchain, signingRun!, profileHome, stream, track, lists),
             "login-new" => () => SignInAsync(
-                harness, owner, fresh!, signingToolchain, signingCommand, profileHome, stream, config, track, lists, name),
+                harness, owner, fresh!, signingToolchain, signingRun!, profileHome, stream, config, track, lists, name),
             // The managed toolchain (TOOL2/D57) — the desktop's half of `daoris agent pin|unpin`, over
             // the same file.
             _ => () => PinAsync(harness, toolchain, stream, version!, CancellationToken.None, track),
@@ -816,9 +817,9 @@ public sealed partial class DriverModule
     /// <param name="harness">The door pressed, whose account agent's end question reads the new account.</param>
     /// <param name="owner">Whose accounts the door runs as (AGT7): the new account's folder is under it.</param>
     /// <param name="toolchain">The account agent's toolchain, whose own flow signs in (CODEXACCT1).</param>
-    /// <param name="command">The command named for the account agent, or null for its own binary.</param>
+    /// <param name="run">What the account agent runs as: its named command, its pin, else PATH's (D57 rule 4).</param>
     private async Task<int> SignInAsync(
-        string harness, string owner, string fresh, HarnessToolchain toolchain, IReadOnlyList<string>? command,
+        string harness, string owner, string fresh, HarnessToolchain toolchain, HarnessCommand run,
         string profileHome, Action<string> stream, DriverConfig config, Action<HarnessRun> track,
         IReadOnlyList<string?> joins, string? name)
     {
@@ -826,7 +827,7 @@ public sealed partial class DriverModule
         try
         {
             code = await HarnessActions.LoginAsync(
-                toolchain, command, profileHome, stream, CancellationToken.None, track, fresh: true);
+                toolchain, run, profileHome, stream, CancellationToken.None, track, fresh: true);
             return code;
         }
         finally
@@ -866,10 +867,10 @@ public sealed partial class DriverModule
     /// its end the lists the person named joined and where it runs said.
     /// </summary>
     private async Task<int> SignInToAsync(
-        string owner, string account, HarnessToolchain toolchain, IReadOnlyList<string>? command, string profileHome,
+        string owner, string account, HarnessToolchain toolchain, HarnessCommand run, string profileHome,
         Action<string> stream, Action<HarnessRun> track, IReadOnlyList<string?> joins)
     {
-        var code = await HarnessActions.LoginAsync(toolchain, command, profileHome, stream, CancellationToken.None, track);
+        var code = await HarnessActions.LoginAsync(toolchain, run, profileHome, stream, CancellationToken.None, track);
         if (code == 0) Placed(owner, account, joins, stream);
         return code;
     }

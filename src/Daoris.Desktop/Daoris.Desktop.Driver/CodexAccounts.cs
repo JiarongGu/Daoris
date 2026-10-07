@@ -16,8 +16,9 @@ namespace Daoris.Driver;
 /// <para><b>No key</b> (D67 §1, AGT3): <c>codex login --with-api-key</c> stores a key in Codex's own home, where D67 keeps
 /// a key in <c>keys.json</c> and hands it at spawn through a variable the tool reads, and no such variable is measured for
 /// Codex. Its key accounts wait on that measurement.</para>
-/// <para>Its pin stays the CLI's to install (<c>codex-releases</c>): a question here runs the pinned <c>codex</c> where
-/// <c>harnesses.json</c> pins one, as the usage question does (<see cref="CodexUsage.Question"/>).</para>
+/// <para>Its pin stays the CLI's to install (<c>codex-releases</c>): a status question and a sign-in here run the pinned
+/// <c>codex</c> where <c>harnesses.json</c> pins one and <c>driver.json</c> names no command (<see cref="HarnessProbe.CommandOf"/>),
+/// as the usage question does (<see cref="CodexUsage.Question"/>).</para>
 /// </remarks>
 public static class CodexAccounts
 {

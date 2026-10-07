@@ -53,4 +53,19 @@ public sealed class DriverModuleSignInTests : DriverModuleBridge
         Assert.Empty(HarnessSettings.Profiles(Home, "codex"));
         Assert.False(Directory.Exists(Path.Combine(Home, "harnesses", "codex-acp")));
     }
+
+    /// <summary>
+    /// The sign-in runs the <c>codex</c> its status question asks (D57 rule 4): with no command named, the pin, here one with
+    /// nothing installed at it, so it is refused naming the pin, never run from <c>PATH</c>, and keeps nothing.
+    /// </summary>
+    [Fact]
+    public async Task Adding_a_codex_account_on_a_pin_with_nothing_installed_is_refused_naming_the_pin()
+    {
+        new HarnessSettings().WithVersion("codex", "0.160.0").Save(HarnessSettingsPath);
+
+        var refusal = await RefusalAsync(Module(), "HARNESS_ACTION", new { harness = "codex-acp", action = "login-new" });
+
+        Assert.Contains("`codex` is pinned to 0.160.0 on this machine, and nothing is installed at that version", refusal);
+        Assert.Empty(HarnessSettings.Profiles(Home, "codex"));
+    }
 }

@@ -114,6 +114,71 @@ public sealed class CodexAccountTests : IDisposable
         Assert.Null(declared.LoginCheck.Account);
     }
 
+    // ——— Which `codex` a sign-in runs (D57 rule 4): the command named for it, then its pin, then PATH's, as its status
+    // question asks. The owner's install pins Codex and has none on PATH, so a sign-in that ran PATH's could not start.
+
+    private string Pin(string version)
+    {
+        var binary = Path.Combine(
+            HarnessSettings.ManagedHome(_home, "codex", version), "bin", OperatingSystem.IsWindows() ? "codex.exe" : "codex");
+        Directory.CreateDirectory(Path.GetDirectoryName(binary)!);
+        File.WriteAllText(binary, "");
+        return binary;
+    }
+
+    private void Pinned(string version) => new HarnessSettings().WithVersion("codex", version).Save(Path.Combine(_home, "harnesses.json"));
+
+    private string Fresh => HarnessSettings.ProfileHome(_home, "codex", "acct-0a1b2c3d");
+
+    /// <summary>Only a pin, no command named: the sign-in's start names the pinned <c>codex</c>, into its new folder.</summary>
+    [Fact]
+    public void A_sign_in_with_only_a_pin_runs_the_pinned_codex_into_its_new_folder()
+    {
+        var binary = Pin("0.160.0");
+        Pinned("0.160.0");
+        var roster = Roster();
+
+        var run = roster.SignInCommand("codex-acp", DriverConfig.Empty)!;
+        var info = HarnessActions.PrepareLogin(roster.AccountToolchain("codex-acp")!, run, Fresh, fresh: true);
+
+        Assert.Equal(binary, run.Managed);
+        Assert.Equal(binary, info.FileName);
+        Assert.Equal(["login"], info.ArgumentList);
+        Assert.Equal(Fresh, info.Environment["CODEX_HOME"]);
+        Assert.True(Directory.Exists(Fresh));
+    }
+
+    /// <summary>A command named for <c>codex</c> has the last word over its pin, as at every spawn.</summary>
+    [Fact]
+    public void A_command_named_for_codex_signs_in_before_its_pin()
+    {
+        Pin("0.160.0");
+        Pinned("0.160.0");
+        var named = Path.Combine(_home, "named-codex.exe");
+        File.WriteAllText(named, "");
+        var config = DriverConfig.Empty with { Commands = new Dictionary<string, IReadOnlyList<string>> { ["codex"] = [named] } };
+
+        var run = Roster().SignInCommand("codex-acp", config)!;
+
+        Assert.Equal([named], run.Run);
+        Assert.Null(run.Managed);
+    }
+
+    /// <summary>Pinned with nothing installed at the pin: refused, naming the pin, with no folder made and never PATH's.</summary>
+    [Fact]
+    public void A_sign_in_pinned_to_a_version_not_installed_is_refused_and_makes_nothing()
+    {
+        Pinned("0.160.0");
+        var roster = Roster();
+
+        var refusal = Assert.Throws<DriverException>(() => HarnessActions.PrepareLogin(
+            roster.AccountToolchain("codex-acp")!, roster.SignInCommand("codex-acp", DriverConfig.Empty)!, Fresh, fresh: true));
+
+        Assert.Contains("`codex` is pinned to 0.160.0 on this machine, and nothing is installed at that version", refusal.Message);
+        Assert.Contains("`daoris agent pin codex 0.160.0` installs it", refusal.Message);
+        Assert.False(Directory.Exists(Fresh));
+    }
+
     // ——— A start on a door whose owner is declared, not carried: the walk reads the owner's accounts in the door's report,
     // and asks one through the owner's question. A stand-in answers in place of the agent, so no process starts.
 
