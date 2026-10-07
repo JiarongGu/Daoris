@@ -107,7 +107,11 @@ describe('clearing finished history in the shell', () => {
     expect(within(questMain()).queryByRole('group', { name: 'clear from this machine' })).toBeNull();
   });
 
-  it('says a unit that changed since the list in its code’s sentence, and leaves the page where it was', async () => {
+  /**
+   * A unit that changed since the list is said in its code's sentence (D153 §5), and since UXFIX2 inside the ask where it was
+   * pressed, which stays open, rather than in a toast.
+   */
+  it('says a unit that changed since the list in its code’s sentence inside the ask, and leaves the page where it was', async () => {
     answering({
       HISTORY_CLEAR: Object.assign(new Error('raw'), { code: 'HISTORY_LIVE', parameters: { session: 's1a2b3c4' } }),
     });
@@ -119,7 +123,9 @@ describe('clearing finished history in the shell', () => {
     await moreAct(page, 'Clear from this machine…');
     await userEvent.click(within(questMain()).getByRole('button', { name: 'Clear quest' }));
 
-    await waitFor(() => expect(notify).toHaveBeenCalledWith('s1a2b3c4 is still running, so it was not cleared. Stop it first.', 'error'));
+    const ask = within(questMain()).getByRole('group', { name: 'clear from this machine' });
+    expect(await within(ask).findByRole('alert')).toHaveTextContent('s1a2b3c4 is still running, so it was not cleared. Stop it first.');
+    expect(notify).not.toHaveBeenCalledWith(expect.stringContaining('so it was not cleared'), 'error');
     expect(screen.getByRole('heading', { level: 1, name: 'Expose a streaming budget' })).toBeInTheDocument();
   });
 

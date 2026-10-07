@@ -1,10 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
-import { act, render, screen, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '../i18n';
 import { WORKSPACE_EMPTY, WORKSPACE_KEPT, WORKSPACE_LEFT_OVER, WORKSPACE_PLAN } from '../work/historyFixtures';
+import type { Answered } from '../work/InlineConfirm';
 import { KeptHistory } from './KeptHistory';
+
+/** How a clear's ask hears its end (UXFIX2, ACCTEDIT1's contract). */
+const ANSWERED = expect.objectContaining({ done: expect.any(Function), refused: expect.any(Function) });
 
 // A workspace's *Kept on this machine* (HIST1e, D153; the history-clearing design §2.4, §6.1): always the reading of what the
 // home keeps of its finished work, then *Clear history…* while anything may go, listing first and sending on its second
@@ -44,12 +48,38 @@ describe('a workspace’s Kept on this machine (design §2.4)', () => {
     rerender(<KeptHistory workspace="aurora" plan={WORKSPACE_KEPT} onClear={clear} />);
     await userEvent.click(within(ask).getByRole('button', { name: 'Clear 3' }));
     expect(clear).toHaveBeenCalledWith(
-      [{ kind: 'ask', id: 'a1b2c3' }, { kind: 'quest', id: '0c1d2e' }, { kind: 'quest', id: '3f4a5b' }], expect.any(Function),
+      [{ kind: 'ask', id: 'a1b2c3' }, { kind: 'quest', id: '0c1d2e' }, { kind: 'quest', id: '3f4a5b' }], ANSWERED,
     );
-    // Once the driver answers, the list is put down.
-    act(() => clear.mock.calls[0]![1]());
+    // Until the driver answers, the list stays, waiting (UXFIX2); once it answers, the list is put down.
+    expect(within(ask).getByRole('button', { name: 'Never mind' })).toBeDisabled();
+    act(() => (clear.mock.calls[0]![1] as Answered).done());
     expect(await screen.findByRole('region', { name: 'Kept on this machine' })).toBeInTheDocument();
     expect(screen.queryByRole('group', { name: 'clear from this machine' })).toBeNull();
+  });
+
+  /**
+   * UXFIX2 (the second-opinion review, `ClearAsk.tsx:101`): what goes and what stays take the focus and describe *Clear N*,
+   * so a keyboard reaches it having heard them; a refusal is said inside the list, which stays; *Never mind* gives the
+   * focus back to *Clear history…*, drawn again.
+   */
+  it('takes the focus to what goes, says a refusal inside the list, and gives the focus back to Clear history…', async () => {
+    const clear = vi.fn();
+    const user = userEvent.setup();
+    render(<KeptHistory workspace="aurora" plan={WORKSPACE_PLAN} onClear={clear} />);
+
+    await user.click(screen.getByRole('button', { name: 'Clear history…' }));
+    const ask = screen.getByRole('group', { name: 'clear from this machine' });
+    const said = within(ask).getByRole('list', { name: 'What goes' }).closest('[tabindex="-1"]');
+    await waitFor(() => expect(said).toHaveFocus());
+    expect(within(ask).getByRole('button', { name: 'Clear 3' })).toHaveAccessibleDescription(/4 closed quests/);
+
+    await user.click(within(ask).getByRole('button', { name: 'Clear 3' }));
+    act(() => (clear.mock.calls[0]![1] as Answered).refused('The driver is not running on this machine.'));
+    expect(within(ask).getByRole('alert')).toHaveTextContent('The driver is not running on this machine.');
+
+    await user.click(within(ask).getByRole('button', { name: 'Never mind' }));
+    expect(screen.queryByRole('group', { name: 'clear from this machine' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Clear history…' })).toHaveFocus();
   });
 
   it('sends no unit where only left-over files and the intake’s room go', async () => {
@@ -59,7 +89,7 @@ describe('a workspace’s Kept on this machine (design §2.4)', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Clear history…' }));
     await userEvent.click(screen.getByRole('button', { name: 'Clear 5' }));
-    expect(clear).toHaveBeenCalledWith([], expect.any(Function));
+    expect(clear).toHaveBeenCalledWith([], ANSWERED);
   });
 
   it('offers nothing where the plan lists nothing that may go, and says so', () => {

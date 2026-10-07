@@ -1,10 +1,11 @@
 import { type ReactElement, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { render as rtlRender, screen, within } from '@testing-library/react';
+import { act, render as rtlRender, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
 import { NO_CARRY } from '../compose/carry';
+import type { Answered } from '../work/InlineConfirm';
 import { AskComposer, type AskDraft } from './AskComposer';
 import { AskPage } from './AskPage';
 import { AskRow, asksInOrder } from './AskRow';
@@ -398,6 +399,37 @@ describe('deleting an ask', () => {
 
     expect(within(page).getByRole('button', { name: 'Close ask' })).toBeInTheDocument();
     expect(onDelete).not.toHaveBeenCalled();
+  });
+
+  /**
+   * UXFIX2 (the second-opinion review, `AskPage.tsx:260`): the delete's ask is the one inline confirmation. What goes takes
+   * the focus and describes *Delete ask*; the press keeps it open and waiting, where it closed at once and refused in a
+   * toast; a refusal is said inside it, word for word; it closes once the delete lands; Escape gives the focus back to
+   * *Delete…*, drawn again.
+   */
+  it('takes the focus to what goes, stays open until the delete answers, says a refusal inside, and gives the focus back', async () => {
+    let answered: Answered | undefined;
+    const { page } = record({ ...PUBLISHED, deletable: true }, { onDelete: (told: Answered) => { answered = told; } });
+    const user = userEvent.setup();
+
+    await user.click(within(page).getByRole('button', { name: 'Delete…' }));
+    const says = within(page).getByText(/every quest it became goes with it/);
+    await waitFor(() => expect(says).toHaveFocus());
+    expect(within(page).getByRole('button', { name: 'Delete ask' })).toHaveAccessibleDescription(says.textContent!);
+    await user.keyboard('{Escape}');
+    expect(within(page).queryByRole('group', { name: 'delete this ask' })).toBeNull();
+    expect(within(page).getByRole('button', { name: 'Delete…' })).toHaveFocus();
+
+    await user.click(within(page).getByRole('button', { name: 'Delete…' }));
+    await user.click(within(page).getByRole('button', { name: 'Delete ask' }));
+    const confirm = within(page).getByRole('group', { name: 'delete this ask' });
+    expect(within(confirm).getByRole('button', { name: 'Never mind' })).toBeDisabled();
+    act(() => answered!.refused('Ask #b2c3d4 has a quest a session took, so it stays. Close it instead.'));
+    expect(within(confirm).getByRole('alert')).toHaveTextContent('Ask #b2c3d4 has a quest a session took, so it stays. Close it instead.');
+
+    await user.click(within(confirm).getByRole('button', { name: 'Delete ask' }));
+    act(() => answered!.done());
+    expect(within(page).queryByRole('group', { name: 'delete this ask' })).toBeNull();
   });
 
   /** A closed ask becomes nothing more — but one made by mistake can still go, when the service says so. */

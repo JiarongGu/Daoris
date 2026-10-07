@@ -2332,6 +2332,37 @@ describe('a session’s page header and its acts', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Stop session' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STOP_SESSION', { payload: { id: 's1a2b3c4' } });
     await waitFor(() => expect(notify).toHaveBeenCalledWith('session s1a2b3c4 is being stopped — the record will say the person ended it.'));
+    // UXFIX2: it closes once the stop lands, never on the press.
+    await waitFor(() => expect(screen.queryByRole('group', { name: 'stop this session' })).toBeNull());
+  });
+
+  /**
+   * UXFIX2 (the second-opinion review): the stop's ask takes the focus to what follows, gives it back to *Stop…* when put
+   * down, and a refused stop is said inside it, word for word, where it was pressed, rather than in a toast; it stays open.
+   */
+  it('gives the focus back to Stop… when put down, and says a refused stop inside its ask', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type !== 'STOP_SESSION') return DRIVER_STATE;
+      throw Object.assign(new Error('fallback'), { code: 'DRIVER_REFUSED', parameters: { message: 'Session `s1a2b3c4` already ended.' } });
+    });
+    const notify = vi.fn();
+    show('s1a2b3c4', notify);
+
+    const user = userEvent.setup();
+    const acts = within(await screen.findByRole('group', { name: 'Session actions' }));
+    await user.click(acts.getByRole('button', { name: 'Stop…' }));
+    const ask = screen.getByRole('group', { name: 'stop this session' });
+    await waitFor(() => expect(within(ask).getByText(/^Stops the session now/)).toHaveFocus());
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('group', { name: 'stop this session' })).toBeNull();
+    expect(acts.getByRole('button', { name: 'Stop…' })).toHaveFocus();
+
+    await user.click(acts.getByRole('button', { name: 'Stop…' }));
+    await user.click(screen.getByRole('button', { name: 'Stop session' }));
+    const refused = await within(screen.getByRole('group', { name: 'stop this session' })).findByRole('alert');
+    expect(refused).toHaveTextContent('Session s1a2b3c4 already ended.');
+    expect(notify).not.toHaveBeenCalledWith(expect.stringContaining('already ended'), 'error');
+    expect(screen.getByRole('button', { name: 'Stop session' })).toBeEnabled();
   });
 
   /**
@@ -2363,8 +2394,11 @@ describe('a session’s page header and its acts', () => {
 
     const ask = screen.getByRole('group', { name: 'delete this session' });
     expect(ask).toHaveTextContent('Nothing brings it back.');
+    // UXFIX2: opened from the ⋯, its sentence takes the focus, and *Never mind* gives it back to the ⋯.
+    await waitFor(() => expect(within(ask).getByText(/^Deletes this conversation’s record/)).toHaveFocus());
     await user.click(within(ask).getByRole('button', { name: 'Never mind' }));
     expect(screen.queryByRole('group', { name: 'delete this session' })).toBeNull();
+    expect(acts.getByRole('button', { name: 'More actions' })).toHaveFocus();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DELETE', expect.anything());
 
     acts.getByRole('button', { name: 'More actions' }).focus();
@@ -2939,11 +2973,14 @@ describe('acting on what a session landed', () => {
     // The clean-up's list is read again, so the head says what is left.
     await vi.waitFor(() => expect(invoke.mock.calls.filter(([, type]) => type === 'SWEEP_PLAN').length).toBeGreaterThan(asked));
 
+    // UXFIX2: it closed once the discard landed; a branch the driver kept is said inside the ask, whole, which stays open.
+    await vi.waitFor(() => expect(screen.queryByRole('group', { name: 'discard daoris/s-abc12345' })).toBeNull());
     answer = { repository: 'engine', branch: 'daoris/s-abc12345', done: false, message: 'there is no branch `daoris/s-abc12345` in `engine` — it is gone already.' };
     await userEvent.click(await screen.findByRole('button', { name: 'Discard branch…' }));
     await userEvent.click(screen.getByRole('button', { name: 'Discard branch' }));
-    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(
-      'there is no branch `daoris/s-abc12345` in `engine` — it is gone already.', 'error'));
+    const kept = await within(screen.getByRole('group', { name: 'discard daoris/s-abc12345' })).findByRole('alert');
+    expect(kept).toHaveTextContent('there is no branch daoris/s-abc12345 in engine — it is gone already.');
+    expect(notify).not.toHaveBeenCalledWith(expect.stringContaining('it is gone already'), 'error');
   });
 
   it('accepts by asking the driver to land the work, and renders whatever it says back', async () => {

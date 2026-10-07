@@ -1,10 +1,11 @@
 import type { ReactElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { render as rtlRender, screen, within } from '@testing-library/react';
+import { act, render as rtlRender, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { Ask } from '../api';
 import type { HistoryDoor, HistoryPlan } from '../work/history';
+import type { Answered } from '../work/InlineConfirm';
 import { ASK_OPEN, ASK_PLAN } from '../work/historyFixtures';
 import { AskPage } from './AskPage';
 import { CLOSED, DONE, PUBLISHED } from './fixtures';
@@ -21,6 +22,9 @@ const of = (plan: HistoryPlan, id: string): HistoryPlan => ({
 });
 
 const door = (over: Partial<HistoryDoor> = {}): HistoryDoor => ({ plan: null, busy: false, onClear: vi.fn(), ...over });
+
+/** How a clear's ask hears its end (UXFIX2, ACCTEDIT1's contract). */
+const ANSWERED = expect.objectContaining({ done: expect.any(Function), refused: expect.any(Function) });
 
 const page = (ask: Ask, history?: HistoryDoor) => render(
   <AskPage
@@ -47,7 +51,7 @@ describe('an ask’s clear (design §6.1)', () => {
     expect(ask).toHaveTextContent(`Clears ask #${DONE.id}, the 2 quests it became, their 5 sessions`);
     expect(ask).toHaveTextContent('Nothing brings it back.');
     await userEvent.click(within(ask).getByRole('button', { name: 'Clear ask' }));
-    expect(history.onClear).toHaveBeenCalledWith({ scope: 'ask', id: DONE.id }, [{ kind: 'ask', id: DONE.id }], expect.any(Function));
+    expect(history.onClear).toHaveBeenCalledWith({ scope: 'ask', id: DONE.id }, [{ kind: 'ask', id: DONE.id }], ANSWERED);
   });
 
   it('offers it on an ask closed by the person, as its plan says', async () => {
@@ -67,5 +71,32 @@ describe('an ask’s clear (design §6.1)', () => {
     live.unmount();
     page(DONE);
     expect(screen.queryByRole('button', { name: 'More actions' })).toBeNull();
+  });
+
+  /**
+   * UXFIX2: the ⋯ is drawn only while the clear is offered, so it goes while the clear asks; *Never mind* gives the focus to
+   * the ⋯ drawn again. What goes takes the focus on opening; the ask stays open until the clear answers, a refusal said in it.
+   */
+  it('gives the focus back to the ⋯ drawn again, and says a refused clear inside its ask', async () => {
+    let answered: Answered | undefined;
+    page(DONE, door({ plan: of(ASK_PLAN, DONE.id), onClear: (_target, _units, told) => { answered = told; } }));
+    const user = userEvent.setup();
+
+    await more();
+    await user.click(screen.getByRole('menuitem', { name: 'Clear from this machine…' }));
+    const ask = screen.getByRole('group', { name: 'clear from this machine' });
+    const says = ask.querySelector<HTMLElement>('[tabindex="-1"]')!;
+    expect(says).toHaveTextContent(`Clears ask #${DONE.id}`);
+    await waitFor(() => expect(says).toHaveFocus());
+    expect(screen.queryByRole('button', { name: 'More actions' })).toBeNull();
+    await user.keyboard('{Escape}');
+    expect(screen.getByRole('button', { name: 'More actions' })).toHaveFocus();
+
+    await more();
+    await user.click(screen.getByRole('menuitem', { name: 'Clear from this machine…' }));
+    await user.click(screen.getByRole('button', { name: 'Clear ask' }));
+    act(() => answered!.refused('Ask #a1b2c3 changed since the list, so it was not cleared.'));
+    expect(within(screen.getByRole('group', { name: 'clear from this machine' })).getByRole('alert'))
+      .toHaveTextContent('Ask #a1b2c3 changed since the list, so it was not cleared.');
   });
 });

@@ -4,9 +4,11 @@ import {
   retryNotice, stopNotice, useArchiveSessions, useDeleteSession, useOpenSessionFolder, useOpenWindow, useResolveSession,
   useRetryQuest, useStopSession,
 } from '../shell';
+import { sentence } from '../format';
 import { failure, type Notify } from '../ui';
 import { type ActFacts, folderOf, type SessionActId, workTargetOf } from './acts';
 import { forgetDraft } from './drafts';
+import type { Answered } from './InlineConfirm';
 import type { WorkTarget } from './pausing';
 import { sessionWindowName } from './window';
 import { useWorkActs } from './workActs';
@@ -132,39 +134,44 @@ export function useSessionActs({ notify, doors = {} }: { notify: Notify; doors?:
     }
   };
 
-  /** The stop's second press (§3.3), and `done` once the driver has answered it. */
-  const stopNow = (session: Session, done?: () => void) => {
+  // A refusal is said in the ask that was answered (UXFIX2), whole; with no ask to say it in, in a toast.
+  const refusedIn = (answered?: Answered) => (answered
+    ? (error: unknown) => answered.refused(sentence(error))
+    : failure(notify));
+
+  /** The stop's second press (§3.3), told back to its ask: `done` once the driver has answered it, `refused` with why not. */
+  const stopNow = (session: Session, answered?: Answered) => {
     if (session.state === 'awaiting-person') {
       resolve.mutate({ id: session.id, state: 'stopped' }, {
         onSuccess: () => {
           notify(t('work.awaiting.resolved', { id: session.id, state: t('sessionState.stopped') }));
-          done?.();
+          answered?.done();
         },
-        onError: failure(notify),
+        onError: refusedIn(answered),
       });
       return;
     }
     stop.mutate(session.id, {
       onSuccess: (answer) => {
         notify(t(stopNotice(answer), { id: session.id }));
-        done?.();
+        answered?.done();
       },
-      onError: failure(notify),
+      onError: refusedIn(answered),
     });
   };
 
   /**
-   * *Delete…*'s second press (SESSUX1f, D126 §5.4), and `done` once the host deleted it: the record and what this machine
-   * kept of it go, and so does the draft this viewer kept for it (§5.1). A refusal is said in the catalogue's words, and
-   * the ask stays, since nothing went.
+   * *Delete…*'s second press (SESSUX1f, D126 §5.4), told back to its ask: `done` once the host deleted it, when the record
+   * and what this machine kept of it go, and so does the draft this viewer kept for it (§5.1). A refusal is said in the
+   * catalogue's words inside the ask (UXFIX2), and the ask stays, since nothing went.
    */
-  const deleteNow = (session: Session, done?: () => void) => remove.mutate(session.id, {
+  const deleteNow = (session: Session, answered?: Answered) => remove.mutate(session.id, {
     onSuccess: () => {
       forgetDraft(session.id);
       notify(t('work.delete.done', { id: session.id }));
-      done?.();
+      answered?.done();
     },
-    onError: failure(notify),
+    onError: refusedIn(answered),
   });
 
   /**

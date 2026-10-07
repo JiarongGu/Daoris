@@ -17,6 +17,7 @@ import type { AskRowFacts } from '../quests/QuestList';
 import { QuestsMainNotice } from '../quests/QuestPage';
 import type { HistoryDoor } from '../work/history';
 import { useHistoryActs } from '../work/historyActs';
+import type { Answered } from '../work/InlineConfirm';
 import { type AbandonAnswer, wiredFor, type WorkDoor, type WorkTarget } from '../work/pausing';
 import { useWorkActs } from '../work/workActs';
 import { questName } from '../work/identity';
@@ -196,10 +197,11 @@ export function useAsksPart({
     });
 
   // Deleted with every quest asked by it (D95): the record is gone, so the list chooses nothing, on the service's
-  // sentence. A refusal is the service's sentence too, and the page stays on the ask as it was.
-  const onDelete = (id: string) => remove.mutate(id, {
-    onSuccess: (result) => { notify(result.message); setHeld(null); onChoose(null); },
-    onError: failure(notify),
+  // sentence. A refusal is the service's sentence too, said inside the ask that was pressed (UXFIX2), and the page stays on
+  // the ask as it was.
+  const onDelete = (id: string, answered: Answered) => remove.mutate(id, {
+    onSuccess: (result) => { notify(result.message); answered.done(); setHeld(null); onChoose(null); },
+    onError: (error) => answered.refused(sentence(error)),
   });
 
   // What the page is handed of its clear: nothing in a browser, which has no driver and no home (D47 §4). The clear takes
@@ -208,10 +210,13 @@ export function useAsksPart({
     ? {
         plan: historyOf.plan?.id === item.id ? historyOf.plan : null,
         busy: historyActs.busy,
-        onClear: (target, units, done) => historyActs.clear(target, units, () => {
-          done();
-          setHeld(null);
-          onChoose(null);
+        onClear: (target, units, answered) => historyActs.clear(target, units, {
+          done: () => {
+            answered.done();
+            setHeld(null);
+            onChoose(null);
+          },
+          refused: answered.refused,
         }),
       }
     : undefined);
@@ -249,7 +254,7 @@ export function useAsksPart({
           busy={busy}
           onPublish={(to) => onPublish(shown.id, to)}
           onClose={(reason) => onClose(shown.id, reason)}
-          onDelete={() => onDelete(shown.id)}
+          onDelete={(answered) => onDelete(shown.id, answered)}
           onOpenQuest={(id) => onChoose(id)}
           onAnswerGoAhead={(number, approved, words) => onAnswerGoAhead(shown.id, number, approved, words)}
           work={workDoor(shown)}

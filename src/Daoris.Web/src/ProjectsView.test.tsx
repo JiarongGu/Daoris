@@ -646,8 +646,38 @@ describe("a workspace's page (UX6g)", () => {
     });
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Discarded `daoris/s-failed` in engine.'));
     await vi.waitFor(() => expect(invoke.mock.calls.filter(([, type]) => type === 'SWEEP_PLAN').length).toBeGreaterThan(asked));
+    // UXFIX2: the ask closes once the discard landed, never on the press.
+    await vi.waitFor(() => expect(within(repositoryMain()).queryByRole('group', { name: 'discard daoris/s-failed' })).toBeNull());
     // Discarding one branch is not the clean-up's press.
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SWEEP', expect.anything());
+  });
+
+  /**
+   * UXFIX2 (the second-opinion review, `Sweep.tsx:218`): a branch the driver kept is said inside the ask, in the driver's
+   * own sentence, word for word, and the ask stays open; it was a toast after the ask had closed on the press.
+   */
+  it('says a branch the driver kept inside the discard’s ask, and keeps the ask open', async () => {
+    const failed = {
+      repository: 'engine', workspace: 'aurora', branch: 'daoris/s-failed', hasTree: false, kind: 'unlanded', commits: 2,
+      removable: false, discardable: true,
+    };
+    machine({
+      SWEEP_PLAN: { branches: [...SWEEP.branches, failed], landed: [] },
+      DISCARD_SESSION_BRANCH: { repository: 'engine', branch: 'daoris/s-failed', done: false, message: '`daoris/s-failed` is checked out in a tree a session uses, so it was kept.' },
+    });
+    const notify = vi.fn();
+    show(<ProjectsView notify={notify} />);
+    await chooseWorkspace('aurora');
+    await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
+
+    const row = await within(repositoryMain()).findByRole('listitem', { name: 'daoris/s-failed' });
+    await userEvent.click(within(row).getByRole('button', { name: 'Discard branch…' }));
+    const ask = within(repositoryMain()).getByRole('group', { name: 'discard daoris/s-failed' });
+    await userEvent.click(within(ask).getByRole('button', { name: 'Discard branch' }));
+
+    expect(await within(ask).findByRole('alert')).toHaveTextContent('daoris/s-failed is checked out in a tree a session uses, so it was kept.');
+    expect(within(repositoryMain()).getByRole('group', { name: 'discard daoris/s-failed' })).toBeInTheDocument();
+    expect(notify).not.toHaveBeenCalledWith(expect.stringContaining('so it was kept'), 'error');
   });
 
   /**
