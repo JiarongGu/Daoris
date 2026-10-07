@@ -39,7 +39,8 @@ public sealed class CodexAccountTests : IDisposable
         Assert.Equal("codex", agent.Name);
         Assert.Equal(["codex"], agent.Toolchain.Binary);
         Assert.Equal("CODEX_HOME", agent.Toolchain.ProfileVariable);
-        Assert.Equal(["login"], agent.Toolchain.LoginArguments!);
+        // By its device code (CODEXACCT2): the browser sign-in's callback port is reserved on some machines (os error 10013).
+        Assert.Equal(["login", "--device-auth"], agent.Toolchain.LoginArguments!);
         Assert.Equal(["login", "status"], agent.Toolchain.LoginCheck!.Arguments);
         Assert.Equal(["codex"], Roster().AccountToolchain("codex-acp")!.Binary);
         // The door itself still has none: it runs `codex` and reads the home `codex` signed into (ACP3).
@@ -114,6 +115,33 @@ public sealed class CodexAccountTests : IDisposable
         Assert.Null(declared.LoginCheck.Account);
     }
 
+    /// <summary>
+    /// CODEXACCT2: what <c>codex login --device-auth</c> prints reaches the window's console as plain lines, as Claude
+    /// Code's sign-in does: its colours gone, the link a line of its own for the page to offer, and the one-time code the
+    /// line after the sentence that asks for it. The words are those measured with 0.160.0 (D125's CODEXACCT2 note), shaped
+    /// as Codex prints them, with a colour around the version, the link, the code and the notes; the code is invented.
+    /// </summary>
+    [Fact]
+    public async Task Codex_s_device_code_reaches_the_console_as_plain_lines_with_its_link_and_code()
+    {
+        const string printed =
+            "\nWelcome to Codex [v\u001b[90m0.160.0\u001b[0m]\n\u001b[90mOpenAI's command-line coding agent\u001b[0m\n"
+            + "\nFollow these steps to sign in with ChatGPT using device code authorization:\n"
+            + "\n1. Open this link in your browser and sign in to your account\n   \u001b[94mhttps://auth.openai.com/codex/device\u001b[0m\n"
+            + "\n2. Enter this one-time code \u001b[90m(expires in 15 minutes)\u001b[0m\n   \u001b[94mABCD-12345\u001b[0m\n"
+            + "\n\u001b[90mDevice codes are a common phishing target. Never share this code.\u001b[0m\n";
+        var lines = new List<string>();
+
+        await HarnessActions.PumpAsync(new StringReader(printed), lines.Add, CancellationToken.None);
+
+        Assert.DoesNotContain(lines, line => line.Contains('\u001b'));
+        Assert.Contains("Follow these steps to sign in with ChatGPT using device code authorization:", lines);
+        Assert.Contains("   https://auth.openai.com/codex/device", lines);
+        var asked = lines.IndexOf("2. Enter this one-time code (expires in 15 minutes)");
+        Assert.True(asked >= 0, string.Join('\n', lines));
+        Assert.Equal("   ABCD-12345", lines[asked + 1]);
+    }
+
     // ——— Which `codex` a sign-in runs (D57 rule 4): the command named for it, then its pin, then PATH's, as its status
     // question asks. The owner's install pins Codex and has none on PATH, so a sign-in that ran PATH's could not start.
 
@@ -130,7 +158,10 @@ public sealed class CodexAccountTests : IDisposable
 
     private string Fresh => HarnessSettings.ProfileHome(_home, "codex", "acct-0a1b2c3d");
 
-    /// <summary>Only a pin, no command named: the sign-in's start names the pinned <c>codex</c>, into its new folder.</summary>
+    /// <summary>
+    /// Only a pin, no command named: the sign-in's start names the pinned <c>codex</c> and its device-code sign-in
+    /// (CODEXACCT2), into its new folder.
+    /// </summary>
     [Fact]
     public void A_sign_in_with_only_a_pin_runs_the_pinned_codex_into_its_new_folder()
     {
@@ -143,7 +174,7 @@ public sealed class CodexAccountTests : IDisposable
 
         Assert.Equal(binary, run.Managed);
         Assert.Equal(binary, info.FileName);
-        Assert.Equal(["login"], info.ArgumentList);
+        Assert.Equal(["login", "--device-auth"], info.ArgumentList);
         Assert.Equal(Fresh, info.Environment["CODEX_HOME"]);
         Assert.True(Directory.Exists(Fresh));
     }

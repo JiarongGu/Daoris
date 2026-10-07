@@ -232,7 +232,7 @@
         "settings.pluginsFolder.open",
         "settings.wiring.add", "settings.wiring.cancel",
         "settings.wiring.remove", "setup.ask.button", "setup.door.*",
-        "signin.cancel", "signin.continue", "signin.copy", "trust.cancel", "trust.grant", "trust.open",
+        "signin.cancel", "signin.continue", "signin.copy", "signin.copyCode", "trust.cancel", "trust.grant", "trust.open",
         "work.act.*", "work.attention.act.acceptDeparture", "work.attention.act.acceptRule", "work.attention.act.approve",
         "work.attention.act.choose", "work.attention.act.chooseWhere", "work.attention.act.declineRule",
         "work.attention.act.publish", "work.attention.act.refuse", "work.attention.act.retry", "work.attention.act.trust",

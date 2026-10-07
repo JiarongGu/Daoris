@@ -129,6 +129,61 @@ describe('signing in on the row', () => {
     });
   });
 
+  /**
+   * CODEXACCT2: Codex signs in by its device code, since its browser sign-in's callback port is reserved on some machines.
+   * It prints a link and a one-time code to enter on that page (the words measured with 0.160.0, the driver's colours
+   * stripped; the code invented), opens no browser and asks nothing on its input. The link is offered as Claude Code's
+   * is, the code is shown to copy, and there is no box to paste into.
+   */
+  it('offers a device code\'s link and the code to enter there, with no box to paste into', async () => {
+    const id = 'codex-acp:login-new';
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'TAIL_SESSION'
+      ? { session: id, lines: [{ sequence: 1, text: '$ codex login --device-auth' }], sequence: 1, live: true, dropped: 0 }
+      : {}));
+    const writeText = vi.fn(() => Promise.resolve());
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <SignIn id={id} harness="codex-acp" action="login-new" tool="Codex" />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByText('Signing in to another Codex account')).toBeTruthy();
+    await userEvent.click(screen.getByText('The tool\'s own output'));
+    await screen.findByText(/codex login --device-auth/);
+
+    await act(async () => {
+      eventHandlers.get('DAORIS.SESSION_OUTPUT')!({
+        session: id,
+        lines: [
+          '', 'Welcome to Codex [v0.160.0]', "OpenAI's command-line coding agent", '',
+          'Follow these steps to sign in with ChatGPT using device code authorization:', '',
+          '1. Open this link in your browser and sign in to your account', '   https://auth.openai.com/codex/device', '',
+          '2. Enter this one-time code (expires in 15 minutes)', '   ABCD-12345', '',
+          'Device codes are a common phishing target. Never share this code.',
+        ].map((text) => ({ sequence: ++sequence, text })),
+      });
+    });
+
+    const link = await screen.findByRole('link', { name: /auth\.openai\.com/ });
+    expect(link.getAttribute('href')).toBe('https://auth.openai.com/codex/device');
+    // Nothing opened by itself: the step says to open the link, not that a page opened.
+    expect(screen.getByText('Open the link and sign in.')).toBeTruthy();
+    expect(screen.getByText('Enter this code on that page.')).toBeTruthy();
+    expect(screen.getByText('ABCD-12345')).toBeTruthy();
+    expect(screen.queryByLabelText('sign-in code')).toBeNull();
+    expect(screen.queryByText(/The box appears when the tool asks/)).toBeNull();
+
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    await userEvent.click(screen.getByRole('button', { name: 'Copy code' }));
+    expect(writeText).toHaveBeenCalledWith('ABCD-12345');
+    expect(await screen.findByRole('button', { name: 'copied' })).toBeTruthy();
+    // The link's own copy is still the link.
+    await userEvent.click(screen.getByRole('button', { name: 'Copy link' }));
+    expect(writeText).toHaveBeenLastCalledWith('https://auth.openai.com/codex/device');
+  });
+
   /** The tool's own words are one disclosure away, never the surface. */
   it('keeps the raw output behind a disclosure', async () => {
     show();
