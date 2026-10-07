@@ -158,11 +158,11 @@
  */
 import { spawn, spawnSync } from 'node:child_process';
 import {
-  closeSync, copyFileSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync, writeSync,
+  closeSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync, writeSync,
 } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { gluedLabels, records } from './doc-duplicates.mjs';
-import { isMain, renameHeld, writeAtomic } from './fsx.mjs';
+import { isMain, renameHeld, stagedTree, writeAtomic } from './fsx.mjs';
 
 export const MAIN = 'main';
 const SCRATCH = 'local/scratch';
@@ -716,25 +716,14 @@ export function addVerdicts(root, entries, { keep = 400 } = {}) {
 }
 
 /**
- * The checkout's content as a tree id, as `git add -A` would stage it: tracked changes and untracked files
- * that are not ignored included. Written through an index of its own in the git folder, a copy of the
- * real one, so the person's index and a merge in progress are untouched. Null when git cannot say.
+ * The checkout's content as a tree id, as `git add -A` would stage it (`stagedTree`, which `as-merged.mjs`
+ * builds its commit on too): the person's index and a merge in progress untouched. Null when git cannot say.
  */
 export function contentTree(root) {
-  let index = null;
   try {
-    const real = resolve(root, git(root, ['rev-parse', '--git-path', 'index']).out.trim());
-    index = resolve(root, git(root, ['rev-parse', '--git-path', `daoris-content-${process.pid}.index`]).out.trim());
-    const env = { GIT_INDEX_FILE: index };
-    if (existsSync(real)) copyFileSync(real, index);
-    else git(root, ['read-tree', 'HEAD'], { env, allowFail: true });
-    if (git(root, ['add', '-A'], { env, allowFail: true }).status !== 0) return null;
-    const tree = git(root, ['write-tree'], { env, allowFail: true });
-    return tree.status === 0 && /^[0-9a-f]{40,64}$/.test(tree.out.trim()) ? tree.out.trim() : null;
+    return stagedTree(root);
   } catch {
     return null;
-  } finally {
-    if (index) for (const file of [index, `${index}.lock`]) rmSync(file, { force: true });
   }
 }
 

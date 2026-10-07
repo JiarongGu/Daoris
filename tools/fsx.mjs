@@ -2,11 +2,12 @@
  * The one filesystem helper the tooling shares. It existed five times — both rehearsals, the package
  * stager, and the web e2e host — each copy carrying the same one-line justification.
  */
+import { spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import {
   copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, writeFileSync,
 } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
@@ -73,6 +74,53 @@ export function writeAtomic(file, data, { tries, waitMs, rename } = {}) {
       // The failure to report is the write's; a beside file that will not go is the lesser fact.
     }
     throw error;
+  }
+}
+
+/**
+ * The checkout's content as a tree id, as `git add -A` would stage it (REFAC2; the merge tool's verdicts and
+ * `as-merged.mjs`'s commit each built it): tracked changes and deletions, and every untracked file that is not ignored,
+ * so an open merge's resolutions and an unstaged fix in it are in the tree. Nothing is committed and no ref names it.
+ *
+ * Staged through an index of its own: a copy of the one git uses here, named by `git rev-parse --git-path`, so a linked
+ * worktree's own index and git folder are the ones used, and an inherited `GIT_INDEX_FILE` (a hook's) is read and never
+ * written. With no index yet it starts from HEAD's tree, so a tracked file that is now ignored stays, as it would in the
+ * person's index; with no HEAD either, from nothing. The person's index, HEAD and open merge are never written, and the
+ * copy is removed, with its lock, however it ends.
+ *
+ * Git starts in `cwd` with `env`, the caller's environment unless given, so an inherited `GIT_DIR` or `GIT_WORK_TREE`
+ * names the same checkout here as for every other git the caller starts. An unmerged path is staged as the file stands,
+ * markers and all: a caller that must not judge one refuses first. Throws when git cannot say (no checkout, git missing,
+ * a failed add), for the caller to answer by its own policy.
+ */
+export function stagedTree(cwd, { env = process.env } = {}) {
+  const git = (args, extra = null) => {
+    const result = spawnSync('git', args, {
+      cwd, encoding: 'utf8', windowsHide: true, maxBuffer: 256 * 1024 * 1024, env: extra ? { ...env, ...extra } : env,
+    });
+    if (result.error) throw new Error(`git could not start: ${result.error.message}`);
+    return { status: result.status, out: result.stdout.trim(), err: (result.stderr || result.stdout).trim() };
+  };
+  const must = (args, extra) => {
+    const result = git(args, extra);
+    if (result.status !== 0) throw new Error(`git ${args.join(' ')} failed: ${result.err}`);
+    return result.out;
+  };
+
+  const located = must(['rev-parse', '--path-format=absolute', '--git-path', 'index', '--git-path', besideName('daoris-snapshot', '.index')]);
+  // Resolved against `cwd`: an inherited GIT_INDEX_FILE may be relative to it.
+  const [index, staging] = located.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((path) => resolve(cwd, path));
+  if (!index || !staging) throw new Error(`git rev-parse named no index: ${located}`);
+  const own = { GIT_INDEX_FILE: staging };
+  try {
+    if (existsSync(index)) copyFileSync(index, staging);
+    else git(['read-tree', 'HEAD'], own); // an unborn HEAD has no tree, and the stage starts from nothing
+    must(['add', '-A'], own);
+    const tree = must(['write-tree'], own);
+    if (!/^[0-9a-f]{40,64}$/.test(tree)) throw new Error(`git write-tree answered no tree: ${tree}`);
+    return tree;
+  } finally {
+    for (const file of [staging, `${staging}.lock`]) rmSync(file, { force: true });
   }
 }
 
