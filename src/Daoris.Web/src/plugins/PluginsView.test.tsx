@@ -417,8 +417,10 @@ describe('the doors into the Plugins view', () => {
     const user = userEvent.setup();
     (await screen.findByRole('button', { name: 'Go' })).focus();
     await user.keyboard('{Enter}');
-    const plugins = await screen.findByRole('menuitem', { name: /^Plugins/ });
+    // A place is one choice among Go's places, said as a radio (UXFIX1).
+    const plugins = await screen.findByRole('menuitemradio', { name: /^Plugins/ });
     expect(plugins).toHaveTextContent('Ctrl+8');
+    expect(plugins).toHaveAttribute('aria-checked', 'false');
     await user.click(plugins);
     expect(await screen.findByText('Installed (2)')).toBeInTheDocument();
   });

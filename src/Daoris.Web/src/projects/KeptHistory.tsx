@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Inline, Prose } from '../ui';
 import { ClearAsk, KeptDoorButton, type KeptDoors } from '../work/ClearAsk';
 import { clearOffered, type HistoryPlan, type HistoryUnitName, readingSaid } from '../work/history';
+import type { Answered } from '../work/InlineConfirm';
 import { PageSection } from '../work/ViewMain';
 
 /**
@@ -31,8 +32,8 @@ export function KeptHistory({ workspace, plan, reading = false, refusal = null, 
   busy?: boolean;
   /** Where a kept reason's door leads: its Branches, *Sync now*, a quest's, an ask's or a session's page. */
   doors?: KeptDoors;
-  /** The second press: exactly the units the list held; `done` once the driver has answered. */
-  onClear: (units: readonly HistoryUnitName[], done: () => void) => void;
+  /** The second press: exactly the units the list held, told back to the list (UXFIX2): done, or refused with why. */
+  onClear: (units: readonly HistoryUnitName[], answered: Answered) => void;
 }) {
   const { t } = useTranslation();
   const [asking, setAsking] = useState(false);
@@ -76,8 +77,8 @@ export function KeptHistory({ workspace, plan, reading = false, refusal = null, 
               })}
               busy={busy}
               doors={doors}
-              onClear={(units) => onClear(units, () => setAsking(false))}
-              onCancel={() => setAsking(false)}
+              onClear={onClear}
+              onClose={() => setAsking(false)}
             />
           ) : offered && (
             <div className="mt-1">

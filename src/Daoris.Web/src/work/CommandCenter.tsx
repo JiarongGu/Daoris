@@ -47,7 +47,11 @@ export function CommandCenter({ scope, detail, shortcut, onOpen, label }: {
       className={cn(
         // Below 8rem it is its glyph alone, centred (UX7a, D152 §3.1): the seven menus keep their room, and a scope cut
         // to a few letters said nothing the status bar does not.
-        '@container flex h-6 w-full min-w-0 max-w-md items-center gap-2 overflow-hidden rounded-md px-2.5',
+        '@container flex w-full max-w-md items-center gap-2 overflow-hidden rounded-md px-2.5',
+        // A target of 28 px at least, the platform language's floor (UXFIX1b, §6), where `h-6` drew it 24 px tall. A
+        // minimum, not a height, as the menu bar's names have (UXFIX1): the strip (`h-9`, 36 px) keeps its height and
+        // centres it. Its width's floor is the same 28 px, its glyph alone, where `min-w-0` let it narrow below that.
+        'min-h-7 min-w-7',
         'border border-line bg-sunken text-small text-ink-soft',
         'transition-colors hover:border-line-strong hover:bg-raised hover:text-ink',
         'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent',

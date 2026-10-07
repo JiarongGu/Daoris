@@ -1,6 +1,7 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, Chip, Inline, type Notify, Prose, SectionTitle } from '../ui';
+import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 
 /** What a session branch holds (D88). Only `empty` and `landed` go. */
 export type SweepKind = 'empty' | 'landed' | 'unlanded' | 'dirty' | 'in-use';
@@ -31,40 +32,51 @@ export type BranchDiscard = { repository: string; branch: string; done: boolean;
 
 /**
  * A discard's answer said once (LAND3b): the branch gone in the reader's words, which name no tree's path; a branch kept
- * in the driver's own sentence, whole, since a refusal is the contract.
+ * in the driver's own sentence, whole, since a refusal is the contract. Pressed in an ask, a kept branch is said inside it
+ * and the ask closes only once the branch went (UXFIX2); with no ask, in a toast.
  */
-export const sayDiscard = (notify: Notify, t: (key: string, options?: Record<string, unknown>) => string) =>
-  (result: BranchDiscard) => (result.done
-    ? notify(t('settings.sweep.discarded', { branch: result.branch, repository: result.repository }))
-    : notify(result.message, 'error'));
+export const sayDiscard = (notify: Notify, t: (key: string, options?: Record<string, unknown>) => string, answered?: Answered) =>
+  (result: BranchDiscard) => {
+    if (!result.done) {
+      if (answered) answered.refused(result.message);
+      else notify(result.message, 'error');
+      return;
+    }
+    notify(t('settings.sweep.discarded', { branch: result.branch, repository: result.repository }));
+    answered?.done();
+  };
 
 /**
  * A session branch's discard, asked once (LAND3b, D102's LAND3 note): it names the branch, its repository, its tree where
  * it still has one, and that its commits go with it for good, beside the move and *never mind* (platform language §4).
  * The commits are the ones the driver counted that no branch of the person's holds; the press is forced, as
- * `daoris-driver trees remove <branch> --repository <name> --force` is.
+ * `daoris-driver trees remove <branch> --repository <name> --force` is. The one inline confirmation (UXFIX2): open until
+ * the discard lands, a branch the driver kept said inside it.
  */
-export function DiscardBranchAsk({ branch, busy = false, onDiscard, onCancel }: {
+export function DiscardBranchAsk({ branch, busy = false, onDiscard, onClose, className }: {
   branch: Pick<SweepBranch, 'repository' | 'branch' | 'commits' | 'hasTree'>;
   /** A discard on its way: the presses wait for it. */
   busy?: boolean;
-  onDiscard: () => void;
-  onCancel: () => void;
+  /** The second press, told how the discard ended. */
+  onDiscard: (answered: Answered) => void;
+  /** Put down, or the discard landed. */
+  onClose: () => void;
+  className?: string;
 }) {
   const { t } = useTranslation();
   const says = t(branch.hasTree ? 'settings.sweep.discardSaysTree' : 'settings.sweep.discardSays', {
     branch: branch.branch, repository: branch.repository, count: branch.commits,
   });
   return (
-    <div
-      role="group"
-      aria-label={t('settings.sweep.discardTitle', { branch: branch.branch })}
-      className="flex flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2"
-    >
-      <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft"><Inline text={says} /></span>
-      <Button variant="danger" disabled={busy} onClick={onDiscard}>{t('settings.sweep.discardMeanIt')}</Button>
-      <Button variant="ghost" disabled={busy} onClick={onCancel}>{t('common.cancel')}</Button>
-    </div>
+    <InlineConfirm
+      className={className}
+      label={t('settings.sweep.discardTitle', { branch: branch.branch })}
+      says={<Inline text={says} />}
+      meanIt={t('settings.sweep.discardMeanIt')}
+      busy={busy}
+      onConfirm={onDiscard}
+      onClose={onClose}
+    />
   );
 }
 
@@ -110,7 +122,8 @@ export const sweepKey = (branch: { repository: string; branch: string }) => `${b
  *
  * **A failed or superseded attempt's branch is discarded by its own press** (LAND3b, D102's LAND3 note): its commits are on
  * no branch of the person's, so the clean-up keeps it. Beside each row the driver says `discardable`, *Discard branch…*
- * asks once under the row and then discards it, as `daoris-driver trees remove … --force` does beside the same rows.
+ * asks once under the row and then discards it, as `daoris-driver trees remove … --force` does beside the same rows. The
+ * ask stays open until the driver answers, and says a branch it kept inside itself (UXFIX2).
  */
 export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, discarding = null, sync }: {
   /** Undefined while the driver is asked; empty when there is no session branch at all. */
@@ -120,8 +133,11 @@ export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, 
   busy?: boolean;
   onLook: () => void;
   onClean: (only: string[]) => void;
-  /** Discard one branch the driver offers it for, once the person said so (LAND3b). Absent, no row offers it. */
-  onDiscard?: (branch: SweepBranch) => void;
+  /**
+   * Discard one branch the driver offers it for, once the person said so (LAND3b), told back to its ask (UXFIX2). Absent,
+   * no row offers it.
+   */
+  onDiscard?: (branch: SweepBranch, answered: Answered) => void;
   /** The branch whose discard is on its way, by its `sweepKey`: its row's presses wait for it. */
   discarding?: string | null;
   /** Bringing repositories up to date after a pull request merged (WSR6), drawn first: it runs before a clean-up. */
@@ -211,14 +227,12 @@ export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, 
                   </span>
                   {discardable && asking === key && (
                     <div className="col-span-full mt-1.5">
+                      {/* Open until the discard answers (UXFIX2), its presses waiting for it. */}
                       <DiscardBranchAsk
                         branch={branch}
                         busy={busy || discarding === key}
-                        onDiscard={() => {
-                          setAsking(null);
-                          onDiscard!(branch);
-                        }}
-                        onCancel={() => setAsking(null)}
+                        onDiscard={(answered) => onDiscard!(branch, answered)}
+                        onClose={() => setAsking((was) => (was === key ? null : was))}
                       />
                     </div>
                   )}

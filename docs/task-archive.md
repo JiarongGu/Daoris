@@ -11714,3 +11714,38 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ORIENT2e — service indexes lines** (service). Heading-split `index` entries keep ranges, hits name them and `knowledge_get` accepts ranges. Contract: §3.1–§3.2, D151 §6. Proof: scanner/tool tests and tier line.
 
 **Outcome** 2026-10-07: the service reads a repository's declared `documents.index` split at every heading, as entries of a new kind `index`; every entry keeps its file's lines, a hit names `path:first-last`, and `knowledge_get` takes lines. Store schema 5. Follow-ups: ORIENT2e2, ORIENT2h, ORIENT2i. Detail: D151's ORIENT2e note; commit ce7b77e1.
+
+
+## ORIENT2a2 — Daoris's own index lists what is kept by hand (2026-10-07, D151)
+
+> - [ ] **ORIENT2a2 — Daoris's own index lists what is kept by hand** (tools). The canon's index template (ORIENT2a) puts *Kept by hand* first and the generated files under *Generated*, naming an index the repository already keeps rather than restating it; `tools/orient-index.mjs` writes Daoris's `docs/index/README.md` without that section. Add it (the knowledge index, the router), keeping the check. Contract: orientation design §2.4, D151's ORIENT2a note. Proof: `orient-index.test.mjs` and the index's check.
+
+**Outcome** 2026-10-07: `docs/index/README.md` opens with *Kept by hand* (the router and the lanes map), names the generated indexes kept elsewhere (`.claude/INDEX.md`, `docs/code-map.json`) above it, and keeps its generated rows unchanged; a tree with none says so. Detail: D151's ORIENT2a2 note; commit 8bb3ea71.
+
+
+## WAITCLAIM1 — a wait made on a take that lost (2026-10-07, D69)
+
+> - [ ] **WAITCLAIM1 — a wait made on a take that lost** (service; decide first). Found by QUESTOP1: a wait this machine made after its own take, when that take loses the race, is still applied by the rebase to the winner's quest, which then waits on the loser's question. Decide whether D69's lost-claim rule, which drops a losing move, covers a wait too, and record it. Contract: D79, D69, `QuestLog.Lost` and `.claude/knowledge/quest-operations.md`. Proof: a sync test of the race, and the decision's note.
+
+**Outcome** 2026-10-07: decided and built: a wait made after this machine's own take goes with that take when it loses the race; the rebase forgets it and the take's conflict names the question after its own note. A wait on a quest this machine did not take is kept. Follow-up: WAITCLAIM2. Detail: D69's WAITCLAIM1 note, FIX-LOG; commits c5b9979a, 1bd2c977.
+
+
+## UXFIX1 — keyboard and screen-reader gaps in the new controls (2026-10-07)
+
+> - [ ] **UXFIX1 — keyboard and screen-reader gaps in the new controls** (web-shell). From the second-opinion review: `Segmented` moves the value on arrows but not the focus (Knowledge's mode switch, `ui.tsx:1002`); the folded menu's trigger is about 23 px, under the 28 px floor (`AppMenu.tsx:119`); menu checkmarks are visual only (`AppMenu.tsx:103`, `ui.tsx:1121`). Contract: platform-ux §3, the review. Proof: vitest on the focused element and the menu roles; the trigger's box measured in a story.
+
+**Outcome** 2026-10-07: the menu bar's ticks are announced: toggles are `menuitemcheckbox`, a run of choices `menuitemradio` in one group, each `aria-checked`, from the command table's `radio`; the bar's names and the fold's button are 28 px targets; `Segmented` moves the focus with its choice. Detail: commits 7ef05a38, 24c6b4e7, ef478759.
+
+
+## UXFIX1b — the other menus announce their ticks; the command center's target (2026-10-07)
+
+> - [ ] **UXFIX1b — the other menus announce their ticks; the command center's target** (web-shell). After UXFIX1, the map's size (`map/LayeredMap.tsx:32`) and the selected view (`work/ViewsMenu.tsx:83`) still draw a tick that is not announced, and the command center is 24 px (`work/CommandCenter.tsx:50`), under the 28 px floor. Contract: platform-ux §6, the second-opinion review. Proof: vitest on `menuitemradio`/`aria-checked` and the center's min size.
+
+**Outcome** 2026-10-07: the map's sizes and a region's views menu are `menuitemradio` rows in a named group, `aria-checked` on the one in use; the command center has a 28 px minimum box. Leftovers are UXFIX1c. Detail: commits fe68adbb, 3c4e9da4, 81c47379.
+
+
+## UXFIX2 — one inline confirmation for destructive acts (2026-10-07, D153)
+
+> - [ ] **UXFIX2 — one inline confirmation for destructive acts** (web-shell, web-settings). Clear history stays open while pending; discard branch and delete close at once and refuse in a toast; none focuses its explanation or ties it to the button. Build one foundation for `ClearAsk`, `DiscardBranchAsk`, the delete and stop asks and the quest/ask/agent pages' inline copies, on ACCTEDIT1's `answered.done/refused`. Contract: the review's cross-cutting note, D88. Proof: vitest per ask (pending, refusal inside, focus) and stories.
+
+**Outcome** 2026-10-07: `InlineConfirm` is the one foundation for a destructive ask: in the page, its explanation focused, the move then *Never mind*, open while its act is on its way, a refusal said inside it, focus handed back. The clear, a branch's discard, stop, delete and an account's *Remove…* stand on it. Remaining asks: UXFIX2b. Detail: platform-ux's destructive-edit rule, D153's note; commits 364e1873, c08fddc2.

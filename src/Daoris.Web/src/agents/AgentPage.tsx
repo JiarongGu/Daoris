@@ -5,6 +5,7 @@ import type { Account, AccountSettingsChange, Tool } from '../tools';
 import {
   Button, Chip, Icon, Inline, Menu, type MenuAct, Pill, Prose, SectionTitle, Tip,
 } from '../ui';
+import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import { PageHead, ViewMain } from '../work/ViewMain';
 import {
   type AccountScope, type AgentAccounts, cannotLeave, machineScope, offeredLine, ownLine, saidLine, workspaceScope,
@@ -39,9 +40,10 @@ export type AddedAnswer = { name?: string; join: (string | null)[] };
 
 /**
  * How a question asked in the page hears how its act ended (ACCTEDIT1): `done` once it landed, and `refused` with the
- * sentence the person reads, said in the question with what they entered kept.
+ * sentence the person reads, said in the question with what they entered kept. One type, the inline confirmation's, since
+ * UXFIX2 made it every inline ask's contract.
  */
-export type Answered = { done: () => void; refused: (sentence: string) => void };
+export type { Answered };
 
 /** The questions that wait on their act's answer: a row's rename, a row's *Use in a workspace…*, the add flow's last step. */
 type Question = 'rename' | 'place' | 'added';
@@ -61,7 +63,8 @@ export type AgentActs = {
   onTryNow: (account: string | null, label: string) => void;
   /** A default set (an account) or cleared (null): the machine's, or a workspace's. */
   onDefault: (account: string | null, workspace?: string) => void;
-  onRemove: (account: string) => void;
+  /** An account removed, from its *Remove…*'s ask, told back to it (UXFIX2). */
+  onRemove: (account: string, answered: Answered) => void;
   /** An account named by the person, or its name taken back with null (ACCT2, `daoris agent profile rename`). */
   onRename: (account: string, name: string | null, answered: Answered) => void;
   /**
@@ -430,18 +433,16 @@ export function AgentPage({
         menu={accountMenu(account, state)}
         now={now}
       >
+        {/* The one inline confirmation (UXFIX2): open until the removal answers, a refusal said inside it. */}
         {removing === account.name && (
-          <div
-            role="group"
-            aria-label={t('harness.profile.removeTitle', { account: name })}
-            className="flex flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2"
-          >
-            <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft">{t('harness.profile.removeConfirm')}</span>
-            <Button variant="danger" disabled={busy} onClick={() => { setRemoving(null); acts.onRemove(account.name); }}>
-              {t('harness.profile.removeMeanIt')}
-            </Button>
-            <Button variant="ghost" onClick={() => setRemoving(null)}>{t('common.cancel')}</Button>
-          </div>
+          <InlineConfirm
+            label={t('harness.profile.removeTitle', { account: name })}
+            says={t('harness.profile.removeConfirm')}
+            meanIt={t('harness.profile.removeMeanIt')}
+            busy={busy}
+            onConfirm={(answered) => acts.onRemove(account.name, answered)}
+            onClose={() => setRemoving((was) => (was === account.name ? null : was))}
+          />
         )}
         {placing === account.name && (
           <PlaceAccount

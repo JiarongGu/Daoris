@@ -90,7 +90,7 @@ export const ATeammatesRecord: Story = {
 /** A driven session holding its quest, its stop asking once under the header. */
 export const StopAskingHeld: Story = {
   args: {
-    asking: <StopAsk sentence={i18n.t('work.stop.drivenHeld')} onStop={() => {}} onCancel={() => {}} />,
+    asking: <StopAsk sentence={i18n.t('work.stop.drivenHeld')} onStop={() => {}} onClose={() => {}} />,
   },
 };
 
@@ -98,7 +98,7 @@ export const StopAskingHeld: Story = {
 export const StopAskingBeforeTheTake: Story = {
   args: {
     session: { ...SESSION, state: 'queued' }, shown: 'queued',
-    asking: <StopAsk sentence={i18n.t('work.stop.drivenOpen', { quest: 'abc123' })} onStop={() => {}} onCancel={() => {}} />,
+    asking: <StopAsk sentence={i18n.t('work.stop.drivenOpen', { quest: 'abc123' })} onStop={() => {}} onClose={() => {}} />,
   },
 };
 
@@ -106,7 +106,7 @@ export const StopAskingBeforeTheTake: Story = {
 export const StopAskingParked: Story = {
   args: {
     session: { ...SESSION, state: 'awaiting-person' }, shown: 'awaiting-person',
-    asking: <StopAsk sentence={i18n.t('work.stop.parked')} onStop={() => {}} onCancel={() => {}} />,
+    asking: <StopAsk sentence={i18n.t('work.stop.parked')} onStop={() => {}} onClose={() => {}} />,
   },
 };
 
@@ -114,7 +114,7 @@ export const StopAskingParked: Story = {
 export const StopAskingAChat: Story = {
   args: {
     session: { ...SESSION, quest: null, kind: 'chat' }, title: 'Cap the hydration per frame', shown: 'idle',
-    asking: <StopAsk sentence={i18n.t('work.stop.chat')} onStop={() => {}} onCancel={() => {}} />,
+    asking: <StopAsk sentence={i18n.t('work.stop.chat')} onStop={() => {}} onClose={() => {}} />,
   },
 };
 
@@ -123,7 +123,7 @@ export const StopAskingAnIntake: Story = {
   args: {
     session: { ...SESSION, quest: null, kind: 'chat', ask: '0fda18', repository: 'ask #0fda18' }, title: 'Intake for ask #0fda18',
     acts: ['stop', 'detach', 'copy'],
-    asking: <StopAsk sentence={i18n.t('work.intake.stopMeans')} onStop={() => {}} onCancel={() => {}} />,
+    asking: <StopAsk sentence={i18n.t('work.intake.stopMeans')} onStop={() => {}} onClose={() => {}} />,
   },
 };
 
@@ -139,7 +139,7 @@ export const ADeletableConversation: Story = {
 export const DeleteAsking: Story = {
   args: {
     ...ADeletableConversation.args,
-    asking: <DeleteAsk onDelete={() => {}} onCancel={() => {}} />,
+    asking: <DeleteAsk onDelete={() => {}} onClose={() => {}} />,
   },
 };
 

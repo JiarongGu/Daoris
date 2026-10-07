@@ -13,6 +13,7 @@ import { AnsweredPark } from './AnsweredPark';
 import { AwaitingIntake } from './AwaitingIntake';
 import { AwaitingPerson, type Resolution } from './AwaitingPerson';
 import { DetailsFold } from './DetailsFold';
+import type { Answered } from './InlineConfirm';
 import { useCut } from './ViewMain';
 import { isIntake, sessionOrigin, sessionTitle, shortened } from './identity';
 import { Note } from './Note';
@@ -95,9 +96,10 @@ export function SessionHead({
   branch?: SweepBranch | null;
   /**
    * Discard that branch, its commits with it (LAND3b): offered once its tree is gone, where the driver says its commits are a
-   * failed or superseded attempt's, and asked once first. Absent where nothing here can press it.
+   * failed or superseded attempt's, and asked once first; told back to its ask (UXFIX2). Absent where nothing here can press
+   * it.
    */
-  onDiscardBranch?: () => void;
+  onDiscardBranch?: (answered: Answered) => void;
   /** That discard is on its way: its presses wait for it. */
   discardingBranch?: boolean;
   /** Whether a turn is in flight, as the driver says: a live chat between turns reads idle (UX5 U17). */
@@ -305,7 +307,7 @@ function Said({ note, parts }: { note?: string | null; parts?: Session['notePart
 function Left({ branch, onReview, onDiscard, discarding = false }: {
   branch: SweepBranch;
   onReview?: () => void;
-  onDiscard?: () => void;
+  onDiscard?: (answered: Answered) => void;
   discarding?: boolean;
 }) {
   const { t } = useTranslation();
@@ -327,16 +329,9 @@ function Left({ branch, onReview, onDiscard, discarding = false }: {
           </Button>
         )}
       </p>
+      {/* Open until the discard answers, a branch the driver kept said inside it (UXFIX2). */}
       {discardable && asking && (
-        <DiscardBranchAsk
-          branch={branch}
-          busy={discarding}
-          onDiscard={() => {
-            setAsking(false);
-            onDiscard!();
-          }}
-          onCancel={() => setAsking(false)}
-        />
+        <DiscardBranchAsk branch={branch} busy={discarding} onDiscard={onDiscard!} onClose={() => setAsking(false)} />
       )}
     </>
   );

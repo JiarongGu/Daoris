@@ -117,11 +117,11 @@ describe('the acts on a session', () => {
       ? { stopped: true }
       : { session: 'p4rk3d00', state: 'stopped', message: 'ok' }));
     const { result, notify } = acts();
-    const done = vi.fn();
+    const answered = { done: vi.fn(), refused: vi.fn() };
 
-    act(() => result.current.stopNow(session({ id: 'p4rk3d00', state: 'awaiting-person' }), done));
+    act(() => result.current.stopNow(session({ id: 'p4rk3d00', state: 'awaiting-person' }), answered));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RESOLVE_SESSION', { payload: { id: 'p4rk3d00', state: 'stopped' } }));
-    await waitFor(() => expect(done).toHaveBeenCalledOnce());
+    await waitFor(() => expect(answered.done).toHaveBeenCalledOnce());
 
     act(() => result.current.stopNow(session({ state: 'working' })));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STOP_SESSION', { payload: { id: 's1a2b3c4' } }));
@@ -139,11 +139,11 @@ describe('the acts on a session', () => {
     window.localStorage.setItem('daoris.drafts', JSON.stringify([['c0ffee00', 'half a thought'], ['other000', 'kept']]));
     invoke.mockImplementation(async () => ({ deleted: 'c0ffee00', removed: ['record', 'conversation'] }));
     const { result, notify } = acts();
-    const done = vi.fn();
+    const answered = { done: vi.fn(), refused: vi.fn() };
 
-    act(() => result.current.deleteNow(session({ id: 'c0ffee00', quest: null, kind: 'chat', state: 'completed' }), done));
+    act(() => result.current.deleteNow(session({ id: 'c0ffee00', quest: null, kind: 'chat', state: 'completed' }), answered));
 
-    await waitFor(() => expect(done).toHaveBeenCalledOnce());
+    await waitFor(() => expect(answered.done).toHaveBeenCalledOnce());
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DELETE', { payload: { id: 'c0ffee00' } });
     expect(notify).toHaveBeenCalledWith('Deleted c0ffee00: its record, and its words, transcript and files on this machine, are gone.');
     expect(JSON.parse(window.localStorage.getItem('daoris.drafts') ?? '[]')).toEqual([['other000', 'kept']]);
@@ -174,15 +174,22 @@ describe('the acts on a session', () => {
       "Resumed ask #a1b2c3: the driver's next look plans its work as it would have.", 'ok'));
   });
 
-  it('says a delete the host refused in the catalogue’s words, and keeps the ask open', async () => {
+  /** UXFIX2: a refusal is said in the ask that was pressed, in the catalogue's words, and the ask stays open. */
+  it('says a delete the host refused in the catalogue’s words, inside the ask, which stays open', async () => {
     invoke.mockImplementation(async () => { throw refusal('SESSION_SERVED_QUEST', { session: 's1a2b3c4', quest: 'abc123' }); });
     const { result, notify } = acts();
-    const done = vi.fn();
+    const answered = { done: vi.fn(), refused: vi.fn() };
 
-    act(() => result.current.deleteNow(session({ state: 'completed' }), done));
+    act(() => result.current.deleteNow(session({ state: 'completed' }), answered));
 
+    await waitFor(() => expect(answered.refused).toHaveBeenCalledWith(
+      's1a2b3c4 worked on #abc123, and its record is that work’s, so it was not deleted. Archive it instead.'));
+    expect(answered.done).not.toHaveBeenCalled();
+    expect(notify).not.toHaveBeenCalled();
+
+    // With no ask to say it in, it is a toast.
+    act(() => result.current.deleteNow(session({ state: 'completed' })));
     await waitFor(() => expect(notify).toHaveBeenCalledWith(
       's1a2b3c4 worked on #abc123, and its record is that work’s, so it was not deleted. Archive it instead.', 'error'));
-    expect(done).not.toHaveBeenCalled();
   });
 });

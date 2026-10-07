@@ -408,7 +408,11 @@ describe('QuestsView', () => {
       expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBeNull();
     });
 
-    it('a refusal reaches the person in the service\'s words, and the quest stays on its page', async () => {
+    /**
+     * A refusal reaches the person in the service's words, and since UXFIX2 inside the ask where they pressed, which stays
+     * open, rather than in a toast after it had closed on the press (the second-opinion review, `QuestPage.tsx:396`).
+     */
+    it('a refusal reaches the person in the service\'s words inside the ask, and the quest stays on its page', async () => {
       const refusal = 'Quest `#abc123` is open, but session `s1a2b3c4` was started for it and its record names the quest, so it stays. Decline it instead, with the reason, and the asker hears why.';
       stub(() => Response.json({ error: refusal }, { status: 409 }));
       const notify = view();
@@ -417,19 +421,26 @@ describe('QuestsView', () => {
       await moreAct(page, 'Delete…');
       await userEvent.click(within(page).getByRole('button', { name: 'Delete quest' }));
 
-      await waitFor(() => expect(notify).toHaveBeenCalledWith(refusal, 'error'));
+      const confirm = within(page).getByRole('group', { name: 'delete this quest' });
+      expect(await within(confirm).findByRole('alert')).toHaveTextContent(refusal.replaceAll('`', ''));
+      expect(notify).not.toHaveBeenCalledWith(refusal, 'error');
       expect(screen.getByRole('heading', { level: 1, name: 'Expose a streaming budget' })).toBeInTheDocument();
     });
 
-    it('never mind leaves the quest where it was, and asks nothing of the service', async () => {
+    it('never mind leaves the quest where it was, asks nothing of the service, and gives the focus back to the ⋯', async () => {
       stub(() => Response.json({ id: 'abc123', message: 'Deleted.' }));
       view();
       const page = await chooseRow('Expose a streaming budget');
 
       await moreAct(page, 'Delete…');
+      // UXFIX2: what goes takes the focus, and describes *Delete quest*.
+      const says = await within(page).findByText(/cannot be undone/);
+      await waitFor(() => expect(says).toHaveFocus());
+      expect(within(page).getByRole('button', { name: 'Delete quest' })).toHaveAccessibleDescription(says.textContent!);
       await userEvent.click(within(page).getByRole('button', { name: 'Never mind' }));
 
       expect(within(page).queryByRole('group', { name: 'delete this quest' })).toBeNull();
+      expect(within(page).getByRole('button', { name: 'More actions' })).toHaveFocus();
       await moreAct(page, 'Delete…');
       expect(within(page).getByRole('group', { name: 'delete this quest' })).toBeInTheDocument();
       expect(deleted).toEqual([]);
@@ -586,6 +597,38 @@ describe('QuestsView', () => {
       await userEvent.click(await within(questMain()).findByRole('button', { name: /#abc123/ }));
       expect(await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' })).toBeInTheDocument();
       expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBe('abc123');
+    });
+
+    /**
+     * UXFIX2 (the second-opinion review, `AskPage.tsx:260`): an ask's delete refused is said inside its ask, in the service's
+     * words, which stays open; it was a toast after the ask had closed on the press. Landed, it closes with the page.
+     */
+    it('says a refused delete of an ask inside its ask, and closes the page once a delete lands', async () => {
+      ASKS = [{ ...PROPOSED, deletable: true }];
+      const refusal = 'Ask `#7c1e9a04b2d5` became quest `#abc123`, which a session took, so it stays. Close it instead.';
+      let refuse = true;
+      const before = globalThis.fetch;
+      vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (init?.method === 'DELETE' && String(input) === '/api/asks/7c1e9a04b2d5') {
+          return refuse
+            ? Response.json({ error: refusal }, { status: 409 })
+            : Response.json({ id: '7c1e9a04b2d5', message: 'Deleted ask `#7c1e9a04b2d5`.' });
+        }
+        return before(input, init);
+      }));
+      const notify = view();
+
+      const page = await chooseRow('Cap the hydration per frame.');
+      await userEvent.click(within(page).getByRole('button', { name: 'Delete…' }));
+      await userEvent.click(within(page).getByRole('button', { name: 'Delete ask' }));
+      const confirm = within(page).getByRole('group', { name: 'delete this ask' });
+      expect(await within(confirm).findByRole('alert')).toHaveTextContent(refusal.replaceAll('`', ''));
+      expect(notify).not.toHaveBeenCalledWith(refusal, 'error');
+
+      refuse = false;
+      await userEvent.click(within(confirm).getByRole('button', { name: 'Delete ask' }));
+      await waitFor(() => expect(notify).toHaveBeenCalledWith('Deleted ask `#7c1e9a04b2d5`.'));
+      expect(await within(questMain()).findByText('Choose a quest or an ask')).toBeInTheDocument();
     });
 
     /** An ask may be published to any repository its circle can ask — adopted or not (D70). */

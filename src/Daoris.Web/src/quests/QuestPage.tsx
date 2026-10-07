@@ -16,6 +16,7 @@ import { clearOffered, type HistoryDoor, type HistoryTarget } from '../work/hist
 import { questFacts } from '../work/headFacts';
 import { HowItCameToBe, type TraceDoor } from '../work/HowItCameToBe';
 import { questName } from '../work/identity';
+import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import { Note } from '../work/Note';
 import { QuestRequirements } from './Requirements';
 import { TrustAsk } from '../work/TrustAsk';
@@ -90,7 +91,8 @@ function Fact({ name, children }: { name: string; children: ReactNode }) {
  * *Decline…*'s reason, *Delete…*'s sentence — is its own, so it resets with the quest it was asked of.
  *
  * - **A delete asks once** (D95): its first press opens a sentence saying the second removes the record, which
- *   nothing gives back; offered only where the service says it may go (`deletable`).
+ *   nothing gives back; offered only where the service says it may go (`deletable`). It is the one inline confirmation
+ *   (UXFIX2): open until the service answers, a refusal said inside it.
  * - **A decline needs its reason**, which the service refuses without; the form does not offer the mistake.
  * - **What the service and the driver say is said verbatim**: the session's evidence, a conflict's note, the driver's
  *   sentence about why it sits (translated by its verdict, never by its words, U27). The session's note is `Note`'s
@@ -152,8 +154,8 @@ export function QuestPage({
   /** The person's yes to a departure is on its way (DRIFT1d2). */
   accepting?: boolean;
   onRespond: (action: 'take' | 'done' | 'decline', reason?: string) => void;
-  /** Delete the quest (D95) — absent where there is no door to do it. */
-  onDelete?: () => void;
+  /** Delete the quest (D95), told back to its ask (UXFIX2) — absent where there is no door to do it. */
+  onDelete?: (answered: Answered) => void;
   onDismiss: (machine: string, sequence: number) => void;
   /**
    * *Try again* (RETRY1; D126 §3.4): start a quest parked by its strikes again, or release one the person's stop holds
@@ -379,25 +381,24 @@ export function QuestPage({
             ? t('quests.detail.clearMeanIt')
             : (list) => t('quests.detail.clearFailedMeanIt', { count: list.sessions })}
           busy={waiting}
-          onClear={(units) => history.onClear(clearTarget(asking), units, () => setAsking(null))}
-          onCancel={() => setAsking(null)}
+          onClear={(units, answered) => history.onClear(clearTarget(asking), units, answered)}
+          onClose={() => setAsking(null)}
         />
       )}
 
       {deleting && deletable && (
         /* 🔴 A delete removes the record, which nothing gives back (D95) — so the first press only asks, the
-           way removing an account does, and the second is the one that deletes. */
-        <div
-          role="group"
-          aria-label={t('quests.detail.deleteTitle')}
-          className="mb-4 flex flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2"
-        >
-          <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft">{t('quests.detail.deleteConfirm')}</span>
-          <Button variant="danger" disabled={busy} onClick={() => { setAsking(null); onDelete!(); }}>
-            {t('quests.detail.deleteMeanIt')}
-          </Button>
-          <Button variant="ghost" disabled={busy} onClick={() => setAsking(null)}>{t('common.cancel')}</Button>
-        </div>
+           way removing an account does, and the second is the one that deletes. It stays open until the service
+           answers, and says a refusal inside itself (UXFIX2). */
+        <InlineConfirm
+          className="mb-4"
+          label={t('quests.detail.deleteTitle')}
+          says={t('quests.detail.deleteConfirm')}
+          meanIt={t('quests.detail.deleteMeanIt')}
+          busy={busy}
+          onConfirm={onDelete!}
+          onClose={() => setAsking((was) => (was === 'delete' ? null : was))}
+        />
       )}
 
       {declining && moving && (

@@ -12,6 +12,8 @@ import type { MenuItem } from './AppMenu';
  *   surface is absent: the table has already left out what a browser may not know (D47 §4).
  * - **A row prints its first key** at its right, as VS Code's do; a key a browser keeps is not printed there.
  * - **A submenu is one row** (View's *Theme ▸*, *Language ▸*), at its first choice's place, its choices a radio group.
+ * - **A row carries what its tick means** (UXFIX1): a region shown is a toggle, a place or a workspace one choice
+ *   (`radio`), so the menu says each as it is and not only draws it.
  *
  * Built as data, so a desktop's menus and a browser's are asserted without mounting the application.
  */
@@ -49,6 +51,7 @@ export function menuRows(entries: readonly CommandEntry[], menu: MenuId): MenuIt
       ...(entry.badge !== undefined ? { badge: entry.badge } : {}),
       ...(separated ? { separated } : {}),
       ...(entry.checked !== undefined ? { checked: entry.checked } : {}),
+      ...(entry.radio ? { radio: entry.radio } : {}),
       ...(entry.enabled ? {} : { disabled: true }),
       ...(entry.keys[0] ? { shortcut: entry.keys[0].combo } : {}),
       ...(firstOfGroup && entry.heading ? { heading: entry.heading } : {}),

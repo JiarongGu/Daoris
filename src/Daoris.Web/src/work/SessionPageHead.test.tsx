@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../i18n';
 import type { Session } from '../api';
 import { code } from '../test/code';
+import type { Answered } from './InlineConfirm';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 
 // The session's page header (SESSUX1d, D126 §3.2) and its stop's ask (§3.3), as molecules: every state is reached by
@@ -110,20 +111,46 @@ describe('a session’s page header', () => {
 describe('the stop’s ask', () => {
   it('says what follows, and stops only on its second press, with never mind beside it', async () => {
     const stop = vi.fn();
-    const cancel = vi.fn();
-    render(<StopAsk sentence="Stops the session now. Run `daoris driver retry abc123` later." onStop={stop} onCancel={cancel} />);
+    const close = vi.fn();
+    render(<StopAsk sentence="Stops the session now. Run `daoris driver retry abc123` later." onStop={stop} onClose={close} />);
 
     const ask = screen.getByRole('group', { name: 'stop this session' });
     expect(within(ask).getByText(code('daoris driver retry abc123'))).toBeInTheDocument();
     expect(within(ask).getAllByRole('button').map((button) => button.textContent)).toEqual(['Stop session', 'Never mind']);
     await userEvent.click(within(ask).getByRole('button', { name: 'Never mind' }));
-    expect(cancel).toHaveBeenCalledOnce();
+    expect(close).toHaveBeenCalledOnce();
     await userEvent.click(within(ask).getByRole('button', { name: 'Stop session' }));
     expect(stop).toHaveBeenCalledOnce();
   });
 
+  /** UXFIX2: its sentence takes the focus and describes the move, so a keyboard reaches *Stop session* having heard it. */
+  it('takes the focus to what follows, which describes the move', async () => {
+    render(<StopAsk sentence="Stops the session now." onStop={() => {}} onClose={() => {}} />);
+    await waitFor(() => expect(screen.getByText('Stops the session now.')).toHaveFocus());
+    expect(screen.getByRole('button', { name: 'Stop session' })).toHaveAccessibleDescription('Stops the session now.');
+  });
+
+  /** UXFIX2: the press keeps it open and waiting; a refusal is said inside it, word for word; it closes once the stop lands. */
+  it('stays open while its stop is on its way, says a refusal inside itself, and closes once it lands', async () => {
+    const close = vi.fn();
+    let answered: Answered | undefined;
+    render(<StopAsk sentence="Stops it." onStop={(told) => { answered = told; }} onClose={close} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Stop session' }));
+    expect(screen.getByRole('button', { name: 'Stop session' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Never mind' })).toBeDisabled();
+
+    act(() => answered!.refused('The driver is not running on this machine.'));
+    expect(within(screen.getByRole('group', { name: 'stop this session' })).getByRole('alert'))
+      .toHaveTextContent('The driver is not running on this machine.');
+    expect(close).not.toHaveBeenCalled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Stop session' }));
+    act(() => answered!.done());
+    expect(close).toHaveBeenCalledOnce();
+  });
+
   it('waits while a stop is on its way', () => {
-    render(<StopAsk sentence="Stops it." busy onStop={() => {}} onCancel={() => {}} />);
+    render(<StopAsk sentence="Stops it." busy onStop={() => {}} onClose={() => {}} />);
     expect(screen.getByRole('button', { name: 'Stop session' })).toBeDisabled();
   });
 });
@@ -146,22 +173,41 @@ describe('the delete’s ask', () => {
 
   it('says what goes, and deletes only on its second press, with never mind beside it', async () => {
     const remove = vi.fn();
-    const cancel = vi.fn();
-    render(<DeleteAsk onDelete={remove} onCancel={cancel} />);
+    const close = vi.fn();
+    render(<DeleteAsk onDelete={remove} onClose={close} />);
 
     const ask = screen.getByRole('group', { name: 'delete this session' });
     expect(ask).toHaveTextContent(
       'Deletes this conversation’s record and what this machine kept of it: its words, its transcript and its files. Nothing brings it back.');
     expect(within(ask).getAllByRole('button').map((button) => button.textContent)).toEqual(['Delete session', 'Never mind']);
     await userEvent.click(within(ask).getByRole('button', { name: 'Never mind' }));
-    expect(cancel).toHaveBeenCalledOnce();
+    expect(close).toHaveBeenCalledOnce();
     await userEvent.click(within(ask).getByRole('button', { name: 'Delete session' }));
     expect(remove).toHaveBeenCalledOnce();
   });
 
+  /** UXFIX2: what goes takes the focus and describes the move; a refusal is said inside it; it closes once the delete lands. */
+  it('takes the focus to what goes, says a refusal inside itself, and closes once the delete lands', async () => {
+    const close = vi.fn();
+    let answered: Answered | undefined;
+    render(<DeleteAsk onDelete={(told) => { answered = told; }} onClose={close} />);
+    const says = screen.getByText(/^Deletes this conversation’s record/);
+    await waitFor(() => expect(says).toHaveFocus());
+    expect(screen.getByRole('button', { name: 'Delete session' })).toHaveAccessibleDescription(says.textContent!);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Delete session' }));
+    expect(screen.getByRole('button', { name: 'Never mind' })).toBeDisabled();
+    act(() => answered!.refused('Session s1a2b3c4 is running, so it was not deleted.'));
+    expect(screen.getByRole('alert')).toHaveTextContent('Session s1a2b3c4 is running, so it was not deleted.');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Delete session' }));
+    act(() => answered!.done());
+    expect(close).toHaveBeenCalledOnce();
+  });
+
   it('waits while a delete is on its way, and speaks 中文', async () => {
     await i18n.changeLanguage('zh');
-    render(<DeleteAsk busy onDelete={() => {}} onCancel={() => {}} />);
+    render(<DeleteAsk busy onDelete={() => {}} onClose={() => {}} />);
     expect(screen.getByRole('button', { name: '确认删除会话' })).toBeDisabled();
     expect(screen.getByRole('group', { name: '删除这个会话' })).toHaveTextContent('无法找回');
   });

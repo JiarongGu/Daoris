@@ -1125,6 +1125,100 @@ public sealed class QuestSyncTests : IAsyncLifetime
         }
     }
 
+    /// <summary>
+    /// 🔴 A wait made after this machine's own take is part of that take's move (WAITCLAIM1, D69's note): when the take
+    /// loses the race, the wait goes with it. Applied to the winner's quest, it would hold the winner's session on a
+    /// question it never asked. The loss this machine reports, the take's conflict, names the wait, so whoever asked
+    /// learns that nothing waits on the question's answer.
+    /// </summary>
+    [Fact]
+    public async Task A_wait_made_on_a_take_that_lost_goes_with_the_take_and_the_loss_names_it()
+    {
+        var quest = await Publish(_a);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        Assert.True((await _a.MoveAsync(quest.Id, QuestStatus.Taken, "A's session.", Now.AddHours(1))).Moved);
+        var question = await Publish(_a, "A question for its owner");
+        Assert.True((await _a.WaitAsync(quest.Id, question.Id, Now.AddHours(2))).Moved);
+        Assert.True((await _b.MoveAsync(quest.Id, QuestStatus.Taken, "B's session.", Now.AddHours(3))).Moved);
+        await SyncAsync(_b);
+        var lost = await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        Assert.Null(lost.Problem);
+        Assert.Empty(lost.Refused);
+        Assert.Equal(QuestClaim.Lost, await _a.ClaimAsync(quest.Id));
+        Assert.Equal(QuestClaim.Held, await _b.ClaimAsync(quest.Id));
+        var reported = Assert.Single(lost.Conflicts);
+        Assert.Equal(QuestStatus.Taken, reported.Attempted);
+        Assert.StartsWith("A's session.", reported.Note);
+        Assert.Contains($"#{question.Id}", reported.Note);
+        Assert.Empty(await _a.PendingAsync(Workspaces.Default, _ => true));
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var held = (await store.FindAsync(quest.Id))!;
+            Assert.Equal((QuestStatus.Taken, (string?)null), (held.Status, held.Awaits));
+            var conflict = Assert.Single(held.Conflicts);
+            Assert.Equal((_a.Machine, QuestStatus.Taken, reported.Note), (conflict.Machine, conflict.Attempted, conflict.Note));
+            Assert.DoesNotContain(await store.HistoryAsync(quest.Id), o => o.Kind == QuestOperationKind.Waited);
+            Assert.Empty(await store.WaitingOnAsync(question.Id));
+        }
+
+        // The question is a quest of its own and still went up: only the wait on it went with the take.
+        Assert.NotNull(await _remote.FindAsync(question.Id));
+    }
+
+    /// <summary>The take's note stays as it was given, and the waits that went with it follow it, each named (WAITCLAIM1).</summary>
+    [Theory]
+    [InlineData(null, new[] { "q2" },
+        "This take's wait on #q2 went with it, so this quest does not wait on that question's answer.")]
+    [InlineData("A's session. ", new[] { "q2", "q3", "q4" },
+        "A's session. This take's waits on #q2, #q3 and #q4 went with it, so this quest does not wait on those questions' answers.")]
+    public void A_lost_takes_conflict_names_each_wait_after_its_own_note(string? note, string[] questions, string said) =>
+        Assert.Equal(said, QuestStore.WaitsWentWith(note, questions));
+
+    /// <summary>
+    /// A wait on a quest this machine did not take was never part of a take of its own (WAITCLAIM1): the pass that drops
+    /// the wait on a lost take keeps it, and the quest waits on the question everywhere.
+    /// </summary>
+    [Fact]
+    public async Task A_wait_on_a_quest_this_machine_did_not_take_survives_the_pass_that_drops_a_lost_takes()
+    {
+        var raced = await Publish(_a);
+        var theirs = await Publish(_a, "Taken on the other machine");
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        Assert.True((await _b.MoveAsync(theirs.Id, QuestStatus.Taken, null, Now.AddHours(1))).Moved);
+        await SyncAsync(_b);
+        await SyncAsync(_a);
+
+        Assert.True((await _a.MoveAsync(raced.Id, QuestStatus.Taken, null, Now.AddHours(2))).Moved);
+        var question = await Publish(_a, "A question for its owner");
+        Assert.True((await _a.WaitAsync(raced.Id, question.Id, Now.AddHours(3))).Moved);
+        Assert.True((await _a.WaitAsync(theirs.Id, question.Id, Now.AddHours(3))).Moved);
+
+        // The other machine's take wins the race, and its own wait on the quest it holds reaches the remote first, so the
+        // pass rebases this machine's wait on that quest too.
+        Assert.True((await _b.MoveAsync(raced.Id, QuestStatus.Taken, null, Now.AddHours(4))).Moved);
+        var asked = await Publish(_b, "B's question for its owner");
+        Assert.True((await _b.WaitAsync(theirs.Id, asked.Id, Now.AddHours(1.5))).Moved);
+        await SyncAsync(_b);
+        var pass = await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        Assert.Null(pass.Problem);
+        Assert.Equal(raced.Id, Assert.Single(pass.Conflicts).Quest);
+        Assert.Empty(await _a.PendingAsync(Workspaces.Default, _ => true));
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            Assert.Null((await store.FindAsync(raced.Id))!.Awaits);
+            var kept = (await store.FindAsync(theirs.Id))!;
+            Assert.Equal((QuestStatus.Taken, question.Id, 0), (kept.Status, kept.Awaits, kept.Conflicts.Count));
+            Assert.Contains(await store.HistoryAsync(theirs.Id), o => o is { Kind: QuestOperationKind.Waited } && o.Machine == _a.Machine);
+        }
+    }
+
     // ——— A decline that applies only while open (PAUSE1c, D132 point 10, design §5.2): an abandon judged its decline
     // on an open quest, so one that reaches the remote after another machine's take is a conflict on the quest (D68
     // rule 2), and the take stands.

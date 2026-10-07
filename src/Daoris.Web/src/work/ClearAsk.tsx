@@ -1,11 +1,11 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { cn } from '../lib/cn';
 import { Button, Inline, Prose } from '../ui';
 import {
   clearEnd, clearLead, type ClearList, clearList, goingSaid, type HistoryPlan, type HistoryReason, type HistoryTarget,
   type HistoryUnit, type HistoryUnitName, type KeptDoor, keptDoor, reasonSaid,
 } from './history';
+import { type Answered, InlineConfirm } from './InlineConfirm';
 
 /**
  * The doors a kept unit's line may offer (design §5 step 1), each only where its page holds it: the quest's page for a
@@ -73,8 +73,11 @@ function KeptPiece({ reason }: { reason: HistoryReason }) {
  * look and the second press sends exactly the units the first listed (§5 step 2); the driver judges each again as it goes.
  * A list that finds nothing to take says so and offers only *Close*, never a press that clears nothing (D48 §6). A reason is
  * the refusal's own catalogue sentence for its code and variant, read in the reader's language, never the service's words.
+ *
+ * **It is the one inline confirmation** (UXFIX2): what goes and what stays take the focus on opening and describe the move,
+ * so a keyboard reaches it having heard them; the press keeps the list open until the clear answers; a refusal is said in it.
  */
-export function ClearAsk({ target, plan, meanIt, busy = false, doors, onClear, onCancel, className }: {
+export function ClearAsk({ target, plan, meanIt, busy = false, doors, onClear, onClose, className }: {
   target: HistoryTarget;
   /** The plan as the first press read it; held from the first render. */
   plan: HistoryPlan;
@@ -84,9 +87,10 @@ export function ClearAsk({ target, plan, meanIt, busy = false, doors, onClear, o
   busy?: boolean;
   /** Where a kept unit's door leads; absent, none is drawn. */
   doors?: KeptDoors;
-  /** The second press, with exactly the units the list held. */
-  onClear: (units: readonly HistoryUnitName[]) => void;
-  onCancel: () => void;
+  /** The second press, with exactly the units the list held, told how the clear ended. */
+  onClear: (units: readonly HistoryUnitName[], answered: Answered) => void;
+  /** Put down, or the clear landed. */
+  onClose: () => void;
   className?: string;
 }) {
   const { t } = useTranslation();
@@ -97,39 +101,35 @@ export function ClearAsk({ target, plan, meanIt, busy = false, doors, onClear, o
   const said = list.takes ? t('history.join', { first: clearLead(t, target, list), second: clearEnd(t, list) }) : t('history.nothing');
 
   return (
-    <div
-      role="group"
-      aria-label={t('history.title')}
-      className={cn('grid gap-3 rounded-control border border-line bg-sunken px-3 py-2.5', className)}
-    >
-      <Prose className="text-small"><Inline text={said} /></Prose>
-      {(going.length > 0 || stays) && (
-        <div className="grid gap-4 @min-[44rem]/main:grid-cols-2">
-          {going.length > 0 && (
-            <Listed title={t('history.goes')}>
-              {going.map((line) => <li key={line} className="wrap-anywhere text-body text-ink">{line}</li>)}
-            </Listed>
+    <InlineConfirm
+      block
+      className={className}
+      label={t('history.title')}
+      says={(
+        <>
+          <Prose className="text-small"><Inline text={said} /></Prose>
+          {(going.length > 0 || stays) && (
+            <div className="grid gap-4 @min-[44rem]/main:grid-cols-2">
+              {going.length > 0 && (
+                <Listed title={t('history.goes')}>
+                  {going.map((line) => <li key={line} className="wrap-anywhere text-body text-ink">{line}</li>)}
+                </Listed>
+              )}
+              {stays && (
+                <Listed title={t('history.stays')}>
+                  {list.staying.map((unit) => <Staying key={`${unit.kind}:${unit.id}`} unit={unit} doors={doors} />)}
+                  {list.kept.map((reason, i) => <KeptPiece key={`${reason.code}:${reason.session ?? i}`} reason={reason} />)}
+                </Listed>
+              )}
+            </div>
           )}
-          {stays && (
-            <Listed title={t('history.stays')}>
-              {list.staying.map((unit) => <Staying key={`${unit.kind}:${unit.id}`} unit={unit} doors={doors} />)}
-              {list.kept.map((reason, i) => <KeptPiece key={`${reason.code}:${reason.session ?? i}`} reason={reason} />)}
-            </Listed>
-          )}
-        </div>
+        </>
       )}
-      <div className="flex flex-wrap gap-2">
-        {list.takes ? (
-          <>
-            <Button variant="danger" disabled={busy} onClick={() => onClear(list.units)}>
-              {typeof meanIt === 'function' ? meanIt(list) : meanIt}
-            </Button>
-            <Button variant="ghost" disabled={busy} onClick={onCancel}>{t('common.cancel')}</Button>
-          </>
-        ) : (
-          <Button variant="ghost" onClick={onCancel}>{t('common.close')}</Button>
-        )}
-      </div>
-    </div>
+      // Nothing to take: only *Close*, never a press that clears nothing.
+      meanIt={list.takes ? (typeof meanIt === 'function' ? meanIt(list) : meanIt) : undefined}
+      busy={busy}
+      onConfirm={(answered) => onClear(list.units, answered)}
+      onClose={onClose}
+    />
   );
 }

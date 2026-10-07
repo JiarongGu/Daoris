@@ -30,7 +30,7 @@ const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 const meta: Meta<typeof ClearAsk> = {
   title: 'Work/Clear',
   component: ClearAsk,
-  args: { target: QUEST, plan: QUEST_PLAN, meanIt: 'Clear quest', onClear: nothing, onCancel: nothing },
+  args: { target: QUEST, plan: QUEST_PLAN, meanIt: 'Clear quest', onClear: nothing, onClose: nothing },
   decorators: [wide],
 };
 export default meta;
