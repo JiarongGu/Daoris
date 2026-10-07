@@ -87,6 +87,20 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
     expect([...values].filter((value) => !(value in NOTE_VALUES))).toEqual([]);
   });
 
+  /**
+   * AGT3d (D125's AGT3c note): a limit's cooling line carries whose accounts and the kind of limit, a window the page words
+   * by `harness.window.*`; a limit whose reset named none has a line of its own, since a value its entry says and the part
+   * lacks shows the line as recorded.
+   */
+  it('reads a limit’s window and owner on the cooling line, and the line without a window apart', () => {
+    const cooling = driver.find((code) => code.code === 'account.cooling');
+    const none = driver.find((code) => code.code === 'account.cooling-no-window');
+    expect(cooling).toEqual({ code: 'account.cooling', values: ['until', 'why', 'owner', 'window'], key: 'note.account.cooling', writer: 'driver', why: 'cooling' });
+    expect(none).toEqual({ code: 'account.cooling-no-window', values: ['until', 'why', 'owner'], key: 'note.account.cooling-no-window', writer: 'driver', why: 'cooling' });
+    expect(NOTE_VALUES.window).toBe('window');
+    expect(NOTE_VALUES.owner).toBe('text');
+  });
+
   /** A `why` the driver writes is a reason the page words, by the same key, needing the values the driver writes beside it. */
   it('words every reason a `why` may name', () => {
     const continued = reasons('Continue');

@@ -171,6 +171,12 @@ public sealed class AccountLimitHoldTests : IDisposable
             System.Globalization.DateTimeStyles.AssumeUniversal);
         Assert.Equal(new DateTimeOffset(2026, 10, 3, 15, 2, 0, TimeSpan.Zero), until);
         Assert.Equal(CoolingWhy.Stated, travelled[^1].Value("why"));
+        // AGT3d: which kind of limit and whose account travel as facts too, the window as the reset named it.
+        Assert.Equal(("weekly", "stub"), ((string?)travelled[^1].Value("window"), (string?)travelled[^1].Value("owner")));
+        Assert.Equal(
+            "the agent's turn failed with the quest still taken: The `stub` account it ran on hit its weekly limit and is cooling "
+            + $"until {CoolingWords.When(until, Zone)}, as the agent said, and nothing starts on it until then.",
+            conclusion.Note);
         Assert.Equal(
             "Oct 3, 11:02 (America/New_York)", CoolingWords.When(until, TimeZoneInfo.FindSystemTimeZoneById("America/New_York")));
         Assert.DoesNotContain(travelled, part => part.Words is { } words && words.Contains("4pm", StringComparison.Ordinal));
@@ -282,8 +288,8 @@ public sealed class AccountLimitHoldTests : IDisposable
         var cooling = roster.CoolingOf("acp-stub", null)!;
         Assert.Equal(("c1", Until), (cooling.Session, cooling.Until));
         Assert.Equal(
-            $"The account this conversation runs on is cooling until Oct 3, 16:02 ({Zone.Id}), as the agent said, and "
-            + "nothing new starts on it until then.",
+            $"The `stub` account this conversation runs on hit its weekly limit and is cooling until Oct 3, 16:02 ({Zone.Id}), "
+            + "as the agent said, and nothing new starts on it until then.",
             said!.Note);
         var line = Assert.Single(lines);
         Assert.Equal("account.limited", line.Event);
@@ -311,7 +317,9 @@ public sealed class AccountLimitHoldTests : IDisposable
         var line = Assert.Single(said.Parts);
         Assert.Equal(("account.cooling", said.Note), (line.Code, line.Text));
         Assert.Equal(("2026-10-03T10:17:00Z", CoolingWhy.Stated), ((string?)line.Value("until"), (string?)line.Value("why")));
-        Assert.Equal(["until", "why"], line.Values.Select(value => value.Key));
+        // AGT3d: whose account and the kind of limit, as the session record's line carries them.
+        Assert.Equal(["until", "why", "owner", "window"], line.Values.Select(value => value.Key));
+        Assert.Equal(("stub", "weekly"), ((string?)line.Value("owner"), (string?)line.Value("window")));
         Assert.DoesNotContain(line.Values, value => value.Value is string text && text.Contains("account-1", StringComparison.Ordinal));
         Assert.DoesNotContain("account-1", said.Note);
     }

@@ -43,8 +43,9 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'ended.stopped': { values: [] },
   'ended.lost-claim': { values: [] },
   'ended.driver-closed': { values: [] },
-  // An account's line.
-  'account.cooling': { values: ['until', 'why'], why: 'cooling' },
+  // An account's line. A limit's names whose accounts and the window its reset named, or has a line of its own (AGT3d).
+  'account.cooling': { values: ['until', 'why', 'owner', 'window'], why: 'cooling' },
+  'account.cooling-no-window': { values: ['until', 'why', 'owner'], why: 'cooling' },
   'account.refused': { values: ['owner'] },
   'account.refused-own': { values: ['owner'] },
   'account.signed-out': { values: ['owner'] },
@@ -119,16 +120,18 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
 
 /**
  * How each value a code carries is said (the language design §3–§4): an id as the record writes it, a list of quest ids
- * joined the reader's way, a moment in the reader's language and zone, a number in its figures, a fact as it is, and a
- * reason by its family. `locales/note.test.ts` holds that every value a writer declares has a way here.
+ * joined the reader's way, a moment in the reader's language and zone, a number in its figures, a fact as it is, a reason
+ * by its family, and a limit's window as the agents' screens word it (`harness.window.*`, AGT3d), one this build does not
+ * know said as named. `locales/note.test.ts` holds that every value a writer declares has a way here.
  */
-export const NOTE_VALUES: Readonly<Record<string, 'id' | 'ids' | 'moment' | 'number' | 'text' | 'why'>> = {
+export const NOTE_VALUES: Readonly<Record<string, 'id' | 'ids' | 'moment' | 'number' | 'text' | 'why' | 'window'>> = {
   awaits: 'id', answered: 'id', ask: 'id', quest: 'id', session: 'id',
   quests: 'ids',
   until: 'moment', at: 'moment',
   exit: 'number', minutes: 'number', paths: 'number',
   owner: 'text', branch: 'text', basedOn: 'text', plugin: 'text',
   why: 'why',
+  window: 'window',
 };
 
 /** A cool-off's four reasons (TOOL4d), each its `harness.cooling.why.*` entry. */
@@ -175,6 +178,10 @@ function said(t: Translate, name: string, values: Record<string, unknown>, code:
       return reasonOf(t, why, {
         from: text(values.from), to: text(values.to), adapter: text(values.adapter), agent: text(values.agent),
       });
+    }
+    case 'window': {
+      const window = typeof value === 'string' && value.length > 0 ? value : null;
+      return window === null ? null : t(`harness.window.${window}`, { defaultValue: window });
     }
     default:
       return text(value);

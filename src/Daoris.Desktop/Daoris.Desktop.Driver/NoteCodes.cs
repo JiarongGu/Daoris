@@ -356,8 +356,11 @@ public static class NoteCodes
     public static readonly NoteCode EndedLostClaim = new("ended.lost-claim", []);
     public static readonly NoteCode EndedDriverClosed = new("ended.driver-closed", []);
 
-    // ——— An account's line, appended to a failure.
-    public static readonly NoteCode AccountCooling = new("account.cooling", ["until", "why"]) { Why = Cooling };
+    // ——— An account's line, appended to a failure. A limit's cooling line names whose accounts they are, never which, and the
+    // window its reset named (AGT3d); a limit that named none has its own line, since the page words a line only with every
+    // value its entry says (D142 point 4).
+    public static readonly NoteCode AccountCooling = new("account.cooling", ["until", "why", "owner", "window"]) { Why = Cooling };
+    public static readonly NoteCode AccountCoolingNoWindow = new("account.cooling-no-window", ["until", "why", "owner"]) { Why = Cooling };
     public static readonly NoteCode AccountRefused = new("account.refused", ["owner"]);
     public static readonly NoteCode AccountRefusedOwn = new("account.refused-own", ["owner"]);
     public static readonly NoteCode AccountSignedOut = new("account.signed-out", ["owner"]);

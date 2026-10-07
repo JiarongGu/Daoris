@@ -108,10 +108,40 @@ describe('noteLines', () => {
   });
 
   it('words a cool-off’s reason by its own family', () => {
-    const cooling = coded('account.cooling', 'The account it ran on is cooling until …', { until: '2026-10-03T16:00:00Z', why: 'default' });
+    const cooling = coded('account.cooling-no-window', 'The `claude-code` account it ran on is cooling until …', {
+      until: '2026-10-03T16:00:00Z', why: 'default', owner: 'claude-code',
+    });
     const [line] = noteLines(t, { parts: [cooling] }, 'en');
     expect(line).toMatchObject({ kind: 'said' });
-    expect(line.text).toMatch(/^The account it ran on is cooling until .+ \(Daoris's default: the agent named no time\); nothing starts on it until then\.$/);
+    expect(line.text).toMatch(/^The claude-code account it ran on is cooling until .+ \(Daoris's default: the agent named no time\); nothing starts on it until then\.$/);
+  });
+
+  /**
+   * AGT3d (D125's AGT3c note): a limit's line says the kind of limit, its window worded as the agents' screens word it
+   * (`harness.window.*`), and whose accounts, in either language; a window this build does not know is said as named.
+   */
+  it('words a limit’s window and whose account it was, in either language', () => {
+    const limit = (window: string) => coded('account.cooling', 'The `claude-code` account it ran on hit its … limit and is cooling until …', {
+      until: '2026-10-03T16:00:00Z', why: 'stated', owner: 'claude-code', window,
+    });
+
+    const [english] = noteLines(t, { parts: [limit('session')] }, 'en');
+    expect(english).toMatchObject({ kind: 'said' });
+    expect(english.text).toMatch(/^The claude-code account it ran on hit its five-hour limit and is cooling until .+ \(the agent said so\); nothing starts on it until then\.$/);
+    const [chinese] = noteLines(zh, { parts: [limit('weekly')] }, 'zh');
+    expect(chinese).toMatchObject({ kind: 'said' });
+    expect(chinese.text).toMatch(/^它运行时用的 claude-code 账户达到了每周上限，冷却至 .+（智能体如此说明），在此之前不会在它上面启动任何会话。$/);
+    expect(noteLines(zh, { parts: [limit('session')] }, 'zh')[0].text).toContain('达到了5 小时上限');
+    expect(noteLines(t, { parts: [limit('monthly')] }, 'en')[0].text).toContain('hit its monthly limit');
+
+    const none = coded('account.cooling-no-window', 'The `codex` account it ran on is cooling until …', {
+      until: '2026-10-03T16:00:00Z', why: 'default', owner: 'codex',
+    });
+    expect(noteLines(zh, { parts: [none] }, 'zh')[0].text).toMatch(/^它运行时用的 codex 账户冷却至 .+（Daoris 的默认值：智能体没有说明时间），在此之前不会在它上面启动任何会话。$/);
+
+    // A line from before AGT3d carries neither, so it is shown as its record kept it (D142 point 4).
+    const before = coded('account.cooling', 'The account it ran on is cooling until …', { until: '2026-10-03T16:00:00Z', why: 'stated' });
+    expect(noteLines(zh, { parts: [before] }, 'zh')).toEqual([{ kind: 'recorded', text: 'The account it ran on is cooling until …' }]);
   });
 
   /** A program's words pass through as written, as `DRIVER_REFUSED` passes the driver's sentence. */

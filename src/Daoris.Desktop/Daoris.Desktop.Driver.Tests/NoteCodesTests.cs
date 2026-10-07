@@ -117,6 +117,22 @@ public sealed class NoteCodesTests
         Assert.Equal(NoteCodes.All.Select(code => code.Code).Order(StringComparer.Ordinal), parsed.Order(StringComparer.Ordinal));
     }
 
+    /// <summary>
+    /// AGT3d (D125's AGT3c note): a limit's cooling line says whose account it was and, where the agent named one, the kind
+    /// of limit, so a reader on another machine learns both; a limit whose reset named no window has a line of its own, since
+    /// a value its entry needs and the part lacks shows the line as recorded (D142 point 4).
+    /// </summary>
+    [Fact]
+    public void A_cooling_line_carries_its_owner_and_the_window_it_named()
+    {
+        Assert.Equal(["until", "why", "owner", "window"], NoteCodes.AccountCooling.Values);
+        Assert.Equal(["until", "why", "owner"], NoteCodes.AccountCoolingNoWindow.Values);
+        Assert.Same(NoteCodes.Cooling, NoteCodes.AccountCooling.Why);
+        Assert.Same(NoteCodes.Cooling, NoteCodes.AccountCoolingNoWindow.Why);
+        // Its owner says whose account, never which: the fault is the account's limit, and no strike (AccountsOwn) reads it.
+        Assert.DoesNotContain(NoteCodes.AccountCoolingNoWindow, NoteCodes.AccountsOwn);
+    }
+
     [Fact]
     public void A_part_carries_only_the_values_its_code_declares()
     {
