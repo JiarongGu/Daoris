@@ -11673,3 +11673,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **REFAC2 — tooling writes and snapshots through one helper each** (tools). Tools assemble write-beside-then-rename themselves (`ux-count.mjs` still renames bare), and `as-merged.mjs` and `merge-branch.mjs` each build the staged tree. Give `tools/fsx.mjs` an atomic write and one staged-tree snapshot both use. Contract: the review's refactors 4, 5. Proof: the tools' tests and `merge-branch.test.ts` green; the counter's write retried.
 
 **Outcome** 2026-10-07: `tools/fsx.mjs` gains `writeAtomic` (a unique beside name, `renameHeld` into place, the beside file removed on failure) and `stagedTree` (the tree `git add -A` would stage, on a copy of the index git uses there, a linked worktree's own, never writing the person's index); every replacement write in the tools (the counter's script, both benches, the orientation index, the publish's resources and manifest, the merge tool's notes, verdicts and state, the knowledge server's stamp) and the snapshots in the merge tool and `as-merged` go through them. A gate's streaming log, folder installs and the rehearsals' scripted moves are left, each with its reason. `tools/fsx.test.mjs` (10) runs in `verify`. Detail: FIX-LOG's held-folder entry; commits 27f58f70, b7f5b6ff.
+
+
+## EVID1b — the driver checks evidence at session end (2026-10-07, D144)
+
+> - [ ] **EVID1b — driver checks at session end** (driver; after a). Read paths at HEAD, post/store verdicts; prompts/intake name evidence; sweep and terminal check read remaining items. Contract: §2–§3, §5. Proof: git evidence, requirements, goldens, trace/command tests and family phase 7.
+
+**Outcome** 2026-10-07: the driver reads a done's path evidence at a session's end, in the orphan sweep and from `daoris-driver quest check`, and posts the verdict to EVID1a's door; prompts, intake, planner and trace name it. The family rehearsal's phase is EVID1b2. Detail: D144's EVID1b note; commits 55aa650f…f946b4a3.

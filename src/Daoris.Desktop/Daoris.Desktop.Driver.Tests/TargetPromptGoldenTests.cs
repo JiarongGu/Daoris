@@ -61,7 +61,14 @@ public sealed class TargetPromptGoldenTests
         ServiceUrl: "http://localhost:5177")
     {
         Links = ["https://tickets.example/T-9"],
-        Requirements = [new QuestRequirementView("use the common-report module", "the report is a common-report entry")],
+        // EVID1b: the evidence its check turns on, which Daoris reads in the branch's last commit when the session ends.
+        Requirements =
+        [
+            new QuestRequirementView("use the common-report module", "the report is a common-report entry")
+            {
+                Evidence = [new QuestEvidenceItem("docs/comparison.md")],
+            },
+        ],
         Words = Words,
         Standing = new StandingAnswer("dev writes allowed; test locally against dev; prod only on a yes.", Asked.AddDays(-1)),
         ReadsAcross = [new AcrossCheckout("bridge", "C:/work/bridge")],

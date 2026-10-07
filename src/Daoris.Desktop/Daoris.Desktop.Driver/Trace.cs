@@ -101,6 +101,15 @@ public sealed record TracedQuest(string Id, string From, string To, string Title
 
     public bool Held { get; init; }
 
+    /// <summary>
+    /// Why a held done waits (EVID1a, D144 §6): <c>departed</c>, <c>evidence-unread</c> or <c>evidence-missing</c>; null where
+    /// nothing holds it, and from a host before evidence, whose one hold was a departure.
+    /// </summary>
+    public string? Hold { get; init; }
+
+    /// <summary>What Daoris last read of its evidence (EVID1a, EVID1b), or null while nothing was.</summary>
+    public EvidenceVerdict? Evidence { get; init; }
+
     /// <summary>When the person said yes to a departure (DRIFT1d), or null.</summary>
     public DateTimeOffset? Accepted { get; init; }
 
@@ -386,7 +395,10 @@ public static class Trace
                 [
                     .. Objects(quest, "requirements")
                         .Where(requirement => Text(requirement, "quote") is not null)
-                        .Select(requirement => new QuestRequirementView(Text(requirement, "quote")!, Text(requirement, "check") ?? "")),
+                        .Select(requirement => new QuestRequirementView(Text(requirement, "quote")!, Text(requirement, "check") ?? "")
+                        {
+                            Evidence = ServiceClient.EvidenceOf(requirement),
+                        }),
                 ],
                 Answers =
                 [
@@ -398,6 +410,9 @@ public static class Trace
                             each.Number!.Value, Filled(each.Answer, "met"), Filled(each.Answer, "departed"), Filled(each.Answer, "quote"))),
                 ],
                 Held = Flag(quest, "held"),
+                // Why it waits and what was read of its evidence (EVID1a, D144 §5): codes and names, as the quest keeps them.
+                Hold = Filled(quest, "hold"),
+                Evidence = EvidenceVerdict.Read(quest),
                 Accepted = Moment(quest, "accepted"),
                 PublishedBy = Filled(quest, "publishedBy"),
                 Awaits = Filled(quest, "awaits"),

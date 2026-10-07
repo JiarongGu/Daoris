@@ -4,7 +4,7 @@ Open work only. Finished rows move to `docs/task-archive.md`; `CHANGELOG.md` des
 
 ## State
 
-Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,366 CLI, 1,455 service, 78 HTTP host, 5,257 driver (4,543 fast, 714 Process), 751 modules (633 fast, 118 Process), 85 devkit, 4,363 web unit and 24 Playwright; rehearsals: release 114, family 390, deployment 110. The full set (14 gates) passed `6394ec1` and that tree is on the install; earlier receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,547 bytes, advisory budget 26,000.
+Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,366 CLI, 1,455 service, 78 HTTP host, 5,333 driver (4,619 fast, 714 Process; EVID1b's real-git class awaits the full set), 751 modules (633 fast, 118 Process), 85 devkit, 4,363 web unit and 24 Playwright; rehearsals: release 114, family 390, deployment 110. The full set (14 gates) passed `6394ec1` and that tree is on the install; earlier receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,547 bytes, advisory budget 26,000.
 
 Live consumer count is zero. Adoption is the owner's call. The existing desktop-runtime rehearsal remains evidence: 6 collisions, 2 twins to retire, budget 40,000, check at 38,782 bytes; supporting mechanics are in `docs/adoption/shenora-repo-mechanics.md`.
 
@@ -118,7 +118,7 @@ Contracts: D145, D148, D149; `docs/2026-10-04-plugin-hooks-design.md` for plugin
 
 Contracts: `docs/2026-10-03-evidence-design.md` (EVID1, D144) and `docs/2026-10-04-landing-and-proof-design.md` (EVID2, D146). Order EVID1a → b → c; each EVID2 follows corresponding EVID1; EVID1d also needs DEV5/7.
 
-- [ ] **EVID1b — driver checks at session end** (driver; after a). Read paths at HEAD, post/store verdicts; prompts/intake name evidence; sweep and terminal check read remaining items. Contract: §2–§3, §5. Proof: git evidence, requirements, goldens, trace/command tests and family phase 7.
+- [ ] **EVID1b2 — the family rehearsal proves evidence** (tools; the parent runs it). Phase 7 needs an ask whose intake publishes a requirement with `evidence: [{ path }]` and whose work commits that file and closes done met (the session was handed the evidence line; `held:false`, `evidence.how` `session-end`, item `found` with a 40-hex object, the step published, the record's `evidence read at …` line), and a second whose file is written but not committed (`evidence-missing`, `uncommitted`, then `quest check --commit` exits 0 and publishes, and an earlier commit exits 1). Contract: D144's EVID1b note. Proof: the phase passing.
 - [ ] **EVID1c — quest evidence and hold reason** (web-shell, driver; after b/DRIFT1d2). Show result/commit versus session assertion, Check again and Ask Daoris check card. Contract: §5–§6. Proof: stories/vitest/catalogues/coverage and bilingual look.
 - [ ] **EVID1d — queue gate evidence** (driver, service; after DEV5/7/b). Add required gates to queue; read landing verdict and landed path evidence; report `no-queue` elsewhere. Contract: §4. Proof: stand-in gate tests and queue rehearsal.
 - [ ] **EVID2a — captured proof requirement** (service; after EVID1a). Screenshot/answer kinds, done proof and capture verdicts; no bytes/address/path travel across machines. Contract: §9–§10, §12. Proof: evidence/sync/MCP/local/shared tests.

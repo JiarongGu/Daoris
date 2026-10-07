@@ -162,6 +162,11 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         // Ask Daoris's `accept` kind.
         ("accept a quest's departure from what you required, so what it held goes on: the chain's next step, a quest "
             + "waiting on it", "Quests → the quest's page → Accept the departure", "`daoris-driver quest accept <id>`"),
+        // EVID1b (D144 §5): reading a done's evidence again, the terminal's door; the quest page's *Check again* and Ask Daoris's
+        // check card are EVID1c's, owed meanwhile (HelpCoverageTests).
+        ("read a done's evidence again, so a commit that holds it now lifts its hold: at the commit a session's end here read, "
+            + "or one named after it on the same history (a done no session here ended needs the commit named)",
+            "(no screen yet)", "`daoris-driver quest check <id> [--commit <sha>]`"),
         // PLUG9: the card installs one that landed; the screen switches one installed, installs one of
         // Daoris's own (d) and updates one from where it came from (c).
         ("add a plugin that has landed, or switch one on or off", "Settings → Plugins (its switch)",

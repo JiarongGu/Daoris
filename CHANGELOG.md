@@ -54,6 +54,9 @@ with the version and date at release.
   it showed, and every way that reached either still lands there.
 - Knowledge search finds an identifier from its words (`ProbeLock` from "probe lock") and lists each
   dated note of a decision as its own result, so a question lands on the note that answers it.
+- A quest's requirement may name files the done must have committed: the driver reads them at the
+  session's end (and `daoris-driver quest check` reads them from a terminal), and the done is held until
+  they are found or the person says yes.
 - The local service can list and clear finished history: a closed quest's work, an ask's, or a closed
   quest's failed sessions, each judged again as it goes. A quest a remote holds is forgotten on this
   machine only. The driver now clears what the home kept of them too, never a tree in use or a standing

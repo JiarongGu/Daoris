@@ -153,7 +153,15 @@ internal static class TraceWords
         if (quest.Parent is { } parent) text.Append($"  a step of quest #{parent}, published when that one closed\n");
         if (quest.PublishedBy is { } by) text.Append($"  published by session {by}\n");
         if (quest.Awaits is { } awaits) text.Append($"  waits on quest #{awaits}, asked of the repository that knows\n");
-        if (quest.Held) text.Append($"  held: its done departed from what you required, and waits for your yes (`daoris-driver quest accept {quest.Id}`)\n");
+        if (quest.Held) text.Append(Held(quest));
+        if (quest.Evidence is { } read)
+        {
+            text.Append($"  evidence read at `{Short(read.Commit)}` ({read.How}), ")
+                .Append(read.Session is { } session ? $"at the end of session {session}" : "from a terminal")
+                .Append(read.Machine is { } machine ? $" on {machine}" : "")
+                .Append($", {WhenOr(read.At)}: {read.Found} of {read.Items} found\n");
+        }
+
         if (quest.Accepted is { } accepted) text.Append($"  accepted {When(accepted)}: your yes to its departure\n");
         if (quest.Note is { } note) text.Append($"  its close said: {OneLine(note)}\n");
 
@@ -170,6 +178,10 @@ internal static class TraceWords
                     TraceAnswers.Unanswered => "        not answered: its done carries no answer to it\n",
                     _ => "        not answered yet: a done answers it\n",
                 });
+                if (requirement.Evidence.Count > 0)
+                {
+                    text.Append($"        evidence: {string.Join(" · ", requirement.Evidence.Select(EvidenceItem))}\n");
+                }
             }
         }
 
@@ -179,6 +191,31 @@ internal static class TraceWords
         }
 
         Records(text, quest);
+    }
+
+    /// <summary>
+    /// Why a held done waits, and its doors (DRIFT1d; EVID1b, D144 §6): a departure waits for the person's yes; evidence nobody
+    /// read waits for the session's end or the terminal's check; evidence read and not found waits for a later commit or the
+    /// yes. A host before evidence names no cause, and its one hold was a departure.
+    /// </summary>
+    private static string Held(TraceQuestLink quest) => quest.Hold switch
+    {
+        EvidenceCodes.Unread =>
+            $"  held: its evidence is not read yet: the driver reads it when the session that closed it ends, or "
+            + $"`daoris-driver quest check {quest.Id}` reads it; your yes takes the done as it stands (`daoris-driver quest accept {quest.Id}`)\n",
+        EvidenceCodes.MissingHold =>
+            $"  held: its evidence was not found in the commit read, and waits for you: a later commit that holds it "
+            + $"(`daoris-driver quest check {quest.Id} --commit <sha>`), or your yes to the done as it stands (`daoris-driver quest accept {quest.Id}`)\n",
+        _ => $"  held: its done departed from what you required, and waits for your yes (`daoris-driver quest accept {quest.Id}`)\n",
+    };
+
+    /// <summary>One evidence item and what was last read of it, as the record's bundle says it; or that it is not read yet.</summary>
+    private static string EvidenceItem(TraceEvidenceItem item)
+    {
+        var named = item.Kind == "gate" ? $"gate `{item.Named}`" : $"`{item.Named}`";
+        return item.Result is not { } result
+            ? $"{named} not read yet"
+            : $"{named} {EvidenceCheck.Said(new EvidenceRead(0, item.Kind == "path" ? item.Named : null, item.Kind == "gate" ? item.Named : null, result) { Changed = item.Changed, Spelled = item.Spelled })}";
     }
 
     /// <summary>The records that name a quest, oldest first, by id and state: each one's own trace is a word away.</summary>
@@ -533,6 +570,8 @@ internal static class TraceWords
     private static string When(DateTimeOffset at) => at.ToUniversalTime().ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture);
 
     private static string WhenOr(DateTimeOffset? at) => at is { } moment ? When(moment) : "at a moment not recorded";
+
+    private static string Short(string commit) => commit.Length > 8 ? commit[..8] : commit;
 
     private static string Count(int number) => number.ToString("N0", CultureInfo.InvariantCulture);
 }

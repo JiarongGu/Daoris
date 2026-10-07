@@ -206,6 +206,15 @@ public sealed partial class HelpCoverageTests
         + "`driver list` is exempt (D110 §4); a screen's door to the same read is a row of its own (D143).");
 
     /// <summary>
+    /// EVID1b's <c>daoris-driver quest check</c> (D144 §5), a verb of the headless host: a door Ask Daoris owes, until EVID1c
+    /// builds the check card beside the quest page's <i>Check again</i>.
+    /// </summary>
+    private static readonly Owed CheckDoor = new(
+        "reading a done's evidence again posts a verdict that can lift its hold and publish what it held, a move the person "
+        + "applies as a card, so Ask Daoris should propose it; that is EVID1c's check card beside the quest page's Check again "
+        + "(D144 §5), and until then `daoris-driver quest check` is the terminal's door.");
+
+    /// <summary>
     /// GIT1c's <c>daoris-driver git branches</c> (D147 §3.3), a verb of the headless host: exempt, since it reads each
     /// repository's branches and changes nothing, as <c>trace</c> is. The acts (fetch, branch, push, delete) are owed to a
     /// <c>git</c> kind, GIT1k's, once GIT1g and GIT1h build them.
@@ -526,6 +535,7 @@ public sealed partial class HelpCoverageTests
             .Append(GoOnNewDoor)
             .Append(StartFromDoor)
             .Append(TraceDoor)
+            .Append(CheckDoor)
             .Append(GitBranchesDoor)
             .Append(TreesStateDoor)
             .Append(UpdateDoor)
@@ -605,6 +615,19 @@ public sealed partial class HelpCoverageTests
         Assert.Contains("accept", HelpProposalKinds.Find("accept")!.Doors);
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver quest accept <id>`", StringComparison.Ordinal)
             && door.Screen.Contains("Accept the departure", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// EVID1b: the headless host's <c>quest check</c> (D144 §5) is a door owed to EVID1c's check card while the host's usage
+    /// spells it and no kind takes it; the room names it meanwhile, so the helper can point the person at it.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_quest_check_is_a_door_owed_to_the_check_card()
+    {
+        Assert.Contains("quest check <id> [--commit <sha>]", DriverCommand.Usage);
+        Assert.DoesNotContain("check", HelpProposalKinds.Find("accept")!.Doors);
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver quest check <id> [--commit <sha>]`", StringComparison.Ordinal));
+        Assert.Contains("EVID1c", CheckDoor.Reason);
     }
 
     /// <summary>
