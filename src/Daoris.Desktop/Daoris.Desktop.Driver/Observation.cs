@@ -18,6 +18,17 @@ public sealed record SessionConclusion(string State, string Note)
 
     /// <summary>The same state, its note followed by the glue and a line (an account's, D125).</summary>
     public SessionConclusion Then(string glue, Noted line) => Of(State, AsNoted().Then(glue, line));
+
+    /// <summary>
+    /// The same state, its note without the agent's words that a line will say as facts (AGT3c): a limit's sentence names
+    /// the zone of the machine it was said on, and the note travels. Unchanged where the note holds no such words part.
+    /// </summary>
+    public SessionConclusion Unsaid(string words)
+    {
+        var noted = AsNoted();
+        var unsaid = noted.Unsaid(words, NoteBy.Agent);
+        return ReferenceEquals(unsaid, noted) ? this : Of(State, unsaid);
+    }
 }
 
 /// <summary>

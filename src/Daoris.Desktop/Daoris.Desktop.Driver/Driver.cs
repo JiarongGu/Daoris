@@ -1414,9 +1414,13 @@ public sealed partial class Driver(
     /// named, the record says <c>limit</c> — which is never a strike — and its note says until when, naming no account.
     /// </summary>
     /// <remarks>
-    /// Only a <c>failed</c> conclusion: a refused turn after the work reached its close or its wait ended as that, the
+    /// <para>Only a <c>failed</c> conclusion: a refused turn after the work reached its close or its wait ended as that, the
     /// person's stop is theirs, and a timeout carries no door failure. A failure no table recognises is a failure as
-    /// today, and the strikes bound it.
+    /// today, and the strikes bound it.</para>
+    /// <para>🔴 <b>The note carries the facts, never the agent's sentence</b> (AGT3c): the sentence names its reset in the zone
+    /// of the machine it was said on, and in English, and the note travels to every machine. The cooling line carries the reset
+    /// as a moment each reader words in its own zone and language; the sentence stays in the transcript and the conversation,
+    /// the raw view, which stay here.</para>
     /// </remarks>
     /// <param name="turnFailed">What the protocol door said refusing the turn (ACPEND1), or null.</param>
     /// <param name="used">The context the door reported, for the log; null where it reported none.</param>
@@ -1441,7 +1445,7 @@ public sealed partial class Driver(
 
         var (entry, seen) = read;
         service.AccountSaid(AccountLine.Limited(sessionId, adapter.Name, selection.Profile, seen, TurnsEnded(_events, sessionId) + 1, used?.Used));
-        return (conclusion.Then(" ", CoolingWords.NoteOf(entry, _harnesses.Zone)), true);
+        return (conclusion.Unsaid(turnFailed).Then(" ", CoolingWords.NoteOf(entry, _harnesses.Zone)), true);
     }
 
     /// <summary>

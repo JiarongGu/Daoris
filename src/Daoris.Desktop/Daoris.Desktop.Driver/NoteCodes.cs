@@ -223,6 +223,27 @@ public sealed record Noted(string Note, IReadOnlyList<NotePart> Parts)
 
     /// <summary>A part whose text this English already holds.</summary>
     public Noted Also(NotePart part) => new(Note, [.. Parts, part]);
+
+    /// <summary>
+    /// This without someone's words that a coded line will say as facts (AGT3c): the last words part holding exactly
+    /// <paramref name="words"/> by <paramref name="by"/>, and those words and the space before them out of the English. This,
+    /// unchanged, where no such part is or the English does not hold them.
+    /// </summary>
+    public Noted Unsaid(string words, string by)
+    {
+        var at = -1;
+        for (var part = Parts.Count - 1; part >= 0 && at < 0; part--)
+        {
+            if (Parts[part] is { Code: null } said && said.Words == words && said.By == by) at = part;
+        }
+
+        var start = at < 0 || words.Length == 0 ? -1 : Note.LastIndexOf(words, StringComparison.Ordinal);
+        if (start < 0) return this;
+
+        var from = start;
+        while (from > 0 && char.IsWhiteSpace(Note[from - 1])) from--;
+        return new(Note[..from] + Note[(start + words.Length)..], [.. Parts.Where((_, part) => part != at)]);
+    }
 }
 
 /// <summary>
