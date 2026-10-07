@@ -1,10 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   API_VERSION, KNOWLEDGE_SERVER, MANIFEST, STATE_FILE, commandPlugin, dataFolder, disablePlugin,
-  enablePlugin, pluginsRoot, readPluginState, readPlugins, reservedHarnesses, resolvable,
+  enablePlugin, isPluginId, pluginsRoot, readPluginState, readPlugins, reservedHarnesses, resolvable,
 } from '../src/plugins.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
@@ -505,6 +506,23 @@ test('enable and disable edit the row, and an unknown id is refused naming the l
  * wire, so `try` checks what the driver does — and the CLI spawns nothing outside `toolchain.ts`. Asked
  * for here, the CLI says where the kit is, with the command to type, and needs no home to say it.
  */
+/**
+ * REFAC1 (the second-opinion review of 2026-10-07): a plugin id's shape has one owner in this package, `isPluginId`, which
+ * the catalogue, `plugin` and the landing rule's check (`driverconfig.ts`) all ask; CASEFOLD1e had to mend the same pattern
+ * in two places. Each caller keeps its own lowering. The driver's `PluginCatalog.IsId` is the twin, held by its own tables.
+ */
+test('only plugins.ts spells a plugin id’s shape, and isPluginId answers it', () => {
+  const sources = join(dirname(dirname(fileURLToPath(import.meta.url))), 'src');
+  const spelled = readdirSync(sources)
+    .filter((name) => name.endsWith('.ts') && /\[a-z0-9\]\[a-z0-9\.-\]/.test(readFileSync(join(sources, name), 'utf8')));
+  assert.deepEqual(spelled, ['plugins.ts']);
+
+  for (const id of ['acme.agent', 'example.github-pull-request', '0day', 'a']) assert.equal(isPluginId(id), true, id);
+  for (const id of ['', '.data', '-x', 'Acme', 'acme/agent', 'acme agent', 'acme.agent\n', 'straße']) {
+    assert.equal(isPluginId(id), false, JSON.stringify(id));
+  }
+});
+
 test('new and try say where the plugin kit is, and touch nothing', () => {
   const saved = process.env.DAORIS_HOME;
   delete process.env.DAORIS_HOME;

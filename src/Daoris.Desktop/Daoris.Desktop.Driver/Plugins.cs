@@ -127,8 +127,9 @@ public sealed class PluginCatalog
     public const string DataPlaceholder = "${data}";
 
     /// <summary>
-    /// A plugin id's shape, which the CLI's <c>ID_SHAPE</c> twins: it checks <see cref="IsId"/>, a manifest's id and a server's
-    /// name. <c>\z</c>, since .NET's <c>$</c> also passes a final line break the CLI's refuses (CASEFOLD1e).
+    /// A plugin id's shape, which the CLI's <c>isPluginId</c> twins: it checks <see cref="IsId"/>, a manifest's id and a server's
+    /// name. <c>\z</c>, since .NET's <c>$</c> also passes a final line break the CLI's refuses (CASEFOLD1e). Its one spelling in the
+    /// driver (REFAC1): a landing rule's plugin, a plugin's tool id and the log's landing line ask <see cref="IsId"/>.
     /// </summary>
     private static readonly Regex IdShape = new(@"^[a-z0-9][a-z0-9.-]*\z", RegexOptions.CultureInvariant);
 

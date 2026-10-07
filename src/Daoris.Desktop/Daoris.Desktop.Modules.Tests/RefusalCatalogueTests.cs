@@ -142,4 +142,38 @@ public sealed class RefusalCatalogueTests
 
         Assert.Contains("{{message}}", text);
     }
+
+    /// <summary>
+    /// REFAC1: a code the driver library chose (its <c>HistoryCodes</c>, which this class declares as its own) is raised only
+    /// where it is declared here; any other is the driver's verbatim refusal, its sentence kept, so none reaches the page as a
+    /// bare code. What REFUSE1's scan holds at a throw site naming a code, this holds at the one door that is handed one.
+    /// </summary>
+    [Fact]
+    public void A_code_the_driver_library_chose_is_raised_only_where_it_is_declared_here()
+    {
+        var declared = Refusals.Declared(Daoris.Driver.HistoryCodes.Open, "it is open", ("quest", "q1"));
+        var later = Refusals.Declared("HISTORY_FROM_LATER", "a newer service's sentence", ("quest", "q1"));
+
+        Assert.Equal((Refusals.HistoryOpen, "q1", "it is open"), (declared.Code, declared.Parameters!["quest"], declared.Message));
+        Assert.Equal((Refusals.DriverRefused, "a newer service's sentence"), (later.Code, later.Parameters!["message"]));
+        Assert.Equal("a newer service's sentence", later.Message);
+    }
+
+    /// <summary>
+    /// REFAC1 (the second-opinion review of 2026-10-07): which code a history word is said in is the driver library's
+    /// <c>HistoryCodes.Of</c>, read through its projection (<c>HistoryAnswers.Reason</c>); the shell's routes add only the
+    /// exception, and map no word themselves, where <c>HistoryKept</c> once repeated the mapping.
+    /// </summary>
+    [Fact]
+    public void No_module_maps_a_history_word_to_its_code_itself()
+    {
+        var modules = Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Modules");
+        var mapped = Directory.EnumerateFiles(modules, "*.cs", SearchOption.AllDirectories)
+            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
+                && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))
+            .Where(path => System.Text.RegularExpressions.Regex.IsMatch(File.ReadAllText(path), @"HistoryWords\.\w+\s*=>"))
+            .Select(path => Path.GetFileName(path));
+
+        Assert.Empty(mapped);
+    }
 }

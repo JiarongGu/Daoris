@@ -90,31 +90,25 @@ public sealed partial class DriverModule
         return new HistoryWorld(service, _loop.Home, _loop.ConfigPath, _loop.Processes) { Events = _loop.Events, Log = _loop.Log };
     }
 
-    /// <summary>A unit kept, refused in its code with the facts its sentence names and which of its sentences is meant.</summary>
+    /// <summary>
+    /// A unit kept, refused in its code with the facts its sentence names and which of its sentences is meant: the driver
+    /// library's projection (<see cref="HistoryAnswers.Reason"/>, whose code is <see cref="HistoryCodes.Of"/>'s), the one the
+    /// plan's and the clear's answers carry, raised as the IPC's exception (REFAC1). A word this build does not know is a newer
+    /// service's: it said no, and its sentence, verbatim, says why.
+    /// </summary>
     private static Exception HistoryKept(HistoryKeep keep)
     {
+        var reason = HistoryAnswers.Reason(keep);
+        if (reason.Code == HistoryCodes.Refused) return Refusals.Because(Refusals.DriverRefused, keep.Message, ("message", keep.Message));
+
         var facts = new (string Key, string? Value)[]
             {
-                ("context", keep.Context), ("quest", keep.Quest), ("ask", keep.Ask), ("session", keep.Session),
-                ("machine", keep.Machine), ("workspace", keep.Workspace), ("repository", keep.Repository), ("branch", keep.Branch),
+                ("context", reason.Context), ("quest", reason.Quest), ("ask", reason.Ask), ("session", reason.Session),
+                ("machine", reason.Machine), ("workspace", reason.Workspace), ("repository", reason.Repository), ("branch", reason.Branch),
             }
             .Where(fact => fact.Value is not null)
             .Select(fact => (fact.Key, fact.Value!))
             .ToArray();
-        return keep.Word switch
-        {
-            HistoryWords.Unknown => Refusals.Because(Refusals.HistoryUnknown, keep.Message, facts),
-            HistoryWords.Open => Refusals.Because(Refusals.HistoryOpen, keep.Message, facts),
-            HistoryWords.Asked => Refusals.Because(Refusals.HistoryAsked, keep.Message, facts),
-            HistoryWords.Live => Refusals.Because(Refusals.HistoryLive, keep.Message, facts),
-            HistoryWords.NeedsYou => Refusals.Because(Refusals.HistoryNeedsYou, keep.Message, facts),
-            HistoryWords.Awaited => Refusals.Because(Refusals.HistoryAwaited, keep.Message, facts),
-            HistoryWords.TreeHere => Refusals.Because(Refusals.HistoryTreeHere, keep.Message, facts),
-            HistoryWords.LandingStands => Refusals.Because(Refusals.HistoryLandingStands, keep.Message, facts),
-            HistoryWords.Unpushed => Refusals.Because(Refusals.HistoryUnpushed, keep.Message, facts),
-            HistoryWords.NotOurs => Refusals.Because(Refusals.HistoryNotOurs, keep.Message, facts),
-            // A word this build does not know is a newer service's: it said no, and its sentence says why.
-            _ => Refusals.Because(Refusals.DriverRefused, keep.Message, ("message", keep.Message)),
-        };
+        return Refusals.Declared(reason.Code, keep.Message, facts);
     }
 }

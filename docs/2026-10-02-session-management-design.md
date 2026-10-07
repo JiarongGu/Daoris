@@ -521,7 +521,7 @@ handler, its name in the Desktop README's row, and a call from `bridge/sessions.
 |---|---|---|---|
 | `SESSION_GROUPS` | new | `{ ids? }` | per session: its group, shown state, line facts, archived, deletable (§2.4) |
 | `SESSION_ARCHIVE` | new | `{ ids, archived }` | the marks as they now stand, or a refusal (§5.2) |
-| `SESSION_DELETE` | new | `{ id }` | deleted, with what was removed, or a refusal (§5.4) |
+| `SESSION_DELETE` | new | `{ id }` | deleted, with what was removed and what the disk kept (SESSDEL1), or a refusal (§5.4) |
 | `SESSION_OPEN_FOLDER` | new | `{ id }` | opened, or `SESSION_FOLDER_GONE` |
 | `STOP_SESSION` | unchanged | `{ id }` | as today, from the header's one owner |
 | `RESOLVE_SESSION` | unchanged | `{ id, state, note? }` | as today, from the card and the processless stop |

@@ -23,7 +23,7 @@ import { flagValue, operands } from './args.ts';
 import { readJsonObject, writeJsonAtomic } from './fsx.ts';
 import { findName, sameName } from './casefold.ts';
 import { isoMoment } from './cooling.ts';
-import { readPlugins, type PluginCatalog } from './plugins.ts';
+import { isPluginId, readPlugins, type PluginCatalog } from './plugins.ts';
 import { normalizeWorkspace } from './remotemap.ts';
 import { TOOLCHAINS } from './toolchain.ts';
 import { failuresOf, type RecordsReader } from './strikes.ts';
@@ -235,9 +235,6 @@ export function autoAcceptSays(plugin: string | undefined): string {
 /** The point a plugin lands work on — the driver's `HookPoints.Land`. */
 export const LAND_POINT = 'work/land';
 
-/** What a plugin's id may be — the catalogue's own shape, so a rule never names a path. */
-const PLUGIN_ID = /^[a-z0-9][a-z0-9.-]*$/;
-
 /** What a pattern may say — the driver's `LandingRules.Placeholders`. One of the first two is required. */
 const PLACEHOLDERS = ['quest', 'session', 'slug', 'repository'];
 
@@ -287,7 +284,8 @@ export function landingProblem(rule: LandingRule): string | null {
     return `\`${pattern}\` does not make a branch name git would take — it gives \`${sample}\`.`;
   }
 
-  return rule.plugin !== undefined && !PLUGIN_ID.test(rule.plugin)
+  // A plugin's id is the catalogue's own shape, asked of its one owner (REFAC1), so a rule never names a path.
+  return rule.plugin !== undefined && !isPluginId(rule.plugin)
     ? `\`${rule.plugin}\` is not a plugin id — one is lowercase letters, digits, dots and dashes, like \`example.github-pull-request\`.`
     : null;
 }

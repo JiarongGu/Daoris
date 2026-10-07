@@ -73,7 +73,7 @@
       "source": "core/rules/no-tmp-for-repo-files.md",
       "target": "rules/no-tmp-for-repo-files.md",
       "canonVersion": "0.0.1",
-      "sha256": "eeba11e988735be8c6e4975ffbac2b9df64dcdcc2ca6dceb756bcf850a6006bf",
+      "sha256": "97e2025ff3ccd93878add9754cdca280d0b1308f01452ecee0666859bf63fc03",
       "in": "AGENTS.md"
     },
     {
