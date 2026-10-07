@@ -39,10 +39,10 @@
  * `docs/2026-10-02-knowledge-bench-results.md`.
  */
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { dirname, join, parse, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isMain } from './fsx.mjs';
+import { isMain, writeAtomic } from './fsx.mjs';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -717,12 +717,6 @@ export function aggregate(runs) {
 
 // ---------------------------------------------------------------------------------------------------------
 // The runner
-
-function writeAtomic(path, text) {
-  mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(`${path}.tmp`, text);
-  renameSync(`${path}.tmp`, path);
-}
 
 const MARKER = '.knowledge-bench';
 

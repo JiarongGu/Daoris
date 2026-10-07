@@ -11666,3 +11666,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ORIENT2b — declare the index** (cli). Add `index` after `router`, render its location, fail missing paths and declare `docs/index/README.md`. Contract: §1.4, D151 §4. Proof: documents tests and measured region growth.
 
 **Outcome** 2026-10-07: `index` joins the CLI's `ROLES` after `router`, so `sync` renders its row after the router's, `check` and `status` name a missing declared path, and a ceiling with no path is refused; Daoris declares `docs/index/README.md`. The region grows 119 bytes as the design measured, to 20,547 of 26,000. A dogfood test holds the canon's roles table and `ROLES` to one order. The service's twin `RepositoryDocuments.Roles` gains `index` in ORIENT2e. CLI 1359 → 1366. Detail: D151's ORIENT2b note; commit dc9dd921.
+
+
+## REFAC2 — tooling writes and snapshots through one helper each (2026-10-07)
+
+> - [ ] **REFAC2 — tooling writes and snapshots through one helper each** (tools). Tools assemble write-beside-then-rename themselves (`ux-count.mjs` still renames bare), and `as-merged.mjs` and `merge-branch.mjs` each build the staged tree. Give `tools/fsx.mjs` an atomic write and one staged-tree snapshot both use. Contract: the review's refactors 4, 5. Proof: the tools' tests and `merge-branch.test.ts` green; the counter's write retried.
+
+**Outcome** 2026-10-07: `tools/fsx.mjs` gains `writeAtomic` (a unique beside name, `renameHeld` into place, the beside file removed on failure) and `stagedTree` (the tree `git add -A` would stage, on a copy of the index git uses there, a linked worktree's own, never writing the person's index); every replacement write in the tools (the counter's script, both benches, the orientation index, the publish's resources and manifest, the merge tool's notes, verdicts and state, the knowledge server's stamp) and the snapshots in the merge tool and `as-merged` go through them. A gate's streaming log, folder installs and the rehearsals' scripted moves are left, each with its reason. `tools/fsx.test.mjs` (10) runs in `verify`. Detail: FIX-LOG's held-folder entry; commits 27f58f70, b7f5b6ff.

@@ -49,10 +49,10 @@
  * The helpers are tested by `node --test tools/question-bench.test.mjs`. What it found is D135's KNOWUSE2 note.
  */
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isMain } from './fsx.mjs';
+import { isMain, writeAtomic } from './fsx.mjs';
 import { tokenize } from './knowledge-bench.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -571,12 +571,6 @@ export function renderReport({ label, scored, summary, knowledgeCount, commands 
 
 // ---------------------------------------------------------------------------------------------------------
 // The runner
-
-function writeAtomic(path, text) {
-  mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(`${path}.tmp`, text);
-  renameSync(`${path}.tmp`, path);
-}
 
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
 

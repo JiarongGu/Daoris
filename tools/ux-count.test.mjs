@@ -12,7 +12,7 @@
  */
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { dirname, join } from 'node:path';
 import { after, before, test } from 'node:test';
@@ -21,7 +21,7 @@ import { Cdp, freePort, targetsAt } from './cdp.mjs';
 import { evalExpression } from './desktop.mjs';
 import {
   LANGUAGE_KEY, LIST_ROW, REGION, countExpression, countStories, expandFiles, expandStories, glossaryTerms, loadChromium,
-  parseLooks, parseSizes, readAnswer, readTasks, renderRows, storyIndex,
+  parseLooks, parseSizes, readAnswer, readTasks, renderRows, storyIndex, writeWindowScript,
 } from './ux-count.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -218,6 +218,29 @@ test('the window’s path gives the same answer: the same expression, through th
   } finally {
     await debuggable.close();
   }
+});
+
+// REFAC2: the script was renamed into place bare, so a scanner holding the last one failed `--window` outright.
+test('the window’s script is written whole through a held rename, and a refused one leaves the last script as it was', () => {
+  const out = join(scratch, 'held', 'window.js');
+  const calls = [];
+  const said = writeWindowScript({ out, terms: TERMS }, {
+    waitMs: 1,
+    rename: (from, to) => {
+      calls.push(from);
+      if (calls.length <= 2) throw Object.assign(new Error('EPERM: operation not permitted, rename'), { code: 'EPERM' });
+      renameSync(from, to);
+    },
+  });
+  assert.equal(calls.length, 3, 'tried again while it was held');
+  assert.equal(readFileSync(out, 'utf8'), countExpression({ terms: TERMS }));
+  assert.deepEqual(readdirSync(dirname(out)), ['window.js'], 'nothing left beside it');
+  assert.match(said, /The counter's script is written: /);
+
+  const refused = () => { throw Object.assign(new Error('EXDEV: cross-device link not permitted, rename'), { code: 'EXDEV' }); };
+  assert.throws(() => writeWindowScript({ out, terms: [] }, { rename: refused }), /EXDEV/);
+  assert.equal(readFileSync(out, 'utf8'), countExpression({ terms: TERMS }), 'the last script stands');
+  assert.deepEqual(readdirSync(dirname(out)), ['window.js']);
 });
 
 test('eval takes a script from a file, whole, or its words as before', () => {
