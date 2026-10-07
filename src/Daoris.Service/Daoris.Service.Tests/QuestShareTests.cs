@@ -149,6 +149,55 @@ public sealed class QuestShareTests : IAsyncLifetime
         Assert.Equal(QuestClaim.Lost, await _quests.ClaimAsync(published.Quest.Id));
     }
 
+    /// <summary>
+    /// 🔴 A session that goes on after its take lost (WAITCLAIM2), told to stand down or not stopped yet after a pass found
+    /// it lost, is refused its wait, its done and its decline as the stand-down they are: each answer says this machine's
+    /// take lost and nothing moved, at the door's 409 as the take's own loss is. Nothing is written, so the next pass
+    /// carries nothing of them to the winner's quest.
+    /// </summary>
+    [Fact]
+    public async Task A_wait_or_a_close_on_a_take_that_lost_is_refused_saying_so_and_nothing_reaches_the_remote()
+    {
+        var remote = await RemoteStoreAsync();
+        var exchange = Exchange(new StoreRemote(remote));
+        var quest = (await exchange.PublishAsync("Asker", "Federated", "Do it", "why", Now)).Quest!;
+        await QuestSync.RunAsync(_quests, _service, new StoreRemote(remote), Workspaces.Default);
+        await remote.MoveAsync(quest.Id, QuestStatus.Taken, "another machine's session", Now.AddMinutes(5));
+        var took = await exchange.RespondAsync(quest.Id, "take", "this machine's session", Now.AddMinutes(6));
+        var question = (await exchange.PublishAsync("Federated", "Homebody", "What does home say?", "why", Now.AddMinutes(7))).Quest!;
+
+        var waited = await exchange.RespondAsync(quest.Id, "wait", null, Now.AddMinutes(8), on: question.Id);
+        var closed = await exchange.RespondAsync(quest.Id, "done", "Finished anyway.", Now.AddMinutes(9));
+        var declined = await exchange.RespondAsync(quest.Id, "decline", "Giving up.", Now.AddMinutes(10));
+        await QuestSync.RunAsync(_quests, _service, new StoreRemote(remote), Workspaces.Default);
+
+        Assert.Equal(QuestRespondRefusal.AlreadyTaken, took.Refusal);
+        foreach (var (answer, what) in new[]
+                 {
+                     (waited, $"so it does not wait on `#{question.Id}` here"), (closed, "so this done is not this machine's to make"),
+                     (declined, "so this decline is not this machine's to make"),
+                 })
+        {
+            Assert.Equal(QuestRespondRefusal.AlreadyTaken, answer.Refusal);
+            Assert.StartsWith(
+                $"Quest `#{quest.Id}` was taken on another machine first: this machine's take lost and is kept on the quest as a conflict, ",
+                answer.Message);
+            Assert.Contains(what, answer.Message);
+            Assert.Contains("Nothing moved", answer.Message);
+            Assert.Null(answer.Quest);
+        }
+
+        Assert.Contains($"`#{question.Id}` stays a quest of its own", waited.Message);
+        foreach (var store in new[] { _quests, remote })
+        {
+            var held = (await store.FindAsync(quest.Id))!;
+            Assert.Equal((QuestStatus.Taken, "another machine's session", (string?)null), (held.Status, held.Note, held.Awaits));
+            Assert.DoesNotContain(
+                await store.HistoryAsync(quest.Id),
+                o => o.Kind is QuestOperationKind.Waited or QuestOperationKind.Done or QuestOperationKind.Declined);
+        }
+    }
+
     /// <summary>Silence means local: a take on a quest nobody shares is complete when it commits, and asks nothing.</summary>
     [Fact]
     public async Task A_take_on_a_quest_nobody_shares_never_asks_the_remote()

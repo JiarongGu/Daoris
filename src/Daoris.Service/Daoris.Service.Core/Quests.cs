@@ -253,7 +253,14 @@ public sealed record QuestAttachment(string Name, string Sha256, long Bytes)
 /// <param name="Quest">The quest as it now stands — null when no such id exists.</param>
 /// <param name="Moved">Whether THIS call moved it. False with a non-null quest is a refused move.</param>
 /// <param name="FollowUp">The chain's next step, published by this close — null when there was none.</param>
-public sealed record QuestMove(Quest? Quest, bool Moved, Quest? FollowUp = null);
+public sealed record QuestMove(Quest? Quest, bool Moved, Quest? FollowUp = null)
+{
+    /// <summary>
+    /// Refused because this machine's take on the quest lost, and the take that beat it stands (WAITCLAIM2): the move or
+    /// wait would be made on a claim this machine never held. Said apart from the table's refusals, so the answer can say why.
+    /// </summary>
+    public bool ClaimLost { get; init; }
+}
 
 /// <summary>What a dismissal did: the quest as it now stands (null when there is no such quest), and how many conflicts went.</summary>
 public sealed record QuestDismissal(Quest? Quest, int Dismissed);
@@ -969,7 +976,8 @@ public sealed class QuestStore
     /// </summary>
     /// <returns>
     /// The quest as it now stands and whether this call moved it; a null quest means no such id.
-    /// A refused move returns the row unchanged, so the caller can name the state that refused it.
+    /// A refused move returns the row unchanged, so the caller can name the state that refused it, and says
+    /// <see cref="QuestMove.ClaimLost"/> where the state allowed it but this machine's take on the quest lost (WAITCLAIM2).
     /// </returns>
     /// <param name="answers">
     /// How a done answers the quest's requirements (DRIFT1d, D133 §4), already judged by the exchange. A departure
@@ -1005,10 +1013,14 @@ public sealed class QuestStore
             // Judged by the replay's own rule, so the store refuses here exactly what a rebase or a remote
             // would not apply — a decline made while open (PAUSE1c) on a quest no longer open among them.
             var open = whileOpen && status == QuestStatus.Declined;
-            if (!QuestLog.Applies(QuestLog.Replay(history), new QuestOperation(id, kind, Machine, 0, now, note, WhileOpen: open)))
+            var standing = QuestLog.Replay(history);
+            if (!QuestLog.Applies(standing, new QuestOperation(id, kind, Machine, 0, now, note, WhileOpen: open)))
             {
                 return new QuestMove(held, Moved: false);
             }
+
+            // A close on the winner's take, made here after the pass that found this machine's take lost (WAITCLAIM2).
+            if (OnALostTake(standing, history)) return new QuestMove(held, Moved: false) { ClaimLost = true };
 
             var operation = await AppendAsync(
                 id, kind, now, note, null, transaction, inside,
@@ -1106,7 +1118,10 @@ public sealed class QuestStore
     /// operation naming the question, judged against the replayed history inside the write, as every
     /// move is. It moves no status.
     /// </summary>
-    /// <returns>The quest as it now stands and whether this call marked it; a null quest means no such id.</returns>
+    /// <returns>
+    /// The quest as it now stands and whether this call marked it; a null quest means no such id. Refused with
+    /// <see cref="QuestMove.ClaimLost"/> where this machine's take on the quest lost (WAITCLAIM2).
+    /// </returns>
     public Task<QuestMove> WaitAsync(string id, string on, DateTimeOffset now, CancellationToken ct = default) =>
         InTransactionAsync(async (transaction, inside) =>
         {
@@ -1122,6 +1137,9 @@ public sealed class QuestStore
             {
                 return new QuestMove(quest, Moved: false);
             }
+
+            // A wait on the winner's take, made here after the pass that found this machine's take lost (WAITCLAIM2).
+            if (OnALostTake(quest, history)) return new QuestMove(quest, Moved: false) { ClaimLost = true };
 
             var operation = await AppendAsync(
                 id, QuestOperationKind.Waited, now, on, null, transaction, inside).ConfigureAwait(false);
@@ -1390,7 +1408,8 @@ public sealed class QuestStore
     /// Replay one quest — accepted first, pending on top — and rewrite what did not survive, each kind by
     /// <see cref="QuestLog.Lost"/>: a move becomes a conflict, a publish of an ask already held is the same
     /// ask again, and a follow-up that only a lost close published goes with it. A wait made on this machine's
-    /// take that lost goes with the take, and the take's conflict names it (WAITCLAIM1). Answers the conflicts made.
+    /// take that lost goes with the take, and the take's conflict names it (WAITCLAIM1); one made after the take was
+    /// rewritten was refused by the store (WAITCLAIM2). Answers the conflicts made.
     /// </summary>
     private async Task<IReadOnlyList<QuestOperation>> RebaseAsync(
         string id, SqliteTransaction transaction, CancellationToken ct)
@@ -1404,7 +1423,8 @@ public sealed class QuestStore
         // A wait made on that take is part of its move (WAITCLAIM1): applied to the winner's quest, it would
         // hold the winner's session on a question it never asked. It goes with the take, and the take's
         // conflict, the loss this machine reports, names the question, so whoever asked learns the quest
-        // no longer waits on it.
+        // no longer waits on it. A move or a wait made after the pass that rewrote the take never meets this
+        // rule: the store's verbs refuse it as the claim reads (WAITCLAIM2), so it is never pending here.
         var claimLost = false;
         (long Position, int Reported)? lostTake = null;
         var waitsLost = new List<string>();
@@ -1633,21 +1653,25 @@ public sealed class QuestStore
             command.Parameters.AddWithValue("$id", id);
             command.Parameters.AddWithValue("$machine", Machine);
 
-            var claim = QuestClaim.None;
+            var mine = new List<QuestOperation>();
             await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
-            while (await reader.ReadAsync(ct).ConfigureAwait(false))
-            {
-                var operation = ReadOperation(reader);
-                if (operation.Kind == QuestOperationKind.Taken)
-                {
-                    return operation.Number is null ? QuestClaim.Unconfirmed : QuestClaim.Held;
-                }
-
-                if (operation is { Kind: QuestOperationKind.Conflict, Attempted: QuestStatus.Taken }) claim = QuestClaim.Lost;
-            }
-
-            return claim;
+            while (await reader.ReadAsync(ct).ConfigureAwait(false)) mine.Add(ReadOperation(reader));
+            return QuestLog.Claim(mine, Machine);
         }, ct);
+
+    /// <summary>
+    /// Whether a move or a wait judged on <paramref name="standing"/> would be made on a take this machine lost (WAITCLAIM2):
+    /// the quest is taken, by the take that beat this machine's, and the rebase already made this machine's a conflict.
+    /// </summary>
+    /// <remarks>
+    /// The pass that finds a take lost leaves the session running until its driver's next look stops it, and the session
+    /// does not know. The rebase loses what this machine made BEFORE that pass (D69, WAITCLAIM1); a move or a wait made
+    /// after it would apply to the winner's quest and be pushed, so the store refuses it here, inside the write, as the
+    /// claim reads. Nothing is written, so no machine's log holds an operation that was never this machine's to make.
+    /// Only a taken quest is judged: an open one is nobody's work, whatever an earlier incarnation of it held (D95).
+    /// </remarks>
+    private bool OnALostTake(Quest? standing, IReadOnlyList<QuestOperation> history) =>
+        standing is { Status: QuestStatus.Taken } && QuestLog.Claim(history, Machine) == QuestClaim.Lost;
 
     /// <summary>
     /// How a circle's pass ended (SYNC6a). A pass that reached the remote moves <see cref="QuestStanding.Synced"/>;

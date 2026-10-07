@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — a session whose take had lost closed the winner's quest
+
+### Service: a wait or a close made after the pass that found this machine's take lost applied to the winner's quest (WAITCLAIM2)
+- **Symptom:** found by WAITCLAIM1 and left open in D69's note, not seen on an install: machine A's take lost in one pass, and its session, not yet stopped by A's driver, waited on a question and closed done. A's next pass pushed both, so on every machine the winner's quest was Done on A's note and waited on A's question.
+- **Root cause:** D69's rule and WAITCLAIM1 lose this machine's later moves and waits only in `QuestStore.RebaseAsync`, and only while they are pending as it rewrites the take. Once the take was a numbered conflict, `MoveAsync` and `WaitAsync` judged by the table alone, which allows done and a wait on any taken quest, whoever took it.
+- **Fix:** both verbs read this machine's claim inside their write by `QuestLog.Claim`, the rule `ClaimAsync` now answers from, and refuse a done, a decline or a wait on a taken quest whose claim is lost, writing nothing (`QuestMove.ClaimLost`); the exchange answers it `AlreadyTaken`, saying the take lost and nothing moved. D69's WAITCLAIM2 note has the choice and what it rejected.
+- **Verify:** `QuestSyncTests.A_wait_and_a_close_made_after_the_pass_that_found_the_take_lost_are_refused_and_never_reach_the_winner` failed first (the winner's quest Done, awaiting A's question), and `QuestShareTests.A_wait_or_a_close_on_a_take_that_lost_is_refused_saying_so_and_nothing_reaches_the_remote` (the wait answered `CannotWait`); then both passed with the service suite (1535) and the HTTP suite (87). Not covered: a remote still takes such a move from a machine on an older build; the family rehearsal, read and not run.
+
 ## 2026-10-07 — a clear that took nothing closed as done
 
 ### Web: a workspace's clear closed its list in the `ok` tone when every unit it listed was kept (HIST1n)
@@ -226,6 +234,11 @@ where 0 was expected, under its 600 ms wait, once in AGT3c's full fast run after
 times and in a full rerun (4656/4656). A fast-half test waiting on a clock is the shape to look at.
 `setup-kit.test.ts:807` (STUB3) failed once in EVID1b3's verify: its stub did not answer `initialize` within 1000 ms,
 right after a dotnet run on the same machine; it passed alone and the next verify was green.
+`merge-branch.test.ts`'s "--passed counts a verdict no path changed since reaches" failed once at the web batch's merge
+gate (UXFIX2d…SESSDEL1b, which touch no CLI or tools file): "git could not write the checkout's tree" on its scratch
+repository, with three worktrees building beside it; the same git-on-scratch shape as the `--rerun` sightings above.
+`landing-plugins.test.ts:267` failed once in UXFIX5b's verify: its fixture's `git config user.email` exited -1
+(4294967295), a spawn failure; the file passed 19/19 alone and the next verify was green. A third git-spawn shape.
 
 *Fixed the same day:* `desktop-publish.test.ts`'s "retries a held rename at each package and launcher step" failed
 twice (AGENTREAD1's verify, ACCTQUOTE1d's merge gate) with a real EPERM. It handed `layCli` two tries with no wait, the

@@ -4,12 +4,12 @@ import {
   retryNotice, stopNotice, useArchiveSessions, useDeleteSession, useOpenSessionFolder, useOpenWindow, useResolveSession,
   useRetryQuest, useStopSession,
 } from '../shell';
-import { sentence } from '../format';
+import { list, sentence } from '../format';
 import { failure, type Notify } from '../ui';
 import { type ActFacts, folderOf, type SessionActId, workTargetOf } from './acts';
 import { forgetDraft } from './drafts';
 import type { Answered } from './InlineConfirm';
-import type { WorkTarget } from './pausing';
+import type { Translate, WorkTarget } from './pausing';
 import { sessionWindowName } from './window';
 import { useWorkActs } from './workActs';
 
@@ -37,6 +37,17 @@ const FRAME_ACTS = new Set<SessionActId>(['answer', 'stop', 'review', 'terminal'
 
 /** Which of the frame's doors an act goes through. */
 const DOOR_OF: Partial<Record<SessionActId, keyof SessionDoors>> = { pauseQuest: 'pause', pauseAsk: 'pause' };
+
+/**
+ * The names a delete's `stayed` carries (SESSDEL1; the driver's `SessionHomeFiles`), each said by the catalogue's words for
+ * it. A name a later driver adds is said as it is named, rather than as a key the catalogue does not hold.
+ */
+const KEPT_NAMES = new Set([
+  'conversation', 'transcript', 'files', 'harness', 'marker', 'mark', 'choice', 'spawn', 'held', 'landing', 'archived',
+]);
+
+const keptSaid = (t: Translate, name: string) =>
+  (KEPT_NAMES.has(name) ? t(`work.delete.kept.${name}`) : t('work.delete.kept.other', { name }));
 
 /**
  * **The one owner of each act on a session** (SESSUX1d, D126 §3.1): the row's ⋯ and the page header each call this,
@@ -164,11 +175,16 @@ export function useSessionActs({ notify, doors = {} }: { notify: Notify; doors?:
    * *Delete…*'s second press (SESSUX1f, D126 §5.4), told back to its ask: `done` once the host deleted it, when the record
    * and what this machine kept of it go, and so does the draft this viewer kept for it (§5.1). A refusal is said in the
    * catalogue's words inside the ask (UXFIX2), and the ask stays, since nothing went.
+   *
+   * What the disk would not let go of (`stayed`, SESSDEL1) is said by name, in the error's tone, since not all of it went
+   * (SESSDEL1b); the ask still closes, since the record did.
    */
   const deleteNow = (session: Session, answered?: Answered) => remove.mutate(session.id, {
-    onSuccess: () => {
+    onSuccess: (answer) => {
       forgetDraft(session.id);
-      notify(t('work.delete.done', { id: session.id }));
+      const stayed = answer?.stayed ?? [];
+      if (stayed.length === 0) notify(t('work.delete.done', { id: session.id }));
+      else notify(t('work.delete.stayed', { id: session.id, what: list(stayed.map((name) => keptSaid(t, name))) }), 'error');
       answered?.done();
     },
     onError: refusedIn(answered),

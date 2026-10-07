@@ -1219,6 +1219,56 @@ public sealed class QuestSyncTests : IAsyncLifetime
         }
     }
 
+    /// <summary>
+    /// 🔴 A wait and a close made after the pass that found this machine's take lost (WAITCLAIM2, D69's note): the session
+    /// has not been stopped yet and does not know, so it asks, waits and closes. The store refuses each as the claim reads,
+    /// lost, and writes nothing, so neither reaches the remote: the winner's quest neither waits on this machine's question
+    /// nor closes. What this machine keeps says why: each refusal names the lost claim, and its copy of the quest carries
+    /// its take's conflict as every machine does.
+    /// </summary>
+    [Fact]
+    public async Task A_wait_and_a_close_made_after_the_pass_that_found_the_take_lost_are_refused_and_never_reach_the_winner()
+    {
+        var quest = await Publish(_a);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        Assert.True((await _a.MoveAsync(quest.Id, QuestStatus.Taken, "A's session.", Now.AddHours(1))).Moved);
+        Assert.True((await _b.MoveAsync(quest.Id, QuestStatus.Taken, "B's session.", Now.AddHours(2))).Moved);
+        await SyncAsync(_b);
+        var lost = await SyncAsync(_a);
+        Assert.Equal(QuestStatus.Taken, Assert.Single(lost.Conflicts).Attempted);
+        Assert.Equal(QuestClaim.Lost, await _a.ClaimAsync(quest.Id));
+
+        var question = await Publish(_a, "A question for its owner");
+        var waited = await _a.WaitAsync(quest.Id, question.Id, Now.AddHours(3));
+        var closed = await _a.MoveAsync(quest.Id, QuestStatus.Done, "Finished after the take lost.", Now.AddHours(4));
+        var next = await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var held = (await store.FindAsync(quest.Id))!;
+            Assert.Equal((QuestStatus.Taken, "B's session.", (string?)null), (held.Status, held.Note, held.Awaits));
+            var conflict = Assert.Single(held.Conflicts);
+            Assert.Equal((_a.Machine, QuestStatus.Taken, "A's session."), (conflict.Machine, conflict.Attempted, conflict.Note));
+            Assert.DoesNotContain(
+                await store.HistoryAsync(quest.Id), o => o.Kind is QuestOperationKind.Waited or QuestOperationKind.Done);
+            Assert.Empty(await store.WaitingOnAsync(question.Id));
+        }
+
+        Assert.Equal((false, true), (waited.Moved, waited.ClaimLost));
+        Assert.Equal((false, true), (closed.Moved, closed.ClaimLost));
+        Assert.Null(closed.FollowUp);
+        Assert.Null(next.Problem);
+        Assert.Empty(next.Refused);
+        Assert.Empty(next.Conflicts);
+        Assert.Empty(await _a.PendingAsync(Workspaces.Default, _ => true));
+
+        // The question is a quest of its own and still went up: only the wait on it was refused.
+        Assert.NotNull(await _remote.FindAsync(question.Id));
+    }
+
     // ——— A decline that applies only while open (PAUSE1c, D132 point 10, design §5.2): an abandon judged its decline
     // on an open quest, so one that reaches the remote after another machine's take is a conflict on the quest (D68
     // rule 2), and the take stands.

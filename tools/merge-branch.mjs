@@ -390,6 +390,8 @@ const PAGE_READERS = ['service', 'driver', 'modules'];
 const DESKTOP_SUITES = ['driver', 'modules', 'driver-process', 'modules-process'];
 // What the CLI's sources reach; a narrow rule for one of its files names these as well, since the first rule decides.
 const CLI_READERS = ['driver', 'rehearse', 'rehearse-family', 'web', 'deployment'];
+// What the modules lane's sources reach, named by its narrow rule for the C# sources as well (MOD9c).
+const MODULES_READERS = ['modules', 'modules-process', 'deployment'];
 
 /**
  * Which gates can see a changed path, beyond the baseline: the first rule that places the path decides.
@@ -444,6 +446,13 @@ export const REACH = Object.freeze([
     gates: ['service', 'driver'],
     why: "the driver's SetupBrief twin reads the playbook's steps (LAYOUT7, MOD9b), and the service's suite scans this repository's documents",
   },
+  // MOD9c: the driver's scans enumerate every C# source of the modules and the app, to hold the next spawn site or ask
+  // written there, so the files are not named one by one: today's would miss that next one.
+  {
+    paths: ['src/Daoris.Desktop/Daoris.Desktop.Modules/**/*.cs', 'src/Daoris.Desktop/Daoris.Desktop.App/**/*.cs'],
+    gates: [...MODULES_READERS, 'driver'],
+    why: "the modules' own, and the driver's NoConsoleWindow and PullRequestOccasion scans read every C# source of the modules and the app (MOD9c)",
+  },
   { paths: ['src/Daoris.Cli/test/**'], gates: [], why: "the CLI's tests, which verify runs at every merge" },
   // GATE6: a fix to a browser test was re-gated by the web gate alone, and the stage then voided every other verdict.
   { paths: ['src/Daoris.Web/e2e/**'], gates: ['web'], why: "the page's end-to-end specs, which only the web gate runs: no .NET suite reads them" },
@@ -454,7 +463,7 @@ export const REACH = Object.freeze([
     gates: [...DESKTOP_SUITES, 'rehearse-family', 'deployment'],
     why: 'the modules build on it, the family rehearsal drives its headless host, and the deployed shell runs its loop (D60): ServiceHostLocator, the staged build, a session',
   },
-  { lane: 'modules', gates: ['modules', 'modules-process', 'deployment'], why: 'the application, its launcher and the modules it hosts: the deployed shell (D60)' },
+  { lane: 'modules', gates: MODULES_READERS, why: 'the application, its launcher and the modules it hosts: the deployed shell (D60)' },
   {
     lane: 'service',
     gates: ['service', 'devkit', 'driver', 'rehearse-family', 'web', 'deployment'],

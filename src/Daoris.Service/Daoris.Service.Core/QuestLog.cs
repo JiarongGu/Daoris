@@ -245,6 +245,24 @@ public static class QuestLog
              && QuestTransitions.Allows(quest.Status, target),
     };
 
+    /// <summary>
+    /// Where <paramref name="machine"/>'s claim on a quest stands, read from the quest's operations (D68 §4, D69): held once
+    /// a remote numbered its take, unconfirmed while the take is only here, lost once a rebase made it a conflict, and none
+    /// when it never took the quest. <see cref="QuestStore.ClaimAsync"/> answers from it, and the store's verbs judge by it
+    /// inside their write (WAITCLAIM2), so the driver and the store read one claim.
+    /// </summary>
+    public static QuestClaim Claim(IEnumerable<QuestOperation> history, string machine)
+    {
+        var claim = QuestClaim.None;
+        foreach (var operation in history.Where(operation => operation.Machine == machine))
+        {
+            if (operation.Kind == QuestOperationKind.Taken) return operation.Number is null ? QuestClaim.Unconfirmed : QuestClaim.Held;
+            if (operation is { Kind: QuestOperationKind.Conflict, Attempted: QuestStatus.Taken }) claim = QuestClaim.Lost;
+        }
+
+        return claim;
+    }
+
     /// <summary>The quest after an operation that <see cref="Applies"/> — none after a delete.</summary>
     public static Quest? Step(Quest? quest, QuestOperation operation) => operation.Kind switch
     {

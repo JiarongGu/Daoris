@@ -94,14 +94,14 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Service/Daoris.Service.Core/Asks.cs` | 48 | 928 |
 | `src/Daoris.Service/Daoris.Service.Core/KnowledgeService.cs` | 51 | 1021 |
-| `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 88 | 1672 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 126 | 2333 |
+| `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 90 | 1703 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 128 | 2357 |
 | `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 62 | 1198 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 63 | 1146 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 74 | 1340 |
 | `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 96 | 1731 |
 | `src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs` | 42 | 750 |
-| `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 67 | 1401 |
+| `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 69 | 1451 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 67 | 1385 |
 | `src/Daoris.Service/README.md` | 59 | 615 |
 
@@ -116,7 +116,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/test/desktop-publish.test.ts` | 48 | 871 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 46 | 818 |
 | `src/Daoris.Cli/test/driverconfig.test.ts` | 75 | 1460 |
-| `src/Daoris.Cli/test/merge-branch.test.ts` | 146 | 2309 |
+| `src/Daoris.Cli/test/merge-branch.test.ts` | 155 | 2438 |
 | `src/Daoris.Cli/test/rotation-use.test.ts` | 44 | 543 |
 | `src/Daoris.Cli/test/setup-kit.test.ts` | 44 | 820 |
 | `src/Daoris.Cli/test/toolchain.test.ts` | 87 | 1706 |
@@ -131,7 +131,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 48 | 998 |
 | `tools/family-rehearsal.mjs` | 306 | 5489 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 126 | 2318 |
+| `tools/merge-branch.mjs` | 127 | 2327 |
 | `tools/orient-index.mjs` | 66 | 1435 |
 | `tools/usage-report.mjs` | 57 | 1254 |
 
@@ -140,7 +140,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `.claude/knowledge/twins.md` | 46 | 113 |
-| `docs/2026-09-19-platform-ux.md` | 55 | 588 |
+| `docs/2026-09-19-platform-ux.md` | 55 | 590 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 52 | 349 |
 | `docs/2026-09-25-rev3-review.md` | 51 | 407 |

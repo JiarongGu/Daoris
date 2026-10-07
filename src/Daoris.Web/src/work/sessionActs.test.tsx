@@ -16,6 +16,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import type { Session } from '../api';
+import i18n from '../i18n';
 import { type SessionDoors, useSessionActs } from './sessionActs';
 
 const DRIVER_STATE = { drivable: ['engine'], holds: [], trees: [], running: [], notify: true, strikes: 3, forgiven: {} };
@@ -36,7 +37,10 @@ function acts(doors?: SessionDoors) {
 const refusal = (code: string, parameters: Record<string, string>) => Object.assign(new Error(code), { code, parameters });
 
 describe('the acts on a session', () => {
-  afterEach(() => invoke.mockReset());
+  afterEach(async () => {
+    invoke.mockReset();
+    await i18n.changeLanguage('en');
+  });
 
   it('tries a parked quest again by its quest, and says the mark it made', async () => {
     invoke.mockImplementation(async () => ({ ...DRIVER_STATE, retried: { quest: 'abc123', did: 'marked', session: null } }));
@@ -147,6 +151,38 @@ describe('the acts on a session', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DELETE', { payload: { id: 'c0ffee00' } });
     expect(notify).toHaveBeenCalledWith('Deleted c0ffee00: its record, and its words, transcript and files on this machine, are gone.');
     expect(JSON.parse(window.localStorage.getItem('daoris.drafts') ?? '[]')).toEqual([['other000', 'kept']]);
+  });
+
+  /**
+   * SESSDEL1b (D126's SESSDEL1 note): `SESSION_DELETE` answers `stayed`, the names of what the disk would not let go of, and
+   * the toast still said everything went. It names what stayed in the reader's language, in the error's tone since not all
+   * of it went, and the ask still closes, since the record did. A delete that kept nothing says what it said.
+   */
+  it('says which of what this machine kept stayed, by name, in both languages', async () => {
+    invoke.mockImplementation(async () => ({ deleted: 'c0ffee00', removed: ['record', 'conversation', 'files'], stayed: ['transcript'] }));
+    const { result, notify } = acts();
+    const answered = { done: vi.fn(), refused: vi.fn() };
+
+    act(() => result.current.deleteNow(session({ id: 'c0ffee00', quest: null, kind: 'chat', state: 'completed' }), answered));
+
+    await waitFor(() => expect(answered.done).toHaveBeenCalledOnce());
+    expect(notify).toHaveBeenCalledWith(
+      'Deleted c0ffee00: its record went, but the disk would not let go of its transcript, now left over on this machine.', 'error');
+    expect(notify).not.toHaveBeenCalledWith(expect.stringContaining('are gone'));
+
+    await i18n.changeLanguage('zh');
+    invoke.mockImplementation(async () => ({ deleted: 'c0ffee00', removed: ['record', 'conversation'], stayed: ['transcript', 'files'] }));
+    act(() => result.current.deleteNow(session({ id: 'c0ffee00', quest: null, kind: 'chat', state: 'completed' })));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      '已删除 c0ffee00：它的记录已移除，但它的记录文本和它的文件没能从磁盘移除，现已遗留在本机上。', 'error'));
+  });
+
+  it('says a delete that kept nothing as before, an empty stayed included', async () => {
+    invoke.mockImplementation(async () => ({ deleted: 'c0ffee00', removed: ['record', 'conversation'], stayed: [] }));
+    const { result, notify } = acts();
+    act(() => result.current.deleteNow(session({ id: 'c0ffee00', quest: null, kind: 'chat', state: 'completed' })));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      'Deleted c0ffee00: its record, and its words, transcript and files on this machine, are gone.'));
   });
 
   /** PAUSE1e (D132 §7.1): a pause is the frame's to ask, naming its quest or its ask; Resume goes to the work's owner at once. */
