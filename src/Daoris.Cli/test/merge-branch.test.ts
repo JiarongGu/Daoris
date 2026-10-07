@@ -434,8 +434,15 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ["the driver's tests", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/LandingTests.cs'], [...BASE, 'driver', 'driver-process']],
     // GATE6: a browser test is the web gate's alone; no .NET suite reads it (the test below holds that).
     ['a browser test', ['src/Daoris.Web/e2e/platform.spec.ts'], [...BASE, 'web']],
-    ['the modules', ['src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs'], [...BASE, 'modules', 'modules-process', 'deployment']],
-    ['the desktop app', ['src/Daoris.Desktop/Daoris.Desktop.App/Program.cs'], [...BASE, 'modules', 'modules-process', 'deployment']],
+    // MOD9c: the driver's console and occasion scans read every C# source of the modules and the app, from its source root.
+    ['the modules', ['src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs'], [...BASE, 'driver', 'modules', 'modules-process', 'deployment']],
+    ["the modules' loop", ['src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs'], [...BASE, 'driver', 'modules', 'modules-process', 'deployment']],
+    ['the desktop app', ['src/Daoris.Desktop/Daoris.Desktop.App/Program.cs'], [...BASE, 'driver', 'modules', 'modules-process', 'deployment']],
+    // What those scans do not read stays the modules lane's alone: a project file, the icon, the launcher, the modules' tests.
+    ["the modules' project", ['src/Daoris.Desktop/Daoris.Desktop.Modules/Daoris.Desktop.Modules.csproj'], [...BASE, 'modules', 'modules-process', 'deployment']],
+    ["the app's icon", ['src/Daoris.Desktop/Daoris.Desktop.App/daoris.ico'], [...BASE, 'modules', 'modules-process', 'deployment']],
+    ['the launcher', ['src/Daoris.Desktop/Daoris.Desktop.Launcher/Program.cs'], [...BASE, 'modules', 'modules-process', 'deployment']],
+    ["the modules' tests", ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleRoutesTests.cs'], [...BASE, 'modules', 'modules-process']],
     ['the publish script', ['tools/desktop-publish.mjs'], [...BASE, 'rehearse-family', 'deployment']],
     ['the deployment rehearsal', ['tools/deployment-rehearsal.mjs'], [...BASE, 'deployment']],
     ['the canon', ['canon/core/rules/task-lifecycle.md'], [...BASE, 'service', 'rehearse', 'rehearse-family']],
@@ -466,7 +473,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
   }
   // Lanes add up: a branch crossing two runs what either reaches.
   assert.deepEqual(runs(['docs/x.md', 'tools/release-rehearsal.mjs', 'src/Daoris.Desktop/Daoris.Desktop.App/Program.cs']),
-    [...BASE, 'service', 'modules', 'rehearse']);
+    [...BASE, 'service', 'driver', 'modules', 'rehearse']);
 
   // GATE5's proof: a driver change runs seven gates, and says the long three are in the full set before staging.
   const driver = selected(['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs']);
@@ -625,7 +632,9 @@ test('every tool a rehearsal imports or starts is one whose change reaches that 
  * suite, which a merge then runs, and its Process half when the reading class is a Process class,
  * which the full set runs (GATE5). A read is a path under `src/Daoris.…`, or under any other top-level
  * folder (`treeReads`, MOD9b): the service's twin read the digest's note table under `tools/`, and the
- * scan, seeing `src/` alone, never asked for the row that sends its change there (ORIENT1h).
+ * scan, seeing `src/` alone, never asked for the row that sends its change there (ORIENT1h). Or it is a
+ * path under a source root (`sourceRootReads`, MOD9c): the driver's console and occasion scans read the
+ * modules' and the app's sources from `SourceRoot()`, which neither pattern saw.
  */
 test("every repository file a .NET suite reads is one whose change reaches that suite (MOD9's incident)", () => {
   const suites: [string, string, string | null][] = [
@@ -638,6 +647,7 @@ test("every repository file a .NET suite reads is one whose change reaches that 
   const files = trackedFiles();
   let reads = 0;
   let outsideSrc = 0;
+  let rooted = 0;
   for (const file of files.filter((path) => path.endsWith('.cs'))) {
     const suite = suites.find(([folder]) => file.startsWith(folder));
     if (!suite) continue;
@@ -650,7 +660,9 @@ test("every repository file a .NET suite reads is one whose change reaches that 
     }
     const outside = treeReads(text, files);
     outsideSrc += outside.length;
-    for (const read of [...found, ...outside]) {
+    const fromRoot = sourceRootReads(file, text, files);
+    rooted += fromRoot.length;
+    for (const read of [...found, ...outside, ...fromRoot]) {
       reads += 1;
       assert.ok(runs([read]).includes(suite[1]), `${file} reads ${read}, and a merge changing it does not run ${suite[1]}`);
       if (isProcess && suite[2]) assert.ok(reaches([read]).includes(suite[2]), `${file} (a Process class) reads ${read}, and a change there does not reach ${suite[2]}`);
@@ -658,6 +670,7 @@ test("every repository file a .NET suite reads is one whose change reaches that 
   }
   assert.ok(reads >= 10, `the scan found only ${reads} reads: its pattern no longer matches how the tests read the repository`);
   assert.ok(outsideSrc >= 3, `the scan found only ${outsideSrc} reads outside src/: its pattern no longer matches how the tests read the repository`);
+  assert.ok(rooted >= 10, `the scan found only ${rooted} reads from a source root: its pattern no longer matches how the tests read their sources`);
 });
 
 test('the scan sees a read under any top-level folder, and never a name, a sentence or a folder the test made (MOD9b)', () => {
@@ -719,6 +732,122 @@ function treeReads(text: string, files: readonly string[]): string[] {
     else if (folders.has(path)) reads.push(`${path}/probe.txt`);
   }
   return reads;
+}
+
+test('the scan resolves a source root as its walk does, and reads under it what the file names there (MOD9c)', () => {
+  const files = [
+    'src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs', 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/ScanTests.cs',
+    'src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs', 'src/Daoris.Desktop/Daoris.Desktop.App/Program.cs',
+    'src/Daoris.Service/Daoris.Service.Core/Asks.cs', 'src/Daoris.Service/Daoris.Service.Tests/GateTests.cs', 'daoris.json',
+  ];
+  const helper = (marker: string, returns = 'folder?.FullName ?? throw new InvalidOperationException("no source tree above the test")') => [
+    '    private static string SourceRoot()',
+    '    {',
+    '        var folder = new DirectoryInfo(AppContext.BaseDirectory);',
+    `        while (folder is not null && !Directory.Exists(Path.Combine(folder.FullName, "${marker}")))`,
+    '        {',
+    '            folder = folder.Parent;',
+    '        }',
+    '',
+    `        return ${returns};`,
+    '    }',
+  ].join('\n');
+  const scanner = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/ScanTests.cs';
+
+  // The project list a scan hands to the root, a read through the helper, and one through the file's own wrapper of it.
+  const driver = [
+    '    private static readonly string[] Projects =',
+    '        ["Daoris.Desktop.Driver", "Daoris.Desktop.Modules", "Daoris.Desktop.App"];',
+    '    private static readonly string[] Occasions = ["TidyCarriedAsync", "CleanPlanAsync"];',
+    '        foreach (var file in Directory.EnumerateFiles(Path.Combine(root, project), "*.cs", SearchOption.AllDirectories)) { }',
+    '        var loop = Directory.EnumerateFiles(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver"), "Driver*.cs")',
+    '            .Append(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "DriverLoop.cs"));',
+    '    private static string Source(string project, string file) => File.ReadAllText(Path.Combine(SourceRoot(), project, file));',
+    '        Assert.DoesNotContain("AskStatesAsync", Source("Daoris.Desktop.Driver", "Hooks.cs"));',
+    // Names that are no path under the root are not reads, and nor is the folder the walk looks for.
+    '        Assert.Equal([("LandingPlugins.cs", "AskOneAsync")], speakers);',
+    helper('Daoris.Desktop.Driver'),
+  ].join('\n');
+  // Every search pattern names C# sources, so a folder is read for its C# sources.
+  assert.deepEqual(sourceRootReads(scanner, driver, files), [
+    'src/Daoris.Desktop/Daoris.Desktop.Driver/probe.cs', 'src/Daoris.Desktop/Daoris.Desktop.Modules/probe.cs',
+    'src/Daoris.Desktop/Daoris.Desktop.App/probe.cs', 'src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs',
+    'src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs',
+  ]);
+  // A file that enumerates anything else reads a folder for any file in it.
+  const json = ['        Directory.GetFiles(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver"), "*.json");', helper('Daoris.Desktop.Driver')].join('\n');
+  assert.deepEqual(sourceRootReads(scanner, json, files), ['src/Daoris.Desktop/Daoris.Desktop.Driver/probe.txt']);
+
+  // A helper that returns a path under the folder it found is rooted there.
+  const service = [
+    '        foreach (var file in Directory.EnumerateFiles(SourceRoot(), "*.cs", SearchOption.AllDirectories)) { }',
+    '        File.ReadAllText(Path.Combine(SourceRoot(), "Asks.cs"));',
+    helper('Daoris.Service.Core', 'folder is null ? throw new InvalidOperationException("none") : Path.Combine(folder.FullName, "Daoris.Service.Core")'),
+  ].join('\n');
+  assert.deepEqual(sourceRootReads('src/Daoris.Service/Daoris.Service.Tests/GateTests.cs', service, files), ['src/Daoris.Service/Daoris.Service.Core/Asks.cs']);
+
+  // A walk to the repository's own marker is the repository, whose reads the scan takes by its other patterns.
+  const repository = [
+    '        File.ReadAllText(Path.Combine(SourceRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.App", "Program.cs"));',
+    helper('daoris.json'),
+  ].join('\n');
+  assert.deepEqual(sourceRootReads(scanner, repository, files), []);
+
+  // What the scan above then asks of the lane table: without MOD9c's row, the modules' and the app's sources reach no driver suite.
+  const without = tool.REACH.filter((rule) => !rule.paths?.includes('src/Daoris.Desktop/Daoris.Desktop.Modules/**/*.cs'));
+  const reached = (path: string, reach: readonly Rule[]) => tool.selectGates(repoPlan, [path], { lanes: repoLanes, reach })
+    .gates.filter((entry) => entry.run).map((entry) => entry.gate.name);
+  for (const read of ['src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs', 'src/Daoris.Desktop/Daoris.Desktop.App/probe.cs']) {
+    assert.equal(reached(read, without).includes('driver'), false, read);
+    assert.equal(reached(read, tool.REACH).includes('driver'), true, read);
+  }
+});
+
+/**
+ * MOD9c: the paths a .NET source reads from a source root, a folder above the test other than the repository, which the
+ * `src/` pattern and `treeReads` cannot see: `Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "DriverLoop.cs")`. A
+ * source-root helper is a method of the file with no parameters that walks up from the test binary until a named folder
+ * is there (`!Directory.Exists(Path.Combine(folder.FullName, "Daoris.Desktop.Driver"))`) and returns the folder it
+ * stopped at, or a path under it (`Path.Combine(folder.FullName, "Daoris.Service.Core")`). It resolves as the walk does:
+ * to the nearest folder above the test that holds the named one, with what the return adds. A walk to the repository's
+ * marker finds the repository, which is no source root.
+ *
+ * Under each root, a run of string literals whose joined path is tracked is a read of it, through the helper or through
+ * the file's own wrapper of it (`Source("Daoris.Desktop.Driver", "Hooks.cs")`). Of a run that joins to nothing tracked,
+ * each literal naming a folder directly under the root is a read of that folder: the project list a scan hands to the
+ * root (`Projects`, then `Path.Combine(root, project)`). A folder is read for its C# sources (`probe.cs`) when every
+ * search pattern the file enumerates names C# sources, and for any file in it otherwise. The helper's own body is no
+ * read: the folder it names is the marker its walk looks for.
+ */
+function sourceRootReads(file: string, text: string, files: readonly string[]): string[] {
+  const tracked = new Set(files);
+  const folders = new Set(files.flatMap((path) => path.split('/').slice(0, -1).map((_, i, parts) => parts.slice(0, i + 1).join('/'))));
+  const roots: string[] = [];
+  let rest = text;
+  for (const helper of text.matchAll(/^([ \t]*)(?:(?:private|internal|public|protected)\s+)?static\s+string\s+\w+\(\)\s*\r?\n\1\{([\s\S]*?)\r?\n\1\}/gm)) {
+    const body = helper[2]!;
+    const marker = /Exists\(Path\.Combine\(\w+\.FullName,\s*"([^"]+)"\)\)/.exec(body)?.[1];
+    if (!marker) continue;
+    let at = posix.dirname(file);
+    while (at !== '.' && !tracked.has(`${at}/${marker}`) && !folders.has(`${at}/${marker}`)) at = posix.dirname(at);
+    if (at === '.') continue;
+    const added = /\breturn\b[\s\S]*?Path\.Combine\(\w+\.FullName((?:\s*,\s*"[^"]*")+)\)/.exec(body)?.[1] ?? '';
+    roots.push([at, ...[...added.matchAll(/"([^"]*)"/g)].map((part) => part[1]!)].join('/'));
+    rest = rest.replace(helper[0], '');
+  }
+  const patterns = [...rest.matchAll(/\b(?:Enumerate|Get)Files\s*\([^;]*?"([^"]*\*[^"]*)"/g)].map((match) => match[1]!);
+  const probe = patterns.length > 0 && patterns.every((pattern) => pattern.endsWith('.cs')) ? 'probe.cs' : 'probe.txt';
+  const reads = new Set<string>();
+  for (const root of roots) {
+    for (const match of rest.matchAll(/"([^"\\\r\n]*)"((?:\s*,\s*"[^"\\\r\n]*")*)/g)) {
+      const run = [match[1]!, ...[...match[2]!.matchAll(/"([^"]*)"/g)].map((part) => part[1]!)];
+      const path = `${root}/${run.join('/')}`;
+      if (tracked.has(path)) reads.add(path);
+      else if (folders.has(path)) reads.add(`${path}/${probe}`);
+      else for (const name of run) if (name && !name.includes('/') && folders.has(`${root}/${name}`)) reads.add(`${root}/${name}/${probe}`);
+    }
+  }
+  return [...reads];
 }
 
 // ---------------------------------------------------------------------------------------------------
