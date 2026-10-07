@@ -11770,3 +11770,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **MOD9b — the lane scan sees .NET reads under tools** (cli, tools). MOD9's scan in `merge-branch.test.ts` matches only .NET reads of paths starting `"src", "Daoris.…"`, so `DecisionNotesTests` reading `tools/orient-index-fixtures/` was not asked for a lane row; it was remembered (ORIENT1h). Match `"tools", …` too. Contract: MOD9, parallel-development design §3. Proof: the scan fails until such a fixture reaches its suite.
 
 **Outcome** 2026-10-07: the lane scan sees .NET reads under every top-level folder, not only `src/`; it found two missing REACH rows, both the driver's (`examples/plugins/**` for `PluginOfferTests`, `.claude/knowledge/adoption.md` for `SetupBriefTests`), now added. Reads from a source root are MOD9c. Detail: D115's MOD9b note; commits f468a49d, c1e635ba.
+
+
+## HIST1l — the service names which needs-you it meant (2026-10-07, D153)
+
+> - [ ] **HIST1l — the service names which needs-you it meant** (service, driver). The driver rebuilds whether `needs-you` was a held done, a conflict, a parked session or a proposal from a second snapshot (`HistoryClearing.cs:492`); carry the variant on the wire, additive, keeping the inference for older hosts. Contract: design §6.3, the review. Proof: desk and route tests for each variant; the driver reads it.
+
+**Outcome** 2026-10-07: the history desk names what waits beside `needs-you` (`waits`: parked, held, conflict, ask, proposal), additively on both doors; the driver says its sentence from it, falling back to the records for an older host or an unknown word. Follow-up: HIST1m. Detail: D153's HIST1l note; commits d0101f41, 453660bf.

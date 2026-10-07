@@ -93,6 +93,28 @@ public static class HistoryContexts
 }
 
 /// <summary>
+/// What waits on the person, as the service names it beside <c>needs-you</c> (HIST1l): the service judged it from the records it
+/// read, so the driver says the sentence meant from these and not from a second read, which may have moved since.
+/// </summary>
+public static class HistoryWaits
+{
+    /// <summary>A session of the work parked to ask the person: the word's own sentence.</summary>
+    public const string Parked = "parked";
+
+    /// <summary>A done held for the person's yes.</summary>
+    public const string Held = "held";
+
+    /// <summary>A conflict nobody dismissed.</summary>
+    public const string Conflict = "conflict";
+
+    /// <summary>The ask, proposed or open.</summary>
+    public const string Ask = "ask";
+
+    /// <summary>A rule proposal nobody settled: a session's where the refusal names one, else the ask's.</summary>
+    public const string Proposal = "proposal";
+}
+
+/// <summary>
 /// Why a unit stays on this machine, or a piece of it is kept: its word, the variant of its sentence, what it names, and the
 /// sentence a terminal prints (the service's for the records' half, the driver's for this machine's).
 /// </summary>
@@ -492,8 +514,9 @@ public static partial class HistoryClearing
         };
 
     /// <summary>
-    /// The service's word with its facts, and which of its sentences is meant, read from the records the word names (§1.2's
-    /// table): never from the service's sentence, which only a terminal prints.
+    /// The service's word with its facts, and which of its sentences is meant: what the service named waiting beside
+    /// <c>needs-you</c> (HIST1l), else read from the records the word names (§1.2's table); never from the service's sentence,
+    /// which only a terminal prints.
     /// </summary>
     private static HistoryKeep Said(HistoryRefusalView refusal, string kind, Facts facts) => new(refusal.Word, refusal.Message)
     {
@@ -511,7 +534,16 @@ public static partial class HistoryClearing
         HistoryWords.Open when kind == HistoryKinds.Failed => HistoryContexts.Failed,
         HistoryWords.Open => Is(facts.Quest(refusal.Quest)?.Status, "Taken") ? HistoryContexts.Taken : null,
         HistoryWords.Live => refusal.Origin is not null ? HistoryContexts.Teammate : null,
-        // The service names a parked session alone, and a rule proposal by its session; a held done and a conflict by the quest.
+        // What the service named waiting (HIST1l), judged from the records it read: a second read here may have moved since.
+        HistoryWords.NeedsYou when refusal.Waits is HistoryWaits.Parked => null,
+        HistoryWords.NeedsYou when refusal.Waits is HistoryWaits.Held => HistoryContexts.Held,
+        HistoryWords.NeedsYou when refusal.Waits is HistoryWaits.Conflict => HistoryContexts.Conflict,
+        HistoryWords.NeedsYou when refusal.Waits is HistoryWaits.Ask => HistoryContexts.Ask,
+        HistoryWords.NeedsYou when refusal.Waits is HistoryWaits.Proposal =>
+            refusal.Session is null ? HistoryContexts.ProposalAsk : HistoryContexts.Proposal,
+        // A host before it names nothing waiting, and a word this build does not know says nothing it can use, so the records
+        // read here say which. The service names a parked session alone, and a rule proposal by its session; a held done and a
+        // conflict by the quest.
         HistoryWords.NeedsYou when refusal.Session is { } session =>
             Is(facts.Record(session)?.State, "awaiting-person") ? null : HistoryContexts.Proposal,
         HistoryWords.NeedsYou when refusal.Quest is { } quest =>
