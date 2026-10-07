@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { copyTree, treeDiff } from './fsx.mjs';
 import {
-  ACP_STUB_AGENT, capture, evidenceFolder, makeChecker, openTranscript,
+  ACP_STUB_AGENT, capture, evidenceFolder, makeChecker, openTranscript, restartBetweenRequests, waitFor,
 } from './rehearsal-kit.mjs';
 import {
   SETUP_RULES, SETUP_TITLE, readEvents, readFollowed, readRegister, readSetup, readWorkspaceSetup, withFirstOnPath,
@@ -670,9 +670,13 @@ const LATE_NOTE_PATH = 'notes/late.md';
 // through the same HTTP door a real session's connector would use, works (a commit), and closes —
 // or declines when the ask says to, because judging the ask is the session's job, not the driver's.
 const stubAgent = join(scratch, 'stub-agent.mjs');
+// Where the stub also says what a phase must read while its session still works (DEV3d), a file per quest: the driver
+// writes a session's transcript through a buffer it does not flush, so a few lines reach the disk only as the session ends.
+const stubSaidFolder = join(scratch, 'stub-said');
+const stubSaid = (quest) => join(stubSaidFolder, `${quest}.log`);
 writeFileSync(stubAgent, `
 import { execSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 // The stub is a fake BINARY as well as a fake session (D49 §4): before anything else it answers the
@@ -798,10 +802,17 @@ console.log('stub: config home ' + (process.env.DAORIS_STUB_CONFIG_DIR ?? '(the 
 // A session that is still working when something happens to its claim (D68 §5): it lingers — up to
 // a minute, well inside the driver's timeout — before it commits anything, so a driver that stops it
 // for a take that lost stops it with nothing landed. If nothing stops it, it finishes, and the gate
-// that expected it stopped sees a commit and fails.
+// that expected it stopped sees a commit and fails. Between its two lines it has no request in flight, which is when the
+// phase may restart its host (DEV3d); each is also written where the phase reads it while the session works.
 if (/linger/i.test(title)) {
-  console.log('stub: lingering');
+  const lingerSaid = (line) => {
+    console.log(line);
+    mkdirSync(${JSON.stringify(stubSaidFolder)}, { recursive: true });
+    appendFileSync(join(${JSON.stringify(stubSaidFolder)}, id + '.log'), line + '\\n');
+  };
+  lingerSaid('stub: lingering');
   for (let wait = 0; wait < 240; wait += 1) await new Promise((resolve) => setTimeout(resolve, 250));
+  lingerSaid('stub: lingered');
 }
 
 // What the quest carried (D65 §2), as a session meets it: the links its target names, and each file
@@ -2365,39 +2376,56 @@ const lingeringRun = driverInBackground({
   harness: { DAORIS_HARNESS_CONFIG: machineBHarness },
   timeout: LINGERING_TIMEOUT,
 });
-// Waited on until the session has its take's ANSWER and is lingering — its own transcript says so —
+// Waited on until the session has its take's ANSWER and is lingering — the stub says so —
 // not merely until it spawned, nor until the take committed: the host answers only after its push
 // failed, and restarting it under a take still in flight would cut the answer off, not the take.
+// Read where the stub says it as it says it, and bounded by the clock and by the run (DEV3d): the wait read the session's
+// transcript, which holds none of its few lines until the session ends, so it always ran its 160 asks out, about 40 s
+// from the spawn, and the phase restarted host b then. Under load the session started 41 s in, the restart cut its take off, and the stub crashed
+// before the driver could stop it. Two minutes, the session's own: one started in time has long lingered by then.
 let lingeringSession;
-for (let attempt = 0; attempt < 160; attempt += 1) {
-  await sleep(250);
+const stubSays = (line) => existsSync(stubSaid(lingeringId))
+  && readFileSync(stubSaid(lingeringId), 'utf8').split(/\r?\n/).includes(line);
+const lingerWait = await waitFor(async () => {
   lingeringSession = ((await api('GET', '/api/sessions?repository=borealis', { base: HOST_B_BASE })
     .catch(() => ({ json: [] }))).json ?? []).find((s) => s.quest === lingeringId && s.state === 'working');
-  if (lingeringSession && existsSync(lingeringSession.transcript ?? '')
-      && readFileSync(lingeringSession.transcript, 'utf8').includes('stub: lingering')) {
-    break;
-  }
-}
+  return lingeringSession !== undefined && stubSays('stub: lingering');
+}, { within: 2 * 60_000, settled: lingeringRun });
+const machineLogs = (home) => (existsSync(join(home, 'logs')) ? readdirSync(join(home, 'logs')).map((name) => join(home, 'logs', name)) : []);
+const lingeringFiles = () => [
+  lingeringSession?.transcript, stubSaid(lingeringId),
+  ...machineLogs(process.env.DAORIS_HOME), ...machineLogs(hostBEnv.DAORIS_HOME),
+];
 const claimWhileOffline = await api('GET', `/api/quests/${lingeringId}/claim`, { base: HOST_B_BASE }).catch(() => null);
+const lingeringDetail = `${lingerWait.ended === 'ready' ? 'lingering' : `not lingering: the wait ${lingerWait.ended === 'timeout' ? 'ran out' : 'met the run’s end'}`}`
+  + ` after ${Math.round(lingerWait.ms / 1000)}s\n${JSON.stringify(lingeringSession)}\n${claimWhileOffline?.text}`;
 check(
   'a session on machine b takes its quest while b cannot reach the remote — unconfirmed, and it works',
-  lingeringSession !== undefined && claimWhileOffline?.json?.claim === 'unconfirmed',
-  `${JSON.stringify(lingeringSession)}\n${claimWhileOffline?.text}`,
+  lingerWait.ended === 'ready' && claimWhileOffline?.json?.claim === 'unconfirmed',
+  lingeringDetail,
+  () => ({ print: lingeringDetail, files: lingeringFiles() }),
 );
 const winsOnA = await api('POST', `/api/quests/${lingeringId}/respond`, { body: { action: 'take', reason: 'machine a, online' } });
 check('machine a, online, takes the same quest and the remote confirms it', /the remote confirmed the claim/.test(winsOnA.text), winsOnA.text);
-// b comes back: the same host, over the same store, pointed at the remote again.
-if (hostB && !hostB.killed) hostB.kill();
-await sleep(700);
-hostB = await startServer(hostBEnv, HOST_B_BASE);
+// b comes back: the same host, over the same store, pointed at the remote again. Only while the stub lingers (DEV3d),
+// between its take's answer and its work, when no request of its is in flight: the check reads a stop, so nothing else
+// may end the session first.
+const backOnline = await restartBetweenRequests({
+  quiet: () => stubSays('stub: lingering') && !stubSays('stub: lingered'),
+  stop: () => { if (hostB && !hostB.killed) hostB.kill(); },
+  start: () => startServer(hostBEnv, HOST_B_BASE),
+  within: 15_000,
+});
+hostB = backOnline.host;
 const lingered = await lingeringRun;
 const stoppedRecord = ((await api('GET', '/api/sessions?repository=borealis&includeClosed=true', { base: HOST_B_BASE })).json ?? [])
   .find((s) => s.quest === lingeringId);
 // What the run printed, when it started, how it ended and how long it took, and the record it left: the record's
-// `updated` against the run's start and length says which pass stopped the session (DEV3b).
+// `updated` against the run's start and length says which pass stopped the session (DEV3b). And whether host b came back
+// while the stub lingered (DEV3d), since a restart under a request in flight ends the session before any pass can.
 const lingeredSaid = `exit ${lingered.code} after ${Math.round(lingered.ms / 1000)}s, started ${lingered.startedAt}\n`
+  + `host b restarted ${backOnline.quiet ? 'while the stub lingered' : `with the stub not lingering, after ${Math.round(backOnline.waited / 1000)}s`}\n`
   + `${lingered.out}\n${JSON.stringify(stoppedRecord)}`;
-const machineLogs = (home) => (existsSync(join(home, 'logs')) ? readdirSync(join(home, 'logs')).map((name) => join(home, 'logs', name)) : []);
 check(
   '…and when b reaches the remote again, its driver stops its own losing session, with the reason on the record',
   lingered.code === 0 && /stop {2}session/.test(lingered.out)
@@ -2406,7 +2434,7 @@ check(
   () => ({
     print: lingeredSaid,
     files: [
-      stoppedRecord?.transcript ?? lingeringSession?.transcript,
+      stoppedRecord?.transcript ?? lingeringSession?.transcript, stubSaid(lingeringId),
       ...machineLogs(process.env.DAORIS_HOME), ...machineLogs(hostBEnv.DAORIS_HOME),
     ],
   }),
