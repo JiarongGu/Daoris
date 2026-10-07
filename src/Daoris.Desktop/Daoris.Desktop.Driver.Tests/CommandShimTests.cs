@@ -20,7 +20,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class CommandShimTests : IDisposable
 {
     // Scratch in the repository's own gitignored `_fixtures/`, never OS temp.
-    private readonly string _folder = Path.Combine(Root(), "_fixtures", "command-shim", Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _folder = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "command-shim", Guid.NewGuid().ToString("N")[..8]);
 
     private static readonly HarnessToolchain Plain = new(["x"], ["--version"]);
 
@@ -162,16 +162,4 @@ public sealed class CommandShimTests : IDisposable
         Repository: "Game",
         Root: _folder,
         ServiceUrl: "http://localhost:5177");
-
-    /// <summary>The worktree's root, found by its manifest — the tests run from <c>bin/Debug/net10.0</c>.</summary>
-    private static string Root()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "daoris.json")))
-        {
-            directory = directory.Parent;
-        }
-
-        return directory?.FullName ?? throw new InvalidOperationException("no workspace root above the test binaries");
-    }
 }
