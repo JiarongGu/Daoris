@@ -1,6 +1,7 @@
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, Chip, Inline, type Notify, Prose, SectionTitle } from '../ui';
+import { cn } from '../lib/cn';
+import { Button, Card, Chip, Inline, type Notify, PathText, Prose, SectionTitle } from '../ui';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 
 /** What a session branch holds (D88). Only `empty` and `landed` go. */
@@ -106,6 +107,51 @@ export type LandedBranch = {
 export const sweepKey = (branch: { repository: string; branch: string }) => `${branch.repository}:${branch.branch}`;
 
 /**
+ * A list of branch rows (UXFIX4): its own container, so its rows lay out by the list's width, which is the main area's less
+ * the card's gutters, and never by the window's.
+ */
+export const BRANCH_ROWS = '@container/branches m-0 list-none p-0';
+
+/**
+ * **One branch's row** (UXFIX4): what the press does to it, its name, and the sentence. The session branches, the landed
+ * group and bringing up to date all draw it, so the three lists cannot lay a row out three ways.
+ *
+ * @remarks
+ * **Its columns follow its list's width** (`BRANCH_ROWS`). Three where the list holds 30rem: the mark, the name up to 16rem,
+ * and the sentence never under 13rem, so neither is a word a line at a 680 px window. Narrower, the name stays beside its
+ * mark and the sentence goes under the name. At the main area's 400 px floor the three columns stayed, and the sentence was
+ * left whatever width the name did not take.
+ *
+ * **Its name is shown whole and heard whole.** It wraps after its separators as a path does (`PathText`). It is never cut
+ * to one line with the rest in a tip, since a tip is reached by neither a keyboard nor a reader. The row is named by
+ * that text (`aria-labelledby`), so what is read and what is heard are one.
+ */
+export function BranchRow({ name, moving, word, children, under }: {
+  name: string;
+  /** Whether the press acts on it: its mark in the accent. */
+  moving: boolean;
+  /** The mark's word: *goes*, *kept*, *moves*, *stays*. */
+  word: string;
+  /** The sentence, and what it adds beneath. */
+  children: ReactNode;
+  /** A panel under the row, across its columns: a discard's ask. */
+  under?: ReactNode;
+}) {
+  const named = useId();
+  return (
+    <li
+      aria-labelledby={named}
+      className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-baseline gap-x-3 gap-y-0.5 py-1.5 @min-[30rem]/branches:grid-cols-[4.5rem_minmax(0,16rem)_minmax(13rem,1fr)] @min-[30rem]/branches:py-1"
+    >
+      <span><Chip accent={moving}>{word}</Chip></span>
+      <span id={named} className="min-w-0 text-small text-ink"><PathText path={name} /></span>
+      <span className="col-start-2 min-w-0 text-small text-ink-soft @min-[30rem]/branches:col-start-3">{children}</span>
+      {under && <div className="col-span-full mt-1.5">{under}</div>}
+    </li>
+  );
+}
+
+/**
  * Session branches (WSR3, D88): every `daoris/` branch in a repository with a checkout here, with what it
  * holds — then one press removes those whose work is on a branch of the person's, or that hold nothing,
  * with their trees.
@@ -193,50 +239,43 @@ export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, 
       {repositories.map((repository) => (
         <section key={repository} aria-label={repository} className="mt-3 border-t border-line pt-3">
           <div className="text-body font-medium text-ink">{repository}</div>
-          <ul className="m-0 mt-1.5 list-none p-0">
+          <ul className={cn(BRANCH_ROWS, 'mt-1.5')}>
             {(branches ?? []).filter((branch) => branch.repository === repository).map((branch) => {
               const key = sweepKey(branch);
               const discardable = Boolean(onDiscard && branch.discardable);
               return (
-                <li
+                <BranchRow
                   key={branch.branch}
-                  aria-label={branch.branch}
-                  className="grid grid-cols-[4.5rem_minmax(0,16rem)_minmax(0,1fr)] items-baseline gap-x-3 py-1"
-                >
-                  <span>
-                    <Chip accent={branch.removable}>{t(branch.removable ? 'settings.sweep.goes' : 'settings.sweep.kept')}</Chip>
-                  </span>
-                  <span className="truncate font-mono text-small text-ink">{branch.branch}</span>
-                  <span className="min-w-0 text-small text-ink-soft">
-                    <Inline text={holds(branch)} />
-                    {branch.kind === 'unlanded' && branch.detail && (
-                      <span className="mt-0.5 block whitespace-pre-line font-mono text-meta text-ink-faint">{branch.detail}</span>
-                    )}
-                    {discardable && asking !== key && (
-                      <span className="mt-1 block">
-                        <Button
-                          variant="danger"
-                          className="px-2 py-0.5 text-small"
-                          disabled={busy || discarding === key}
-                          onClick={() => setAsking(key)}
-                        >
-                          {t('settings.sweep.discard')}
-                        </Button>
-                      </span>
-                    )}
-                  </span>
-                  {discardable && asking === key && (
-                    <div className="col-span-full mt-1.5">
-                      {/* Open until the discard answers (UXFIX2), its presses waiting for it. */}
-                      <DiscardBranchAsk
-                        branch={branch}
-                        busy={busy || discarding === key}
-                        onDiscard={(answered) => onDiscard!(branch, answered)}
-                        onClose={() => setAsking((was) => (was === key ? null : was))}
-                      />
-                    </div>
+                  name={branch.branch}
+                  moving={branch.removable}
+                  word={t(branch.removable ? 'settings.sweep.goes' : 'settings.sweep.kept')}
+                  // Open until the discard answers (UXFIX2), its presses waiting for it.
+                  under={discardable && asking === key && (
+                    <DiscardBranchAsk
+                      branch={branch}
+                      busy={busy || discarding === key}
+                      onDiscard={(answered) => onDiscard!(branch, answered)}
+                      onClose={() => setAsking((was) => (was === key ? null : was))}
+                    />
                   )}
-                </li>
+                >
+                  <Inline text={holds(branch)} />
+                  {branch.kind === 'unlanded' && branch.detail && (
+                    <span className="mt-0.5 block whitespace-pre-line font-mono text-meta text-ink-faint">{branch.detail}</span>
+                  )}
+                  {discardable && asking !== key && (
+                    <span className="mt-1 block">
+                      <Button
+                        variant="danger"
+                        className="px-2 py-0.5 text-small"
+                        disabled={busy || discarding === key}
+                        onClick={() => setAsking(key)}
+                      >
+                        {t('settings.sweep.discard')}
+                      </Button>
+                    </span>
+                  )}
+                </BranchRow>
               );
             })}
           </ul>
@@ -250,24 +289,19 @@ export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, 
           {landedIn.map((repository) => (
             <div key={repository} role="group" aria-label={repository} className="mt-2">
               <div className="text-small font-medium text-ink-soft">{repository}</div>
-              <ul className="m-0 mt-1 list-none p-0">
+              <ul className={cn(BRANCH_ROWS, 'mt-1')}>
                 {landed.filter((branch) => branch.repository === repository).map((branch) => (
-                  <li
+                  <BranchRow
                     key={branch.branch}
-                    aria-label={branch.branch}
-                    className="grid grid-cols-[4.5rem_minmax(0,16rem)_minmax(0,1fr)] items-baseline gap-x-3 py-1"
+                    name={branch.branch}
+                    moving={branch.removable}
+                    word={t(branch.removable ? 'settings.sweep.goes' : 'settings.sweep.kept')}
                   >
-                    <span>
-                      <Chip accent={branch.removable}>{t(branch.removable ? 'settings.sweep.goes' : 'settings.sweep.kept')}</Chip>
-                    </span>
-                    <span className="truncate font-mono text-small text-ink">{branch.branch}</span>
-                    <span className="min-w-0 text-small text-ink-soft">
-                      <Inline text={shows(branch)} />
-                      {beneath(branch) && (
-                        <span className="mt-0.5 block whitespace-pre-line break-words font-mono text-meta text-ink-faint">{beneath(branch)}</span>
-                      )}
-                    </span>
-                  </li>
+                    <Inline text={shows(branch)} />
+                    {beneath(branch) && (
+                      <span className="mt-0.5 block whitespace-pre-line break-words font-mono text-meta text-ink-faint">{beneath(branch)}</span>
+                    )}
+                  </BranchRow>
                 ))}
               </ul>
             </div>

@@ -140,7 +140,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `.claude/knowledge/twins.md` | 46 | 113 |
-| `docs/2026-09-19-platform-ux.md` | 52 | 568 |
+| `docs/2026-09-19-platform-ux.md` | 53 | 573 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 52 | 349 |
 | `docs/2026-09-25-rev3-review.md` | 51 | 407 |

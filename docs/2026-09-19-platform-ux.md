@@ -125,6 +125,11 @@ controls are in the frame design's §3.
   repository's summary) wraps whole, never cut to one line with its words in a tip (NAME2).
 - **Status leads.** A row reads `pill · title · route · how long`: identity first, the secondary marks
   at the right. A pill pushed to the far edge sat a thousand pixels from the title it described.
+- **A row stacks by its list's width, and its name is never cut** (UXFIX4). A workspace's branch rows are one part,
+  `BranchRow`, on a list that is its own container: three columns where the list holds 30rem, and narrower the sentence
+  under the name, since at the main area's 400 px floor three columns left the sentence what the name did not take. The
+  name wraps after its separators, never cut to a line with the rest in a tip that neither a keyboard nor a reader
+  reaches, and the row is named by the text it shows.
 - **Buttons**: `primary` (solid accent, paper text — the one loud control per view), default (raised +
   line), `ghost` (borderless, for in-card affordances), and `danger` for a move that ends or removes
   something: decline, close an ask, retire, remove an account, stop, discard. It wears the hue of the

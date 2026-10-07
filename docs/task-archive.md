@@ -11805,3 +11805,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ORIENT2e2 — the index's lines everywhere** (driver, cli, tools). After ORIENT2e: the driver's `RemoteSyncPayloads.Entries` should copy `firstLine`/`lastLine` into the feed (a shared deployment's entries name no lines); the comment above `ROLES`' `index` row in `documents.ts` is stale; and the service's roles twin test (withdrawn) needs `src/Daoris.Cli/src/documents.ts` sent to the service gate in the merge tool's lane table, then restored. Contract: D151's ORIENT2e note. Proof: a feed test with lines; the restored twin test.
 
 **Outcome** 2026-10-07: the driver's entries feed carries `firstLine`/`lastLine` where the local answer names them; the merge tool sends `documents.ts` to the service gate (one `CLI_READERS` list), so the service's roles twin test reading the CLI's `ROLES` is restored; `ROLES`' stale comment corrected. Detail: D151's ORIENT2e2 note; commits ba2a0993…610583cf.
+
+
+## UXFIX4 — branch rows at narrow widths (2026-10-07)
+
+> - [ ] **UXFIX4 — branch rows at narrow widths** (web-settings, web-shell). Both branch lists keep three columns to the main area's 400 px floor, and a truncated branch name cannot be read whole (`Sweep.tsx:188,244`). Stack by container width and make the full name available. Contract: platform-ux §4, the review. Proof: stories at 680 and 400 px, both themes.
+
+**Outcome** 2026-10-07: a workspace's branch rows (session, landed, bringing up to date) are one `BranchRow` on a list that is its own container: three columns from 30rem, the sentence under the name below that; the name wraps whole after its separators and names the row. Follow-up: UXFIX4b. Detail: platform-ux §4; commit 17b9e3c6.
