@@ -79,6 +79,22 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
     public IReadOnlyList<QuestAnswerView> Answers { get; init; } = [];
 
     /// <summary>
+    /// Why a held done waits (EVID1a, D144 §6), as the service answers <c>hold</c>: <c>departed</c>, <c>evidence-unread</c> or
+    /// <c>evidence-missing</c> (<see cref="EvidenceCodes"/>). Null when nothing holds it, and from a host before the field,
+    /// whose only hold was a departure.
+    /// </summary>
+    public string? Hold { get; init; }
+
+    /// <summary>
+    /// Whether its done waits for Daoris to find its evidence (EVID1a, D144 §3): a met answer names some and none was found
+    /// yet, a departure beside it or not. What a session's end, the sweep and the terminal's check read. Absent is false.
+    /// </summary>
+    public bool AwaitsEvidence { get; init; }
+
+    /// <summary>What Daoris last read of its evidence (EVID1a, D144 §5), or null while nothing was.</summary>
+    public EvidenceVerdict? Evidence { get; init; }
+
+    /// <summary>
     /// When its status last moved, as the service answered it (<c>updated</c>). For a taken quest that waits on nothing it is
     /// when it was taken (CARRY2b): a wait is the one other move a taken quest makes, and it leaves the quest waiting. Null
     /// from a host that answers none.
@@ -87,7 +103,20 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
 }
 
 /// <summary>One thing the person requires of a quest (DRIFT1c), as the service answers it: their words, and the check that proves them.</summary>
-public sealed record QuestRequirementView(string Quote, string Check);
+public sealed record QuestRequirementView(string Quote, string Check)
+{
+    /// <summary>
+    /// What Daoris reads itself to tell the check was met (EVID1a, D144 §2): each a path the done's commit must hold, or a
+    /// gate. Empty for a requirement that names none, and from a host before evidence.
+    /// </summary>
+    public IReadOnlyList<QuestEvidenceItem> Evidence { get; init; } = [];
+
+    // A list compares by what it holds, so two reads of one requirement are one requirement.
+    public bool Equals(QuestRequirementView? other) =>
+        other is not null && Quote == other.Quote && Check == other.Check && Evidence.SequenceEqual(other.Evidence);
+
+    public override int GetHashCode() => HashCode.Combine(Quote, Check, Evidence.Count);
+}
 
 /// <summary>
 /// How a done answered one requirement (DRIFT1d), as the service answers it: its number, and <paramref name="Met"/> with
@@ -283,6 +312,12 @@ public sealed record SessionView(
     /// started it (DEV3), so the next look can find its quest still open, and must not start it again.
     /// </summary>
     public string? Quest { get; init; }
+
+    /// <summary>
+    /// The commit its tree stood at when it opened (SURF6), or null where unsaid: what a lost session's done is read as changed
+    /// from when the sweep ends it (EVID1b, D144 §3). Answered on loopback alone, beside the tree.
+    /// </summary>
+    public string? BaseCommit { get; init; }
 
     /// <summary>Its note's lines by code (LANG1a), handed on wherever its note is; null for a record from before parts.</summary>
     public IReadOnlyList<NotePart>? NoteParts { get; init; }

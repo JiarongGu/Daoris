@@ -704,8 +704,9 @@ public static class WorkingTree
     internal static Task<bool> IsTopLevelAsync(string root, CancellationToken ct) => IsTopLevelAsync(root, WholeAsync, ct);
 
     /// <inheritdoc cref="IsTopLevelAsync(string, CancellationToken)"/>
-    /// <param name="git">How git is read: the review's seam (REVIEW3), so its tests count this start with the range's.</param>
-    private static async Task<bool> IsTopLevelAsync(string root, GitRead git, CancellationToken ct)
+    /// <param name="git">How git is read: the review's seam (REVIEW3), so its tests count this start with the range's, and
+    /// evidence's (EVID1b).</param>
+    internal static async Task<bool> IsTopLevelAsync(string root, GitRead git, CancellationToken ct)
     {
         // A folder that is not there: git would refuse to start in it, and nothing here is asked of the one above.
         if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) return false;

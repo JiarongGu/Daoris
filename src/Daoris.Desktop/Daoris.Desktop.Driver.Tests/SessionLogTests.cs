@@ -546,6 +546,35 @@ public sealed class SessionLogTests : IDisposable
     }
 
     /// <summary>
+    /// EVID1b (D144 §5): each read of a done's evidence is one <c>evidence.checked</c> line, counts and codes, never a path, the
+    /// commit or the service's words; and none once the watch has let go.
+    /// </summary>
+    [Fact]
+    public void An_evidence_read_is_one_line_of_counts_and_codes()
+    {
+        using var w = Watch();
+        var verdict = new EvidenceVerdict(new string('a', 40), EvidenceCodes.SessionEnd,
+        [
+            new EvidenceRead(1, "docs/secret-plan.md", null, EvidenceCodes.Found) { Object = new string('b', 40), Changed = true },
+            new EvidenceRead(2, "docs/other.md", null, EvidenceCodes.Missing),
+        ]);
+        var outcome = new EvidenceOutcome(verdict, new EvidencePosted(EvidencePosted.Kept, "Read the evidence of quest `#q1`."), "evidence read at …");
+
+        w.Client.EvidenceSaid(EvidenceLine.Checked("q1", new EvidenceAt("C:/trees/q1", EvidenceCodes.SessionEnd) { Session = "s1" }, 2, outcome));
+        w.Watch.Dispose();
+        w.Client.EvidenceSaid(EvidenceLine.Checked("q2", new EvidenceAt("C:/trees/q2", EvidenceCodes.Terminal), 2, outcome));
+
+        var line = Assert.Single(Named("evidence.checked"));
+        Assert.Equal("info", line.GetProperty("level").GetString());
+        Assert.Equal(
+            """{"quest":"q1","session":"s1","how":"session-end","items":2,"found":1,"missing":1,"uncommitted":0,"case":0,"noQueue":0,"outcome":"kept"}""",
+            Data(line).GetRawText());
+        Assert.DoesNotContain("secret-plan", Raw(), StringComparison.Ordinal);
+        Assert.DoesNotContain("trees", Raw(), StringComparison.Ordinal);
+        Assert.DoesNotContain("aaaaaaaa", Raw(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// WSSETUP6 (D124 §4.1): a workspace plan's lines, each with its fields only (names, words and counts, never a sentence
     /// or a path); and none once the watch has let go. A terminal's press writes the same lines through the static writer.
     /// </summary>
