@@ -153,10 +153,11 @@ describe('an inline confirmation', () => {
 
   /**
    * UXFIX2c (the second-opinion review, `InlineConfirm.tsx:175`): the press disabled both presses and moved the focus, and
-   * nothing said the act had started. A status there from the first draw says it, politely, and the ask is busy while it
-   * waits; the move keeps its name and its place.
+   * nothing said the act had started. A status there from the first draw says it, politely; the move keeps its name and its
+   * place. Nothing busy holds the status, since a reader may hold back what a busy element says until it is no longer busy,
+   * which is after the act answered and the status went quiet: the waiting presses and the status are the wait's signs.
    */
-  it('says its act started, politely, and is busy until it answers, the move keeping its name', async () => {
+  it('says its act started, politely, inside nothing busy, the move keeping its name', async () => {
     let answered: Answered | undefined;
     const user = userEvent.setup();
     render(<Page onConfirm={(told) => { answered = told; }} />);
@@ -165,17 +166,16 @@ describe('an inline confirmation', () => {
     // There before it speaks, so a reader hears it when it does.
     const status = within(ask).getByRole('status');
     expect(status).toBeEmptyDOMElement();
-    expect(ask).not.toHaveAttribute('aria-busy');
 
     await user.click(within(ask).getByRole('button', { name: 'Delete quest' }));
     expect(status).toHaveTextContent('working…');
     expect(status).toHaveAttribute('aria-live', 'polite');
-    expect(ask).toHaveAttribute('aria-busy', 'true');
+    expect(status.closest('[aria-busy="true"]')).toBeNull();
     expect(within(ask).getByRole('button', { name: 'Delete quest' })).toBeDisabled();
+    expect(within(ask).getByRole('button', { name: 'Never mind' })).toBeDisabled();
 
     act(() => answered!.refused('No.'));
     expect(status).toBeEmptyDOMElement();
-    expect(ask).not.toHaveAttribute('aria-busy');
   });
 
   it('says nothing started while only the page’s own act waits', () => {

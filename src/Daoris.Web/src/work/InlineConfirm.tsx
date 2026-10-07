@@ -140,8 +140,9 @@ function giveBack(opener: Opener) {
  *   Escape wait with the move, so a refusal is never said to nobody. An answer to an ask put down changes nothing; a `done`
  *   still closes an ask the page drew away while it waited, so the page's own hold on it lets go.
  * - **While it waits it says so** (UXFIX2c): a status beside the presses, drawn from the first so a reader hears it speak
- *   (`role="status"`, polite), and the ask busy (`aria-busy`). The move keeps its name; the page's own `busy` is another act,
- *   so it says nothing.
+ *   (`role="status"`, polite), and nothing around it busy, since a reader may hold back what a busy element says until the
+ *   wait is over and the status quiet again; the waiting presses and the status are the wait's signs. The move keeps its
+ *   name; the page's own `busy` is another act, so it says nothing.
  * - **Landed, the focus goes where a cancel's does** (UXFIX2c): the press drawn again, and where none is, since a delete took
  *   its record or nothing more is offered, the nearest section or list that held it, never the page's body.
  * - **A rich body** (a clear's *What goes* and *What stays*) is its explanation too: `block` lays it out as rows.
@@ -294,7 +295,6 @@ export function InlineConfirm({
       ref={own}
       role="group"
       aria-label={label}
-      aria-busy={pending || undefined}
       onKeyDown={onKeyDown}
       className={cn(
         'rounded-control border border-line bg-sunken',
