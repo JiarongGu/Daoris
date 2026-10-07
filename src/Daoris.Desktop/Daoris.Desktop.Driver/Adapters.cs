@@ -1530,7 +1530,10 @@ public sealed class CodexAcpAdapter : ISessionAdapter
         ProfileMustExist: true,
         // What Codex says when an account's limit refuses a turn (TOOL4k), read in its source: declared here, since
         // no `codex` adapter exists to own it, and reaching this door only as the error's data (ACPDATA1).
-        Limits: CodexLimits.Words);
+        Limits: CodexLimits.Words,
+        // How an account's windows are asked, since this door forwards none of them (CODEXUSE1): Codex's own app server under
+        // the account's home, declared here for the same reason as `Limits`.
+        Usage: CodexUsage.Question);
 
     private IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
         command is { Count: > 0 } ? command : Toolchain!.Binary;
