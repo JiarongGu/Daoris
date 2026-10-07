@@ -423,6 +423,10 @@ only when the accounts before it are not ready: it is the account left when driv
 
 ### 5.1 Each source, and what it can say
 
+> **Amended by CODEXUSE1 (2026-10-07, D125's CODEXUSE1 note).** Codex's app server row now reads: used, for a Codex
+> account, at a press and at a start over a list. Its read spends no model usage and answers the account's whole use
+> (`2026-10-07-codex-usage-evidence.md`), so §5.3's *no probe* stands for a start made to ask, not for this read.
+
 | Source | What it says | Of what is left | Used by |
 |---|---|---|---|
 | The agent's own field about its windows, on the door its session runs on: Claude Code's `rate_limit_event` (C9), Codex's `rate_limits` (X2) | per window: clear, near or refused, or how much is used; and when it resets; said as the agent works, at no extra call | **The only word on what is left**, as the agent says it, as of when it said it | `left`, `soonest`, *switch before the limit*, once a door is recorded carrying it (TOOL4b) |

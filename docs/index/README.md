@@ -65,11 +65,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/ToolResourcesTests.cs` | 40 | 559 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/AccountRotation.cs` | 49 | 849 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Acp.cs` | 86 | 1767 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 102 | 1864 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 102 | 1867 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 80 | 1520 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 141 | 2435 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 51 | 967 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 187 | 3485 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 189 | 3502 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 57 | 1008 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 86 | 1581 |
@@ -158,7 +158,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-01-self-development-design.md` | 50 | 651 |
 | `docs/2026-10-01-tools-design.md` | 60 | 856 |
 | `docs/2026-10-01-workspace-setup-design.md` | 58 | 744 |
-| `docs/2026-10-02-account-use-design.md` | 86 | 977 |
+| `docs/2026-10-02-account-use-design.md` | 86 | 981 |
 | `docs/2026-10-02-knowledge-design-review.md` | 43 | 538 |
 | `docs/2026-10-02-pause-and-clean-up-design.md` | 49 | 668 |
 | `docs/2026-10-02-session-management-design.md` | 69 | 849 |

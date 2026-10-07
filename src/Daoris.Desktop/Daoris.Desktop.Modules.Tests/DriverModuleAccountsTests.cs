@@ -263,7 +263,8 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
 
     /// <summary>
     /// D130 §6: switching before the limit reads the agent's own word, which only some agents' sessions carry; the screen
-    /// offers the switch where they do, and says why not where they do not.
+    /// offers the switch where they do, and says why not where they do not. Codex's door carries none, and its own server is
+    /// asked instead (CODEXUSE1), so it says too; dsh says nothing either way.
     /// </summary>
     [Fact]
     public async Task Each_agent_says_whether_its_sessions_say_how_near_their_limits_are()
@@ -271,7 +272,8 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         var answer = await AnswerAsync(Module(), "ACCOUNTS");
 
         Assert.True(Agent(answer, "claude-code").GetProperty("speaks").GetBoolean());
-        Assert.False(Agent(answer, "codex").GetProperty("speaks").GetBoolean());
+        Assert.True(Agent(answer, "codex").GetProperty("speaks").GetBoolean());
+        Assert.False(Agent(answer, "dsh").GetProperty("speaks").GetBoolean());
     }
 
     // ---------------------------------------------------------------- ACCOUNT_USE: the list
