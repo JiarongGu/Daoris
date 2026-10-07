@@ -255,14 +255,17 @@ public sealed record WordsHold(string Why, string Reason)
     /// What holds the words, by the planner's verdict on the record's quest and the cool-off the look held its start on;
     /// null where the verdict starts it, which is going on.
     /// </summary>
-    /// <param name="wait">The look's wait naming this quest (TOOL4g), or null.</param>
+    /// <param name="wait">
+    /// The look's wait naming this quest (TOOL4g), or null. A wait on signed-out accounts has no reset (UX6d1), so the words
+    /// wait in its sentence, as any other hold's.
+    /// </param>
     public static WordsHold? Of(Consideration verdict, AccountWait? wait) => verdict.Verdict switch
     {
         StartVerdict.Start => null,
         StartVerdict.Paused => new(Paused, verdict.Reason) { PausedBy = verdict.PausedBy },
         StartVerdict.Held => new(Hold, verdict.Reason) { Repository = verdict.Quest.To },
         StartVerdict.AtCapacity => new(Cap, verdict.Reason),
-        StartVerdict.Blocked when wait is not null => new(Cooling, verdict.Reason) { Until = wait.Until },
+        StartVerdict.Blocked when wait?.Until is { } until => new(Cooling, verdict.Reason) { Until = until },
         StartVerdict.RepositoryBusy => new(Busy, verdict.Reason),
         _ => new(Waits, verdict.Reason),
     };
@@ -887,7 +890,7 @@ public static class SessionGroups
             && last.WordsWaiting
             && !GoOnMarks.Judged(last, _look.Unable.GetValueOrDefault(record.Id));
 
-        /// <summary>The cool-off the look held this quest's start on (TOOL4g), or null.</summary>
+        /// <summary>The look's wait holding this quest's start (TOOL4g), on a cool-off or on signed-out accounts (UX6d1), or null.</summary>
         private AccountWait? WaitOn(string quest) =>
             _look.Waits.FirstOrDefault(wait => wait.Quests.Contains(quest, StringComparer.OrdinalIgnoreCase));
 
@@ -919,7 +922,7 @@ public sealed class LastLook
 
     /// <summary>
     /// The starts the last look held on a cooling account (TOOL4g): a record whose words such a start holds says its reset
-    /// (MSG1f2). None before any look.
+    /// (MSG1f2). And those it held on signed-out accounts with none cooling, with no reset (UX6d1). None before any look.
     /// </summary>
     public IReadOnlyList<AccountWait> Waits => _looked?.Waits ?? [];
 

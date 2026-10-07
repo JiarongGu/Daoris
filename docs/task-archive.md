@@ -11784,3 +11784,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ORIENT2h — a declared index's tables are read a row at a time** (service). Heading-split sections lose long tables: *where is the SESSION_GO_ON_NEW handler* asked of kind `index` did not reach the 102-row section holding the row, five short sections outranking it (BM25 weighs one matching row against a long section; ORIENT1c's finding). Read a table's rows as entries naming their own line. Contract: D151's ORIENT2e note, ORIENT1c. Proof: the route question lands on its row first.
 
 **Outcome** 2026-10-07: a declared index's tables are read a row at a time: each row an `index` entry titled by its headings and its column-named label, naming its own line, so the route question lands on its row first; prose stays a section. 435 rows of 571 entries here. Follow-up: ORIENT2h2. Detail: D151's ORIENT2h note; commits faacada6, b72bfbeb.
+
+
+## UX6d1 — a held intake with no account cooling reaches the page (2026-10-07, D150)
+
+> - [ ] **UX6d1 — a held intake with no account cooling reaches the page** (driver; modules forward it). `Driver.Waits` makes a wait only from a cool-off and `Considerations.Blocked` names quests alone, so an intake held on signed-out accounts with none cooling is only a `starts.waiting` log line and What needs you cannot list it. Contract: D150 §6.2, D130 §3.3, TOOL6g. Proof: a Driver report test for that hold; `TickWaitTests` for its shape.
+
+**Outcome** 2026-10-07: a start held on signed-out accounts with none cooling is a wait the tick forwards (no `until`, no account, its signed-out accounts named), holding quests and ask intakes alike; the readers tell it from a cool-off. The page reads it since UX6d2. Detail: D150's UX6d1 note; commits 946974d6, 6eede024.

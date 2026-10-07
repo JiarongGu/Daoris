@@ -174,6 +174,30 @@ public sealed class TickConsiderationTests
     }
 
     /// <summary>
+    /// UX6d1: a quest a wait on signed-out accounts holds waits for a sign-in, not a time, so it names no wait for an account,
+    /// which the page would say with a reset; its accounts are its <c>signedOut</c>, as they were before such a wait was made.
+    /// </summary>
+    [Fact]
+    public void A_quest_a_signed_out_wait_holds_names_no_wait_for_an_account_and_its_accounts_as_signed_out()
+    {
+        var held = new Consideration(Quest, StartVerdict.Blocked, "no `claude-code` account this start may use is ready: …")
+        {
+            SignedOut = new SignedOutAccounts("claude-code", ["account-1", "account-2"]),
+        };
+        var wait = new AccountWait("claude-code-acp", "claude-code", null, "work", Until: null, Stated: false, held.Reason)
+        {
+            Quests = ["q1"],
+            SignedOut = ["account-1", "account-2"],
+        };
+
+        var shape = JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(held, null, wait), Wire);
+
+        Assert.Equal(JsonValueKind.Null, shape.GetProperty("waitsFor").ValueKind);
+        Assert.Equal(
+            ["account-1", "account-2"], shape.GetProperty("signedOut").GetProperty("accounts").EnumerateArray().Select(each => each.GetString()));
+    }
+
+    /// <summary>
     /// ACCT2b (D125's ACCT2b note): the wait and the accounts passed carry the name the person gave each account beside its id,
     /// read when the look said them, so the page says them by name in either language; null where an account has none.
     /// </summary>

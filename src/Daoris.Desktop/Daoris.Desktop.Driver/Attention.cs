@@ -91,7 +91,8 @@ public sealed record AttentionEvent(
 ///
 /// <para><b>A wait for an account is the third thing</b> (TOOL4d, D125 §4): starts held because every account they may
 /// use is cooling, from the report's <see cref="TickReport.Waits"/>. Said once per cool-off, since it lasts every look
-/// until its reset; nothing is wrong with the work, and it starts by itself then.</para>
+/// until its reset; nothing is wrong with the work, and it starts by itself then. A wait on accounts not signed in with none
+/// cooling (UX6d1) is said once per set of accounts: it lasts until a sign-in, which only the person makes.</para>
 ///
 /// <para><b>A quest's park is the fourth</b> (SESSUX1i, D126 §4.7): a quest the planner parked on its failed sessions
 /// here, from the parks a door read for that look (<see cref="QuestParkReader"/>). Said once per park, a park being its
@@ -113,8 +114,10 @@ public sealed class AttentionWatch
     private Dictionary<string, string>? _seen;
 
     // The waits already said, by account, with the cool-off each was for (TOOL4d): a wait lasts every look until its
-    // reset, and a look that planned no start says nothing of it, so the cool-off — not the look — is what is said once.
-    private readonly Dictionary<string, DateTimeOffset> _waits = new(StringComparer.OrdinalIgnoreCase);
+    // reset, and a look that planned no start says nothing of it, so the cool-off — not the look — is what is said once. A
+    // wait on signed-out accounts (UX6d1) is said once per set of accounts, as the log's line is, and kept apart from a
+    // cool-off of the tool's own sign-in, whose account is null too.
+    private readonly Dictionary<string, string> _waits = new(StringComparer.OrdinalIgnoreCase);
 
     // The quests' parks already said or seen at the first look, by quest, with the last session each park was for
     // (SESSUX1i). Bounded by what the planner still considers. A null session is a park seen at a first look whose records
@@ -216,12 +219,15 @@ public sealed class AttentionWatch
         return unsaid;
     }
 
-    /// <summary>Whether this wait's cool-off is not yet said; it is marked said either way.</summary>
+    /// <summary>Whether this wait's cool-off, or its set of signed-out accounts, is not yet said; it is marked said either way.</summary>
     private bool Unsaid(AccountWait wait)
     {
-        var account = $"{wait.Agent}/{wait.Account ?? ""}";
-        var said = _waits.TryGetValue(account, out var until) && until == wait.Until;
-        _waits[account] = wait.Until;
+        var (account, what) = wait.Until is { } until
+            ? ($"{wait.Agent}/{wait.Account ?? ""}", until.UtcTicks.ToString(System.Globalization.CultureInfo.InvariantCulture))
+            // No profile name has a colon, so this is no account's key.
+            : ($"{wait.Agent}/:signed-out", string.Join(",", wait.SignedOut.Order(StringComparer.OrdinalIgnoreCase)).ToUpperInvariant());
+        var said = _waits.TryGetValue(account, out var was) && was == what;
+        _waits[account] = what;
         return !said;
     }
 }
