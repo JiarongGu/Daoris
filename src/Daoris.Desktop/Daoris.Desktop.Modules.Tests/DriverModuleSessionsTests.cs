@@ -555,6 +555,27 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         Assert.Equal(SessionsCommand.JsonFields, row.EnumerateObject().Select(field => field.Name));
     }
 
+    /// <summary>
+    /// LAND4: a row carries what its session's own tree offers to land, whatever group it rests in, as the reader said it: the
+    /// branch, the tree's name (never its path), the commits and the uncommitted paths; and null where it offers none. The page
+    /// offers Accept beside it, and <c>sessions --json</c> prints the same field.
+    /// </summary>
+    [Fact]
+    public void A_groups_row_carries_what_its_tree_offers_to_land()
+    {
+        var camel = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        var failed = new SessionGrouping("f41led00", SessionGroup.Ended, "failed") { Lands = new LandOffer("daoris/s-4e6837ed", "s-4e6837ed", 1, null) };
+
+        var row = JsonSerializer.SerializeToElement(DriverModule.Grouped(failed), camel);
+        var bare = JsonSerializer.SerializeToElement(DriverModule.Grouped(failed with { Lands = null }), camel);
+
+        var lands = row.GetProperty("lands");
+        Assert.Equal(("daoris/s-4e6837ed", "s-4e6837ed", 1, JsonValueKind.Null),
+            (lands.GetProperty("branch").GetString(), lands.GetProperty("tree").GetString(), lands.GetProperty("commits").GetInt32(),
+                lands.GetProperty("uncommitted").ValueKind));
+        Assert.Equal(JsonValueKind.Null, bare.GetProperty("lands").ValueKind);
+    }
+
     /// <summary>SESSUX1g (D126 §7.4): an archive from the screen is counted in the machine log as the screen's, with no session named.</summary>
     [Fact]
     public async Task An_archive_from_the_screen_is_counted_in_the_log_as_the_screens()

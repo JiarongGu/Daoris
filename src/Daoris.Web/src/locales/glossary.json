@@ -244,7 +244,7 @@
         "work.conversation.hide", "work.conversation.show", "work.dock.close", "work.dock.full",
         "work.dock.open", "work.dock.unfull", "work.find.firstFailure", "work.find.lastWords", "work.find.next",
         "work.find.previous", "work.frame.goSessions", "work.frame.open", "work.head.more", "work.head.noteLess", "work.head.noteMore",
-        "work.head.review", "work.head.copyId",
+        "work.head.review", "work.head.copyId", "work.head.accept", "work.head.landMeanIt",
         "work.intake.answer", "work.intakeRunning.open", "work.list.archiveMeanIt", "work.list.more", "work.list.showMore",
         "work.open",
         "work.panel.hide", "work.panel.show",

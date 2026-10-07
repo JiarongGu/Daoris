@@ -6,15 +6,16 @@ import type { AccountNamer } from '../tools';
 import { GoAheadList } from '../asks/GoAheadList';
 import { ago, elapsed, sessionTool, stamp } from '../format';
 import {
-  answeredPark, Button, PathText, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
+  answeredPark, Button, Inline, PathText, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
 } from '../ui';
 import { cn } from '../lib/cn';
 import { AnsweredPark } from './AnsweredPark';
 import { AwaitingIntake } from './AwaitingIntake';
 import { AwaitingPerson, type Resolution } from './AwaitingPerson';
 import { DetailsFold } from './DetailsFold';
-import type { Answered } from './InlineConfirm';
+import { type Answered, InlineConfirm } from './InlineConfirm';
 import { useCut } from './ViewMain';
+import type { LandOffer } from './groups';
 import { isIntake, sessionOrigin, sessionTitle, shortened } from './identity';
 import { Note } from './Note';
 import { hasNote, noteBlocks, noteLines } from './noteLines';
@@ -54,6 +55,11 @@ import { RunningIntake } from './RunningIntake';
  * beside it, where the metadata's last pair used to say it with nothing to press. A failed attempt's branch whose tree is
  * gone has *Discard branch…* too (LAND3b), asking once, since no clean-up takes it and the review has no tree to discard.
  *
+ * **Commits its tree holds are offered to land, whatever its ending** (LAND4, D102's LAND4 note): where the driver's reader
+ * says what the tree offers (`lands`), the line names the commits, the branch and the tree, and *Accept…* asks once under it,
+ * saying where accepting puts the work by the repository's rule, as the review's foot says it, and for a session that did
+ * not finish that only what it committed lands. The press is the review's Accept; a refusal is said inside the ask.
+ *
  * **An absence is never a dash.** No tree is the registered root, no profile is the harness's own
  * configuration home, no machine is this deployment's own — and a browser over a keyed remote is
  * told none of them (D47 §4). `MetaLine` drops a pair it has no value for, which is why all four
@@ -62,8 +68,20 @@ import { RunningIntake } from './RunningIntake';
 export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
   onAnswerSession, branch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
-  ownSignIn = false, nameOf,
+  ownSignIn = false, nameOf, lands, landing, onLand,
 }: {
+  /**
+   * What its own tree offers to land (LAND4), as the driver's reader said it: commits no branch of the person's holds, on its
+   * branch in its tree, whatever its ending. Absent where it offers none, or nothing has answered.
+   */
+  lands?: LandOffer | null;
+  /**
+   * Where accepting would put it, by the repository's rule (D87, D100): the review's own plan, said in the ask before the
+   * press. Absent while it is read.
+   */
+  landing?: LandingPlan | null;
+  /** Land it: the review's Accept, told back to its ask. Absent where nothing can press it (a browser, a story). */
+  onLand?: (answered: Answered) => void;
   /**
    * Its agent has accounts, so a record naming none ran on the tool's own sign-in, and the head says so where it shows an
    * account (D125 §3.7, TOOL4m's rest with UX6e).
@@ -199,8 +217,11 @@ export function SessionHead({
 
       {/* What it left, and the move that acts on it (SESS2 H4): work no branch of the person's holds is
           theirs to review, in the waiting hue; landed work is a quiet fact. */}
-      {/* Keyed by the branch: an ask to discard one session's branch never carries to another's (REV3's lesson). */}
-      {branch && (
+      {/* Keyed by the branch: an ask to discard one session's branch never carries to another's (REV3's lesson). Commits
+          its tree offers to land are the reader's to say (LAND4), keyed by the session for the same reason. */}
+      {lands ? (
+        <Lands key={session.id} session={session} lands={lands} landing={landing} onReview={onReview} onLand={onLand} />
+      ) : branch && (
         <Left key={branch.branch} branch={branch} onReview={onReview} onDiscard={onDiscardBranch} discarding={discardingBranch} />
       )}
 
@@ -333,6 +354,74 @@ function Left({ branch, onReview, onDiscard, discarding = false }: {
       {/* Open until the discard answers, a branch the driver kept said inside it (UXFIX2). */}
       {discardable && asking && (
         <DiscardBranchAsk branch={branch} busy={discarding} onDiscard={onDiscard!} onClose={() => setAsking(false)} />
+      )}
+    </>
+  );
+}
+
+/** Where accepting a session's work would put it (D87, D100): the driver's `LANDING` answer, which the review reads too. */
+export type LandingPlan = { session?: string; form?: string; target?: string; source?: string; plugin?: string; problem?: string };
+
+/**
+ * What its own tree offers to land, and its press (LAND4, D102's LAND4 note): the commits no branch of the person's holds,
+ * on its branch in its tree, with *Review* where the review can open and *Accept…*, which asks once under the line. The ask
+ * says where accepting puts the work by the repository's rule, what would refuse it now, the uncommitted work a landing
+ * refuses, and for a session that did not finish that only what it committed lands. The move is the review's Accept, in
+ * the primary's hue: a landing destroys nothing. Open until the landing answers, a refusal said inside it (UXFIX2).
+ */
+function Lands({ session, lands, landing, onReview, onLand }: {
+  session: Session;
+  lands: LandOffer;
+  landing?: LandingPlan | null;
+  onReview?: () => void;
+  onLand?: (answered: Answered) => void;
+}) {
+  const { t } = useTranslation();
+  const [asking, setAsking] = useState(false);
+  // A session that did not finish lands what it committed before it ended (LAND4); one finished, at a checkpoint or by
+  // itself, lands its work.
+  const unfinished = session.state !== 'completed';
+  const where = !landing?.target ? null
+    : landing.form === 'merge' ? t('work.review.landsOnLine', { line: landing.target })
+      : landing.plugin ? t('work.review.landsOnBranchPlugin', { branch: landing.target, plugin: landing.plugin })
+        : t('work.review.landsOnBranch', { branch: landing.target });
+  return (
+    <>
+      <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small">
+        <span className="text-ink-faint">{t('work.head.itsWork')}</span>
+        <span className="text-ink-open">{t('work.head.landed.not', { count: lands.commits })}</span>
+        <PathText path={lands.branch} className="min-w-0 text-meta text-ink-faint" />
+        <span className="text-ink-faint">{t('work.head.inTree', { tree: lands.tree })}</span>
+        {onLand && !asking && (
+          <Button variant="primary" className="px-2 py-0.5 text-small" onClick={() => setAsking(true)}>{t('work.head.accept')}</Button>
+        )}
+        {onReview && <Button className="px-2 py-0.5 text-small" onClick={onReview}>{t('work.head.review')}</Button>}
+      </p>
+      {onLand && asking && (
+        <InlineConfirm
+          tone="primary"
+          block
+          label={t('work.head.landTitle', { branch: lands.branch })}
+          says={(
+            <>
+              <p className="m-0 text-small text-ink-soft"><Inline text={where ?? t('work.head.landReading')} /></p>
+              {landing?.problem && (
+                <p className="m-0 border-l-[3px] border-warn pl-2 text-small text-ink-soft">
+                  <Inline text={t('work.review.landingProblem', { problem: landing.problem })} />
+                </p>
+              )}
+              {typeof lands.uncommitted === 'number' && lands.uncommitted > 0 && (
+                <p className="m-0 border-l-[3px] border-warn pl-2 text-small text-ink-soft">
+                  {t('work.head.landUncommitted', { count: lands.uncommitted })}
+                </p>
+              )}
+              {unfinished && <p className="m-0 text-small text-ink-soft">{t('work.head.landUnfinished')}</p>}
+            </>
+          )}
+          meanIt={t('work.head.landMeanIt')}
+          onConfirm={onLand}
+          onClose={() => setAsking(false)}
+        />
       )}
     </>
   );

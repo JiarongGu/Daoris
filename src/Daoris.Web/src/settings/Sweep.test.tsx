@@ -191,6 +191,39 @@ describe('discarding a failed attempt\'s branch from the session branches card',
   });
 });
 
+// LAND4 (D102's LAND4 note): a kept branch whose tree is still here and holds commits no branch of the person's holds says
+// which session it is and how it ended, and how to land it: its page's Accept, or `daoris-driver trees land` from a terminal,
+// the line the terminal's list prints beside the same row. A row the driver offers no landing beside says none.
+
+describe('the landing a kept branch offers', () => {
+  const KEPT: SweepBranch[] = [
+    branch({ branch: 'daoris/s-4e6837ed', kind: 'unlanded', commits: 1, session: { id: 'f41led00', state: 'failed' }, landable: true }),
+    branch({ branch: 'daoris/s-56cb4d29', kind: 'unlanded', commits: 2, session: { id: 'f1n1sh00', state: 'completed' }, landable: true }),
+    branch({ branch: 'daoris/s-gone', hasTree: false, kind: 'unlanded', commits: 2, discardable: true }),
+  ];
+  const row = (name: string) => screen.getByRole('listitem', { name });
+
+  it('names the session its tree is, how it ended, and how to land it', () => {
+    draw({ branches: KEPT });
+
+    expect(row('daoris/s-4e6837ed')).toHaveTextContent(
+      'From session f41led00 (failed), its tree still here: its page offers Accept, which lands it, as daoris-driver trees land f41led00 does.');
+    expect(row('daoris/s-56cb4d29')).toHaveTextContent('From session f1n1sh00 (completed), its tree still here');
+    expect(row('daoris/s-gone')).not.toHaveTextContent('From session');
+  });
+
+  it('says it in 中文 too', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      draw({ branches: KEPT });
+      expect(row('daoris/s-4e6837ed')).toHaveTextContent(
+        '来自会话 f41led00（失败），它的工作树还在：在它的页面上采纳即可将其落地，与 daoris-driver trees land f41led00 相同。');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+});
+
 // WSR5a: the branches landings made, in a group of their own — each goes once every file it changed reads
 // on the line as it left it, or it is inside another that does — and by the same press.
 

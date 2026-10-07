@@ -348,6 +348,124 @@ describe('the attended session\'s head', () => {
   });
 
   /**
+   * LAND4 (D102's LAND4 note): a session that ended with commits no branch of the person's holds offers its landing on its
+   * page, whatever its ending, with its branch and its tree said. *Accept…* asks once, under the line, saying where accepting
+   * puts the work by the repository's rule; for a session that did not finish, that only what it committed lands. The press
+   * is the review's own, told back to its ask.
+   */
+  describe('the landing a session left', () => {
+    const LANDS = { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 };
+    const PLAN = { session: 's1a2b3c4', form: 'branch', target: 'feature/kepak-release', plugin: 'azure-devops-pull-request' };
+
+    it('offers a failed session’s commits to land, naming its branch and tree, and lands them on the second press', () => {
+      const onLand = vi.fn();
+      render(<SessionHead session={session({ state: 'failed' })} lands={LANDS} landing={PLAN} onLand={onLand} onReview={vi.fn()} />);
+
+      expect(screen.getByText('Its work')).toBeInTheDocument();
+      expect(screen.getByText('1 commit no branch of yours holds')).toBeInTheDocument();
+      expect(screen.getByText('daoris/s-4e6837ed')).toBeInTheDocument();
+      expect(screen.getByText('in its tree s-4e6837ed')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Review' })).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Accept…' }));
+      expect(onLand).not.toHaveBeenCalled();
+      const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
+      expect(ask).toHaveTextContent(
+        'Accepting puts this work on a new branch, feature/kepak-release, then the plugin azure-devops-pull-request pushes it and opens the pull request. Nothing is merged.');
+      expect(ask).toHaveTextContent('This session did not finish, so what lands is only what it committed before it ended.');
+      fireEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
+      expect(onLand).toHaveBeenCalledOnce();
+      act(() => (onLand.mock.calls[0]![0] as Answered).done());
+      expect(screen.queryByRole('group', { name: 'accept daoris/s-4e6837ed' })).toBeNull();
+    });
+
+    it('offers a session finished at a checkpoint its landing too, and says a refusal inside the ask', () => {
+      const onLand = vi.fn();
+      render(
+        <SessionHead
+          session={session({ state: 'completed', note: 'The person finished this at a checkpoint.' })}
+          lands={{ ...LANDS, commits: 2, uncommitted: 3 }}
+          landing={{ session: 's1a2b3c4', form: 'merge', target: 'master' }}
+          onLand={onLand}
+        />,
+      );
+
+      expect(screen.getByText('2 commits no branch of yours holds')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Accept…' }));
+      const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
+      expect(ask).toHaveTextContent('Accepting merges this work into master, in the repository\'s own checkout.');
+      expect(ask).not.toHaveTextContent('did not finish');
+      expect(ask).toHaveTextContent('Its tree has 3 uncommitted paths, and a landing refuses the work it would leave behind: commit them in its tree first.');
+      fireEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
+      act(() => (onLand.mock.calls[0]![0] as Answered).refused('the checkout is not clean, so nothing was merged.'));
+      expect(within(ask).getByRole('alert')).toHaveTextContent('the checkout is not clean, so nothing was merged.');
+    });
+
+    it('says what a press would be refused with before it, and offers nothing where no commits wait or nothing can press', () => {
+      const { rerender } = render(
+        <SessionHead
+          session={session({ state: 'stopped' })}
+          lands={LANDS}
+          landing={{ ...PLAN, problem: 'plugin `azure-devops-pull-request` is switched off on this machine.' }}
+          onLand={vi.fn()}
+        />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Accept…' }));
+      expect(screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' }))
+        .toHaveTextContent('A press would be refused now: plugin azure-devops-pull-request is switched off on this machine.');
+
+      // No commits to land: the reader offers none, and the clean-up's line stands as it did.
+      rerender(
+        <SessionHead
+          session={session({ state: 'failed' })}
+          branch={{ repository: 'engine', branch: 'daoris/s-43c14a70', kind: 'empty', where: 'main', commits: 0 } as SweepBranch}
+          onLand={vi.fn()}
+        />,
+      );
+      expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
+      expect(screen.getByText('nothing beyond main')).toBeInTheDocument();
+
+      // Nothing here can press it (a browser, a story): the work is said, with no press.
+      rerender(<SessionHead session={session({ state: 'failed' })} lands={LANDS} />);
+      expect(screen.getByText('1 commit no branch of yours holds')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
+    });
+
+    it('never carries an ask to accept one session’s work to another’s', () => {
+      const { rerender } = render(<SessionHead session={session({ state: 'failed' })} lands={LANDS} landing={PLAN} onLand={vi.fn()} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Accept…' }));
+      expect(screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' })).toBeInTheDocument();
+
+      rerender(
+        <SessionHead
+          session={session({ id: 's9f8e7d6', state: 'failed' })}
+          lands={{ ...LANDS, branch: 'daoris/s-56cb4d29', tree: 's-56cb4d29' }}
+          landing={PLAN}
+          onLand={vi.fn()}
+        />,
+      );
+      expect(screen.queryByRole('group', { name: /^accept/ })).toBeNull();
+      expect(screen.getByRole('button', { name: 'Accept…' })).toBeInTheDocument();
+    });
+
+    it('says it in Chinese', async () => {
+      await i18n.changeLanguage('zh');
+      try {
+        render(<SessionHead session={session({ state: 'failed' })} lands={LANDS} landing={PLAN} onLand={vi.fn()} onReview={vi.fn()} />);
+        expect(screen.getByText('它的工作')).toBeInTheDocument();
+        expect(screen.getByText('1 个提交不在你的任何分支上')).toBeInTheDocument();
+        expect(screen.getByText('在它的工作树 s-4e6837ed 中')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: '采纳…' }));
+        const ask = screen.getByRole('group', { name: '采纳 daoris/s-4e6837ed' });
+        expect(ask).toHaveTextContent('这个会话没有完成，所以落地的只是它已提交的内容，它的审阅中列有这些提交。');
+        expect(within(ask).getByRole('button', { name: '采纳' })).toBeInTheDocument();
+      } finally {
+        await i18n.changeLanguage('en');
+      }
+    });
+  });
+
+  /**
    * LAND3b (D102's LAND3 note): a failed session's tree is gone and its branch stands, holding commits no branch of the
    * person's holds, so no clean-up takes it and the review has no tree to discard. Its head offers the discard beside
    * what it left, asking once, naming the branch and its commits; while the tree is here, the review's Discard serves.

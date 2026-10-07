@@ -163,6 +163,31 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// LAND4: a clean-up row names the session its tree is, by id and how it ended, and says whether its landing is offered,
+    /// by the driver's own rule (<see cref="SessionTrees.LandingOffered"/>, the line `trees clean` prints beside it): a tree
+    /// still here holding commits no branch of the person's holds, whatever that session's ending. The page's Branches tab says
+    /// the same words; a row whose tree is gone, or with no session named, offers none.
+    /// </summary>
+    [Fact]
+    public void A_clean_up_row_names_its_session_and_whether_its_landing_is_offered()
+    {
+        var camel = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        var failed = new SessionRecord("4e6837ed", "engine", "failed") { Tree = "tree" };
+        var here = new SweepItem("engine", "aurora", "daoris/s-4e6837ed", "tree", SweepKind.Unlanded, 1, null, "a1b2c3d the work");
+        var gone = here with { Tree = null };
+
+        var row = JsonSerializer.SerializeToElement(DriverModule.SweepRow(here, failed), camel);
+        var treeless = JsonSerializer.SerializeToElement(DriverModule.SweepRow(gone, null), camel);
+        var unnamed = JsonSerializer.SerializeToElement(DriverModule.SweepRow(here), camel);
+
+        Assert.Equal(("4e6837ed", "failed"), (row.GetProperty("session").GetProperty("id").GetString(), row.GetProperty("session").GetProperty("state").GetString()));
+        Assert.True(row.GetProperty("landable").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, treeless.GetProperty("session").ValueKind);
+        Assert.False(treeless.GetProperty("landable").GetBoolean());
+        Assert.False(unnamed.GetProperty("landable").GetBoolean());
+    }
+
+    /// <summary>
     /// A failed or superseded attempt's branch discarded from the page (LAND3b, D102's LAND3 note) is the terminal's
     /// `trees remove &lt;branch&gt; --repository &lt;name&gt; --force`: it reads the registry's checkout and the sessions in
     /// use, so before the driver is up it is the cold-start sentence, and a discard that names no branch or no repository
