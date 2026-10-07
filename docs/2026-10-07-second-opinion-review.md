@@ -105,3 +105,111 @@ below was checked against the source.
 
 **Cross-cutting, adopted:** judge an operation's outcome before closing its ask, as the branch discard already does
 (`Sweep.tsx:41`); keep long raw identifiers in the shared refusal's stories.
+
+## The account management view (the owner asked, 2026-10-07)
+
+Asked of Codex after the owner asked for support on the account management view's design, the Claude Code account view
+included, with a new fact to take in: Codex's app-server answers an account's usage windows without spending usage
+(CODEXUSE1). Read from source against D125, UX6, UX7 and the account designs; nothing rendered. Its one-line verdict:
+the structure is worth keeping; identity, sign-in, reported allowance and the next start are not clearly separated.
+
+| Finding | Verified | Row |
+|---|---|---|
+| A refused key reads as merely unchecked: `accountState` makes a signed-out account with a key `keyed`, so attention and the badge omit it (`agents.ts:46`, `accountAttention.ts:270,371`) | ✓ | ACCTUX1 |
+| A cool-off reads *resets …* even where Daoris chose the wait (`agents.ts:114`) | ✓ | ACCTUX1 |
+| The usage sentence wears 11 px faint ink, 3.38:1 in light, 4.04:1 in dark (`AccountRow.tsx:150`) | ✓ | ACCTUX1 |
+| Two hints mislead: *from its row below*, *Left empty, it is called {{id}}* (`harness.next.json:10`, `agents.json:53`) | | ACCTUX1 |
+| Claude Code and Codex collapse to the same `C` mark (`AgentList.tsx:133`, `ui.tsx:462`) | ✓ | ACCTUX2 |
+| The email sits in a tooltip no key reaches; column heads hidden without per-row labels; the terms toggle and reorder buttons under 28 px | | ACCTUX2 |
+| Adding a key and saving model/effort drop their forms before the act lands; an added key skips UX7's naming step (`AgentPage.tsx:240,747`) | | ACCTUX3 |
+| *consider:* the row's *first* is the list's head, not `scope.next`; usage as one sentence compares badly across windows and makers | | ACCTUX4 |
+| *consider:* UX6's recorded measure on the install is 16 concepts against a budget of 14 | | ACCTUX4 |
+
+**Its proposal, adopted as ACCTUX4's starting point.** One page per agent, one row per account, the same windows for
+both makers: the chosen name first, the reported identity beneath when it differs; sign-in and its read time apart from
+allowance; each window in a stable cell with its exact percent, a thin bar of that window's own allowance, its reset and
+its own reading's age; one *Next start* sentence for the chosen workspace above the accounts; an unknown window said in
+words with no bar and never 0%; plan, ordinary usage, spend control and reset credits in details, and a credit never
+redeemed by Daoris until redeeming is supported and confirmed through `InlineConfirm`. Its mock-ups, the readings
+illustrative:
+
+```text
+**About 1000px — list open, two window cells side by side**
+
+```text
++------------------+------------------------------------------------------------------------+
+| Agents           | Codex  OpenAI · installed                     [Add an account...]  ... |
+|                  |                                                                        |
+| CC Claude Code   | Accounts for [work v]                                      [Read again] |
+|    3 accounts    | Next start: team — it is the only account here that is ready.           |
+|    1 signed out  | [How accounts are used >]                                              |
+|                  |                                                                        |
+| Cx Codex         | Account / state           Runs for          Now          Next start    |
+|    3 accounts    | ---------------------------------------------------------------------- |
+|                  | team · signed in 10:40    work, forge        1 session       next    ... |
+| Not installed    | five-hour [          ] 1% used       weekly [==        ] 15% used       |
+|                  | resets today 15:00 · read 10:42       resets 14 Oct 17:00 · read 10:42   |
+|                  | ---------------------------------------------------------------------- |
+|                  | reserve · cooling        work                              [Try now] ...|
+|                  | five-hour [==========] 100% used     weekly [========= ] 94% used       |
+|                  | resets today 15:00 · read 10:38       resets 10 Oct 17:00 · read 10:38   |
+|                  | Cooling until today 15:02                                               |
+|                  | ---------------------------------------------------------------------- |
+|                  | spare · signed out 10:35 work                              [Sign in] ...|
+|                  | Usage unknown · never read                                             |
+|                  | ---------------------------------------------------------------------- |
+|                  | Your own sign-in · unknown · never read   no workspace        [Read] ...|
+|                  |                                                                        |
+|                  | > Each account's own plan and terms                                    |
+|                  | > How accounts are used   work: Make the most of them                  |
+|                  | > Workspaces              forge: this machine's accounts               |
+|                  | > Ways in                                                              |
+|                  | > Usage                   Daoris's sessions only                       |
++------------------+------------------------------------------------------------------------+
+```
+
+The bars are schematic: a real 1% fill stays 1%, without a minimum-width blob. The text carries the precise value.
+
+**About 680px — distinct agent marks, stacked account facts**
+
+```text
++----+-------------------------------------------------------------+
+| CC | Codex  OpenAI · installed                                   |
+| Cx | [Add an account...]                                     ... |
+|    |                                                             |
+|    | Accounts for [work v]                          [Read again] |
+|    | Next start: team                                            |
+|    | It is the only account here that is ready.                  |
+|    | [How accounts are used >]                                   |
+|    | ----------------------------------------------------------- |
+|    | team · signed in · read 10:40                           ... |
+|    | Runs for work, forge · Now 1 session · Next start            |
+|    | five-hour  1% used          weekly  15% used                 |
+|    | resets today 15:00          resets 14 Oct 17:00              |
+|    | read 10:42                  read 10:42                      |
+|    | ----------------------------------------------------------- |
+|    | reserve · cooling                            [Try now] ... |
+|    | Runs for work · Cooling until today 15:02                    |
+|    | five-hour  100% used        weekly  94% used                 |
+|    | resets today 15:00          resets 10 Oct 17:00              |
+|    | read 10:38                  read 10:38                      |
+|    | ----------------------------------------------------------- |
+|    | spare · signed out                            [Sign in] ...|
+|    | Runs for work · Sign-in read 10:35                           |
+|    | Usage unknown · never read                                  |
+|    | ----------------------------------------------------------- |
+|    | Your own sign-in                                 [Read] ...|
+|    | unknown · never read · no workspace                          |
+|    |                                                             |
+|    | > Each account's own plan and terms                         |
+|    | > How accounts are used                                     |
+|    | > Workspaces                                                |
+|    | > Ways in                                                   |
+|    | > Usage · Daoris's sessions only                            |
++----+-------------------------------------------------------------+
+```
+```
+
+**It said to keep:** one roster per agent across its ways in; chosen names, *no workspace* and the separate *Your own
+sign-in* row; one action by state; the add flow's offer to sign an existing account back in; no probe because a page
+opened; the inline removal and the retained drafts; What needs you's deduplication of accounts a waiting start names.
