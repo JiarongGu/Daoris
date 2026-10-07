@@ -11763,3 +11763,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **HIST1k — the reading never says nothing beside a clear** (web-shell). `readingSaid` picks "takes nothing" from `takes.bytes` alone (`history.ts:314`), while `clearList` offers *Clear history…* for a closed quest with records and no files. Choose the sentence from the units' counts too. Contract: design §6.1, the review. Proof: a vitest with records and zero bytes.
 
 **Outcome** 2026-10-07: `readingSaid` chooses from the counts as well as the bytes: records alone say so, files alone say what they free even at 0 B, and *nothing* is said only where no clear is offered. Detail: D153's HIST1k note; commit 2455281a.
+
+
+## MOD9b — the lane scan sees .NET reads under tools (2026-10-07, D115)
+
+> - [ ] **MOD9b — the lane scan sees .NET reads under tools** (cli, tools). MOD9's scan in `merge-branch.test.ts` matches only .NET reads of paths starting `"src", "Daoris.…"`, so `DecisionNotesTests` reading `tools/orient-index-fixtures/` was not asked for a lane row; it was remembered (ORIENT1h). Match `"tools", …` too. Contract: MOD9, parallel-development design §3. Proof: the scan fails until such a fixture reaches its suite.
+
+**Outcome** 2026-10-07: the lane scan sees .NET reads under every top-level folder, not only `src/`; it found two missing REACH rows, both the driver's (`examples/plugins/**` for `PluginOfferTests`, `.claude/knowledge/adoption.md` for `SetupBriefTests`), now added. Reads from a source root are MOD9c. Detail: D115's MOD9b note; commits f468a49d, c1e635ba.

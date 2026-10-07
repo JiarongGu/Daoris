@@ -432,6 +432,11 @@ export const REACH = Object.freeze([
   { paths: ['src/Daoris.Cli/test/fixtures/account-reads.json'], gates: ['driver'], why: "the driver's AccountReads twin reads the shared reads table (AGENTREAD1b)" },
   { paths: ['src/Daoris.Cli/test/fixtures/name-case.json'], gates: ['driver'], why: "the driver's NameCaseTests reads the shared name-case table (CASEFOLD1d)" },
   { paths: ['tools/orient-index-fixtures/**'], gates: ['service'], why: "the service's DecisionNotes twin reads the digest's note table (ORIENT1h)" },
+  {
+    paths: ['.claude/knowledge/adoption.md'],
+    gates: ['service', 'driver'],
+    why: "the driver's SetupBrief twin reads the playbook's steps (LAYOUT7, MOD9b), and the service's suite scans this repository's documents",
+  },
   { paths: ['src/Daoris.Cli/test/**'], gates: [], why: "the CLI's tests, which verify runs at every merge" },
   // GATE6: a fix to a browser test was re-gated by the web gate alone, and the stage then voided every other verdict.
   { paths: ['src/Daoris.Web/e2e/**'], gates: ['web'], why: "the page's end-to-end specs, which only the web gate runs: no .NET suite reads them" },
@@ -458,8 +463,8 @@ export const REACH = Object.freeze([
   { paths: ['canon/**'], gates: ['service', 'rehearse', 'rehearse-family'], why: 'the package ships it, the examples must be current with it, and the service scans the doctrine synced from it' },
   {
     paths: ['examples/plugins/**'],
-    gates: ['service', 'rehearse-family', 'web', 'deployment'],
-    why: 'the example family the rehearsals and the end-to-end suite run on, and the offers the install lays out',
+    gates: ['service', 'driver', 'rehearse-family', 'web', 'deployment'],
+    why: "the example family the rehearsals and the end-to-end suite run on, and the offers the install lays out, which the driver's PluginOffer test reads as they stand (D103, MOD9b)",
   },
   { paths: ['examples/**'], gates: ['service', 'rehearse-family', 'web'], why: 'the example family the family rehearsal and the end-to-end suite run on' },
   { paths: ['README.md', 'LICENSE'], gates: ['service', 'rehearse'], why: 'staged into the package the release rehearsal packs' },

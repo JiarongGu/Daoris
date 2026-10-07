@@ -440,7 +440,10 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['the deployment rehearsal', ['tools/deployment-rehearsal.mjs'], [...BASE, 'deployment']],
     ['the canon', ['canon/core/rules/task-lifecycle.md'], [...BASE, 'service', 'rehearse', 'rehearse-family']],
     ['the examples', ['examples/engine/README.md'], [...BASE, 'service', 'rehearse-family', 'web']],
-    ["the install's offers", ['examples/plugins/github-pull-request/land.mjs'], [...BASE, 'service', 'rehearse-family', 'web', 'deployment']],
+    // MOD9b: the driver reads the offers and the adoption playbook, as the service reads the digest's note table.
+    ["the install's offers", ['examples/plugins/github-pull-request/land.mjs'], [...BASE, 'service', 'driver', 'rehearse-family', 'web', 'deployment']],
+    ['the adoption playbook', ['.claude/knowledge/adoption.md'], [...BASE, 'service', 'driver']],
+    ["the digest's note table", ['tools/orient-index-fixtures/decision-notes.json'], [...BASE, 'service']],
     ['release tooling', ['tools/release-rehearsal.mjs'], [...BASE, 'rehearse']],
     ['the CLI', ['src/Daoris.Cli/src/cli.ts'], [...BASE, 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     ['the merge tool and its tests', ['tools/merge-branch.mjs', 'src/Daoris.Cli/test/merge-branch.test.ts'], BASE],
@@ -618,7 +621,9 @@ test('every tool a rehearsal imports or starts is one whose change reaches that 
  * MOD9's incident, as a test: two C# tests read the web's catalogues, and a batch called "web only"
  * skipped them. Every repository path a .NET test reads must be one whose change reaches that test's
  * suite, which a merge then runs, and its Process half when the reading class is a Process class,
- * which the full set runs (GATE5).
+ * which the full set runs (GATE5). A read is a path under `src/Daoris.…`, or under any other top-level
+ * folder (`treeReads`, MOD9b): the service's twin read the digest's note table under `tools/`, and the
+ * scan, seeing `src/` alone, never asked for the row that sends its change there (ORIENT1h).
  */
 test("every repository file a .NET suite reads is one whose change reaches that suite (MOD9's incident)", () => {
   const suites: [string, string, string | null][] = [
@@ -628,22 +633,91 @@ test("every repository file a .NET suite reads is one whose change reaches that 
     ['src/Daoris.Service/Daoris.Service.Http.Tests/', 'service', null],
     ['src/Daoris.Devkit/Daoris.Devkit.Tests/', 'devkit', null],
   ];
+  const files = trackedFiles();
   let reads = 0;
-  for (const file of trackedFiles().filter((path) => path.endsWith('.cs'))) {
+  let outsideSrc = 0;
+  for (const file of files.filter((path) => path.endsWith('.cs'))) {
     const suite = suites.find(([folder]) => file.startsWith(folder));
     if (!suite) continue;
     const text = readFileSync(join(repoRoot, file), 'utf8');
     const isProcess = /\[Trait\(Category\.Name, Category\.Process\)\]/.test(text);
+    const found: string[] = [];
     for (const match of text.matchAll(/"src",\s*"(Daoris\.[A-Za-z.]+)"((?:,\s*"[^"]*")*)/g)) {
       const segments = ['src', match[1]!, ...[...match[2]!.matchAll(/"([^"]*)"/g)].map((part) => part[1]!)];
-      const read = /\.(cs|ts|tsx|mjs|js|json|css|md|props|txt)$/.test(segments.at(-1)!) ? segments.join('/') : `${segments.join('/')}/probe.txt`;
+      found.push(/\.(cs|ts|tsx|mjs|js|json|css|md|props|txt)$/.test(segments.at(-1)!) ? segments.join('/') : `${segments.join('/')}/probe.txt`);
+    }
+    const outside = treeReads(text, files);
+    outsideSrc += outside.length;
+    for (const read of [...found, ...outside]) {
       reads += 1;
       assert.ok(runs([read]).includes(suite[1]), `${file} reads ${read}, and a merge changing it does not run ${suite[1]}`);
       if (isProcess && suite[2]) assert.ok(reaches([read]).includes(suite[2]), `${file} (a Process class) reads ${read}, and a change there does not reach ${suite[2]}`);
     }
   }
   assert.ok(reads >= 10, `the scan found only ${reads} reads: its pattern no longer matches how the tests read the repository`);
+  assert.ok(outsideSrc >= 3, `the scan found only ${outsideSrc} reads outside src/: its pattern no longer matches how the tests read the repository`);
 });
+
+test('the scan sees a read under any top-level folder, and never a name, a sentence or a folder the test made (MOD9b)', () => {
+  const files = [
+    'tools/orient-index-fixtures/decision-notes.json', 'examples/plugins/a/plugin.json', '.claude/knowledge/adoption.md',
+    '.claude/settings.json', 'docs/README.md', 'daoris.json', 'src/Daoris.Web/src/App.tsx',
+  ];
+  const source = [
+    'File.ReadAllText(Path.Combine(Root(), "tools", "orient-index-fixtures", "decision-notes.json"));',
+    'var examples = Path.Combine(WorkspaceRoot.Folder, "examples", "plugins");',
+    'return Path.Combine(at?.FullName ?? throw new InvalidOperationException("no root above the test"),',
+    '    ".claude", "knowledge", "adoption.md");',
+    // A folder the test made in this repository's own layout, by a local, a field or a property: not this repository.
+    'File.ReadAllText(Path.Combine(room, ".claude", "settings.json"));',
+    'File.WriteAllText(Path.Combine(_home, "docs", "README.md"), "x");',
+    'File.WriteAllText(Path.Combine(Root, "docs", "README.md"), "x");',
+    // A workspace's name, a sentence, a marker file, a path deeper in another run, and `src/`, which the scan reads itself.
+    'Entry("beta", "tools", "Dedicated readers integrate with approvals, so lookups never interrupt.");',
+    'new UsageEntry("s2", "tools", "claude-code", "work");',
+    'AcrossRules.Reading(config, "tools", "forge");',
+    'AcrossRules.Reading(DriverConfig.Empty.WithWorkspaceReadAcross("default", false), "tools", null);',
+    'while (!File.Exists(Path.Combine(at.FullName, "daoris.json"))) at = at.Parent;',
+    '[InlineData("CLAUDE.md", "docs", "docs/README.md", true)]',
+    'Path.Combine(Root(), "src", "Daoris.Web", "src", "App.tsx");',
+  ].join('\n');
+  assert.deepEqual(treeReads(source, files), [
+    'tools/orient-index-fixtures/decision-notes.json', 'examples/plugins/probe.txt', '.claude/knowledge/adoption.md',
+  ]);
+
+  // What the scan above then asks of the lane table: without the digest's row, the twin's read reaches no service suite.
+  const without = tool.REACH.filter((rule) => !rule.paths?.includes('tools/orient-index-fixtures/**'));
+  const reached = (reach: readonly Rule[]) => tool.selectGates(repoPlan, ['tools/orient-index-fixtures/decision-notes.json'], { lanes: repoLanes, reach })
+    .gates.filter((entry) => entry.run).map((entry) => entry.gate.name);
+  assert.equal(reached(without).includes('service'), false);
+  assert.equal(reached(tool.REACH).includes('service'), true);
+});
+
+/**
+ * MOD9b: the paths a .NET source reads under this repository's top-level folders but `src`, whose reads the scan above
+ * matches by its own pattern. A read is a run of string literals whose joined path is tracked, as
+ * `Path.Combine(Root(), "tools", "orient-index-fixtures", "decision-notes.json")`, so a workspace's name or a sentence
+ * is none. Its base, the argument before the run, is a call or a member (`Root()`, `WorkspaceRoot.Folder`), as every
+ * read of `src/` is: a bare name is a folder the test made, often in this repository's own layout (`room`, `_home`), and
+ * a string is the start of a longer run. A folder read is a file in it. A top-level folder alone (`"tools"`) is a
+ * workspace's name far more often than a read, and a top-level file (`daoris.json`, the marker the tests walk up to) is
+ * not read this way; neither is taken.
+ */
+function treeReads(text: string, files: readonly string[]): string[] {
+  const tracked = new Set(files);
+  const folders = new Set(files.flatMap((file) => file.split('/').slice(0, -1).map((_, i, parts) => parts.slice(0, i + 1).join('/'))));
+  const reads: string[] = [];
+  for (const match of text.matchAll(/,\s*"([^"\\\s]+)"((?:\s*,\s*"[^"\\]*")*)/g)) {
+    const base = text.slice(0, match.index).trimEnd();
+    if (base.endsWith('"') || /(?:^|[^\w.!?])@?[A-Za-z_]\w*$/.test(base)) continue;
+    const path = [match[1]!, ...[...match[2]!.matchAll(/"([^"]*)"/g)].map((part) => part[1]!)].join('/');
+    const top = path.split('/')[0]!;
+    if (top === 'src' || !folders.has(top) || top === path) continue;
+    if (tracked.has(path)) reads.push(path);
+    else if (folders.has(path)) reads.push(`${path}/probe.txt`);
+  }
+  return reads;
+}
 
 // ---------------------------------------------------------------------------------------------------
 // Flakes: a real-process test that fails is run alone once

@@ -4,7 +4,7 @@ Open work only. Finished rows move to `docs/task-archive.md`; `CHANGELOG.md` des
 
 ## State
 
-Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,367 CLI, 1,500 service, 80 HTTP host, 5,337 driver (4,623 fast, 714 Process; EVID1b's real-git class awaits the full set), 754 modules (636 fast, 118 Process), 85 devkit, 4,432 web unit and 24 Playwright; rehearsals: release 114, family 400, deployment 110. The full set (14 gates) passed `6394ec1` and that tree is on the install; earlier receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,887 bytes, advisory budget 26,000.
+Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,368 CLI, 1,500 service, 80 HTTP host, 5,337 driver (4,623 fast, 714 Process; EVID1b's real-git class awaits the full set), 754 modules (636 fast, 118 Process), 85 devkit, 4,432 web unit and 24 Playwright; rehearsals: release 114, family 400, deployment 110. The full set (14 gates) passed `6394ec1` and that tree is on the install; earlier receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,887 bytes, advisory budget 26,000.
 
 Live consumer count is zero. Adoption is the owner's call. The existing desktop-runtime rehearsal remains evidence: 6 collisions, 2 twins to retire, budget 40,000, check at 38,782 bytes; supporting mechanics are in `docs/adoption/shenora-repo-mechanics.md`.
 
@@ -67,7 +67,6 @@ Contracts: `docs/2026-10-01-plugins-screen-design.md` (D119) and `docs/2026-10-0
 
 ## Faster development
 
-- [ ] **MOD9b — the lane scan sees .NET reads under tools** (cli, tools). MOD9's scan in `merge-branch.test.ts` matches only .NET reads of paths starting `"src", "Daoris.…"`, so `DecisionNotesTests` reading `tools/orient-index-fixtures/` was not asked for a lane row; it was remembered (ORIENT1h). Match `"tools", …` too. Contract: MOD9, parallel-development design §3. Proof: the scan fails until such a fixture reaches its suite.
 - [ ] **MOD9c — the lane scan sees reads from a source root** (cli, tools). The driver's `NoConsoleWindowTests` and `PullRequestOccasionTests` read the modules' and the app's sources through `SourceRoot()`, which the scan does not see, and the modules lane does not reach `driver`, so a change there fails them only in the full set, never at a merge. Contract: MOD9, parallel-development design §3, D115's MOD9b note. Proof: the scan fails until those reads reach `driver`.
 - [ ] **AGENTS2a — measure DeepSeek API-key support** (driver, cli). Probe `dsh --profile acp` with invalid/no key before declaring `DEEPSEEK_API_KEY` in both twins. Contract: D57 AGENTS2, AGT3, D67 §1. Proof: evidence beside ACP3 and twin tables.
 - [ ] **PROC1 — Process suite under ten minutes** (driver tests, tools). Measure classes, reuse/copy expensive git fixtures, isolate homes/ports for parallel workers and replace unnecessary processes with fakes. Contract: MOD8, FLAKE1. Proof: three serial-equivalent green runs with timings; retain original measured class durations in supporting evidence.
