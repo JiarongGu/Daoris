@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -121,6 +122,55 @@ public sealed class SelfDescriptionTests : IDisposable
         File("README.md", "# Introduction\n\nThe pipelines that sort archived device messages into the database.\n");
 
         Assert.Equal("The pipelines that sort archived device messages into the database.", SelfDescription.Read(_root)!.Summary);
+    }
+
+    /// <summary>
+    /// A README's fences, read as CommonMark reads one (ORIENT2h6): a fence's lines are skipped, and only a fence's. The
+    /// first cut toggled on any line opening with three backticks or tildes, so a longer fence closed on the example it
+    /// quoted, a tilde fence on a backtick run inside it, and inline code at a line's start swallowed the rest.
+    /// </summary>
+    [Theory]
+    [InlineData("a four-backtick fence quoting a heading", "# Parcel Tracking\n\n````markdown\n```\n## Setup\n```\n````\n\nThe tracking backend.\n",
+        "Parcel Tracking — The tracking backend.")]
+    [InlineData("a fence quoting an underlined heading", "# Parcel Tracking\n\n````\n```\nInstallation\n---\n```\n````\n\nThe tracking backend.\n",
+        "Parcel Tracking — The tracking backend.")]
+    [InlineData("a tilde fence, a backtick run inside it", "# Parcel Tracking\n\n~~~\n```\n## Setup\n~~~\n\nThe tracking backend.\n",
+        "Parcel Tracking — The tracking backend.")]
+    [InlineData("inline code at a line's start", "# Parcel Tracking\n\n```track``` follows parcels and their routes.\n",
+        "Parcel Tracking — ```track``` follows parcels and their routes.")]
+    public void A_fence_holds_only_its_own_lines(string why, string readme, string summary)
+    {
+        File("README.md", readme);
+
+        var said = SelfDescription.Read(_root)?.Summary;
+        Assert.True(said == summary, $"{why}: {said}");
+    }
+
+    /// <summary>
+    /// The driver's half of a TWIN (ORIENT2h6, <c>.claude/knowledge/twins.md</c>) with the CLI's <c>markdownFence</c> and
+    /// the tools' <c>fenced</c>: all three read the CLI's <c>test/fixtures/fence-cases.json</c>, row for row, each case's
+    /// lines and the lines a fence holds, from 1.
+    /// </summary>
+    [Fact]
+    public void Each_line_is_fenced_as_the_shared_table_reads_it()
+    {
+        using var table = JsonDocument.Parse(System.IO.File.ReadAllText(
+            Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "test", "fixtures", "fence-cases.json")));
+        var cases = table.RootElement.GetProperty("cases").EnumerateArray().ToList();
+
+        foreach (var row in cases)
+        {
+            var why = row.GetProperty("why").GetString();
+            var fence = new SelfDescription.Fence();
+            var held = row.GetProperty("lines").EnumerateArray()
+                .Select((line, at) => (Held: fence.Holds(line.GetString()!), Line: at + 1))
+                .Where(line => line.Held).Select(line => line.Line).ToList();
+            var expected = row.GetProperty("fenced").EnumerateArray().Select(line => line.GetInt32()).ToList();
+            Assert.True(expected.SequenceEqual(held), $"{why}: {string.Join(", ", held)}");
+        }
+
+        Assert.Contains(cases, row => row.GetProperty("fenced").GetArrayLength() == 0);
+        Assert.Contains(cases, row => row.GetProperty("fenced").GetArrayLength() > 0);
     }
 
     [Fact]

@@ -136,6 +136,7 @@ with the version and date at release.
 - Status words (open, taken, done) are easier to read in both themes, as danger words already were.
 - `daoris-driver trees clean` and `trees sync` take `--workspace <name>`, as a workspace's Branches tab
   does, and refuse a word they do not know instead of ignoring it.
+- A quest sitting because another machine took it says so in Chinese too, naming that machine.
 
 The first version: doctrine that installs, is checked, and flows back.
 

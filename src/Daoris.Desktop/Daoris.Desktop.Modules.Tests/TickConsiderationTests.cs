@@ -223,6 +223,37 @@ public sealed class TickConsiderationTests
                 .GetProperty("waitsFor").GetProperty("name").ValueKind);
     }
 
+    /// <summary>
+    /// CARRY2c: a quest whose take is not this machine's names whose it is as facts beside the driver's sentence, the machine
+    /// and its session where a record named them, a take made here, and the session here not carried on, so the page says it
+    /// in the reader's language; every other verdict names none.
+    /// </summary>
+    [Fact]
+    public void A_quest_taken_elsewhere_names_the_machine_and_session_that_took_it()
+    {
+        var named = new Consideration(Quest, StartVerdict.TakenElsewhere,
+            "Quest `#q1` is taken on `alice-laptop`, by session `alice-laptop/ab12cd34`: the take is theirs, so session `s1` is not carried on over it.")
+        {
+            TakenBy = new TakenBy("s1", "alice-laptop", "alice-laptop/ab12cd34"),
+        };
+        var here = named with { TakenBy = new TakenBy("s1", Here: true) };
+
+        var shape = JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(named), Wire);
+        var taken = shape.GetProperty("takenBy");
+        var made = JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(here), Wire).GetProperty("takenBy");
+        var other = JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(new Consideration(Quest, StartVerdict.Start, "starting.")), Wire);
+
+        Assert.Equal("TakenElsewhere", shape.GetProperty("verdict").GetString());
+        Assert.Equal(named.Reason, shape.GetProperty("reason").GetString());
+        Assert.Equal("alice-laptop", taken.GetProperty("machine").GetString());
+        Assert.Equal("alice-laptop/ab12cd34", taken.GetProperty("session").GetString());
+        Assert.False(taken.GetProperty("here").GetBoolean());
+        Assert.Equal("s1", taken.GetProperty("last").GetString());
+        Assert.True(made.GetProperty("here").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, made.GetProperty("machine").ValueKind);
+        Assert.Equal(JsonValueKind.Null, other.GetProperty("takenBy").ValueKind);
+    }
+
     /// <summary>Every other verdict holds by no session, and says none.</summary>
     [Fact]
     public void A_quest_no_stop_holds_names_no_session()

@@ -83,6 +83,13 @@ export interface Consideration {
    * Absent for every other hold, and on an older shell.
    */
   forUpdate?: boolean | null;
+  /**
+   * For a quest whose take is not this machine's (verdict `TakenElsewhere`, CARRY2b): whose it is (CARRY2c), the machine that
+   * took it and its session where a teammate's record named them, else null; `here` where it was taken on this machine after
+   * its session ended, by a chat or by work outside Daoris; and `last`, the session here not carried on over it. Absent for
+   * every other verdict, and on an older shell.
+   */
+  takenBy?: { machine?: string | null; session?: string | null; here?: boolean; last: string } | null;
 }
 
 /**
@@ -166,15 +173,27 @@ export function sittingBecause(considered: readonly Consideration[], quest: stri
  * change (D48 §6). Only the verdicts whose words need nothing the page lacks have a translation
  * (`NotDrivable`, `Held`, `NoRoot`), `Stopped`, whose session the tick names as a fact (`heldBy`,
  * SESSUX1d), `Exhausted`, whose number of failed sessions it names (`strikes`, SESSUX1i), `Paused`, whose ask or
- * quest it names (`pausedBy`, PAUSE1e), and a `Blocked` hold that is an update's drain (`forUpdate`, UPDATE1). The rest
+ * quest it names (`pausedBy`, PAUSE1e), a `Blocked` hold that is an update's drain (`forUpdate`, UPDATE1), and
+ * `TakenElsewhere`, whose take it names (`takenBy`, CARRY2c). The rest
  * keep the driver's words, since their sentences name a session or a cap the tick does not carry, and
- * so does a verdict the page has not heard of, and a stop or a park on a shell that names no session or
- * number. English passes the driver's sentence through as its only copy, as the rules' defaults do
+ * so does a verdict the page has not heard of, and a stop, a park or a take on a shell that names no session,
+ * number or machine. English passes the driver's sentence through as its only copy, as the rules' defaults do
  * (POLISH2).
  */
 export function sittingSentence(sitting: Consideration): string {
   if (sitting.verdict === 'Stopped' && !sitting.heldBy) return sitting.reason;
   if (sitting.verdict === 'Exhausted' && sitting.strikes == null) return sitting.reason;
+  // A take that is not this machine's (CARRY2c) is said from whose it is: a teammate's machine and session where a record
+  // named both, another machine where none did, or a take made here; with no facts, the driver's words.
+  if (sitting.verdict === 'TakenElsewhere') {
+    const taken = sitting.takenBy;
+    if (!taken?.last) return sitting.reason;
+    const named = Boolean(taken.machine && taken.session);
+    return i18n.t('work.sitting.TakenElsewhere', {
+      why: sitting.reason, quest: sitting.quest, machine: taken.machine, session: taken.session, last: taken.last,
+      context: taken.here ? 'here' : named ? undefined : 'another', defaultValue: sitting.reason,
+    });
+  }
   // A pause (PAUSE1e, D132 §2.3) is said from whose it is, an ask's or a quest's own; with none named, the driver's words.
   if (sitting.verdict === 'Paused') {
     if (!sitting.pausedBy) return sitting.reason;

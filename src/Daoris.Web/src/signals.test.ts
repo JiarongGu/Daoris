@@ -334,6 +334,44 @@ describe('sittingSentence', () => {
     expect(sittingSentence(byQuest)).not.toContain('需求');
     expect(sittingSentence(sits('Paused', asks))).toBe(asks);
   });
+
+  /**
+   * CARRY2c (D80's CARRY2b note): a quest whose take is not this machine's said the driver's English in both languages. The
+   * tick now names whose the take is (`takenBy`): the machine and its session where a record named them, a take made here,
+   * and the session here not carried on, so 中文 says it from those facts in each of its three forms. English is the driver's
+   * own sentence; with no facts (a shell older than them), the driver's words stand in both.
+   */
+  it('says a take elsewhere in 中文 from the machine and session the tick names, and the driver’s words without them', async () => {
+    const named = 'Quest `#9a9492` is taken on `alice-laptop`, by session `alice-laptop/ab12cd34`: the take is theirs, so session `s1` is not carried on over it.';
+    const byTeammate: Consideration = {
+      ...sits('TakenElsewhere', named),
+      takenBy: { machine: 'alice-laptop', session: 'alice-laptop/ab12cd34', here: false, last: 's1' },
+    };
+    const unnamed = 'Quest `#9a9492` is taken on another machine: the take is theirs, so session `s1` is not carried on over it.';
+    const byAnother: Consideration = { ...sits('TakenElsewhere', unnamed), takenBy: { machine: null, session: null, here: false, last: 's1' } };
+    const outside = 'Quest `#9a9492` was taken here after session `s1` ended, by a chat or by work outside Daoris: the take is theirs, so session `s1` is not carried on over it.';
+    const byHere: Consideration = { ...sits('TakenElsewhere', outside), takenBy: { machine: null, session: null, here: true, last: 's1' } };
+
+    await i18n.changeLanguage('en');
+    expect(sittingSentence(byTeammate)).toBe(named);
+    expect(sittingSentence(byAnother)).toBe(unnamed);
+    expect(sittingSentence(byHere)).toBe(outside);
+
+    await i18n.changeLanguage('zh');
+    const teammate = sittingSentence(byTeammate);
+    expect(teammate).toContain('委托 `#9a9492` 已在 alice-laptop 上由会话 `alice-laptop/ab12cd34` 接下');
+    expect(teammate).toContain('不会接续会话 `s1`');
+    expect(teammate).not.toContain('taken');
+    const another = sittingSentence(byAnother);
+    expect(another).toContain('已在另一台机器上接下');
+    expect(another).toContain('不会接续会话 `s1`');
+    const here = sittingSentence(byHere);
+    expect(here).toContain('会话 `s1` 结束后');
+    expect(here).toContain('本机');
+    expect(here).toContain('聊天');
+    expect(here).not.toContain('另一台机器');
+    expect(sittingSentence(sits('TakenElsewhere', named))).toBe(named);
+  });
 });
 
 describe('waitsForAccount', () => {
