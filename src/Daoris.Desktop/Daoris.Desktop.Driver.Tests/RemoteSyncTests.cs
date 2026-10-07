@@ -213,6 +213,29 @@ public sealed class RemoteSyncTests
         Assert.Contains(read.Notes, n => n.Contains("1 quest(s) moved at the remote"));
     }
 
+    /// <summary>
+    /// A refusal is said as what it refused (WAITCLAIM4): what this machine pushed for the quest, which may be a publish, a
+    /// move or a wait, never a take the remote declined. The remote's reason follows whole as its own sentence, so a lost
+    /// take's words (WAITCLAIM3) read as the reason, read from the answer's shape every host sends.
+    /// </summary>
+    [Fact]
+    public void A_refused_push_is_said_as_what_this_machine_pushed_with_the_remotes_reason_after_it()
+    {
+        const string reason = "Quest `#q1` was taken on another machine first: this machine's take lost and is kept on the "
+            + "quest as a conflict, so this `done` is not this machine's to make. The remote kept nothing this push carried "
+            + "for the quest. Stand down rather than doubling the work.";
+        var pass = $$"""
+            { "workspace": "default", "machine": "m1", "wired": true, "pushed": 0, "conflicts": [],
+              "refused": [{ "quest": "q1", "reason": {{System.Text.Json.JsonSerializer.Serialize(reason)}} }],
+              "behind": [], "problem": null }
+            """;
+
+        var note = Assert.Single(RemoteSyncPayloads.Pass(pass).Notes);
+
+        Assert.Equal($"quest `#q1`: the remote refused what this machine pushed for it. {reason}", note);
+        Assert.DoesNotContain("not taken", note);
+    }
+
     /// <summary>A host answering something that is not a pass is a wall the sync names, never an empty pass.</summary>
     [Fact]
     public void An_answer_that_is_not_a_pass_is_a_wall()
