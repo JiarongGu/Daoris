@@ -1,0 +1,24 @@
+{
+  "_why": "HIST1m (D153's HIST1m note; .claude/knowledge/twins.md): every word the history doors spell, one table both sides are held to, row for row. The service spells them (HistoryUnitRef.Spell, HistoryKept.Spell), and its HistoryWordsTwinTests holds the desk's enums here, member for name in their order and spelling for word; the driver reads them (HistoryKinds, HistoryWords, HistoryWaits, HistoryStands, HistoryAwaitedBy), and its HistoryWordsTwinTests holds each class's constants here, name for name and word for word. A word added on one side alone fails that side's test. Each group maps a name, the service's enum member and the driver's constant, to its word on the wire. kinds: a unit's `kind`. reasons: a refusal's `refusal`. machine: the driver's own words for this machine's half (design §1.2), which the service never spells. waits: beside `needs-you` only, what waits on the person (HIST1l). stands: beside `open` only, how the work in progress stands. by: beside `awaited` only, the open work that names it: an open question a session of the work published, a taken quest awaiting its answer, or a chain's open next step.",
+
+  "kinds": { "Quest": "quest", "Ask": "ask", "Failed": "failed" },
+
+  "reasons": {
+    "Unknown": "unknown",
+    "Open": "open",
+    "Asked": "asked",
+    "Live": "live",
+    "NeedsYou": "needs-you",
+    "Awaited": "awaited",
+    "Unpushed": "unpushed",
+    "NotOurs": "not-ours"
+  },
+
+  "machine": { "TreeHere": "tree-here", "LandingStands": "landing-stands" },
+
+  "waits": { "Parked": "parked", "Held": "held", "Conflict": "conflict", "Ask": "ask", "Proposal": "proposal" },
+
+  "stands": { "Open": "open", "Taken": "taken" },
+
+  "by": { "Question": "question", "Asker": "asker", "Step": "step" }
+}
