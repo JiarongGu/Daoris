@@ -557,7 +557,7 @@ public sealed partial class HelpCoverageTests
     [Fact]
     public void The_headless_hosts_trees_sync_is_the_sync_kinds_door()
     {
-        Assert.Contains("sync [--repository <name>] [--all] [--yes]", DriverCommand.Usage);
+        Assert.Contains("sync [--repository <name>] [--workspace <name>] [--all] [--yes]", DriverCommand.Usage);
         Assert.Contains("sync", HelpProposalKinds.Find("sync")!.Doors);
     }
 

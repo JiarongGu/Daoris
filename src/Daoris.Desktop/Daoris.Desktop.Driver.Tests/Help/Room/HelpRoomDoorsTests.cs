@@ -21,9 +21,10 @@ public sealed class HelpRoomDoorsTests
             "daoris driver landing <repository> merge|branch <pattern>|--clear", "daoris driver intake <agent>|off",
             "daoris driver helper <agent>|off", "daoris driver strikes <n>", "daoris driver timeout <minutes>",
             "daoris driver notify on|off", "daoris agent rules", "daoris-driver ask --workspace <name>",
-            "daoris-driver trees clean",
+            // BRSCOPE1a: the clean-up and bringing up to date take one workspace's checkouts with `--workspace`.
+            "daoris-driver trees clean [--workspace <name>]",
             // WSR6: bringing a repository up to date after its pull request merged; WSR7 (D112): every repository with `--all`.
-            "daoris-driver trees sync [--repository <name>] [--all] [--yes]",
+            "daoris-driver trees sync [--repository <name>] [--workspace <name>] [--all] [--yes]",
             // D107: reading and writing across, the CLI's `driver across` verbs.
             "daoris driver across <repository> read on|off|--clear", "daoris driver across <repository> write-to <other> [--clear]",
             // HELP9: every `daoris driver` verb that changes something, and the doors Ask Daoris owes, named where they are.
