@@ -1,0 +1,91 @@
+{
+  "_why": "ORIENT2h6 (D151's ORIENT2h3, ORIENT2h4 and ORIENT2h6 notes; .claude/knowledge/twins.md): which lines of a markdown file a fenced code block holds, read as CommonMark reads a fence. A fence opens on a run of three or more backticks or tildes after any indent, and closes only on a run of the same character at least as long with nothing after it but spaces; a backtick run with a backtick later on its line is code inline and opens nothing; a fence never closed holds the rest of the file. One table its readers are held to, row for row: the CLI's markdownFence (src/document.ts, which firstHeading reads by) and the tools' fenced (tools/doc-duplicates.mjs) in test/markdown-fence.test.ts, and the driver's SelfDescription.Fence in SelfDescriptionTests. The service's MarkdownFence is held to the tools' fenced by tools/orient-index-fixtures/decision-notes.json. Each case: why, the file's lines, and the lines a fence holds, from 1, its opening and closing lines included.",
+
+  "cases": [
+    {
+      "why": "three backticks open a fence and three close it",
+      "lines": ["# Title", "```", "# quoted", "```", "# After"],
+      "fenced": [2, 3, 4]
+    },
+    {
+      "why": "a four-backtick fence quoting a three-backtick example closes only on four",
+      "lines": ["````markdown", "```", "# quoted", "```", "````", "# After"],
+      "fenced": [1, 2, 3, 4, 5]
+    },
+    {
+      "why": "a four-backtick fence quoting a frontmatter-shaped block and an underlined heading",
+      "lines": ["````markdown", "---", "name: quoted", "---", "```", "Installation", "------------", "```", "````", "After"],
+      "fenced": [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    },
+    {
+      "why": "a tilde fence opens, and a backtick run inside it closes nothing",
+      "lines": ["~~~", "```", "# quoted", "~~~", "# After"],
+      "fenced": [1, 2, 3, 4]
+    },
+    {
+      "why": "a backtick fence, and a tilde run inside it closes nothing",
+      "lines": ["```", "~~~", "# quoted", "```", "# After"],
+      "fenced": [1, 2, 3, 4]
+    },
+    {
+      "why": "a closing run longer than the opening one closes it",
+      "lines": ["```", "# quoted", "`````", "# After"],
+      "fenced": [1, 2, 3]
+    },
+    {
+      "why": "a closing run shorter than the opening one closes nothing",
+      "lines": ["~~~~", "~~~", "# quoted", "~~~~", "# After"],
+      "fenced": [1, 2, 3, 4]
+    },
+    {
+      "why": "a run with text after it closes nothing, an info string included",
+      "lines": ["```text", "```js", "# quoted", "```", "# After"],
+      "fenced": [1, 2, 3, 4]
+    },
+    {
+      "why": "spaces, a tab or a carriage return after a closing run still close it",
+      "lines": ["```", "# quoted", "```   ", "# After", "~~~", "# quoted", "~~~\t", "```", "# quoted", "```\r", "# After"],
+      "fenced": [1, 2, 3, 5, 6, 7, 8, 9, 10]
+    },
+    {
+      "why": "a backtick run with a backtick later on its line is code inline and opens nothing",
+      "lines": ["```a``` is code inline", "# A heading", "``` js `x`", "# Another"],
+      "fenced": []
+    },
+    {
+      "why": "a tilde run may have backticks after it, and opens a fence",
+      "lines": ["~~~ `info`", "# quoted", "~~~", "# After"],
+      "fenced": [1, 2, 3]
+    },
+    {
+      "why": "two backticks or two tildes open nothing",
+      "lines": ["``", "# A heading", "~~", "# Another", "``"],
+      "fenced": []
+    },
+    {
+      "why": "a run after text on its line opens nothing",
+      "lines": ["text ```", "# A heading"],
+      "fenced": []
+    },
+    {
+      "why": "a fence opens and closes after any indent, a tab's or four spaces' too",
+      "lines": ["    ```", "# quoted", "  ```", "# After", "\t~~~", "# quoted", "~~~", "# After"],
+      "fenced": [1, 2, 3, 5, 6, 7]
+    },
+    {
+      "why": "a second fence after the first, each of its own kind",
+      "lines": ["```js", "a", "```", "text", "~~~", "b", "~~~", "text"],
+      "fenced": [1, 2, 3, 5, 6, 7]
+    },
+    {
+      "why": "a fence never closed holds the rest of the file, its last empty line too",
+      "lines": ["# Title", "````", "# quoted", "```", ""],
+      "fenced": [2, 3, 4, 5]
+    },
+    {
+      "why": "no fence holds nothing",
+      "lines": ["# Title", "", "Text with `code` in it.", ""],
+      "fenced": []
+    }
+  ]
+}

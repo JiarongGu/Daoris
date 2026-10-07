@@ -11980,3 +11980,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CARRY2c — a quest taken elsewhere reads in Chinese** (driver, web-shell). `StartVerdict.TakenElsewhere` carries the ledger's English sentence, which the page shows as the sitting reason in both languages. Carry the machine and session as facts on the consideration and word it from both catalogues. Contract: D80's CARRY2b note, LANG1a. Proof: a planner facts test and a vitest rendering it in 中文.
 
 **Outcome** 2026-10-07: a `TakenElsewhere` consideration carries `TakenBy` (the machine, its session, whether made here, the session not carried on); the tick forwards it as `takenBy`, and the page words it in 中文 from `work.sitting.TakenElsewhere`; English and older shells keep the driver's sentence. Follow-up: CARRY2d. Detail: D80's CARRY2c note; commits c65da06b…550adc7b.
+
+
+## ORIENT2h6 — the last fence toggles read as Markdown does (2026-10-07, D151)
+
+> - [ ] **ORIENT2h6 — the last fence toggles read as Markdown does** (cli, driver; after ORIENT2h4). After ORIENT2h3 and ORIENT2h4 the service and the tools read fences as CommonMark does, but the CLI's `src/Daoris.Cli/src/document.ts` and the driver's `SelfDescription.cs` still toggle on any three backticks or tildes, so a longer fence quoting a heading or a frontmatter line misreads there. Each implements the rule in its own language, held by the shared `decision-notes.json` fence rows or a fixture of their own. Contract: D151's ORIENT2h3/2h4 notes, `twins.md`. Proof: a four-backtick fence case seen failing in each.
+
+**Outcome** 2026-10-07: the CLI's `firstHeading` and the driver's `SelfDescription` read a fence as Markdown does, each with code of its own, held with the tools' `fenced` to `fence-cases.json` (17 cases); no tracked markdown file reads differently (519 compared). Follow-up: ORIENT2h6b. Detail: D151's ORIENT2h6 note, FIX-LOG; commits 56c2d4e2, cd037d60.
