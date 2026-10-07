@@ -8,7 +8,7 @@ import type { ChainStep } from './chain';
 
 /** A quest's status, in the words and the hue its pill wears (D41: never hue alone). */
 const WORD: Record<Quest['status'], string> = {
-  Open: 'text-st-open', Taken: 'text-st-taken', Done: 'text-st-done', Declined: 'text-st-declined',
+  Open: 'text-st-open', Taken: 'text-st-taken', Done: 'text-st-done', Declined: 'text-ink-danger',
 };
 
 /**

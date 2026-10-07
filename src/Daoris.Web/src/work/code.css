@@ -41,5 +41,5 @@
 }
 
 .hljs-deletion {
-  color: var(--st-declined);
+  color: var(--ink-danger);
 }

@@ -18,6 +18,11 @@
   --ink: #1a1a18;
   --ink-soft: #5b5a55;
   --ink-faint: #8a887f;
+  /* Red drawn as words (UXFIX5): a danger button's label, a refusal, a declined pill's word. Declined's own hue is a
+     fill's, and in dark it read 3.2 to 3.95:1 as text; this ink keeps its hue (OKLCH 30°) and is lifted until
+     tokens.test.ts holds it at 4.5:1 on every surface and on declined's soft field over each, in both themes. In light
+     the fill already reads, so the two are one value. A fill, a border and a mark keep --st-declined. */
+  --ink-danger: #9e2f24;
   --page: #faf9f6;
   /* One step below the page (LOOK6): the box a move asks once in (stop, pause, delete, remove), and the command
      center on the strip. tokens.test.ts holds it under the page in both themes, and every ink readable on it. */
@@ -53,6 +58,7 @@
     --ink: #e8e6df;
     --ink-soft: #a9a69c;
     --ink-faint: #7a7770;
+    --ink-danger: #ee6955;
     --page: #16161a;
     --sunken: #0f0f12;
     --raised: #1e1e23;
@@ -89,6 +95,7 @@
   --ink: #1a1a18;
   --ink-soft: #5b5a55;
   --ink-faint: #8a887f;
+  --ink-danger: #9e2f24;
   --page: #faf9f6;
   --sunken: #f3f1ec;
   --raised: #ffffff;
@@ -116,6 +123,7 @@
   --ink: #e8e6df;
   --ink-soft: #a9a69c;
   --ink-faint: #7a7770;
+  --ink-danger: #ee6955;
   --page: #16161a;
   --sunken: #0f0f12;
   --raised: #1e1e23;
@@ -153,6 +161,7 @@
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
   --color-ink-faint: var(--ink-faint);
+  --color-ink-danger: var(--ink-danger);
   --color-accent: var(--accent);
   --color-accent-ink: var(--accent-ink);
   --color-accent-soft: var(--accent-soft);

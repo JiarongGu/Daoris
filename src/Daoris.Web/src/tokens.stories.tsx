@@ -31,6 +31,7 @@ function Gallery() {
         <Swatch name="ink" variable="--ink" />
         <Swatch name="ink-soft" variable="--ink-soft" />
         <Swatch name="ink-faint" variable="--ink-faint" />
+        <Swatch name="ink-danger" variable="--ink-danger" note="red drawn as words; a fill keeps st-declined" />
       </section>
       <section>
         <h2 className="mb-2 text-body font-semibold">Accent — the interactive identity, never a status</h2>

@@ -129,7 +129,7 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
             "nothing is running" means something entirely different and the window would be lying
             by omission. */}
         {driver.isError && (
-          <p className="m-0 ml-auto text-small text-st-declined">{t('work.monitor.driverStopped')}</p>
+          <p className="m-0 ml-auto text-small text-ink-danger">{t('work.monitor.driverStopped')}</p>
         )}
       </header>
 

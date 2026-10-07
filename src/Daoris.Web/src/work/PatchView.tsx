@@ -49,7 +49,7 @@ export function PatchView({ patch, path, layout }: { patch: string; path: string
 
 const TONE = {
   add: { row: 'bg-st-done/10', sign: 'text-st-done', mark: '+' },
-  del: { row: 'bg-st-declined/10', sign: 'text-st-declined', mark: '−' },
+  del: { row: 'bg-st-declined/10', sign: 'text-ink-danger', mark: '−' },
   same: { row: '', sign: 'text-ink-faint', mark: ' ' },
 } as const;
 

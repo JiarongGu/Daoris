@@ -12,7 +12,7 @@ import { type DiffLayout, PatchView } from './PatchView';
 const MARK: Record<string, { letter: string; tone: string }> = {
   added: { letter: 'A', tone: 'text-st-done' },
   modified: { letter: 'M', tone: 'text-st-taken' },
-  deleted: { letter: 'D', tone: 'text-st-declined' },
+  deleted: { letter: 'D', tone: 'text-ink-danger' },
   renamed: { letter: 'R', tone: 'text-st-open' },
   copied: { letter: 'C', tone: 'text-st-open' },
 };
@@ -96,7 +96,7 @@ export function DiffFileRow({ file, open, viewed, layout = 'unified', onToggle, 
               <>
                 <span className="text-st-done">+{file.added}</span>
                 {' '}
-                <span className="text-st-declined">−{file.removed}</span>
+                <span className="text-ink-danger">−{file.removed}</span>
               </>
             )}
         </span>

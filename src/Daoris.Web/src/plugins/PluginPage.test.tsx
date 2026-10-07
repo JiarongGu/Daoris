@@ -116,7 +116,7 @@ describe("a plugin's page", () => {
     page();
 
     expect(acts()).toEqual(['Turn off', 'Try', 'Update…', 'Remove…']);
-    expect(within(header()).getByRole('button', { name: 'Remove…' }).className).toMatch(/\btext-st-declined\b/);
+    expect(within(header()).getByRole('button', { name: 'Remove…' }).className).toMatch(/\btext-ink-danger\b/);
     // None is loud by default: the plan's Update now is the one primary control.
     expect(within(header()).getAllByRole('button').some((button) => /\bbg-accent\b/.test(button.className))).toBe(false);
   });
@@ -192,7 +192,7 @@ describe("a plugin's page", () => {
       expect(acts()).not.toContain('Remove…');
       const moves = within(ask).getAllByRole('button');
       expect(moves.map((move) => move.textContent)).toEqual(['Remove plugin', 'Never mind']);
-      expect(moves[0]!.className).toMatch(/\btext-st-declined\b/);
+      expect(moves[0]!.className).toMatch(/\btext-ink-danger\b/);
       await userEvent.click(moves[1]!);
       expect(onCancelRemove).toHaveBeenCalled();
       await userEvent.click(moves[0]!);

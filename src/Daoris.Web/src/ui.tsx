@@ -159,8 +159,9 @@ const BUTTON: Record<string, string> = {
     'border border-accent bg-accent text-accent-ink hover:enabled:brightness-108',
   ghost:
     'border border-transparent bg-transparent text-ink-soft px-2 py-1 hover:enabled:text-ink hover:enabled:border-line',
+  // Its label in the danger ink, its line and its hover field in declined's hue (UXFIX5): the hue as text was 3.95:1 in dark.
   danger:
-    'border border-st-declined bg-transparent text-st-declined hover:enabled:bg-st-declined/10',
+    'border border-st-declined bg-transparent text-ink-danger hover:enabled:bg-st-declined/10',
 };
 
 /**
@@ -193,7 +194,8 @@ const PILL_TONE: Record<string, string> = {
   open: 'border-st-open text-st-open bg-st-open/10',
   taken: 'border-st-taken text-st-taken bg-st-taken/10',
   done: 'border-st-done text-st-done bg-st-done/10',
-  declined: 'border-st-declined text-st-declined bg-st-declined/10',
+  // Declined's word is the danger ink on its own soft field (UXFIX5), which the hue itself read at 3.2:1 in dark.
+  declined: 'border-st-declined text-ink-danger bg-st-declined/10',
 };
 
 /**
@@ -372,7 +374,7 @@ const DOT_TONE: Record<string, { mark: string; word: string }> = {
   // It wore declined's red, and a session waiting on its person read as one that had failed (UX5 U1).
   parked: { mark: 'bg-st-open', word: 'text-st-open' },
   // A failure is an outcome, and red is its hue: a tool call that failed, never a session's liveness.
-  failed: { mark: 'bg-st-declined', word: 'text-st-declined' },
+  failed: { mark: 'bg-st-declined', word: 'text-ink-danger' },
   // Ended is completed, failed, declined and stopped at once, so it wears no outcome's hue: done's
   // green put a success mark beside a failed session in the rail. The pill beside it names the outcome.
   ended: { mark: 'bg-ink-faint', word: 'text-ink-soft' },

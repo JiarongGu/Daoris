@@ -3,6 +3,7 @@ import {
   Button, CheckField, Chip, CodeText, Dot, Drawer, EmptyState, Menu, MetaLine, MonoWell, PathText, Pill, SettingRow,
   SkeletonRows, Tile, Toasts,
 } from './ui';
+import { InTheme } from './plugins/storyIcons';
 
 // Every state of every primitive, on the shipped components — including the states real data rarely
 // shows. This is where the design is reviewed and kept (D42); the product cannot drift from it,
@@ -37,6 +38,34 @@ export const Pills: StoryObj = {
     </div>
   ),
 };
+
+/**
+ * Red drawn as words (UXFIX5): a danger button's label, a declined pill's word, a failed mark's word, a refusal and a
+ * diff's removed count, in the danger ink on each of the four surfaces; the line, the field and the mark stay declined's
+ * hue. `tokens.test.ts` computes each at 4.5:1 or more; these are where the eye checks it.
+ */
+function DangerWords() {
+  const surfaces = [['bg-page', 'page'], ['bg-sunken', 'sunken'], ['bg-raised', 'raised'], ['bg-overlay', 'overlay']] as const;
+  return (
+    <div className="grid gap-2">
+      {surfaces.map(([surface, name]) => (
+        <div key={name} className={`flex flex-wrap items-center gap-3 rounded-card border border-line p-3 ${surface}`}>
+          <span className="w-14 font-mono text-meta text-ink-faint">{name}</span>
+          <Button variant="danger">Remove plugin</Button>
+          <Pill tone="declined">Declined</Pill>
+          <Dot tone="failed" label="failed" />
+          <span className="font-mono text-meta text-ink-danger">−12</span>
+          <p className="m-0 text-small text-ink-danger">The driver stopped: sessions will not start until it runs again.</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export const Danger: StoryObj = { render: () => <DangerWords /> };
+
+/** The same in dark, where declined's hue as text read 3.2 to 3.95:1 and the danger ink reads 4.6 or more. */
+export const DangerDark: StoryObj = { render: () => <InTheme theme="dark"><DangerWords /></InTheme> };
 
 /**
  * A setting is a row (2026-09-23): the four shapes the Machine view uses — a switch, a number, a

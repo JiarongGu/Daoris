@@ -204,7 +204,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
       ? 'rounded-control border border-st-declined/50 bg-raised px-3 py-2.5'
       : 'rounded-control border border-accent/50 bg-raised px-3 py-2.5'}
     >
-      <p className={deleting ? 'm-0 text-small font-semibold text-st-declined' : 'm-0 text-small font-semibold text-accent'}>
+      <p className={deleting ? 'm-0 text-small font-semibold text-ink-danger' : 'm-0 text-small font-semibold text-accent'}>
         {t(deleting ? 'help.proposal.titleDelete'
           : going ? 'help.proposal.titleGo'
             : proposal.kind === 'plugin' ? 'help.proposal.titlePlugin'
@@ -254,9 +254,9 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
       {plugin?.replaced && <p className="m-0 mt-1 text-meta text-ink-faint">{t('help.proposal.plugin.replaced')}</p>}
       {/* The catalogue's sentence, carried through as a value: one copy of it, the driver's. */}
       {plugin?.problem && (
-        <p className="m-0 mt-1 text-meta text-st-declined"><Inline text={t('help.proposal.plugin.problem', { problem: plugin.problem })} /></p>
+        <p className="m-0 mt-1 text-meta text-ink-danger"><Inline text={t('help.proposal.plugin.problem', { problem: plugin.problem })} /></p>
       )}
-      {deleting && <p className="m-0 mt-1 text-meta text-st-declined">{t('help.proposal.deleteNote')}</p>}
+      {deleting && <p className="m-0 mt-1 text-meta text-ink-danger">{t('help.proposal.deleteNote')}</p>}
       {going && <p className="m-0 mt-1 text-meta text-ink-faint">{t('help.proposal.goNote')}</p>}
       {handing && <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.handNote')}</p>}
       {proposal.terminal && (
