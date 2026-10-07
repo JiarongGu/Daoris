@@ -18,6 +18,8 @@ What the person requires of this quest, in their own words, each quoted verbatim
 
   Check: the report is a common-report entry
 
+  Evidence: Daoris reads `docs/comparison.md` in your branch's last commit when you end. A met answer without it holds the quest for the person, so commit it first.
+
 When you close it `done`, answer each requirement by its number (`answers`): `met`, with how its check was met, or `departed`, with the reason and the person's own words it turns on, quoted exactly (`quote`). A `done` that leaves one unanswered is refused. A departure is shown to the person, and what follows this quest waits until the person accepts it: say plainly where the work departs from their words, rather than close as though they had agreed to your reading of them.
 
 The person's own words on ask `#a1b2c3`, oldest first and newest last. These are their words verbatim: the quest above, a plan or an earlier session's note is someone else's reading of them.

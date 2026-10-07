@@ -1387,9 +1387,9 @@ public sealed class QuestStore
         }, ct);
 
     /// <summary>
-    /// Replay one quest — accepted first, pending on top — and rewrite what did not survive: a move
-    /// becomes a conflict, a publish of an ask already held is the same ask again, and a follow-up
-    /// that only a lost close published goes with it. Answers the conflicts made.
+    /// Replay one quest — accepted first, pending on top — and rewrite what did not survive, each kind by
+    /// <see cref="QuestLog.Lost"/>: a move becomes a conflict, a publish of an ask already held is the same
+    /// ask again, and a follow-up that only a lost close published goes with it. Answers the conflicts made.
     /// </summary>
     private async Task<IReadOnlyList<QuestOperation>> RebaseAsync(
         string id, SqliteTransaction transaction, CancellationToken ct)
@@ -1412,26 +1412,18 @@ public sealed class QuestStore
 
             var position = (await PositionOfAsync(operation.Machine, operation.Sequence, transaction, ct)
                 .ConfigureAwait(false))!.Value;
-            if (operation.Kind == QuestOperationKind.Published)
-            {
-                // The same ask, published first elsewhere: the first publish is the quest, as it
-                // always was, and a second copy was never anybody's decision.
-                await ForgetOperationAsync(position, transaction, ct).ConfigureAwait(false);
-                continue;
-            }
 
-            if (operation.Kind is QuestOperationKind.Deleted or QuestOperationKind.Accepted or QuestOperationKind.Evidenced)
+            // Each kind by its rule (QuestLog.Lost), which says why each is forgotten, kept or made a conflict.
+            var loss = QuestLog.Lost(operation.Kind);
+            if (loss == QuestLoss.Kept) continue;
+            if (loss == QuestLoss.Forgotten)
             {
-                // A delete that lost to a take, or that another machine's delete already made (D95):
-                // its condition, that nobody has taken the quest, no longer holds, and it carries no
-                // work for a person to reconcile. The third thing a rebase drops. A yes to a departure
-                // that no longer waits (DRIFT1d) is the same: its done lost, or another machine's yes came
-                // first, and a second yes is the first. A step it published goes as a lost close's does.
-                // So is a verdict on evidence nothing waits on any more (EVID1a): another machine's verdict
-                // found it first, or the person accepted the done as it stood, and either way the step it
-                // published is the one that stands. A verdict on a done that lost needs nothing more here:
-                // the done came first in the history, and its conflict took the step with it.
                 await ForgetOperationAsync(position, transaction, ct).ConfigureAwait(false);
+
+                // A yes that lost takes the step it published with it, as a lost close's does (DRIFT1d). A verdict on a
+                // done that lost needs nothing more here: the done came first in the history, and its conflict took the
+                // step with it (EVID1a). A verdict that lost to another machine's, or to the person's yes, leaves the
+                // step standing, since the winner published the same one.
                 if (operation.Kind == QuestOperationKind.Accepted && quest is not { Accepted: not null })
                 {
                     await ForgetFollowUpsAsync(id, transaction, ct).ConfigureAwait(false);
@@ -1440,22 +1432,10 @@ public sealed class QuestStore
                 continue;
             }
 
-            if (quest is null)
-            {
-                // Another machine deleted the quest first (D95). A move made meanwhile is kept as a
-                // conflict on a quest no list shows, so this machine's claim reads lost and its driver
-                // stops the session, and a conflict already made stays as it was. A wait or a dismissal
-                // has nothing left to say about a quest that is gone.
-                if (operation.Kind == QuestOperationKind.Conflict) continue;
-                if (QuestTransitions.Target(operation.Kind) is null)
-                {
-                    await ForgetOperationAsync(position, transaction, ct).ConfigureAwait(false);
-                    continue;
-                }
-            }
-
-            // A decline made while open that lost to a take (PAUSE1c) is kept like any losing move, with its
-            // reason: the conflict says it attempted a decline, and the flag, a decline's, goes with the kind.
+            // A move. On a quest another machine deleted first (D95) it is kept as a conflict on a quest no list shows,
+            // so this machine's claim reads lost and its driver stops the session. A decline made while open that lost
+            // to a take (PAUSE1c) is kept like any losing move, with its reason: the conflict says it attempted a
+            // decline, and the flag, a decline's, goes with the kind.
             var lost = operation with
             {
                 Kind = QuestOperationKind.Conflict, Attempted = QuestTransitions.Target(operation.Kind), WhileOpen = false,

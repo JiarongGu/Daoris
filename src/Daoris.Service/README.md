@@ -248,6 +248,9 @@ else is refused naming who can be, because an unread quest looks exactly like an
 Stored beside the index in the same database: quests are service state as the index is, and two files
 would be two things to back up and two that can disagree about which repositories exist.
 
+**A new kind of quest operation goes in every place `.claude/knowledge/quest-operations.md` names**
+(QUESTOP1), from the enum to the MCP listing, and `QuestOperationKindsTests` fails for a kind that misses one.
+
 ## Proposing a change to what agents may do
 
 A session that finds the rules it was handed wrong says so: `permission_propose` (PERM2, D74) proposes

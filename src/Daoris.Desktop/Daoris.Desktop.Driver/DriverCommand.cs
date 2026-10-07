@@ -64,6 +64,9 @@ public static class DriverCommand
           quest delete <id>  ·  quest accept <id>
               delete a quest nobody has started on, or accept a done's departure from what you required, so what
               it held (the chain's next step, a quest waiting on it) goes on.
+          quest check <id> [--commit <sha>]
+              read a done's evidence again: at the commit a driven end here read, or the one named, which must come
+              after it on the same history. 0 when all is found, 1 when anything is missing or unread.
           history [--workspace <name>] [--json]
               what this machine keeps of finished work, per workspace: quests, asks, sessions and bytes, what a
               clear would take, and what it keeps and why.

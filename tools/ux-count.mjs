@@ -41,11 +41,11 @@
  * It starts neither Storybook nor the window. The stories are counted on a Storybook the caller started; the
  * window's script is written for `npm run desktop -- eval --file`, which the caller runs against the install.
  */
-import { mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { basename, dirname, extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isMain } from './fsx.mjs';
+import { isMain, writeAtomic } from './fsx.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const web = join(repoRoot, 'src', 'Daoris.Web');
@@ -457,13 +457,12 @@ export async function countStories({
 /**
  * Write the window's script, atomically, and say the two commands that take a screen's counts with it. The window
  * is never started here: the caller runs `eval` against the install `npm run desktop -- run --install` started.
+ * `renameOptions` are `writeAtomic`'s, for a test to hold the file.
  */
-export function writeWindowScript({ out = DEFAULT_SCRIPT, terms }) {
+export function writeWindowScript({ out = DEFAULT_SCRIPT, terms }, renameOptions = {}) {
   const script = resolve(repoRoot, out);
   const text = countExpression({ terms });
-  mkdirSync(dirname(script), { recursive: true });
-  writeFileSync(`${script}.part`, text);
-  renameSync(`${script}.part`, script);
+  writeAtomic(script, text, renameOptions);
   const shown = (path) => relative(repoRoot, path).replaceAll('\\', '/');
   const answer = join(dirname(script), '<screen>.json');
   return [

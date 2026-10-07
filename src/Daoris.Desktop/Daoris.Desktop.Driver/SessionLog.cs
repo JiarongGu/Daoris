@@ -24,7 +24,8 @@ namespace Daoris.Driver;
 /// <c>permission.refused</c> {session, adapter, tool, kind, by} for each call the record says was refused
 /// (UNBLOCK5, D122 §3.10). Beside the sessions, what the client says of the registry and of the workspace
 /// plans: <c>registry.followed</c> (WSSETUP5) and the <c>setup.*</c> lines (WSSETUP6); and of the accounts:
-/// <c>account.limited</c> and <c>starts.waiting</c> (TOOL4d). An answer taken up, <c>session.answered</c> (ANSWER1a,
+/// <c>account.limited</c> and <c>starts.waiting</c> (TOOL4d); of a landing at done, <c>landing.auto</c> (LAND2b); and of a
+/// done's evidence read, <c>evidence.checked</c> (EVID1b). An answer taken up, <c>session.answered</c> (ANSWER1a,
 /// D131 §2), and words that reopened an ended record, <c>session.reopened</c> with the door they were said at (MSG1b,
 /// MSG1d, D137 §3.3), ride the account lines' channel, which writes a catalogued line as it is given. The person's words
 /// shown the moment they are said (an event with <c>reaches</c>) are no prompt, and time nothing.</para>
@@ -91,6 +92,7 @@ public sealed class SessionLog : IDisposable
         service.SetupLined += OnSetup;
         service.AccountLined += OnAccount;
         service.LandingLined += OnLanding;
+        service.EvidenceLined += OnEvidence;
         events.Evented += OnEvented;
     }
 
@@ -108,6 +110,22 @@ public sealed class SessionLog : IDisposable
         }
 
         WriteLanding(_log, line);
+    }
+
+    /// <summary>
+    /// A done's evidence read (EVID1b, D144 §5): <c>evidence.checked</c>, with the fields <see cref="EvidenceLine"/> gives it —
+    /// counts and codes, never a path, a commit or the service's words. The terminal's check writes the same line through here.
+    /// </summary>
+    public static void WriteEvidence(MachineLog log, EvidenceLine line) => log.Write("info", line.Event, line.Data);
+
+    private void OnEvidence(EvidenceLine line)
+    {
+        lock (_gate)
+        {
+            if (_disposed) return;
+        }
+
+        WriteEvidence(_log, line);
     }
 
     /// <summary>
@@ -176,6 +194,7 @@ public sealed class SessionLog : IDisposable
         _service.SetupLined -= OnSetup;
         _service.AccountLined -= OnAccount;
         _service.LandingLined -= OnLanding;
+        _service.EvidenceLined -= OnEvidence;
         _events.Evented -= OnEvented;
     }
 

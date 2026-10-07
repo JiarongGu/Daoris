@@ -1,7 +1,7 @@
 ---
 name: development-documents
 applies_when: setting a repository up for agents, adding, moving or splitting one of its documents, writing an entry into one, or when a session had to search for where something is written
-enforces: a short brief every agent reads, detail on demand, records in places the always-read file names; a document read whole has a ceiling and a record read by lookup has none; an entry points to its detail; what may run unasked is a declaration a tool reads, never a sentence
+enforces: a short brief every agent reads, detail on demand, records in places the always-read file names; a document read whole has a ceiling and a record read by lookup has none; an entry points to its detail; what may run unasked is a declaration a tool reads, never a sentence; where things are is a generated index the repository's own check keeps true
 ---
 
 # The development documents — what a repository keeps so a session works unasked
@@ -27,7 +27,9 @@ Each failure this prevents is silent.
   refusal and a stall. A sentence that forbids something stops nothing either.
 - **The search before the work.** The doctrine names records by their job (the backlog, the decisions,
   the fix log) and never by their path, which is right for doctrine and costs every session in every
-  repository a search. A session that guesses wrong writes to the wrong one.
+  repository a search. A session that guesses wrong writes to the wrong one. Measured in one
+  repository, a third of each session's calls came before its first edit, spent finding its way; and a
+  search names a file, not the line in it.
 - **A record written twice, and paid for on every step.** A document's cost is its size times the steps
   that follow it: a session carries what it read into every step after, and a cache makes the repeat
   cheaper, never free. A retold entry costs every later reader and tells them nothing the first copy
@@ -54,6 +56,7 @@ names and paths are the repository's own.
 | **knowledge** | a deep dive one area needs, saying when it applies and what it enforces | on demand, from the index |
 | **skill** | a procedure, invoked by name | its description always, its body on use |
 | **router** | each document, its kind (contract, method, study, evidence, record) and its standing (current, amended by, superseded by) | whole, at a task's start |
+| **index** | where things are in the code and the records, by what a session looks for, each with its file and lines; generated, never edited by hand | by lookup, before any search of the code |
 | **decisions** | numbered decisions, each with why, what it rejected, and what the checks do not cover | by lookup |
 | **backlog** | open work only, each row naming its contract and its proof | whole, when picking work |
 | **archive** | finished work, each with its date and outcome | by lookup |
@@ -74,8 +77,8 @@ things to people. Elsewhere it is a document nobody opens, so no repository is r
 - **On demand**: rooms, knowledge, skill bodies, the router, the design documents. Something always
   read names each one, or names the index that lists them, because telling is how an on-demand tier
   reaches an agent. A list that grows with the repository is read on demand too.
-- **By lookup**: decisions, archive, fixes, changelog, glossary. Read for one entry and never whole, so
-  they may grow without limit.
+- **By lookup**: decisions, archive, fixes, changelog, glossary, and the index of where things are. Read
+  for one entry and never whole, so they may grow without limit.
 
 Name a knowledge document by its subject, and say when it applies in its first lines. A search finds
 what a file's name and opening say, and that is how a document is found where no index is read.
@@ -136,6 +139,28 @@ The brief ends with **where things are**: one line per record the repository kee
 path. Where a tool generates that list from a declaration, declare the records and let the tool keep
 the list true. Without one, write it by hand. A record with no line there is a record no session finds.
 
+### An index of where things are
+
+A session that knows what it needs but not where it is will search, and the search is its largest cost
+before its first change. A search names a file, not a line, so the read that follows is the whole file;
+and a long record is read whole to find one amendment in it.
+
+- **Generate it and commit it.** A tool in the repository's own toolchain writes it from the files, and
+  nobody edits it by hand. Committed, because a file is read by every agent on every machine with
+  nothing installed and nothing running. A hand-kept list is wrong the moment the code moves.
+- **By what is sought, each row a place.** Group it by what sessions look for here (an entry point, a
+  command, a key, a fixture), each row naming a file and a line range, so the read that follows is a
+  range.
+- **Outline what is too long to read whole**: its declarations or headings, each with its lines.
+- **Digest the decisions**, where there is a decisions record: each decision's title and lines, and each
+  dated amendment's label and lines.
+- **The repository's own check keeps it true**, failing on a stale index and naming the command that
+  writes it again. A conflict in it is resolved by writing it again, never by hand, and it is marked as
+  generated so a review folds it.
+- **The brief names it in a line**, and says to open it before searching.
+- **An index the repository already keeps stays**, the knowledge's among them. The generated one links
+  it and restates none of its rows.
+
 ### What may run unasked is a declaration
 
 What a session may run without asking goes in a declaration a tool reads, beside the gates, and a
@@ -157,4 +182,5 @@ install from the lockfile. The brief says only where the declaration is.
 
 Every part of this is a committed file. A repository with no doctrine tool writes its list of places by
 hand, keeps its ceilings by judgement, and its declaration is read by whatever reads it. A tool adds
-two things: the list kept true, and the facts checked.
+two things: the list kept true, and the facts checked. The index is the repository's own: its
+generator, its check and its files need no doctrine tool, and neither does reading it.

@@ -1,5 +1,5 @@
 {
-  "chars": 6877,
+  "chars": 7043,
   "sections": [
     {
       "name": "quest",
@@ -18,8 +18,8 @@
     {
       "name": "requirements",
       "source": "quest",
-      "said": "the requirements: 777 characters, 1 of 1 from quest #abc123",
-      "chars": 777,
+      "said": "the requirements: 943 characters, 1 of 1 from quest #abc123",
+      "chars": 943,
       "from": "abc123",
       "shown": 1,
       "of": 1

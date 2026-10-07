@@ -359,6 +359,61 @@ public sealed class TraceTests : IDisposable
         Assert.Contains("instruction handed: event 1, 70,000 characters, of which the record keeps the first 65,536", said);
     }
 
+    /// <summary>
+    /// EVID1b (D144 §5): what was kept of a done's evidence reads back as kept: each requirement's evidence with what was read of
+    /// it, the verdict's commit, how it was chosen, which session's end and which machine, and the hold's cause with its doors.
+    /// </summary>
+    [Fact]
+    public async Task A_dones_evidence_and_its_hold_are_read_as_kept()
+    {
+        var commit = "0123456789abcdef0123456789abcdef01234567";
+        var quest = Quest("q1", "ask #a1", "Fix the dashboard figure", "Done",
+        [
+            new JsonObject
+            {
+                ["quote"] = "use the v3 bridge", ["check"] = "the report reads through bridge v3",
+                ["evidence"] = new JsonArray(new JsonObject { ["path"] = "docs/report.md" }, new JsonObject { ["path"] = "docs/tile.md" }),
+            },
+        ],
+            [new JsonObject { ["requirement"] = 1, ["met"] = "the tile reads through v3 now" }]);
+        quest["held"] = true;
+        quest["hold"] = "evidence-missing";
+        quest["awaitsEvidence"] = true;
+        quest["evidence"] = new JsonObject
+        {
+            ["commit"] = commit, ["how"] = "session-end", ["session"] = "s2", ["at"] = At(10, 5).ToString("O"), ["machine"] = "laptop",
+            ["items"] = new JsonArray(
+                new JsonObject { ["requirement"] = 1, ["path"] = "docs/report.md", ["result"] = "found", ["object"] = new string('b', 40), ["changed"] = true },
+                new JsonObject { ["requirement"] = 1, ["path"] = "docs/tile.md", ["result"] = "case", ["spelled"] = "docs/Tile.md", ["changed"] = false }),
+        };
+
+        var (_, said, _) = await TraceAsync(new TraceAsk("q1"), quests: [quest]);
+
+        Assert.Contains("        evidence: `docs/report.md` found, changed by this work · `docs/tile.md` case, the commit spells it `docs/Tile.md`\n", said);
+        Assert.Contains("  held: its evidence was not found in the commit read, and waits for you: a later commit that holds it "
+            + "(`daoris-driver quest check q1 --commit <sha>`), or your yes to the done as it stands (`daoris-driver quest accept q1`)\n", said);
+        Assert.Contains($"  evidence read at `{commit[..8]}` (session-end), at the end of session s2 on laptop, 2026-10-03 10:05 UTC: 1 of 2 found\n", said);
+        Assert.DoesNotContain("departed from what you required", said);
+    }
+
+    /// <summary>EVID1b: a done whose evidence nobody read yet says so, and says the driver reads it when the session ends.</summary>
+    [Fact]
+    public async Task A_dones_unread_evidence_says_it_is_not_read_yet()
+    {
+        var quest = Quest("q1", "ask #a1", "Fix the dashboard figure", "Done",
+            [new JsonObject { ["quote"] = "use the v3 bridge", ["check"] = "reads", ["evidence"] = new JsonArray(new JsonObject { ["path"] = "docs/report.md" }) }],
+            [new JsonObject { ["requirement"] = 1, ["met"] = "it reads" }]);
+        quest["held"] = true;
+        quest["hold"] = "evidence-unread";
+        quest["awaitsEvidence"] = true;
+
+        var (_, said, _) = await TraceAsync(new TraceAsk("q1"), quests: [quest]);
+
+        Assert.Contains("        evidence: `docs/report.md` not read yet\n", said);
+        Assert.Contains("  held: its evidence is not read yet: the driver reads it when the session that closed it ends, or "
+            + "`daoris-driver quest check q1` reads it; your yes takes the done as it stands (`daoris-driver quest accept q1`)\n", said);
+    }
+
     /// <summary>A quest no ask asked says so, and reads its sessions all the same.</summary>
     [Fact]
     public async Task A_quest_on_no_ask_says_it_has_none()

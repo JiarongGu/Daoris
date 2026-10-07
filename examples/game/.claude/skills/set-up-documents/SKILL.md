@@ -36,7 +36,7 @@ the way it is. Read that first. The templates are in `templates/`, beside this f
    - one folder's conventions, traps or checks → that folder's room
    - history, and what was rejected → the decisions
    - status and counts → the backlog, or the one place that keeps them
-   - a permission → the declaration (step 5)
+   - a permission → the declaration (step 6)
 
 3. **Write the rooms.** A folder whose conventions, traps or checks differ from the rest of the
    repository gets an instruction file of its own, from `templates/room.md`. Not every agent loads a
@@ -50,19 +50,29 @@ the way it is. Read that first. The templates are in `templates/`, beside this f
    its shape is open work, so its excess moves to the record that holds it (a log of sightings to the
    fix log, a history to the decisions, a design's text back to the design), and the row points there.
 
-5. **Declare the safe work** in the declaration beside the gates: the checks a session may run (not the
+5. **Give it an index of where things are**, from `templates/index.md`. First list every index the
+   repository already keeps, written by hand or generated (a router, a file named as an index, a routing
+   skill, a code map), and keep each as and where it is. One that is generated and checked is the index:
+   name it, and add nothing. Otherwise write a generator in the repository's own toolchain, beside its
+   other tools, needing nothing the repository does not already use and writing the same files on every
+   machine. Put its check in the command that means done. Mark its folder as generated, so a review
+   folds it and a merge leaves it to be written again. The generated index lists the hand-kept ones
+   first and restates none of their rows. The brief's *Where things are* names it.
+
+6. **Declare the safe work** in the declaration beside the gates: the checks a session may run (not the
    ones that need the machine quiet or run for a long time), the build and test commands, the install
    from the lockfile. Exact, one command per entry, and none of the carve-outs. The brief's *Build,
    test, verify* names the one command that means done and says where the declaration is. It takes
    effect when a person accepts it, and the review says so.
 
-6. **Measure.** Each document read whole against its ceiling in words; the root instruction file,
+7. **Measure.** Each document read whole against its ceiling in words; the root instruction file,
    brief and doctrine together, against the smallest byte limit among the agents the repository serves.
    Over is reported, never hidden. Relocate, then condense, then raise the ceiling with the reason.
 
-7. **Check, and leave it for review.** Run the doctrine check where there is one and the repository's
+8. **Check, and leave it for review.** Run the doctrine check where there is one and the repository's
    own build and tests. Then hand over: each line that left the brief and where it went, each record
-   placed, each room written, the declaration and what it allows, and every measure against its ceiling.
+   placed, each room written, each index the repository already kept and how the generated one differs,
+   the declaration and what it allows, and every measure against its ceiling.
 
 ## The templates
 
@@ -72,6 +82,7 @@ the way it is. Read that first. The templates are in `templates/`, beside this f
 | room | `templates/room.md` |
 | knowledge | `templates/knowledge.md` |
 | router | `templates/router.md` |
+| index | `templates/index.md`, the folder's README |
 | decisions | `templates/decision.md`, one entry |
 | backlog | `templates/backlog-row.md`, one row |
 | archive | `templates/archive-entry.md`, one entry |
