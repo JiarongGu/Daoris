@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { Session } from '../api';
 import { Button, Icon, Inline, Menu, Pill, SESSION_TONE, type ShownState, shownKey } from '../ui';
 import { ACT_LOOK, actMenu, headerActs, type SessionActId } from './acts';
+import { type Answered, InlineConfirm } from './InlineConfirm';
 
 /**
  * **A session's page header** (SESSUX1d, D126 §3.2): Sessions' main area gains the header every view's chosen item has
@@ -125,50 +126,56 @@ export function SessionPageHead({ title, shown, facts = [], acts, primary = null
 /**
  * **A stop's ask** (D126 §3.3): it ends work in flight, so it asks once, under the header (platform language §4: a
  * destructive edit asks once). It says what follows by what the session is, then the move, *Stop session*, and *Never
- * mind*. The sentence is the catalogue's, and its backticks are code (`Inline`).
+ * mind*. The sentence is the catalogue's, and its backticks are code (`Inline`). It is the one inline confirmation
+ * (UXFIX2): open until the stop lands, a refusal said inside it.
  */
-export function StopAsk({ sentence, busy = false, onStop, onCancel }: {
+export function StopAsk({ sentence, busy = false, onStop, onClose }: {
   sentence: string;
   /** A stop on its way: the presses wait for it. */
   busy?: boolean;
-  onStop: () => void;
-  onCancel: () => void;
+  /** The second press, told how the stop ended. */
+  onStop: (answered: Answered) => void;
+  /** Put down, or the stop landed. */
+  onClose: () => void;
 }) {
   const { t } = useTranslation();
   return (
-    <div
-      role="group"
-      aria-label={t('work.stop.title')}
-      className="mt-2.5 flex flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2"
-    >
-      <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft"><Inline text={sentence} /></span>
-      <Button variant="danger" disabled={busy} onClick={onStop}>{t('work.act.stopMeanIt')}</Button>
-      <Button variant="ghost" disabled={busy} onClick={onCancel}>{t('common.cancel')}</Button>
-    </div>
+    <InlineConfirm
+      className="mt-2.5"
+      label={t('work.stop.title')}
+      says={<Inline text={sentence} />}
+      meanIt={t('work.act.stopMeanIt')}
+      busy={busy}
+      onConfirm={onStop}
+      onClose={onClose}
+    />
   );
 }
 
 /**
  * **A delete's ask** (SESSUX1f, D126 §5.4): nothing brings a deleted conversation back, so it asks once, under the header
  * as the stop's ask does: what goes, then *Delete session* and *Never mind*. The page offers *Delete…* only where the
- * driver said it would be taken, so the sentence is one for every session that reaches it.
+ * driver said it would be taken, so the sentence is one for every session that reaches it. The one inline confirmation
+ * (UXFIX2).
  */
-export function DeleteAsk({ busy = false, onDelete, onCancel }: {
+export function DeleteAsk({ busy = false, onDelete, onClose }: {
   /** A delete on its way: the presses wait for it. */
   busy?: boolean;
-  onDelete: () => void;
-  onCancel: () => void;
+  /** The second press, told how the delete ended. */
+  onDelete: (answered: Answered) => void;
+  /** Put down, or the delete landed. */
+  onClose: () => void;
 }) {
   const { t } = useTranslation();
   return (
-    <div
-      role="group"
-      aria-label={t('work.delete.title')}
-      className="mt-2.5 flex flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2"
-    >
-      <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft">{t('work.delete.means')}</span>
-      <Button variant="danger" disabled={busy} onClick={onDelete}>{t('work.act.deleteMeanIt')}</Button>
-      <Button variant="ghost" disabled={busy} onClick={onCancel}>{t('common.cancel')}</Button>
-    </div>
+    <InlineConfirm
+      className="mt-2.5"
+      label={t('work.delete.title')}
+      says={t('work.delete.means')}
+      meanIt={t('work.act.deleteMeanIt')}
+      busy={busy}
+      onConfirm={onDelete}
+      onClose={onClose}
+    />
   );
 }

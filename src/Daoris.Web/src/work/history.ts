@@ -1,4 +1,5 @@
 import { size } from '../format';
+import type { Answered } from './InlineConfirm';
 import type { Translate } from './pausing';
 
 // Clearing finished history from this machine on the screen (HIST1e, D153; `docs/2026-10-07-history-clearing-design.md`
@@ -115,8 +116,11 @@ export type HistoryDoor = {
   failed?: HistoryPlan | null;
   /** A press on its way: the acts wait for it. */
   busy: boolean;
-  /** The second press: exactly the units the first listed; `done` once the driver has answered. */
-  onClear: (target: HistoryTarget, units: readonly HistoryUnitName[], done: () => void) => void;
+  /**
+   * The second press: exactly the units the first listed, told back to its ask (UXFIX2): `done` once the driver has
+   * answered, `refused` with the sentence that says why not.
+   */
+  onClear: (target: HistoryTarget, units: readonly HistoryUnitName[], answered: Answered) => void;
 };
 
 /**

@@ -765,20 +765,53 @@ describe('the Agents place', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
       payload: { harness: 'claude-code', action: 'profile-remove', profile: 'work' },
     });
+    // UXFIX2: the ask closes once the removal answered, never on the press.
+    await waitFor(() => expect(within(work).queryByRole('group', { name: 'remove work' })).toBeNull());
     // An account edit is not a door's work: nothing streams under *Ways in* for it.
     await new Promise((settle) => setTimeout(settle, 50));
     expect(screen.queryByText(/its sign-in are gone/)).toBeNull();
   });
 
-  it('Remove… can be taken back before it deletes anything', async () => {
+  /**
+   * UXFIX2 (the second-opinion review): the remove's ask is the one inline confirmation. What it deletes takes the focus
+   * and describes *Remove account*; a refused removal is said inside the ask, word for word, which stays open, where it
+   * closed on the press and refused in a toast.
+   */
+  it('Remove… takes the focus to what it deletes, and says a refused removal inside its ask', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESS_ACTION') {
+        throw Object.assign(new Error('refused'), {
+          code: 'DRIVER_REFUSED', parameters: { message: 'work is the default of aurora; choose another first.' },
+        });
+      }
+      return type === 'HARNESSES' ? ROSTER : WIRING;
+    });
+    const notify = vi.fn();
+    place(notify);
+
+    await userEvent.click(within(await more('work')).getByRole('menuitem', { name: 'Remove…' }));
+    const work = screen.getByRole('listitem', { name: 'work' });
+    const says = within(work).getByText(/deletes the account from this machine, sign-in included/);
+    await waitFor(() => expect(says).toHaveFocus());
+    expect(within(work).getByRole('button', { name: 'Remove account' })).toHaveAccessibleDescription(says.textContent!);
+
+    await userEvent.click(within(work).getByRole('button', { name: 'Remove account' }));
+    const ask = within(work).getByRole('group', { name: 'remove work' });
+    expect(await within(ask).findByRole('alert')).toHaveTextContent('work is the default of aurora; choose another first.');
+    expect(notify).not.toHaveBeenCalledWith(expect.stringContaining('choose another first'), 'error');
+  });
+
+  it('Remove… can be taken back before it deletes anything, giving the focus back to the account’s ⋯', async () => {
     place();
 
     await userEvent.click(within(await more('work')).getByRole('menuitem', { name: 'Remove…' }));
     const work = screen.getByRole('listitem', { name: 'work' });
+    await waitFor(() => expect(within(work).getByText(/deletes the account from this machine/)).toHaveFocus());
     await userEvent.click(within(work).getByRole('button', { name: 'Never mind' }));
 
     expect(within(work).queryByRole('button', { name: 'Remove account' })).toBeNull();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', expect.anything());
+    expect(screen.getByRole('button', { name: 'More for work' })).toHaveFocus();
   });
 
   /** An agent with no sign-in of its own offers neither sign-in. */

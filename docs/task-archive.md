@@ -11742,3 +11742,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UXFIX1b — the other menus announce their ticks; the command center's target** (web-shell). After UXFIX1, the map's size (`map/LayeredMap.tsx:32`) and the selected view (`work/ViewsMenu.tsx:83`) still draw a tick that is not announced, and the command center is 24 px (`work/CommandCenter.tsx:50`), under the 28 px floor. Contract: platform-ux §6, the second-opinion review. Proof: vitest on `menuitemradio`/`aria-checked` and the center's min size.
 
 **Outcome** 2026-10-07: the map's sizes and a region's views menu are `menuitemradio` rows in a named group, `aria-checked` on the one in use; the command center has a 28 px minimum box. Leftovers are UXFIX1c. Detail: commits fe68adbb, 3c4e9da4, 81c47379.
+
+
+## UXFIX2 — one inline confirmation for destructive acts (2026-10-07, D153)
+
+> - [ ] **UXFIX2 — one inline confirmation for destructive acts** (web-shell, web-settings). Clear history stays open while pending; discard branch and delete close at once and refuse in a toast; none focuses its explanation or ties it to the button. Build one foundation for `ClearAsk`, `DiscardBranchAsk`, the delete and stop asks and the quest/ask/agent pages' inline copies, on ACCTEDIT1's `answered.done/refused`. Contract: the review's cross-cutting note, D88. Proof: vitest per ask (pending, refusal inside, focus) and stories.
+
+**Outcome** 2026-10-07: `InlineConfirm` is the one foundation for a destructive ask: in the page, its explanation focused, the move then *Never mind*, open while its act is on its way, a refusal said inside it, focus handed back. The clear, a branch's discard, stop, delete and an account's *Remove…* stand on it. Remaining asks: UXFIX2b. Detail: platform-ux's destructive-edit rule, D153's note; commits 364e1873, c08fddc2.

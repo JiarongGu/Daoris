@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { list } from '../format';
 import { shellWord } from '../shellWord';
 import { Button, CheckField, Inline, Pill } from '../ui';
+// Why a question's act was refused, said under it, whole (ACCTEDIT1): the inline confirmation's, so every ask says it alike.
+import { Refused } from '../work/InlineConfirm';
 import { type AccountState, type JoinChoice, stateWhen, stateWord } from './agents';
 
 // *Add an account…* (UX7b, the UX7 design §4.5; ACCT1's screen half): three steps under the agent's header, one live control
@@ -12,18 +14,6 @@ import { type AccountState, type JoinChoice, stateWhen, stateWord } from './agen
 
 const FIELD = 'min-w-0 max-w-full flex-1 basis-56 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint';
 const PANEL = 'rounded-card border border-line bg-raised p-3';
-
-/**
- * Why the question's act was refused, in the sentence the person reads (ACCTEDIT1): said under it, whole, where it was
- * pressed, as a refused start is said in its form (UX5 U68). A toast is for an error with no form to stand in.
- */
-function Refused({ sentence }: { sentence: string }) {
-  return (
-    <p role="alert" className="m-0 basis-full whitespace-pre-wrap border-l-[3px] border-warn pl-2.5 text-small text-ink-soft">
-      <Inline text={sentence} />
-    </p>
-  );
-}
 
 /** An account step 1 offers back: its id, its name, its state as last known and where it runs. */
 export type BackAccount = { id: string; name: string; state: AccountState; runs: string };

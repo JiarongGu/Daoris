@@ -130,7 +130,10 @@ controls are in the frame design's §3.
   something: decline, close an ask, retire, remove an account, stop, discard. It wears the hue of the
   outcome it causes, and never marks a state (U18). **The move comes first, then *never mind*,** in
   every drawer's footer and every confirming pair (U38). **A destructive edit asks once**: its first
-  press opens a sentence saying what the second will do, beside the move and *never mind*.
+  press opens a sentence saying what the second will do, beside the move and *never mind*. Every such ask is one
+  component, `InlineConfirm` (UXFIX2): in the page, never a modal; the sentence takes the focus and describes the move;
+  Escape and *never mind* give the focus back to what opened it; the press keeps it open and waiting, and a refusal is
+  said inside it, whole, rather than in a toast; it closes only on success or a cancel.
 - **Pills** carry state: status text on its soft field with its hue — label always present.
 - **Chips** carry declarations (owns/accepts/packs): quiet line-bordered tokens; `accent` variant for
   what a project *accepts*, because that is the actionable half. A phrase stays in the body face

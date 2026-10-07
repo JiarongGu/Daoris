@@ -229,7 +229,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, install = false, 
       { onSuccess: (answer) => notify(t(answer.ended ? 'harness.cooling.ready' : 'harness.cooling.notCooling', { account: label })), onError },
     ),
     onDefault: (account, workspace) => run(door, 'profile-default', account ?? undefined, undefined, workspace),
-    onRemove: (account) => run(door, 'profile-remove', account),
+    onRemove: (account, answered) => run(door, 'profile-remove', account, undefined, undefined, answered),
     onRename: (account, name, answered) => told(rename(account, name), answered),
     onJoin: (account, lists, answered) => told(join(account, lists), answered),
     // The add flow's end (D152 §4.5): its name kept where the field holds one other than its id, then the lists joined;

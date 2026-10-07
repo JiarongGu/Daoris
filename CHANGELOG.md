@@ -92,6 +92,9 @@ with the version and date at release.
   button are easier to hit, and arrowing through a segmented choice moves the focus with it.
 - The map's size and a region's shown view are announced as the ticked choice, and the command
   center is easier to hit.
+- Every destructive ask (clearing history, discarding a branch, stopping or deleting a session, a
+  quest's or an ask's Delete…, removing an account) stays open while it works and says a refusal
+  inside itself, then hands the focus back to what opened it.
 
 The first version: doctrine that installs, is checked, and flows back.
 
