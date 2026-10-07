@@ -81,14 +81,14 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Asks.cs` | 48 | 928 |
 | `src/Daoris.Service/Daoris.Service.Core/KnowledgeService.cs` | 49 | 986 |
 | `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 88 | 1672 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 125 | 2308 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 123 | 2288 |
 | `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 62 | 1198 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 63 | 1146 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 67 | 1208 |
 | `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 95 | 1727 |
-| `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 60 | 1274 |
+| `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 61 | 1307 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 67 | 1385 |
-| `src/Daoris.Service/README.md` | 55 | 581 |
+| `src/Daoris.Service/README.md` | 55 | 584 |
 
 ### CLI (`cli`)
 
