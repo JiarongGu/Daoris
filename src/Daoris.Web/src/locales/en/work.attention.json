@@ -64,7 +64,6 @@
   "work.attention.held.intakes_other": "Intake for {{count}} asks",
   "work.attention.held.both": "{{quests}} and intake for {{count}} ask",
   "work.attention.held.both_other": "{{quests}} and intake for {{count}} asks",
-  "work.attention.signedOut.read": "Read signed out at {{when}}.",
   "work.attention.signedOut.runs": "It runs work in {{runs}}.",
   "work.attention.signedOut.own": "Daoris's starts run on it, since no account is named.",
   "work.attention.act.letRun": "Let {{account}} run {{workspace}}…",

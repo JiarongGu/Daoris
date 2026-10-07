@@ -11749,3 +11749,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UXFIX2 — one inline confirmation for destructive acts** (web-shell, web-settings). Clear history stays open while pending; discard branch and delete close at once and refuse in a toast; none focuses its explanation or ties it to the button. Build one foundation for `ClearAsk`, `DiscardBranchAsk`, the delete and stop asks and the quest/ask/agent pages' inline copies, on ACCTEDIT1's `answered.done/refused`. Contract: the review's cross-cutting note, D88. Proof: vitest per ask (pending, refusal inside, focus) and stories.
 
 **Outcome** 2026-10-07: `InlineConfirm` is the one foundation for a destructive ask: in the page, its explanation focused, the move then *Never mind*, open while its act is on its way, a refusal said inside it, focus handed back. The clear, a branch's discard, stop, delete and an account's *Remove…* stand on it. Remaining asks: UXFIX2b. Detail: platform-ux's destructive-edit rule, D153's note; commits 364e1873, c08fddc2.
+
+
+## UXFIX3 — account attention says what it knows (2026-10-07, D150)
+
+> - [ ] **UXFIX3 — account attention says what it knows** (web-shell). *Let … run …* may offer an account in an unknown state (`outsideOf` falls back to `candidates[0]`, `accountAttention.ts:240`), and a signed-out row's age is its last reading shown as waiting (`:347`). Offer only a known-ready account, or *Read* first; say *read …* for those rows. Contract: D150's UX6d note, the review. Proof: vitest rows for each.
+
+**Outcome** 2026-10-07: *Let … run …* is offered only for an account known ready; one never read is offered *Read* first. A signed-out row says when it was read rather than a wait, and sorts after rows with a wait in the roster's order. Detail: D150's UXFIX3 note; commit c1b8d834.

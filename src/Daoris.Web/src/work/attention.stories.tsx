@@ -76,10 +76,22 @@ const LET_IN: Attention = {
   },
 };
 
-/** A signed-out account a list holds that no waiting start names: its own row, its sign-in, its agent's page. */
+/**
+ * The same quest where the one account outside `work`'s list was never read (UXFIX3): it may be signed out, so the row reads
+ * it first, in *Let … run …*'s place, and offers to let it run once it reads ready.
+ */
+const READ_FIRST: Attention = {
+  ...LET_IN, id: 'quest:claude-code/account-2:read-first', detail: `home cools until ${resetSaid}.`,
+  account: { ...CLAUDE, named: [LET_IN.account!.named[0]!], outside: null, readFirst: { id: 'acct-5e6f7a8b', label: 'team seat' } },
+};
+
+/**
+ * A signed-out account a list holds that no waiting start names: its own row, its sign-in, its agent's page. It says when
+ * it was read, never how long it waited, since nobody knows when it began to hold work (UXFIX3).
+ */
 const SIGNED_OUT: Attention = {
-  id: 'signed-out:claude-code/account-5', kind: 'signed-out', title: 'you@work.example', where: 'Claude Code', since: at(300),
-  detail: `Read signed out at ${readSaid}. It runs work in this machine and aurora.`,
+  id: 'signed-out:claude-code/account-5', kind: 'signed-out', title: 'you@work.example', where: 'Claude Code', since: null,
+  read: READ, detail: 'It runs work in this machine and aurora.',
   account: { ...CLAUDE, outside: null, named: [{ id: 'acct-7d01e3aa', label: 'you@work.example', state: 'out', read: READ, until: null }] },
 };
 
@@ -185,13 +197,14 @@ const meta: Meta = { title: 'Work/Attention' };
 export default meta;
 
 /**
- * Overview's lead as the install would have shown it the morning the asks sat (UX6c, design §6): what holds work (a
- * signed-out account a list holds, a folder held for trust, a quest and the asks' intake waiting on their accounts, a quest
- * parked on its failed sessions, a go-ahead, a parked session), what waits for the person's word (two proposed asks, a
- * departure, a widening), and seven sessions to review, five shown and two counted.
+ * Overview's lead as the install would have shown it the morning the asks sat (UX6c, design §6): what holds work (a folder
+ * held for trust, a quest and the asks' intake waiting on their accounts, a quest parked on its failed sessions, a
+ * go-ahead, a parked session, and last a signed-out account a list holds, which has no wait to sort by, UXFIX3), what
+ * waits for the person's word (two proposed asks, a departure, a widening), and seven sessions to review, five shown and
+ * two counted.
  */
 const BAND: Attention[] = [
-  SIGNED_OUT, TRUST_ROW, LET_IN, PARKED_QUEST, GO_AHEAD, PARKED, ACCOUNT_WAIT,
+  TRUST_ROW, LET_IN, PARKED_QUEST, GO_AHEAD, PARKED, ACCOUNT_WAIT, SIGNED_OUT,
   PROPOSAL, { ...PROPOSAL, id: '1b2c3d4e5f6a', title: 'Fix the pipeline’s knowledge check', since: at(170), publishTo: ['engine'], detail: 'The declarations propose engine. Nothing is published until you choose.' },
   DEPARTURE, RULE,
   ...REVIEWS,
@@ -269,9 +282,10 @@ export const Asking: StoryObj = {
 
 /**
  * The accounts' rows (UX6d, design §6.2–§6.3): the intake waiting behind a cooling account with a sign-in for each account it
- * passed signed out; a quest whose one account cools, letting a ready one in and reading one never read; a signed-out account
- * a list holds; the tool's own sign-in cooling, which only the person signs in; three signed out, two pressed and the third
- * said; the tick's word before the roster answers, nothing to press; a row held while a sign-in runs; a long 中文 name.
+ * passed signed out; a quest whose one account cools, letting a ready one in and reading one never read; the same where the
+ * one outside its list was never read, read first (UXFIX3); a signed-out account a list holds, saying when it was read; the
+ * tool's own sign-in cooling, which only the person signs in; three signed out, two pressed and the third said; the tick's
+ * word before the roster answers, nothing to press; a row held while a sign-in runs; a long 中文 name.
  */
 export const AccountRows: StoryObj = {
   render: () => (
@@ -279,6 +293,7 @@ export const AccountRows: StoryObj = {
       <ul className="m-0 grid list-none gap-1 border border-line bg-raised p-0 py-2">
         <AttentionRow item={ACCOUNT_WAIT} acts={ACTS} onOpen={() => {}} />
         <AttentionRow item={LET_IN} acts={ACTS} onOpen={() => {}} />
+        <AttentionRow item={READ_FIRST} acts={ACTS} onOpen={() => {}} />
         <AttentionRow item={SIGNED_OUT} acts={ACTS} onOpen={() => {}} />
         <AttentionRow
           item={{
@@ -314,7 +329,7 @@ export const AccountRows: StoryObj = {
         <AttentionRow
           item={{
             ...SIGNED_OUT, id: 'cjk', title: '工作账户（团队席位，周额度）',
-            detail: `Read signed out at ${readSaid}. It runs work in 世界流式加载引擎.`,
+            detail: 'It runs work in 世界流式加载引擎.',
             account: { ...CLAUDE, outside: null, named: [{ id: 'acct-1a2b3c4d', label: '工作账户（团队席位，周额度）', state: 'out', read: READ, until: null }] },
           }}
           acts={ACTS}
@@ -327,7 +342,8 @@ export const AccountRows: StoryObj = {
 
 /**
  * The rows as 中文 derives them (`accountAttention` words each from the catalogue, in the reader's language): the titles and
- * the lines in 中文, the accounts' names and the reset's moment as the reader's language writes them.
+ * the lines in 中文, the accounts' names and the reset's moment as the reader's language writes them. A signed-out account's
+ * reading is the row's own words (*… 读取*), so its line says only where it runs (UXFIX3).
  */
 function chineseRows(): Attention[] {
   const t = zh.t.bind(zh);
@@ -345,7 +361,11 @@ function chineseRows(): Attention[] {
     },
     {
       ...SIGNED_OUT,
-      detail: [t('work.attention.signedOut.read', { when: read }), t('work.attention.signedOut.runs', { runs: list([t('agents.runs.machine'), 'aurora'], 'zh') })].join(''),
+      detail: t('work.attention.signedOut.runs', { runs: list([t('agents.runs.machine'), 'aurora'], 'zh') }),
+    },
+    {
+      ...READ_FIRST, title: '从配置读取媒体字段名', detail: line(cooling),
+      account: { ...READ_FIRST.account!, readFirst: { id: 'acct-5e6f7a8b', label: '团队席位' } },
     },
     {
       ...ACCOUNT_WAIT, id: 'own', title: '在区块 API 上暴露流式预算', where: 'engine', circle: false,
@@ -354,13 +374,16 @@ function chineseRows(): Attention[] {
     },
     {
       ...SIGNED_OUT, id: 'own-out', title: t('agents.account.own'),
-      detail: [t('work.attention.signedOut.read', { when: read }), t('work.attention.signedOut.own')].join(''),
+      detail: t('work.attention.signedOut.own'),
       account: { ...CLAUDE, outside: null, named: [{ id: null, label: t('agents.account.own'), state: 'out', read: READ, until: null }] },
     },
   ];
 }
 
-/** The accounts' rows in 中文, each title and line as 中文 says it; the tool's own sign-in read signed out, with no press. */
+/**
+ * The accounts' rows in 中文, each title and line as 中文 says it: a signed-out account saying when it was read, an account
+ * outside the list read first, and the tool's own sign-in read signed out, with no press.
+ */
 export const AccountRowsChinese: StoryObj = {
   decorators: [chinese],
   render: () => (

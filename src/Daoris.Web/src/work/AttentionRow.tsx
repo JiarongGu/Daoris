@@ -1,6 +1,6 @@
 import { type ReactNode, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { elapsed } from '../format';
+import { clockOf, elapsed } from '../format';
 import { cn } from '../lib/cn';
 import { shellWord } from '../shellWord';
 import type { TrustHold } from '../signals';
@@ -74,9 +74,12 @@ export type Attention = {
   account?: AccountRowFacts;
   /**
    * When it started waiting — a park's last move, a parked quest's last session's end, an ask's asking, a quest's filing, a
-   * go-ahead's first asking, a held done's close, a reviewed session's end.
+   * go-ahead's first asking, a held done's close, a reviewed session's end. Null where nothing the page holds says when
+   * (UXFIX3): a signed-out account's row knows only when the account was read, which is not a wait, so it says `read`.
    */
-  since: string;
+  since: string | null;
+  /** When a signed-out account's row read it (UXFIX3): said as *read …* where a row with a wait says how long. */
+  read?: string | null;
   /** The sentence explaining what the person is being asked to settle. */
   detail?: string | null;
   /**
@@ -166,8 +169,10 @@ const DOOR_ONLY: Partial<Record<Attention['kind'], (item: Attention) => [string,
  * other row's door is *Open* at its end, beside its acts, and an account's row's is its agent's name (UX6d).
  *
  * **An account's row settles what one press can** (UX6d, §6.2): *Sign in* to each account read signed out, *Read* an
- * account no read answered, and *Let … run …* (D130 §3.3), which widens what Daoris may spend and so asks once, naming the
- * list it joins and its terminal twin. Its sign-in's steps are the band's to hand (`below`), since they follow a process.
+ * account no read answered, and *Let … run …* (D130 §3.3) for an account known ready, which widens what Daoris may spend and
+ * so asks once, naming the list it joins and its terminal twin; where the one outside the list was never read, *Read* it
+ * first (UXFIX3). Its sign-in's steps are the band's to hand (`below`), since they follow a process. A signed-out account's
+ * row says when it was read where the others say how long (*read 10:42*), since a reading is not a wait (UXFIX3).
  *
  * A molecule: it is handed the item, the acts and the door, and reports each press.
  */
@@ -191,9 +196,14 @@ export function AttentionRow({ item, onOpen, acts = {}, busy = false, opened = n
   const offered = attentionOffers(item).filter((offer) => acts[HANDLER[offer.act]] !== undefined);
   const doorOnly = DOOR_ONLY[item.kind];
   const where = IN_A_CIRCLE.has(item.kind) || item.circle ? t('work.attention.circle', { circle: item.where }) : item.where;
-  // An account's name as the row says it: the person's, from what the row names (ACCT2).
+  // An account's name as the row says it: the person's, from what the row names (ACCT2), or the one outside its list.
   const called = (account?: string) =>
-    item.account?.named.find((one) => one.id === account)?.label ?? item.account?.outside?.label ?? account ?? '';
+    [...(item.account?.named ?? []), item.account?.outside, item.account?.readFirst]
+      .find((one) => one && one.id === account)?.label ?? account ?? '';
+  // How long it has waited; where no wait is known, when its account was read, which is not a wait (UXFIX3).
+  const when = item.since
+    ? t('work.attention.since', { span: elapsed(item.since) })
+    : item.read ? t('agents.read.at', { when: clockOf(item.read) }) : null;
 
   const done = () => { setAsking(null); setWords(''); setChoice(''); };
   const press = ({ act, account }: AttentionOffer) => {
@@ -250,8 +260,12 @@ export function AttentionRow({ item, onOpen, acts = {}, busy = false, opened = n
             {item.title}
           </span>
           {where && <><span aria-hidden className="text-ink-faint">·</span><span className="text-accent">{where}</span></>}
-          <span aria-hidden className="text-ink-faint">·</span>
-          <span className="font-mono text-meta text-ink-faint">{t('work.attention.since', { span: elapsed(item.since) })}</span>
+          {when && (
+            <>
+              <span aria-hidden className="text-ink-faint">·</span>
+              <span className="font-mono text-meta text-ink-faint">{when}</span>
+            </>
+          )}
         </p>
         {/* 🔴 No display utility beside the clamp: `block` overrode the box it needs, and a parked
             session's whole analysis filled the band (2026-09-29). */}

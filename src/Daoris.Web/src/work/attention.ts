@@ -73,10 +73,11 @@ const ACCOUNT_ACTS = 2;
 
 /**
  * What an account's row offers (UX6d, design §6.2–§6.3), each for one account: *Sign in* to each account the start passed
- * signed out, in the order it names them; *Let … run …* for a ready account outside its list (D130 §3.3); and *Read* for
- * one no read answered (§5.3: a reading only on the press). A signed-out account's own row signs it in. Never the tool's own
- * sign-in, which is the person's, nor where Daoris runs no sign-in for the agent. Two at most: the rest are on the agent's
- * page, the row's door, and its line says them.
+ * signed out, in the order it names them; *Let … run …* for an account outside its list known ready (D130 §3.3), or in its
+ * place *Read* for one there never read (UXFIX3), since letting run an account nobody looked at widens what Daoris may spend
+ * on a guess; and *Read* for one it names that no read answered (§5.3: a reading only on the press). A signed-out account's
+ * own row signs it in. Never the tool's own sign-in, which is the person's, nor where Daoris runs no sign-in for the agent.
+ * Two at most: the rest are on the agent's page, the row's door, and its line says them.
  */
 function accountOffers(item: Attention): AttentionOffer[] {
   const facts = item.account;
@@ -85,9 +86,12 @@ function accountOffers(item: Attention): AttentionOffer[] {
     ? facts.named.filter((one) => one.state === 'out' && one.id).map((one) => ({ act: 'sign-in', account: one.id! }))
     : [];
   if (item.kind === 'signed-out') return signIns.slice(0, 1);
+  const outside: AttentionOffer[] = facts.outside
+    ? [{ act: 'let-run', account: facts.outside.id }]
+    : facts.readFirst ? [{ act: 'read', account: facts.readFirst.id }] : [];
   return [
     ...signIns,
-    ...(facts.outside ? [{ act: 'let-run' as const, account: facts.outside.id }] : []),
+    ...outside,
     ...facts.named.filter((one) => one.state === 'unknown' && one.id && !one.read).map((one) => ({ act: 'read' as const, account: one.id! })),
   ].slice(0, ACCOUNT_ACTS);
 }
@@ -221,7 +225,9 @@ export function waitingInSessions(
  * **The accounts hold work** (UX6d, TOOL4m's row): a start waiting on its accounts, an ask's intake among them, and a
  * signed-out account a list or a default holds that no waiting start names (`accountAttention`). From the tick's waits and
  * considerations, the roster's last readings with their times and the accounts' files: nothing a row would have to ask
- * for. A browser has none of them.
+ * for. A browser has none of them. **A signed-out account's row has no wait** (UXFIX3): only when it was read is known, and
+ * sorted by that, reading it again sent an old blocker to the end of its group. It holds no start that waits now (a waiting
+ * start would stand for it), so it comes after every row with a wait, in the roster's order.
  */
 export function needsAPerson(
   sessions: readonly Session[],
@@ -356,7 +362,7 @@ export function needsAPerson(
     }));
 
   // One row per folder in one file: two quests held on one untrusted tree are one grant.
-  const folders = new Map<string, Attention>();
+  const folders = new Map<string, Attention & { since: string }>();
   for (const hold of untrusted) {
     const held = hold.quest ? quests.find((quest) => quest.id === hold.quest) : undefined;
     const asked = hold.ask ? asks.find((one) => one.id === hold.ask) : undefined;
@@ -399,8 +405,11 @@ export function needsAPerson(
   // The starts waiting on their accounts, and the signed-out accounts no waiting start names (UX6d).
   const accountRows = accountAttention(accounts, considered, quests, asks, registry);
 
-  // Each group's kinds in §6.2's order, then the longest waiting first: a stable sort keeps §6.2's order for a tie.
-  const oldestFirst = (a: Attention, b: Attention) => a.since.localeCompare(b.since);
+  // Each group's kinds in §6.2's order, then the longest waiting first: a stable sort keeps §6.2's order for a tie. A row
+  // with no known wait (a signed-out account's, UXFIX3) comes after those that have one, in the order it was listed, so a
+  // reading moves nothing.
+  const oldestFirst = (a: Attention, b: Attention) =>
+    (a.since === null || b.since === null ? Number(a.since === null) - Number(b.since === null) : a.since.localeCompare(b.since));
   return [
     [...accountRows, ...parked, ...parkedQuests, ...goAheads, ...folders.values()],
     [...waitingAsks, ...departures, ...widenings, ...unanswerable],

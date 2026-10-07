@@ -95,6 +95,8 @@ with the version and date at release.
 - Every destructive ask (clearing history, discarding a branch, stopping or deleting a session, a
   quest's or an ask's Delete…, removing an account) stays open while it works and says a refusal
   inside itself, then hands the focus back to what opened it.
+- What needs you offers *Let … run …* only for an account known to be ready, and a signed-out account's
+  row says when it was last read rather than how long it has waited.
 
 The first version: doctrine that installs, is checked, and flows back.
 

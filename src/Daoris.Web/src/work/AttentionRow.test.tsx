@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { clockOf } from '../format';
 import i18n from '../i18n';
 import { code } from '../test/code';
 import { type Attention, type AttentionActs, AttentionRow } from './AttentionRow';
@@ -82,10 +83,19 @@ const LET_IN: Attention = {
   },
 };
 
-/** A signed-out account a list holds, which no waiting start names. */
+/** The same wait, where the one account outside `work`'s list no read answered: it is read before it is let in (UXFIX3). */
+const READ_FIRST: Attention = {
+  ...LET_IN,
+  account: { ...LET_IN.account!, named: [ACCOUNT_WAIT.account!.named[0]!], outside: null, readFirst: { id: 'account-4', label: 'spare' } },
+};
+
+/**
+ * A signed-out account a list holds, which no waiting start names: when it was read is known, since when it holds work is
+ * not (UXFIX3).
+ */
 const SIGNED_OUT: Attention = {
   id: 'signed-out:claude-code/account-1', kind: 'signed-out', title: 'account-1', where: 'Claude Code',
-  since: '2026-09-21T10:42:00Z', detail: 'Read signed out at 10:42. It runs work in aurora.',
+  since: null, read: '2026-09-21T10:42:00Z', detail: 'It runs work in aurora.',
   account: {
     agent: 'claude-code', product: 'Claude Code', harness: 'claude-code', signsIn: true, outside: null,
     named: [{ id: 'account-1', label: 'account-1', state: 'out', read: '2026-09-21T10:42:00Z', until: null }],
@@ -456,6 +466,47 @@ describe('an account’s row', () => {
     render(<AttentionRow item={LET_IN} acts={acts} />);
     await userEvent.click(screen.getByRole('button', { name: 'Read spare' }));
     expect(acts.read).toHaveBeenCalledWith(LET_IN, 'account-5');
+  });
+
+  /** UXFIX3: an account no read answered may be signed out, so letting it run waits for a reading that says it is ready. */
+  it('reads an unread account outside the list before it offers to let it run', async () => {
+    const acts = everyAct();
+    render(<AttentionRow item={READ_FIRST} acts={acts} onOpen={vi.fn()} />);
+
+    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['Read spare', 'Claude Code']);
+    expect(screen.queryByRole('button', { name: /^Let / })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Read spare' }));
+    expect(acts.read).toHaveBeenCalledWith(READ_FIRST, 'account-4');
+    expect(acts.letRun).not.toHaveBeenCalled();
+  });
+
+  /**
+   * UXFIX3: a signed-out account's row says when it was read where other rows say how long they waited. Its reading is not
+   * a wait, and as one, reading it again made an old blocker look new.
+   */
+  it('says when a signed-out account was read, never that it waits', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-09-21T12:00:00Z'));
+    try {
+      const { unmount } = render(<AttentionRow item={SIGNED_OUT} />);
+      expect(screen.getByText(`read ${clockOf('2026-09-21T10:42:00Z', new Date())}`)).toBeInTheDocument();
+      expect(screen.queryByText(/waiting/)).not.toBeInTheDocument();
+      expect(screen.getByText('It runs work in aurora.')).toBeInTheDocument();
+      unmount();
+
+      await i18n.changeLanguage('zh');
+      render(<AttentionRow item={SIGNED_OUT} />);
+      expect(screen.getByText(`${clockOf('2026-09-21T10:42:00Z', new Date(), 'zh')} 读取`)).toBeInTheDocument();
+      expect(screen.queryByText(/已等待/)).not.toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+      vi.useRealTimers();
+    }
+  });
+
+  it('says no time at all where the reading is undated', () => {
+    render(<AttentionRow item={{ ...SIGNED_OUT, read: null }} />);
+    expect(screen.queryByText(/^read |waiting/)).not.toBeInTheDocument();
   });
 
   it('signs a signed-out account in from its own row, named by the account', async () => {
