@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text;
 using System.Text.Json.Nodes;
 using Daoris.Driver;
 
@@ -235,9 +234,9 @@ public sealed class QuestCheckCommandTests : IDisposable
 
         public List<JsonObject> Evidence { get; } = [];
 
-        public ServiceClient Client(string checkout) => new("http://stand-in", null, new HttpClient(new Handler(this, checkout)));
+        public ServiceClient Client(string checkout) => QuestStandIn.Client(request => Answer(request, checkout));
 
-        private (HttpStatusCode, string) Answer(HttpRequestMessage request, string checkout)
+        private (HttpStatusCode, string)? Answer(HttpRequestMessage request, string checkout)
         {
             var path = request.RequestUri!.AbsolutePath;
             if (request.Method == HttpMethod.Get && path == "/api/sessions") return (HttpStatusCode.OK, new JsonArray([.. Sessions.Select(s => s.DeepClone())]).ToJsonString());
@@ -251,42 +250,16 @@ public sealed class QuestCheckCommandTests : IDisposable
 
             if (request.Method == HttpMethod.Get && path == "/api/quests")
             {
-                return (HttpStatusCode.OK, Quest is not { } quest ? "[]" : new JsonArray(Json(quest)).ToJsonString());
+                return (HttpStatusCode.OK, QuestStandIn.List(Quest is { } quest ? [quest] : []));
             }
 
             if (request.Method == HttpMethod.Post && path == "/api/quests/q1/evidence")
             {
-                Evidence.Add(JsonNode.Parse(request.Content!.ReadAsStringAsync().Result)!.AsObject());
+                Evidence.Add(QuestStandIn.Body(request));
                 return (HttpStatusCode.OK, """{"quest":{"id":"q1"},"message":"Read the evidence of quest `#q1`."}""");
             }
 
-            return (HttpStatusCode.NotFound, "");
-        }
-
-        private static JsonNode Json(QuestView quest)
-        {
-            var json = new JsonObject
-            {
-                ["id"] = quest.Id, ["from"] = quest.From, ["to"] = quest.To, ["title"] = quest.Title, ["body"] = quest.Body, ["status"] = quest.Status,
-                ["held"] = quest.Held, ["hold"] = quest.Hold, ["awaitsEvidence"] = quest.AwaitsEvidence,
-                ["requirements"] = new JsonArray([.. quest.Requirements.Select(r => (JsonNode)new JsonObject
-                {
-                    ["quote"] = r.Quote, ["check"] = r.Check,
-                    ["evidence"] = new JsonArray([.. r.Evidence.Select(e => (JsonNode)new JsonObject { ["path"] = e.Path })]),
-                })]),
-                ["answers"] = new JsonArray([.. quest.Answers.Select(a => (JsonNode)new JsonObject { ["requirement"] = a.Requirement, ["met"] = a.Met })]),
-            };
-            if (quest.Evidence is { } read) json["evidence"] = JsonNode.Parse(read.Json());
-            return json;
-        }
-
-        private sealed class Handler(Recorded service, string checkout) : HttpMessageHandler
-        {
-            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
-            {
-                var (status, body) = service.Answer(request, checkout);
-                return Task.FromResult(new HttpResponseMessage(status) { Content = new StringContent(body, Encoding.UTF8, "application/json") });
-            }
+            return null;
         }
     }
 

@@ -117,7 +117,8 @@ public sealed class AccountLimitHoldTests : IDisposable
         var cooling = roster.CoolingOf("acp-stub", null);
         Assert.Equal(("stub", (string?)null, Until, true, "s1"), (cooling!.Agent, cooling.Account, cooling.Until, cooling.Stated, cooling.Session));
         Assert.Equal("failed", conclusion.State);
-        Assert.Equal($"{failed.Note} {CoolingWords.Note(cooling, Zone)}", conclusion.Note);
+        // The lead-in, then the facts; the agent's sentence is the raw view's (AGT3c).
+        Assert.Equal($"the agent's turn failed with the quest still taken: {CoolingWords.Note(cooling, Zone)}", conclusion.Note);
 
         var line = Assert.Single(lines);
         Assert.Equal("account.limited", line.Event);
@@ -127,6 +128,52 @@ public sealed class AccountLimitHoldTests : IDisposable
         Assert.Equal(
             new object?[] { "s1", "acp-stub", null, "individual spend", "weekly", "2026-10-03T10:17:00Z", true, false, 1L, 370_104L },
             line.Data.Select(field => field.Value));
+    }
+
+    /// <summary>
+    /// AGT3c (D125's discovery note; D80's ACPEND1): the note travels to every machine, so a limit's carries its facts, the
+    /// reset as a moment and why it holds, and never the agent's sentence, whose zone is the zone of the machine it was said
+    /// on. That sentence stays in the transcript and the conversation, the raw view, which stay here.
+    /// </summary>
+    [Fact]
+    public void A_limit_s_note_carries_its_reset_as_a_moment_another_machine_words_in_its_own_zone_and_never_the_agent_s_sentence()
+    {
+        using var service = _ledger.Client();
+        var roster = Roster();
+        // Said in another zone than this machine's, so the agent's zone and Daoris's are told apart.
+        const string said = "the ACP agent refused the call: You've hit your individual spend limit · … · your weekly limit resets "
+            + "Oct 3, 4pm (Europe/London)";
+        var failed = Observation.Conclude(0, "Taken", turnFailed: said);
+
+        var (conclusion, limit) = Driver(service, roster).AccountLimited(
+            failed, AdapterSet.Built().Resolve("acp-stub"), new HarnessSelection(null), said, "s1", used: null);
+
+        Assert.True(limit);
+        Assert.DoesNotContain("hit your", conclusion.Note);
+        Assert.DoesNotContain("Europe/London", conclusion.Note);
+        Assert.DoesNotContain(conclusion.Parts!, part => part.Code is null);
+        Assert.Equal(["ended.turn-failed-taken", "account.cooling"], NoteAssert.Codes(conclusion.Parts));
+        NoteAssert.Holds(conclusion.Note, conclusion.Parts);
+
+        // Another machine reads the parts as the feed carries them, and words the same moment in its own zone.
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream))
+        {
+            writer.WriteStartObject();
+            writer.WritePropertyName("noteParts");
+            NotePart.Write(writer, conclusion.Parts!);
+            writer.WriteEndObject();
+        }
+
+        var travelled = NotePart.Read(JsonDocument.Parse(stream.ToArray()).RootElement)!;
+        var until = DateTimeOffset.ParseExact(
+            (string)travelled[^1].Value("until")!, "yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.AssumeUniversal);
+        Assert.Equal(new DateTimeOffset(2026, 10, 3, 15, 2, 0, TimeSpan.Zero), until);
+        Assert.Equal(CoolingWhy.Stated, travelled[^1].Value("why"));
+        Assert.Equal(
+            "Oct 3, 11:02 (America/New_York)", CoolingWords.When(until, TimeZoneInfo.FindSystemTimeZoneById("America/New_York")));
+        Assert.DoesNotContain(travelled, part => part.Words is { } words && words.Contains("4pm", StringComparison.Ordinal));
     }
 
     [Theory]

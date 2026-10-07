@@ -260,8 +260,8 @@ public sealed partial class Driver
                 workingNote: park.Parked ? Continuations.WorkingNoted : Continuations.GoingOnNoted,
                 goOn: GoOnWith(adapter, target, selection, rules.File, handed),
                 working: () => starting?.Dispose(),
-                conclude: (exitCode, used, turnFailed) =>
-                    ConcludeResumedAsync(quest, park, adapter, selection, resume, workTree, transcript, before, exitCode, used, turnFailed, ct))
+                conclude: (exitCode, used, turnFailed, ended) =>
+                    ConcludeResumedAsync(quest, park, adapter, selection, resume, workTree, transcript, before, exitCode, used, turnFailed, ended, ct))
                 .ConfigureAwait(false);
             return (run, refusedWhy, resume.Spoken);
         }
@@ -340,7 +340,8 @@ public sealed partial class Driver
     /// </remarks>
     private async Task<(StartRun? Run, ContinueReason? FellBack)> ConcludeResumedAsync(
         QuestView quest, PriorSession park, ISessionAdapter adapter, HarnessSelection selection, ResumeAsk resume,
-        string workTree, string transcript, string? before, int? exitCode, AcpUsage? used, string? turnFailed, CancellationToken ct)
+        string workTree, string transcript, string? before, int? exitCode, AcpUsage? used, string? turnFailed, HarnessEnding ended,
+        CancellationToken ct)
     {
         var sessionId = park.Session;
 
@@ -402,7 +403,7 @@ public sealed partial class Driver
                     lastWords: closed ? null : ParkedWords(_events, sessionId, transcript))
                 : SessionConclusion.Of("failed", Observation.TimedOut(config.TimeoutMinutes));
 
-        conclusion = AccountRefused(conclusion, adapter, selection, transcript);
+        conclusion = AccountRefused(conclusion, adapter, selection, ended);
         conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed);
         (conclusion, var limited) = AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
 
@@ -555,10 +556,12 @@ public sealed partial class Driver
     /// any words still held are said, never dropped without a trace.
     /// </summary>
     /// <param name="keep">Where each run's process, its tracking and its reaper are kept, until the record has concluded.</param>
+    /// <param name="own">Where the harness's own words are kept (AGT3c): each run begins it again, so it says the last run's ending.</param>
     private async Task<(int? ExitCode, AcpUsage? Used)> GoOnAsync(
         DrivenInbox held, Func<string, string, System.Diagnostics.ProcessStartInfo?> goOn, ISessionAdapter adapter,
         string sessionId, string transcript, string? refusesInput, bool drivesBrowser, int? exitCode, AcpUsage? used,
-        ResumeAsk? resume, Action<System.Text.Json.JsonElement>? said, List<IDisposable> keep, CancellationToken ct)
+        ResumeAsk? resume, Action<System.Text.Json.JsonElement>? said, List<IDisposable> keep, CancellationToken ct,
+        HarnessWords? own = null)
     {
         while (exitCode is not null && !_processes.WasStopRequested(sessionId) && held.TakeAllOrClose() is { Count: > 0 } words)
         {
@@ -581,7 +584,7 @@ public sealed partial class Driver
             var capture = adapter.StructuredOutput() is { } mapper
                 ? KeepingAsync(mapper, CaptureStructuredAsync(
                     process.StandardOutput, process.StandardError, transcript, sessionId, output, _events, mapper,
-                    prompt: null, ct, opened: NativeWords.Opening(adapter.Name, words), append: true, said: said),
+                    prompt: null, ct, opened: NativeWords.Opening(adapter.Name, words), append: true, said: said, own: own),
                     sessionId, adapter.Name, resume: null)
                 : null;
             exitCode = await WaitAsync(process, ct).ConfigureAwait(false);

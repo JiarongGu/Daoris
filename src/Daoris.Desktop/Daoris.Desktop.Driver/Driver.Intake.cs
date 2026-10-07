@@ -213,7 +213,7 @@ public sealed partial class Driver
                 handedServers: servers,
                 drivesBrowser: drivesBrowser,
                 said: Said(adapter, selection, sessionId),
-                conclude: async (exitCode, used, turnFailed) =>
+                conclude: async (exitCode, used, turnFailed, ended) =>
                 {
                     if (used is not null)
                     {
@@ -229,7 +229,7 @@ public sealed partial class Driver
                         : exitCode is int code
                             ? IntakeObservation.Conclude(code, ask.Quests.Count, after, turnFailed)
                             : SessionConclusion.Of("failed", Observation.TimedOut(config.TimeoutMinutes));
-                    conclusion = AccountRefused(conclusion, adapter, selection, transcript);
+                    conclusion = AccountRefused(conclusion, adapter, selection, ended);
                     // A refused sign-in reads its account signed out (ROSTER1b), as a driven session's does.
                     conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed);
                     // An account's limit cools the account the intake ran as (TOOL4d), as a driven session's does.

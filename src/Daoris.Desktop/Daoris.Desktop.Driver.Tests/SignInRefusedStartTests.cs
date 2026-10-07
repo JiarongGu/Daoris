@@ -473,7 +473,7 @@ public sealed class SignInRefusedStartTests : IDisposable
 
         var conclusion = Driver(service, roster).AccountRefused(
             new SessionConclusion("failed", "exit 1 before taking its quest."), AdapterSet.Built().Resolve("stub"),
-            new HarnessSelection(null, "account-1"), transcript);
+            new HarnessSelection(null, "account-1"), HarnessEnding.Transcript(1, transcript));
 
         Assert.Equal("account.refused", conclusion.Parts![^1].Code);
         Assert.Equal(new AccountRead(LoginState.Out, Seen), ReadOf("stub", "account-1"));

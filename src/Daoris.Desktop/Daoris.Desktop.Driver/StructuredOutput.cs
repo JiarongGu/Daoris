@@ -12,6 +12,18 @@ public sealed record StreamMapped(IReadOnlyList<string> Lines, IReadOnlyList<Ses
     /// for the agent's table to read. Null for every other line. Neither the console nor the record shows it.
     /// </summary>
     public JsonElement? Limits { get; init; }
+
+    /// <summary>
+    /// Whether the line was outside the harness's protocol (AGT3c): words it printed itself, which no agent wrote, since an
+    /// agent's words arrive inside the frames. Shown on the console as ever.
+    /// </summary>
+    public bool Outside { get; init; }
+
+    /// <summary>
+    /// A turn's failure in the harness's own words, apart from its agent's (AGT3c): a failed <c>result</c>'s. Null for every
+    /// other line, a turn that did not fail among them.
+    /// </summary>
+    public string? Failed { get; init; }
 }
 
 /// <summary>
@@ -118,11 +130,11 @@ public sealed class ClaudeStreamJson : IStreamMapper
         }
         catch (JsonException)
         {
-            // Not a frame: the harness said something outside its protocol. Shown, never dropped.
-            return new([line], []);
+            // Not a frame: the harness said something outside its protocol. Shown, never dropped, and its own words (AGT3c).
+            return new([line], []) { Outside = true };
         }
 
-        if (frame.ValueKind != JsonValueKind.Object) return new([line], []);
+        if (frame.ValueKind != JsonValueKind.Object) return new([line], []) { Outside = true };
 
         return Str(frame, "type") switch
         {
@@ -290,11 +302,13 @@ public sealed class ClaudeStreamJson : IStreamMapper
             events.Add(new SessionEvent { Kind = SessionEventKind.Usage, Used = used, Size = size });
         }
 
-        // A failure's words reach the transcript: the refusal detector reads its last lines (D49 §4).
+        // A failure's words reach the transcript for the person, and the capture as the harness's own (AGT3c): a refused
+        // credential is read from them there, never from the transcript, whose last lines may be the agent's words.
+        var failure = !stopped && failed && Str(frame, "result") is { Length: > 0 } why ? why : null;
         lines.Add(stopped
             ? "— the turn was stopped"
-            : failed && Str(frame, "result") is { Length: > 0 } why
-                ? $"— the turn failed ({subtype}): {why}"
+            : failure is not null
+                ? $"— the turn failed ({subtype}): {failure}"
                 : $"— the turn ended: {subtype}");
         events.Add(new SessionEvent
         {
@@ -309,7 +323,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
                 : null,
         });
 
-        return new(lines, events);
+        return new(lines, events) { Failed = failure };
     }
 
     /// <summary>A <c>permission_denied</c> frame, as the maker's reference types it (UNBLOCK5).</summary>

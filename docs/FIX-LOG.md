@@ -5,6 +5,28 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — an agent quoting a 401 held its account, and a limit's sentence travelled
+
+### Driver: a refused key was read from the agent's words, and a limit's note carried the agent's sentence to every machine (AGT3c)
+- **Symptom:** found by D125's reading of the code, not seen on an install: a failed session whose agent's own output ended with `API Error: 401` (quoting a log, testing an error path) held its account as refused and read it signed out; and a limit's record note carried the agent's sentence, its reset in the zone of the machine it was said on, to every reader the note reaches.
+- **Root cause:** AGT3b matched its phrase against the transcript's last 40 lines, which on the native and protocol doors are the agent's rendered words as much as the harness's; D125 refused exactly that for a limit and SIGNIN1b for a sign-in, and AGT3b was never moved. ACPEND1's conclusion kept the door's failure as an agent words part, and TOOL4d appended the cooling line after it without taking it out.
+- **Fix:** a refused key is read from `HarnessEnding`, what the harness itself said by its door (the protocol door's failure; the native door's failed `result`, its stderr and its lines outside its frames; a text door's transcript beside an exit that was not 0); a limit's conclusion drops the agent's words part (`Unsaid`) and keeps the cooling line's facts. D125's AGT3c note has the detail.
+- **Verify:** `RefusedByTheHarnessTests.An_agent_s_words_ending_with_the_refused_phrase_on_a_turn_that_ended_normally_hold_no_account` failed first (`account.refused` appended), and `AccountLimitHoldTests.A_limit_s_note_carries_its_reset_as_a_moment_…` (the sentence in the note); then passed, with the driver's fast half (4655). Not covered: the `Process` half and the family rehearsal's refused-key check, read and not run; a text door still cannot tell its agent's words from its harness's beside an exit that was not 0.
+## 2026-10-07 — an anchor given twice, and a fence closed on its quote
+
+### Service: a title that was another's counted anchor failed the refresh, and a fence closed on a shorter one inside it (ORIENT2h3)
+- **Symptom:** found by the second-opinion review of 2026-10-07 and verified in the code, not seen on an install: headings `A`, `A`, `A (2)` in one file were anchored `A`, `A (2)`, `A (2)`, and the store's insert failed the repository's whole refresh on the shared id; a four-backtick fence quoting a three-backtick example closed on the example's first fence, and the heading and the table inside it became a section and index rows.
+- **Root cause:** each reader that splits a file counted titles in a dictionary of its own and built `title (n)` from the count, never checking the anchors it had already given (`RepositoryScanner`'s sections, declared index and decision notes, `IndexRows`' rows). Each reader also toggled a fence on any line opening with three backticks or tildes, so the closing line's character and length were never compared with the opening's (`MarkdownSections`, `IndexSections`, `IndexRows`).
+- **Fix:** one allocator, `EntryAnchors`, which reserves each anchor and counts a taken one on to the next free, keeping every anchor that was unique; one fence scanner, `MarkdownFence`, which closes only on the opening's character at least as long, as CommonMark does. Each reader keeps its own section and table policy. D151's ORIENT2h3 note has the choices.
+- **Verify:** `IndexEntriesTests`' and `RepositoryScannerTests`' refreshes of the three headings failed on the store's unique constraint first, then passed with distinct ids; the fenced-example cases in `IndexEntriesTests`, `CheckoutDocumentsTests` and `MarkdownSectionsTests` failed first, then passed. Every id this checkout and both examples yield, 1,948 and 8,996 by the two readings, is unchanged. Not covered: `DecisionNotes.Fenced` and its twin in `tools/doc-duplicates.mjs` still toggle on three backticks.
+## 2026-10-07 — an evidence read that failed said missing
+
+### Driver: a lookup git or the disk did not answer read as absence, and held a done for a fact nobody read (EVID1b3)
+- **Symptom:** found by the second-opinion review of 2026-10-07 and verified in the code, not seen on an install. An `ls-tree` git did not answer during the case walk, or a folder of the tree the disk would not list, read as `missing` or `uncommitted`. `EvidenceCheck` posted that verdict, so the done stayed held `evidence-missing`.
+- **Root cause:** `EvidenceReader.SpelledAsync` took a failed listing as an empty folder, and `InTree` turned an `IOException` or `UnauthorizedAccessException` into false. Only the object lookup told a failure from absence. The base's lookup took a failure as an unsaid change.
+- **Fix:** each lookup comes to found, absent or unread. An unread anywhere in an item's read makes the read unread, and nothing is posted, as for the object lookup. The unread names the folder from the tree's root and why. The tree's listing is a seam beside git's. D144's EVID1b3 note has the detail.
+- **Verify:** `EvidenceReaderTests`: a walk failing at the root and beneath it, a folder refused and one that failed, and a base lookup git did not answer each failed first as a verdict, then passed. Not covered: a real folder the disk refuses, since a deny on listing did not stop this machine's test process.
+
 ## 2026-10-07 — a wait on a lost take held the winner's quest
 
 ### Service: a wait made after this machine's take still applied to the winner's quest when that take lost (WAITCLAIM1)

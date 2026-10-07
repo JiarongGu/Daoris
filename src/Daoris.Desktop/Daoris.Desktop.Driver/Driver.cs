@@ -1117,7 +1117,7 @@ public sealed partial class Driver(
                 said: Said(adapter, selection, sessionId),
                 // A native run holds what the person says while it works, and goes on with it in its own conversation (MSG1b).
                 goOn: GoOnWith(adapter, target, selection, rules.File, handed),
-                conclude: async (exitCode, used, turnFailed) =>
+                conclude: async (exitCode, used, turnFailed, ended) =>
                 {
                     if (used is not null)
                     {
@@ -1149,7 +1149,7 @@ public sealed partial class Driver(
                                 lastWords: ParkedWords(_events, sessionId, transcript))
                             : SessionConclusion.Of("failed", Observation.TimedOut(config.TimeoutMinutes));
 
-                    conclusion = AccountRefused(conclusion, adapter, selection, transcript);
+                    conclusion = AccountRefused(conclusion, adapter, selection, ended);
                     conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed);
                     (conclusion, var limited) = AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
 
@@ -1414,9 +1414,13 @@ public sealed partial class Driver(
     /// named, the record says <c>limit</c> — which is never a strike — and its note says until when, naming no account.
     /// </summary>
     /// <remarks>
-    /// Only a <c>failed</c> conclusion: a refused turn after the work reached its close or its wait ended as that, the
+    /// <para>Only a <c>failed</c> conclusion: a refused turn after the work reached its close or its wait ended as that, the
     /// person's stop is theirs, and a timeout carries no door failure. A failure no table recognises is a failure as
-    /// today, and the strikes bound it.
+    /// today, and the strikes bound it.</para>
+    /// <para>🔴 <b>The note carries the facts, never the agent's sentence</b> (AGT3c): the sentence names its reset in the zone
+    /// of the machine it was said on, and in English, and the note travels to every machine. The cooling line carries the reset
+    /// as a moment each reader words in its own zone and language; the sentence stays in the transcript and the conversation,
+    /// the raw view, which stay here.</para>
     /// </remarks>
     /// <param name="turnFailed">What the protocol door said refusing the turn (ACPEND1), or null.</param>
     /// <param name="used">The context the door reported, for the log; null where it reported none.</param>
@@ -1441,7 +1445,7 @@ public sealed partial class Driver(
 
         var (entry, seen) = read;
         service.AccountSaid(AccountLine.Limited(sessionId, adapter.Name, selection.Profile, seen, TurnsEnded(_events, sessionId) + 1, used?.Used));
-        return (conclusion.Then(" ", CoolingWords.NoteOf(entry, _harnesses.Zone)), true);
+        return (conclusion.Unsaid(turnFailed).Then(" ", CoolingWords.NoteOf(entry, _harnesses.Zone)), true);
     }
 
     /// <summary>
@@ -1474,18 +1478,23 @@ public sealed partial class Driver(
     }
 
     /// <summary>
-    /// 🔴 A credential its provider refused is read from the tool's own last words (AGT3b), and the
+    /// 🔴 A credential its provider refused is read from what the harness itself said of its ending (AGT3b, AGT3c), and the
     /// account is held so no further session sits through the same minutes of retries.
     /// </summary>
     /// <remarks>
-    /// And it reads signed out (ROSTER1b, D150 §5.3), kept as a reading is, so the hold outlives this process and the page
-    /// says the account's state; its line is one no strike counts (<see cref="NoteCodes.AccountsOwn"/>).
+    /// <para>Never from words its agent could write (AGT3c, D125 point 1's rule for a limit): an agent whose output ends quoting
+    /// the phrase, reading a log or testing an error path, would hold an account its provider never refused. A door that
+    /// carries only text gives nothing but its transcript, so there the exit, which only the harness sets, must say it failed
+    /// (<see cref="HarnessEnding.Transcript"/>).</para>
+    /// <para>And it reads signed out (ROSTER1b, D150 §5.3), kept as a reading is, so the hold outlives this process and the page
+    /// says the account's state; its line is one no strike counts (<see cref="NoteCodes.AccountsOwn"/>).</para>
     /// </remarks>
+    /// <param name="ended">What the harness said of its ending, by its door (<see cref="Ending"/>).</param>
     internal SessionConclusion AccountRefused(
-        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string transcript)
+        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, HarnessEnding ended)
     {
         if (conclusion.State != "failed" || adapter.Toolchain is not { Refused: { Length: > 0 } refusedWords } refusing
-            || !Observation.Refused(LastLines(transcript), refusedWords))
+            || !Observation.Refused(ended, refusedWords))
         {
             return conclusion;
         }
@@ -1675,8 +1684,9 @@ public sealed partial class Driver(
     /// silently discards the outcome, which is where the usage measurement lives (TOOL3).</para>
     /// </remarks>
     /// <param name="conclude">
-    /// The exit code (null when the timeout killed it) and the usage the door reported (null when it
-    /// reported none), to the caller's conclusion — which reads the stop flags and moves the record.
+    /// The exit code (null when the timeout killed it), the usage the door reported (null when it
+    /// reported none), the protocol door's failure (ACPEND1), and what the harness itself said of its
+    /// ending (AGT3c), to the caller's conclusion — which reads the stop flags and moves the record.
     /// </param>
     /// <param name="said">
     /// Told what the session's door says about its account's windows (TOOL6c), on either door, as it says it.
@@ -1694,7 +1704,7 @@ public sealed partial class Driver(
     private async Task<T> HoldAsync<T>(
         ISessionAdapter adapter, ProcessStartInfo info, SessionTarget target, string sessionId, string transcript,
         string cwd, string? harnessNotice, (string? File, object? Meta, HandedSection? Handed) rules, string? handed, string? refusesInput,
-        Func<int?, AcpUsage?, string?, Task<T>> conclude, CancellationToken ct,
+        Func<int?, AcpUsage?, string?, HarnessEnding, Task<T>> conclude, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, string? preamble = null,
         IReadOnlyList<AcpMcpServer>? handedServers = null, bool drivesBrowser = false, Action<JsonElement>? said = null,
         ResumeAsk? resume = null, Noted? workingNote = null, Func<string, string, ProcessStartInfo?>? goOn = null,
@@ -1753,7 +1763,9 @@ public sealed partial class Driver(
             // same D37 boundary three different ways, and one of them does not name it on the wire.
             ? CaptureAcpAsync(process, transcript, sessionId, cwd, prompt, adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta, handedServers ?? _servers, target.PersonSaid, inbox, said, keepAs, resume, account)
             : null;
-        var structured = acp is null ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble, target.PersonSaid, said, keepAs, resume, account) : null;
+        // What the native door's harness says in its own words, apart from its agent's, for its ending (AGT3c).
+        var own = new HarnessWords();
+        var structured = acp is null ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble, target.PersonSaid, said, keepAs, resume, account, own) : null;
         Task capture = acp ?? structured ?? CaptureAsync(process, transcript, sessionId, ct, preamble);
 
         await service.AdvanceAsync(
@@ -1775,12 +1787,23 @@ public sealed partial class Driver(
         if (held is not null)
         {
             (exitCode, used) = await GoOnAsync(
-                held, goOn!, adapter, sessionId, transcript, refusesInput, drivesBrowser, exitCode, used, resume, said, wentOn, ct)
+                held, goOn!, adapter, sessionId, transcript, refusesInput, drivesBrowser, exitCode, used, resume, said, wentOn, ct, own)
                 .ConfigureAwait(false);
         }
 
-        return await conclude(exitCode, used, turnFailed).ConfigureAwait(false);
+        return await conclude(exitCode, used, turnFailed, Ending(acp is not null, structured is not null, exitCode, turnFailed, own, transcript))
+            .ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// What the harness itself said about how its run ended (AGT3c), by its door: the protocol door's failure; the native
+    /// door's failed turn and the words it wrote outside its protocol and on its stderr; and for a door that carries only text,
+    /// all it gives, its transcript, beside the exit.
+    /// </summary>
+    internal static HarnessEnding Ending(bool protocol, bool structured, int? exit, string? turnFailed, HarnessWords own, string transcript) =>
+        protocol ? new HarnessEnding(exit, turnFailed, [])
+        : structured ? own.Ended(exit)
+        : HarnessEnding.Transcript(exit, transcript);
 
     /// <summary>
     /// Exit code, or null when the timeout killed it. Either way the tree dies with it — a timeout
@@ -1825,15 +1848,16 @@ public sealed partial class Driver(
     /// <param name="keepAs">The adapter a quest's session keeps its harness's conversation id under (ANSWER1a); null keeps none.</param>
     /// <param name="resume">The conversation an answer continues: the record's transcript and conversation go on.</param>
     /// <param name="account">What the prompt was composed of (CONTEXT1), kept beside it on its event.</param>
+    /// <param name="own">Where the harness's own words are kept for its run's ending (AGT3c).</param>
     private Task<AcpUsage?>? Structured(
         ISessionAdapter adapter, Process process, string transcript, string sessionId, string prompt,
         CancellationToken ct, string? preamble = null, string? personSaid = null, Action<JsonElement>? said = null,
-        string? keepAs = null, ResumeAsk? resume = null, InstructionAccount? account = null) =>
+        string? keepAs = null, ResumeAsk? resume = null, InstructionAccount? account = null, HarnessWords? own = null) =>
         adapter.StructuredOutput() is { } mapper
             ? KeepingAsync(mapper, CaptureStructuredAsync(
                 process.StandardOutput, process.StandardError, transcript, sessionId, output, _events, mapper,
                 resume is null ? prompt : null, ct, preamble, personSaid: personSaid,
-                opened: resume?.Opening(), append: resume is not null, said: said, account: account), sessionId, keepAs, resume)
+                opened: resume?.Opening(), append: resume is not null, said: said, account: account, own: own), sessionId, keepAs, resume)
             : null;
 
     /// <summary>
@@ -2194,19 +2218,6 @@ public sealed partial class Driver(
         return words.Length <= limit ? words : "…" + words[^limit..].TrimStart();
     }
 
-    /// <summary>A finished transcript's last lines — where a tool says why it gave up. Unreadable is none.</summary>
-    private static IReadOnlyList<string> LastLines(string transcript)
-    {
-        try
-        {
-            return [.. File.ReadLines(transcript).TakeLast(40)];
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return [];
-        }
-    }
-
     /// <summary>
     /// The same capture for a session this class did not spawn — a chat (D49 §3), whose process
     /// belongs to <see cref="ChatRunner"/>. Shared rather than copied: one pump, one tee, one set of
@@ -2239,8 +2250,11 @@ public sealed partial class Driver(
     /// </summary>
     /// <remarks>
     /// <para><b>The transcript stays text a person reads</b>, exactly as the protocol door's does: the
-    /// rendered lines, never the JSON — and a failure's words among them, because the refusal detector
-    /// reads its last lines (D49 §4).</para>
+    /// rendered lines, never the JSON — and a failure's words among them, for the person.</para>
+    ///
+    /// <para><b>What the harness says in its own words is kept apart</b> (AGT3c, <paramref name="own"/>): its stderr, the lines it
+    /// prints outside its protocol and its failed turn's words, which no agent writes. A refused credential is read from those,
+    /// never from the transcript, whose last lines may be the agent quoting one.</para>
     ///
     /// <para><b>A record that cannot be written costs a console line, never the session</b>: the
     /// conversation enriches the run, it does not run it.</para>
@@ -2258,13 +2272,15 @@ public sealed partial class Driver(
     /// </param>
     /// <param name="append">The transcript goes on rather than starting again: a resumed run's record is the one that parked.</param>
     /// <param name="account">What the prompt was composed of (CONTEXT1), kept beside it on its event; null where none was.</param>
+    /// <param name="own">Where the harness's own words are kept for its run's ending (AGT3c), begun again here; null keeps none.</param>
     internal static async Task<AcpUsage?> CaptureStructuredAsync(
         TextReader stdout, TextReader stderr, string transcript, string sessionId, SessionOutput? output,
         SessionEvents? events, IStreamMapper mapper, string? prompt, CancellationToken ct, string? preamble = null,
         Action<SessionEvent>? observed = null, string? personSaid = null,
         IReadOnlyList<SessionEvent>? opened = null, bool append = false, Action<JsonElement>? said = null,
-        Action<string>? named = null, InstructionAccount? account = null)
+        Action<string>? named = null, InstructionAccount? account = null, HarnessWords? own = null)
     {
+        own?.Begin();
         await using var file = new StreamWriter(transcript, append);
         // Told once, the moment the harness names its conversation (MSG1c): a conversation that lives for hours keeps it
         // before it ends, as the protocol door keeps `session/new`'s id.
@@ -2286,7 +2302,7 @@ public sealed partial class Driver(
             Event(opening);
         }
 
-        var errors = PumpAsync(stderr, file, sessionId, output, ct);
+        var errors = PumpAsync(stderr, file, sessionId, output, ct, also: own is null ? null : own.Said);
         // What it runs beside itself, each its own console stream (CONSOLE3c), kept wherever the
         // session's own console is; a line that is a stream's never reaches the session's reader.
         var beside = output is null ? null : mapper.Beside(new SessionStreams(output, sessionId), Line);
@@ -2294,6 +2310,12 @@ public sealed partial class Driver(
         {
             if (beside?.Take(line) == true) continue;
             var mapped = mapper.Read(line);
+            if (own is not null)
+            {
+                if (mapped.Outside) own.Said(line);
+                if (mapped.Failed is { } failure) own.Failed(failure);
+            }
+
             if (named is not null && !told && mapper.Conversation is { } conversation)
             {
                 told = true;
@@ -2339,13 +2361,16 @@ public sealed partial class Driver(
     /// One stream into the transcript and the console. Internal rather than local so the tee itself is
     /// testable without a process: the property worth holding is that a line reaches BOTH.
     /// </summary>
+    /// <param name="also">Told each line too, after both: the native door's stderr is its harness's own words (AGT3c).</param>
     internal static async Task PumpAsync(
-        TextReader reader, TextWriter file, string sessionId, SessionOutput? output, CancellationToken ct)
+        TextReader reader, TextWriter file, string sessionId, SessionOutput? output, CancellationToken ct,
+        Action<string>? also = null)
     {
         while (await reader.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
         {
             lock (file) file.WriteLine(line);
             output?.Append(sessionId, line);
+            also?.Invoke(line);
         }
     }
 }

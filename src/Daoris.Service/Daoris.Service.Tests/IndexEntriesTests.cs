@@ -486,4 +486,69 @@ public sealed class IndexEntriesTests : IDisposable
         Assert.Contains("`FENCED`", index[0].Body);
         Assert.Equal("|  | `continued.ts:4` |", index[2].Body);
     }
+
+    /// <summary>
+    /// ORIENT2h3: a title that is literally another title's counted anchor is anchored past it. Counting titles alone
+    /// gave <c>A</c>, <c>A (2)</c> and <c>A (2)</c>, two entries shared an id, and the store's insert failed the whole
+    /// refresh. The anchors a title had while every id was unique are kept.
+    /// </summary>
+    [Fact]
+    public async Task A_title_that_is_another_s_counted_anchor_gets_the_next_free_one_and_the_refresh_succeeds()
+    {
+        Declare("""{"index":"docs/index/README.md"}""");
+        Write("docs/index/README.md", "# A\n\nOne.\n\n# A\n\nTwo.\n\n# A (2)\n\nThree.\n");
+
+        var entries = new RepositoryScanner().Scan(_root);
+        var database = Path.Combine(_root, "knowledge.db");
+        try
+        {
+            await using var store = await SqliteKnowledgeStore.OpenAsync(database);
+            await store.ReplaceRepositoryAsync(entries[0].Repository, entries);
+
+            var stored = Index(await store.AllAsync()).OrderBy(e => e.Lines?.First).ToList();
+            Assert.Equal(
+                ["A @ 3 #A", "A @ 7 #A (2)", "A (2) @ 11 #A (2) (2)"],
+                stored.Select(e => $"{e.Title} @ {e.Lines} #{e.Anchor}").ToList());
+            Assert.Equal(3, stored.Select(e => e.Id).Distinct().Count());
+        }
+        finally
+        {
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        }
+    }
+
+    /// <summary>
+    /// ORIENT2h3: a fence is closed only by a fence of its own character at least as long, as CommonMark reads one. A
+    /// four-backtick fence quoting a three-backtick example closed on the example's first fence, and the heading and
+    /// the table inside the example became a section and a row.
+    /// </summary>
+    [Fact]
+    public void A_longer_fence_holds_a_shorter_one_and_nothing_inside_it_is_an_entry()
+    {
+        Declare("""{"index":"docs/index/README.md"}""");
+        Write("docs/index/README.md",
+            "# Where things are\n"                              // 1
+            + "\n"                                              // 2
+            + "````markdown\n"                                  // 3
+            + "```\n"                                           // 4
+            + "## Not a heading\n"                              // 5
+            + "\n"                                              // 6
+            + "| Route | Handler |\n"                            // 7
+            + "|---|---|\n"                                     // 8
+            + "| `FENCED` | `X.cs:1` |\n"                        // 9
+            + "```\n"                                           // 10
+            + "````\n"                                          // 11
+            + "\n"                                              // 12
+            + "| Command | Does |\n"                            // 13
+            + "|---|---|\n"                                     // 14
+            + "| `sync` | writes the files |\n");               // 15
+
+        var index = Index(new RepositoryScanner().Scan(_root));
+
+        Assert.Equal(
+            ["Where things are @ 3-11", "Where things are › Command: sync @ 15"],
+            index.Select(e => $"{e.Title} @ {e.Lines}").ToList());
+        Assert.Contains("## Not a heading", index[0].Body);
+        Assert.Contains("`FENCED`", index[0].Body);
+    }
 }
