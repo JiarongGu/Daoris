@@ -24,8 +24,10 @@ network.
   None of it needs a doctrine tool, to write or to read. Drawn from one repository where a third of each
   session's calls came before its first edit, spent finding its way, and from a second that met the same
   need with indexes kept by hand. **Adopting repositories:** run `daoris sync`; the always-loaded region
-  does not change. To keep an index, run `set-up-documents`' new step; one you already keep stays as it
-  is.
+  does not change until you declare an index. To keep one, run `set-up-documents`' new step; one you
+  already keep stays as it is. Then declare its README as `index` in `daoris.json`'s `documents`: `sync`
+  gives it a row in the region's *Where things are*, after the router's (119 bytes in the repository this
+  changelog ships from), and `check` fails while the path is missing.
 - **`file-tool-discipline` says what a harness with no dedicated file tools does.** Its shell's
   read-only commands are its read tools, since a read changes nothing; the rest of the rule still
   binds: no edit scripted through another language's escaping, no deletion by computed offsets, no side

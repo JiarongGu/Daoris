@@ -9,6 +9,7 @@ import { frontmatterEnd, parseFrontmatter, SKILL_FIELDS } from '../src/document.
 import { listFiles, readText } from '../src/fsx.ts';
 import { readManifest, readLock } from '../src/config.ts';
 import { inspect, commandCheck } from '../src/drift.ts';
+import { ROLES } from '../src/documents.ts';
 
 // This package is src/Daoris.Cli; the canon and daoris's own doctrine live at
 // the workspace root, because they are the project's data rather than the CLI's.
@@ -150,6 +151,22 @@ test('every template beside a canon skill is named by it, and every template it 
   assert.ok(templates.length >= 2, `the scan found ${templates.length} templates, so it proved nothing`);
 
   assert.deepEqual(templateProblems(skills.map((file) => file.source), (source) => readText(join(repoRoot, 'canon', source))), []);
+});
+
+/**
+ * The roles a manifest may declare are the canon's (ORIENT2b; D122 §2.7, D151 point 4). `ROLES`' jobs
+ * are the canon's roles table cut short, so a role the canon teaches that the CLI does not know is a
+ * declaration every adopter is refused, and one the CLI knows that the canon does not teach is a row no
+ * adopter has a reason to write. `knowledge` and `skill` are the canon's and never declared: the index
+ * lists them from the target.
+ */
+test("the canon's roles table and the roles a manifest may declare name the same roles, in one order", () => {
+  const text = readText(join(repoRoot, 'canon', 'core', 'knowledge', 'development-documents.md'));
+  const table = text.slice(text.indexOf('### The roles'), text.indexOf('### Three ways a document is read'));
+  const canonRoles = [...table.matchAll(/^\| \*\*([a-z]+)\*\* \|/gm)].map((match) => match[1]!);
+  assert.ok(canonRoles.length >= 10, `the scan found ${canonRoles.length} roles in the canon's table, so it proved nothing`);
+
+  assert.deepEqual(canonRoles.filter((role) => role !== 'knowledge' && role !== 'skill'), ROLES.map((row) => row.role));
 });
 
 /**
