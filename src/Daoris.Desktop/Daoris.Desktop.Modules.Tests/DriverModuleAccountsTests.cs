@@ -111,6 +111,33 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         var own = claude.GetProperty("own").GetProperty("cooling");
         Assert.False(own.GetProperty("stated").GetBoolean());
         Assert.Empty(claude.GetProperty("accounts").EnumerateArray());
+        // Nothing said of its windows: absent, never zero (D57).
+        Assert.Equal(JsonValueKind.Null, claude.GetProperty("own").GetProperty("said").ValueKind);
+    }
+
+    /// <summary>
+    /// CODEXUSE3: what the tool's own sign-in last said of its windows, read at a person's press and kept under its own key, is
+    /// answered beside the accounts as an account's reading is, and is none of them: no account row, and near in no scope.
+    /// </summary>
+    [Fact]
+    public async Task The_own_sign_ins_windows_are_answered_beside_the_accounts_and_near_in_no_scope()
+    {
+        Accounts("codex", "account-1");
+        Wiring("""{ "rotation": { "codex": ["account-1"] } }""");
+        AccountWindows.Said(Home, "codex", AccountWindows.Own,
+            [new WindowReading("session", 0.95, Now.AddHours(2)), new WindowReading("weekly", 0.15, Now.AddDays(4))], Now, null);
+
+        var codex = Agent(await AnswerAsync(Module(), "ACCOUNTS"), "codex");
+
+        var said = codex.GetProperty("own").GetProperty("said");
+        var windows = said.GetProperty("windows").EnumerateArray().ToList();
+        Assert.Equal(["session", "weekly"], windows.Select(each => each.GetProperty("window").GetString()));
+        Assert.Equal(0.95, windows[0].GetProperty("used").GetDouble(), 3);
+        Assert.Equal(0.15, windows[1].GetProperty("used").GetDouble(), 3);
+        Assert.Equal(["account-1"], codex.GetProperty("accounts").EnumerateArray().Select(each => each.GetProperty("name").GetString()));
+        Assert.Equal(JsonValueKind.Null, Account(codex, "account-1").GetProperty("said").ValueKind);
+        // Near reads a list's accounts alone: 95% on the own sign-in is near nothing, since no list holds it.
+        Assert.Empty(Scope(codex, null).GetProperty("near").EnumerateArray());
     }
 
     /// <summary>
