@@ -11756,3 +11756,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UXFIX3 — account attention says what it knows** (web-shell). *Let … run …* may offer an account in an unknown state (`outsideOf` falls back to `candidates[0]`, `accountAttention.ts:240`), and a signed-out row's age is its last reading shown as waiting (`:347`). Offer only a known-ready account, or *Read* first; say *read …* for those rows. Contract: D150's UX6d note, the review. Proof: vitest rows for each.
 
 **Outcome** 2026-10-07: *Let … run …* is offered only for an account known ready; one never read is offered *Read* first. A signed-out row says when it was read rather than a wait, and sorts after rows with a wait in the roster's order. Detail: D150's UXFIX3 note; commit c1b8d834.
+
+
+## HIST1k — the reading never says nothing beside a clear (2026-10-07, D153)
+
+> - [ ] **HIST1k — the reading never says nothing beside a clear** (web-shell). `readingSaid` picks "takes nothing" from `takes.bytes` alone (`history.ts:314`), while `clearList` offers *Clear history…* for a closed quest with records and no files. Choose the sentence from the units' counts too. Contract: design §6.1, the review. Proof: a vitest with records and zero bytes.
+
+**Outcome** 2026-10-07: `readingSaid` chooses from the counts as well as the bytes: records alone say so, files alone say what they free even at 0 B, and *nothing* is said only where no clear is offered. Detail: D153's HIST1k note; commit 2455281a.

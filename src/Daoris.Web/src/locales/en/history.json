@@ -35,6 +35,7 @@
   "history.reading.holds": "{{what}}: {{size}}.",
   "history.reading.none": "Nothing finished is kept here.",
   "history.reading.takes": "A clear would take {{what}}: {{size}}.",
+  "history.reading.takesRecords": "A clear would take {{what}}: records only, with no files on this machine.",
   "history.reading.takesFiles": "A clear would take {{size}}: files no record here holds any more.",
   "history.reading.takesNothing": "A clear would take nothing now.",
   "history.reading.kept.HISTORY_OPEN": "{{count}} kept: still open or taken",

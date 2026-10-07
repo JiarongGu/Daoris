@@ -5,7 +5,7 @@ import {
 } from './history';
 import {
   ASK_PLAN, FAILED_NONE, FAILED_PLAN, QUEST_ASKED, QUEST_CLEARED, QUEST_PLAN, QUEST_TREE_HERE, WORKSPACE_CLEARED,
-  WORKSPACE_EMPTY, WORKSPACE_KEPT, WORKSPACE_LEFT_OVER, WORKSPACE_PLAN,
+  WORKSPACE_EMPTY, WORKSPACE_KEPT, WORKSPACE_LEFT_OVER, WORKSPACE_PLAN, WORKSPACE_RECORDS_ONLY,
 } from './historyFixtures';
 
 // What a clear lists, sends and says on the screen (HIST1e, D153; the history-clearing design §2.4, §5, §6.1): pure, so every
@@ -130,6 +130,23 @@ describe('the reading of what the home keeps (design §2.4)', () => {
     expect(said.conversations).toBeNull();
     expect(said.leftOver).toBeNull();
     expect(readingSaid(zh, WORKSPACE_KEPT.reading!).takes).toBe('现在清除不会带走任何东西。');
+  });
+
+  // HIST1k: the sentence was chosen from the bytes alone, so records with no file said "nothing" beside a live press.
+  it('says the records a clear would take where they hold no file, and nothing only where nothing at all would go', () => {
+    expect(clearOffered(WORKSPACE_RECORDS_ONLY)).toBe(true);
+    expect(readingSaid(en, WORKSPACE_RECORDS_ONLY.reading!).takes)
+      .toBe('A clear would take 1 closed quest: records only, with no files on this machine.');
+    expect(readingSaid(zh, WORKSPACE_RECORDS_ONLY.reading!).takes).toBe('清除会带走 1 条已关闭的委托：只有记录，本机没有相关文件。');
+    // Left-over files that are empty still go, as the press would take them.
+    const emptyFiles = { ...WORKSPACE_EMPTY.reading!, leftOver: { count: 2, bytes: 0 } };
+    expect(clearOffered({ ...WORKSPACE_EMPTY, reading: emptyFiles })).toBe(true);
+    expect(readingSaid(en, emptyFiles).takes).toBe('A clear would take 0 B: files no record here holds any more.');
+  });
+
+  it('sets the count apart from the Chinese around it where the clear takes records and files', () => {
+    expect(readingSaid(zh, WORKSPACE_PLAN.reading!).takes)
+      .toBe('清除会带走 4 条已关闭的委托、1 个需求、6 个会话、1 份队友记录的副本：共 20.6 MB。');
   });
 });
 

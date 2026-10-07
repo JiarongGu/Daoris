@@ -97,6 +97,8 @@ with the version and date at release.
   inside itself, then hands the focus back to what opened it.
 - What needs you offers *Let … run …* only for an account known to be ready, and a signed-out account's
   row says when it was last read rather than how long it has waited.
+- A workspace's history reading no longer says a clear would take nothing beside a *Clear history…*
+  that would take records.
 
 The first version: doctrine that installs, is checked, and flows back.
 
