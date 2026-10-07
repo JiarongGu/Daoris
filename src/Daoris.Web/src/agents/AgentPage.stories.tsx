@@ -13,7 +13,8 @@ import {
 // row per state with its one act; the add flow's last step; *Read again* on its way; a proposal waiting, which opens *What
 // it may do*; an agent with one account and no settings Daoris knows; Codex's own sign-in with its windows read (CODEXUSE3);
 // one not installed; an API key; what each row knows (ACCTUX1), in both themes; the same read without a pointer (ACCTUX2), each
-// row's explanation opened, at 680 px and the main area's 400 px floor in both themes; and the main area with no page. Each at
+// row's explanation opened, at 680 px and the main area's 400 px floor in both themes; a key added asking its name and lists,
+// and a key refused in its field (ACCTUX3), at the same widths; and the main area with no page. Each at
 // the main area's two widths: the frame's 52rem, and the 680 px window's main area, where rows stack.
 
 const nothing = () => {};
@@ -147,6 +148,45 @@ export const ReadingsExplainedFloorDark: Story = { args: Readings.args, decorato
 
 /** The install's shape at the 400 px floor, in dark: each row stacked, who signed in wrapping, the terms' line a 28 px target. */
 export const TheInstallFloorDark: Story = { args: TheInstall.args, decorators: [atFloor, dark] };
+
+/**
+ * A key added asks its name and lists (ACCTUX3, the UX7 design §4.5), where it ended in a toast: *Added the API key …*, its
+ * name left empty to be called by its handle, and the lists it may join.
+ */
+export const KeyAddedAskingWhere: Story = {
+  args: { ...TheInstall.args, added: { account: 'acct-9c8d7e6f', who: null, key: '…k3y9' } },
+};
+
+/** The same at the 680 px window's main area. */
+export const KeyAddedAskingWhereNarrow: Story = { args: KeyAddedAskingWhere.args, decorators: [narrow] };
+
+/** The same at the 400 px floor, in dark. */
+export const KeyAddedAskingWhereFloorDark: Story = { args: KeyAddedAskingWhere.args, decorators: [atFloor, dark] };
+
+/** A key the driver refused, said in its field (ACCTUX3): every press on the page refuses it with this sentence. */
+const REFUSING: AgentActs = {
+  ...ACTS,
+  onAddKey: (_key, answered) => answered.refused('`claude-code` takes no key while a sign-in runs: let it end, then save the key again.'),
+};
+
+/** The header's *Add an API key* pressed, a key typed and saved; the story's act refuses it. */
+const saveARefusedKey: Story['play'] = async ({ canvasElement }) => {
+  [...canvasElement.querySelectorAll('button')].find((button) => button.textContent?.trim() === 'Add an API key')?.click();
+  const field = canvasElement.querySelector<HTMLInputElement>('input[type="password"]');
+  if (!field) return;
+  Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(field, 'sk-ant-api03-story-k3y9');
+  field.dispatchEvent(new Event('input', { bubbles: true }));
+  field.form?.requestSubmit();
+};
+
+/**
+ * Refused, the key's field stays with the key in it and says why under it (ACCTUX3), at the 680 px window's main area: it
+ * emptied and closed on the press, so the refusal had nowhere to be said.
+ */
+export const KeyRefusedNarrow: Story = { args: { acts: REFUSING }, decorators: [narrow], play: saveARefusedKey };
+
+/** The same at the 400 px floor, in dark. */
+export const KeyRefusedFloorDark: Story = { args: { acts: REFUSING }, decorators: [atFloor, dark], play: saveARefusedKey };
 
 /** The main area with nothing chosen. */
 export const NothingChosen: StoryObj<typeof AgentMainNotice> = {

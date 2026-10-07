@@ -57,6 +57,7 @@
   "agents.add.new": "添加新账户",
   "agents.add.signedIn": "已登录为 {{account}}。",
   "agents.add.signedInUnnamed": "已登录——工具没有说明是谁。",
+  "agents.add.keyAdded": "已添加 API 密钥 {{handle}}。",
   "agents.add.name": "名称",
   "agents.add.nameHint": "终端里能输入的一个词。留空则称为 {{name}}。",
   "agents.add.nameHintId": "终端里能输入的一个词。留空则称为 {{name}}，终端里输入它的 ID {{id}}。",

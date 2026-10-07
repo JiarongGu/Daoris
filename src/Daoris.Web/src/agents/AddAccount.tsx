@@ -87,15 +87,18 @@ function choiceDetail(t: ReturnType<typeof useTranslation>['t'], choice: JoinCho
  * them (ACCTEDIT1).
  */
 export function PlaceAccount({
-  agent, account, title, signedIn, offered, fallback = account, choices, busy = false, refusal = null, cancelLabel, onDone, onCancel,
+  agent, account, title, signedIn, lead, offered, fallback = account, choices, busy = false, refusal = null, cancelLabel, onDone,
+  onCancel,
 }: {
   /** The agent's id and the account's, which the terminal's twin names. */
   agent: string;
   account: string;
-  /** What the panel is called, for a reader: *Add an account*, or *Where account-3 runs work*. */
+  /** What the panel is called, for a reader: *Add an account*, *Add an API key*, or *Where account-3 runs work*. */
   title: string;
   /** Who the sign-in reached, for step 3's first line; null when the tool did not say; absent draws no line. */
   signedIn?: string | null;
+  /** Step 3's first line where no sign-in reached the account: a key added (ACCTUX3), *Added the API key …wxyz.* */
+  lead?: string;
   /** The name offered in its field (step 3); absent asks no name. */
   offered?: string;
   /**
@@ -143,11 +146,13 @@ export function PlaceAccount({
           if (joining || (asksName && choices.length === 0)) onDone({ ...answer(), join });
         }}
       >
-        {signedIn !== undefined && (
-          <p className="m-0 text-body text-ink">
-            {signedIn ? t('agents.add.signedIn', { account: signedIn }) : t('agents.add.signedInUnnamed')}
-          </p>
-        )}
+        {lead !== undefined
+          ? <p className="m-0 text-body text-ink">{lead}</p>
+          : signedIn !== undefined && (
+            <p className="m-0 text-body text-ink">
+              {signedIn ? t('agents.add.signedIn', { account: signedIn }) : t('agents.add.signedInUnnamed')}
+            </p>
+          )}
         {asksName && (
           <label className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span className="text-body font-medium text-ink">{t('agents.add.name')}</span>
