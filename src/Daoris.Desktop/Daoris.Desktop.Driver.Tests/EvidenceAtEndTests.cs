@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text;
 using System.Text.Json.Nodes;
 using Daoris.Driver;
 
@@ -139,50 +138,28 @@ public sealed class EvidenceAtEndTests : IDisposable
 
         public List<(string Session, JsonObject Body)> Moves { get; } = [];
 
-        public ServiceClient Client() => new("http://stand-in", null, new HttpClient(new Handler(this)));
+        public ServiceClient Client() => QuestStandIn.Client(Answer);
 
-        private (HttpStatusCode, string) Answer(HttpRequestMessage request)
+        private (HttpStatusCode, string)? Answer(HttpRequestMessage request)
         {
             var path = request.RequestUri!.AbsolutePath;
-            JsonObject Body() => JsonNode.Parse(request.Content!.ReadAsStringAsync().Result)!.AsObject();
             if (request.Method == HttpMethod.Get && path == "/api/sessions") return (HttpStatusCode.OK, new JsonArray([.. Sessions.Select(s => s.DeepClone())]).ToJsonString());
-            if (request.Method == HttpMethod.Get && path == "/api/quests") return (HttpStatusCode.OK, new JsonArray([.. Quests.Select(Json)]).ToJsonString());
+            if (request.Method == HttpMethod.Get && path == "/api/quests") return (HttpStatusCode.OK, QuestStandIn.List(Quests));
             if (request.Method == HttpMethod.Post && path.EndsWith("/evidence", StringComparison.Ordinal))
             {
-                Evidence.Add((path.Split('/')[3], Body()));
+                Evidence.Add((path.Split('/')[3], QuestStandIn.Body(request)));
                 return (HttpStatusCode.OK, """{"quest":{"id":"q1"},"message":"Read the evidence."}""");
             }
 
             if (request.Method == HttpMethod.Post && path.EndsWith("/state", StringComparison.Ordinal))
             {
                 var id = path.Split('/')[3];
-                var body = Body();
+                var body = QuestStandIn.Body(request);
                 Moves.Add((id, body));
                 return (HttpStatusCode.OK, new JsonObject { ["session"] = new JsonObject { ["id"] = id, ["state"] = body["state"]!.DeepClone() }, ["message"] = "moved" }.ToJsonString());
             }
 
-            return (HttpStatusCode.NotFound, "");
-        }
-
-        private static JsonNode Json(QuestView quest) => new JsonObject
-        {
-            ["id"] = quest.Id, ["from"] = quest.From, ["to"] = quest.To, ["title"] = quest.Title, ["body"] = quest.Body, ["status"] = quest.Status,
-            ["held"] = quest.Held, ["hold"] = quest.Hold, ["awaitsEvidence"] = quest.AwaitsEvidence,
-            ["requirements"] = new JsonArray([.. quest.Requirements.Select(r => (JsonNode)new JsonObject
-            {
-                ["quote"] = r.Quote, ["check"] = r.Check,
-                ["evidence"] = new JsonArray([.. r.Evidence.Select(e => (JsonNode)(e.Path is { } p ? new JsonObject { ["path"] = p } : new JsonObject { ["gate"] = e.Gate }))]),
-            })]),
-            ["answers"] = new JsonArray([.. quest.Answers.Select(a => (JsonNode)new JsonObject { ["requirement"] = a.Requirement, ["met"] = a.Met })]),
-        };
-
-        private sealed class Handler(Recorded service) : HttpMessageHandler
-        {
-            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
-            {
-                var (status, body) = service.Answer(request);
-                return Task.FromResult(new HttpResponseMessage(status) { Content = new StringContent(body, Encoding.UTF8, "application/json") });
-            }
+            return null;
         }
     }
 }
