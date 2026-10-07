@@ -226,6 +226,90 @@ public sealed class HistoryClearingTests : IDisposable
         Assert.NotEmpty(KeptOf("s1"));
     }
 
+    /// <summary>
+    /// HIST1l: a <c>needs-you</c> refusal, what it names, what the service said waits, and two sentences: the one the records
+    /// read beside it would mean, and the one the service meant. Each row's records say the other thing, as records read after
+    /// the service judged can, once the person answered or accepted between the two reads.
+    /// </summary>
+    public static TheoryData<string, string?, string?, string?, string, string?, string?> Waiting => new()
+    {
+        // The service saw s1 parked; the records read it completed, as after the person's answer, so they say a proposal's.
+        { "quest", null, null, "s1", "parked", HistoryContexts.Proposal, null },
+        // A proposal from parked1; the records read parked1 parked, so they say the parked session's own sentence.
+        { "quest", null, null, "parked1", "proposal", null, HistoryContexts.Proposal },
+        // The service saw q1 held; the records read it not held, as after the person's yes, so they say a conflict.
+        { "quest", "q1", null, null, "held", HistoryContexts.Conflict, HistoryContexts.Held },
+        // A conflict on qh; the records read qh held, so they say the held done.
+        { "quest", "qh", null, null, "conflict", HistoryContexts.Held, HistoryContexts.Conflict },
+        // The service saw a1 proposed or open; the records read it done, as after its publish closed, so they say a proposal for it.
+        { "ask", null, "a1", null, "ask", HistoryContexts.ProposalAsk, HistoryContexts.Ask },
+        // A proposal for aopen; the records read aopen open, so they say the ask's own.
+        { "ask", null, "aopen", null, "proposal", HistoryContexts.Ask, HistoryContexts.ProposalAsk },
+    };
+
+    /// <summary>
+    /// 🔴 HIST1l: what waits is read from the service's refusal (<c>waits</c>), never rebuilt from a second read of the records,
+    /// which can have moved since the service judged: the sentence the service meant is said, at the listing and at the press.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(Waiting))]
+    public async Task What_waits_is_read_from_the_services_refusal_not_the_records_read_after_it(
+        string kind, string? quest, string? ask, string? session, string waits, string? recordsSay, string? serviceMeant)
+    {
+        _ = recordsSay;
+        var (listed, pressed) = await NeedsYouAsync(kind, Refusal("needs-you", quest, ask, session, waits: waits));
+
+        Assert.Equal((HistoryWords.NeedsYou, serviceMeant), (listed.Word, listed.Context));
+        Assert.Equal((HistoryWords.NeedsYou, serviceMeant), (pressed.Word, pressed.Context));
+        Assert.Equal((quest, ask, session), (listed.Quest, listed.Ask, listed.Session));
+    }
+
+    /// <summary>
+    /// HIST1l: a host from before names nothing waiting, so what waits is read from the records the word names, as HIST1c read
+    /// it; so is a word for it this build does not know.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(Waiting))]
+    public async Task A_host_that_names_nothing_waiting_is_read_from_the_records_the_word_names(
+        string kind, string? quest, string? ask, string? session, string waits, string? recordsSay, string? serviceMeant)
+    {
+        _ = (waits, serviceMeant);
+        foreach (var refusal in new[]
+                 {
+                     Refusal("needs-you", quest, ask, session),
+                     Refusal("needs-you", quest, ask, session, waits: "a-word-this-build-does-not-know"),
+                 })
+        {
+            var (listed, pressed) = await NeedsYouAsync(kind, refusal);
+
+            Assert.Equal((HistoryWords.NeedsYou, recordsSay), (listed.Word, listed.Context));
+            Assert.Equal((HistoryWords.NeedsYou, recordsSay), (pressed.Word, pressed.Context));
+        }
+    }
+
+    /// <summary>
+    /// A unit of <paramref name="kind"/> the service keeps with <paramref name="refusal"/>, listed and then pressed against records
+    /// that read otherwise (<see cref="Waiting"/>): what the list said, and what the press counted as changed.
+    /// </summary>
+    private async Task<(HistoryKeep Listed, HistoryKeep Pressed)> NeedsYouAsync(string kind, System.Text.Json.Nodes.JsonObject refusal)
+    {
+        var service = new StandIn
+        {
+            Records = [Record("s1", "q1"), Record("parked1", "q1", state: "awaiting-person")],
+            Quests = [Quest("q1"), Quest("qh", held: true)],
+            Asks = [Ask("a1"), Ask("aopen", state: "Open")],
+        };
+        var id = kind == "ask" ? "a1" : "q1";
+        var scope = kind == "ask" ? HistoryScope.Ask : HistoryScope.Quest;
+        service.Listings[kind == "ask" ? "ask=a1" : "quest=q1"] = [Unit(kind, id, quests: ["q1"], sessions: ["s1"], refusal: refusal)];
+
+        var listed = Assert.Single((await HistoryClearing.PlanAsync(World(service), scope, id)).Units).Keep;
+        var pressed = await HistoryClearing.ClearAsync(World(service), scope, id, [new HistoryUnitName(kind, id)], PluginEvents.Screen);
+
+        Assert.Empty(service.Pressed);
+        return (listed!, Assert.Single(pressed.Changed).Keep!);
+    }
+
     // ——— This machine's half.
 
     /// <summary>A tree still here keeps the unit (§1.2), and the service is never asked to clear it: the clear never touches a tree.</summary>
