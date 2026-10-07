@@ -434,6 +434,36 @@ public sealed class RemoteSyncTests
         Assert.Contains("\"entries\"", emptyJson);
     }
 
+    /// <summary>
+    /// The lines of its file each entry is travel with it where the local answer names them (ORIENT2e2), so a
+    /// shared deployment's hit names <c>path:first-last</c> as this machine's does. An entry the local answer
+    /// names none for (a row read with its columns, null) feeds none: the deployment judges a pair, never a guess.
+    /// </summary>
+    [Fact]
+    public void Entries_feed_the_lines_the_local_answer_names_and_none_where_it_names_none()
+    {
+        const string entriesJson = """
+            [
+              { "id": "Shared:docs/index/routes.md#a", "repository": "Shared", "kind": "Index", "provenance": "Local",
+                "title": "Bridge routes", "path": "docs/index/routes.md", "body": "one\ntwo", "anchor": null,
+                "workspace": "default", "firstLine": 7, "lastLine": 8 },
+              { "id": "Shared:docs/index/routes.md#b", "repository": "Shared", "kind": "Index", "provenance": "Local",
+                "title": "A row", "path": "docs/index/routes.md", "body": "| a | b |", "anchor": null,
+                "workspace": "default", "firstLine": null, "lastLine": null }
+            ]
+            """;
+
+        var (json, count) = RemoteSyncPayloads.Entries("Shared", entriesJson, Head);
+
+        Assert.Equal(2, count);
+        using var document = JsonDocument.Parse(json);
+        var entries = document.RootElement.GetProperty("entries").EnumerateArray().ToList();
+        Assert.Equal(7, entries[0].GetProperty("firstLine").GetInt32());
+        Assert.Equal(8, entries[0].GetProperty("lastLine").GetInt32());
+        Assert.False(entries[1].TryGetProperty("firstLine", out _));
+        Assert.False(entries[1].TryGetProperty("lastLine", out _));
+    }
+
     /// <summary>Where this checkout stands, as git answered it.</summary>
     private static readonly TreeProvenance Head = new(
         "aaaa1111bbbb2222", DateTimeOffset.Parse("2026-09-20T09:00:00Z"), "main");

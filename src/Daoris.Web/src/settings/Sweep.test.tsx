@@ -241,3 +241,67 @@ describe('the landed branches in the session branches card', () => {
     expect(screen.queryByRole('region', { name: 'Landed branches' })).not.toBeInTheDocument();
   });
 });
+
+// UXFIX4 (the second-opinion review, `Sweep.tsx:188,244`): a branch's row kept its three columns down to the main area's
+// 400 px floor, and cut its name to one line, so a long name could not be read whole by anyone. jsdom lays nothing out, so
+// what the rows rest on is held: the name a reader hears is the name the row shows, whole, and the columns follow the
+// list's own width.
+
+/** A class that cuts what it holds to one line, or hides what overflows it. */
+const CUTS = /^(?:truncate|text-ellipsis|text-clip|overflow-hidden|overflow-x-hidden|whitespace-nowrap|line-clamp-\d+)$/;
+
+/** The element a row is named by, and every class it and what it holds wear. */
+function namedBy(row: HTMLElement) {
+  const id = row.getAttribute('aria-labelledby');
+  const shown = id ? row.ownerDocument.getElementById(id) : null;
+  const classes = shown ? [shown, ...shown.querySelectorAll('*')].flatMap((each) => [...each.classList]) : [];
+  return { shown, classes };
+}
+
+describe('a branch row at a narrow width', () => {
+  const LONG = 'feature/0fda18-fix-the-api-gap-before-the-quarter-closes';
+  const LONGER = 'daoris/s-1f2e3d4c-a-chain-step-that-carries-a-long-slug';
+
+  it('is named by the name it shows, whole, and nothing cuts that name to a line', () => {
+    draw({
+      branches: [branch({ branch: LONGER, kind: 'unlanded', commits: 2, discardable: true })],
+      landed: [landed({ branch: LONG, kind: 'on-line', where: 'origin/main', removable: true })],
+      onDiscard: vi.fn(),
+    });
+
+    for (const name of [LONGER, LONG]) {
+      const row = screen.getByRole('listitem', { name });
+      const { shown, classes } = namedBy(row);
+      // What a reader hears is what the row shows: one source for both, so they cannot drift.
+      expect(shown).not.toBeNull();
+      expect(row).toContainElement(shown);
+      expect(shown!.textContent).toBe(name);
+      // Shown whole: it wraps after its separators, as a path does, and is never cut with its words in a tip.
+      expect(classes.filter((name) => CUTS.test(name))).toEqual([]);
+      expect(shown!.querySelector('[data-copy]')).toHaveAttribute('data-copy', name);
+    }
+  });
+
+  it('keeps the row named whole while its discard asks under it', async () => {
+    draw({ branches: [branch({ branch: LONGER, kind: 'unlanded', commits: 2, discardable: true })], onDiscard: vi.fn() });
+
+    await userEvent.click(within(screen.getByRole('listitem', { name: LONGER })).getByRole('button', { name: 'Discard branch…' }));
+
+    const row = screen.getByRole('listitem', { name: LONGER });
+    expect(within(row).getByRole('group', { name: `discard ${LONGER}` })).toBeInTheDocument();
+    expect(namedBy(row).shown!.textContent).toBe(LONGER);
+  });
+
+  it('lays its columns out by its own list’s width, never the window’s', () => {
+    draw({ landed: LANDED });
+
+    for (const row of screen.getAllByRole('listitem')) {
+      const list = row.closest('ul')!;
+      const columns = [...row.classList].filter((name) => /grid-cols-/.test(name));
+      expect(list).toHaveClass('@container/branches');
+      // Narrow, the name beside its mark and the sentence under the name; three columns only where the list holds them.
+      expect(columns).toEqual(['grid-cols-[4.5rem_minmax(0,1fr)]', '@min-[30rem]/branches:grid-cols-[4.5rem_minmax(0,16rem)_minmax(13rem,1fr)]']);
+      expect([...row.classList].filter((name) => /^(?:sm|md|lg|xl|2xl|max-(?:sm|md|lg|xl|2xl)):/.test(name))).toEqual([]);
+    }
+  });
+});

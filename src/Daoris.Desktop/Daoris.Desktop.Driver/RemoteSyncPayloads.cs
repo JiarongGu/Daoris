@@ -196,6 +196,10 @@ public static class RemoteSyncPayloads
                 writer.WriteString("body", Text(entry, "body"));
                 writer.WriteString("relativePath", Text(entry, "path"));
                 Copy(writer, entry, "anchor");
+                // ORIENT2e2: the lines of its file the entry is, as the local answer names them, so a shared
+                // deployment's hit names them too. The deployment judges whether they can be the body's.
+                CopyWhole(writer, entry, "firstLine");
+                CopyWhole(writer, entry, "lastLine");
                 writer.WriteEndObject();
             }
 
@@ -558,6 +562,16 @@ public static class RemoteSyncPayloads
     private static void Copy(Utf8JsonWriter writer, JsonElement element, string name)
     {
         if (Text(element, name) is { } value) writer.WriteString(name, value);
+    }
+
+    /// <summary>A whole number copied as it was answered; a null, a fraction or anything else is left out.</summary>
+    private static void CopyWhole(Utf8JsonWriter writer, JsonElement element, string name)
+    {
+        if (element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number
+            && value.TryGetInt32(out var number))
+        {
+            writer.WriteNumber(name, number);
+        }
     }
 
     private static string? Text(JsonElement element, string name) =>

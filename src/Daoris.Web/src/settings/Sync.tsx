@@ -1,24 +1,13 @@
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ago } from '../format';
 import { cn } from '../lib/cn';
 import { Button, CheckField, Chip, Icon, Inline, Prose } from '../ui';
-import { sweepKey, type LandedBranch } from './Sweep';
+import { BRANCH_ROWS, BranchRow, sweepKey, type LandedBranch } from './Sweep';
 
 /** A press under way, on its own button: the refresh mark turning, and still under reduced motion. */
 function Working() {
   return <Icon name="refresh" size={14} className="motion-safe:animate-spin" />;
-}
-
-/** One row: what the press does to it, its name, and the sentence — the session branches card's own grid. */
-function Row({ name, moving, word, children }: { name: string; moving: boolean; word: string; children: ReactNode }) {
-  return (
-    <li aria-label={name} className="grid grid-cols-[4.5rem_minmax(0,16rem)_minmax(0,1fr)] items-baseline gap-x-3 py-1">
-      <span><Chip accent={moving}>{word}</Chip></span>
-      <span className="truncate font-mono text-small text-ink">{name}</span>
-      <span className="min-w-0 text-small text-ink-soft">{children}</span>
-    </li>
-  );
 }
 
 /** What pulling a repository's line would do (WSR6). Only `fast-forward` moves anything. */
@@ -319,9 +308,10 @@ export function SyncSection({ plan, scope, included, looking, lookingAt, bringin
       {plan && repositories.map((repository) => (
         <div key={repository} role="group" aria-label={repository} className={cn('mt-2', looking && 'opacity-60')}>
           <div className="text-small font-medium text-ink-soft">{repository}</div>
-          <ul className="m-0 mt-1 list-none p-0">
+          {/* The session branches card's own rows (UXFIX4): a line's and a branch's name whole, stacked by the list's width. */}
+          <ul className={cn(BRANCH_ROWS, 'mt-1')}>
             {plan.lines.filter((pull) => pull.repository === repository).map((pull) => (
-              <Row key={`line:${pull.line ?? ''}`} name={pull.line ?? t('settings.sync.line.none')} moving={pull.moves}
+              <BranchRow key={`line:${pull.line ?? ''}`} name={pull.line ?? t('settings.sync.line.none')} moving={pull.moves}
                 word={t(pull.moves ? 'settings.sync.moves' : 'settings.sync.stays')}>
                 <Inline text={pulls(pull)} />
                 {/* A short mark: the reason is said once, above the rows (WSR7). */}
@@ -329,22 +319,22 @@ export function SyncSection({ plan, scope, included, looking, lookingAt, bringin
                 {pull.kind === 'unknown' && pull.detail && (
                   <span className="mt-0.5 block break-words font-mono text-meta text-ink-faint">{pull.detail}</span>
                 )}
-              </Row>
+              </BranchRow>
             ))}
             {plan.rebases.filter((branch) => branch.repository === repository).map((branch) => (
-              <Row key={`branch:${branch.branch}`} name={branch.branch} moving={branch.replays}
+              <BranchRow key={`branch:${branch.branch}`} name={branch.branch} moving={branch.replays}
                 word={t(branch.replays ? 'settings.sync.moves' : 'settings.sync.stays')}>
                 {branch.landed && <Chip>{t('settings.sync.branch.landed')}</Chip>} <Inline text={replays(branch)} />
                 {branch.kind === 'unknown' && branch.detail && (
                   <span className="mt-0.5 block break-words font-mono text-meta text-ink-faint">{branch.detail}</span>
                 )}
-              </Row>
+              </BranchRow>
             ))}
             {plan.deletes.filter((branch) => branch.repository === repository).map((branch) => (
-              <Row key={`delete:${branch.branch}`} name={branch.branch} moving={branch.removable}
+              <BranchRow key={`delete:${branch.branch}`} name={branch.branch} moving={branch.removable}
                 word={t(branch.removable ? 'settings.sweep.goes' : 'settings.sweep.kept')}>
                 <Inline text={goes(branch)} />
-              </Row>
+              </BranchRow>
             ))}
           </ul>
         </div>

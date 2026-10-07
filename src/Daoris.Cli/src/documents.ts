@@ -10,7 +10,8 @@
 // byte what it was, so no adopter and no example needs a re-sync until it declares.
 //
 // The service's `RepositoryScanner` reads the same field for the declared decisions, fixes and archive
-// (DOC5): the manifest-reading table in `documents-manifest.test.ts` is the one its reader matches.
+// (DOC5), and the declared index (ORIENT2e): the manifest-reading table in `documents-manifest.test.ts` is
+// the one its reader matches.
 
 import type { DeclaredDocument, DocumentLinkProblem, Harness } from './types.ts';
 import { readdirSync, statSync } from 'node:fs';
@@ -32,14 +33,19 @@ type Binding = 'path' | 'ceiling';
  * ceiling and no path: the brief is the repository's own part of the root instruction file, outside the
  * region, and the rooms are `rooms`'. `knowledge` and `skill` are roles too, and are not declared here:
  * the index already lists them from the target, which is where the descriptor keeps them.
+ *
+ * The service keeps a copy, `RepositoryDocuments.Roles`, and its `RepositoryDocumentsTests` reads this
+ * array from this file, each row's role and binding in this order, so a role added here fails the service's
+ * suite until the copy gains it (ORIENT2e2). Its pattern reads each row as written here, its role and
+ * binding first.
  */
 export const ROLES: readonly { role: string; binding: Binding; job: string }[] = [
   { role: 'brief', binding: 'ceiling', job: 'what this is, the constraint every change serves, and where everything else is' },
   { role: 'room', binding: 'ceiling', job: "one folder's conventions, traps and checks" },
   { role: 'router', binding: 'path', job: 'every document, its kind and its standing' },
   // ORIENT2b (D151 point 4): the generated index of where things are, the row that sends a session to it
-  // before it searches. The service's copy (`RepositoryDocuments.Roles`) reads it as undeclared until it
-  // indexes the declared index (ORIENT2e).
+  // before it searches. The service reads the declared index as entries of the kind `index`, each naming
+  // the lines of its file (ORIENT2e).
   { role: 'index', binding: 'path', job: 'where things are in the code and the records, generated: open it before searching' },
   { role: 'decisions', binding: 'path', job: 'numbered decisions, with why and what each rejected' },
   { role: 'backlog', binding: 'path', job: 'open work only' },
