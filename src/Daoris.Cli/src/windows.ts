@@ -5,10 +5,11 @@
 //       "session": { "reset": "2026-10-02T14:00:00Z", "used": 0.88, "standing": "clear", "seen": "2026-10-02T11:40:00Z", "session": "s1" },
 //       "weekly":  { "reset": "2026-10-06T21:18:00Z", "used": 0.14, "seen": "2026-10-02T11:40:00Z", "session": "s1" } } } }
 //
-// The driver WRITES it as a session's door carries the agent's frame (`AccountWindows.Said`), and its weekly limits' resets
-// (`AccountWindows.Told`); this module only reads it, for `daoris agent list` and `profile use`. It is the CLI's twin of the
-// driver's `AccountWindows.SaidOf`: `windows.test.ts` holds the table `WindowsTwinTests.cs` holds, cell for cell. The rules
-// both keep:
+// The driver WRITES it as a session's door carries the agent's frame, or as the agent's own server answers where no door
+// carries one (CODEXUSE1; `AccountWindows.Said` either way, a server's answer with no `session`), and its weekly limits'
+// resets (`AccountWindows.Told`); this module only reads it, for `daoris agent list` and `profile use`. It is the CLI's
+// twin of the driver's `AccountWindows.SaidOf`: `windows.test.ts` holds the table `WindowsTwinTests.cs` holds, cell for
+// cell. The rules both keep:
 //
 //   1. Missing or unreadable is nothing said (D21's reading), and nothing said is unknown: never spent, never fresh (D57).
 //   2. A window is an object whose `reset` and `seen` are ISO 8601 and nothing lenient; it says something only where `used`

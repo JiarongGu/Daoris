@@ -140,6 +140,7 @@ with the version and date at release.
 - Codex accounts show how much of their five-hour and weekly limits they have used, read from Codex
   itself without spending usage, and rotation switches before their limits as it does for Claude Code.
 - After *Resume*, what still holds a quest reads in Chinese too.
+- `daoris agent list` and `profile use` weigh a Codex account's usage windows, as they do Claude Code's.
 
 The first version: doctrine that installs, is checked, and flows back.
 

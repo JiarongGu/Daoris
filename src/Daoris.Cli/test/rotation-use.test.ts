@@ -291,8 +291,10 @@ test('`profile use` shows each account\'s last reading and its age, and says no 
   const fx = makeFixture('rotation-use-said');
   accounts(fx, 'claude-code', 'account-1', 'account-2');
   accounts(fx, 'codex', 'account-1', 'account-2');
+  accounts(fx, 'dsh', 'account-1', 'account-2');
   run(['profile', 'order', 'claude-code', 'account-1', 'account-2'], at(fx));
   run(['profile', 'order', 'codex', 'account-1', 'account-2'], at(fx));
+  run(['profile', 'order', 'dsh', 'account-1', 'account-2'], at(fx));
   run(['profile', 'use', 'claude-code', '--near', '85'], at(fx));
   const stamp = (offset: number) => new Date(Date.now() + offset).toISOString().replace(/\.\d+Z$/, 'Z');
   writeFileSync(join(fx.root, WINDOWS_FILE), JSON.stringify({
@@ -306,14 +308,19 @@ test('`profile use` shows each account\'s last reading and its age, and says no 
 
   const printed = run(['profile', 'use', 'claude-code'], at(fx)).out;
   const codex = run(['profile', 'use', 'codex'], at(fx)).out;
+  const silent = run(['profile', 'use', 'dsh'], at(fx)).out;
 
   assert.match(printed, /account-1\s+said \d+ min ago: 88% of its session limit used, resetting [^;]+; 14% of its weekly limit used, resetting [^;]+; near at 85%\n/);
   assert.match(printed, /account-2\s+nothing said about what it has left/);
   assert.doesNotMatch(printed, /no account has said what it has left yet/);
-  // An agent whose sessions do not say it passes nothing, says so, and walks without near and pace.
-  assert.match(codex, /switch before the limit\s+on, at 90% — Codex's sessions here do not say how near their limits are/);
-  assert.match(codex, /next start\s+the ready account running the fewest of Daoris's sessions; then one whose week resets within a day; then the one Daoris started on least recently;/);
+  // Codex's accounts speak through its own app server, asked by the driver (CODEXUSE1b): near and pace, and none said yet.
+  assert.match(codex, /switch before the limit\s+on, at 90% — a start passes an account Codex says is near its limit, or that has used 90% of a window/);
+  assert.match(codex, /next start\s+the ready account its agent did not say is near; [^\n]*then the one furthest behind its week's pace;/);
   assert.match(codex, /no account has said what it has left yet/);
+  // An agent whose accounts do not say it passes nothing, says so, and walks without near and pace.
+  assert.match(silent, /switch before the limit\s+on, at 90% — DeepSeek Harness's sessions here do not say how near their limits are/);
+  assert.match(silent, /next start\s+the ready account running the fewest of Daoris's sessions; then one whose week resets within a day; then the one Daoris started on least recently;/);
+  assert.match(silent, /no account has said what it has left yet/);
   fx.cleanup();
 });
 

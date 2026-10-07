@@ -12036,3 +12036,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CARRY2d — a resume's hold reads in Chinese** (modules, web-shell; after CARRY2c). A resume's report of what still holds a quest of its work (`WorkHold`, `DriverModule.Work.cs:233`) carries only the verdict and the English sentence, so 中文 shows English there, as it does for a stop and a pause. Carry the facts (CARRY2c's `takenBy` for a take elsewhere, and their own for a stop and a pause) and word them from both catalogues. Contract: D80's CARRY2c note ("Not covered"). Proof: a modules test for the forwarded facts; a vitest rendering each hold in 中文.
 
 **Outcome** 2026-10-07: a resume's report of what still holds a quest carries each hold's facts (the stop's session, whose pause, a park's count, whose take) beside the unchanged sentence; the page words each in 中文 by `sittingSentence`, and the driver's sentence stands for an older host. A park's facts came too. Detail: D80's CARRY2d note; commits e7b06251…2141ce8f.
+
+
+## CODEXUSE1b — the terminal and the record say Codex speaks (2026-10-07, D130)
+
+> - [ ] **CODEXUSE1b — the terminal and the record say Codex speaks** (cli, docs; after CODEXUSE1). `daoris agent list` already prints a kept Codex reading, but its `codex` entry lacks `windows: true`, so its use and next-start lines still say Codex is silent; and D130's own record does not say CODEXUSE1 reversed §5.1's app-server row and §5.3's *no probe* for this read (only a pointer in the account-use design). Contract: D125's CODEXUSE1 note, `docs/2026-10-07-codex-usage-evidence.md`. Proof: an `agent list` test for a Codex account with a reading; D130's note.
+
+**Outcome** 2026-10-07: the CLI's `codex` entry declares `windows`, the twin of the driver's `Speaks`, so `agent list` and `profile use` treat a Codex account as one that reports its usage (the switch passes a near account, the next start weighs its week); D130's note records what CODEXUSE1 reversed. Detail: D130's last note; commits 1abac11a, a8bca33f.

@@ -246,10 +246,12 @@ export interface Toolchain {
    */
   keyVariable?: string;
   /**
-   * That this tool's sessions say how much of each window an account has used (TOOL6c, D130 §5.2): the driver reads its
-   * frame by its readings table and keeps what it said in `windows.json`, so *switch before the limit* and pace act on it.
-   * Declared only where a frame was recorded (limit-signals evidence §1); a door's are its owner's (twin rule 7). The
-   * driver's `Windows` is the twin.
+   * That this tool says how much of each window an account has used (TOOL6c, D130 §5.2; CODEXUSE1b): the driver reads its
+   * frame on the door its sessions run on by its readings table, or asks its own server where no door carries one
+   * (CODEXUSE1), and keeps what it said in `windows.json`, so *switch before the limit* and pace act on it. Declared only
+   * where a frame or an answer was recorded (limit-signals evidence §1, Codex usage evidence §2); a door's are its owner's
+   * (twin rule 7). The driver's `Speaks` is the twin: its `Windows` or its `Usage`. This command reads what was kept and
+   * asks no server itself.
    */
   windows?: boolean;
 }
@@ -336,6 +338,9 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
     // "Not logged in" contains "logged in". An unanchored pattern reported every logged-out profile
     // as logged in — found by a test, which is the only way a thing like this is ever found.
     loginCheck: { args: ['login', 'status'], in: /^\s*logged in/im, out: /^\s*not logged in/im },
+    // Each window's use and reset, asked of its own app server under the account's home, since no door of Daoris's carries
+    // them (CODEXUSE1b; the driver's `Usage`, declared on `codex-acp`; Codex usage evidence §1, §2).
+    windows: true,
   },
   // Codex over the PROTOCOL door (ACP3/D53, closing HARNESS2). Its own entry beside `codex` for
   // exactly the reason `claude-code-acp` is one beside `claude-code`: the adapter and the harness
@@ -1142,10 +1147,10 @@ function endLines(
  * @remarks
  * 🔴 It states each setting as chosen, and claims nothing about the walk that reads it: *make the most of them* is §16.3's
  * walk, the driver's, whose steps `profile use` names (`nextStartLines`). *Switch before the limit* passes an account its
- * agent said is near only where the agent's sessions say how much of each window is used (`windows`, TOOL6c); for any other
- * agent it passes none, and that is said.
+ * agent said is near only where the agent says how much of each window is used, on its door or asked of its own server
+ * (`windows`, TOOL6c, CODEXUSE1b); for any other agent it passes none, and that is said.
  *
- * @param says Whether the agent's sessions say how much of each window is used (the toolchain's `windows`).
+ * @param says Whether the agent says how much of each window is used (the toolchain's `windows`).
  */
 export function useLines(
   scope: Scope, product: string, says = false, shown: (account: string) => string = (account) => account,
@@ -1180,14 +1185,14 @@ export function useLines(
 /**
  * The step the next start of a scope would follow (TOOL6b, TOOL6c; D130 §16.3, §16.4, §16.6), in the terminal's words: the
  * goal's steps as the driver's walk takes them, or the list's order under `order`, and the kept account driven work passes.
- * Where the agent's sessions say how much of each window is used, a near account goes last (with *switch before the
+ * Where the agent says how much of each window is used (`windows`), a near account goes last (with *switch before the
  * limit* on) and pace orders the goal's walk; with the goal and no account of the list having said anything, it says so.
  *
  * @remarks
  * Prose about the driver's walk (`AccountRotation.Order`), not a twin of a file: this command is offline and reads no
  * session record, so it names the steps rather than the account they would choose.
  *
- * @param says Whether the agent's sessions say how much of each window is used (the toolchain's `windows`).
+ * @param says Whether the agent says how much of each window is used (the toolchain's `windows`).
  * @param anySaid Whether any account of the list has said what it has left (`windows.json`).
  */
 export function nextStartLines(
