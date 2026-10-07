@@ -99,7 +99,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/src/plugins.ts` | 67 | 1347 |
 | `src/Daoris.Cli/src/toolchain.ts` | 137 | 2690 |
 | `src/Daoris.Cli/test/desktop-publish.test.ts` | 48 | 871 |
-| `src/Daoris.Cli/test/dogfood.test.ts` | 42 | 755 |
+| `src/Daoris.Cli/test/dogfood.test.ts` | 46 | 818 |
 | `src/Daoris.Cli/test/driverconfig.test.ts` | 75 | 1460 |
 | `src/Daoris.Cli/test/merge-branch.test.ts` | 140 | 2233 |
 | `src/Daoris.Cli/test/rotation-use.test.ts` | 44 | 543 |

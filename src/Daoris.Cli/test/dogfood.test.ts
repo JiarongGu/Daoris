@@ -9,6 +9,7 @@ import { frontmatterEnd, parseFrontmatter, SKILL_FIELDS } from '../src/document.
 import { listFiles, readText } from '../src/fsx.ts';
 import { readManifest, readLock } from '../src/config.ts';
 import { inspect, commandCheck } from '../src/drift.ts';
+import { ROLES } from '../src/documents.ts';
 
 // This package is src/Daoris.Cli; the canon and daoris's own doctrine live at
 // the workspace root, because they are the project's data rather than the CLI's.
@@ -104,6 +105,68 @@ test('every shipped canon skill carries the frontmatter the harness needs', () =
   assert.ok(skills.length > entries.length, 'no canon skill carries a supporting file, so the folder rule proved nothing here');
 
   assert.deepEqual(skillProblems(skills.map((file) => file.source), (source) => readText(join(repoRoot, 'canon', source))), []);
+});
+
+/**
+ * A template beside a canon skill that its entry file never names, or one it names that is not there
+ * (ORIENT2a). A skill's templates arrive in every adopter, and a session reaches one only through the
+ * skill's own words: an unnamed template is shipped and never copied, and a named one that is gone sends
+ * the session to a file that does not exist. Both are silent, so they are held here.
+ */
+function templateProblems(sources: readonly string[], read: (source: string) => string): string[] {
+  const problems: string[] = [];
+  const entries = sources.filter((source) => source.endsWith('/SKILL.md'));
+  for (const entry of entries) {
+    const folder = entry.slice(0, -'/SKILL.md'.length);
+    const beside = sources.filter((source) => source.startsWith(`${folder}/templates/`))
+      .map((source) => source.slice(folder.length + 1));
+    const named = [...new Set([...read(entry).matchAll(/`(templates\/[^`<>\s]+)`/g)].map((match) => match[1]!))];
+    for (const template of beside) {
+      if (!named.includes(template)) problems.push(`${entry} never names ${template}, which ships beside it`);
+    }
+    for (const template of named) {
+      if (!beside.includes(template)) problems.push(`${entry} names ${template}, which is not there`);
+    }
+  }
+  return problems;
+}
+
+test('the template scan finds a template nobody names, and a name with no template', () => {
+  const files: Record<string, string> = {
+    'core/skills/writer/SKILL.md': '---\nname: writer\ndescription: d\n---\n\n| row | `templates/row.md` |\n| gone | `templates/gone.md` |\n',
+    'core/skills/writer/templates/row.md': '# A row\n',
+    'core/skills/writer/templates/stray.md': '# A stray\n',
+    'core/skills/plain/SKILL.md': '---\nname: plain\ndescription: d\n---\n\nNo templates, and none named.\n',
+  };
+  assert.deepEqual(templateProblems(Object.keys(files), (source) => files[source]!), [
+    'core/skills/writer/SKILL.md never names templates/stray.md, which ships beside it',
+    'core/skills/writer/SKILL.md names templates/gone.md, which is not there',
+  ]);
+});
+
+test('every template beside a canon skill is named by it, and every template it names is there', () => {
+  const canon = readCanon(join(repoRoot, 'canon'));
+  const skills = [...canon.packs.values()].flatMap((pack) => pack.files).filter((file) => isSkill(file.source));
+  const templates = skills.filter((file) => file.source.includes('/templates/'));
+  assert.ok(templates.length >= 2, `the scan found ${templates.length} templates, so it proved nothing`);
+
+  assert.deepEqual(templateProblems(skills.map((file) => file.source), (source) => readText(join(repoRoot, 'canon', source))), []);
+});
+
+/**
+ * The roles a manifest may declare are the canon's (ORIENT2b; D122 §2.7, D151 point 4). `ROLES`' jobs
+ * are the canon's roles table cut short, so a role the canon teaches that the CLI does not know is a
+ * declaration every adopter is refused, and one the CLI knows that the canon does not teach is a row no
+ * adopter has a reason to write. `knowledge` and `skill` are the canon's and never declared: the index
+ * lists them from the target.
+ */
+test("the canon's roles table and the roles a manifest may declare name the same roles, in one order", () => {
+  const text = readText(join(repoRoot, 'canon', 'core', 'knowledge', 'development-documents.md'));
+  const table = text.slice(text.indexOf('### The roles'), text.indexOf('### Three ways a document is read'));
+  const canonRoles = [...table.matchAll(/^\| \*\*([a-z]+)\*\* \|/gm)].map((match) => match[1]!);
+  assert.ok(canonRoles.length >= 10, `the scan found ${canonRoles.length} roles in the canon's table, so it proved nothing`);
+
+  assert.deepEqual(canonRoles.filter((role) => role !== 'knowledge' && role !== 'skill'), ROLES.map((row) => row.role));
 });
 
 /**

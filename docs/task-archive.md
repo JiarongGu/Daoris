@@ -11652,3 +11652,17 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **QUESTOP1 — write down how a quest operation kind is added** (service, knowledge). EVID1a's `evidenced` took eight places, listed nowhere: the enum, the replay's rule, the log payload, the wire and its shape sentence, the rebase's drop list, the cache column, the HTTP response and the MCP listing. A knowledge document (or the service README's section) names them, and ideally a test fails when a kind misses one. Contract: D144's EVID1a note, D68. Proof: the document's index row; the test if built.
 
 **Outcome** 2026-10-07: `.claude/knowledge/quest-operations.md` names the eleven places a quest operation kind goes (the kind, the replay's rule, the log payload, the wire and its shape sentence, the rebase's rule, the cache column, the HTTP answer, the MCP listing, the operation's field, the quest's property, the verb's doors), and `QuestOperationKindsTests` (five theories over every kind) and `QuestResponseTests` fail on a place a kind misses. Listing them found a live defect since D79: a taker's lost `waited` was rebased into a conflict naming no status, which the wire refuses, so the remote answered every later push of that circle with 400; the rebase's rule is now one table (`QuestLog.Lost`) and such a wait is forgotten. A wait on a take that lost is a decision (WAITCLAIM1). Service +51, HTTP +1. Detail: the knowledge document, FIX-LOG 2026-10-07; commits 74bbb550, c5b17699, e970347f.
+
+
+## ORIENT2a — the canon teaches the index (2026-10-07, D151)
+
+> - [ ] **ORIENT2a — canon teaches the index** (canon, examples). Add index role/section, skill steps and template; update canon changelog and sync examples. Contract: design §1.3, D151 §3. Proof: canon tests, D48 §2a scan, unchanged core bytes.
+
+**Outcome** 2026-10-07: the canon teaches a generated, committed index of where things are, kept true by the repository's own check: `development-documents` gains the `index` role, its section and a sentence in *Without the tool*; `doc-loader` gains step 3 (start every search at the index's row, read the lines it names); `set-up-documents` gains step 5 and `templates/index.md` (*Kept by hand* first, then *Generated*). Nothing always-loaded changed (core unchanged at 20,428); this repository and both examples re-synced. Detail: D151's ORIENT2a note; commit 1250ed14.
+
+
+## ORIENT2b — declare the index (2026-10-07, D151)
+
+> - [ ] **ORIENT2b — declare the index** (cli). Add `index` after `router`, render its location, fail missing paths and declare `docs/index/README.md`. Contract: §1.4, D151 §4. Proof: documents tests and measured region growth.
+
+**Outcome** 2026-10-07: `index` joins the CLI's `ROLES` after `router`, so `sync` renders its row after the router's, `check` and `status` name a missing declared path, and a ceiling with no path is refused; Daoris declares `docs/index/README.md`. The region grows 119 bytes as the design measured, to 20,547 of 26,000. A dogfood test holds the canon's roles table and `ROLES` to one order. The service's twin `RepositoryDocuments.Roles` gains `index` in ORIENT2e. CLI 1359 → 1366. Detail: D151's ORIENT2b note; commit dc9dd921.

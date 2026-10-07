@@ -58,6 +58,44 @@ test('sync renders Where things are into the region: one row per declared path, 
   fx.cleanup();
 });
 
+/**
+ * ORIENT2b (D151 point 4, the orientation design §1.4): the index of where things are is the row that
+ * sends a session there before it searches, so it sits after the router and says so in its job.
+ */
+test('sync renders a declared index after the router, saying to open it before searching', () => {
+  const fx = layoutFixture('documents-index');
+  fx.repoFx.write('docs/README.md', '# The documents\n');
+  fx.repoFx.write('docs/index/README.md', '# Where things are\n');
+  fx.repoFx.write('docs/decisions/D1.md', '# D1\n');
+  fx.manifest({ documents: { decisions: 'docs/decisions', index: 'docs/index/README.md', router: 'docs/README.md' } });
+  fx.sync();
+
+  const region = fx.repoFx.region()!;
+  assert.ok(region.includes([
+    '| router | `docs/README.md` | every document, its kind and its standing |',
+    '| index | `docs/index/README.md` | where things are in the code and the records, generated: open it before searching |',
+    '| decisions | `docs/decisions` |',
+  ].join('\n')), region);
+  assert.equal(fx.cli('check').code, 0, fx.cli('check').out);
+  fx.cleanup();
+});
+
+test('check fails on a declared index that is absent, naming the role', () => {
+  const fx = layoutFixture('documents-index-missing');
+  fx.repoFx.write('TASKS.md', '# Tasks\n');
+  fx.manifest({ documents: { index: 'docs/index/README.md', backlog: 'TASKS.md', decisions: 'TASKS.md' } });
+  fx.sync();
+
+  const { code, out } = fx.cli('check');
+
+  assert.equal(code, 1, out);
+  assert.match(out, /document\s+docs\/index\/README\.md \(index\) is declared in daoris\.json, and absent/);
+
+  fx.repoFx.write('docs/index/README.md', '# Where things are\n');
+  assert.equal(fx.cli('check').code, 0, 'written, it passes');
+  fx.cleanup();
+});
+
 test('a repository that declares nothing gets no table, and its region is byte for byte what it was', () => {
   const fx = layoutFixture('documents-none');
   fx.sync();
