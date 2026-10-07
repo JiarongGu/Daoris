@@ -17,7 +17,7 @@ import { ACCOUNT_COLUMNS, AccountColumnsHead, AccountRow } from './AccountRow';
 import { type BackAccount, PlaceAccount, RenameAccount, ReSignIn } from './AddAccount';
 import {
   type AccountAct, type AccountState, type AgentPart, type AgentUsage, accountAct, accountName, accountStates, accountWho,
-  doorsSummary, joinChoices, latestRead, ownRunsFor, ownState, rulesSummary, runsFor, runsForLine, settingsSummary,
+  doorsSummary, joinChoices, latestRead, ownRunsFor, ownSaid, ownState, rulesSummary, runsFor, runsForLine, settingsSummary,
   usageLine, usageSummary, useSummary, versionOnly, workspacesSummary,
 } from './agents';
 
@@ -332,6 +332,9 @@ export function AgentPage({
       id: `clear:${circle.workspace}`, label: t('agents.account.clearIn', { workspace: circle.workspace }),
       onSelect: () => acts.onDefault(null, circle.workspace),
     })),
+    // Read again on the press, as each account's ⋯ offers (CODEXUSE3): with the agent's accounts, since the driver has no
+    // read of the own sign-in alone (§5.3); its state and, where its agent's server answers, its windows.
+    { id: 'read', label: t('agents.account.readAgain'), disabled: reading || busy, onSelect: acts.onReadAgain },
   ];
 
   // The lists an account is in, the machine's and each workspace's own, for its ⋯'s *Remove from …'s list* (D152 §4.2).
@@ -561,9 +564,9 @@ export function AgentPage({
                 why={ownLine(tool.ownAccount, use?.own.cooling)}
                 state={own}
                 runs={runsForLine(ownRunsFor(tool, use, scopeWorkspaces))}
-                // No window of the tool's own sign-in is read apart from the accounts' (TOOL6c), so its line says only that a
-                // cool-off Daoris chose the length of has no known reset (ACCTUX1).
-                said={usageLine(null, own)}
+                // What its agent last said of its windows, where a press asked its own server (CODEXUSE3), as an account's
+                // row says its own; else only that a cool-off Daoris chose the length of has no known reset (ACCTUX1).
+                said={usageLine({ said: ownSaid(use) }, own)}
                 act={actOf(own.state === 'cooling' || own.state === 'unknown' ? accountAct(own, { signsIn: false, present: tool.present, runs: 1 }) : null, null, ownLabel)}
                 menu={ownMenu}
                 now={now}

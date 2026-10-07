@@ -1,5 +1,5 @@
 import { byTool, type Tool, type ToolDoor } from '../tools';
-import { type AgentAccounts, USE_DEFAULTS } from '../settings/accounts';
+import { type AccountSaid, type AgentAccounts, USE_DEFAULTS } from '../settings/accounts';
 import type { AgentRulesState } from '../settings/AgentRules';
 import { scopeOf } from '../settings/accountsFixtures';
 
@@ -81,6 +81,24 @@ export const CLAUDE_USE: AgentAccounts = {
 export const CODEX_USE: AgentAccounts = {
   agent: 'codex', speaks: false, own: {}, accounts: [{ name: 'account-1', running: 0 }], scopes: [scopeOf()],
 };
+
+/**
+ * Codex with no account of Daoris's, its starts on your own sign-in, whose windows a press read of Codex's own server
+ * (CODEXUSE3): five hours nearly unused, its week at 15%.
+ */
+export const CODEX_OWN_TOOL: Tool = byTool([{ ...CODEX, profiles: [] }])[0]!;
+
+const OWN_READ: AgentAccounts['own'] & { said: AccountSaid } = {
+  said: {
+    seen: READ,
+    windows: [
+      { window: 'session', used: 0.01, reset: minutesFrom(3 * 60 + 40), credits: false, seen: READ },
+      { window: 'weekly', used: 0.15, reset: minutesFrom(5 * 24 * 60), credits: false, seen: READ },
+    ],
+  },
+};
+
+export const CODEX_OWN_USE: AgentAccounts = { agent: 'codex', speaks: true, own: OWN_READ, accounts: [], scopes: [scopeOf()] };
 
 /**
  * The install's shape, as the UX7 design §4.7 draws it (UX7b): account-1 signed in with a session on it, first in work's
