@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — an evidence verdict judged twice, differently
+
+### Service: the wire took a `spelled` the evidence door refused (REFAC3)
+- **Symptom:** read from the code by a second opinion (`docs/2026-10-07-second-opinion-review.md`), not seen on an install: a verdict whose item named `spelled` on a `missing` or `found` read was refused at `POST /api/quests/{id}/evidence` but read whole from another machine's push, and replayed.
+- **Root cause:** EVID1a wrote the verdict's field rules twice, in `QuestEvidenceVerdict.Judged` for the wire and `QuestExchange.JudgeVerdict` for the door, and only the door kept `spelled` to a `case` read. Neither checked that the spelling is the same path in another case.
+- **Fix:** `QuestEvidenceVerdict.JudgeShape`, one judge of the shape both call, returning the field at fault (`QuestVerdictFault`); coverage stays the exchange's and the replay's. D144's REFAC3 note names what is refused now.
+- **Verify:** `QuestEvidenceTests.A_verdict_is_taken_or_refused_alike_at_both_doors`: thirty-one shapes through both doors; the two disagreeing rows failed first (taken on the wire, refused at the door), and the two new `spelled` rows failed at both. Not covered: no reader writes a verdict yet (EVID1b).
+
 ## 2026-10-07 — a deleted conversation's files left behind
 
 ### Driver: *Delete…* of a conversation left four of its files under the home (HIST1c)

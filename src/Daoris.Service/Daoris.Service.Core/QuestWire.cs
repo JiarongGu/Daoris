@@ -27,7 +27,8 @@ public static class QuestWire
         + "a done's every answer names its requirement and says met or departed, a departure "
         + "with its quote; a decline's whileOpen, where it says one, is true or false; a conflict names "
         + "what it attempted; a dismissal names the conflict's machine and sequence; an evidenced verdict names "
-        + "the full commit read, how it was read, and each item's requirement, path or gate, and result";
+        + "the full commit read, how it was read, and each item's requirement, path or gate, and result, with a "
+        + "spelling only on a `case` read";
 
     /// <summary>A page of what a remote accepted — the answer to a fetch.</summary>
     public static string Page(QuestFetch page) => Written(writer =>
