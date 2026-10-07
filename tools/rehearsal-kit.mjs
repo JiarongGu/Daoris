@@ -6,8 +6,8 @@
  * depending on which gate caught it.
  */
 import { execSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { copyFileSync, existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
+import { basename, dirname, join } from 'node:path';
 
 /**
  * Every run leaves a transcript under `_fixtures/rehearsal-logs/`, outside anything a passing run
@@ -33,18 +33,91 @@ export function openTranscript(repoRoot, name, { beforeExit } = {}) {
   });
 }
 
-/** The check/section vocabulary, with the counters the final summary reads. */
-export function makeChecker() {
+/**
+ * Where a run keeps what its failed checks read (DEV3b): a folder of its own beside the transcripts, which no run deletes,
+ * named for the rehearsal and the moment it started. The rehearsal's scratch is wiped at every start, so evidence kept
+ * there went with the rerun that followed the failure, and the next sighting was a quote.
+ */
+export function evidenceFolder(repoRoot, name, started = new Date()) {
+  return join(repoRoot, '_fixtures', 'rehearsal-logs', `${name}-${started.toISOString().replace(/[:.]/g, '-')}`);
+}
+
+/** How long a kept check's folder name may be: a label is a sentence, and a deep checkout's paths are long. */
+const NAME_LIMIT = 60;
+
+/** A check's label as a folder name: its letters and digits, lower case, hyphened, cut at a word within the limit. */
+export function checkFolderName(label) {
+  const words = label.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  let name = '';
+  for (const word of words) {
+    const next = name ? `${name}-${word}` : word;
+    if (next.length > NAME_LIMIT) break;
+    name = next;
+  }
+
+  if (!name && words.length > 0) name = words[0].slice(0, NAME_LIMIT);
+  return name || 'check';
+}
+
+/**
+ * Keep what a failed check read (DEV3b): its print as `print.txt` and a copy of each file it names, under `root`, in a
+ * folder named for the check, a second failure of the same check beside the first. A file that is not there is listed in
+ * `missing.txt`, and the checker says a folder it could not write on the FAIL line: keeping evidence fails no check.
+ *
+ * @returns {string} the folder, for the FAIL line to name
+ */
+export function keepEvidence(root, label, { print = '', files = [] } = {}) {
+  const name = checkFolderName(label);
+  let folder = join(root, name);
+  for (let n = 2; existsSync(folder); n += 1) folder = join(root, `${name}-${n}`);
+  mkdirSync(folder, { recursive: true });
+  writeFileSync(join(folder, 'print.txt'), print);
+
+  const missing = [];
+  for (const file of files.filter(Boolean)) {
+    if (!existsSync(file) || !statSync(file).isFile()) {
+      missing.push(file);
+      continue;
+    }
+
+    // Two homes write their logs under one name each day: a copy whose name is taken is named for the two folders above it.
+    const above = dirname(file).split(/[\\/]/).filter(Boolean).slice(-2).join('-');
+    let target = join(folder, basename(file));
+    for (let n = 1; existsSync(target); n += 1) {
+      target = join(folder, `${above}-${n > 1 ? `${n}-` : ''}${basename(file)}`);
+    }
+    copyFileSync(file, target);
+  }
+
+  if (missing.length > 0) writeFileSync(join(folder, 'missing.txt'), `${missing.join('\n')}\n`);
+  return folder;
+}
+
+/**
+ * The check/section vocabulary, with the counters the final summary reads.
+ *
+ * With `keep` (DEV3b, `evidenceFolder`), a failed check that hands `evidence` (`{ print, files }`, or a function answering
+ * it, asked only on a failure) keeps it there, and its FAIL line names the folder.
+ */
+export function makeChecker({ keep } = {}) {
   const totals = { checks: 0, failures: 0 };
   return {
     totals,
-    check(label, condition, detail = '') {
+    check(label, condition, detail = '', evidence) {
       totals.checks += 1;
       if (condition) {
         console.log(`  ok    ${label}`);
       } else {
         totals.failures += 1;
         console.log(`  FAIL  ${label}${detail ? `\n          ${detail}` : ''}`);
+        if (keep && evidence) {
+          try {
+            console.log(`          kept: ${keepEvidence(keep, label, typeof evidence === 'function' ? evidence() : evidence)}`);
+          } catch (error) {
+            // The check has failed already; evidence that could not be kept is said, never a second failure.
+            console.log(`          kept: nothing, ${error.message}`);
+          }
+        }
       }
     },
     section(title) {
