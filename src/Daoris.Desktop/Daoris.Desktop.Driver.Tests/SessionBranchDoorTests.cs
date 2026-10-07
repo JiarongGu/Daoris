@@ -75,6 +75,15 @@ public sealed class SessionBranchDoorTests : IDisposable
         else Assert.Equal($"if its work is wanted: `daoris-driver trees land 4e6837ed` accepts it (session 4e6837ed, {state}, its tree here)", offer);
     }
 
+    /// <summary>LAND4: records the service does not answer name no session, so a clean-up's list stands without its landing lines.</summary>
+    [Fact]
+    public async Task Records_the_service_does_not_answer_name_no_session()
+    {
+        using var service = new ServiceClient("http://127.0.0.1:9", null);
+
+        Assert.Empty(await SessionTrees.RecordsOrNoneAsync(service));
+    }
+
     [Theory]
     [InlineData("daoris/s-1a2b3c4d", false)]
     [InlineData("s-1a2b3c4d", false)]

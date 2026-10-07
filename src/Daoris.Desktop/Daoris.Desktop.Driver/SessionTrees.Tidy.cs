@@ -169,6 +169,22 @@ public sealed partial class SessionTrees
             : null;
 
     /// <summary>
+    /// The records a clean-up's list names each kept branch's session from (LAND4), or none where the service does not answer
+    /// them: the landing line beside a row is the list's convenience, and the list stands without it.
+    /// </summary>
+    public static async Task<IReadOnlyList<SessionRecord>> RecordsOrNoneAsync(ServiceClient service, CancellationToken ct = default)
+    {
+        try
+        {
+            return await service.SessionRecordsAsync(ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
+        {
+            return [];
+        }
+    }
+
+    /// <summary>
     /// The session a tree is (LAND4): the newest record of this machine's naming it, separators and case aside, as the reader's
     /// <c>ReviewableTree</c> lets the newest stand for a tree. Null for no tree, or one no record of this machine's names.
     /// </summary>

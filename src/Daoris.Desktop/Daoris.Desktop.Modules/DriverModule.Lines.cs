@@ -144,9 +144,9 @@ public sealed partial class DriverModule
         {
             var plan = await trees.CleanPlanAsync(repositories, inUse, cancellationToken);
             // LAND4: the session each kept branch's tree is, so its row says how to land it as that session's page does. The
-            // records are read only where a row could offer one.
+            // records are read only where a row could offer one, and records that do not read offer none: the list stands.
             var records = plan.Sessions.Any(item => item.Kind == SweepKind.Unlanded && item.Tree is not null)
-                ? await (_loop.Service ?? throw NotReady()).SessionRecordsAsync(cancellationToken)
+                ? await SessionTrees.RecordsOrNoneAsync(_loop.Service ?? throw NotReady(), cancellationToken)
                 : [];
             return new
             {
