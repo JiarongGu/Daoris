@@ -136,7 +136,8 @@ public sealed record HarnessToolchain(
     // handed at spawn. Declared only where measured; null means this agent takes no key from Daoris.
     string? KeyVariable = null,
     // The words this tool prints when its provider refuses the account's credential (AGT3b) — read
-    // from a failed session's last lines, so the account is not spent again. Measured, never guessed.
+    // from what it said of a failed session's ending, never from its agent's words (AGT3c,
+    // `Observation.Refused`), so the account is not spent again. Measured, never guessed.
     string? Refused = null,
     // The maker's OWN release channel a pin fetches from (AGT2b), verified end to end — never npm.
     // A toolchain declares this or `Package`, never both: which source a pin came from is not left

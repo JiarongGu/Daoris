@@ -66,5 +66,7 @@ agent measured so far.
   roster then **holds every further start on that account**, on either door, until a person looks
   again: any account action, or *look again*. One session pays the retries, and the rest do not.
   *(Since CONV3, 2026-09-25, the direct door runs `--output-format stream-json`, so a retry is on its
-  wire too. Nothing reads `api_retry` yet. The words above are still what ends the session.)*
+  wire too. Nothing reads `api_retry` yet. The words above are still what ends the session.)* *(Since AGT3c, 2026-10-07,
+  they are read from what the harness itself says of its ending, a failed `result`, its stderr or a line outside its
+  frames, never from its agent's words, which may quote them; D125's AGT3c note.)*
 - **Codex key accounts**, once measured.

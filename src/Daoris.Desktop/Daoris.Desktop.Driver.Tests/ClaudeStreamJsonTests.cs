@@ -420,6 +420,28 @@ public sealed class ClaudeStreamJsonTests
         }
     }
 
+    /// <summary>
+    /// AGT3c: what the harness says in its own words is marked apart from its agent's: a line outside its protocol, and a
+    /// failed result's words. An agent's text, a turn that ended and a stopped one carry neither.
+    /// </summary>
+    [Fact]
+    public void The_harness_s_own_words_are_marked_apart_from_the_agent_s()
+    {
+        const string failed = """{"type":"result","subtype":"success","is_error":true,"api_error_status":401,"result":"Failed to authenticate. API Error: 401 API key is invalid."}""";
+        const string stopped = """{"type":"result","subtype":"error_during_execution","is_error":true,"result":"Request was aborted.","terminal_reason":"aborted_streaming"}""";
+        var mapper = new ClaudeStreamJson();
+
+        Assert.True(mapper.Read("warming up…").Outside);
+        Assert.True(mapper.Read("[1, 2]").Outside);
+        Assert.Equal("Failed to authenticate. API Error: 401 API key is invalid.", mapper.Read(failed).Failed);
+        Assert.Contains("— the turn failed (success): Failed to authenticate. API Error: 401 API key is invalid.", new ClaudeStreamJson().Read(failed).Lines);
+        foreach (var line in new[] { Init, Whole, Result, stopped })
+        {
+            var mapped = new ClaudeStreamJson().Read(line);
+            Assert.Equal((false, (string?)null), (mapped.Outside, mapped.Failed));
+        }
+    }
+
     /// <summary>What is not a frame is shown as itself, and a type this build does not know is kept raw.</summary>
     [Fact]
     public void A_line_that_is_not_a_frame_is_shown_and_an_unknown_type_is_kept_raw()

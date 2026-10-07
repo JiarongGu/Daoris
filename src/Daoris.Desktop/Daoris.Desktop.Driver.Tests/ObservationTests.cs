@@ -12,7 +12,7 @@ public sealed class ObservationTests
     /// <summary>
     /// 🔴 A refused credential is OBSERVED in the tool's own words (AGT3b). Measured on Claude Code
     /// 2.1.280 with an invalid key: a text-mode run prints nothing for 189 s while it retries, then
-    /// this one line, and exits 1.
+    /// this one line, and exits 1. Read only where the harness itself said the run failed (AGT3c).
     /// </summary>
     [Fact]
     public void A_provider_s_refusal_is_read_from_the_tool_s_own_last_words()
@@ -20,10 +20,27 @@ public sealed class ObservationTests
         const string measured = "Failed to authenticate. API Error: 401 API key is invalid.";
         const string pattern = "API Error: 401";
 
-        Assert.True(Observation.Refused(["some work", measured], pattern));
-        Assert.False(Observation.Refused(["API Error: 529 overloaded", "exit"], pattern));
+        Assert.True(Observation.Refused(new HarnessEnding(1, null, ["some work", measured]), pattern));
+        Assert.False(Observation.Refused(new HarnessEnding(1, null, ["API Error: 529 overloaded", "exit"]), pattern));
         // A tool that declares no such words has no refusal to observe.
-        Assert.False(Observation.Refused([measured], null));
+        Assert.False(Observation.Refused(new HarnessEnding(1, null, [measured]), null));
+    }
+
+    /// <summary>
+    /// AGT3c: the door's failure is the harness's own word, read whatever the exit; its own lines are read only beside a
+    /// failure it reported, so a run it ended normally holds nothing, whatever its lines say.
+    /// </summary>
+    [Fact]
+    public void A_provider_s_refusal_is_read_only_where_the_harness_said_the_run_failed()
+    {
+        const string measured = "Failed to authenticate. API Error: 401 API key is invalid.";
+        const string pattern = "API Error: 401";
+
+        Assert.True(Observation.Refused(new HarnessEnding(0, measured, []), pattern));
+        Assert.True(Observation.Refused(new HarnessEnding(0, "Overloaded", [measured]), pattern));
+        Assert.False(Observation.Refused(new HarnessEnding(0, null, [measured]), pattern));
+        Assert.False(Observation.Refused(new HarnessEnding(null, null, [measured]), pattern));
+        Assert.False(Observation.Refused(new HarnessEnding(1, "Overloaded", []), pattern));
     }
 
     [Fact]

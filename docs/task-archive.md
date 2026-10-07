@@ -11819,3 +11819,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UXFIX5 — danger text contrast and history's English** (web-shell; consider). Dark danger labels are about 3.95:1 (`ui.tsx:161`, `tokens.css:120`); add a danger-text token checked for text. History's English is harder to scan than its 中文 (`en/history.json:44`). Contract: platform-ux's palette rule, the review. Proof: the token's contrast in `tokens.test.ts`; reworded strings in both catalogues.
 
 **Outcome** 2026-10-07: red drawn as words wears a new `--ink-danger` (dark #ee6955, 4.61:1 at worst; light unchanged), held by `tokens.test.ts` on every surface; fills keep the fill colour. History's kept lines lead with the reason; 中文 takesFiles' drift fixed. Follow-ups: UXFIX5b, UXFIX5c. Detail: platform-ux §3/§4; commits c6735108, 1f264471.
+
+
+## AGT3c — don't trust transcript-shaped signals (2026-10-07, D125)
+
+> - [ ] **AGT3c — don't trust transcript-shaped signals**. Agent output ending `API Error: 401` falsely holds an account; ACPEND1 prose leaks zone across machines. Contract: D125 discovery; inspect AGT3b and `SessionNote.ForAnotherMachine`.
+
+**Outcome** 2026-10-07: a refused key is read only from what the harness reports of its ending (`HarnessEnding`: the protocol door's failure, the native door's failed result and its own lines), never from text the agent can write; a limit's note drops the agent's sentence and keeps the cooling line's reset as a UTC moment. Follow-up: AGT3d. Detail: D125's AGT3c note, FIX-LOG; commits ffd4164a, 922f17c8.

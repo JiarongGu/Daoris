@@ -36,7 +36,7 @@ public sealed class AcpTurnFailureTickTests : IDisposable
     }
 
     [Fact]
-    public async Task A_turn_the_agent_refused_after_taking_the_quest_is_a_failure_in_its_own_words()
+    public async Task A_turn_the_agent_refused_after_taking_the_quest_is_a_failure_not_a_stand_down()
     {
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
         var driver = Driver(service);
@@ -46,9 +46,13 @@ public sealed class AcpTurnFailureTickTests : IDisposable
         var record = service.Session("s1");
         Assert.Equal("Taken", service.Status("q1"));
         Assert.Equal("failed", record["state"]!.GetValue<string>());
-        Assert.Contains("spend limit", record["note"]!.GetValue<string>());
         // The table knows these words (TOOL4d): the failure is a limit, and so not a strike.
         Assert.True(record["limit"]!.GetValue<bool>());
+        // A limit's note carries its facts, the cooling line; the agent's own words stay in its transcript (AGT3c).
+        var note = record["note"]!.GetValue<string>();
+        Assert.StartsWith("the agent's turn failed with the quest still taken: The account it ran on is cooling until", note);
+        Assert.DoesNotContain("spend limit", note);
+        Assert.Contains("spend limit", File.ReadAllText(Path.Combine(_home, "sessions", "s1.log")));
     }
 
     /// <summary>

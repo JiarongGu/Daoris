@@ -209,6 +209,38 @@ public sealed class NoteCodesTests
     }
 }
 
+/// <summary>AGT3c: a words part a coded line will say as facts leaves the note, its space with it, and nothing else does.</summary>
+public sealed class NoteUnsaidTests
+{
+    [Fact]
+    public void Someone_s_words_leave_the_note_with_the_space_before_them()
+    {
+        var noted = Noted.Of(NoteCodes.EndedTurnFailedTaken, "the agent's turn failed with the quest still taken:")
+            .Then(" ", Noted.Said("You've hit your limit · resets 4pm (Europe/London)", NoteBy.Agent))
+            .Then(" ", Noted.Of(NoteCodes.EndedStopped, "the person stopped it."));
+
+        var unsaid = noted.Unsaid("You've hit your limit · resets 4pm (Europe/London)", NoteBy.Agent);
+
+        Assert.Equal("the agent's turn failed with the quest still taken: the person stopped it.", unsaid.Note);
+        Assert.Equal(["ended.turn-failed-taken", "ended.stopped"], NoteAssert.Codes(unsaid.Parts));
+        NoteAssert.Holds(unsaid);
+    }
+
+    [Fact]
+    public void Words_no_part_holds_or_held_by_another_leave_the_note_as_it_was()
+    {
+        var noted = Noted.Of(NoteCodes.EndedTurnFailedOpen, "the agent's turn failed before it took its quest:")
+            .Then(" ", Noted.Said("refused", NoteBy.Agent));
+
+        Assert.Same(noted, noted.Unsaid("overloaded", NoteBy.Agent));
+        Assert.Same(noted, noted.Unsaid("refused", NoteBy.Person));
+        Assert.Same(noted, noted.Unsaid("", NoteBy.Agent));
+
+        var before = new SessionConclusion("failed", "refused.");
+        Assert.Same(before, before.Unsaid("refused."));
+    }
+}
+
 /// <summary>What every note site's test asks of what it wrote (LANG1a): each coded part's text inside the note it built.</summary>
 internal static class NoteAssert
 {

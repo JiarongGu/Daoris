@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — an agent quoting a 401 held its account, and a limit's sentence travelled
+
+### Driver: a refused key was read from the agent's words, and a limit's note carried the agent's sentence to every machine (AGT3c)
+- **Symptom:** found by D125's reading of the code, not seen on an install: a failed session whose agent's own output ended with `API Error: 401` (quoting a log, testing an error path) held its account as refused and read it signed out; and a limit's record note carried the agent's sentence, its reset in the zone of the machine it was said on, to every reader the note reaches.
+- **Root cause:** AGT3b matched its phrase against the transcript's last 40 lines, which on the native and protocol doors are the agent's rendered words as much as the harness's; D125 refused exactly that for a limit and SIGNIN1b for a sign-in, and AGT3b was never moved. ACPEND1's conclusion kept the door's failure as an agent words part, and TOOL4d appended the cooling line after it without taking it out.
+- **Fix:** a refused key is read from `HarnessEnding`, what the harness itself said by its door (the protocol door's failure; the native door's failed `result`, its stderr and its lines outside its frames; a text door's transcript beside an exit that was not 0); a limit's conclusion drops the agent's words part (`Unsaid`) and keeps the cooling line's facts. D125's AGT3c note has the detail.
+- **Verify:** `RefusedByTheHarnessTests.An_agent_s_words_ending_with_the_refused_phrase_on_a_turn_that_ended_normally_hold_no_account` failed first (`account.refused` appended), and `AccountLimitHoldTests.A_limit_s_note_carries_its_reset_as_a_moment_…` (the sentence in the note); then passed, with the driver's fast half (4655). Not covered: the `Process` half and the family rehearsal's refused-key check, read and not run; a text door still cannot tell its agent's words from its harness's beside an exit that was not 0.
+
 ## 2026-10-07 — a wait on a lost take held the winner's quest
 
 ### Service: a wait made after this machine's take still applied to the winner's quest when that take lost (WAITCLAIM1)

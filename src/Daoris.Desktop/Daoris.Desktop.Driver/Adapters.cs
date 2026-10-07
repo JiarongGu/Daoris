@@ -1198,7 +1198,8 @@ public sealed class StubAdapter : ISessionAdapter
             ["--login-state"], LoggedIn: @"logged-in", LoggedOut: @"logged-out",
             Account: @"logged-in as (\S+)"),
         // Claude Code's own words for a refused credential (AGT3b), mirrored so the rehearsal can
-        // gate a refused account with no account behind it.
+        // gate a refused account with no account behind it. The stub's door carries only text, so they
+        // are read from its transcript beside an exit that was not 0 (AGT3c).
         Refused: "API Error: 401",
         // And its words for an account's limit (TOOL4a, D125 §1.3 rule 4), mirrored for the same reason.
         Limits: ClaudeLimits.Words,
@@ -1753,7 +1754,9 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         KeyVariable: "ANTHROPIC_API_KEY",
         // What it prints when its provider refuses the credential (AGT3b) — measured on 2.1.280: a
         // `-p` run with an invalid key was silent for 189 s of retries, then printed "Failed to
-        // authenticate. API Error: 401 API key is invalid." and exited 1.
+        // authenticate. API Error: 401 API key is invalid." and exited 1. Measured in text mode; on
+        // this door's `stream-json` they are read from a failed `result` and from what it writes
+        // outside its frames and on stderr, never from its agent's words (AGT3c).
         Refused: "API Error: 401",
         // What it says when an account's limit refuses a turn (TOOL4a, D125 §0.2): five recorded
         // sentences and one the maker documents (TOOL4k), each naming its reset. Its ACP door reads

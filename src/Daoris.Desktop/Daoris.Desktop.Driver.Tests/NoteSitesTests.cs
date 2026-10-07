@@ -122,18 +122,23 @@ public sealed class NoteSitesTests
 
     // ——— An account's line, appended to a failure: rows 22–24.
 
+    /// <summary>
+    /// As <c>Driver.AccountLimited</c> composes it: the lead-in, then the cooling line in place of the agent's sentence, which
+    /// names a zone and travels no further than the raw view (AGT3c).
+    /// </summary>
     [Fact]
     public void A_cooling_account_s_line_carries_its_moment_and_why_by_code_and_names_no_account()
     {
         var until = new DateTimeOffset(2026, 10, 3, 9, 30, 0, TimeSpan.Zero);
         var entry = new CoolingEntry("claude-code", "work", until, Stated: true, Window: null, Seen: until, Session: "s1");
         var conclusion = Observation.Conclude(0, "Taken", turnFailed: "Usage limit reached")
+            .Unsaid("Usage limit reached")
             .Then(" ", CoolingWords.NoteOf(entry, TimeZoneInfo.Utc));
 
         Assert.Equal(
-            "the agent's turn failed with the quest still taken: Usage limit reached "
-            + CoolingWords.Note(entry, TimeZoneInfo.Utc),
+            "the agent's turn failed with the quest still taken: " + CoolingWords.Note(entry, TimeZoneInfo.Utc),
             conclusion.Note);
+        Assert.Equal(["ended.turn-failed-taken", "account.cooling"], NoteAssert.Codes(conclusion.Parts));
         NoteAssert.Holds(conclusion.Note, conclusion.Parts);
         var cooling = conclusion.Parts![^1];
         Assert.Equal("account.cooling", cooling.Code);
