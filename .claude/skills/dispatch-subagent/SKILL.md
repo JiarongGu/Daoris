@@ -79,6 +79,9 @@ Follow the dispatch-subagent skill's subagent half.
   **A shape is read too:** a field added to or renamed in a route's answer fails a rehearsal that compares that answer
   whole. Search the rehearsals for the field's neighbours (`requirements`, `hold`, …) as well as for words. EVID1a's
   `evidence: []` beside each requirement failed four family-rehearsal checks its branch could not run.
+- **A stored shape is never changed in place.** A coded note's declared values, a record's field and a wire answer
+  are kept on machines and read back later: add a field or a new code, and keep the old one read as it was. AGT3d first
+  widened `account.cooling`'s values, which would have left every cooling note already written "shown as recorded".
 - **A new bridge hook the page presses owes Ask Daoris a door or a reason.** The driver's `HelpCoverageTests` lists
   every page control with its `Door` or `Exempt`, and a branch outside the driver lane cannot run it. Name the row
   the hook needs, door or exemption with its reason, in the hand-back; the parent adds it at the merge. LAND3b's
