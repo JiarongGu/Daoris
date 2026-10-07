@@ -197,4 +197,26 @@ public sealed class ObservationTests
     {
         Assert.Contains("transcript", Observation.Conclude(0, "Taken", took: true).Note);
     }
+
+    /// <summary>
+    /// BGWAIT1: whether a turn's clean end would park on the person is one rule, read twice — by the conclusion, and by the
+    /// protocol door when a turn ends while the session's own background work runs, to keep such a session working rather
+    /// than park it. Held to agree with <see cref="Observation.Conclude"/> on every quest state and take this table covers.
+    /// </summary>
+    [Theory]
+    [InlineData("Taken", null, null, false, true, true)]
+    [InlineData("Taken", null, null, true, false, true)]
+    [InlineData("Taken", "q1", "q1", false, false, true)]
+    [InlineData("Taken", null, null, false, false, false)]
+    [InlineData("Taken", null, "q9", false, true, false)]
+    [InlineData("Taken", "q1", "q9", true, false, false)]
+    [InlineData("Done", null, null, false, true, false)]
+    [InlineData("Declined", null, null, true, false, false)]
+    [InlineData("Open", null, null, false, false, false)]
+    public void Whether_a_clean_end_parks_on_the_person_is_the_conclusions_rule(
+        string status, string? awaitsBefore, string? awaitsAfter, bool resumed, bool took, bool parks)
+    {
+        Assert.Equal(parks, Observation.Parks(status, awaitsBefore, awaitsAfter, resumed, took));
+        Assert.Equal(parks, Observation.Conclude(0, status, awaitsBefore, awaitsAfter, resumed: resumed, took: took).State == "awaiting-person");
+    }
 }
