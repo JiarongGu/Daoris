@@ -269,11 +269,12 @@ public static class QuestLog
     /// reads lost. The take that beat it stands, so the operation is made on a claim its machine never held.
     /// </summary>
     /// <remarks>
-    /// One rule for both places that judge it. The store's verbs refuse such an operation inside their write
+    /// One rule for the three places that judge it. The store's verbs refuse such an operation inside their write
     /// (WAITCLAIM2): the pass that finds a take lost leaves the session running until its driver's next look stops it,
     /// and the session does not know. A remote refuses it as a push arrives (WAITCLAIM3), because a machine on a build
-    /// that does not refuse it locally still pushes it, and applied it would move the winner's quest. A dismissal, a yes
-    /// and a verdict are no move on the take. An open quest is nobody's work, whatever an earlier incarnation of it held
+    /// that does not refuse it locally still pushes it, and applied it would move the winner's quest. A rebase loses one
+    /// such a build left pending, so an upgraded machine stops pushing what the remote refuses (WAITCLAIM4). A dismissal,
+    /// a yes and a verdict are no move on the take. An open quest is nobody's work, whatever an earlier incarnation of it held
     /// (D95). And a machine whose take was numbered reads held, never lost, so a winner's own moves are never judged here.
     /// </remarks>
     public static bool OnALostTake(Quest? standing, IEnumerable<QuestOperation> history, QuestOperation operation) =>
@@ -337,7 +338,8 @@ public static class QuestLog
         QuestOperationKind.Conflict => QuestLoss.Kept,
         // Nothing left to say. A dismissal is lost only with its quest. A wait, once its quest is no longer taken: another
         // machine closed or deleted it first (QUESTOP1); or made on this machine's take that lost, which the take's
-        // conflict names (WAITCLAIM1, QuestStore.RebaseAsync). A delete that lost to a take, or that another machine's delete
+        // conflict names (WAITCLAIM1, QuestStore.RebaseAsync), or which an older build made after that conflict was written
+        // and the remote never kept (WAITCLAIM4). A delete that lost to a take, or that another machine's delete
         // already made (D95). A yes to a done nothing holds any more (DRIFT1d): its done lost, or another machine's yes came
         // first. A verdict on evidence nothing waits on any more (EVID1a): another machine's verdict found it first, or the
         // person accepted the done as it stood.

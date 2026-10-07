@@ -1386,6 +1386,13 @@ public sealed class QuestStore
                 if (!touched.Contains(operation.Quest, StringComparer.Ordinal)) touched.Add(operation.Quest);
             }
 
+            // A stray an older build left pending on a lost take (WAITCLAIM4) sits on a quest no fetch touches once the
+            // take's conflict has come back, so it is rebased whether or not anything arrived for it.
+            foreach (var quest in await StrayQuestsAsync(circle, transaction, inside).ConfigureAwait(false))
+            {
+                if (!forgotten.Contains(quest) && !touched.Contains(quest, StringComparer.Ordinal)) touched.Add(quest);
+            }
+
             var conflicts = new List<QuestOperation>();
             foreach (var quest in touched)
             {
@@ -1413,7 +1420,8 @@ public sealed class QuestStore
     /// <see cref="QuestLog.Lost"/>: a move becomes a conflict, a publish of an ask already held is the same
     /// ask again, and a follow-up that only a lost close published goes with it. A wait made on this machine's
     /// take that lost goes with the take, and the take's conflict names it (WAITCLAIM1); one made after the take was
-    /// rewritten was refused by the store (WAITCLAIM2). Answers the conflicts made.
+    /// rewritten was refused by the store (WAITCLAIM2), and one an older build made then is lost here as the claim reads
+    /// (WAITCLAIM4). Answers the conflicts made.
     /// </summary>
     private async Task<IReadOnlyList<QuestOperation>> RebaseAsync(
         string id, SqliteTransaction transaction, CancellationToken ct)
@@ -1428,18 +1436,28 @@ public sealed class QuestStore
         // hold the winner's session on a question it never asked. It goes with the take, and the take's
         // conflict, the loss this machine reports, names the question, so whoever asked learns the quest
         // no longer waits on it. A move or a wait made after the pass that rewrote the take never meets this
-        // rule: the store's verbs refuse it as the claim reads (WAITCLAIM2), so it is never pending here. One an
-        // older build wrote is, and applies here as the table allows; the remote refuses it as it arrives (WAITCLAIM3).
+        // rule: the store's verbs refuse it as the claim reads (WAITCLAIM2), so it is never pending here.
         var claimLost = false;
         (long Position, int Reported)? lostTake = null;
         var waitsLost = new List<string>();
+        // The history as this rebase leaves it so far: what QuestLog.OnALostTake reads this machine's claim from.
+        var replayed = new List<QuestOperation>();
         foreach (var operation in await HistoryAsync(id, transaction, ct).ConfigureAwait(false))
         {
             var lostClaim = claimLost && operation.Number is null
                 && (QuestTransitions.Target(operation.Kind) is not null || operation.Kind == QuestOperationKind.Waited);
-            if (!lostClaim && (operation.Number is not null || QuestLog.Applies(quest, operation)))
+
+            // A stray (WAITCLAIM4): a done, a decline or a wait a build before WAITCLAIM2 made after the take's conflict
+            // was written, which the remote refuses at every pass (WAITCLAIM3), so the circle never pushed clean. Judged by
+            // the rule the store's verbs and the remote judge by, and lost by its kind's rule as one made on a take this
+            // rebase finds lost is. A forgotten wait is named on no conflict: the take's is already written, a remote may
+            // have numbered it, and no machine rewrites a numbered operation. The remote never kept the wait, so no other
+            // machine's copy of the quest waits on the question.
+            var stray = !lostClaim && operation.Number is null && QuestLog.OnALostTake(quest, replayed, operation);
+            if (!lostClaim && !stray && (operation.Number is not null || QuestLog.Applies(quest, operation)))
             {
                 quest = QuestLog.Applies(quest, operation) ? QuestLog.Step(quest, operation) : quest;
+                replayed.Add(operation);
                 continue;
             }
 
@@ -1448,7 +1466,12 @@ public sealed class QuestStore
 
             // Each kind by its rule (QuestLog.Lost), which says why each is forgotten, kept or made a conflict.
             var loss = QuestLog.Lost(operation.Kind);
-            if (loss == QuestLoss.Kept) continue;
+            if (loss == QuestLoss.Kept)
+            {
+                replayed.Add(operation);
+                continue;
+            }
+
             if (loss == QuestLoss.Forgotten)
             {
                 await ForgetOperationAsync(position, transaction, ct).ConfigureAwait(false);
@@ -1479,6 +1502,7 @@ public sealed class QuestStore
             };
             await RewriteAsync(position, lost, transaction, ct).ConfigureAwait(false);
             quest = quest is null ? null : QuestLog.Step(quest, lost);
+            replayed.Add(lost);
             conflicts.Add(lost);
             if (operation.Kind == QuestOperationKind.Taken)
             {
@@ -1511,6 +1535,37 @@ public sealed class QuestStore
         if (quest is not null) await WriteCacheAsync(quest, transaction, ct).ConfigureAwait(false);
         else await DropCacheAsync(id, transaction, ct).ConfigureAwait(false);
         return conflicts;
+    }
+
+    /// <summary>
+    /// The circle's quests where this machine holds a done, a decline or a wait not yet pushed beside a take of its own
+    /// that is a conflict (WAITCLAIM4): where a stray can be. <see cref="RebaseAsync"/> judges each operation by
+    /// <see cref="QuestLog.OnALostTake"/>, so a quest this finds and nothing strays on is replayed as it stands.
+    /// </summary>
+    private async Task<IReadOnlyList<string>> StrayQuestsAsync(string circle, SqliteTransaction transaction, CancellationToken ct)
+    {
+        await using var command = _connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = """
+            SELECT DISTINCT stray.quest FROM quest_log AS stray
+            JOIN quest_log AS asked ON asked.position = (
+              SELECT MIN(first.position) FROM quest_log AS first
+              WHERE first.quest = stray.quest AND first.kind = 'published')
+            WHERE stray.remote IS NULL AND stray.machine = $machine AND stray.kind IN ('done', 'declined', 'waited')
+              AND json_extract(asked.payload, '$.workspace') = $workspace COLLATE NOCASE
+              AND EXISTS (
+                SELECT 1 FROM quest_log AS lost
+                WHERE lost.quest = stray.quest AND lost.machine = $machine AND lost.kind = 'conflict'
+                  AND json_extract(lost.payload, '$.attempted') = 'Taken' COLLATE NOCASE)
+            ORDER BY stray.quest
+            """;
+        command.Parameters.AddWithValue("$machine", Machine);
+        command.Parameters.AddWithValue("$workspace", circle);
+
+        var quests = new List<string>();
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false)) quests.Add(reader.GetString(0));
+        return quests;
     }
 
     /// <summary>
