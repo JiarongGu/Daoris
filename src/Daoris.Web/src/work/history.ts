@@ -350,7 +350,20 @@ export function readingSaid(t: Translate, reading: HistoryReading): ReadingSaid 
   };
 }
 
-/** What a first press says it takes, as one lead sentence, for a quest's, its failed sessions', an ask's or a workspace's. */
+/**
+ * What a workspace's first press takes where no unit goes (HIST1o): the left-over files, the intake's room, or both. Said as
+ * only that, since no finished work of the workspace goes and its words, transcripts and files are not touched.
+ */
+const leadBeyondUnits = (list: ClearList) => (list.leftOver.count > 0 && list.room > 0 ? 'workspaceLeftOverRoom'
+  : list.room > 0 ? 'workspaceRoom' : 'workspaceLeftOver');
+
+/**
+ * What a first press says it takes, as one lead sentence, for a quest's, its failed sessions', an ask's or a workspace's.
+ *
+ * @remarks
+ * **Worded from the plan's units, as the list is** (HIST1o): a workspace's names its finished work only where a unit goes;
+ * otherwise it says only the left-over files and the intake's room it takes.
+ */
 export function clearLead(t: Translate, target: HistoryTarget, list: ClearList): string {
   const bytes = size(list.bytes);
   const sessions = t('history.count.sessions', { count: list.sessions + list.teammates });
@@ -364,7 +377,9 @@ export function clearLead(t: Translate, target: HistoryTarget, list: ClearList):
     case 'ask':
       return t('history.lead.ask', { id: target.id, quests: t('history.count.quests', { count: list.quests }), sessions, size: bytes });
     default:
-      return t('history.lead.workspace', { workspace: target.id, size: bytes });
+      return list.going.length > 0
+        ? t('history.lead.workspace', { workspace: target.id, size: bytes })
+        : t(`history.lead.${leadBeyondUnits(list)}`, { workspace: target.id, size: bytes });
   }
 }
 
