@@ -4,15 +4,15 @@ import { chinese } from '../storyLanguage';
 import type { AgentActs } from './AgentPage';
 import { AgentMainNotice, AgentPage } from './AgentPage';
 import {
-  CLAUDE_TOOL, CLAUDE_USE, CODEX_TOOL, CODEX_USE, DSH_TOOL, INSTALL_TOOL, INSTALL_USE, INSTALL_WORKSPACES, READ, READINGS_TOOL,
-  READINGS_USE, RULES, USAGE, WORKSPACES,
+  CLAUDE_TOOL, CLAUDE_USE, CODEX_OWN_TOOL, CODEX_OWN_USE, CODEX_TOOL, CODEX_USE, DSH_TOOL, INSTALL_TOOL, INSTALL_USE,
+  INSTALL_WORKSPACES, READ, READINGS_TOOL, READINGS_USE, RULES, USAGE, WORKSPACES,
 } from './agentsFixtures';
 
 // An agent's page (UX7b, D152 §4; first UX6e, D150 §5.2) in the main area: the design's Claude Code, three accounts of which
 // two read signed out and one cools, your own sign-in never read, each section folded to its line; the install's shape, a
 // row per state with its one act; the add flow's last step; *Read again* on its way; a proposal waiting, which opens *What
-// it may do*; an agent with one account and no settings Daoris knows; one not installed; an API key; what each row knows
-// (ACCTUX1), in both themes; and the main area with no page. Each at the main area's two widths: the frame's 52rem, and the 680 px window's main area, where rows stack.
+// it may do*; an agent with one account and no settings Daoris knows; Codex's own sign-in with its windows read (CODEXUSE3);
+// one not installed; an API key; what each row knows (ACCTUX1), in both themes; and the main area with no page. Each at the main area's two widths: the frame's 52rem, and the 680 px window's main area, where rows stack.
 
 const nothing = () => {};
 const ACTS: AgentActs = {
@@ -72,6 +72,15 @@ export const AtUsage: Story = { args: { part: 'usage' } };
 
 /** Codex: one account signed in, no rules file and no settings Daoris knows, so neither section is drawn (§5.1). */
 export const OneAccount: Story = { args: { tool: CODEX_TOOL, use: CODEX_USE, rules: QUIET_RULES, usage: [] } };
+
+/**
+ * Codex with no account of Daoris's (CODEXUSE3): your own sign-in's row says its five-hour and weekly use, read at a press
+ * of Codex's own server, as an account's row says its own; its ⋯ reads it again.
+ */
+export const OwnSignInRead: Story = { args: { tool: CODEX_OWN_TOOL, use: CODEX_OWN_USE, rules: QUIET_RULES, usage: [] } };
+
+/** The same in 中文. */
+export const OwnSignInReadChinese: Story = { args: OwnSignInRead.args, decorators: [chinese] };
 
 /** An agent not installed: the header says so, and *Ways in* offers its installer. */
 export const NotInstalled: Story = { args: { tool: DSH_TOOL, use: null, rules: null, usage: [] } };

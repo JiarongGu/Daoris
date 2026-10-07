@@ -106,6 +106,28 @@ public sealed class CodexUsageProcessTests : IDisposable
         Assert.Equal(0.15, said.Of("weekly")!.Used);
     }
 
+    /// <summary>
+    /// CODEXUSE3: a press for the tool's own sign-in starts the server with no account's home of Daoris's, so it answers
+    /// wherever the agent keeps its own sign-in (D63), and its answer is kept under the own sign-in's own key.
+    /// </summary>
+    [Fact]
+    public async Task The_own_sign_in_s_press_starts_the_server_with_no_account_s_home_and_keeps_it_under_its_own_key()
+    {
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "door", "account-1"));
+        var roster = Roster();
+
+        await roster.ReportAsync("door", Config, refresh: true, own: true);
+
+        // A `CODEX_HOME` this test process inherited is the person's own, and the server inherits it as their terminal would.
+        var own = Environment.GetEnvironmentVariable("CODEX_HOME") is { Length: > 0 } inherited ? Path.GetFileName(inherited) : "(own)";
+        Assert.Equal(
+            new[] { $"{own} app-server", "account-1 app-server" }.Order(StringComparer.Ordinal),
+            AskedLines().Order(StringComparer.Ordinal));
+        var said = AccountWindows.SaidOf(_home, "door", AccountWindows.Own, DateTimeOffset.UtcNow)!;
+        Assert.Equal(0.01, said.Of("session")!.Used);
+        Assert.Equal(0.15, said.Of("weekly")!.Used);
+    }
+
     [Fact]
     public async Task A_server_that_hangs_is_unknown_once_its_patience_is_spent()
     {

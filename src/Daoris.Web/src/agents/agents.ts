@@ -2,8 +2,8 @@ import i18n from '../i18n';
 import { ago, clockOf, moment } from '../format';
 import type { Account, AccountPlace, Tool } from '../tools';
 import {
-  type AccountCooling, type AccountFacts, type AccountScope, type AccountsAnswer, type AgentAccounts, agentOf, coolingLine,
-  machineScope, offeredLine, orderedWindows, percent, windowName, workspaceScope,
+  type AccountCooling, type AccountFacts, type AccountSaid, type AccountScope, type AccountsAnswer, type AgentAccounts, agentOf,
+  coolingLine, machineScope, offeredLine, orderedWindows, percent, windowName, workspaceScope,
 } from '../settings/accounts';
 import type { AgentRulesState } from '../settings/AgentRules';
 import { OPEN_STATES } from '../settings/proposals';
@@ -73,6 +73,16 @@ export function sharesOwn(tool: Tool, use: AgentAccounts | null | undefined): bo
 export function ownState(tool: Tool, use: AgentAccounts | null | undefined): AccountState {
   const login = tool.ownLogin === 'in' || tool.ownLogin === 'out' ? tool.ownLogin : 'unknown';
   return accountState({ login, read: tool.ownRead }, { cooling: use?.own.cooling ?? null }, sharesOwn(tool, use));
+}
+
+/**
+ * What the tool's own sign-in last said of its windows (CODEXUSE3): read at a person's press by its agent's own server and
+ * answered beside the accounts as `own.said`, never as one of them; null where nothing was said. Read defensively, as a shell
+ * older than that answers none, and `AgentAccounts`' `own` does not declare it yet.
+ */
+export function ownSaid(use: AgentAccounts | null | undefined): AccountSaid | null {
+  const own = use?.own as (AgentAccounts['own'] & { said?: AccountSaid | null }) | undefined;
+  return own?.said && Array.isArray(own.said.windows) ? own.said : null;
 }
 
 /** Each named account's state on this agent, by its directory. */

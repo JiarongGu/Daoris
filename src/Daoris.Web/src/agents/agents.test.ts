@@ -5,7 +5,7 @@ import { byTool, type ToolDoor } from '../tools';
 import { scopeOf, THREE } from '../settings/accountsFixtures';
 import type { AgentAccounts } from '../settings/accounts';
 import {
-  accountAct, accountName, accountState, accountWho, agentRows, doorsSummary, heldBy, joinChoices, ownRunsFor, ownState,
+  accountAct, accountName, accountState, accountWho, agentRows, doorsSummary, heldBy, joinChoices, ownRunsFor, ownSaid, ownState,
   readLine, rulesSummary, runsFor, runsForLine, settingsSummary, signedOutHeld, stateWhen, stateWord, usageLine, usageSummary,
   useSummary, versionOnly, workspacesSummary,
 } from './agents';
@@ -354,6 +354,27 @@ describe('what an account’s agent last said, on its row', () => {
     expect(text(usageLine({ said }, signedIn))).toBe(
       `它自己说接近5 小时上限；5 小时上限已用 88%，${moment(RESET)} 重置；每周上限已用 15%，${moment(WEEK)} 重置 · ${ago(SEEN)}报告`);
     expect(text(usageLine({}, cooling(false)))).toBe('重置时间未知');
+  });
+
+  /**
+   * CODEXUSE3: the tool's own sign-in's windows, read at a person's press, are answered beside the accounts as `own.said`,
+   * and its row says them as an account's row says its own; a shell older than that answers none, and its row says nothing.
+   */
+  it('reads your own sign-in’s windows beside the accounts, and none where the shell answers none', () => {
+    const use = (own: AgentAccounts['own'] & { said?: unknown }): AgentAccounts => ({
+      agent: 'codex', speaks: true, own: own as AgentAccounts['own'], accounts: [], scopes: [scopeOf()],
+    });
+    const codex = byTool([{ ...claude({ profiles: [] }), harness: 'codex-acp', product: 'Codex', maker: 'OpenAI', accountOf: 'codex' }])[0]!;
+
+    expect(ownSaid(use({ said }))).toEqual(said);
+    expect(text(usageLine({ said: ownSaid(use({ said })) }, ownState(codex, use({ said }))))).toBe(
+      `near its five-hour limit, by its own word; 88% of its five-hour limit used, resets ${moment(RESET)}; `
+      + `15% of its weekly limit used, resets ${moment(WEEK)} · said ${ago(SEEN)}`);
+    expect(ownSaid(use({}))).toBeNull();
+    expect(ownSaid(use({ said: null }))).toBeNull();
+    expect(ownSaid(use({ said: { seen: SEEN } }))).toBeNull();
+    expect(ownSaid(null)).toBeNull();
+    expect(usageLine({ said: ownSaid(use({})) }, ownState(codex, use({})))).toBeNull();
   });
 });
 

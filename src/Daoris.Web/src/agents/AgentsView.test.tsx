@@ -1630,6 +1630,46 @@ describe('how accounts are used', () => {
     });
   });
 
+  /**
+   * CODEXUSE3: what your own sign-in last said of its windows, read at a press, is its row's second line, as an account's
+   * reading is on its row; and its ⋯ reads it again with the agent's accounts, since the driver has no read of it alone.
+   */
+  it('says what your own sign-in last said of its windows, and reads it again from its ⋯', async () => {
+    const reset = new Date(Date.now() + 3 * 3_600_000).toISOString();
+    const week = new Date(Date.now() + 100 * 3_600_000).toISOString();
+    const seen = new Date(Date.now() - 20 * 60_000).toISOString();
+    const said = {
+      agents: [{
+        ...ACCOUNTS.agents[0]!,
+        own: {
+          said: {
+            seen,
+            windows: [
+              { window: 'session', used: 0.01, reset, standing: null, credits: false, seen },
+              { window: 'weekly', used: 0.15, reset: week, standing: null, credits: false, seen },
+            ],
+          },
+        },
+      }],
+    };
+    invoke.mockImplementation(answer(ROSTER, said));
+    place();
+
+    const own = await screen.findByRole('listitem', { name: 'Your own sign-in' });
+    expect(await within(own).findByText('1% of its five-hour limit used')).toBeTruthy();
+    expect(within(own).getByText('15% of its weekly limit used')).toBeTruthy();
+    // It is none of the accounts: their rows say only their own readings.
+    expect(within(screen.getByRole('listitem', { name: 'work' })).queryByText(/limit used/)).toBeNull();
+
+    // The press reads its windows again, so the accounts' files are asked again once it answers, not at the next tick.
+    const accountsAsked = () => invoke.mock.calls.filter(([, type]) => type === 'ACCOUNTS').length;
+    const before = accountsAsked();
+    await userEvent.click(within(await more('Your own sign-in')).getByRole('menuitem', { name: 'Read again' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith(
+      'DAORIS.DRIVER', 'HARNESSES', { payload: { refresh: true, agent: 'claude-code' } }));
+    await waitFor(() => expect(accountsAsked()).toBeGreaterThan(before));
+  });
+
   /** TOOL6e: each scope says which account its next start takes and why, with what holds the others. */
   it('says which account the next start takes and why', async () => {
     const next = {

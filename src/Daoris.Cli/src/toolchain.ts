@@ -123,7 +123,7 @@ import type { Login } from './accountreads.ts';
 import { atName, byName, findName, sameName } from './casefold.ts';
 import { coolingLine, coolingOf, coolingWhen, endCooling, machineZone, readCooling } from './cooling.ts';
 import { shellWord, shellWords } from './shellword.ts';
-import { saidLine, saidOf } from './windows.ts';
+import { OWN_WINDOWS, saidLine, saidOf } from './windows.ts';
 import { markSignedIn, probeLockPath, takeProbeLock } from './probelock.ts';
 import type { Channel, Fetcher } from './channels.ts';
 import type { CommandArgs } from './types.ts';
@@ -1287,9 +1287,9 @@ export function nextStartBeneath(
 
 /**
  * What `agent list` says under one agent about its accounts (D49 §4, D66 §3, TOOL4e): each account and what marks it,
- * each one's cool-off under it, the tool's own sign-in's cool-off, the order rotation may use with how it is used and its
- * next start (`nextStartBeneath`, TOOL6f), and — where a start would run on the person's own sign-in — that it does, and
- * how to give Daoris an account of its own (D125 §2.4, §3.7).
+ * each one's cool-off under it, the tool's own sign-in's cool-off and what it last said of its windows (CODEXUSE3), the
+ * order rotation may use with how it is used and its next start (`nextStartBeneath`, TOOL6f), and — where a start would
+ * run on the person's own sign-in — that it does, and how to give Daoris an account of its own (D125 §2.4, §3.7).
  *
  * @remarks
  * A door's accounts, defaults, orders and cool-offs are its owner's (twin rule 7). The own sign-in's line is said only for
@@ -1338,6 +1338,10 @@ export function accountLines(
 
   const ownCooling = coolingOf(home, owner, null, now);
   if (ownCooling) lines.push(`${indent}its own sign-in: ${coolingLine(ownCooling, now, zone)}`);
+  // What the tool's own sign-in last said, read by its agent's server at a person's press (CODEXUSE3): a reading beside
+  // the accounts, never one of them.
+  const ownSaid = saidOf(home, owner, OWN_WINDOWS, now);
+  if (ownSaid) lines.push(`${indent}its own sign-in: ${saidLine(ownSaid, now, zone)}`);
 
   // Each list, how it is used beneath it (TOOL6a, D130 §3.2) and its next start (TOOL6f): the machine's, then each
   // workspace's own. The machine with no list says its next start where its default names the one account it uses.
