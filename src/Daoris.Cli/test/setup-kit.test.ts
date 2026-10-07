@@ -439,20 +439,29 @@ type Frame = { id?: number; method?: string; params?: { update: Update }; result
 const STUB_WAIT_MS = 10_000;
 const TURN_WAIT_MS = 30_000;
 
+/**
+ * How long `speak()` waits for a stub's first answer, which is when its process is up (STUB3b): the start is the machine's
+ * load, not the stub's silence, so a row's `wait` is timed from that answer and the start has this bound of its own. Under
+ * parallel builds a start took longer than a row's whole 1000 ms; this is the slowest row's whole wait, as before.
+ */
+const STUB_START_MS = STUB_WAIT_MS;
+
 /** A spawned stub, and when its process has ended with its output read to the end, as `close` says it. */
 type Stub = { child: ChildProcess; closed: Promise<number | null> };
 
 /**
  * What a row awaits of the stub, bounded (STUB3): `until` settles it, or `wait` passes first and the row fails saying what
- * never came. Either way a failure stops the stub and waits for it to end, so nothing outlives the row and its folder can
- * go (Windows holds a running process's folder), and carries its stderr.
+ * never came, and from when the bound was counted where `since` names it (STUB3b). Either way a failure stops the stub and
+ * waits for it to end, so nothing outlives the row and its folder can go (Windows holds a running process's folder), and
+ * carries its stderr.
  */
 async function bounded<T>(
-  { child, closed }: Stub, until: Promise<T>, { wait, late, stderr }: { wait: number; late: () => string; stderr: () => string },
+  { child, closed }: Stub, until: Promise<T>,
+  { wait, late, stderr, since }: { wait: number; late: () => string; stderr: () => string; since?: string },
 ): Promise<T> {
   let timer: NodeJS.Timeout | undefined;
   const bound = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error(`${late()} within ${wait} ms`)), wait);
+    timer = setTimeout(() => reject(new Error(`${late()} within ${wait} ms${since ? ` of ${since}` : ''}`)), wait);
   });
   try {
     return await Promise.race([until, bound]);
@@ -617,10 +626,12 @@ type Heard = { id?: number; result?: { stopReason?: string; sessionId?: string; 
  * stub's text, ACP's stub unless a row cuts one short.
  *
  * Each wait is bounded (STUB3): a stub that exits before answering fails the row as it exits, one that stays silent fails
- * it at `wait`, and one that does not exit once its input closes fails it there too, each naming what never came.
+ * it at `wait`, and one that does not exit once its input closes fails it there too, each naming what never came. The
+ * answers' `wait` is counted from the stub's first answer, and a stub that gives none fails at `start` (STUB3b), so how
+ * long a process takes to start on a loaded machine is never counted as the stub's silence.
  */
-async function speak({ cwd, env, frames, agent: text = ACP_STUB_AGENT, wait = STUB_WAIT_MS }: {
-  cwd: string; env: Env; frames: Said[]; agent?: string; wait?: number;
+async function speak({ cwd, env, frames, agent: text = ACP_STUB_AGENT, wait = STUB_WAIT_MS, start = STUB_START_MS }: {
+  cwd: string; env: Env; frames: Said[]; agent?: string; wait?: number; start?: number;
 }): Promise<{
   answers: Map<number, Heard>; at: Map<number, number>; texts: string[]; stderr: string; code: number | null;
 }> {
@@ -636,6 +647,8 @@ async function speak({ cwd, env, frames, agent: text = ACP_STUB_AGENT, wait = ST
   const missing = () => frames.filter((said) => !answers.has(said.id)).map((said) => `${said.id} (${said.method})`).join(', ');
   // `close` comes once its output is read to the end, so every answer it gave is counted before one is called missing.
   const closed = new Promise<number | null>((resolve) => child.on('close', (code) => resolve(code)));
+  let up = () => {};
+  const first = new Promise<void>((resolve) => { up = resolve; });
   const answered = new Promise<void>((resolve, reject) => {
     createInterface({ input: child.stdout }).on('line', (line) => {
       const frame = JSON.parse(line) as Heard & { method?: string; params?: { update?: { content?: { text?: string } } } };
@@ -645,6 +658,7 @@ async function speak({ cwd, env, frames, agent: text = ACP_STUB_AGENT, wait = ST
       } else if (frame.id !== undefined && frames.some((said) => said.id === frame.id)) {
         answers.set(frame.id, frame);
         at.set(frame.id, performance.now());
+        up();
         if (answers.size === frames.length) resolve();
       }
     });
@@ -652,10 +666,13 @@ async function speak({ cwd, env, frames, agent: text = ACP_STUB_AGENT, wait = ST
   });
   for (const frame of frames) send(frame);
   const stub = { child, closed };
-  const told = { wait, stderr: () => stderr };
-  await bounded(stub, answered, { late: () => `the stub never answered ${missing()}`, ...told });
+  const told = { stderr: () => stderr };
+  const unanswered = () => `the stub never answered ${missing()}`;
+  // Its start first (STUB3b): the answers' bound is counted from its first answer, so a slow start is not its silence.
+  await bounded(stub, Promise.race([first, answered]), { wait: start, late: unanswered, since: 'its start', ...told });
+  await bounded(stub, answered, { wait, late: unanswered, since: 'its first answer', ...told });
   child.stdin.end();
-  const code = await bounded(stub, closed, { late: () => 'the stub did not exit once its input closed', ...told });
+  const code = await bounded(stub, closed, { wait, late: () => 'the stub did not exit once its input closed', ...told });
   return { answers, at, texts, stderr, code };
 }
 
@@ -765,10 +782,12 @@ test('the stub resumed on a quest that asks nothing says what it heard, takes no
 
 /**
  * A stub cut short (STUB3): it answers `initialize`, then, at the next frame, either ends without a word or hears nothing
- * more and stays. Either is a stub that will never answer what the row waits for.
+ * more and stays. Either is a stub that will never answer what the row waits for. `startsAfter` holds its start that many
+ * milliseconds before it reads a frame, as a machine under load does (STUB3b).
  */
-const cutShort = (then: 'exits' | 'stays') => `
+const cutShort = (then: 'exits' | 'stays', { startsAfter = 0 } = {}) => `
 import { createInterface } from 'node:readline';
+await new Promise((resolve) => setTimeout(resolve, ${startsAfter}));
 createInterface({ input: process.stdin }).on('line', (line) => {
   const frame = JSON.parse(line);
   if (frame.method === 'initialize') process.stdout.write(JSON.stringify({ jsonrpc: '2.0', id: frame.id, result: {} }) + '\\n');
@@ -811,9 +830,44 @@ test('a stub that stays without answering fails its row at the bound, and is sto
   try {
     await assert.rejects(
       speak({ cwd: tree, env: { ...process.env }, frames: RESUME_FRAMES, agent: cutShort('stays'), wait: 1_000 }),
-      /^Error: the stub never answered 2 \(session\/new\), 3 \(session\/prompt\) within 1000 ms/,
+      /^Error: the stub never answered 2 \(session\/new\), 3 \(session\/prompt\) within 1000 ms of its first answer/,
     );
     // Stopped: a stub left running holds this file's process open past its last row, which the run would show as a hang.
+  } finally {
+    fx.cleanup();
+  }
+});
+
+/**
+ * STUB3b (FLAKE1): the case above failed three times on 2026-10-07 under parallel builds. Its stub had not answered even
+ * `initialize` within the 1000 ms bound, so the row named three unanswered requests where it expects two: the bound was
+ * counted from the spawn, so a process's start under load counted as the stub's silence. It counts from the stub's first
+ * answer now, and the start has a bound of its own.
+ */
+test('a stub slow to start is not counted against the bound, which runs from its first answer (STUB3b)', { timeout: 30_000 }, async () => {
+  const fx = makeFixture('setup-kit-stub-slow');
+  const tree = join(fx.root, 'atlas');
+  mkdirSync(tree, { recursive: true });
+  try {
+    await assert.rejects(
+      speak({ cwd: tree, env: { ...process.env }, frames: RESUME_FRAMES, agent: cutShort('stays', { startsAfter: 1_500 }), wait: 1_000 }),
+      /^Error: the stub never answered 2 \(session\/new\), 3 \(session\/prompt\) within 1000 ms of its first answer/,
+    );
+  } finally {
+    fx.cleanup();
+  }
+});
+
+/** STUB3b: a stub that never answers at all fails its row at the start's own bound, naming every request, and is stopped. */
+test('a stub that answers nothing fails its row at the bound on its start, naming every request (STUB3b)', { timeout: 30_000 }, async () => {
+  const fx = makeFixture('setup-kit-stub-silent');
+  const tree = join(fx.root, 'atlas');
+  mkdirSync(tree, { recursive: true });
+  try {
+    await assert.rejects(
+      speak({ cwd: tree, env: { ...process.env }, frames: RESUME_FRAMES, agent: cutShort('stays', { startsAfter: 60_000 }), start: 1_000 }),
+      /^Error: the stub never answered 1 \(initialize\), 2 \(session\/new\), 3 \(session\/prompt\) within 1000 ms of its start/,
+    );
   } finally {
     fx.cleanup();
   }

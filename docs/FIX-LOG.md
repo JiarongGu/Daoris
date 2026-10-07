@@ -5,6 +5,26 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-08 — a stub's slow start counted as its silence
+
+### CLI tests: the setup kit's bound counted a stub's start under load as its silence (STUB3b)
+- **Symptom:** `setup-kit.test.ts`'s STUB3 case *a stub that stays without answering fails its row at the bound, and is
+  stopped* failed three times on 2026-10-07 under parallel builds (EVID1b3's and CODEXUSE1's verifies, ACCTUX1's merge
+  gate). The row named `1 (initialize), 2 (session/new), 3 (session/prompt)` unanswered where it expects two, and passed
+  alone.
+- **Root cause:** `speak()` started a row's bound as it spawned the stub, so the case's 1000 ms covered the process's start
+  too. Its stub answers `initialize` as soon as it reads it, and under load a Node process took longer than that to start
+  reading.
+- **Fix:** `speak()` counts the answers' `wait` from the stub's first answer, and bounds the start apart (`start`,
+  `STUB_START_MS`: ten seconds, the slowest row's whole wait as before). Each failure says what it was counted from
+  (*within 1000 ms of its first answer*, *of its start*). `cutShort` can hold its stub's start (`startsAfter`). The case's
+  pattern asks for *of its first answer*. Two cases are new: a stub that starts 1.5 s late fails naming only the two it
+  never answered, and a stub that answers nothing fails at the start's bound, naming all three.
+- **Verify:** the slow-start case failed first as the sightings did (*never answered 1 (initialize), 2 (session/new), 3
+  (session/prompt) within 1000 ms*), and the silent case failed at the old ten seconds. Then the four STUB3 cases passed
+  ten runs in a row, with `dotnet build src/Daoris.Desktop/Daoris.Desktop.Driver --no-incremental` running beside them
+  throughout. `setup-kit.test.ts` went from 27 cases to 29.
+
 ## 2026-10-08 — the lost-claim phase restarted host b under the lingering session's take
 
 ### Tools: the family rehearsal waited on a transcript that holds nothing until the session ends (DEV3d)
@@ -325,7 +345,8 @@ green. No child had died, so the wait, not a held file, is the repeat; what the 
 where 0 was expected, under its 600 ms wait, once in AGT3c's full fast run after merging main; it passed alone three
 times and in a full rerun (4656/4656). A fast-half test waiting on a clock is the shape to look at.
 `setup-kit.test.ts:807` (STUB3) failed once in EVID1b3's verify: its stub did not answer `initialize` within 1000 ms,
-right after a dotnet run on the same machine; it passed alone and the next verify was green.
+right after a dotnet run on the same machine; it passed alone and the next verify was green. *Fixed 2026-10-08 (STUB3b
+above):* the bound counted the stub's start; it counts from the stub's first answer now.
 `merge-branch.test.ts`'s "--passed counts a verdict no path changed since reaches" failed once at the web batch's merge
 gate (UXFIX2d…SESSDEL1b, which touch no CLI or tools file): "git could not write the checkout's tree" on its scratch
 repository, with three worktrees building beside it; the same git-on-scratch shape as the `--rerun` sightings above.
