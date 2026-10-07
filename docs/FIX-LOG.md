@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — a workspace's Branches tab counted every checkout on the machine
+
+### Web and modules: a workspace's look fetched, counted and left apart the machine's checkouts (BRSCOPE1)
+- **Symptom:** seen on the install: lumachain's Branches tab said *另有 31 个有检出的仓库不持有 Daoris 的分支* (31 more checked-out repositories hold no branch of Daoris's) beside its header's 29 repositories, and its list held `Daoris` and `Daoris.Plugins`, which are another circle's.
+- **Root cause:** UX6g filtered the clean-up's rows and the look's rows to the workspace, and nothing else. `BranchesPart` handed the section the machine's `TREES_SYNC_SCOPE` reading and the look's `looked` and `apart` whole, so the count, the list apart and *Looking at N* were the machine's. The page sent no workspace and `TREES_SYNC_PLAN` and `TREES_SYNC` took none, so the look fetched every checkout holding Daoris's branches and *All N* included every other one; the look had one cache key for every workspace.
+- **Fix:** the two routes take `workspace` (`DriverModule.Checkouts`), the bridge's look and press send it and keep the look per workspace, and the page filters the reading and the look's lists to its own. D150's BRSCOPE1 note has the detail.
+- **Verify:** `ProjectsView.test.tsx`'s two workspaces' checkouts (aurora's tab counted the machine's 3 first) and `DriverModuleLinesTests.A_look_asked_for_a_workspace_takes_its_own_checkouts_alone` (every circle's checkouts first) failed, then passed with the web suite and the modules' fast half. Not covered: the window, the modules' `Process` half and the rehearsals.
+
 ## 2026-10-07 — a session whose take had lost closed the winner's quest
 
 ### Service: a wait or a close made after the pass that found this machine's take lost applied to the winner's quest (WAITCLAIM2)
