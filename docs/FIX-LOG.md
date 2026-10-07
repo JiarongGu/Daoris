@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — a document's first heading and a README's description read a fence's text
+
+### CLI and driver: the first heading and a README's description closed a longer fence on a shorter one inside it (ORIENT2h6)
+- **Symptom:** left open by ORIENT2h4, verified in the code, not seen on an install: a four-backtick fence quoting a three-backtick example closed on the example's first line, so the example's heading named a knowledge document in the index's heading table or a room's row (`firstHeading`), and ended a README's description for an intake (`SelfDescription`, D77); a tilde fence closed on a backtick run inside it; and inline code at a line's start opened a fence that held the rest of the file.
+- **Root cause:** `firstHeading` (`src/Daoris.Cli/src/document.ts`) and `SelfDescription.FromReadme` each toggled on any line opening with three backticks or tildes. ORIENT2h3 and ORIENT2h4 gave the service and the tools CommonMark's rule and left these two, outside their rows.
+- **Fix:** the CLI's `markdownFence`, which `firstHeading` reads by, and the driver's `SelfDescription.Fence` read a fence as `MarkdownFence` and `fenced` do, each with code of its own; both and the tools' `fenced` are held to one table, `src/Daoris.Cli/test/fixtures/fence-cases.json`, which a `REACH` row sends to the driver's suite at a merge. D151's ORIENT2h6 note has the choices.
+- **Verify:** `markdown-fence.test.ts` (the CLI's reader against the table, and four first headings) and `SelfDescriptionTests` (the table, and four READMEs) failed first, then passed with the CLI suite and the driver's fast half; the lane scan in `merge-branch.test.ts` failed until the `REACH` row. No tracked markdown file here, 518, reads a line or a first heading differently. Not covered: the service's suite does not read the table.
+- **Commit:** `56c2d4e2`
+## 2026-10-07 — a look that failed took its own lines with it
+
+### Driver: a stop made early in a look went unsaid when the look failed later (DEV3c)
+- **Symptom:** read from the code and DEV3b's note, not seen on a run: under `--until-idle` and the watch, a look that stopped a session for a lost take and then failed (the quest list down, its sync after the endings unreadable) left the record stood down and printed no `stop  session` line. A look that drained an ending before its own sync failed printed neither the ending nor its fact.
+- **Root cause:** `TickAsync` gathered every line and ending into lists it handed over only in the report it returned, and a look that threw returned none. DEV3a and DEV3b made each finished look and each pass beside `--once`'s sessions said as it ends; a look cut short had no such door.
+- **Fix:** `TickAsync` takes `failed`, handed what the look had said when it fails or is closed. `RunUntilIdleAsync` and `RunOnceAsync` hand it their `said`. `DriverWatch.RunAsync` takes `said` for a part of a look, which the headless host prints; with none, the part joins the next look's report, as the orphan sweep's lines do. D115's DEV3c note has the rest.
+- **Verify:** five `SessionsOutliveTheirLookTests` DEV3c cases over the stand-in ledger, each seen failing first (the until-idle stop case said the ending without the stop; the others said nothing; the two watch cases failed with the carry removed), and `DriverCommandTests.The_hosts_watch_prints_what_a_failed_look_had_said`, failing with the host's `said` removed; then the driver's fast half passed (4686). Not run: the family rehearsal, the `Process` half and the deployment rehearsal.
+- **Commit:** `bbe9510b`.
+
 ## 2026-10-07 — a losing session's stop that its run made and never said
 
 ### Driver: `--once` kept the passes beside its session for its end, and the rehearsal's bound ended it first (DEV3b)
@@ -282,6 +299,11 @@ refused it. (localhost:5191))*, so that run's pass did not reach the remote, and
 never showed. The rerun's log replaced the failing one before it was kept; the lines quoted here are what was read.
 DEV3b carries it. *Read 2026-10-07 (DEV3b above):* the same run made the stop in a pass beside its session, whose lines
 `--once` kept for its end, and the rehearsal's 90 s bound most likely ended it first; a failed check's evidence is now kept.
+`SettingsView.doors.test.tsx`'s "closes on a press of the Settings place…" timed out (20 s) once in SESSDEL1c's web run
+with two other worktrees building; it passed alone (5/5) and in both later full runs.
+`setupStart.test.tsx`'s "opens a fresh machine on Get started, and counts the setup in the status bar" timed out (20 s)
+once in ORIENT2h6's merge gate (no web file changed), with three worktrees building beside it. Two page tests timing out
+under the same load in one day: a page test that renders the whole shell is the shape to look at.
 
 *Fixed the same day:* `desktop-publish.test.ts`'s "retries a held rename at each package and launcher step" failed
 twice (AGENTREAD1's verify, ACCTQUOTE1d's merge gate) with a real EPERM. It handed `layCli` two tries with no wait, the

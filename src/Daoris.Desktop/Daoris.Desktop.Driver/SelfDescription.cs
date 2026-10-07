@@ -84,7 +84,7 @@ public static class SelfDescription
         string? title = null;
         string? said = null;
         var paragraph = new List<string>();
-        var fenced = false;
+        var fence = new Fence();
         var describing = true;
         var topSeen = false;
 
@@ -116,13 +116,7 @@ public static class SelfDescription
         foreach (var raw in Head(file).Split('\n'))
         {
             var line = raw.Trim();
-            if (line.StartsWith("```", StringComparison.Ordinal) || line.StartsWith("~~~", StringComparison.Ordinal))
-            {
-                fenced = !fenced;
-                continue;
-            }
-
-            if (fenced) continue;
+            if (fence.Holds(line)) continue;
 
             if (line.Length == 0)
             {
@@ -281,6 +275,59 @@ public static class SelfDescription
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             return "";
+        }
+    }
+
+    /// <summary>
+    /// Which lines of a README a fenced code block holds, read a line at a time as CommonMark reads a fence (ORIENT2h6):
+    /// its text is never a heading, an underline or a paragraph.
+    /// </summary>
+    /// <remarks>
+    /// <para>A run of three or more backticks or tildes after any indent opens a fence, and only a run of the same
+    /// character at least as long, with nothing after it but spaces, closes it. A backtick run with a backtick later on
+    /// its line is code inline and opens nothing. A fence never closed holds the rest of the file. 🔴 The first cut
+    /// toggled on any line opening with three of either, so a four-backtick fence closed on the example it quoted and
+    /// the example's heading ended the description.</para>
+    ///
+    /// <para>The driver's half of a TWIN with the CLI's <c>markdownFence</c> (<c>document.ts</c>) and the tools'
+    /// <c>fenced</c> (<c>tools/doc-duplicates.mjs</c>), sharing no code: all three are held to the CLI's
+    /// <c>test/fixtures/fence-cases.json</c>, row for row. The service's <c>MarkdownFence</c> is the same rule, held to
+    /// the tools' by the decisions digest's note table.</para>
+    /// </remarks>
+    internal sealed class Fence
+    {
+        private char _marker;
+        private int _length;
+
+        /// <summary>
+        /// Reads the next line: whether a fence holds it, its opening and closing lines included. Called once for every
+        /// line, in order, since what closes a fence depends on what opened it.
+        /// </summary>
+        public bool Holds(string line)
+        {
+            var text = line.TrimStart();
+            var (marker, length) = Run(text);
+
+            if (_marker == '\0')
+            {
+                if (length < 3) return false;
+                if (marker == '`' && text.IndexOf('`', length) >= 0) return false;
+                _marker = marker;
+                _length = length;
+                return true;
+            }
+
+            if (marker == _marker && length >= _length && text[length..].Trim().Length == 0) _marker = '\0';
+            return true;
+        }
+
+        /// <summary>The backticks or tildes a line opens with, and how many; none for a line that opens with neither.</summary>
+        private static (char Marker, int Length) Run(string text)
+        {
+            if (text.Length == 0 || text[0] is not ('`' or '~')) return ('\0', 0);
+            var length = 1;
+            while (length < text.Length && text[length] == text[0]) length++;
+            return (text[0], length);
         }
     }
 

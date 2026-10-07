@@ -441,6 +441,7 @@ export const REACH = Object.freeze([
   { paths: ['src/Daoris.Cli/test/fixtures/shell-words.json'], gates: ['driver', 'web'], why: "the driver's ShellWord twin and the page's shellWord read the shell-word table (ACCTQUOTE1b)" },
   { paths: ['src/Daoris.Cli/test/fixtures/account-reads.json'], gates: ['driver'], why: "the driver's AccountReads twin reads the shared reads table (AGENTREAD1b)" },
   { paths: ['src/Daoris.Cli/test/fixtures/name-case.json'], gates: ['driver'], why: "the driver's NameCaseTests reads the shared name-case table (CASEFOLD1d)" },
+  { paths: ['src/Daoris.Cli/test/fixtures/fence-cases.json'], gates: ['driver'], why: "the driver's SelfDescription fence twin reads the shared fence table (ORIENT2h6)" },
   { paths: ['tools/orient-index-fixtures/**'], gates: ['service'], why: "the service's DecisionNotes twin reads the digest's note table (ORIENT1h)" },
   {
     paths: ['src/Daoris.Cli/src/documents.ts'],
