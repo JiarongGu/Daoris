@@ -46,7 +46,47 @@ public enum LoginState
 /// organisation and a tier beside it still has neither kept. Null asks nobody's name.
 /// </param>
 public sealed record LoginQuestion(
-    IReadOnlyList<string> Arguments, string LoggedIn, string LoggedOut, string? Account = null);
+    IReadOnlyList<string> Arguments, string LoggedIn, string LoggedOut, string? Account = null)
+{
+    /// <summary>
+    /// What one answer says (CODEXACCT1, read in one place so a table can hold it): yes where <see cref="LoggedIn"/> matches,
+    /// with who where <see cref="Account"/> reads one; else no where <see cref="LoggedOut"/> matches; else unknown. Matched
+    /// without case, the yes first, since it is the specific one.
+    /// </summary>
+    public (LoginState Login, string? Account) Read(string output) =>
+        Matches(output, LoggedIn) ? (LoginState.In, Who(output, Account))
+        : (Matches(output, LoggedOut) ? LoginState.Out : LoginState.Unknown, null);
+
+    /// <summary>The first group of the account pattern, trimmed — or null when there is none to read.</summary>
+    private static string? Who(string output, string? pattern)
+    {
+        if (pattern is null) return null;
+        try
+        {
+            var match = Regex.Match(output, pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(2));
+            return match.Success && match.Groups.Count > 1 && match.Groups[1].Value.Trim() is { Length: > 0 } who
+                ? who
+                : null;
+        }
+        catch (Exception error) when (error is ArgumentException or RegexMatchTimeoutException)
+        {
+            return null;
+        }
+    }
+
+    private static bool Matches(string output, string pattern)
+    {
+        try
+        {
+            return Regex.IsMatch(output, pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(2));
+        }
+        catch (Exception error) when (error is ArgumentException or RegexMatchTimeoutException)
+        {
+            // A pattern this build cannot run is no evidence, exactly like an answer it cannot read.
+            return false;
+        }
+    }
+}
 
 /// <summary>
 /// What Daoris knows about a harness AS A TOOL (D49 §4) — where its binary is, how to ask its version,
@@ -1311,41 +1351,10 @@ public static class HarnessProbe
             .ConfigureAwait(false);
         if (!answer.Ran) return new LoginAnswer(LoginState.Unknown, null, true);
 
-        // Matched in this order because a "logged in" pattern is the specific one; and neither
-        // matching leaves it unknown rather than out, which is what keeps a reworded status line from
-        // refusing a spawn that would have worked.
-        if (Matches(answer.Output, question.LoggedIn)) return new LoginAnswer(LoginState.In, Who(answer.Output, question.Account), true);
-        return new LoginAnswer(Matches(answer.Output, question.LoggedOut) ? LoginState.Out : LoginState.Unknown, null, true);
-    }
-
-    /// <summary>The first group of the account pattern, trimmed — or null when there is none to read.</summary>
-    private static string? Who(string output, string? pattern)
-    {
-        if (pattern is null) return null;
-        try
-        {
-            var match = Regex.Match(output, pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(2));
-            return match.Success && match.Groups.Count > 1 && match.Groups[1].Value.Trim() is { Length: > 0 } who
-                ? who
-                : null;
-        }
-        catch (Exception error) when (error is ArgumentException or RegexMatchTimeoutException)
-        {
-            return null;
-        }
-    }
-
-    private static bool Matches(string output, string pattern)
-    {
-        try
-        {
-            return Regex.IsMatch(output, pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(2));
-        }
-        catch (Exception error) when (error is ArgumentException or RegexMatchTimeoutException)
-        {
-            // A pattern this build cannot run is no evidence, exactly like an answer it cannot read.
-            return false;
-        }
+        // Read with the "logged in" pattern first, because it is the specific one; and neither matching leaves it unknown
+        // rather than out, which is what keeps a reworded status line from refusing a spawn that would have worked.
+        var (login, who) = question.Read(answer.Output);
+        return new LoginAnswer(login, who, true);
     }
 
     /// <summary>The runtime's error code for a binary that is not there — ERROR_FILE_NOT_FOUND and ENOENT alike.</summary>
@@ -2013,11 +2022,23 @@ public sealed partial class HarnessRoster(AdapterSet adapters, string? settingsP
     private async Task PressAsync(string name, HarnessToolchain toolchain, string owner, DriverConfig config, bool own)
     {
         var prior = Composed(name, toolchain, new Binary(true, null, null));
+        // 🔴 A door onto an agent this build carries no door of (CODEXACCT1: `codex-acp`, `codex`) asks its binary as itself,
+        // and its accounts and the tool's own sign-in as that agent asks them, with the agent's own binary: no press of the
+        // agent's would, and the door has no status question. Its press read nothing, so the own sign-in said *never read*.
+        var holder = HolderOf(name, toolchain);
         var report = await HarnessProbe.ProbeAsync(
             name, toolchain, config.Commands.GetValueOrDefault(name), Settings, Home, CancellationToken.None,
-            busy: account => Busy(owner, account), prior: prior, own: own, clock: Clock,
+            busy: account => Busy(owner, account), prior: prior, own: own && holder is null,
+            asks: holder is null ? null : _ => false, clock: Clock,
             answered: (account, login, who, at) => Keep(owner, account, login, who, at)).ConfigureAwait(false);
         _binaries[name] = new Binary(report.Present, report.Version, report.Problem);
+        if (holder is { } agent)
+        {
+            await HarnessProbe.ProbeAsync(
+                agent.Name, agent.Toolchain, config.Commands.GetValueOrDefault(agent.Name), Settings, Home, CancellationToken.None,
+                busy: account => Busy(owner, account), prior: prior, own: own, clock: Clock,
+                answered: (account, login, who, at) => Keep(owner, account, login, who, at)).ConfigureAwait(false);
+        }
         // And each account's windows, where its agent's server is asked them (CODEXUSE1).
         await PressUsageAsync(name, owner, config, CancellationToken.None).ConfigureAwait(false);
     }
@@ -2257,23 +2278,55 @@ public sealed partial class HarnessRoster(AdapterSet adapters, string? settingsP
         return (answer.Login, answer.Account);
     }
 
-    /// <summary>The toolchain that answers for this adapter's accounts (AGT7) — its owner's, when carried.</summary>
-    public HarnessToolchain? AccountToolchain(string adapter) =>
-        Toolchain(adapter) is { } toolchain ? AccountAgent(adapters.Resolve(adapter).Name, toolchain).Toolchain : null;
+    /// <summary>The toolchain that answers for this adapter's accounts (AGT7) — its owner's, when carried or declared.</summary>
+    public HarnessToolchain? AccountToolchain(string adapter) => AccountAgentOf(adapter)?.Toolchain;
 
     /// <summary>
-    /// Which adapter answers for a door's ACCOUNTS (AGT7): its owner when this build carries one — the
-    /// owner has the login question and the key variable — else the door itself.
+    /// The agent that answers for this adapter's accounts, by name and toolchain (AGT7, CODEXACCT1): what a sign-in on the
+    /// door runs, with that agent's configured command, and what its accounts are asked with. Null for an adapter that
+    /// declares no toolchain.
     /// </summary>
+    public (string Name, HarnessToolchain Toolchain)? AccountAgentOf(string adapter) =>
+        Toolchain(adapter) is { } toolchain ? AccountAgent(adapters.Resolve(adapter).Name, toolchain) : null;
+
+    /// <summary>
+    /// Which agent answers for a door's ACCOUNTS (AGT7): its owner when this build carries a door of it — the owner has the
+    /// login question and the key variable — else the owner as the set declares it where it carries no door of it
+    /// (<see cref="AdapterSet.Holder"/>, CODEXACCT1: <c>codex</c> for <c>codex-acp</c>), else the door itself.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 A declared owner is no adapter: its name is never handed to <see cref="ReportAsync"/> or a press, which resolve
+    /// adapters. <see cref="HolderOf"/> says which agent that is.
+    /// </remarks>
     private (string Name, HarnessToolchain Toolchain) AccountAgent(string name, HarnessToolchain toolchain)
     {
         var owner = toolchain.Owner(name);
-        return !string.Equals(owner, name, StringComparison.OrdinalIgnoreCase)
-            && adapters.Names.Contains(owner, StringComparer.OrdinalIgnoreCase)
-            && adapters.Resolve(owner).Toolchain is { } ownerToolchain
-                ? (adapters.Resolve(owner).Name, ownerToolchain)
-                : (name, toolchain);
+        if (string.Equals(owner, name, StringComparison.OrdinalIgnoreCase)) return (name, toolchain);
+        if (adapters.Names.Contains(owner, StringComparer.OrdinalIgnoreCase) && adapters.Resolve(owner).Toolchain is { } ownerToolchain)
+        {
+            return (adapters.Resolve(owner).Name, ownerToolchain);
+        }
+
+        return adapters.Holder(owner) is { } holder ? (owner, holder) : (name, toolchain);
     }
+
+    /// <summary>
+    /// The agent a door asks its accounts through where this build carries no door of it (CODEXACCT1), or null where the
+    /// door answers for its accounts itself or its owner's own door does: what a press on the door asks with, since no
+    /// press of the owner's would.
+    /// </summary>
+    private (string Name, HarnessToolchain Toolchain)? HolderOf(string name, HarnessToolchain toolchain)
+    {
+        var agent = AccountAgent(name, toolchain);
+        return string.Equals(agent.Name, name, StringComparison.OrdinalIgnoreCase)
+               || adapters.Names.Contains(agent.Name, StringComparer.OrdinalIgnoreCase)
+            ? null
+            : agent;
+    }
+
+    /// <summary>The adapter whose report says a door's accounts (AGT7): its owner's door where this build carries one, else itself.</summary>
+    private string ReportingDoor(string name, HarnessToolchain toolchain) =>
+        AccountAgent(name, toolchain).Name is var agent && adapters.Names.Contains(agent, StringComparer.OrdinalIgnoreCase) ? agent : name;
 
     /// <summary>Every harness this build knows, probed — what a roster surface renders.</summary>
     /// <remarks>
@@ -2542,9 +2595,11 @@ public sealed partial class HarnessRoster(AdapterSet adapters, string? settingsP
         // The account's state is its owner's answer when this build carries the owner — a door
         // declares no login question of its own, which is what `accountOf` says.
         var asker = AccountAgent(resolved.Name, toolchain);
-        var accounts = asker.Name == resolved.Name
+        // A report is an adapter's: an owner declared for a door it has none of (CODEXACCT1) reads its accounts in the door's.
+        var reporting = ReportingDoor(resolved.Name, toolchain);
+        var accounts = reporting == resolved.Name
             ? report
-            : await ReportAsync(asker.Name, config, refresh: false, ct).ConfigureAwait(false);
+            : await ReportAsync(reporting, config, refresh: false, ct).ConfigureAwait(false);
 
         // The walk (TOOL4f, D125 §3.3): the first account still ready once the agent has said who is signed in, in the
         // order the start tries them. Signed out (a key gone included) is walked past as cooling and refused are.
@@ -2880,7 +2935,7 @@ public sealed partial class HarnessRoster(AdapterSet adapters, string? settingsP
             .ToList();
         if (others.Count == 0) return [];
 
-        var report = await ReportAsync(AccountAgent(adapter, toolchain).Name, config, refresh: false, ct).ConfigureAwait(false);
+        var report = await ReportAsync(ReportingDoor(adapter, toolchain), config, refresh: false, ct).ConfigureAwait(false);
         return report is { Present: false } ? [] : [.. others.Where(name => LoginOf(report, name) != LoginState.Out)];
     }
 
