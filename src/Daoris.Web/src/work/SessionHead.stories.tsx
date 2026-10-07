@@ -223,6 +223,18 @@ export const FailedItsBranchLeft: Story = {
 };
 
 /**
+ * UXFIX4b: the same with a long branch name, at the main area's 400 px floor less a page's gutters. The name is whole,
+ * wrapping after its separators on the line's own row, where it was cut to one line with nothing to read the rest by.
+ */
+export const FailedItsLongBranchLeftAtTheFloor: Story = {
+  args: {
+    ...FailedItsBranchLeft.args,
+    branch: { ...FailedItsBranchLeft.args!.branch!, branch: 'daoris/s-5a6b7c8d-a-chain-step-that-carries-a-long-slug-past-the-head' },
+  },
+  decorators: [(Story) => <div className="w-[352px]"><Story /></div>],
+};
+
+/**
  * Failed, its note by code (LANG1b, D142): Daoris's lines worded in the window's language, the agent's words beneath their
  * lead-in as written. The two stories above are records from before parts, shown as kept and marked.
  */

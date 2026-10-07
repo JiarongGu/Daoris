@@ -142,7 +142,8 @@ controls are in the frame design's §3.
   `BranchRow`, on a list that is its own container: three columns where the list holds 30rem, and narrower the sentence
   under the name, since at the main area's 400 px floor three columns left the sentence what the name did not take. The
   name wraps after its separators, never cut to a line with the rest in a tip that neither a keyboard nor a reader
-  reaches, and the row is named by the text it shows.
+  reaches, and the row is named by the text it shows. A session head's branch is shown so too (UXFIX4b), on its
+  line's own wrapping row.
 - **Buttons**: `primary` (solid accent, paper text — the one loud control per view), default (raised +
   line), `ghost` (borderless, for in-card affordances), and `danger` for a move that ends or removes
   something: decline, close an ask, retire, remove an account, stop, discard. It wears the hue of the
