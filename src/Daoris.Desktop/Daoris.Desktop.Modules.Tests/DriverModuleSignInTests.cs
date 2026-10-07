@@ -17,7 +17,7 @@ public sealed class DriverModuleSignInTests : DriverModuleBridge
 {
     /// <summary>
     /// What the roster answers each door's page with: whether it signs in, and takes a key, as its agent does. Codex signs in
-    /// with <c>codex login</c> and takes no key from Daoris (D67 §1 holds a key no Codex variable is measured for).
+    /// with <c>codex login --device-auth</c> (CODEXACCT2) and takes no key from Daoris (D67 §1 holds a key no Codex variable is measured for).
     /// </summary>
     [Theory]
     [InlineData("claude-code", true, true)]
@@ -52,6 +52,18 @@ public sealed class DriverModuleSignInTests : DriverModuleBridge
         Assert.Contains("could not be started", refusal);
         Assert.Empty(HarnessSettings.Profiles(Home, "codex"));
         Assert.False(Directory.Exists(Path.Combine(Home, "harnesses", "codex-acp")));
+        // CODEXACCT2: the console's first line names the sign-in it started, by Codex's device code, which needs no port
+        // of this machine, where the browser sign-in's callback port is reserved on some (os error 10013).
+        await UntilAsync(() => Raised.Select(Line).Any(line => line.StartsWith("$ ", StringComparison.Ordinal)));
+        Assert.Contains($"$ {codex} login --device-auth", Raised.Select(Line));
+    }
+
+    /// <summary>The text of one relayed console line, or empty for any other event.</summary>
+    private static string Line(Shenora.Core.Events.EventMessage message)
+    {
+        if (message.Type != "SESSION_OUTPUT") return string.Empty;
+        var json = JsonSerializer.SerializeToElement(message.Payload);
+        return string.Join("\n", json.GetProperty("Lines").EnumerateArray().Select(l => l.GetProperty("Text").GetString()));
     }
 
     /// <summary>

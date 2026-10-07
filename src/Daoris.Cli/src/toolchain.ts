@@ -333,7 +333,9 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
     // pin stays the version pinned without a switch (the channel evidence, §2).
     channel: 'codex-releases',
     update: ['update'],
-    login: ['login'],
+    // By its device code (CODEXACCT2): a link and a one-time code, and no port of this machine. The browser sign-in waits
+    // for a callback on a local port, and Windows reserves that port on some machines (os error 10013, D125's note).
+    login: ['login', '--device-auth'],
     // ANCHORED, and that is load-bearing: this harness answers a sentence rather than a field, and
     // "Not logged in" contains "logged in". An unanchored pattern reported every logged-out profile
     // as logged in — found by a test, which is the only way a thing like this is ever found.
@@ -912,6 +914,36 @@ export interface SignInOptions {
   name?: string | null;
   joins?: (string | null)[];
   path?: string | null;
+  /** The binary the sign-in ran and its end's question asks (`signInBinary`); the toolchain's own where none is given. */
+  binary?: SignInBinary;
+}
+
+/** The binary an agent's sign-in runs: its command, and whether that is its pin, which runs with the pin's switch (AGT2). */
+export interface SignInBinary {
+  command: string[];
+  managed: boolean;
+}
+
+/**
+ * The binary a sign-in runs (CODEXACCT1b, D57 rule 4): the agent's pin on this machine, else `PATH`'s, as `agent list`
+ * asks it (`probe`), so the sign-in and the question at its end ask the program a session runs. The terminal's sign-in
+ * ran `PATH`'s, and the owner's only `codex` is its pin. A pin with nothing installed at it is refused naming the pin,
+ * before anything is made, never `PATH`'s instead; the driver's `HarnessActions.PrepareLogin` says the same words.
+ */
+export function signInBinary(
+  harness: string, toolchain: Toolchain, home: string, settings: HarnessSettings,
+): SignInBinary {
+  const pinned = resolveVersion(settings, harness, null, null);
+  if (!pinned) return { command: toolchain.binary, managed: false };
+
+  const managed = managedBinary(home, harness, pinned, toolchain.binary);
+  if (managed === null) {
+    throw new DaorisError(
+      `\`${harness}\` is pinned to ${pinned} on this machine, and nothing is installed at that version, so nothing was `
+      + `signed in — \`daoris agent pin ${harness} ${pinned}\` installs it, and \`daoris agent unpin ${harness}\` goes `
+      + 'back to PATH.');
+  }
+  return { command: [managed, ...toolchain.binary.slice(1)], managed: true };
 }
 
 /** One scope an account runs in, as a person reads it: `this machine's list, as its default`, `` `work`'s default ``. */
@@ -1042,8 +1074,9 @@ export function signInNew(
     code = run(where);
   } finally {
     // Asked of the binary the login ran, so the answer is about the sign-in that just happened.
+    const binary = options.binary ?? { command: toolchain.binary, managed: false };
     const said = code === 0
-      ? loginAt(toolchain.binary, toolchain, where, false, {}, probeLockPath(home, harness, id))
+      ? loginAt(binary.command, toolchain, where, binary.managed, {}, probeLockPath(home, harness, id))
       : { login: 'out' as const, account: null, asked: false };
 
     if (code !== 0 || said.login === 'out') {
@@ -1110,7 +1143,8 @@ export function signInTo(
     const named = nameFor(names, account);
     // A sign-in's end reads its account (ROSTER1) and keeps the reading (AGENTREAD1), so an account the loop read signed out
     // reads signed in on the screen too; who signed in is offered as a name only where the account has none (D66 §3).
-    const said = loginAt(toolchain.binary, toolchain, where, false, {}, probeLockPath(home, harness, account));
+    const binary = options.binary ?? { command: toolchain.binary, managed: false };
+    const said = loginAt(binary.command, toolchain, where, binary.managed, {}, probeLockPath(home, harness, account));
     if (said.asked) keepReading(home, harness, account, said.login);
     const who = named === null ? said.account : null;
     for (const line of endLines(harness, account, named, who, settings, home, Boolean(options.path))) write(line);
@@ -1457,27 +1491,30 @@ export function commandHarness(
       // ACCT1: the lists a sign-in joins at its end, `--join <workspace>` (repeated, or comma-separated) and
       // `--join-machine`, refused before anything starts where one cannot be joined.
       const joins = joinsOf(argv);
-      const relayed = (where: string) => relay([...toolchain.binary, ...login], where, toolchain, write);
-
-      // A new account (D66 §3): made by the sign-in, offered who signed in as its name (ACCT2) — the desktop's
-      // *Add an account…*, from a terminal (D50).
-      if (argv.includes('--new')) {
-        if (argv.includes('--profile')) {
-          throw new DaorisError(
-            `\`--new\` signs in to a new account and \`--profile\` to one that is here — \`daoris agent login ${name} --new\`, or `
-            + `\`daoris agent login ${name} --profile ${shellWord(flagValue(argv, '--profile') ?? '', '<account>')}\`.`);
-        }
-        return signInNew(name, toolchain, home, relayed, write, { name: flagValue(argv, '--name') ?? null, joins, path });
+      if (argv.includes('--new') && argv.includes('--profile')) {
+        throw new DaorisError(
+          `\`--new\` signs in to a new account and \`--profile\` to one that is here — \`daoris agent login ${name} --new\`, or `
+          + `\`daoris agent login ${name} --profile ${shellWord(flagValue(argv, '--profile') ?? '', '<account>')}\`.`);
       }
-
-      if (argv.includes('--name')) {
+      if (!argv.includes('--new') && argv.includes('--name')) {
         throw new DaorisError(
           `\`--name\` names a new account as it is made (\`--new\`); an account that is here is named with \`daoris agent `
           + `profile rename ${name} <account> <name>\`.`);
       }
 
+      // CODEXACCT1b: the binary `agent list` asks, the pin before PATH's, refused before anything is made where the pin
+      // has nothing installed; the sign-in and its end's question both run it.
+      const binary = signInBinary(name, toolchain, home, readHarnessSettings(path));
+      const relayed = (where: string) => relay([...binary.command, ...login], where, toolchain, write, binary.managed);
+
+      // A new account (D66 §3): made by the sign-in, offered who signed in as its name (ACCT2) — the desktop's
+      // *Add an account…*, from a terminal (D50).
+      if (argv.includes('--new')) {
+        return signInNew(name, toolchain, home, relayed, write, { name: flagValue(argv, '--name') ?? null, joins, path, binary });
+      }
+
       // An account that is here, by its id or its name, else the machine's default: never a new folder (ACCT1).
-      return signInTo(name, toolchain, home, flagValue(argv, '--profile') ?? null, relayed, write, { joins, path });
+      return signInTo(name, toolchain, home, flagValue(argv, '--profile') ?? null, relayed, write, { joins, path, binary });
     }
 
     // The managed toolchain (TOOL2/D57): Daoris owns where this version lives and which one runs.
@@ -2515,14 +2552,16 @@ export function commandHarness(
    * a code, and a person needs to answer it. Capturing the stream to pretty-print it would turn a
    * working login into a hung one — the desktop's roster relays these through the session console
    * instead, which is the same process wired for a surface that has no terminal.
+   *
+   * `managed` says the command is a pin's, which runs with the pin's own switch (AGT2), as a probe asks it.
    */
   function relay(
-    command: string[], profile: string | null, toolchain: Toolchain, out: (line: string) => void,
+    command: string[], profile: string | null, toolchain: Toolchain, out: (line: string) => void, managed = false,
   ): ExitCode {
     out(`  $ ${command.join(' ')}`);
     out('');
 
-    const env: Env = { ...process.env };
+    const env: Env = { ...process.env, ...(managed ? toolchain.pinnedEnv : {}) };
     if (profile) {
       mkdirSync(profile, { recursive: true });
       env[toolchain.profileVariable] = profile;

@@ -191,10 +191,10 @@ public sealed class HarnessProfileTests : Bridge
     }
 
     /// <summary>
-    /// CODEXACCT1: *Add an account…* on Agents → Codex runs <c>codex login</c> — a stand-in named for <c>codex</c>, answering
-    /// in the words <c>codex login status</c> printed on the install — into a new folder under <c>codex</c>'s accounts, with
-    /// that folder as its <c>CODEX_HOME</c>, and keeps it once the status reads it signed in. Codex names nobody, so the end
-    /// says so, and the page's naming step asks for the name.
+    /// CODEXACCT1: *Add an account…* on Agents → Codex runs <c>codex login --device-auth</c> (CODEXACCT2) — a stand-in named
+    /// for <c>codex</c>, answering in the words <c>codex login status</c> printed on the install — into a new folder under
+    /// <c>codex</c>'s accounts, with that folder as its <c>CODEX_HOME</c>, and keeps it once the status reads it signed in.
+    /// Codex names nobody, so the end says so, and the page's naming step asks for the name.
     /// </summary>
     [Fact]
     public async Task Adding_a_codex_account_signs_in_with_codex_into_a_new_folder_and_keeps_it()
@@ -210,7 +210,10 @@ public sealed class HarnessProfileTests : Bridge
               console.log(home && fs.existsSync(path.join(home, 'auth.json')) ? 'Logged in using ChatGPT' : 'Not logged in');
               process.exit(0);
             }
-            if (verb === 'login' && sub === undefined && home) { fs.writeFileSync(path.join(home, 'auth.json'), '{}'); process.exit(0); }
+            if (verb === 'login' && sub === '--device-auth' && process.argv.length === 4 && home) {
+              fs.writeFileSync(path.join(home, 'auth.json'), '{}');
+              process.exit(0);
+            }
             process.exit(1);
             """);
         File.WriteAllText(DriverConfigPath, $$"""

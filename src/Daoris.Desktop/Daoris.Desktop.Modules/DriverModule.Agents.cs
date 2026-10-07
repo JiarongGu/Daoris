@@ -88,7 +88,8 @@ public sealed partial class DriverModule
                     // Whether this door can run a sign-in at all — the same rule: an agent that
                     // declares no login flow gets no "Sign in" whose only outcome is a refusal. Its
                     // agent's flow (AGT7, CODEXACCT1), as `TakesKey` reads its key: `codex-acp` has no
-                    // sign-in of its own and runs `codex login`, so Agents → Codex offered no account.
+                    // sign-in of its own and runs `codex login --device-auth` (CODEXACCT2), so Agents → Codex
+                    // offered no account.
                     SignsIn = accountActs.SignsIn,
                     // Which Update this door has (USE1a): "pin" moves the pin to the newest
                     // release, "tool" runs the tool's own updater, and null offers none — the
@@ -187,8 +188,9 @@ public sealed partial class DriverModule
 
     /// <summary>
     /// Whether a door signs in its agent's accounts, and takes a key into one, by that agent's own flow and key variable
-    /// (AGT7, CODEXACCT1): <c>codex-acp</c> signs in with <c>codex login</c>, as <c>claude-code-acp</c> with <c>claude auth
-    /// login</c>. Public for the fast half's table, which reads it without the roster the route asks.
+    /// (AGT7, CODEXACCT1): <c>codex-acp</c> signs in with <c>codex login --device-auth</c> (CODEXACCT2), as
+    /// <c>claude-code-acp</c> with <c>claude auth login</c>. Public for the fast half's table, which reads it without the
+    /// roster the route asks.
     /// </summary>
     public static (bool SignsIn, bool TakesKey) AccountActs(HarnessRoster harnesses, string adapter) =>
         harnesses.AccountToolchain(adapter) is { } agent
@@ -677,8 +679,8 @@ public sealed partial class DriverModule
         var profileHome = HarnessSettings.ProfileHome(home, owner, fresh ?? target ?? profile ?? "default");
         // 🔴 A sign-in is its accounts' agent's (AGT7, CODEXACCT1): a door onto another agent runs that agent's own flow, on the
         // binary its status question asks: the command named for it, its pin, else PATH's (D57 rule 4). `codex-acp` has no flow
-        // of its own and runs `codex login`; refused as a door with none, Agents → Codex offered no account while `daoris agent
-        // login codex --new` made one (D50), and the install's only `codex` is its pin.
+        // of its own and runs `codex login --device-auth` (CODEXACCT2); refused as a door with none, Agents → Codex offered no
+        // account while `daoris agent login codex --new` made one (D50), and the install's only `codex` is its pin.
         var signing = action is "login" or "login-new" ? _loop.Harnesses.AccountAgentOf(harness) : null;
         var signingToolchain = signing?.Toolchain ?? toolchain;
         var signingRun = signing is null ? null : _loop.Harnesses.SignInCommand(harness, config);
