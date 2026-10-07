@@ -162,7 +162,7 @@ import {
 } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { gluedLabels, records } from './doc-duplicates.mjs';
-import { isMain, renameHeld } from './fsx.mjs';
+import { isMain, renameHeld, writeAtomic } from './fsx.mjs';
 
 export const MAIN = 'main';
 const SCRATCH = 'local/scratch';
@@ -553,8 +553,7 @@ function setApartNotes(root) {
     const file = join(root, path);
     const { text, set } = setApart(readFileSync(file, 'utf8'));
     if (set.length === 0) continue;
-    writeFileSync(`${file}.partial`, text);
-    renameHeld(`${file}.partial`, file);
+    writeAtomic(file, text);
     git(root, ['add', '--', path]);
     for (const note of set) console.log(`set apart: ${basename(path, '.md')}'s ${noteName(note.label)} (${path}:${note.line})`);
   }
@@ -708,14 +707,12 @@ export function readVerdicts(root) {
 export function addVerdicts(root, entries, { keep = 400 } = {}) {
   const file = join(root, VERDICTS_FILE);
   const verdicts = [...readVerdicts(root).verdicts, ...entries].slice(-keep);
-  mkdirSync(dirname(file), { recursive: true });
   const record = {
     schema: 1,
     _why: 'Written by tools/merge-branch.mjs (GATE3): each gate verdict with the tree it ran on. publish:desktop asks `merge-branch --passed`, which reads it.',
     verdicts,
   };
-  writeFileSync(`${file}.partial`, `${JSON.stringify(record, null, 2)}\n`);
-  renameHeld(`${file}.partial`, file);
+  writeAtomic(file, `${JSON.stringify(record, null, 2)}\n`);
 }
 
 /**
@@ -1560,10 +1557,7 @@ const statePath = (root) => join(root, STATE);
 const readState = (root) => (existsSync(statePath(root)) ? JSON.parse(readFileSync(statePath(root), 'utf8')) : null);
 
 function writeState(root, state) {
-  const file = statePath(root);
-  mkdirSync(dirname(file), { recursive: true });
-  writeFileSync(`${file}.partial`, `${JSON.stringify(state, null, 2)}\n`);
-  renameHeld(`${file}.partial`, file);
+  writeAtomic(statePath(root), `${JSON.stringify(state, null, 2)}\n`);
 }
 
 const dropState = (root) => rmSync(statePath(root), { force: true });
@@ -1603,7 +1597,11 @@ export function runStep(command, cwd, fd) {
   });
 }
 
-/** A log is written beside and renamed when its gate ends, so a half-written one never reads as whole. */
+/**
+ * A log is written beside and renamed when its gate ends, so a half-written one never reads as whole. Not `writeAtomic`
+ * (REFAC2): the gate streams into it for minutes, a re-run reads it as it grows, and it lands whatever the gate did,
+ * where `writeAtomic` throws away what a failure leaves.
+ */
 async function withLog(file, work) {
   const partial = `${file}.partial`;
   writeFileSync(partial, '');

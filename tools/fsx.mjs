@@ -2,8 +2,11 @@
  * The one filesystem helper the tooling shares. It existed five times — both rehearsals, the package
  * stager, and the web e2e host — each copy carrying the same one-line justification.
  */
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync } from 'node:fs';
-import { join } from 'node:path';
+import { randomBytes } from 'node:crypto';
+import {
+  copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, writeFileSync,
+} from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
@@ -41,6 +44,35 @@ export function renameHeld(from, to, { tries = 50, waitMs = 200, rename = rename
       if (attempt >= tries || !HELD.has(error?.code)) throw error;
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, waitMs);
     }
+  }
+}
+
+/** A name beside `file` that no other write shares: this process's, and random within it. */
+const besideName = (file, suffix) => `${file}.${process.pid}-${randomBytes(4).toString('hex')}${suffix}`;
+
+/**
+ * A file replaced whole, the one way the tooling writes one (REFAC2; each tool had assembled it itself, one with a bare
+ * rename). `data` is written beside the file under a name no other write shares, then renamed into place through
+ * `renameHeld`, so a reader finds the old file or the new one, never half of one, and a held file is waited for. The
+ * folder is made first. A string is written as UTF-8 with no BOM, bytes as they are; line endings are the caller's.
+ *
+ * When the write or the rename fails, what was written beside is removed and the failure thrown: the file stands as it
+ * was, and nothing is left for a later run to trip over or for `git add -A` to stage (the merge tool left a rewritten
+ * decision beside itself so). `tries`, `waitMs` and `rename` are `renameHeld`'s.
+ */
+export function writeAtomic(file, data, { tries, waitMs, rename } = {}) {
+  mkdirSync(dirname(file), { recursive: true });
+  const beside = besideName(file, '.partial');
+  try {
+    writeFileSync(beside, data);
+    renameHeld(beside, file, { tries, waitMs, rename });
+  } catch (error) {
+    try {
+      rmSync(beside, { force: true });
+    } catch {
+      // The failure to report is the write's; a beside file that will not go is the lesser fact.
+    }
+    throw error;
   }
 }
 

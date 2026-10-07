@@ -36,11 +36,11 @@
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
-import { isMain, renameHeld } from './fsx.mjs';
+import { isMain, writeAtomic } from './fsx.mjs';
 
 /** Where a checkout keeps the server: its builds, the pointer to the current one, and its home. */
 export const SERVER = 'local/knowledge-server';
@@ -319,11 +319,8 @@ function build(checkout, { force }) {
     console.error(`knowledge-server: the build failed (${why}); sessions keep the build they had`);
     return 1;
   }
-  mkdirSync(folder, { recursive: true });
   const pointer = join(folder, 'current.json');
-  const beside = `${pointer}.${process.pid}`;
-  writeFileSync(beside, `${JSON.stringify({ build: `builds/${name}`, entry: ENTRY, digest, builtAt: new Date().toISOString() }, null, 2)}\n`);
-  renameHeld(beside, pointer);
+  writeAtomic(pointer, `${JSON.stringify({ build: `builds/${name}`, entry: ENTRY, digest, builtAt: new Date().toISOString() }, null, 2)}\n`);
   const pruned = pruneBuilds(join(folder, 'builds'), KEEP);
   const kept = pruned.kept.length ? `; ${pruned.kept.length} older kept, in use` : '';
   console.log(`knowledge-server: built ${name} (${why}) in ${Math.round((Date.now() - started) / 1000)} s; `
