@@ -273,31 +273,52 @@ public static class CoolingWords
     }
 
     /// <summary>
-    /// What the refused session's record adds to its note. 🔴 It names no account, its own included: the note travels to
-    /// another machine, and its scrubber elides only the record's own profile name (D125 §3.6).
+    /// What the refused session's record adds to its note: whose accounts they are, the kind of limit where its reset named
+    /// one (AGT3d), until when, and why. 🔴 It names no account, its own included: the note travels to another machine, and
+    /// its scrubber elides only the record's own profile name (D125 §3.6). The owner is the agent, which names none.
     /// </summary>
     public static string Note(CoolingEntry entry, TimeZoneInfo zone) =>
-        $"The account it ran on is cooling until {When(entry.Until, zone)}, {Why(entry)}, and nothing starts on it until then.";
+        $"The `{entry.Agent}` account it ran on {Reached(entry)}is cooling until {When(entry.Until, zone)}, {Why(entry)}, and "
+        + "nothing starts on it until then.";
 
     /// <summary>
     /// <see cref="Note"/> with its code (LANG1a, the language design §4 row 22): until when as a moment the page formats in the
-    /// reader's zone, and why by its code. It names no account, as the sentence does not.
+    /// reader's zone, why by its code, and, since AGT3d, whose accounts and the window, which the page words
+    /// (<c>harness.window.*</c>). It names no account, as the sentence does not.
     /// </summary>
-    public static Noted NoteOf(CoolingEntry entry, TimeZoneInfo zone) =>
-        Noted.Of(NoteCodes.AccountCooling, Note(entry, zone), ("until", NoteCodes.Moment(entry.Until)), ("why", CoolingWhy.Of(entry)));
+    public static Noted NoteOf(CoolingEntry entry, TimeZoneInfo zone) => Coded(entry, Note(entry, zone));
 
     /// <summary>What a conversation whose turn was refused is told in its record; the conversation goes on.</summary>
     public static string Conversation(CoolingEntry entry, TimeZoneInfo zone) =>
-        $"The account this conversation runs on is cooling until {When(entry.Until, zone)}, {Why(entry)}, and nothing new "
-        + "starts on it until then.";
+        $"The `{entry.Agent}` account this conversation runs on {Reached(entry)}is cooling until {When(entry.Until, zone)}, "
+        + $"{Why(entry)}, and nothing new starts on it until then.";
 
     /// <summary>
     /// <see cref="Conversation"/> with the code a session record's cooling line carries (CONVNOTE1b; <see cref="NoteOf"/>,
     /// LANG1a), so the page words a conversation's cooling in the reader's language as it words a record's. Its English stays
     /// the conversation's sentence, and it names no account, as neither sentence does.
     /// </summary>
-    public static Noted ConversationOf(CoolingEntry entry, TimeZoneInfo zone) =>
-        Noted.Of(NoteCodes.AccountCooling, Conversation(entry, zone), ("until", NoteCodes.Moment(entry.Until)), ("why", CoolingWhy.Of(entry)));
+    public static Noted ConversationOf(CoolingEntry entry, TimeZoneInfo zone) => Coded(entry, Conversation(entry, zone));
+
+    /// <summary>
+    /// The cooling line by its code (AGT3d): <c>account.cooling-window</c> with the window its reset named, else
+    /// <c>account.cooling-no-window</c>, since a line whose entry says a value the part lacks is shown as recorded. Never
+    /// <c>account.cooling</c>, which keeps its old shape for the notes written before.
+    /// </summary>
+    private static Noted Coded(CoolingEntry entry, string text) => WindowOf(entry) is { } window
+        ? Noted.Of(NoteCodes.AccountCoolingWindow, text,
+            ("until", NoteCodes.Moment(entry.Until)), ("why", CoolingWhy.Of(entry)), ("owner", entry.Agent), ("window", window))
+        : Noted.Of(NoteCodes.AccountCoolingNoWindow, text,
+            ("until", NoteCodes.Moment(entry.Until)), ("why", CoolingWhy.Of(entry)), ("owner", entry.Agent));
+
+    /// <summary>The kind of limit, as its reset named it (<i>hit its weekly limit and </i>), or nothing where it named none.</summary>
+    private static string Reached(CoolingEntry entry) => WindowOf(entry) is { } window ? $"hit its {window} limit and " : "";
+
+    /// <summary>
+    /// The window the reset named, a word read out of the agent's sentence (<i>session</i>, <i>weekly</i>), bounded as the log
+    /// bounds it (<see cref="AccountLine.Bounded"/>): a value is a fact, never a phrase, and the note travels.
+    /// </summary>
+    private static string? WindowOf(CoolingEntry entry) => AccountLine.Bounded(entry.Window);
 
     /// <summary>A moment as a person reads it here: <i>Oct 3, 16:02 (Asia/Kathmandu)</i>, in the machine's zone, named.</summary>
     public static string When(DateTimeOffset moment, TimeZoneInfo zone) =>
@@ -402,7 +423,7 @@ public sealed record AccountLine(string Event, IReadOnlyList<(string Key, object
     private static string? Profile(string? account) => account is not null && Name.IsMatch(account) ? account : null;
 
     /// <summary>The marker's own word, kept short: a window's name, never a clause.</summary>
-    private static string? Bounded(string? word) => word is { Length: > 0 and <= 40 } ? word : null;
+    internal static string? Bounded(string? word) => word is { Length: > 0 and <= 40 } ? word : null;
 }
 
 /// <summary>

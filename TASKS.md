@@ -4,7 +4,7 @@ Open work only. Finished rows move to `docs/task-archive.md`; `CHANGELOG.md` des
 
 ## State
 
-Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,371 CLI, 1,543 service, 87 HTTP host, 5,379 driver (4,662 fast, 717 Process), 758 modules (640 fast, 118 Process), 85 devkit, 4,505 web unit and 24 Playwright; rehearsals: release 114, family 400, deployment 110. The full set (14 gates) passed `d92a49c1` and that tree is on the install; earlier receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,887 bytes, advisory budget 26,000.
+Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,371 CLI, 1,543 service, 87 HTTP host, 5,381 driver (4,664 fast, 717 Process), 758 modules (640 fast, 118 Process), 85 devkit, 4,509 web unit and 24 Playwright; rehearsals: release 114, family 400, deployment 110. The full set (14 gates) passed `d92a49c1` and that tree is on the install; earlier receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,887 bytes, advisory budget 26,000.
 
 Live consumer count is zero. Adoption is the owner's call. The existing desktop-runtime rehearsal remains evidence: 6 collisions, 2 twins to retire, budget 40,000, check at 38,782 bytes; supporting mechanics are in `docs/adoption/shenora-repo-mechanics.md`.
 
@@ -235,7 +235,6 @@ Contracts: toolchain design (D57, §3 resolution), account-rotation (D125), acco
 - [ ] **TOOL4l — account proposal service doors** (service, driver). Support use/keep/early/near, order, ready and cooloff. Contract: D125 §6, D130 §9/§16.6. Proof: proposal kinds and no owed coverage rows.
 - [ ] **TOOL4h — account rehearsal/report** (tools; after j). Two stub accounts, per-account/window limits labelled Daoris-only, parallel N-account run. Contract/proof: rotation §8/§2.2, D130 §5.4.
 - [ ] **TOOL4i — installed rotation** (owner). Parallel every-account run and what one limit interrupts remain; sequential run recorded already. Contract: D130 §11. Proof: run; preserve earlier evidence in FIX-LOG.
-- [ ] **AGT3d — a limit's note says what kind of limit it was** (driver, web-shell). Since AGT3c the travelling note carries the cooling line's `until` and `why` and never the agent's sentence, but neither the kind of limit (`window`: five-hour or weekly) nor whose account (`owner`), so a reader on another machine learns neither. The web adds `{{window}}` (worded by `harness.window.*`) and `{{owner}}` to `note.account.cooling` in both catalogues and `NOTE_VALUES`; the driver declares them on `NoteCodes.AccountCooling` and passes `CoolingEntry.Window`. Contract: D125's AGT3c note. Proof: `NoteCodesTests` and `note.test.ts` hold the entries; a limit-note test reads the window from the parts.
 - [ ] **AGT2c — real vendor pins** (owner; two downloads). Verify Claude Code honours `DISABLE_UPDATES` and pinned Codex does not update outside native layout. Contract: D67/channel evidence. Proof: observed pins.
 - [ ] **BRW14 — downloads become quest attachments** (design first). Intake currently cannot save a mock-up attachment; define session download destination and transfer to quest. Contract: D78, CHR3 §3.2. Proof: design before build.
 

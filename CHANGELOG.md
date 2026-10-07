@@ -129,6 +129,8 @@ with the version and date at release.
   one method lands on its line.
 - A workspace's Branches tab looks for updates, counts and lists only that workspace's repositories,
   not every checkout on the machine.
+- A note about an account's limit says whether it was the five-hour or the weekly limit, and which
+  agent's account it was; older notes keep reading as before.
 
 The first version: doctrine that installs, is checked, and flows back.
 
