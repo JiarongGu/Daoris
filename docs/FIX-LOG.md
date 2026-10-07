@@ -5,6 +5,15 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — a document's first heading and a README's description read a fence's text
+
+### CLI and driver: the first heading and a README's description closed a longer fence on a shorter one inside it (ORIENT2h6)
+- **Symptom:** left open by ORIENT2h4, verified in the code, not seen on an install: a four-backtick fence quoting a three-backtick example closed on the example's first line, so the example's heading named a knowledge document in the index's heading table or a room's row (`firstHeading`), and ended a README's description for an intake (`SelfDescription`, D77); a tilde fence closed on a backtick run inside it; and inline code at a line's start opened a fence that held the rest of the file.
+- **Root cause:** `firstHeading` (`src/Daoris.Cli/src/document.ts`) and `SelfDescription.FromReadme` each toggled on any line opening with three backticks or tildes. ORIENT2h3 and ORIENT2h4 gave the service and the tools CommonMark's rule and left these two, outside their rows.
+- **Fix:** the CLI's `markdownFence`, which `firstHeading` reads by, and the driver's `SelfDescription.Fence` read a fence as `MarkdownFence` and `fenced` do, each with code of its own; both and the tools' `fenced` are held to one table, `src/Daoris.Cli/test/fixtures/fence-cases.json`, which a `REACH` row sends to the driver's suite at a merge. D151's ORIENT2h6 note has the choices.
+- **Verify:** `markdown-fence.test.ts` (the CLI's reader against the table, and four first headings) and `SelfDescriptionTests` (the table, and four READMEs) failed first, then passed with the CLI suite and the driver's fast half; the lane scan in `merge-branch.test.ts` failed until the `REACH` row. No tracked markdown file here, 518, reads a line or a first heading differently. Not covered: the service's suite does not read the table.
+- **Commit:** `56c2d4e2`
+
 ## 2026-10-07 — a losing session's stop that its run made and never said
 
 ### Driver: `--once` kept the passes beside its session for its end, and the rehearsal's bound ended it first (DEV3b)
