@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
@@ -67,9 +66,6 @@ public static class PluginTools
     /// <summary>How long one check, or one version question, may take before it counts as no answer (§7.2).</summary>
     public static readonly TimeSpan CheckPatience = TimeSpan.FromSeconds(10);
 
-    /// <summary>A plugin id's shape (<see cref="PluginCatalog.IsId"/>'s); <c>\z</c>, since .NET's <c>$</c> passes a final newline the CLI's refuses.</summary>
-    private static readonly Regex IdShape = new(@"^[a-z0-9][a-z0-9.-]*\z", RegexOptions.CultureInvariant);
-
     private static readonly string[] Daoris = ["name", "command", "versionArguments"];
 
     /// <summary>The manifest's <c>tools</c>, by the table: none for <c>null</c>; an array, each entry read on its own.</summary>
@@ -104,7 +100,8 @@ public static class PluginTools
             return PluginTool.NotRead(null, $"tool {at} in `tools` needs an `id`: a tool's name in lowercase, like `az`.");
         }
 
-        if (!IdShape.IsMatch(id))
+        // A tool's id has a plugin id's shape, asked of its one owner (REFAC1), as the CLI's `toolDeclared` asks `isPluginId`.
+        if (!PluginCatalog.IsId(id))
         {
             return PluginTool.NotRead(null,
                 $"tool {at} in `tools` has the `id` `{id}`, which is not one: lowercase letters, digits, dots and dashes, like `az`.");

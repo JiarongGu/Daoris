@@ -250,20 +250,8 @@ public sealed class AccountReadsTests : IDisposable
     /// <summary>One kind of the shared table's rows, each its cells as the file spells them, a JSON null as null.</summary>
     private static IEnumerable<object?[]> Table(string kind)
     {
-        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root(), "src", "Daoris.Cli", "test", "fixtures", "account-reads.json")));
+        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "test", "fixtures", "account-reads.json")));
         return [.. table.RootElement.GetProperty(kind).EnumerateArray()
             .Select(row => row.EnumerateArray().Select(cell => cell.ValueKind == JsonValueKind.Null ? null : (object?)cell.GetString()).ToArray())];
-    }
-
-    /// <summary>The workspace root, found by walking up from the test binaries to <c>daoris.json</c>.</summary>
-    private static string Root()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "daoris.json")))
-        {
-            directory = directory.Parent;
-        }
-
-        return directory?.FullName ?? throw new InvalidOperationException("no workspace root above the test binaries");
     }
 }

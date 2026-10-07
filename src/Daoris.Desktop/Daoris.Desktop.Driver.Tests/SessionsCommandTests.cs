@@ -553,6 +553,36 @@ public sealed class SessionsCommandTests : IDisposable
     }
 
     /// <summary>
+    /// SESSDEL1 (D126 §5.4): a delete whose file the disk kept says which, through the world's remover, and exits 2, as a clear's
+    /// kept file does (HIST1d): the record went, and something here could not.
+    /// </summary>
+    [Fact]
+    public async Task A_delete_whose_file_the_disk_kept_says_which_and_exits_2()
+    {
+        var ledger = Family();
+        using var service = ledger.Client();
+        var transcript = Path.Combine(_home, "sessions", "c0ffee11.log");
+        File.WriteAllText(transcript, "the transcript\n");
+        var world = World(ledger, service) with
+        {
+            Remover = (path, folder) =>
+            {
+                if (path == transcript) throw new IOException("held by a process");
+                SessionHomeFiles.FromDisk(path, folder);
+            },
+        };
+
+        var (exit, said) = await RunAsync(ledger, ["delete", "c0ffee11"], world: world);
+
+        Assert.Equal(2, exit);
+        Assert.Equal(
+            "sessions: Deleted session `c0ffee11`: its record, and what this machine kept of it but its transcript, which the disk would "
+            + "not let go of and is left over; the next clear of a workspace takes it.\n",
+            said);
+        Assert.True(File.Exists(transcript));
+    }
+
+    /// <summary>
     /// The service's doors the verb crosses, standing in: the records, the quests, the registry, the state door, and a
     /// session's delete and its judgement, by each record's <c>deletable</c>.
     /// </summary>

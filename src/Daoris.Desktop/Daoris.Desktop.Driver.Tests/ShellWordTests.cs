@@ -47,19 +47,7 @@ public sealed class ShellWordTests
 
     private static IReadOnlyList<(string, string, string)> ReadRows()
     {
-        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root(), "src", "Daoris.Cli", "test", "fixtures", "shell-words.json")));
+        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "test", "fixtures", "shell-words.json")));
         return [.. table.RootElement.EnumerateArray().Select(row => (row[0].GetString()!, row[1].GetString()!, row[2].GetString()!))];
-    }
-
-    /// <summary>The workspace root, found by walking up from the test binaries to <c>daoris.json</c>.</summary>
-    private static string Root()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "daoris.json")))
-        {
-            directory = directory.Parent;
-        }
-
-        return directory?.FullName ?? throw new InvalidOperationException("no workspace root above the test binaries");
     }
 }

@@ -398,4 +398,16 @@ public static class Refusals
     public static ShenoraException Because(
         string code, string message, params (string Key, string Value)[] parameters) =>
         new(code, parameters.ToDictionary(p => p.Key, p => p.Value), message);
+
+    /// <summary>
+    /// Refuse in a code the driver library chose (REFAC1): its <c>HistoryCodes</c>, which this class declares as its own, read
+    /// through its projection so no route here maps a word again. Only a code declared here is raised; any other is
+    /// <see cref="DriverRefused"/> with the sentence, so nothing reaches the page as a bare code, which REFUSE1's scan holds
+    /// for every throw site that names its code.
+    /// </summary>
+    public static ShenoraException Declared(
+        string code, string message, params (string Key, string Value)[] parameters) =>
+        All.Contains(code, StringComparer.Ordinal)
+            ? Because(code, message, parameters)
+            : Because(DriverRefused, message, ("message", message));
 }

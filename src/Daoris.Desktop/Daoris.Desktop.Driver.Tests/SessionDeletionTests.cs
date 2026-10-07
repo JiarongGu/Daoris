@@ -123,6 +123,76 @@ public sealed class SessionDeletionTests : IDisposable
         Assert.Contains("\"c2\"", File.ReadAllText(HeldWordsFile.PathOf(_home)));
     }
 
+    /// <summary>
+    /// SESSDEL1 (D126 §5.4, D153's HIST1j note): a file the disk will not let go of stays, and the delete says which, by the
+    /// names what went is said in, as a clear says what it left over. The record's removal is as it was, and what went goes.
+    /// </summary>
+    [Fact]
+    public async Task A_file_the_disk_keeps_is_said_by_name_and_left_over()
+    {
+        Kept("c1");
+        var transcript = Path.Combine(Sessions, "c1.log");
+        var ledger = new Ledger(Record("c1"));
+        using var service = ledger.Client();
+
+        var outcome = await new SessionDeletion(_home, Holding(transcript)).DeleteAsync(service, "c1", PluginEvents.Screen, log: null);
+
+        Assert.Equal(DeleteVerdict.Deleted, outcome.Verdict);
+        Assert.Equal(["DELETE /api/sessions/c1"], ledger.Deletes);
+        Assert.Equal(["record", "conversation", "files", "harness", "archived"], outcome.Removed);
+        Assert.Equal(["transcript"], outcome.Stayed);
+        Assert.True(File.Exists(transcript));
+        Assert.False(File.Exists(Path.Combine(Sessions, "c1.events.jsonl")));
+        Assert.Equal(
+            "Deleted session `c1`: its record, and what this machine kept of it but its transcript, which the disk would not let go of "
+            + "and is left over; the next clear of a workspace takes it.",
+            outcome.Message);
+    }
+
+    /// <summary>Two kept, or one whose name is plural, are said as they read; and nothing kept leaves the sentence as it was.</summary>
+    [Fact]
+    public async Task What_stays_is_said_in_the_inventorys_order_and_nothing_kept_says_nothing_of_it()
+    {
+        Kept("c1");
+        Kept("c2");
+        var ledger = new Ledger(Record("c1"), Record("c2"));
+        using var service = ledger.Client();
+
+        var held = await new SessionDeletion(_home, Holding(Path.Combine(Sessions, "c1", "files", "shot.png"), Path.Combine(Sessions, "c1.log")))
+            .DeleteAsync(service, "c1", PluginEvents.Screen, log: null);
+        var clean = await new SessionDeletion(_home).DeleteAsync(service, "c2", PluginEvents.Screen, log: null);
+
+        Assert.Equal(["transcript", "files"], held.Stayed);
+        Assert.EndsWith("but its transcript and its files, which the disk would not let go of and are left over; the next clear of a workspace takes them.", held.Message);
+        Assert.Empty(clean.Stayed);
+        Assert.Equal("Deleted session `c2`: its record, and its words, transcript and files on this machine.", clean.Message);
+    }
+
+    /// <summary>
+    /// The disk, refusing <paramref name="held"/> as a process holding them does (HIST1j's seam): a held file is not removed, and a
+    /// folder holding one goes in part, its other files removed and the held one kept.
+    /// </summary>
+    private static Action<string, bool> Holding(params string[] held) => (path, folder) =>
+    {
+        bool Held(string file) => held.Contains(file, StringComparer.OrdinalIgnoreCase);
+        if (!folder)
+        {
+            if (Held(path)) throw new IOException($"`{path}` is held.");
+            File.Delete(path);
+            return;
+        }
+
+        var inside = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
+        if (!inside.Any(Held))
+        {
+            Directory.Delete(path, recursive: true);
+            return;
+        }
+
+        foreach (var file in inside.Where(file => !Held(file))) File.Delete(file);
+        throw new IOException($"`{inside.First(Held)}` is held.");
+    };
+
     /// <summary>An automatic landing still trying is no leftover: the helper leaves an open entry, which a clear refuses before it.</summary>
     [Fact]
     public void The_helper_leaves_an_automatic_landing_still_open()

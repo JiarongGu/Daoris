@@ -61,7 +61,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionGroups.cs` | 51 | 929 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.Sync.cs` | 68 | 1146 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.cs` | 66 | 1163 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionsCommand.cs` | 52 | 1044 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionsCommand.cs` | 52 | 1049 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trace.Chain.cs` | 56 | 1236 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/WorkAbandoning.cs` | 53 | 983 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/WorkingTree.cs` | 47 | 1003 |
@@ -70,7 +70,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleSessionsTests.cs` | 41 | 682 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleSessionsTests.cs` | 42 | 710 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs` | 46 | 862 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs` | 60 | 1125 |
 
@@ -94,9 +94,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Cli/src/driverconfig.ts` | 75 | 1427 |
+| `src/Daoris.Cli/src/driverconfig.ts` | 75 | 1425 |
 | `src/Daoris.Cli/src/materialize.ts` | 47 | 936 |
-| `src/Daoris.Cli/src/plugins.ts` | 67 | 1347 |
+| `src/Daoris.Cli/src/plugins.ts` | 68 | 1356 |
 | `src/Daoris.Cli/src/toolchain.ts` | 137 | 2690 |
 | `src/Daoris.Cli/test/desktop-publish.test.ts` | 48 | 871 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 46 | 818 |
