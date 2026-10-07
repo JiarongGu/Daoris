@@ -317,6 +317,8 @@ public sealed class PermissionRulesTests : IDisposable
     [InlineData("rm -rf /")]
     [InlineData("(npm test)")]
     [InlineData("Bash(npm test)\nWebFetch")]
+    // PERMSHAPE1: .NET's `$` also matches before a final line break; the shape ends at the very end, as the CLI's does.
+    [InlineData("Bash\n")]
     public void Anything_else_is_refused_naming_the_shape(string rule)
     {
         var refused = PermissionRules.Refusal(rule);

@@ -1,7 +1,7 @@
 ---
 name: file-tool-discipline
 applies_when: inspecting or editing files, or running a destructive or irreversible command
-enforces: use the dedicated read/search/find/edit tools, not shell or scripted equivalents; never route a command through a side channel to skip approval
+enforces: use the dedicated read/search/find/edit tools, not shell or scripted equivalents — a harness with none reads with its shell's read-only commands; never route a command through a side channel to skip approval
 ---
 
 # Use the dedicated file tools — and never evade the approval gate
@@ -24,6 +24,9 @@ specifically to skip a prompt is not "reducing friction"; it is circumventing a 
 ## How to apply
 
 - **Reading a file → the read tool. Searching content → the search tool. Finding files → the find tool.**
+  Where the harness offers none, its shell's read-only commands are the read tools: a read changes
+  nothing, so stopping protects nothing. The rest of this rule still binds: no edit scripted through
+  another language's escaping, no deletion by computed offsets, no side channel past an approval.
 - **Editing a file → the edit tool.** Not a script that rewrites it. A scripted edit passes the content
   through another language's escaping on the way in, and what lands is not what you wrote: literal
   newlines inside string literals, control bytes, a backreference that eats the text before it, a

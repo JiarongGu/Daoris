@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Knowledge;
 
 namespace Daoris.Service.Tests;
 
@@ -42,5 +43,30 @@ public sealed class HelpHandProposalTests : HelpProposalBoxFixture
         Assert.Contains("Nothing was proposed", message);
         Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
         Assert.Null(Box().ProposeHand("s2a3b4c5", null, null, " ", "h1", Now).Id);
+    }
+
+    /// <summary>
+    /// CASEFOLD1f: a plugin id's shape holds to the id's very end, as the driver's <c>PluginCatalog</c> and
+    /// <c>LandingRules</c> shapes do since CASEFOLD1e and the CLI's always did. .NET's <c>$</c> also matches before a
+    /// final line break, so <c>acme.gate</c> and a line break read as an id.
+    /// </summary>
+    [Theory]
+    [InlineData("acme.gate", true)]
+    [InlineData("acme.gate\n", false)]
+    [InlineData("acme.gate\n\n", false)]
+    [InlineData("\nacme.gate", false)]
+    public void A_plugin_id_s_shape_ends_where_the_driver_s_does(string plugin, bool id) =>
+        Assert.Equal(id, HelpProposalBox.IsPluginId(plugin));
+
+    /// <summary>
+    /// CASEFOLD1f: the door trims a field before its shape is checked, as it trims every field, so a line break after an
+    /// id goes with the trim and the id is proposed. No proposal ever reached the shape's end.
+    /// </summary>
+    [Fact]
+    public void A_line_break_after_a_plugin_id_goes_with_the_fields_trim()
+    {
+        var (id, _) = Box().ProposeHand("s2a3b4c5", null, "acme.gate\n", "a reason", "h1", Now);
+
+        Assert.Equal("acme.gate", Written(id!).GetProperty("value").GetString());
     }
 }

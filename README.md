@@ -164,7 +164,8 @@ without `join` is refused. `daoris status` reports the declaration.
   and `status` all say so.
 - **Packs** — stack-specific sets, named in the manifest.
 - **Local** — the repository's own documents: never synced or touched, and its knowledge and skills
-  are indexed as `(local)`.
+  are indexed as `(local)`. A knowledge document with no frontmatter is listed by its first heading, and
+  `check` says how many there are without failing on them (D128 §3).
 
 The rule that makes this safe: **anything not in the lock is invisible to the tool.** Daoris only ever
 writes files it put there. A repository that already owns a file at a canonical path gets a refusal, not

@@ -61,8 +61,11 @@ enforces: <the one-line invariant>
 ---
 ```
 
-A file missing any of them is marked `⚠ needs frontmatter` in the index rather than dropped — visible, not
-silent. Tests assert `name` matches the filename, so a rename that misses the frontmatter fails the build.
+A file missing any of them is still listed rather than dropped — visible, not silent: marked `⚠ needs
+frontmatter`, or, for a knowledge document with no frontmatter at all, listed by its first heading in a
+table of its own (D128 §3.1), which is for an adopter's own documents and never a licence for the canon's.
+Tests assert every canon file has all three and that `name` matches the filename, so a rename that misses
+the frontmatter fails the build.
 
 ### Placement
 

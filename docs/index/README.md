@@ -84,11 +84,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 125 | 2308 |
 | `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 62 | 1198 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 63 | 1146 |
-| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 65 | 1169 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 95 | 1725 |
+| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 67 | 1200 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 95 | 1727 |
 | `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 60 | 1274 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 67 | 1385 |
-| `src/Daoris.Service/README.md` | 54 | 574 |
+| `src/Daoris.Service/README.md` | 54 | 576 |
 
 ### CLI (`cli`)
 
@@ -96,13 +96,13 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Cli/src/driverconfig.ts` | 75 | 1427 |
 | `src/Daoris.Cli/src/materialize.ts` | 47 | 936 |
-| `src/Daoris.Cli/src/plugins.ts` | 67 | 1346 |
+| `src/Daoris.Cli/src/plugins.ts` | 67 | 1347 |
 | `src/Daoris.Cli/src/toolchain.ts` | 137 | 2690 |
 | `src/Daoris.Cli/test/desktop-publish.test.ts` | 48 | 871 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 42 | 755 |
-| `src/Daoris.Cli/test/driverconfig.test.ts` | 76 | 1474 |
+| `src/Daoris.Cli/test/driverconfig.test.ts` | 75 | 1460 |
 | `src/Daoris.Cli/test/merge-branch.test.ts` | 140 | 2233 |
-| `src/Daoris.Cli/test/rotation-use.test.ts` | 45 | 555 |
+| `src/Daoris.Cli/test/rotation-use.test.ts` | 44 | 543 |
 | `src/Daoris.Cli/test/setup-kit.test.ts` | 44 | 820 |
 | `src/Daoris.Cli/test/toolchain.test.ts` | 87 | 1706 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 71 | 1226 |
@@ -124,7 +124,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 47 | 114 |
+| `.claude/knowledge/twins.md` | 46 | 113 |
 | `docs/2026-09-19-platform-ux.md` | 52 | 565 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 51 | 348 |
@@ -149,4 +149,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-05-ux7-design.md` | 66 | 784 |
 | `docs/2026-10-07-history-clearing-design.md` | 51 | 615 |
 | `docs/DAORIS_FUTURE_DIRECTIONS.md` | 51 | 3466 |
-| `src/Daoris.Desktop/README.md` | 46 | 288 |
+| `src/Daoris.Desktop/README.md` | 47 | 288 |

@@ -29,11 +29,20 @@ public sealed class QuestFiles(string home, string folder = QuestFiles.Folder)
     /// <summary>The folder under the home that holds every quest's own.</summary>
     public const string Folder = "quests";
 
+    /// <summary>How a record's folder is removed whole: from the disk, unless a test hands one that refuses (HIST1j).</summary>
+    private readonly Action<string> _remove = path => Directory.Delete(path, recursive: true);
+
+    /// <summary>
+    /// A keeper whose removals go through <paramref name="remove"/>: a test's disk that will not let go of a file, as a process
+    /// holding one makes the real disk refuse, so a refused removal is held on every platform (HIST1j).
+    /// </summary>
+    internal QuestFiles(string home, string folder, Action<string> remove) : this(home, folder) => _remove = remove;
+
     /// <summary>
     /// The same keeper for another kind of record under the same home — an ask keeps its files beside
     /// the quests it may become (D65 §1a), with the same layout and the same naming rules.
     /// </summary>
-    public QuestFiles For(string otherFolder) => new(home, otherFolder);
+    public QuestFiles For(string otherFolder) => new(home, otherFolder, _remove);
 
     /// <summary>A kept name's longest — a path under a deep home still has to open on Windows.</summary>
     public const int MaxNameLength = 100;
@@ -57,20 +66,26 @@ public sealed class QuestFiles(string home, string folder = QuestFiles.Folder)
         $"{attachment.Sha256[..Math.Min(HashInName, attachment.Sha256.Length)]}-{attachment.Name}";
 
     /// <summary>
-    /// Remove everything kept for one record — its quest or ask was deleted (D95). Best effort: a file
-    /// the disk will not let go of stays where it was, and the record is gone either way.
+    /// Remove everything kept for one record — its quest or ask was deleted (D95) or cleared (D153). Best
+    /// effort: a file the disk will not let go of stays where it was, and the record is gone either way.
+    /// Says whether nothing of it is left, so a clear can report what stayed (HIST1j); D95's delete reads
+    /// nothing from it.
     /// </summary>
     /// <param name="id">The record's own id, as its store holds it — never a caller's words.</param>
-    public void Forget(string id)
+    /// <returns>True where its folder is gone or was never here; false where the disk kept any of it.</returns>
+    public bool Forget(string id)
     {
         var directory = Path.Combine(home, folder, id);
         try
         {
-            if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true);
+            if (Directory.Exists(directory)) _remove(directory);
+            return true;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            // Held open by another process, or refused by the disk: nothing names these bytes any more.
+            // Held open by another process, or refused by the disk: nothing names these bytes any more, and a
+            // folder deleted whole may have let go of the rest before it refused.
+            return !Directory.Exists(directory);
         }
     }
 

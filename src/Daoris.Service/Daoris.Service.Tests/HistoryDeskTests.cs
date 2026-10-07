@@ -80,8 +80,8 @@ public sealed class HistoryDeskTests : IAsyncLifetime
     private AskDesk Asking() => new(_service, _asks, Exchange(), _files);
 
     /// <summary>The desk, on a machine whose every circle is wired to <paramref name="remote"/>; null is a machine with none.</summary>
-    private HistoryDesk Desk(IRemote? remote = null) =>
-        new(_quests, _sessions, _asks, _service, remote is null ? null : new OneRemote(remote), _files, _proposals);
+    private HistoryDesk Desk(IRemote? remote = null, QuestFiles? files = null) =>
+        new(_quests, _sessions, _asks, _service, remote is null ? null : new OneRemote(remote), files ?? _files, _proposals);
 
     private static HistoryUnitRef QuestUnit(string id) => new(HistoryUnitKind.Quest, id);
 
@@ -159,6 +159,28 @@ public sealed class HistoryDeskTests : IAsyncLifetime
         Assert.Null(await _sessions.FindAsync(first.Id));
         Assert.Null(await _sessions.FindAsync(second.Id));
         Assert.False(Directory.Exists(Path.GetDirectoryName(_files.DirectoryOf(quest.Id))));
+        Assert.Empty(cleared.Failed.Quests);
+        Assert.Empty(cleared.Failed.Asks);
+    }
+
+    /// <summary>
+    /// Kept files the disk will not let go of (HIST1j): the records still go, since a unit is cleared whole or not at all, and the
+    /// answer names the quest whose kept files stayed, so the driver counts them as failed rather than freed. They stay, named by
+    /// nothing, for the next clear of a workspace to take.
+    /// </summary>
+    [Fact]
+    public async Task Kept_files_the_disk_will_not_let_go_of_are_named_in_the_answer()
+    {
+        var quest = await Closed("Finished work whose file is held");
+        var held = new QuestFiles(Home, QuestFiles.Folder, remove: path => throw new IOException($"`{path}` is held."));
+
+        var cleared = Assert.Single(await Desk(files: held).ClearAsync([QuestUnit(quest.Id)], Now.AddHours(1)));
+
+        Assert.True(cleared.Cleared);
+        Assert.Null(await _quests.FindAsync(quest.Id));
+        Assert.Equal([quest.Id], cleared.Failed.Quests);
+        Assert.Empty(cleared.Failed.Asks);
+        Assert.True(_files.Has(quest.Id, quest.Attachments[0]));
     }
 
     /// <summary>

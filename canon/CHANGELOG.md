@@ -12,6 +12,13 @@ network.
 
 ## Unreleased
 
+- **`file-tool-discipline` says what a harness with no dedicated file tools does.** Its shell's
+  read-only commands are its read tools, since a read changes nothing; the rest of the rule still
+  binds: no edit scripted through another language's escaping, no deletion by computed offsets, no side
+  channel past an approval. Drawn from an agent harness that offers only a shell: asked for a read-only
+  review, it read the rule as forbidding every read it could make, and stopped before opening a file.
+  **Adopting repositories:** run `daoris sync`; nothing else. The always-loaded region grows by 364
+  bytes, the rule's three new lines and its longer row in the region's table.
 - **`autonomous-development` says how often to verify.** Run the checks a change can reach while working,
   the whole set once where the work leaves the run, and after a fix only what failed; when the full set
   grows slow, measure the slowest check and make it faster rather than skipping it. An agent that re-ran

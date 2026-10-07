@@ -472,12 +472,17 @@ public static class HistoryCommand
         _ => $"#{id}",
     };
 
-    /// <summary>The line that clears a scope, without its <c>--yes</c> for a workspace's (the reading names it to list first).</summary>
+    /// <summary>
+    /// The line that clears a scope, without its <c>--yes</c> for a workspace's (the reading names it to list first). A
+    /// workspace's name is spelled for any shell, as ACCTQUOTE1b's commands are (HIST1i): a person copies this line, and
+    /// <c>my team</c> printed bare is two arguments, <c>R&amp;D</c> a second command. A quest's or an ask's id needs none: it is
+    /// the store's hex (<c>QuestStore.MakeId</c>, <c>AskStore.MakeId</c>), and a unit is found only by it, in any case.
+    /// </summary>
     private static string Door(HistoryScope scope, string id) => scope switch
     {
         HistoryScope.Ask => $"daoris-driver ask --clear {id} --yes",
         HistoryScope.Failed => $"daoris-driver quest clear {id} --failed --yes",
-        HistoryScope.Workspace => $"daoris-driver history clear --workspace {id}",
+        HistoryScope.Workspace => $"daoris-driver history clear --workspace {ShellWord.Of(id, ShellWord.Workspace)}",
         _ => $"daoris-driver quest clear {id} --yes",
     };
 

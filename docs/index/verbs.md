@@ -11,9 +11,9 @@ Each verb is a module of `src/Daoris.Cli/src/cli/`, its row in `COMMANDS` (`src/
 | `analyze` | doctrine | `cli/analyze.ts:5` | `analyze.ts:268` commandAnalyze | [packs...] what adopting would do here: collisions, duplicates… |
 | `init` | doctrine | `cli/init.ts:5` | `commands.ts:55` commandInit | detect what this repo has, write daoris.json |
 | `sync` | doctrine | `cli/sync.ts:5` | `materialize.ts:811` commandSync | materialize the manifest's packs; write daoris.lock |
-| `check` | doctrine | `cli/check.ts:5` | `drift.ts:287` commandCheck | drift, staleness, index freshness (offline); the core budget is… |
+| `check` | doctrine | `cli/check.ts:5` | `drift.ts:292` commandCheck | drift, staleness, index freshness (offline); the core budget is… |
 | `upstream` | doctrine | `cli/upstream.ts:5` | `upstream.ts:171` commandUpstream | <file> promote a locally-edited canonical file back to the canon |
-| `index` | doctrine | `cli/index.ts:6` | `indexgen.ts:147` commandIndex | say where the roster is: the rules in AGENTS.md, the |
+| `index` | doctrine | `cli/index.ts:6` | `indexgen.ts:148` commandIndex | say where the roster is: the rules in AGENTS.md, the |
 | `status` | doctrine | `cli/status.ts:5` | `commands.ts:142` commandStatus | summary of packs, drift, local files, and any pending |
 | `doctor` | doctrine | `cli/doctor.ts:5` | `twins.ts:142` commandDoctor | report local documents that look like canonical ones |
 | `connect` | management | `cli/connect.ts:5` | `connect.ts:154` commandConnect | register this repo with a knowledge service: what it owns |
@@ -22,7 +22,7 @@ Each verb is a module of `src/Daoris.Cli/src/cli/`, its row in `COMMANDS` (`src/
 | `remote` | management | `cli/remote.ts:5` | `remotes.ts:90` commandRemote | [verb] this machine's remotes, one per workspace: |
 | `agent` | management | `cli/agent.ts:6` | `toolchain.ts:1389` commandHarness | [verb] this machine's agents — Claude Code, Codex, dsh — and the |
 | `driver` | management | `cli/driver.ts:6` | `driverconfig.ts:481` commandDriver | [verb] what this machine drives ($DAORIS_HOME/driver.json): |
-| `plugin` | management | `cli/plugin.ts:5` | `plugins.ts:1107` commandPlugin | [verb] this machine's plugins ($DAORIS_HOME/plugins/<id>/plugin.json): |
+| `plugin` | management | `cli/plugin.ts:5` | `plugins.ts:1108` commandPlugin | [verb] this machine's plugins ($DAORIS_HOME/plugins/<id>/plugin.json): |
 | `browser` | management | `cli/browser.ts:5` | `browser.ts:316` commandBrowser | [verb] Daoris's browser: its favorites and its settings… |
 | `tool` | management | `cli/tool.ts:7` | `toolinstall.ts:429` commandTool | [verb] the programs Daoris runs beside its agents — Git, Node.js, |
 

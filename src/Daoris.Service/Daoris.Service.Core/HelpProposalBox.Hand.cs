@@ -19,7 +19,7 @@ public sealed partial class HelpProposalBox
         if (string.IsNullOrWhiteSpace(why)) return NoReason;
         var refused = named is null ? "a hand-off names the session that landed the branch, or the branch itself."
             : Word(named, "a session or a branch") ?? (holder is null ? null : Word(holder, "a repository"))
-              ?? (to is null || PluginId.IsMatch(to) ? null
+              ?? (to is null || IsPluginId(to) ? null
                   : $"`{to}` is not a plugin id — one is lowercase letters, digits, dots and dashes, as the room lists the plugins installed here.");
         if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
 
@@ -35,7 +35,14 @@ public sealed partial class HelpProposalBox
         }, why, session, at);
     }
 
-    /// <summary>What a plugin's id may be — the catalogue's own shape (the driver's <c>LandingRules</c> holds the same).</summary>
+    /// <summary>Whether a plugin is named by an id's shape, the catalogue's own.</summary>
+    internal static bool IsPluginId(string plugin) => PluginId.IsMatch(plugin);
+
+    /// <summary>
+    /// What a plugin's id may be — the catalogue's own shape (the driver's <c>LandingRules</c> holds the same). <c>\z</c>,
+    /// as the driver's copies end since CASEFOLD1e, since .NET's <c>$</c> also passes a final line break the CLI's
+    /// refuses (CASEFOLD1f). The door trims a field first, so no proposal met that; the copy is the shape all the same.
+    /// </summary>
     private static readonly System.Text.RegularExpressions.Regex PluginId =
-        new("^[a-z0-9][a-z0-9.-]*$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+        new(@"^[a-z0-9][a-z0-9.-]*\z", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 }

@@ -131,7 +131,7 @@ public sealed class SessionDeletionTests : IDisposable
 
         var removed = new SessionHomeFiles(_home).Remove(["c1"], events: null);
 
-        Assert.DoesNotContain("landing", removed["c1"]);
+        Assert.DoesNotContain("landing", removed.Went["c1"]);
         Assert.NotNull(new AutoLandings(_home).Of("c1"));
     }
 

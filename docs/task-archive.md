@@ -11596,3 +11596,45 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CASEFOLD1e — the driver's id shape and the workspace maps' owed rows** (driver). `PluginCatalog.IdShape` (`Plugins.cs:129`) ends in `$`, which in .NET also matches before a final line break, so `acme.gate` plus a line break reads as an id the CLI refuses; use `\z` as `PluginTools.cs` does (it also checks manifests and harness names). Append the owed rows D125's CASEFOLD1b and CASEFOLD1c notes list to `PluginSourceTests`, `RotationTwinTests`, `RotationUseTwinTests`, `AccountJoinTwinTests` and `ProfileDefaultTwinTests`. Proof: the CLI's owed sets empty.
 
 **Outcome** 2026-10-07: `PluginCatalog.IdShape` and `LandingRules.PluginId`, its copy, end at `\z`, so an id followed by a line break is refused as the CLI refuses it (`IsId`, a manifest's id and a server's name use it; nothing trimmed after the check). Every row CASEFOLD1b and CASEFOLD1c owed is in its driver or modules theory, and each passed the driver unchanged. A harness's name is checked only for blank, correcting CASEFOLD1b's note. Driver fast 4522 → 4536, modules 631 → 633. Detail: D125's CASEFOLD1e note; commits ff8b36a0, f61a8a77, e0a1c70e.
+
+
+## CASEFOLD1f — the twin checks owe nothing, and every id shape ends at the end (2026-10-07, D125)
+
+> - [ ] **CASEFOLD1f — the twin checks owe nothing, and every id shape ends at the end** (cli, service). Since CASEFOLD1d and 1e every owed row is held by the driver, so remove the CLI's owed sets (`DRIVER_OWES` in plugin-sources, rotation, account-join, accountnames, connect-twin, cooling, driverconfig, windows; `ORDERS_OWED`, `EDITS_OWED`, `FILES_OWED`, `SCOPES_OWED`, `JOINS_OWED`) and reword the two comments that call the driver's `$` lenient (`plugins.ts` beside `ID_SHAPE`, `plugin-sources.test.ts` above its owed set). The service's `HelpProposalBox.Hand.cs:39-40` copy of the landing shape still ends at `$`. Contract: D125's CASEFOLD1d and 1e notes. Proof: each twin test holds the driver's rows with no owed set; a service row for a trailing line break.
+
+**Outcome** 2026-10-07: every CLI owed set and `heldSoFar` are gone, each twin test again holding the driver's rows with `deepEqual`; the two comments that called the driver's `$` lenient are reworded; the service's copy of the landing plugin shape (`HelpProposalBox.Hand.cs`) ends at `\z` (its door trims first, so no proposal ever reached the leniency); `twins.md` holds one name-case row. Found the permission rule's shape with the same `$` in the driver and the service (PERMSHAPE1). Service +5. Detail: D125's CASEFOLD1f note; commits 3988d18f, 49ee664a, 79ee5aba.
+
+
+## PERMSHAPE1 — a permission rule's shape ends where the CLI's does (2026-10-07, D72)
+
+> - [ ] **PERMSHAPE1 — a permission rule's shape ends where the CLI's does** (driver, service; together). .NET's `$` also matches before a final line break, so `Bash` plus a line break is a rule to the driver's `Permissions.cs:153` and the service's `RuleProposals.cs:53` (its MCP door passes `rule` untrimmed), while the CLI's `permissions.ts` refuses it. End both at `\z` in one change. Contract: D72, twins.md's permission row, D125's CASEFOLD1f note. Proof: a line-break row in `PermissionRulesTests` and the service's rule-proposal tests, each seen failing first.
+
+**Outcome** 2026-10-07: `PermissionRules.Shape` (driver) and `RuleProposalBox.Shape` (service) end at `\z`, so a rule followed by a line break is refused at the screen's `RULE_ACTION` and the connector's `permission_propose`, as the CLI refuses it. It was a live defect: the screen's door passed the rule untrimmed and wrote it into `permissions.json` with the line break (the read trimmed it back), and the service filed the proposal after trimming. The CLI's hand-kept table holds the same row. Driver fast +1, service +2. Detail: D72's PERMSHAPE1 note; commit a5748135.
+
+
+## WSSETUP14c — a heading without frontmatter (2026-10-07, D128)
+
+> - [ ] **WSSETUP14c — heading without frontmatter** (after a). Contract: pilot §3.1–§3.2. Proof: `node --test`.
+
+**Outcome** 2026-10-07: the index lists a knowledge document with no frontmatter block by its first heading, in a table of its own (*Knowledge without frontmatter*), and `check` says the repository's own count once, never failing; a block missing a field, and a skill without frontmatter, keep their warning. One rule (`withoutFrontmatter`) decides for both, and one heading reader (`firstHeading`, any level, past frontmatter and fences, `C#` keeps its `#`) serves the index and the rooms. Following the design over the brief: nothing is guessed from the heading. Canon files still need all three fields. CLI 1349 → 1359. Detail: D128's WSSETUP14c note; commit ad3ce77d.
+
+
+## HIST1i — the history verbs' printed commands spell the workspace (2026-10-07, D153)
+
+> - [ ] **HIST1i — the history verbs' printed commands spell the workspace** (driver). `HistoryCommand.Door` (`HistoryCommand.cs:480`) interpolates a workspace bare, so `my team` breaks the line the reading tells a person to run. Spell it with `ShellWord`, as ACCTQUOTE1b's sentences do. Contract: second-opinion review 2026-10-07, D125's ACCTQUOTE1 note. Proof: a `HistoryCommandTests` row with a spaced and an `R&D` workspace.
+
+**Outcome** 2026-10-07: `HistoryCommand.Door` spells the workspace through `ShellWord` (`"my team"`, `<workspace>` for `R&D`), in the reading's line and a workspace list's `--yes` line; quest and ask ids are the store's hex and need none. Detail: D153's HIST1i note; commit 718f1109.
+
+
+## HIST1j — a clear says the bytes it freed (2026-10-07, D153)
+
+> - [ ] **HIST1j — a clear says the bytes it freed** (driver, service). `HistoryClearing` sums sizes measured before removal whatever failed (`HistoryClearing.cs:335,363`), and the service's `QuestFiles` swallows its deletion failures, so a locked transcript counts as freed. Have one descriptor inventory in `SessionHomeFiles` return what went and what failed, and the service report its failures. Contract: history-clearing design §5, the review. Proof: a held-file clear reports the right bytes and its failure.
+
+**Outcome** 2026-10-07: `SessionHomeFiles` holds one inventory of a session's files that measures, removes and names left-over files, and `Remove` returns what went (bytes per session) and what failed, each path measured again if the disk refuses; a clear totals only what went, kept-file bytes included. The service's `QuestFiles.Forget` says whether anything stayed, and `POST /api/history/clear` adds `failed: { quests, asks }` only when a unit's kept files stayed, so an older driver reads it unchanged. The disk is a seam (`HistoryWorld.Remover`). D126's *Delete…* still says its sentence whatever stayed (SESSDEL1). Driver fast +5, service +2, HTTP +1. Detail: D153's HIST1j note, FIX-LOG; commit 1aa16866.
+
+
+## CANONREAD1 — the file-tool rule names a harness with no file tools (2026-10-07)
+
+> - [ ] **CANONREAD1 — the file-tool rule names a harness with no file tools** (canon, examples). Codex, asked for a read-only review on 2026-10-07, refused to read any file: `file-tool-discipline` says to use the dedicated read/search tools rather than the shell, and its harness has none, so it stopped. Say that where a harness offers no dedicated tool, its shell's read-only commands are the read tools, and the rule's point (no scripted edits, no side channel past approval) still binds. Contract: `canon-authoring.md`, D48 §2a. Proof: canon tests, examples re-synced, core bytes measured.
+
+**Outcome** 2026-10-07: `file-tool-discipline` tells a harness with no dedicated read or search tool that its shell's read-only commands are the read tools (a read changes nothing, so stopping protects nothing), while scripted edits, deletions by computed offsets and side channels past an approval stay barred; its `enforces` row says so too. The always-loaded core grows 364 bytes (20,064 → 20,428 of 26,000; each example 19,309 → 19,673 of 30,000), this repository and both examples re-synced, and the canon changelog's Unreleased entry tells adopters to sync. `no-tmp-for-repo-files` has the same gap for writing (CANONREAD2). Detail: the canon changelog; commit 46425744.

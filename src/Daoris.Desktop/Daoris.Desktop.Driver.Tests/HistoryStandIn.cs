@@ -30,6 +30,12 @@ internal sealed class HistoryStandIn : HttpMessageHandler
     /// <summary>A host from before the door: a bare 404.</summary>
     public bool NoDoor { get; init; }
 
+    /// <summary>
+    /// Quests and asks whose kept files the press could not remove: they stay, and the answer names them in <c>failed</c>, as the
+    /// service's does (HIST1j). Empty is every removal made, and the answer carries no <c>failed</c>, as a host before it.
+    /// </summary>
+    public HashSet<string> HoldingKept { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>The home whose kept files a press takes after the records, as the service's desk does.</summary>
     public string? Home { get; set; }
 
@@ -116,15 +122,25 @@ internal sealed class HistoryStandIn : HttpMessageHandler
             Records.RemoveAll(record => In("sessions", record) || In("teammates", record));
             Quests.RemoveAll(quest => In("quests", quest));
             Asks.RemoveAll(ask => In("asks", ask));
+            var failed = new JsonObject { ["quests"] = new JsonArray(), ["asks"] = new JsonArray() };
             foreach (var (field, folder) in new[] { ("quests", "quests"), ("asks", "asks") })
             {
                 foreach (var id in unit[field]!.AsArray().Select(id => (string?)id).OfType<string>())
                 {
+                    if (HoldingKept.Contains(id))
+                    {
+                        failed[field]!.AsArray().Add(id);
+                        continue;
+                    }
+
                     var kept = Path.Combine(Home ?? "", folder, id);
                     if (Home is not null && Directory.Exists(kept)) Directory.Delete(kept, recursive: true);
                 }
             }
-            answers.Add(new JsonObject { ["unit"] = unit.DeepClone(), ["cleared"] = true, ["message"] = $"Cleared `#{(string?)unit["id"]}`." });
+
+            var answer = new JsonObject { ["unit"] = unit.DeepClone(), ["cleared"] = true, ["message"] = $"Cleared `#{(string?)unit["id"]}`." };
+            if (failed["quests"]!.AsArray().Count + failed["asks"]!.AsArray().Count > 0) answer["failed"] = failed;
+            answers.Add(answer);
         }
 
         return Answer(HttpStatusCode.OK, new JsonObject { ["units"] = answers });

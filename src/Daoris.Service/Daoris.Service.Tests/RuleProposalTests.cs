@@ -129,6 +129,9 @@ public sealed class RuleProposalTests : IAsyncLifetime
 
     [Theory]
     [InlineData("add", "deny", "rm -rf everything", "machine", null, "not a permission rule")]
+    // PERMSHAPE1: the door passes the rule untrimmed, and .NET's `$` also matches before a final line break.
+    [InlineData("add", "deny", "Bash\n", "machine", null, "not a permission rule")]
+    [InlineData("remove", null, "Bash(rm:*)\n", "machine", null, "not a permission rule")]
     [InlineData("add", "maybe", "Bash(ls)", "machine", null, "`allow`, `ask` or `deny`")]
     [InlineData("add", "deny", "Bash(ls)", "repository", null, "names the repository")]
     [InlineData("add", "deny", "Bash(ls)", "galaxy", null, "`machine`, a `workspace` or a `repository`")]
