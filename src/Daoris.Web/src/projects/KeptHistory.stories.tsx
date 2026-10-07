@@ -2,7 +2,7 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { ReactNode } from 'react';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../storyLanguage';
-import { WORKSPACE_EMPTY, WORKSPACE_KEPT, WORKSPACE_LEFT_OVER, WORKSPACE_PLAN } from '../work/historyFixtures';
+import { WORKSPACE_EMPTY, WORKSPACE_KEPT, WORKSPACE_LEFT_OVER, WORKSPACE_PLAN, WORKSPACE_RECORDS_ONLY } from '../work/historyFixtures';
 import { KeptHistory } from './KeptHistory';
 
 // A workspace's *Kept on this machine* (HIST1e, D153; the history-clearing design §2.4, §6.1), the last section of its
@@ -58,6 +58,12 @@ export const NothingKept: Story = { args: { plan: WORKSPACE_EMPTY } };
 
 /** Only what records already gone left, and the intake's room: the press takes those. */
 export const LeftOverOnly: Story = { args: { plan: WORKSPACE_LEFT_OVER } };
+
+/** A closed quest whose record holds no file here (HIST1k): the reading says the clear takes it, beside the press. */
+export const RecordsOnly: Story = { args: { plan: WORKSPACE_RECORDS_ONLY } };
+
+/** The same in 中文. */
+export const RecordsOnlyChinese: Story = { args: { plan: WORKSPACE_RECORDS_ONLY }, decorators: [chinese] };
 
 /** The reading on its way. */
 export const ReadingOnItsWay: Story = { args: { plan: null, reading: true } };

@@ -138,6 +138,18 @@ export const WORKSPACE_EMPTY: HistoryPlan = {
   },
 };
 
+/**
+ * A closed quest no session here served, whose record holds no file on this machine: a clear takes it and frees nothing on
+ * the disk, so the reading says what goes rather than that nothing would (HIST1k).
+ */
+export const WORKSPACE_RECORDS_ONLY: HistoryPlan = {
+  scope: 'workspace', id: 'aurora', units: [unit('quest', '7e8f9a')],
+  reading: {
+    ...WORKSPACE_EMPTY.reading!, quests: 1,
+    takes: { quests: 1, asks: 0, sessions: 0, teammates: 0, bytes: 0 },
+  },
+};
+
 /** Only what records already gone left behind, and the intake's room once no ask is held: the press sends no unit. */
 export const WORKSPACE_LEFT_OVER: HistoryPlan = {
   scope: 'workspace', id: 'aurora', units: [],
