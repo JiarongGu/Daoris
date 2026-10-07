@@ -25,6 +25,8 @@ with the version and date at release.
   agent anything.
 - Below about 620 px the window's seven menus fold into one menu, reached and walked by keyboard as
   the bar is. A conversation's notes that an account is signed out or cooling read in Chinese too.
+- The index lists a repository's knowledge document that has no frontmatter by its first heading, in a
+  table of its own, and `check` says how many once, never failing.
 - A permission rule followed by a line break is refused at every door, as the terminal already refused
   it; the window could write one into the rules file before.
 - The terminal compares account, workspace and other names without case exactly as the driver does,

@@ -4,9 +4,9 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { digestBytes, listMarkdown, readText, sha256 } from './fsx.ts';
 import { readLock, readManifest } from './config.ts';
-import { indexFromDisk, rosterFromDisk } from './indexgen.ts';
+import { indexInput, rosterFromDisk } from './indexgen.ts';
 import { findRegion, hasImport, removeRegion } from './region.ts';
-import { indexPath, spanBody, WHERE_HEADING } from './tierrender.ts';
+import { indexPath, renderIndex, spanBody, WHERE_HEADING, withoutFrontmatter as bare } from './tierrender.ts';
 import { declaredPaths, documentLinks, present, RECORD_ROLES, shortDocumentLink, wordCount } from './documents.ts';
 import { HARNESSES, DEFAULT_HARNESS, alwaysLoadedTiers } from './harness.ts';
 import { folderTiers, INSTRUCTION_LIMIT, isFile, lockLayout, unlistedDocuments } from './layout.ts';
@@ -203,7 +203,12 @@ export function inspect(
   // re-synced. A lock that does not name the index has not had one written yet (D128 §2.4).
   const index = indexPath(target);
   const indexText = isFile(join(root, index)) ? readText(join(root, index)) : null;
-  const indexStale = lock?.index !== index || indexText !== indexFromDisk({ root, target, lock, harness });
+  const tiers = indexInput({ root, target, lock, harness });
+  const indexStale = lock?.index !== index || indexText !== renderIndex(tiers);
+  // Reported, never failed on (D54, D128 §3.2): the repository's own knowledge the index lists by its
+  // heading. Its own only, since a canonical document without frontmatter is the canon's defect, and
+  // the canon's own tests hold it.
+  const withoutFrontmatter = tiers.knowledge.filter((document) => document.local && bare(document)).length;
 
   // The region's half, two kinds of table compared apart (D122 §2.8): the pointer, the mirror sentence
   // and the rooms rebuilt from the disk, and the records' table from the manifest, so a stale one is
@@ -278,7 +283,7 @@ export function inspect(
   return {
     drifted, missing, stalePacks, coreBytes, overBudget, index, indexStale, rosterStale, switchedOff, staleSwitches,
     staleLayout, mirrorsDrifted, mirrorsMissing, mirrorsBehind, roomsWithoutInstructions, roomPointersMissing,
-    links, agentsBytes, unlisted, readAlone,
+    links, agentsBytes, unlisted, readAlone, withoutFrontmatter,
     documentsStale, documentsMissing, documentLinks: documentLinksFound, documentsOver, ceilingsUnmeasured, recordsUndeclared,
     ok,
   };
@@ -343,6 +348,11 @@ export function commandCheck({ root, write }: Pick<CommandArgs, 'root' | 'write'
   if (report.recordsUndeclared.length) {
     write(`  records   ${report.recordsUndeclared.map((role) => `no ${role}`).join(' and ')} declared in daoris.json's `
       + "documents — the canon's records have nowhere to point here (advisory)");
+  }
+  if (report.withoutFrontmatter) {
+    const one = report.withoutFrontmatter === 1;
+    write(`  frontmatter  ${report.withoutFrontmatter} knowledge ${one ? 'document has' : 'documents have'} none; `
+      + `the index lists ${one ? 'it by its' : 'them by their'} first heading — advisory`);
   }
   for (const doc of report.unlisted) write(`  unlisted  ${doc.path} — no index lists it; ${doc.move}`);
   for (const path of report.readAlone) {

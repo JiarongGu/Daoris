@@ -11,9 +11,9 @@ Each verb is a module of `src/Daoris.Cli/src/cli/`, its row in `COMMANDS` (`src/
 | `analyze` | doctrine | `cli/analyze.ts:5` | `analyze.ts:268` commandAnalyze | [packs...] what adopting would do here: collisions, duplicates… |
 | `init` | doctrine | `cli/init.ts:5` | `commands.ts:55` commandInit | detect what this repo has, write daoris.json |
 | `sync` | doctrine | `cli/sync.ts:5` | `materialize.ts:811` commandSync | materialize the manifest's packs; write daoris.lock |
-| `check` | doctrine | `cli/check.ts:5` | `drift.ts:287` commandCheck | drift, staleness, index freshness (offline); the core budget is… |
+| `check` | doctrine | `cli/check.ts:5` | `drift.ts:292` commandCheck | drift, staleness, index freshness (offline); the core budget is… |
 | `upstream` | doctrine | `cli/upstream.ts:5` | `upstream.ts:171` commandUpstream | <file> promote a locally-edited canonical file back to the canon |
-| `index` | doctrine | `cli/index.ts:6` | `indexgen.ts:147` commandIndex | say where the roster is: the rules in AGENTS.md, the |
+| `index` | doctrine | `cli/index.ts:6` | `indexgen.ts:148` commandIndex | say where the roster is: the rules in AGENTS.md, the |
 | `status` | doctrine | `cli/status.ts:5` | `commands.ts:142` commandStatus | summary of packs, drift, local files, and any pending |
 | `doctor` | doctrine | `cli/doctor.ts:5` | `twins.ts:142` commandDoctor | report local documents that look like canonical ones |
 | `connect` | management | `cli/connect.ts:5` | `connect.ts:154` commandConnect | register this repo with a knowledge service: what it owns |

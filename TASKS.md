@@ -4,7 +4,7 @@ Open work only. Finished rows move to `docs/task-archive.md`; `CHANGELOG.md` des
 
 ## State
 
-Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,349 CLI, 1,364 service, 76 HTTP host, 5,250 driver (4,536 fast, 714 Process), 751 modules (633 fast, 118 Process), 85 devkit, 4,363 web unit and 24 Playwright; rehearsals: release 114, family 390, deployment 110. The full set (14 gates) passed `6394ec1` and that tree is on the install; earlier receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,064 bytes, advisory budget 26,000.
+Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,359 CLI, 1,364 service, 76 HTTP host, 5,250 driver (4,536 fast, 714 Process), 751 modules (633 fast, 118 Process), 85 devkit, 4,363 web unit and 24 Playwright; rehearsals: release 114, family 390, deployment 110. The full set (14 gates) passed `6394ec1` and that tree is on the install; earlier receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,064 bytes, advisory budget 26,000.
 
 Live consumer count is zero. Adoption is the owner's call. The existing desktop-runtime rehearsal remains evidence: 6 collisions, 2 twins to retire, budget 40,000, check at 38,782 bytes; supporting mechanics are in `docs/adoption/shenora-repo-mechanics.md`.
 
@@ -164,7 +164,6 @@ Contracts: `docs/2026-10-01-workspace-setup-design.md` §8 (D124), `docs/2026-10
 
 - [ ] **WSSETUP7 — workspace setup screen/Ask Daoris** (modules, web-shell, service, driver; after LAYOUT8). Workspace page, both languages. Contract/proof: D124 design §4.4–§4.5.
 - [ ] **WSSETUP14b — knowledge stays in place** (after a). Declare `documents.knowledge`; index/service read it and sync never writes it. Contract: pilot §1.2–§1.3. Proof: twin tables.
-- [ ] **WSSETUP14c — heading without frontmatter** (after a). Contract: pilot §3.1–§3.2. Proof: `node --test`.
 - [ ] **WSSETUP14d — setup keeps checks green** (after b; absorbs SETUP2). Check before/after; preserve knowledge, repoint moved paths/readers, never finish red; list hand indexes without deletion and use subject names. Contract: pilot §1.1, §1.4–§1.6, §3.3; D129 §4.5. Proof: brief/playbook twins and moved-path family phase.
 - [ ] **WSSETUP14e — finish setup branch** (after d). Exact merge rule in follow-up quest. Contract: pilot §4.2. Proof: composer/press tests and family setup phase.
 - [ ] **WSSETUP14f — finish pilot** (owner; after republish). Both repositories: checks green, knowledge declared, root under 32,768 bytes, default budget restored. Contract: pilot §4. Proof: real pilot.

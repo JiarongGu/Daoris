@@ -114,10 +114,13 @@ test('files not in the lock are marked local, and an old rules folder is not lis
   fx.cleanup();
 });
 
-test('a file without frontmatter is listed with a warning, never dropped', () => {
+/** By its first heading, in a table of its own (WSSETUP14c, D128 §3.1); `index-headings.test.ts` has the cases. */
+test('a file without frontmatter is listed by its heading, never dropped', () => {
   const fx = seedRepo();
   const text = indexFromDisk({ root: fx.root, target: '.claude', lock: LOCK });
-  assert.match(text, /legacy.*needs frontmatter/);
+  assert.match(text, /^## Knowledge without frontmatter$/m);
+  assert.match(text, /^\| `\.claude\/knowledge\/legacy\.md` _\(local\)_ \| Legacy \|$/m);
+  assert.doesNotMatch(text, /legacy.*needs frontmatter/);
   fx.cleanup();
 });
 

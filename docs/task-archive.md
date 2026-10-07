@@ -11610,3 +11610,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PERMSHAPE1 — a permission rule's shape ends where the CLI's does** (driver, service; together). .NET's `$` also matches before a final line break, so `Bash` plus a line break is a rule to the driver's `Permissions.cs:153` and the service's `RuleProposals.cs:53` (its MCP door passes `rule` untrimmed), while the CLI's `permissions.ts` refuses it. End both at `\z` in one change. Contract: D72, twins.md's permission row, D125's CASEFOLD1f note. Proof: a line-break row in `PermissionRulesTests` and the service's rule-proposal tests, each seen failing first.
 
 **Outcome** 2026-10-07: `PermissionRules.Shape` (driver) and `RuleProposalBox.Shape` (service) end at `\z`, so a rule followed by a line break is refused at the screen's `RULE_ACTION` and the connector's `permission_propose`, as the CLI refuses it. It was a live defect: the screen's door passed the rule untrimmed and wrote it into `permissions.json` with the line break (the read trimmed it back), and the service filed the proposal after trimming. The CLI's hand-kept table holds the same row. Driver fast +1, service +2. Detail: D72's PERMSHAPE1 note; commit a5748135.
+
+
+## WSSETUP14c — a heading without frontmatter (2026-10-07, D128)
+
+> - [ ] **WSSETUP14c — heading without frontmatter** (after a). Contract: pilot §3.1–§3.2. Proof: `node --test`.
+
+**Outcome** 2026-10-07: the index lists a knowledge document with no frontmatter block by its first heading, in a table of its own (*Knowledge without frontmatter*), and `check` says the repository's own count once, never failing; a block missing a field, and a skill without frontmatter, keep their warning. One rule (`withoutFrontmatter`) decides for both, and one heading reader (`firstHeading`, any level, past frontmatter and fences, `C#` keeps its `#`) serves the index and the rooms. Following the design over the brief: nothing is guessed from the heading. Canon files still need all three fields. CLI 1349 → 1359. Detail: D128's WSSETUP14c note; commit ad3ce77d.
