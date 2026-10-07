@@ -264,9 +264,11 @@ public sealed record SessionDeletionResponse(
 // `not-ours`), which the driver reads instead of the sentence, and the quest, ask, session, machine or workspace it names.
 // HIST1l: `waits`, beside `needs-you` only, names what waits on the person (`parked`, `held`, `conflict`, `ask`, `proposal`), so
 // the driver says the sentence meant without reading the records again; absent for every other word, and from a host before it.
+// HIST1m, the same way: `stands`, beside `open` only, how the work in progress stands (`open`, `taken`), and `by`, beside
+// `awaited` only, the open work that names it (`question`, `asker`, `step`). The words themselves are unchanged.
 public sealed record HistoryRefusalResponse(
     string Refusal, string Error, string? Quest = null, string? Ask = null, string? Session = null, string? Origin = null,
-    string? Workspace = null, string? Waits = null);
+    string? Workspace = null, string? Waits = null, string? Stands = null, string? By = null);
 // One unit (`kind`: `quest`, `ask` or `failed`): what a clear takes, by id, and whether it may go now. `forgotten` is which of
 // its quests a remote numbered, forgotten here rather than simply removed; `teammates` this machine's copies of a teammate's
 // records; `kept` the pieces listed and kept while the unit goes (a teammate's failed session).

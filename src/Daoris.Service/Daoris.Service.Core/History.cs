@@ -75,6 +75,36 @@ public enum HistoryWaiting
     Proposal,
 }
 
+/// <summary>
+/// How the work in progress stands, where a unit stays for <see cref="HistoryRefusal.Open"/> (HIST1m): named by the desk that
+/// judged it, as <see cref="HistoryWaiting"/> is, so the driver says *taken* from the refusal rather than from a second read
+/// of the quest, which may have been taken or closed between the two.
+/// </summary>
+public enum HistoryStands
+{
+    /// <summary>The quest is still open.</summary>
+    Open,
+
+    /// <summary>The quest is taken.</summary>
+    Taken,
+}
+
+/// <summary>
+/// The open work that names the unit, where it stays for <see cref="HistoryRefusal.Awaited"/> (HIST1m): named by the desk that
+/// judged it, so the driver says *chain* from the refusal rather than from a second read of the quest it names.
+/// </summary>
+public enum HistoryAwaitedBy
+{
+    /// <summary>An open question a session of the work published.</summary>
+    Question,
+
+    /// <summary>A taken quest outside the work that asked it and waits on its answer (H7).</summary>
+    Asker,
+
+    /// <summary>A chain's open next step, which builds on the work's last session here.</summary>
+    Step,
+}
+
 /// <summary>A unit as a press names it: its kind and its quest's or ask's id.</summary>
 public sealed record HistoryUnitRef(HistoryUnitKind Kind, string Id)
 {
@@ -111,6 +141,14 @@ public sealed record HistoryKept(HistoryRefusal Refusal, string Message)
     /// <summary>What waits on the person, for <see cref="HistoryRefusal.NeedsYou"/> only (HIST1l); null for every other word.</summary>
     public HistoryWaiting? Waits { get; init; }
 
+    /// <summary>How the work in progress stands, for <see cref="HistoryRefusal.Open"/> only (HIST1m); null for every other word.</summary>
+    public HistoryStands? Stands { get; init; }
+
+    /// <summary>The open work that names the unit, for <see cref="HistoryRefusal.Awaited"/> only (HIST1m); null for every other word.</summary>
+    public HistoryAwaitedBy? By { get; init; }
+
+    // Every word below is held, with the driver's constants, to one table: the service tests' fixtures/history-words.json (HIST1m).
+
     /// <summary>The refusal's word on the wire, kebab-case as every word there: <c>needs-you</c>, <c>not-ours</c>.</summary>
     public static string Spell(HistoryRefusal refusal) => refusal switch
     {
@@ -121,6 +159,12 @@ public sealed record HistoryKept(HistoryRefusal Refusal, string Message)
 
     /// <summary>What waits, as the wire's <c>waits</c> says it: <c>parked</c>, <c>held</c>, <c>conflict</c>, <c>ask</c>, <c>proposal</c>.</summary>
     public static string Spell(HistoryWaiting waiting) => waiting.ToString().ToLowerInvariant();
+
+    /// <summary>How the work stands, as the wire's <c>stands</c> says it: <c>open</c>, <c>taken</c>.</summary>
+    public static string Spell(HistoryStands stands) => stands.ToString().ToLowerInvariant();
+
+    /// <summary>The open work naming it, as the wire's <c>by</c> says it: <c>question</c>, <c>asker</c>, <c>step</c>.</summary>
+    public static string Spell(HistoryAwaitedBy by) => by.ToString().ToLowerInvariant();
 }
 
 /// <summary>
@@ -473,14 +517,11 @@ public sealed class HistoryDesk(
         // Work in progress: its record is what the driver plans from (§4).
         foreach (var (quest, _, _) in work.Quests.Where(each => !each.Question && !IsClosed(each.Quest)))
         {
-            return new HistoryKept(
-                HistoryRefusal.Open,
+            return InProgress(
+                quest,
                 quest.Status == QuestStatus.Taken
                     ? $"Quest `#{quest.Id}` is taken: its record is work in progress."
-                    : $"Quest `#{quest.Id}` is still open: its record is work in progress.")
-            {
-                Quest = quest.Id,
-            };
+                    : $"Quest `#{quest.Id}` is still open: its record is work in progress.");
         }
 
         // A session that runs writes into its record; a teammate's that still reads as running has not ended yet.
@@ -508,11 +549,7 @@ public sealed class HistoryDesk(
         // Open work naming it.
         foreach (var (quest, _, by) in work.Quests.Where(each => each.Question && !IsClosed(each.Quest)))
         {
-            return new HistoryKept(
-                HistoryRefusal.Awaited, $"Quest `#{quest.Id}` was published by its session `{by}` and is still open.")
-            {
-                Quest = quest.Id, Session = by,
-            };
+            return Published(quest, by!);
         }
 
         var inWork = work.Quests.Select(each => each.Quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -520,7 +557,7 @@ public sealed class HistoryDesk(
         {
             if (quest.Status == QuestStatus.Taken && quest.Awaits is { } awaits && inWork.Contains(awaits))
             {
-                return new HistoryKept(HistoryRefusal.Awaited, $"Quest `#{quest.Id}` waits on its answer from `#{awaits}`.")
+                return Awaited(HistoryAwaitedBy.Asker, $"Quest `#{quest.Id}` waits on its answer from `#{awaits}`.") with
                 {
                     Quest = quest.Id,
                 };
@@ -528,8 +565,7 @@ public sealed class HistoryDesk(
 
             if (quest.Parent is { } parent && inWork.Contains(parent))
             {
-                return new HistoryKept(
-                    HistoryRefusal.Awaited, $"Quest `#{quest.Id}`, its chain's next step, is still open and builds on its work.")
+                return Awaited(HistoryAwaitedBy.Step, $"Quest `#{quest.Id}`, its chain's next step, is still open and builds on its work.") with
                 {
                     Quest = quest.Id,
                 };
@@ -603,6 +639,25 @@ public sealed class HistoryDesk(
     private static HistoryKept Waiting(HistoryWaiting waits, string message) => new(HistoryRefusal.NeedsYou, message) { Waits = waits };
 
     /// <summary>
+    /// A <see cref="HistoryRefusal.Open"/> that names how <paramref name="quest"/> stands (HIST1m), as <see cref="Waiting"/> names
+    /// what waits: the one way the desk says the word, so the driver reads *taken* from the refusal and not from the quest again.
+    /// </summary>
+    private static HistoryKept InProgress(Quest quest, string message) => new(HistoryRefusal.Open, message)
+    {
+        Quest = quest.Id, Stands = quest.Status == QuestStatus.Taken ? HistoryStands.Taken : HistoryStands.Open,
+    };
+
+    /// <summary>A <see cref="HistoryRefusal.Awaited"/> that names the open work naming the unit (HIST1m): the one way the desk says the word.</summary>
+    private static HistoryKept Awaited(HistoryAwaitedBy by, string message) => new(HistoryRefusal.Awaited, message) { By = by };
+
+    /// <summary>An open <paramref name="question"/> the work's session <paramref name="session"/> published: the work awaits its answer.</summary>
+    private static HistoryKept Published(Quest question, string session) =>
+        Awaited(HistoryAwaitedBy.Question, $"Quest `#{question.Id}` was published by its session `{session}` and is still open.") with
+        {
+            Quest = question.Id, Session = session,
+        };
+
+    /// <summary>
     /// A record of this machine's, of a repository joined in its wired workspace, written after the last push: the team's
     /// copy still to come (SYNC4). A record of a repository that never joined stays home, so it is never waited for.
     /// </summary>
@@ -664,13 +719,10 @@ public sealed class HistoryDesk(
         {
             return unit with
             {
-                Refusal = new HistoryKept(
-                    HistoryRefusal.Open,
+                Refusal = InProgress(
+                    quest,
                     // A person reads this; strike is the code's word, never on the window (the glossary's).
-                    $"Quest `#{quest.Id}` is still open or taken, and these failed sessions count against it; archive them instead.")
-                {
-                    Quest = quest.Id,
-                },
+                    $"Quest `#{quest.Id}` is still open or taken, and these failed sessions count against it; archive them instead."),
             };
         }
 
@@ -681,11 +733,7 @@ public sealed class HistoryDesk(
             if (refusal is not null) break;
             if (look.Quests.FirstOrDefault(asked => asked.PublishedBy is { } by && Spells(session, by) && !IsClosed(asked)) is { } open)
             {
-                refusal = new HistoryKept(
-                    HistoryRefusal.Awaited, $"Quest `#{open.Id}` was published by its session `{session.Id}` and is still open.")
-                {
-                    Quest = open.Id, Session = session.Id,
-                };
+                refusal = Published(open, session.Id);
             }
         }
 
