@@ -66,7 +66,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Acp.cs` | 86 | 1767 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 102 | 1864 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 80 | 1520 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 138 | 2376 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 140 | 2413 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 51 | 967 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 187 | 3485 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
@@ -131,7 +131,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/deployment-rehearsal.mjs` | 93 | 1645 |
 | `tools/desktop-publish.mjs` | 53 | 972 |
 | `tools/desktop.mjs` | 48 | 998 |
-| `tools/family-rehearsal.mjs` | 306 | 5489 |
+| `tools/family-rehearsal.mjs` | 308 | 5521 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
 | `tools/merge-branch.mjs` | 127 | 2333 |
 | `tools/orient-index.mjs` | 66 | 1435 |

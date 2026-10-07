@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { copyTree, treeDiff } from './fsx.mjs';
 import {
-  ACP_STUB_AGENT, capture, makeChecker, openTranscript,
+  ACP_STUB_AGENT, capture, evidenceFolder, makeChecker, openTranscript,
 } from './rehearsal-kit.mjs';
 import {
   SETUP_RULES, SETUP_TITLE, readEvents, readFollowed, readRegister, readSetup, readWorkspaceSetup, withFirstOnPath,
@@ -64,7 +64,9 @@ const NO_HARNESS = { DAORIS_HARNESS_CONFIG: join(scratch, 'no-harness.json') };
 process.env.DAORIS_HOME = join(scratch, 'home');
 
 openTranscript(repoRoot, 'family', { beforeExit: () => stopEverything() });
-const { totals, check, section } = makeChecker();
+// A failed check that hands its evidence keeps it beside the transcripts, in a folder of this run's (DEV3b): the scratch is
+// wiped at the next start, and the rerun after a failure took the failed run's session transcript with it.
+const { totals, check, section } = makeChecker({ keep: evidenceFolder(repoRoot, 'family') });
 
 const run = (command, cwd, env = {}, timeout = 0) => capture(command, cwd, { env, timeout });
 
@@ -97,9 +99,14 @@ const driver = ({ serviceUrl, config, remote = {}, harness = {}, env = {}, mode 
  * `mode: null` is the watch itself, a bare `drive` ticking until it is stopped, and aborting `signal`
  * stops it as Ctrl+C does, the watch's own stop where the platform delivers one (MSG1e3: a terminal's
  * words said while the loop runs). The timeout still ends a watch that does not stop.
+ *
+ * The answer says when the run started (`startedAt`) and how long it took (`ms`), and a run its timeout ended says so
+ * under its print, as `capture` does (DEV3b): the lost-claim run's print read as a whole run's, and nothing said when the
+ * run had started against the record's own times.
  */
-const driverInBackground = ({ serviceUrl, config, remote = {}, harness = {}, mode = '--once', signal }) =>
+const driverInBackground = ({ serviceUrl, config, remote = {}, harness = {}, mode = '--once', signal, timeout = DRIVE_TIMEOUT }) =>
   new Promise((resolve) => {
+    const started = Date.now();
     const child = spawn('dotnet', [driverDll, 'drive', ...(mode ? [mode] : [])], {
       cwd: scratch,
       env: {
@@ -117,10 +124,18 @@ const driverInBackground = ({ serviceUrl, config, remote = {}, harness = {}, mod
     let out = '';
     child.stdout.on('data', (chunk) => { out += chunk; });
     child.stderr.on('data', (chunk) => { out += chunk; });
-    const timer = setTimeout(() => child.kill('SIGKILL'), DRIVE_TIMEOUT);
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      child.kill('SIGKILL');
+    }, timeout);
     child.on('close', (code) => {
       clearTimeout(timer);
-      resolve({ code: code ?? -1, out });
+      const ms = Date.now() - started;
+      resolve({
+        code: code ?? -1, out: timedOut ? `${out}\n[killed: exceeded the timeout of ${timeout / 1000}s]` : out, ms,
+        startedAt: new Date(started).toISOString(),
+      });
     });
   });
 
@@ -2340,10 +2355,15 @@ if (hostB && !hostB.killed) hostB.kill();
 await sleep(700);
 hostB = await startServer({ ...hostBEnv, DAORIS_REMOTE_URL: 'http://localhost:5191' }, HOST_B_BASE);
 bConfig({ holds: [] });
+// Bounded by what the run holds through (DEV3b): its session's own two minutes (`timeoutMinutes`), which cover this
+// phase's wait, a host's restart and the stub's minute of lingering, and a minute more for its look and its ending. The
+// shared ninety seconds started with the run, and under load ended it after its stop and before it was said.
+const LINGERING_TIMEOUT = (2 + 1) * 60_000;
 const lingeringRun = driverInBackground({
   serviceUrl: HOST_B_BASE, config: driverConfigB,
   remote: { DAORIS_REMOTE_URL: REMOTE_BASE, DAORIS_REMOTE_KEY: keyB },
   harness: { DAORIS_HARNESS_CONFIG: machineBHarness },
+  timeout: LINGERING_TIMEOUT,
 });
 // Waited on until the session has its take's ANSWER and is lingering — its own transcript says so —
 // not merely until it spawned, nor until the take committed: the host answers only after its push
@@ -2373,11 +2393,23 @@ hostB = await startServer(hostBEnv, HOST_B_BASE);
 const lingered = await lingeringRun;
 const stoppedRecord = ((await api('GET', '/api/sessions?repository=borealis&includeClosed=true', { base: HOST_B_BASE })).json ?? [])
   .find((s) => s.quest === lingeringId);
+// What the run printed, when it started, how it ended and how long it took, and the record it left: the record's
+// `updated` against the run's start and length says which pass stopped the session (DEV3b).
+const lingeredSaid = `exit ${lingered.code} after ${Math.round(lingered.ms / 1000)}s, started ${lingered.startedAt}\n`
+  + `${lingered.out}\n${JSON.stringify(stoppedRecord)}`;
+const machineLogs = (home) => (existsSync(join(home, 'logs')) ? readdirSync(join(home, 'logs')).map((name) => join(home, 'logs', name)) : []);
 check(
   '…and when b reaches the remote again, its driver stops its own losing session, with the reason on the record',
   lingered.code === 0 && /stop {2}session/.test(lingered.out)
     && stoppedRecord?.state === 'stood-down' && /another machine's take on the quest reached the remote first/.test(stoppedRecord.note ?? ''),
-  `${lingered.out}\n${JSON.stringify(stoppedRecord)}`,
+  lingeredSaid,
+  () => ({
+    print: lingeredSaid,
+    files: [
+      stoppedRecord?.transcript ?? lingeringSession?.transcript,
+      ...machineLogs(process.env.DAORIS_HOME), ...machineLogs(hostBEnv.DAORIS_HOME),
+    ],
+  }),
 );
 check(
   '…before it landed anything: no commit for that quest in borealis, and the quest is machine a’s',

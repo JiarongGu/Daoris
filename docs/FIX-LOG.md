@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — a losing session's stop that its run made and never said
+
+### Driver: `--once` kept the passes beside its session for its end, and the rehearsal's bound ended it first (DEV3b)
+- **Symptom:** the family rehearsal's *its driver stops its own losing session* failed after DEV3a's fix (399/400, FLAKE1 below; its transcript `_fixtures/rehearsal-logs/family-2026-10-07T09-14-19-638Z.log` was kept): the record stood down (`ended.lost-claim`, opened 09:08:53, stood down 09:09:38), and the run's print held its look alone, one sync line meeting host b's absent remote.
+- **Root cause:** only that run could have stopped it: only `StopLostClaimsAsync` gives a stop the lost-claim reason, and only to a session in the driver's own running set, whose record that run then writes; not another run, and not the orphan sweep. The look ran before the session started, so a pass beside it in `SettleAsync` made the stop, and `SettleAsync` held every pass's lines until all its sessions had ended and the pass after the endings had run. Each pass while host b was away met the wall too, and none of those lines was printed, so the run never got that far. Nothing in it leaves `SettleAsync` unsaid but the close; from outside, the rehearsal ends a background run only by `DRIVE_TIMEOUT`, 90 s counted from the spawn. This run is held through the rehearsal's wait for the stub, a restart of host b, the stop, then up to two full passes (git started for each joined repository) before it says anything. The background helper marked no kill, unlike `capture`, so a cut-off print read as a whole run's. The first sighting (2026-10-01) fits: stood down 64 s after its record opened, its print the banner alone, which is what a run killed before `RunOnceAsync` returned printed then.
+- **Fix:** `SettleAsync` hands `said` each pass that said anything as the pass ends, and then what ended. Together these are still the returned report. The lost-claim stop is said once per session. The rehearsal bounds that run by its session's own two minutes plus one (180 s), marks a killed background run with `[killed: …]` and its length, and opens the check's detail with `exit <code> after <n>s, started <time>`, to hold against the record's own times. A failed check that hands evidence keeps it under `_fixtures/rehearsal-logs/family-<start>/<check>/`: the print, the session transcript and both homes' machine logs (`makeChecker({ keep })`, `keepEvidence` in `tools/rehearsal-kit.mjs`). D115's DEV3b note on the losing session has the rest.
+- **Verify:** `SessionsOutliveTheirLookTests.Run_once_says_a_stop_a_later_pass_made_as_that_pass_ends_when_the_first_could_not_reach_the_remote` failed first, its said lines the look's sync line alone, as the rehearsal's were; then the driver's fast half passed (4663). `node --test tools/rehearsal-kit.test.mjs` (10) failed first on the missing exports and runs in `verify`. Not run: the family rehearsal and the `Process` half. The bound is the cause the code and the record's times admit, not one a capture proved; the next sighting's kept folder says which.
+- **Commit:** `e1b69d48` (driver), `e355c992` (the rehearsal and its kit).
 ## 2026-10-07 — a workspace's Branches tab counted every checkout on the machine
 
 ### Web and modules: a workspace's look fetched, counted and left apart the machine's checkouts (BRSCOPE1)
@@ -259,7 +267,8 @@ at ORIENT2h2's merge, after DEV3a's fix above: the record WAS stood down (`ended
 run's print held no `stop  session` line; its one sync line read *quests: the remote could not be reached (… actively
 refused it. (localhost:5191))*, so that run's pass did not reach the remote, and the stop came from a pass the print
 never showed. The rerun's log replaced the failing one before it was kept; the lines quoted here are what was read.
-DEV3b carries it.
+DEV3b carries it. *Read 2026-10-07 (DEV3b above):* the same run made the stop in a pass beside its session, whose lines
+`--once` kept for its end, and the rehearsal's 90 s bound most likely ended it first; a failed check's evidence is now kept.
 
 *Fixed the same day:* `desktop-publish.test.ts`'s "retries a held rename at each package and launcher step" failed
 twice (AGENTREAD1's verify, ACCTQUOTE1d's merge gate) with a real EPERM. It handed `layCli` two tries with no wait, the

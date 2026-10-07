@@ -480,7 +480,8 @@ try
     {
         // One look, then what it started to its end (DEV3): a look no longer waits for its sessions, and a
         // single run that let go of them would leave them working with nothing watching. Each part is printed
-        // as it is said (DEV3a), so a stop or an ending already made is never lost with the process.
+        // as it is said (DEV3a), each pass beside the sessions as it ends (DEV3b), so a stop or an ending already
+        // made is never lost with the process.
         await new Driver(service, config, AdapterSet.Built(), home, processes, sync, hooks: hooks, events: events)
             .RunOnceAsync(closing.Token, said: report => Print(report));
     }

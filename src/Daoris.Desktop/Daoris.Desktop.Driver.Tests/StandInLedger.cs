@@ -28,7 +28,13 @@ internal sealed class StandInLedger : HttpMessageHandler
     private DateTimeOffset _clock = new(2026, 10, 1, 9, 0, 0, TimeSpan.Zero);
 
     /// <summary>What <c>/api/quests/{id}/claim</c> answers for every quest (D68 §4).</summary>
-    public string Claim { get; set; } = "held";
+    public string Claim
+    {
+        get { lock (_gate) return _claim; }
+        set { lock (_gate) _claim = value; }
+    }
+
+    private string _claim = "held";
 
     /// <summary>While true the quest list does not answer, as a service that went away does.</summary>
     public bool Down { get; set; }
@@ -49,6 +55,23 @@ internal sealed class StandInLedger : HttpMessageHandler
     public int QuestsAsked => Volatile.Read(ref _questsAsked);
 
     private int _questsAsked;
+
+    /// <summary>
+    /// What this host's sync pass meets at its remote (DEV3b): null for a pass that went through, or the wall it names, as a
+    /// host whose remote is away answers <c>/api/sync</c>. The remote's own doors answer from this ledger's rows.
+    /// </summary>
+    public string? SyncProblem
+    {
+        get { lock (_gate) return _syncProblem; }
+        set { lock (_gate) _syncProblem = value; }
+    }
+
+    private string? _syncProblem;
+
+    /// <summary>How many sync passes a driver asked this host for.</summary>
+    public int SyncPasses => Volatile.Read(ref _syncPasses);
+
+    private int _syncPasses;
 
     /// <summary>A client over this ledger, as a driver is handed one; <paramref name="timeout"/> is the client's own.</summary>
     public ServiceClient Client(TimeSpan? timeout = null)
@@ -166,6 +189,16 @@ internal sealed class StandInLedger : HttpMessageHandler
                 case ("GET", "/api/registry"):
                     return Answer(HttpStatusCode.OK, new JsonArray([.. _registry.Select(r => r.DeepClone())]));
 
+                // A circle's sync (DEV3b): this machine owes it no retires, and the host's pass answers where its remote stood.
+                case ("GET", "/api/registry/retired"):
+                    return Answer(HttpStatusCode.OK, new JsonObject { ["repositories"] = new JsonArray() });
+
+                case ("POST", "/api/sync"):
+                    Interlocked.Increment(ref _syncPasses);
+                    return Answer(HttpStatusCode.OK, _syncProblem is { } wall
+                        ? new JsonObject { ["wired"] = true, ["problem"] = wall }
+                        : new JsonObject { ["wired"] = true });
+
                 // Newest first, as the service answers them.
                 case ("GET", "/api/asks"):
                     return Answer(HttpStatusCode.OK, new JsonArray([.. _asks.Select(a => a.DeepClone())]));
@@ -215,7 +248,7 @@ internal sealed class StandInLedger : HttpMessageHandler
                 {
                     var quest = path["/api/quests/".Length..^"/claim".Length];
                     _claims[quest] = _claims.GetValueOrDefault(quest) + 1;
-                    return Answer(HttpStatusCode.OK, new JsonObject { ["claim"] = Claim });
+                    return Answer(HttpStatusCode.OK, new JsonObject { ["claim"] = _claim });
                 }
 
                 default:
@@ -263,11 +296,36 @@ internal sealed class StandInRuns(ServiceClient service, StandInLedger ledger)
     /// <summary>The runner a driver is handed.</summary>
     public Func<Consideration, Action, CancellationToken, Task<StartRun>> Runner => RunAsync;
 
+    /// <summary>
+    /// The stop a driver is handed with the runner (DEV3b), which it calls for a take that lost as it ends a real session's
+    /// process: true when a session of this stand-in's was running and not yet stopped, which then ends stood down for the
+    /// driver's reason.
+    /// </summary>
+    public Func<string, Noted, bool> Stops => Stop;
+
+    /// <summary>
+    /// What a stopped run waits on before it writes how it ended, as a real run writes its record only once its process has
+    /// exited: done at once unless a test holds it, to see what the driver says meanwhile.
+    /// </summary>
+    public Task StopLands { get; set; } = Task.CompletedTask;
+
+    // Which quest each running session serves, and the driver's reason for each it stopped.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _serving = new(StringComparer.Ordinal);
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Noted> _stoppedFor = new(StringComparer.Ordinal);
+
     /// <summary>End the session working on <paramref name="quest"/>: its quest closes done, and its record completes.</summary>
     public void End(string quest)
     {
         ledger.Move(quest, "Done");
         Ending(quest).TrySetResult("completed");
+    }
+
+    private bool Stop(string session, Noted reason)
+    {
+        // Once: a run already stopped and still writing how it ended is not stopped again, as the driver's own stop is not.
+        if (!_serving.TryGetValue(session, out var quest) || !_stoppedFor.TryAdd(session, reason)) return false;
+        Ending(quest).TrySetResult("stood-down");
+        return true;
     }
 
     private TaskCompletionSource<string> Ending(string quest) =>
@@ -286,12 +344,21 @@ internal sealed class StandInRuns(ServiceClient service, StandInLedger ledger)
         opened();
 
         Keeping?.Live.TryAdd(quest.Id, id);
+        _serving[id] = quest.Id;
         try
         {
             string state;
             try
             {
                 state = await Ending(quest.Id).Task.WaitAsync(ct);
+                if (_stoppedFor.TryGetValue(id, out var reason))
+                {
+                    await StopLands.WaitAsync(ct);
+                    await service.AdvanceAsync(id, state, reason, ct: CancellationToken.None);
+                    return new StartRun(
+                        $"{state}  session {id} (#{quest.Id} → {quest.To}): {reason.Note}", true,
+                        new SessionEnded(id, quest.To, state, ByPerson: false, reason.Note, Quest: quest.Id));
+                }
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
@@ -313,6 +380,7 @@ internal sealed class StandInRuns(ServiceClient service, StandInLedger ledger)
         finally
         {
             Keeping?.Live.TryRemove(quest.Id, out _);
+            _serving.TryRemove(id, out _);
         }
     }
 }
