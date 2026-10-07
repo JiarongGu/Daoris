@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — a decision's note split on a fence it quoted
+
+### Tools and service: the decisions digest and its twin closed a longer fence on a shorter one inside it (ORIENT2h4)
+- **Symptom:** left open by ORIENT2h3, verified in the code, not seen on an install: a four-backtick fence in a decision quoting a three-backtick example closed on the example's first line, so a note's label after a blank line inside it became a note of its own in the digest and in the service's entries, and a tilde fence fenced nothing. `doc-shapes` read a `##` heading inside either as an archive entry.
+- **Root cause:** `fenced` (`tools/doc-duplicates.mjs`), `DecisionNotes.Fenced` and `doc-shapes`' `archiveEntries` each toggled on any line opening with three backticks; ORIENT2h3 gave the service's other readers `MarkdownFence` and left these, a twin, for a change to both sides.
+- **Fix:** `fenced` reads a fence as CommonMark does, as `MarkdownFence` does; `DecisionNotes.Fenced` reads by `MarkdownFence`; `doc-shapes` reads by `fenced`. D151's ORIENT2h4 note has the choices.
+- **Verify:** three new decisions in `tools/orient-index-fixtures/decision-notes.json` failed first in `DecisionNotesTests` and `tools/orient-index.test.mjs`, and `doc-shapes.test.ts`' longer and tilde fences; then passed, with the service suite (1538), the CLI suite (1371) and `verify`. No tracked markdown file here reads differently. Not covered: the CLI's `document.ts` and the driver's `SelfDescription` still toggle.
+
 ## 2026-10-07 — a session whose take had lost closed the winner's quest
 
 ### Service: a wait or a close made after the pass that found this machine's take lost applied to the winner's quest (WAITCLAIM2)

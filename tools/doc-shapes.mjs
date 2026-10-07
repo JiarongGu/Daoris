@@ -40,7 +40,8 @@
  *   counted. It is named by its first bold span up to the dash.
  * - **A router row** is a table row whose first cell is a code span, named by that cell.
  * - **An archive entry** is a second-level heading and what follows it, until the next heading of that
- *   level or higher (a fenced block's lines are never headings). It is dated by the last ISO date its
+ *   level or higher (a fenced block's lines are never headings, a fence read as markdown reads one, by
+ *   `doc-duplicates`' `fenced`: ORIENT2h4). It is dated by the last ISO date its
  *   heading names, since a heading such as `(2026-09-28 → 2026-09-29)` names when it started and when it
  *   finished. Its outcome runs from the `**Outcome.**` label, label included, to the entry's end; an entry
  *   with no label is measured by what it says beyond its heading and its quoted row, so leaving the label
@@ -65,9 +66,10 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { words } from './doc-budgets.mjs';
+import { fenced } from './doc-duplicates.mjs';
 import { isMain } from './fsx.mjs';
 
-export { words };
+export { fenced, words };
 
 const CONFIG = 'tools/doc-shapes.json';
 const DECLARED = 'daoris.json';
@@ -154,16 +156,16 @@ export function routerRows(text) {
 export function archiveEntries(text) {
   const entries = [];
   let current = null;
-  let fenced = false;
-  for (const line of lines(text)) {
-    if (/^\s*```/.test(line)) fenced = !fenced;
-    else if (!fenced && /^#{1,2} /.test(line)) {
+  const read = lines(text);
+  const inFence = fenced(read);
+  read.forEach((line, i) => {
+    if (!inFence[i] && /^#{1,2} /.test(line)) {
       current = line.startsWith('## ') ? { heading: line.slice(3).trim(), body: [] } : null;
       if (current) entries.push(current);
-      continue;
+      return;
     }
     if (current) current.body.push(line);
-  }
+  });
   return entries.map(({ heading, body }) => {
     const dates = heading.match(/\d{4}-\d{2}-\d{2}/g);
     const all = body.join('\n');
