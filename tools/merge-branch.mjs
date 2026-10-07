@@ -422,6 +422,12 @@ export const REACH = Object.freeze([
   { paths: ['tools/deployment-rehearsal.mjs', 'tools/desktop.mjs', 'tools/cdp.mjs'], gates: ['deployment'], why: 'the deployment rehearsal and what it imports' },
   { paths: ['src/Daoris.Devkit/**'], gates: ['devkit'], why: 'its own suite; it is also the universal gates and the code map, which every merge runs' },
   { paths: ['src/Daoris.Desktop/process.runsettings'], gates: ['driver-process', 'modules-process'], why: "the Process halves' settings (MOD8)" },
+  // Before the driver's tests, which would place it first: the page's twin reads it too.
+  {
+    paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/kept-names.json'],
+    gates: ['driver', 'web'],
+    why: "the driver's KeptNamesTwinTests and the page's sessionActs vitest read the kept names' table (SESSDEL1c)",
+  },
   {
     paths: ['src/Daoris.Desktop/Directory.Build.props', 'src/Daoris.Desktop/Directory.Packages.props'],
     gates: [...DESKTOP_SUITES, 'rehearse-family', 'deployment'],
