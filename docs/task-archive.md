@@ -11861,3 +11861,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **WAITCLAIM2 — a move or wait made after the pass that found the take lost** (service). D69's rule and WAITCLAIM1 reach only operations pending when the rebase rewrites this machine's take; one a session makes after that pass, before its driver stops it, applies to the winner's quest and is pushed. Read a lost claim from an existing conflict at the rebase, or refuse at the store's verbs when `ClaimAsync` answers Lost. Contract: D69's WAITCLAIM1 note, `QuestStore.RebaseAsync`, `ClaimAsync`. Proof: a sync test where A's take loses in one pass and A then waits and closes; after the next pass the winner's quest neither waits nor closes.
 
 **Outcome** 2026-10-07: a done, decline or wait made after the pass that found this machine's take lost is refused inside the store's write (`QuestLog.Claim`, `QuestMove.ClaimLost`) and the exchange answers `AlreadyTaken` saying why; nothing reaches the winner's quest and no log or note is rewritten. Follow-up: WAITCLAIM3. Detail: D69's WAITCLAIM2 note, FIX-LOG; commit 44d7fe95.
+
+
+## MOD9c — the lane scan sees reads from a source root (2026-10-07, D115)
+
+> - [ ] **MOD9c — the lane scan sees reads from a source root** (cli, tools). The driver's `NoConsoleWindowTests` and `PullRequestOccasionTests` read the modules' and the app's sources through `SourceRoot()`, which the scan does not see, and the modules lane does not reach `driver`, so a change there fails them only in the full set, never at a merge. Contract: MOD9, parallel-development design §3, D115's MOD9b note. Proof: the scan fails until those reads reach `driver`.
+
+**Outcome** 2026-10-07: the lane scan resolves source-root helpers (`SourceRoot()`) and reads under them; it found five unplaced reads, the driver's `NoConsoleWindowTests` and `PullRequestOccasionTests` scanning the modules' and app's C#, now sent to `driver` by one `**/*.cs` row (`MODULES_READERS`). Follow-up: MOD9d. Detail: D115's MOD9c note; commits 0ce4c3d6, b7343f00.
