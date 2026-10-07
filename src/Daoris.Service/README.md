@@ -61,7 +61,11 @@ headings and its label, its first cell with text named by its column
 line. Read as part of its section, one matching row was weighed against a long section, and a route's row in a 102-row
 table lost to short sections (D151's ORIENT2e note); the column's name is in the title because the header is no line of
 the row, and without it *sync verb* missed the `sync` row (D151's ORIENT2h note). The header and its separator are no
-entry; the prose around a table stays a section, each run of it an entry; a list, an outline's, stays in its section. A README declared at the root is read alone, a declared folder is that folder, and an undeclared folder named
+entry. Since **ORIENT2h2** a list is read an item at a time, for the same reason: a fixture's item was answered by
+its list's 61-line section. An item is its line and its continuation lines, as markdown reads them, titled by the
+headings, its parents' labels and its own (`Outline of … › 300-2333 class QuestStore › 688-724 PublishAsync()`), so a
+nested item read alone keeps its place; its label is its leading code span or link text, or its text where it opens
+with neither. The prose around a table or a list stays a section, each run of it an entry. A README declared at the root is read alone, a declared folder is that folder, and an undeclared folder named
 like an index is never guessed. A folder a deployment names as its index (`DAORIS_KNOWLEDGE_INDEX`) is read a row at a
 time first, as that deployment chose, and those rows are of the kind `index` too. A search that names no kinds answers
 with at most two index entries, at their ranks, and fills the rest from every other kind; the answer says when more

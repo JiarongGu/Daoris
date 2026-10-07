@@ -130,6 +130,21 @@ public sealed class CheckoutDocumentsTests : IDisposable
         Assert.DoesNotContain("class Widget", record.Body);
     }
 
+    /// <summary>
+    /// An item is one item to this reader and the declared index's (ORIENT2h2, one reader both share): a number and
+    /// a parenthesis opens one as a number and a dot does, and a thematic break of spaced dashes or stars is none.
+    /// </summary>
+    [Fact]
+    public void A_list_item_is_read_as_the_declared_index_reads_one()
+    {
+        Write("docs/index/kits.md", "# Kits\n\n1. `setup-kit.mjs` the set-up\n2) `proof-kit.mjs` the proof\n\n- - -\n\n* * *\n");
+
+        var entries = new RepositoryScanner(documents: null, index: "docs/index").Scan(_root);
+
+        Assert.Equal(["Kits", "setup-kit.mjs the set-up", "proof-kit.mjs the proof"], entries.Select(e => e.Title).ToList());
+        Assert.Equal("- - -\n* * *", entries[0].Body);
+    }
+
     [Fact]
     public void A_document_is_split_at_its_headings_with_its_opening_titled_by_its_first_heading()
     {

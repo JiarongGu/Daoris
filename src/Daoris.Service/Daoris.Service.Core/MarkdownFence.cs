@@ -11,9 +11,9 @@ namespace Daoris.Knowledge;
 /// heading and the table inside the example became entries of their own. A backtick run with a backtick after it on
 /// its line is code inline, not a fence, as CommonMark has it. A fence never closed holds the rest of the file.</para>
 ///
-/// <para>After any indent, where CommonMark allows three spaces: the readers do not read the list item a fence may
-/// sit in, and a fence inside an item is indented by it. A line four spaces in that opens with backticks is read
-/// as a fence, as every reader read it before.</para>
+/// <para>After any indent, where CommonMark allows three spaces: a fence inside a list item is indented by it, and
+/// the declared index gives a fence to the item its indent puts it in (ORIENT2h2). A line four spaces in that opens
+/// with backticks is read as a fence, as every reader read it before.</para>
 ///
 /// <para>Each reader keeps its own policy for what it does with a fenced line, its sections and its tables; only
 /// where a fence starts and stops is shared, so a fence is one fence to every reader.</para>
@@ -22,6 +22,12 @@ internal sealed class MarkdownFence
 {
     private char _marker;
     private int _length;
+
+    /// <summary>
+    /// Whether a fence is open before the next line is read: a reader that sends a fence's lines where its opening line
+    /// sits (a list item's, ORIENT2h2) asks it before <see cref="Holds"/>, to tell an opening line from one inside.
+    /// </summary>
+    public bool Open => _marker != '\0';
 
     /// <summary>
     /// Reads the next line: whether a fence holds it, its opening and closing lines included. Called once for every

@@ -165,6 +165,32 @@ public sealed class EntryLinesTests : IDisposable
     }
 
     /// <summary>
+    /// A declared index's item is its lines as written, its continuation lines with it and its nested items left out
+    /// (ORIENT2h2), so it names them and a range reads part of it; the text of an item after its nested items names
+    /// its own.
+    /// </summary>
+    [Fact]
+    public void A_declared_index_s_items_keep_their_lines()
+    {
+        Write("daoris.json", """{"source":"s","packs":[],"documents":{"index":"docs/index/README.md"}}""");
+        Write("docs/index/README.md",
+            "# Kits\n\n- `setup-kit.mjs` writes the set-up\n  and reads it back\n  - `readSetup` reads it\n\n  the kit's own words\n- `proof-kit.mjs`\n");
+
+        var entries = new RepositoryScanner().Scan(_root);
+
+        Assert.Equal(
+            [
+                "Kits › setup-kit.mjs @ docs/index/README.md:3-4",
+                "Kits › setup-kit.mjs › readSetup @ docs/index/README.md:5",
+                "Kits › setup-kit.mjs @ docs/index/README.md:7",
+                "Kits › proof-kit.mjs @ docs/index/README.md:8",
+            ],
+            Of(entries, EntryKind.Index));
+        AssertVerbatim(entries);
+        Assert.Equal((new LineSpan(4, 4), "  and reads it back"), entries.First(e => e.Title == "Kits › setup-kit.mjs").Cut(new LineSpan(4, 9)));
+    }
+
+    /// <summary>
     /// A deployment's index row is its cells labelled by their columns (ORIENT1c), which is not its file's line as
     /// written, so it names no lines: absent, never a line whose text a range would misreport.
     /// </summary>

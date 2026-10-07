@@ -1,5 +1,11 @@
 namespace Daoris.Knowledge;
 
+/// <summary>A list item's line, read as <see cref="IndexRows.Item"/> reads it.</summary>
+/// <param name="Indent">The spaces before its marker.</param>
+/// <param name="Content">The column its text starts at: what a continuation or a nested item is indented to.</param>
+/// <param name="Text">Its text on this line, trimmed.</param>
+internal readonly record struct ListItem(int Indent, int Content, string Text);
+
 /// <summary>One entry of a generated index: a table row, a list item, or the file's prose.</summary>
 /// <param name="Title">The row's first cell or the item's text, without its code marks; the file's heading for its prose.</param>
 /// <param name="Body">The row with each cell labelled by its column, or the item with the items above it; then where it sits.</param>
@@ -113,11 +119,23 @@ public static class IndexRows
         return rows;
     }
 
-    /// <summary>A list item's indent and text: <c>-</c>, <c>*</c>, <c>+</c> or a number and a dot, then a space.</summary>
-    private static (int Indent, string Text)? Item(string raw)
+    /// <summary>
+    /// A list item's line: <c>-</c>, <c>*</c>, <c>+</c> or a number and a dot or a parenthesis, then a space, and text.
+    /// A declared index's items are read by it too (<see cref="IndexSections"/>, ORIENT2h2), so an item is one item to
+    /// both readers.
+    /// </summary>
+    /// <remarks>
+    /// A thematic break, <c>- - -</c> or <c>* * *</c>, is no item, as markdown reads it. The content column is where
+    /// the item's text starts: a line after a blank continues the item only when indented that far, and an item
+    /// indented that far is nested in it (CommonMark's rule; five spaces or more after the marker are code, so the
+    /// text starts one past it).
+    /// </remarks>
+    internal static ListItem? Item(string raw)
     {
         var indent = raw.Length - raw.TrimStart().Length;
         var rest = raw[indent..];
+        if (ThematicBreak(rest)) return null;
+
         int marker;
         if (rest.Length > 1 && (rest[0] is '-' or '*' or '+') && rest[1] == ' ')
         {
@@ -126,12 +144,21 @@ public static class IndexRows
         else
         {
             var digits = rest.TakeWhile(char.IsDigit).Count();
-            if (digits == 0 || rest.Length <= digits + 1 || rest[digits] != '.' || rest[digits + 1] != ' ') return null;
+            if (digits == 0 || rest.Length <= digits + 1 || rest[digits] is not ('.' or ')') || rest[digits + 1] != ' ') return null;
             marker = digits + 1;
         }
 
         var text = rest[marker..].Trim();
-        return text.Length == 0 ? null : (indent, text);
+        if (text.Length == 0) return null;
+        var spaces = rest.Length - marker - rest[marker..].TrimStart().Length;
+        return new ListItem(indent, indent + marker + (spaces > 4 ? 1 : spaces), text);
+    }
+
+    /// <summary>Three or more of one of <c>-</c>, <c>*</c> or <c>_</c>, and nothing else but spaces.</summary>
+    internal static bool ThematicBreak(string line)
+    {
+        var marks = line.Where(c => c is not (' ' or '\t')).ToList();
+        return marks.Count >= 3 && marks[0] is ('-' or '*' or '_') && marks.All(c => c == marks[0]);
     }
 
     /// <summary>

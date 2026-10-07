@@ -11903,3 +11903,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UXFIX5b — Settings' red words wear the danger ink** (web-settings; after UXFIX5). Three Settings sites still draw danger words in the fill's colour (`settings/AccountSettings.tsx:23`, `Logs.tsx:187`, `Sync.tsx:308`), allowed by name in `tokens.test.ts`'s `DANGER_TEXT_ELSEWHERE`. Swap them to `text-ink-danger` and drop their allowance rows (a swapped file that keeps its row fails the test). Contract: platform-ux §3. Proof: `tokens.test.ts` with the allowance empty.
 
 **Outcome** 2026-10-07: the three Settings red words (an account's unreadable settings file, a log's error level, a sync look the page stopped waiting for) wear `--ink-danger`; `tokens.test.ts`'s allowance is empty and checked to stay so; a story shows the account summary's problem. Detail: platform-ux §3; commits 441e1c10, 37dd2df2.
+
+
+## ORIENT2h2 — a declared index's lists read an item at a time (2026-10-07, D151)
+
+> - [ ] **ORIENT2h2 — a declared index's lists read an item at a time** (service; after ORIENT2h). Tables are rows since ORIENT2h, but a list is still one section per heading: *where is ParkStandIn* is answered by the fixtures list's 61-line section. Read a list item as an entry naming its line, titled by the headings above it and any parent item, so an item read alone keeps its place. Contract: D151's ORIENT2h note. Proof: the fixture question lands on its item first, naming its line.
+
+**Outcome** 2026-10-07: each item of a declared index's lists is its own entry naming its line(s), titled by its headings and its parents' labels; *where is ParkStandIn* answers with `fixtures.md:7`. Entries 573 → 6,629; 1,810 of 1,933 earlier ids unchanged. ORIENT2h's *sync verb* fixture renamed one class. Follow-up: ORIENT2h5. Detail: D151's ORIENT2h2 note; commits 0431ad52, edcceb8c.

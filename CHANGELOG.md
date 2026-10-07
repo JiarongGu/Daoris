@@ -125,6 +125,8 @@ with the version and date at release.
 - A history clear that would only take left-over files says just that, instead of naming conversations
   and records it will not touch.
 - An abandon that left part of its work behind is said as an error rather than as done.
+- Knowledge search reads an index's lists an item at a time too, so a question about one fixture or
+  one method lands on its line.
 
 The first version: doctrine that installs, is checked, and flows back.
 
