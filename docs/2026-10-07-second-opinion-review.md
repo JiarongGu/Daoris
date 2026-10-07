@@ -69,3 +69,21 @@ Measure assembled windows, not only component stories (UX6a2's counter on the in
 **It said to keep:** Knowledge's shared place with separate mode memory; Settings alone at the bar's foot and the
 seven domains; the attention rows' control budget; history's held plan, exact listed-unit press and stated kept
 reasons; the account refusals' retained drafts; and the folded menu's reuse of the full menu's rows.
+
+## Second round, the afternoon: code shape
+
+Asked again once the owner's Codex usage returned, against a detached snapshot at `fca36ad7` so the reviewer never read
+a checkout mid-merge, over what landed since `1da961d6` (REFAC1–3, EVID1b, HIST1l, SESSDEL1, ORIENT2e/2h, WAITCLAIM1,
+UX6d1, MOD9b, ORIENT2a2). It found no regression in REFAC1–3 and no defect in WAITCLAIM1's distinction.
+
+| Finding | Verified | Row |
+|---|---|---|
+| The scanner counts titles but never reserves the anchors it makes: `A`, `A`, `A (2)` give `A`, `A (2)`, `A (2)`, and the duplicate id fails the store's insert and the whole refresh (`RepositoryScanner.cs:508`, the same rule at `:457`, `:616`, `IndexRows.cs:45`) | ✓ | ORIENT2h3 |
+| Every reader toggles a fence on any triple-backtick line, so a four-backtick fence closes on a quoted example and its table becomes index rows (`IndexSections.cs:66`, `IndexRows.cs:57`, `MarkdownSections.cs:98`) | ✓ | ORIENT2h3; the digest's twin is ORIENT2h4 |
+| A failed `ls-tree` reads as an empty folder and an unreadable folder as absent, so evidence nobody read posts `missing` (`EvidenceReader.cs:225-230,263`) | ✓ | EVID1b3 |
+| The two evidence test files serialize `QuestView` by hand and already differ | | EVID1b3 |
+| *consider:* `RebaseAsync` (`Quests.cs:1395`) replays, judges claims, rewrites and amends in one method; a pure planner would make WAITCLAIM1's ordering testable | | QUESTREBASE1 |
+
+**It said to leave alone:** REFAC1–3's centralizations; the twins across artifacts, C#-to-C# included; REACH's
+dependency rows beside lane ownership; a deployment's index rows having no source lines, where a declared index's
+rows keep theirs; and WAITCLAIM1's line between a wait on this machine's losing take and one made without a take.
