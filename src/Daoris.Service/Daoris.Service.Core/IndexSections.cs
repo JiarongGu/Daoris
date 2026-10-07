@@ -9,7 +9,9 @@ namespace Daoris.Knowledge;
 /// <param name="Lines">The lines of the file the body is: line <c>i</c> of the body is line <c>First + i</c>.</param>
 /// <param name="Opening">Whether it is prose before any heading: the file's own, which no heading names.</param>
 /// <param name="Label">A row's label, its first cell with text, or an item's, each without its code marks; null for prose.</param>
-public readonly record struct IndexSection(string Title, string Body, LineSpan Lines, bool Opening = false, string? Label = null);
+/// <param name="Anchored">What an item is anchored by: its title with the lines its label and its parents' lead with taken out (<see cref="IndexRows.Unnumbered"/>, ORIENT2h5); null for prose and a row, anchored by their title.</param>
+public readonly record struct IndexSection(
+    string Title, string Body, LineSpan Lines, bool Opening = false, string? Label = null, string? Anchored = null);
 
 /// <summary>
 /// A file of a repository's declared index of where things are, split at its headings, each table row and each list
@@ -40,7 +42,9 @@ public readonly record struct IndexSection(string Title, string Body, LineSpan L
 /// the place it answers for first (<c>`AnswerContinuesTickTests.cs:284` class ParkStandIn</c>), and its text
 /// otherwise (<c>9-12 Widget()</c>). It is not named as a row's is: a list has no header, and what its items are
 /// is said by the headings above them, which the title carries. Text of an item after its nested items is a second
-/// run of it, titled as the item is.</para>
+/// run of it, titled as the item is. An item is anchored by its title with the lines each label leads with taken out
+/// (<c>class Widget › Widget()</c>, <see cref="IndexRows.Unnumbered"/>, ORIENT2h5), so an edit above the lines it
+/// names leaves its id as it was; its title keeps them, since a person reads them.</para>
 ///
 /// <para>The prose around a table or a list stays a section, each run of it between them an entry of its own,
 /// since an entry is one run of lines. The headings, the table and the items are read as
@@ -129,7 +133,9 @@ public static class IndexSections
                 if (parent is not null) Emit(parent);
                 blanks.Clear();
                 var label = ItemLabel(item.Text);
-                items.Add(new OpenItem(item.Content, $"{parent?.Title ?? title} › {label}", label, [(line, raw)]));
+                items.Add(new OpenItem(
+                    item.Content, $"{parent?.Title ?? title} › {label}", label,
+                    $"{parent?.Anchored ?? title} › {IndexRows.Unnumbered(label)}", [(line, raw)]));
                 continue;
             }
 
@@ -171,7 +177,8 @@ public static class IndexSections
         void Emit(OpenItem open)
         {
             var built = MarkdownSections.Build(open.Title, open.Lines);
-            if (built.Body.Length > 0) sections.Add(new IndexSection(open.Title, built.Body, new LineSpan(built.First, built.Last), Label: open.Label));
+            if (built.Body.Length > 0)
+                sections.Add(new IndexSection(open.Title, built.Body, new LineSpan(built.First, built.Last), Label: open.Label, Anchored: open.Anchored));
             open.Lines.Clear();
         }
 
@@ -203,8 +210,8 @@ public static class IndexSections
         }
     }
 
-    /// <summary>An item the list holds open: the column its text starts at, its title and label, and its lines not yet an entry.</summary>
-    private sealed record OpenItem(int Content, string Title, string Label, List<(int Line, string Text)> Lines);
+    /// <summary>An item the list holds open: the column its text starts at, its title, label and anchor's title, and its lines not yet an entry.</summary>
+    private sealed record OpenItem(int Content, string Title, string Label, string Anchored, List<(int Line, string Text)> Lines);
 
     private static int Indent(string raw) => raw.Length - raw.TrimStart().Length;
 

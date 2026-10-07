@@ -9,7 +9,7 @@ internal readonly record struct ListItem(int Indent, int Content, string Text);
 /// <summary>One entry of a generated index: a table row, a list item, or the file's prose.</summary>
 /// <param name="Title">The row's first cell or the item's text, without its code marks; the file's heading for its prose.</param>
 /// <param name="Body">The row with each cell labelled by its column, or the item with the items above it; then where it sits.</param>
-/// <param name="Anchor">Unique within the file (<see cref="EntryAnchors"/>); null for the file's prose, which is the file itself.</param>
+/// <param name="Anchor">Unique within the file (<see cref="EntryAnchors"/>), an item's past the lines it leads with (<see cref="IndexRows.Unnumbered"/>); null for the file's prose, which is the file itself.</param>
 public readonly record struct IndexRow(string Title, string Body, string? Anchor);
 
 /// <summary>
@@ -46,12 +46,14 @@ public static class IndexRows
 
         string Where() => string.Join(" › ", new[] { title, heading }.OfType<string>().Distinct(StringComparer.Ordinal));
 
-        void Emit(string rowTitle, string line)
+        // An item is anchored past the lines it leads with (ORIENT2h5), a row by its title as it always was.
+        void Emit(string rowTitle, string line, string? anchored = null)
         {
             if (rowTitle.Length == 0) return;
             var where = Where();
             rows.Add(new IndexRow(
-                rowTitle, where.Length == 0 ? line : $"{line}\n\nIn {where}", anchors.Next($"{heading ?? title ?? fallbackTitle}: {rowTitle}")));
+                rowTitle, where.Length == 0 ? line : $"{line}\n\nIn {where}",
+                anchors.Next($"{heading ?? title ?? fallbackTitle}: {anchored ?? rowTitle}")));
         }
 
         foreach (var raw in (markdown ?? string.Empty).Replace("\r\n", "\n").Split('\n'))
@@ -103,7 +105,8 @@ public static class IndexRows
             {
                 while (parents.Count > 0 && parents[^1].Indent >= item.Indent) parents.RemoveAt(parents.Count - 1);
                 var above = parents.Select(parent => parent.Text).ToList();
-                Emit(Plain(item.Text), above.Count == 0 ? item.Text : $"{item.Text}\n\nUnder {string.Join(" › ", above)}");
+                var itemTitle = Plain(item.Text);
+                Emit(itemTitle, above.Count == 0 ? item.Text : $"{item.Text}\n\nUnder {string.Join(" › ", above)}", Unnumbered(itemTitle));
                 parents.Add((item.Indent, item.Text));
                 continue;
             }
@@ -200,6 +203,40 @@ public static class IndexRows
     /// <summary>A separator cell: dashes, with a colon at either end for alignment.</summary>
     internal static bool IsRule(string cell) =>
         cell.Trim(':').Length > 0 && cell.Trim(':').All(c => c == '-');
+
+    /// <summary>
+    /// What an item is anchored by (ORIENT2h5): its label without the lines it leads with, where its first word is a
+    /// line or a range of lines (<c>695-731 PublishAsync()</c>) or ends in one after a colon
+    /// (<c>Tests.cs:284</c>, <c>D151:195-239 …</c>); the label as it is otherwise, and where nothing else would be left.
+    /// </summary>
+    /// <remarks>
+    /// A generator puts first where a thing is, and an edit above it moves those lines while the thing stays what it
+    /// is. Anchored on the lines, an item took a new id at every such edit, so a hit a session held named an entry the
+    /// next refresh had replaced, and every outline's items were removed and added again. The title keeps them: a
+    /// person reads the lines, and the id is only how an entry is found again. Digits are ASCII's, as a generator
+    /// writes a line's number.
+    /// </remarks>
+    internal static string Unnumbered(string label)
+    {
+        var end = label.IndexOf(' ');
+        var first = end < 0 ? label : label[..end];
+        var colon = first.LastIndexOf(':');
+        if (!IsLines(colon < 0 ? first : first[(colon + 1)..])) return label;
+
+        var place = colon < 0 ? string.Empty : first[..colon];
+        var rest = end < 0 ? string.Empty : label[(end + 1)..].TrimStart();
+        var anchored = place.Length == 0 ? rest : rest.Length == 0 ? place : $"{place} {rest}";
+        return anchored.Length > 0 ? anchored : label;
+    }
+
+    /// <summary>A line's number or a range of them: ASCII digits, then optionally a dash and more.</summary>
+    private static bool IsLines(string text)
+    {
+        var dash = text.IndexOf('-');
+        return dash < 0 ? Digits(text) : Digits(text[..dash]) && Digits(text[(dash + 1)..]);
+
+        static bool Digits(string run) => run.Length > 0 && run.All(char.IsAsciiDigit);
+    }
 
     /// <summary>Text without the marks that dress it — code's backticks and emphasis's doubled stars — for a title.</summary>
     internal static string Plain(string text) =>

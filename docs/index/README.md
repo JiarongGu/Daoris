@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (106)
+## Files over 40 KB (107)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -104,9 +104,10 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 96 | 1733 |
 | `src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs` | 42 | 750 |
 | `src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs` | 44 | 839 |
+| `src/Daoris.Service/Daoris.Service.Tests/IndexEntriesTests.cs` | 45 | 855 |
 | `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 82 | 1691 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 67 | 1385 |
-| `src/Daoris.Service/README.md` | 60 | 622 |
+| `src/Daoris.Service/README.md` | 60 | 624 |
 
 ### CLI (`cli`)
 
@@ -119,7 +120,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/test/desktop-publish.test.ts` | 48 | 871 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 46 | 818 |
 | `src/Daoris.Cli/test/driverconfig.test.ts` | 75 | 1460 |
-| `src/Daoris.Cli/test/merge-branch.test.ts` | 164 | 2561 |
+| `src/Daoris.Cli/test/merge-branch.test.ts` | 164 | 2562 |
 | `src/Daoris.Cli/test/rotation-use.test.ts` | 44 | 543 |
 | `src/Daoris.Cli/test/setup-kit.test.ts` | 44 | 820 |
 | `src/Daoris.Cli/test/toolchain.test.ts` | 87 | 1706 |
@@ -134,7 +135,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 48 | 998 |
 | `tools/family-rehearsal.mjs` | 312 | 5570 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 128 | 2340 |
+| `tools/merge-branch.mjs` | 128 | 2344 |
 | `tools/orient-index.mjs` | 66 | 1435 |
 | `tools/usage-report.mjs` | 57 | 1254 |
 
