@@ -488,7 +488,7 @@ try
     else if (untilIdle)
     {
         // Each look printed as it ends, and what ended before a failure or a close lets go (DEV3a), where every
-        // look used to be printed only once the whole run returned.
+        // look used to be printed only once the whole run returned; a look that failed, what it had said (DEV3c).
         await new Driver(service, config, AdapterSet.Built(), home, processes, sync, hooks: hooks, events: events)
             .RunUntilIdleAsync(closing.Token, said: report => Print(report));
     }
@@ -506,7 +506,8 @@ try
 
         // The loop itself — re-read the config, tick, wait — is the library's (DriverWatch); this host
         // keeps only its reporting half. A null onError lets a failed tick propagate to the catch
-        // below, which is this door's exit-2 contract.
+        // below, which is this door's exit-2 contract; what that look had said before it failed, a
+        // stop among it, is printed first (DEV3c).
         watching = new DriverWatch(service, configPath, home, processes, sync, hooks: hooks, events: events);
         await watching.RunAsync(
             async (report, ticked) =>
@@ -520,7 +521,8 @@ try
                 if (ticked.Notify) foreach (var item in events) Console.WriteLine($"  !  {item.Line}");
             },
             onError: null,
-            closing.Token);
+            closing.Token,
+            said: report => Print(report));
         Console.WriteLine("driver: stopped — every session it ran was ended and recorded.");
     }
 

@@ -427,6 +427,23 @@ public sealed class DriverCommandTests
         Assert.DoesNotContain("Console.WriteLine(\"driver: stopped.\");", program);
     }
 
+    /// <summary>
+    /// DEV3c: the host's watch is handed its console as the door for a part of a look, so a look that stopped a session and then
+    /// failed prints the stop before the failure ends the loop. Without it the watch carries the part to a next look that a
+    /// failure here never reaches.
+    /// </summary>
+    [Fact]
+    public void The_hosts_watch_prints_what_a_failed_look_had_said()
+    {
+        var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
+        var watch = program.IndexOf("await watching.RunAsync(", StringComparison.Ordinal);
+
+        Assert.True(watch > 0, "the host runs its watch");
+        Assert.Contains(
+            "onError: null,\n            closing.Token,\n            said: report => Print(report));",
+            program[watch..].ReplaceLineEndings("\n"));
+    }
+
     private static string SourceRoot()
     {
         var folder = new DirectoryInfo(AppContext.BaseDirectory);
