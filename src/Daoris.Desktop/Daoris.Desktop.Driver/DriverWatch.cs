@@ -57,6 +57,9 @@ public sealed class DriverWatch(
     /// <summary>Handed to every look's driver: <see cref="Driver.Runner"/>, a test's in-process stand-in for a start's run (DEV3).</summary>
     internal Func<Consideration, Action, CancellationToken, Task<StartRun>>? Runner { get; init; }
 
+    /// <summary>Handed to every look's driver beside <see cref="Runner"/>: <see cref="Driver.Stops"/>, that stand-in's stop (DEV3c).</summary>
+    internal Func<string, Noted, bool>? Stops { get; init; }
+
     /// <summary>
     /// Whether an update is draining this loop (UPDATE1, D139 §2), asked at every look: while it answers true, each look
     /// plans with <see cref="InstallUpdate.Drained"/>, so nothing new starts, and says the hold as the update's
@@ -90,16 +93,35 @@ public sealed class DriverWatch(
     /// shutdown, to be carried on at the next start. A failure that ends the loop ends them the same way
     /// first, rather than leave them working with nothing watching.
     /// </remarks>
+    /// <param name="said">
+    /// Where a door can say a part of a look alone (the headless host's console): handed what a look that failed or was closed
+    /// had said before (DEV3c), its lines and what ended, before the failure is heard or ends the loop. Null carries them into
+    /// the next look's report instead, as the orphan sweep's lines are: a part handed to <paramref name="onReport"/> would
+    /// replace a screen's standing answers with nothing, and a look that failed returns no report.
+    /// </param>
     public async Task RunAsync(
         Func<TickReport, DriverConfig, Task> onReport,
         Func<Exception, Task>? onError,
-        CancellationToken ct)
+        CancellationToken ct,
+        Action<TickReport>? said = null)
     {
         // Once, before the first tick: what the last run left `working` with nothing behind it — a
         // crash, a kill, a power cut — ended before this tick counts it against the cap and its
         // repository's lock (2026-09-25). Retried each tick until the service has answered it once.
         var swept = false;
-        IReadOnlyList<string> sweep = [];
+
+        // What is said and not yet in a report: the sweep's lines, and what a look that failed or was closed had said (DEV3c).
+        // The next report opens with them, or `said` has them as the failure is heard.
+        var carried = new List<string>();
+        var carriedEnded = new List<SessionEnded>();
+        void SayCarried()
+        {
+            if (said is null || (carried.Count == 0 && carriedEnded.Count == 0)) return;
+            said(new TickReport([], [.. carried], Progressed: false, Concluded: [.. carriedEnded]));
+            carried.Clear();
+            carriedEnded.Clear();
+        }
+
         // The last choices that read, for the wait: a torn file keeps the pace it had.
         var config = DriverConfig.Empty;
 
@@ -129,7 +151,7 @@ public sealed class DriverWatch(
                     if (!swept)
                     {
                         var orphans = await Orphans.EndAsync(service, processes, ct: ct).ConfigureAwait(false);
-                        sweep = [.. orphans.Select(ended => $"stopped  session {ended.Id} ({ended.Repository}): {Orphans.Note}")];
+                        carried.AddRange(orphans.Select(ended => $"stopped  session {ended.Id} ({ended.Repository}): {Orphans.Note}"));
                         swept = true;
                         // A record the sweep ended concludes too (LAND2b, design §2): one whose quest its session closed done
                         // before the crash is due, and this first look lands it.
@@ -143,23 +165,28 @@ public sealed class DriverWatch(
                     var report = await new Driver(
                             service, draining ? InstallUpdate.Drained(config) : config, AdapterSet.Built(), home, processes, sync, output,
                             _harnesses, usage, hooks, events, browser, Running)
-                        { Runner = Runner }
-                        .TickAsync(sessions.Token).ConfigureAwait(false);
+                        { Runner = Runner, Stops = Stops }
+                        .TickAsync(sessions.Token, failed: part =>
+                        {
+                            carried.AddRange(part.Events);
+                            carriedEnded.AddRange(part.Concluded);
+                        }).ConfigureAwait(false);
                     if (draining) report = report with { Considerations = InstallUpdate.HeldFor(report.Considerations, config) };
-                    if (sweep.Count > 0)
+                    if (carried.Count > 0 || carriedEnded.Count > 0)
                     {
-                        report = report with { Events = [.. sweep, .. report.Events] };
-                        sweep = [];
+                        report = report with { Events = [.. carried, .. report.Events], Concluded = [.. carriedEnded, .. report.Concluded] };
+                        carried.Clear();
+                        carriedEnded.Clear();
                     }
 
                     if (!followed && following is { IsCompleted: true } done)
                     {
-                        var said = done.IsCompletedSuccessfully ? done.Result : null;
+                        var lines = done.IsCompletedSuccessfully ? done.Result : null;
                         following = null;
-                        if (said is not null)
+                        if (lines is not null)
                         {
                             followed = true;
-                            if (said.Count > 0) report = report with { Events = [.. report.Events, .. said] };
+                            if (lines.Count > 0) report = report with { Events = [.. report.Events, .. lines] };
                         }
                     }
 
@@ -167,11 +194,13 @@ public sealed class DriverWatch(
                 }
                 catch (OperationCanceledException) when (ct.IsCancellationRequested)
                 {
+                    SayCarried();
                     break;
                 }
                 catch (Exception error) when (onError is not null)
                 {
                     failed = true;
+                    SayCarried();
                     await onError(error).ConfigureAwait(false);
                 }
 
@@ -200,6 +229,8 @@ public sealed class DriverWatch(
         }
         catch
         {
+            // A failure with nobody to hear it ends the loop: what its look had said is said first (DEV3c).
+            SayCarried();
             await sessions.CancelAsync().ConfigureAwait(false);
             throw;
         }

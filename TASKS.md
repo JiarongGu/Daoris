@@ -4,7 +4,7 @@ Open work only. Finished rows move to `docs/task-archive.md`; `CHANGELOG.md` des
 
 ## State
 
-Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,378 CLI, 1,562 service, 93 HTTP host, 5,435 driver (4,718 fast, 717 Process), 759 modules (641 fast, 118 Process), 85 devkit, 4,531 web unit and 24 Playwright; rehearsals: release 114, family 404, deployment 110. The full set (14 gates) passed `d92a49c1` and that tree is on the install; earlier receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,887 bytes, advisory budget 26,000.
+Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,378 CLI, 1,562 service, 93 HTTP host, 5,441 driver (4,724 fast, 717 Process), 759 modules (641 fast, 118 Process), 85 devkit, 4,531 web unit and 24 Playwright; rehearsals: release 114, family 404, deployment 110. The full set (14 gates) passed `d92a49c1` and that tree is on the install; earlier receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,887 bytes, advisory budget 26,000.
 
 Live consumer count is zero. Adoption is the owner's call. The existing desktop-runtime rehearsal remains evidence: 6 collisions, 2 twins to retire, budget 40,000, check at 38,782 bytes; supporting mechanics are in `docs/adoption/shenora-repo-mechanics.md`.
 
@@ -246,7 +246,6 @@ Contracts: toolchain design (D57, §3 resolution), account-rotation (D125), acco
 ## Flakes and held work
 
 - [ ] **FLAKE1 — bounded diagnostic waits** (driver/modules tests). Instrument repeating plugin-kit, input and ProcessJob failures instead of rerunning blindly. Contract: MOD8, PROC1; sightings in FIX-LOG FLAKE1. Proof: named slow step and three loaded serial green runs.
-- [ ] **DEV3c — a look that fails after stopping a session keeps its lines** (driver; after DEV3b). DEV3b made `--once` say each pass beside its sessions as it ends; in `--until-idle` and the watch, a look that stops a session and then fails later in the same look still loses that look's lines (the record is still written). Say each pass's lines as they are made there too. Contract: D115's DEV3a and DEV3b notes. Proof: a stand-in test where a look stops a session, then fails; the stop's line is said.
 - [ ] **TEST1 — capture Windows Node abort** (web e2e, tools). Preserve JSON reporter/rehearsal exit for `0xC0000409`; no timeout tuning from three sightings. Contract: FIX-LOG TEST1. Proof: next failure captured.
 - [ ] **REH1 — canon-upgrade rehearsal failure** (held). Keep transcripts; no tag until captured failure resolved or owner closes after clean post-canon runs. Contract/evidence: FIX-LOG REH1, `_fixtures/rehearsal-logs/`.
 - [ ] **CANON9 — desktop-winforms pack** (held). Keep local until a second repository needs it; two-repository bar remains. Contract: original pack candidate.

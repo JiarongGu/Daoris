@@ -11987,3 +11987,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ORIENT2h6 — the last fence toggles read as Markdown does** (cli, driver; after ORIENT2h4). After ORIENT2h3 and ORIENT2h4 the service and the tools read fences as CommonMark does, but the CLI's `src/Daoris.Cli/src/document.ts` and the driver's `SelfDescription.cs` still toggle on any three backticks or tildes, so a longer fence quoting a heading or a frontmatter line misreads there. Each implements the rule in its own language, held by the shared `decision-notes.json` fence rows or a fixture of their own. Contract: D151's ORIENT2h3/2h4 notes, `twins.md`. Proof: a four-backtick fence case seen failing in each.
 
 **Outcome** 2026-10-07: the CLI's `firstHeading` and the driver's `SelfDescription` read a fence as Markdown does, each with code of its own, held with the tools' `fenced` to `fence-cases.json` (17 cases); no tracked markdown file reads differently (519 compared). Follow-up: ORIENT2h6b. Detail: D151's ORIENT2h6 note, FIX-LOG; commits 56c2d4e2, cd037d60.
+
+
+## DEV3c — a look that fails after stopping a session keeps its lines (2026-10-07, D115)
+
+> - [ ] **DEV3c — a look that fails after stopping a session keeps its lines** (driver; after DEV3b). DEV3b made `--once` say each pass beside its sessions as it ends; in `--until-idle` and the watch, a look that stops a session and then fails later in the same look still loses that look's lines (the record is still written). Say each pass's lines as they are made there too. Contract: D115's DEV3a and DEV3b notes. Proof: a stand-in test where a look stops a session, then fails; the stop's line is said.
+
+**Outcome** 2026-10-07: a look that fails or is closed hands what it had said (its lines, a lost-claim stop among them, and what ended) to `--until-idle`'s, `--once`'s and the headless watch's `said` before the failure; the desktop's loop carries it into the next look's report. Detail: D115's DEV3c note, FIX-LOG; commits bbe9510b, 3fecd196.

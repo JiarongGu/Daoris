@@ -13,6 +13,14 @@ repository.
 - **Fix:** the CLI's `markdownFence`, which `firstHeading` reads by, and the driver's `SelfDescription.Fence` read a fence as `MarkdownFence` and `fenced` do, each with code of its own; both and the tools' `fenced` are held to one table, `src/Daoris.Cli/test/fixtures/fence-cases.json`, which a `REACH` row sends to the driver's suite at a merge. D151's ORIENT2h6 note has the choices.
 - **Verify:** `markdown-fence.test.ts` (the CLI's reader against the table, and four first headings) and `SelfDescriptionTests` (the table, and four READMEs) failed first, then passed with the CLI suite and the driver's fast half; the lane scan in `merge-branch.test.ts` failed until the `REACH` row. No tracked markdown file here, 518, reads a line or a first heading differently. Not covered: the service's suite does not read the table.
 - **Commit:** `56c2d4e2`
+## 2026-10-07 — a look that failed took its own lines with it
+
+### Driver: a stop made early in a look went unsaid when the look failed later (DEV3c)
+- **Symptom:** read from the code and DEV3b's note, not seen on a run: under `--until-idle` and the watch, a look that stopped a session for a lost take and then failed (the quest list down, its sync after the endings unreadable) left the record stood down and printed no `stop  session` line. A look that drained an ending before its own sync failed printed neither the ending nor its fact.
+- **Root cause:** `TickAsync` gathered every line and ending into lists it handed over only in the report it returned, and a look that threw returned none. DEV3a and DEV3b made each finished look and each pass beside `--once`'s sessions said as it ends; a look cut short had no such door.
+- **Fix:** `TickAsync` takes `failed`, handed what the look had said when it fails or is closed. `RunUntilIdleAsync` and `RunOnceAsync` hand it their `said`. `DriverWatch.RunAsync` takes `said` for a part of a look, which the headless host prints; with none, the part joins the next look's report, as the orphan sweep's lines do. D115's DEV3c note has the rest.
+- **Verify:** five `SessionsOutliveTheirLookTests` DEV3c cases over the stand-in ledger, each seen failing first (the until-idle stop case said the ending without the stop; the others said nothing; the two watch cases failed with the carry removed), and `DriverCommandTests.The_hosts_watch_prints_what_a_failed_look_had_said`, failing with the host's `said` removed; then the driver's fast half passed (4686). Not run: the family rehearsal, the `Process` half and the deployment rehearsal.
+- **Commit:** `bbe9510b`.
 
 ## 2026-10-07 — a losing session's stop that its run made and never said
 
