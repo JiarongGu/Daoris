@@ -473,8 +473,8 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
     /// folder is that folder. A README at the repository's root is read alone: its folder is the whole repository,
     /// and the index is the small, reviewed statement of where things are, never every file beside it. A section,
     /// a row or an item is anchored by its title, a title twice in one file told apart by its count (REV3) and never
-    /// given an anchor already given (<see cref="EntryAnchors"/>, ORIENT2h3); text before any heading is the file's
-    /// own, unanchored.
+    /// given an anchor already given (<see cref="EntryAnchors"/>, ORIENT2h3), an item's without the lines it leads
+    /// with (ORIENT2h5); text before any heading is the file's own, unanchored.
     /// </remarks>
     private static IEnumerable<KnowledgeEntry> ScanDeclaredIndex(
         string root, string repository, string declared, ISet<string> indexed)
@@ -505,8 +505,9 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
                 // The file's opening is the file, unanchored; prose before any heading after a table or a list is a
                 // second run of it, and anchored as a repeat, so no two entries share an id (REV3), as is an item's text
                 // after its nested items (ORIENT2h2). A row or an item is anchored with the sections, since its title
-                // can be a subsection's (ORIENT2h3: each anchor reserved).
-                var anchor = anchors.Next(section.Title);
+                // can be a subsection's (ORIENT2h3: each anchor reserved). An item past the lines it leads with
+                // (ORIENT2h5), so an edit above them leaves its id as it was.
+                var anchor = anchors.Next(section.Anchored ?? section.Title);
                 if (section.Opening && anchor == section.Title) anchor = null;
                 yield return new KnowledgeEntry(
                     repository, EntryKind.Index, Provenance.Local, section.Title, section.Body, relative, anchor,

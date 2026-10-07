@@ -665,6 +665,129 @@ public sealed class IndexEntriesTests : IDisposable
         Assert.Equal(index.Count, index.Select(e => e.Id).Distinct().Count());
     }
 
+    // ── an item's id, past the lines it leads with (ORIENT2h5) ──────────────────────────────────
+
+    /// <summary>
+    /// Three generators' items, each leading with the lines it names: an outline's ranges, a fixture's line after its
+    /// file, a digest's lines after its decision; and an item that leads with none. <paramref name="moved"/> is the
+    /// same index after an edit above every one of those lines moved them, which also added a member.
+    /// </summary>
+    private void NumberedItems(bool moved)
+    {
+        var (shift, added) = moved ? (10, "  - 15-17 const Size\n") : (0, string.Empty);
+        string Lines(int first, int last) => $"{first + shift}-{last + shift}";
+        Write("docs/index/outlines/src/Widget.cs.md",
+            "# Outline of `src/Widget.cs`\n\nGenerated; never edit by hand.\n\n"
+            + $"- {Lines(4, 40)} class Widget\n"
+            + added
+            + $"  - {Lines(9, 12)} Widget()\n"
+            + $"  - {Lines(412, 417)} test CountAsync\n"
+            + $"  - {Lines(418, 420)} Task()\n"
+            + $"  - {Lines(421, 423)} Task()\n"
+            + "- [`Gadget`](src/Gadget.cs) the gadget\n"
+            + "  - `Spin()` turns it\n");
+        Write("docs/index/fixtures.md",
+            "# Test fixtures\n\n## `src/Driver.Tests/`\n\n"
+            + $"- `AnswerContinuesTickTests.cs:{284 + shift}` class ParkStandIn\n"
+            + $"- `ChatGoOnTests.cs:{401 + shift}` class ChatLedger\n"
+            + $"- `ChatGoOnTests.cs:{485 + shift}` class Words\n");
+        Write("docs/index/decisions.md",
+            "# Decisions digest\n\n## Notes (2)\n\n"
+            + $"- D151:{Lines(195, 239)} ORIENT2h, built 2026-10-07: a declared index's tables are read a row at a time.\n"
+            + $"- D151:{Lines(241, 253)} ORIENT2e2, built 2026-10-07: the lines travel.\n");
+    }
+
+    /// <summary>
+    /// ORIENT2h5's proof: an item that leads with the lines it names keeps its id when an edit above those lines moves
+    /// them, in the declared index and in a deployment's index read a row at a time alike, since an id is how a hit is
+    /// fetched again and how a refresh replaces an entry rather than adding one. Its title still names the lines, which
+    /// a person reads. Anchored on the title whole, every such item took a new id at every edit: between two commits of
+    /// this repository's index, 1,259 items whose lines moved, and none kept its id (D151's ORIENT2h5 note).
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void An_item_keeps_its_id_when_the_lines_it_leads_with_move(bool deployment)
+    {
+        Declare("""{"index":"docs/index/README.md"}""");
+        Write("docs/index/README.md", Readme);
+        List<KnowledgeEntry> Read() =>
+            Index(new RepositoryScanner(index: deployment ? "docs/index" : null).Scan(_root))
+                .Where(e => e.RelativePath != "docs/index/README.md").ToList();
+
+        NumberedItems(moved: false);
+        var before = Read();
+        NumberedItems(moved: true);
+        var after = Read();
+
+        Assert.Empty(before.Select(e => e.Id).Except(after.Select(e => e.Id)));
+        Assert.Equal(before.Count + 1, after.Count);
+        Assert.Equal(after.Count, after.Select(e => e.Id).Distinct().Count());
+        Assert.Contains(after, e => e.Title.EndsWith("19-22 Widget()", StringComparison.Ordinal));
+        Assert.Contains(after, e => e.Title.Contains("ChatGoOnTests.cs:495", StringComparison.Ordinal));
+        Assert.Contains(after, e => e.Title.Contains("D151:251-263", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// ORIENT2h5: an item is anchored by its title with the lines each label leads with taken out, its parents'
+    /// included, since a class's range moves with every edit inside it; two that are then alike are told apart by
+    /// their count, as two titles alike always were. An item that leads with no lines is anchored by its title, as it
+    /// always was.
+    /// </summary>
+    [Fact]
+    public void An_item_is_anchored_past_the_lines_its_labels_lead_with_and_titled_with_them()
+    {
+        Declare("""{"index":"docs/index/README.md"}""");
+        Write("docs/index/README.md", "# Where things are\n");
+        NumberedItems(moved: false);
+
+        var index = Index(new RepositoryScanner().Scan(_root)).Where(e => e.RelativePath != "docs/index/README.md");
+
+        Assert.Equal(
+            [
+                "Decisions digest › Notes (2) › D151:195-239 ORIENT2h, built 2026-10-07: a declared index's tables are read a row at a time. "
+                + "#Decisions digest › Notes (2) › D151 ORIENT2h, built 2026-10-07: a declared index's tables are read a row at a time.",
+                "Decisions digest › Notes (2) › D151:241-253 ORIENT2e2, built 2026-10-07: the lines travel. "
+                + "#Decisions digest › Notes (2) › D151 ORIENT2e2, built 2026-10-07: the lines travel.",
+                "Test fixtures › `src/Driver.Tests/` › AnswerContinuesTickTests.cs:284 #Test fixtures › `src/Driver.Tests/` › AnswerContinuesTickTests.cs",
+                "Test fixtures › `src/Driver.Tests/` › ChatGoOnTests.cs:401 #Test fixtures › `src/Driver.Tests/` › ChatGoOnTests.cs",
+                "Test fixtures › `src/Driver.Tests/` › ChatGoOnTests.cs:485 #Test fixtures › `src/Driver.Tests/` › ChatGoOnTests.cs (2)",
+                "Outline of `src/Widget.cs` #Outline of `src/Widget.cs`",
+                "Outline of `src/Widget.cs` › 4-40 class Widget #Outline of `src/Widget.cs` › class Widget",
+                "Outline of `src/Widget.cs` › 4-40 class Widget › 9-12 Widget() #Outline of `src/Widget.cs` › class Widget › Widget()",
+                "Outline of `src/Widget.cs` › 4-40 class Widget › 412-417 test CountAsync #Outline of `src/Widget.cs` › class Widget › test CountAsync",
+                "Outline of `src/Widget.cs` › 4-40 class Widget › 418-420 Task() #Outline of `src/Widget.cs` › class Widget › Task()",
+                "Outline of `src/Widget.cs` › 4-40 class Widget › 421-423 Task() #Outline of `src/Widget.cs` › class Widget › Task() (2)",
+                "Outline of `src/Widget.cs` › Gadget #Outline of `src/Widget.cs` › Gadget",
+                "Outline of `src/Widget.cs` › Gadget › Spin() #Outline of `src/Widget.cs` › Gadget › Spin()",
+            ],
+            index.Select(e => $"{e.Title} #{e.Anchor}").ToList());
+    }
+
+    /// <summary>
+    /// ORIENT2h5: what counts as the lines a label leads with. Its first word, where it is a line or a range of lines
+    /// or ends in one after a colon; what follows is what the item is. Anything else is the label as it is: a date, a
+    /// port, a label that is only its lines.
+    /// </summary>
+    [Theory]
+    [InlineData("695-731 PublishAsync()", "PublishAsync()")]
+    [InlineData("23-50 2. The shell", "2. The shell")]
+    [InlineData("AnswerContinuesTickTests.cs:284", "AnswerContinuesTickTests.cs")]
+    [InlineData("AnswerContinuesTickTests.cs:284 class ParkStandIn", "AnswerContinuesTickTests.cs class ParkStandIn")]
+    [InlineData("D151:195-239 ORIENT2h, built", "D151 ORIENT2h, built")]
+    [InlineData(":284 class ParkStandIn", "class ParkStandIn")]
+    [InlineData("PublishAsync()", "PublishAsync()")]
+    [InlineData("2026-10-07 the day", "2026-10-07 the day")]
+    [InlineData("localhost:8080/api the host", "localhost:8080/api the host")]
+    [InlineData("12-", "12-")]
+    [InlineData("695-731", "695-731")]
+    [InlineData("D1:", "D1:")]
+    [InlineData("x:١٢ Arabic digits", "x:١٢ Arabic digits")]
+    public void A_label_s_leading_lines_are_its_first_word_s_line_or_range(string label, string anchored)
+    {
+        Assert.Equal(anchored, IndexRows.Unnumbered(label));
+    }
+
     /// <summary>
     /// ORIENT2h3: a title that is literally another title's counted anchor is anchored past it. Counting titles alone
     /// gave <c>A</c>, <c>A (2)</c> and <c>A (2)</c>, two entries shared an id, and the store's insert failed the whole
