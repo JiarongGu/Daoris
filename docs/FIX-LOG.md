@@ -12,6 +12,7 @@ repository.
 - **Root cause:** UXFIX2 gave the clear ACCTEDIT1's `answered`, and `useHistoryActs` called `done()` on every answer. The driver refuses a lone quest's, ask's or failed sessions' clear that stays, but answers a workspace's, so an answer's arrival was read as the act's success, and `clearSaid` toned it `ok`. HIST1k's `takesSaid` chose its sentence from `takes.bytes`, a size that says nothing of whether files exist.
 - **Fix:** `clearWent` judges the answer before the ask closes, as `sayDiscard` judges a discard; one that took nothing calls `answered.refused` with `clearRefusal`'s lines, and a partial clear's notice wears the error's tone. Records say their size through `history.reading.takes`. D153's HIST1n note has the detail.
 - **Verify:** `history.test.ts`' wholly-kept, partial and records-beside-empty-files cases, `KeptHistory.test.tsx`'s and `ProjectsView.history.test.tsx`'s each failed first, then passed. Not covered: the window.
+
 ## 2026-10-07 — an agent quoting a 401 held its account, and a limit's sentence travelled
 
 ### Driver: a refused key was read from the agent's words, and a limit's note carried the agent's sentence to every machine (AGT3c)
