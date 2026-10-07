@@ -8,6 +8,7 @@
   "map.matches_other": "{{count}} 个匹配",
   "map.sizing": "缩放（Ctrl+滚轮）",
   "map.size": "缩放：{{percent}}%",
+  "map.sizes": "缩放比例",
   "map.zoomIn": "放大",
   "map.zoomOut": "缩小",
   "map.fit": "显示整张地图",

@@ -90,6 +90,8 @@ with the version and date at release.
   the winner's quest; the lost take's conflict names the question instead.
 - The menu bar says which of its rows are ticked to a screen reader, its names and the folded menu's
   button are easier to hit, and arrowing through a segmented choice moves the focus with it.
+- The map's size and a region's shown view are announced as the ticked choice, and the command
+  center is easier to hit.
 
 The first version: doctrine that installs, is checked, and flows back.
 

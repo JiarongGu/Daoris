@@ -11735,3 +11735,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UXFIX1 — keyboard and screen-reader gaps in the new controls** (web-shell). From the second-opinion review: `Segmented` moves the value on arrows but not the focus (Knowledge's mode switch, `ui.tsx:1002`); the folded menu's trigger is about 23 px, under the 28 px floor (`AppMenu.tsx:119`); menu checkmarks are visual only (`AppMenu.tsx:103`, `ui.tsx:1121`). Contract: platform-ux §3, the review. Proof: vitest on the focused element and the menu roles; the trigger's box measured in a story.
 
 **Outcome** 2026-10-07: the menu bar's ticks are announced: toggles are `menuitemcheckbox`, a run of choices `menuitemradio` in one group, each `aria-checked`, from the command table's `radio`; the bar's names and the fold's button are 28 px targets; `Segmented` moves the focus with its choice. Detail: commits 7ef05a38, 24c6b4e7, ef478759.
+
+
+## UXFIX1b — the other menus announce their ticks; the command center's target (2026-10-07)
+
+> - [ ] **UXFIX1b — the other menus announce their ticks; the command center's target** (web-shell). After UXFIX1, the map's size (`map/LayeredMap.tsx:32`) and the selected view (`work/ViewsMenu.tsx:83`) still draw a tick that is not announced, and the command center is 24 px (`work/CommandCenter.tsx:50`), under the 28 px floor. Contract: platform-ux §6, the second-opinion review. Proof: vitest on `menuitemradio`/`aria-checked` and the center's min size.
+
+**Outcome** 2026-10-07: the map's sizes and a region's views menu are `menuitemradio` rows in a named group, `aria-checked` on the one in use; the command center has a 28 px minimum box. Leftovers are UXFIX1c. Detail: commits fe68adbb, 3c4e9da4, 81c47379.

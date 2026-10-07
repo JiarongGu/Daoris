@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render as rtlRender, screen } from '@testing-library/react';
+import { fireEvent, render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -52,10 +52,10 @@ describe('the layered map', () => {
     const svg = screen.getByRole('group', { name: 'the workspace map' });
     const width = () => Number(svg.getAttribute('viewBox')!.split(' ')[2]);
     const start = width();
-    const sizing = async (item: string) => {
+    const sizing = async (item: string, role: 'menuitem' | 'menuitemradio' = 'menuitem') => {
       screen.getByRole('button', { name: /^Sizing: \d+%$/ }).focus();
       await userEvent.keyboard('{Enter}');
-      await userEvent.click(screen.getByRole('menuitem', { name: new RegExp(`^${item}`) }));
+      await userEvent.click(screen.getByRole(role, { name: new RegExp(`^${item}`) }));
     };
 
     await sizing('Zoom in');
@@ -64,13 +64,41 @@ describe('the layered map', () => {
     await sizing('Zoom out');
     expect(width()).toBeGreaterThan(start);
     // A size by name, ticked in the menu once it is the size, and said on the button.
-    await sizing('100%');
+    await sizing('100%', 'menuitemradio');
     expect(screen.getByRole('button', { name: 'Sizing: 100%' })).toHaveTextContent('100%');
     screen.getByRole('button', { name: 'Sizing: 100%' }).focus();
     await userEvent.keyboard('{Enter}');
-    expect(screen.getByRole('menuitem', { name: '100%' }).querySelector('svg')).not.toBeNull();
+    expect(screen.getByRole('menuitemradio', { name: '100%' }).querySelector('svg')).not.toBeNull();
     // Each keyed way says its key.
     expect(screen.getByRole('menuitem', { name: /^Show the whole map/ })).toHaveTextContent('0');
+    await userEvent.keyboard('{Escape}');
+  });
+
+  /**
+   * UXFIX1b: the sizes by name are one choice among three, so the one the map is at is said as well as drawn: a radio
+   * row each, in one group named for what it chooses, `aria-checked` on the size now and on none at a size between
+   * them. The ways that change the size by a step, or fit it, are acts and stay plain items.
+   */
+  it('says which size by name the map is at, as one choice among the three', async () => {
+    render(<LayeredMap topology={TOPOLOGY} selected={null} onSelect={vi.fn()} />);
+    const open = async () => {
+      screen.getByRole('button', { name: /^Sizing: \d+%$/ }).focus();
+      await userEvent.keyboard('{Enter}');
+    };
+    const checked = () => within(screen.getByRole('group', { name: 'Size' })).getAllByRole('menuitemradio')
+      .map((size) => `${size.textContent} ${size.getAttribute('aria-checked')}`);
+
+    await open();
+    expect(screen.getAllByRole('menuitem').map((act) => act.textContent))
+      .toEqual(['Zoom in+', 'Zoom out-', 'Show the whole map0']);
+    await userEvent.click(screen.getByRole('menuitemradio', { name: '200%' }));
+    await open();
+    expect(checked()).toEqual(['50% false', '100% false', '200% true']);
+
+    // A step off a size by name leaves none of the three ticked.
+    await userEvent.click(screen.getByRole('menuitem', { name: /^Zoom out/ }));
+    await open();
+    expect(checked()).toEqual(['50% false', '100% false', '200% false']);
     await userEvent.keyboard('{Escape}');
   });
 

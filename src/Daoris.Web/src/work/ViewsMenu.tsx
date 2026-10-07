@@ -38,6 +38,9 @@ export function viewEntries(t: (key: string) => string, views: readonly ViewId[]
  * locations* puts them back, here once anything has moved and in the View menu always.
  *
  * Controlled when `open` is handed in, so a right-click on a tab can open it.
+ *
+ * **The shown view is said, not only ticked** (UXFIX1b): it is one choice among the region's, so the views are radio
+ * rows, where a plain item's drawn tick told a screen reader nothing; the moves and the reset stay acts.
  */
 export function ViewsMenu({
   region, views, selected, onSelect, onMove, onReset, open, onOpenChange,
@@ -79,12 +82,16 @@ export function ViewsMenu({
       </Tip>
 
       <Menu.Content align="end" className="min-w-56 max-w-80">
-        {views.map((view) => (
-          <Menu.Item key={view.id} tick={view.id === selected} onSelect={() => onSelect(view.id)}>
-            <Icon name={view.icon} size={13} className="shrink-0 opacity-70" />
-            <span className="truncate">{view.label}</span>
-          </Menu.Item>
-        ))}
+        {/* One group named for the region, the shown view `aria-checked`. A row chooses through `onSelect`, the shown
+            one too, as it did as a plain item. */}
+        <Menu.RadioGroup aria-label={label} value={selected ?? ''}>
+          {views.map((view) => (
+            <Menu.RadioItem key={view.id} value={view.id} onSelect={() => onSelect(view.id)}>
+              <Icon name={view.icon} size={13} className="shrink-0 opacity-70" />
+              <span className="truncate">{view.label}</span>
+            </Menu.RadioItem>
+          ))}
+        </Menu.RadioGroup>
 
         {(chosen && onMove) || onReset ? <Menu.Separator /> : null}
         {chosen && onMove && (

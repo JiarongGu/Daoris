@@ -8,6 +8,7 @@
   "map.matches_other": "{{count}} matches",
   "map.sizing": "Sizing (Ctrl+wheel)",
   "map.size": "Sizing: {{percent}}%",
+  "map.sizes": "Size",
   "map.zoomIn": "Zoom in",
   "map.zoomOut": "Zoom out",
   "map.fit": "Show the whole map",

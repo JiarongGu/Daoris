@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
@@ -35,15 +35,31 @@ async function open(props: Partial<Parameters<typeof ViewsMenu>[0]> = {}) {
 afterEach(cleanup);
 
 describe('the views menu', () => {
-  it('names every view the region holds by its whole name, the shown one ticked', async () => {
+  /**
+   * UXFIX1b: the shown view is one choice among the region's, so its tick is said as well as drawn: a radio row each,
+   * in one group named for the region, the shown one `aria-checked`. As a plain item with a drawn tick, a screen reader
+   * heard no view as the shown one.
+   */
+  it('names every view the region holds by its whole name, the shown one ticked and said', async () => {
     await open();
-    const items = screen.getAllByRole('menuitem').map((item) => item.textContent);
-    expect(items.slice(0, 3)).toEqual(['Timeline', 'Review', 'Ask Daoris']);
+    const group = screen.getByRole('group', { name: 'views in the right side bar' });
+    const views = within(group).getAllByRole('menuitemradio');
+    expect(views.map((view) => view.textContent)).toEqual(['Timeline', 'Review', 'Ask Daoris']);
+    expect(views.map((view) => view.getAttribute('aria-checked'))).toEqual(['false', 'true', 'false']);
+    // The moves are acts, not choices: they stay plain items.
+    expect(screen.getByRole('menuitem', { name: 'Move Review to the panel' })).toBeInTheDocument();
+  });
+
+  it('ticks no view when none is shown', async () => {
+    await open({ selected: undefined });
+    const views = screen.getAllByRole('menuitemradio');
+    expect(views).toHaveLength(3);
+    expect(views.every((view) => view.getAttribute('aria-checked') === 'false')).toBe(true);
   });
 
   it('shows the view picked from it', async () => {
     const { onSelect } = await open();
-    await userEvent.click(screen.getByRole('menuitem', { name: 'Ask Daoris' }));
+    await userEvent.click(screen.getByRole('menuitemradio', { name: 'Ask Daoris' }));
     expect(onSelect).toHaveBeenCalledWith('ask');
   });
 
