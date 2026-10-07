@@ -92,7 +92,8 @@ sees, stores or copies a sign-in**; `agent key` keeps an API key, and `agent rul
 session may do (D72). Pick one per machine, per
 workspace, or for a single conversation, or `--clear` it; the session record names the account and tool
 version it ran as. A spawn onto a missing agent, a profile nobody signed into, or a workspace the agent
-has never been trusted in refuses **naming the action that fixes it**.
+has never been trusted in refuses **naming the action that fixes it**. `agent list` says what each account's
+agent last said of its windows, and the tool's own sign-in's once a press on its page read them (D125).
 `docs/2026-09-22-toolchain-design.md` is the contract.
 
 **`connect`, `retire` and `import` are the management commands** — opt-in, they talk to a service, and
