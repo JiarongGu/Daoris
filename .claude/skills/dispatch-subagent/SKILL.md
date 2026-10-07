@@ -118,7 +118,10 @@ Follow the dispatch-subagent skill's subagent half.
 2. **Name the lanes by id** (`daoris.lanes.json`, design §5) and the files the branch must not touch,
    which is anything a branch in flight holds. When two branches need the same lane, one waits for the
    other or the work is split.
-3. **Run at most three at once.** More load makes real-process tests flake.
+3. **Run at most three at once.** More load makes real-process tests flake. **Dispatch before starting a merge, or
+   once its gates are running, not in the moment it starts:** the harness's worktree isolation reads the checkout's git
+   metadata, refuses while the merge tool is writing it, and leaves a locked worktree behind. Unlock it
+   (`git worktree unlock`) so the next prune takes it, and dispatch again.
 4. **Merge with `tools/merge-branch.mjs`**, from the main checkout with a clean tree:
    - `--plan <branch>` shows the lanes, the commit check, the prune and the gate order, and merges nothing.
    - `<branch>` merges with `--no-ff --no-commit`, writes `docs/index/` from the merged tree (ORIENT1), then runs
