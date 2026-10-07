@@ -5,6 +5,15 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-08 — an answered park failed by a second look
+
+### Driver: answering a parked session failed it, *cannot move working → working* (ANSWER2)
+- **Symptom:** on the install, 2026-10-08: two driven sessions parked to ask (`session.parked` 20:38:58 and 20:40:04 UTC), the person answered each from the window (`message.sent`, `kind: answer`, `reach: resume`, 20:43:08 and 20:43:37), and each ended `failed`, its note *the service refused moving session `…` to working: Session `…` cannot move working → working. From working: …*, an unobserved task's `System.AggregateException` in the desktop's log beside each.
+- **Root cause:** not the answer: the box's words reach the say door, which moves nothing. The next look moved the park to working and resumed it, and a resumed run takes the words off its record only as it concludes. Since MSG1b (`3483ea90`), `PriorSession.WordsWaiting` read `said` whatever the record's state, so at every look while the run worked the planner planned the same record to go on, its `continuing` letting it past its own record (ANSWER1a, `0374e74c`). The second run started a second agent process, its move to working was refused, and `ContinueAsync`'s catch moved the record `failed`. Its capture, started before that move, was never awaited: the unobserved task (read from the code: the protocol door's capture opens the record's transcript, which the first run holds). ANSWER1's tick looks once per answer with a stand-in that answers no `said`, and the rehearsals' resumed runs end before a second look.
+- **Fix:** `WordsWaiting` is false for a queued, starting or working record (`PriorSession.Running`); a look claims a record its words wait on for the one run that takes it up (`RunningSessions.TryGoOn`, `WentOn`), covering the moment between a run's open and its move, and says *going on* where a run has it; `HoldAsync` ends a run whose record will not move and observes its capture (`Driver.AbandonedAsync`, 10 s, then left still observed), writing a failure to the machine log with its place (`Driver.Log`, handed by both hosts) and to the console. D131's ANSWER2 note has the rest.
+- **Verify:** `AnswerGoesOnOnceTests` over the stand-in ledger, which now keeps a park, the say and taken doors, and refuses a same-state move in the ledger's words: its two look rows failed first with the install's sentence (moves `working, failed`), its observation rows on a stub that observed nothing; `SessionMessagesPlanTests`' four new rows failed with a working record planned `Start`, going on; the planner's guard, the claim and the bound each failed their rows with the line removed. The driver's fast half passed (4799, was 4788) and the modules' (651, was 650). Not run: the `Process` half, the family rehearsal and the deployment rehearsal.
+- **Commit:** `90dee80a`, `df972c56`, `046560f9`.
+
 ## 2026-10-08 — the publish's last bare rename
 
 ### Tools: laying out the plugin offers stopped a publish on a held staging folder
