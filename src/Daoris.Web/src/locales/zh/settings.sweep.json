@@ -20,6 +20,7 @@
   "settings.sweep.kind.unknown": "git 无法判断它持有什么，因此保留。",
   "settings.sweep.kind.dirty": "它的工作树有未提交的工作。",
   "settings.sweep.kind.inUse": "仍在运行或等待中的会话正持有它的工作树。",
+  "settings.sweep.lands": "来自会话 `{{session}}`（{{state}}），它的工作树还在：在它的页面上采纳即可将其落地，与 `daoris-driver trees land {{session}}` 相同。",
   "settings.sweep.clean": "清理 {{count}} 个分支",
   "settings.sweep.clean_other": "清理 {{count}} 个分支",
   "settings.sweep.look": "重新检查",

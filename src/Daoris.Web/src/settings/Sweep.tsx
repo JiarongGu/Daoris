@@ -26,6 +26,16 @@ export type SweepBranch = {
    * which no clean-up takes. A shell older than LAND3b answers none, and nothing is offered.
    */
   discardable?: boolean;
+  /**
+   * The session its tree is, by id and how it ended (LAND4), where its tree is still here and a record of this machine's
+   * names it. Absent on a shell older than LAND4.
+   */
+  session?: { id: string; state: string } | null;
+  /**
+   * Whether its session's landing is offered beside it (LAND4), by the driver's own rule: its tree still here, holding commits
+   * no branch of the person's holds, whatever that session's ending; the line `trees clean` prints beside the same row.
+   */
+  landable?: boolean;
 };
 
 /** What discarding a session branch answered (LAND3b): done, or the driver's sentence for why it was kept. */
@@ -170,6 +180,10 @@ export function BranchRow({ name, moving, word, children, under }: {
  * no branch of the person's, so the clean-up keeps it. Beside each row the driver says `discardable`, *Discard branch…*
  * asks once under the row and then discards it, as `daoris-driver trees remove … --force` does beside the same rows. The
  * ask stays open until the driver answers, and says a branch it kept inside itself (UXFIX2).
+ *
+ * **A kept branch whose tree is still here says how it lands** (LAND4, D102's LAND4 note): where the driver says `landable`,
+ * the row names the session its tree is and how it ended, and that its page offers Accept, as `daoris-driver trees land`
+ * does from the terminal, whose list prints that line beside the same row. Words only: the press is the session's.
  */
 export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, discarding = null, sync }: {
   /** Undefined while the driver is asked; empty when there is no session branch at all. */
@@ -262,6 +276,14 @@ export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, 
                   <Inline text={holds(branch)} />
                   {branch.kind === 'unlanded' && branch.detail && (
                     <span className="mt-0.5 block whitespace-pre-line font-mono text-meta text-ink-faint">{branch.detail}</span>
+                  )}
+                  {/* LAND4: whose work it is, and how it lands: its session's page, or the terminal's line beside the row. */}
+                  {branch.landable && branch.session && (
+                    <span className="mt-0.5 block">
+                      <Inline text={t('settings.sweep.lands', {
+                        session: branch.session.id, state: t(`sessionState.${branch.session.state}`),
+                      })} />
+                    </span>
                   )}
                   {discardable && asking !== key && (
                     <span className="mt-1 block">
