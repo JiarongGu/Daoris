@@ -1,7 +1,7 @@
 ---
 name: no-tmp-for-repo-files
 applies_when: composing a repository file, or needing a scratch, probe, or dump file
-enforces: compose finals with the file-writing tools; scratch goes in a gitignored repo directory, never OS temp
+enforces: compose finals with the file-writing tools — a harness with none writes through a program's file API, never console redirection; scratch goes in a gitignored repo directory, never OS temp
 ---
 
 # No OS temp for repository files — compose in place; keep scratch in the repository
@@ -23,7 +23,9 @@ directly never touches the console.
 ## How to apply
 
 - **Final content → write the file directly.** Read the inputs, build the content, write it once. Most
-  work needs no intermediate file at all.
+  work needs no intermediate file at all. Where the harness offers no file-writing tool, a program
+  writes the file: a language's file API, BOM-less UTF-8 in the repository's line endings, never the
+  console's redirection; read it back once written. A helper script is scratch like any other.
 - **Unavoidable scratch — probes, fixtures, multi-stage dumps → a gitignored directory in the
   repository.** Clean it up when the task ends.
 - **Reusable tooling → a tracked tools directory**, where it is visible, reviewable, and reusable, rather
