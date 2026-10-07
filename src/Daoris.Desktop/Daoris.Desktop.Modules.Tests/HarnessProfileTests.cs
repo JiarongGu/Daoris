@@ -191,6 +191,48 @@ public sealed class HarnessProfileTests : Bridge
     }
 
     /// <summary>
+    /// CODEXACCT1: *Add an account…* on Agents → Codex runs <c>codex login</c> — a stand-in named for <c>codex</c>, answering
+    /// in the words <c>codex login status</c> printed on the install — into a new folder under <c>codex</c>'s accounts, with
+    /// that folder as its <c>CODEX_HOME</c>, and keeps it once the status reads it signed in. Codex names nobody, so the end
+    /// says so, and the page's naming step asks for the name.
+    /// </summary>
+    [Fact]
+    public async Task Adding_a_codex_account_signs_in_with_codex_into_a_new_folder_and_keeps_it()
+    {
+        var script = Path.Combine(Home, "codex.mjs");
+        File.WriteAllText(script, """
+            import fs from 'node:fs';
+            import path from 'node:path';
+            const home = process.env.CODEX_HOME;
+            const [verb, sub] = process.argv.slice(2);
+            if (verb === '--version') { console.log('codex-cli 0.160.0'); process.exit(0); }
+            if (verb === 'login' && sub === 'status') {
+              console.log(home && fs.existsSync(path.join(home, 'auth.json')) ? 'Logged in using ChatGPT' : 'Not logged in');
+              process.exit(0);
+            }
+            if (verb === 'login' && sub === undefined && home) { fs.writeFileSync(path.join(home, 'auth.json'), '{}'); process.exit(0); }
+            process.exit(1);
+            """);
+        File.WriteAllText(DriverConfigPath, $$"""
+            { "drivable": [], "holds": [], "cap": 1, "adapter": "codex-acp",
+              "commands": { "codex": ["node", {{JsonSerializer.Serialize(script)}}], "codex-acp": ["node", {{JsonSerializer.Serialize(script)}}] } }
+            """);
+
+        var answer = await AnswerAsync(Module(), "HARNESS_ACTION", new { harness = "codex-acp", action = "login-new" });
+        var made = answer.GetProperty("profile").GetString()!;
+        await UntilAsync(() => Raised.Any(m => m.Type == "HARNESS_ENDED"));
+
+        var ended = JsonSerializer.SerializeToElement(Raised.Single(m => m.Type == "HARNESS_ENDED").Payload);
+        Assert.Equal(0, ended.GetProperty("ExitCode").GetInt32());
+        Assert.True(ended.GetProperty("Kept").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, ended.GetProperty("Account").ValueKind);
+        Assert.True(File.Exists(Path.Combine(ProfileAt("codex", made), "auth.json")));
+        Assert.Equal(LoginState.In, AccountReads.Of(Home, "codex").Accounts[made].Login);
+        Assert.Contains(Raised.Select(Line), line => line.Contains("`codex` did not say who"));
+        Assert.False(Directory.Exists(Path.Combine(Home, "harnesses", "codex-acp")));
+    }
+
+    /// <summary>
     /// A sign-in that does not finish leaves nothing behind (D66 §3) — the tool failed, was
     /// stopped, or ended without signing anyone in. The account existed only for the sign-in, so
     /// the list is exactly what it was before the press.

@@ -62,6 +62,7 @@ public sealed partial class DriverModule
                 // knows it: a door's is its owner's (AGT7), and null offers nothing.
                 var settingsFile = _loop.Harnesses.AccountToolchain(report.Adapter)?.SettingsFile;
                 var owner = toolchain?.Owner(report.Adapter) ?? report.Adapter;
+                var accountActs = AccountActs(_loop.Harnesses, report.Adapter);
                 return new
                 {
                     Harness = report.Adapter,
@@ -84,9 +85,11 @@ public sealed partial class DriverModule
                     // outcome is a refusal.
                     Pinnable = toolchain is { } pinnable
                         && (pinnable.Package is { Length: > 0 } || pinnable.Channel is { Length: > 0 }),
-                    // Whether this door can run a sign-in at all — the same rule: a harness that
-                    // declares no login flow gets no "Sign in" whose only outcome is a refusal.
-                    SignsIn = toolchain?.LoginArguments is { Count: > 0 },
+                    // Whether this door can run a sign-in at all — the same rule: an agent that
+                    // declares no login flow gets no "Sign in" whose only outcome is a refusal. Its
+                    // agent's flow (AGT7, CODEXACCT1), as `TakesKey` reads its key: `codex-acp` has no
+                    // sign-in of its own and runs `codex login`, so Agents → Codex offered no account.
+                    SignsIn = accountActs.SignsIn,
                     // Which Update this door has (USE1a): "pin" moves the pin to the newest
                     // release, "tool" runs the tool's own updater, and null offers none — the
                     // same rule again, after Update on a pinned door answered only a refusal.
@@ -123,7 +126,7 @@ public sealed partial class DriverModule
                         : new { AgentSettings.Models, AgentSettings.Efforts },
                     // Whether this agent takes an API key at all — the control is absent where
                     // it does not, by the rule `Pinnable` and `SignsIn` follow.
-                    TakesKey = _loop.Harnesses.AccountToolchain(report.Adapter)?.KeyVariable is { Length: > 0 },
+                    TakesKey = accountActs.TakesKey,
                     // 🔴 The account a person actually HAS — the tool's own configuration home —
                     // answered beside the profiles rather than left out, which read as "No
                     // accounts" to an owner who was logged in.
@@ -181,6 +184,16 @@ public sealed partial class DriverModule
         // When its state was last read (UX6e, ROSTER1), or null where it never was: absent is never a reading.
         profile.Read,
     };
+
+    /// <summary>
+    /// Whether a door signs in its agent's accounts, and takes a key into one, by that agent's own flow and key variable
+    /// (AGT7, CODEXACCT1): <c>codex-acp</c> signs in with <c>codex login</c>, as <c>claude-code-acp</c> with <c>claude auth
+    /// login</c>. Public for the fast half's table, which reads it without the roster the route asks.
+    /// </summary>
+    public static (bool SignsIn, bool TakesKey) AccountActs(HarnessRoster harnesses, string adapter) =>
+        harnesses.AccountToolchain(adapter) is { } agent
+            ? (agent.LoginArguments is { Count: > 0 }, agent.KeyVariable is { Length: > 0 })
+            : (false, false);
 
     /// <summary>Where an account runs, as the page reads it: each scope, a null workspace for this machine, its list and default.</summary>
     private static object[] PlacesShown(IReadOnlyList<AccountPlace> places) =>
@@ -662,12 +675,19 @@ public sealed partial class DriverModule
         }
 
         var profileHome = HarnessSettings.ProfileHome(home, owner, fresh ?? target ?? profile ?? "default");
+        // 🔴 A sign-in is its accounts' agent's (AGT7, CODEXACCT1): a door onto another agent runs that agent's own flow, with
+        // its binary and the command named for it. `codex-acp` has no flow of its own and runs `codex login`; refused as a door
+        // with none, Agents → Codex offered no account while `daoris agent login codex --new` made one (D50).
+        var signing = action is "login" or "login-new" ? _loop.Harnesses.AccountAgentOf(harness) : null;
+        var signingToolchain = signing?.Toolchain ?? toolchain;
+        var signingCommand = signing is { } agent ? config.Commands.GetValueOrDefault(agent.Name) : command;
         Func<Task<int>> run = action switch
         {
             "install" => () => HarnessActions.InstallAsync(toolchain, stream, CancellationToken.None, track),
             "update" => () => UpdateAsync(harness, toolchain, command, stream, CancellationToken.None, track),
-            "login" => () => SignInToAsync(owner, target!, toolchain, command, profileHome, stream, track, lists),
-            "login-new" => () => SignInAsync(harness, fresh!, toolchain, command, profileHome, stream, config, track, lists, name),
+            "login" => () => SignInToAsync(owner, target!, signingToolchain, signingCommand, profileHome, stream, track, lists),
+            "login-new" => () => SignInAsync(
+                harness, owner, fresh!, signingToolchain, signingCommand, profileHome, stream, config, track, lists, name),
             // The managed toolchain (TOOL2/D57) — the desktop's half of `daoris agent pin|unpin`, over
             // the same file.
             _ => () => PinAsync(harness, toolchain, stream, version!, CancellationToken.None, track),
@@ -793,12 +813,15 @@ public sealed partial class DriverModule
     /// is exactly what it was before the press, whether the tool failed, was stopped, or never
     /// started.
     /// </remarks>
+    /// <param name="harness">The door pressed, whose account agent's end question reads the new account.</param>
+    /// <param name="owner">Whose accounts the door runs as (AGT7): the new account's folder is under it.</param>
+    /// <param name="toolchain">The account agent's toolchain, whose own flow signs in (CODEXACCT1).</param>
+    /// <param name="command">The command named for the account agent, or null for its own binary.</param>
     private async Task<int> SignInAsync(
-        string harness, string fresh, HarnessToolchain toolchain, IReadOnlyList<string>? command,
+        string harness, string owner, string fresh, HarnessToolchain toolchain, IReadOnlyList<string>? command,
         string profileHome, Action<string> stream, DriverConfig config, Action<HarnessRun> track,
         IReadOnlyList<string?> joins, string? name)
     {
-        var owner = toolchain.Owner(harness);
         var code = -1;
         try
         {
@@ -832,7 +855,7 @@ public sealed partial class DriverModule
                     _loop.Harnesses.Home, owner, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), fresh, name), name is not null, stream);
                 stream(account is { Length: > 0 }
                     ? $"signed in as {account} — this machine lists it as `{called ?? fresh}`."
-                    : $"signed in — `{harness}` did not say who, so this machine lists it as `{called ?? fresh}`.");
+                    : $"signed in — `{owner}` did not say who, so this machine lists it as `{called ?? fresh}`.");
                 Placed(owner, fresh, joins, stream);
             }
         }
