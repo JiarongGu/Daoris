@@ -83,6 +83,42 @@ public sealed class DriverModuleOpinionTests : DriverModuleBridge
         Assert.False(opinions[2].TryGetProperty("rule", out var nothing) && nothing.ValueKind != JsonValueKind.Null);
     }
 
+    /// <summary>
+    /// The family sentence over the loop's agents (XAGENT1b3, D155's XAGENT1b2 note): a plugin's agent that declares the working
+    /// agent's maker is of its family on the screen, as the terminal and Ask Daoris judge it, and one declaring another maker is
+    /// not. Both the state's rows and the lines say so.
+    /// </summary>
+    [Fact]
+    public async Task A_plugins_agent_declaring_the_working_agents_maker_is_named_its_family()
+    {
+        // The working agent's maker as the build declares it, so the plugin claims exactly that.
+        var maker = AdapterSet.Built().Resolve("claude-code").Toolchain!.Maker!;
+        Plugin("example.same", new { id = "example.same", harnesses = new[] { new { name = "example-same", command = new[] { "same" }, maker } } });
+        Plugin("example.other", new { id = "example.other", harnesses = new[] { new { name = "example-other", command = new[] { "other" }, maker = "Other Maker" } } });
+        // The machine drives with `claude-code` by default; the loop reads the plugins as it is made.
+        var loop = Loop();
+        var module = new DriverModule(Bus, loop);
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService())));
+
+        var state = await AnswerAsync(module, "SET_OPINION", new
+        {
+            workspace = "aurora", set = new { reviewers = new[] { "example-other", "example-same", "codex-acp" } },
+        });
+        var lines = (await AnswerAsync(module, "LINES")).GetProperty("opinions").EnumerateArray().ToList();
+
+        var shared = state.GetProperty("workspaceOpinions")[0].GetProperty("rule");
+        Assert.Equal(["example-same"], shared.GetProperty("sameAgent").EnumerateArray().Select(each => each.GetString()));
+        var engine = lines.Single(row => row.GetProperty("repository").GetString() == "engine").GetProperty("rule");
+        Assert.Equal(["example-same"], engine.GetProperty("sameAgent").EnumerateArray().Select(each => each.GetString()));
+    }
+
+    private void Plugin(string id, object manifest)
+    {
+        var folder = Path.Combine(Home, "plugins", id);
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), JsonSerializer.Serialize(manifest));
+    }
+
     /// <summary>A stand-in service holding three repositories, two in one workspace and one in none.</summary>
     private sealed class StandInService : HttpMessageHandler
     {
