@@ -646,8 +646,8 @@ public static class SessionGroups
         var events = new SessionEvents(Path.Combine(home, "sessions"));
         foreach (var record in look.Records)
         {
+            // Ask Daoris's own conversation among them (ASKHIST1): its runner takes its words up as a chat's.
             if (record.Kind != "chat" || record.Live || record.Teammate || record.State == "stood-down"
-                || string.Equals(record.Repository, HelpRoom.Repository, StringComparison.OrdinalIgnoreCase)
                 || ServiceClient.ReadRecord(recordsJson, record.Id) is not { WordsWaiting: true } prior
                 || GoOnMarks.Judged(prior, marks.Read(record.Id)))
             {

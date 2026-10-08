@@ -149,12 +149,16 @@ public static class GoOnNew
         if (record is null) return Refused(WordsNever.NotFound, $"no session here is {id}.");
 
         var last = WordsNever.LastHere(json, record.Quest);
-        switch (WordsNever.Judge(record, last))
+        // Ask Daoris's own conversation has no quest a new session would serve (ASKHIST1): its words go on in itself, or its
+        // history starts a new conversation from it.
+        switch (WordsNever.Judge(record, last) ?? (WordsNever.IsHelp(record) ? WordsNever.Help : null))
         {
             case WordsNever.Teammate:
                 return Refused(WordsNever.Teammate, $"{id} ran on {id[..id.IndexOf('/')]}, where its conversation is; nothing said here reaches it.");
             case WordsNever.Help:
-                return Refused(WordsNever.Help, $"{id} is Ask Daoris's own conversation, which goes on nowhere: its panel opens a new one.");
+                return Refused(WordsNever.Help,
+                    $"{id} is Ask Daoris's own conversation, which has no quest a new session would serve: its words go on in it, or "
+                    + "Ask Daoris's history starts a new conversation from it.");
             case WordsNever.Intake:
                 return Refused(WordsNever.Intake, $"{id} is an intake; answer its ask #{record.Ask} instead: publish it or close it.");
             case WordsNever.StoodDown:

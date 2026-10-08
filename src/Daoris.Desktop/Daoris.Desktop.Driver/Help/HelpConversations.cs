@@ -292,6 +292,11 @@ public static class HelpTranscript
     /// <summary>The name of the file the new conversation is handed.</summary>
     public static string FileName(string session) => $"earlier-conversation-{session}.md";
 
+    /// <summary>What the new conversation's agent is told beside the person's first words. Its own language, as a preface is.</summary>
+    public static string Preface(string session) =>
+        $"This conversation starts from an earlier Ask Daoris conversation, `{session}`: its words are the attached file "
+        + $"`{FileName(session)}`, which the person handed you. Read it before you answer.";
+
     /// <summary>The transcript, or null where nothing was said.</summary>
     /// <param name="title">The conversation's title, its name or first question, for the head.</param>
     public static string? Of(SessionEvents events, string session, string? title, int limit = Limit)
