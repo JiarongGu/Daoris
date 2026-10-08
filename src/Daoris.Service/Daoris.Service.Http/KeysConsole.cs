@@ -6,7 +6,8 @@ namespace Daoris.Knowledge.Http;
 /// `keys mint|list|revoke` — the deployment's own console is where machine credentials come from
 /// until person-auth exists (D47 §7). A console verb on the serving binary, against the same store,
 /// exiting without ever binding: it is not a web concern, which is why it does not live in Program.cs.
-/// Exit codes are the contract: 0 clean, 1 the prefix named nothing, 2 bad usage.
+/// Exit codes are the contract: 0 clean, 1 the prefix named nothing, 2 bad usage or a store a newer
+/// Daoris wrote.
 /// </summary>
 internal static class KeysConsole
 {
@@ -16,7 +17,19 @@ internal static class KeysConsole
         // the configured root (D48 §3), which on a server would import whatever sits beside the binary
         // into a deployment that must be fed and never scanned (D47 §4). Minting a credential has no
         // business touching an index.
-        await using var composed = await ServiceFactory.OpenKeysAsync(options);
+        KeyAdministration opened;
+        try
+        {
+            opened = await ServiceFactory.OpenKeysAsync(options);
+        }
+        catch (NewerStoreException refusal)
+        {
+            // KSCHEMA1: the file is left as it was, and the refusal is its sentence, as a usage error is.
+            Console.Error.WriteLine(refusal.Message);
+            return 2;
+        }
+
+        await using var composed = opened;
 
         switch (args)
         {

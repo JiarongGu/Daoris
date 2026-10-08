@@ -81,7 +81,8 @@ row is its cells labelled by their columns, not its file's line as written, so i
 entry whose feed named none or named lines its body cannot be. A hit names `path:first-last` and the line its excerpt
 starts on (`KnowledgeHit.ExcerptLine`, from `Text.ExcerptAt`), the frontmatter it skipped counted; `knowledge_get`
 reads a range from the entry as indexed, never from the disk, so a deployment fed by another machine reads it too. The
-store keeps them (`first_line`, `last_line`; schema 5, so an older index is rebuilt when it opens), `/api/search`
+store keeps them (`first_line`, `last_line`; schema 5, so an older index is rebuilt when it opens, and a newer one
+refuses to open, KSCHEMA1 below), `/api/search`
 answers `firstLine`, `lastLine` and `excerptLine` beside every field it had, `/api/entry` and `/api/entries` the first
 two, and `/api/feed/entries` takes them, digesting them only where an entry names them.
 
@@ -350,6 +351,15 @@ the same file (`knowledge.db` under the Daoris home — `DAORIS_HOME`, which the
 for the account, D63), which is how a quest published from one repository's session is waiting when
 another repository's session starts. With no home and no `DAORIS_KNOWLEDGE_DB`, the host says so on
 stderr and exits 2 rather than opening a database under the user profile.
+
+**An older build never opens a newer store** (KSCHEMA1). The index's schema has a version (`user_version`): an older
+one is rebuilt when it opens, as before, and a newer one, which only a newer Daoris writes, is refused with nothing
+written (`NewerStoreException`), in one sentence naming the file, both versions and the folder of the build to update.
+The read and the stamp are one write transaction, so an older build opening beside a newer one's stamp waits for it and
+refuses. The MCP host says the sentence on stderr, keeps it in its machine log as an `error` at `start`, and exits 2:
+its session has no connector. The HTTP host's `keys` verbs say it and exit 2; the host itself does not start, and the
+runtime's report of it is the same sentence with no stack. D36's KSCHEMA1 note reads what an older build can still do to
+the stores that add columns.
 
 **This repository's own `.mcp.json` starts a built host, never a build** (ORIENT1c): `node
 tools/knowledge-server.mjs`. It ran `dotnet run` before, which built at every session's start, once per

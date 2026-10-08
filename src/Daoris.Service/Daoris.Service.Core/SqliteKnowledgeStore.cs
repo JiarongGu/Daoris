@@ -13,8 +13,10 @@ namespace Daoris.Knowledge;
 /// <para><b>No migrations, deliberately.</b> The index is <em>derived</em> data: a local deployment
 /// re-reads it from the repositories in seconds, and a shared one — which can see no repository — is
 /// re-fed whole by each desktop's next sync tick (D47 §9). A schema change therefore does not need
-/// migrating, it needs rebuilding — so the schema carries a version, and a mismatch drops the tables
-/// and starts over. The cognition sibling's storage uses a migration runner because its data is
+/// migrating, it needs rebuilding — so the schema carries a version, and an older one drops the tables
+/// and starts over. A NEWER one refuses to open (<see cref="NewerStoreException"/>, KSCHEMA1): every
+/// host on a machine opens this file, and an older build that rebuilt a newer store would break the
+/// newer host reading it. The cognition sibling's storage uses a migration runner because its data is
 /// authored and cannot be regenerated; the same choice here would be ceremony guarding something that
 /// is not at risk.</para>
 ///
@@ -23,7 +25,7 @@ namespace Daoris.Knowledge;
 /// </remarks>
 public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
 {
-    /// <summary>Bump when the schema changes. A mismatch rebuilds rather than migrates.</summary>
+    /// <summary>Bump when the schema changes. An older version rebuilds rather than migrates; a newer one refuses.</summary>
     /// <remarks>2 — entries carry their workspace (D48).</remarks>
     // 3: the FTS rows carry CJK text cut into bigrams (`Text.Segment`), so every existing index is
     //    rebuilt from the raw entries on open — the rows it held were never findable in 中文.
@@ -31,7 +33,7 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
     //    before holds `ProbeLock` as one token, which a question in words never finds.
     // 5: entries keep the lines of their file they are (`first_line`, `last_line`, ORIENT2e), and the kinds
     //    gain `Index`: an entry written before names no lines, which a hit then could not name.
-    private const int SchemaVersion = 5;
+    internal const int SchemaVersion = 5;
 
     private readonly SqliteConnection _connection;
     private readonly ConnectionGate _db;
@@ -65,16 +67,36 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
 
         await connection.OpenAsync(ct).ConfigureAwait(false);
         var store = new SqliteKnowledgeStore(connection);
-        await store.EnsureSchemaAsync(ct).ConfigureAwait(false);
+        try
+        {
+            await store.EnsureSchemaAsync(ct).ConfigureAwait(false);
+        }
+        catch
+        {
+            // A refused store is closed here, so the file is no longer held by a build that will not use it.
+            await connection.DisposeAsync().ConfigureAwait(false);
+            throw;
+        }
+
         return store;
     }
 
-    private Task EnsureSchemaAsync(CancellationToken ct) => _db.RunAsync(async () =>
+    /// <remarks>
+    /// One write transaction, the read through the stamp (KSCHEMA1): every host on the machine opens this file, and an
+    /// older build that read its own version a moment before a newer one stamped the file would write its number back
+    /// over the newer tables, which the newer build's next start would then rebuild.
+    /// </remarks>
+    private Task EnsureSchemaAsync(CancellationToken ct) => _db.InTransactionAsync(async (_, inside) =>
     {
-        var version = Convert.ToInt32(await ScalarAsync("PRAGMA user_version;", ct).ConfigureAwait(false));
+        var version = Convert.ToInt32(await ScalarAsync("PRAGMA user_version;", inside).ConfigureAwait(false));
+
+        // 🔴 An older build never drops a newer store (KSCHEMA1, NewerStoreException's remarks say why). Nothing is
+        // written: the transaction rolls back on the throw.
+        if (version > SchemaVersion) throw new NewerStoreException(_connection.DataSource, version, SchemaVersion);
+
         if (version != SchemaVersion)
         {
-            await ExecuteAsync("DROP TABLE IF EXISTS entries_fts; DROP TABLE IF EXISTS entries;", ct)
+            await ExecuteAsync("DROP TABLE IF EXISTS entries_fts; DROP TABLE IF EXISTS entries;", inside)
                 .ConfigureAwait(false);
             Rebuilt = version != 0;   // 0 is a store nobody has written yet
         }
@@ -101,9 +123,10 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
             -- id is stored but not indexed: it is how a hit gets back to its row, never a search term.
             CREATE VIRTUAL TABLE IF NOT EXISTS entries_fts
                 USING fts5(id UNINDEXED, title, body, tokenize='unicode61');
-            """, ct).ConfigureAwait(false);
+            """, inside).ConfigureAwait(false);
 
-        await ExecuteAsync($"PRAGMA user_version = {SchemaVersion};", ct).ConfigureAwait(false);
+        await ExecuteAsync($"PRAGMA user_version = {SchemaVersion};", inside).ConfigureAwait(false);
+        return true;
     }, ct);
 
     /// <remarks>

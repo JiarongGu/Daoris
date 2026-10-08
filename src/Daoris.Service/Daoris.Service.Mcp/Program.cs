@@ -95,8 +95,21 @@ var embedder = HostComposition.BuildEmbedder(serviceOptions);
 // host is always a LOCAL door; a shared deployment has no stdio.
 // A quest's files are kept under the home of the machine that has them (D65 §2) — this one, always:
 // the MCP host is a local door. No home, no keeper, and a publish carrying files is refused (D63).
-var composed = await ServiceFactory.CreateAsync(
-    serviceOptions, embedder, remotes: new ConfiguredRemotes(), files: QuestFiles.FromEnvironment());
+ComposedService composed;
+try
+{
+    composed = await ServiceFactory.CreateAsync(
+        serviceOptions, embedder, remotes: new ConfiguredRemotes(), files: QuestFiles.FromEnvironment());
+}
+catch (NewerStoreException refusal)
+{
+    // KSCHEMA1: a store a newer Daoris wrote is refused, left as it was, and said in one sentence a person can act on,
+    // as every other start refusal here is. Into the machine log too, since this standard error is the agent's.
+    Console.Error.WriteLine(refusal.Message);
+    log.Failed("start", refusal);
+    return 2;
+}
+
 builder.Services.AddSingleton(composed.Service);
 builder.Services.AddSingleton(composed.Quests);
 builder.Services.AddSingleton(composed.Exchange);
