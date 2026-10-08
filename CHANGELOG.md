@@ -166,6 +166,8 @@ with the version and date at release.
   nothing, instead of whichever repository its other words matched.
 - A working session's transcript file now fills as the session speaks, not only when it ends.
 - A request the service fails on now answers with a sentence, and its log says what went wrong and where.
+- An installed Daoris now carries its own knowledge connector and hands it to every session, instead of an
+  older copy that could rebuild the knowledge index at an older version and break search.
 
 The first version: doctrine that installs, is checked, and flows back.
 

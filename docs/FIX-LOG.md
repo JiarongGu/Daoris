@@ -13,6 +13,36 @@ repository.
 - **Fix:** the index alone is refused, never the store. A version newer than the build's is left as it is: nothing is dropped, created or stamped, `Rebuilt` stays false and the fed commits are kept. The store opens, and its `Refusal` (`NewerIndexException`) is thrown by every operation on the index, the service's refusing before anything else, since the hybrid search's tiers each fold a throw into an empty answer. The HTTP host answers it as 409 in the error shape, caught ahead of HOSTLOG1's 500, and the connector's index tools answer it as their text; its sentence names both versions and no path. The registry answers without counts, no implicit refresh is tried, and each host says it once at start (stderr with the folder to update, and `index.refused` in its log). An older version is rebuilt as before, and the read through the stamp is one `BEGIN IMMEDIATE` transaction. The branch first refused the whole store at open, as the task asked; an update that fails to confirm rolls back to the previous build by itself (D139), and that build would have had no host until a person updated it. D36's KSCHEMA1 note has why the index alone, and the reading of the column-adding stores.
 - **Verify:** `NewerIndexTests` (Service, 7): a store one version ahead opens, its reads, replace and search refuse, and every declared object, row and the version stay as they were; the whole composition over it starts, a quest is found and another published, a session made, a key minted and listed, an ask made and the registry read, while search, read, summary, convergence, entries, refresh, feed and retire refuse, the retire leaving its registration and the fed commit kept, and the index's tables unchanged; the key console lists over it; with a model, a search refuses rather than answering nothing (removing the service's refusal made it answer nothing); the connector's index tools answer the sentence and its registry answers; an older build opening while a newer one holds its stamp uncommitted waits and leaves it; the real connector starts and stays up over it, says it once on stderr and logs `index.refused` once; a store one version behind is still rebuilt. Five failed first against the refusal at open. `NewerIndexHostTests` (Http, 2): the host starts, status, registry, quests and sessions answer 200, and search, repositories, entry, entries, convergence, refresh and retire answer 409 with the sentence and no path, with no `error` and no `request.failed` in its log and `index.refused` once; without the 409 catch, search answered HOSTLOG1's 500. The key console lists over it. The older-version tests (`SchemaRebuildTests`, `SqliteStoreTests`, `HitLinesTests`) pass unchanged. On the tree merged with main: Service 1625 (main 1618), Http 102 (main 100). Not covered: a connector already installed predates this and still rebuilds; only builds from this one on leave a newer index alone.
 - **Commit:** pending.
+## 2026-10-08 — an install handed its sessions a connector no republish refreshed
+
+### Tools and driver: a deployed shell carried its HTTP host and no connector, so sessions got the home's old copy (CONNECTOR1)
+- **Symptom:** on the install, 2026-10-08: the running host answered `no such column: first_line` on every knowledge
+  route, 523 times in a day, and the shared `knowledge.db` read `user_version` 3 while the code is at 5. An intake's
+  `quest_publish` wrote its short title and its requirements into the body, because the connector's tool had neither
+  parameter.
+- **Root cause:** `publish:desktop --service` laid the HTTP host under `app/daoris-knowledge-http/` and no MCP host, so
+  `KnowledgeConnector.Candidates` found `$DAORIS_HOME/bin/daoris-knowledge.exe`, which one `publish:service --install`
+  had laid down eight days earlier and no republish touched. Every protocol-door session was handed it. It opened the
+  shared store, saw a newer schema, and dropped and rebuilt it at its own older version, after which the newer host
+  read columns the store no longer had. The HTTP host had met the same order once and been fixed (the install's own
+  copy outranks the home's, `ServiceHostLocator`); the connector's list had kept the old order, minus the install's
+  rung, because the install had nothing to put there. A driven pipe-door session in this repository ran the same old
+  copy through `tools/knowledge-server.mjs`, which mirrors that list.
+- **Fix:** `--service` publishes both hosts under `app/`, each into the folder `service-publish` gives it, by that
+  script's one recipe (`publishCommand`, exported, its runner guarded). The connector lands in `app/daoris-knowledge/`
+  and is replaced whole on each publish. `KnowledgeConnector.Candidates` looks beside the running application, as
+  `ServiceHostLocator` does, ahead of the home's `bin/`; `DAORIS_MCP_HOST` still comes first. `knowledge-server.mjs`
+  runs the install's copy for a driven session whose home is an install's `data/`. KSCHEMA1, a store refusing a newer
+  database, is the other half and a row of its own. D93's CONNECTOR1 note has the layout.
+- **Verify:** `KnowledgeConnectorTests` (8): the order, the defect (both copies present, the session handed the
+  install's), both shapes, the explicit path over both, and the fall-through; four failed first. `desktop-publish.test.ts`:
+  the plan lays the connector beside the host by the one recipe, and the recipe keeps its native libraries inside.
+  `deployment-rehearsal.test.ts`: the layout and the locator agree, and the stub says the command it was handed, read
+  back. `knowledge-server.test.ts`: a driven session on an install runs the install's copy. Driver fast half 4859 (was
+  4851); CLI 45, 27 and 13 in those three files (were 42, 23 and 11). Not run here: the deployment rehearsal, whose
+  phase 7 now asserts the conversation was handed `app/daoris-knowledge/daoris-knowledge.exe` and not the `bin/` decoy
+  phase 4 plants.
+- **Commit:** `be46c6c0`, `6f6d439f`, `df8018cd`, `4d4ad88d`.
 
 ## 2026-10-08 — a say met another request's open transaction
 

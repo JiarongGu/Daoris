@@ -16,6 +16,10 @@ type Reply = { jsonrpc: string; id: number | string; result?: Record<string, unk
 const tool = await import('../../../tools/knowledge-server.mjs') as {
   SERVER: string;
   DRIVEN: string;
+  INSTALL_CONNECTOR: readonly string[];
+  INSTALL_MARKER: string;
+  INSTALL_HOME: string;
+  installConnector: (home: string | undefined, executable: string) => string | null;
   mainCheckout: (checkout: string) => string;
   readBuild: (checkout: string) => Omit<Located, 'served'> | null;
   locateServer: (checkout: string) => Located | null;
@@ -158,6 +162,43 @@ test('a workspace session runs the workspace\'s build; a driven one the machine\
   assert.equal(tool.serverCommand('driven', {}, null, 'win32'), null);
   assert.equal(tool.serverCommand('workspace', {}, null), null);
   fx.cleanup();
+});
+
+/**
+ * CONNECTOR1: the driver hands a protocol-door session the connector its install carries ahead of the home's `bin/`
+ * copy (`KnowledgeConnector.Candidates`), and a driven pipe-door session whose `.mcp.json` starts this file runs the
+ * same one. An install's shell makes its own `data/` the home every session inherits (D63), so the install is the folder
+ * above a home named `data` that holds the install's marker. The `bin/` copy is what no republish refreshes.
+ */
+test('a driven session on an install runs the connector the install carries, ahead of the home’s bin/ copy', () => {
+  const fx = makeFixture('knowledge-server-install');
+  fx.write(`install/${tool.INSTALL_MARKER}`, '# Daoris — installed desktop\n');
+  const home = join(fx.root, 'install', tool.INSTALL_HOME);
+  fx.write(`install/${tool.INSTALL_HOME}/bin/daoris-knowledge.exe`, '');
+  const own = fx.write(`install/${tool.INSTALL_CONNECTOR.join('/')}/daoris-knowledge.exe`, '');
+
+  assert.equal(tool.serverCommand('driven', { DAORIS_HOME: home }, null, 'win32')?.command, own);
+  const explicit = fx.write('elsewhere/daoris-knowledge.exe', '');
+  assert.equal(tool.serverCommand('driven', { DAORIS_MCP_HOST: explicit, DAORIS_HOME: home }, null, 'win32')?.command, explicit,
+    'the person’s word still comes first');
+
+  // A home that is no install's `data/`: no marker above it, or another name, has no install connector to run.
+  fx.write('scratch/data/bin/daoris-knowledge.exe', '');
+  fx.write(`scratch/${tool.INSTALL_CONNECTOR.join('/')}/daoris-knowledge.exe`, '');
+  const scratch = join(fx.root, 'scratch', 'data');
+  assert.equal(tool.serverCommand('driven', { DAORIS_HOME: scratch }, null, 'win32')?.command, join(scratch, 'bin', 'daoris-knowledge.exe'));
+  assert.equal(tool.installConnector(join(fx.root, 'install', 'elsewhere'), 'daoris-knowledge.exe'), null);
+  fx.cleanup();
+});
+
+/** The install's layout, duplicated here so a session's start loads no publish code: held to the publish's own names. */
+test('the install connector this file looks for is where the desktop publish lays it', async () => {
+  // @ts-expect-error — untyped workspace tooling; the same seam dogfood.test.ts documents
+  const publish = await import('../../../tools/desktop-publish.mjs') as { CONNECTOR_HOME: string[]; CONNECTOR_EXE: string; MARKER: string; HOME: string };
+  assert.deepEqual([...tool.INSTALL_CONNECTOR], [...publish.CONNECTOR_HOME]);
+  assert.equal(tool.INSTALL_MARKER, publish.MARKER);
+  assert.equal(tool.INSTALL_HOME, publish.HOME);
+  assert.equal(publish.CONNECTOR_EXE, 'daoris-knowledge.exe');
 });
 
 // ---------------------------------------------------------------------------------------------------
