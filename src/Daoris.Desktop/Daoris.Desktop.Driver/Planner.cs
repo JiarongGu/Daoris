@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>A quest as the service answered it — enough to decide on, and enough to compose a target from.</summary>
-public sealed record QuestView(string Id, string From, string To, string Title, string Body, string Status)
+public sealed partial record QuestView(string Id, string From, string To, string Title, string Body, string Status)
 {
     /// <summary>
     /// What a list calls it, as the service answered (SESSUX1j): its publisher's short title, or the name the service read
@@ -79,9 +79,9 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
     public IReadOnlyList<QuestAnswerView> Answers { get; init; } = [];
 
     /// <summary>
-    /// Why a held done waits (EVID1a, D144 §6), as the service answers <c>hold</c>: <c>departed</c>, <c>evidence-unread</c> or
-    /// <c>evidence-missing</c> (<see cref="EvidenceCodes"/>). Null when nothing holds it, and from a host before the field,
-    /// whose only hold was a departure.
+    /// Why a held done waits (EVID1a, D144 §6), as the service answers <c>hold</c>: <c>departed</c>, <c>evidence-unread</c>,
+    /// <c>evidence-missing</c> or, a set-up step's after both, <c>unreviewed</c> (REVIEWENV1b; <see cref="EvidenceCodes"/>).
+    /// Null when nothing holds it, and from a host before the field, whose only hold was a departure.
     /// </summary>
     public string? Hold { get; init; }
 
@@ -273,7 +273,7 @@ public sealed record TakenBy(string Last, string? Machine = null, string? Sessio
 public sealed record SaidWordView(string? Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens);
 
 /// <summary>One step of a chain, as the service answered it.</summary>
-public sealed record QuestStepView(string To, string Title, string Body);
+public sealed partial record QuestStepView(string To, string Title, string Body);
 
 /// <summary>A file a quest carries, as the local service answered it.</summary>
 /// <param name="Name">The file's own name.</param>

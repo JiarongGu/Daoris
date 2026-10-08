@@ -668,6 +668,9 @@ public sealed partial class ServiceClient : IDisposable
             WordsKeptFrom = Moment(ask, "wordsKeptFrom"),
             // The go-aheads its sessions asked (KNOWUSE1a), which every session on the ask is handed beside the words.
             GoAheads = ReadGoAheads(ask),
+            // The person's review choices and its intake's proposals (REVIEWENV1b). Absent is none, and a host before them.
+            ReviewChoices = ReadReviewChoices(ask),
+            ReviewProposals = ReadReviewProposals(ask),
         };
     }
 
@@ -1093,7 +1096,11 @@ public sealed partial class ServiceClient : IDisposable
                     : [],
                 Then = quest.TryGetProperty("then", out var then) && then.ValueKind == JsonValueKind.Array
                     ? then.EnumerateArray().Select(step => new QuestStepView(
-                        Text(step, "to") ?? "", Text(step, "title") ?? "", Text(step, "body") ?? "")).ToList()
+                        Text(step, "to") ?? "", Text(step, "title") ?? "", Text(step, "body") ?? "")
+                        {
+                            // A set-up step's environment (REVIEWENV1b). Absent on every other step, and from a host before it.
+                            SetUpIn = Text(step, "setUpIn"),
+                        }).ToList()
                     : [],
                 Parent = Text(quest, "parent"),
                 // What a list calls it (SESSUX1j). Absent is a host from before the field: the title names it.
@@ -1134,6 +1141,11 @@ public sealed partial class ServiceClient : IDisposable
                     : [],
                 // When its status last moved: a taken quest's take, compared with its last session's end (CARRY2b).
                 Updated = Moment(quest, "updated"),
+                // The review on the record (REVIEWENV1b): each absent where there is none, and from a host before them.
+                Review = ReadReviewChoice(quest),
+                SetUpIn = Text(quest, "setUpIn"),
+                SetUps = ReadSetUps(quest),
+                Verdicts = ReadVerdicts(quest),
             });
         }
 
