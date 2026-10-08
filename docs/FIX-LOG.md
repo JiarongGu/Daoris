@@ -516,6 +516,12 @@ failed once in LOGVIEW1's full set, 2026-10-08 (722/723, 32 m), and passed alone
 `AccountGoalTickTests.cs:94` found a record with no event yet. The tick returns once its starts are chosen and their
 records written; each opening note is appended on its start's own path, so a test reading the notes at once races
 them. The read is the repeat: it should wait for the opening event as the other Process rows wait (`Poll.Until`).
+*Fixed 2026-10-08:* the test waits for each record's first event (`Poll.Until`, 90 s) before reading it. A 3 s delay put
+before the note (a probe, since removed) failed the old read at once as the sighting did, and the new one passed; then 10
+serial runs passed without it. Its siblings that read an opening note do so after their sessions end (`RunOnceAsync`,
+`Running.SettledAsync`), passing 10/10 under the same delay, or call `RotatedOpening.Say` themselves: none races. The
+ledger holds a record before its note (`Driver.cs`, the open, then `onOpened`, then the note), so a page can open it
+first; the page takes the note as it is kept (`SessionEvents.Evented`), so it misses nothing.
 `setup-kit.test.ts:807` (STUB3) failed once in EVID1b3's verify: its stub did not answer `initialize` within 1000 ms,
 right after a dotnet run on the same machine; it passed alone and the next verify was green. *Fixed 2026-10-08 (STUB3b
 above):* the bound counted the stub's start; it counts from the stub's first answer now.
