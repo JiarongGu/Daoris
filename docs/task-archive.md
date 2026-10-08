@@ -12316,3 +12316,17 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **REVIEWENV1b — the review on the record** (service; after a). Ask and chain choices (the person's, or quoted); the intake's proposal; the set-up step's shape; its hold; the set-up and verdict kinds; both tools; the verdict's door; no production go-ahead from a set-up step. Contract: §1.4–§1.5, §2.1, §2.5–§2.6, §3.5. Proof: the census, `ReviewStepTests`, both hosts, `McpToolsTests`, `GoAheadTests`.
 
 **Outcome** 2026-10-07: the review is on the record: a chain's choice (quoted from the person), an ask's choices and its intake's proposals, set-up steps judged at composition, the `setup` and `verdict` operation kinds with an `unreviewed` hold only the person's verdict on the newest set-up (or a skip) lifts, `review_serve`/`review_ready`, four local doors, and no production go-ahead from a set-up step. Follow-up: REVIEWENV1b2. Detail: D154's REVIEWENV1b note; commits 8d9ac6fa, b74b6603.
+
+
+## GOAHEAD2b — the session page's go-ahead door says what it answers (2026-10-08, D135)
+
+> - [ ] **GOAHEAD2b — the session page's go-ahead door says what it answers** (modules, web-shell; after GOAHEAD2). `SESSION_GO_AHEAD` relies on the client's default `goesOn: false` and answers the park on every press, so on that door a go-ahead still open does not keep the session parked, unlike the ask's door. Pass `goesOn` explicitly, and decide with the owner whether the page's door waits for the last open go-ahead too. Contract: D135's GOAHEAD2 note. Proof: a module test of the call; a vitest for the page's sentence.
+
+**Outcome** 2026-10-07: the session page's go-ahead press goes through the ask's own route with `goesOn`, so a go-ahead still open keeps the session parked there too, and the toast says it goes on or which go-ahead it still waits on; the person's words stay on the go-ahead's answer. Detail: D135's GOAHEAD2b note; commits 9df26343…8afc159d.
+
+
+## REVIEWENV1b2 — the connector allows the set-up tools, and Ask Daoris's accept card reads the review hold (2026-10-08, D154)
+
+> - [ ] **REVIEWENV1b2 — the connector allows the set-up tools, and Ask Daoris's accept card reads the review hold** (driver, cli; after REVIEWENV1b). `review_serve` and `review_ready` are not in the connector's default allow list in either twin, and `HelpAcceptProposals` would propose an accept the door refuses for a quest held `unreviewed`; `ServiceClient` reads the new fields, and `AskWordsText` words the three new kinds. Contract: D154's REVIEWENV1b note, §2.6, §3.5. Proof: `PermissionRulesTests` and `permissions.test.ts` rows; a `HelpAcceptProposalsTests` refusal row in the door's words.
+
+**Outcome** 2026-10-07: the connector's default allows `review_serve` and `review_ready` in both twins; Ask Daoris's accept refuses a quest held `unreviewed` in the door's words; `ServiceClient` reads the review's quest and ask fields, all optional; the three new ask word kinds are said as their verdicts. Detail: D154's REVIEWENV1b2 note; commits 22808ae8…692025b3.

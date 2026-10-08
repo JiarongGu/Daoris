@@ -308,16 +308,21 @@ public sealed class SessionWords : IDisposable
     }
 
     /// <summary>
-    /// A park answered with no words of the person's (KNOWUSE1a2, D135 §2): the go-ahead they answered on its page is what
-    /// they said, so nothing is written as their words here. The park takes the blank answer the service has always kept for
-    /// one (ANSWER1b's <i>carry on.</i>) through its answer door, and the loop is nudged. A park already answered goes on with
-    /// what it holds, and the resumed session reads every go-ahead it asked as it goes on, so nothing is kept again. A record
-    /// that is not parked is left as it is: nothing there waits on the person's answer.
+    /// What became of a park once a go-ahead it asked was answered at the go-ahead's own door with <c>goesOn</c> (GOAHEAD2b,
+    /// D135 §2): the service judged there, as for the ask's page and the terminal, whether none of the session's go-aheads
+    /// is open any more, and kept the park's blank answer where none is (GOAHEAD2). That decision is read here off the record
+    /// and never judged again: a park now answered goes on, and the loop is nudged so a look takes it up now; one still
+    /// parked with no answer waits on the person.
     /// </summary>
+    /// <returns>
+    /// The park as <c>SESSION_INPUT</c> words a reach, and whether it still waits on the person: a go-ahead it asked still
+    /// open, or, where none is, its own answer, since a changed answer wakes nothing (GOAHEAD2). A record that is not parked,
+    /// or never goes on, waits on nothing.
+    /// </returns>
     /// <exception cref="DriverException">The loop's service is not answering yet, or did not answer for the record.</exception>
-    public async Task<WordsAnswer> AnswerParkAsync(string id, CancellationToken ct)
+    public async Task<(WordsAnswer Park, bool Waits)> AfterGoAheadAsync(string id, CancellationToken ct)
     {
-        if (id.Contains('/')) return WordsAnswer.Refused(WordsNever.Teammate);
+        if (id.Contains('/')) return (WordsAnswer.Refused(WordsNever.Teammate), false);
 
         Read? read;
         try
@@ -326,22 +331,18 @@ public sealed class SessionWords : IDisposable
         }
         catch (Exception error) when (Unanswered(error))
         {
-            throw new DriverException($"the service did not answer for session `{id}`, so it was not answered: {error.Message}");
+            throw new DriverException(
+                $"the service did not answer for session `{id}`, so whether it goes on is not known; its go-ahead is answered: {error.Message}");
         }
 
-        if (read is null || _loop.Service is not { } service) throw new DriverException(NotUp);
-        if (read.Record is not { } record) return WordsAnswer.Refused(WordsNever.NotFound);
-        if (WordsNever.Judge(record, read.Last) is { } never) return WordsAnswer.Refused(never);
-        if (record.State != "awaiting-person") return new(false, null, null);
-
-        if (!record.Answered)
-        {
-            var (answered, message) = await service.AnswerSessionAsync(id, answer: null, ct).ConfigureAwait(false);
-            if (!answered) return new(false, null, null) { Message = message };
-        }
+        if (read is null) throw new DriverException(NotUp);
+        if (read.Record is not { } record) return (WordsAnswer.Refused(WordsNever.NotFound), false);
+        if (WordsNever.Judge(record, read.Last) is { } never) return (WordsAnswer.Refused(never), false);
+        if (record.State != "awaiting-person") return (new(false, null, null), false);
+        if (!record.Answered) return (new(false, null, null), true);
 
         _loop.Nudge();
-        return new(true, "resume", null);
+        return (new(true, "resume", null), false);
     }
 
     /// <summary>

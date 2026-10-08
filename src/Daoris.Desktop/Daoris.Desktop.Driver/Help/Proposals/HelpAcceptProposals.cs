@@ -36,6 +36,9 @@ internal sealed class HelpAcceptProposals : IHelpProposalKind
 
         var departures = Departures(quest);
         if (!quest.Held) return Refused(NotHeld(quest, departures.Count > 0));
+        // A yes accepts a departure or its evidence, never a review (REVIEWENV1b2, D154 point 9): the door refuses a quest held
+        // for its review alone, and says what does let it go.
+        if (quest.Hold == EvidenceCodes.Unreviewed) return Refused(Unreviewed(quest));
 
         var departed = departures.Count == 1
             ? $"it departed from requirement {departures[0].Requirement}"
@@ -79,6 +82,11 @@ internal sealed class HelpAcceptProposals : IHelpProposalKind
         var status => $"quest `#{quest.Id}` is {status.ToLowerInvariant()}: only a quest closed done with a departure from what "
             + "you required waits for your yes.",
     };
+
+    /// <summary>Why a yes does not let a quest held for its review go, as the service's accept door says it of the same quest.</summary>
+    private static string Unreviewed(QuestView quest) =>
+        $"quest `#{quest.Id}` waits for your review{(quest.SetUpIn is { Length: > 0 } environment ? $" in `{environment}`" : "")}, "
+        + "which a yes does not give: say `reviewed` once you have looked at what it shows, or skip the review for this work.";
 
     /// <summary>
     /// What the yes lets go on: the chain's next step it held, as the service will publish it (<c>{parent}</c> is this

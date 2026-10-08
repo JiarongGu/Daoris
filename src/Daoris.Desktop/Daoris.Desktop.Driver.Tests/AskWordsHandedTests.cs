@@ -131,6 +131,25 @@ public sealed class AskWordsHandedTests
         Assert.Contains("- They added, after a session on quest `#q1` ended, 2026-10-01 09:40 UTC:\n\n  > Also log the port.", prompt);
     }
 
+    /// <summary>
+    /// The person's words with a review's verdict (REVIEWENV1b2; the review environment design §3.5), kept on the ask as their
+    /// own kinds, are said as what they were, never as a word this build does not know: a session handed them knows the person
+    /// looked at a set-up and found it right, or not right yet, or skipped the review, and on which quest.
+    /// </summary>
+    [Theory]
+    [InlineData(AskWordView.Reviewed, "q1", "- They reviewed the set-up shown on quest `#q1`, 2026-10-01 09:40 UTC:\n\n  > The words.")]
+    [InlineData(AskWordView.NotYet, "q1", "- They said not yet to the set-up shown on quest `#q1`, 2026-10-01 09:40 UTC:\n\n  > The words.")]
+    [InlineData(AskWordView.Skipped, "q1", "- They skipped the review of the work on quest `#q1`, 2026-10-01 09:40 UTC:\n\n  > The words.")]
+    [InlineData(AskWordView.NotYet, "q2", "- They said not yet to the set-up shown on this quest, 2026-10-01 09:40 UTC:\n\n  > The words.")]
+    [InlineData(AskWordView.Skipped, null, "- They skipped the review of the work, 2026-10-01 09:40 UTC:\n\n  > The words.")]
+    public void A_review_s_words_are_said_as_the_verdict_they_came_with(string kind, string? quest, string said)
+    {
+        var prompt = TargetPrompt.Compose(Target(Read(Word("asked", Sentence, 0), Word(kind, "The words.", 40, null, quest))));
+
+        Assert.Contains(said, prompt);
+        Assert.DoesNotContain("They said,", prompt);
+    }
+
     [Fact]
     public void Each_word_says_how_it_was_given_when_and_on_which_quest()
     {

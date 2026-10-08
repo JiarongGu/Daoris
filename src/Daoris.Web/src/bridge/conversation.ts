@@ -447,15 +447,18 @@ export const useSay = () => {
   });
 };
 
-/** What a go-ahead answered on a park's page did (KNOWUSE1a2): the go-ahead's sentence, then what became of the park. */
-export type GoAheadAnswered = WordsAnswer & { message: string };
+/**
+ * What a go-ahead answered on a park's page did (KNOWUSE1a2, GOAHEAD2b): the go-ahead's sentence, what became of the park,
+ * and whether it still waits on the person.
+ */
+export type GoAheadAnswered = WordsAnswer & { waits: boolean; message: string };
 
 /**
  * A go-ahead a parked session asked, answered on the session's own page (KNOWUSE1a2, D135 §2): one press, where the ask's
- * page and the box took two. `SESSION_GO_AHEAD` answers the go-ahead on its ask first, so the conversation the answer
- * resumes is handed it, then the park: with the person's words as the box keeps them, or, with none, the park's blank
- * answer. A refused go-ahead answers nothing else, in the service's sentence. The person's words go only where they gave
- * some: the record keeps no words they did not write (D137).
+ * page and the box took two. `SESSION_GO_AHEAD` answers it through the ask's own door, which sends the park on only once
+ * none of the go-aheads it asked is open, as the ask's page does (GOAHEAD2b), and says whether it still waits. The
+ * person's words are the go-ahead's, never the park's: the record keeps no words they did not write to it (D137). A
+ * refused go-ahead answers nothing else, in the service's sentence.
  *
  * The sessions and the asks are asked again whatever came of it, since a park that could not be answered may still have
  * had its go-ahead answered.
@@ -468,8 +471,8 @@ export const useParkGoAhead = () => {
         id: answer.id, ask: answer.ask, number: answer.number, approved: answer.approved,
         ...(answer.words ? { words: answer.words } : {}),
       });
-      const message = (answered as { message?: unknown } | null | undefined)?.message;
-      return { ...wordsOf(answered), message: typeof message === 'string' ? message : '' };
+      const { message, waits } = (answered ?? {}) as { message?: unknown; waits?: unknown };
+      return { ...wordsOf(answered), waits: waits === true, message: typeof message === 'string' ? message : '' };
     },
     onSettled: () => {
       void client.invalidateQueries({ queryKey: keys.allSessions });

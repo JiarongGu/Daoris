@@ -122,7 +122,7 @@ const GO_AHEADS: GoAhead[] = [
 
 /**
  * Parked asking for go-aheads (KNOWUSE1a2, D135 §2): what it asked stands beneath its card, each with *Approve* and
- * *Refuse*, and answering one there answers the park too, so the same session goes on with one press.
+ * *Refuse*, and answering the last one open there sends the same session on, as on the ask's page (GOAHEAD2b).
  */
 export const ParkedAskingGoAheads: Story = {
   args: {
@@ -140,8 +140,24 @@ export const ParkedAskingGoAheads: Story = {
 };
 
 /**
- * The same park once the person approved the first (KNOWUSE1a2): its blank answer is kept, so it goes on at the driver's
- * next look, and the second, still waiting, can be answered before it does.
+ * The same park once the person approved the first (GOAHEAD2b): go-ahead 2 is still open, so it stays parked with no
+ * answer, as at the ask's door, and goes on once the second is answered.
+ */
+export const OneGoAheadAnsweredOneOpen: Story = {
+  args: {
+    session: {
+      ...SESSION, state: 'awaiting-person', created: at(52), updated: at(11),
+      note: 'The cap is written; it needs go-aheads 1 and 2 to reach production. Both are listed on the ask.',
+    },
+    goAheads: [{ ...GO_AHEADS[0]!, state: 'approved', answer: { approved: true, words: 'dev first', at: at(1) } }, GO_AHEADS[1]!],
+    onResolve: () => {},
+    onGoAhead: () => {},
+  },
+};
+
+/**
+ * The same park answered on its card with a go-ahead still open (KNOWUSE1a2): its blank answer is kept, so it goes on at
+ * the driver's next look with what it holds, and the second, still waiting, can be answered before it does.
  */
 export const AnsweredWithAGoAheadWaiting: Story = {
   args: {

@@ -668,6 +668,9 @@ public sealed partial class ServiceClient : IDisposable
             WordsKeptFrom = Moment(ask, "wordsKeptFrom"),
             // The go-aheads its sessions asked (KNOWUSE1a), which every session on the ask is handed beside the words.
             GoAheads = ReadGoAheads(ask),
+            // The person's review choices and its intake's proposals (REVIEWENV1b). Absent is none, and a host before them.
+            ReviewChoices = ReadReviewChoices(ask),
+            ReviewProposals = ReadReviewProposals(ask),
         };
     }
 
@@ -730,8 +733,8 @@ public sealed partial class ServiceClient : IDisposable
     /// </summary>
     /// <param name="goesOn">
     /// Whether the answer that leaves none of a parked session's go-aheads waiting is that park's answer, so the session goes
-    /// on with it (GOAHEAD2), as the ask's page has it: the terminal's door says so. False by default, for the session page's
-    /// door, which answers the park itself with the person's own words (KNOWUSE1a2), so the service leaves the park to it.
+    /// on with it (GOAHEAD2), as the ask's page has it: the terminal's door and the session page's (GOAHEAD2b) both say so.
+    /// False by default, for a caller that answers the park itself, which leaves the park to it.
     /// </param>
     public async Task<(bool Ok, string Message)> AnswerGoAheadAsync(
         string ask, int number, bool approved, string? words, CancellationToken ct = default, bool goesOn = false)
@@ -1093,7 +1096,11 @@ public sealed partial class ServiceClient : IDisposable
                     : [],
                 Then = quest.TryGetProperty("then", out var then) && then.ValueKind == JsonValueKind.Array
                     ? then.EnumerateArray().Select(step => new QuestStepView(
-                        Text(step, "to") ?? "", Text(step, "title") ?? "", Text(step, "body") ?? "")).ToList()
+                        Text(step, "to") ?? "", Text(step, "title") ?? "", Text(step, "body") ?? "")
+                        {
+                            // A set-up step's environment (REVIEWENV1b). Absent on every other step, and from a host before it.
+                            SetUpIn = Text(step, "setUpIn"),
+                        }).ToList()
                     : [],
                 Parent = Text(quest, "parent"),
                 // What a list calls it (SESSUX1j). Absent is a host from before the field: the title names it.
@@ -1134,6 +1141,11 @@ public sealed partial class ServiceClient : IDisposable
                     : [],
                 // When its status last moved: a taken quest's take, compared with its last session's end (CARRY2b).
                 Updated = Moment(quest, "updated"),
+                // The review on the record (REVIEWENV1b): each absent where there is none, and from a host before them.
+                Review = ReadReviewChoice(quest),
+                SetUpIn = Text(quest, "setUpIn"),
+                SetUps = ReadSetUps(quest),
+                Verdicts = ReadVerdicts(quest),
             });
         }
 

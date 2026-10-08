@@ -30,15 +30,33 @@ describe('the go-aheads a park asked', () => {
   });
 });
 
-/** What one press said: the yes or the no and that the same session goes on, or the go-ahead alone and why. */
+/** What one press said: the yes or the no and that the same session goes on, or which go-ahead it still waits on, or why not. */
 describe('the toast for a go-ahead answered on a park\'s page', () => {
   const t = i18n.t.bind(i18n);
-  const answer = (over: Partial<{ sent: boolean; reaches: string | null; why: string | null }>) =>
-    ({ sent: true, reaches: 'resume', why: null, message: 'Answered.', ...over });
+  const answer = (over: Partial<{ sent: boolean; reaches: string | null; why: string | null; waits: boolean }>) =>
+    ({ sent: true, reaches: 'resume', why: null, waits: false, message: 'Answered.', ...over });
+  const waiting = answer({ sent: false, reaches: null, waits: true });
+  const answered = (number: number): GoAhead => ({ ...goAhead(number, 'p1'), state: 'approved' });
 
   it('says the yes or the no and that the same session goes on, where the park took its answer', () => {
     expect(goAheadToast(t, 2, true, answer({}), {})).toBe("Approved go-ahead #2; the same session goes on with it at the driver's next look.");
     expect(goAheadToast(t, 1, false, answer({}), {})).toBe("Refused go-ahead #1; the same session goes on with it at the driver's next look.");
+  });
+
+  /** GOAHEAD2b: the park is answered only once none of its go-aheads is open, so a press that leaves one says which. */
+  it('says the yes or the no and which go-ahead the park still waits on, where one it asked is still open', () => {
+    const asked = [goAhead(1, 'p1'), goAhead(2, 'p1')];
+    expect(goAheadToast(t, 1, true, waiting, { asked }))
+      .toBe('Approved go-ahead #1. It still waits on you for go-ahead #2, and goes on once that is answered.');
+    expect(goAheadToast(t, 2, false, waiting, { asked: [answered(1), ...asked.slice(1), goAhead(3, 'p1'), goAhead(4, 'p1')] }))
+      .toBe('Refused go-ahead #2. It still waits on you for go-aheads #3 and #4, and goes on once those are answered.');
+  });
+
+  it('says the park still waits on the person\'s own answer where none it asked is open, as after a changed answer', () => {
+    expect(goAheadToast(t, 1, true, waiting, { asked: [answered(1), answered(2)] }))
+      .toBe('Approved go-ahead #1. It still waits on you: answer it below to send it on.');
+    expect(goAheadToast(t, 1, false, waiting, {}))
+      .toBe('Refused go-ahead #1. It still waits on you: answer it below to send it on.');
   });
 
   it('says the go-ahead alone where the words reached a session still running', () => {
@@ -57,6 +75,11 @@ describe('the toast for a go-ahead answered on a park\'s page', () => {
     expect(goAheadToast(t, 2, true, answer({}), {})).toBe('已放行 #2；同一个会话会在驱动的下一轮带着它继续。');
     expect(goAheadToast(t, 2, true, answer({ sent: false, reaches: null }), {}))
       .toBe('已答复放行 #2。这个会话已不再等你，所以这个需求会保留你的答复，交给之后的每次启动。');
+    expect(goAheadToast(t, 1, true, waiting, { asked: [goAhead(1, 'p1'), goAhead(2, 'p1')] }))
+      .toBe('已放行 #1。它仍在等你答复放行 #2，答复后就会继续。');
+    expect(goAheadToast(t, 1, false, waiting, { asked: [goAhead(1, 'p1'), goAhead(2, 'p1'), goAhead(3, 'p1')] }))
+      .toBe('已拒绝放行 #1。它仍在等你答复放行 #2和#3，答复后就会继续。');
+    expect(goAheadToast(t, 1, true, waiting, {})).toBe('已放行 #1。它仍在等你：在下面回答它，它就会继续。');
     await i18n.changeLanguage('en');
   });
 });

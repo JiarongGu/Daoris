@@ -43,8 +43,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/ui.test.tsx` | 43 | 872 |
 | `src/Daoris.Web/src/ui.tsx` | 76 | 1620 |
 | `src/Daoris.Web/src/work/ConversationView.test.tsx` | 43 | 817 |
-| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 195 | 3807 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 75 | 1418 |
+| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 196 | 3827 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 75 | 1417 |
 | `src/Daoris.Web/src/work/conversation.test.ts` | 44 | 857 |
 | `src/Daoris.Web/src/work/frame.tsx` | 40 | 877 |
 
@@ -73,7 +73,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 197 | 3626 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 58 | 1019 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 89 | 1627 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 89 | 1639 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionGroups.cs` | 55 | 987 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.Sync.cs` | 68 | 1146 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.cs` | 67 | 1179 |

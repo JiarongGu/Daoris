@@ -695,11 +695,12 @@ const ASKED: GoAhead[] = [
 describe('a park\'s go-aheads', () => {
   const parked: Partial<Session> = { state: 'awaiting-person', note: 'I need the two go-aheads to finish.' };
 
-  it('lists what the park asked beneath its card, each with Approve and Refuse, saying an answer here goes on', () => {
+  it('lists what the park asked beneath its card, each with Approve and Refuse, saying it goes on once all are answered', () => {
     render(<SessionHead session={session(parked)} onResolve={vi.fn()} goAheads={ASKED} onGoAhead={vi.fn()} />);
 
     const section = screen.getByRole('region', { name: 'Go-aheads it asked' });
-    expect(section).toHaveTextContent('Answering one here answers this session too');
+    // GOAHEAD2b: one still open keeps it parked, here as on the ask's page.
+    expect(section).toHaveTextContent('This session goes on once every go-ahead it asked is answered, here or on its ask');
     const items = within(section).getAllByRole('listitem');
     expect(items).toHaveLength(2);
     expect(items[0]).toHaveTextContent('write on production');
