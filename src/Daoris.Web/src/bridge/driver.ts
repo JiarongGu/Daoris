@@ -7,6 +7,7 @@ import type { LandingRule } from '../settings/Landings';
 import type { LanguageOption } from '../settings/Languages';
 import type { OpinionRule } from '../settings/Opinions';
 import type { ReviewLook, ReviewRule } from '../settings/Reviews';
+import type { ReviewShown } from '../work/ReviewChip';
 import { call, refusedNotReady } from './call';
 
 // The driver's standing state and its dials (MOD3): what this machine drives and holds, what it says
@@ -35,6 +36,13 @@ export type DriverState = {
    * it, from the handing until each ends. Absent on a shell older than it, which says nothing.
    */
   drivingBrowser?: string[];
+  /**
+   * The set-ups waiting for the person's review here (REVIEWENV1d), each with whether Daoris serves its tab now: the strip's
+   * chip beside the browser's door. Absent on a shell older than it, and where the loop carries no browser, which shows nothing.
+   */
+  inReview?: ReviewShown[];
+  /** What *Show it again* said (REVIEWENV1d), on the answer to `SHOW_REVIEW_AGAIN` alone; absent on every other answer. */
+  shownAgain?: { quest: string; message: string } | null;
   /** Whether this machine interrupts the person when a session parks or ends unasked (SURF5b). */
   notify: boolean;
   /** How many failed sessions park a quest (D58); `0` never parks. */
@@ -254,6 +262,13 @@ export const useSetCoolOff = () => useDriverChange<{ minutes: number }>('SET_COO
  * retry <quest>` and its `--session` are the terminal's two halves.
  */
 export const useRetryQuest = () => useDriverChange<{ quest: string }>('RETRY_QUEST');
+
+/**
+ * *Show it again* on the strip's review chip (REVIEWENV1d, the review environment design §3.3): the set-up step's newest set-up
+ * served to its tab of Daoris's browser again, the tab brought forward where the set-up left it, with no session and no model.
+ * Refused in the driver's words wherever it would show anything but that build at the rule's address.
+ */
+export const useShowReviewAgain = () => useDriverChange<{ quest: string }>('SHOW_REVIEW_AGAIN');
 
 /** What *Try again* did (D126 §3.4): RETRY1's mark on a parked quest, or the release of the stop that held it. */
 export type Retried = { quest: string; did: 'marked' | 'released'; session?: string | null };

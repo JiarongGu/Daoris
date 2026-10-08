@@ -6,5 +6,15 @@
   "browser.driving.severalLabel": "Daoris's browser is driven by {{count}} sessions",
   "browser.driving.tip": "Handed Daoris's browser and still running: its agent may act on any page there, between your keystrokes. It counts from the handing until the session ends, whether or not it has used it yet.",
   "browser.driving.menu": "Sessions driving Daoris's browser",
-  "browser.driving.unknown": "session {{id}}"
+  "browser.driving.unknown": "session {{id}}",
+  "browser.review.one": "In review: #{{quest}}",
+  "browser.review.several": "In review: {{count}}",
+  "browser.review.oneLabel": "Set-up step #{{quest}} waits for your review: {{title}}",
+  "browser.review.severalLabel": "{{count}} set-ups wait for your review",
+  "browser.review.tip": "A set-up step showed its chain's work in Daoris's browser, and its landing waits for your review. Look there: Daoris keeps its build shown in that tab until you say whether it is right.",
+  "browser.review.menu": "Waiting for your review",
+  "browser.review.served": "Shown in Daoris's browser for {{environment}}",
+  "browser.review.unserved": "No longer shown: a reload there loads your own server. Show it again to serve its build.",
+  "browser.review.again": "Show #{{quest}} again",
+  "browser.review.shownAgain": "Shown again in Daoris's browser: #{{quest}}"
 }

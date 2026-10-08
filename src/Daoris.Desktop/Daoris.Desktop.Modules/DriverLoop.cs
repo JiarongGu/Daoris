@@ -23,8 +23,17 @@ public sealed class DriverLoop(
     MachineLog? log = null,
     // The account's own DAORIS_HOME, which a terminal reads (LEFT2); the user environment's by default, and a
     // test's stand-in so a test never reads the machine's.
-    Func<string?>? account = null) : IDisposable
+    Func<string?>? account = null,
+    // Daoris's browser as a set-up step's review uses it (REVIEWENV1d): its tab, and its build served there until the person's
+    // verdict. Null shows nothing, as a loop with no browser does.
+    IReviewTabs? reviews = null) : IDisposable
 {
+    /// <summary>
+    /// The review's showing in Daoris's browser (REVIEWENV1d, D154 point 5): one for the shell's life, handed to every look's
+    /// driver, read by the strip's chip and pressed by its *Show it again*. Null where this loop carries no browser.
+    /// </summary>
+    public ReviewDesk? Reviews { get; } = reviews is null ? null : new ReviewDesk(reviews);
+
     private readonly CancellationTokenSource _stopping = new();
     private readonly TaskCompletionSource<bool> _hostReady = new();
     private DriverWatch? _watch;
@@ -480,6 +489,8 @@ public sealed class DriverLoop(
             Draining = () => Draining?.Invoke() == true,
             // Where a run's failure nothing else awaits is written with its place, not left to the finalizer (ANSWER2).
             Log = log,
+            // A set-up step's tab and its build kept served until the verdict (REVIEWENV1d), across every look.
+            Reviews = Reviews,
         };
         await _watch.RunAsync(
             async (report, ticked) =>
