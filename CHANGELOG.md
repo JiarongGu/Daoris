@@ -162,6 +162,8 @@ with the version and date at release.
   page, from the session's *Finish…*, or with `daoris-driver quest done`.
 - Saying something to a session while the driver looks at it no longer fails with a server error: the
   service's database now takes one request at a time on its shared connection.
+- An ask that names its repository now proposes that repository first, even one that has declared
+  nothing, instead of whichever repository its other words matched.
 
 The first version: doctrine that installs, is checked, and flows back.
 
