@@ -280,6 +280,8 @@ public sealed partial class HelpCoverageTests
         ("language", new Door("setting", "language")),
         // REVIEWENV1a: where work is shown to the person before it lands, with the service's writer in the same change.
         ("review", new Door("setting", "review")),
+        // XAGENT1a: which other agent reads work before it lands, with the service's writer in the same change.
+        ("opinion", new Door("setting", "opinion")),
         ("notify", new Door("setting", "notify")),
         ("intake", new Door("setting", "intake")),
         ("helper", new Door("setting", "helper")),

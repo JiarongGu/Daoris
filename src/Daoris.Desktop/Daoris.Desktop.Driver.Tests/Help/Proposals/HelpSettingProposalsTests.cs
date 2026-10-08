@@ -196,6 +196,77 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
+    /// XAGENT1a (D155 point 3, the second-agent design §2.5): a second-opinion rule for a registered repository or a workspace,
+    /// in the terminal's words, judged by the twin's table and planned with what it lets a reviewer do, the working agent's
+    /// own family named among its reviewers, and that nothing reads it yet.
+    /// </summary>
+    [Theory]
+    [InlineData("engine", null, "--reviewers codex-acp --on landing,steps --verify --minutes 30",
+        "daoris driver opinion engine --reviewers codex-acp --on landing,steps --verify --minutes 30",
+        "Set the second opinion for `engine`. Before work here lands, `codex-acp` reads it, in a copy of its own that nothing is taken back from")]
+    [InlineData(null, "work", "--reviewers codex-acp,dsh --required", "daoris driver opinion --workspace work --reviewers codex-acp,dsh --required",
+        "Set the second opinion for each repository of workspace `work` that sets none of its own. Before work here lands, `codex-acp`, else `dsh`, reads it")]
+    // The machine's work runs on `claude-code`, whose family both Claude Code doors are.
+    [InlineData("engine", null, "--reviewers codex-acp,claude-code-acp", "daoris driver opinion engine --reviewers codex-acp,claude-code-acp",
+        "`claude-code-acp` is the same agent as the one that does the work here")]
+    [InlineData("game", null, "none", "daoris driver opinion game none",
+        "Declare that `game` has no second opinion, whatever its workspace says. No second opinion here")]
+    [InlineData("engine", null, "--clear", "daoris driver opinion engine --clear", "Clear `engine`'s second-opinion rule: it takes its workspace's again, else none.")]
+    public void An_opinion_rule_is_planned_with_what_it_lets_a_reviewer_do_and_applied_as_the_terminal_makes_it(
+        string? target, string? workspace, string value, string terminal, string says)
+    {
+        var plan = HelpProposals.Plan(Setting("opinion", target, workspace, value), DriverConfig.Empty, Facts);
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal(terminal, plan.Terminal);
+        Assert.Contains(says, plan.Describe);
+        if (value != "--clear") Assert.Contains(OpinionRules.DeclaredOnly, plan.Describe);
+        Assert.NotNull(plan.Apply);
+    }
+
+    [Fact]
+    public void An_opinion_rule_applied_is_the_edit_the_terminal_makes()
+    {
+        var config = HelpProposals.Plan(
+            Setting("opinion", null, "work", "--reviewers \"codex-acp, dsh\" --on steps --minutes 45 --no-recheck"),
+            DriverConfig.Empty, Facts).Apply!(DriverConfig.Empty);
+
+        Assert.Equal("""{"on":["steps"],"reviewers":["codex-acp","dsh"],"minutes":45,"recheck":false}""", OpinionRules.ToJson(config.WorkspaceOpinions["work"]));
+        config = HelpProposals.Plan(Setting("opinion", null, "work", "--required --recheck"), config, Facts).Apply!(config);
+        Assert.Equal("""{"on":["steps"],"reviewers":["codex-acp","dsh"],"required":true,"minutes":45}""", OpinionRules.ToJson(config.WorkspaceOpinions["work"]));
+        config = HelpProposals.Plan(Setting("opinion", "engine", null, "none"), config, Facts).Apply!(config);
+        Assert.True(config.Opinions["engine"].IsNone);
+    }
+
+    /// <summary>The twin's refusals, the registry's names, and a form `daoris driver opinion` does not take, each refused in its words.</summary>
+    [Theory]
+    [InlineData("engine", null, "--reviewers codex-acp --on merge", "`merge` is not an occasion — `landing`, `steps` or both.")]
+    [InlineData("engine", null, "--reviewers codex-acp --minutes half", "`minutes` is a whole number from 5 to 120")]
+    [InlineData("engine", null, "--reviewers codex-acp,codex-acp", "`codex-acp` is named twice")]
+    [InlineData("engine", "work", "--clear", "a second-opinion rule is set for a repository or a workspace — name exactly one.")]
+    [InlineData(null, null, "--clear", "a second-opinion rule is set for a repository or a workspace — name exactly one.")]
+    [InlineData("elsewhere", null, "none", "is not registered on this machine")]
+    [InlineData(null, "elsewhere", "--clear", "no workspace `elsewhere`")]
+    [InlineData(null, "work", "none", "`none` is a repository's")]
+    [InlineData("engine", null, "", "`opinion` is `--reviewers <adapter,adapter>")]
+    [InlineData("engine", null, "--reviewers", "`--reviewers` needs its value")]
+    [InlineData("engine", null, "--reviewers dsh --colour blue", "`--colour` is not a word `opinion` takes")]
+    [InlineData("engine", null, "codex-acp", "`codex-acp` is not a word `opinion` takes")]
+    [InlineData("engine", null, "--reviewers \"dsh", "close every quote they open")]
+    [InlineData("engine", null, "--reviewers dsh --required --not-required", "say `--required` or `--not-required`, not both")]
+    [InlineData("engine", null, "--reviewers dsh --verify --no-verify", "say `--verify` or `--no-verify`, not both")]
+    [InlineData("engine", null, "--reviewers dsh --recheck --no-recheck", "say `--recheck` or `--no-recheck`, not both")]
+    [InlineData("engine", null, "none --reviewers dsh", "one change at a time")]
+    [InlineData("engine", null, "--required", "`engine` has no second-opinion rule of its own — name its reviewers first.")]
+    public void An_opinion_rule_is_refused_in_the_twins_words(string? target, string? workspace, string value, string says)
+    {
+        var plan = HelpProposals.Plan(Setting("opinion", target, workspace, value), DriverConfig.Empty, Facts);
+
+        Assert.Contains(says, plan.Refusal);
+        Assert.Null(plan.Apply);
+    }
+
+    /// <summary>
     /// LANG1c2: the service's setting writer shape-checks a language against a deliberate copy of the table's codes
     /// (<c>HelpProposalBox.Languages</c>), read here as text since the two share no code, so a language added to the table is
     /// one the box takes, and the box takes none the table does not hold.
@@ -310,7 +381,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
             ("drive", "engine", null, null), ("undrive", "engine", null, null), ("hold", "engine", null, null),
             ("resume", "engine", null, null), ("trees", "engine", null, "off"), ("line", "engine", null, "main"),
             ("landing", "engine", null, "merge"), ("across", "engine", null, "read on"), ("standing", "engine", null, "dev only"),
-            ("language", null, "work", "zh"), ("review", "engine", null, "none"), ("intake", null, null, "off"),
+            ("language", null, "work", "zh"), ("review", "engine", null, "none"), ("opinion", "engine", null, "none"), ("intake", null, null, "off"),
             ("helper", null, null, "claude-code"), ("strikes", null, null, "0"), ("retry", "q1a2b3c4", null, null),
             ("timeout", null, null, "30"), ("notify", null, null, "on"), ("cap", null, null, "1"), ("adapter", null, null, "claude-code"),
         ];

@@ -260,6 +260,21 @@ public sealed record DriverConfig(
     public IReadOnlyDictionary<string, ReviewRule> WorkspaceReviews { get; init; } =
         new Dictionary<string, ReviewRule>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Which other agent reads each repository's work before it lands (XAGENT1a, D155 point 3, the second-agent design
+    /// §2.2–§2.3), by repository: a rule, or <see cref="OpinionRule.None"/> (the file's <c>false</c>), which says there is no
+    /// second opinion whatever its workspace says. A repository's rule replaces its workspace's whole
+    /// (<see cref="OpinionRules.Resolve"/>); absent is the workspace's, then none, which is today's behaviour. Edited only
+    /// through <see cref="OpinionRules.Apply"/>. The CLI's <c>driverconfig.ts</c> reads it the same way, by one shared table
+    /// (<c>OpinionRulesTests</c>).
+    /// </summary>
+    public IReadOnlyDictionary<string, OpinionRule> Opinions { get; init; } =
+        new Dictionary<string, OpinionRule>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A workspace's second-opinion rule, for every repository in it that sets none of its own; never <see cref="OpinionRule.None"/>.</summary>
+    public IReadOnlyDictionary<string, OpinionRule> WorkspaceOpinions { get; init; } =
+        new Dictionary<string, OpinionRule>(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>A moment as the file keeps it: in UTC, to the second.</summary>
     private static DateTimeOffset ToTheSecond(DateTimeOffset at)
     {
@@ -519,6 +534,9 @@ public sealed record DriverConfig(
             // Written only when set (REVIEWENV1a), as the CLI writes them: absent is no review environment, today's behaviour.
             ReviewRules.WriteMap(writer, "reviews", Reviews);
             ReviewRules.WriteMap(writer, "workspaceReviews", WorkspaceReviews);
+            // Written only when set (XAGENT1a), as the CLI writes them: absent is no second opinion, today's behaviour.
+            OpinionRules.WriteMap(writer, "opinions", Opinions);
+            OpinionRules.WriteMap(writer, "workspaceOpinions", WorkspaceOpinions);
             // Written only when set (D107), for the same reason: absent is reading on and no relationship.
             WriteFlags(writer, "readAcross", ReadAcross);
             WriteFlags(writer, "workspaceReadAcross", WorkspaceReadAcross);
@@ -873,6 +891,9 @@ public sealed record DriverConfig(
             // A rule with a problem is not read, and `false` only for a repository (REVIEWENV1a).
             Reviews = ReviewRules.Map(root, "reviews", allowNone: true),
             WorkspaceReviews = ReviewRules.Map(root, "workspaceReviews", allowNone: false),
+            // A rule with a problem is not read, and `false` only for a repository (XAGENT1a).
+            Opinions = OpinionRules.Map(root, "opinions", allowNone: true),
+            WorkspaceOpinions = OpinionRules.Map(root, "workspaceOpinions", allowNone: false),
             ReadAcross = FlagMap(root, "readAcross"),
             WorkspaceReadAcross = FlagMap(root, "workspaceReadAcross"),
             WriteAcross = TargetMap(root, "writeAcross"),

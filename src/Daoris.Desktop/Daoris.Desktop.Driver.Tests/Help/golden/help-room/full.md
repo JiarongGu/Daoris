@@ -129,6 +129,7 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | set the line its work grows from and lands on | Repositories → the repository's page → Setup → Line and landing; a workspace's, Settings → Workspace → Lines | `daoris driver line <repository> <branch>|--clear` (`--workspace <name>` for a whole workspace) |
 | set how accepted work lands | Repositories → the repository's page → Setup → Line and landing; a workspace's, Settings → Workspace → How work lands | `daoris driver landing <repository> merge|branch <pattern>|--clear` (`--workspace <name>`, `--tidy`, and on a branch `--plugin <id>`: an installed plugin that pushes it and opens the pull request, and `--auto-accept`: a quest's done lands it with no press) |
 | declare where a repository's work is shown to you before it is offered to land, or a workspace's: a review environment, local (shown in Daoris's browser at the address where the app runs) or deployed (by the repository's documented procedure), and whether work waits for your look (declared only: nothing reads it yet; production is never one) | Repositories → the repository's page → Setup → Line and landing → Review before landing; a workspace's, Repositories → the workspace's page → Setup → Defaults | `daoris driver review <repository> <environment> --kind local|deployed --procedure <path> [--address <url>] [--run "<command>"] [--required|--not-required]` (`--workspace <name>` for a whole workspace), `daoris driver review <repository> none|--drop <environment>|--clear` |
+| declare which other agent reads a repository's work before it lands, or a workspace's: reviewers named in the order they are tried, another maker's agent by your naming, each reading in a copy of its own that nothing is taken back from, at landing or each step, whether work waits for you when none can, whether it may run what is declared safe, and how long a pass may take (declared only: nothing reads it yet; never on unless you name a reviewer) | Repositories → the repository's page → Setup → Line and landing → Second opinion before landing; a workspace's, Repositories → the workspace's page → Setup → Defaults | `daoris driver opinion <repository> --reviewers <adapter,adapter> [--on landing,steps] [--required|--not-required] [--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck]` (`--workspace <name>` for a whole workspace), `daoris driver opinion <repository> none|--clear` |
 | bring a repository up to date after its pull request merged: fetch and fast-forward the line, delete the branches whose work reached it, replay the branches still at work onto it (Daoris fetches, never pushes; it takes the repositories holding Daoris's branches, and another where named or included) | Settings → Workspace → Session branches → Updates | `daoris-driver trees sync [--repository <name>] [--workspace <name>] [--all] [--yes]` |
 | clean up session branches whose work landed, and branches a landing made whose work reached the line | Settings → Workspace → Session branches | `daoris-driver trees clean [--workspace <name>]` |
 | discard a failed or superseded session's branch, with its tree where it is still here | Sessions → the session's review → Discard, while its tree is here | `daoris-driver trees remove <session|branch> [--repository <name>] --force` |
@@ -241,17 +242,17 @@ message when it changed; for anything else on the screen, ask them rather than g
 
 ### Workspace `default`
 
-| Repository | Driven | Line | Work lands | Reviewed before landing |
-|---|---|---|---|---|
-| `engine` | not driven, no checkout here | none git can name | merged into the line (set for it) | no review environment (set for it) |
-| `tools` | driven | `develop` (set for its workspace) | merged into the line (the default) | no review environment |
+| Repository | Driven | Line | Work lands | Reviewed before landing | Second opinion before landing |
+|---|---|---|---|---|---|
+| `engine` | not driven, no checkout here | none git can name | merged into the line (set for it) | no review environment (set for it) | no second opinion (set for it) |
+| `tools` | driven | `develop` (set for its workspace) | merged into the line (the default) | no review environment | no second opinion |
 
 ### Workspace `work`
 
-| Repository | Driven | Line | Work lands | Reviewed before landing |
-|---|---|---|---|---|
-| `console-ui` | driven, in its own tree | `feature/app` (set for it) | on a branch `feature/{slug}-{quest}`, pushed with a pull request opened by plugin `example.lands`, tree removed once landed, accepted automatically when its quest is done (its workspace's rule) | `dev` (local, `http://localhost:4200`, by `README.md`), the first the default; work waits for the person's review before it lands (its workspace's rule) |
-| `reports-db` | driven, held | `main` (the checkout's own) | merged into the line (the default) | no review environment |
+| Repository | Driven | Line | Work lands | Reviewed before landing | Second opinion before landing |
+|---|---|---|---|---|---|
+| `console-ui` | driven, in its own tree | `feature/app` (set for it) | on a branch `feature/{slug}-{quest}`, pushed with a pull request opened by plugin `example.lands`, tree removed once landed, accepted automatically when its quest is done (its workspace's rule) | `dev` (local, `http://localhost:4200`, by `README.md`), the first the default; work waits for the person's review before it lands (its workspace's rule) | `codex-acp`, else `dsh`; before landing; required; at most 20 minutes a pass (its workspace's rule) |
+| `reports-db` | driven, held | `main` (the checkout's own) | merged into the line (the default) | no review environment | no second opinion |
 
 ### Agents
 

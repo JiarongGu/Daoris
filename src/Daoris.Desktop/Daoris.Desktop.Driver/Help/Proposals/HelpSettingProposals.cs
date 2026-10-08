@@ -28,12 +28,12 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     /// <remarks>
     /// HELP9 added <c>across</c> (D107), and <c>cap</c> and <c>adapter</c>, which only a terminal set before; HELP10
     /// <c>retry</c>, once the facts carried the parked quests; LANG1c2 <c>language</c>, once the service's writer listed it;
-    /// REVIEWENV1a <c>review</c>, with the service's writer in the same change.
+    /// REVIEWENV1a <c>review</c>, with the service's writer in the same change; XAGENT1a <c>opinion</c>, the same way.
     /// </remarks>
     public IReadOnlyList<string> Doors { get; } =
     [
-        "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "standing", "language", "review", "intake",
-        "helper", "strikes", "retry", "timeout", "notify", "cap", "adapter",
+        "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "standing", "language", "review", "opinion",
+        "intake", "helper", "strikes", "retry", "timeout", "notify", "cap", "adapter",
     ];
 
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
@@ -202,6 +202,13 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                 var (refused, review) = Review(target, workspace, value, config, facts);
                 if (refused is not null) return Refused(refused, "", "");
                 planned = review;
+                break;
+            }
+            case "opinion":
+            {
+                var (refused, opinion) = Opinion(target, workspace, value, config);
+                if (refused is not null) return Refused(refused, "", "");
+                planned = opinion;
                 break;
             }
             case "intake" or "helper":
@@ -511,6 +518,107 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
             : [];
         var scope = circle ? $"--workspace {ShellWord.Of(workspace!, ShellWord.Workspace)}" : target!;
         return (null, (string.Join(" ", [head, .. said, .. notes]), $"daoris driver review {scope} {value}", c => ReviewRules.Apply(c, edit)));
+    }
+
+    /// <summary>What an <c>opinion</c> proposal's words may say, in the refusal that names the shape.</summary>
+    private const string OpinionUsage =
+        "`opinion` is `--reviewers <adapter,adapter> [--on landing,steps] [--required|--not-required] [--verify|--no-verify] "
+        + "[--minutes <n>] [--recheck|--no-recheck]`, `none` or `--clear` — e.g. "
+        + "`daoris driver opinion web-app --reviewers codex-acp --required`.";
+
+    /// <summary>
+    /// <c>opinion</c> (XAGENT1a, D155 point 3, the second-agent design §2.5), as <c>daoris driver opinion</c> reads its words:
+    /// <c>--reviewers</c> and the switches set over the rule set there, <c>none</c> or <c>--clear</c>, for a repository or a
+    /// whole workspace, a quoted word kept whole. Judged by the twin's table (<see cref="OpinionRules.Apply"/>); the card says
+    /// what the rule lets a reviewer do, names the reviewers of the working agent's own family, and says nothing reads it yet.
+    /// </summary>
+    private static (string? Refusal, (string Describe, string Terminal, Func<DriverConfig, DriverConfig> Edit) Planned) Opinion(
+        string? target, string? workspace, string value, DriverConfig config)
+    {
+        var named = target is { Length: > 0 };
+        var circle = workspace is { Length: > 0 };
+        if (named == circle) return (OpinionRules.Scope, default);
+        if (Words(value) is not { } words) return ($"`opinion`'s words close every quote they open — {OpinionUsage}", default);
+
+        var flags = new Dictionary<string, string>(StringComparer.Ordinal);
+        var switches = new HashSet<string>(StringComparer.Ordinal);
+        var none = false;
+        for (var at = 0; at < words.Count; at++)
+        {
+            var word = words[at];
+            if (word is "--reviewers" or "--on" or "--minutes")
+            {
+                if (at + 1 >= words.Count || words[at + 1].StartsWith("--", StringComparison.Ordinal)) return ($"`{word}` needs its value — {OpinionUsage}", default);
+                flags[word] = words[++at];
+            }
+            else if (word is "--required" or "--not-required" or "--verify" or "--no-verify" or "--recheck" or "--no-recheck" or "--clear")
+            {
+                switches.Add(word);
+            }
+            else if (word == "none") none = true;
+            else return ($"`{word}` is not a word `opinion` takes — {OpinionUsage}", default);
+        }
+
+        bool? Switch(string on, string off) => switches.Contains(on) ? true : switches.Contains(off) ? false : null;
+        foreach (var (on, off, why) in new[]
+        {
+            ("--required", "--not-required", "a rule is required or not"),
+            ("--verify", "--no-verify", "a reviewer may build and run or it may not"),
+            ("--recheck", "--no-recheck", "the answers are read again or they are not"),
+        })
+        {
+            if (switches.Contains(on) && switches.Contains(off)) return ($"{why} — say `{on}` or `{off}`, not both.", default);
+        }
+
+        static IReadOnlyList<string?>? Listed(string? words) => words?.Split(',').Select(each => (string?)each.Trim()).ToList();
+        var minutes = flags.GetValueOrDefault("--minutes");
+        var set = new OpinionSet
+        {
+            Reviewers = Listed(flags.GetValueOrDefault("--reviewers")),
+            On = Listed(flags.GetValueOrDefault("--on")),
+            Required = Switch("--required", "--not-required"),
+            Verify = Switch("--verify", "--no-verify"),
+            // A number only as digits, as the terminal reads it: anything else is refused in the rule's own words.
+            Minutes = minutes is null ? null
+                : minutes.Length > 0 && minutes.All(char.IsAsciiDigit) ? double.Parse(minutes, CultureInfo.InvariantCulture) : double.NaN,
+            Recheck = Switch("--recheck", "--no-recheck"),
+        };
+        var clear = switches.Contains("--clear");
+        if (!none && !clear && !set.Names) return (OpinionUsage, default);
+
+        var edit = new OpinionEdit
+        {
+            Repository = circle ? null : target,
+            Workspace = circle ? workspace : null,
+            Set = set.Names ? set : null,
+            None = none,
+            Clear = clear,
+        };
+
+        DriverConfig after;
+        try
+        {
+            after = OpinionRules.Apply(config, edit);
+        }
+        catch (DriverException refused)
+        {
+            return (refused.Message, default);
+        }
+
+        var whose = circle ? $"each repository of workspace `{workspace}` that sets none of its own" : $"`{target}`";
+        var head = clear
+            ? circle
+                ? $"Clear workspace `{workspace}`'s second-opinion rule: each repository there keeps its own, else none."
+                : $"Clear `{target}`'s second-opinion rule: it takes its workspace's again, else none."
+            : none ? $"Declare that `{target}` has no second opinion, whatever its workspace says."
+            : $"Set the second opinion for {whose}.";
+        var map = circle ? after.WorkspaceOpinions : after.Opinions;
+        // The working agent is the one this machine's work runs on: a reviewer of its family is no independent reading.
+        List<string> said = map.TryGetValue((circle ? workspace : target)!, out var standing)
+            ? [.. OpinionRules.Says(standing, OpinionRules.SameAgent(standing, config.Adapter)), OpinionRules.DeclaredOnly]
+            : [];
+        var scope = circle ? $"--workspace {ShellWord.Of(workspace!, ShellWord.Workspace)}" : target!;
+        return (null, (string.Join(" ", [head, .. said]), $"daoris driver opinion {scope} {value}", c => OpinionRules.Apply(c, edit)));
     }
 
     /// <summary>
