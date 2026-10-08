@@ -13,6 +13,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class StagedBuildTests : IDisposable
 {
+    private static readonly DateTimeOffset Start = new(2026, 10, 8, 12, 0, 0, TimeSpan.Zero);
+
     private readonly string _install = Path.Combine(Path.GetTempPath(), "daoris-staged-" + Guid.NewGuid().ToString("N")[..8]);
 
     public StagedBuildTests()
@@ -268,27 +270,36 @@ public sealed class StagedBuildTests : IDisposable
         Assert.Null(StagedBuild.ReadJournal(_install));
     }
 
+    /// <summary>
+    /// A file in <c>app/</c> held for longer than the wait: the swap rolls back <c>busy</c>, which is true, since nothing
+    /// was replaced, and the journal names what was held and for how long (SWAP2). The clock is the test's, so the two
+    /// minutes pass in a moment against a real hold.
+    /// </summary>
     [Fact]
-    public void A_file_held_in_app_rolls_the_swap_back_with_nothing_changed()
+    public void A_file_held_in_app_past_the_wait_rolls_the_swap_back_busy_with_nothing_changed_and_the_hold_journalled()
     {
         // Only Windows refuses to move a folder holding an open file; elsewhere the rename succeeds, so there is nothing
         // to hold here.
         if (!OperatingSystem.IsWindows()) return;
         Stage();
+        var now = Start;
 
         SwapOutcome outcome;
+        InstallSwap swap;
         using (new FileStream(Path.Combine(_install, "app", "Daoris.Desktop.App.dll"), FileMode.Open, FileAccess.Read, FileShare.None))
         {
-            // A hold that outlasts the tries: two, a moment apart.
-            outcome = new InstallSwap(_install, start: _ => 1, alive: _ => true)
-            {
-                HeldTries = 2, HeldWait = TimeSpan.FromMilliseconds(1),
-            }.Run([]);
+            swap = new InstallSwap(_install, start: _ => 1, alive: _ => true, clock: () => now, sleep: span => now += span);
+            outcome = swap.Run([]);
         }
 
         Assert.Equal(SwapPhase.RolledBack, outcome.Phase);
         Assert.Equal("busy", outcome.Reason);
         AssertTheBuildBefore();
+        var journal = StagedBuild.ReadJournal(_install)!;
+        Assert.Equal("busy", journal.Reason);
+        var hold = Assert.Single(journal.Holds!);
+        Assert.Equal(("app", "update/previous/app", false), (hold.From, hold.To, hold.Released));
+        Assert.True(hold.Ms >= swap.HeldWithin.TotalMilliseconds, $"held {hold.Ms} ms");
     }
 
     /// <summary>
@@ -313,12 +324,253 @@ public sealed class StagedBuildTests : IDisposable
             return 4242;
         }, alive: _ => true)
         {
-            HeldTries = 50, HeldWait = TimeSpan.FromMilliseconds(50),
+            HeldWithin = TimeSpan.FromSeconds(10), HeldWait = TimeSpan.FromMilliseconds(50),
         }.Run([]);
         letGo.Wait();
 
         Assert.Equal(SwapPhase.Installed, outcome.Phase);
         Assert.Equal("new library", Read("app/Daoris.Desktop.App.dll"));
+        Assert.True(Assert.Single(StagedBuild.ReadJournal(_install)!.Holds!).Released);
+    }
+
+    // ——— Holds outlasted, measured, and said as what they were (SWAP2).
+
+    /// <summary>
+    /// The deployment rehearsal twice met a hold longer than the ten seconds the swap once waited (50 tries, 200 ms apart),
+    /// each with a build running beside it. A real file in <c>app/</c>, held for twenty-five seconds by the test's clock and
+    /// let go when they have passed, no longer rolls the update back with the wait as it stands.
+    /// </summary>
+    [Fact]
+    public void A_hold_longer_than_the_old_ten_seconds_still_swaps_and_the_journal_says_how_long_it_lasted()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        Stage();
+        var now = Start;
+        var held = new FileStream(Path.Combine(_install, "app", "Daoris.Desktop.App.dll"), FileMode.Open, FileAccess.Read, FileShare.None);
+        SwapOutcome outcome;
+        try
+        {
+            outcome = new InstallSwap(_install, start: _ =>
+            {
+                Assert.True(StagedBuild.Confirm(_install, 4242));
+                return 4242;
+            }, alive: _ => true, clock: () => now, sleep: span =>
+            {
+                now += span;
+                if (now - Start >= TimeSpan.FromSeconds(25)) held.Dispose();
+            }).Run([]);
+        }
+        finally
+        {
+            held.Dispose();
+        }
+
+        Assert.Equal(SwapPhase.Installed, outcome.Phase);
+        Assert.Equal("new library", Read("app/Daoris.Desktop.App.dll"));
+        var journal = StagedBuild.ReadJournal(_install)!;
+        Assert.Equal(SwapPhase.Installed, journal.Phase);
+        Assert.Null(journal.Reason);
+        var hold = Assert.Single(journal.Holds!);
+        Assert.Equal(("app", "update/previous/app", true), (hold.From, hold.To, hold.Released));
+        Assert.InRange(hold.Ms, 25_000, 26_000);
+    }
+
+    /// <summary>The same on any platform, the hold handed in: the staged folder refused for forty seconds as it comes in.</summary>
+    [Fact]
+    public void A_staged_folder_held_past_the_old_bound_as_it_comes_in_still_swaps()
+    {
+        Stage();
+        var now = Start;
+        var swap = new InstallSwap(_install, start: _ =>
+        {
+            Assert.True(StagedBuild.Confirm(_install, 4242));
+            return 4242;
+        }, alive: _ => true, clock: () => now, sleep: span => now += span)
+        {
+            Mover = (from, to, overwrite) =>
+            {
+                if (Is(from, "update/staged/app") && now - Start < TimeSpan.FromSeconds(40)) throw Refused();
+                InstallSwap.MoveOnDisk(from, to, overwrite);
+            },
+        };
+
+        var outcome = swap.Run([]);
+
+        Assert.Equal(SwapPhase.Installed, outcome.Phase);
+        Assert.Equal("new application", Read("app/Daoris.Desktop.exe"));
+        var hold = Assert.Single(StagedBuild.ReadJournal(_install)!.Holds!);
+        Assert.Equal(("update/staged/app", "app", true), (hold.From, hold.To, hold.Released));
+        Assert.InRange(hold.Ms, 40_000, 41_000);
+        Assert.True(hold.Tries > 50, $"{hold.Tries} tries");
+    }
+
+    /// <summary>
+    /// <c>busy</c> is a hold that outlasted the wait and nothing else: a move that fails for another reason fails at once,
+    /// waits for nothing, and is said as <c>move</c>, the build before it put back.
+    /// </summary>
+    [Fact]
+    public void A_move_that_fails_for_another_reason_rolls_back_at_once_as_move_never_busy()
+    {
+        Stage();
+        var slept = 0;
+        var swap = new InstallSwap(_install, start: _ => throw new InvalidOperationException("never started"), alive: _ => true,
+            sleep: _ => slept++)
+        {
+            Mover = (from, to, overwrite) =>
+            {
+                // ERROR_ALREADY_EXISTS: not a hold, and no wait makes it one.
+                if (Is(from, "update/staged/Daoris.exe")) throw new IOException("Cannot create a file when that file already exists.", unchecked((int)0x800700B7));
+                InstallSwap.MoveOnDisk(from, to, overwrite);
+            },
+        };
+
+        var outcome = swap.Run([]);
+
+        Assert.Equal(SwapPhase.RolledBack, outcome.Phase);
+        Assert.Equal("move", outcome.Reason);
+        Assert.Equal(0, slept);
+        AssertTheBuildBefore();
+        var journal = StagedBuild.ReadJournal(_install)!;
+        Assert.Equal("move", journal.Reason);
+        Assert.Contains("already exists", journal.Detail);
+        Assert.Null(journal.Holds);
+    }
+
+    /// <summary>
+    /// A new build that exits is rolled back as <c>exited</c> even when putting it back meets a hold that outlasts the wait:
+    /// the journal stays under way with the moves still to undo and the reason it undoes for, a start then confirms
+    /// nothing, and the next start finishes the undo with that reason, never <c>busy</c> nor <c>interrupted</c>.
+    /// </summary>
+    [Fact]
+    public void A_roll_back_held_past_the_wait_keeps_its_reason_and_the_next_start_finishes_it()
+    {
+        Stage();
+        var now = Start;
+        var letGo = false;
+        void Mover(string from, string to, bool overwrite)
+        {
+            if (!letGo && Is(from, "app") && Is(to, "update/failed/app")) throw Refused();
+            InstallSwap.MoveOnDisk(from, to, overwrite);
+        }
+
+        var first = new InstallSwap(_install, start: _ => 4242, alive: _ => false, clock: () => now, sleep: span => now += span)
+        {
+            Mover = Mover,
+        };
+        Assert.ThrowsAny<IOException>(() => first.Run([]));
+
+        var under = StagedBuild.ReadJournal(_install)!;
+        Assert.Equal(SwapPhase.Started, under.Phase);
+        Assert.Equal("exited", under.Reason);
+        Assert.Equal(new SwapMove("update/staged/app", "app"), under.Moves[^1]);
+        Assert.Equal(4, under.Moves.Count);
+        Assert.False(StagedBuild.Confirm(_install, 4242));
+        Assert.Equal(SwapPhase.Started, StagedBuild.ReadJournal(_install)!.Phase);
+
+        letGo = true;
+        var put = new InstallSwap(_install, start: _ => 1, alive: _ => false, clock: () => now, sleep: span => now += span)
+        {
+            Mover = Mover,
+        }.Recover(appRunning: false);
+
+        Assert.Equal(SwapPhase.RolledBack, put);
+        AssertTheBuildBefore();
+        var journal = StagedBuild.ReadJournal(_install)!;
+        Assert.Equal("exited", journal.Reason);
+        Assert.Contains("ended before it came up", journal.Detail);
+        Assert.Contains(journal.Holds!, hold => (hold.From, hold.To, hold.Released) == ("app", "update/failed/app", false));
+        Assert.Equal("new application", Read("update/failed/app/Daoris.Desktop.exe"));
+        Assert.Equal("new launcher", Read("update/failed/Daoris.exe"));
+    }
+
+    /// <summary>
+    /// The launcher's catch (D139 §6): an error part way through a swap is put right from its journal, as a launcher that
+    /// died is; only with no swap under way does an update asked for refuse the staged build, and then as <c>error</c>.
+    /// </summary>
+    [Fact]
+    public void An_error_puts_a_swap_under_way_right_from_its_journal_and_refuses_as_error_only_when_none_is()
+    {
+        Stage();
+        Directory.CreateDirectory(Path.Combine(_install, "update", "previous"));
+        Directory.Move(Path.Combine(_install, "app"), Path.Combine(_install, "update", "previous", "app"));
+        StagedBuild.WriteJournal(_install, new SwapRecord(
+            SwapPhase.Swapping, "b1", "0.0.1", null, Start, [new SwapMove("app", "update/previous/app")]));
+
+        var put = new InstallSwap(_install, start: _ => null, alive: _ => false).AfterError(appRunning: false, updating: true);
+
+        Assert.Equal(SwapPhase.RolledBack, put.Phase);
+        Assert.Equal("interrupted", put.Reason);
+        Assert.True(put.StartOld);
+        AssertTheBuildBefore();
+
+        Stage();
+        var refused = new InstallSwap(_install, start: _ => null, alive: _ => false).AfterError(appRunning: false, updating: true);
+
+        Assert.Equal(SwapPhase.Refused, refused.Phase);
+        Assert.Equal("error", refused.Reason);
+        Assert.Equal("error", StagedBuild.ReadJournal(_install)!.Reason);
+        Assert.False(StagedBuild.IsStaged(_install));
+        AssertTheBuildBefore();
+    }
+
+    /// <summary>
+    /// A refusal never writes over a swap under way: its journal is what puts the install right, and a <c>refused</c>
+    /// over it would lose the moves it made and say <c>busy</c> of a swap that went on.
+    /// </summary>
+    [Fact]
+    public void A_refusal_never_writes_over_a_swap_under_way()
+    {
+        Stage();
+        var started = new SwapRecord(
+            SwapPhase.Started, "b1", "0.0.1", null, Start, [new SwapMove("app", "update/previous/app")], Pid: 4242);
+        StagedBuild.WriteJournal(_install, started);
+        var swap = new InstallSwap(_install, start: _ => null, alive: _ => true);
+
+        swap.Held("something still ran from app/ after the application closed, so nothing was replaced.");
+        var after = swap.AfterError(appRunning: true, updating: true);
+
+        Assert.False(after.StartOld);
+        var journal = StagedBuild.ReadJournal(_install)!;
+        Assert.Equal(SwapPhase.Started, journal.Phase);
+        Assert.Null(journal.Reason);
+        Assert.Equal(started.Moves, journal.Moves);
+        Assert.True(StagedBuild.IsStaged(_install));
+    }
+
+    /// <summary>
+    /// A journal a reader holds open for a moment without delete sharing is still written (AtomicFile's REV3 measurement):
+    /// the launcher reads it every poll while the new application writes its confirmation.
+    /// </summary>
+    [Fact]
+    public void A_journal_a_reader_holds_for_a_moment_is_still_written()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        StagedBuild.WriteJournal(_install, new SwapRecord(SwapPhase.Started, "b1", "0.0.1", null, Start, []));
+
+        var reader = new FileStream(StagedBuild.JournalOf(_install), FileMode.Open, FileAccess.Read, FileShare.Read);
+        var letGo = Task.Run(async () =>
+        {
+            await Task.Delay(150);
+            reader.Dispose();
+        });
+        StagedBuild.WriteJournal(_install, new SwapRecord(SwapPhase.Confirmed, "b1", "0.0.1", null, Start, [], Pid: 4242));
+        letGo.Wait();
+
+        Assert.Equal(SwapPhase.Confirmed, StagedBuild.ReadJournal(_install)!.Phase);
+    }
+
+    /// <summary>A journal written before SWAP2 has no holds, and reads as it did; one with holds reads them back.</summary>
+    [Fact]
+    public void A_journal_s_holds_read_back_and_one_without_reads_as_before()
+    {
+        StagedBuild.WriteJournal(_install, new SwapRecord(SwapPhase.Installed, "b1", "0.0.1", null, Start, []));
+        Assert.DoesNotContain("holds", File.ReadAllText(StagedBuild.JournalOf(_install)));
+        Assert.Null(StagedBuild.ReadJournal(_install)!.Holds);
+
+        SwapHold[] holds = [new("app", "update/previous/app", 12_345, 62, true), new("update/staged/app", "app", 120_000, 601, false)];
+        StagedBuild.WriteJournal(_install, new SwapRecord(SwapPhase.RolledBack, "b1", "0.0.1", null, Start, [], Reason: "busy", Holds: holds));
+
+        Assert.Equal(holds, StagedBuild.ReadJournal(_install)!.Holds);
     }
 
     /// <summary>
@@ -467,6 +719,13 @@ public sealed class StagedBuildTests : IDisposable
     }
 
     private string Staged(string relative) => Path.Combine(_install, "update", "staged", relative.Replace('/', Path.DirectorySeparatorChar));
+
+    /// <summary>Whether a full path a move is handed is this install-relative one.</summary>
+    private bool Is(string full, string relative) =>
+        string.Equals(full, Path.Combine(_install, relative.Replace('/', Path.DirectorySeparatorChar)), StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>What Windows answers a move of a folder a scanner holds a file in: access denied.</summary>
+    private static UnauthorizedAccessException Refused() => new("Access to the path is denied.");
 
     private string Read(string relative) => File.ReadAllText(Path.Combine(_install, relative.Replace('/', Path.DirectorySeparatorChar)));
 

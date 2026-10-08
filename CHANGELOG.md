@@ -168,6 +168,8 @@ with the version and date at release.
 - A request the service fails on now answers with a sentence, and its log says what went wrong and where.
 - An installed Daoris now carries its own knowledge connector and hands it to every session, instead of an
   older copy that could rebuild the knowledge index at an older version and break search.
+- An update that meets a folder held by a scanner now waits for it rather than rolling back, and says how
+  long it waited.
 
 The first version: doctrine that installs, is checked, and flows back.
 

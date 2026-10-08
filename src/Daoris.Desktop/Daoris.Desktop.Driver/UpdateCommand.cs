@@ -134,6 +134,9 @@ public static class UpdateCommand
                 _ => $"{last.Phase}{build}{when}, still under way.",
             };
             output.AppendLine($"  The last swap: {outcome}");
+
+            // What the swap found held, and for how long (SWAP2): the launcher writes no log, so this is where a person reads it.
+            if (last.Holds is { Count: > 0 } holds) output.AppendLine($"  Held as it swapped: {string.Join("; ", holds.Select(hold => hold.Said))}.");
         }
     }
 
