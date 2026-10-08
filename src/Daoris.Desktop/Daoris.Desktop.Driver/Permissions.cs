@@ -107,13 +107,16 @@ public static class PermissionRules
             {
                 "registry", "knowledge_search", "knowledge_get", "knowledge_repositories",
                 "knowledge_convergence", "quest_list", "quest_respond", "quest_publish", "permission_propose", "go_ahead_ask",
-                "review_serve", "review_ready",
+                "review_serve", "review_ready", "opinion_give", "opinion_answer",
             }.Select(tool => ConnectorPrefix + tool)],
             // Not `knowledge_refresh`: rebuilding the index is the machine's job, never a session's. And
             // `permission_propose` (PERM2, D74) only PROPOSES — a widening still waits for the person. `go_ahead_ask`
             // (KNOWUSE1a, D135 §2) only ASKS — the act it names still waits for the person's yes. `review_serve` and
             // `review_ready` (REVIEWENV1b2, D154 points 5 and 8) are a set-up step's, answered for its own session only:
             // serving shows its build to its own tab, and saying what it showed gives no verdict, which is the person's.
+            // `opinion_give` and `opinion_answer` (XAGENT1c2, D155; the second agent design §5.4, §6.1, §6.4) are answered
+            // for an opinion's own reviewer and for the working session handed it only: each says a claim, and neither
+            // asks for an opinion, lands the work or answers a dispute, which is the person's.
             "A session takes and closes its own quest, publishes what it finds for others and proposes a "
             + "change to these rules, through Daoris's connector — and anything it would have to ask for is "
             + "refused."),

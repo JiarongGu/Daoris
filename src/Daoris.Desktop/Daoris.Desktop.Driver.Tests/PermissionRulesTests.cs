@@ -43,6 +43,8 @@ public sealed class PermissionRulesTests : IDisposable
         "mcp__daoris-knowledge__go_ahead_ask",
         "mcp__daoris-knowledge__review_serve",
         "mcp__daoris-knowledge__review_ready",
+        "mcp__daoris-knowledge__opinion_give",
+        "mcp__daoris-knowledge__opinion_answer",
     ];
 
     /// <summary>What the `commit` default allows (PERM4), a rename among it (UNBLOCK4, D122 §3.6).</summary>
@@ -156,6 +158,22 @@ public sealed class PermissionRulesTests : IDisposable
     [InlineData("review_serve")]
     [InlineData("review_ready")]
     public void A_set_up_step_s_two_tools_reach_a_session_by_default(string tool)
+    {
+        var rules = PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine");
+
+        Assert.Contains($"mcp__daoris-knowledge__{tool}", rules.Allow);
+        Assert.True(PermissionRules.AllowsConnector(rules, tool));
+    }
+
+    /// <summary>
+    /// A reviewer's session says its opinion, and the working session handed one answers it (XAGENT1c2; the second agent
+    /// design §5.4, §6.1, §6.4). An ask over the protocol door is a refusal (D52), so the default allows both, as it allows
+    /// <c>review_serve</c>: the service answers each for its own session only, and neither gives the verdict.
+    /// </summary>
+    [Theory]
+    [InlineData("opinion_give")]
+    [InlineData("opinion_answer")]
+    public void The_opinion_tools_reach_a_session_by_default(string tool)
     {
         var rules = PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine");
 
