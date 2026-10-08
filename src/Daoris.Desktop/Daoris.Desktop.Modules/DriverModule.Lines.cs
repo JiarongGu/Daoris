@@ -111,7 +111,7 @@ public sealed partial class DriverModule
                 {
                     pair.line.Repository,
                     pair.line.Workspace,
-                    Rule = pair.opinion is null ? null : OpinionWire(pair.opinion.Rule, config.Adapter),
+                    Rule = pair.opinion is null ? null : OpinionWire(pair.opinion.Rule, config.Adapter, _loop.Harnesses.Adapters),
                     pair.opinion?.Source,
                 })
                 .ToArray(),
@@ -481,7 +481,11 @@ public sealed partial class DriverModule
     /// the bound of a pass (the default where none is written), and the reviewers of the working agent's own family, judged
     /// against <paramref name="working"/>, the agent this machine's work runs on, so the page says what the terminal says.
     /// </summary>
-    internal static object OpinionWire(OpinionRule rule, string working) => new
+    /// <param name="adapters">
+    /// The loop's agents, the machine's plugins among them, so a maker a plugin declares counts on the screen as it counts at
+    /// the terminal and at Ask Daoris's door (XAGENT1b3).
+    /// </param>
+    internal static object OpinionWire(OpinionRule rule, string working, AdapterSet adapters) => new
     {
         None = rule.IsNone,
         rule.On,
@@ -490,6 +494,6 @@ public sealed partial class DriverModule
         rule.Verify,
         Minutes = rule.Bound,
         rule.Recheck,
-        SameAgent = OpinionRules.SameAgent(rule, working),
+        SameAgent = OpinionRules.SameAgent(rule, working, adapters),
     };
 }

@@ -137,6 +137,34 @@ test('a harness this build carries is refused naming both sides', () => {
   fx.cleanup();
 });
 
+/**
+ * PLUGINRESERVE1: the names this build reserves are ONE table both twins are held to, the driver suite's
+ * `fixtures/reserved-harnesses.json`: every name either side runs as a harness, `codex` among them. The driver's
+ * `PluginCatalogTests` holds `AdapterSet.Built().Reserved` and its catalogue's refusals to the same rows.
+ */
+const RESERVED_TABLE = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
+  'Daoris.Desktop.Driver.Tests', 'fixtures', 'reserved-harnesses.json'), 'utf8')) as {
+  reserved: string[];
+  declares: [why: string, name: string, refused: boolean][];
+};
+
+test('the names this build reserves are the shared table\'s, codex among them (PLUGINRESERVE1)', () => {
+  assert.ok(RESERVED_TABLE.reserved.includes('codex'));
+  assert.deepEqual([...reservedHarnesses()].sort(), RESERVED_TABLE.reserved);
+});
+
+for (const [why, name, refused] of RESERVED_TABLE.declares) {
+  test(`a plugin declaring a reserved name is refused as the driver refuses it: ${why} (PLUGINRESERVE1)`, () => {
+    const fx = makeFixture('plugins-reserved');
+    plugin(fx.root, 'example.agent', JSON.stringify({ id: 'example.agent', harnesses: [{ name, command: ['agent'] }] }));
+
+    const [entry] = readPlugins(fx.root).plugins;
+    if (refused) assert.ok(entry!.problem?.includes(`\`${name}\`, which this build already carries`), entry!.problem ?? 'no problem');
+    else assert.equal(entry!.problem, null);
+    fx.cleanup();
+  });
+}
+
 test('presence is asked of the file or PATH, never by running the command', () => {
   const fx = makeFixture('plugins-presence');
   const here = join(fx.root, 'agent.mjs');
@@ -160,6 +188,27 @@ test('two plugins declaring the same harness keep the first by id and refuse the
   assert.match(catalog.plugins[1]!.problem!, /a\.one/);
   assert.match(catalog.plugins[1]!.problem!, /shared/);
   assert.deepEqual(catalog.contributing.map((p) => p.manifest.id), ['a.one']);
+  fx.cleanup();
+});
+
+/**
+ * XAGENT1b2 (D155 point 4, the second-agent design §3.1): a declared harness may say what a person calls its tool and who
+ * makes it, so a plugin's agent can count as another maker's. Each is the plugin's word, read trimmed; one that is not text,
+ * or is blank, declares none and never refuses the plugin. Twin: `PluginCatalogTests`'
+ * `A_declared_harness_may_say_its_product_and_maker_and_an_older_manifest_reads_as_before`, the same manifest read the same.
+ */
+test('a declared harness may say its product and maker, and an older manifest reads as before', () => {
+  const fx = makeFixture('plugins-maker');
+  plugin(fx.root, 'acme.agent', `{ "id": "acme.agent",
+    "harnesses": [ { "name": "acme-agent", "command": ["acme"], "product": " Acme Agent ", "maker": "Acme" },
+                   { "name": "older-agent", "command": ["older"] },
+                   { "name": "odd-agent", "command": ["odd"], "product": 7, "maker": "  " } ] }`);
+
+  const [entry] = readPlugins(fx.root).plugins;
+  assert.equal(entry!.problem, null);
+  assert.deepEqual(
+    entry!.manifest.harnesses.map((harness) => [harness.name, harness.product, harness.maker]),
+    [['acme-agent', 'Acme Agent', 'Acme'], ['older-agent', null, null], ['odd-agent', null, null]]);
   fx.cleanup();
 });
 

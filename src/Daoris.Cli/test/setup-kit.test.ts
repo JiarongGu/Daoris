@@ -451,18 +451,25 @@ type Stub = { child: ChildProcess; closed: Promise<number | null> };
 
 /**
  * What a row awaits of the stub, bounded (STUB3): `until` settles it, or `wait` passes first and the row fails saying what
- * never came, and from when the bound was counted where `since` names it (STUB3b). Either way a failure stops the stub and
- * waits for it to end, so nothing outlives the row and its folder can go (Windows holds a running process's folder), and
- * carries its stderr.
+ * never came, and from when the bound was counted where `since` names it (STUB3b). A `quiet` bound starts again at each
+ * chunk the stub writes on either stream (FLAKE2), so it counts only the stub's silence, never how long its work takes on a
+ * loaded machine. Either way a failure stops the stub and waits for it to end, so nothing outlives the row and its folder
+ * can go (Windows holds a running process's folder), and carries its stderr.
  */
 async function bounded<T>(
   { child, closed }: Stub, until: Promise<T>,
-  { wait, late, stderr, since }: { wait: number; late: () => string; stderr: () => string; since?: string },
+  { wait, late, stderr, since, quiet = false }: { wait: number; late: () => string; stderr: () => string; since?: string; quiet?: boolean },
 ): Promise<T> {
   let timer: NodeJS.Timeout | undefined;
-  const bound = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error(`${late()} within ${wait} ms${since ? ` of ${since}` : ''}`)), wait);
-  });
+  let fail: (error: Error) => void = () => {};
+  const bound = new Promise<never>((_, reject) => { fail = reject; });
+  const arm = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fail(new Error(`${late()} within ${wait} ms${since ? ` of ${since}` : ''}`)), wait);
+  };
+  arm();
+  const streams = quiet ? [child.stdout, child.stderr].filter((stream) => stream !== null) : [];
+  for (const stream of streams) stream.on('data', arm);
   try {
     return await Promise.race([until, bound]);
   } catch (error) {
@@ -471,6 +478,7 @@ async function bounded<T>(
     throw new Error(`${(error as Error).message}\n${stderr()}`);
   } finally {
     clearTimeout(timer);
+    for (const stream of streams) stream.off('data', arm);
   }
 }
 
@@ -478,10 +486,17 @@ async function bounded<T>(
  * One driven turn over the protocol, as the driver holds one: the handshake, a session on the tree, the prompt,
  * a permission the stub asks for refused (the driver refuses one by construction, D52), and end of input once
  * the prompt is answered. Resolves with the prompt's answer, every update, stderr, and the code the stub exited with.
+ * `agent` is the stub's text, ACP's stub unless a row puts one at work.
+ *
+ * The prompt's `wait` is counted from the stub's last output (FLAKE2), after its start's own bound (STUB3b): a set-up turn
+ * runs the doctrine tool six times and says each, so on a loaded machine the whole turn may take longer than any bound
+ * while no step of it is silent for long.
  */
-async function driveTurn({ cwd, env }: { cwd: string; env: Env }): Promise<{ answer: Frame; updates: Update[]; stderr: string; code: number | null }> {
+async function driveTurn({ cwd, env, agent: text = ACP_STUB_AGENT, wait = TURN_WAIT_MS, start = STUB_START_MS }: {
+  cwd: string; env: Env; agent?: string; wait?: number; start?: number;
+}): Promise<{ answer: Frame; updates: Update[]; stderr: string; code: number | null }> {
   const agent = join(cwd, '..', 'acp-agent.mjs');
-  writeFileSync(agent, ACP_STUB_AGENT);
+  writeFileSync(agent, text);
   const child = spawn(process.execPath, [agent], { cwd, env, stdio: ['pipe', 'pipe', 'pipe'] });
   let stderr = '';
   child.stderr.on('data', (chunk) => { stderr += chunk; });
@@ -489,8 +504,11 @@ async function driveTurn({ cwd, env }: { cwd: string; env: Env }): Promise<{ ans
   const updates: Update[] = [];
   // Bounded as `speak()` is (STUB3): the prompt's answer, then the exit, each failing the row where it never comes.
   const closed = new Promise<number | null>((resolve) => child.on('close', (code) => resolve(code)));
+  let up = () => {};
+  const first = new Promise<void>((resolve) => { up = resolve; });
   const answered = new Promise<Frame>((resolve, reject) => {
     createInterface({ input: child.stdout }).on('line', (line) => {
+      up();
       const frame = JSON.parse(line) as Frame;
       if (frame.method === 'session/update' && frame.params) updates.push(frame.params.update);
       else if (frame.method === 'session/request_permission') {
@@ -503,10 +521,12 @@ async function driveTurn({ cwd, env }: { cwd: string; env: Env }): Promise<{ ans
   send({ jsonrpc: '2.0', id: 2, method: 'session/new', params: { cwd, mcpServers: [] } });
   send({ jsonrpc: '2.0', id: 3, method: 'session/prompt', params: { sessionId: 'acp-session-1', prompt: [{ type: 'text', text: 'the target' }] } });
   const stub = { child, closed };
-  const told = { wait: TURN_WAIT_MS, stderr: () => stderr };
-  const answer = await bounded(stub, answered, { late: () => 'the stub never answered 3 (session/prompt)', ...told });
+  const told = { stderr: () => stderr };
+  const unanswered = () => 'the stub never answered 3 (session/prompt)';
+  await bounded(stub, Promise.race([first, answered]), { wait: start, late: unanswered, since: 'its start', ...told });
+  const answer = await bounded(stub, answered, { wait, late: unanswered, since: 'its last output', quiet: true, ...told });
   child.stdin.end();
-  const code = await bounded(stub, closed, { late: () => 'the stub did not exit once its input closed', ...told });
+  const code = await bounded(stub, closed, { wait: TURN_WAIT_MS, late: () => 'the stub did not exit once its input closed', ...told });
   return { answer, updates, stderr, code };
 }
 
@@ -867,6 +887,67 @@ test('a stub that answers nothing fails its row at the bound on its start, namin
     await assert.rejects(
       speak({ cwd: tree, env: { ...process.env }, frames: RESUME_FRAMES, agent: cutShort('stays', { startsAfter: 60_000 }), start: 1_000 }),
       /^Error: the stub never answered 1 \(initialize\), 2 \(session\/new\), 3 \(session\/prompt\) within 1000 ms of its start/,
+    );
+  } finally {
+    fx.cleanup();
+  }
+});
+
+/**
+ * A stub at work (FLAKE2): it answers `initialize` and `session/new`, then, at the prompt, says an update every `every` ms,
+ * `times` times, as a set-up turn says each command it runs, and answers the prompt after them, or with `answers` false
+ * falls silent instead. Its input closing ends it.
+ */
+const atWork = ({ times, every, answers }: { times: number; every: number; answers: boolean }) => `
+import { createInterface } from 'node:readline';
+const say = (frame) => process.stdout.write(JSON.stringify({ jsonrpc: '2.0', ...frame }) + '\\n');
+const lines = createInterface({ input: process.stdin });
+lines.on('line', async (line) => {
+  const frame = JSON.parse(line);
+  if (frame.method === 'initialize') say({ id: frame.id, result: {} });
+  else if (frame.method === 'session/new') say({ id: frame.id, result: { sessionId: 'acp-session-1' } });
+  else if (frame.method === 'session/prompt') {
+    for (let step = 1; step <= ${times}; step++) {
+      await new Promise((resolve) => setTimeout(resolve, ${every}));
+      say({ method: 'session/update', params: { sessionId: 'acp-session-1', update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'step ' + step } } } });
+    }
+    if (${JSON.stringify(answers)}) say({ id: frame.id, result: { stopReason: 'end_turn' } });
+  }
+});
+lines.on('close', () => process.exit(0));
+`;
+
+/**
+ * FLAKE2 (FLAKE1's sightings): *a set-up quest is done as its body says* failed three times under load, its stub having run
+ * all four commands, because `driveTurn()` counted the prompt's 30 s from the request: a turn that kept working past it was
+ * counted as silent. The bound runs from the stub's last output now, as STUB3b's runs from its first answer.
+ */
+test('a turn still at work past the bound is not counted as silent, which runs from its last output (FLAKE2)', { timeout: 30_000 }, async () => {
+  const fx = makeFixture('setup-kit-stub-at-work');
+  const tree = join(fx.root, 'atlas');
+  mkdirSync(tree, { recursive: true });
+  try {
+    const { answer, updates, code } = await driveTurn({
+      cwd: tree, env: { ...process.env }, agent: atWork({ times: 6, every: 400, answers: true }), wait: 1_000,
+    });
+
+    assert.equal(answer.result?.stopReason, 'end_turn');
+    assert.equal(updates.length, 6);
+    assert.equal(code, 0);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+/** FLAKE2: a turn that falls silent still fails at the bound, counted from its last output, and is stopped. */
+test('a turn that falls silent fails at the bound from its last output, and is stopped (FLAKE2)', { timeout: 30_000 }, async () => {
+  const fx = makeFixture('setup-kit-stub-falls-silent');
+  const tree = join(fx.root, 'atlas');
+  mkdirSync(tree, { recursive: true });
+  try {
+    await assert.rejects(
+      driveTurn({ cwd: tree, env: { ...process.env }, agent: atWork({ times: 2, every: 200, answers: false }), wait: 1_000 }),
+      /^Error: the stub never answered 3 \(session\/prompt\) within 1000 ms of its last output/,
     );
   } finally {
     fx.cleanup();

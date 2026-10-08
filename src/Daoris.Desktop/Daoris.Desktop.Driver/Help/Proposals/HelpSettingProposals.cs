@@ -206,7 +206,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
             }
             case "opinion":
             {
-                var (refused, opinion) = Opinion(target, workspace, value, config);
+                var (refused, opinion) = Opinion(target, workspace, value, config, facts);
                 if (refused is not null) return Refused(refused, "", "");
                 planned = opinion;
                 break;
@@ -531,10 +531,11 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     /// <c>opinion</c> (XAGENT1a, D155 point 3, the second-agent design §2.5), as <c>daoris driver opinion</c> reads its words:
     /// <c>--reviewers</c> and the switches set over the rule set there, <c>none</c> or <c>--clear</c>, for a repository or a
     /// whole workspace, a quoted word kept whole. Judged by the twin's table (<see cref="OpinionRules.Apply"/>); the card says
-    /// what the rule lets a reviewer do, names the reviewers of the working agent's own family, and says nothing reads it yet.
+    /// what the rule lets a reviewer do, names the reviewers of the working agent's own family over this machine's agents, a
+    /// plugin's among them (XAGENT1b2), and says nothing reads it yet.
     /// </summary>
     private static (string? Refusal, (string Describe, string Terminal, Func<DriverConfig, DriverConfig> Edit) Planned) Opinion(
-        string? target, string? workspace, string value, DriverConfig config)
+        string? target, string? workspace, string value, DriverConfig config, HelpMachineFacts facts)
     {
         var named = target is { Length: > 0 };
         var circle = workspace is { Length: > 0 };
@@ -614,9 +615,11 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
             : none ? $"Declare that `{target}` has no second opinion, whatever its workspace says."
             : $"Set the second opinion for {whose}.";
         var map = circle ? after.WorkspaceOpinions : after.Opinions;
-        // The working agent is the one this machine's work runs on: a reviewer of its family is no independent reading.
+        // The working agent is the one this machine's work runs on: a reviewer of its family is no independent reading. A
+        // plugin's agent is judged by what its plugin declares (XAGENT1b2), as the terminal and the reviewer's choice judge it.
+        var adapters = AdapterSet.Built().WithPlugins(facts.Plugins);
         List<string> said = map.TryGetValue((circle ? workspace : target)!, out var standing)
-            ? [.. OpinionRules.Says(standing, OpinionRules.SameAgent(standing, config.Adapter)), OpinionRules.DeclaredOnly]
+            ? [.. OpinionRules.Says(standing, OpinionRules.SameAgent(standing, config.Adapter, adapters)), OpinionRules.DeclaredOnly]
             : [];
         var scope = circle ? $"--workspace {ShellWord.Of(workspace!, ShellWord.Workspace)}" : target!;
         return (null, (string.Join(" ", [head, .. said]), $"daoris driver opinion {scope} {value}", c => OpinionRules.Apply(c, edit)));

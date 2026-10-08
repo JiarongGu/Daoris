@@ -133,6 +133,14 @@ public sealed record SessionEvent
     public string? Origin { get; init; }
 
     /// <summary>
+    /// For the turn Daoris handed a session with another agent's findings (XAGENT1e, D155 point 7): the second opinion they are
+    /// from. Its <see cref="Origin"/> is <c>target</c>, since the words are Daoris's fixed words around that agent's claims, so a
+    /// page that does not read this field shows them as what Daoris handed the session and never as the person's. And for the
+    /// driver's note on how the session answered them, read as its turn ended. Null on every other event.
+    /// </summary>
+    public string? Opinion { get; init; }
+
+    /// <summary>
     /// For the person's words to a driven session, on the event that shows them the moment they are said (STEER1, D136):
     /// when they reach it, <c>next-step</c> or <c>turn-end</c>. The words where the session took them come again without
     /// it, under the same <see cref="Id"/>, and that one is the turn's ask.

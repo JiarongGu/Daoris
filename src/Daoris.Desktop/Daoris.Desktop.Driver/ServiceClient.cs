@@ -1426,12 +1426,13 @@ public sealed partial class ServiceClient : IDisposable
 
     /// <summary>
     /// One word as the service answers it (MSG1a): its id, its words, when, its files' names and whether it was said after
-    /// the record ended. Null for one without its id, its words or a moment that reads.
+    /// the record ended; and the second opinion whose findings it carries (XAGENT1c's <c>by</c>), absent for the person's.
+    /// Null for one without its id, its words or a moment that reads.
     /// </summary>
-    private static SaidWordView? ReadWord(JsonElement word) =>
+    internal static SaidWordView? ReadWord(JsonElement word) =>
         word.ValueKind == JsonValueKind.Object
         && Text(word, "id") is { Length: > 0 } id && Text(word, "text") is { } words && Moment(word, "at") is { } at
-            ? new SaidWordView(id, words, at, Strings(word, "files"), Flag(word, "reopens"))
+            ? new SaidWordView(id, words, at, Strings(word, "files"), Flag(word, "reopens")) { By = Text(word, "by") is { Length: > 0 } by ? by : null }
             : null;
 
     /// <summary>

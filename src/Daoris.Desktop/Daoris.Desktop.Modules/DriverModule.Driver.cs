@@ -305,11 +305,12 @@ public sealed partial class DriverModule
                 .Select(p => new { Repository = p.Key, Rule = ReviewWire(p.Value) }).ToArray(),
             WorkspaceReviews = config.WorkspaceReviews.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Workspace = p.Key, Rule = ReviewWire(p.Value) }).ToArray(),
-            // The second-opinion rules as set (XAGENT1a), as rows for the same reason, each naming the working agent's family.
+            // The second-opinion rules as set (XAGENT1a), as rows for the same reason, each naming the working agent's family
+            // over the loop's agents, a plugin's among them (XAGENT1b3).
             Opinions = config.Opinions.OrderBy(p => p.Key, StringComparer.Ordinal)
-                .Select(p => new { Repository = p.Key, Rule = OpinionWire(p.Value, config.Adapter) }).ToArray(),
+                .Select(p => new { Repository = p.Key, Rule = OpinionWire(p.Value, config.Adapter, _loop.Harnesses.Adapters) }).ToArray(),
             WorkspaceOpinions = config.WorkspaceOpinions.OrderBy(p => p.Key, StringComparer.Ordinal)
-                .Select(p => new { Workspace = p.Key, Rule = OpinionWire(p.Value, config.Adapter) }).ToArray(),
+                .Select(p => new { Workspace = p.Key, Rule = OpinionWire(p.Value, config.Adapter, _loop.Harnesses.Adapters) }).ToArray(),
             Running = _loop.Processes.Running,
             // Who is driving Daoris's browser (BRW8): the running sessions handed a server that drives it.
             DrivingBrowser = _loop.Processes.DrivingBrowser,

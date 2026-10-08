@@ -40,6 +40,11 @@
 //   8. A plugin's tools are the manifest's `tools`: each an id, a range, why, and at most four checks. Each tool's
 //      first problem is said, by the same rules in the same order and words, and never refuses the plugin. This side
 //      reads and lists them; finding a tool and running its checks are the driver's, at a trial.
+//
+// And since XAGENT1b2 (D155 point 4), with `Plugins.cs`, `PluginCatalogTests` holding the row:
+//
+//   9. A declared harness may say its `product` and `maker`: text, trimmed, with blank or not text read as none and never
+//      a refusal. A maker is the plugin's word, by which `opinions.ts` judges its agent's family.
 
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, resolve, sep } from 'node:path';
@@ -104,7 +109,10 @@ export function isPluginId(id: string): boolean {
 
 /**
  * The harness names this build carries, which a plugin may not declare. The toolchain table plus the
- * two gate stubs that have no toolchain — the same set the driver's `AdapterSet.Built()` names.
+ * two gate stubs that have no toolchain: every name either side runs as a harness, so no plugin can
+ * shadow a built-in one (PLUGINRESERVE1). The driver's twin is `AdapterSet.Built().Reserved`, each door
+ * and each agent a door runs as (`codex`, a holder since CODEXACCT1); both suites hold their list to the
+ * driver suite's `fixtures/reserved-harnesses.json`.
  *
  * A function rather than a constant: `toolchain.ts` imports this module for `harness list`, and this
  * module imports its table — read at call time, the cycle costs nothing; read at load time, whichever
@@ -132,6 +140,16 @@ export interface PluginHarness {
   install: string[] | null;
   versionArguments: string[] | null;
   accountOf: string | null;
+  /**
+   * What a person calls the tool it runs, as the plugin says (XAGENT1b2, D155 point 4): trimmed, and null where it says none,
+   * says a blank or says something that is not text. Never a reason to refuse the plugin.
+   */
+  product: string | null;
+  /**
+   * Who makes that tool, as the plugin says, read as `product` is: the plugin's word, by which its agent may count as another
+   * maker's for a second opinion (the second-agent design §3.1). Null is a maker not declared, never taken as independent.
+   */
+  maker: string | null;
 }
 
 export interface PluginHooks { command: string[]; points: string[] }
@@ -274,6 +292,12 @@ function text(row: unknown, name: string): string | null {
   return typeof value === 'string' ? value : null;
 }
 
+/** A harness's word about itself (XAGENT1b2): its text trimmed, and none where it is blank or not text, never a refusal. */
+function ownWord(row: unknown, name: string): string | null {
+  const value = text(row, name)?.trim();
+  return value ? value : null;
+}
+
 /**
  * The data folder is the install folder's sibling under `.data`, by the same name: a plugin's folder IS
  * its id. A null folder leaves the placeholders as written (PLUG9: what a person is shown, and what an
@@ -360,6 +384,9 @@ export function readManifest(folderName: string, folder: string, asWritten = fal
         install: strings(row, 'install', base),
         versionArguments: strings(row, 'versionArguments', base),
         accountOf: text(row, 'accountOf'),
+        // The plugin's word for its tool and its maker; a manifest written before says neither.
+        product: ownWord(row, 'product'),
+        maker: ownWord(row, 'maker'),
       });
     }
   }

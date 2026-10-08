@@ -228,6 +228,31 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         Assert.NotNull(plan.Apply);
     }
 
+    /// <summary>
+    /// XAGENT1b2 (design §3.1): the door judges a plugin's agent by what its plugin declares, from this machine's plugins, so a
+    /// reviewer whose plugin declares the working agent's maker is named its family, as the terminal names it and the
+    /// reviewer's choice judges it.
+    /// </summary>
+    [Fact]
+    public void An_opinion_rule_names_a_plugin_s_agent_of_the_working_agent_s_maker_from_the_machine_s_plugins()
+    {
+        foreach (var (id, harness, maker) in new[] { ("acme.agent", "acme-agent", "Acme"), ("acme.other", "acme-other", "ACME") })
+        {
+            var folder = Path.Combine(_home, PluginCatalog.Folder, id);
+            Directory.CreateDirectory(folder);
+            System.IO.File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName),
+                $$"""{ "id": "{{id}}", "harnesses": [ { "name": "{{harness}}", "command": ["{{harness}}"], "maker": "{{maker}}" } ] }""");
+        }
+
+        var config = DriverConfig.Empty with { Adapter = "acme-agent" };
+        var proposal = Setting("opinion", "engine", null, "--reviewers codex-acp,acme-other");
+
+        Assert.Contains("`acme-other` is the same agent as the one that does the work here",
+            HelpProposals.Plan(proposal, config, Facts with { Plugins = PluginCatalog.Load(_home, AdapterSet.Built().Names) }).Describe);
+        // With no plugin on the machine, nothing declares its maker: it is its own family by name.
+        Assert.DoesNotContain("the same agent as the one", HelpProposals.Plan(proposal, config, Facts).Describe);
+    }
+
     [Fact]
     public void An_opinion_rule_applied_is_the_edit_the_terminal_makes()
     {
