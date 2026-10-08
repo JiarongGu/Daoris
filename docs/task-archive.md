@@ -12295,3 +12295,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SQUASHTIDY1 — a session branch a squash merge carried is offered to go, saying so** (driver, web-shell; owner's real case 2026-10-08). The owner squash-merged a session's work as a pull request with no landing plugin; the session branches then held commits no ref contains, so *Discard* refused unforced, git refused too, and the owner could not clean up. Where a branch's tree equals a commit on the line, or each of its changes is on a person's branch by patch, the refusal says so and offers the discard as losing nothing; force stays for work held nowhere. Contract: D51 rule 7, PLUGHOOK1a (a plugin's word for squash), D102. Proof: a driver test with a squash-merged line and a cherry-picked branch; the page's sentence, both catalogues.
 
 **Outcome** 2026-10-07: *Discard* and the Branches tab's clean-up let a session branch go unforced when a squash merge (its tree on the line) or a cherry-pick (each file it changed the same on the line or a person's branch) holds its work by content, and say where; a branch with one file differing is refused as before. Follow-ups: SQUASHTIDY1b, SWEEPCARRIED1. Detail: D102's SQUASHTIDY1 note; commit 0a7b9c72.
+
+
+## SWEEPCARRIED1 — the Branches tab words a carried row (2026-10-08, D148)
+
+> - [ ] **SWEEPCARRIED1 — the Branches tab words a carried row** (web-settings). PLUGHOOK1a's `carried` rows say the in-use sentence (*A session still running or waiting holds its tree*) because `Sweep.tsx`'s `holds()` has no case for them; add `settings.sweep.kind.carried` to both catalogues and the case. Contract: D148 point 4, D41. Proof: a `Sweep` vitest per language.
+
+**Outcome** 2026-10-07: the Branches card's carried rows say which landed branch's completed pull request carried their work, both catalogues; every kind the driver's `SweepKind` declares has its own case, held by `Sweep.test.tsx` parsing `Landing.cs`, and a kind the page does not know says so rather than a false sentence. Follow-up: SWEEPCARRIED1b. Detail: commit 104e36fc.
