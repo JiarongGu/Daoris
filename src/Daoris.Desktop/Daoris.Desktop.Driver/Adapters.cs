@@ -786,11 +786,17 @@ public static class TargetPrompt
             .Append("makes, such as a build's output, stays where the procedure keeps it.\n")
             .Append("- Never stop, restart or take over a process or a port of the person's. That needs their go-ahead at the least, and ")
             .Append("showing the work needs none.\n")
+            // REVIEWENV1d (design §2.3 steps 1–4): the tab the driver opened before this session, by the title it gave it, and
+            // what Daoris does with the folder once the session ends. The service's `review_serve` answers for the moment itself.
             .Append(local
-                ? "- Build the work as the procedure says, then ask Daoris to serve that build to your tab with your connector's "
-                  + $"`review_serve`: the build's folder in this tree, and `{environment.Address}`. Go to the change, do what it is "
-                  + "about, and leave the tab there. An interaction that would save to a shared environment's data needs the person's "
-                  + "go-ahead; without it, stop just before it and say so.\n"
+                ? $"- Daoris opened a tab of its browser for you, titled `{ReviewDesk.TabTitle(target.QuestId)}` until you navigate it. "
+                  + "Find it among the browser's tabs and work in it: the person sees it, and a tab you open yourself has no window.\n"
+                  + "- Build the work as the procedure says, then ask Daoris to serve that build to that tab with your connector's "
+                  + $"`review_serve`: the build's folder in this tree, and `{environment.Address}`. Where it answers that nothing is "
+                  + "served yet, show it in that tab the way the procedure gives. Once you end, Daoris serves that folder to that tab at "
+                  + $"`{environment.Address}` until the person's review, so a reload there shows your build and never the person's own "
+                  + "server. Go to the change, do what it is about, and leave the tab there. An interaction that would save to a shared "
+                  + "environment's data needs the person's go-ahead; without it, stop just before it and say so.\n"
                 : $"- Reach `{name}` as the procedure says. A deploy, a pipeline run, a configuration write or a sign-in there needs the "
                   + "person's go-ahead, asked once on the ask. A step the procedure leaves to a push is the person's: say so under "
                   + "**Needs you**, naming the procedure's line. Then show the work there in Daoris's browser, go to the change, and "

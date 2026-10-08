@@ -430,7 +430,8 @@ public sealed partial class Driver
 
         // REVIEWENV1c (design §2.6, §3.4): a set-up step that went on with the person's not yet says a new set-up, posted with
         // the commit its tree holds now, its correction among it.
-        await ReviewSetUps.PostAsync(service, config, _events, after, sessionId, workTree, quest.Workspace, openedAt, ct).ConfigureAwait(false);
+        await ReviewSetUps.PostAsync(service, config, _events, after, sessionId, workTree, quest.Workspace, openedAt, ct, Reviews)
+            .ConfigureAwait(false);
 
         // LAND2b: as a first run's ending, so a resumed session that closes its quest done is due too. One that went on after
         // its landing moves its own branch on at the next look (LAND2c).

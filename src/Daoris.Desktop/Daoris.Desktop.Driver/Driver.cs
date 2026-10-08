@@ -150,6 +150,13 @@ public sealed partial class Driver(
     /// </summary>
     public MachineLog? Log { get; init; }
 
+    /// <summary>
+    /// The review's showing in Daoris's browser (REVIEWENV1d, D154 point 5), shared across looks as the browser is: a local
+    /// set-up step's tab opened before its session, its build served there once its set-up is posted, and let go at each look
+    /// once the person answered it. Null where no shell carries a browser, the headless host and every gate, which show nothing.
+    /// </summary>
+    public ReviewDesk? Reviews { get; init; }
+
     /// <summary>What a session whose take lost is told, in its record (D68 §5).</summary>
     public const string LostClaim =
         "stopped by this machine's driver: another machine's take on the quest reached the remote first, so this "
@@ -319,6 +326,22 @@ public sealed partial class Driver(
         // The words a record could not go on with, read again at each look (MSG1b): the planner leaves them waiting.
         snapshot = snapshot with { Unable = _marks.For(snapshot.LastRun.Values) };
         _harnesses.Look(snapshot.Started, mark);
+
+        // The set-ups waiting for the person here, and each set-up step's tab let go once they answered it (REVIEWENV1d, design
+        // §2.3): kept served from look to look until then. A miss is said and tried again at the next look.
+        if (Reviews is { } showing)
+        {
+            try
+            {
+                events.AddRange(await showing.LookAsync(snapshot.Quests, service.FindQuestAsync, ct).ConfigureAwait(false));
+            }
+            catch (Exception error) when (error is HttpRequestException or System.Text.Json.JsonException or DriverException
+                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
+            {
+                events.Add($"review  the set-ups' tabs were not looked at this look: {error.Message}");
+            }
+        }
+
         // Whether this loop carries Daoris's browser decides whether a local set-up step can be shown here (REVIEWENV1c).
         var plan = Planner.Plan(snapshot, config, Door(), window: browser is not null);
         var progressed = false;
@@ -1023,6 +1046,14 @@ public sealed partial class Driver(
             return Hold(unfollowable);
         }
 
+        // A local set-up step's tab, opened before its session so its instruction names a tab the person sees (REVIEWENV1d,
+        // design §2.3 step 1): a tab an agent opens over CDP has no window. A browser that will not open one holds the start.
+        if (setUp is not null && Reviews is { } desk && await desk.OpenForStepAsync(quest, setUp, ct).ConfigureAwait(false) is { } unshowable)
+        {
+            if (opened is not null) await _trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+            return Hold(unshowable);
+        }
+
         // 🔴 Can this harness use what the repository allows it? (DEPLOY1.) Claude Code ignores a
         // repository's `permissions.allow` until a person has accepted that path, so a session in an
         // untrusted tree does the work and then cannot take or close the quest it exists to serve —
@@ -1292,7 +1323,8 @@ public sealed partial class Driver(
                         parts: conclusion.Parts).ConfigureAwait(false);
 
                     // REVIEWENV1c (design §2.6): a set-up step's said set-ups posted with the commit Daoris reads from its tree now.
-                    await ReviewSetUps.PostAsync(service, config, _events, after, sessionId, workTree, start.Workspace, openedAt, ct)
+                    // REVIEWENV1d: and its build served to its tab from then until the person's verdict.
+                    await ReviewSetUps.PostAsync(service, config, _events, after, sessionId, workTree, start.Workspace, openedAt, ct, Reviews)
                         .ConfigureAwait(false);
 
                     // LAND2b: a done under a rule that accepts automatically is due, and a later look lands it beside itself.
