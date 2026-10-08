@@ -131,7 +131,7 @@ export const REFILED: Quest = {
 export const REFILED_UNNAMED: Quest = { ...REFILED, short: undefined };
 
 /** The same quest named by its intake's short title, its whole title said once under the head. */
-export const REFILED_NAMED: Quest = { ...REFILED, short: 'AR-2203 continue the production half' };
+export const REFILED_NAMED: Quest = { ...REFILED, short: 'TK-2203 continue the production half' };
 
 /** A session starting for the re-filed quest, as the install's list said while its page said nothing of it. */
 export const STARTING: Session = {

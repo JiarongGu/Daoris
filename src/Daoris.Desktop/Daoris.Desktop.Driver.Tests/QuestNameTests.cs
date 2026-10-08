@@ -27,7 +27,7 @@ public sealed class QuestNameTests
         var standIn = new StandIn(request => request.RequestUri!.AbsolutePath == "/api/quests"
             ? (HttpStatusCode.OK, $$"""
                 [{"id":"q1","from":"ask #a1","to":"report","title":"{{Refiled}}","body":"b","status":"Open",
-                  "short":"AR-2203 continue the prod half"},
+                  "short":"TK-2203 continue the prod half"},
                  {"id":"q2","from":"report","to":"backend","title":"Read the field names","body":"b","status":"Open"}]
                 """)
             : null);
@@ -36,8 +36,8 @@ public sealed class QuestNameTests
         var named = (await service.FindQuestAsync("q1"))!;
         var older = (await service.FindQuestAsync("q2"))!;
 
-        Assert.Equal("AR-2203 continue the prod half", named.Short);
-        Assert.Equal("AR-2203 continue the prod half", named.Name);
+        Assert.Equal("TK-2203 continue the prod half", named.Short);
+        Assert.Equal("TK-2203 continue the prod half", named.Name);
         Assert.Null(older.Short);
         Assert.Equal("Read the field names", older.Name);
     }
@@ -49,15 +49,15 @@ public sealed class QuestNameTests
     [Fact]
     public async Task A_landing_is_named_for_the_quests_name_and_keeps_its_title()
     {
-        var quest = new QuestView("q1", "ask #a1", "report-ui", Refiled, "b", "Done") { Short = "AR-2203 continue the prod half" };
+        var quest = new QuestView("q1", "ask #a1", "portal-ui", Refiled, "b", "Done") { Short = "TK-2203 continue the prod half" };
         Task<QuestView?> Find(string id) => Task.FromResult<QuestView?>(id == "q1" ? quest : null);
 
         var subject = await LandingRules.SubjectAsync("s1", "q1", Find, opening: null);
 
         Assert.Equal(Refiled, subject.Title);
-        Assert.Equal("ar-2203-continue-the-prod-half", subject.Slug);
-        Assert.Equal("feature/ar-2203-continue-the-prod-half-q1",
-            LandingRules.Expand("feature/{slug}-{quest}", new LandingNames(subject.Quest!, subject.Slug, "report-ui", "s1")));
+        Assert.Equal("tk-2203-continue-the-prod-half", subject.Slug);
+        Assert.Equal("feature/tk-2203-continue-the-prod-half-q1",
+            LandingRules.Expand("feature/{slug}-{quest}", new LandingNames(subject.Quest!, subject.Slug, "portal-ui", "s1")));
     }
 
     /// <summary>A start's landing is told the same name, and a quest whose name is its title is named as it always was.</summary>

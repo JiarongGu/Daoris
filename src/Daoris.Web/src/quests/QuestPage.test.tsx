@@ -43,7 +43,7 @@ describe('a quest’s head', () => {
   /** With a short title the head says the name, and the body opens on the whole title, said once. */
   it('says its short title in the head, and the whole title once, at the body’s head', () => {
     const { container } = page({ quest: REFILED_NAMED });
-    expect(screen.getByRole('heading', { level: 1, name: 'AR-2203 continue the production half' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'TK-2203 continue the production half' })).toBeInTheDocument();
     const body = container.querySelector('p.whitespace-pre-wrap')!.textContent!;
     expect(body.startsWith(NOTE)).toBe(true);
     expect(screen.queryAllByText(NOTE, { exact: false })).toHaveLength(1);

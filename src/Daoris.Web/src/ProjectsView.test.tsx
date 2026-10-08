@@ -715,7 +715,7 @@ describe("a workspace's page (UX6g)", () => {
    * BRSCOPE1 (WSP5, D150's UX6g note): a workspace's Branches tab holds its own repositories alone. The machine's reading
    * of which checkouts hold Daoris's branches is filtered to it, the look is asked for it and kept under its name, and
    * what the look leaves apart is its own. The driver answers here as the machine's, as a host before BRSCOPE1 does, so
-   * the page's own filter is what is held; the install's lumachain counted every checkout on the machine as its own.
+   * the page's own filter is what is held; the install's work workspace counted every checkout on the machine as its own.
    */
   it("counts, looks at and leaves apart only this workspace's checkouts, each workspace's tab its own", async () => {
     let answer!: (plan: unknown) => void;

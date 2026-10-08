@@ -39,7 +39,7 @@ public sealed class LandingTidyTests : IDisposable
     }
 
     /// <summary>
-    /// AR-2203's shape: the first session's commit rode into the second, grown from its branch (CHAIN2), and the second was
+    /// TK-2203's shape: the first session's commit rode into the second, grown from its branch (CHAIN2), and the second was
     /// accepted. Both branches and both trees go, the landing says the first went, and the record holds neither.
     /// </summary>
     [Fact]

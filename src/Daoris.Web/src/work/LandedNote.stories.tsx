@@ -73,6 +73,6 @@ export const Unreadable: Story = {
 
 /** A long branch name, at the side bar's floor: it wraps rather than widening the pane. */
 export const LongBranch: Story = {
-  args: { landed: { ...LANDED, branch: 'feature/AR-2202-align-the-streaming-budget-with-the-tile-loader-and-its-tests' } },
+  args: { landed: { ...LANDED, branch: 'feature/TK-2202-align-the-streaming-budget-with-the-tile-loader-and-its-tests' } },
   decorators: [(Story) => <div className="w-[300px]"><Story /></div>],
 };

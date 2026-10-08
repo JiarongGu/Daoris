@@ -16,7 +16,7 @@ namespace Daoris.Knowledge;
 /// titles): only the quest's own words, chosen and never rewritten; whole words, a Chinese character being the smallest
 /// cut; an ellipsis where words were left off; the first line that says what is wanted, skipping a line that is wholly a
 /// bracketed note and setting aside a note that leads a line (the install's re-filed asks put theirs first); and a ticket key
-/// the ask names (<c>AR-2203</c>) leading it, as trackers name work. It is read when asked, never written into the
+/// the ask names (<c>TK-2203</c>) leading it, as trackers name work. It is read when asked, never written into the
 /// record, so the record keeps only what a publisher said, and a quest from before the field is named the same way.</para>
 /// </remarks>
 public static partial class QuestTitles

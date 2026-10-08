@@ -22,8 +22,8 @@ function topology(ids: string[], quests: [string, string][] = [], knowledge: [st
 
 describe('the layered map', () => {
   it('puts an asker to the left of whom it asks, one column a step', () => {
-    const { at } = layoutLayers(topology(['report-ui', 'db', 'api'], [['report-ui', 'api'], ['api', 'db']]));
-    expect(at['report-ui']!.x).toBeLessThan(at.api!.x);
+    const { at } = layoutLayers(topology(['portal-ui', 'db', 'api'], [['portal-ui', 'api'], ['api', 'db']]));
+    expect(at['portal-ui']!.x).toBeLessThan(at.api!.x);
     expect(at.api!.x).toBeLessThan(at.db!.x);
   });
 

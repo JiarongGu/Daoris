@@ -3048,13 +3048,13 @@ describe('acting on what a session landed', () => {
    */
   it('offers a failed session’s commits to land on its page, and lands them through the review’s own door', async () => {
     SESSIONS = [{ ...IN_A_TREE, state: 'failed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
-    let landed = { session: 's1a2b3c4', done: true, message: 'put its work on `feature/kepak` — 1 commit(s).' };
+    let landed = { session: 's1a2b3c4', done: true, message: 'put its work on `feature/delta` — 1 commit(s).' };
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_GROUPS') {
         return { sessions: [{ session: 's1a2b3c4', group: 'ended', shown: 'failed', archived: false, teammate: false,
           lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] };
       }
-      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/kepak', source: 'workspace' };
+      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace' };
       if (type === 'LAND_SESSION_TREE') return landed;
       if (type === 'SESSION_DIFF') return DIFF;
       return DRIVER_STATE;
@@ -3067,11 +3067,11 @@ describe('acting on what a session landed', () => {
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', expect.anything());
     const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
     await within(ask).findByText(/on a new branch/);
-    expect(ask).toHaveTextContent('Accepting puts this work on a new branch, feature/kepak, for you to push and open a pull request from.');
+    expect(ask).toHaveTextContent('Accepting puts this work on a new branch, feature/delta, for you to push and open a pull request from.');
 
     await userEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', { payload: { id: 's1a2b3c4' }, timeoutMs: 6 * 60_000 });
-    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('put its work on `feature/kepak` — 1 commit(s).'));
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('put its work on `feature/delta` — 1 commit(s).'));
     await vi.waitFor(() => expect(screen.queryByRole('group', { name: 'accept daoris/s-4e6837ed' })).toBeNull());
 
     // A refusal is the driver's sentence, said inside the ask, which stays open.
