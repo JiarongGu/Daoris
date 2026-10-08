@@ -149,6 +149,12 @@ public sealed record ComposedService(
     internal SqliteKnowledgeStore? Store { get; init; }
 
     /// <summary>
+    /// Why the index answers nothing on this host, or null when it answers (KSCHEMA1): a newer Daoris wrote it. The
+    /// host still starts, and what is not derived works; a host says this once, at its start.
+    /// </summary>
+    public NewerIndexException? IndexRefusal => Store?.Refusal;
+
+    /// <summary>
     /// Where this deployment keeps the bytes a quest carries (D65 §2) — null on a deployment that keeps
     /// none: a shared one, which holds names only, or a local one with no Daoris home (D63).
     /// </summary>

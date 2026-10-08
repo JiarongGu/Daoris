@@ -203,6 +203,7 @@ public sealed class KnowledgeService(
     /// </remarks>
     public async Task<SearchAnswer> AnswerAsync(KnowledgeQuery query, CancellationToken ct = default)
     {
+        RefuseNewerIndex();
         await EnsureIndexedAsync(ct).ConfigureAwait(false);
         var answer = await AnswerAnyAsync(query, ct).ConfigureAwait(false);
         if (query.Kinds is not null) return answer;
@@ -228,6 +229,15 @@ public sealed class KnowledgeService(
             failures.Count == 0 ? null : string.Join("; ", failures), MoreIndex: true);
     }
 
+    /// <summary>
+    /// The index's refusal, before an operation on it does anything else (KSCHEMA1): a search's tiers would each fold
+    /// it into a failure and answer nothing, and a feed or a retire would write its other half first.
+    /// </summary>
+    private void RefuseNewerIndex()
+    {
+        if (store.Refusal is { } refused) throw refused.Again();
+    }
+
     private async Task<SearchAnswer> AnswerAnyAsync(KnowledgeQuery query, CancellationToken ct) =>
         search is IAnsweringSearch answering
             ? await answering.AnswerAsync(query, ct).ConfigureAwait(false)
@@ -235,6 +245,7 @@ public sealed class KnowledgeService(
 
     public async Task<KnowledgeEntry?> FindAsync(string id, CancellationToken ct = default)
     {
+        RefuseNewerIndex();
         await EnsureIndexedAsync(ct).ConfigureAwait(false);
         return await store.FindAsync(id, ct).ConfigureAwait(false);
     }
@@ -248,6 +259,7 @@ public sealed class KnowledgeService(
     public async Task<IReadOnlyList<RepositorySummary>> SummarizeAsync(
         string? workspace = null, CancellationToken ct = default)
     {
+        RefuseNewerIndex();
         await EnsureIndexedAsync(ct).ConfigureAwait(false);
         var all = await store.AllAsync(ct).ConfigureAwait(false);
         // One read for the whole table rather than one per repository: it is a small table, and the
@@ -281,6 +293,7 @@ public sealed class KnowledgeService(
     public async Task<IReadOnlyList<ConvergenceCandidate>> FindConvergenceAsync(
         ConvergenceOptions? options = null, CancellationToken ct = default)
     {
+        RefuseNewerIndex();
         await EnsureIndexedAsync(ct).ConfigureAwait(false);
         return await _convergence.FindAsync(options, ct).ConfigureAwait(false);
     }
@@ -304,7 +317,11 @@ public sealed class KnowledgeService(
     {
         await ReloadRegistryAsync(ct).ConfigureAwait(false);
         await EnsureIndexedAsync(ct).ConfigureAwait(false);
-        var counts = await store.CountByRepositoryAsync(ct).ConfigureAwait(false);
+        // A quest is addressed by the registry, so it answers over an index a newer Daoris wrote, counting nothing in
+        // it (KSCHEMA1): each row's entries read none.
+        var counts = store.Refusal is null
+            ? await store.CountByRepositoryAsync(ct).ConfigureAwait(false)
+            : new Dictionary<string, int>();
 
         var all = registry?.Read(counts) ?? [];
         return workspace is null
@@ -324,6 +341,9 @@ public sealed class KnowledgeService(
     /// <returns>Whether there was a registration to retire; false is an answer, not a failure.</returns>
     public async Task<bool> RetireAsync(string repository, CancellationToken ct = default)
     {
+        // Refused whole over an index a newer Daoris wrote (KSCHEMA1): the registration alone would go, and the index
+        // would keep serving what was taken off the map.
+        RefuseNewerIndex();
         var stored = registrations is not null
             && await registrations.DeleteAsync(repository, ct).ConfigureAwait(false);
         var known = registry?.Retire(repository) ?? false;
@@ -478,13 +498,18 @@ public sealed class KnowledgeService(
                 return (NotTaken(verdict, registration.Repository, "registration", standing!, arriving), null);
             }
 
+            // Over an index a newer Daoris wrote (KSCHEMA1), a declaration that stops sharing what it shared is refused
+            // whole, since what it fed could not be taken back; one that never shared has nothing there to take.
+            var withdraws = !(registration.Joined && registration.SharesKnowledge);
+            if (withdraws && existing is { Joined: true, SharesKnowledge: true }) RefuseNewerIndex();
+
             var registered = await RegisterAsync(registration, now, ct).ConfigureAwait(false);
 
             // 🔴 A declaration that no longer joins-and-shares takes back what it fed while it did (REV3):
             // from here its knowledge stays home, and a deployment that kept serving it would be the
             // disclosure the declaration was written to prevent. Its held commit goes too, or sharing
             // again from that commit would be "already held" into an index that holds nothing.
-            if (!(registered.Joined && registered.SharesKnowledge))
+            if (!(registered.Joined && registered.SharesKnowledge) && store.Refusal is null)
             {
                 await store.ReplaceRepositoryAsync(registered.Repository, [], ct).ConfigureAwait(false);
                 await held.ForgetKnowledgeAsync(registered.Repository, ct).ConfigureAwait(false);
@@ -523,6 +548,7 @@ public sealed class KnowledgeService(
     public async Task<IReadOnlyList<KnowledgeEntry>> LocalEntriesAsync(
         string repository, CancellationToken ct = default)
     {
+        RefuseNewerIndex();
         await EnsureIndexedAsync(ct).ConfigureAwait(false);
         return (await store.AllAsync(ct).ConfigureAwait(false))
             .Where(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)
@@ -543,6 +569,7 @@ public sealed class KnowledgeService(
         string repository, IReadOnlyList<KnowledgeEntry> entries, FeedProvenance? provenance = null,
         CancellationToken ct = default)
     {
+        RefuseNewerIndex();
         var (registration, refused) = await AdmitAsync(repository, provenance, "knowledge", ct).ConfigureAwait(false);
         if (refused is not null) return refused;
 
@@ -795,8 +822,11 @@ public sealed class KnowledgeService(
     private static string Short(string commit) => commit.Length <= 8 ? commit : commit[..8];
 
     /// <summary>Re-read every repository and rebuild the index.</summary>
-    public async Task<IndexReport> RefreshAsync(CancellationToken ct = default) =>
-        (await RefreshUnlessFreshAsync(freshFor: null, ct).ConfigureAwait(false))!;
+    public async Task<IndexReport> RefreshAsync(CancellationToken ct = default)
+    {
+        RefuseNewerIndex();
+        return (await RefreshUnlessFreshAsync(freshFor: null, ct).ConfigureAwait(false))!;
+    }
 
     /// <summary>
     /// A refresh, or nothing when <paramref name="freshFor"/> names a window the last reading is still inside:
@@ -955,6 +985,10 @@ public sealed class KnowledgeService(
     /// </summary>
     private async Task EnsureIndexedAsync(CancellationToken ct)
     {
+        // An index a newer Daoris wrote is never read into here (KSCHEMA1): no refresh is tried, so none is retried, and
+        // the host said why once, at its start.
+        if (store.Refusal is not null) return;
+
         // A source that moves under the store is re-read at first use and once its reading is older than
         // the window (ORIENT1c): what the store held from an earlier process is that process's reading.
         if (rereadAfter is { } window)

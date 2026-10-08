@@ -36,9 +36,12 @@ public sealed class SqliteKnowledgeSearch(SqliteKnowledgeStore store) : IKnowled
     /// <summary>Where bm25's rank lands: immediately after the entry's own columns.</summary>
     private static int RankOrdinal => SqliteKnowledgeStore.ColumnCount;
 
-    /// <remarks>Inside the connection's gate, as every command on the stores' one connection is (SQLITETX1).</remarks>
+    /// <remarks>
+    /// Inside the connection's gate, as every command on the stores' one connection is (SQLITETX1). An index a newer
+    /// Daoris wrote is refused, as the store's own reads are (KSCHEMA1).
+    /// </remarks>
     public Task<IReadOnlyList<KnowledgeHit>> SearchAsync(KnowledgeQuery query, CancellationToken ct = default) =>
-        store.Gate.RunAsync(() => SearchInAsync(query, ct), ct);
+        store.Refused<IReadOnlyList<KnowledgeHit>>() ?? store.Gate.RunAsync(() => SearchInAsync(query, ct), ct);
 
     private async Task<IReadOnlyList<KnowledgeHit>> SearchInAsync(KnowledgeQuery query, CancellationToken ct)
     {

@@ -42,6 +42,12 @@ public interface IKnowledgeStore
 
     /// <summary>How many entries each repository holds — a count, never a read of every body (REV3 C1).</summary>
     Task<IReadOnlyDictionary<string, int>> CountByRepositoryAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Why this store's index answers nothing, or null when it answers (KSCHEMA1): a newer Daoris wrote it, so each
+    /// method above throws this refusal and the rest of the store works.
+    /// </summary>
+    NewerIndexException? Refusal => null;
 }
 
 /// <summary>

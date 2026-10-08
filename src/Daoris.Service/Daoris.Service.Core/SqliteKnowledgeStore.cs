@@ -14,9 +14,9 @@ namespace Daoris.Knowledge;
 /// re-reads it from the repositories in seconds, and a shared one — which can see no repository — is
 /// re-fed whole by each desktop's next sync tick (D47 §9). A schema change therefore does not need
 /// migrating, it needs rebuilding — so the schema carries a version, and an older one drops the tables
-/// and starts over. A NEWER one refuses to open (<see cref="NewerStoreException"/>, KSCHEMA1): every
-/// host on a machine opens this file, and an older build that rebuilt a newer store would break the
-/// newer host reading it. The cognition sibling's storage uses a migration runner because its data is
+/// and starts over. A NEWER one is left as it is and refused, the index alone (<see cref="Refusal"/>,
+/// KSCHEMA1): the store opens, and every operation on the index throws. The cognition sibling's
+/// storage uses a migration runner because its data is
 /// authored and cannot be regenerated; the same choice here would be ceremony guarding something that
 /// is not at risk.</para>
 ///
@@ -25,7 +25,7 @@ namespace Daoris.Knowledge;
 /// </remarks>
 public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
 {
-    /// <summary>Bump when the schema changes. An older version rebuilds rather than migrates; a newer one refuses.</summary>
+    /// <summary>Bump when the schema changes. An older version rebuilds rather than migrates; a newer one is refused.</summary>
     /// <remarks>2 — entries carry their workspace (D48).</remarks>
     // 3: the FTS rows carry CJK text cut into bigrams (`Text.Segment`), so every existing index is
     //    rebuilt from the raw entries on open — the rows it held were never findable in 中文.
@@ -53,6 +53,11 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
     /// </remarks>
     public bool Rebuilt { get; private set; }
 
+    /// <summary>
+    /// Why the index answers nothing here: a newer Daoris wrote it (KSCHEMA1). Null when it answers. Set at open, and
+    /// then the index's tables are neither dropped nor stamped, and each operation on them throws it again.
+    /// </summary>
+    public NewerIndexException? Refusal { get; private set; }
 
     /// <summary>Open (or create) a store at a path. Use <c>":memory:"</c> for a throwaway one.</summary>
     public static async Task<SqliteKnowledgeStore> OpenAsync(string path, CancellationToken ct = default)
@@ -73,7 +78,7 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
         }
         catch
         {
-            // A refused store is closed here, so the file is no longer held by a build that will not use it.
+            // A store that did not open is closed here, so the file is not held by a connection nothing will use.
             await connection.DisposeAsync().ConfigureAwait(false);
             throw;
         }
@@ -90,9 +95,13 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
     {
         var version = Convert.ToInt32(await ScalarAsync("PRAGMA user_version;", inside).ConfigureAwait(false));
 
-        // 🔴 An older build never drops a newer store (KSCHEMA1, NewerStoreException's remarks say why). Nothing is
-        // written: the transaction rolls back on the throw.
-        if (version > SchemaVersion) throw new NewerStoreException(_connection.DataSource, version, SchemaVersion);
+        // 🔴 An older build never drops a newer index (KSCHEMA1, NewerIndexException's remarks say why), and never refuses
+        // the store around it: nothing is dropped, created or stamped, and the index alone answers the refusal.
+        if (version > SchemaVersion)
+        {
+            Refusal = new NewerIndexException(_connection.DataSource, version, SchemaVersion);
+            return true;
+        }
 
         if (version != SchemaVersion)
         {
@@ -136,7 +145,9 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
     /// </remarks>
     public Task ReplaceRepositoryAsync(
         string repository, IReadOnlyList<KnowledgeEntry> entries, CancellationToken ct = default) =>
-        _db.InTransactionAsync((_, inside) => ReplaceRepositoryInAsync(repository, entries, inside), ct);
+        Refusal is { } refused
+            ? Task.FromException(refused.Again())
+            : _db.InTransactionAsync((_, inside) => ReplaceRepositoryInAsync(repository, entries, inside), ct);
 
     private async Task<bool> ReplaceRepositoryInAsync(
         string repository, IReadOnlyList<KnowledgeEntry> entries, CancellationToken ct)
@@ -185,14 +196,14 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
         return true;
     }
 
-    public Task<IReadOnlyList<KnowledgeEntry>> AllAsync(CancellationToken ct = default) => _db.RunAsync(async () =>
+    public Task<IReadOnlyList<KnowledgeEntry>> AllAsync(CancellationToken ct = default) => Refused<IReadOnlyList<KnowledgeEntry>>() ?? _db.RunAsync(async () =>
     {
         await using var command = _db.Command();
         command.CommandText = $"SELECT {Columns} FROM entries;";
         return await ReadAllAsync(command, ct).ConfigureAwait(false);
     }, ct);
 
-    public Task<IReadOnlyDictionary<string, int>> CountByRepositoryAsync(CancellationToken ct = default) => _db.RunAsync<IReadOnlyDictionary<string, int>>(async () =>
+    public Task<IReadOnlyDictionary<string, int>> CountByRepositoryAsync(CancellationToken ct = default) => Refused<IReadOnlyDictionary<string, int>>() ?? _db.RunAsync<IReadOnlyDictionary<string, int>>(async () =>
     {
         await using var command = _db.Command();
         command.CommandText = "SELECT repository, COUNT(*) FROM entries GROUP BY repository;";
@@ -202,13 +213,16 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
         return counts;
     }, ct);
 
-    public Task<KnowledgeEntry?> FindAsync(string id, CancellationToken ct = default) => _db.RunAsync(async () =>
+    public Task<KnowledgeEntry?> FindAsync(string id, CancellationToken ct = default) => Refused<KnowledgeEntry?>() ?? _db.RunAsync(async () =>
     {
         await using var command = _db.Command();
         command.CommandText = $"SELECT {Columns} FROM entries WHERE id = $id;";
         command.Parameters.AddWithValue("$id", id);
         return (await ReadAllAsync(command, ct).ConfigureAwait(false)).FirstOrDefault();
     }, ct);
+
+    /// <summary>The refusal as an operation's answer, or null when the index answers (KSCHEMA1); the search asks it too.</summary>
+    internal Task<T>? Refused<T>() => Refusal is { } refused ? Task.FromException<T>(refused.Again()) : null;
 
     internal const string Columns =
         "id, repository, kind, provenance, title, body, relative_path, anchor, workspace, first_line, last_line";
