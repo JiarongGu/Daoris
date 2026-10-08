@@ -152,7 +152,9 @@ var composed = await ServiceFactory.CreateAsync(
     // its home, and a shared host keeps none — it holds names, and its door refuses bytes outright.
     files: mode == ServiceMode.Local ? QuestFiles.FromEnvironment() : null,
     // The rule proposals a clear of history reads and tidies (HIST1b) are this machine's files; a shared host has none.
-    proposals: mode == ServiceMode.Local ? RuleProposalBox.FromEnvironment() : null);
+    proposals: mode == ServiceMode.Local ? RuleProposalBox.FromEnvironment() : null,
+    // A second opinion is this machine's alone (XAGENT1c): a shared host's desk refuses every door with its sentence.
+    mode: mode);
 builder.Services.AddSingleton(composed);
 
 // KSCHEMA1: an index a newer Daoris wrote is left as it is; the host starts, and what is not derived works. Said once,
@@ -971,7 +973,7 @@ if (mode == ServiceMode.Local)
         }
 
         var refused = new SessionSayRefusalResponse(
-            outcome.Message, SayRefusal(outcome.Refusal), outcome.Quest, outcome.Ask, outcome.Origin);
+            outcome.Message, SayRefusal(outcome.Refusal), outcome.Quest, outcome.Ask, outcome.Origin, outcome.Opinion);
         return outcome.Refusal switch
         {
             SessionSayRefusal.NotFound => Results.NotFound(refused),
@@ -982,8 +984,9 @@ if (mode == ServiceMode.Local)
     });
 
     // The words a session took off its record (MSG1a, D137 §2.4): the resumed run's first prompt went, or the session a
-    // fallback handed them to took them. Each said after the record ended is kept on the ask its work is for, as
-    // `reopened`, said to the session that took it, beside the take as the answer door keeps an answer (DRIFT1a).
+    // fallback handed them to took them. Each of the person's said after the record ended is kept on the ask its work is for,
+    // as `reopened`, said to the session that took it, beside the take as the answer door keeps an answer (DRIFT1a). Another
+    // agent's claims never are (XAGENT1c): on the ask they would reach every later session as the person's requirements.
     app.MapPost("/api/sessions/{id}/taken", async (
         ComposedService s, HttpContext http, string id, TakenRequest body, CancellationToken ct) =>
     {
@@ -991,7 +994,7 @@ if (mode == ServiceMode.Local)
         var outcome = await s.Ledger.TakeSaidAsync(id, ids, string.IsNullOrWhiteSpace(body.By) ? null : body.By, ct);
         if (outcome.Refusal == SessionSayRefusal.None)
         {
-            foreach (var word in outcome.Taken.Where(word => word.Reopens))
+            foreach (var word in outcome.Taken.Where(word => word.Reopens && word.Persons))
             {
                 await s.Ledger.KeepOnAskAsync(
                     string.IsNullOrWhiteSpace(body.By) ? id : body.By, AskWordKind.Reopened, word.Text, word.At, ct);
@@ -1008,6 +1011,81 @@ if (mode == ServiceMode.Local)
             _ => Results.Conflict(refused),
         };
     });
+}
+
+// Second opinions (XAGENT1c, D155 point 11; the second agent design §6.2–§6.3): the driver asks a pass, which opens its
+// reviewer's record beside it, reads it back, and hands its findings to the working session. LOCAL mode only, and answered
+// only to a caller on this machine, as a record's `said` is (MSG1a): the candidate is this machine's commits until they land,
+// and the reviewer names an account. What the reviewer says and what the working session answers come through each one's
+// own connector, and no door here answers a dispute for the person.
+if (mode == ServiceMode.Local)
+{
+    app.MapPost("/api/opinions", async (ComposedService s, HttpContext http, OpinionAskRequest body, CancellationToken ct) =>
+    {
+        if (!MachineLocal(http)) return OffMachineOpinion();
+
+        // A part left out arrives blank, refused by the desk naming which; `minutes` left out is 0, which is no bound.
+        var candidate = body.Candidate;
+        var reviewer = body.Reviewer;
+        var ask = new OpinionAsk(
+            body.Occasion ?? "", body.Pass ?? "", body.Working ?? "",
+            new OpinionCandidate(
+                candidate?.Repository ?? "", candidate?.Base ?? "", candidate?.Tip ?? "", [.. (candidate?.Commits ?? []).Select(commit => commit ?? "")]),
+            new OpinionReviewer(reviewer?.Adapter ?? "", reviewer?.Label ?? "")
+            {
+                Product = reviewer?.Product, Maker = reviewer?.Maker, Account = reviewer?.Account,
+            },
+            body.Posture ?? "", body.Minutes ?? 0, body.Tree ?? "")
+        {
+            Rechecks = body.Rechecks,
+            Families = [.. (body.Families ?? []).Select(family => family ?? "")],
+            HarnessVersion = body.HarnessVersion,
+        };
+        return await OpinionReply(await s.Opinions.AskAsync(ask, DateTimeOffset.UtcNow, ct), s, http, ct);
+    });
+
+    // The opinions on one session's work, the one a reviewer's record reads for, or those of a repository, each where its
+    // pass stands, oldest first.
+    app.MapGet("/api/opinions", async (
+        ComposedService s, HttpContext http, string? working, string? session, string? repository, CancellationToken ct) =>
+        MachineLocal(http)
+            ? Results.Ok((await s.Opinions.ListAsync(working, session, repository, DateTimeOffset.UtcNow, ct)).Select(ToOpinion))
+            : OffMachineOpinion());
+
+    app.MapGet("/api/opinions/{id}", async (ComposedService s, HttpContext http, string id, CancellationToken ct) =>
+    {
+        if (!MachineLocal(http)) return OffMachineOpinion();
+        return await s.Opinions.ReadAsync(id, DateTimeOffset.UtcNow, ct) is { } standing
+            ? Results.Ok(ToOpinion(standing))
+            : Results.NotFound(new ErrorResponse($"There is no second opinion `{id.Trim()}` on this machine."));
+    });
+
+    // A first pass's findings, to its working session as another agent's words (design §6.3): once, at a turn's end.
+    app.MapPost("/api/opinions/{id}/hand", async (ComposedService s, HttpContext http, string id, CancellationToken ct) =>
+        MachineLocal(http)
+            ? await OpinionReply(await s.Opinions.HandAsync(id, DateTimeOffset.UtcNow, ct), s, http, ct)
+            : OffMachineOpinion());
+}
+
+// A door to a second opinion answers (XAGENT1c): a shape is a bad request, nothing by that name is not found, and a bound or a
+// state the opinion is in is the lock's own shape, 409. Done, the opinion as it now stands with the desk's sentence.
+async Task<IResult> OpinionReply(OpinionOutcome outcome, ComposedService s, HttpContext http, CancellationToken ct)
+{
+    if (outcome.Refusal != OpinionRefusal.None)
+    {
+        return outcome.Refusal switch
+        {
+            OpinionRefusal.NotFound or OpinionRefusal.Shared => Results.NotFound(new ErrorResponse(outcome.Message)),
+            OpinionRefusal.BadShape => Results.BadRequest(new ErrorResponse(outcome.Message)),
+            _ => Results.Conflict(new ErrorResponse(outcome.Message)),
+        };
+    }
+
+    var standing = (await s.Opinions.ReadAsync(outcome.Opinion!.Id, DateTimeOffset.UtcNow, ct))!;
+    return Results.Ok(new OpinionActionResponse(
+        ToOpinion(standing), outcome.Message,
+        outcome.Session is { } session ? ToSession(session, MachineLocal(http)) : null,
+        outcome.Word is { } word ? ToSaid(word) : null));
 }
 
 // Clearing finished history from this machine (HIST1b, D153; the history-clearing design §6.3), listed first and then
@@ -1808,9 +1886,38 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     // The same words, one by one (MSG1a), under the same guard.
     Said: loopback ? s.Said.Select(ToSaid).ToList() : null,
     // The note's lines by code (LANG1a), beside it and cleaned as it is for any other caller.
-    NoteParts: NoteParts.Element(loopback ? s.NoteParts : NoteParts.ForAnotherMachine(s.NoteParts, s)));
+    NoteParts: NoteParts.Element(loopback ? s.NoteParts : NoteParts.ForAnotherMachine(s.NoteParts, s)),
+    // The second opinion a reviewer's record reads for (XAGENT1c): this machine's, like the opinion, so answered to it only.
+    Opinion: loopback ? s.Opinion : null);
 
-static SaidWordResponse ToSaid(SaidWord word) => new(word.Id, word.Text, word.At, word.Files, word.Reopens);
+// A word with whose it is (XAGENT1c): `by` names the second opinion whose findings these are, and is absent for the person's.
+static SaidWordResponse ToSaid(SaidWord word) => new(word.Id, word.Text, word.At, word.Files, word.Reopens, word.By);
+
+// An opinion as this machine's doors answer it (XAGENT1c), with where its pass stands, derived when read.
+static OpinionResponse ToOpinion(OpinionStanding standing)
+{
+    var opinion = standing.Opinion;
+    return new(
+        opinion.Id, opinion.Occasion, opinion.Pass, opinion.Working, opinion.Session, opinion.Rechecks,
+        new OpinionCandidateWire(opinion.Candidate.Repository, opinion.Candidate.Base, opinion.Candidate.Tip, [.. opinion.Candidate.Commits]),
+        new OpinionReviewerWire(opinion.Reviewer.Adapter, opinion.Reviewer.Label, opinion.Reviewer.Product, opinion.Reviewer.Maker, opinion.Reviewer.Account),
+        opinion.Families, opinion.Posture, opinion.Minutes, opinion.Tier, opinion.Asked, opinion.Due, standing.State, standing.Why,
+        opinion.Given is { } given
+            ? new OpinionGivenResponse(
+                [.. given.Findings.Select(finding => new OpinionFindingResponse(
+                    finding.Number, finding.Weight, finding.Where, finding.Claim, finding.Consequence, finding.Reproduce, finding.Sure,
+                    finding.Proposal))],
+                given.Read, given.Limits,
+                given.Rechecked.Count == 0 ? null : [.. given.Rechecked.Select(recheck => new OpinionRecheckResponse(recheck.Finding, recheck.Says))],
+                given.At)
+            : null,
+        opinion.Handed is { } handed ? new OpinionHandedResponse(handed.Session, handed.Word, handed.At) : null,
+        [.. opinion.Answers.Select(answer => new OpinionAnswerResponse(answer.Finding, answer.Said, answer.Commit, answer.Evidence, answer.Why, answer.At))]);
+}
+
+// An opinion is this machine's (D47 §4): a caller off it is answered none, as a quest's file is not served to one.
+static IResult OffMachineOpinion() =>
+    Results.NotFound(new ErrorResponse("A second opinion is kept on this machine, and answered only to a caller on this machine."));
 
 // A say or a take refused (MSG1a), its word as the wire spells it, kebab-case like a session's state.
 static string SayRefusal(SessionSayRefusal refusal) => refusal switch
@@ -1820,6 +1927,7 @@ static string SayRefusal(SessionSayRefusal refusal) => refusal switch
     SessionSayRefusal.NotOurs => "not-ours",
     SessionSayRefusal.Intake => "intake",
     SessionSayRefusal.StoodDown => "stood-down",
+    SessionSayRefusal.Opinion => "opinion",
     _ => "running",
 };
 
