@@ -28,7 +28,7 @@ import { normalizeWorkspace } from './remotemap.ts';
 import { TOOLCHAINS } from './toolchain.ts';
 import { failuresOf, type RecordsReader } from './strikes.ts';
 import {
-  REVIEW_DECLARED_ONLY, applyReviewEdit, holdsProcedure, inScope, reviewListed, reviewSays, reviewsOf, type CheckoutsReader,
+  applyReviewEdit, holdsProcedure, inScope, reviewGate, reviewListed, reviewSays, reviewsOf, type CheckoutsReader,
   type ReviewEdit, type ReviewRule, type ReviewSetting,
 } from './reviews.ts';
 import {
@@ -1080,7 +1080,8 @@ export function commandDriver(
     // Where work is reviewed before it is offered to land (REVIEWENV1a, D154 point 2, design §1.7): for a repository, or with
     // `--workspace` for each repository there that sets none of its own. An environment added or replaced, keeping the
     // others; `none`; `--drop`; `--required|--not-required`; `--clear`. The repository's and the workspace's Setup and Ask
-    // Daoris's `setting` kind are its other doors (D50). Nothing reads it yet: the set-up step and the gate are REVIEWENV1b–h.
+    // Daoris's `setting` kind are its other doors (D50). The landing's gate reads it since REVIEWENV1c, and each door says so
+    // after the rule's sentences (`reviewGate`, REVIEWENV1c2).
     case 'review':
       return review();
 
@@ -1320,8 +1321,7 @@ export function commandDriver(
       }
 
       if (rule !== undefined) {
-        for (const sentence of reviewSays(rule)) write(`  ${sentence}`);
-        write(`  ${REVIEW_DECLARED_ONLY}`);
+        for (const sentence of [...reviewSays(rule), ...reviewGate(rule)]) write(`  ${sentence}`);
       }
       if (rule !== undefined && rule !== false && workspace) {
         write('  A repository with a rule of its own keeps it — `daoris driver review <repository> --clear` hands it back.');

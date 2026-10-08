@@ -48,8 +48,14 @@ export const REVIEW_KINDS = ['local', 'deployed'] as const;
  */
 export const PRODUCTION_WORDS = ['production', 'prod', 'prd', 'live'] as const;
 
-/** Said by each door after what the rule lets a step do, until the set-up step and the gate read it (REVIEWENV1c). */
-export const REVIEW_DECLARED_ONLY = 'Declared only: nothing reads it yet, so no set-up step is composed and no landing waits for it.';
+/**
+ * Said by each door after what the rule lets a step do (REVIEWENV1c2): what the landing's gate does with it since REVIEWENV1c,
+ * the person's verdict by the terminal's door, and that the intake composes no set-up step yet (REVIEWENV1f). The driver's
+ * `ReviewRules.Waiting`, held to the shared table's `gate` rows.
+ */
+export const REVIEW_WAITING = 'Where work here waits for your review, it lands only once you say it is reviewed, '
+  + '`daoris-driver quest review <quest> reviewed`, or skip the review, `daoris-driver quest review <quest> skip`. '
+  + 'No set-up step is composed for you yet.';
 
 /** What stands where nothing is set anywhere (design §1.8): today's behaviour, said as such. */
 export const REVIEW_NONE_SET = 'None: work is offered to land once its quest is done.';
@@ -253,6 +259,14 @@ export function reviewSays(rule: ReviewSetting): string[] {
   }
 
   return said;
+}
+
+/**
+ * What each door says after the rule's own sentences (REVIEWENV1c2): what the landing's gate does with work that waits for the
+ * person's review; nothing after none here, where nothing waits. The driver's `ReviewRules.Gate`, by the table's `gate` rows.
+ */
+export function reviewGate(rule: ReviewSetting): string[] {
+  return rule === false ? [] : [REVIEW_WAITING];
 }
 
 /** A rule in a line of `driver list`: each environment with its kind, address, procedure and command, then whether it waits. */

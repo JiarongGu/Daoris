@@ -413,7 +413,8 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     /// words: an environment added or replaced with its parts, <c>none</c>, <c>--drop</c>, <c>--required|--not-required</c>
     /// or <c>--clear</c>, for a repository or a whole workspace, a quoted word kept whole. Judged by the twin's table
     /// (<see cref="ReviewRules.Apply"/>), and an environment's procedure looked for in the checkouts it reaches, as the
-    /// screen's route and the terminal look; the card says what the rule lets a step do, and that nothing reads it yet.
+    /// screen's route and the terminal look; the card says what the rule lets a step do, and what the landing's gate does with it
+    /// (<see cref="ReviewRules.Gate"/>, REVIEWENV1c2).
     /// </summary>
     private static (string? Refusal, (string Describe, string Terminal, Func<DriverConfig, DriverConfig> Edit) Planned) Review(
         string? target, string? workspace, string value, DriverConfig config, HelpMachineFacts facts)
@@ -514,7 +515,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
             : $"Declare the review environment `{environment}` for {whose}.";
         var map = circle ? after.WorkspaceReviews : after.Reviews;
         List<string> said = map.TryGetValue((circle ? workspace : target)!, out var standing)
-            ? [.. ReviewRules.Says(standing), ReviewRules.DeclaredOnly]
+            ? [.. ReviewRules.Says(standing), .. ReviewRules.Gate(standing)]
             : [];
         var scope = circle ? $"--workspace {ShellWord.Of(workspace!, ShellWord.Workspace)}" : target!;
         return (null, (string.Join(" ", [head, .. said, .. notes]), $"daoris driver review {scope} {value}", c => ReviewRules.Apply(c, edit)));

@@ -150,8 +150,8 @@ daoris <command> [options]
                                                    is to wait for your look);
                                                    none, --drop <environment>,
                                                    --not-required, or --clear;
-                                                   declared only: nothing reads
-                                                   it yet
+                                                   work that waits lands on your
+                                                   `daoris-driver quest review`
                          opinion <repo> --reviewers <adapter,adapter>
                                 [--on landing,steps] [--minutes <n>]
                                                    which other agent reads its
