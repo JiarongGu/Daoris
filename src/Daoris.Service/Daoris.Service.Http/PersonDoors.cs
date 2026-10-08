@@ -220,13 +220,20 @@ public sealed class PersonGate(PersonKey? key, MachineLog log)
     /// <summary>Whether this start was handed a key, and so enforces it.</summary>
     public bool Holds => key is not null;
 
-    /// <summary>What a request presented of the key.</summary>
-    public Presented PresentedBy(HttpRequest request)
+    /// <summary>
+    /// What a request presented of the key. Read from a caller on this machine only (design §2.2): a local host binds the
+    /// loopback alone, so a key that arrives from anywhere else has left the machine, and its call is judged as keyless.
+    /// </summary>
+    public Presented PresentedBy(HttpContext context)
     {
-        var values = request.Headers[PersonKey.Header];
-        if (values.All(string.IsNullOrWhiteSpace)) return Presented.None;
+        var values = context.Request.Headers[PersonKey.Header];
+        if (!FromThisMachine(context.Connection) || values.All(string.IsNullOrWhiteSpace)) return Presented.None;
         return values.Count == 1 && key is not null && key.Matches(values[0]) ? Presented.Key : Presented.Stale;
     }
+
+    /// <summary>A caller on this machine, as the host's machine paths are answered (D46): no address is the in-process server.</summary>
+    private static bool FromThisMachine(ConnectionInfo connection) =>
+        connection.RemoteIpAddress is null || System.Net.IPAddress.IsLoopback(connection.RemoteIpAddress);
 
     /// <summary>
     /// The gate's judgement of a call (design §3.1), pure so it can be held without a host: the code it is refused with,
@@ -248,7 +255,7 @@ public sealed class PersonGate(PersonKey? key, MachineLog log)
     {
         if (key is not null && context.GetEndpoint() is RouteEndpoint endpoint)
         {
-            var presented = PresentedBy(context.Request);
+            var presented = PresentedBy(context);
             context.Items[PresentedItem] = presented;
             var door = PersonDoors.Find(context.Request.Method, endpoint.RoutePattern.RawText ?? "");
             if (Judge(door, context.Request.Method, presented) is { } refused)

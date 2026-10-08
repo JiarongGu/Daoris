@@ -309,6 +309,26 @@ public sealed class PersonDoorHostTests(KeyedHost host) : IClassFixture<KeyedHos
     }
 
     /// <summary>
+    /// The key is read from a caller on this machine only (design §2.2): a local host binds the loopback alone, so a key
+    /// that arrives from anywhere else has left the machine, and is no key here. Its call is judged as a keyless one.
+    /// </summary>
+    [Fact]
+    public async Task A_key_from_a_caller_off_this_machine_is_no_key()
+    {
+        AssertRefused(
+            await host.SendAsync("POST", "/api/quests/probe/accept", DaorisHost.OffMachine, person: Key),
+            PersonDoors.PersonOnly, PersonDoors.PersonSentence("the yes to a departure"), "a yes from off the machine");
+        var agents = await host.SendAsync(
+            "POST", "/api/quests", DaorisHost.OffMachine,
+            json: JsonSerializer.Serialize(new { from = "Asker", to = "Keeper", title = "t", body = "b", review = new { choice = "off" } }),
+            person: Key);
+        Assert.Equal(400, agents.Status);
+        Assert.Contains("only on the person's own words", agents.Error);
+
+        Assert.Equal(404, (await host.SendAsync("POST", "/api/quests/probe/accept", DaorisHost.Loopback, person: Key)).Status);
+    }
+
+    /// <summary>
     /// The shell's proof of possession (design §2.3): asked with a nonce, a host holding a key answers an HMAC of it under
     /// the key, the twin's vector; asked without, its status is what it always was. The key itself is never answered.
     /// </summary>
