@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (110)
+## Files over 40 KB (111)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -170,5 +170,6 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-04-ux6-redesign.md` | 72 | 892 |
 | `docs/2026-10-05-ux7-design.md` | 66 | 784 |
 | `docs/2026-10-07-history-clearing-design.md` | 51 | 615 |
+| `docs/2026-10-08-review-environment-design.md` | 55 | 686 |
 | `docs/DAORIS_FUTURE_DIRECTIONS.md` | 51 | 3466 |
 | `src/Daoris.Desktop/README.md` | 48 | 294 |
