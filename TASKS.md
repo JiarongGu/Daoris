@@ -93,6 +93,10 @@ Contracts: `docs/2026-10-03-future-directions-review.md`, `docs/2026-10-04-built
 - [ ] **GIT1j — offer managed Git** (web-settings, web-shell, driver; after TOOLS6/10). Setup Git step, repository tool identity and explicit switch press. Contract: §5. Proof: setup facts, vitest, `HelpCoverageTests`.
 - [ ] **GIT1k — Ask Daoris git proposals** (service, driver, web-shell; after h). Person confirms fetch/branch/push/delete. Contract: §3.3, D110. Proof: both kinds tables and no owed coverage row.
 
+## A second agent assists before work lands
+
+- [ ] **XAGENT1 — a session's work gets a second agent's review or help, from another harness** (design, then driver, service, web-shell; owner, 2026-10-08: *"you can always use Codex to assist the development"*; *"this is also the logic that applies to Daoris, since we have a multi-agent system in Daoris"*). Developing Daoris, a second agent from another maker (Codex beside Claude Code) reviews merges and designs read-only, and its findings are verified and routed; Daoris drives sessions on several harnesses and accounts but never sets one to check or help another. Design first, with a decision: when a second agent is asked (before a quest's work is offered to land, at a design, on a failed check), how it is chosen (another harness or account than the session's, by the roster's allowance), what it may do (read-only review by default; a build only on its own tree), how its findings reach the working session (its next turn) and the person (the review, beside D154's *reviewed*), and configurable as D154 is (workspace, repository, task). Contract: D45, D53 (the protocol door), D57 (the toolchain), D154, `model-decoupling`. Proof: the design and its decision; then a family-rehearsal phase where a stub reviewer's finding reaches the stub session's next turn.
+
 ## Reviewed where it runs before it lands
 
 Contract: D154, `docs/2026-10-08-review-environment-design.md` (the owner's direction, 2026-10-08: work is reviewed where it runs before it is offered to land; configurable by workspace, repository and task; local review shown in Daoris's own browser first-class).
