@@ -98,7 +98,7 @@ nested. A reader skips a line it cannot parse and a field it does not know.
 | `update.staged` / `update.draining` | desktop | build, version / build, driven, turns | a build staged beside the install, and the drain it began with what still ran (UPDATE1, D139) |
 | `update.requested` | desktop, driver | mode, door, build | the person's word on it: `when-idle`, `now` or `not-now`, from the `screen` or the `terminal` |
 | `update.applying` | desktop | build, version, by, waitedSeconds | the application closing for it, `by` `idle` or `now`, and how long the drain waited |
-| `update.installed` / `update.rolled-back` (warn) / `update.refused` (warn) | desktop | build, version, confirmed / build, reason | how the swap ended, said once at the start after it; a refusal by the application's own check is said as it happens, its reason the check's code |
+| `update.installed` / `update.rolled-back` (warn) / `update.refused` (warn) | desktop | build, version, confirmed / build, reason; holds, heldMs | how the swap ended, said once at the start after it; a refusal by the application's own check is said as it happens, its reason the check's code; `holds` and `heldMs` (the longest) when the swap's journal records a move it found held (SWAP2) |
 
 **The page reports through the bridge**, one request (`DAORIS.LOG` · `EVENT`), and the module takes
 only the page's events above with only their fields: anything else is dropped. That is where the

@@ -85,19 +85,19 @@ public static class Launcher
         catch (Exception)
         {
             // Whatever the update met, the launcher's last act is starting Daoris: one that died here would leave no window
-            // after the application had closed for the update. A swap journals each move before the next, so what it did
-            // not put back, the next start does. An update asked for still consumes what is staged, so the application is
-            // not closed for the same build again.
-            if (updating)
+            // after the application had closed for the update. A swap under way is put right first from its journal, with
+            // the reason it was undoing for, and never refused over (SWAP2); what that cannot put back, the next start does.
+            // With none under way, an update asked for still consumes what is staged, as `error`, so the application is not
+            // closed for the same build again.
+            try
             {
-                try
-                {
-                    new InstallSwap(root, start: _ => null, alive: _ => false).Held("the launcher met an error before it could swap.");
-                }
-                catch (Exception)
-                {
-                    // Nothing more to try: the application starts below, on the build in app/.
-                }
+                var settled = new InstallSwap(root, start: _ => null, alive: Alive)
+                    .AfterError(StagedBuild.RunningFrom(Path.Combine(root, AppFolder)).Count > 0, updating);
+                if (!settled.StartOld) return 0;
+            }
+            catch (Exception)
+            {
+                // Nothing more to try: the application starts below, on the build in app/.
             }
         }
 

@@ -99,6 +99,24 @@ public sealed class UpdateCommandTests : IDisposable
         Assert.Contains("ended before it came up", said);
     }
 
+    /// <summary>SWAP2: what the swap found held, and for how long, said beside how it ended; nothing of holds when it met none.</summary>
+    [Fact]
+    public void The_last_swap_names_what_it_found_held_and_for_how_long()
+    {
+        StagedBuild.WriteJournal(Install, new SwapRecord(
+            SwapPhase.RolledBack, "b0", "0.0.1", "abc1234", Now, [], Reason: "busy",
+            Detail: "a file the swap had to move was held: update/staged/app for 120.0 s, and it did not give way; nothing was changed.",
+            Holds: [new SwapHold("app", "update/previous/app", 14_200, 72, true), new SwapHold("update/staged/app", "app", 120_000, 601, false)]));
+
+        var said = Run().Said;
+
+        Assert.Contains("rolled back", said);
+        Assert.Contains("  Held as it swapped: app for 14.2 s; update/staged/app for 120.0 s, and it did not give way.", said);
+
+        StagedBuild.WriteJournal(Install, new SwapRecord(SwapPhase.Installed, "b1", "0.0.1", "abc1234", Now, [], Confirmed: true));
+        Assert.DoesNotContain("Held", Run().Said);
+    }
+
     [Fact]
     public void A_home_that_is_no_install_s_data_is_pointed_at_one_with_install_or_the_request_holds_for_whatever_is_staged()
     {

@@ -129,7 +129,7 @@ public sealed class InstallUpdater(
             if (StagedBuild.Confirm(install, pid ?? Environment.ProcessId) && StagedBuild.ReadJournal(install) is { } confirmed)
             {
                 outcome = Outcome(confirmed with { Phase = SwapPhase.Installed });
-                log.Info("update.installed", ("build", confirmed.Id), ("version", confirmed.Version), ("confirmed", true));
+                log.Info("update.installed", Ending(confirmed, ("build", confirmed.Id), ("version", confirmed.Version), ("confirmed", true)));
             }
             else if (StagedBuild.ReadJournal(install) is { Told: false } last
                      && last.Phase is SwapPhase.Installed or SwapPhase.RolledBack or SwapPhase.Refused)
@@ -137,11 +137,12 @@ public sealed class InstallUpdater(
                 outcome = Outcome(last);
                 if (last.Phase == SwapPhase.Installed)
                 {
-                    log.Info("update.installed", ("build", last.Id), ("version", last.Version), ("confirmed", last.Confirmed ?? false));
+                    log.Info("update.installed",
+                        Ending(last, ("build", last.Id), ("version", last.Version), ("confirmed", last.Confirmed ?? false)));
                 }
                 else
                 {
-                    log.Warn($"update.{last.Phase}", ("build", last.Id), ("reason", last.Reason));
+                    log.Warn($"update.{last.Phase}", Ending(last, ("build", last.Id), ("reason", last.Reason)));
                 }
 
                 StagedBuild.Tell(install);
@@ -370,6 +371,15 @@ public sealed class InstallUpdater(
 
     private static UpdateOutcome Outcome(SwapRecord record) =>
         new(record.Phase, record.Id, record.Version, record.Commit, record.Reason, record.Detail);
+
+    /// <summary>
+    /// A line about how a swap ended, with what it found held (SWAP2): the launcher writes no log, so its journal's holds are
+    /// said here, a count and the longest in milliseconds, and nothing of them when it met none.
+    /// </summary>
+    private static (string Key, object? Value)[] Ending(SwapRecord record, params (string Key, object? Value)[] data) =>
+        record.Holds is { Count: > 0 } holds
+            ? [.. data, ("holds", holds.Count), ("heldMs", holds.Max(hold => hold.Ms))]
+            : data;
 
     /// <summary>
     /// How the journal's swap ended, told or not (UPDATE1d): installed, rolled back or refused as written; confirmed by this

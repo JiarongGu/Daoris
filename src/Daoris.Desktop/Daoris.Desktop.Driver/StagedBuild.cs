@@ -94,10 +94,39 @@ public sealed record SwapMove(string From, string To);
 /// it ended. The application reads it at its start to say the outcome once, and marks it told.
 /// </summary>
 /// <param name="Phase"><see cref="SwapPhase"/>'s words.</param>
-/// <param name="Reason">For a roll-back or a refusal, its code: a <see cref="StagedProblem"/>'s, or <c>exited</c>, <c>start</c>, <c>move</c>, <c>interrupted</c>.</param>
+/// <param name="Reason">
+/// For a roll-back or a refusal, its code: a <see cref="StagedProblem"/>'s (<c>busy</c> only for a hold that outlasted the
+/// wait, or something still running from <c>app/</c>), or <c>exited</c>, <c>start</c>, <c>move</c> (a move or its journal
+/// failed, not held), <c>interrupted</c>, <c>error</c> (the launcher met an error before it could swap). On a journal still
+/// under way, the reason a roll-back that stopped part way was undoing for, which the next start finishes it with (SWAP2).
+/// </param>
+/// <param name="Holds">Every move the swap found held, and how long (SWAP2); null when none was.</param>
 public sealed record SwapRecord(
     string Phase, string? Id, string? Version, string? Commit, DateTimeOffset? At, IReadOnlyList<SwapMove> Moves,
-    int? Pid = null, string? Reason = null, string? Detail = null, bool? Confirmed = null, bool Told = false);
+    int? Pid = null, string? Reason = null, string? Detail = null, bool? Confirmed = null, bool Told = false,
+    IReadOnlyList<SwapHold>? Holds = null);
+
+/// <summary>
+/// A move the swap found held (SWAP2), relative to the install's root: how long it was refused, from the first refusal to
+/// the move or to the end of the wait, over how many tries, and whether it gave way. The measurement the wait is sized by.
+/// </summary>
+public sealed record SwapHold(string From, string To, long Ms, int Tries, bool Released)
+{
+    /// <summary>The hold in a terminal's words: <c>app for 12.3 s</c>, and whether it never gave way.</summary>
+    public string Said =>
+        $"{From} for {(Ms / 1000.0).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)} s"
+        + (Released ? "" : ", and it did not give way");
+}
+
+/// <summary>
+/// A move a held file still refused when the wait for it ran out (SWAP2): the swap's <c>busy</c>, and the only one. Any
+/// other failure of a move is thrown as it was.
+/// </summary>
+public sealed class HeldMoveException(SwapHold hold, Exception refusal)
+    : IOException($"{hold.Said} ({refusal.Message.TrimEnd('.')})", refusal)
+{
+    public SwapHold Hold { get; } = hold;
+}
 
 /// <summary>The phases a swap passes through, as <c>swap.json</c> writes them.</summary>
 public static class SwapPhase
@@ -314,13 +343,38 @@ public static class StagedBuild
         if (!File.Exists(path)) return null;
         try
         {
-            if (JsonNode.Parse(File.ReadAllText(path)) is not JsonObject root || Text(root["phase"]) is not { } phase) return null;
+            // Read sharing every access, the delete too: the launcher reads at every poll while the new application writes
+            // its confirmation, and a reader that shares less refuses that rename (SWAP2).
+            string text;
+            using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+            using (var reader = new StreamReader(stream))
+            {
+                text = reader.ReadToEnd();
+            }
+
+            if (JsonNode.Parse(text) is not JsonObject root || Text(root["phase"]) is not { } phase) return null;
             var moves = new List<SwapMove>();
             if (root["moves"] is JsonArray listed)
             {
                 foreach (var entry in listed)
                 {
                     if (entry is JsonObject move && Text(move["from"]) is { } from && Text(move["to"]) is { } to) moves.Add(new SwapMove(from, to));
+                }
+            }
+
+            // Absent on a journal written before SWAP2, which reads as it did.
+            List<SwapHold>? holds = null;
+            if (root["holds"] is JsonArray held)
+            {
+                holds = [];
+                foreach (var entry in held)
+                {
+                    if (entry is JsonObject hold && Text(hold["from"]) is { } from && Text(hold["to"]) is { } to
+                        && Number(hold["ms"]) is { } ms && Number(hold["tries"]) is { } tries)
+                    {
+                        holds.Add(new SwapHold(from, to, ms, (int)tries,
+                            hold["released"] is JsonValue released && released.TryGetValue<bool>(out var gave) && gave));
+                    }
                 }
             }
 
@@ -332,7 +386,8 @@ public static class StagedBuild
                 phase, Text(root["id"]), Text(root["version"]), Text(root["commit"]), at, moves,
                 Number(root["pid"]) is { } pid ? (int)pid : null, Text(root["reason"]), Text(root["detail"]),
                 root["confirmed"] is JsonValue confirmed && confirmed.TryGetValue<bool>(out var flag) ? flag : null,
-                root["told"] is JsonValue told && told.TryGetValue<bool>(out var said) && said);
+                root["told"] is JsonValue told && told.TryGetValue<bool>(out var said) && said,
+                holds is { Count: > 0 } ? holds : null);
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException or InvalidOperationException or FormatException)
         {
@@ -360,20 +415,60 @@ public static class StagedBuild
         if (record.Detail is { } detail) root["detail"] = detail;
         if (record.Confirmed is { } confirmed) root["confirmed"] = confirmed;
         if (record.Told) root["told"] = true;
+        if (record.Holds is { Count: > 0 } holds)
+        {
+            root["holds"] = new JsonArray(holds.Select(hold => (JsonNode)new JsonObject
+            {
+                ["from"] = hold.From,
+                ["to"] = hold.To,
+                ["ms"] = hold.Ms,
+                ["tries"] = hold.Tries,
+                ["released"] = hold.Released,
+            }).ToArray());
+        }
 
         var staging = path + ".writing";
         File.WriteAllText(staging, root.ToJsonString(Indented).Replace("\r\n", "\n") + "\n", new System.Text.UTF8Encoding(false));
-        File.Move(staging, path, overwrite: true);
+        Replace(staging, path);
     }
+
+    /// <summary>
+    /// The journal renamed into place, tried again a moment while a reader holds it open without delete sharing, which
+    /// Windows refuses as access denied and which clears in milliseconds (AtomicFile.Replace's REV3 measurement, written here
+    /// because the launcher compiles this file alone). A refused write would lose a phase the swap reached, or the new
+    /// application's confirmation (SWAP2).
+    /// </summary>
+    private static void Replace(string staging, string path)
+    {
+        for (var attempt = 0; ; attempt++)
+        {
+            try
+            {
+                File.Move(staging, path, overwrite: true);
+                return;
+            }
+            catch (Exception busy) when (attempt < 40
+                                          && (busy is UnauthorizedAccessException
+                                              || busy is IOException and not FileNotFoundException and not DirectoryNotFoundException))
+            {
+                Thread.Sleep(5 + attempt * 5);
+            }
+        }
+    }
+
+    /// <summary>Whether the journal says a swap is under way: moving, started, or confirmed and not yet finished.</summary>
+    public static bool UnderWay(string install) =>
+        ReadJournal(install)?.Phase is SwapPhase.Swapping or SwapPhase.Started or SwapPhase.Confirmed;
 
     /// <summary>
     /// The new application says it came up (D139 §5): a journal at <see cref="SwapPhase.Started"/> becomes
     /// <see cref="SwapPhase.Confirmed"/>, which the waiting launcher reads. True when this start confirmed a swap, so the
-    /// application says once that it was updated; false for every other start.
+    /// application says once that it was updated; false for every other start, and for a journal a roll-back stopped part
+    /// way through, which carries its reason and is finished at the next start, never confirmed (SWAP2).
     /// </summary>
     public static bool Confirm(string install, int pid)
     {
-        if (ReadJournal(install) is not { Phase: SwapPhase.Started } record) return false;
+        if (ReadJournal(install) is not { Phase: SwapPhase.Started, Reason: null } record) return false;
         // Told as it is confirmed: this start is the one that says it, and the launcher keeps the mark as it finishes.
         WriteJournal(install, record with { Phase = SwapPhase.Confirmed, Pid = pid, Told = true });
         return true;
@@ -482,34 +577,81 @@ public sealed class InstallSwap(
     public TimeSpan Poll { get; init; } = TimeSpan.FromMilliseconds(250);
 
     /// <summary>
-    /// How many times a move a held file refuses is tried, <see cref="HeldWait"/> apart, before the swap rolls back as
-    /// <c>busy</c>: the scanner opens a new build's files and lets go within seconds (FIX-LOG 2026-10-07). Written here,
-    /// not through the driver's <c>AtomicFile</c>, because the launcher compiles this file alone.
+    /// How long a move a held file refuses is tried, <see cref="HeldWait"/> apart, before the swap gives it up as
+    /// <c>busy</c>, by the clock, for each move. Two minutes (SWAP2, D139's note): ten seconds was outlasted twice by the
+    /// deployment rehearsal with a build beside it, and the publish's own staging needed more than ten; two minutes stays
+    /// inside the three the launcher already waits for the application to close. Written here, not through the driver's
+    /// <c>AtomicFile</c>, because the launcher compiles this file alone.
     /// </summary>
-    public int HeldTries { get; init; } = 50;
+    public TimeSpan HeldWithin { get; init; } = TimeSpan.FromMinutes(2);
 
     /// <summary>The wait between two tries of a held move.</summary>
     public TimeSpan HeldWait { get; init; } = TimeSpan.FromMilliseconds(200);
 
-    /// <summary>A folder or a file moved, tried again while a held file refuses it; a missing one throws at once.</summary>
+    /// <summary>The move itself, from and to full paths, and whether a file may be written over; a test hands in one that refuses.</summary>
+    public Action<string, string, bool>? Mover { get; init; }
+
+    /// <summary>Every move this swap found held, journalled with each write (SWAP2): the measurement the wait is sized by.</summary>
+    private readonly List<SwapHold> _holds = [];
+
+    /// <summary>A folder or a file moved on the disk, as the swap moves it.</summary>
+    public static void MoveOnDisk(string source, string target, bool overwrite)
+    {
+        if (Directory.Exists(source)) Directory.Move(source, target);
+        else File.Move(source, target, overwrite);
+    }
+
+    /// <summary>
+    /// Whether a move's failure is a hold that may give way: access denied, which <c>Directory.Move</c> throws as an
+    /// <see cref="IOException"/> of <c>0x80070005</c> for a folder a file inside is held open in (measured, SWAP2), or a
+    /// sharing, lock or busy refusal of a file. Anything else (a path missing, a target already there) no wait mends, and
+    /// it fails at once. The codes are Win32's; elsewhere an <see cref="IOException"/> carries an errno, and no hold.
+    /// </summary>
+    public static bool IsHeld(Exception error) =>
+        error is UnauthorizedAccessException
+        || (OperatingSystem.IsWindows()
+            && error is IOException and not FileNotFoundException and not DirectoryNotFoundException
+            && (error.HResult & 0xFFFF) is 5 or 32 or 33 or 170);
+
+    /// <summary>
+    /// A folder or a file moved, tried again while a held file refuses it, for <see cref="HeldWithin"/>; every hold met is
+    /// kept with how long it lasted. A hold that outlasts the wait throws <see cref="HeldMoveException"/>; any other failure
+    /// throws at once.
+    /// </summary>
     private void MoveHeld(string source, string target, bool overwrite = false)
     {
-        for (var attempt = 1; ; attempt++)
+        DateTimeOffset? since = null;
+        for (var tries = 1; ; tries++)
         {
             try
             {
-                if (Directory.Exists(source)) Directory.Move(source, target);
-                else File.Move(source, target, overwrite);
+                (Mover ?? MoveOnDisk)(source, target, overwrite);
+                if (since is { } first) _holds.Add(Hold(source, target, Now - first, tries, released: true));
                 return;
             }
-            catch (Exception held) when (attempt < HeldTries
-                                         && (held is UnauthorizedAccessException
-                                             || held is IOException and not FileNotFoundException and not DirectoryNotFoundException))
+            catch (Exception refusal) when (IsHeld(refusal))
             {
+                since ??= Now;
+                if (Now - since.Value >= HeldWithin)
+                {
+                    var hold = Hold(source, target, Now - since.Value, tries, released: false);
+                    _holds.Add(hold);
+                    throw new HeldMoveException(hold, refusal);
+                }
+
                 Sleep(HeldWait);
             }
         }
     }
+
+    private SwapHold Hold(string source, string target, TimeSpan held, int tries, bool released) =>
+        new(Relative(source), Relative(target), (long)held.TotalMilliseconds, tries, released);
+
+    private string Relative(string full) => Path.GetRelativePath(install, full).Replace(Path.DirectorySeparatorChar, '/');
+
+    /// <summary>The journal written with every hold this swap has met.</summary>
+    private void Journal(SwapRecord record) =>
+        StagedBuild.WriteJournal(install, _holds.Count == 0 ? record : record with { Holds = _holds.ToList() });
 
     private DateTimeOffset Now => (clock ?? (() => DateTimeOffset.UtcNow))();
 
@@ -523,19 +665,24 @@ public sealed class InstallSwap(
     /// What a launcher that died left (D139 §6), put right before anything else: a journal still <c>swapping</c> is undone;
     /// one <c>started</c> and never confirmed, with nothing running from <c>app/</c>, is a new application that failed, and
     /// is undone too; one confirmed and never marked installed is installed. The phase it put right to, or null when there
-    /// was nothing to put right; either way the launcher goes on as it would have.
+    /// was nothing to put right; either way the launcher goes on as it would have. A roll-back that stopped part way left
+    /// its reason in the journal, and is finished with it (SWAP2).
     /// </summary>
     public string? Recover(bool appRunning)
     {
         var record = StagedBuild.ReadJournal(install);
+        _holds.Clear();
+        _holds.AddRange(record?.Holds ?? []);
         switch (record?.Phase)
         {
             case SwapPhase.Swapping:
-                Undo(record, "interrupted", "the launcher stopped while it was swapping; the moves it made were put back.");
+                Undo(record, record.Reason ?? "interrupted",
+                    record.Detail ?? "the launcher stopped while it was swapping; the moves it made were put back.");
                 return SwapPhase.RolledBack;
 
             case SwapPhase.Started when !appRunning:
-                Undo(record, "exited", "the new build never said it came up, and nothing of it runs; the build before it was put back.");
+                Undo(record, record.Reason ?? "exited",
+                    record.Detail ?? "the new build never said it came up, and nothing of it runs; the build before it was put back.");
                 return SwapPhase.RolledBack;
 
             case SwapPhase.Confirmed:
@@ -548,11 +695,30 @@ public sealed class InstallSwap(
     }
 
     /// <summary>
+    /// The update met an error (D139 §6; SWAP2): a swap under way is put right from its journal, as a launcher that died is,
+    /// keeping the reason it was undoing for; one started whose application runs is left to it. With no swap under way, an
+    /// update asked for refuses the staged build as <c>error</c>, so the application is not closed for the same build
+    /// again. Never a refusal written over a swap under way, and never <c>busy</c>.
+    /// </summary>
+    public SwapOutcome AfterError(bool appRunning, bool updating)
+    {
+        if (Recover(appRunning) is { } put)
+        {
+            return new SwapOutcome(put, StagedBuild.ReadJournal(install)?.Reason, StartOld: put != SwapPhase.Installed);
+        }
+
+        // Still under way: started, and its application runs. It is the application now; the launcher starts no other.
+        if (StagedBuild.UnderWay(install)) return new SwapOutcome(null, null, StartOld: false);
+        return updating ? Held("the launcher met an error before it could swap.", "error") : SwapOutcome.Nothing;
+    }
+
+    /// <summary>
     /// Install the staged build: check it, move it in with a journal, start it and wait for it to confirm, or roll back.
     /// <see cref="SwapOutcome.Nothing"/> when nothing is staged.
     /// </summary>
     public SwapOutcome Run(IReadOnlyList<string> arguments)
     {
+        _holds.Clear();
         var manifest = StagedBuild.Read(install, out var unread);
         if (manifest is null && unread is null) return SwapOutcome.Nothing;
 
@@ -570,7 +736,7 @@ public sealed class InstallSwap(
         }
 
         var record = new SwapRecord(SwapPhase.Swapping, manifest!.Id, manifest.Version, manifest.Commit, Now, []);
-        StagedBuild.WriteJournal(install, record);
+        Journal(record);
         Directory.CreateDirectory(previous);
 
         var moves = new List<SwapMove>();
@@ -587,17 +753,23 @@ public sealed class InstallSwap(
                 Move(Under(StagedBuild.Folder, StagedBuild.Staged, name), name);
             }
         }
+        catch (HeldMoveException held)
+        {
+            // `busy` is this and only this: a hold that outlasted the wait, and the moves before it put back (SWAP2).
+            Undo(record with { Moves = moves }, "busy", $"a file the swap had to move was held: {held.Message}; nothing was changed.");
+            return new SwapOutcome(SwapPhase.RolledBack, "busy", StartOld: true);
+        }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            Undo(record with { Moves = moves }, "busy", $"a file the swap had to move is held ({error.Message.TrimEnd('.')}); nothing was changed.");
-            return new SwapOutcome(SwapPhase.RolledBack, "busy", StartOld: true);
+            Undo(record with { Moves = moves }, "move", $"a move the swap had to make failed ({error.Message.TrimEnd('.')}); nothing was changed.");
+            return new SwapOutcome(SwapPhase.RolledBack, "move", StartOld: true);
         }
 
         // What is left of the staged folder is its manifest, already in the journal: gone, so nothing reads it as staged.
         TryDelete(StagedBuild.StagedOf(install));
 
         record = record with { Moves = moves, Phase = SwapPhase.Started, At = Now };
-        StagedBuild.WriteJournal(install, record);
+        Journal(record);
 
         var pid = start(arguments);
         if (pid is null)
@@ -647,31 +819,37 @@ public sealed class InstallSwap(
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
             MoveHeld(source, target);
             moves.Add(new SwapMove(from, to));
-            StagedBuild.WriteJournal(install, record with { Moves = moves.ToList() });
+            Journal(record with { Moves = moves.ToList() });
         }
     }
 
     /// <summary>
     /// An update asked for while something still runs from <c>app/</c> once the wait is over (D139 §5): the staged build is
     /// refused, <c>busy</c>, and moved aside, so the application started again on the build before it does not drain and
-    /// close for the same build again. <see cref="SwapOutcome.Nothing"/> when nothing is staged.
+    /// close for the same build again; <paramref name="code"/> names another reason, <c>error</c> for the launcher's.
+    /// <see cref="SwapOutcome.Nothing"/> when nothing is staged, or when a swap is under way: its journal is what puts the
+    /// install right, and a refusal written over it would lose its moves (SWAP2).
     /// </summary>
-    public SwapOutcome Held(string detail)
+    public SwapOutcome Held(string detail, string code = "busy")
     {
+        if (StagedBuild.UnderWay(install)) return SwapOutcome.Nothing;
         var manifest = StagedBuild.Read(install, out var unread);
         if (manifest is null && unread is null) return SwapOutcome.Nothing;
-        return Refuse(manifest, new StagedProblem("busy", detail));
+        return Refuse(manifest, new StagedProblem(code, detail));
     }
 
     private bool Exists(string relative) => Directory.Exists(Full(relative)) || File.Exists(Full(relative));
 
     private SwapOutcome Refuse(StagedManifest? manifest, StagedProblem problem)
     {
-        StagedBuild.WriteJournal(install, new SwapRecord(
-            SwapPhase.Refused, manifest?.Id, manifest?.Version, manifest?.Commit, Now, [], Reason: problem.Code, Detail: problem.Sentence));
+        var record = new SwapRecord(
+            SwapPhase.Refused, manifest?.Id, manifest?.Version, manifest?.Commit, Now, [], Reason: problem.Code, Detail: problem.Sentence);
+        Journal(record);
         // A build refused is not tried again at every start: moved aside, as a failed one is, over the last one aside.
         TryDelete(Full(Under(StagedBuild.Folder, StagedBuild.Failed)));
+        var holds = _holds.Count;
         MoveAside(StagedBuild.StagedOf(install));
+        if (_holds.Count > holds) Journal(record);
         return new SwapOutcome(SwapPhase.Refused, problem.Code, StartOld: true);
     }
 
@@ -679,7 +857,7 @@ public sealed class InstallSwap(
     private void Finish(SwapRecord record)
     {
         TryDelete(Full(Under(StagedBuild.Folder, StagedBuild.Previous)));
-        StagedBuild.WriteJournal(install, record with
+        Journal(record with
         {
             Phase = SwapPhase.Installed,
             Confirmed = record.Confirmed ?? true,
@@ -691,31 +869,54 @@ public sealed class InstallSwap(
     /// Put the build before it back (D139 §6): the journal's moves undone in reverse, a staged file that had moved in going
     /// to <c>update/failed/</c> rather than back to <c>staged/</c>, so it is not tried again.
     /// </summary>
+    /// <remarks>
+    /// The reason is journalled before the first move back, and the moves still to undo after each one (SWAP2): a move back
+    /// that a hold outlasts throws with the journal still under way, so the launcher's <see cref="AfterError"/>, or the next
+    /// start, finishes it with the reason it was undoing for and never moves a file it already put back. A journal that
+    /// already carries a reason is such a finish, and keeps what the first attempt moved to <c>update/failed/</c>.
+    /// </remarks>
     private void Undo(SwapRecord record, string reason, string detail)
     {
         var failed = Full(Under(StagedBuild.Folder, StagedBuild.Failed));
-        TryDelete(failed);
+        if (record.Reason is null) TryDelete(failed);
+        record = record with { Reason = reason, Detail = detail };
+        var remaining = record.Moves.ToList();
+        Journal(record with { Moves = remaining.ToList() });
+
         var stagedPrefix = Under(StagedBuild.Folder, StagedBuild.Staged) + "/";
-        foreach (var move in record.Moves.Reverse())
+        while (remaining.Count > 0)
         {
+            var move = remaining[^1];
             var back = move.From.StartsWith(stagedPrefix, StringComparison.Ordinal)
                 ? Under(StagedBuild.Folder, StagedBuild.Failed, move.From[stagedPrefix.Length..])
                 : move.From;
             var source = Full(move.To);
             var target = Full(back);
-            if (!Directory.Exists(source) && !File.Exists(source)) continue;
-            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            MoveHeld(source, target, overwrite: true);
+            if (Directory.Exists(source) || File.Exists(source))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                try
+                {
+                    MoveHeld(source, target, overwrite: true);
+                }
+                catch (HeldMoveException)
+                {
+                    // The hold that stopped it, journalled with what is left to undo, for whoever finishes it.
+                    Journal(record with { Moves = remaining.ToList() });
+                    throw;
+                }
+            }
+
+            remaining.RemoveAt(remaining.Count - 1);
+            Journal(record with { Moves = remaining.ToList() });
         }
 
         TryDelete(Full(Under(StagedBuild.Folder, StagedBuild.Previous)));
         MoveAside(StagedBuild.StagedOf(install));
-        StagedBuild.WriteJournal(install, record with
+        Journal(record with
         {
             Phase = SwapPhase.RolledBack,
             Moves = [],
-            Reason = reason,
-            Detail = detail,
             At = Now,
         });
     }

@@ -247,6 +247,40 @@ public sealed class InstallUpdaterTests : Bridge
     }
 
     /// <summary>
+    /// SWAP2: the launcher writes no log, so the holds its swap journalled reach the machine log here, as a count and the
+    /// longest in milliseconds, on the line that says how the swap ended; a swap that met none says nothing of them.
+    /// </summary>
+    [Fact]
+    public void The_line_that_says_how_a_swap_ended_counts_its_holds_and_the_longest()
+    {
+        StagedBuild.WriteJournal(_install, new SwapRecord(
+            SwapPhase.Started, "b1", "0.0.2", "def5678", Now, [],
+            Holds: [new SwapHold("app", "update/previous/app", 14_200, 72, true), new SwapHold("update/staged/app", "app", 3_000, 16, true)]));
+        using (var updater = Updater()) updater.Started();
+
+        var installed = Logged("update.installed").Single();
+        Assert.Equal(2, installed["holds"]!.GetValue<int>());
+        Assert.Equal(14_200, installed["heldMs"]!.GetValue<long>());
+
+        StagedBuild.WriteJournal(_install, new SwapRecord(
+            SwapPhase.RolledBack, "b2", "0.0.3", null, Now, [], Reason: "busy", Detail: "a file the swap had to move was held.",
+            Holds: [new SwapHold("update/staged/app", "app", 120_000, 601, false)]));
+        using (var updater = Updater()) updater.Started();
+
+        var rolledBack = Logged("update.rolled-back", "warn").Single();
+        Assert.Equal("busy", rolledBack["reason"]!.GetValue<string>());
+        Assert.Equal(1, rolledBack["holds"]!.GetValue<int>());
+        Assert.Equal(120_000, rolledBack["heldMs"]!.GetValue<long>());
+
+        StagedBuild.WriteJournal(_install, new SwapRecord(SwapPhase.RolledBack, "b3", "0.0.4", null, Now, [], Reason: "exited"));
+        using (var updater = Updater()) updater.Started();
+
+        var plain = Logged("update.rolled-back", "warn").Single(line => line["build"]!.GetValue<string>() == "b3");
+        Assert.Null(plain["holds"]);
+        Assert.Null(plain["heldMs"]);
+    }
+
+    /// <summary>
     /// UPDATE1d (D139's UPDATE1b note, D50): the last swap is the journal's record, told or not, on every state, apart from
     /// the outcome the banner says once. It outlives the banner's *Dismiss* and a later start that says nothing, as the
     /// terminal's plain <c>daoris-driver update</c> still says it from the same journal.
