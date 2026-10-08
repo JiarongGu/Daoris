@@ -9,8 +9,8 @@ import { REVIEW_REFUSALS, ReviewFailed, ReviewHead, ReviewReading, SLOW_MS } fro
 // sentences out — every state below is reached without a bridge, a repository or a git process (components plan §2).
 
 const KNOWN = {
-  title: 'Fix the report header in report-ui',
-  repository: 'report-ui',
+  title: 'Fix the report header in portal-ui',
+  repository: 'portal-ui',
   branch: 'daoris/s-2394e5d9',
   base: '0fda18c2b7e4a9d1',
   commits: 4,
@@ -24,8 +24,8 @@ describe('ReviewHead', () => {
   it('says what the page knows before git answers: the title, the repository, the branch, the base and the commits', () => {
     render(<ReviewHead {...KNOWN} />);
 
-    expect(screen.getByText('Fix the report header in report-ui')).toBeTruthy();
-    expect(screen.getByText('report-ui')).toBeTruthy();
+    expect(screen.getByText('Fix the report header in portal-ui')).toBeTruthy();
+    expect(screen.getByText('portal-ui')).toBeTruthy();
     expect(screen.getByText('daoris/s-2394e5d9')).toBeTruthy();
     // The range it will be measured from, short as a commit is named.
     expect(screen.getByText('since 0fda18c2')).toBeTruthy();
@@ -33,9 +33,9 @@ describe('ReviewHead', () => {
   });
 
   it('leaves out what the record does not hold, and says one commit as one', () => {
-    render(<ReviewHead title={null} repository="report-ui" branch={null} base={null} commits={1} machine={null} />);
+    render(<ReviewHead title={null} repository="portal-ui" branch={null} base={null} commits={1} machine={null} />);
 
-    expect(screen.getByText('report-ui')).toBeTruthy();
+    expect(screen.getByText('portal-ui')).toBeTruthy();
     expect(screen.getByText('1 commit')).toBeTruthy();
     expect(screen.queryByText(/since/)).toBeNull();
     expect(screen.queryByText(/daoris\//)).toBeNull();
@@ -56,9 +56,9 @@ describe('ReviewReading', () => {
 
   /** What it is doing, at once and on the line the count will take; the skeleton beneath it is for the eye alone. */
   it('says what it is reading at once, and draws the files and the patch as a skeleton', () => {
-    const { container } = render(<ReviewReading repository="report-ui" since={Date.now()} />);
+    const { container } = render(<ReviewReading repository="portal-ui" since={Date.now()} />);
 
-    expect(screen.getByRole('status').textContent).toBe('Reading the changes in report-ui…');
+    expect(screen.getByRole('status').textContent).toBe('Reading the changes in portal-ui…');
     const skeleton = container.querySelector('[data-skeleton="review"]');
     expect(skeleton?.getAttribute('aria-hidden')).toBe('true');
     expect(skeleton?.querySelectorAll('[data-skeleton="file"]').length).toBeGreaterThan(2);
@@ -68,32 +68,32 @@ describe('ReviewReading', () => {
   /** For how long, once it is long enough to wonder: nothing for the first moment, then the seconds, counting. */
   it('adds how long it has been reading after the threshold, and keeps counting', () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
-    render(<ReviewReading repository="report-ui" since={Date.now()} />);
+    render(<ReviewReading repository="portal-ui" since={Date.now()} />);
 
     act(() => vi.advanceTimersByTime(SLOW_MS - 1_000));
-    expect(screen.getByRole('status').textContent).toBe('Reading the changes in report-ui…');
+    expect(screen.getByRole('status').textContent).toBe('Reading the changes in portal-ui…');
 
     act(() => vi.advanceTimersByTime(1_000));
-    expect(screen.getByRole('status').textContent).toBe('Reading the changes in report-ui… 2s');
+    expect(screen.getByRole('status').textContent).toBe('Reading the changes in portal-ui… 2s');
 
     act(() => vi.advanceTimersByTime(53_000));
-    expect(screen.getByRole('status').textContent).toBe('Reading the changes in report-ui… 55s');
+    expect(screen.getByRole('status').textContent).toBe('Reading the changes in portal-ui… 55s');
   });
 
   it('counts from when the read began, not from when this pane appeared', () => {
-    render(<ReviewReading repository="report-ui" since={Date.now() - 23_000} />);
+    render(<ReviewReading repository="portal-ui" since={Date.now() - 23_000} />);
 
-    expect(screen.getByRole('status').textContent).toBe('Reading the changes in report-ui… 23s');
+    expect(screen.getByRole('status').textContent).toBe('Reading the changes in portal-ui… 23s');
   });
 
   it('says it in 中文, its number set apart', () => {
     render(
       <I18nextProvider i18n={i18n.cloneInstance({ lng: 'zh' })}>
-        <ReviewReading repository="report-ui" since={Date.now() - 65_000} />
+        <ReviewReading repository="portal-ui" since={Date.now() - 65_000} />
       </I18nextProvider>,
     );
 
-    expect(screen.getByRole('status').textContent).toBe('正在读取 report-ui 的改动… 1 分 5 秒');
+    expect(screen.getByRole('status').textContent).toBe('正在读取 portal-ui 的改动… 1 分 5 秒');
   });
 
   it('says what it reads without a repository where the page knows none', () => {

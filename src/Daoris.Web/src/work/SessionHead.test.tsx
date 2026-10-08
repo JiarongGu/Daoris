@@ -355,7 +355,7 @@ describe('the attended session\'s head', () => {
    */
   describe('the landing a session left', () => {
     const LANDS = { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 };
-    const PLAN = { session: 's1a2b3c4', form: 'branch', target: 'feature/kepak-release', plugin: 'azure-devops-pull-request' };
+    const PLAN = { session: 's1a2b3c4', form: 'branch', target: 'feature/delta-release', plugin: 'azure-devops-pull-request' };
 
     it('offers a failed session’s commits to land, naming its branch and tree, and lands them on the second press', () => {
       const onLand = vi.fn();
@@ -371,7 +371,7 @@ describe('the attended session\'s head', () => {
       expect(onLand).not.toHaveBeenCalled();
       const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
       expect(ask).toHaveTextContent(
-        'Accepting puts this work on a new branch, feature/kepak-release, then the plugin azure-devops-pull-request pushes it and opens the pull request. Nothing is merged.');
+        'Accepting puts this work on a new branch, feature/delta-release, then the plugin azure-devops-pull-request pushes it and opens the pull request. Nothing is merged.');
       expect(ask).toHaveTextContent('This session did not finish, so what lands is only what it committed before it ended.');
       fireEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
       expect(onLand).toHaveBeenCalledOnce();

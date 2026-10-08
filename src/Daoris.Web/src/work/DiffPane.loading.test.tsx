@@ -27,14 +27,14 @@ import { DiffPane } from './DiffPane';
 const ENDED: Session = {
   id: 's1a2b3c4',
   quest: 'abc123',
-  repository: 'report-ui',
+  repository: 'portal-ui',
   adapter: 'claude-code',
   state: 'completed',
   kind: 'driven',
   created: '2026-10-03T08:00:00Z',
   updated: '2026-10-03T09:00:00Z',
   workspace: 'default',
-  tree: 'C:/somewhere/.daoris/trees/default/report-ui/s-2394e5d9',
+  tree: 'C:/somewhere/.daoris/trees/default/portal-ui/s-2394e5d9',
   baseCommit: '0fda18c2b7e4a9d1',
   evidence: 'commits landed:\nabc1234 Draw the header\ndef5678 Name the columns\n0123abc Test the header',
 };
@@ -105,11 +105,11 @@ describe('the review while git reads (REVIEW4)', () => {
     const { container } = render(pane(newClient()));
 
     expect(screen.getByText('Fix the report header')).toBeTruthy();
-    expect(screen.getByText('report-ui')).toBeTruthy();
+    expect(screen.getByText('portal-ui')).toBeTruthy();
     expect(screen.getByText('daoris/s-2394e5d9')).toBeTruthy();
     expect(screen.getByText('since 0fda18c2')).toBeTruthy();
     expect(screen.getByText('3 commits')).toBeTruthy();
-    expect(screen.getByRole('status').textContent).toBe('Reading the changes in report-ui…');
+    expect(screen.getByRole('status').textContent).toBe('Reading the changes in portal-ui…');
     expect(container.querySelector('[data-skeleton="review"]')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Discard tree' })).toBeNull();
 
@@ -119,9 +119,9 @@ describe('the review while git reads (REVIEW4)', () => {
     }));
 
     act(() => vi.advanceTimersByTime(2_000));
-    expect(screen.getByRole('status').textContent).toBe('Reading the changes in report-ui… 2s');
+    expect(screen.getByRole('status').textContent).toBe('Reading the changes in portal-ui… 2s');
     act(() => vi.advanceTimersByTime(53_000));
-    expect(screen.getByRole('status').textContent).toBe('Reading the changes in report-ui… 55s');
+    expect(screen.getByRole('status').textContent).toBe('Reading the changes in portal-ui… 55s');
 
     await act(async () => host.answer(DIFF));
     expect(await screen.findByText('src/report/header.ts')).toBeTruthy();
@@ -164,7 +164,7 @@ describe('the review while git reads (REVIEW4)', () => {
     render(pane(newClient()));
 
     await userEvent.click(await screen.findByRole('button', { name: 'Read again' }));
-    expect(await screen.findByRole('status')).toHaveTextContent('Reading the changes in report-ui…');
+    expect(await screen.findByRole('status')).toHaveTextContent('Reading the changes in portal-ui…');
     expect(screen.queryByText('The changes took too long to read')).toBeNull();
 
     await act(async () => host.answer(DIFF));
@@ -320,7 +320,7 @@ describe('the review while git reads (REVIEW4)', () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_DIFF') return DIFF;
       if (type === 'DISCARD_SESSION_BRANCH') {
-        return { repository: 'report-ui', branch: 'daoris/s-2394e5d9', done: true, message: 'removed the session branch.' };
+        return { repository: 'portal-ui', branch: 'daoris/s-2394e5d9', done: true, message: 'removed the session branch.' };
       }
       if (type === 'HANDOFF_PLAN') return { session: 's1a2b3c4', branch: null };
       return {};
@@ -333,7 +333,7 @@ describe('the review while git reads (REVIEW4)', () => {
       wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
     });
     await act(async () => {
-      await result.current.mutateAsync({ repository: 'report-ui', branch: 'daoris/s-2394e5d9' });
+      await result.current.mutateAsync({ repository: 'portal-ui', branch: 'daoris/s-2394e5d9' });
     });
     await waitFor(() => expect(diffs()).toHaveLength(2));
   });
@@ -351,7 +351,7 @@ describe('the review while git reads (REVIEW4)', () => {
 
     act(() => vi.advanceTimersByTime(7_000));
     render(pane(client));
-    await waitFor(() => expect(screen.getByRole('status').textContent).toBe('Reading the changes in report-ui… 12s'));
+    await waitFor(() => expect(screen.getByRole('status').textContent).toBe('Reading the changes in portal-ui… 12s'));
     expect(diffs()).toHaveLength(1);
 
     await act(async () => host.answer(DIFF));
