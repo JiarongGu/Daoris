@@ -285,19 +285,60 @@ public sealed record SessionResponse(
     IReadOnlyList<SaidWordResponse>? Said = null,
     // LANG1a (D142 point 2): the note's lines, each a code with its values or someone's words, beside `note`, which stays as it
     // always read. Null for a record from before parts. To another machine, every string in them cleaned as the note is.
-    JsonElement? NoteParts = null);
+    JsonElement? NoteParts = null,
+    // XAGENT1c (D155 point 11): the second opinion a reviewer's record reads another session's work for. This machine's own,
+    // like the opinion: answered to it only, and absent for every other session.
+    string? Opinion = null);
 // MSG1a: one word waiting on a record — its id, which the record's events say again where the session took it; the
-// words; when; its files' names, never where they are; and whether it was said after the record ended.
-public sealed record SaidWordResponse(string Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens);
+// words; when; its files' names, never where they are; and whether it was said after the record ended. XAGENT1c: `by`, the
+// second opinion whose findings these are, another agent's claims; absent, the person's words, as every word before it was.
+public sealed record SaidWordResponse(
+    string Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens, string? By = null);
 // MSG1a (D137 §5.3): what the person says to a parked or ended session. `Files` are the names of what they gave with it;
 // a path is cut to its name before it is kept.
 public sealed record SayRequest(string? Text, IReadOnlyList<string>? Files = null);
 // The session as it stands, the ledger's sentence, and the word as kept (to this machine only).
 public sealed record SaidResponse(SessionResponse Session, string Message, SaidWordResponse? Said);
 // A say refused: the sentence as `error`, beside its word (`refusal`: `no-words`, `not-found`, `not-ours`, `intake`,
-// `stood-down`, `running`), which a reader acts on instead of the sentence, and the quest, ask or machine it names.
+// `stood-down`, `running`, and XAGENT1c's `opinion`, a reviewer's record), which a reader acts on instead of the sentence, and
+// the quest, ask, machine or second opinion it names.
 public sealed record SessionSayRefusalResponse(
-    string Error, string Refusal, string? Quest = null, string? Ask = null, string? Origin = null);
+    string Error, string Refusal, string? Quest = null, string? Ask = null, string? Origin = null, string? Opinion = null);
+// XAGENT1c (D155 point 11; the second agent design §6.2): a pass the driver asks, every part nullable so one left out is
+// refused by the desk naming which. `minutes` is the rule's bound, said, never defaulted here: the service holds no rule.
+public sealed record OpinionAskRequest(
+    string? Occasion, string? Pass, string? Working, OpinionCandidateWire? Candidate, OpinionReviewerWire? Reviewer,
+    string? Posture, int? Minutes, string? Tree, string? Rechecks = null, IReadOnlyList<string?>? Families = null,
+    string? HarnessVersion = null);
+// The candidate: exactly what a pass reads, by full commit ids.
+public sealed record OpinionCandidateWire(string? Repository, string? Base, string? Tip, IReadOnlyList<string?>? Commits);
+// The reviewer as the driver's walk chose it: its adapter, its label (`another-maker`, `same-agent`, `maker-not-declared`), its
+// declared product and maker, and the account it runs as.
+public sealed record OpinionReviewerWire(
+    string? Adapter, string? Label, string? Product = null, string? Maker = null, string? Account = null);
+// An opinion as this machine keeps it, with where its pass stands (`state`: `reading`, `given`, `failed`, with `why`:
+// `ended` or `out-of-time`), derived when read. Answered only to a caller on this machine.
+public sealed record OpinionResponse(
+    string Id, string Occasion, string Pass, string Working, string Session, string? Rechecks,
+    OpinionCandidateWire Candidate, OpinionReviewerWire Reviewer, IReadOnlyList<string> Families, string? Posture, int Minutes,
+    string Tier, DateTimeOffset Asked, DateTimeOffset Due, string State, string? Why,
+    OpinionGivenResponse? Given, OpinionHandedResponse? Handed, IReadOnlyList<OpinionAnswerResponse> Answers);
+// What the reviewer said, once: its numbered findings, what it read, its limits, and a recheck's word on each first-pass finding.
+public sealed record OpinionGivenResponse(
+    IReadOnlyList<OpinionFindingResponse> Findings, string Read, string? Limits, IReadOnlyList<OpinionRecheckResponse>? Rechecked,
+    DateTimeOffset At);
+public sealed record OpinionFindingResponse(
+    int Number, string Weight, string Where, string Claim, string Consequence, string Reproduce, string Sure, string? Proposal);
+public sealed record OpinionRecheckResponse(int Finding, string Says);
+// Where the findings went: the working session, the word they wait in on its record, and when.
+public sealed record OpinionHandedResponse(string Session, string Word, DateTimeOffset At);
+// The working session's answer to one finding, the latest standing: `fixed` with its commit, `rejected` with its evidence, or
+// `unresolved` with why. A finding with none reads as unresolved, not answered.
+public sealed record OpinionAnswerResponse(int Finding, string Said, string? Commit, string? Evidence, string? Why, DateTimeOffset At);
+// A door's answer: the opinion as it now stands, the desk's sentence, and the reviewer's record a pass opened or the working
+// session the findings went to, with the word they wait in.
+public sealed record OpinionActionResponse(
+    OpinionResponse Opinion, string Message, SessionResponse? Session = null, SaidWordResponse? Said = null);
 // MSG1a (D137 §2.4): the words a session took, by their ids; `By` the session that took them where it is not this one
 // (a fallback's new session).
 public sealed record TakenRequest(IReadOnlyList<string?>? Said, string? By = null);
@@ -459,6 +500,10 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(SaidResponse))]
 [JsonSerializable(typeof(SessionSayRefusalResponse))]
 [JsonSerializable(typeof(TakenRequest))]
+[JsonSerializable(typeof(OpinionAskRequest))]
+[JsonSerializable(typeof(OpinionResponse))]
+[JsonSerializable(typeof(IEnumerable<OpinionResponse>))]
+[JsonSerializable(typeof(OpinionActionResponse))]
 [JsonSerializable(typeof(HistoryPlanResponse))]
 [JsonSerializable(typeof(HistoryClearRequest))]
 [JsonSerializable(typeof(HistoryClearResponse))]
