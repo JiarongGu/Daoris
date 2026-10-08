@@ -5,6 +5,29 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-08 — a working session's transcript held nothing until it ended
+
+### Driver: a session's transcript reached the disk only at its end (TRANSCRIPT1)
+- **Symptom:** found by DEV3d (below): a transcript of a few lines held 0 bytes while its session worked and everything
+  once it ended, so the family rehearsal's wait for its stub's line never saw it. Anything reading a live session's
+  transcript (a rehearsal, a person opening the file) saw nothing until the end.
+- **Root cause:** every door's capture wrote the transcript through a `StreamWriter` it never flushed (`Driver.CaptureAsync`,
+  `CaptureStructuredAsync`, `CaptureAcpAsync`, `ChatRunner.CaptureProtocolAsync`; `PumpAsync` writes into it). The writer
+  holds what it is given until its buffer fills or it is disposed, and a session says far less than a buffer between its
+  start and its end. Not a regression: the transcript was written so from the driver's first loop (`a9c9e9a7`, DRV2), and
+  each door after copied it. The events file (`<id>.events.jsonl`, `SessionEvents.Append`) was never of this shape: it
+  opens, writes and closes the file for each event, so each is on the disk as it is kept. The session's other files (its
+  conversation id, its marks) are written whole, atomically.
+- **Fix:** `TranscriptFile` (driver), the one writer the four captures open: a line asks the thread pool for a flush, at
+  most one queued at a time, so the lines written before it runs share it and no pump waits on the file. A flush that
+  fails on the pool is swallowed (the bytes stay with the writer for the next flush and the close). The file opens as
+  before, shared for reading; a line written after the close still throws, as a closed writer's did.
+- **Verify:** `TranscriptAsSaidTests` (4): a stand-in harness says a line and waits, and the test reads the file sharing it
+  for writing, on the pipe door (its preamble, stdout and stderr), the native door's structured stdout, and the writer
+  itself, fresh and going on. All four failed first, each wait running out with *the transcript held 0 character(s)*
+  (16, the earlier run's line, for the one going on). Not run: the protocol doors, which need a real process; they open
+  the same writer.
+
 ## 2026-10-08 — the window's bar froze while its page worked
 
 ### Web shell and desktop: an endless pulse drew at the display's rate, and nothing said what held the window's thread (FREEZE1)
