@@ -232,6 +232,12 @@ public sealed record PriorSession(
         Said is { } said ? said
         : Answer is { } answer ? [new SaidWordView(null, answer, DateTimeOffset.MinValue, [], false)]
         : [];
+
+    /// <summary>
+    /// The second opinions whose findings wait among its words (XAGENT1e, D155 point 7), each once, in the order handed: another
+    /// agent's claims, which go on only in this session's own conversation and never to a new session as the person's words.
+    /// </summary>
+    public IReadOnlyList<string> Findings => [.. Waiting.Select(word => word.By).OfType<string>().Distinct(StringComparer.Ordinal)];
 }
 
 /// <summary>
@@ -270,7 +276,17 @@ public sealed record TakenBy(string Last, string? Machine = null, string? Sessio
 /// said after the record ended.
 /// </summary>
 /// <param name="Id">Its id on the record; null for an answer a host from before <c>said</c> kept, which has none.</param>
-public sealed record SaidWordView(string? Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens);
+public sealed record SaidWordView(string? Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens)
+{
+    /// <summary>
+    /// The second opinion whose findings these are (XAGENT1e, D155 point 7, D137 as it amends it): another agent's claims in
+    /// Daoris's fixed words, never the person's. Null for the person's words, as every word kept before it was.
+    /// </summary>
+    public string? By { get; init; }
+
+    /// <summary>Whether these are the person's words: no second opinion's.</summary>
+    public bool Persons => By is null;
+}
 
 /// <summary>One step of a chain, as the service answered it.</summary>
 public sealed partial record QuestStepView(string To, string Title, string Body);

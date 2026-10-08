@@ -198,6 +198,7 @@ with the version and date at release.
 - Setup's *Review before landing* now says that work there waits for your review, and how to give it.
 - Daoris's local service answers only to its own loopback names, so a website cannot read it through a rebound
   name.
+- A conversation is handed a plugin's servers even when that plugin also adds an agent.
 
 The first version: doctrine that installs, is checked, and flows back.
 

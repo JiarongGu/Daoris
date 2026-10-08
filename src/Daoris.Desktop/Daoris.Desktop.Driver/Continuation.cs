@@ -211,13 +211,35 @@ public static class Continuations
     public static Noted GoingOnNoted => Noted.Of(NoteCodes.WorkingGoesOn, GoingOn);
 
     /// <summary>
+    /// What an ended record's note gains as it goes on with another agent's findings alone (XAGENT1e, D155 point 7): never "your
+    /// words", which they are not.
+    /// </summary>
+    public const string GoingOnWithFindings =
+        "It goes on with another agent's findings in its own conversation, in the tree it worked in, to check and answer each.";
+
+    /// <summary>
+    /// <see cref="GoingOnWithFindings"/> as its note's line: its English whole, with no code until the page words one (XAGENT1g),
+    /// since a code the page's catalogues do not hold would be shown as a key.
+    /// </summary>
+    public static Noted GoingOnWithFindingsNoted => Noted.Said(GoingOnWithFindings, NoteBy.Before);
+
+    /// <summary>
     /// The resumed run's first line in its record (D131 §1): the door it resumed on, and the harness's version where it
     /// moved since the record opened, since the record names the version it opened on and a newer one is never refused.
     /// </summary>
     /// <param name="answer">A park's answer; false for words said to a record that had ended (MSG1b), which are no answer.</param>
-    public static string Opening(string adapter, string? now, string? then, bool answer = true)
+    /// <param name="findings">
+    /// Whether another agent's findings are among them (XAGENT1e, D155 point 7): said as that agent's, never as the person's.
+    /// </param>
+    /// <param name="persons">Whether any of them are the person's words; with no findings among them, they all are.</param>
+    public static string Opening(string adapter, string? now, string? then, bool answer = true, bool findings = false, bool persons = true)
     {
-        var said = answer ? "your answer is" : "your words are";
+        var said = (findings, persons) switch
+        {
+            (true, false) => "another agent's findings are",
+            (true, true) => answer ? "your answer and another agent's findings are" : "your words and another agent's findings are",
+            _ => answer ? "your answer is" : "your words are",
+        };
         return now is { Length: > 0 } && then is { Length: > 0 } && !string.Equals(now, then, StringComparison.Ordinal)
             ? $"— {said} the next turn of its own conversation, resumed on `{adapter}` {now}; it opened on {then}."
             : $"— {said} the next turn of its own conversation, resumed on `{adapter}`.";

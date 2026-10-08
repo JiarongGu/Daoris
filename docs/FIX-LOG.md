@@ -36,6 +36,24 @@ repository.
   rehearsal gains both checks on Kestrel (section 2): ORIGIN1's no-body foreign `POST` answering `cross-site`, and a
   read under a rebound name, sent through `node:http` since `fetch` names the address's own host whatever it is told.
 - **Commit:** `683b5f5e`.
+## 2026-10-09 — a conversation withheld the servers of a plugin that also declares an agent (CHATSERVERS1)
+
+### Driver: a plugin declaring an agent and a server handed its server to driven sessions and never to a conversation
+- **Symptom:** a plugin whose manifest declares a harness and a server had its server handed to every driven session, and
+  withheld from every conversation, which read the plugin as refused: *declares agent `…`, which this build already carries*.
+- **Root cause:** `ChatRunner.HandServersAsync` read the catalogue reserving `_harnesses.Adapters.Names`, the roster's live
+  set, which the driver's tick hands it as the build's adapters plus every harness the plugins declare. The plugin's own
+  agent was in it, so the catalogue refused the plugin and took nothing of it. The driver loop reserves the build's set
+  (`Driver.cs`, `_built.Names`), so only the conversation was wrong. In since CONV3b (`0a78ff6d`), which first read the
+  conversation's servers that way; REV3 and BRW2 moved the line and kept the argument.
+- **Fix:** `HandServersAsync` takes no names and reads the catalogue as `LandingPlugins.Catalog()` does, reserving
+  `AdapterSet.Built().Names` (PLUGINRESERVE1 makes the catalogue reserve the build's names whatever it is handed). No
+  other caller hands the live set as reserved names: every other `PluginCatalog.Load`, `RefusedByThisBuild` and install
+  path hands the build's names or none, and `DriverModule.Help`'s use of the live set is the agents a proposal may name.
+- **Verify:** `ChatRunnerTests.A_plugin_that_also_declares_an_agent_hands_a_conversation_its_servers` (the class is in the
+  `Process` half; the row starts nothing, its harness's program missing and its tree no checkout) failed first, the file
+  handed to the conversation naming no server, then passed, run alone. The driver's fast half passed (5270).
+- **Commit:** `f97c8166`.
 
 ## 2026-10-09 — a website could press a door on the local host (ORIGIN1)
 
@@ -745,7 +763,13 @@ verify, the same words).
 `setup-kit.test.ts:531` (*a set-up quest is done as its body says*) failed once at SWEEPCARRIED1's merge, 2026-10-08, a
 web-only change: *the stub never answered 3 (session/prompt) within 30000 ms* after it had run all four commands, with
 a Codex review and two subagents building beside the gate. The same file's stub bound as STUB3's, after its command
-runs rather than at its start.
+runs rather than at its start. *Fixed 2026-10-09 (FLAKE2):* `driveTurn()` counted the prompt's 30 s from the request, so
+a turn that kept working under load (six doctrine commands, each said as a call and its end) was counted as silent. The
+answer's bound now runs from the stub's last output on either stream (`bounded`'s `quiet`), after a start bound of its
+own as STUB3b gave `speak()`; its exit keeps 30 s. Two rows are new: a stub that talks every 400 ms for 2.4 s under a
+1000 ms bound failed first exactly as the sighting did (*never answered 3 (session/prompt) within 1000 ms*) and passes,
+and one that falls silent still fails *within 1000 ms of its last output*. The set-up row and both passed 5/5 with
+`dotnet build --no-incremental` running beside them; `setup-kit.test.ts` went from 29 cases to 31.
 `AccountGoalTickTests.One_look_spreads_K_starts_over_N_accounts_and_a_limit_cuts_off_only_its_own` (driver, Process)
 failed once in LOGVIEW1's full set, 2026-10-08 (722/723, 32 m), and passed alone: `events.After(id, 0).Events[0]` at
 `AccountGoalTickTests.cs:94` found a record with no event yet. The tick returns once its starts are chosen and their
@@ -789,6 +813,14 @@ timed out (20 s) once in CARRY2d's web run and passed in the next.
 The full set on `99b2a858` (2026-10-08) caught `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one`
 (modules, Process half) failing in the full run and passing alone, with one worktree building beside it; the plugin-kit
 repeat FLAKE1's row names.
+`DriverModuleStartFromTests.The_press_starts_a_conversation_whose_end_reaches_the_page` (modules, fast half) was answered
+*conversation `c1` is going on with its words already* under load (FLAKE2's row). *Fixed 2026-10-09 (FLAKE2):* the loop's
+own look as it comes up (MSG1c2) takes up the stand-in record's waiting word and says it cannot go on. The test waited for
+that line, but the runner holds the chat as going on until after the line is kept (`GoOnAsync`'s `finally`), and a press
+inside the hold is refused. The test now marks the word judged before the loop comes up, as an earlier look leaves it, so
+the look leaves it waiting and the press is judged alone. A 3 s delay before the hold's release (a probe, since removed)
+failed the old test at once as the sighting did, and the new one passed 5/5 under it; then 10 runs passed without it. Its
+siblings that wait for a look's line only read after it (`DriverLoopChatTakenUpTests`, `ChatGoOnTests`): none presses.
 
 *Fixed the same day:* `desktop-publish.test.ts`'s "retries a held rename at each package and launcher step" failed
 twice (AGENTREAD1's verify, ACCTQUOTE1d's merge gate) with a real EPERM. It handed `layCli` two tries with no wait, the
