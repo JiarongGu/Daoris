@@ -137,6 +137,34 @@ test('a harness this build carries is refused naming both sides', () => {
   fx.cleanup();
 });
 
+/**
+ * PLUGINRESERVE1: the names this build reserves are ONE table both twins are held to, the driver suite's
+ * `fixtures/reserved-harnesses.json`: every name either side runs as a harness, `codex` among them. The driver's
+ * `PluginCatalogTests` holds `AdapterSet.Built().Reserved` and its catalogue's refusals to the same rows.
+ */
+const RESERVED_TABLE = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
+  'Daoris.Desktop.Driver.Tests', 'fixtures', 'reserved-harnesses.json'), 'utf8')) as {
+  reserved: string[];
+  declares: [why: string, name: string, refused: boolean][];
+};
+
+test('the names this build reserves are the shared table\'s, codex among them (PLUGINRESERVE1)', () => {
+  assert.ok(RESERVED_TABLE.reserved.includes('codex'));
+  assert.deepEqual([...reservedHarnesses()].sort(), RESERVED_TABLE.reserved);
+});
+
+for (const [why, name, refused] of RESERVED_TABLE.declares) {
+  test(`a plugin declaring a reserved name is refused as the driver refuses it: ${why} (PLUGINRESERVE1)`, () => {
+    const fx = makeFixture('plugins-reserved');
+    plugin(fx.root, 'example.agent', JSON.stringify({ id: 'example.agent', harnesses: [{ name, command: ['agent'] }] }));
+
+    const [entry] = readPlugins(fx.root).plugins;
+    if (refused) assert.ok(entry!.problem?.includes(`\`${name}\`, which this build already carries`), entry!.problem ?? 'no problem');
+    else assert.equal(entry!.problem, null);
+    fx.cleanup();
+  });
+}
+
 test('presence is asked of the file or PATH, never by running the command', () => {
   const fx = makeFixture('plugins-presence');
   const here = join(fx.root, 'agent.mjs');

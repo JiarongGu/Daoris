@@ -159,6 +159,19 @@ public sealed class PluginCatalog
     /// <summary>A machine with no plugins: what a reader that was handed none judges against (HELP8).</summary>
     public static PluginCatalog None { get; } = new([]);
 
+    /// <summary>
+    /// The harness names this build runs, which no plugin may declare (PLUGINRESERVE1, D64 rule 3): the built set's
+    /// <see cref="AdapterSet.Reserved"/>, each door and each agent a door runs as, `codex` among them since CODEXACCT1 made it
+    /// a holder rather than a door. Twin: the CLI's <c>reservedHarnesses()</c>; both suites hold their list to the driver
+    /// suite's <c>fixtures/reserved-harnesses.json</c>.
+    /// </summary>
+    public static IReadOnlyList<string> Reserved => AdapterSet.Built().Reserved;
+
+    // The build's own names are reserved whatever a caller hands (PLUGINRESERVE1): callers hand a set's doors, and a door list
+    // alone misses an agent a door runs as, which let a plugin declare `codex` here while the CLI refused it.
+    private static HashSet<string> ReservedWith(IEnumerable<string>? handed) =>
+        new(Reserved.Concat(handed ?? []), StringComparer.OrdinalIgnoreCase);
+
     private PluginCatalog(IReadOnlyList<PluginEntry> plugins)
     {
         Plugins = plugins;
@@ -184,14 +197,17 @@ public sealed class PluginCatalog
     /// Read the home's plugins.
     /// </summary>
     /// <param name="home">The Daoris home (D63).</param>
-    /// <param name="reservedHarnesses">The harness names this build carries — a plugin declaring one is refused naming both.</param>
+    /// <param name="reservedHarnesses">
+    /// Harness names reserved beside <see cref="Reserved"/>, which is reserved whatever is handed: a set a test builds of its
+    /// own adapters, say. A plugin declaring one is refused naming both.
+    /// </param>
     public static PluginCatalog Load(string home, IEnumerable<string>? reservedHarnesses = null)
     {
         var root = Path.Combine(home, Folder);
         if (!Directory.Exists(root)) return new([]);
 
         var disabled = new HashSet<string>(PluginState.Load(home).Disabled, StringComparer.OrdinalIgnoreCase);
-        var reserved = new HashSet<string>(reservedHarnesses ?? [], StringComparer.OrdinalIgnoreCase);
+        var reserved = ReservedWith(reservedHarnesses);
         var declaredBy = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var servedBy = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var entries = new List<PluginEntry>();
@@ -257,9 +273,10 @@ public sealed class PluginCatalog
     /// or a server under the knowledge host's name. Case-blind, as every name here is. The catalogue and
     /// the driver's add ask this one question (PLUG9), as the CLI's twin asks `refusedByThisBuild`.
     /// </summary>
+    /// <param name="reservedHarnesses">Harness names reserved beside <see cref="Reserved"/>, which is reserved whatever is handed.</param>
     public static string? RefusedByThisBuild(PluginManifest manifest, IEnumerable<string> reservedHarnesses)
     {
-        var reserved = new HashSet<string>(reservedHarnesses, StringComparer.OrdinalIgnoreCase);
+        var reserved = ReservedWith(reservedHarnesses);
         if (manifest.Harnesses.FirstOrDefault(harness => reserved.Contains(harness.Name)) is { } carried)
         {
             return $"declares agent `{carried.Name}`, which this build already carries — "

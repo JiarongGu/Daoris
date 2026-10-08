@@ -109,7 +109,10 @@ export function isPluginId(id: string): boolean {
 
 /**
  * The harness names this build carries, which a plugin may not declare. The toolchain table plus the
- * two gate stubs that have no toolchain — the same set the driver's `AdapterSet.Built()` names.
+ * two gate stubs that have no toolchain: every name either side runs as a harness, so no plugin can
+ * shadow a built-in one (PLUGINRESERVE1). The driver's twin is `AdapterSet.Built().Reserved`, each door
+ * and each agent a door runs as (`codex`, a holder since CODEXACCT1); both suites hold their list to the
+ * driver suite's `fixtures/reserved-harnesses.json`.
  *
  * A function rather than a constant: `toolchain.ts` imports this module for `harness list`, and this
  * module imports its table — read at call time, the cycle costs nothing; read at load time, whichever
