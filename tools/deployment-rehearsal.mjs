@@ -32,6 +32,12 @@
  * it rolled back, and one that fails its check refused with nothing closed. Only the artefact can
  * show it: the swap is the launcher's, run against the install's own folder.
  *
+ * And a fifth, held since CONNECTOR1: an install carried its HTTP host and no knowledge connector, so
+ * every session on it was handed the home's `bin/` copy, which no republish refreshed, and an old one
+ * rebuilt the shared store at its own older schema. Phase 1 finds the connector under `app/`, phase 4
+ * plants a `bin/` decoy beside it, and phase 7 reads off the conversation's transcript which one the
+ * agent was handed: the install's own, by its path.
+ *
  *   npm run rehearse:deploy
  *
  * Exit 0 = the deployed thing works. Exit 1 = it does not; the transcript names the first failure.
@@ -74,8 +80,8 @@ import {
 } from './rehearsal-kit.mjs';
 // The install's layout, from the script that makes it (REV3 CLEAN1) — never a second spelling of it.
 import {
-  BUILD_MANIFEST, CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES, LAUNCHER, MARKER,
-  OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RETIRED_BROWSER_EXE, RETIRED_IN_APP, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES,
+  BUILD_MANIFEST, CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, CONNECTOR_EXE, CONNECTOR_HOME, HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES,
+  LAUNCHER, MARKER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RETIRED_BROWSER_EXE, RETIRED_IN_APP, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES,
   SHELL_HOME, STAGE, STAGED, SWAP_JOURNAL, promoteStage, unstage, writeManifest,
 } from './desktop-publish.mjs';
 
@@ -113,6 +119,26 @@ export function insideWorkspace(path, repoRoot) {
   // The gate's own scratch lives under the workspace and is not part of it — the question is whether
   // the shell fell through to a PROJECT build, which is the candidate a deployment does not have.
   return !resolve(path).toLowerCase().startsWith(join(inside, '_fixtures').toLowerCase());
+}
+
+/**
+ * The knowledge connector a protocol-door session was handed, as the agent said it on `session/new` (CONNECTOR1): the
+ * command the rehearsal kit's stub says for the `daoris-knowledge` server, or null when it said none. Read from the
+ * agent's side because that is the session's side: what the driver meant to hand over is not what arrived.
+ */
+export function offeredConnector(transcript) {
+  const said = /^acp-agent: mcp server daoris-knowledge runs (.+?)\r?$/m.exec(transcript ?? '');
+  return said ? said[1].trim() : null;
+}
+
+/**
+ * Whether `offered` is the connector published with the install, under its `app/daoris-knowledge/` (CONNECTOR1):
+ * resolved, and compared without case as Windows compares paths. The home's `bin/` copy never is, which is what every
+ * session on an install was handed while the install carried no connector of its own.
+ */
+export function isInstallsConnector(offered, install) {
+  if (!offered) return false;
+  return resolve(offered).toLowerCase() === resolve(join(install, ...CONNECTOR_HOME, CONNECTOR_EXE)).toLowerCase();
 }
 
 /**
@@ -409,6 +435,8 @@ const newcomer = join(family, 'newcomer');
 const launcherExe = join(install, LAUNCHER);
 const shellExe = join(install, ...SHELL_HOME, SHELL_EXE);
 const installedHost = join(install, ...HOST_HOME, HOST_EXE);
+/** The knowledge connector the install carries (CONNECTOR1), which a session on it is handed. */
+const installedConnector = join(install, ...CONNECTOR_HOME, CONNECTOR_EXE);
 /** Where the browser lived before CHR8, with an engine of its own: a republish removes it (D93, D99). */
 const retiredBrowser = join(install, ...SHELL_HOME, RETIRED_IN_APP[0]);
 
@@ -632,6 +660,10 @@ async function main() {
   check(`the host is under ${HOST_HOME.join('/')}/`, existsSync(installedHost), installedHost);
   check('…and its bundle travelled beside it',
     existsSync(join(install, ...HOST_HOME, 'wwwroot', 'index.html')));
+  // CONNECTOR1: and the connector a protocol-door session is handed, beside it and built with it. An install that
+  // carried none handed every session the home's `bin/` copy, which no republish refreshed. Phase 7 reads which one a
+  // session on this install was handed.
+  check(`the knowledge connector is under ${CONNECTOR_HOME.join('/')}/`, existsSync(installedConnector), installedConnector);
 
   // One Chromium (CHR8, D99): Daoris's browser is the application started with the browser's
   // argument, so no folder under `app/` carries an executable and an engine of its own.
@@ -670,7 +702,7 @@ async function main() {
   // in (TOOLS3) and the doctrine tool's two folders (WSSETUP2), which the publish lays out after the
   // application's files.
   const besideIt = [
-    HOST_HOME.at(-1), SHELL_FILES.at(-1), PLUGIN_OFFERS.at(-1), RESOURCES.at(-1), CLI_HOME.at(-1), CLI_BIN.at(-1),
+    HOST_HOME.at(-1), CONNECTOR_HOME.at(-1), SHELL_FILES.at(-1), PLUGIN_OFFERS.at(-1), RESOURCES.at(-1), CLI_HOME.at(-1), CLI_BIN.at(-1),
   ];
   check(`…and ${SHELL_FILES.join('/')} names every file the application put there, and nothing else`,
     recorded.includes(SHELL_EXE)
@@ -765,6 +797,11 @@ async function main() {
     mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, '// from the publish before\n');
   }
+  // …and one in the connector's folder (CONNECTOR1): a republish lays the connector down afresh, as it does the host,
+  // which is what the home's `bin/` copy never had.
+  const staleConnector = join(install, ...CONNECTOR_HOME, 'stale-from-before.txt');
+  mkdirSync(dirname(staleConnector), { recursive: true });
+  writeFileSync(staleConnector, 'from the publish before\n');
   const neighbour = join(install, 'a-neighbours-notes.txt');
   writeFileSync(neighbour, 'not the application’s\n');
 
@@ -783,6 +820,9 @@ async function main() {
   check(`…nor a file the doctrine tool's last layout had, in ${CLI_HOME.join('/')}/ or ${CLI_BIN.join('/')}/`,
     staleTool.every((path) => !existsSync(path)) && cliProblems(install, canonVersion).length === 0,
     [...staleTool.filter(existsSync), ...cliProblems(install, canonVersion)].join('; '));
+  check(`…nor anything of the connector before it, in ${CONNECTOR_HOME.join('/')}/, which it laid down again`,
+    !existsSync(staleConnector) && existsSync(installedConnector),
+    [staleConnector].filter(existsSync).concat(existsSync(installedConnector) ? [] : [`no ${installedConnector}`]).join('; '));
   check('…and a file it never wrote is still there', existsSync(neighbour));
   rmSync(neighbour, { force: true });
 
@@ -978,10 +1018,19 @@ if (!done.ok) throw new Error(done.text);
   const installedHome = join(home, 'bin', 'daoris-knowledge-http');
   mkdirSync(installedHome, { recursive: true });
   writeFileSync(join(installedHome, HOST_EXE), '');
+  // The connector's decoy, for the same reason (CONNECTOR1): an installed-looking connector where
+  // `publish:service --install` lands one, the copy every session on an install was handed while the install carried
+  // none. Phase 7 asserts the session was handed the install's own instead. The stub never runs a server, so an empty
+  // file is enough.
+  const homeConnector = join(home, 'bin', CONNECTOR_EXE);
+  writeFileSync(homeConnector, '');
 
   const before = new Set(hostProcesses().map((host) => host.pid));
   const environment = { ...process.env, ...shellEnvironment };
   for (const name of CLEARED) delete environment[name];
+  // Neither host is named to the shell, whatever this machine's own environment says: a name is exactly what skips the
+  // locators' order, which phases 4 and 7 assert (`ServiceHostLocator`, `KnowledgeConnector`).
+  for (const name of ['DAORIS_HTTP_HOST', 'DAORIS_MCP_HOST']) delete environment[name];
 
   // Started the way a person starts it: the launcher at the root, which hands over and exits.
   shell = spawn(launcherExe, { cwd: install, env: environment, detached: true, stdio: 'ignore' });
@@ -1291,6 +1340,20 @@ if (!done.ok) throw new Error(done.text);
     closedRecord?.note === SWEPT_NOTE
       ? `ended by the sweep's note, so the close wrote nothing: ${JSON.stringify(closedRecord)}`
       : JSON.stringify(closedRecord ?? afterClose.text));
+
+  // 🔴 CONNECTOR1: which connector binary the deployed shell handed that conversation, as the agent said it on
+  // `session/new`, read once the close has ended the conversation and its transcript holds all it said. An install
+  // that carried no connector handed every session the home's `bin/` copy, which one `publish:service --install` laid
+  // down and no republish refreshed, and an eight-day-old one rebuilt the shared store at its own older schema. The
+  // decoy planted in phase 4 is that copy, so this goes red on every machine where the order is wrong.
+  const conversationTranscript = closedRecord?.transcript ?? chatRecord?.transcript ?? '';
+  const conversationSaid = existsSync(conversationTranscript) ? readFileSync(conversationTranscript, 'utf8') : '';
+  const handed = offeredConnector(conversationSaid);
+  check(`the conversation was handed the connector published with the install, under ${CONNECTOR_HOME.join('/')}/`,
+    isInstallsConnector(handed, install), handed ?? `the stub said no daoris-knowledge server in ${conversationTranscript || '(no transcript)'}`);
+  check('…and not the home’s bin/ copy beside it',
+    Boolean(handed) && resolve(handed).toLowerCase() !== resolve(homeConnector).toLowerCase(), handed ?? '(none handed)');
+  console.log(`        handed: ${handed ?? '(none)'}`);
 
   reader.kill();
   children.length = 0;

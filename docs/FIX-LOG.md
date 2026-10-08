@@ -5,6 +5,37 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-08 — an install handed its sessions a connector no republish refreshed
+
+### Tools and driver: a deployed shell carried its HTTP host and no connector, so sessions got the home's old copy (CONNECTOR1)
+- **Symptom:** on the install, 2026-10-08: the running host answered `no such column: first_line` on every knowledge
+  route, 523 times in a day, and the shared `knowledge.db` read `user_version` 3 while the code is at 5. An intake's
+  `quest_publish` wrote its short title and its requirements into the body, because the connector's tool had neither
+  parameter.
+- **Root cause:** `publish:desktop --service` laid the HTTP host under `app/daoris-knowledge-http/` and no MCP host, so
+  `KnowledgeConnector.Candidates` found `$DAORIS_HOME/bin/daoris-knowledge.exe`, which one `publish:service --install`
+  had laid down eight days earlier and no republish touched. Every protocol-door session was handed it. It opened the
+  shared store, saw a newer schema, and dropped and rebuilt it at its own older version, after which the newer host
+  read columns the store no longer had. The HTTP host had met the same order once and been fixed (the install's own
+  copy outranks the home's, `ServiceHostLocator`); the connector's list had kept the old order, minus the install's
+  rung, because the install had nothing to put there. A driven pipe-door session in this repository ran the same old
+  copy through `tools/knowledge-server.mjs`, which mirrors that list.
+- **Fix:** `--service` publishes both hosts under `app/`, each into the folder `service-publish` gives it, by that
+  script's one recipe (`publishCommand`, exported, its runner guarded). The connector lands in `app/daoris-knowledge/`
+  and is replaced whole on each publish. `KnowledgeConnector.Candidates` looks beside the running application, as
+  `ServiceHostLocator` does, ahead of the home's `bin/`; `DAORIS_MCP_HOST` still comes first. `knowledge-server.mjs`
+  runs the install's copy for a driven session whose home is an install's `data/`. KSCHEMA1, a store refusing a newer
+  database, is the other half and a row of its own. D93's CONNECTOR1 note has the layout.
+- **Verify:** `KnowledgeConnectorTests` (8): the order, the defect (both copies present, the session handed the
+  install's), both shapes, the explicit path over both, and the fall-through; four failed first. `desktop-publish.test.ts`:
+  the plan lays the connector beside the host by the one recipe, and the recipe keeps its native libraries inside.
+  `deployment-rehearsal.test.ts`: the layout and the locator agree, and the stub says the command it was handed, read
+  back. `knowledge-server.test.ts`: a driven session on an install runs the install's copy. Driver fast half 4859 (was
+  4851); CLI 45, 27 and 13 in those three files (were 42, 23 and 11). Not run here: the deployment rehearsal, whose
+  phase 7 now asserts the conversation was handed `app/daoris-knowledge/daoris-knowledge.exe` and not the `bin/` decoy
+  phase 4 plants.
+- **Commit:** `be46c6c0`, `6f6d439f`, `df8018cd`, `4d4ad88d`.
+
 ## 2026-10-08 — a say met another request's open transaction
 
 ### Service: one connection shared by every request let a command meet another's open transaction (SQLITETX1, KNOW500's cause)
