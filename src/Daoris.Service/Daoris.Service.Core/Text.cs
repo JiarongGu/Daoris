@@ -277,7 +277,7 @@ public static partial class Text
     }
 
     /// <summary>One character of a script whose words carry no spaces between them.</summary>
-    private static bool IsIdeograph(char c) =>
+    internal static bool IsIdeograph(char c) =>
         c is (>= '一' and <= '鿿')      // CJK Unified Ideographs
            or (>= '㐀' and <= '䶿')      // CJK Extension A
            or (>= '぀' and <= 'ヿ')      // Hiragana, Katakana
