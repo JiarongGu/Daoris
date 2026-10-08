@@ -95,11 +95,11 @@ workflow (`tools/release-prep.mjs`). A hand-bump leaves every file consistent an
   the literal form had drifted to fifteen values. The diagnosis was **measured**, which is how a
   design complaint became a decision. 🔴 **git walks UP** — a diff of a path that is not a
   repository answers for the one above it (FIX-LOG).
-- **Two traps the desktop keeps.** `shot` needs **`--window <monitor|session:ID>`** or it
-  photographs whichever window Windows calls main (`eval`/`click` default to the application's
-  page). And on Chromium (D92/D93) the engine's renderer, GPU and utility processes run from the
-  app's **own exe** with `--type=`, and so does the browser, with `--daoris-browser` first (D99):
-  count and stop the application, never every process on the path.
+- **Two traps the desktop keeps.** `shot` takes the application, never its browser
+  (`--window browser`), and Windows picks which of its windows is main: a secondary one needs
+  **`--window <monitor|session:ID>`** (SHOTPICK1). And on Chromium (D92/D93) the engine's processes
+  run from the app's **own exe** with `--type=`, and so does the browser, with `--daoris-browser`
+  first (D99): count, stop and photograph the application, never every process on the path.
 - 🔴 **The desktop app is the focus, and the install is where it is judged** (owner, 2026-09-22 →
   **D62**): it carries the platform, runs the driver loop, hosts the machine's service, and is the
   only surface that reaches a machine-local fact. `npm run desktop -- run --install <dir>` starts the
