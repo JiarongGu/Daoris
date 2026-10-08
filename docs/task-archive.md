@@ -12239,3 +12239,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CONNECTOR1b — an in-place publish never leaves an older build's hosts first** (tools, driver; after CONNECTOR1). Republishing in place without `--service` leaves the previous build's `app/daoris-knowledge-http/` and `app/daoris-knowledge/`, which both locators rank first — the stale-binary defect by another road; the stage already refuses the same case (`stageRefusal`). An in-place publish without `--service` refuses or removes them, saying which. And the driver's no-connector sentence (`Driver.cs`) names `publish:desktop --service` beside `publish:service -- --install`. Contract: D93's CONNECTOR1 note. Proof: a publish-plan test for each case; a driver test for the sentence.
 
 **Outcome** 2026-10-07: a publish in place without `--service` is refused while the install carries a service host, naming each folder and `--service`, as the stage refuses — removing them would hand sessions the home's stale `bin/` copy again; the driver's no-connector sentence names `publish:desktop --service` first. Follow-up: CONNECTOR1c. Detail: D93's CONNECTOR1b note; commits 87095fef, 53300457.
+
+
+## CONNECTOR1c — every no-connector and no-host sentence names the install's own command (2026-10-08, D93)
+
+> - [ ] **CONNECTOR1c — every no-connector and no-host sentence names the install's own command** (driver, modules; after CONNECTOR1b). The intake's `NoConnectorForIntake` (`Driver.Intake.cs`) and `HostSupervisor`'s no-host sentence (`HostSupervisor.cs:87`) name only `publish:service -- --install`, though the install's own copy ranks first; each names `publish:desktop -- --to <install> --service` first, as `Driver.NoConnectorForSession` does. Contract: D93's CONNECTOR1b note. Proof: a fast test per sentence.
+
+**Outcome** 2026-10-07: the intake's no-connector sentence and the supervisor's no-host sentence name `publish:desktop -- --to <install> --service` before `publish:service -- --install`, in `NoConnectorForSession`'s words; each has a fast test. Detail: commits db9a0c4c, 0ec4b03e.

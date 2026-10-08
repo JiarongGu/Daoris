@@ -82,10 +82,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
 
         if (location is null)
         {
-            Trouble =
-                $"no service host is running at {serviceUrl}, and no {ServiceHostLocator.ExecutableName} was "
-                + $"found — install one with `npm run publish:service -- --install`, or set "
-                + $"{ServiceHostLocator.PathVariable}.";
+            Trouble = NoHost(serviceUrl);
             return false;
         }
 
@@ -116,6 +113,17 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
         Trouble = $"the service host was started from {location.Executable} but never answered at {serviceUrl}.";
         return false;
     }
+
+    /// <summary>
+    /// Why a shell with no host answering and none to start has none — a sentence for the person, naming the two
+    /// commands that lay one down in the words the driver's no-connector sentences use (CONNECTOR1c): the install's
+    /// first, as <see cref="ServiceHostLocator.Candidates"/> ranks them after the person's own path.
+    /// </summary>
+    public static string NoHost(string serviceUrl) =>
+        $"no service host is running at {serviceUrl}, and no {ServiceHostLocator.ExecutableName} was found. "
+        + "`npm run publish:desktop -- --to <install> --service` lays one beside the application, and "
+        + "`npm run publish:service -- --install` lands one in the home's `bin/`; or set "
+        + $"{ServiceHostLocator.PathVariable} to the path of one.";
 
     /// <summary>
     /// How a host this supervisor starts is started (LOG2a): its standard input redirected and

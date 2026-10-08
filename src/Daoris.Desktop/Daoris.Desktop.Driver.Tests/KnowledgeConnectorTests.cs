@@ -106,6 +106,28 @@ public sealed class KnowledgeConnectorTests : IDisposable
         Assert.Equal(installed, KnowledgeConnector.Locate(null, Home, Application));
     }
 
+    /// <summary>
+    /// CONNECTOR1c: an intake handed no connector is told the two commands a session is told (CONNECTOR1b), in the same
+    /// words and the same order, the install's first, as the locator ranks them. Each is a script the workspace has.
+    /// </summary>
+    [Fact]
+    public void An_intake_with_no_connector_is_told_the_install_and_the_home_commands_that_lay_one_down()
+    {
+        var said = Daoris.Driver.Driver.NoConnectorForIntake;
+
+        Assert.Contains($"no {KnowledgeConnector.ExecutableName} on this machine", said);
+        var install = said.IndexOf(
+            "`npm run publish:desktop -- --to <install> --service` lays one beside the application", StringComparison.Ordinal);
+        var home = said.IndexOf("`npm run publish:service -- --install` lands one in the home's `bin/`", StringComparison.Ordinal);
+        Assert.True(install >= 0, said);
+        Assert.True(home > install, said);
+
+        using var package = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "package.json")));
+        var scripts = package.RootElement.GetProperty("scripts");
+        Assert.True(scripts.TryGetProperty("publish:desktop", out _), "no publish:desktop script");
+        Assert.True(scripts.TryGetProperty("publish:service", out _), "no publish:service script");
+    }
+
     /// <summary>Development: the workspace build after every installed place, found by walking up to the manifest.</summary>
     [Fact]
     public void The_workspace_build_comes_after_the_shells_own_copy_and_the_homes()

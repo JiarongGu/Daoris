@@ -6,6 +6,38 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
+/// CONNECTOR1c: a shell that finds no host answering and none to start is told the two commands that lay one down, the
+/// install's first, in the order <see cref="ServiceHostLocator"/> ranks them after the person's own path, and in the words
+/// the driver's no-connector sentences use. Each is a script the workspace has. It starts nothing, so it is in the fast
+/// half (MOD8), where <see cref="HostSupervisorTests"/> is not.
+/// </summary>
+public sealed class HostSupervisorNoHostTests
+{
+    [Fact]
+    public void A_shell_with_no_host_is_told_the_install_and_the_home_commands_that_lay_one_down()
+    {
+        var said = HostSupervisor.NoHost("http://localhost:5177");
+
+        Assert.Contains("no service host is running at http://localhost:5177", said);
+        Assert.Contains($"no {ServiceHostLocator.ExecutableName} was found", said);
+        var install = said.IndexOf(
+            "`npm run publish:desktop -- --to <install> --service` lays one beside the application", StringComparison.Ordinal);
+        var home = said.IndexOf("`npm run publish:service -- --install` lands one in the home's `bin/`", StringComparison.Ordinal);
+        Assert.True(install >= 0, said);
+        Assert.True(home > install, said);
+        Assert.Contains(ServiceHostLocator.PathVariable, said);
+
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "daoris.json"))) root = root.Parent;
+        Assert.NotNull(root);
+        using var package = JsonDocument.Parse(File.ReadAllText(Path.Combine(root.FullName, "package.json")));
+        var scripts = package.RootElement.GetProperty("scripts");
+        Assert.True(scripts.TryGetProperty("publish:desktop", out _), "no publish:desktop script");
+        Assert.True(scripts.TryGetProperty("publish:service", out _), "no publish:service script");
+    }
+}
+
+/// <summary>
 /// Adopting a host that is already answering is the supervisor's rule, and it says nothing about
 /// WHAT that host serves — the first deployment's 4d: the shell adopted the machine's host, the
 /// window was new, the page was old, and no surface said so. The second deployment fixed which host
