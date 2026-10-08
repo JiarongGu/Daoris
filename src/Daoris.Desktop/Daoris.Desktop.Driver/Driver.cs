@@ -1077,7 +1077,7 @@ public sealed partial class Driver(
 
             // Another agent's findings go on only in their own session (XAGENT1e, design §6.7): where they are all that waits,
             // nothing is carried on, and they go to the person. The person's words beside them are carried on as ever.
-            if (!park.Waiting.Any(word => word.Persons)) return CannotGoOn(quest, park, fellBack);
+            if (park.Findings.Count > 0 && !park.Waiting.Any(word => word.Persons)) return CannotGoOn(quest, park, fellBack);
 
             // A taken quest is carried on, an open one started, handed the words, in the tree the session worked in.
             start = start with { Resumes = park.Parked || park.Said is null ? park with { State = "completed" } : park };
