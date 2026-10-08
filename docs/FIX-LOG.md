@@ -5,6 +5,38 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-09 — a website whose name points at the loopback could read the local host (ORIGIN2)
+
+### Service: a page under a rebound name was its own origin, and its reads were answered
+- **Symptom:** a request to the local host whose `Host` was a website's name (`rebound.example:5177`) was answered like
+  any loopback caller's: `GET /api/registry` with the repositories' roots, `/api/quests`, a search over the index, the
+  page itself. A website that points its DNS name at 127.0.0.1 (DNS rebinding) makes its page same-origin with the
+  host, so the browser lets the page read every answer. Reproduced as host tests before the fix (`ReboundHostTests`,
+  three failing).
+- **Root cause:** a local host trusts the loopback (D47 §7, as amended), and the loopback is where the request came
+  from, not what it was sent to. CORS judges the page's origin against the host it called, and under a rebound name
+  they are one, so CORS has nothing to refuse; ORIGIN1's gate refuses only writes, and only a page that is not its own
+  origin. Nothing read the `Host` header, the one part of the request that says which name the browser thought it was
+  talking to.
+- **Fix:** a gate before CORS and before ORIGIN1's, on a local host only (`Program.cs`): any request whose `Host` names
+  something other than a loopback name (`localhost` in any case, a 127/8 address, `[::1]`; any port) is refused 403,
+  `{ error, code: "host" }`, with one `host.refused` warning in the machine log by the route's pattern, never the name.
+  `BrowserOrigins.IsLoopbackName` is the one test, which ORIGIN1's own-origin check now reads too. A request that names
+  no host (HTTP/1.0, a program) is answered: every browser names the host it asked for. A shared host judges no name:
+  it is reached by its deployment's own, and its key gate keeps a page off it.
+- **Verify:** `ReboundHostTests` and `ReboundHostLogTests` (29 rows): under a rebound name the registry, the quests, a
+  search, the page, a no-body write as its own origin, a write with no origin and a preflight refused; every route by
+  the host's own table under five names that are not the loopback's (a rebound name with and without a port, a name
+  that starts `localhost.`, a LAN address, `0.0.0.0`); `localhost`, `LocalHost`, `127.0.0.1`, `127.8.9.10`, `[::1]`,
+  each with and without a port, and no host at all, answered, the shell's page pressing a door under each; the name
+  test's table; ORIGIN1's own origin never a rebound one; one log line without the name or the caller's address; a
+  shared host answering its keyed machine under its own name. ORIGIN1's rebound row moved here, since the name refuses
+  it first. Then a real Kestrel host from this build, probed with curl: the same refusals, `[::1]` and `localhost`
+  answered, an HTTP/1.0 request with no `Host` answered, and one `host.refused` line per refusal. The family
+  rehearsal gains both checks on Kestrel (section 2): ORIGIN1's no-body foreign `POST` answering `cross-site`, and a
+  read under a rebound name, sent through `node:http` since `fetch` names the address's own host whatever it is told.
+- **Commit:** `683b5f5e`.
+
 ## 2026-10-09 — a website could press a door on the local host (ORIGIN1)
 
 ### Service: a page on any site, in any browser on this machine, could give the yes to a departure

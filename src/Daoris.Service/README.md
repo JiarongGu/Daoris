@@ -517,6 +517,16 @@ the CORS policy's own origins (the shell's page on a local host, D92, and `DAORI
 on a local host, its own origin under a loopback name. A client that sends neither header (the CLI, the
 driver, a rehearsal) is answered as before. A read is CORS's, as it was.
 
+**A local host answers only its loopback names** (ORIGIN2, `BrowserOrigins.IsLoopbackName`). A website whose DNS
+name is pointed at 127.0.0.1 is its own origin here, so CORS and the origin gate both see a same-origin page, and its
+reads would be answered: the index, the quests, the roots a loopback caller is given. So every request on a local
+host, reads, writes and preflights alike, whose `Host` is not `localhost`, a 127/8 address or `[::1]` (any port, any
+case) is refused 403 before anything else runs: `{ "error": <sentence>, "code": "host" }`, and one `host.refused`
+warning in the machine log by the route's pattern, never the name. A request that names no host is no browser's and
+is answered. Every caller already uses a loopback name: the shell and its page at `127.0.0.1`, the CLI, Playwright and
+the rehearsals at `localhost`, the development proxy keeping its own `localhost`. A shared host judges no name: it is
+reached by its deployment's own, and its key gate keeps a page off it (D47 §7).
+
 **A shared deployment takes knowledge from a named commit on the canonical line** (D48 §6). Each feed
 carries `{ commit, committedAt, branch }` stamped from git by the machine that holds the checkout; the
 deployment refuses one from a branch that is not the repository's declared default. Wholesale

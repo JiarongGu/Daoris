@@ -188,11 +188,21 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     }
 
     /// <summary>
-    /// REVIEWENV1a (D154 points 1–2, design §1.7): the tool tells the helper what a review takes, that production is never
-    /// one, that `--required` is the person's say-so, and that nothing reads it yet, so it proposes the shape the box takes.
+    /// What every door says after a review rule's own sentences, in the gate's words: the shared table's <c>gate</c> rows,
+    /// <c>src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/review-rules.json</c>, spelled here from the table and
+    /// never from the tool, so a change to one is seen at the other (REVIEWENV1c3).
+    /// </summary>
+    private const string GateSays = "Where work here waits for your review, it lands only once you say it is reviewed, "
+        + "`daoris-driver quest review <quest> reviewed`, or skip the review, `daoris-driver quest review <quest> skip`. "
+        + "No set-up step is composed for you yet.";
+
+    /// <summary>
+    /// REVIEWENV1a (D154 points 1–2, design §1.7), as REVIEWENV1c3 words it: the tool tells the helper what a review takes,
+    /// that production is never one, that `--required` is the person's say-so, and what the landing's gate then does with
+    /// work that waits, in the sentence every other door says. Never that nothing reads it: the gate does (REVIEWENV1c).
     /// </summary>
     [Fact]
-    public void The_tool_says_what_a_review_takes_that_production_is_never_one_and_that_nothing_reads_it_yet()
+    public void The_tool_says_what_a_review_takes_that_production_is_never_one_and_what_the_gate_does()
     {
         var method = typeof(Daoris.Knowledge.Mcp.KnowledgeTools).GetMethod(nameof(Daoris.Knowledge.Mcp.KnowledgeTools.ProposeSetting))!;
         string Described(string name) => method.GetParameters().Single(parameter => parameter.Name == name)
@@ -206,7 +216,12 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
         Assert.Contains("a review", Described("workspace"));
         Assert.Contains("never production", tool);
         Assert.Contains("propose it only when they ask", tool);
-        Assert.Contains("declared only, nothing reads it yet", tool);
+        Assert.Contains(GateSays, tool);
+
+        // The review's clause runs from its door's name to the opinion's, whose rule nothing reads yet.
+        var review = tool[tool.IndexOf("`review` declares", StringComparison.Ordinal)..tool.IndexOf("`opinion` declares", StringComparison.Ordinal)];
+        Assert.DoesNotContain("declared only", review, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("nothing reads it", review, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>

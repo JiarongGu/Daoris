@@ -4,7 +4,8 @@ using Daoris.Knowledge;
 namespace Daoris.Knowledge.Http;
 
 /// <summary>
-/// Which pages a browser may call this host from, and the gate that keeps every other page off its writes (ORIGIN1).
+/// Which pages a browser may call this host from, and the gate that keeps every other page off its writes (ORIGIN1);
+/// and the names a local host answers under, which keep a page whose name was pointed at the loopback off it (ORIGIN2).
 /// </summary>
 /// <remarks>
 /// <para><b>Why a gate, and not CORS alone.</b> CORS keeps a page from <i>reading</i> an answer. A <c>POST</c> with no
@@ -40,6 +41,12 @@ namespace Daoris.Knowledge.Http;
 /// <para><b>The host's own origin</b> is the one the request itself names, <c>{scheme}://{Host}</c>, and only under a
 /// loopback name. A name rebound to the loopback by a website's DNS would otherwise make that website's page its own
 /// origin here.</para>
+///
+/// <para><b>The name's gate</b> (ORIGIN2, <see cref="HostCode"/>): a local host refuses every request, reads included,
+/// whose <c>Host</c> is not a loopback name (<see cref="IsLoopbackName"/>), before CORS or this gate is asked. A rebound
+/// page is same-origin with the host, so neither could tell it from the host's own page, and its reads would be
+/// answered: the index, the quests, the roots a loopback caller is given. A shared host has no such gate: it is
+/// reached by its deployment's own name, which this build cannot know, and its key gate keeps a page off it.</para>
 ///
 /// <para><b>A shared host keeps the gate too</b>, in front of its key gate. A browser reaches it on the network, and
 /// today a bearer key is what stops a page elsewhere, since a browser never sends one on its own; a browser credential
@@ -109,12 +116,32 @@ public static class BrowserOrigins
     /// Whether <paramref name="origin"/> is the address the request was sent to, under a loopback name: the page this
     /// host served, calling it on its own origin.
     /// </summary>
-    public static bool IsOwnOrigin(HttpRequest request, string origin)
+    public static bool IsOwnOrigin(HttpRequest request, string origin) =>
+        request.Host.HasValue && IsLoopbackName(request.Host.Host)
+        && string.Equals(origin, $"{request.Scheme}://{request.Host.Value}", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Whether <paramref name="name"/>, a request's host without its port, is one of this machine's loopback names:
+    /// <c>localhost</c> in any case, or a loopback address (127/8, <c>[::1]</c>). The one definition the host's own
+    /// origin and the name's gate both read (ORIGIN1, ORIGIN2). A name under <c>.localhost</c> is not one: no caller
+    /// uses one, and the shell's page names <c>daoris.localhost</c> as its origin, never as the host it calls.
+    /// </summary>
+    public static bool IsLoopbackName(string name)
     {
-        if (!request.Host.HasValue) return false;
-        var name = request.Host.Host.Trim('[', ']');
-        var loopback = string.Equals(name, "localhost", StringComparison.OrdinalIgnoreCase)
-            || (IPAddress.TryParse(name, out var address) && IPAddress.IsLoopback(address));
-        return loopback && string.Equals(origin, $"{request.Scheme}://{request.Host.Value}", StringComparison.OrdinalIgnoreCase);
+        var bare = name.Trim('[', ']');
+        return string.Equals(bare, "localhost", StringComparison.OrdinalIgnoreCase)
+            || (IPAddress.TryParse(bare, out var address) && IPAddress.IsLoopback(address));
     }
+
+    /// <summary>The name's refusal's code (ORIGIN2), which a client reads instead of the sentence.</summary>
+    public const string HostCode = "host";
+
+    /// <summary>The name's refusal's sentence (ORIGIN2).</summary>
+    public const string HostSentence =
+        "This request named this service by a name that is not this machine's own. A local service answers only "
+        + "`localhost`, `127.0.0.1` or `[::1]`, so that a website whose name was pointed at this machine reads nothing "
+        + "here. Nothing was read or changed.";
+
+    /// <summary>The machine log's event for the name's refusal: one warning per request, by its route's pattern.</summary>
+    public const string HostEvent = "host.refused";
 }

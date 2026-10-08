@@ -161,8 +161,8 @@ public sealed class CrossSiteWriteTests(LocalHost host) : IClassFixture<LocalHos
             // Another port on the loopback is the same site to a browser: any local server's page.
             ("a page on another loopback port", new() { ["Origin"] = "http://localhost:3000", ["Sec-Fetch-Site"] = "same-site" }, "localhost:5177"),
             ("a page on another loopback port that names no origin", new() { ["Sec-Fetch-Site"] = "same-site" }, "localhost:5177"),
-            // A name rebound to the loopback: the page is its own origin, under a name that is not this machine's.
-            ("a page under a rebound name", new() { ["Origin"] = "http://rebound.example:5177", ["Sec-Fetch-Site"] = "same-origin" }, "rebound.example:5177"),
+            // A name rebound to the loopback is refused by its name before this gate is asked, reads included (ORIGIN2,
+            // ReboundHostTests); that the host's own origin is never one is held there too.
         };
 
         var executed = new List<string>();

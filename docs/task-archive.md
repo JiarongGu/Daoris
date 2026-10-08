@@ -12400,3 +12400,17 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **XAGENT1c2 — the connector default allows the opinion tools** (driver, cli; after XAGENT1c). `opinion_give` and `opinion_answer` join the `connector` default in both twins (`Permissions.cs`, `permissions.ts`), as `review_serve` did; the service answers each only for its own session. Contract: design §5.4, D155's XAGENT1c note. Proof: `PermissionRulesTests` and `permissions.test.ts`.
 
 **Outcome** 2026-10-07: the connector default allows `opinion_give` and `opinion_answer` in both twins, held by `PermissionRulesTests`' new theory and `permissions.test.ts`; the root README says what a session may do by default. Detail: commits 6738d256, 42615606.
+
+
+## ORIGIN2 — a Host allow-list on the local host (2026-10-09, D46)
+
+> - [ ] **ORIGIN2 — a Host allow-list on the local host** (service; after ORIGIN1). A website whose name resolves to 127.0.0.1 (DNS rebinding) is same-origin with the host, so its reads are answered — the index, quests, registration roots given to loopback callers. In local mode refuse any request whose `Host` is not a loopback name, using ORIGIN1's `BrowserOrigins`; and add the family rehearsal's one-line check that a foreign-Origin no-body `POST` to `/accept` answers 403 `cross-site` on Kestrel. Contract: D46, D47 §7. Proof: a host test where `Host: rebound.example` is refused and loopback names answered; the rehearsal check.
+
+**Outcome** 2026-10-07: a local host refuses any request whose `Host` is not a loopback name (403 `host`, one `host.refused` warning without the name), so a website whose DNS name points at 127.0.0.1 reads nothing; a shared host checks no name (D47 §7); the family rehearsal checks both ORIGIN1's and ORIGIN2's refusals on Kestrel. Detail: D46's ORIGIN2 note, FIX-LOG 2026-10-09; commits 683b5f5e, a259830d.
+
+
+## REVIEWENV1c3 — Ask Daoris's service door stops saying the review is declared only (2026-10-09, D154)
+
+> - [ ] **REVIEWENV1c3 — Ask Daoris's service door stops saying the review is declared only** (service; after REVIEWENV1c2). `KnowledgeTools.Help.Setting.cs` (lines 23, 28) and `HelpSettingProposalTests.cs:209` still tell agents a review rule is declared only; say the gate's sentence as the twins' `gate` table does. Contract: D154's REVIEWENV1c2 note. Proof: the test row in the gate's words.
+
+**Outcome** 2026-10-07: `setting_propose`'s review clause quotes the gate sentence of `review-rules.json`'s `gate` rows instead of *declared only*; the opinion clause keeps it until XAGENT1f. Follow-up: REVIEWENV1c4. Detail: commit a55c43de.

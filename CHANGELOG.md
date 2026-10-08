@@ -196,6 +196,8 @@ with the version and date at release.
   `daoris-driver quest review` gives it.
 - A web page in your browser can no longer press a door on Daoris's local service.
 - Setup's *Review before landing* now says that work there waits for your review, and how to give it.
+- Daoris's local service answers only to its own loopback names, so a website cannot read it through a rebound
+  name.
 
 The first version: doctrine that installs, is checked, and flows back.
 
