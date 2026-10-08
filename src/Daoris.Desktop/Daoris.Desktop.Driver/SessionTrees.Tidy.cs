@@ -232,8 +232,9 @@ public sealed partial class SessionTrees
     /// person's is theirs to delete.
     /// </summary>
     /// <remarks>
-    /// Unforced it is the clean-up's proof (D88): it goes only where a branch of the person's holds every commit, and the
-    /// refusal names the commits it would lose. <paramref name="force"/> is the person saying it again, meaning it. The record
+    /// Unforced it is the clean-up's proof (D88): it goes only where a branch of the person's holds every commit, or where its
+    /// work is held by content (SQUASHTIDY1, <see cref="HeldByContentAsync"/>), and the refusal names the commits it would lose.
+    /// <paramref name="force"/> is the person saying it again, meaning it. The record
     /// forgets it once it is gone. <b>It asks no sessions</b>, so forced it would take a tree a live session holds: the
     /// person's doors reach it through <see cref="SessionBranchDiscard"/>, which keeps such a branch (LAND3c).
     /// </remarks>
@@ -269,6 +270,7 @@ public sealed partial class SessionTrees
                 : new(false, $"`{branch}` is checked out at {tree}, which is not a session tree — Daoris removes nothing there.");
         }
 
+        ContentHold? held = null;
         if (!force)
         {
             var (logCode, unlanded, logErr) = await UnlandedLogAsync(root, branch, ct).ConfigureAwait(false);
@@ -278,17 +280,25 @@ public sealed partial class SessionTrees
                     + "The branch stays; say it again with --force to discard it.");
             }
 
+            // SQUASHTIDY1: the same proof by content as a tree's removal, against the line of the workspace it grew in.
             if (!string.IsNullOrWhiteSpace(unlanded))
             {
-                return new(false, $"`{branch}` holds commits no branch of yours holds:\n{unlanded.Trim()}\n"
-                    + "If its work is not wanted — a failed or superseded attempt — say it again with --force to discard them.");
+                var grewIn = Grown.All().LastOrDefault(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)
+                                                                && string.Equals(entry.Branch, branch, StringComparison.Ordinal))?.Workspace;
+                var line = (await LineAsync(root, repository, RemoteTarget.Workspace(grewIn), ct).ConfigureAwait(false)).Branch;
+                held = await HeldByContentAsync(root, $"refs/heads/{branch}", line, ct).ConfigureAwait(false);
+                if (held is null)
+                {
+                    return new(false, $"`{branch}` holds commits no branch of yours holds:\n{unlanded.Trim()}\n"
+                        + "If its work is not wanted — a failed or superseded attempt — say it again with --force to discard them.");
+                }
             }
         }
 
         var (deleteCode, _, deleteErr) = await WorkingTree.GitAsync(root, ["branch", "-D", branch], ct).ConfigureAwait(false);
         if (deleteCode != 0) return new(false, $"git would not delete `{branch}`: {FirstLine(deleteErr)}");
         Forget(repository, branch);
-        return new(true, $"removed the session branch `{branch}` from `{repository}`.");
+        return new(true, $"removed the session branch `{branch}` from `{repository}`" + (held is null ? "." : $": {held.Said}."));
     }
 
     /// <summary>The record forgets one branch; a record that could not be written only keeps a name no branch has.</summary>

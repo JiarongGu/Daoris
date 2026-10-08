@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../i18n';
+import { en } from '../locales';
 import { UpdateBanner, type UpdateState } from './UpdateBanner';
 
 // UPDATE1 (D139 §2, §3): the install's update as a quiet strip — staged and waiting, draining, applying, refused, and how
@@ -16,9 +17,25 @@ const state = (extra: Partial<UpdateState>): UpdateState => ({
 const draw = (update: UpdateState | undefined, busy = false) => {
   const onSay = vi.fn();
   const onDismiss = vi.fn();
-  const { container } = render(<UpdateBanner update={update} busy={busy} onSay={onSay} onDismiss={onDismiss} />);
-  return { onSay, onDismiss, container };
+  const { container, unmount } = render(<UpdateBanner update={update} busy={busy} onSay={onSay} onDismiss={onDismiss} />);
+  return { onSay, onDismiss, container, unmount };
 };
+
+// SWAP2c (D139's SWAP2 note): the two codes SWAP2 added to the journal, each said in the reader's language. The
+// journal's own sentence is English and stays the terminal's (`daoris-driver update`).
+const DETAIL = 'the journal’s own English sentence.';
+const SWAP2_CODES = [
+  {
+    code: 'move', phase: 'rolled-back',
+    en: 'went back to the build before it: a file could not be moved for a reason other than being held open, so what had moved was put back; daoris-driver update says why.',
+    zh: '已退回到之前的版本：有文件因被占用以外的原因无法移动，已移动的文件都已放回原处；daoris-driver update 会说明原因。',
+  },
+  {
+    code: 'error', phase: 'refused',
+    en: 'was refused before anything was replaced: the launcher met an error before it could put the build in place, so the build before it runs on; stage this one again to retry.',
+    zh: '在替换任何文件之前被拒绝：启动器在把构建换上之前出错，之前的构建照常运行；请重新暂存这个构建再试。',
+  },
+] as const;
 
 describe('the update banner', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
@@ -69,6 +86,34 @@ describe('the update banner', () => {
       'Daoris 0.0.2 could not start, so Daoris went back to the build before it: the new build ended before it came up.');
     await userEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
     expect(onDismiss).toHaveBeenCalledOnce();
+  });
+
+  it.each(SWAP2_CODES)('a swap ended by `$code` is said in its own words, in English and in 中文', async ({ code, phase, en: english, zh }) => {
+    const update = state({ outcome: { phase, build: 'b1', version: '0.0.2', commit: null, reason: code, detail: DETAIL } });
+
+    const { unmount } = draw(update);
+    expect(screen.getByRole('status')).toHaveTextContent(english);
+    expect(screen.getByRole('status')).not.toHaveTextContent(DETAIL);
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    draw(update);
+    expect(screen.getByRole('status')).toHaveTextContent(zh);
+    expect(screen.getByRole('status')).not.toHaveTextContent(DETAIL);
+  });
+
+  // The banner's set is what made SWAP2's codes fall through to the journal's English: every reason the catalogue words,
+  // the banner words, so a code given a sentence is never left out of the set again.
+  it('words every reason the catalogue has a sentence for', () => {
+    const codes = Object.keys(en).filter((key) => key.startsWith('update.why.')).map((key) => key.slice('update.why.'.length));
+    expect(codes).toEqual(expect.arrayContaining(['move', 'error']));
+
+    for (const code of codes) {
+      const { unmount } = draw(state({ outcome: { phase: 'refused', build: 'b1', version: '0.0.2', reason: code, detail: DETAIL } }));
+      expect(screen.getByRole('status')).toHaveTextContent(i18n.t(`update.why.${code}`));
+      expect(screen.getByRole('status')).not.toHaveTextContent(DETAIL);
+      unmount();
+    }
   });
 
   it('after an update, says the version it was updated to', () => {

@@ -18,7 +18,7 @@ internal static class TreesConsole
     internal static string Describe(SweepItem item) => $"{item.Repository}  {item.Branch}  " + item.Kind switch
     {
         SweepKind.Empty => $"nothing beyond `{item.Where}`",
-        SweepKind.Landed => $"landed{(item.Where is { } where ? $" on `{where}`" : "")}",
+        SweepKind.Landed => item.HeldBy is { } held ? held.Said : $"landed{(item.Where is { } where ? $" on `{where}`" : "")}",
         SweepKind.Unlanded => item.Commits > 0
             ? $"{item.Commits} commit(s) no branch of yours holds"
             : $"unlanded — {item.Detail}",

@@ -33,6 +33,29 @@ export const Updated: Story = {
   args: { update: state({ outcome: { phase: 'installed', build: STAGED.id, version: '0.0.1', commit: 'abc1234' } }) },
 };
 
+// SWAP2c: the two codes SWAP2 added, said in the banner's words; `detail` is the journal's English, which they replace.
+export const RolledBackByAFailedMove: Story = {
+  args: {
+    update: state({
+      outcome: {
+        phase: 'rolled-back', build: STAGED.id, version: '0.0.1', commit: 'abc1234', reason: 'move',
+        detail: 'a move the swap had to make failed (the target already exists); nothing was changed.',
+      },
+    }),
+  },
+};
+
+export const RefusedByTheLaunchersError: Story = {
+  args: {
+    update: state({
+      outcome: {
+        phase: 'refused', build: STAGED.id, version: '0.0.1', commit: 'abc1234', reason: 'error',
+        detail: 'the launcher met an error before it could swap.',
+      },
+    }),
+  },
+};
+
 export const RolledBackWhileANewerIsStaged: Story = {
   args: {
     update: state({

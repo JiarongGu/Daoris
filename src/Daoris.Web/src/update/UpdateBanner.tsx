@@ -29,10 +29,13 @@ export type UpdateState = {
   last: UpdateOutcome | null;
 };
 
-/** The codes a refusal or a roll-back is said by; anything else keeps the driver's own sentence. */
+/**
+ * The codes a refusal or a roll-back is said by; anything else keeps the driver's own sentence. `move` and `error` are
+ * SWAP2's (D139's SWAP2 note): a move that failed other than by a hold, and the launcher's error with nothing under way.
+ */
 const WHY = new Set([
   'manifest', 'schema', 'path', 'missing', 'size', 'hash', 'unlisted', 'required', 'host', 'launcher', 'busy', 'previous',
-  'exited', 'start', 'interrupted',
+  'exited', 'start', 'interrupted', 'move', 'error',
 ]);
 
 /**
