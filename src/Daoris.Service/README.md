@@ -81,7 +81,8 @@ row is its cells labelled by their columns, not its file's line as written, so i
 entry whose feed named none or named lines its body cannot be. A hit names `path:first-last` and the line its excerpt
 starts on (`KnowledgeHit.ExcerptLine`, from `Text.ExcerptAt`), the frontmatter it skipped counted; `knowledge_get`
 reads a range from the entry as indexed, never from the disk, so a deployment fed by another machine reads it too. The
-store keeps them (`first_line`, `last_line`; schema 5, so an older index is rebuilt when it opens), `/api/search`
+store keeps them (`first_line`, `last_line`; schema 5, so an older index is rebuilt when it opens, and a newer one
+is left as it is and refused, KSCHEMA1 below), `/api/search`
 answers `firstLine`, `lastLine` and `excerptLine` beside every field it had, `/api/entry` and `/api/entries` the first
 two, and `/api/feed/entries` takes them, digesting them only where an entry names them.
 
@@ -352,6 +353,17 @@ the same file (`knowledge.db` under the Daoris home — `DAORIS_HOME`, which the
 for the account, D63), which is how a quest published from one repository's session is waiting when
 another repository's session starts. With no home and no `DAORIS_KNOWLEDGE_DB`, the host says so on
 stderr and exits 2 rather than opening a database under the user profile.
+
+**An older build never touches a newer index, and works with the rest of the store** (KSCHEMA1). The index's schema has
+a version (`user_version`): an older one is rebuilt when it opens, as before. A newer one, which only a newer Daoris
+writes, is left as it is: nothing is dropped, created or stamped, `Rebuilt` stays false and the fed commits are kept.
+The store opens, and its quests, sessions, asks, keys and registry work; every operation on the index throws
+`NewerIndexException`, whose sentence names both versions and no path. The HTTP host answers it on every route over the
+index as 409 in the error shape, and the connector's index tools answer it as their text. The registry answers with no
+entry counts, and no refresh is tried. Each host says it once at start, on stderr with the folder to update and in its
+log as `index.refused`. The read and the stamp are one write transaction, so an older build opening beside a newer
+one's stamp waits for it and leaves it. D36's KSCHEMA1 note says why the index alone is refused, and what an older build
+can still do to the stores that add columns.
 
 **This repository's own `.mcp.json` starts a built host, never a build** (ORIENT1c): `node
 tools/knowledge-server.mjs`. It ran `dotnet run` before, which built at every session's start, once per

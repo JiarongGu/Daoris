@@ -83,6 +83,22 @@ public sealed partial class KnowledgeTools(
     private static string Scoped(string? scope) =>
         scope is null ? " across every workspace on this machine" : $" in workspace `{scope}`";
 
+    /// <summary>
+    /// What an index tool reads, or the index's refusal as the tool's answer (KSCHEMA1): a newer Daoris wrote the index,
+    /// and the agent is told so in its sentence rather than handed the protocol's bare error.
+    /// </summary>
+    private static async Task<(T? Read, string? Refused)> FromIndexAsync<T>(Task<T> reading)
+    {
+        try
+        {
+            return (await reading.ConfigureAwait(false), null);
+        }
+        catch (NewerIndexException refused)
+        {
+            return (default, refused.Message);
+        }
+    }
+
     [McpServerTool(Name = "knowledge_search")]
     [Description(
         "Search engineering knowledge across every repository in this family: decisions and their "
@@ -106,7 +122,7 @@ public sealed partial class KnowledgeTools(
     {
         if (UnknownKinds(kinds) is { } refused) return refused;
         var scope = await ScopeAsync(workspace, ct).ConfigureAwait(false);
-        var answer = await service.AnswerAsync(
+        var (answered, refusedIndex) = await FromIndexAsync(service.AnswerAsync(
             new KnowledgeQuery(query)
             {
                 Kinds = KnowledgeQuery.ParseKinds(kinds),
@@ -114,7 +130,9 @@ public sealed partial class KnowledgeTools(
                 Provenance = localOnly ? Provenance.Local : null,
                 Limit = Math.Clamp(limit, 1, 50),
                 Workspace = scope,
-            }, ct).ConfigureAwait(false);
+            }, ct)).ConfigureAwait(false);
+        if (refusedIndex is not null) return refusedIndex;
+        var answer = answered!;
         var hits = answer.Hits;
 
         // 🔴 Nothing answering is not nothing matching (TIER1): an agent told "no matches" by an index
@@ -186,7 +204,8 @@ public sealed partial class KnowledgeTools(
         string? lines = null,
         CancellationToken ct = default)
     {
-        var entry = await service.FindAsync(id, ct).ConfigureAwait(false);
+        var (entry, refusedIndex) = await FromIndexAsync(service.FindAsync(id, ct)).ConfigureAwait(false);
+        if (refusedIndex is not null) return refusedIndex;
         if (entry is null) return $"No entry with id `{id}`. Ids come from `knowledge_search`.";
 
         var whole = entry.Lines is { } span ? $"{entry.RelativePath}:{span}" : entry.RelativePath;
@@ -226,7 +245,9 @@ public sealed partial class KnowledgeTools(
         CancellationToken ct = default)
     {
         var scope = await ScopeAsync(workspace, ct).ConfigureAwait(false);
-        var summary = await service.SummarizeAsync(scope, ct).ConfigureAwait(false);
+        var (summarized, refusedIndex) = await FromIndexAsync(service.SummarizeAsync(scope, ct)).ConfigureAwait(false);
+        if (refusedIndex is not null) return refusedIndex;
+        var summary = summarized!;
         if (summary.Count == 0)
         {
             return scope is null
@@ -262,10 +283,12 @@ public sealed partial class KnowledgeTools(
     {
         if (UnknownKinds(kinds) is { } refused) return refused;
         var scope = await ScopeAsync(workspace, ct).ConfigureAwait(false);
-        var candidates = await service.FindConvergenceAsync(
+        var (found, refusedIndex) = await FromIndexAsync(service.FindConvergenceAsync(
             new ConvergenceOptions(
-                minimumSimilarity, KnowledgeQuery.ParseKinds(kinds), Math.Clamp(limit, 1, 50), scope), ct)
+                minimumSimilarity, KnowledgeQuery.ParseKinds(kinds), Math.Clamp(limit, 1, 50), scope), ct))
             .ConfigureAwait(false);
+        if (refusedIndex is not null) return refusedIndex;
+        var candidates = found!;
 
         if (candidates.Count == 0)
         {
@@ -662,7 +685,9 @@ public sealed partial class KnowledgeTools(
     [Description("Re-read every repository from disk and rebuild the index. Use after doctrine or decisions have changed; it takes about a second.")]
     public async Task<string> RefreshAsync(CancellationToken ct = default)
     {
-        var report = await service.RefreshAsync(ct).ConfigureAwait(false);
+        var (refreshed, refusedIndex) = await FromIndexAsync(service.RefreshAsync(ct)).ConfigureAwait(false);
+        if (refusedIndex is not null) return refusedIndex;
+        var report = refreshed!;
         var withheld = report.Withheld > 0 ? $", {report.Withheld} withheld by policy" : "";
         // Named, never silently skipped (D48 §3): a registered checkout that has moved contributes
         // nothing while the count still looks healthy — the ghost failure from the other direction.

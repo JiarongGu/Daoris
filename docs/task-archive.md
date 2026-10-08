@@ -12211,3 +12211,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **LOGVIEW1 — a log line's exception can be read whole** (web-settings). Settings → Logs cuts each value at 160 characters, so a host line's `exception` showed Kestrel's sentence and the first words of a type, and the defect it named (CONNECTOR1) was read as "no type logged" for a day. A value cut short says so and opens whole (its frames on their own lines) on the line's expansion, both catalogues. Contract: the machine-log design §6, platform-ux §4. Proof: a vitest with a 2,000-character exception expanded whole; a shot of an expanded line.
 
 **Outcome** 2026-10-07: a log line's cut value says how many characters it left out, and pressing that opens it whole beneath the line in a monospace well, one frame per line and selectable, both catalogues; lines are keyed by moment, so a re-read keeps an open one open. Detail: `Logs.tsx`'s `LogLine` remarks; commit 758a8941.
+
+
+## KSCHEMA1 — an older build never drops a newer store (2026-10-08, D36)
+
+> - [ ] **KSCHEMA1 — an older build never drops a newer store** (service; after CONNECTOR1's finding). `SqliteKnowledgeStore.EnsureSchemaAsync` drops and rebuilds on ANY version mismatch (`SqliteKnowledgeStore.cs:73`), so an old binary opening a newer database destroys it. A database newer than the code refuses to open, naming both versions, in every store that versions its schema; only an older one is rebuilt or migrated. Contract: D36, D24. Proof: a store test opening a database stamped one version ahead, which refuses and leaves its tables whole.
+
+**Outcome** 2026-10-07: an older build never touches a newer knowledge index and refuses nothing else: the store opens with nothing dropped or stamped, its quests, sessions, asks, keys and registry work, and every index operation answers one path-free sentence naming both versions (409 over HTTP, the tool's text over MCP); each host says it once at start. Refusing the whole store was built first and turned back: a rollback (D139) would have left the host unable to start. Detail: D36's KSCHEMA1 note, FIX-LOG KSCHEMA1; commits c03c92c6, d912f6c3, 7a8fc52b.

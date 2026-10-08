@@ -97,6 +97,15 @@ var embedder = HostComposition.BuildEmbedder(serviceOptions);
 // the MCP host is a local door. No home, no keeper, and a publish carrying files is refused (D63).
 var composed = await ServiceFactory.CreateAsync(
     serviceOptions, embedder, remotes: new ConfiguredRemotes(), files: QuestFiles.FromEnvironment());
+
+// KSCHEMA1: an index a newer Daoris wrote is left as it is, and this connector still serves what is not derived. Said
+// once, here: on stderr with the folder to update, since that stream is this machine's, and in the log by its versions.
+if (composed.IndexRefusal is { } refusedIndex)
+{
+    Console.Error.WriteLine($"{refusedIndex.Message} This build runs from '{refusedIndex.Build}'.");
+    log.Warn("index.refused", ("found", refusedIndex.Found), ("known", refusedIndex.Known));
+}
+
 builder.Services.AddSingleton(composed.Service);
 builder.Services.AddSingleton(composed.Quests);
 builder.Services.AddSingleton(composed.Exchange);

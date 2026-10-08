@@ -155,6 +155,14 @@ var composed = await ServiceFactory.CreateAsync(
     proposals: mode == ServiceMode.Local ? RuleProposalBox.FromEnvironment() : null);
 builder.Services.AddSingleton(composed);
 
+// KSCHEMA1: an index a newer Daoris wrote is left as it is; the host starts, and what is not derived works. Said once,
+// here: on stderr with the folder to update, and in the log by its versions. Each route over the index refuses below.
+if (composed.IndexRefusal is { } refusedIndex)
+{
+    Console.Error.WriteLine($"{refusedIndex.Message} This build runs from '{refusedIndex.Build}'.");
+    log.Warn("index.refused", ("found", refusedIndex.Found), ("known", refusedIndex.Known));
+}
+
 // Source-generated serialization: this host publishes AOT-friendly and reflection-based JSON would be
 // the one thing stopping it.
 builder.Services.ConfigureHttpJsonOptions(json =>
@@ -193,6 +201,16 @@ app.Use(async (context, next) =>
     {
         await next();
         status = context.Response.StatusCode;
+    }
+    catch (NewerIndexException refused) when (!context.Response.HasStarted)
+    {
+        // KSCHEMA1: an index a newer Daoris wrote is a refusal the caller shows, not an error nobody expected. 409 in the
+        // house's shape, as every refusal here is: nothing about it passes by waiting, so it is no busy host to try
+        // again. Its sentence names no path, and nothing is written as an error: the host said it once, at its start.
+        status = StatusCodes.Status409Conflict;
+        context.Response.Clear();
+        context.Response.StatusCode = status;
+        await context.Response.WriteAsJsonAsync(new ErrorResponse(refused.Message));
     }
     catch (Exception error) when (!UnhandledRequests.CallerLeft(context, error))
     {

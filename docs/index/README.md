@@ -97,19 +97,19 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Service/Daoris.Service.Core/Asks.cs` | 48 | 921 |
 | `src/Daoris.Service/Daoris.Service.Core/History.cs` | 40 | 824 |
-| `src/Daoris.Service/Daoris.Service.Core/KnowledgeService.cs` | 51 | 1021 |
+| `src/Daoris.Service/Daoris.Service.Core/KnowledgeService.cs` | 53 | 1055 |
 | `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 93 | 1761 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 131 | 2387 |
 | `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 62 | 1198 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 63 | 1133 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 82 | 1495 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 97 | 1760 |
-| `src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs` | 42 | 750 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 98 | 1778 |
+| `src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs` | 43 | 775 |
 | `src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs` | 44 | 839 |
 | `src/Daoris.Service/Daoris.Service.Tests/IndexEntriesTests.cs` | 45 | 855 |
 | `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 82 | 1691 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 67 | 1385 |
-| `src/Daoris.Service/README.md` | 61 | 627 |
+| `src/Daoris.Service/README.md` | 62 | 639 |
 
 ### CLI (`cli`)
 
@@ -151,7 +151,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-09-21-working-surface-components.md` | 52 | 349 |
 | `docs/2026-09-25-rev3-review.md` | 51 | 407 |
 | `docs/2026-09-26-ux5-screen-audit.md` | 46 | 141 |
-| `docs/2026-09-30-machine-log-design.md` | 44 | 450 |
+| `docs/2026-09-30-machine-log-design.md` | 44 | 451 |
 | `docs/2026-10-01-account-rotation-design.md` | 52 | 613 |
 | `docs/2026-10-01-agent-layout-design.md` | 59 | 790 |
 | `docs/2026-10-01-development-documents-design.md` | 62 | 825 |
