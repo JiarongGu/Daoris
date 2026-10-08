@@ -229,7 +229,15 @@ public sealed partial class Driver
                 ? null
                 : adapter.PrepareResume(target, config.Commands.GetValueOrDefault(adapter.Name), kept.Conversation, resume.Prompt);
             var (info, harnessNotice) = Prepare(adapter, target, selection, prepared);
+            // A set-up step going on with the person's words shows it again in its own tab (REVIEWENV1d, design §3.4): opened
+            // again where the person closed it, and brought forward. Said, never held, where it will not open: the words go on.
+            var tabNotice = quest.SetUpIn is not null && Reviews is { } desk
+                            && ReviewSetUps.Environment(config, quest, start.Workspace) is { } shownIn
+                            && await desk.OpenForStepAsync(quest, shownIn, ct).ConfigureAwait(false) is { } unopened
+                ? $"— {unopened}"
+                : null;
             var (servers, browserNotice, drivesBrowser) = await InAppBrowserServers.HandAsync(_servers, browser, ct).ConfigureAwait(false);
+            browserNotice = JoinNotices(browserNotice, tabNotice);
             hooks?.Log.Served(_catalog, sessionId, servers);
             var handed = SpawnServers.Hand(adapter, info, home, sessionId, servers);
             var rules = HandRules(
