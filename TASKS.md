@@ -4,7 +4,7 @@ Open work only. Finished rows move to `docs/task-archive.md`; `CHANGELOG.md` des
 
 ## State
 
-Development remains at `0.0.x`; nothing is published. Verified 2026-10-09: 1,442 CLI, 1,745 service, 147 HTTP host, 6,092 driver (5,342 fast, 750 Process), 795 modules (676 fast, 119 Process), 85 devkit, 4,712 web unit and 24 Playwright; rehearsals: release 114, family 404, deployment 114. The full set (14 gates) passed the XAGENT1c merge and that tree is on the install; earlier receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,887 bytes, advisory budget 26,000.
+Development remains at `0.0.x`; nothing is published. Verified 2026-10-09: 1,442 CLI, 1,745 service, 223 HTTP host, 6,092 driver (5,342 fast, 750 Process), 795 modules (676 fast, 119 Process), 85 devkit, 4,712 web unit and 24 Playwright; rehearsals: release 114, family 404, deployment 114. The full set (14 gates) passed the XAGENT1c merge and that tree is on the install; earlier receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,887 bytes, advisory budget 26,000.
 
 Live consumer count is zero. Adoption is the owner's call. The existing desktop-runtime rehearsal remains evidence: 6 collisions, 2 twins to retire, budget 40,000, check at 38,782 bytes; supporting mechanics are in `docs/adoption/shenora-repo-mechanics.md`.
 
@@ -97,7 +97,6 @@ Contracts: `docs/2026-10-03-future-directions-review.md`, `docs/2026-10-04-built
 
 Contract: D156, `docs/2026-10-09-person-door-design.md` (merge order §10: a → b, c → d, e → f → g → h → i).
 
-- [ ] **PERSONDOOR1a — the key and the gate** (service). The key from the host's first input line, checked by route class (§3.2); keyless publishes as an agent's; `403` with §5.2's codes; the log lines; status's proof. A host handed none keeps today's trust. Contract: §2.1, §2.3, §3, §5. Proof: `PersonDoorHostTests`, keyless and keyed per route; the class table.
 - [ ] **PERSONDOOR1b — confirmed in the window** (service; after a). `/api/confirmations`: the refused request and a secret's hash, in memory; the route's name and fields; confirm and refuse take the key; a grant used once, for that request, within two minutes; five waiting. Contract: §4.2. Proof: `ConfirmationTests` (a changed body, expiry, reuse, the sixth).
 - [ ] **PERSONDOOR1c — a publish says who asked** (service; after a). `byAgent` on a quest an agent published naming no session, in every place `quest-operations.md` lists, census first; a record from before reads as it did. Contract: §5.1. Proof: the census (`QuestOperationKindsTests`), `QuestSyncTests` across the wire, both hosts' answers.
 - [ ] **PERSONDOOR1d — the driver** (driver; after b). Every start removes `DAORIS_PERSON_KEY` (`Tools.Hand` before its home check, the terminal's block, exempt starts); `ServiceClient` sends it to loopback only, and on `person-only` or `driver-only` asks the window and waits, saying so. Contract: §2.2, §4. Proof: a source scan beside `EveryChildIsHandedTheToolsTests`; client tests on a stub host.

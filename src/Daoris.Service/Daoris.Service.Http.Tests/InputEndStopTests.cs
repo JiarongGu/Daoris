@@ -1,8 +1,4 @@
-using System.Diagnostics;
 using System.IO.Pipes;
-using System.Net;
-using System.Net.Sockets;
-using Daoris.Knowledge;
 using Daoris.Knowledge.Http;
 using Microsoft.Extensions.Hosting;
 
@@ -138,7 +134,7 @@ public sealed class InputEndStopTests : IDisposable
 
         Assert.True(host.Process.WaitForExit(15_000), "the host did not stop when its input closed");
         Assert.Equal(0, host.Process.ExitCode);
-        var lines = HostLogLines();
+        var lines = host.LogLines();
         Assert.Contains(lines, line => line.Contains("\"event\":\"app.started\"", StringComparison.Ordinal));
         var stopped = Assert.Single(lines, line => line.Contains("\"event\":\"app.stopped\"", StringComparison.Ordinal));
         Assert.Contains("\"uptimeSeconds\":", stopped);
@@ -153,142 +149,13 @@ public sealed class InputEndStopTests : IDisposable
         host.Process.StandardInput.Close();
 
         Assert.False(host.Process.WaitForExit(2_000), "a host nobody asked stopped when its input closed");
-        Assert.True(await AnswersAsync(host.Url));
-        Assert.DoesNotContain(HostLogLines(), line => line.Contains("\"event\":\"app.stopped\"", StringComparison.Ordinal));
+        Assert.True(await RealHost.AnswersAsync(host.Url));
+        Assert.DoesNotContain(host.LogLines(), line => line.Contains("\"event\":\"app.stopped\"", StringComparison.Ordinal));
     }
 
-    private string Home => Path.Combine(_scratch, "home");
-
-    private IReadOnlyList<string> HostLogLines()
-    {
-        var folder = Path.Combine(Home, MachineLog.Folder);
-        if (!Directory.Exists(folder)) return [];
-        return Directory.EnumerateFiles(folder, "*.host.jsonl")
-            .SelectMany(path =>
-            {
-                using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-                using var reader = new StreamReader(stream);
-                return reader.ReadToEnd().Split('\n', StringSplitOptions.RemoveEmptyEntries);
-            })
-            .ToList();
-    }
-
-    /// <summary>
-    /// The host's own build, beside this test's, started as the shell starts it — input redirected — on a
-    /// free loopback port, with every variable it reads set or cleared, and waited for until it answers.
-    /// </summary>
-    private async Task<HostProcess> StartHostAsync(bool asked)
-    {
-        var repositories = Path.Combine(_scratch, "repositories");
-        Directory.CreateDirectory(Home);
-        Directory.CreateDirectory(repositories);
-        var url = $"http://127.0.0.1:{FreePort()}";
-
-        var start = new ProcessStartInfo("dotnet")
-        {
-            WorkingDirectory = _scratch,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            RedirectStandardInput = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-        };
-        start.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, "daoris-knowledge-http.dll"));
-        foreach (var (name, value) in new Dictionary<string, string?>
-                 {
-                     [InputEndStop.Variable] = asked ? "1" : null,
-                     [DaorisHome.Variable] = Home,
-                     [ServiceOptions.DatabaseVariable] = Path.Combine(_scratch, "index", "knowledge.db"),
-                     [ServiceOptions.RootVariable] = repositories,
-                     [ServiceOptions.ModelVariable] = null,
-                     [ServiceOptions.UrlVariable] = null,
-                     [Access.ModeVariable] = null,
-                     [Access.WorkspaceVariable] = null,
-                     [RemoteConfig.UrlVariable] = null,
-                     [RemoteConfig.KeyVariable] = null,
-                     [RemoteConfig.WorkspaceVariable] = null,
-                     [RemoteConfig.PathVariable] = null,
-                     [RuleProposalBox.HomeVariable] = null,
-                     [IntakeScope.AskVariable] = null,
-                     [IntakeScope.SessionVariable] = null,
-                     ["DAORIS_WEB_ORIGIN"] = null,
-                     ["ASPNETCORE_ENVIRONMENT"] = "Production",
-                     ["ASPNETCORE_URLS"] = url,
-                 })
-        {
-            if (value is null) start.Environment.Remove(name);
-            else start.Environment[name] = value;
-        }
-
-        var host = new HostProcess(Process.Start(start)!, url);
-        // Drained, so a host that writes more than a pipe holds is never blocked on its own output.
-        host.Process.OutputDataReceived += (_, _) => { };
-        host.Process.ErrorDataReceived += (_, _) => { };
-        host.Process.BeginOutputReadLine();
-        host.Process.BeginErrorReadLine();
-
-        for (var attempt = 0; attempt < 150; attempt++)
-        {
-            if (await AnswersAsync(url)) return host;
-            if (host.Process.HasExited)
-            {
-                var exit = host.Process.ExitCode;
-                host.Dispose();
-                throw new InvalidOperationException($"the host exited ({exit}) before it answered");
-            }
-
-            await Task.Delay(200);
-        }
-
-        host.Dispose();
-        throw new TimeoutException($"the host never answered at {url}");
-    }
-
-    private static async Task<bool> AnswersAsync(string url)
-    {
-        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
-        try
-        {
-            using var response = await client.GetAsync($"{url}/api/status");
-            return response.StatusCode == HttpStatusCode.OK;
-        }
-        catch (Exception error) when (error is HttpRequestException or TaskCanceledException)
-        {
-            return false;
-        }
-    }
-
-    private static int FreePort()
-    {
-        var probe = new TcpListener(IPAddress.Loopback, 0);
-        probe.Start();
-        var port = ((IPEndPoint)probe.LocalEndpoint).Port;
-        probe.Stop();
-        return port;
-    }
-
-    /// <summary>A started host and the address it answers at; killed with its tree if a test leaves it running.</summary>
-    private sealed class HostProcess(Process process, string url) : IDisposable
-    {
-        public Process Process { get; } = process;
-
-        public string Url { get; } = url;
-
-        public void Dispose()
-        {
-            try
-            {
-                if (!Process.HasExited) Process.Kill(entireProcessTree: true);
-                Process.WaitForExit(5_000);
-            }
-            catch (InvalidOperationException)
-            {
-                // Already reaped.
-            }
-
-            Process.Dispose();
-        }
-    }
+    /// <summary>The host, started as the shell starts it, asked to stop on its input's end or not.</summary>
+    private Task<RealHost> StartHostAsync(bool asked) =>
+        RealHost.StartAsync(_scratch, new Dictionary<string, string?> { [InputEndStop.Variable] = asked ? "1" : null });
 
     /// <summary>What the host's lifetime is asked: how many times it was told to stop.</summary>
     private sealed class Lifetime : IHostApplicationLifetime

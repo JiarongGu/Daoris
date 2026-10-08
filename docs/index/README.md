@@ -103,9 +103,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 146 | 2645 |
 | `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 64 | 1230 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 66 | 1179 |
-| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 93 | 1654 |
-| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 42 | 522 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 115 | 2029 |
+| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 93 | 1657 |
+| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 42 | 524 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 119 | 2079 |
 | `src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs` | 49 | 861 |
 | `src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs` | 44 | 839 |
 | `src/Daoris.Service/Daoris.Service.Tests/IndexEntriesTests.cs` | 45 | 855 |
@@ -150,7 +150,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 61 | 122 |
+| `.claude/knowledge/twins.md` | 62 | 123 |
 | `docs/2026-09-19-platform-ux.md` | 57 | 612 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 52 | 349 |
