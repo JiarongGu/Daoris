@@ -14,7 +14,8 @@ namespace Daoris.Driver.Host;
 /// <para><c>--delete</c> removes an ask made by mistake with every quest asked by it, or refuses whole
 /// when one of them must stay (D95) — the ask's record's <i>Delete</i> is the other door.</para>
 /// <para><c>--go-ahead</c> answers a go-ahead a session asked on the ask, with the person's words if any (KNOWUSE1a):
-/// every session on the ask is handed the answer. The ask's page's <i>Go-aheads</i> is the other door.</para>
+/// every session on the ask is handed the answer, and a parked session none of whose go-aheads waits any more goes on with
+/// them (GOAHEAD2). The ask's page's <i>Go-aheads</i> is the other door.</para>
 /// <para>The service answers with the tier that answered — by declarations only, with no intake
 /// harness, which proposes and publishes nothing; or the receiver named with <c>--to</c>, published
 /// at once. The answer is printed verbatim: it is the contract, and a rewording here would be a second
@@ -76,7 +77,9 @@ internal static class AskConsole
             if (goAhead is not null)
             {
                 if (GoAheadCommand.Read(words, out var problem) is not { } answer) return Usage(problem!);
-                var (ok, message) = await service.AnswerGoAheadAsync(goAhead, answer.Number, answer.Approved, answer.Words).ConfigureAwait(false);
+                // The ask page's twin (D50): the answer that leaves none of a parked session's go-aheads waiting sends it on (GOAHEAD2).
+                var (ok, message) = await service.AnswerGoAheadAsync(goAhead, answer.Number, answer.Approved, answer.Words, goesOn: true)
+                    .ConfigureAwait(false);
                 Console.WriteLine(message);
                 return ok ? 0 : 1;
             }
