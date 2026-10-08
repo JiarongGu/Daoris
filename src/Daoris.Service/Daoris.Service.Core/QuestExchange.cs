@@ -100,6 +100,13 @@ public sealed record QuestAsk(string From, string To, string Title, string Body)
     public string? PublishedBy { get; init; }
 
     /// <summary>
+    /// Whether an agent publishes it, named session or not (REVIEWENV1b3): its authority, kept apart from
+    /// <see cref="PublishedBy"/>, which only says which session to credit. A connector always sets it, since a connector is
+    /// always an agent's. Only a door that sets neither is the person's own, and only it sets a review choice unquoted.
+    /// </summary>
+    public bool ByAgent { get; init; }
+
+    /// <summary>
     /// What the person requires (DRIFT1c, D133 §3), each quoting their words on the ask that asks it —
     /// judged here against that ask's words, so every door refuses the same quote.
     /// </summary>
@@ -113,7 +120,8 @@ public sealed record QuestAsk(string From, string To, string Title, string Body)
 
     /// <summary>
     /// The chain's review choice (REVIEWENV1b, D154 point 3), inherited by each step: the person's, with any words they give,
-    /// or a session's quoting them, which is judged here against the ask's words as a requirement's quote is. Null for none.
+    /// or an agent's quoting them, which is judged here against the ask's words as a requirement's quote is. An agent's
+    /// <c>off</c> is kept on the ask as a proposal instead, never as the choice (REVIEWENV1b3). Null for none.
     /// </summary>
     public QuestReview? Review { get; init; }
 }
@@ -420,8 +428,9 @@ public sealed partial class QuestExchange(
             return new(QuestPublishRefusal.BadChain, unfitChain, Quest: null, addressable);
         }
 
-        // The chain's review choice (REVIEWENV1b, D154 point 3): its shape, then, from a session, the person's words it quotes.
-        var (review, unfitReview) = await JudgeReviewAsync(from, ask, ct).ConfigureAwait(false);
+        // The chain's review choice (REVIEWENV1b, D154 point 3): its shape, then, from an agent, the person's words it quotes; an
+        // agent's `off` is a proposal for the person's press, never the chain's choice (REVIEWENV1b3).
+        var (review, proposedOff, unfitReview) = await JudgeReviewAsync(from, ask, now, ct).ConfigureAwait(false);
         if (unfitReview is { } refusedReview)
         {
             return new(refusedReview.Refusal, refusedReview.Message, Quest: null, addressable);
@@ -476,6 +485,12 @@ public sealed partial class QuestExchange(
             var count => $" It carries {count} requirements, each in the person's own words.",
         };
         var reviewed = quest.Review is { } chosen ? $" Its chain's review choice is `{chosen.Choice}`, and each step inherits it." : "";
+        if (proposedOff is not null && asks is not null && AskDesk.AskOf(from) is { } offAsk)
+        {
+            await asks.RecordReviewProposalAsync(offAsk, proposedOff with { Quest = quest.Id }, now, ct).ConfigureAwait(false);
+            reviewed += $" It sets no review choice: `off` on the person's words is kept on ask `#{offAsk}` as a proposal, since `off` "
+                        + "is only the person's own press, and the review stands as the ask or the repository sets it until they press it.";
+        }
 
         return new(
             QuestPublishRefusal.None,

@@ -49,17 +49,18 @@ public sealed partial class AskDesk
     }
 
     /// <summary>
-    /// An intake's proposal as the ask keeps it, or why not (design §1.5–§1.6): from a session, with a reason of at most
+    /// An intake's proposal as the ask keeps it, or why not (design §1.5–§1.6): from an agent, with a reason of at most
     /// <see cref="Reviews.ReasonLimit"/> characters, and never beside a choice it sets on the person's words. Null for none.
+    /// The session that made it is kept where the agent named one; an agent that named none is still an agent (REVIEWENV1b3).
     /// </summary>
-    private static (AskReviewProposal? Proposal, string? Refusal) JudgeProposal(AskDraft? draft, string? session, DateTimeOffset now)
+    private static (AskReviewProposal? Proposal, string? Refusal) JudgeProposal(AskDraft? draft, string? session, bool agent, DateTimeOffset now)
     {
         if (draft?.ReviewProposal is not { } proposed) return (null, null);
 
         var choice = proposed.Choice?.Trim() ?? "";
         var reason = proposed.Reason?.Trim() ?? "";
         string? unfit =
-            string.IsNullOrWhiteSpace(session) ? "A review proposal is an intake's reading, kept for the person's press: the person sets their own choice instead"
+            !agent ? "A review proposal is an intake's reading, kept for the person's press: the person sets their own choice instead"
             : draft.Review is not null ? "A chain takes a review choice on the person's words, or a proposal with your reason, never both"
             : Reviews.JudgeChoice(choice) is { } shape ? $"The proposal's {shape}"
             : reason.Length == 0 ? "A review proposal says why, in a sentence: the person decides on it"
@@ -67,6 +68,6 @@ public sealed partial class AskDesk
             : null;
         return unfit is not null
             ? (null, unfit + ". Nothing was published.")
-            : (new AskReviewProposal(choice, reason, now, session!.Trim()), null);
+            : (new AskReviewProposal(choice, reason, now, string.IsNullOrWhiteSpace(session) ? null : session.Trim()), null);
     }
 }

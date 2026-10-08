@@ -22,51 +22,74 @@ public sealed partial class QuestExchange
 {
     /// <summary>
     /// A chain's review choice as a quest keeps it, or why not (REVIEWENV1b, design §1.5): <c>off</c>, <c>on</c> or an
-    /// environment's name, the words trimmed and bounded. The person's own door sets it with any words they give. A session
+    /// environment's name, the words trimmed and bounded. The person's own door sets it with any words they give. An agent
     /// sets it only on the person's words, which must stand in what they said on the ask that asks the quest, checked as a
     /// requirement's quote is (DRIFT1c) — otherwise it proposes one, which only the person's press applies.
     /// </summary>
-    private async Task<(QuestReview? Review, (QuestPublishRefusal Refusal, string Message)? Refused)> JudgeReviewAsync(
-        string from, QuestAsk ask, CancellationToken ct)
+    /// <remarks>
+    /// <para><b>An agent is whoever is not the person's own door</b> (REVIEWENV1b3): <see cref="QuestAsk.ByAgent"/>, or a
+    /// session named. A connector that named no session once published with the person's authority.</para>
+    ///
+    /// <para><b>An agent never sets <c>off</c></b>, quoted or not (REVIEWENV1b3, narrowing design §1.5): <c>off</c> lowers a
+    /// gate, and a quote proves only that the person said some words, not that those words switch the review off. An agent's
+    /// <c>off</c> on their verified words becomes a proposal on the ask, with the words as its reason, for the person's own
+    /// press. A quoted <c>on</c> or environment raises the gate and stays the agent's to set.</para>
+    /// </remarks>
+    private async Task<(QuestReview? Review, AskReviewProposal? Proposed, (QuestPublishRefusal Refusal, string Message)? Refused)> JudgeReviewAsync(
+        string from, QuestAsk ask, DateTimeOffset now, CancellationToken ct)
     {
-        if (ask.Review is not { } given) return (null, null);
+        if (ask.Review is not { } given) return (null, null, null);
 
         var choice = given.Choice?.Trim() ?? "";
-        if (Reviews.JudgeChoice(choice) is { } unfit) return (null, (QuestPublishRefusal.BadReview, $"The chain's {unfit}. Nothing was published."));
+        if (Reviews.JudgeChoice(choice) is { } unfit) return (null, null, (QuestPublishRefusal.BadReview, $"The chain's {unfit}. Nothing was published."));
 
         var words = string.IsNullOrWhiteSpace(given.Words) ? null : given.Words.Trim();
         if (words is { Length: > Reviews.WordsLimit })
         {
-            return (null, (QuestPublishRefusal.BadReview,
+            return (null, null, (QuestPublishRefusal.BadReview,
                 $"The words a review choice is set on are at most {Reviews.WordsLimit} characters; these are {words.Length}. Nothing was published."));
         }
 
         // The person's own door: their choice, with whatever words they gave.
-        if (ask.PublishedBy is null) return (new QuestReview(choice, words), null);
+        if (!ask.ByAgent && ask.PublishedBy is null) return (new QuestReview(choice, words), null, null);
 
         const string Instead = "Without the person's words, propose the choice with your reason instead; only their press applies it.";
         if (words is null)
         {
-            return (null, (QuestPublishRefusal.BadReview,
+            return (null, null, (QuestPublishRefusal.BadReview,
                 $"A session sets a chain's review choice only on the person's own words: quote them in `words`, copied exactly from "
                 + $"what they asked or said since. {Instead} Nothing was published."));
         }
 
         if (AskDesk.AskOf(from) is not { } askId || asks is null || await asks.FindAsync(askId, ct).ConfigureAwait(false) is not { } held)
         {
-            return (null, (QuestPublishRefusal.BadReview,
+            return (null, null, (QuestPublishRefusal.BadReview,
                 $"A review choice quotes the person's words on the ask a quest is asked by, and this quest is asked by `{from}`, "
                 + "on no ask held here — so there are no words of theirs to quote. Nothing was published."));
         }
 
         if (!held.Words.Any(word => QuestRequirement.QuotedIn(words, word.Text)))
         {
-            return (null, (QuestPublishRefusal.NotQuoted,
+            return (null, null, (QuestPublishRefusal.NotQuoted,
                 $"The review choice `{choice}` quotes words the person never said on ask `#{held.Id}`: \"{Clip(words)}\". A choice "
                 + $"is set on their own words, verbatim (whitespace and case aside). {Instead} Nothing was published."));
         }
 
-        return (new QuestReview(choice, words), null);
+        return choice == Reviews.Off
+            ? (null, new AskReviewProposal(Reviews.Off, OffReason(words), now, ask.PublishedBy), null)
+            : (new QuestReview(choice, words), null, null);
+    }
+
+    /// <summary>
+    /// An agent's quoted <c>off</c> as the proposal it becomes (REVIEWENV1b3): the person's words as its reason, cut to the
+    /// proposal's bound, so the person reads what it was set on beside the press that applies it.
+    /// </summary>
+    private static string OffReason(string words)
+    {
+        const string Before = "The person said \"";
+        const string After = "\"; `off` is only their own press.";
+        var room = Reviews.ReasonLimit - Before.Length - After.Length;
+        return Before + (words.Length <= room ? words : words[..(room - 1)] + "…") + After;
     }
 
     /// <summary>
@@ -215,7 +238,7 @@ public sealed partial class QuestExchange
 
     /// <summary>
     /// The person's verdict on a set-up step (REVIEWENV1b, D154 point 8; design §3.3–§3.6): <c>reviewed</c> or <c>not-yet</c>
-    /// on its newest set-up, or <c>skipped</c> for the work, on a set-up step or on the chain's last quest in a repository with
+    /// on the set-up they name, its newest, or <c>skipped</c> for the work, on a set-up step or on the chain's last quest in a repository with
     /// none. A <c>reviewed</c> or a skip lets go what the step's review held, publishing the chain's next step; a
     /// <c>not-yet</c> keeps it held, its words kept for the step's session. Their words are kept on the ask, each as its own
     /// kind (design §3.5).
@@ -224,7 +247,10 @@ public sealed partial class QuestExchange
     /// <b>The person's alone</b>: no connector tool and no Ask Daoris card reaches it, since the verdict is a look only they
     /// have taken. A local host's door, as the yes is; it travels from there as an operation (D68).
     /// </remarks>
-    /// <param name="setUp">The set-up a <c>reviewed</c> or a <c>not-yet</c> answers; null for the newest.</param>
+    /// <param name="setUp">
+    /// The set-up a <c>reviewed</c> or a <c>not-yet</c> answers, as the person's view showed it: required, and refused unless it
+    /// is the newest (REVIEWENV1b3). A skip answers none and ignores it.
+    /// </param>
     public async Task<QuestRespondOutcome> ReviewAsync(
         string id, string? verdict, string? words, QuestOperationRef? setUp, DateTimeOffset now, CancellationToken ct = default)
     {
@@ -289,9 +315,14 @@ public sealed partial class QuestExchange
     }
 
     /// <summary>
-    /// A <c>reviewed</c> or a <c>not-yet</c> on a set-up step's newest set-up, or why the review's state refuses it: nothing
-    /// shown yet, a set-up that is not the newest, or a review already given or skipped.
+    /// A <c>reviewed</c> or a <c>not-yet</c> on the set-up the person looked at, which must be the newest, or why it is
+    /// refused: no set-up named, nothing shown yet, a set-up that is not the newest, or a review already given or skipped.
     /// </summary>
+    /// <remarks>
+    /// <b>Named, never defaulted</b> (REVIEWENV1b3): a verdict that named none once answered the newest, so a set-up posted
+    /// after the person's view was drawn took a <c>reviewed</c> for work they never saw run. What they looked at is what the
+    /// verdict answers, and a newer one refuses it as stale.
+    /// </remarks>
     private static (QuestReviewVerdict? Verdict, QuestRespondOutcome? Refused) Look(Quest quest, string said, string? words, QuestOperationRef? named)
     {
         QuestRespondOutcome Refuse(string why) => new(QuestRespondRefusal.ReviewRefused, why + " Nothing was kept.", Quest: null);
@@ -309,9 +340,16 @@ public sealed partial class QuestExchange
                 "A `not-yet` says what is not right yet, in your words: they are what the step's session acts on. Nothing was kept.", Quest: null));
         }
 
+        if (named is null)
+        {
+            return (null, new(QuestRespondRefusal.BadReviewVerdict,
+                $"A `{said}` names the set-up you looked at, by the `machine` and `sequence` set-up step `#{quest.Id}`'s set-ups "
+                + "answer it with: what you looked at is what it answers. Nothing was kept.", Quest: null));
+        }
+
         if (QuestReviewing.Newest(quest) is not { } newest) return (null, Refuse($"Set-up step `#{quest.Id}` has shown nothing yet in `{quest.SetUpIn}`."));
-        var answered = named is null ? newest : quest.SetUps.FirstOrDefault(each => each.Ref == named);
-        if (answered is null) return (null, Refuse($"Set-up step `#{quest.Id}` holds no set-up `{named!.Machine}`/{named.Sequence}."));
+        var answered = quest.SetUps.FirstOrDefault(each => each.Ref == named);
+        if (answered is null) return (null, Refuse($"Set-up step `#{quest.Id}` holds no set-up `{named.Machine}`/{named.Sequence}."));
         if (answered.Ref != newest.Ref)
         {
             return (null, Refuse($"Set-up step `#{quest.Id}` was shown again since that set-up, at `{Short(newest.Commit)}`: review the newest, "
@@ -401,15 +439,26 @@ public sealed partial class QuestExchange
             return Refuse($"Quest `#{parent.Id}` is {parent.Status}: a set-up step shows work that is done, so it follows a done quest.");
         }
 
-        if (parent.Then.FirstOrDefault(step => step.SetUpIn is not null) is { } composed)
+        // The repository's part of the whole `follows` chain, judged together (REVIEWENV1b3): a set-up step composed or published
+        // for it anywhere, and its last work step. Another repository's set-up step is that repository's.
+        var title = $"Show #{parent.Id} in `{env}` for review";
+        var chain = await quests.ChainAsync(parent.Id, ct).ConfigureAwait(false);
+        if (chain.SelectMany(each => each.Then).FirstOrDefault(step => step.SetUpIn is not null && SameRepository(step.To, parent.To)) is { } composed)
         {
-            return Refuse($"Quest `#{parent.Id}`'s chain already composes a set-up step, in `{composed.SetUpIn}`.");
+            return Refuse($"Quest `#{parent.Id}`'s chain already composes a set-up step for `{parent.To}`, in `{composed.SetUpIn}`.");
         }
 
-        var title = $"Show #{parent.Id} in `{env}` for review";
-        if ((await quests.SetUpStepsAfterAsync(parent.Id, ct).ConfigureAwait(false)).FirstOrDefault(step => step.Title != title) is { } other)
+        if (await LaterWorkAsync(parent, ct).ConfigureAwait(false) is { } later)
         {
-            return Refuse($"Set-up step `#{other.Id}` already follows quest `#{parent.Id}`, in `{other.SetUpIn}`: one set-up step per repository per chain.");
+            return Refuse($"Quest `#{parent.Id}` is not `{parent.To}`'s last step in its chain: {later} asks `{parent.To}` after it. A set-up "
+                          + "step follows that repository's last step, so its tree holds all the work it shows: set it up after that one.");
+        }
+
+        if (chain.FirstOrDefault(each => each.SetUpIn is not null && SameRepository(each.To, parent.To)
+                                         && !(each.Parent == parent.Id && each.Title == title)) is { } other)
+        {
+            return Refuse($"Set-up step `#{other.Id}` already shows `{other.To}`'s work in this chain, in `{other.SetUpIn}`: one set-up step "
+                          + "per repository per chain.");
         }
 
         var step = await quests.PublishAsync(
@@ -425,6 +474,35 @@ public sealed partial class QuestExchange
             + $"`#{parent.Id}` in `{env}` for your review, and its done waits for your verdict.",
             step);
     }
+
+    /// <summary>
+    /// The first work step of <paramref name="done"/>'s repository that comes after it on its chain, named as a person finds
+    /// it, or null where it is that repository's last (REVIEWENV1b3, design §2.1): each step its <c>then</c> still composes, read
+    /// along the steps its closes published. A published step is named by its id and one still to come by its place; a
+    /// declined step ends the walk, since a decline stops the chain and nothing after it is published.
+    /// </summary>
+    private async Task<string?> LaterWorkAsync(Quest done, CancellationToken ct)
+    {
+        var at = done;
+        foreach (var (step, place) in done.Then.Select((step, index) => (step, index + 1)))
+        {
+            // The id the close of `at` publishes this step under (QuestStore.NextStep), so the walk follows the chain itself.
+            var title = step.Title.Replace("{parent}", $"#{at.Id}", StringComparison.Ordinal);
+            var published = await quests.FindAsync(QuestStore.MakeId(at.From, step.To, title, at.Id), ct).ConfigureAwait(false);
+            if (published is { Status: QuestStatus.Declined }) return null;
+            if (step.SetUpIn is null && SameRepository(step.To, done.To))
+            {
+                return published is null ? $"step {place} of its chain" : $"`#{published.Id}`";
+            }
+
+            if (published is null) continue;
+            at = published;
+        }
+
+        return null;
+    }
+
+    private static bool SameRepository(string one, string other) => string.Equals(one, other, StringComparison.OrdinalIgnoreCase);
 
     private static string Capital(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
 }

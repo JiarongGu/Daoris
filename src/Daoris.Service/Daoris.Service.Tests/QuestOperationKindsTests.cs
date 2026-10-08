@@ -86,6 +86,8 @@ public sealed class QuestOperationKindsTests
         {
             SetUp = new QuestSetUp(Commit)
             {
+                // The identity the store makes, which crosses and is kept whole (REVIEWENV1b3).
+                Id = "0123456789abcdef0123456789abcdef",
                 Look = "https://dev.example.test/reports/7", Shows = "The report with the new setting on.",
                 Again = "Open https://dev.example.test/reports/7 and turn on the setting.", Served = "dist/app",
                 Run = "npm run serve:dev", Session = "s1a2b3c4",

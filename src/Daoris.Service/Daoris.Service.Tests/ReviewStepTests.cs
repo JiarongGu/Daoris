@@ -9,7 +9,7 @@ namespace Daoris.Service.Tests;
 /// repository as the work it shows; its session says what it showed, its driver posts each set-up with the commit it read,
 /// and its done waits, held, for the person's verdict. A yes accepts a departure or its evidence and never a review.
 /// </summary>
-public sealed class ReviewStepTests : IAsyncLifetime
+public sealed partial class ReviewStepTests : IAsyncLifetime
 {
     private readonly string _root = Path.Combine(
         Path.GetTempPath(), "daoris-review-" + Guid.NewGuid().ToString("N")[..8]);
@@ -459,7 +459,7 @@ public sealed class ReviewStepTests : IAsyncLifetime
         var (ask, _, setUp) = await Built();
         var (_, shown) = await Shown(setUp);
 
-        var reviewed = await _exchange.ReviewAsync(setUp.Id, "reviewed", "That is the setting.", null, Now);
+        var reviewed = await _exchange.ReviewAsync(setUp.Id, "reviewed", "That is the setting.", shown.SetUps[0].Ref, Now);
 
         Assert.Equal(QuestRespondRefusal.None, reviewed.Refusal);
         Assert.Contains("what its review held goes on", reviewed.Message);
@@ -474,7 +474,7 @@ public sealed class ReviewStepTests : IAsyncLifetime
         Assert.Equal((AskWordKind.Reviewed, "That is the setting.", setUp.Id), (word.Kind, word.Text, word.Quest));
         Assert.Equal("reviewed", AskWord.Spell(word.Kind));
 
-        Assert.Equal(QuestRespondRefusal.ReviewRefused, (await _exchange.ReviewAsync(setUp.Id, "reviewed", null, null, Now)).Refusal);
+        Assert.Equal(QuestRespondRefusal.ReviewRefused, (await _exchange.ReviewAsync(setUp.Id, "reviewed", null, shown.SetUps[0].Ref, Now)).Refusal);
 
         await _exchange.RespondAsync(note.Id, "take", null, Now);
         await _exchange.RespondAsync(note.Id, "done", "Noted.", Now, answers: [Met]);
@@ -494,20 +494,20 @@ public sealed class ReviewStepTests : IAsyncLifetime
         var first = shown.SetUps[0].Ref;
 
         Assert.Equal(QuestRespondRefusal.BadReviewVerdict, (await _exchange.ReviewAsync(setUp.Id, "not-yet", "  ", null, Now)).Refusal);
-        var notYet = await _exchange.ReviewAsync(setUp.Id, "not-yet", "the label still reads the old name", null, Now);
+        var notYet = await _exchange.ReviewAsync(setUp.Id, "not-yet", "the label still reads the old name", first, Now);
         Assert.Equal(QuestRespondRefusal.None, notYet.Refusal);
         Assert.Equal(QuestHold.Unreviewed, notYet.Quest!.Hold);
         Assert.Equal("the label still reads the old name", Assert.Single(notYet.Quest.Verdicts).Words);
         Assert.Equal(("not-yet", AskWordKind.NotYet), (AskWord.Spell(AskWordKind.NotYet), (await _desk.FindAsync(ask.Id))!.Words[^1].Kind));
 
         await _ledger.ReadyAsync(session.Id, Look, "The label, corrected.", "Open it.", null, Now);
-        await _exchange.PostSetUpAsync(setUp.Id, new QuestSetUpPost(Later, "local", Session: session.Id), Now);
+        var corrected = await _exchange.PostSetUpAsync(setUp.Id, new QuestSetUpPost(Later, "local", Session: session.Id), Now);
 
         var older = await _exchange.ReviewAsync(setUp.Id, "reviewed", null, first, Now);
         Assert.Equal(QuestRespondRefusal.ReviewRefused, older.Refusal);
         Assert.Contains("shown again since", older.Message);
 
-        var reviewed = await _exchange.ReviewAsync(setUp.Id, "reviewed", null, null, Now);
+        var reviewed = await _exchange.ReviewAsync(setUp.Id, "reviewed", null, corrected.Quest!.SetUps[^1].Ref, Now);
         Assert.Equal(QuestRespondRefusal.None, reviewed.Refusal);
         Assert.Equal(Later, reviewed.Quest!.Verdicts[^1].Commit);
         Assert.Null(reviewed.Quest.Hold);
@@ -698,9 +698,9 @@ public sealed class ReviewStepTests : IAsyncLifetime
     public async Task A_verdict_that_loses_takes_the_step_it_published_with_it()
     {
         var (ask, _, setUp) = await Built();
-        await Shown(setUp);
+        var (_, shown) = await Shown(setUp);
         var history = await _quests.HistoryAsync(setUp.Id);
-        await _exchange.ReviewAsync(setUp.Id, "reviewed", null, null, Now);
+        await _exchange.ReviewAsync(setUp.Id, "reviewed", null, shown.SetUps[0].Ref, Now);
         Assert.Single(await FollowUps(ask, setUp));
 
         // The remote numbered everything up to the set-up, then another machine's newer set-up, before this machine's verdict.

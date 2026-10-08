@@ -447,7 +447,8 @@ public sealed partial class KnowledgeTools(
         [Description(
             "Whether the person looks at this chain's work running before it lands, for a quest an ask asks: off, on (the "
             + "repository's default environment) or an environment's name, set only on the person's own words, which you quote "
-            + "exactly. Every step inherits it. Without their words, propose one with reviewProposal instead.")]
+            + "exactly. Every step inherits it. Without their words, propose one with reviewProposal instead. Your off, even on "
+            + "their words, is kept as a proposal: only their own press turns a review off.")]
         ReviewChoice? review = null,
         [Description(
             "For an intake, where the person said nothing on it: the review you propose for this chain and your reason, kept on "
@@ -466,21 +467,23 @@ public sealed partial class KnowledgeTools(
             uploads.Add(upload!);
         }
 
-        var steps = (then ?? []).Select(step => new QuestStep(step.To ?? "", step.Title ?? "", step.Body ?? "") { SetUpIn = step.SetUpIn }).ToList();
+        // A step or a requirement sent as null arrives blank, refused by the exchange naming its number (REVIEWENV1b3).
+        var steps = (then ?? []).Select(step => new QuestStep(step?.To ?? "", step?.Title ?? "", step?.Body ?? "") { SetUpIn = step?.SetUpIn }).ToList();
         // A choice left out arrives blank and is refused by the exchange naming why (REVIEWENV1b), and so does a proposal.
         var chosen = review is null ? null : new QuestReview(review.Choice ?? "", review.Words);
         // A half left out arrives blank and is refused by the exchange naming which (DRIFT1c); so does an evidence item
         // naming both or neither (EVID1a).
         var required = (requirements ?? [])
-            .Select(r => new QuestRequirement(r.Quote ?? "", r.Check ?? "")
+            .Select(r => new QuestRequirement(r?.Quote ?? "", r?.Check ?? "")
             {
-                Evidence = [.. (r.Evidence ?? []).Select(item => new QuestEvidence(item?.Path, item?.Gate))],
+                Evidence = [.. (r?.Evidence ?? []).Select(item => new QuestEvidence(item?.Path, item?.Gate))],
             })
             .ToList();
 
         // An intake publishes AS ITS ASK (D65 §1b): the room is no repository, so `from` could name
         // nothing addressable — the ask is the asker, in its own circle, carrying its own links and
         // files beside these. The desk judges through the same exchange, so nothing else differs.
+        // A connector is always an agent's, whether or not the driver named its session (REVIEWENV1b3).
         if (intake is { Active: true, Ask: { } askId } && asks is not null)
         {
             var answered = await asks.PublishAsync(
@@ -491,7 +494,7 @@ public sealed partial class KnowledgeTools(
                         Review = chosen,
                         ReviewProposal = reviewProposal is null ? null : new ReviewProposed(reviewProposal.Choice, reviewProposal.Reason),
                     },
-                    intake.Session)
+                    intake.Session, byAgent: true)
                 .ConfigureAwait(false);
             return answered.Refusal == AskRefusal.None
                 ? $"As ask `#{askId}`: {answered.Message}{LeftUnsaid(answered.Quest, onAnAsk: true)}"
@@ -519,6 +522,8 @@ public sealed partial class KnowledgeTools(
                     Review = chosen,
                     // Which session asked (SESS1), as the driver named it on this connector (PERM2).
                     PublishedBy = intake?.Session,
+                    // An agent's authority, named session or not: the session only credits it (REVIEWENV1b3).
+                    ByAgent = true,
                 },
                 DateTimeOffset.UtcNow, ct)
             .ConfigureAwait(false);

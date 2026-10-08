@@ -972,9 +972,13 @@ public sealed partial class AskDesk(KnowledgeService service, AskStore asks, Que
     /// The session publishing, when it is one. Only the ask's OWN intake moves its tier to
     /// <see cref="ByIntake"/> — a session naming itself is a claim, and the ask is what can check it.
     /// </param>
+    /// <param name="byAgent">
+    /// An agent publishes, whether or not it names a session: a connector always does (REVIEWENV1b3). A session named is an
+    /// agent too, so only a publish with neither carries the person's authority.
+    /// </param>
     public async Task<AskOutcome> PublishAsync(
         string id, string to, DateTimeOffset now, CancellationToken ct = default,
-        AskDraft? draft = null, string? session = null)
+        AskDraft? draft = null, string? session = null, bool byAgent = false)
     {
         var ask = await asks.FindAsync(id, ct).ConfigureAwait(false);
         if (ask is null)
@@ -988,10 +992,11 @@ public sealed partial class AskDesk(KnowledgeService service, AskStore asks, Que
         }
 
         // An intake's review proposal (REVIEWENV1b), judged before anything is published, so a refused one leaves nothing behind.
-        var (proposed, unfitProposal) = JudgeProposal(draft, session, now);
+        var agent = byAgent || !string.IsNullOrWhiteSpace(session);
+        var (proposed, unfitProposal) = JudgeProposal(draft, session, agent, now);
         if (unfitProposal is not null) return new(AskRefusal.BadReview, unfitProposal, ask);
 
-        var published = await PublishQuestAsync(ask, to, now, ct, draft, session).ConfigureAwait(false);
+        var published = await PublishQuestAsync(ask, to, now, ct, draft, session, agent).ConfigureAwait(false);
         if (published.Quest is null) return new(AskRefusal.QuestRefused, published.Message, ask);
 
         var byIntake = session is { Length: > 0 } && string.Equals(session, ask.Intake, StringComparison.Ordinal);
@@ -1031,7 +1036,7 @@ public sealed partial class AskDesk(KnowledgeService service, AskStore asks, Que
     /// may be asked is the exchange's answer, never this desk's.
     /// </summary>
     private async Task<QuestPublishOutcome> PublishQuestAsync(
-        Ask ask, string to, DateTimeOffset now, CancellationToken ct, AskDraft? draft = null, string? session = null)
+        Ask ask, string to, DateTimeOffset now, CancellationToken ct, AskDraft? draft = null, string? session = null, bool agent = false)
     {
         var uploads = new List<QuestUpload>();
         foreach (var attachment in ask.Attachments)
@@ -1064,6 +1069,8 @@ public sealed partial class AskDesk(KnowledgeService service, AskStore asks, Que
                 Workspace = ask.Workspace,
                 // The session publishing, as its connector names it (SESS1): the intake that read the ask.
                 PublishedBy = session,
+                // Whether an agent publishes, apart from which session it credits (REVIEWENV1b3).
+                ByAgent = agent,
             },
             now, ct).ConfigureAwait(false);
     }

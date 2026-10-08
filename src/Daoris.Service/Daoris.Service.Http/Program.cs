@@ -601,14 +601,23 @@ if (mode == ServiceMode.Local)
             s, http, ct));
 
     // The person's verdict on a set-up step, or their skip of a review (REVIEWENV1b, D154 point 8): LOCAL mode only, as the yes
-    // is, and no connector tool reaches it, since the verdict is a look only the person has taken.
+    // is, and no connector tool reaches it, since the verdict is a look only the person has taken. A set-up named by half its
+    // reference is refused here, never read as none (REVIEWENV1b3): none once meant the newest, which the person may not have seen.
     app.MapPost("/api/quests/{id}/review", async (
         ComposedService s, HttpContext http, string id, QuestReviewRequest body, CancellationToken ct) =>
-        await ReviewAnswer(await s.Exchange.ReviewAsync(
+    {
+        if (body.SetUp is { } half && (string.IsNullOrWhiteSpace(half.Machine) || half.Sequence is null))
+        {
+            return Results.BadRequest(new ErrorResponse(
+                "`setUp` names a set-up by both its `machine` and its `sequence`, as the quest's `setUps` answer them. Nothing was kept."));
+        }
+
+        return await ReviewAnswer(await s.Exchange.ReviewAsync(
             id, body.Verdict, body.Words,
             body.SetUp is { Machine: { } machine, Sequence: { } sequence } ? new QuestOperationRef(machine, sequence) : null,
             DateTimeOffset.UtcNow, ct),
-            s, http, ct));
+            s, http, ct);
+    });
 
     // The person's *Set it up in `<environment>`* (REVIEWENV1b, design §2.1, §3.6): a set-up step published following a done
     // quest, in Daoris's words. LOCAL mode only: the person's press, on their own machine.
@@ -1760,8 +1769,9 @@ static AskResponse ToAsk(Ask a, QuestFiles? files, bool machineLocal)
 }
 
 // A chain's steps as a door hands them to the exchange (D65 §4, REVIEWENV1b): a set-up step's environment rides with its words.
-static IReadOnlyList<QuestStep> StepsOf(IReadOnlyList<QuestStepWire>? given) =>
-    (given ?? []).Select(step => new QuestStep(step.To ?? "", step.Title ?? "", step.Body ?? "") { SetUpIn = step.SetUpIn }).ToList();
+// A step sent as null arrives blank, refused by the exchange naming its number as a step missing its words is (REVIEWENV1b3).
+static IReadOnlyList<QuestStep> StepsOf(IReadOnlyList<QuestStepWire?>? given) =>
+    (given ?? []).Select(step => new QuestStep(step?.To ?? "", step?.Title ?? "", step?.Body ?? "") { SetUpIn = step?.SetUpIn }).ToList();
 
 // A chain's review choice as a door hands it to the exchange (REVIEWENV1b): a choice left out arrives blank, refused there.
 static QuestReview? ReviewOf(QuestReviewWire? given) => given is null ? null : new QuestReview(given.Choice ?? "", given.Words);
