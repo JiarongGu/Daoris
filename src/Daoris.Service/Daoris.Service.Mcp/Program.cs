@@ -103,6 +103,8 @@ builder.Services.AddSingleton(composed.Asks);
 // The ledger, for the one write a session's connector makes on its own record: that it took its quest
 // (STANDDOWN2).
 builder.Services.AddSingleton(composed.Ledger);
+// Second opinions (XAGENT1c): a reviewer's connector says its opinion, and a working session's answers what it was handed.
+builder.Services.AddSingleton(composed.Opinions);
 
 // An intake's connector (D65 §1b): the driver that opened the session names the ask it answers, and a
 // quest published here is then asked BY that ask. Every other session names none.

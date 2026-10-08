@@ -91,6 +91,30 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
+    /// XAGENT1c (D155 points 5, 8 and 9): an agent is never the person. A second opinion has two tools, the reviewer's and the
+    /// working session's, and no tool asks for one, hands one on, or answers a dispute (*Go on anyway…*, *I looked myself…*);
+    /// each says the findings are claims, not facts, and that the person sees them.
+    /// </summary>
+    [Fact]
+    public void No_tool_settles_a_second_opinion_and_both_say_its_findings_are_claims()
+    {
+        var tools = typeof(KnowledgeTools).GetMethods()
+            .Select(method => method.GetCustomAttribute<McpServerToolAttribute>()?.Name)
+            .OfType<string>()
+            .ToList();
+
+        Assert.Equal(["opinion_answer", "opinion_give"], tools.Where(name => name.Contains("opinion")).Order());
+        Assert.DoesNotContain(tools, name => name.Contains("anyway") || name.Contains("myself") || name.Contains("settle")
+                                             || name.Contains("dispute") || name.Contains("reviewer"));
+        foreach (var tool in new[] { "opinion_give", "opinion_answer" })
+        {
+            var text = string.Join(" ", Descriptions().Where(d => d.Tool == tool).Select(d => d.Text));
+            Assert.Contains("claims", text);
+            Assert.Contains("person sees", text);
+        }
+    }
+
+    /// <summary>
     /// EVID1a (D144 §1, §3): the session a requirement will judge never writes its verdict — the driver reads the commit and
     /// posts it to a local door no connector tool reaches. What the session is told is to commit what its evidence names,
     /// since Daoris reads its last commit when it ends; and the publish says a requirement may name its evidence.
