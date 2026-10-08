@@ -5,6 +5,37 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-08 — the connector warned at every start about a probe it answered correctly
+
+### Service: the harness's `server/discover` probe left two warnings in the machine log per session (MCPDISCOVER1)
+- **Symptom:** on the install, every start of the knowledge connector (the stdio MCP host) wrote two `warn` `log`
+  lines into the `mcp` log, category `ModelContextProtocol.Server.McpServer`: *received request for method
+  'server/discover', but no handler is available*, then *request handler failed* with
+  `ModelContextProtocol.McpProtocolException: Method 'server/discover' is not available.` Settings → Logs filled with
+  warnings a person could do nothing about.
+- **Root cause:** `server/discover` is the probe of the MCP protocol's 2026-07-28 revision (SEP-2575), which drops the
+  `initialize` handshake. The harness's MCP client now opens every connection with it and, told method not found,
+  treats the server as pre-2026-07-28 and falls back to `initialize`. The connector's SDK (ModelContextProtocol 1.4.1)
+  predates the revision and registers no handler for it, so its dispatch (`McpSessionHandler.HandleRequestAsync`) logs
+  the missing handler at Warning, throws, and `HandleMessageCoreAsync` logs the failure at Warning before the session
+  sends the error. The answer was the protocol's own; the two warnings were noise. The 2.x line of the SDK registers a
+  handler for the probe, but taking it changes which revision every session's connector speaks, a choice of its own.
+- **Fix:** `DiscoverProbe` (`Daoris.Service.Mcp`), an incoming message filter the host registers
+  (`.AnswerDiscoverProbe()`), answers a `server/discover` request before the SDK's dispatch: it logs one line at Debug
+  and throws the same `McpProtocolException` (`MethodNotFound`, the same message). The session answers a request's
+  protocol error with its code and message and logs nothing, so the wire is unchanged and neither provider (standard
+  error, the machine log) sees a warning. Every other message reaches the SDK as before, so another unknown method still
+  warns. The shared `MachineLogProvider` is untouched, and so is its desktop twin. The host's logging moved into
+  `McpHostLogging.Use` so the tests run the host's own. 🔴 **Upgrading the SDK to a line that answers the probe** would
+  leave this filter refusing the revision the SDK then speaks: `DiscoverProbeTests`' third test fails on that upgrade,
+  and the upgrade removes the filter and decides which revision the connector speaks.
+- **Verify:** `DiscoverProbeTests` (Service, 4): the probe is answered -32601 with no warning in the machine log and one
+  Debug line; `example/unknown` still writes its warning; without the filter the SDK gives the same answer and the two
+  warnings (the install's lines); the host's `Program.cs` calls both. The probe test and the source test failed first.
+  The built `daoris-knowledge.exe` on a scratch home, fed a probe, an `initialize` and an unknown method: the probe
+  answered -32601, `initialize` answered, and only the unknown method warned, on standard error and in the log.
+- **Commit:** `170d6748`.
+
 ## 2026-10-08 — an older connector rebuilt a newer index
 
 ### Service: an older build read a newer index's schema as one to rebuild, and dropped it (KSCHEMA1)

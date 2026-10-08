@@ -291,6 +291,13 @@ held only the server's line that something was thrown. The host's outermost midd
   no error of the service's and is not written. `request.failed` is written as it was. **Not covered by a
   test**: those two cases.
 
+**As built (MCPDISCOVER1): the connector's `log` lines leave out the protocol's version probe.** A client of the
+MCP 2026-07-28 revision opens with `server/discover`, and the connector, which predates it, answers method not
+found so the client falls back to `initialize`. The SDK gave that answer with two warnings at every start, which
+asked nothing of anyone. The connector now answers the probe itself, before the SDK's dispatch (`DiscoverProbe`),
+with the same error, and says it once at debug, below every provider's floor; any other method with no handler
+still warns. Held by `DiscoverProbeTests`; the mechanism is the fix log's.
+
 ## 5. What is never logged
 
 **Anyone's words**: a message, a prompt, what an agent said, a tool call's input or output, a quest's
