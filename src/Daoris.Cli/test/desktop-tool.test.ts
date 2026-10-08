@@ -13,7 +13,7 @@ import { readText, listFiles } from '../src/fsx.ts';
 // the tool's BEHAVIOUR, which a stale declaration would not protect.
 import {
   CLEARED, PAGE_THEME, REDIRECTED, SHELL_ORIGIN, THEME_KEY, assemblyExe, awaitDebugPort, closedPortReport, engineLogOf,
-  installEnvironment, installedExe, isShell, prune, scratchEnvironment, startedHere, withPageTheme,
+  installEnvironment, installedExe, isShell, prune, scratchEnvironment, shotTarget, startedHere, withPageTheme,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop.mjs';
 // @ts-expect-error — untyped workspace tooling; see above
@@ -341,10 +341,11 @@ test('the capture script and the tool agree with the project on the process name
   assert.equal(`${process}.exe`, SHELL_EXE, 'the build names the application as the install does');
 
   // Daoris's own browser is the application's executable started with its argument since CHR8 (D99),
-  // so `shot --window browser` photographs that process by its id, found by its argument; a name of
-  // its own no longer tells it apart.
+  // so a name or a path no longer tells the two apart: the capture is handed the process `shotTarget`
+  // chose, by its id, whichever window was asked for (SHOTPICK1).
   const tool = readText(join(repoRoot, 'tools', 'desktop.mjs'));
-  assert.ok(tool.includes('browsersAt('), 'the capture finds the browser among the application’s processes');
+  assert.ok(tool.includes('shotTarget(commandLinesAt(exe)'), 'the capture chooses among the processes from its path');
+  assert.ok(tool.includes("'-ProcessId', String(target.pid)"), 'the capture hands the script the process it chose');
   assert.ok(!tool.includes('daoris-browser.exe') && !tool.includes('Daoris.Desktop.Browser'),
     'the capture still looks for the retired browser executable');
 });
@@ -543,6 +544,66 @@ test('kill stops the process the loop recorded, never another from the same path
   assert.deepEqual(startedHere([4100], { pid: 4200 }), [], 'the recorded run has ended; the other is not ours');
   assert.deepEqual(startedHere([4100], {}), [4100], 'a record without a pid keeps the old answer');
   assert.deepEqual(startedHere([4100], null), [4100]);
+});
+
+/**
+ * SHOTPICK1: the application and its browser run from one executable since D99, and both hold windows,
+ * so the capture script's "the first process with a window from this path" was Windows' choice between
+ * them. On an install it was the browser, photographed for the application with only "2 matching
+ * windows are open; took the first" said. The tool now chooses the process by its command line, as
+ * `eval` chooses the application's page, and hands the script its id.
+ */
+const exeAt = '"D:\\app\\Daoris.Desktop.exe"';
+const anApplication = `4200|${exeAt} `;
+const itsBrowser = `4400|${exeAt} --daoris-browser "--daoris-profile=D:\\h\\browser\\engine" --daoris-port=9422 --daoris-parent=4200`;
+const anEngineProcess = `4100|${exeAt} --type=gpu-process --no-sandbox`;
+
+test('shot takes the application with its browser beside it, and the browser only when it is named', () => {
+  // Listed browser first, as Windows listed them on the install.
+  const both = [itsBrowser, anEngineProcess, anApplication].join('\n');
+  assert.deepEqual(shotTarget(both), { pid: 4200, title: null }, 'the application, never the browser');
+  assert.deepEqual(shotTarget(both, { window: 'browser' }), { pid: 4400, title: 'Chromium' });
+  // A secondary window is the application's own, so it is looked for among that process's windows.
+  assert.deepEqual(shotTarget(both, { window: 'monitor' }), { pid: 4200, title: 'Monitor' });
+  assert.deepEqual(shotTarget(both, { window: 'session:s-1' }), { pid: 4200, title: 'session:s-1' });
+});
+
+test('shot with only the application takes it, and refuses the browser that is not open', () => {
+  const application = [anEngineProcess, anApplication].join('\n');
+  assert.deepEqual(shotTarget(application), { pid: 4200, title: null });
+  assert.deepEqual(shotTarget(application, { window: 'monitor' }), { pid: 4200, title: 'Monitor' });
+  const refused = shotTarget(application, { window: 'browser' });
+  assert.equal(refused.pid, undefined);
+  assert.match(refused.refusal, /no browser of this shell is running/);
+  assert.match(refused.refusal, /View → Browser/);
+});
+
+test('shot with only the browser photographs it when named, and never in the application’s place', () => {
+  assert.deepEqual(shotTarget(itsBrowser, { window: 'browser' }), { pid: 4400, title: 'Chromium' });
+  for (const window of [null, 'monitor', 'session:s-1']) {
+    const refused = shotTarget(itsBrowser, { window, exe: 'D:\\app\\Daoris.Desktop.exe' });
+    assert.equal(refused.pid, undefined, `${window ?? 'the main window'} is the application's`);
+    assert.match(refused.refusal, /no application of this shell is running from D:\\app\\Daoris\.Desktop\.exe/);
+    assert.match(refused.refusal, /only its browser is, which `--window browser` photographs/);
+  }
+
+  const nothing = shotTarget('', { exe: 'D:\\app\\Daoris.Desktop.exe' });
+  assert.match(nothing.refusal, /no application of this shell is running/);
+  assert.doesNotMatch(nothing.refusal, /browser/);
+  assert.ok(shotTarget('', { window: 'browser' }).refusal);
+});
+
+/**
+ * Two applications from one path are a scratch run and a `--real` one from the same build. The one the
+ * last run recorded is photographed, as `kill` stops it; a record whose application has ended leaves the
+ * path's answer, because a shot of the person's own start of the install harms nothing, and says so.
+ */
+test('shot prefers the application the last run recorded, and names the others it passed over', () => {
+  const two = [anApplication, `4300|${exeAt} --app-root D:\\scratch\\app`, itsBrowser].join('\n');
+  assert.deepEqual(shotTarget(two, { record: { pid: 4300 } }), { pid: 4300, title: null });
+  assert.deepEqual(shotTarget(two, { record: { pid: 9999 } }), { pid: 4200, title: null, others: [4300] });
+  assert.deepEqual(shotTarget(two), { pid: 4200, title: null, others: [4300] });
+  assert.deepEqual(shotTarget(two, { window: 'browser', record: { pid: 4300 } }), { pid: 4400, title: 'Chromium' });
 });
 
 /**

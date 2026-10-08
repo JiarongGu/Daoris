@@ -42,7 +42,9 @@ import { fileURLToPath } from 'node:url';
 import { copyTree, isMain } from './fsx.mjs';
 // The install's layout, from the script that makes it (REV3 CLEAN1): one launcher at the root, the home in `data/`.
 import { HOME, LAUNCHER, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_HOME, layOffers } from './desktop-publish.mjs';
-import { applicationsAt, browsersAt, running, stopAll, stopProcesses } from './processes.mjs';
+import {
+  applicationsAt, applicationsIn, browsersIn, commandLinesAt, running, stopAll, stopProcesses,
+} from './processes.mjs';
 
 export const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -519,6 +521,42 @@ function windowCaption(window) {
 }
 
 /**
+ * Which process `shot` photographs, and the caption it looks for among that process's windows
+ * (SHOTPICK1), from the `pid|command line` rows of every process running from the shell's executable.
+ *
+ * Since D99 the browser runs from that executable too, with windows of its own, so the capture script's
+ * "the first process from this path with a window" was Windows' choice between two processes. On an
+ * install it was the browser, photographed in the application's place. So the choice is made here, by
+ * command line, as `eval` chooses the application's page, and the script is handed the id:
+ * `--window browser` is the browser; every other window, the main one, the monitor or a detached
+ * session, is the application's own. Among applications from one path (a scratch run and a `--real` one
+ * from the same build) the one the last run recorded wins, as it does for `kill`; with none recorded the
+ * first is taken and the rest are named in `others`.
+ *
+ * @returns {{ pid: number, title: string | null, others?: number[] } | { refusal: string }}
+ */
+export function shotTarget(rows, { window = null, record = null, exe = '' } = {}) {
+  const browsers = browsersIn(rows);
+  if (window === 'browser') {
+    return browsers.length
+      ? { pid: browsers[0], title: windowCaption(window) }
+      : { refusal: 'no browser of this shell is running — open it with View → Browser, then photograph it.' };
+  }
+
+  const applications = applicationsIn(rows);
+  if (!applications.length) {
+    return {
+      refusal: `no application of this shell is running${exe ? ` from ${exe}` : ''}`
+        + (browsers.length ? ' (only its browser is, which `--window browser` photographs)' : '')
+        + ' — `node tools/desktop.mjs run` starts one.',
+    };
+  }
+  const recorded = startedHere(applications, record);
+  const [pid, ...others] = recorded.length ? recorded : applications;
+  return { pid, title: window ? windowCaption(window) : null, ...(others.length ? { others } : {}) };
+}
+
+/**
  * Attach to one of the running shell's pages, having first established that it IS the shell.
  *
  * @param window - null for the application's own window, or a secondary window's name (SURF8):
@@ -834,12 +872,13 @@ async function main(command, args) {
       }
 
       /* `--window <name>` photographs a SECONDARY window (SURF8) — `monitor`, or `session:<id>` —
-       * rather than the main one.
+       * rather than the main one, or `browser`, Daoris's own browser beside the application (D99).
        *
        * It exists because `Process.MainWindowHandle` answers for exactly one window and Windows
        * chooses which, so with the monitor open a capture silently photographs whichever the OS
        * calls main. A name that matches no open window is refused rather than falling back: the
-       * whole point of asking is that the main window is not the one wanted. */
+       * whole point of asking is that the main window is not the one wanted. Which PROCESS holds the
+       * window is chosen before that, below, and never by Windows (SHOTPICK1). */
       const window = takeWindow(args);
 
       /* `--page [--size WxH]` asks Chromium for the PAGE over the debug port instead of photographing
@@ -888,20 +927,21 @@ async function main(command, args) {
         break;
       }
 
-      // The browser is another process since CHR3, and every one of its windows is the engine's own,
-      // captioned `<page> - Chromium`. Since CHR8 it runs from the application's own executable,
-      // started with the browser's argument, so it is named by its process id: the path and the
-      // process name are the application's too.
-      const browsers = window === 'browser' ? browsersAt(exe) : [];
-      if (window === 'browser' && browsers.length === 0) {
-        fail('no browser of this shell is running — open it with View → Browser, then photograph it.');
+      // The browser runs from the application's own executable since CHR8 (D99), with windows of its
+      // own, so the path and the process name are both of theirs: the process is chosen here, by its
+      // command line, and handed to the script by id (SHOTPICK1). Left to the script, the first of the
+      // two with a window was Windows' choice, and on an install it was the browser.
+      const target = shotTarget(commandLinesAt(exe), { window, record: readRun(), exe });
+      if (target.refusal) fail(target.refusal);
+      if (target.others) {
+        console.log(`${target.others.length + 1} applications run from ${exe} and the last run recorded none of `
+          + `them; photographing pid ${target.pid}, not ${target.others.join(', ')}.`);
       }
-      const whose = ['-ProcessName', basename(exe, '.exe'), '-ExePath', exe,
-        ...(browsers.length ? ['-ProcessId', String(browsers[0])] : [])];
+      const whose = ['-ProcessName', basename(exe, '.exe'), '-ExePath', exe, '-ProcessId', String(target.pid)];
       const captureArgs = ['-NoProfile', '-ExecutionPolicy', 'Bypass',
         '-File', join(repoRoot, 'tools', 'shot-window.ps1'),
         ...whose,
-        ...(window ? ['-WindowTitle', windowCaption(window)] : []),
+        ...(target.title ? ['-WindowTitle', target.title] : []),
         '-OutFile', join(SHOTS, `${name}.png`)];
 
       if (theme) {
