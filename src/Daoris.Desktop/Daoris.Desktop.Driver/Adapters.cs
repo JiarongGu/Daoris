@@ -179,6 +179,13 @@ public sealed record SessionTarget(
     public IReadOnlyList<AcrossCheckout> WritesAcross { get; init; } = [];
 
     /// <summary>
+    /// For a set-up step (REVIEWENV1c, D154 point 4; the review environment design §2.2): the environment it shows its chain's
+    /// work in, as the review rule here declares it at the start, so its instruction says what to show, by which procedure,
+    /// where, and how to say it. Null for every other quest, and the instruction reads as it did.
+    /// </summary>
+    public ReviewEnvironment? SetUp { get; init; }
+
+    /// <summary>
     /// The target a quest's session is handed: the quest as the service answered it, run in
     /// <paramref name="workTree"/> — the repository's own tree where it opted in (D51), its root
     /// otherwise — naming the code map that tree keeps.
@@ -262,6 +269,9 @@ public static class TargetPrompt
     /// </summary>
     private static IEnumerable<Piece> Tail(SessionTarget target, string close) =>
     [
+        // A set-up step's own section (REVIEWENV1c, design §2.2), before the close it changes. Accounted with what the quest carries
+        // until the page words a section of its own for it.
+        new(HandedSections.Carried, SetUp(target)),
         new(HandedSections.Close, close),
         new(HandedSections.Language, Language(target)),
         new(HandedSections.Close, "\n"),
@@ -754,6 +764,52 @@ public static class TargetPrompt
           nothing at all, so leave it whole.
 
           """;
+
+    /// <summary>
+    /// A set-up step's section (REVIEWENV1c, D154 points 4–6; the review environment design §2.2–§2.6, §3.4): the environment, its
+    /// kind and its address; the repository's procedure, read first and never gone past; that the tree holds the chain's work and
+    /// the step adds none; never a process or a port of the person's; what needs a go-ahead and what never happens; proof; the
+    /// set-up said through <c>review_ready</c> before the done; and how the person's <i>not yet</i> comes back. Nothing for every
+    /// other quest, so its instruction reads as it did.
+    /// </summary>
+    private static string SetUp(SessionTarget target)
+    {
+        if (target.SetUp is not { } environment) return "";
+        var name = environment.Name;
+        var local = environment.Kind == "local";
+        var where = environment.Address is { } address ? $" at `{address}`" : "";
+        var text = new StringBuilder("\n");
+        text.Append($"This quest is a set-up step. It shows the work of its chain to the person in `{name}`, for them to review ")
+            .Append("before it lands: ")
+            .Append(local
+                ? $"`{name}` is a local environment, and the work is shown in Daoris's browser{where}, where the app normally runs.\n"
+                : $"`{name}` is a deployed environment{where}, reached by the route this repository documents.\n")
+            .Append('\n')
+            .Append($"- Read `{environment.Procedure}` first. It is this repository's own procedure for reaching `{name}`: follow it, and ")
+            .Append("never go past it. Where it does not cover something you need, say so under **Needs you** rather than improvise.\n")
+            .Append("- This tree holds the chain's work. Add none of your own, and make no commit for the set-up itself; what the procedure ")
+            .Append("makes, such as a build's output, stays where the procedure keeps it.\n")
+            .Append("- Never stop, restart or take over a process or a port of the person's. That needs their go-ahead at the least, and ")
+            .Append("showing the work needs none.\n")
+            .Append(local
+                ? "- Build the work as the procedure says, then ask Daoris to serve that build to your tab with your connector's "
+                  + $"`review_serve`: the build's folder in this tree, and `{environment.Address}`. Go to the change, do what it is "
+                  + "about, and leave the tab there. An interaction that would save to a shared environment's data needs the person's "
+                  + "go-ahead; without it, stop just before it and say so.\n"
+                : $"- Reach `{name}` as the procedure says. A deploy, a pipeline run, a configuration write or a sign-in there needs the "
+                  + "person's go-ahead, asked once on the ask. A step the procedure leaves to a push is the person's: say so under "
+                  + "**Needs you**, naming the procedure's line. Then show the work there in Daoris's browser, go to the change, and "
+                  + "leave it there.\n")
+            .Append("- Never production, a push, or a merge into a line, and write nothing outside this tree but your proof. Capture ")
+            .Append("proof of what you showed.\n")
+            .Append("- Then say the set-up with your connector's `review_ready`: where the tab is (`look`), what it shows and what to ")
+            .Append("look at (`shows`), and how to show it again by hand (`again`). Close this quest `done` only after that; it then ")
+            .Append("waits for the person's review, and Daoris reads the commit your tree holds when you end.\n")
+            .Append("- The person may say *not yet*, with their words, or ask to see it again: either comes back to you as a new turn. ")
+            .Append("Put right what their words name: in the showing or the environment, there; in the work, in this tree, committed, ")
+            .Append("with your closing note saying it was a correction under their words. Then show it again and say a new set-up.\n");
+        return text.ToString();
+    }
 
     /// <summary>
     /// How the work lands, said only where it goes onto a branch: the branch the person will push and

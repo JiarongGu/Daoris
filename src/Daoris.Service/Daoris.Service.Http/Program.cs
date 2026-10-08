@@ -15,7 +15,7 @@ using Daoris.Knowledge.Http;
 //   DAORIS_EMBED_URL       the endpoint                    (default: http://localhost:11434)
 //   DAORIS_EMBED_WINDOW    the most characters one embedded text carries, title included; a longer
 //                          entry is embedded in pieces (D123)   (default: 2000; under 200, exit 2)
-//   DAORIS_WEB_ORIGIN      the dev UI's origin for CORS    (absent: same-origin only)
+//   DAORIS_WEB_ORIGIN      the dev UI's origin, for CORS and the write gate   (absent: same-origin only)
 //   DAORIS_WORKSPACE       which circle a SHARED host serves    (default: `default`; D48 §5)
 //                          Refused on a local host, which holds every workspace this machine wired.
 //   DAORIS_STOP_ON_INPUT_END  `1`: stop cleanly when standard input ends — how the desktop stops a
@@ -40,7 +40,8 @@ using Daoris.Knowledge.Http;
 // task is the whole point of a remote deployment, which may run with no model at all (D24) and still
 // carry it. There are exactly two trust shapes (D47 §7, as amended): LOCAL trusts the loopback — the
 // OS account is the boundary (D21) — and SHARED gates every route with minted keys. Binding beyond
-// loopback without shared mode refuses to start, so no third shape can exist by accident.
+// loopback without shared mode refuses to start, so no third shape can exist by accident. Neither shape
+// takes a write from a web page it does not allow (ORIGIN1): a browser on this machine is on the loopback.
 //
 // A REGISTRATION'S ROOT NEVER LEAVES THE MACHINE (D46). The filesystem path a repository registers is
 // answered only to loopback callers — the local driver — so a remote deployment never serves anyone's
@@ -173,15 +174,11 @@ builder.Services.ConfigureHttpJsonOptions(json =>
     json.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 });
 
-var origin = Environment.GetEnvironmentVariable("DAORIS_WEB_ORIGIN");
-// Who may call this host from another origin: named, never wildcarded, since a wildcard would quietly
-// make a local-only index readable by any page the browser happens to have open. The development UI
-// on another port, when that variable names it; and, on a LOCAL host only, the desktop's own page
-// (D92), which lives on its engine's app origin and reaches this host at the loopback address. No
-// website can present that origin: only the shell's engine serves it.
-var origins = new List<string>();
-if (!string.IsNullOrWhiteSpace(origin)) origins.Add(origin);
-if (mode == ServiceMode.Local) origins.Add(DesktopPage.Origin);
+// Who may call this host from another origin: the development UI on another port, when that variable
+// names it; and, on a LOCAL host only, the desktop's own page (D92), which lives on its engine's app
+// origin and reaches this host at the loopback address. One list, which the write gate below reads too
+// (ORIGIN1): CORS only keeps a page from reading an answer.
+var origins = BrowserOrigins.Allowed(mode, Environment.GetEnvironmentVariable("DAORIS_WEB_ORIGIN"));
 if (origins.Count > 0)
 {
     builder.Services.AddCors(cors => cors.AddDefaultPolicy(p =>
@@ -239,6 +236,32 @@ app.Use(async (context, next) =>
 });
 
 if (origins.Count > 0) app.UseCors();
+
+// ORIGIN1: no website presses a door. CORS keeps a page from reading an answer, never from sending a simple
+// request (a POST with no body, a text body or a form body), so a write from a page this host does not allow is
+// refused here, before any route runs: by its Origin, or with none by what its browser says of the site. A program
+// sends neither header and passes as before. In both modes: a browser reaches a shared host too, and that host's
+// key gate stops a page only for as long as a browser holds no credential for it. BrowserOrigins says why each
+// header decides what it does, and why the shell's page, another site by its browser's reckoning, is answered.
+var ownOrigin = mode == ServiceMode.Local;
+app.Use(async (context, next) =>
+{
+    if (BrowserOrigins.Refused(context.Request, origins, ownOrigin) is { } by)
+    {
+        // Once per request, by the route's pattern and which header refused it: never the page's address, a header's
+        // value or the body (machine-log design §5).
+        log.Warn(BrowserOrigins.Event,
+            ("method", context.Request.Method),
+            ("route", UnhandledRequests.RouteOf(context)),
+            ("by", by),
+            ("site", BrowserOrigins.SiteOf(context.Request)));
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        await context.Response.WriteAsJsonAsync(new ErrorResponse(BrowserOrigins.Sentence, BrowserOrigins.Code));
+        return;
+    }
+
+    await next();
+});
 
 // The built UI, when there is one — in local mode. A shared deployment serves the API and nothing
 // else: the platform in a browser arrives with person-auth, not before (D47 §7), so until then there
@@ -308,10 +331,12 @@ if (mode == ServiceMode.Shared)
     });
 }
 
-// There is deliberately no third gate. D36's interim single-key write gate was retired with nothing
-// deployed (D47 §7, as amended): local mode trusts the loopback outright — the OS account is the
+// There is deliberately no third credential gate. D36's interim single-key write gate was retired with
+// nothing deployed (D47 §7, as amended): local mode trusts the loopback outright — the OS account is the
 // boundary (D21), and the startup refusal above keeps local mode ON the loopback — while shared mode
-// gates everything with minted keys. Two credential stories would drift, and the weaker would win.
+// gates everything with minted keys. Two credential stories would drift, and the weaker would win. The
+// origin gate above is no credential: it tells a website's page from Daoris's own, which the loopback
+// trust never asked, since a browser on this machine is on the loopback too (ORIGIN1).
 
 app.MapGet("/api/status", (ComposedService s) => new StatusResponse(
     Semantic: s.SemanticEnabled,

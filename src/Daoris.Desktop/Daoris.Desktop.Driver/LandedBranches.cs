@@ -55,6 +55,12 @@ public sealed record LandedBranch(
     public LandedRule? Rule { get; init; }
 
     /// <summary>
+    /// The review that let its first landing go (REVIEWENV1c, D154 point 9; design §3.5): <c>reviewed</c> with the environment and
+    /// the set-up's commit, or <c>skipped</c> with the person's words. Null where no review was asked, and for one recorded before.
+    /// </summary>
+    public LandingReview? Review { get; init; }
+
+    /// <summary>
     /// Each time a later done moved it on (LAND2c, D149 point 2), oldest first: a chain's later step, or a session that went on
     /// after its landing. <see cref="Tip"/> is the newest one's <see cref="LandedAdvance.To"/>.
     /// </summary>
@@ -96,6 +102,9 @@ public sealed record LandedAdvance(string From, string To, DateTimeOffset At, st
 {
     /// <summary>One of <see cref="Daoris.Driver.AcceptedBy"/>, or null in a record that did not keep it.</summary>
     public string? AcceptedBy { get; init; }
+
+    /// <summary>The review that let this advance go (REVIEWENV1c, design §3.5); null where none was asked, and in a record from before.</summary>
+    public LandingReview? Review { get; init; }
 }
 
 /// <summary>
@@ -356,6 +365,8 @@ public sealed class LandedBranches(string home)
                     writer.WriteEndObject();
                 }
 
+                if (entry.Review is { } review) WriteReview(writer, review);
+
                 if (entry.Advances.Count > 0)
                 {
                     writer.WriteStartArray("advances");
@@ -367,6 +378,7 @@ public sealed class LandedBranches(string home)
                         writer.WriteString("at", advance.At.ToString("O", CultureInfo.InvariantCulture));
                         writer.WriteString("session", advance.Session);
                         if (advance.AcceptedBy is not null) writer.WriteString("acceptedBy", advance.AcceptedBy);
+                        if (advance.Review is { } advanced) WriteReview(writer, advanced);
                         writer.WriteEndObject();
                     }
 
@@ -408,6 +420,30 @@ public sealed class LandedBranches(string home)
 
         return System.Text.Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n";
     }
+
+    /// <summary>The review that let a landing go (REVIEWENV1c), each field only where it is known.</summary>
+    private static void WriteReview(Utf8JsonWriter writer, LandingReview review)
+    {
+        writer.WriteStartObject("review");
+        writer.WriteString("said", review.Said);
+        if (review.Environment is not null) writer.WriteString("environment", review.Environment);
+        if (review.Quest is not null) writer.WriteString("quest", review.Quest);
+        if (review.Commit is not null) writer.WriteString("commit", review.Commit);
+        if (review.At is { } at) writer.WriteString("at", at.ToString("O", CultureInfo.InvariantCulture));
+        if (review.Words is not null) writer.WriteString("words", review.Words);
+        writer.WriteEndObject();
+    }
+
+    /// <summary>The review a landing or an advance kept, or null: absent, which is every landing from before REVIEWENV1c, or not whole.</summary>
+    private static LandingReview? ReviewOf(JsonElement element) =>
+        element.TryGetProperty("review", out var review) && review.ValueKind == JsonValueKind.Object && Text(review, "said") is { } said
+            ? new LandingReview(said, Text(review, "environment"), Text(review, "quest"))
+            {
+                Commit = Text(review, "commit"),
+                At = DateTimeOffset.TryParse(Text(review, "at"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at) ? at : null,
+                Words = Text(review, "words"),
+            }
+            : null;
 
     /// <summary>The kept answer, in the answer's own field names, with who answered and when it was asked (PLUGHOOK1a).</summary>
     private static void WriteState(Utf8JsonWriter writer, PullRequestState state)
@@ -507,6 +543,7 @@ public sealed class LandedBranches(string home)
                     rule.TryGetProperty("autoAccept", out var auto) && auto.ValueKind == JsonValueKind.True,
                     Text(rule, "source") ?? LandingSource.Default)
                 : null,
+            Review = ReviewOf(element),
             Advances = AdvancesOf(element),
             PullRequestState = StateOf(element),
             PullRequestAskFailed = AskFailedOf(element),
@@ -531,7 +568,7 @@ public sealed class LandedBranches(string home)
                 continue;
             }
 
-            advances.Add(new LandedAdvance(from, to, at, session) { AcceptedBy = Text(each, "acceptedBy") });
+            advances.Add(new LandedAdvance(from, to, at, session) { AcceptedBy = Text(each, "acceptedBy"), Review = ReviewOf(each) });
         }
 
         // The empty case is the property's own default, so an entry from before LAND2c still equals itself read twice.

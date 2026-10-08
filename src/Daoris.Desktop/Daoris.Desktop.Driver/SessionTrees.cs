@@ -384,6 +384,18 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         return new(LandingForm.Merge, line ?? "", landing.Source);
     }
 
+    /// <summary>
+    /// The review's gate for this tree (REVIEWENV1c, D154 point 7; <see cref="ReviewGate.ReadAsync"/>): the chain its quest is a step
+    /// of, the review rule standing for the tree's repository here, and git's ancestry from the tree's <c>HEAD</c>. Every door that
+    /// lands asks it and hands it to <see cref="LandAsync"/>; a conversation, with no quest, has nothing to wait for.
+    /// </summary>
+    public Task<ReviewGateState> ReviewAsync(string path, string? quest, IReviewWorld world, CancellationToken ct = default)
+    {
+        var full = Path.GetFullPath(path);
+        var (workspace, repository) = OwnerOf(full);
+        return ReviewGate.ReadAsync(world, Config(), full, repository, workspace, quest, ct);
+    }
+
     /// <summary>What a landing says of the tree it leaves — dropped when a tidy removed it.</summary>
     private const string TreeStays = " The tree is still there; discard it when you are done with it.";
 
@@ -408,10 +420,19 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     /// quest's done. 🔴 One thing differs for <see cref="AcceptedBy.Auto"/>: a plugin that cannot land work here does not stop
     /// the branch, since nobody is there to fix it, so the branch is made and recorded and the push is not tried.
     /// </param>
+    /// <param name="review">
+    /// The review's gate for this tree (REVIEWENV1c, D154 point 7; <see cref="ReviewAsync"/>), read by the door that lands it: one
+    /// that does not let go refuses before anything is made, merge or branch, an advance among them, with its sentence and the
+    /// code <see cref="AutoLandingCode.Unreviewed"/>; one that does is kept on the landing record. Null is a door that asked none.
+    /// </param>
     public async Task<TreeLanding> LandAsync(
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
-        string acceptedBy = AcceptedBy.Person)
+        string acceptedBy = AcceptedBy.Person, ReviewGateState? review = null)
     {
+        // Wherever the level says review, the work waits for the person's reviewed on a set-up that holds it, or their skip
+        // (design §3.1): a merge rule waits as a branch rule does, and an advance waits the same way.
+        if (review is { LetsGo: false }) return new(false, review.Says) { Refusal = AutoLandingCode.Unreviewed };
+
         var full = Path.GetFullPath(path);
         var (workspace, repository) = OwnerOf(full);
         var landing = LandingRules.Choose(Config(), repository, workspace);
@@ -451,7 +472,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             {
                 // Moved on (LAND2c): the entry's tip is the new commit, and the advance is kept with who accepted it (D143).
                 landed = Remember(landed, () => Recorded.Advanced(repository, landed.Branch!,
-                    new LandedAdvance(advancedFrom, tip, DateTimeOffset.UtcNow, subject.Session) { AcceptedBy = acceptedBy }));
+                    new LandedAdvance(advancedFrom, tip, DateTimeOffset.UtcNow, subject.Session) { AcceptedBy = acceptedBy, Review = review?.Landing }));
             }
             else if (landed.Landed && tip is not null)
             {
@@ -465,6 +486,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                     // Who accepted it, and the rule as it stood (LAND2b, D145 point 6): a choice keeps its facts (D143).
                     AcceptedBy = acceptedBy,
                     Rule = new LandedRule(plugin, landing.Rule.AutoAccept, landing.Source),
+                    // The review that let it go (REVIEWENV1c, design §3.5): reviewed with its set-up's commit, or skipped.
+                    Review = review?.Landing,
                 }));
             }
 

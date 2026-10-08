@@ -192,6 +192,9 @@ with the version and date at release.
   sentence names, and a tree holding files only it has is kept.
 - A workspace or repository can name the agents that give a second opinion before its work lands (Setup →
   *Second opinion before landing*, or `daoris driver opinion`); nothing asks one yet.
+- Work in a repository whose review rule says so now waits for your *reviewed* (or a skip) before it lands;
+  `daoris-driver quest review` gives it.
+- A web page in your browser can no longer press a door on Daoris's local service.
 
 The first version: doctrine that installs, is checked, and flows back.
 

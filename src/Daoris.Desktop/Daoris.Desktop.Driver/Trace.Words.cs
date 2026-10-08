@@ -206,6 +206,11 @@ internal static class TraceWords
         EvidenceCodes.MissingHold =>
             $"  held: its evidence was not found in the commit read, and waits for you: a later commit that holds it "
             + $"(`daoris-driver quest check {quest.Id} --commit <sha>`), or your yes to the done as it stands (`daoris-driver quest accept {quest.Id}`)\n",
+        // A set-up step's review (REVIEWENV1c, D154 point 9): the person's look lets it go, which a yes to a departure does not.
+        EvidenceCodes.Unreviewed =>
+            $"  held: it waits for your review of what it showed (`daoris-driver quest review {quest.Id} reviewed`, or "
+            + $"`daoris-driver quest review {quest.Id} not-yet \"…\"`), or your skip of it (`daoris-driver quest review {quest.Id} skip`); "
+            + "a yes to a departure does not let it go\n",
         _ => $"  held: its done departed from what you required, and waits for your yes (`daoris-driver quest accept {quest.Id}`)\n",
     };
 
@@ -444,6 +449,21 @@ internal static class TraceWords
                 .Append(rule.AutoAccept ? ", accepting automatically" : ", accepting at a press");
         }
 
+        // The review that let it go (REVIEWENV1c, design §3.5): the person's reviewed, with its environment and set-up's commit, or
+        // their skip. Nothing for a landing no review was asked of, and for one recorded before.
+        said.Append(landing.Review switch
+        {
+            { Said: ReviewVerdicts.Reviewed } review =>
+                $"; reviewed by you in `{review.Environment}`"
+                + (review.Quest is { } step ? $" on set-up step #{step}" : "")
+                + (review.Commit is { } commit ? $" at {Short(commit)}" : "")
+                + (review.At is { } at ? $", {When(at)}" : ""),
+            { Said: ReviewVerdicts.Skipped } review =>
+                $"; landed without a review, which you skipped{(review.Quest is { } on ? $" on quest #{on}" : "")}"
+                + (review.Words is { Length: > 0 } words ? $", saying: \"{OneLine(words)}\"" : ""),
+            _ => "",
+        });
+
         return said.ToString();
     }
 
@@ -550,6 +570,10 @@ internal static class TraceWords
             AskWordView.Answered => $"answered session {to}{on}",
             AskWordView.Added => $"added while session {to} ran{on}",
             AskWordView.Reopened => $"said to session {to} after it ended{on}",
+            // A review's verdict (REVIEWENV1c): said to no session, and worded as the verdict it came with.
+            AskWordView.Reviewed => $"reviewed what a set-up step showed{on}",
+            AskWordView.NotYet => $"said not yet to what a set-up step showed{on}",
+            AskWordView.Skipped => $"skipped the review of the work{on}",
             var kind => $"{kind}, to session {to}{on}",
         };
     }

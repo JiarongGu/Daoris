@@ -507,6 +507,16 @@ sentence naming both. A machine names its remotes in the home's `remotes.json` �
 `{ "<workspace>": { "url": ..., "key": ... } }`, with the environment pair overriding it whole — and
 the desktop's sync loop, which runs once per wired circle, does the rest.
 
+**Neither shape takes a write from a web page it does not allow** (ORIGIN1, `BrowserOrigins`). CORS keeps a
+page from reading an answer, not from sending a simple request (a `POST` with no body, a text body or a form
+body), and a browser on this machine is on the loopback. So every `POST`, `PUT`, `PATCH` and `DELETE`, on any
+path, whose `Origin` is not allowed, or that names none and whose `Sec-Fetch-Site` is `cross-site` or
+`same-site`, is refused 403 before a route runs: `{ "error": <sentence>, "code": "cross-site" }`, and one
+`origin.refused` warning in the machine log, by the route's pattern and which header refused it. Allowed are
+the CORS policy's own origins (the shell's page on a local host, D92, and `DAORIS_WEB_ORIGIN` when set) and,
+on a local host, its own origin under a loopback name. A client that sends neither header (the CLI, the
+driver, a rehearsal) is answered as before. A read is CORS's, as it was.
+
 **A shared deployment takes knowledge from a named commit on the canonical line** (D48 §6). Each feed
 carries `{ commit, committedAt, branch }` stamped from git by the machine that holds the checkout; the
 deployment refuses one from a branch that is not the repository's declared default. Wholesale

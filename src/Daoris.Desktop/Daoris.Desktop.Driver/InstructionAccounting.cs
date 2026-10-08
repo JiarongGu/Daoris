@@ -147,6 +147,8 @@ internal static class InstructionAccounting
         if (target.Attachments.Count > 0) parts.Add(Plural(target.Attachments.Count, "file"));
         if (target.Parent is { } parent) parts.Add($"the quest it follows, #{parent}");
         if (target.Then.Count > 0) parts.Add(target.Then.Count == 1 ? $"its next step, to `{target.Then[0].To}`" : $"its next {target.Then.Count} steps");
+        // A set-up step's section rides here until the page words one of its own (REVIEWENV1c).
+        if (target.SetUp is { } setUp) parts.Add($"the set-up in `{setUp.Name}`, {setUp.Kind}, by `{setUp.Procedure}` as the rule here declares it");
 
         var elsewhere = target.Attachments.Count(file => file.Path is null);
         return new HandedSection(

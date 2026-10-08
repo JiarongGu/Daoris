@@ -342,10 +342,15 @@ internal static class TreesConsole
                 // A plugin's own lines, said as they come, under its name — as the console says them (D64 §4).
                 var landing = new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => Console.WriteLine($"  plugin:{plugin}  {line}"), log: log));
 
+                // The review's gate (REVIEWENV1c, D154 point 7): read for the plan, and handed to the landing, which refuses what it holds.
+                var review = await landing.ReviewAsync(tree, questId, new ServiceReviewWorld(service)).ConfigureAwait(false);
+
                 if (args.Contains("--plan"))
                 {
                     var plan = await landing.PlanAsync(tree, subject).ConfigureAwait(false);
                     Console.WriteLine(Planned(session, plan));
+                    // What the review says before the press (design §3.5): what holds it, or what let it go.
+                    if (review.State != ReviewStates.None) Console.WriteLine($"trees: {review.Says}");
                     // Landed before, its branch gone since, its tree still here: said, as the review's note says it.
                     if (before is not null) Console.WriteLine($"trees: {LandedReviewWords.Describe(session, before)}");
                     // Due to land at its quest's done (LAND2b): what its tries came to, which the review's note shows.
@@ -356,8 +361,13 @@ internal static class TreesConsole
                 // The sessions in use, asked when the rule's tidy reaches the other session branches the work holds (LAND3).
                 var landed = await landing.LandAsync(tree, subject, inUse: async token => (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
                     .Select(each => each.Tree).OfType<string>().Where(each => each.Length > 0)
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase)).ConfigureAwait(false);
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase), review: review).ConfigureAwait(false);
                 Console.WriteLine($"trees: {landed.Message}");
+                if (landed.Refusal == AutoLandingCode.Unreviewed)
+                {
+                    var (workspace, repository) = landing.Owner(tree);
+                    SessionLog.WriteLanding(log, ReviewLines.Held(session, repository, workspace, review, ReviewDoors.Terminal));
+                }
                 // Kept where the conversation is kept, as the review's press keeps it (D100).
                 if (landed.Landed) events.Keep(session, LandingRules.Note(landed), line => Console.Error.WriteLine($"trees: {line}"));
                 await FollowMovedLinesAsync(service, home, log).ConfigureAwait(false);

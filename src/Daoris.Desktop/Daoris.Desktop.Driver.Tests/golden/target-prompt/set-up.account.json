@@ -1,0 +1,112 @@
+{
+  "chars": 6538,
+  "sections": [
+    {
+      "name": "quest",
+      "source": "quest",
+      "said": "the quest: 460 characters, quest #def456 asked by `ask #a1b2c3`, as the service answered it",
+      "chars": 460,
+      "from": "def456"
+    },
+    {
+      "name": "carried",
+      "source": "quest",
+      "said": "what the quest carries: 2,235 characters from quest #def456: the quest it follows, #abc123 and the set-up in `local`, local, by `README.md` as the rule here declares it",
+      "chars": 2235,
+      "from": "def456"
+    },
+    {
+      "name": "close",
+      "source": "driver",
+      "said": "how to take it and close it: 340 characters, the driver's own words",
+      "chars": 340
+    },
+    {
+      "name": "look",
+      "source": "driver",
+      "said": "where to look before asking: 585 characters, the driver's own words",
+      "chars": 585
+    },
+    {
+      "name": "attributed",
+      "source": "driver",
+      "said": "the person's words met second-hand: 481 characters, the driver's own words",
+      "chars": 481
+    },
+    {
+      "name": "asking",
+      "source": "driver",
+      "said": "asking another repository, and stopping for the person, a go-ahead asked once on the ask: 1,182 characters, the driver's own words",
+      "chars": 1182
+    },
+    {
+      "name": "closing",
+      "source": "driver",
+      "said": "the closing note's two lists, each item naming its source: 655 characters, the driver's own words",
+      "chars": 655
+    },
+    {
+      "name": "proposing",
+      "source": "driver",
+      "said": "proposing a rule: 298 characters, the driver's own words",
+      "chars": 298
+    },
+    {
+      "name": "boundary",
+      "source": "driver",
+      "said": "the boundary: 302 characters, the driver's own words",
+      "chars": 302
+    },
+    {
+      "name": "requirements",
+      "source": "quest",
+      "said": "the requirements: none, since the quest names none",
+      "chars": 0,
+      "from": "def456",
+      "none": "empty"
+    },
+    {
+      "name": "words",
+      "source": "ask",
+      "said": "the person's words: none, since no ask asked this quest",
+      "chars": 0,
+      "none": "no-ask"
+    },
+    {
+      "name": "go-aheads",
+      "source": "ask",
+      "said": "the go-aheads: none, since no ask asked this quest",
+      "chars": 0,
+      "none": "no-ask"
+    },
+    {
+      "name": "standing",
+      "source": "repository",
+      "said": "the standing answer: none set for `reports` on this machine",
+      "chars": 0,
+      "from": "reports",
+      "none": "not-set"
+    },
+    {
+      "name": "language",
+      "source": "repository",
+      "said": "the session language: none set for its repository or its workspace on this machine",
+      "chars": 0,
+      "none": "not-set"
+    },
+    {
+      "name": "map",
+      "source": "tree",
+      "said": "the code map: none, since its tree keeps none",
+      "chars": 0,
+      "none": "empty"
+    },
+    {
+      "name": "indexes",
+      "source": "tree",
+      "said": "the repository's indexes: none, since its tree names none",
+      "chars": 0,
+      "none": "empty"
+    }
+  ]
+}
