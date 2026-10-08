@@ -592,12 +592,12 @@ app.MapPost("/api/quests", async (
 app.MapPost("/api/quests/{id}/respond", async (
     ComposedService s, HttpContext http, string id, RespondQuestRequest body, CancellationToken ct) =>
 {
-    // A done's answers (DRIFT1d): a number left out arrives as 0, a half left out blank, and the exchange refuses
-    // each naming which — the same sentence every door gives.
     // `whileOpen` (PAUSE1c) is an abandon's decline, which the driver sends on the person's press: the person's form of an
     // agent's door, so it wants the key where the host holds one (PERSONDOOR1a, design §3.2).
     if (personGate.Refused(http, PersonDoors.Respond, form: body.WhileOpen == true) is { } refusedForm) return refusedForm;
 
+    // A done's answers (DRIFT1d): a number left out arrives as 0, a half left out blank, and the exchange refuses
+    // each naming which — the same sentence every door gives.
     var answers = (body.Answers ?? [])
         .Select(a => new QuestAnswer(a?.Requirement ?? 0, a?.Met, a?.Departed, a?.Quote))
         .ToList();

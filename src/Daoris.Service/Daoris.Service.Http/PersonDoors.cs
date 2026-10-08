@@ -44,8 +44,8 @@ public sealed record DoorForm(string Field, DoorClass Class, string Act);
 /// <summary>
 /// The local host's doors, every route by its class (design §3.2), and the refusal each says (§5.2). A route the table
 /// does not class is the person's: a write with no class is refused without the key, so a door added tomorrow is the
-/// person's until someone classes it otherwise (§3.1). <c>PersonDoorTableTests</c> lists every route the hosts map, and
-/// every route in <c>docs/index/routes.md</c>, against this table.
+/// person's until someone classes it otherwise (§3.1). <c>PersonDoorTableTests</c> lists every route, as
+/// <c>docs/index/routes.md</c> does, and holds this table to it and to every route each host maps.
 /// </summary>
 public static class PersonDoors
 {

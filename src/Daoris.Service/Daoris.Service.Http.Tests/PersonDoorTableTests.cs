@@ -1,15 +1,15 @@
-using System.Text.RegularExpressions;
 using Daoris.Knowledge.Http;
 
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>
 /// The class table (PERSONDOOR1a; the person-door design §3.2, D156 point 3): every route either host maps, by its class,
-/// listed here whole, held to <see cref="PersonDoors.Table"/>, to the routes each host maps, and to every route in
-/// <c>docs/index/routes.md</c>. A route added tomorrow fails here until it is classed; until then the gate refuses it
-/// without the key, as the person's.
+/// listed here whole, as <c>docs/index/routes.md</c> lists them, and held to <see cref="PersonDoors.Table"/> and to the
+/// routes each host maps, which that index is generated from. A route added tomorrow fails here until it is classed; until
+/// then the gate refuses it without the key, as the person's. The hosts' tables are read rather than the index: a change to
+/// <c>Program.cs</c> runs this suite at a merge, and a change to the index alone does not.
 /// </summary>
-public sealed partial class PersonDoorTableTests
+public sealed class PersonDoorTableTests
 {
     private const DoorClass Open = DoorClass.Open;
     private const DoorClass Agent = DoorClass.Agent;
@@ -152,18 +152,6 @@ public sealed partial class PersonDoorTableTests
             Sorted(PersonDoors.Table.Select(door => (door.Method, door.Pattern))));
     }
 
-    /// <summary>The index's list of the service's routes, generated from <c>Program.cs</c>, is the table's, route for route.</summary>
-    [Fact]
-    public void Every_route_in_the_index_is_in_the_table()
-    {
-        var index = File.ReadAllText(Path.Combine(Root(), "docs", "index", "routes.md"));
-        var section = index[index.IndexOf("## The service's HTTP routes", StringComparison.Ordinal)..];
-        var listed = RouteRow().Matches(section).Select(row => (row.Groups[1].Value, row.Groups[2].Value)).ToList();
-
-        Assert.True(listed.Count >= 63, $"only {listed.Count} routes read from the index");
-        Assert.Equal(Sorted(listed), Sorted(PersonDoors.Table.Select(door => (door.Method, door.Pattern))));
-    }
-
     /// <summary>The gate's judgement (design §3.1), row by row, without a host.</summary>
     [Theory]
     // A read is answered whatever was presented.
@@ -197,15 +185,4 @@ public sealed partial class PersonDoorTableTests
         Assert.Equal(code, refused?.Code);
         if (refused is { } said && PersonDoors.Find(method, pattern) is null) Assert.Equal(PersonDoors.Unclassified, said.Act);
     }
-
-    /// <summary>The workspace root, found by walking up from the test binaries to <c>daoris.json</c>.</summary>
-    private static string Root()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "daoris.json"))) directory = directory.Parent;
-        return directory?.FullName ?? throw new InvalidOperationException("no workspace root above the test binaries");
-    }
-
-    [GeneratedRegex(@"^\| (GET|POST|PUT|PATCH|DELETE) (/\S+) \|", RegexOptions.Multiline)]
-    private static partial Regex RouteRow();
 }
