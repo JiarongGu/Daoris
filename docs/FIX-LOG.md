@@ -5,6 +5,80 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-09 — the review record could be decided by an agent or a stale press (REVIEWENV1b3)
+
+A second agent's read-only review of REVIEWENV1b (the review on the record, D154) claimed seven defects. Six were reproduced
+first as failing tests (`ReviewStepTests.Guards`, `McpToolsTests.Guards`, `ReviewGuardHostTests`) and all six held. The
+seventh, any local process calling the person's doors over loopback, is PERSONDOOR1's design. D154's REVIEWENV1b3 note has
+the shape; the entries below the mechanisms.
+
+### Service: a verdict that named no set-up approved the newest, which the person may never have seen (REVIEWENV1b3 2)
+- **Symptom:** the person looked at set-up A; the step's session then posted set-up B; a `reviewed` sent with no `setUp`,
+  or with only its `machine`, was kept as a `reviewed` of B and let the step go.
+- **Root cause:** the review door turned an absent or incomplete `setUp` into null (`Program.cs`, the `/review` route), and
+  `QuestExchange.Look` read null as the newest set-up.
+- **Fix:** a `reviewed` or `not-yet` names its set-up: none is refused by the exchange (`BadReviewVerdict`, 400) and half of
+  one by the door (400), each with a sentence. One that is not the newest stays 409, stale. A skip names none.
+- **Verify:** `A_verdict_that_names_no_set_up_is_refused_and_one_naming_an_older_set_up_is_stale` and
+  `A_verdict_names_the_set_up_the_persons_view_showed_or_is_refused`: both answered success on the unnamed verdict before.
+- **Commit:** `9a8a44d7`.
+
+### Service: a connector that named no session published with the person's authority (REVIEWENV1b3 3)
+- **Symptom:** `quest_publish` from a connector with no session, or from an intake's connector the driver named no session
+  for, set a chain's review to `off` with no words of the person's.
+- **Root cause:** the connector passed `PublishedBy = intake?.Session`, and `JudgeReviewAsync` read a null `PublishedBy` as
+  the person's own door: attribution stood in for authority.
+- **Fix:** `QuestAsk.ByAgent` carries the authority, set by every connector (`KnowledgeTools`) and by the ask door for a
+  named session or `byAgent` (`AskDesk.PublishAsync`). Only a publish with neither is the person's.
+- **Verify:** `A_connector_that_names_no_session_publishes_as_an_agent` and
+  `An_agent_that_names_no_session_has_no_persons_authority`: both published `off` before.
+- **Commit:** `9a8a44d7`.
+
+### Service: an agent's quote of any of the person's words set `off` (REVIEWENV1b3 4)
+- **Symptom:** an intake quoting *"add the compare setting"*, words the person did say, with `off` turned the chain's review
+  off.
+- **Root cause:** the exchange checked only that the quote stands in the ask's words, as a requirement's quote is checked.
+  That proves the person said the words, never that they switch a review off.
+- **Fix:** an agent never sets `off`. Its `off` on verified words is kept on the ask as a proposal, with those words as its
+  reason, and the publish says so; a quoted `on` or environment still sets the choice. D154's note narrows design §1.5.
+- **Verify:** `An_agents_off_is_kept_as_a_proposal_however_it_quotes_the_person`: the chain's choice was `off` before.
+- **Commit:** `9a8a44d7`.
+
+### Service: a set-up said again at another address held the step here and not on the remote (REVIEWENV1b3 5)
+- **Symptom:** the person's local set-up, reviewed, then a second at another address with the same commit and words: this
+  machine held the step `unreviewed`; across the wire it read reviewed, and a remote refused the push.
+- **Root cause:** `QuestSetUp.Same` compared `Look`, which a local set-up leaves behind on the wire, so the replay's dedup
+  (`QuestLog.Applies`) judged the second set-up new here and a copy of the first everywhere else.
+- **Fix:** a set-up carries `id`, a digest of everything it says, its address included, made by `QuestStore.SetUpAsync` and
+  carried by the payload, the column and the wire. `Same` compares it, and one from before, with none, is compared only by
+  what crosses.
+- **Verify:** `A_set_up_said_again_at_another_address_reads_alike_here_and_across_the_wire` (one set-up and no hold across
+  the wire, and a refused push, before) and `A_set_up_carries_its_identity_across_and_one_from_before_reads_as_it_was`.
+- **Commit:** `9a8a44d7`.
+
+### Service: the late set-up door judged the wrong part of the chain (REVIEWENV1b3 6)
+- **Symptom:** *Set it up* was refused after work whose chain later composed a set-up step for another repository, and it
+  published a second set-up step, after work a later step of the same repository added to, when the first followed that
+  later step.
+- **Root cause:** `PublishSetUpStepAsync` refused on any set-up step in the parent's `then`, whatever its repository, and
+  looked for published set-up steps among the parent's direct children only (`SetUpStepsAfterAsync`).
+- **Fix:** it reads the repository's part of the whole `follows` chain (`QuestStore.ChainAsync`): a set-up step composed or
+  published for that repository anywhere, and a later work step of it, published or still to come, walked along the chain's
+  own ids and stopped at a decline.
+- **Verify:** `Another_repositorys_set_up_step_in_the_chain_leaves_this_ones_door_open`,
+  `The_late_set_up_door_follows_the_repositorys_last_step_and_is_one_per_chain` and
+  `A_later_step_of_the_same_repository_still_to_come_holds_the_late_door`: each answered the other way before.
+- **Commit:** `9a8a44d7`.
+
+### Service: a chain step sent as null answered 500 (REVIEWENV1b3 7)
+- **Symptom:** `"then": [null]` at `POST /api/quests` or an ask's publish answered 500; `quest_publish` threw.
+- **Root cause:** `StepsOf` (`Program.cs`) and the connector's step and requirement mapping dereferenced each element.
+- **Fix:** a null element becomes a blank one, which the exchange refuses naming its number, as it does a step or a
+  requirement missing its words: 400 at the quest door, the ask door's answer for a quest it could not publish.
+- **Verify:** `A_null_chain_step_is_refused_naming_it` (500 before) and `A_null_step_or_requirement_is_refused_naming_which`
+  (a `NullReferenceException` before).
+- **Commit:** `9a8a44d7`.
+
 ## 2026-10-08 — the content proof could delete what it never judged (SQUASHTIDY1c)
 
 A second agent's read-only review named six ways SQUASHTIDY1's unforced removal (commit `0a7b9c72`) could lose work. Each

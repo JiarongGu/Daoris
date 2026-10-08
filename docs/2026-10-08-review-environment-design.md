@@ -175,6 +175,8 @@ a review.
   examples: *"run it locally against dev data"* gives `local`, and *"no need to run it, it's a typo"* gives `off`.
   Without the person's words it does not set the level. It may **propose** one, with its reason in at most 300
   characters, kept on the ask and shown beside the choice. Only the person's press applies a proposal.
+  *Narrowed by D154's REVIEWENV1b3 note: an agent never sets `off`, quoted or not. Its `off` is kept as a proposal, the
+  person's words as its reason, so the `off` example above is a proposal too.*
 
 The reason for the split is D74's, applied to verification. Lowering a gate the person set, on an agent's own reading,
 is an agent widening its own autonomy. Raising one on its own reading is a press and a deploy nobody asked for. Neither
