@@ -5,6 +5,43 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-09 — a website could press a door on the local host (ORIGIN1)
+
+### Service: a page on any site, in any browser on this machine, could give the yes to a departure
+- **Symptom:** a `POST` to `/api/quests/{id}/accept` with no body and `Origin: https://evil.example` accepted a held
+  departure, the person's yes, and the chain's next step was published. Found by reading the route while designing
+  PERSONDOOR1 (D156 §0); reproduced as a host test before the fix. Every write route was then sent the same request:
+  `/accept` and `/done` reached their handler (404 for an id nobody holds, so a real id executes), `/api/refresh` and
+  `/api/sync` answered 200, and both registry `DELETE`s answered 200 (a browser asks before a `DELETE`, so CORS did
+  hold those). The rest answered 400 for a body they require.
+- **Root cause:** CORS was read as the guard on a page's writes, and it guards only the reading of an answer. A request
+  with a CORS-safelisted method (`POST`) and no body, a `text/plain` body or a form body is a *simple request*: the
+  browser sends it without a preflight, and the route runs before CORS ever decides the page may not see its answer. A
+  local host trusts the loopback outright (D47 §7, as amended), and a browser on this machine is on the loopback, so
+  nothing stood between a page and a door that binds no body or an optional one. The CORS policy has been the only
+  browser-facing check since the host was first built (`c35d125a`); the yes's door, which binds no body, came with
+  DRIFT1d (`1b1ef103`). `Program.cs` said *no website can present that origin*, which is true of reading and was taken
+  as true of sending.
+- **Fix:** a gate before every route, in both modes (`BrowserOrigins`, `Program.cs` after `UseCors`). A `POST`, `PUT`,
+  `PATCH` or `DELETE` on any path is refused 403, `{ error, code: "cross-site" }`, with one `origin.refused` warning in
+  the machine log by the route's pattern and the header that refused it, when its `Origin` is present and is neither
+  CORS's own list (one list, `BrowserOrigins.Allowed`: the shell's page on a local host, `DAORIS_WEB_ORIGIN`) nor a
+  local host's own origin under a loopback name (`{scheme}://{Host}`; a name rebound to the loopback by a website's DNS
+  is not one); or, with no `Origin`, when `Sec-Fetch-Site` is `cross-site` or `same-site` (another loopback port is the
+  same site: any local server's page). An allowed origin passes whatever `Sec-Fetch-Site` says, because the shell's page
+  is another site by construction (its `https` app origin calling the loopback over `http`). A client that sends neither
+  header, the CLI, the driver and every rehearsal, is unchanged. `ErrorResponse` gained an optional `code`.
+- **Verify:** `CrossSiteWriteTests` and `CrossSiteWriteHostTests` (7): every write route, by the host's own route table,
+  refused to a page elsewhere in seven shapes (no body, origin alone, `Sec-Fetch-Site` alone, `Origin: null`, another
+  loopback port with and without an origin, a rebound name), and answered to the shell's page, the host's own page under
+  three loopback names, a client with no origin, a navigation and a same-origin request; `/accept` with no body, a text
+  body and a form body refused and the quest still held, then accepted from the shell's page; one log line, without the
+  page, the body or the id; `DAORIS_WEB_ORIGIN` answered and its neighbouring port refused; a shared host refusing a
+  keyed write from a page elsewhere or from the shell's page and answering its keyed machines. Five of the seven failed
+  before the gate. Then a real Kestrel host from this build, probed with curl: the same refusals and answers, a preflight
+  still CORS's, and one log line per refusal.
+- **Commit:** `24557291`.
+
 ## 2026-10-09 — the review record could be decided by an agent or a stale press (REVIEWENV1b3)
 
 A second agent's read-only review of REVIEWENV1b (the review on the record, D154) claimed seven defects. Six were reproduced

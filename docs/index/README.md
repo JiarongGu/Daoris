@@ -103,7 +103,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 63 | 1210 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 63 | 1138 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 93 | 1654 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 105 | 1869 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 106 | 1894 |
 | `src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs` | 49 | 860 |
 | `src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs` | 44 | 839 |
 | `src/Daoris.Service/Daoris.Service.Tests/IndexEntriesTests.cs` | 45 | 855 |
@@ -111,7 +111,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 82 | 1691 |
 | `src/Daoris.Service/Daoris.Service.Tests/ReviewStepTests.cs` | 41 | 734 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 67 | 1385 |
-| `src/Daoris.Service/README.md` | 67 | 672 |
+| `src/Daoris.Service/README.md` | 68 | 682 |
 
 ### CLI (`cli`)
 
@@ -154,7 +154,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-09-21-working-surface-components.md` | 52 | 349 |
 | `docs/2026-09-25-rev3-review.md` | 51 | 407 |
 | `docs/2026-09-26-ux5-screen-audit.md` | 46 | 141 |
-| `docs/2026-09-30-machine-log-design.md` | 44 | 458 |
+| `docs/2026-09-30-machine-log-design.md` | 45 | 459 |
 | `docs/2026-10-01-account-rotation-design.md` | 52 | 613 |
 | `docs/2026-10-01-agent-layout-design.md` | 59 | 790 |
 | `docs/2026-10-01-development-documents-design.md` | 62 | 825 |

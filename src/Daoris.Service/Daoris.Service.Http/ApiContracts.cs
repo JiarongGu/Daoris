@@ -402,7 +402,9 @@ public sealed record QuestClaimResponse(string Quest, string Claim);
 public sealed record FeedResponse(int Accepted, string Message);
 // A repository's code map is answered in Core's shape (CodeMapWire, MAP3e), not a record here: the
 // host that brings a teammate's map down reads the same answer the door writes.
-public sealed record ErrorResponse(string Error);
+// `Code` (ORIGIN1): a word a client reads instead of the sentence, where a refusal has one; absent elsewhere, so every
+// answer from before reads as it did.
+public sealed record ErrorResponse(string Error, string? Code = null);
 /// <summary>
 /// A refusal the CLIENT should report rather than fix (D48 §6) — a stale or branch feed is the system
 /// working, and the machine that is behind is simply behind. The flag is what lets a sync loop tell
