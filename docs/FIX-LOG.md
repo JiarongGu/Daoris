@@ -5,6 +5,88 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-08 — the content proof could delete what it never judged (SQUASHTIDY1c)
+
+A second agent's read-only review named six ways SQUASHTIDY1's unforced removal (commit `0a7b9c72`) could lose work. Each
+was reproduced first as a failing test in `ContentProofLossTests` (driver, `Process` half, real git in a scratch
+repository), and all six held. D102's SQUASHTIDY1c note has the shape; the entries below the mechanisms.
+
+### Driver: a commit made between the judgement and the delete went with the branch (SQUASHTIDY1c 1)
+- **Symptom:** a commit landing on a session branch after the review's Discard, the clean-up or `trees remove <branch>`
+  judged it was deleted with it; the branch's tip read empty afterwards.
+- **Root cause:** every judged removal deleted by name, `git branch -D <branch>`, after judging by name: `RemoveAsync`
+  (since D51), `SweepAsync` and `RemoveBranchAsync`. `HeldByContentAsync` also read the commit and its tree in two
+  `rev-parse` calls of a mutable revision (`HEAD`, `refs/heads/…`), so even the judgement could mix two commits. LAND3's
+  tidy and the landed half compared the tip first, then deleted by name, leaving the same window narrower.
+- **Fix:** each judgement reads the tip's object id once and asks every question of it (`JudgeAsync` returns it; the tree is
+  `<id>^{tree}`; each holder's id is read once); every judged delete is `DeleteJudgedAsync`: `git update-ref -d
+  refs/heads/<branch> <judged id>`, which git refuses once the ref moved, after checking no tree has it checked out, then
+  the branch's config section as `-D` drops it. A forced removal keeps `branch -D`. A tree removed whose branch then moved
+  says the branch stays and why.
+- **Verify:** `ContentProofLossTests`' three `A_commit_made_after_…` (Discard, clean-up, branch door), through the
+  `BeforeDeleting` seam that commits on the branch at that moment; each failed with the tip gone.
+- **Commit:** `1afadeeb`.
+
+### Driver: a branch the same clean-up removed vouched for a session branch by content (SQUASHTIDY1c 2)
+- **Symptom:** the clean-up removed a session branch whose redo of a reverted change read the same on a branch a landing
+  had made, then removed that landing's branch as merged: the redo was on no ref.
+- **Root cause:** `HeldByContentAsync` took any local branch outside `daoris/` as a holder, recorded landing branches
+  included, and `CleanAsync` removes those on their own proof right after the session branches. The landing's proof covers
+  the files it changed; a session file it never changed read the same there only by its history.
+- **Fix:** a branch a landing made and recorded in the repository (`LandedHere`) never holds another's work by content, in
+  every door: the clean-up may remove it, in this press or a later one.
+- **Verify:** `A_branch_the_clean_up_itself_removes_never_vouches_for_a_session_branch`: failed with the session branch
+  gone; now it stays, unlanded, and the landed branch still goes.
+- **Commit:** `1afadeeb`.
+
+### Driver: `diff.ignoreSubmodules=all` hid a gitlink's change from the proof (SQUASHTIDY1c 3)
+- **Symptom:** a session branch that changed a file and a submodule's commit was discarded unforced as held by a person's
+  branch that held the file alone.
+- **Root cause:** `NamesAsync` is porcelain `git diff --name-only`, which honours `diff.ignoreSubmodules` and a submodule's
+  `ignore` setting, so the gitlink was in neither the changed paths nor the differing ones. D102's landed-branch proof reads
+  the same function.
+- **Fix:** `--ignore-submodules=none` on `NamesAsync`, so both proofs see every gitlink.
+- **Verify:** `A_submodules_change_hidden_by_config_still_differs` (an unpopulated gitlink and the config set): failed with
+  the tree removed; now refused in the unchanged words.
+- **Commit:** `1afadeeb`.
+
+### Driver: an unforced removal deleted ignored files, and untracked ones a setting hid (SQUASHTIDY1c 4)
+- **Symptom:** a tree holding an ignored `local.db`, or an untracked file under `status.showUntrackedFiles=no`, was removed
+  unforced by the Discard and by the clean-up, the file with it.
+- **Root cause:** the keep was plain `git status --porcelain`, which lists no ignored file and obeys
+  `status.showUntrackedFiles`; `git worktree remove` checks the same way and deletes ignored files without asking.
+- **Fix:** `HoldsAsync` asks `git status --porcelain -z --untracked-files=all --ignored=matching --ignore-submodules=none`.
+  Any uncommitted path keeps the tree as before; an ignored path keeps it, named, unless the registered checkout holds the
+  same path too (build output, installed dependencies), which is what keeps a build from blocking every discard. Applied in
+  `RemoveAsync`, the clean-up's judgement (`Dirty`) and LAND3's tidy.
+- **Verify:** `An_ignored_file_only_the_tree_holds_keeps_it_named`, `An_untracked_file_hidden_by_config_keeps_the_tree` and
+  `The_clean_up_keeps_a_tree_with_an_ignored_file_only_it_holds` failed with the file deleted;
+  `An_ignored_output_the_checkout_holds_too_goes_with_the_tree` holds the rule's other side.
+- **Commit:** `1afadeeb`.
+
+### Driver: what the final tree does not show went for good (SQUASHTIDY1c 5)
+- **Symptom:** a content-held removal deleted an empty commit carrying a note and a file added then deleted; no ref held
+  any of the branch's commits afterwards.
+- **Root cause:** the proof compares the branch's aggregate content, which is all a squash carries; the commits, their
+  messages and intermediate history were held only by the branch it deleted.
+- **Fix:** every content-held deletion first keeps its judged commit at `refs/daoris/discarded/<branch>` (a number after it
+  where the name holds another commit), which no proof reads; the sentence names it and how to have the branch back. A
+  delete that does not happen drops it again while the branch still holds the commit. Daoris never deletes one.
+- **Verify:** `Every_commit_a_content_held_discard_deletes_stays_on_a_recovery_ref_it_names` and
+  `The_branch_door_and_the_clean_up_keep_a_recovery_ref_for_what_they_delete_on_content` failed with no ref named.
+- **Commit:** `1afadeeb`.
+
+### Driver: work held only on `origin/<line>` was lost when the remote rewrote its line (SQUASHTIDY1c 6)
+- **Symptom:** a branch discarded as squash-merged on `origin/main` alone had its commits on no ref once the platform
+  force-pushed the squash away and a fetch moved `origin/main` back.
+- **Root cause:** `LineFormsAsync` accepts `origin/<line>` as it stands; a remote-tracking ref is the remote's, and the
+  next fetch may move it anywhere. Nothing local held the work.
+- **Fix:** the local line is asked first, as before (a test now holds it); the recovery ref of the entry above pins what
+  went, whichever form held it. No fetch at a judgement, which stays local (D102).
+- **Verify:** `Work_held_only_on_origins_line_survives_the_line_being_rewritten_after_the_discard` failed with no ref
+  containing the commit; `Where_both_forms_hold_it_the_local_line_is_named`.
+- **Commit:** `1afadeeb`.
+
 ## 2026-10-08 — `shot` photographed the browser beside the application
 
 ### Tools: a capture chose by path, and since D99 the application and its browser share an exe (SHOTPICK1)
