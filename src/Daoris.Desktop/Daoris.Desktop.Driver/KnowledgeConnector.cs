@@ -32,6 +32,12 @@ public static class KnowledgeConnector
         OperatingSystem.IsWindows() ? "daoris-knowledge.exe" : "daoris-knowledge";
 
     /// <summary>
+    /// The folder an install keeps its connector in, under `app/` beside the HTTP host's (CONNECTOR1):
+    /// the folder `service-publish` publishes this host into, so one recipe lays out both.
+    /// </summary>
+    public const string Folder = "daoris-knowledge";
+
+    /// <summary>
     /// Everything the host needs to find the same store this driver is reading.
     /// </summary>
     /// <remarks>
@@ -92,17 +98,36 @@ public static class KnowledgeConnector
         Candidates(explicitPath, home, baseDirectory).FirstOrDefault(File.Exists);
 
     /// <summary>
-    /// Where to look, in the order they deserve trust: the HTTP host's order (<see cref="ServiceHostLocator"/>)
-    /// less its first rung. A deployed shell carries its own HTTP host (`desktop-publish --service`)
-    /// and no connector, so the connector is found where `publish:service --install` put it — the
-    /// home's `bin/` — or in a development build.
+    /// Where to look, in the order they deserve trust, which is the HTTP host's (<see cref="ServiceHostLocator"/>):
+    /// what the person said, then the connector the install carries beside the running application
+    /// (`desktop-publish --service` lays it under `app/daoris-knowledge/`), then the home's `bin/`,
+    /// where `publish:service --install` puts one, then a development build.
     /// </summary>
+    /// <remarks>
+    /// 🔴 CONNECTOR1. The install's own copy outranks the home's, as the install's HTTP host does.
+    /// An install carried its HTTP host and no connector, so every session was handed the home's
+    /// `bin/` copy, which one `publish:service --install` laid down and no republish refreshed. Eight
+    /// days old on the install that found it, it opened the shared store, rebuilt it at its own older
+    /// schema, and the running host failed every knowledge route after. What the install carries is
+    /// built with the shell it runs beside, and a shell published without its connector still falls
+    /// through to the home's next.
+    /// </remarks>
     /// <param name="home">The Daoris home (D63), whose `bin/` is the CLI's install landing place; null when the machine has none.</param>
+    /// <param name="baseDirectory">The running application's folder: an install's `app/` (D93), or a build's output.</param>
     public static IReadOnlyList<string> Candidates(
         string? explicitPath, string? home, string baseDirectory)
     {
         var candidates = new List<string>();
         if (!string.IsNullOrWhiteSpace(explicitPath)) candidates.Add(explicitPath);
+
+        // Both shapes, as the HTTP host's locator looks: beside the application, where an install's
+        // application in `app/` finds it, and under `app/` of the folder it runs from. The install
+        // layout (`tools/desktop-publish.mjs`, CONNECTOR_HOME) and this list are a counterpart set,
+        // and `deployment-rehearsal.test.ts` reads this file for the other half.
+        foreach (var relative in new[] { Folder, Path.Combine("app", Folder) })
+        {
+            candidates.Add(Path.Combine(baseDirectory, relative, ExecutableName));
+        }
 
         if (home is not null) candidates.Add(Path.Combine(home, "bin", ExecutableName));
 

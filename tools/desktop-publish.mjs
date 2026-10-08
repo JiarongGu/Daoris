@@ -5,7 +5,8 @@
  * workspace build is not a deployment, and the difference only shows up once you try.
  *
  *   node tools/desktop-publish.mjs --to <folder>            publish the shell into <folder>
- *   node tools/desktop-publish.mjs --to <folder> --service  …and the HTTP host beside it, with its bundle
+ *   node tools/desktop-publish.mjs --to <folder> --service  …and both service hosts beside it: the HTTP host,
+ *                                                           with its bundle, and the knowledge connector
  *   node tools/desktop-publish.mjs --to <folder> --beside   …into a folder that holds other things —
  *                                                           the repositories it drives, typically
  *   node tools/desktop-publish.mjs --to <install> --service --stage
@@ -33,7 +34,8 @@
  *
  * **The layout is a regular application's** (D93): `Daoris.exe` at the root is a small launcher and
  * the one thing to run; the application is `app/Daoris.Desktop.exe`, CEF's launcher, beside its
- * Chromium and its libraries, with the HTTP host in a folder of its own under `app/`; `data/` is the
+ * Chromium and its libraries, with the HTTP host and the knowledge connector each in a folder of its own
+ * under `app/`; `data/` is the
  * home. Daoris's browser is the application itself since CHR8 (D99), started with the browser's
  * argument, so the install carries one Chromium. The names the shell's publish put in `app/` are
  * listed in `app/shell-files.txt`, so the next publish removes exactly those and nothing else. Daoris's
@@ -45,8 +47,10 @@
  * **What a deployed shell finds.** Nothing is wired into it: with no `DAORIS_*` overrides it makes
  * the install's `data/` the Daoris home (D63) — the machine's registry, quests, drivable set and profiles
  * live there, and nothing under the user profile — and locates the HTTP host through
- * `ServiceHostLocator`, which looks beside the shell first. `--service` publishes a copy there, so
- * the folder is self-sufficient.
+ * `ServiceHostLocator`, and the connector it hands each protocol-door session through
+ * `KnowledgeConnector`, both of which look beside the shell before the home's `bin/`. `--service`
+ * publishes both there, by the service publish's one recipe (CONNECTOR1), so the folder is
+ * self-sufficient and a republish refreshes both with the shell.
  */
 import { execSync, spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
@@ -57,6 +61,8 @@ import { fileURLToPath } from 'node:url';
 import { extractTarGz } from '../src/Daoris.Cli/src/tarball.ts';
 import { copyTree, isMain, renameHeld, writeAtomic } from './fsx.mjs';
 import { running } from './processes.mjs';
+// The service hosts' one build recipe (CONNECTOR1): what `--service` lays under `app/`, built as the service publish builds it.
+import { HOSTS, executableFor, publishCommand, publishHost } from './service-publish.mjs';
 
 // ---------------------------------------------------------------------------------------------
 // Everything above the divider is the guard, exported so `src/Daoris.Cli/test/desktop-publish.test.ts`
@@ -130,6 +136,37 @@ export const HOST_HOME = Object.freeze(['app', 'daoris-knowledge-http']);
 
 /** The service host's file name inside {@link HOST_HOME}. */
 export const HOST_EXE = 'daoris-knowledge-http.exe';
+
+/**
+ * Where `--service` puts the knowledge connector inside an install, as path segments (CONNECTOR1): the MCP host every
+ * protocol-door session is handed, beside the HTTP host and built with it.
+ *
+ * 🔴 An install that carried only its HTTP host handed every session the home's `bin/` copy, which one
+ * `publish:service --install` laid down and no republish refreshed: eight days old on the install that found it, it
+ * rebuilt the shared store at its own older schema. A folder of its own under `app/`, for three reasons: it is the
+ * folder `service-publish` publishes this host into, so one recipe lays both out; the publish replaces it whole, as it
+ * does the HTTP host's; and `app/bin/`, the one other folder of executables, is the doctrine tool's and goes first on
+ * every child's PATH. The other half of this counterpart set is `KnowledgeConnector.Candidates`, which
+ * `deployment-rehearsal.test.ts` reads.
+ */
+export const CONNECTOR_HOME = Object.freeze(['app', 'daoris-knowledge']);
+
+/** The connector's file name inside {@link CONNECTOR_HOME}. */
+export const CONNECTOR_EXE = 'daoris-knowledge.exe';
+
+/** The runtime an install is published for: the shell is a Windows application. */
+const INSTALL_RID = 'win-x64';
+
+/**
+ * What `--service` lays out (CONNECTOR1), as a plan: each host `service-publish` makes, the folder under `app/` named for
+ * its binary, its executable there, and the command that builds it, which is that script's one recipe.
+ */
+export function servicePlan(root, rid = INSTALL_RID) {
+  return HOSTS.map((host) => {
+    const folder = join(root, SHELL_HOME[0], host.binary);
+    return { host, folder, executable: join(folder, executableFor(host.binary, rid)), command: publishCommand(host, rid, folder) };
+  });
+}
 
 /**
  * The engine's locale files an install keeps, for the window and the browser alike, which share one
@@ -542,7 +579,7 @@ Published from a Daoris workspace by \`tools/desktop-publish.mjs\`.
 | | |
 |---|---|
 | \`${LAUNCHER}\` | **the application** — the only thing to run. A small launcher that starts \`${[...SHELL_HOME, SHELL_EXE].join('/')}\`. |
-| \`${SHELL_HOME[0]}/\` | the application itself, on the Chromium it carries (its files are listed in \`${SHELL_FILES.join('/')}\`), which is also Daoris's own browser; the HTTP host in \`${HOST_HOME.slice(1).join('/')}/\` when published with \`--service\`; and Daoris's own example plugins in \`${PLUGIN_OFFERS.slice(1).join('/')}/\` (${OFFERED_PLUGINS.join(', ')}), offered in Settings → Plugins and by \`daoris plugin list\`, none installed until you install one; and \`${RESOURCES.slice(1).join('/')}\`, the list of where each version of the tools Daoris runs downloads from, read and never rewritten; and the doctrine tool, in \`${CLI_HOME.slice(1).join('/')}/\` and \`${CLI_BIN.slice(1).join('/')}/\` (below). Nothing to open. |
+| \`${SHELL_HOME[0]}/\` | the application itself, on the Chromium it carries (its files are listed in \`${SHELL_FILES.join('/')}\`), which is also Daoris's own browser; when published with \`--service\`, the HTTP host in \`${HOST_HOME.slice(1).join('/')}/\` and, in \`${CONNECTOR_HOME.slice(1).join('/')}/\`, the knowledge connector a session on the protocol door is handed, each run ahead of any in \`bin/\` under the home; and Daoris's own example plugins in \`${PLUGIN_OFFERS.slice(1).join('/')}/\` (${OFFERED_PLUGINS.join(', ')}), offered in Settings → Plugins and by \`daoris plugin list\`, none installed until you install one; and \`${RESOURCES.slice(1).join('/')}\`, the list of where each version of the tools Daoris runs downloads from, read and never rewritten; and the doctrine tool, in \`${CLI_HOME.slice(1).join('/')}/\` and \`${CLI_BIN.slice(1).join('/')}/\` (below). Nothing to open. |
 | \`${HOME}/\` | **the Daoris home**: the registry, the quests, the drivable set, the harness profiles, the installed service binaries — and the window's engine profile (\`chromium/\`) and its geometry. |
 | \`${STAGE[0]}/\` | an update: a build staged with \`--stage\` in \`${STAGED.slice(1).join('/')}/\`, which the application installs once its work allows, and the launcher's record of the last swap, \`${SWAP_JOURNAL}\` (D139). Present only once something was staged. |
 
@@ -558,7 +595,8 @@ one sets the other sees. When your account's \`DAORIS_HOME\` already names anoth
 install's \`${HOME}/\`, or this one's before it moved — the application still runs on its own, leaves
 that variable as it is, and says so on Settings' home row (D105): a terminal reads the folder the
 variable names. A \`.daoris\` folder under your profile from an earlier version moves in on
-that first start (its \`bin/\` stays; re-run \`publish:service --install\` to land the hosts here).
+that first start (its \`bin/\` stays: an install published with \`--service\` carries both hosts, and
+\`publish:service --install\` lands copies here for a repository's own \`.mcp.json\`).
 Deleting this folder removes the application and its machine — nothing else on the machine changes.
 
 Starting it starts the driver loop, so **a drivable repository with an open quest gets a real agent
@@ -730,7 +768,6 @@ async function main() {
 
   const APP = 'src/Daoris.Desktop/Daoris.Desktop.App';
   const LAUNCHER_PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.Launcher';
-  const HTTP = 'src/Daoris.Service/Daoris.Service.Http';
   const WEB = 'src/Daoris.Web';
 
   const run = (command) => execSync(command, { cwd: repoRoot, stdio: ['ignore', 'inherit', 'inherit'] });
@@ -911,23 +948,29 @@ async function main() {
   if (flag('--service')) {
     // Supporting binaries go under `app/`, which is the shape the neighbouring applications on this
     // machine use: one launcher at the root, everything it needs out of sight, runtime state in `data/`.
-    console.log(`desktop-publish: publishing the HTTP host under ${HOST_HOME[0]}/…`);
-    const host = join(root, ...HOST_HOME);
+    // Both hosts (CONNECTOR1): the HTTP host the shell starts, and the knowledge connector its sessions are
+    // handed, each by the service publish's one recipe into the folder that script gives it.
+    for (const step of servicePlan(root)) {
+      console.log(`desktop-publish: publishing ${step.host.binary} under ${relative(root, step.folder).split(sep).join('/')}/…`);
 
-    // 🔴 REPLACED, not published over. `dotnet publish` does not clear its output, so a re-publish
-    // leaves every previous hashed bundle in `wwwroot/assets` — and `index.html` names only the
-    // current one, which makes the folder correct and unreadable. `service-publish.mjs` already does
-    // this, for this reason, and its sibling here did not: a real install reached SEVEN bundles, and
-    // listing it gave a wrong answer about which build was live twice — once in the first-deployment
-    // case study, and once while re-publishing to that same machine afterwards.
-    rmSync(host, { recursive: true, force: true });
+      // 🔴 REPLACED, not published over. `dotnet publish` does not clear its output, so a re-publish
+      // leaves every previous hashed bundle in `wwwroot/assets` — and `index.html` names only the
+      // current one, which makes the folder correct and unreadable. `service-publish.mjs` already does
+      // this, for this reason, and its sibling here did not: a real install reached SEVEN bundles, and
+      // listing it gave a wrong answer about which build was live twice — once in the first-deployment
+      // case study, and once while re-publishing to that same machine afterwards.
+      rmSync(step.folder, { recursive: true, force: true });
 
-    run(`dotnet publish "${HTTP}" -c Release -r win-x64 --self-contained `
-      + `-p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o "${host}"`);
+      if (!publishHost(repoRoot, step.host, INSTALL_RID, step.folder, 'desktop-publish')) process.exit(1);
+      if (!existsSync(step.executable)) {
+        console.error(`desktop-publish: the publish of ${step.host.binary} made no ${step.executable}.`);
+        process.exit(1);
+      }
+    }
 
     // The bundle travels BESIDE the executable — a host installed without its page answers every API
     // call and serves 404 for the UI, which reads as a broken app rather than a missing file.
-    const bundle = join(host, 'wwwroot');
+    const bundle = join(root, ...HOST_HOME, 'wwwroot');
     if (!existsSync(bundle)) {
       console.error('desktop-publish: the HTTP publish carries no wwwroot — the shell would serve no page.');
       process.exit(1);

@@ -413,7 +413,12 @@ export const REACH = Object.freeze([
     why: 'it changes how every gate runs or reaches a path: the gates, lanes, scripts, line endings, what is tracked, or the file helpers every rehearsal imports',
   },
   { paths: ['tools/rehearsal-kit.mjs'], gates: ['rehearse', 'rehearse-family', 'deployment'], why: "the rehearsals' kit" },
-  { paths: ['tools/release-rehearsal.mjs', 'tools/release-prep.mjs', 'tools/service-publish.mjs'], gates: ['rehearse'], why: 'release tooling' },
+  { paths: ['tools/release-rehearsal.mjs', 'tools/release-prep.mjs'], gates: ['rehearse'], why: 'release tooling' },
+  {
+    paths: ['tools/service-publish.mjs'],
+    gates: ['rehearse', 'deployment', 'rehearse-family'],
+    why: "release tooling, and the hosts' one build recipe (CONNECTOR1), which desktop-publish imports: the deployment rehearsal drives it, and the family rehearsal runs usage-report, which imports it",
+  },
   { paths: ['tools/stage-package.mjs'], gates: ['rehearse', 'deployment'], why: "every pack runs it: the release rehearsal's, and the install's doctrine tool" },
   { paths: ['tools/family-rehearsal.mjs', 'tools/setup-kit.mjs', 'tools/usage-report.mjs'], gates: ['rehearse-family'], why: 'the family rehearsal, what it imports, and what it runs' },
   {
