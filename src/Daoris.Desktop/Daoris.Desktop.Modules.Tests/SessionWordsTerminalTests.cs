@@ -99,11 +99,11 @@ public sealed class SessionWordsTerminalTests : DriverModuleBridge
 
     /// <summary>
     /// What never goes on is refused by the one table the terminal judges by (<see cref="WordsNever"/>), before anything is
-    /// posted: a session that stood down, Ask Daoris's own conversation, an intake, and a session whose quest went on later.
+    /// posted: a session that stood down, an intake, and a session whose quest went on later. Ask Daoris's own conversation is
+    /// none since ASKHIST1: it goes on in itself.
     /// </summary>
     [Theory]
     [InlineData("""{"id":"s1","repository":"engine","state":"stood-down","quest":"q1","kind":"driven","created":"2026-10-03T08:00:00Z"}""", "stood-down")]
-    [InlineData("""{"id":"s1","repository":"daoris:help","state":"completed","kind":"chat","created":"2026-10-03T08:00:00Z"}""", "help")]
     [InlineData("""{"id":"s1","repository":"ask #a1","state":"completed","ask":"a1","kind":"driven","created":"2026-10-03T08:00:00Z"}""", "intake")]
     [InlineData("""{"id":"s1","repository":"engine","state":"failed","quest":"q1","kind":"driven","created":"2026-10-03T08:00:00Z"},{"id":"s2","repository":"engine","state":"completed","quest":"q1","kind":"driven","created":"2026-10-03T09:00:00Z"}""", "superseded")]
     public async Task What_never_goes_on_is_refused_by_the_one_table_and_nothing_is_kept(string records, string why)

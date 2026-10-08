@@ -85,14 +85,14 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
 
     /// <summary>
     /// MSG1d (D137 §2.2): what never goes on is refused by its code, and nothing is posted: a teammate's record (whose
-    /// process and conversation are on their machine), an intake, a session that stood down, Ask Daoris's own conversation
-    /// (its panel opens a new one), a session whose quest went on in a later session here, and a record nothing holds.
+    /// process and conversation are on their machine), an intake, a session that stood down, a session whose quest went on in
+    /// a later session here, and a record nothing holds. Ask Daoris's own conversation goes on in itself since ASKHIST1
+    /// (<see cref="DriverModuleHelpHistoryTests"/>).
     /// </summary>
     [Theory]
     [InlineData("laptop/s1", """{"id":"laptop/s1","repository":"engine","state":"completed","quest":"q1","kind":"driven","created":"2026-10-03T08:00:00Z"}""", "teammate")]
     [InlineData("s1", """{"id":"s1","repository":"ask #a1","state":"completed","ask":"a1","kind":"driven","created":"2026-10-03T08:00:00Z"}""", "intake")]
     [InlineData("s1", """{"id":"s1","repository":"engine","state":"stood-down","quest":"q1","kind":"driven","created":"2026-10-03T08:00:00Z"}""", "stood-down")]
-    [InlineData("s1", """{"id":"s1","repository":"daoris:help","state":"completed","kind":"chat","created":"2026-10-03T08:00:00Z"}""", "help")]
     [InlineData("s1", """{"id":"s1","repository":"engine","state":"failed","quest":"q1","kind":"driven","created":"2026-10-03T08:00:00Z"},{"id":"s2","repository":"engine","state":"completed","quest":"q1","kind":"driven","created":"2026-10-03T09:00:00Z"}""", "superseded")]
     [InlineData("s9", """{"id":"s1","repository":"engine","state":"completed","quest":"q1","kind":"driven","created":"2026-10-03T08:00:00Z"}""", "not-found")]
     public async Task What_never_goes_on_is_refused_by_its_code_and_nothing_is_kept(string id, string records, string why)
