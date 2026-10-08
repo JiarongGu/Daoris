@@ -336,7 +336,7 @@ public sealed class HistoryDesk(
 
     /// <summary>
     /// The records, read whole: a clear is rare, and a unit's work is read across every quest and record (§1.1). Within the
-    /// press's transaction a history is read without the connection's gate, which that transaction already holds.
+    /// press's transaction a history is read inside the connection's gate that transaction already holds (SQLITETX1).
     /// </summary>
     private async Task<Look> LookAsync(bool within, CancellationToken ct) => new(
         await quests.ListAsync(includeClosed: true, ct: ct).ConfigureAwait(false),

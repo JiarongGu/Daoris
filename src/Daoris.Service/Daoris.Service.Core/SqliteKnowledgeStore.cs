@@ -34,8 +34,13 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
     private const int SchemaVersion = 5;
 
     private readonly SqliteConnection _connection;
+    private readonly ConnectionGate _db;
 
-    private SqliteKnowledgeStore(SqliteConnection connection) => _connection = connection;
+    private SqliteKnowledgeStore(SqliteConnection connection)
+    {
+        _connection = connection;
+        _db = ConnectionGate.For(connection);
+    }
 
     /// <summary>
     /// Whether opening this store dropped an index an older schema had written (a version bump).
@@ -64,7 +69,7 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
         return store;
     }
 
-    private async Task EnsureSchemaAsync(CancellationToken ct)
+    private Task EnsureSchemaAsync(CancellationToken ct) => _db.RunAsync(async () =>
     {
         var version = Convert.ToInt32(await ScalarAsync("PRAGMA user_version;", ct).ConfigureAwait(false));
         if (version != SchemaVersion)
@@ -99,37 +104,24 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
             """, ct).ConfigureAwait(false);
 
         await ExecuteAsync($"PRAGMA user_version = {SchemaVersion};", ct).ConfigureAwait(false);
-    }
+    }, ct);
 
-    public async Task ReplaceRepositoryAsync(
-        string repository, IReadOnlyList<KnowledgeEntry> entries, CancellationToken ct = default)
-    {
-        // The connection is every store's, and SQLite does not nest transactions: a publish arriving
-        // mid-refresh would fail on this one's (ConnectionGate).
-        var gate = ConnectionGate.For(_connection);
-        await gate.WaitAsync(ct).ConfigureAwait(false);
-        try
-        {
-            // Not the caller's token once the transaction begins: a cancelled replace would roll back,
-            // and a rollback takes every statement that joined it meanwhile with it (REV3, Quests.cs).
-            await ReplaceRepositoryInAsync(repository, entries, CancellationToken.None).ConfigureAwait(false);
-        }
-        finally
-        {
-            gate.Release();
-        }
-    }
+    /// <remarks>
+    /// The connection is every store's, and SQLite does not nest transactions: a publish arriving mid-refresh waits for
+    /// this one to end (<see cref="ConnectionGate"/>), as does every other request's command (SQLITETX1). Not the
+    /// caller's token once the transaction begins: a cancelled replace would roll back half a refresh (REV3).
+    /// </remarks>
+    public Task ReplaceRepositoryAsync(
+        string repository, IReadOnlyList<KnowledgeEntry> entries, CancellationToken ct = default) =>
+        _db.InTransactionAsync((_, inside) => ReplaceRepositoryInAsync(repository, entries, inside), ct);
 
-    private async Task ReplaceRepositoryInAsync(
+    private async Task<bool> ReplaceRepositoryInAsync(
         string repository, IReadOnlyList<KnowledgeEntry> entries, CancellationToken ct)
     {
-        await using var transaction = await _connection.BeginTransactionAsync(ct).ConfigureAwait(false);
-
         // Both tables, in one transaction: an FTS row whose entry is gone would return a hit that
         // cannot be resolved, which reads as data loss rather than as a stale index.
-        await using (var delete = _connection.CreateCommand())
+        await using (var delete = _db.Command())
         {
-            delete.Transaction = (SqliteTransaction)transaction;
             delete.CommandText =
                 """
                 DELETE FROM entries_fts WHERE id IN (SELECT id FROM entries WHERE repository = $r);
@@ -141,8 +133,7 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
 
         foreach (var entry in entries)
         {
-            await using var insert = _connection.CreateCommand();
-            insert.Transaction = (SqliteTransaction)transaction;
+            await using var insert = _db.Command();
             insert.CommandText =
                 """
                 INSERT INTO entries (id, repository, kind, provenance, title, body, relative_path, anchor, workspace, first_line, last_line)
@@ -168,33 +159,33 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
             await insert.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
-        await transaction.CommitAsync(ct).ConfigureAwait(false);
+        return true;
     }
 
-    public async Task<IReadOnlyList<KnowledgeEntry>> AllAsync(CancellationToken ct = default)
+    public Task<IReadOnlyList<KnowledgeEntry>> AllAsync(CancellationToken ct = default) => _db.RunAsync(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = $"SELECT {Columns} FROM entries;";
         return await ReadAllAsync(command, ct).ConfigureAwait(false);
-    }
+    }, ct);
 
-    public async Task<IReadOnlyDictionary<string, int>> CountByRepositoryAsync(CancellationToken ct = default)
+    public Task<IReadOnlyDictionary<string, int>> CountByRepositoryAsync(CancellationToken ct = default) => _db.RunAsync<IReadOnlyDictionary<string, int>>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = "SELECT repository, COUNT(*) FROM entries GROUP BY repository;";
         var counts = new Dictionary<string, int>(StringComparer.Ordinal);
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         while (await reader.ReadAsync(ct).ConfigureAwait(false)) counts[reader.GetString(0)] = reader.GetInt32(1);
         return counts;
-    }
+    }, ct);
 
-    public async Task<KnowledgeEntry?> FindAsync(string id, CancellationToken ct = default)
+    public Task<KnowledgeEntry?> FindAsync(string id, CancellationToken ct = default) => _db.RunAsync(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = $"SELECT {Columns} FROM entries WHERE id = $id;";
         command.Parameters.AddWithValue("$id", id);
         return (await ReadAllAsync(command, ct).ConfigureAwait(false)).FirstOrDefault();
-    }
+    }, ct);
 
     internal const string Columns =
         "id, repository, kind, provenance, title, body, relative_path, anchor, workspace, first_line, last_line";
@@ -215,6 +206,9 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
     /// files would be two things to back up and two that can disagree about which repositories exist.
     /// </summary>
     internal SqliteConnection Connection => _connection;
+
+    /// <summary>The connection's gate, which every store over it and the search take for each command (SQLITETX1).</summary>
+    internal ConnectionGate Gate => _db;
 
     internal static KnowledgeEntry Read(SqliteDataReader reader) => new(
         reader.GetString(1),
@@ -237,21 +231,25 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
 
     private async Task ExecuteAsync(string sql, CancellationToken ct)
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = sql;
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
 
     private async Task<object?> ScalarAsync(string sql, CancellationToken ct)
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = sql;
         return await command.ExecuteScalarAsync(ct).ConfigureAwait(false);
     }
 
+    /// <summary>Closed once the work in flight has ended, never under it.</summary>
     public async ValueTask DisposeAsync()
     {
-        await _connection.CloseAsync().ConfigureAwait(false);
-        await _connection.DisposeAsync().ConfigureAwait(false);
+        await _db.RunAsync(async () =>
+        {
+            await _connection.CloseAsync().ConfigureAwait(false);
+            await _connection.DisposeAsync().ConfigureAwait(false);
+        }, CancellationToken.None).ConfigureAwait(false);
     }
 }

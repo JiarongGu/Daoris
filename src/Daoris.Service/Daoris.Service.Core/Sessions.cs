@@ -242,20 +242,21 @@ public sealed record SaidWord(string Id, string Text, DateTimeOffset At, IReadOn
 /// </remarks>
 public sealed class SessionStore
 {
-    private readonly SqliteConnection _connection;
+    /// <summary>The connection's gate: every command here runs inside it (SQLITETX1).</summary>
+    private readonly ConnectionGate _db;
 
-    private SessionStore(SqliteConnection connection) => _connection = connection;
+    private SessionStore(SqliteConnection connection) => _db = ConnectionGate.For(connection);
 
     public static async Task<SessionStore> OpenAsync(SqliteConnection connection, CancellationToken ct = default)
     {
         var store = new SessionStore(connection);
-        await store.EnsureSchemaAsync(ct).ConfigureAwait(false);
+        await store._db.RunAsync(() => store.EnsureSchemaAsync(ct), ct).ConfigureAwait(false);
         return store;
     }
 
     private async Task EnsureSchemaAsync(CancellationToken ct)
     {
-        await using (var command = _connection.CreateCommand())
+        await using (var command = _db.Command())
         {
             command.CommandText = $"""
                 CREATE TABLE IF NOT EXISTS sessions (
@@ -305,7 +306,7 @@ public sealed class SessionStore
             ("base_commit", "base_commit TEXT NULL"),
         })
         {
-            await SchemaColumns.EnsureAsync(_connection, "sessions", column, definition, ct).ConfigureAwait(false);
+            await SchemaColumns.EnsureAsync(_db, "sessions", column, definition, ct).ConfigureAwait(false);
         }
 
         await RelaxQuestAsync(ct).ConfigureAwait(false);
@@ -314,9 +315,9 @@ public sealed class SessionStore
         // this store wrote them in. Both are DERIVED for rows that already exist — a mirrored row's id
         // already carries its origin, and the order rows were written in is the order they were
         // inserted — so a store from before the sync pushes and serves every record it holds.
-        if (!await SchemaColumns.HasAsync(_connection, "sessions", "origin", ct).ConfigureAwait(false))
+        if (!await SchemaColumns.HasAsync(_db, "sessions", "origin", ct).ConfigureAwait(false))
         {
-            await using var alter = _connection.CreateCommand();
+            await using var alter = _db.Command();
             alter.CommandText = """
                 ALTER TABLE sessions ADD COLUMN origin TEXT NULL;
                 UPDATE sessions SET origin = substr(id, 1, instr(id, '/') - 1) WHERE instr(id, '/') > 0;
@@ -324,9 +325,9 @@ public sealed class SessionStore
             await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
-        if (!await SchemaColumns.HasAsync(_connection, "sessions", "revision", ct).ConfigureAwait(false))
+        if (!await SchemaColumns.HasAsync(_db, "sessions", "revision", ct).ConfigureAwait(false))
         {
-            await using var alter = _connection.CreateCommand();
+            await using var alter = _db.Command();
             alter.CommandText = """
                 ALTER TABLE sessions ADD COLUMN revision INTEGER NOT NULL DEFAULT 0;
                 UPDATE sessions SET revision = rowid;
@@ -335,32 +336,32 @@ public sealed class SessionStore
         }
 
         // INT4b: the ask an intake answers. After the rebuild, like SYNC4's pair, so it cannot drop it.
-        await SchemaColumns.EnsureAsync(_connection, "sessions", "ask", "ask TEXT NULL", ct).ConfigureAwait(false);
+        await SchemaColumns.EnsureAsync(_db, "sessions", "ask", "ask TEXT NULL", ct).ConfigureAwait(false);
 
         // STANDDOWN2: whether this session took its own quest, through its own connector. A record from
         // before it says nothing, and nothing is the old reading. And the person's answer to one that
         // parked to ask them, which the session that carries the quest on is handed.
-        await SchemaColumns.EnsureAsync(_connection, "sessions", "took", "took INTEGER NULL", ct).ConfigureAwait(false);
-        await SchemaColumns.EnsureAsync(_connection, "sessions", "answer", "answer TEXT NULL", ct).ConfigureAwait(false);
+        await SchemaColumns.EnsureAsync(_db, "sessions", "took", "took INTEGER NULL", ct).ConfigureAwait(false);
+        await SchemaColumns.EnsureAsync(_db, "sessions", "answer", "answer TEXT NULL", ct).ConfigureAwait(false);
 
         // MSG1a (D137 §2.4): the person's words, a JSON list, which the single answer above became. Nothing is moved at
         // the column's arrival: a record from before reads its answer as its first word, and the first word kept after
         // it writes both into this list and empties the old column, so the two never both hold words.
-        await SchemaColumns.EnsureAsync(_connection, "sessions", "said", "said TEXT NULL", ct).ConfigureAwait(false);
+        await SchemaColumns.EnsureAsync(_db, "sessions", "said", "said TEXT NULL", ct).ConfigureAwait(false);
 
         // D104: a stop that was not the person's — the sweep's, or a shutdown's. A record from before it
         // says nothing, and nothing is the old reading: the person's stop.
-        await SchemaColumns.EnsureAsync(_connection, "sessions", "interrupted", "interrupted INTEGER NULL", ct).ConfigureAwait(false);
+        await SchemaColumns.EnsureAsync(_db, "sessions", "interrupted", "interrupted INTEGER NULL", ct).ConfigureAwait(false);
 
         // TOOL4c (D125 §5.2): a failure an account's limit made. A record from before it says nothing, and
         // nothing is the old reading: a failure like any other. `limited`, since LIMIT is SQL's own word.
-        await SchemaColumns.EnsureAsync(_connection, "sessions", "limited", "limited INTEGER NULL", ct).ConfigureAwait(false);
+        await SchemaColumns.EnsureAsync(_db, "sessions", "limited", "limited INTEGER NULL", ct).ConfigureAwait(false);
 
         // LANG1a (D142 point 2): the note's parts, a JSON list beside it. A record from before says none, and its note stands
         // as kept: nothing re-reads the English, and nothing rewrites it (the language design §6).
-        await SchemaColumns.EnsureAsync(_connection, "sessions", "note_parts", "note_parts TEXT NULL", ct).ConfigureAwait(false);
+        await SchemaColumns.EnsureAsync(_db, "sessions", "note_parts", "note_parts TEXT NULL", ct).ConfigureAwait(false);
 
-        await using (var cursor = _connection.CreateCommand())
+        await using (var cursor = _db.Command())
         {
             cursor.CommandText = """
                 CREATE TABLE IF NOT EXISTS session_cursor (
@@ -379,7 +380,7 @@ public sealed class SessionStore
         // triggers move it in the statement that writes the revision, as one statement is what keeps a revision exact
         // under SQLite's write lock (see NextRevision): where no transaction is open, a second statement is a second
         // transaction, and another host could write between the two.
-        await using (var mark = _connection.CreateCommand())
+        await using (var mark = _db.Command())
         {
             mark.CommandText = """
                 CREATE TABLE IF NOT EXISTS session_revision (
@@ -405,9 +406,9 @@ public sealed class SessionStore
         // already exist it is read once from that cursor: a record of this machine's at or before what its workspace
         // pushed was examined by a push, so it is marked, which errs toward refusing a delete (a record of a repository
         // that had not joined is marked too). From here on a push marks what it sent.
-        if (!await SchemaColumns.HasAsync(_connection, "sessions", "pushed", ct).ConfigureAwait(false))
+        if (!await SchemaColumns.HasAsync(_db, "sessions", "pushed", ct).ConfigureAwait(false))
         {
-            await using var alter = _connection.CreateCommand();
+            await using var alter = _db.Command();
             alter.CommandText = """
                 ALTER TABLE sessions ADD COLUMN pushed INTEGER NULL;
                 UPDATE sessions SET pushed = 1
@@ -443,7 +444,7 @@ public sealed class SessionStore
     /// </remarks>
     private async Task RelaxQuestAsync(CancellationToken ct)
     {
-        await using (var probe = _connection.CreateCommand())
+        await using (var probe = _db.Command())
         {
             probe.CommandText =
                 "SELECT COUNT(*) FROM pragma_table_info('sessions') WHERE name = 'quest' AND \"notnull\" = 1";
@@ -451,7 +452,7 @@ public sealed class SessionStore
             if (constrained == 0) return;
         }
 
-        await using var rebuild = _connection.CreateCommand();
+        await using var rebuild = _db.Command();
         rebuild.CommandText = $"""
             CREATE TABLE sessions_relaxed (
               id         TEXT PRIMARY KEY,
@@ -494,34 +495,20 @@ public sealed class SessionStore
     /// session. The one-session-per-tree lock was a read followed by a write, so two opens at once could
     /// both read "free" and both write (REV3). <c>BEGIN IMMEDIATE</c> takes the file's write lock BEFORE
     /// the read, so a second host waits until the first has written, then reads what it wrote. The
-    /// connection's gate does the same between requests inside one host.</para>
+    /// connection's gate does the same between requests inside one host, for every command (SQLITETX1).</para>
     ///
-    /// <para>The work is handed an uncancellable token: once the transaction has begun, a throw would roll
-    /// back whatever other statements joined it (<see cref="QuestStore"/>, REV3). It must not take the
-    /// connection's gate itself, which is not reentrant.</para>
+    /// <para>The work is handed an uncancellable token: once the transaction has begun, a cancelled request
+    /// must not throw halfway (REV3). It calls the stores' own methods, which run inside the gate it holds
+    /// and join its transaction.</para>
     /// </remarks>
-    public async Task<T> ExclusiveAsync<T>(Func<CancellationToken, Task<T>> work, CancellationToken ct = default)
-    {
-        var gate = ConnectionGate.For(_connection);
-        await gate.WaitAsync(ct).ConfigureAwait(false);
-        try
-        {
-            await using var transaction = _connection.BeginTransaction(deferred: false);
-            var result = await work(CancellationToken.None).ConfigureAwait(false);
-            await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
-            return result;
-        }
-        finally
-        {
-            gate.Release();
-        }
-    }
+    public Task<T> ExclusiveAsync<T>(Func<CancellationToken, Task<T>> work, CancellationToken ct = default) =>
+        _db.InTransactionAsync((_, inside) => work(inside), ct);
 
-    public async Task<Session> CreateAsync(
+    public Task<Session> CreateAsync(
         string? quest, string repository, string adapter, DateTimeOffset now,
         string? workspace = null, SessionKind kind = SessionKind.Driven,
         string? harnessVersion = null, string? profile = null, string? tree = null,
-        string? baseCommit = null, CancellationToken ct = default, string? ask = null)
+        string? baseCommit = null, CancellationToken ct = default, string? ask = null) => _db.RunAsync<Session>(async () =>
     {
         var session = new Session(
             Guid.NewGuid().ToString("N")[..8], quest, repository, adapter,
@@ -533,7 +520,7 @@ public sealed class SessionStore
             Ask = Blank(ask),
         };
 
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = $"""
             INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, base_commit, ask, revision)
             VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $harnessVersion, $profile, $tree, $baseCommit, $ask, {NextRevision})
@@ -555,7 +542,7 @@ public sealed class SessionStore
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
 
         return session;
-    }
+    }, ct);
 
     /// <summary>
     /// Move a session and attach what the move carries. An attachment left null keeps its old value:
@@ -572,10 +559,10 @@ public sealed class SessionStore
     /// The note's parts, written with the note (LANG1a): a note written without them clears the record's, so an older
     /// driver's note never sits beside stale parts; a move that writes no note keeps both.
     /// </param>
-    public async Task<Session?> SetStateAsync(
+    public Task<Session?> SetStateAsync(
         string id, SessionState state, string? note, string? evidence, string? transcript,
         DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false,
-        bool clearSaid = false, bool forgive = false, string? noteParts = null)
+        bool clearSaid = false, bool forgive = false, string? noteParts = null) => _db.RunAsync<Session?>(async () =>
     {
         var session = await FindAsync(id, ct).ConfigureAwait(false);
         if (session is null) return null;
@@ -594,7 +581,7 @@ public sealed class SessionStore
         };
 
         // The words are cleared or left alone, never rewritten from what was read: a move is about the state.
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = $"""
             UPDATE sessions SET state = $state, note = $note, note_parts = $noteParts, evidence = $evidence,
               transcript = $transcript, updated = $updated, interrupted = $interrupted, limited = $limited,
@@ -614,7 +601,7 @@ public sealed class SessionStore
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
 
         return moved;
-    }
+    }, ct);
 
     /// <summary>
     /// Copy another machine's session record into this store, whole (D47 §6). The judgement already ran
@@ -622,9 +609,9 @@ public sealed class SessionStore
     /// verbatim and is never re-judged. The caller keys it by origin + id and names the origin; the
     /// transcript never arrives, because no wire has a field for a machine path.
     /// </summary>
-    public async Task MirrorAsync(Session record, CancellationToken ct = default)
+    public Task MirrorAsync(Session record, CancellationToken ct = default) => _db.RunAsync(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = $"""
             INSERT INTO sessions (id, quest, repository, adapter, state, note, note_parts, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, origin, limited, revision)
             VALUES ($id, $quest, $repository, $adapter, $state, $note, $noteParts, $evidence, NULL, $created, $updated, $workspace, $kind, $harnessVersion, NULL, NULL, $origin, $limited, {NextRevision})
@@ -657,24 +644,24 @@ public sealed class SessionStore
         command.Parameters.AddWithValue("$created", record.Created.ToString("O"));
         command.Parameters.AddWithValue("$updated", record.Updated.ToString("O"));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-    }
+    }, ct);
 
-    public async Task<Session?> FindAsync(string id, CancellationToken ct = default)
+    public Task<Session?> FindAsync(string id, CancellationToken ct = default) => _db.RunAsync<Session?>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = "SELECT * FROM sessions WHERE id = $id";
         command.Parameters.AddWithValue("$id", id);
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
-    }
+    }, ct);
 
     /// <summary>
     /// The newest of THIS machine's records for a quest, or null — whether a session here left it
     /// unfinished is what lets one carry it on (D80). A teammate's record is their machine's run.
     /// </summary>
-    public async Task<Session?> LastOwnForQuestAsync(string quest, CancellationToken ct = default)
+    public Task<Session?> LastOwnForQuestAsync(string quest, CancellationToken ct = default) => _db.RunAsync<Session?>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = """
             SELECT * FROM sessions WHERE quest = $quest AND origin IS NULL
             ORDER BY created DESC, rowid DESC LIMIT 1
@@ -682,28 +669,28 @@ public sealed class SessionStore
         command.Parameters.AddWithValue("$quest", quest);
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
-    }
+    }, ct);
 
     /// <summary>
     /// Whether a session of THIS machine's took <paramref name="quest"/> through its own connector
     /// (STANDDOWN2): the take is held here, so a person's stop of its session leaves it this machine's to
     /// carry on once released (SESSUX1b2). A teammate's record never says so: its take is its machine's.
     /// </summary>
-    public async Task<bool> TookHereAsync(string quest, CancellationToken ct = default)
+    public Task<bool> TookHereAsync(string quest, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = "SELECT 1 FROM sessions WHERE quest = $quest AND origin IS NULL AND took = 1 LIMIT 1";
         command.Parameters.AddWithValue("$quest", quest);
         return await command.ExecuteScalarAsync(ct).ConfigureAwait(false) is not null;
-    }
+    }, ct);
 
     /// <summary>
     /// The newest teammate's record for a quest that did not stand down, or null: what names another machine's take
     /// (CARRY2), since the quest's log names a machine by an id no person reads. A stand-down says its machine has no take.
     /// </summary>
-    public async Task<Session?> LastTeammateForQuestAsync(string quest, CancellationToken ct = default)
+    public Task<Session?> LastTeammateForQuestAsync(string quest, CancellationToken ct = default) => _db.RunAsync<Session?>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = """
             SELECT * FROM sessions WHERE quest = $quest AND origin IS NOT NULL AND state <> $stoodDown
             ORDER BY created DESC, rowid DESC LIMIT 1
@@ -712,32 +699,32 @@ public sealed class SessionStore
         command.Parameters.AddWithValue("$stoodDown", nameof(SessionState.StoodDown));
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
-    }
+    }, ct);
 
     /// <summary>
     /// A record of a session started for <paramref name="quest"/> — this machine's or a teammate's, in
     /// any state — or null (D95). A quest a record names is not deleted: the record would name nothing.
     /// </summary>
-    public async Task<Session?> AnyForQuestAsync(string quest, CancellationToken ct = default)
+    public Task<Session?> AnyForQuestAsync(string quest, CancellationToken ct = default) => _db.RunAsync<Session?>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = "SELECT * FROM sessions WHERE quest = $quest ORDER BY created, rowid LIMIT 1";
         command.Parameters.AddWithValue("$quest", quest);
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
-    }
+    }, ct);
 
     /// <summary>Every quest a session record names — <see cref="AnyForQuestAsync"/> for a whole list at once (D95).</summary>
-    public async Task<IReadOnlySet<string>> QuestsNamedAsync(CancellationToken ct = default)
+    public Task<IReadOnlySet<string>> QuestsNamedAsync(CancellationToken ct = default) => _db.RunAsync<IReadOnlySet<string>>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = "SELECT DISTINCT quest FROM sessions WHERE quest IS NOT NULL";
 
         var named = new HashSet<string>(StringComparer.Ordinal);
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         while (await reader.ReadAsync(ct).ConfigureAwait(false)) named.Add(reader.GetString(0));
         return named;
-    }
+    }, ct);
 
     /// <summary>
     /// The session holding a working tree, if any — the one-session-per-TREE question (D51).
@@ -758,10 +745,10 @@ public sealed class SessionStore
     /// active it is. Counting it would let a machine that went quiet mid-session lock a repository on
     /// every other machine for good.</para>
     /// </remarks>
-    public async Task<Session?> ActiveForAsync(
-        string repository, string? tree = null, CancellationToken ct = default)
+    public Task<Session?> ActiveForAsync(
+        string repository, string? tree = null, CancellationToken ct = default) => _db.RunAsync<Session?>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = $"""
             SELECT * FROM sessions
             WHERE repository = $repository AND state IN ({ActiveStates}) AND origin IS NULL
@@ -772,7 +759,7 @@ public sealed class SessionStore
         command.Parameters.AddWithValue("$tree", (object?)Trees.Normalize(tree) ?? DBNull.Value);
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
-    }
+    }, ct);
 
     /// <summary>
     /// The session with a PROCESS in this directory, whichever record it belongs to — the intake
@@ -784,9 +771,9 @@ public sealed class SessionStore
     /// and no tree — it asked the person and ended — and counting it would let one unanswered question
     /// stop every later ask in the circle.
     /// </remarks>
-    public async Task<Session?> RunningInTreeAsync(string tree, CancellationToken ct = default)
+    public Task<Session?> RunningInTreeAsync(string tree, CancellationToken ct = default) => _db.RunAsync<Session?>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = """
             SELECT * FROM sessions
             WHERE tree = $tree AND state IN ('Queued', 'Starting', 'Working') AND origin IS NULL
@@ -795,17 +782,17 @@ public sealed class SessionStore
         command.Parameters.AddWithValue("$tree", (object?)Trees.Normalize(tree) ?? DBNull.Value);
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
-    }
+    }, ct);
 
     /// <summary>
     /// Sessions in one repository, or everywhere. Live work first, closed records on request —
     /// the same shape as the quest list, for the same reason.
     /// </summary>
-    public async Task<IReadOnlyList<Session>> ListAsync(
+    public Task<IReadOnlyList<Session>> ListAsync(
         string? repository = null, bool includeClosed = false, string? workspace = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<Session>>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = $"""
             SELECT * FROM sessions
             WHERE ($repository IS NULL OR repository = $repository)
@@ -821,7 +808,7 @@ public sealed class SessionStore
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         while (await reader.ReadAsync(ct).ConfigureAwait(false)) sessions.Add(Read(reader));
         return sessions;
-    }
+    }, ct);
 
     private const string ActiveStates = "'Queued', 'Starting', 'Working', 'AwaitingPerson'";
 
@@ -832,10 +819,10 @@ public sealed class SessionStore
     /// order they were written, each with its revision — what a push sends. A record from the team is
     /// never here: it is somebody else's to feed, and feeding it would launder it through this key.
     /// </summary>
-    public async Task<IReadOnlyList<(Session Session, long Revision)>> OwnChangedSinceAsync(
-        long revision, string workspace, CancellationToken ct = default)
+    public Task<IReadOnlyList<(Session Session, long Revision)>> OwnChangedSinceAsync(
+        long revision, string workspace, CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<(Session Session, long Revision)>>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = """
             SELECT *, revision AS rev FROM sessions
             WHERE origin IS NULL AND revision > $revision AND workspace = $workspace COLLATE NOCASE
@@ -852,17 +839,17 @@ public sealed class SessionStore
         }
 
         return changed;
-    }
+    }, ct);
 
     /// <summary>
     /// A remote's side: the team's records it holds after <paramref name="since"/>, in revision order,
     /// one page at a time — leaving out <paramref name="caller"/>'s own, which it already has, while
     /// still moving the page past them so they are not scanned again.
     /// </summary>
-    public async Task<SessionFetch> TeamSinceAsync(
-        long since, string? caller, int limit = 500, CancellationToken ct = default)
+    public Task<SessionFetch> TeamSinceAsync(
+        long since, string? caller, int limit = 500, CancellationToken ct = default) => _db.RunAsync<SessionFetch>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = """
             SELECT *, revision AS rev FROM sessions
             WHERE origin IS NOT NULL AND revision > $since
@@ -886,23 +873,23 @@ public sealed class SessionStore
                 .ToList(),
             page.Count == 0 ? since : page[^1].Revision,
             more);
-    }
+    }, ct);
 
     /// <summary>How far this machine has pushed its own records to a workspace's remote, and fetched the team's.</summary>
-    public async Task<(long Pushed, long Fetched)> CursorAsync(string workspace, CancellationToken ct = default)
+    public Task<(long Pushed, long Fetched)> CursorAsync(string workspace, CancellationToken ct = default) => _db.RunAsync<(long Pushed, long Fetched)>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = "SELECT pushed, fetched FROM session_cursor WHERE workspace = $workspace";
         command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(workspace));
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? (reader.GetInt64(0), reader.GetInt64(1)) : (0, 0);
-    }
+    }, ct);
 
     /// <summary>Move a workspace's cursors forward — never back, so a late answer cannot re-send the past.</summary>
-    public async Task AdvanceCursorAsync(
-        string workspace, long? pushed = null, long? fetched = null, CancellationToken ct = default)
+    public Task AdvanceCursorAsync(
+        string workspace, long? pushed = null, long? fetched = null, CancellationToken ct = default) => _db.RunAsync(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = """
             INSERT INTO session_cursor (workspace, pushed, fetched) VALUES ($workspace, $pushed, $fetched)
             ON CONFLICT (workspace) DO UPDATE SET
@@ -912,7 +899,7 @@ public sealed class SessionStore
         command.Parameters.AddWithValue("$pushed", pushed ?? 0);
         command.Parameters.AddWithValue("$fetched", fetched ?? 0);
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-    }
+    }, ct);
 
     private static Session Read(SqliteDataReader reader) => new(
         reader.GetString(reader.GetOrdinal("id")),
@@ -954,28 +941,28 @@ public sealed class SessionStore
     /// is this machine's fact about the record, not a change to it, so the next push does not send it again. An id with
     /// no record of this machine's is passed over.
     /// </summary>
-    public async Task MarkPushedAsync(IEnumerable<string> ids, CancellationToken ct = default)
+    public Task MarkPushedAsync(IEnumerable<string> ids, CancellationToken ct = default) => _db.RunAsync(async () =>
     {
         foreach (var id in ids.Distinct(StringComparer.Ordinal))
         {
-            await using var command = _connection.CreateCommand();
+            await using var command = _db.Command();
             command.CommandText = "UPDATE sessions SET pushed = 1 WHERE id = $id AND origin IS NULL";
             command.Parameters.AddWithValue("$id", id);
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
-    }
+    }, ct);
 
     /// <summary>
     /// Remove a record whole (SESSUX1f, D126 §5.4). Blind, like every write here: whether a record may go is the ledger's
     /// judgement, made before this is asked. False when there was none.
     /// </summary>
-    public async Task<bool> DeleteAsync(string id, CancellationToken ct = default)
+    public Task<bool> DeleteAsync(string id, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = "DELETE FROM sessions WHERE id = $id";
         command.Parameters.AddWithValue("$id", id);
         return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
-    }
+    }, ct);
 
     /// <summary>
     /// The id a record from before <see cref="Session.Said"/> gives its answer as a word (MSG1a). Never one a word is
@@ -997,10 +984,10 @@ public sealed class SessionStore
     /// word in the same statement, and the old column is emptied, so the record's words have one home from here.</para>
     /// </remarks>
     /// <param name="noteParts">The note's parts beside it (LANG1a), written with it; a note without them clears the record's.</param>
-    public async Task<Session?> KeepSaidAsync(
-        string id, SaidWord word, string? note = null, CancellationToken ct = default, string? noteParts = null)
+    public Task<Session?> KeepSaidAsync(
+        string id, SaidWord word, string? note = null, CancellationToken ct = default, string? noteParts = null) => _db.RunAsync<Session?>(async () =>
     {
-        await using (var command = _connection.CreateCommand())
+        await using (var command = _db.Command())
         {
             command.CommandText = $"""
                 UPDATE sessions SET
@@ -1025,7 +1012,7 @@ public sealed class SessionStore
         }
 
         return await FindAsync(id, ct).ConfigureAwait(false);
-    }
+    }, ct);
 
     /// <summary>
     /// Take these words off this machine's record (MSG1a, D137 §2.4): the session took them. An id it does not hold is
@@ -1033,13 +1020,13 @@ public sealed class SessionStore
     /// when there is no such record of this machine's.
     /// </summary>
     /// <remarks>A read, then the write it decides: the ledger calls it inside <see cref="ExclusiveAsync{T}"/> (REV3).</remarks>
-    public async Task<Session?> TakeSaidAsync(string id, IReadOnlyCollection<string> ids, CancellationToken ct = default)
+    public Task<Session?> TakeSaidAsync(string id, IReadOnlyCollection<string> ids, CancellationToken ct = default) => _db.RunAsync<Session?>(async () =>
     {
         var session = await FindAsync(id, ct).ConfigureAwait(false);
         if (session is not { Origin: null }) return null;
 
         var left = session.Said.Where(word => !ids.Contains(word.Id, StringComparer.Ordinal)).ToList();
-        await using (var command = _connection.CreateCommand())
+        await using (var command = _db.Command())
         {
             command.CommandText = "UPDATE sessions SET said = $said, answer = NULL WHERE id = $id AND origin IS NULL";
             command.Parameters.AddWithValue("$id", id);
@@ -1048,7 +1035,7 @@ public sealed class SessionStore
         }
 
         return session with { Said = left };
-    }
+    }, ct);
 
     /// <summary>
     /// The record's words: its list, or, on a record from before the list, its answer as the first word, said when the
@@ -1132,13 +1119,13 @@ public sealed class SessionStore
     /// Mark that this session took its quest itself (STANDDOWN2) — said by the session's own connector
     /// at the moment of the take. False when there is no such record of this machine's.
     /// </summary>
-    public async Task<bool> MarkTookAsync(string id, CancellationToken ct = default)
+    public Task<bool> MarkTookAsync(string id, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = "UPDATE sessions SET took = 1 WHERE id = $id AND origin IS NULL";
         command.Parameters.AddWithValue("$id", id);
         return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
-    }
+    }, ct);
 
     /// <summary>Whitespace is nothing said, not a value: an empty version reads as a version of "".</summary>
     private static string? Blank(string? value) =>
