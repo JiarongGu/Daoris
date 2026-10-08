@@ -1429,13 +1429,18 @@ public sealed partial class Driver(
     /// The folder THIS session keeps the files the person said with their words in (MSG1d3, D137 §2.4), where a resumed run
     /// is handed them; null for none. A read of it, as of <paramref name="kept"/>, and of nothing else under the home.
     /// </param>
+    /// <param name="opinion">
+    /// A reviewer's session (XAGENT1d, D155 point 5): the composition laid under the opinion's rules
+    /// (<see cref="OpinionPermissions.Shape"/>), and the classifier told it changes nothing.
+    /// </param>
     /// <returns>
     /// The file, which goes when the session does, what the protocol door carries, and what was handed, for the instruction's
     /// account (CONTEXT1), which outlives the file.
     /// </returns>
     private (string? File, object? Meta, HandedSection Handed) HandRules(
         ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
-        string tree, string? kept, IReadOnlyList<string>? job = null, AcrossReach? across = null, string? said = null)
+        string tree, string? kept, IReadOnlyList<string>? job = null, AcrossReach? across = null, string? said = null,
+        bool opinion = false)
     {
         // A harness a Claude Code rule means nothing to is handed nothing, and no file is written.
         if (!adapter.TakesSettings) return (null, null, RulesHanded(takes: false, PermissionFile.Empty, RuleLists.Empty, workspace, repository));
@@ -1457,8 +1462,11 @@ public sealed partial class Driver(
             composed = composed with { Allow = [.. composed.Allow, .. job.Where(rule => !composed.Allow.Contains(rule))] };
         }
 
+        if (opinion) composed = OpinionPermissions.Shape(composed);
+
         var file = SpawnSettings.Write(
-            home, sessionId, composed, PermissionRules.HardDeny(rules),
+            home, sessionId, composed,
+            opinion ? [.. PermissionRules.HardDeny(rules), OpinionPermissions.HardDeny] : PermissionRules.HardDeny(rules),
             PermissionRules.GuardsTree(rules) ? TreeGuard.For(home, tree, across?.Writes.Select(target => target.Path)) : null);
         var handed = RulesHanded(takes: true, rules, composed, workspace, repository);
         if (file is null) return (null, null, handed);
@@ -1817,6 +1825,13 @@ public sealed partial class Driver(
     /// On the protocol door, asked when a turn ends while the session's own background work runs (BGWAIT1): whether its
     /// quest stands as a park would leave it, so the session waits for that work instead. Null never waits (D105 §3).
     /// </param>
+    /// <param name="minutes">
+    /// How long it may run before it is stopped, where that is not the machine's session timeout: a reviewer's pass (XAGENT1d).
+    /// </param>
+    /// <param name="noConnector">
+    /// What the protocol door's transcript says where this machine has no connector, when it is not a quest's or an intake's
+    /// sentence: a reviewer's (XAGENT1d).
+    /// </param>
     private async Task<T> HoldAsync<T>(
         ISessionAdapter adapter, ProcessStartInfo info, SessionTarget target, string sessionId, string transcript,
         string cwd, string? harnessNotice, (string? File, object? Meta, HandedSection? Handed) rules, string? handed, string? refusesInput,
@@ -1824,7 +1839,8 @@ public sealed partial class Driver(
         IReadOnlyDictionary<string, string>? scope = null, string? preamble = null,
         IReadOnlyList<AcpMcpServer>? handedServers = null, bool drivesBrowser = false, Action<JsonElement>? said = null,
         ResumeAsk? resume = null, Noted? workingNote = null, Func<string, string, ProcessStartInfo?>? goOn = null,
-        Action? working = null, Func<CancellationToken, Task<bool>>? waitsOnBackground = null)
+        Action? working = null, Func<CancellationToken, Task<bool>>? waitsOnBackground = null, int? minutes = null,
+        string? noConnector = null)
     {
         using var process = Process.Start(info)
             ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
@@ -1850,18 +1866,20 @@ public sealed partial class Driver(
         var composed = resume is null ? TargetPrompt.Composed(target) : null;
         var prompt = resume?.Prompt ?? composed!.Text;
         // What the target was composed of, kept beside it on its event with the rules handed beside it (CONTEXT1, D143 point 1);
-        // a resume composes nothing, so its record keeps none.
-        var account = composed is null ? null
+        // a resume composes nothing, so its record keeps none. Nor a reviewer's (XAGENT1d): its instruction is its own
+        // composer's, which the account's sections do not name yet, and an intake's section would say it was one.
+        var account = composed is null || target.Opinion is not null ? null
             : rules.Handed is { } rulesHanded ? composed.Account.Beside(rulesHanded)
             : composed.Account;
         // A quest's session keeps the id its harness names, which an answer to a park resumes (ANSWER1a). Never an
-        // intake's: it is answered through its ask.
-        var keepAs = target.Ask is null ? adapter.Name : null;
+        // intake's: it is answered through its ask. Nor a reviewer's: every pass is a fresh conversation (D155 point 6).
+        var keepAs = target.OneTurn ? null : adapter.Name;
         // What the person tells a quest's session while it works (SESS3), held for the protocol door to
-        // hand over between turns. Never an intake's: it is one turn framed as one prompt (INT4h). On the native door, where
-        // the run can resume, held until it ends and gone on with in its own conversation (MSG1b, D137 §2.1).
-        var held = goOn is not null && adapter.Wire == SessionWire.Pipe && target.Ask is null ? _processes.OpenInbox(sessionId) : null;
-        var inbox = adapter.Wire == SessionWire.Acp && target.Ask is null ? _processes.OpenInbox(sessionId) : held;
+        // hand over between turns. Never an intake's or a reviewer's: each is one turn framed as one prompt (INT4h, D155 point 5).
+        // On the native door, where the run can resume, held until it ends and gone on with in its own conversation (MSG1b,
+        // D137 §2.1).
+        var held = goOn is not null && adapter.Wire == SessionWire.Pipe && !target.OneTurn ? _processes.OpenInbox(sessionId) : null;
+        var inbox = adapter.Wire == SessionWire.Acp && !target.OneTurn ? _processes.OpenInbox(sessionId) : held;
         using var unheld = new Disposer(() => inbox?.Close());
         if (held is not null)
         {
@@ -1879,7 +1897,7 @@ public sealed partial class Driver(
             // same D37 boundary three different ways, and one of them does not name it on the wire.
             ? CaptureAcpAsync(
                 process, transcript, sessionId, cwd, prompt, adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta, handedServers ?? _servers,
-                target.PersonSaid, inbox, said, keepAs, resume, account, waitsOnBackground)
+                target.PersonSaid, inbox, said, keepAs, resume, account, waitsOnBackground, noConnector)
             : null;
         // What the native door's harness says in its own words, apart from its agent's, for its ending (AGT3c).
         var own = new HarnessWords();
@@ -1901,7 +1919,7 @@ public sealed partial class Driver(
 
         working?.Invoke();
 
-        var exitCode = await WaitAsync(process, ct).ConfigureAwait(false);
+        var exitCode = await WaitAsync(process, ct, minutes).ConfigureAwait(false);
         await capture.ConfigureAwait(false);
 
         // What it consumed, where the door reported it (TOOL3/D57 §4). A pipe with only text reports
@@ -1983,10 +2001,11 @@ public sealed partial class Driver(
     /// AND a driver shutdown both end the process, because an orphaned agent session working a quest
     /// nobody is observing is the one thing worse than a failed one.
     /// </summary>
-    private async Task<int?> WaitAsync(Process process, CancellationToken ct)
+    /// <param name="minutes">The bound where it is not the machine's session timeout: a reviewer's pass (XAGENT1d).</param>
+    private async Task<int?> WaitAsync(Process process, CancellationToken ct, int? minutes = null)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        timeout.CancelAfter(TimeSpan.FromMinutes(config.TimeoutMinutes));
+        timeout.CancelAfter(TimeSpan.FromMinutes(minutes ?? config.TimeoutMinutes));
         try
         {
             await process.WaitForExitAsync(timeout.Token).ConfigureAwait(false);
@@ -2120,13 +2139,14 @@ public sealed partial class Driver(
     /// </param>
     /// <param name="account">What the prompt was composed of (CONTEXT1), kept beside it on its event; null for a resume.</param>
     /// <param name="waitsOnBackground">Whether a turn that ended on its own background work waits for it (BGWAIT1); null never.</param>
+    /// <param name="noConnector">What is said where there is no connector, when it is neither a quest's nor an intake's sentence.</param>
     private async Task<(AcpOutcome? Outcome, string? Failure)> CaptureAcpAsync(
         Process process, string transcript, string sessionId, string cwd, string prompt,
         string? posture, string? harnessNotice, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, object? meta = null,
         IReadOnlyList<AcpMcpServer>? servers = null, string? personSaid = null, DrivenInbox? inbox = null,
         Action<JsonElement>? said = null, string? keepAs = null, ResumeAsk? resume = null, InstructionAccount? account = null,
-        Func<CancellationToken, Task<bool>>? waitsOnBackground = null)
+        Func<CancellationToken, Task<bool>>? waitsOnBackground = null, string? noConnector = null)
     {
         await using var file = TranscriptFile.Open(transcript, append: resume is not null);
 
@@ -2177,7 +2197,7 @@ public sealed partial class Driver(
             var connector = Connector(sessionId, scope);
             if (connector is null)
             {
-                Said(scope is null ? NoConnectorForSession : NoConnectorForIntake);
+                Said(noConnector ?? (scope is null ? NoConnectorForSession : NoConnectorForIntake));
             }
 
             // The knowledge host first, then whatever the plugins hand every session (D65 §1f): a
