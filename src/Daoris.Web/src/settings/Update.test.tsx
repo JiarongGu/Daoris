@@ -86,6 +86,31 @@ describe("Settings' update row", () => {
     expect(screen.queryByText('Last update')).toBeNull();
   });
 
+  // SWAP2c (D139's SWAP2 note): the row words a check's code from the banner's catalogue, so SWAP2's two codes are said
+  // in the reader's language here too, never in the journal's English sentence.
+  it.each([
+    {
+      code: 'move', phase: 'rolled-back',
+      en: 'Daoris 0.0.2 could not start, so Daoris went back to the build before it: a file could not be moved for a reason other than being held open, so what had moved was put back; daoris-driver update says why.',
+      zh: 'Daoris 0.0.2 无法启动，已退回到之前的版本：有文件因被占用以外的原因无法移动，已移动的文件都已放回原处；daoris-driver update 会说明原因。',
+    },
+    {
+      code: 'error', phase: 'refused',
+      en: 'The staged Daoris 0.0.2 was refused before anything was replaced: the launcher met an error before it could put the build in place, so the build before it runs on; stage this one again to retry.',
+      zh: '暂存的 Daoris 0.0.2 在替换任何文件之前被拒绝：启动器在把构建换上之前出错，之前的构建照常运行；请重新暂存这个构建再试。',
+    },
+  ])('says a last swap ended by `$code` in its own words, in English and in 中文', async ({ code, phase, en, zh }) => {
+    const update = standing({ last: { phase, build: 'b1', version: '0.0.2', commit: null, reason: code, detail: 'the journal’s own English sentence.' } });
+
+    const { unmount } = draw(update);
+    expect(screen.getByText(en)).toBeTruthy();
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    draw(update);
+    expect(screen.getByText(zh)).toBeTruthy();
+  });
+
   it('speaks 中文: waiting after Not now, and a swap refused', async () => {
     await i18n.changeLanguage('zh');
     draw(standing({
