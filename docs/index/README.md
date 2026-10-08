@@ -73,7 +73,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 197 | 3626 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 58 | 1019 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 88 | 1620 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 89 | 1627 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionGroups.cs` | 55 | 987 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.Sync.cs` | 68 | 1146 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.cs` | 66 | 1163 |
@@ -100,10 +100,10 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/KnowledgeService.cs` | 53 | 1055 |
 | `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 93 | 1761 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 131 | 2387 |
-| `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 62 | 1198 |
+| `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 63 | 1210 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 63 | 1133 |
-| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 82 | 1495 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 98 | 1778 |
+| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 85 | 1549 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 99 | 1783 |
 | `src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs` | 44 | 801 |
 | `src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs` | 44 | 839 |
 | `src/Daoris.Service/Daoris.Service.Tests/IndexEntriesTests.cs` | 45 | 855 |

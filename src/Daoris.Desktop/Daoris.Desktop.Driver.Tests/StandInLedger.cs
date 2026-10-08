@@ -96,15 +96,49 @@ internal sealed class StandInLedger : HttpMessageHandler
         return this;
     }
 
-    /// <summary>An open quest to <paramref name="to"/>, the newest: the service answers oldest first.</summary>
-    public void Publish(string id, string to, string? title = null)
+    /// <summary>
+    /// An open quest to <paramref name="to"/>, the newest: the service answers oldest first. <paramref name="from"/> is its
+    /// sender, <c>ask #id</c> for a quest an ask asked (GOAHEAD2).
+    /// </summary>
+    public void Publish(string id, string to, string? title = null, string from = "game")
     {
         lock (_gate)
         {
             _quests.Add(new JsonObject
             {
-                ["id"] = id, ["from"] = "game", ["to"] = to, ["title"] = title ?? $"The work of #{id}",
+                ["id"] = id, ["from"] = from, ["to"] = to, ["title"] = title ?? $"The work of #{id}",
                 ["body"] = "Stand-in work.", ["status"] = "Open",
+            });
+        }
+    }
+
+    // The asks a quest was asked by, by id, as `/api/asks/{id}` answers one, with the go-aheads its sessions asked (GOAHEAD2).
+    // Apart from the list above, which holds the asks an intake answers.
+    private readonly Dictionary<string, JsonObject> _askedBy = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// <paramref name="session"/> asks the person on ask <paramref name="ask"/> for a go-ahead (KNOWUSE1a): kept as the ask's
+    /// next number, waiting on them, the ask held from its first.
+    /// </summary>
+    public void GoAheadAsked(string ask, string session, string kind, string on, string act)
+    {
+        lock (_gate)
+        {
+            if (!_askedBy.TryGetValue(ask, out var held))
+            {
+                _askedBy[ask] = held = new JsonObject
+                {
+                    ["id"] = ask, ["workspace"] = "default", ["sentence"] = $"The words of ask #{ask}.", ["state"] = "Published",
+                    ["tier"] = "named", ["goAheads"] = new JsonArray(),
+                };
+            }
+
+            var goAheads = held["goAheads"]!.AsArray();
+            _clock = _clock.AddSeconds(1);
+            goAheads.Add(new JsonObject
+            {
+                ["number"] = goAheads.Count + 1, ["kind"] = kind, ["on"] = on, ["act"] = act, ["state"] = "asked",
+                ["asked"] = new JsonArray(new JsonObject { ["session"] = session, ["at"] = _clock.ToString("O"), ["why"] = "The work needs it." }),
             });
         }
     }
@@ -349,6 +383,53 @@ internal sealed class StandInLedger : HttpMessageHandler
                     if (left.Count == 0) session.Remove("answer");
                     else session["answer"] = string.Join("\n\n", left.Select(word => word["text"]!.GetValue<string>()));
                     return Answer(HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "taken" });
+                }
+
+                // One ask, whole, as a session's start and resume read the go-aheads on it (KNOWUSE1a).
+                case ("GET", _) when path.StartsWith("/api/asks/", StringComparison.Ordinal):
+                    return _askedBy.TryGetValue(path["/api/asks/".Length..], out var whole)
+                        ? Answer(HttpStatusCode.OK, whole.DeepClone())
+                        : Answer(HttpStatusCode.NotFound, new JsonObject { ["error"] = $"No ask `#{path["/api/asks/".Length..]}`." });
+
+                // The go-ahead door (KNOWUSE1a), with what the service does to a park on the answer that leaves none of its
+                // go-aheads waiting (GOAHEAD2, SessionLedger.GoOnWithGoAheadsAsync): a parked record of a session that asked
+                // it, holding no words yet, keeps the park's blank answer, unless the caller answers the park itself.
+                case ("POST", _) when path.StartsWith("/api/asks/", StringComparison.Ordinal) && path.Contains("/go-aheads/", StringComparison.Ordinal):
+                {
+                    var named = path["/api/asks/".Length..].Split("/go-aheads/");
+                    var held = _askedBy[named[0]];
+                    var goAheads = held["goAheads"]!.AsArray().Select(each => each!.AsObject()).ToList();
+                    var goAhead = goAheads.Single(each => each["number"]!.GetValue<int>().ToString(System.Globalization.CultureInfo.InvariantCulture) == named[1]);
+                    var waited = goAhead["answer"] is null;
+                    var approved = body!["answer"]!.GetValue<string>() == "approved";
+                    _clock = _clock.AddSeconds(1);
+                    goAhead["state"] = approved ? "approved" : "refused";
+                    goAhead["answer"] = new JsonObject
+                    {
+                        ["approved"] = approved, ["words"] = body["words"]?.GetValue<string>(), ["at"] = _clock.ToString("O"),
+                    };
+
+                    static string Asker(JsonNode? request) => request!["session"]!.GetValue<string>();
+                    if (waited && body["goesOn"]?.GetValue<bool>() != false)
+                    {
+                        foreach (var asker in goAhead["asked"]!.AsArray().Select(Asker).Distinct(StringComparer.Ordinal))
+                        {
+                            var parked = _sessions.SingleOrDefault(s => s["id"]!.GetValue<string>() == asker);
+                            var open = goAheads.Any(each => each["answer"] is null && each["asked"]!.AsArray().Any(request => Asker(request) == asker));
+                            if (parked?["state"]?.GetValue<string>() != "awaiting-person" || open || parked["said"] is JsonArray { Count: > 0 }) continue;
+                            parked["said"] = new JsonArray(new JsonObject
+                            {
+                                ["id"] = $"w-{asker}", ["text"] = "carry on.", ["at"] = _clock.ToString("O"), ["files"] = new JsonArray(), ["reopens"] = false,
+                            });
+                            parked["answer"] = "carry on.";
+                        }
+                    }
+
+                    return Answer(HttpStatusCode.OK, new JsonObject
+                    {
+                        ["ask"] = held.DeepClone(),
+                        ["message"] = $"Go-ahead {named[1]} on ask `#{named[0]}` {(approved ? "approved" : "refused")}.",
+                    });
                 }
 
                 case ("GET", _) when path.StartsWith("/api/quests/", StringComparison.Ordinal) && path.EndsWith("/claim", StringComparison.Ordinal):

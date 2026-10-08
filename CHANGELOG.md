@@ -177,6 +177,7 @@ with the version and date at release.
 - Re-publishing an install that carries its own service without `--service` is refused, naming what it would
   leave behind.
 - An ask's proposal of a repository its words name says *named in the ask*, not *shares …*.
+- Answering every go-ahead a waiting session asked on its ask now sends that session on with your answers.
 
 The first version: doctrine that installs, is checked, and flows back.
 

@@ -728,14 +728,21 @@ public sealed partial class ServiceClient : IDisposable
     /// The person's yes or no to a go-ahead a session asked on their ask (KNOWUSE1a, D135 §2), with their words where they
     /// give any: the terminal's door. The service's sentence comes back verbatim, a refusal (no such go-ahead) included.
     /// </summary>
+    /// <param name="goesOn">
+    /// Whether the answer that leaves none of a parked session's go-aheads waiting is that park's answer, so the session goes
+    /// on with it (GOAHEAD2), as the ask's page has it: the terminal's door says so. False by default, for the session page's
+    /// door, which answers the park itself with the person's own words (KNOWUSE1a2), so the service leaves the park to it.
+    /// </param>
     public async Task<(bool Ok, string Message)> AnswerGoAheadAsync(
-        string ask, int number, bool approved, string? words, CancellationToken ct = default)
+        string ask, int number, bool approved, string? words, CancellationToken ct = default, bool goesOn = false)
     {
         var body = WriteJson(writer =>
         {
             writer.WriteStartObject();
             writer.WriteString("answer", approved ? "approved" : "refused");
             if (!string.IsNullOrWhiteSpace(words)) writer.WriteString("words", words);
+            // Always said: a host reads it absent as true, the ask page's way (GOAHEAD2).
+            writer.WriteBoolean("goesOn", goesOn);
             writer.WriteEndObject();
         });
         var (ok, status, payload, root) = await PostJsonAsync(

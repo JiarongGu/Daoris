@@ -147,7 +147,9 @@ public sealed record GoAheadResponse(
 public sealed record GoAheadRequestResponse(string Session, string? Quest, DateTimeOffset At, string Why);
 public sealed record GoAheadAnswerResponse(bool Approved, string? Words, DateTimeOffset At);
 // The person's answer to a go-ahead (KNOWUSE1a): `answer` is `approved` or `refused`; `words` theirs, where they give any.
-public sealed record GoAheadAnswerRequest(string? Answer, string? Words);
+// `goesOn` false leaves a parked session that waited on it to its caller, which answers that park itself (GOAHEAD2, the
+// session page's door); absent or true, the answer that leaves none of a park's go-aheads waiting is its answer.
+public sealed record GoAheadAnswerRequest(string? Answer, string? Words, bool? GoesOn = null);
 public sealed record AskActionResponse(AskResponse Ask, string Message, QuestResponse? Quest);
 // DRIFT1a: what the person added to a running session, as its driver reports it.
 public sealed record AddedRequest(string? Text);

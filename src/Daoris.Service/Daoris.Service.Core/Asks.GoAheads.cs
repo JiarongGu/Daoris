@@ -24,14 +24,15 @@ public sealed partial class AskDesk
         }
 
         var answer = new GoAheadAnswer(approved, said, now);
-        var (found, decided) = await asks.DecideGoAheadsAsync<(GoAhead? Answered, IReadOnlyList<int> Numbers)>(id, entries =>
+        var (found, decided) = await asks.DecideGoAheadsAsync<(GoAhead? Answered, bool WasWaiting, IReadOnlyList<int> Numbers)>(id, entries =>
         {
             var held = entries.Select(entry => entry.Read).OfType<GoAhead>().FirstOrDefault(goAhead => goAhead.Number == number);
-            if (held is null) return (null, (null, [.. entries.Select(entry => entry.Read?.Number).OfType<int>()]));
+            if (held is null) return (null, (null, false, [.. entries.Select(entry => entry.Read?.Number).OfType<int>()]));
             GoAhead? answered = held with { Answer = answer };
             IReadOnlyList<(System.Text.Json.JsonElement Raw, GoAhead? Read)> next =
                 [.. entries.Select(entry => entry.Read?.Number == number ? (entry.Raw, answered) : entry)];
-            return (next, (answered, []));
+            // Read as it was stored, in the same transaction: whether this is the person's first answer to it (GOAHEAD2).
+            return (next, (answered, held.Answer is null, []));
         }, now, ct).ConfigureAwait(false);
 
         var ask = found ? await FindAsync(id, ct).ConfigureAwait(false) : null;
@@ -49,6 +50,10 @@ public sealed partial class AskDesk
         return new(GoAheadAnswerRefusal.None,
             $"Go-ahead {kept.Number} on ask `#{ask.Id}` {(approved ? "approved" : "refused")}: {kept.Named}. Every session on the "
             + "ask is handed your answer at its next start" + (said is null ? "." : ", with your words."),
-            ask);
+            ask)
+        {
+            GoAhead = kept,
+            WasWaiting = decided.WasWaiting,
+        };
     }
 }

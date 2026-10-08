@@ -213,16 +213,11 @@ public sealed partial class Driver
             WritesAcross = across.Writes,
             Session = sessionId,
         };
-        // The go-aheads it asked, answered since it parked (KNOWUSE1a, D135 §2): its conversation was handed the ask's at its
-        // start, and is told the answers after the person's own words. Unread, or on no ask, it is resumed with the words alone.
-        // Then the work's session language where one is set (LANG1c), since it may have changed since the conversation was
-        // handed it; none set, and the appendix is what it was.
-        var asked = await AskWords.ReadAsync(service, quest.From, ct).ConfigureAwait(false);
         // Each word's files where they were kept as it was said (MSG1d3, D137 §2.4), handed with the words.
         var resume = new ResumeAsk(
             kept.Conversation, park.Waiting,
             Continuations.Opening(adapter.Name, selection.Version, park.HarnessVersion, answer: park.Parked),
-            SessionLanguageText.Resumed(GoAheadsText.Resumed("", asked, sessionId).TrimStart(), target.Language),
+            await ResumedAfterAsync(service, quest, sessionId, target.Language, ct).ConfigureAwait(false),
             files: word => ChatFiles.Kept(home, sessionId, word.Files));
         var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
 
@@ -315,6 +310,24 @@ public sealed partial class Driver
             // A resume that was tried lets the starting hold go however it ended, so a carry-on takes it again (LEFT2).
             starting?.Dispose();
         }
+    }
+
+    /// <summary>
+    /// What a resumed run's turn carries after the person's words: the answers to the go-aheads its session asked (KNOWUSE1a,
+    /// D135 §2), read from its quest's ask as the run takes the record up, since its conversation was handed the ask's at its
+    /// start and is told the answers after the words; then the work's session language where one is set (LANG1c), since it
+    /// may have changed since the conversation was handed it. Unread, or on no ask, nothing of the go-aheads; none set, and
+    /// no language line.
+    /// </summary>
+    /// <remarks>
+    /// <b>A park its go-aheads' answers woke</b> (GOAHEAD2) holds the blank answer the service keeps for one, and its turn is
+    /// that, then this: each go-ahead it asked, which, approved or refused, and the person's words, quoted as theirs.
+    /// </remarks>
+    internal static async Task<string> ResumedAfterAsync(
+        ServiceClient service, QuestView quest, string session, SessionLanguage? language, CancellationToken ct)
+    {
+        var asked = await AskWords.ReadAsync(service, quest.From, ct).ConfigureAwait(false);
+        return SessionLanguageText.Resumed(GoAheadsText.Resumed("", asked, session).TrimStart(), language);
     }
 
     /// <summary>

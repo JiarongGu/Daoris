@@ -276,7 +276,44 @@ public enum GoAheadAnswerRefusal
 /// <param name="Refusal"><see cref="GoAheadAnswerRefusal.None"/> when the answer was kept.</param>
 /// <param name="Message">The whole answer, phrased once here for every door.</param>
 /// <param name="Ask">The ask as it now stands, when there is one.</param>
-public sealed record GoAheadAnswerOutcome(GoAheadAnswerRefusal Refusal, string Message, Ask? Ask);
+public sealed record GoAheadAnswerOutcome(GoAheadAnswerRefusal Refusal, string Message, Ask? Ask)
+{
+    /// <summary>The go-ahead as it now stands, when the answer was kept.</summary>
+    public GoAhead? GoAhead { get; init; }
+
+    /// <summary>
+    /// It waited on the person until this answer: their first to it, not a change to one they gave before (GOAHEAD2). Only
+    /// such an answer can be the last a parked session was waiting on.
+    /// </summary>
+    public bool WasWaiting { get; init; }
+}
+
+/// <summary>
+/// What answering a go-ahead did to the parked sessions that asked it (GOAHEAD2): those that go on with the answers to the
+/// go-aheads they asked, and those still waiting on one of theirs, by number. Only this machine's driven parks are named.
+/// </summary>
+/// <param name="GoesOn">The parked sessions every one of whose go-aheads is now answered, in the order they asked it.</param>
+/// <param name="Waits">The parked sessions still waiting on one of their go-aheads, each with the numbers still open.</param>
+public sealed record GoAheadParks(IReadOnlyList<string> GoesOn, IReadOnlyDictionary<string, IReadOnlyList<int>> Waits)
+{
+    /// <summary>No parked session asked it.</summary>
+    public static readonly GoAheadParks None = new([], new Dictionary<string, IReadOnlyList<int>>());
+
+    /// <summary>
+    /// What the answer door adds to its sentence, phrased once here for every door: each session that goes on, then each
+    /// still waiting with the go-aheads it waits on, each a sentence led by a space. Empty where no parked session asked it.
+    /// </summary>
+    public string Said =>
+        string.Concat(GoesOn.Select(session =>
+            $" Session `{session}` was waiting on you for its go-aheads: it goes on with your answers at the driver's next look."))
+        + string.Concat(Waits.Select(waiting =>
+            $" Session `{waiting.Key}` is still waiting on you for {(waiting.Value.Count == 1 ? "go-ahead" : "go-aheads")} {Numbers(waiting.Value)}."));
+
+    private static string Numbers(IReadOnlyList<int> numbers) =>
+        numbers.Count == 1
+            ? numbers[0].ToString(CultureInfo.InvariantCulture)
+            : $"{string.Join(", ", numbers.SkipLast(1).Select(n => n.ToString(CultureInfo.InvariantCulture)))} and {numbers[^1].ToString(CultureInfo.InvariantCulture)}";
+}
 
 /// <summary>The bounds and the stored shape of go-aheads (KNOWUSE1a).</summary>
 public static class GoAheads
