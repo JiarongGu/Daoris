@@ -42,8 +42,9 @@ import { RunningIntake } from './RunningIntake';
  * the frame could act.
  *
  * **The go-aheads a park asked stand beneath its card** (KNOWUSE1a2, D135 §2), the ask's own list: each with *Approve*
- * and *Refuse* where the frame can answer, and answering one there answers the park too, so the same session goes on with
- * one press. They stay while it is parked, answered or not, so one still waiting can be answered before it goes on.
+ * and *Refuse* where the frame can answer, and answering the last one open there sends the same session on, as on the
+ * ask's page (GOAHEAD2b). They stay while it is parked, answered or not, so one still waiting can be answered before it
+ * goes on.
  *
  * **It says how an ended session stands, in the record's note** (SESS2, reversing the rule that it
  * did not): the rule rested on *"the timeline below carries it"*, and since FRAME6 the timeline is in
@@ -92,8 +93,8 @@ export function SessionHead({
   /** The go-aheads this session asked on its quest's ask (KNOWUSE1a2), as the frame read them; shown while it is parked. */
   goAheads?: GoAhead[];
   /**
-   * Answer one of them, and the park with it (KNOWUSE1a2): which go-ahead, yes or no, and the person's words where they
-   * gave any. Absent where nothing can answer them here, and then they are shown with no door.
+   * Answer one of them (KNOWUSE1a2), which sends the park on once none is open (GOAHEAD2b): which go-ahead, yes or no, and
+   * the person's words where they gave any. Absent where nothing can answer them here, and then they are shown with no door.
    */
   onGoAhead?: (number: number, approved: boolean, words?: string) => void;
   /**

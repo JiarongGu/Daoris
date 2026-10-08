@@ -19,9 +19,14 @@
   "work.awaiting.yourAnswer": "你的回答",
   "work.awaiting.goesOn": "同一个会话会在驱动的下一轮带着这个回答继续。",
   "work.awaiting.goAheads": "它请求的放行",
-  "work.awaiting.goAheadsLead": "在这里答复其中一项，也就回答了这个会话：同一个会话会在驱动的下一轮带着你的答复继续。这个需求上的每个会话都会拿到它。",
+  "work.awaiting.goAheadsLead": "它提出的每项放行都答复后（在这里或在它的需求上），这个会话会在驱动的下一轮带着你的答复继续。这个需求上的每个会话都会拿到这些答复。",
   "work.awaiting.goAheadApproved": "已放行 #{{number}}；同一个会话会在驱动的下一轮带着它继续。",
   "work.awaiting.goAheadRefused": "已拒绝放行 #{{number}}；同一个会话会在驱动的下一轮带着它继续。",
   "work.awaiting.goAheadOnly": "已答复放行 #{{number}}。",
-  "work.awaiting.goAheadNotWaiting": "这个会话已不再等你，所以这个需求会保留你的答复，交给之后的每次启动。"
+  "work.awaiting.goAheadNotWaiting": "这个会话已不再等你，所以这个需求会保留你的答复，交给之后的每次启动。",
+  "work.awaiting.goAheadWaits.approved": "已放行 #{{number}}。",
+  "work.awaiting.goAheadWaits.refused": "已拒绝放行 #{{number}}。",
+  "work.awaiting.goAheadWaits.for": "它仍在等你答复放行 {{open}}，答复后就会继续。",
+  "work.awaiting.goAheadWaits.for_other": "它仍在等你答复放行 {{open}}，答复后就会继续。",
+  "work.awaiting.goAheadWaits.onYou": "它仍在等你：在下面回答它，它就会继续。"
 }
