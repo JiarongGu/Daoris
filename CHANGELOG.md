@@ -165,6 +165,7 @@ with the version and date at release.
 - An ask that names its repository now proposes that repository first, even one that has declared
   nothing, instead of whichever repository its other words matched.
 - A working session's transcript file now fills as the session speaks, not only when it ends.
+- A request the service fails on now answers with a sentence, and its log says what went wrong and where.
 
 The first version: doctrine that installs, is checked, and flows back.
 
