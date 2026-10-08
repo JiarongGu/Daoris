@@ -53,6 +53,18 @@ public sealed record SessionTarget(
     public string? Ask { get; init; }
 
     /// <summary>
+    /// The second opinion this session gives (XAGENT1d, D155 point 5): a REVIEWER, which serves no quest and no ask. Its spawn
+    /// carries its own session and its instruction, and no quest variable at all. Null for every other session.
+    /// </summary>
+    public string? Opinion { get; init; }
+
+    /// <summary>
+    /// Whether the session is one turn framed as one prompt, taking no person's line and never resumed: an intake (INT4h) and a
+    /// reviewer, which reads in one turn and starts a fresh conversation every pass (D155 point 6).
+    /// </summary>
+    public bool OneTurn => Ask is not null || Opinion is not null;
+
+    /// <summary>
     /// The session's own record — handed to every session, whose connector names it when it publishes
     /// (an intake's, D65 §1b; a quest's, SESS1).
     /// </summary>
@@ -1140,6 +1152,15 @@ internal static class Spawning
             return info;
         }
 
+        // A reviewer (XAGENT1d) serves another session's work and no quest: its own record, so its connector says its opinion as
+        // that session, and its instruction; the quest variables absent, as an intake's are.
+        if (target.Opinion is not null)
+        {
+            if (target.Session is { } reviewer) info.Environment[IntakeRoom.SessionVariable] = reviewer;
+            info.Environment["DAORIS_TARGET"] = TargetPrompt.Compose(target);
+            return info;
+        }
+
         info.Environment["DAORIS_QUEST_ID"] = target.QuestId;
         info.Environment["DAORIS_QUEST_TITLE"] = target.Title;
         info.Environment["DAORIS_QUEST_BODY"] = target.Body;
@@ -1878,6 +1899,19 @@ public sealed class AdapterSet(
 {
     /// <summary>Every adapter this build has, in a stable order — what a roster enumerates.</summary>
     public IReadOnlyList<string> Names => [.. adapters.Keys.OrderBy(k => k, StringComparer.Ordinal)];
+
+    /// <summary>
+    /// Every name this set runs as a harness, in a stable order (PLUGINRESERVE1): each door it carries and each agent a door
+    /// runs as with no door here (<see cref="Holder"/>). Of the built set, what no plugin may declare
+    /// (<see cref="PluginCatalog.Reserved"/>): a plugin's harness named for a holder would be a door of that agent, and
+    /// <see cref="Holder"/> would stop answering for its accounts. Twin: the CLI's <c>reservedHarnesses()</c>.
+    /// </summary>
+    public IReadOnlyList<string> Reserved =>
+    [
+        .. adapters.Keys.Concat(holders?.Keys ?? [])
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(k => k, StringComparer.Ordinal),
+    ];
 
     /// <summary>
     /// The toolchain of an agent whose accounts a door runs as, where this set carries no door of it (CODEXACCT1): its own

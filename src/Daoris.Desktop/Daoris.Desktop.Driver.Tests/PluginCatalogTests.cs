@@ -271,6 +271,56 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.Same(typeof(ClaudeCodeAdapter), AdapterSet.Built().WithPlugins(catalog).Resolve("claude-code").GetType());
     }
 
+    /// <summary>
+    /// The names this build reserves are the shared table's (PLUGINRESERVE1), which the CLI's <c>reservedHarnesses()</c> is held
+    /// to as well: every name either side runs as a harness, each door and each agent a door runs as, <c>codex</c> among them.
+    /// </summary>
+    [Fact]
+    public void The_names_this_build_reserves_are_the_shared_tables()
+    {
+        var reserved = ReservedTable().GetProperty("reserved").EnumerateArray().Select(each => each.GetString()!).ToList();
+
+        Assert.Contains("codex", reserved);
+        Assert.Equal(reserved, AdapterSet.Built().Reserved);
+        Assert.Equal(reserved, PluginCatalog.Reserved);
+    }
+
+    public static TheoryData<string, string, bool> ReservedRows()
+    {
+        var data = new TheoryData<string, string, bool>();
+        foreach (var row in ReservedTable().GetProperty("declares").EnumerateArray())
+        {
+            data.Add(row[0].GetString()!, row[1].GetString()!, row[2].GetBoolean());
+        }
+
+        return data;
+    }
+
+    /// <summary>
+    /// A plugin declaring a reserved name is refused whatever the caller hands the check (PLUGINRESERVE1): the doors alone, as
+    /// the loop and every screen hand it, or nothing at all. The CLI's catalogue refuses the same rows.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(ReservedRows))]
+    public void A_plugin_declaring_a_reserved_name_is_refused_as_the_cli_refuses_it(string why, string name, bool refused)
+    {
+        Plugin("example.agent", $$"""{ "id": "example.agent", "harnesses": [ { "name": "{{name}}", "command": ["agent"] } ] }""");
+
+        foreach (var handed in new[] { null, AdapterSet.Built().Names })
+        {
+            var catalog = PluginCatalog.Load(_home, handed);
+            var entry = Assert.Single(catalog.Plugins);
+            if (refused) Assert.Contains($"`{name}`, which this build already carries", entry.Problem);
+            else Assert.True(entry.Problem is null, why);
+            Assert.Equal(refused, PluginCatalog.RefusedByThisBuild(entry.Manifest with { Harnesses = [new(name, ["agent"])] }, handed ?? []) is not null);
+            // Nothing built in is shadowed: an agent a door runs as keeps the holder that answers for its accounts.
+            Assert.Equal(AdapterSet.Built().Holder(name) is null, AdapterSet.Built().WithPlugins(catalog).Holder(name) is null);
+        }
+    }
+
+    private static JsonElement ReservedTable() => JsonDocument.Parse(File.ReadAllText(Path.Combine(
+        WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "reserved-harnesses.json"))).RootElement.Clone();
+
     [Fact]
     public void Two_plugins_declaring_the_same_harness_keep_the_first_by_id_and_refuse_the_second_naming_it()
     {

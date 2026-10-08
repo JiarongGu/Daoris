@@ -42,6 +42,9 @@ internal sealed class StandInGit(string top)
         return id;
     }
 
+    /// <summary>HEAD moved back to <paramref name="commit"/>, as a reset does: the next commit grows from it, beside what was after it.</summary>
+    public void Reset(string commit) => Head = commit;
+
     /// <summary>A file's blob id, as <see cref="Commit"/> names it from its content.</summary>
     public static string Blob(string content) => Id("blob " + content);
 

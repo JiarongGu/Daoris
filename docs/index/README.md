@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (115)
+## Files over 40 KB (116)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -66,14 +66,15 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/ToolResourcesTests.cs` | 40 | 559 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/AccountRotation.cs` | 49 | 849 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Acp.cs` | 91 | 1845 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 109 | 1953 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 80 | 1520 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 150 | 2586 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 111 | 1987 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 81 | 1525 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.Continue.cs` | 41 | 692 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 152 | 2610 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 55 | 1008 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 198 | 3649 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 60 | 1044 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 89 | 1639 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 61 | 1060 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 90 | 1640 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionGroups.cs` | 55 | 987 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.Sync.cs` | 68 | 1146 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.cs` | 75 | 1308 |
@@ -118,17 +119,17 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Cli/src/driverconfig.ts` | 92 | 1712 |
+| `src/Daoris.Cli/src/driverconfig.ts` | 93 | 1714 |
 | `src/Daoris.Cli/src/materialize.ts` | 47 | 936 |
-| `src/Daoris.Cli/src/plugins.ts` | 68 | 1356 |
+| `src/Daoris.Cli/src/plugins.ts` | 69 | 1383 |
 | `src/Daoris.Cli/src/toolchain.ts` | 140 | 2738 |
 | `src/Daoris.Cli/test/desktop-publish.test.ts` | 56 | 1006 |
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 41 | 786 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 46 | 820 |
-| `src/Daoris.Cli/test/driverconfig.test.ts` | 100 | 1885 |
+| `src/Daoris.Cli/test/driverconfig.test.ts` | 103 | 1927 |
 | `src/Daoris.Cli/test/merge-branch.test.ts` | 179 | 2780 |
 | `src/Daoris.Cli/test/rotation-use.test.ts` | 44 | 550 |
-| `src/Daoris.Cli/test/setup-kit.test.ts` | 47 | 874 |
+| `src/Daoris.Cli/test/setup-kit.test.ts` | 52 | 955 |
 | `src/Daoris.Cli/test/toolchain.test.ts` | 94 | 1834 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 71 | 1226 |
 
@@ -149,7 +150,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 55 | 119 |
+| `.claude/knowledge/twins.md` | 61 | 122 |
 | `docs/2026-09-19-platform-ux.md` | 57 | 612 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 52 | 349 |

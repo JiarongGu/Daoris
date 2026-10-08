@@ -12414,3 +12414,59 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **REVIEWENV1c3 — Ask Daoris's service door stops saying the review is declared only** (service; after REVIEWENV1c2). `KnowledgeTools.Help.Setting.cs` (lines 23, 28) and `HelpSettingProposalTests.cs:209` still tell agents a review rule is declared only; say the gate's sentence as the twins' `gate` table does. Contract: D154's REVIEWENV1c2 note. Proof: the test row in the gate's words.
 
 **Outcome** 2026-10-07: `setting_propose`'s review clause quotes the gate sentence of `review-rules.json`'s `gate` rows instead of *declared only*; the opinion clause keeps it until XAGENT1f. Follow-up: REVIEWENV1c4. Detail: commit a55c43de.
+
+
+## XAGENT1b2 — the CLI reads a plugin harness's product and maker (2026-10-09, D155)
+
+> - [ ] **XAGENT1b2 — the CLI reads a plugin harness's product and maker** (cli, driver; after XAGENT1b). `plugins.ts` reads `product`/`maker` by `Plugins.cs`'s rules, and both opinion twins count a plugin's declared maker in the doors' family sentence, so the doors agree with the choice. Contract: design §3.1, D155's XAGENT1b note. Proof: `plugins.test.ts` against `PluginCatalogTests`' row; plugin rows in `fixtures/opinion-rules.json` on both sides.
+
+**Outcome** 2026-10-07: `plugins.ts` reads a harness's `product`/`maker` by `Plugins.cs`'s rules, and both opinion twins judge a plugin's agent by its `accountOf` and declared maker over the machine's plugins (the terminal from the plugins beside its file, Ask Daoris from its facts), held by the shared table's `pluginFamilies` rows. Follow-ups: XAGENT1b3, PLUGINRESERVE1. Detail: D155's XAGENT1b2 note; commits b33a74bb, cfffd06f, b5b5fef4.
+
+
+## XAGENT1b3 — the screen's family sentence counts a plugin's maker (2026-10-09, D155)
+
+> - [ ] **XAGENT1b3 — the screen's family sentence counts a plugin's maker** (modules; after XAGENT1b2). `DriverModule.OpinionWire` (`DriverModule.Lines.cs:493`) calls `OpinionRules.SameAgent(rule, working)` over the built-in set; hand it the loop's adapter set, so the Setup rows name a plugin's agent of the working agent's family as the terminal and Ask Daoris do. Contract: design §3.1, D155's XAGENT1b2 note. Proof: a `DriverModuleOpinionTests` row with a plugin declaring the working agent's maker.
+
+**Outcome** 2026-10-07: the Setup rows' family sentence counts a plugin's declared maker, `OpinionWire` handed the loop's adapter set in STATE and LINES, as the terminal and Ask Daoris do. Detail: D155's XAGENT1b3 note; commit 09c7faae.
+
+
+## PLUGINRESERVE1 — both twins reserve the same harness names for plugins (2026-10-09, D64)
+
+> - [ ] **PLUGINRESERVE1 — both twins reserve the same harness names for plugins** (cli, driver). The CLI's `reservedHarnesses()` reserves `codex` (a `TOOLCHAINS` key); the driver reserves `AdapterSet.Built().Names` (`Driver.cs:282`, `LandingPlugins.cs:75`), which lacks `codex` since CODEXACCT1 — so a plugin declaring a `codex` harness is refused by one and accepted by the other. One reserved list, held by a twin test. Contract: D64, `twins`. Proof: `plugins.test.ts` and `PluginCatalogTests` rows reading one table.
+
+**Outcome** 2026-10-07: both twins reserve every name either side runs as a harness — each built door and each agent a door runs as with no door of its own (`codex`, which a plugin door could otherwise have answered for) — held to one shared table, `reserved-harnesses.json`; the catalogue always reserves the build's names. Follow-up: CHATSERVERS1. Detail: D64's PLUGINRESERVE1 note; commit 2859fff2.
+
+
+## CHATSERVERS1 — a conversation hands a plugin's servers when the plugin also declares an agent (2026-10-09, D64)
+
+> - [ ] **CHATSERVERS1 — a conversation hands a plugin's servers when the plugin also declares an agent** (driver). `ChatRunner.HandServersAsync` (`ChatRunner.cs:453`) passes the live adapter set, which already holds plugin harnesses, as the reserved list, so in a conversation a plugin that declares both a harness and a server is refused as *already carries* and its servers are withheld. Read the catalogue as the loop reads it. Contract: D64, D65 §1f. Proof: a `ChatRunnerTests` row with such a plugin.
+
+**Outcome** 2026-10-07: a conversation hands a plugin's servers when the plugin also declares an agent: `ChatRunner.HandServersAsync` reads the catalogue as the loop and the landing do (the build's names reserved) instead of the roster's live set, which already held the plugin's own agent. Detail: FIX-LOG CHATSERVERS1; commit f97c8166.
+
+
+## FLAKE2 — two fast tests that race what they bring up (2026-10-09)
+
+> - [ ] **FLAKE2 — two fast tests that race what they bring up** (modules, cli). `DriverModuleStartFromTests.The_press_starts_a_conversation_whose_end_reaches_the_page` brings up a driver loop whose first look may take the stand-in record's waiting `reopens` word before the press (FIX-LOG FLAKE1, 2026-10-09); and `setup-kit.test.ts:531`'s stub misses its 30 s answer under load (three sightings). Bring the loop up without its look (or hold the look until the press), and give the stub's bound the same start STUB3b gave its first answer. Contract: MOD8, FIX-LOG FLAKE1. Proof: each passes under a deliberate delay that failed it before.
+
+**Outcome** 2026-10-07: the start-from press is judged without the loop's own look crossing it (its waiting word marked judged before the loop comes up), and a set-up turn's prompt bound runs from the stub's last output after a start bound; each passed under a deliberate delay that failed it before. Detail: FIX-LOG FLAKE1's two *Fixed (FLAKE2)* lines; commits 6be65d2e, da6d8ea5.
+
+
+## KNOW500 — the install's knowledge routes fail after a session starts (2026-10-09)
+
+> - [ ] **KNOW500 — the install's knowledge routes fail after a session starts** (service; after HOSTLOG1). On the install, `/api/repositories` and `/api/search` both go through `KnowledgeService.EnsureIndexedAsync` and failed together from the moment an intake started (20:19:36 UTC) while a driven session worked the reporting app; a second host on a copy of the install's data (registry, knowledge.db, sessions) answered 200 and refreshed 8,863 entries over 30 repositories, so the fault lived in the running host. With HOSTLOG1 on the install, read the exception at the next sighting and fix its cause (SQLITETX1 found a burst leaving the shared connection in a transaction nobody owned, after which every `BEGIN` failed — this shape; confirm it is gone, or else: a re-index racing a session's writes, a stuck refresh, or an in-memory index the store no longer matches). Contract: D24, D151's index notes. Proof: the exception named; a test reproducing it; the install's routes answering through a session.
+
+**Outcome** 2026-10-07: the install's knowledge routes failed because every session was handed an old connector that rebuilt the shared index at its own older schema (`no such column: first_line`, 523 times in a day): CONNECTOR1 gives sessions the install's own connector, KSCHEMA1 makes an older build leave a newer index alone, SQLITETX1 closed the connection race beside it; on the republished install the index is at schema 5 and the routes answer. Detail: the CONNECTOR1, KSCHEMA1 and SQLITETX1 entries.
+
+
+## XAGENT1d — the pass (2026-10-09, D155)
+
+> - [ ] **XAGENT1d — the pass** (driver; after b, c). The packet; the clone at the candidate with no remote, removed after; the instruction; the rules handed; `minutes`; one turn; the `opinion` say code; posture and tier recorded. Contract: §4, §5. Proof: `OpinionPacketTests`, the instruction's golden, `ReviewTreeTests` (`Process`: a ref written in the clone never reaches the repository).
+
+**Outcome** 2026-10-07: the pass reads the candidate, makes a clone with no remote under the trees home (`o-<8hex>`), opens the opinion record, hands the reviewer the packet, the diff and the repository's rules, runs the chosen reviewer for one bounded turn under the opinion's rules (writes and git's acts denied, only `opinion_give` among the connector's acting tools), and removes the clone however the run ended; a stub reviewer that writes, commits, tags and pushes reaches nothing of the repository. Detail: D155's XAGENT1d note; commit e933c8c2.
+
+
+## XAGENT1e — delivered and answered (2026-10-09, D155)
+
+> - [ ] **XAGENT1e — delivered and answered** (driver; after d). The working session's next turn (D137) with `by` and the fixed words; answers and the fix commit checked; unanswered as unresolved; one recheck, to the person; the fallback to the person; failure as *Try again*. Contract: §6.3–§6.7. Proof: `OpinionDeliveryTests`, `OpinionRecheckTests`, resume rows on both doors.
+
+**Outcome** 2026-10-07: a first pass's findings are handed once to the working session's own conversation (D137), marked as another agent's, or to the person where it cannot take them; answers are read as its turn ends, a `fixed` counting only where git reads its commit after the candidate and on the tree; one recheck, from the new tip, goes to the person; a failed pass is *Try again*, never *no issues*. Follow-up: XAGENT1e2. Detail: D155's XAGENT1e note; commits 13838b70, ed85b71d, e1023ab5.

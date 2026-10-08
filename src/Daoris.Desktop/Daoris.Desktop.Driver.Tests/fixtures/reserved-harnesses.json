@@ -1,0 +1,14 @@
+{
+  "_why": "PLUGINRESERVE1 (D64 rule 3; .claude/knowledge/twins.md): the harness names this build runs, which no plugin may declare, one table both twins are held to. Every name either side runs as a harness is reserved, so no plugin's harness can shadow a built-in one: each door the driver's built set carries (AdapterSet.Built()), each agent a door runs as that has no door of its own (its holders: `codex` since CODEXACCT1, whose sign-in and status question a plugin named `codex` would otherwise take over), and each key of the CLI's TOOLCHAINS with the two gate stubs. `reserved` is the list, in ordinal order: the CLI's reservedHarnesses() and the driver's AdapterSet.Built().Reserved and PluginCatalog.Reserved are each held to it exactly. `declares`: why, a plugin's harness name, and whether each catalogue refuses the plugin for it as one this build carries, compared without case. A name added on one side alone fails that side's test.",
+
+  "reserved": ["acp-stub", "claude-code", "claude-code-acp", "codex", "codex-acp", "dsh", "stub"],
+
+  "declares": [
+    ["a door the build carries", "claude-code", true],
+    ["a gate stub, which no toolchain declares", "acp-stub", true],
+    ["an agent a door runs as, with no door of its own", "codex", true],
+    ["a reserved name in any case", "Codex", true],
+    ["a name beside a reserved one", "codex-cli", false],
+    ["a plugin's own agent", "example-agent", false]
+  ]
+}

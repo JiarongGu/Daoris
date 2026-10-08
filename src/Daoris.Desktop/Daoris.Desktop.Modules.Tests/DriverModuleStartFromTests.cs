@@ -68,14 +68,16 @@ public sealed class DriverModuleStartFromTests : DriverModuleBridge
         var service = new StandIn(root);
         service.Chat("c1", root, words);
         var loop = Loop();
+        // Its words already judged unable to go on, as an earlier look leaves a chat that kept no conversation: the line the
+        // press stands under. The loop's own look as it comes up (MSG1c2) then leaves them waiting, so the press is judged
+        // alone (FLAKE2). Waiting for that look's line was not enough: it holds the chat until after its line is kept, and a
+        // press inside that hold was answered that the conversation is going on with its words already.
+        if (words) new GoOnMarks(loop.Home).Mark("c1", ["w1"], ContinueWhy.Of(ContinueWhy.Unkept), DateTimeOffset.UtcNow);
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = new Talk() });
         var client = new ServiceClient("http://stand-in", null, new HttpClient(service));
         var chat = new ChatRunner(
             client, adapters, loop.Home, loop.Processes, loop.Output, new HarnessRoster(adapters, HarnessSettingsPath), loop.Events);
         await loop.ComeUpAsync(client, chat);
-        // The loop takes up an ended chat's words as it comes up (MSG1c2); this one kept no conversation, so it says it cannot
-        // go on, which is the line the press stands under. Waited for, so the press does not cross that take-up.
-        if (words) await UntilAsync(() => loop.Events.Page("c1").Events.Any(e => e.Why is not null));
         return (loop, new DriverModule(Bus, loop), service);
     }
 

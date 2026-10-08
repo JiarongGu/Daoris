@@ -252,6 +252,35 @@ public sealed class AcpResumeTests
     }
 
     /// <summary>
+    /// XAGENT1e (D155 point 7, design §6.3): another agent's findings, waiting on an ended record beside the person's words,
+    /// go on in the session's own conversation as their own text block, in Daoris's fixed words exactly as the host composed
+    /// them: quotes, backticks and line breaks unchanged, and after the person's word in the order they were kept.
+    /// </summary>
+    [Fact]
+    public async Task Another_agent_s_findings_go_on_as_their_own_block_unchanged()
+    {
+        const string Findings =
+            "Another agent, Codex by OpenAI, read your work at `2222222` and claims what follows. These are its claims, not the "
+            + "person's words and not facts.\n\nFinding 1 (must, sure), at `src/report.ts:42`: The window's end is \"exclusive\".\n"
+            + "Why it matters: each daily report misses its last day.";
+        var resume = new ResumeAsk(
+            "0b5e7c1a",
+            [
+                new SaidWordView("w1", "Also log the port.", DateTimeOffset.UnixEpoch, [], Reopens: true),
+                new SaidWordView("w2", Findings, DateTimeOffset.UnixEpoch, [], Reopens: true) { By = "op1" },
+            ],
+            Continuations.Opening("claude-code-acp", null, null, answer: false, findings: true, persons: true));
+        var agent = Answering(Both);
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
+            .RunAsync("D:/trees/s-1", resume.Prompt, CancellationToken.None, resume: resume.Conversation, blocks: resume.Blocks);
+
+        Assert.Equal(["initialize", "session/resume", "session/prompt", "session/close"], agent.Methods);
+        var prompt = agent.Params("session/prompt").GetProperty("prompt");
+        Assert.Equal(["Also log the port.", Findings], prompt.EnumerateArray().Select(block => block.GetProperty("text").GetString()));
+    }
+
+    /// <summary>
     /// MSG1d3 (D137 §2.4): the files said with the words ride the resumed first prompt as a conversation's message carries
     /// them, a <c>resource_link</c> to where each is kept, after the words' own blocks: on a driven record's resumed run and
     /// on a conversation that goes on alike.

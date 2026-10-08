@@ -98,6 +98,42 @@ public sealed class OpinionRulesTests
         Assert.Equal(same ? [reviewer] : [], OpinionRules.SameAgent(new OpinionRule([reviewer], [OpinionRules.Landing]), working));
     }
 
+    public static TheoryData<string, string, string, string, bool> PluginFamilyRows() => Rows(
+        "pluginFamilies", row => (Cell(row, 0)!, row[1].GetRawText(), Cell(row, 2)!, Cell(row, 3)!, row[4].GetBoolean()));
+
+    /// <summary>
+    /// XAGENT1b2 (design §3.1): a plugin's harness is judged as the reviewer's choice judges it, by its <c>accountOf</c> and the
+    /// maker its plugin declares, over the machine's adapters read from the same folders the CLI reads; a refused plugin
+    /// contributes nothing. So each door names the reviewers of the working agent's family as the choice will judge them.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(PluginFamilyRows))]
+    public void A_plugin_s_agent_is_one_family_by_its_owner_or_its_declared_maker_as_the_cli_judges_it(
+        string name, string plugins, string working, string reviewer, bool same)
+    {
+        var home = Path.Combine(Path.GetTempPath(), "daoris-opinion-plugins-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            using var folders = JsonDocument.Parse(plugins);
+            foreach (var plugin in folders.RootElement.EnumerateObject())
+            {
+                var folder = Path.Combine(home, PluginCatalog.Folder, plugin.Name);
+                Directory.CreateDirectory(folder);
+                File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), plugin.Value.GetString());
+            }
+
+            var built = AdapterSet.Built();
+            var adapters = built.WithPlugins(PluginCatalog.Load(home, built.Names));
+
+            Assert.True(same == OpinionRules.OneFamily(working, reviewer, adapters), name);
+            Assert.Equal(same ? [reviewer] : [], OpinionRules.SameAgent(new OpinionRule([reviewer], [OpinionRules.Landing]), working, adapters));
+        }
+        finally
+        {
+            if (Directory.Exists(home)) Directory.Delete(home, recursive: true);
+        }
+    }
+
     /// <summary>The file a door writes is the file the table reads: written only once set, and read back the same.</summary>
     [Fact]
     public void A_rule_is_written_only_once_set_and_read_back_as_written()

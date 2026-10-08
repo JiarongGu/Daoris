@@ -1446,8 +1446,10 @@ export function commandDriver(
     }
 
     if (rule !== undefined) {
-      // The working agent is the one this machine's work runs on: a reviewer of its family is no independent reading.
-      for (const sentence of opinionSays(rule, rule === false ? [] : sameAgentOf(rule, choices.adapter))) write(`  ${sentence}`);
+      // The working agent is the one this machine's work runs on: a reviewer of its family is no independent reading. A
+      // plugin's agent is judged by what its plugin declares (XAGENT1b2), from the plugins beside the file, as the driver reads them.
+      const sameAgent = rule === false ? [] : sameAgentOf(rule, choices.adapter, readPlugins(dirname(path)));
+      for (const sentence of opinionSays(rule, sameAgent)) write(`  ${sentence}`);
       write(`  ${OPINION_DECLARED_ONLY}`);
     }
     if (rule !== undefined && rule !== false && workspace) {

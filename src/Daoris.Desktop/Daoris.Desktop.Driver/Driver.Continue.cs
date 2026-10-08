@@ -65,8 +65,16 @@ internal sealed class ResumeAsk(
     public bool Spoken { get; private set; }
 
     /// <summary>
+    /// The second opinions whose findings are among the words (XAGENT1e, D155 point 7), each once, in the order handed: what
+    /// the run's end reads the answers of.
+    /// </summary>
+    public IReadOnlyList<string> Opinions => [.. words.Select(word => word.By).OfType<string>().Distinct(StringComparer.Ordinal)];
+
+    /// <summary>
     /// The record's opening for the resumed run: the driver's first line, then each of the person's words as theirs, under
     /// the id their record gave it, so the words shown while they waited pair with where the session took them (D137 §3.1).
+    /// Another agent's findings (XAGENT1e, D155 point 7) are never the person's: they are the turn Daoris composed around that
+    /// agent's claims, naming the opinion they are from.
     /// </summary>
     public IReadOnlyList<SessionEvent> Opening()
     {
@@ -77,7 +85,8 @@ internal sealed class ResumeAsk(
             .. words.Select(word => new SessionEvent
             {
                 Kind = SessionEventKind.User,
-                Origin = "person",
+                Origin = word.Persons ? "person" : "target",
+                Opinion = word.By,
                 Id = word.Id,
                 Text = word.Text,
                 Files = word.Files.Count > 0 ? word.Files : null,
@@ -213,10 +222,15 @@ public sealed partial class Driver
             WritesAcross = across.Writes,
             Session = sessionId,
         };
+        // Another agent's findings among the words (XAGENT1e, D155 point 7): said as that agent's, and answered with the one
+        // tool they need, which the person's rules may not name.
+        var findings = park.Findings.Count > 0;
+        var persons = park.Waiting.Any(word => word.Persons);
+
         // Each word's files where they were kept as it was said (MSG1d3, D137 §2.4), handed with the words.
         var resume = new ResumeAsk(
             kept.Conversation, park.Waiting,
-            Continuations.Opening(adapter.Name, selection.Version, park.HarnessVersion, answer: park.Parked),
+            Continuations.Opening(adapter.Name, selection.Version, park.HarnessVersion, answer: park.Parked, findings, persons),
             await ResumedAfterAsync(service, quest, sessionId, target.Language, ct).ConfigureAwait(false),
             files: word => ChatFiles.Kept(home, sessionId, word.Files));
         var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
@@ -234,7 +248,7 @@ public sealed partial class Driver
             var handed = SpawnServers.Hand(adapter, info, home, sessionId, servers);
             var rules = HandRules(
                 adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory, across: across,
-                said: SaidFilesFolder(home, sessionId, resume));
+                said: SaidFilesFolder(home, sessionId, resume), job: findings ? AnswersFindings : null);
 
             onOpened();
             var openedAt = DateTimeOffset.UtcNow;
@@ -252,8 +266,11 @@ public sealed partial class Driver
                 // as any run's is (TOOL6c with ANSWER1a).
                 said: Said(adapter, selection, sessionId),
                 resume: resume,
-                // A park's note is replaced while it works; an ended record's keeps what ended it and says it goes on (MSG1b).
-                workingNote: park.Parked ? Continuations.WorkingNoted : Continuations.GoingOnNoted,
+                // A park's note is replaced while it works; an ended record's keeps what ended it and says it goes on (MSG1b),
+                // with another agent's findings where those are all it goes on with (XAGENT1e), never "your words".
+                workingNote: park.Parked ? Continuations.WorkingNoted
+                    : findings && !persons ? Continuations.GoingOnWithFindingsNoted
+                    : Continuations.GoingOnNoted,
                 goOn: GoOnWith(adapter, target, selection, rules.File, handed),
                 working: () => starting?.Dispose(),
                 conclude: (exitCode, used, turnFailed, ended) =>
@@ -313,6 +330,13 @@ public sealed partial class Driver
             starting?.Dispose();
         }
     }
+
+    /// <summary>
+    /// What a resumed run handed another agent's findings is given beside the person's rules (XAGENT1e, D155 point 7): the
+    /// connector's <c>opinion_answer</c>, which no default names. Without it the harness would ask, and every ask is refused
+    /// (D52), so the session could check every finding and answer none. A deny the person wrote still wins (D72).
+    /// </summary>
+    internal static readonly IReadOnlyList<string> AnswersFindings = [$"mcp__{KnowledgeConnector.ServerName}__opinion_answer"];
 
     /// <summary>
     /// What a resumed run's turn carries after the person's words: the answers to the go-aheads its session asked (KNOWUSE1a,
@@ -402,6 +426,10 @@ public sealed partial class Driver
             _newSessions.Clear(sessionId);
         }
 
+        // XAGENT1e (design §6.4): another agent's findings it took are answered as its turn ends, read before the record moves,
+        // with each fix's commit read from its tree as it stands now; one it left unanswered is unresolved.
+        await OpinionsAnsweredAsync(resume, sessionId, workTree, ct).ConfigureAwait(false);
+
         var stoppedFor = _processes.StopReason(sessionId);
         var conclusion = stoppedFor is not null
             ? SessionConclusion.Of("stood-down", stoppedFor)
@@ -481,6 +509,8 @@ public sealed partial class Driver
     {
         var words = record.Waiting.Select(word => word.Id).OfType<string>().ToList();
         _marks.Mark(record.Session, words, why, DateTimeOffset.UtcNow);
+        // Another agent's findings among them go to the person instead, unanswered (XAGENT1e, design §6.7).
+        FindingsToPerson(record, why);
         // A choice of a new session is spent with the words it named (MSG1g): words said later wait for the account again.
         _newSessions.Clear(record.Session);
         // The words' ids and the code beside the line (MSG1d), so the page says why in its own words.
@@ -504,7 +534,16 @@ public sealed partial class Driver
 
         // A choice of a new session is spent with the words it named, which went now (MSG1g).
         _newSessions.Clear(record.Session);
-        var ids = record.Waiting.Select(word => word.Id).OfType<string>().ToList();
+        // 🔴 Only the person's words go on in a new session (XAGENT1e, design §6.7): another agent's findings would reach it as the
+        // person's, which DRIFT1 would make requirements. They stay on the record, marked as words that cannot go on there, and
+        // go to the person instead.
+        if (record.Findings.Count > 0)
+        {
+            _marks.Mark(record.Session, record.Waiting.Where(word => !word.Persons).Select(word => word.Id).OfType<string>(), why, DateTimeOffset.UtcNow);
+            FindingsToPerson(record, why);
+        }
+
+        var ids = record.Waiting.Where(word => word.Persons).Select(word => word.Id).OfType<string>().ToList();
         if (!record.Parked)
         {
             // The words' ids, the session and the code beside the line (MSG1d, D137 §3.1): the page links where they went.
