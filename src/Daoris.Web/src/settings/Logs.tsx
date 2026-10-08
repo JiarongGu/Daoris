@@ -107,8 +107,8 @@ const whole = (value: string) => value.replace(/\r\n?/g, '\n');
  * @remarks
  * **A value cut short says so, and opens whole** (LOGVIEW1): beside the cut, how many characters it left out, a press
  * that opens the value beneath the line in a monospace well, its line breaks kept, so an exception reads a frame a
- * line and selects for copying. A line whose values are whole offers nothing to open. A host's exception cut at
- * Kestrel's sentence and a type's first words was read as "no type logged" for a day.
+ * line and selects for copying. A line whose values are whole offers nothing to open. A host's exception cut silently
+ * after its first sentence hid the type it named, and the defect was misread for a day.
  */
 function LogLine({ line, level }: { line: LogRow; level: string }) {
   const { t } = useTranslation();

@@ -145,8 +145,8 @@ function exception(length: number): string {
 }
 
 describe('a value cut short (LOGVIEW1)', () => {
-  // A host line's exception showed its first 160 characters and nothing said more were kept, so a defect it named was
-  // read as "no type logged" for a day. The line says how much was cut, and its expansion opens the value whole.
+  // A host line's exception showed its first 160 characters and nothing said more were kept, so the type it named was
+  // missed for a day. The line says how much was cut, and its expansion opens the value whole.
   const EXCEPTION = exception(2000);
   const LONG: LogReading = {
     ...READING,
