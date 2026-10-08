@@ -1,6 +1,6 @@
 import type { CliCommand } from '../types.ts';
 import { commandDriver } from '../driverconfig.ts';
-import { sessionRecords } from '../service.ts';
+import { registryCheckouts, sessionRecords } from '../service.ts';
 
 export const command: CliCommand = {
   name: 'driver',
@@ -45,6 +45,16 @@ export const command: CliCommand = {
     '                                                   to you in (--workspace <name>',
     '                                                   for each repo there with none);',
     '                                                   the window\'s is Appearance\'s',
+    '                         review <repo> <environment> --kind local|deployed',
+    '                                --procedure <path> [--address <url>] [--run "…"]',
+    '                                                   where its work is shown to you',
+    '                                                   before it lands (--workspace',
+    '                                                   <name> too; --required: work',
+    '                                                   is to wait for your look);',
+    '                                                   none, --drop <environment>,',
+    '                                                   --not-required, or --clear;',
+    '                                                   declared only: nothing reads',
+    '                                                   it yet',
     '                         notify on|off           say so when a session parks,',
     '                                                   or ends without you asking',
     '                         intake <adapter>|off      answer an ask the declarations',
@@ -66,7 +76,8 @@ export const command: CliCommand = {
     '                                                   its limit; 60 by default',
     '                         cap <n> · adapter <name>',
   ],
-  // `retry` without `--at` counts the quest's failures from this machine's records (RETRY1b) through the one module that may
-  // reach a network, handed in here so `driverconfig.ts` never holds a socket of its own.
-  run: (args) => commandDriver(args, () => sessionRecords()),
+  // `retry` without `--at` counts the quest's failures from this machine's records (RETRY1b), and `review` looks for a
+  // procedure in the registry's checkouts (REVIEWENV1a), through the one module that may reach a network, handed in here so
+  // `driverconfig.ts` never holds a socket of its own.
+  run: (args) => commandDriver(args, () => sessionRecords(), () => registryCheckouts()),
 };

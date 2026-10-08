@@ -27,6 +27,10 @@ import { isPluginId, readPlugins, type PluginCatalog } from './plugins.ts';
 import { normalizeWorkspace } from './remotemap.ts';
 import { TOOLCHAINS } from './toolchain.ts';
 import { failuresOf, type RecordsReader } from './strikes.ts';
+import {
+  REVIEW_DECLARED_ONLY, applyReviewEdit, holdsProcedure, inScope, reviewListed, reviewSays, reviewsOf, type CheckoutsReader,
+  type ReviewEdit, type ReviewRule, type ReviewSetting,
+} from './reviews.ts';
 import type { CommandArgs } from './types.ts';
 import type { ExitCode } from './errors.ts';
 
@@ -104,6 +108,14 @@ export interface DriverChoices {
   languages: Record<string, string>;
   /** A workspace's session language, for every repository in it that sets none, and for its intake. */
   workspaceLanguages: Record<string, string>;
+  /**
+   * Where each repository's work is reviewed before it is offered to land (REVIEWENV1a, D154 point 2), or `false` for none
+   * whatever its workspace says; it replaces its workspace's whole. The driver's `DriverConfig.Reviews` is the twin, read by
+   * one shared table (`reviews.ts`).
+   */
+  reviews: Record<string, ReviewSetting>;
+  /** A workspace's review rule, for every repository in it that sets none of its own. */
+  workspaceReviews: Record<string, ReviewRule>;
   rest: Record<string, unknown>;
 }
 
@@ -185,7 +197,7 @@ const EMPTY: DriverChoices = {
   drivable: [], holds: [], trees: [], cap: 2, adapter: 'claude-code', notify: true,
   strikes: 3, forgiven: {}, released: {}, pausedAsks: {}, pausedQuests: {}, intakeAdapter: null, helperAdapter: null, timeoutMinutes: null, cooloff: null, lines: {}, workspaceLines: {},
   landings: {}, workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, standing: {}, languages: {},
-  workspaceLanguages: {}, rest: {},
+  workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, rest: {},
 };
 
 /**
@@ -350,14 +362,14 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     return {
       ...EMPTY, forgiven: {}, released: {}, pausedAsks: {}, pausedQuests: {}, lines: {}, workspaceLines: {}, landings: {},
       workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, standing: {}, languages: {},
-      workspaceLanguages: {}, rest: {},
+      workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, rest: {},
     };
   }
 
   const {
     drivable, holds, trees, cap, adapter, notify, strikes, forgiven, released, intakeAdapter, helperAdapter, timeoutMinutes,
     cooloff, lines, workspaceLines, landings, workspaceLandings, readAcross, workspaceReadAcross, writeAcross, standing,
-    languages, workspaceLanguages, ...rest
+    languages, workspaceLanguages, reviews, workspaceReviews, ...rest
   } = parsed;
   return {
     drivable: names(drivable),
@@ -409,6 +421,9 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     // A code of the table by name, as the driver reads them (LANG1c): a language the driver would not hand is not listed.
     languages: languageMap(languages),
     workspaceLanguages: languageMap(workspaceLanguages),
+    // As the driver reads them (REVIEWENV1a): a rule with a problem is not read, and `false` only for a repository.
+    reviews: reviewsOf(reviews, true),
+    workspaceReviews: reviewsOf(workspaceReviews, false),
     rest,
   };
 }
@@ -457,11 +472,17 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
     // Written only when set (LANG1c), as the driver writes them: absent is no language, and no line handed.
     ...(Object.keys(choices.languages).length > 0 ? { languages: choices.languages } : {}),
     ...(Object.keys(choices.workspaceLanguages).length > 0 ? { workspaceLanguages: choices.workspaceLanguages } : {}),
+    // Written only when set (REVIEWENV1a), as the driver writes them: absent is no review environment, today's behaviour.
+    ...(Object.keys(choices.reviews).length > 0 ? { reviews: choices.reviews } : {}),
+    ...(Object.keys(choices.workspaceReviews).length > 0 ? { workspaceReviews: choices.workspaceReviews } : {}),
   });
 }
 
 /** No way to read the records was handed in, so a retry that needs them is refused (RETRY1b). */
 const unhanded: RecordsReader = async () => ({ unread: 'this command was handed no way to read them' });
+
+/** No way to read the registry was handed in, so a review's procedure is written unchecked, and said so (REVIEWENV1a). */
+const uncheckable: CheckoutsReader = async () => ({ unread: 'this command was handed no way to read it' });
 
 /**
  * Read or change what this machine drives. Every verb edits `driver.json` and answers at once, but `retry <quest>` without
@@ -475,9 +496,11 @@ const unhanded: RecordsReader = async () => ({ unread: 'this command was handed 
  *
  * @param records How this machine's session records are read: the `driver` row hands in the service client's, so this
  * module reaches no network. Absent, they cannot be read, and such a retry is refused.
+ * @param checkouts How the registry's checkouts are read, for `review` to check a procedure in (REVIEWENV1a): handed in the
+ * same way. Absent, a rule is written unchecked, and the terminal says so.
  */
 export function commandDriver(
-  { argv, write }: CommandArgs, records: RecordsReader = unhanded,
+  { argv, write }: CommandArgs, records: RecordsReader = unhanded, checkouts: CheckoutsReader = uncheckable,
 ): ExitCode | Promise<ExitCode> {
   const verb = argv[0] ?? 'list';
   const path = driverConfigPath();
@@ -1036,10 +1059,17 @@ export function commandDriver(
       return 0;
     }
 
+    // Where work is reviewed before it is offered to land (REVIEWENV1a, D154 point 2, design §1.7): for a repository, or with
+    // `--workspace` for each repository there that sets none of its own. An environment added or replaced, keeping the
+    // others; `none`; `--drop`; `--required|--not-required`; `--clear`. The repository's and the workspace's Setup and Ask
+    // Daoris's `setting` kind are its other doors (D50). Nothing reads it yet: the set-up step and the gate are REVIEWENV1b–h.
+    case 'review':
+      return review();
+
     default:
       throw new DaorisError(
         `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, trees, line, landing, across, standing, `
-        + 'language, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper');
+        + 'language, review, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper');
   }
 
   function list(): ExitCode {
@@ -1159,6 +1189,20 @@ export function commandDriver(
       write('  language   none set — sessions are asked for no language; `daoris driver language <repository> en|zh` sets one');
     }
 
+    // REVIEWENV1a: each review rule and where it was set; a workspace's is said for the repositories there that set none.
+    for (const [repository, rule] of Object.entries(choices.reviews)) {
+      write(`  review     ${repository}  ${reviewListed(rule)}`);
+    }
+
+    for (const [workspace, rule] of Object.entries(choices.workspaceReviews)) {
+      write(`  review     workspace ${workspace}  ${reviewListed(rule)}  (for each repository there that sets none)`);
+    }
+
+    if (Object.keys(choices.reviews).length === 0 && Object.keys(choices.workspaceReviews).length === 0) {
+      write('  review     none set — work is offered to land once its quest is done; `daoris driver review <repository> '
+        + '<environment> --kind local|deployed --procedure <path>` declares one');
+    }
+
     // A hold on something not opted in is inert, and saying so is the point: it reads as protection
     // and is not. Reported even when NOTHING is drivable — which is exactly the machine where a
     // person is most likely to believe a hold is what is stopping things.
@@ -1169,6 +1213,125 @@ export function commandDriver(
     }
 
     return 0;
+  }
+
+  /**
+   * `review` (REVIEWENV1a): the person's words made one edit, judged by the twin's table (`reviews.ts`), then, for an
+   * environment put, its procedure looked for in the checkouts the registry names before anything is written.
+   */
+  function review(): ExitCode | Promise<ExitCode> {
+    const workspace = flagValue(argv, '--workspace');
+    const words = operands(argv, new Set(['--workspace', '--kind', '--procedure', '--address', '--run', '--drop'])).slice(1);
+    const name = workspace ?? words.shift();
+    const environment = words[0];
+    const clear = argv.includes('--clear');
+    const drop = flagValue(argv, '--drop');
+    if (argv.includes('--required') && argv.includes('--not-required')) {
+      throw new DaorisError('a rule is required or not — say `--required` or `--not-required`, not both.');
+    }
+    const required = argv.includes('--required') ? true : argv.includes('--not-required') ? false : undefined;
+    if (!name || (environment === undefined && !clear && drop === undefined && required === undefined)) {
+      throw new DaorisError(
+        '`driver review` needs <repository>|--workspace <name>, then <environment> --kind local|deployed --procedure <path> '
+        + '[--address <url>] [--run "<command>"] [--required|--not-required], or none, --drop <environment>, '
+        + '--required|--not-required, or --clear — e.g. `daoris driver review storefront dev --kind local --procedure README.md '
+        + '--address http://localhost:4200 --required`.');
+    }
+
+    const spelled = {
+      kind: flagValue(argv, '--kind'), procedure: flagValue(argv, '--procedure'), address: flagValue(argv, '--address'),
+      run: flagValue(argv, '--run'),
+    };
+    // `none` is the word for a repository with no review environment, unless it is given an environment's parts.
+    const none = environment === 'none' && Object.values(spelled).every((part) => part === undefined);
+    const edit: ReviewEdit = {
+      ...(workspace ? { workspace } : { repository: name }),
+      ...(clear ? { clear: true } : {}),
+      ...(drop !== undefined ? { drop } : {}),
+      ...(none ? { none: true } : environment !== undefined ? { put: { name: environment, ...spelled } } : {}),
+      ...(required !== undefined ? { required } : {}),
+    };
+    const before = choices.workspaceReviews;
+    const after = applyReviewEdit(choices, edit);
+    const map = workspace ? after.workspaceReviews : after.reviews;
+    const key = Object.keys(map).find((each) => sameName(each, name))
+      ?? Object.keys(workspace ? before : choices.reviews).find((each) => sameName(each, name)) ?? name;
+    const whose = workspace ? `repositories in the workspace \`${key}\` that set none of their own` : `\`${key}\``;
+
+    const said = (): ExitCode => {
+      const rule = map[key];
+      if (clear) {
+        write(workspace
+          ? `daoris: repositories in the workspace \`${key}\` keep their own review rule, else none.`
+          : `daoris: \`${key}\` takes its workspace's review rule again, else none.`);
+      } else if (none) {
+        write(`daoris: \`${key}\` declares no review environment.`);
+      } else if (drop !== undefined) {
+        const first = rule === undefined || rule === false ? undefined : rule.environments[0]!.name;
+        const was = (workspace ? before : choices.reviews)[key];
+        const wasDefault = was !== undefined && was !== false && was.environments[0]!.name === drop;
+        write(`daoris: ${whose} no longer declare${workspace ? '' : 's'} \`${drop}\``
+          + `${wasDefault && first !== undefined ? `; \`${first}\` is ${workspace ? 'their' : 'its'} default now` : ''}.`);
+      } else if (environment === undefined) {
+        write(`daoris: ${workspace ? `the workspace \`${key}\`'s` : `\`${key}\`'s`} review rule is ${required ? '' : 'not '}required now.`);
+      } else {
+        const first = rule === undefined || rule === false ? undefined : rule.environments[0]!.name;
+        write(`daoris: ${whose} declare${workspace ? '' : 's'} the review environment \`${environment}\``
+          + `${first === environment ? `, ${workspace ? 'their' : 'its'} default` : `; \`${first}\` stays ${workspace ? 'their' : 'its'} default`}.`);
+      }
+
+      if (rule !== undefined) {
+        for (const sentence of reviewSays(rule)) write(`  ${sentence}`);
+        write(`  ${REVIEW_DECLARED_ONLY}`);
+      }
+      if (rule !== undefined && rule !== false && workspace) {
+        write('  A repository with a rule of its own keeps it — `daoris driver review <repository> --clear` hands it back.');
+      }
+      return 0;
+    };
+
+    if (edit.put === undefined) {
+      writeDriverChoices(path, { ...choices, ...after });
+      said();
+      write(`  Written to ${path}.`);
+      return 0;
+    }
+
+    // An environment put: its procedure is looked for in each checkout the rule reaches, before anything is written.
+    const procedure = edit.put.procedure!;
+    return checkouts().then((read) => {
+      const notes: string[] = [];
+      if ('unread' in read) {
+        notes.push(`Not checked: the registry could not be read — ${read.unread}; a set-up step sits until its tree holds \`${procedure}\`.`);
+      } else if (!workspace) {
+        const checkout = read.checkouts.find((each) => inScope(each, { repository: name }) && each.root);
+        if (!checkout) {
+          notes.push(`Not checked: \`${key}\` has no checkout on this machine; a set-up step sits until its tree holds \`${procedure}\`.`);
+        } else if (!holdsProcedure(checkout.root!, procedure)) {
+          throw new DaorisError(`\`${procedure}\` is not a file in \`${key}\`'s checkout here — a procedure is a document or a `
+            + 'skill the repository holds, and writing it is that repository\'s own work. Nothing was written.');
+        } else {
+          notes.push(`\`${procedure}\` is in \`${key}\`'s checkout here.`);
+        }
+      } else {
+        const reached = read.checkouts.filter((each) => inScope(each, { workspace: name }) && each.root);
+        const lacking = reached.filter((each) => !holdsProcedure(each.root!, procedure));
+        if (reached.length === 0) {
+          notes.push(`Not checked: no repository of the workspace \`${key}\` has a checkout on this machine.`);
+        } else if (lacking.length === 0) {
+          notes.push(`Every repository of the workspace \`${key}\` with a checkout here holds \`${procedure}\`.`);
+        }
+        for (const each of lacking) notes.push(`\`${each.repository}\` holds no \`${procedure}\` here: its set-up steps sit until it does.`);
+      }
+
+      // Read again: the registry was read over the network, and the driver may have written the file meanwhile.
+      const now = readDriverChoices(path);
+      writeDriverChoices(path, { ...now, ...applyReviewEdit(now, edit) });
+      said();
+      for (const note of notes) write(`  ${note}`);
+      write(`  Written to ${path}.`);
+      return 0 as ExitCode;
+    });
   }
 
   function toggle(field: 'drivable' | 'holds', repository: string, present: boolean): ExitCode {

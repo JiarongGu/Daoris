@@ -27,12 +27,13 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     /// <summary>The `daoris driver` verbs it takes, in the order the service's twin lists them (<c>HelpProposalBox.Doors</c>).</summary>
     /// <remarks>
     /// HELP9 added <c>across</c> (D107), and <c>cap</c> and <c>adapter</c>, which only a terminal set before; HELP10
-    /// <c>retry</c>, once the facts carried the parked quests; LANG1c2 <c>language</c>, once the service's writer listed it.
+    /// <c>retry</c>, once the facts carried the parked quests; LANG1c2 <c>language</c>, once the service's writer listed it;
+    /// REVIEWENV1a <c>review</c>, with the service's writer in the same change.
     /// </remarks>
     public IReadOnlyList<string> Doors { get; } =
     [
-        "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "standing", "language", "intake", "helper",
-        "strikes", "retry", "timeout", "notify", "cap", "adapter",
+        "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "standing", "language", "review", "intake",
+        "helper", "strikes", "retry", "timeout", "notify", "cap", "adapter",
     ];
 
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
@@ -194,6 +195,13 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                           + "stays yours, in Settings → Appearance.",
                     $"daoris driver language {scope} {code ?? "--clear"}",
                     c => circle ? c.WithWorkspaceLanguage(workspace!, code) : c.WithLanguage(target!, code));
+                break;
+            }
+            case "review":
+            {
+                var (refused, review) = Review(target, workspace, value, config, facts);
+                if (refused is not null) return Refused(refused, "", "");
+                planned = review;
                 break;
             }
             case "intake" or "helper":
@@ -387,6 +395,166 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
         }
     }
 
+    /// <summary>What a <c>review</c> proposal's words may say, in the refusal that names the shape.</summary>
+    private const string ReviewUsage =
+        "`review` is `<environment> --kind local|deployed --procedure <path> [--address <url>] [--run \"<command>\"] "
+        + "[--required|--not-required]`, `none`, `--drop <environment>`, `--required|--not-required` or `--clear` — e.g. "
+        + "`daoris driver review storefront dev --kind local --procedure README.md --address http://localhost:4200 --required`.";
+
+    /// <summary>
+    /// <c>review</c> (REVIEWENV1a, D154 point 2, the review-environment design §1.7), as <c>daoris driver review</c> reads its
+    /// words: an environment added or replaced with its parts, <c>none</c>, <c>--drop</c>, <c>--required|--not-required</c>
+    /// or <c>--clear</c>, for a repository or a whole workspace, a quoted word kept whole. Judged by the twin's table
+    /// (<see cref="ReviewRules.Apply"/>), and an environment's procedure looked for in the checkouts it reaches, as the
+    /// screen's route and the terminal look; the card says what the rule lets a step do, and that nothing reads it yet.
+    /// </summary>
+    private static (string? Refusal, (string Describe, string Terminal, Func<DriverConfig, DriverConfig> Edit) Planned) Review(
+        string? target, string? workspace, string value, DriverConfig config, HelpMachineFacts facts)
+    {
+        var named = target is { Length: > 0 };
+        var circle = workspace is { Length: > 0 };
+        if (named == circle) return ("a review rule is set for a repository or a workspace — name exactly one.", default);
+        if (Words(value) is not { } words) return ($"`review`'s words close every quote they open — {ReviewUsage}", default);
+
+        var flags = new Dictionary<string, string>(StringComparer.Ordinal);
+        var switches = new HashSet<string>(StringComparer.Ordinal);
+        var bare = new List<string>();
+        for (var at = 0; at < words.Count; at++)
+        {
+            var word = words[at];
+            if (word is "--kind" or "--procedure" or "--address" or "--run" or "--drop")
+            {
+                if (at + 1 >= words.Count || words[at + 1].StartsWith("--", StringComparison.Ordinal)) return ($"`{word}` needs its value — {ReviewUsage}", default);
+                flags[word] = words[++at];
+            }
+            else if (word is "--clear" or "--required" or "--not-required") switches.Add(word);
+            else if (word.StartsWith("--", StringComparison.Ordinal)) return ($"`{word}` is not a word `review` takes — {ReviewUsage}", default);
+            else bare.Add(word);
+        }
+
+        if (switches.Contains("--required") && switches.Contains("--not-required"))
+        {
+            return ("a rule is required or not — say `--required` or `--not-required`, not both.", default);
+        }
+
+        if (bare.Count > 1) return ($"`review` names one environment — {ReviewUsage}", default);
+        var environment = bare.FirstOrDefault();
+        var clear = switches.Contains("--clear");
+        var drop = flags.GetValueOrDefault("--drop");
+        bool? required = switches.Contains("--required") ? true : switches.Contains("--not-required") ? false : null;
+        if (environment is null && !clear && drop is null && required is null) return (ReviewUsage, default);
+
+        var parts = new ReviewSpelled(environment, flags.GetValueOrDefault("--kind"), flags.GetValueOrDefault("--procedure"),
+            flags.GetValueOrDefault("--address"), flags.GetValueOrDefault("--run"));
+        // `none` is the word for a repository with no review environment, unless it is given an environment's parts.
+        var none = environment == "none" && parts is { Kind: null, Procedure: null, Address: null, Run: null };
+        var edit = new ReviewEdit
+        {
+            Repository = circle ? null : target,
+            Workspace = circle ? workspace : null,
+            Clear = clear,
+            Drop = drop,
+            None = none,
+            Put = !none && environment is not null ? parts : null,
+            Required = required,
+        };
+
+        DriverConfig after;
+        try
+        {
+            after = ReviewRules.Apply(config, edit);
+        }
+        catch (DriverException refused)
+        {
+            return (refused.Message, default);
+        }
+
+        // An environment put: its procedure is looked for in each checkout it reaches, as the terminal and the screen look.
+        var notes = new List<string>();
+        if (edit.Put is { Procedure: { } procedure })
+        {
+            if (!circle)
+            {
+                var root = facts.Registered.FirstOrDefault(each => string.Equals(each.Repository, target, StringComparison.OrdinalIgnoreCase)).Root;
+                if (root is not { Length: > 0 })
+                {
+                    notes.Add($"Not checked: `{target}` has no checkout on this machine; a set-up step sits until its tree holds `{procedure}`.");
+                }
+                else if (!ReviewRules.Holds(root, procedure))
+                {
+                    return (ReviewRules.NotHeld(target!, procedure), default);
+                }
+                else
+                {
+                    notes.Add($"`{procedure}` is in `{target}`'s checkout here.");
+                }
+            }
+            else
+            {
+                notes.AddRange(ReviewRules.Lacking(facts.Registered, edit, procedure).Select(lacking => ReviewRules.SitsUntil(lacking, procedure)));
+            }
+        }
+
+        var whose = circle ? $"each repository of workspace `{workspace}` that sets none of its own" : $"`{target}`";
+        var whoseRule = circle ? $"workspace `{workspace}`'s" : $"`{target}`'s";
+        var head = clear
+            ? circle
+                ? $"Clear workspace `{workspace}`'s review rule: each repository there keeps its own, else none."
+                : $"Clear `{target}`'s review rule: it takes its workspace's again, else none."
+            : none ? $"Declare that `{target}` has no review environment, whatever its workspace says."
+            : drop is not null ? $"Stop declaring `{drop}` for {whose}."
+            : environment is null ? $"Make {whoseRule} review rule {(required == true ? "required" : "not required")}."
+            : $"Declare the review environment `{environment}` for {whose}.";
+        var map = circle ? after.WorkspaceReviews : after.Reviews;
+        List<string> said = map.TryGetValue((circle ? workspace : target)!, out var standing)
+            ? [.. ReviewRules.Says(standing), ReviewRules.DeclaredOnly]
+            : [];
+        var scope = circle ? $"--workspace {ShellWord.Of(workspace!, ShellWord.Workspace)}" : target!;
+        return (null, (string.Join(" ", [head, .. said, .. notes]), $"daoris driver review {scope} {value}", c => ReviewRules.Apply(c, edit)));
+    }
+
+    /// <summary>
+    /// A proposal's words split as a terminal splits them: at spaces, a double-quoted run kept whole as one word, <c>\"</c>
+    /// inside it a quote. Null where a quote is left open.
+    /// </summary>
+    private static List<string>? Words(string value)
+    {
+        var words = new List<string>();
+        var word = new System.Text.StringBuilder();
+        var quoted = false;
+        var held = false;
+        for (var at = 0; at < value.Length; at++)
+        {
+            var c = value[at];
+            if (quoted)
+            {
+                if (c == '\\' && at + 1 < value.Length && value[at + 1] == '"')
+                {
+                    word.Append('"');
+                    at++;
+                }
+                else if (c == '"') quoted = false;
+                else word.Append(c);
+            }
+            else if (c == '"')
+            {
+                quoted = true;
+                held = true;
+            }
+            else if (char.IsWhiteSpace(c))
+            {
+                if (word.Length > 0 || held) words.Add(word.ToString());
+                word.Clear();
+                held = false;
+            }
+            else word.Append(c);
+        }
+
+        if (quoted) return null;
+        if (word.Length > 0 || held) words.Add(word.ToString());
+        return words;
+    }
+
     public Task<HelpApplied> ApplyAsync(HelpApplying applying, CancellationToken ct)
     {
         applying.Doors.Change(applying.Plan.Apply!);
@@ -413,4 +581,10 @@ public sealed partial record HelpMachineFacts
     /// one releases that stop. Empty before any look, and while another loop holds the home (D104).
     /// </summary>
     public IReadOnlyList<HeldQuest> Held { get; init; } = [];
+
+    /// <summary>
+    /// Each registered repository with its workspace and its checkout here, or none (REVIEWENV1a): what a <c>review</c>'s
+    /// procedure is looked for in, the one repository it names or each of the workspace's. Empty where it was not asked.
+    /// </summary>
+    public IReadOnlyList<(string Repository, string? Workspace, string? Root)> Registered { get; init; } = [];
 }

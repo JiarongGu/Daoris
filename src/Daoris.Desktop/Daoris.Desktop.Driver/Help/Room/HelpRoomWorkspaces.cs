@@ -27,6 +27,8 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
                 Landing = LandingRules.Choose(config, known.Repository, known.Workspace),
                 // KNOWUSE1b: what the person says holds for every session there, in their words.
                 Standing = config.StandingFor(known.Repository)?.Says,
+                // REVIEWENV1a: where its work is shown to the person before it lands, and where that was set.
+                Review = ReviewRules.Resolve(config, known.Repository, known.Workspace),
             })],
         };
     }
@@ -46,11 +48,14 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
                      .OrderBy(circle => circle.Key, StringComparer.Ordinal))
         {
             text.Append($"### Workspace `{circle.Key}`\n\n");
-            text.Append("| Repository | Driven | Line | Work lands |\n");
-            text.Append("|---|---|---|---|\n");
+            // REVIEWENV1a (design §1.7–§1.8): the room's table names each repository's review rule, and *no review
+            // environment* where nothing is set, which is today's behaviour.
+            text.Append("| Repository | Driven | Line | Work lands | Reviewed before landing |\n");
+            text.Append("|---|---|---|---|---|\n");
             foreach (var repository in circle.OrderBy(repository => repository.Name, StringComparer.Ordinal))
             {
-                text.Append($"| `{repository.Name}` | {Driven(repository)} | {LineOf(repository.Line)} | {Lands(repository.Landing)} |\n");
+                text.Append($"| `{repository.Name}` | {Driven(repository)} | {LineOf(repository.Line)} | {Lands(repository.Landing)} | "
+                    + $"{ReviewRules.RoomCell(repository.Review)} |\n");
             }
 
             text.Append('\n');
@@ -126,6 +131,9 @@ public sealed record HelpRepository(string Name, string Workspace)
 
     /// <summary>Its standing answer on this machine, the person's words (KNOWUSE1b); null where it keeps none.</summary>
     public string? Standing { get; init; }
+
+    /// <summary>The review rule standing for it and where it was set (REVIEWENV1a); null where nothing is set anywhere.</summary>
+    public ResolvedReview? Review { get; init; }
 }
 
 public sealed partial record HelpMachine

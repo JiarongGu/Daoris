@@ -31,6 +31,9 @@ public sealed class HelpRoomGoldenTests
                 Checkout = true, Drivable = true, OwnTree = true,
                 Line = new Line("feature/app", LineSource.Repository),
                 Landing = new Landing(new LandingRule("branch", "feature/{slug}-{quest}", Tidy: true, Plugin: "example.lands", AutoAccept: true), LandingSource.Workspace),
+                // REVIEWENV1a: a workspace's required review rule, its one environment local.
+                Review = new ResolvedReview(
+                    new ReviewRule([new("dev", "local", "README.md", "http://localhost:4200")], Required: true), ReviewSource.Workspace),
             },
             new("reports-db", "work")
             {
@@ -39,6 +42,8 @@ public sealed class HelpRoomGoldenTests
             new("engine", "default")
             {
                 Checkout = false, Landing = new Landing(new LandingRule("merge", null), LandingSource.Repository),
+                // REVIEWENV1a: none here, whatever its workspace says.
+                Review = new ResolvedReview(ReviewRule.None, ReviewSource.Repository),
             },
             new("tools", "default")
             {

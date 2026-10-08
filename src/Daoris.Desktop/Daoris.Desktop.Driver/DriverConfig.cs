@@ -246,6 +246,20 @@ public sealed record DriverConfig(
         return next;
     }
 
+    /// <summary>
+    /// Where each repository's work is reviewed before it is offered to land (REVIEWENV1a, D154 point 2, the review-environment
+    /// design §1.2–§1.3), by repository: a rule, or <see cref="ReviewRule.None"/> (the file's <c>false</c>), which says it has
+    /// none whatever its workspace says. A repository's rule replaces its workspace's whole (<see cref="ReviewRules.Resolve"/>);
+    /// absent is the workspace's, then none, which is today's behaviour. Edited only through <see cref="ReviewRules.Apply"/>.
+    /// The CLI's <c>driverconfig.ts</c> reads it the same way, by one shared table (<c>ReviewRulesTests</c>).
+    /// </summary>
+    public IReadOnlyDictionary<string, ReviewRule> Reviews { get; init; } =
+        new Dictionary<string, ReviewRule>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A workspace's review rule, for every repository in it that sets none of its own; never <see cref="ReviewRule.None"/>.</summary>
+    public IReadOnlyDictionary<string, ReviewRule> WorkspaceReviews { get; init; } =
+        new Dictionary<string, ReviewRule>(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>A moment as the file keeps it: in UTC, to the second.</summary>
     private static DateTimeOffset ToTheSecond(DateTimeOffset at)
     {
@@ -502,6 +516,9 @@ public sealed record DriverConfig(
             // Written only when set (WSR1), for the same reason: absent is the merge it always was.
             WriteRules(writer, "landings", Landings);
             WriteRules(writer, "workspaceLandings", WorkspaceLandings);
+            // Written only when set (REVIEWENV1a), as the CLI writes them: absent is no review environment, today's behaviour.
+            ReviewRules.WriteMap(writer, "reviews", Reviews);
+            ReviewRules.WriteMap(writer, "workspaceReviews", WorkspaceReviews);
             // Written only when set (D107), for the same reason: absent is reading on and no relationship.
             WriteFlags(writer, "readAcross", ReadAcross);
             WriteFlags(writer, "workspaceReadAcross", WorkspaceReadAcross);
@@ -853,6 +870,9 @@ public sealed record DriverConfig(
             WorkspaceLanguages = LanguageMap(root, "workspaceLanguages"),
             Landings = RuleMap(root, "landings"),
             WorkspaceLandings = RuleMap(root, "workspaceLandings"),
+            // A rule with a problem is not read, and `false` only for a repository (REVIEWENV1a).
+            Reviews = ReviewRules.Map(root, "reviews", allowNone: true),
+            WorkspaceReviews = ReviewRules.Map(root, "workspaceReviews", allowNone: false),
             ReadAcross = FlagMap(root, "readAcross"),
             WorkspaceReadAcross = FlagMap(root, "workspaceReadAcross"),
             WriteAcross = TargetMap(root, "writeAcross"),

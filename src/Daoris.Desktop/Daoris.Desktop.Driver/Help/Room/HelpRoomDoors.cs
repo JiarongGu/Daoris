@@ -54,6 +54,16 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "`daoris driver landing <repository> merge|branch <pattern>|--clear` (`--workspace <name>`, `--tidy`, "
             + "and on a branch `--plugin <id>`: an installed plugin that pushes it and opens the pull request, and "
             + "`--auto-accept`: a quest's done lands it with no press)"),
+        // REVIEWENV1a (D154 point 2): where work is shown to the person before it is offered to land; Ask Daoris proposes it
+        // as the `setting` kind's `review` door. Declared only until the set-up step and the gate read it (REVIEWENV1c).
+        ("declare where a repository's work is shown to you before it is offered to land, or a workspace's: a review "
+            + "environment, local (shown in Daoris's browser at the address where the app runs) or deployed (by the "
+            + "repository's documented procedure), and whether work waits for your look (declared only: nothing reads it yet; "
+            + "production is never one)",
+            Setup + "Line and landing → Review before landing; a workspace's, Repositories → the workspace's page → Setup → Defaults",
+            "`daoris driver review <repository> <environment> --kind local|deployed --procedure <path> [--address <url>] "
+            + "[--run \"<command>\"] [--required|--not-required]` (`--workspace <name>` for a whole workspace), "
+            + "`daoris driver review <repository> none|--drop <environment>|--clear`"),
         // WSR6: after a pull request merges — the line pulled, what merged deleted, what still works replayed onto it. It
         // takes the repositories holding Daoris's branches, and the others where included (WSR7, D112); one workspace's
         // alone with `--workspace`, as its Branches tab does (BRSCOPE1a).

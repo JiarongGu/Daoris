@@ -101,6 +101,101 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
+    /// REVIEWENV1a (D154 point 2, design §1.7): a review rule for a registered repository or a workspace, in the terminal's
+    /// words with a quoted command kept whole, judged by the twin's table and planned with what it lets a step do and that
+    /// nothing reads it yet; the procedure looked for in each checkout it reaches, as the screen and the terminal look.
+    /// </summary>
+    [Theory]
+    [InlineData("engine", null, "dev --kind local --procedure README.md --address http://localhost:4200 --required",
+        "daoris driver review engine dev --kind local --procedure README.md --address http://localhost:4200 --required",
+        "Declare the review environment `dev` for `engine`. Before work here lands, it is shown to you in `dev` and waits for you to say it is right.")]
+    [InlineData("engine", null, "dev --kind deployed --procedure docs/deploying-to-dev.md",
+        "daoris driver review engine dev --kind deployed --procedure docs/deploying-to-dev.md",
+        "A set-up step here follows `docs/deploying-to-dev.md` toward `dev`; each deploy or write there asks your go-ahead once per ask.")]
+    [InlineData(null, "work", "local --kind local --procedure README.md --address http://localhost:4200 --run \"npm run serve\"",
+        "daoris driver review --workspace work local --kind local --procedure README.md --address http://localhost:4200 --run \"npm run serve\"",
+        "A set-up step here may run `npm run serve` in its tree on a port nobody holds, without asking you each time; it stops once you have reviewed.")]
+    [InlineData("game", null, "none", "daoris driver review game none",
+        "Declare that `game` has no review environment, whatever its workspace says. No review environment here")]
+    [InlineData("engine", null, "--clear", "daoris driver review engine --clear", "Clear `engine`'s review rule: it takes its workspace's again, else none.")]
+    public void A_review_rule_is_planned_with_what_it_lets_a_step_do_and_applied_as_the_terminal_makes_it(
+        string? target, string? workspace, string value, string terminal, string says)
+    {
+        var plan = HelpProposals.Plan(Setting("review", target, workspace, value), DriverConfig.Empty, Facts);
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal(terminal, plan.Terminal);
+        Assert.Contains(says, plan.Describe);
+        if (value != "--clear") Assert.Contains(ReviewRules.DeclaredOnly, plan.Describe);
+        Assert.NotNull(plan.Apply);
+    }
+
+    [Fact]
+    public void A_review_rule_applied_is_the_edit_the_terminal_makes()
+    {
+        var config = HelpProposals.Plan(
+            Setting("review", null, "work", "local --kind local --procedure \"docs/how we run.md\" --address http://localhost:4200/ --required"),
+            DriverConfig.Empty, Facts).Apply!(DriverConfig.Empty);
+
+        Assert.Equal(
+            """{"required":true,"environments":[{"name":"local","kind":"local","procedure":"docs/how we run.md","address":"http://localhost:4200"}]}""",
+            ReviewRules.ToJson(config.WorkspaceReviews["work"]));
+        config = HelpProposals.Plan(Setting("review", null, "work", "--not-required"), config, Facts).Apply!(config);
+        Assert.False(config.WorkspaceReviews["work"].Required);
+        config = HelpProposals.Plan(Setting("review", "engine", null, "none"), config, Facts).Apply!(config);
+        Assert.True(config.Reviews["engine"].IsNone);
+    }
+
+    /// <summary>The twin's refusals, the registry's names, and a procedure a checkout here does not hold, each refused in its words.</summary>
+    [Theory]
+    [InlineData("engine", null, "prod --kind deployed --procedure README.md", "`prod` reads as production, and production is never a review environment")]
+    [InlineData("engine", null, "dev --kind local --procedure README.md", "a local environment needs its `address`")]
+    [InlineData("engine", "work", "--clear", "a review rule is set for a repository or a workspace — name exactly one.")]
+    [InlineData(null, null, "--clear", "a review rule is set for a repository or a workspace — name exactly one.")]
+    [InlineData("elsewhere", null, "none", "is not registered on this machine")]
+    [InlineData(null, "elsewhere", "--clear", "no workspace `elsewhere`")]
+    [InlineData(null, "work", "none", "`none` is a repository's")]
+    [InlineData("engine", null, "", "`review` is `<environment> --kind local|deployed --procedure <path>")]
+    [InlineData("engine", null, "dev --kind", "`--kind` needs its value")]
+    [InlineData("engine", null, "dev --colour blue", "`--colour` is not a word `review` takes")]
+    [InlineData("engine", null, "dev local --kind local", "`review` names one environment")]
+    [InlineData("engine", null, "dev --kind local --run \"npm start", "close every quote they open")]
+    [InlineData("engine", null, "--required --not-required", "say `--required` or `--not-required`, not both")]
+    [InlineData("engine", null, "--required", "`engine` has no review rule of its own — add an environment to it first.")]
+    public void A_review_rule_is_refused_in_the_twins_words(string? target, string? workspace, string value, string says)
+    {
+        var plan = HelpProposals.Plan(Setting("review", target, workspace, value), DriverConfig.Empty, Facts);
+
+        Assert.Contains(says, plan.Refusal);
+        Assert.Null(plan.Apply);
+    }
+
+    [Fact]
+    public void A_review_s_procedure_is_looked_for_in_each_checkout_it_reaches()
+    {
+        var engine = Beside("-engine");
+        var game = Beside("-game");
+        Directory.CreateDirectory(engine);
+        Directory.CreateDirectory(game);
+        System.IO.File.WriteAllText(Path.Combine(engine, "README.md"), "# Run it against dev\n");
+        var facts = Facts with { Registered = [("engine", "work", engine), ("game", "work", game)] };
+
+        var held = HelpProposals.Plan(Setting("review", "engine", null, "dev --kind deployed --procedure README.md"), DriverConfig.Empty, facts);
+        Assert.Contains("`README.md` is in `engine`'s checkout here.", held.Describe);
+
+        Assert.Equal(ReviewRules.NotHeld("game", "README.md"),
+            HelpProposals.Plan(Setting("review", "game", null, "dev --kind deployed --procedure README.md"), DriverConfig.Empty, facts).Refusal);
+
+        var shared = HelpProposals.Plan(Setting("review", null, "work", "dev --kind deployed --procedure README.md"), DriverConfig.Empty, facts);
+        Assert.Null(shared.Refusal);
+        Assert.Contains(ReviewRules.SitsUntil("game", "README.md"), shared.Describe);
+        Assert.DoesNotContain("`engine` holds no", shared.Describe);
+
+        Assert.Contains("Not checked: `engine` has no checkout on this machine",
+            HelpProposals.Plan(Setting("review", "engine", null, "dev --kind deployed --procedure README.md"), DriverConfig.Empty, Facts).Describe);
+    }
+
+    /// <summary>
     /// LANG1c2: the service's setting writer shape-checks a language against a deliberate copy of the table's codes
     /// (<c>HelpProposalBox.Languages</c>), read here as text since the two share no code, so a language added to the table is
     /// one the box takes, and the box takes none the table does not hold.
@@ -215,7 +310,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
             ("drive", "engine", null, null), ("undrive", "engine", null, null), ("hold", "engine", null, null),
             ("resume", "engine", null, null), ("trees", "engine", null, "off"), ("line", "engine", null, "main"),
             ("landing", "engine", null, "merge"), ("across", "engine", null, "read on"), ("standing", "engine", null, "dev only"),
-            ("language", null, "work", "zh"), ("intake", null, null, "off"),
+            ("language", null, "work", "zh"), ("review", "engine", null, "none"), ("intake", null, null, "off"),
             ("helper", null, null, "claude-code"), ("strikes", null, null, "0"), ("retry", "q1a2b3c4", null, null),
             ("timeout", null, null, "30"), ("notify", null, null, "on"), ("cap", null, null, "1"), ("adapter", null, null, "claude-code"),
         ];

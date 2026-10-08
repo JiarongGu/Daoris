@@ -278,6 +278,8 @@ public sealed partial class HelpCoverageTests
         ("standing", new Door("setting", "standing")),
         // LANG1c: the work's session language, for a repository or a workspace; LANG1c2 gave it the service's writer.
         ("language", new Door("setting", "language")),
+        // REVIEWENV1a: where work is shown to the person before it lands, with the service's writer in the same change.
+        ("review", new Door("setting", "review")),
         ("notify", new Door("setting", "notify")),
         ("intake", new Door("setting", "intake")),
         ("helper", new Door("setting", "helper")),
