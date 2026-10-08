@@ -66,8 +66,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/ToolResourcesTests.cs` | 40 | 559 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/AccountRotation.cs` | 49 | 849 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Acp.cs` | 91 | 1845 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 109 | 1953 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 80 | 1520 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 110 | 1966 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 81 | 1525 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 150 | 2586 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 55 | 1008 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 198 | 3649 |
@@ -118,17 +118,17 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Cli/src/driverconfig.ts` | 92 | 1712 |
+| `src/Daoris.Cli/src/driverconfig.ts` | 93 | 1714 |
 | `src/Daoris.Cli/src/materialize.ts` | 47 | 936 |
-| `src/Daoris.Cli/src/plugins.ts` | 68 | 1356 |
+| `src/Daoris.Cli/src/plugins.ts` | 69 | 1383 |
 | `src/Daoris.Cli/src/toolchain.ts` | 140 | 2738 |
 | `src/Daoris.Cli/test/desktop-publish.test.ts` | 56 | 1006 |
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 41 | 786 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 46 | 820 |
-| `src/Daoris.Cli/test/driverconfig.test.ts` | 100 | 1885 |
+| `src/Daoris.Cli/test/driverconfig.test.ts` | 103 | 1927 |
 | `src/Daoris.Cli/test/merge-branch.test.ts` | 179 | 2780 |
 | `src/Daoris.Cli/test/rotation-use.test.ts` | 44 | 550 |
-| `src/Daoris.Cli/test/setup-kit.test.ts` | 47 | 874 |
+| `src/Daoris.Cli/test/setup-kit.test.ts` | 52 | 955 |
 | `src/Daoris.Cli/test/toolchain.test.ts` | 94 | 1834 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 71 | 1226 |
 
@@ -149,7 +149,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 55 | 119 |
+| `.claude/knowledge/twins.md` | 61 | 122 |
 | `docs/2026-09-19-platform-ux.md` | 57 | 612 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 52 | 349 |

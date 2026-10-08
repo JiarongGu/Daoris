@@ -8,10 +8,12 @@
 // (`.claude/knowledge/twins.md`).
 //
 // Pure: it reads no file, reaches no network and spawns nothing. A family is read from the toolchain table this build
-// declares, as the driver reads the adapters it carries. Declared only: nothing reads the rule yet (XAGENT1b–f).
+// declares and the plugin catalogue a caller hands it, as the driver reads the machine's adapters, a plugin's among them
+// (XAGENT1b2). Declared only: nothing reads the rule yet (XAGENT1b–f).
 
 import { DaorisError } from './errors.ts';
 import { atName, findName, sameName } from './casefold.ts';
+import type { PluginCatalog } from './plugins.ts';
 import { normalizeWorkspace } from './remotemap.ts';
 import { TOOLCHAINS } from './toolchain.ts';
 
@@ -224,27 +226,53 @@ export function opinionSays(rule: OpinionSetting, sameAgent: readonly string[]):
   return said;
 }
 
-/** An adapter's owner (AGT7) and declared maker, from the toolchain table this build declares; a name it lacks owns itself. */
-function familyOf(name: string): { owner: string; maker: string | null } {
-  const key = findName(Object.keys(TOOLCHAINS), name);
-  const toolchain = key === null ? undefined : TOOLCHAINS[key];
-  return { owner: toolchain?.accountOf ?? name, maker: toolchain?.maker ?? null };
+/** A declaration as the driver's `AgentFamily` keeps it: none where it is absent or blank, else trimmed. */
+function declaredOf(text: string | null | undefined): string | null {
+  return text?.trim() || null;
+}
+
+/**
+ * An adapter's owner (AGT7) and declared maker, as the driver's `AgentFamily.Of` reads them, the name trimmed: from the
+ * toolchain table this build declares, else from the harness a contributing plugin of `plugins` declares (XAGENT1b2), its
+ * `accountOf` and its plugin's word for its maker; a name neither declares owns itself and declares no maker.
+ */
+function familyOf(name: string, plugins: PluginCatalog | null): { owner: string; maker: string | null } {
+  const given = name.trim();
+  const key = findName(Object.keys(TOOLCHAINS), given);
+  if (key !== null) {
+    const toolchain = TOOLCHAINS[key]!;
+    return { owner: toolchain.accountOf || key, maker: declaredOf(toolchain.maker) };
+  }
+
+  for (const plugin of plugins?.contributing ?? []) {
+    const harness = plugin.manifest.harnesses.find((each) => sameName(each.name, given));
+    if (harness !== undefined) return { owner: harness.accountOf || harness.name, maker: declaredOf(harness.maker) };
+  }
+
+  return { owner: given, maker: null };
 }
 
 /**
  * Whether two adapters are one family (design §3.1): they run as the same agent's accounts, or both declare the same maker —
- * the driver's `OpinionRules.OneFamily`. A name with no toolchain here is its own family only by its own name.
+ * the driver's `OpinionRules.OneFamily`. A name with no toolchain here and no plugin harness is its own family only by its
+ * own name.
+ *
+ * @param plugins The machine's plugins, whose contributing harnesses count as the driver's choice counts them (XAGENT1b2);
+ *   null judges by the toolchain table alone.
  */
-export function oneFamily(a: string, b: string): boolean {
-  const first = familyOf(a);
-  const second = familyOf(b);
+export function oneFamily(a: string, b: string, plugins: PluginCatalog | null = null): boolean {
+  const first = familyOf(a, plugins);
+  const second = familyOf(b, plugins);
   return sameName(first.owner, second.owner)
     || (first.maker !== null && second.maker !== null && sameName(first.maker, second.maker));
 }
 
-/** The reviewers of `rule` that are the family of `working`, the agent this machine's work runs on — `OpinionRules.SameAgent`. */
-export function sameAgentOf(rule: OpinionRule, working: string): string[] {
-  return rule.reviewers.filter((reviewer) => oneFamily(working, reviewer));
+/**
+ * The reviewers of `rule` that are the family of `working`, the agent this machine's work runs on, over the toolchain table
+ * and `plugins` — `OpinionRules.SameAgent`.
+ */
+export function sameAgentOf(rule: OpinionRule, working: string, plugins: PluginCatalog | null = null): string[] {
+  return rule.reviewers.filter((reviewer) => oneFamily(working, reviewer, plugins));
 }
 
 /** A rule in a line of `driver list`: its reviewers in order, when they read, what they may run, and the bound of a pass. */

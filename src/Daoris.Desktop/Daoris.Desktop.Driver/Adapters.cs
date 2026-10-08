@@ -1880,6 +1880,19 @@ public sealed class AdapterSet(
     public IReadOnlyList<string> Names => [.. adapters.Keys.OrderBy(k => k, StringComparer.Ordinal)];
 
     /// <summary>
+    /// Every name this set runs as a harness, in a stable order (PLUGINRESERVE1): each door it carries and each agent a door
+    /// runs as with no door here (<see cref="Holder"/>). Of the built set, what no plugin may declare
+    /// (<see cref="PluginCatalog.Reserved"/>): a plugin's harness named for a holder would be a door of that agent, and
+    /// <see cref="Holder"/> would stop answering for its accounts. Twin: the CLI's <c>reservedHarnesses()</c>.
+    /// </summary>
+    public IReadOnlyList<string> Reserved =>
+    [
+        .. adapters.Keys.Concat(holders?.Keys ?? [])
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(k => k, StringComparer.Ordinal),
+    ];
+
+    /// <summary>
     /// The toolchain of an agent whose accounts a door runs as, where this set carries no door of it (CODEXACCT1): its own
     /// binary, sign-in, status question and account seam, so a door onto it signs its accounts in and asks them as the
     /// agent itself does, the way <c>claude-code-acp</c> reaches <c>claude-code</c>'s (AGT7). Null for an agent this set

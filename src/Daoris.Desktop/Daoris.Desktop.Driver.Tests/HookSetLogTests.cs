@@ -330,7 +330,7 @@ public sealed class HookSetLogTests : IDisposable
             """);
 
         var (servers, notice, drives) = await ChatRunner.HandServersAsync(
-            _home, AdapterSet.Built().Names, shell ? new AnsweringBrowser("http://127.0.0.1:4810") : null,
+            _home, shell ? new AnsweringBrowser("http://127.0.0.1:4810") : null,
             new PluginLog(_log), "s1a2b3c4", CancellationToken.None);
 
         Assert.Equal(shell ? ["tickets", "browser"] : ["tickets"], servers.Select(server => server.Name));

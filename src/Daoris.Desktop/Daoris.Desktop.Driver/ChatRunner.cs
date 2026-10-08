@@ -371,10 +371,15 @@ public sealed partial class ChatRunner : IDisposable
     /// that one withheld and the sentence why (D78); and a <c>plugin.served</c> line for each, handed or withheld
     /// (PLUGUI1e, D119 §4.2), read from the catalogue the servers came from, as a driven session's are.
     /// </summary>
+    /// <remarks>
+    /// The catalogue is read as the driver loop reads it, reserving the build's names (CHATSERVERS1). Never the roster's live
+    /// set: that holds the plugins' own agents, so a plugin declaring an agent and a server was refused as one this build
+    /// carries, and its servers were withheld from every conversation.
+    /// </remarks>
     internal static async Task<(IReadOnlyList<AcpMcpServer> Handed, string? Notice, bool Drives)> HandServersAsync(
-        string home, IEnumerable<string> reserved, IInAppBrowser? browser, PluginLog plugins, string sessionId, CancellationToken ct)
+        string home, IInAppBrowser? browser, PluginLog plugins, string sessionId, CancellationToken ct)
     {
-        var catalog = PluginCatalog.Load(home, reserved);
+        var catalog = PluginCatalog.Load(home, AdapterSet.Built().Names);
         var handed = await InAppBrowserServers.HandAsync(catalog.Servers, browser, ct).ConfigureAwait(false);
         plugins.Served(catalog, sessionId, handed.Handed);
         return handed;
@@ -450,7 +455,7 @@ public sealed partial class ChatRunner : IDisposable
             if (place.Plugins)
             {
                 (pluginServers, browserNotice, drivesBrowser) = await HandServersAsync(
-                    _home, _harnesses.Adapters.Names, _browser, _plugins, sessionId, ct).ConfigureAwait(false);
+                    _home, _browser, _plugins, sessionId, ct).ConfigureAwait(false);
                 if (browserNotice is not null) Record(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = browserNotice });
             }
 
