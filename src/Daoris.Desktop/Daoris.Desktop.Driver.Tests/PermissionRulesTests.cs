@@ -41,6 +41,8 @@ public sealed class PermissionRulesTests : IDisposable
         "mcp__daoris-knowledge__quest_publish",
         "mcp__daoris-knowledge__permission_propose",
         "mcp__daoris-knowledge__go_ahead_ask",
+        "mcp__daoris-knowledge__review_serve",
+        "mcp__daoris-knowledge__review_ready",
     ];
 
     /// <summary>What the `commit` default allows (PERM4), a rename among it (UNBLOCK4, D122 §3.6).</summary>
@@ -143,6 +145,22 @@ public sealed class PermissionRulesTests : IDisposable
 
         Assert.DoesNotContain("mcp__daoris-knowledge__knowledge_refresh", rules.Allow);
         Assert.DoesNotContain("mcp__daoris-knowledge", rules.Allow);
+    }
+
+    /// <summary>
+    /// A set-up step's session asks Daoris to serve its build to its own tab and says what it showed (REVIEWENV1b2; the review
+    /// environment design §2.6). An ask over the protocol door is a refusal, so the default allows both, as it allows
+    /// <c>go_ahead_ask</c>: the service answers them for a set-up step's own session only, and neither gives the verdict.
+    /// </summary>
+    [Theory]
+    [InlineData("review_serve")]
+    [InlineData("review_ready")]
+    public void A_set_up_step_s_two_tools_reach_a_session_by_default(string tool)
+    {
+        var rules = PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine");
+
+        Assert.Contains($"mcp__daoris-knowledge__{tool}", rules.Allow);
+        Assert.True(PermissionRules.AllowsConnector(rules, tool));
     }
 
     [Fact]
