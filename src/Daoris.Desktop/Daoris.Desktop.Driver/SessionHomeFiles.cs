@@ -57,7 +57,8 @@ public sealed record SessionFilesRemoved(
 /// <remarks>
 /// <para><b>What goes, by name</b>, in this order: its conversation, its transcript, its files (the whole
 /// <c>sessions/&lt;id&gt;/</c>), its harness conversation id, a leftover process marker, its go-on mark, its choice of a new
-/// session, the spawn files a crash left, its held words, its closed automatic landing and its archive mark. Until HIST1c the
+/// session, the spawn files a crash left, Ask Daoris's name and pin for it (ASKHIST1), its held words, its closed automatic
+/// landing and its archive mark. Until HIST1c the
 /// delete took the first five and the mark, and left the mark, the choice, the held words and the landing behind.</para>
 ///
 /// <para><b>Never</b> a tree, a branch, the usage, the machine log, the harness's own conversation in an account's home
@@ -78,6 +79,9 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     public const string Mark = "mark";
     public const string Choice = "choice";
     public const string Spawn = "spawn";
+
+    /// <summary>Ask Daoris's conversation's name, pin and start (ASKHIST1, <see cref="HelpConversations"/>).</summary>
+    public const string Help = "help";
     public const string Held = "held";
     public const string Landing = "landing";
     public const string Archived = "archived";
@@ -113,6 +117,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(Choice, Place.Sessions, NewSessionChoices.Suffix, false, Beside),
         new(Spawn, Place.Spawn, ".mcp.json", false, Beside),
         new(Spawn, Place.Spawn, ".settings.json", false, Beside),
+        new(Help, Place.Sessions, HelpConversations.Suffix, false, Beside),
     ];
 
     /// <summary>The suffixes a session's own files under <c>sessions/</c> carry after its id, the longest first.</summary>
