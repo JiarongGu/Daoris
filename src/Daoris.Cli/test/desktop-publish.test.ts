@@ -348,6 +348,8 @@ test('the install note says where both service hosts are, and that they come bef
   assert.ok(row.includes(`\`${CONNECTOR_HOME.slice(1).join('/')}/\``), 'the connector’s folder');
   assert.match(row, /handed/, 'what the connector is for');
   assert.match(note, /ahead of any in `bin\/`/);
+  // CONNECTOR1b: what it says of a re-publish is what `refusal` does, below.
+  assert.match(note.replace(/\s+/g, ' '), /with `--service` while it carries the hosts \(a re-publish without it is refused/);
 });
 
 /**
@@ -432,6 +434,61 @@ test('--beside on a previous install is the ordinary re-publish', () => {
   mkdirSync(join(at, 'app'));
   mkdirSync(join(at, 'testbed-core'));
   assert.equal(refusal(at, { beside: true }), null);
+});
+
+/**
+ * CONNECTOR1b: both locators run a host the install carries under `app/` ahead of the home's `bin/`, so a publish in
+ * place that left an older build's there would hand every session that build's binaries. A publish without `--service`
+ * never touches the hosts' folders, so over an install that carries either host it is refused, naming each folder and
+ * `--service`, as `--stage` refuses an install that carries its HTTP host.
+ */
+const carryHost = (at: string, home: readonly string[], exe: string) => {
+  mkdirSync(join(at, ...home), { recursive: true });
+  writeFileSync(join(at, ...home, exe), '');
+};
+
+const anInstall = (): string => {
+  const at = folder();
+  markInstalled(at);
+  mkdirSync(join(at, ...SHELL_HOME), { recursive: true });
+  writeFileSync(join(at, ...SHELL_HOME, SHELL_EXE), '');
+  return at;
+};
+
+test('a publish in place without --service is refused while the install carries either service host, naming each and --service', () => {
+  const cases: { name: string; homes: (readonly string[])[] }[] = [
+    { name: 'the HTTP host', homes: [HOST_HOME] },
+    { name: 'the connector', homes: [CONNECTOR_HOME] },
+    { name: 'both', homes: [HOST_HOME, CONNECTOR_HOME] },
+  ];
+  for (const { name, homes } of cases) {
+    const at = anInstall();
+    for (const home of homes) carryHost(at, home, home === HOST_HOME ? HOST_EXE : CONNECTOR_EXE);
+    const before = readdirSync(join(at, ...SHELL_HOME)).sort();
+
+    for (const beside of [false, true]) {
+      const sentence = refusal(at, { beside, service: false }) ?? '';
+      assert.match(sentence, /Refusing/, `${name}, beside: ${beside}: it says it refused`);
+      assert.match(sentence, /--service/, `${name}, beside: ${beside}`);
+      for (const home of [HOST_HOME, CONNECTOR_HOME]) {
+        const named = sentence.includes(`${home.join('/')}/`);
+        assert.equal(named, homes.includes(home), `${name}: ${home.join('/')}/ named only when carried`);
+      }
+      assert.equal(refusal(at, { beside, service: true }), null, `${name}: --service carries them`);
+    }
+    assert.deepEqual(readdirSync(join(at, ...SHELL_HOME)).sort(), before, `${name}: the refusal touches nothing`);
+  }
+});
+
+test('a publish in place without --service over an install that carries neither host is the ordinary re-publish', () => {
+  const at = anInstall();
+  assert.equal(refusal(at, { beside: false, service: false }), null);
+  assert.equal(refusal(at, { beside: true, service: false }), null);
+
+  // A host's folder without its executable is nothing either locator runs, so nothing to leave behind.
+  mkdirSync(join(at, ...HOST_HOME, 'wwwroot'), { recursive: true });
+  mkdirSync(join(at, ...CONNECTOR_HOME), { recursive: true });
+  assert.equal(refusal(at, { beside: false, service: false }), null);
 });
 
 /**

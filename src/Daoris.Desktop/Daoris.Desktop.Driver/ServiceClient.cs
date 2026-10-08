@@ -640,8 +640,10 @@ public sealed partial class ServiceClient : IDisposable
     private static DateTimeOffset? Moment(JsonElement element, string name) =>
         DateTimeOffset.TryParse(Text(element, name), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at) ? at : null;
 
-    private static AskView ReadAsk(JsonElement ask) =>
-        new(
+    private static AskView ReadAsk(JsonElement ask)
+    {
+        var proposal = ReadProposal(ask);
+        return new(
             Text(ask, "id") ?? "", Text(ask, "workspace") ?? "", Text(ask, "sentence") ?? "",
             Text(ask, "state") ?? "", Text(ask, "tier") ?? "")
         {
@@ -657,9 +659,9 @@ public sealed partial class ServiceClient : IDisposable
                     Text(file, "path")))]
                 : [],
             Quests = Strings(ask, "quests"),
-            Proposed = ask.TryGetProperty("proposal", out var proposal) && proposal.ValueKind == JsonValueKind.Array
-                ? [.. proposal.EnumerateArray().Select(match => Text(match, "repository")).OfType<string>()]
-                : [],
+            Proposed = [.. proposal.Select(match => match.Repository)],
+            // ASKNAME1b: a proposal whose evidence is its own name is one the sentence names, and the intake is told so.
+            Named = [.. proposal.Where(match => Asks.IsNamed(match.Repository, match.Matched)).Select(match => match.Repository)],
             Deletable = Flag(ask, "deletable"),
             // The person's words (DRIFT1a), which every session on the ask is handed (DRIFT1b).
             Words = ReadWords(ask),
@@ -667,6 +669,18 @@ public sealed partial class ServiceClient : IDisposable
             // The go-aheads its sessions asked (KNOWUSE1a), which every session on the ask is handed beside the words.
             GoAheads = ReadGoAheads(ask),
         };
+    }
+
+    /// <summary>
+    /// What the declarations tier proposed for an ask, best first: each repository with the words it matched, or with its
+    /// name alone where the sentence names it (ASKNAME1). One without a repository is passed over, as before.
+    /// </summary>
+    private static List<(string Repository, IReadOnlyList<string> Matched)> ReadProposal(JsonElement ask) =>
+        ask.TryGetProperty("proposal", out var proposal) && proposal.ValueKind == JsonValueKind.Array
+            ? [.. proposal.EnumerateArray()
+                .Where(match => Text(match, "repository") is not null)
+                .Select(match => (Text(match, "repository")!, Strings(match, "matched")))]
+            : [];
 
     /// <summary>
     /// The go-aheads an ask holds (KNOWUSE1a), oldest first; null where the host answered none, a host from before them. One
@@ -714,14 +728,21 @@ public sealed partial class ServiceClient : IDisposable
     /// The person's yes or no to a go-ahead a session asked on their ask (KNOWUSE1a, D135 §2), with their words where they
     /// give any: the terminal's door. The service's sentence comes back verbatim, a refusal (no such go-ahead) included.
     /// </summary>
+    /// <param name="goesOn">
+    /// Whether the answer that leaves none of a parked session's go-aheads waiting is that park's answer, so the session goes
+    /// on with it (GOAHEAD2), as the ask's page has it: the terminal's door says so. False by default, for the session page's
+    /// door, which answers the park itself with the person's own words (KNOWUSE1a2), so the service leaves the park to it.
+    /// </param>
     public async Task<(bool Ok, string Message)> AnswerGoAheadAsync(
-        string ask, int number, bool approved, string? words, CancellationToken ct = default)
+        string ask, int number, bool approved, string? words, CancellationToken ct = default, bool goesOn = false)
     {
         var body = WriteJson(writer =>
         {
             writer.WriteStartObject();
             writer.WriteString("answer", approved ? "approved" : "refused");
             if (!string.IsNullOrWhiteSpace(words)) writer.WriteString("words", words);
+            // Always said: a host reads it absent as true, the ask page's way (GOAHEAD2).
+            writer.WriteBoolean("goesOn", goesOn);
             writer.WriteEndObject();
         });
         var (ok, status, payload, root) = await PostJsonAsync(

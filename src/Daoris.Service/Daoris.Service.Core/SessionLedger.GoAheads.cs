@@ -149,4 +149,55 @@ public sealed partial class SessionLedger
     }
 
     private static string Saying(GoAheadAnswer answer) => answer.Words is { Length: > 0 } words ? $", saying: \"{words}\"" : "";
+
+    /// <summary>
+    /// The person's answers to the go-aheads a parked session asked are its answer (GOAHEAD2): the answer that leaves none of
+    /// them waiting keeps the park's blank answer, as the answer door keeps one given no words (ANSWER1b), so the driver's
+    /// next look goes on with that same session, its own conversation resumed and handed the go-aheads' answers after it
+    /// (ANSWER1a, KNOWUSE1a's resumed prompt). One of its go-aheads still waiting keeps it parked, and is named.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Only the sessions that asked this go-ahead</b>, and of those only this machine's driven parks: a session still
+    /// working, or one that ended, is handed the answer at its next start as before, and an intake is answered through its
+    /// ask.</para>
+    ///
+    /// <para><b>Once.</b> Only the person's first answer to a go-ahead can be the last a park waited on, so a changed answer
+    /// wakes nothing. A park that already holds words goes on with them and is handed these answers beside them, so nothing
+    /// is kept twice. Judged and kept under the store's lock, as an answer is (REV3), so the driver taking the park up and
+    /// a second door never both read it waiting.</para>
+    ///
+    /// <para><b>The answers are not written as the person's words</b> (KNOWUSE1a2): the record keeps what the answer door
+    /// keeps for none, and the go-aheads' answers reach the session beneath it, quoted as the person gave them.</para>
+    /// </remarks>
+    /// <param name="answered">What the ask's go-ahead door kept: the go-ahead as it now stands, and the ask with every other.</param>
+    public async Task<GoAheadParks> GoOnWithGoAheadsAsync(GoAheadAnswerOutcome answered, DateTimeOffset now, CancellationToken ct = default)
+    {
+        if (answered is not { Refusal: GoAheadAnswerRefusal.None, WasWaiting: true, GoAhead: { } goAhead, Ask: { } ask })
+        {
+            return GoAheadParks.None;
+        }
+
+        var goesOn = new List<string>();
+        var waits = new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal);
+        foreach (var asker in goAhead.Asked.Select(request => request.Session).Distinct(StringComparer.Ordinal))
+        {
+            var open = ask.GoAheads
+                .Where(held => held.Answer is null && held.Asked.Any(request => request.Session == asker))
+                .Select(held => held.Number)
+                .ToList();
+            var parked = await sessions.ExclusiveAsync(async inside =>
+            {
+                var session = await sessions.FindAsync(asker, inside).ConfigureAwait(false);
+                if (session is not { State: SessionState.AwaitingPerson, Origin: null, Quest: not null, Ask: null }) return false;
+                if (open.Count == 0 && session.Said.Count == 0) await KeepAnswerAsync(session, CarryOn, now, inside).ConfigureAwait(false);
+                return true;
+            }, ct).ConfigureAwait(false);
+
+            if (!parked) continue;
+            if (open.Count > 0) waits[asker] = open;
+            else goesOn.Add(asker);
+        }
+
+        return new(goesOn, waits);
+    }
 }

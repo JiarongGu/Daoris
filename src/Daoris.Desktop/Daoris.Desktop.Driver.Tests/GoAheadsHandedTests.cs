@@ -252,9 +252,16 @@ public sealed class GoAheadsHandedTests
         Assert.Equal((true, "Go-ahead 2 on ask `#a1` refused."), refused);
         Assert.Equal((false, "Ask `#a1` holds no go-ahead 7: it holds 1, 2."), none);
         Assert.Contains("\"answer\":\"approved\"", body);
+        // GOAHEAD2: the park is the caller's unless it says otherwise, as the terminal's door does.
+        Assert.Contains("\"goesOn\":false", body);
+        await service.AnswerGoAheadAsync("a1", 2, approved: true, null, goesOn: true);
+        Assert.Contains("\"goesOn\":true", body);
     }
 
-    /// <summary>The headless host's usage spells the door, as its ask verb takes it.</summary>
+    /// <summary>
+    /// The headless host's usage spells the door, as its ask verb takes it; and the door is the ask page's twin, so the answer
+    /// that leaves none of a park's go-aheads waiting sends it on (GOAHEAD2).
+    /// </summary>
     [Fact]
     public void The_hosts_usage_spells_the_go_ahead_door()
     {
@@ -262,6 +269,7 @@ public sealed class GoAheadsHandedTests
         var host = File.ReadAllText(Path.Combine(
             Daoris.Driver.Tests.HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "AskConsole.cs"));
         Assert.Contains("case \"--go-ahead\":", host);
+        Assert.Contains("answer.Words, goesOn: true)", host);
     }
 
     /// <summary>The terminal's words after `--go-ahead <id>`: the number, approve or refuse, then the person's words as one sentence.</summary>

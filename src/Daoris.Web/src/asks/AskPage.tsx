@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Ask, Session } from '../api';
+import type { Ask, DeclarationMatch, Session } from '../api';
 import { ago, sessionTool, size, stamp } from '../format';
 import { ExternalLink } from '../links';
 import type { Consideration } from '../signals';
@@ -20,6 +20,14 @@ import { GoAheadList } from './GoAheadList';
 
 /** The acts in an ask's header (CTX1, D138 §4): its buttons and its page's right-click draw this one list. */
 type AskAct = 'resume' | 'pause' | 'close' | 'abandon' | 'delete';
+
+/**
+ * Whether a proposal was made because the ask's sentence names its repository (ASKNAME1b): its evidence is that name alone,
+ * which is what the declarations tier writes for one (ASKNAME1), so it reads as named rather than as sharing its own name.
+ * Without case, as the tier finds the name; the driver tells the intake by the same rule (`Asks.IsNamed`).
+ */
+const namedInAsk = ({ repository, matched }: DeclarationMatch) =>
+  matched.length === 1 && matched[0]?.toLowerCase() === repository.toLowerCase();
 
 /** Each act's name, its button's look (the loud act is *Resume*, §7.1) and its glyph in a menu. */
 const ASK_ACT: Record<AskAct, { label: string; variant: 'primary' | 'default' | 'ghost'; icon?: IconName }> = {
@@ -415,7 +423,9 @@ export function AskPage({
                   <span className="grid min-w-0 gap-0.5">
                     <span className="text-body font-semibold">{match.repository}</span>
                     <span className="truncate text-small text-ink-soft">
-                      {t('asks.record.matched', { words: match.matched.join(', ') })}
+                      {namedInAsk(match)
+                        ? t('asks.record.named')
+                        : t('asks.record.matched', { words: match.matched.join(', ') })}
                     </span>
                   </span>
                   <Button disabled={busy} onClick={() => onPublish(match.repository)}>

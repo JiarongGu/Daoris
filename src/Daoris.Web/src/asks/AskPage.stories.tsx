@@ -7,8 +7,8 @@ import {
 } from '../work/pausingFixtures';
 import { AskPage } from './AskPage';
 import {
-  BY_INTAKE, CLOSED, DONE, INTAKE_ASKED, INTAKE_PARKED, INTAKE_SESSION, LONG_CJK, NAMED, PROPOSED, PUBLISHED, REFUSED,
-  UNKNOWN_TIER, UNMATCHED, WITH_GO_AHEADS,
+  BY_INTAKE, CLOSED, DONE, INTAKE_ASKED, INTAKE_PARKED, INTAKE_SESSION, LONG_CJK, NAMED, NAMES_ITS_REPOSITORY, PROPOSED,
+  PUBLISHED, REFUSED, UNKNOWN_TIER, UNMATCHED, WITH_GO_AHEADS,
 } from './fixtures';
 
 // An ask's page (INT4c; FRAME1d, D118 §3d): its record in Quests' main area, where it was a drawer, with *Close ask*
@@ -38,6 +38,8 @@ type Story = StoryObj<typeof AskPage>;
 
 /** Proposed by the declarations: each repository it proposed is a publish, and any other in its circle can be named. */
 export const Proposed: Story = {};
+/** Its sentence names a repository (ASKNAME1b): that one first, *named in the ask*, then a word match with its words. */
+export const NamesItsRepository: Story = { args: { ask: NAMES_ITS_REPOSITORY } };
 /** Nothing in the circle's declarations shares its words, and the page says so. */
 export const Unmatched: Story = { args: { ask: UNMATCHED } };
 /** Published to two repositories, each a door into its quest's page where the page holds it. */

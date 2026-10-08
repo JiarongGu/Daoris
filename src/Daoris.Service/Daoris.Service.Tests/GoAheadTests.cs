@@ -10,7 +10,7 @@ namespace Daoris.Service.Tests;
 /// is kept on it. Three production acts drew thirteen asks because nothing held a go-ahead between sessions
 /// (`docs/2026-10-03-knowledge-use-evidence.md` §5.1).
 /// </summary>
-public sealed class GoAheadTests : IAsyncLifetime
+public sealed partial class GoAheadTests : IAsyncLifetime
 {
     private readonly string _root = Path.Combine(
         Path.GetTempPath(), "daoris-goahead-" + Guid.NewGuid().ToString("N")[..8]);

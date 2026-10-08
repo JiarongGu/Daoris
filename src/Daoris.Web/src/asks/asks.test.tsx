@@ -1,17 +1,17 @@
 import { type ReactElement, useState } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, render as rtlRender, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import '../i18n';
+import i18n from '../i18n';
 import { NO_CARRY } from '../compose/carry';
 import type { Answered } from '../work/InlineConfirm';
 import { AskComposer, type AskDraft } from './AskComposer';
 import { AskPage } from './AskPage';
 import { AskRow, asksInOrder } from './AskRow';
 import {
-  BY_INTAKE, CLOSED, DONE, INTAKE_ASKED, INTAKE_PARKED, INTAKE_SESSION, NAMED, PROPOSED, PUBLISHED, REFUSED, UNKNOWN_TIER,
-  UNMATCHED, WITH_GO_AHEADS,
+  BY_INTAKE, CLOSED, DONE, INTAKE_ASKED, INTAKE_PARKED, INTAKE_SESSION, NAMED, NAMES_ITS_REPOSITORY, PROPOSED, PUBLISHED,
+  REFUSED, UNKNOWN_TIER, UNMATCHED, WITH_GO_AHEADS,
 } from './fixtures';
 
 // An ask's three molecules (INT4c; FRAME1d): its row in Quests' list, its page in the main area, and the composer's
@@ -438,6 +438,51 @@ describe('deleting an ask', () => {
 
     expect(within(page).getByRole('button', { name: 'Delete…' })).toBeInTheDocument();
     expect(within(page).queryByRole('button', { name: 'Close ask' })).toBeNull();
+  });
+});
+
+/**
+ * ASKNAME1b: a repository the ask's sentence names is proposed first, with its name alone as the evidence (ASKNAME1). It
+ * was proposed for being named, so it reads *named in the ask* rather than *shares* its own name; a word match beside it
+ * still says the words it shares. The name is read without case, as the service finds it.
+ */
+describe('a proposal the ask names', () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  /** The section's items, found by its title in the language the page is in. */
+  const proposals = (page: HTMLElement) =>
+    within(within(page).getByRole('region', { name: i18n.t('asks.record.proposal') })).getAllByRole('listitem');
+
+  it('reads named in the ask, and a word match beside it what it shares', () => {
+    const { page } = record(NAMES_ITS_REPOSITORY);
+    const [named, shares] = proposals(page);
+
+    expect(named).toHaveTextContent('lanternnamed in the ask');
+    expect(within(named).queryByText(/shares/)).toBeNull();
+    expect(shares).toHaveTextContent('engineshares frame');
+  });
+
+  it('says the same in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    const { page } = record(NAMES_ITS_REPOSITORY);
+    const [named, shares] = proposals(page);
+
+    expect(within(named).getByText('需求中点名提到')).toBeInTheDocument();
+    expect(within(named).queryByText(/共同词/)).toBeNull();
+    expect(within(shares).getByText('共同词：frame')).toBeInTheDocument();
+  });
+
+  it('is a word match where its one word is another word, or its name is one of several', () => {
+    const { page } = record({
+      ...NAMES_ITS_REPOSITORY,
+      proposal: [
+        { repository: 'lantern', score: 3, matched: ['lantern', 'glow'] },
+        { repository: 'engine', score: 1, matched: ['frame'] },
+      ],
+    });
+
+    expect(within(page).queryByText('named in the ask')).toBeNull();
+    expect(within(page).getByText('shares lantern, glow')).toBeInTheDocument();
   });
 });
 

@@ -753,6 +753,8 @@ if (mode == ServiceMode.Local)
 
     // The person answers a go-ahead a session asked on their ask (KNOWUSE1a, D135 §2): yes or no, with their words where
     // they give any. Local like every ask route; no connector tool answers one, since the production acts stay theirs.
+    // The answer that leaves none of a parked session's go-aheads waiting is that park's answer, and the sentence says which
+    // parks go on and which still wait (GOAHEAD2), unless the caller answers the park itself (`goesOn: false`).
     app.MapPost("/api/asks/{id}/go-aheads/{number}", async (
         ComposedService s, HttpContext http, string id, string number, GoAheadAnswerRequest body, CancellationToken ct) =>
     {
@@ -766,10 +768,13 @@ if (mode == ServiceMode.Local)
             return Results.BadRequest(new ErrorResponse("answer is `approved` or `refused` — the person's yes or no to the act."));
         }
 
-        var outcome = await s.Asks.AnswerGoAheadAsync(id, n, body.Answer == "approved", body.Words, DateTimeOffset.UtcNow, ct);
+        var now = DateTimeOffset.UtcNow;
+        var outcome = await s.Asks.AnswerGoAheadAsync(id, n, body.Answer == "approved", body.Words, now, ct);
+        var parks = body.GoesOn == false ? GoAheadParks.None : await s.Ledger.GoOnWithGoAheadsAsync(outcome, now, ct);
         return outcome.Refusal switch
         {
-            GoAheadAnswerRefusal.None => Results.Ok(new AskActionResponse(ToAsk(outcome.Ask!, s.Files, MachineLocal(http)), outcome.Message, null)),
+            GoAheadAnswerRefusal.None => Results.Ok(new AskActionResponse(
+                ToAsk(outcome.Ask!, s.Files, MachineLocal(http)), outcome.Message + parks.Said, null)),
             GoAheadAnswerRefusal.NotFound or GoAheadAnswerRefusal.NoGoAhead => Results.NotFound(new ErrorResponse(outcome.Message)),
             _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
         };

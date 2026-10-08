@@ -457,7 +457,7 @@ public sealed partial class SessionLedger(
     public async Task<SessionAdvanceOutcome> AnswerAsync(
         string id, string? answer, DateTimeOffset now, CancellationToken ct = default)
     {
-        var said = string.IsNullOrWhiteSpace(answer) ? "carry on." : answer.Trim();
+        var said = string.IsNullOrWhiteSpace(answer) ? CarryOn : answer.Trim();
 
         // Read, judged and written as one step (REV3): the driver taking the park up and a second answer,
         // arriving from two hosts, could both read it parked, and the answer land on a record going on.
@@ -479,14 +479,26 @@ public sealed partial class SessionLedger(
                     Session: null);
             }
 
-            var word = new SaidWord(NewWordId(), said, now, []);
-            var (note, parts) = AnsweredNote(session, said);
-            var answered = await sessions.KeepSaidAsync(id, word, note, inside, noteParts: parts).ConfigureAwait(false);
+            var answered = await KeepAnswerAsync(session, said, now, inside).ConfigureAwait(false);
             return new SessionAdvanceOutcome(
                 SessionAdvanceRefusal.None,
                 $"Answered session `{id}`: it carries on with `#{session.Quest}` at the driver's next look.",
                 answered);
         }, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>The answer a park keeps where the person gave no words of their own (ANSWER1b): what it goes on with.</summary>
+    private const string CarryOn = "carry on.";
+
+    /// <summary>
+    /// Keep <paramref name="said"/> as a park's answer, joining any before it (MSG1a), with its line on the note: inside the
+    /// store's lock, by a caller that found the record parked there.
+    /// </summary>
+    private Task<Session?> KeepAnswerAsync(Session parked, string said, DateTimeOffset now, CancellationToken inside)
+    {
+        var word = new SaidWord(NewWordId(), said, now, []);
+        var (note, parts) = AnsweredNote(parked, said);
+        return sessions.KeepSaidAsync(parked.Id, word, note, inside, noteParts: parts);
     }
 
     /// <summary>
