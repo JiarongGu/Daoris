@@ -188,6 +188,8 @@ with the version and date at release.
   session still holds it.
 - Answering one of a waiting session's go-aheads on its page no longer sends it on while another is still open;
   the page says which one it waits on.
+- A session branch discarded because its work is held elsewhere now keeps its commits at a recovery ref the
+  sentence names, and a tree holding files only it has is kept.
 
 The first version: doctrine that installs, is checked, and flows back.
 

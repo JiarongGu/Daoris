@@ -42,7 +42,7 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `answer` | `Program.cs:342` | `Program.cs:342` (inline) | — |
 | `sessions` | `Program.cs:353` | `Daoris.Desktop.Driver.Host/SessionsConsole.cs:8` SessionsConsole | stop `SessionsCommand.cs:133` · finish `SessionsCommand.cs:138` · decline `SessionsCommand.cs:145` · archive `SessionsCommand.cs:150` · unarchive `SessionsCommand.cs:159` · delete `SessionsCommand.cs:164` · say `SessionsCommand.cs:169` · go-on-new `SessionsCommand.cs:171` · start-from `SessionsCommand.cs:176` |
 | `history` | `Program.cs:361` | `Daoris.Desktop.Driver.Host/HistoryConsole.cs:11` HistoryConsole | clear `HistoryCommand.cs:54` |
-| `trees` | `Program.cs:368` | `Daoris.Desktop.Driver.Host/TreesConsole.cs:15` TreesConsole | list `TreesConsole.cs:116` · remove `TreesConsole.cs:140` · clean `TreesConsole.cs:154` · land `TreesConsole.cs:299` · hand `TreesConsole.cs:370` · state `TreesConsole.cs:426` · sync `TreesConsole.cs:228` |
+| `trees` | `Program.cs:368` | `Daoris.Desktop.Driver.Host/TreesConsole.cs:15` TreesConsole | list `TreesConsole.cs:116` · remove `TreesConsole.cs:140` · clean `TreesConsole.cs:154` · land `TreesConsole.cs:300` · hand `TreesConsole.cs:371` · state `TreesConsole.cs:427` · sync `TreesConsole.cs:229` |
 | `sync` | `Program.cs:374` | `Daoris.Desktop.Driver.Host/SyncConsole.cs:20` SyncConsole | status `SyncConsole.cs:30` · dismiss `SyncConsole.cs:31` |
 | `plugins install` | `Program.cs:381` | `Daoris.Desktop.Driver/PluginPackage.cs:395` PluginPackageCommand | — |
 | `update` | `Program.cs:388` | `Daoris.Desktop.Driver/UpdateCommand.cs:19` UpdateCommand | — |
