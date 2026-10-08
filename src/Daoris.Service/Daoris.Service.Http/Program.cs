@@ -20,6 +20,9 @@ using Daoris.Knowledge.Http;
 //                          Refused on a local host, which holds every workspace this machine wired.
 //   DAORIS_STOP_ON_INPUT_END  `1`: stop cleanly when standard input ends — how the desktop stops a
 //                          host it started (LOG2a). Unset, standard input is never opened.
+//   DAORIS_PERSON_KEY_ON_INPUT  `1`: the first line of standard input is this start's person key, which
+//                          gates the person's and the driver's doors (PERSONDOOR1a, D156). Unset, the
+//                          input is not read for one, and the loopback is trusted as before. Local only.
 //   DAORIS_MODE            local (default) or shared (D47 §3/§7). Shared is the team deployment:
 //                          EVERY /api route needs a minted key, no page is served (the remote is an
 //                          API until person-auth exists), and no machine path is ever answered.
@@ -43,6 +46,8 @@ using Daoris.Knowledge.Http;
 // loopback without shared mode refuses to start, so no third shape can exist by accident. Neither shape
 // takes a write from a web page it does not allow (ORIGIN1): a browser on this machine is on the loopback. And a
 // local host answers only its loopback names (ORIGIN2), since a website's name can be pointed at the loopback too.
+// Within the loopback, a local host its starter handed a person key opens the person's and the driver's doors only to
+// that key (PERSONDOOR1a, D156): every session Daoris starts is on the loopback too, as the same account.
 //
 // A REGISTRATION'S ROOT NEVER LEAVES THE MACHINE (D46). The filesystem path a repository registers is
 // answered only to loopback callers — the local driver — so a remote deployment never serves anyone's
@@ -135,6 +140,19 @@ if (Access.RefuseStartup(mode, urls, endpoints) is { } refusal)
     Console.Error.WriteLine(refusal);
     return 2;
 }
+
+// PERSONDOOR1a (D156): the person key, read from the first line of standard input when the starter asks, before the host
+// answers anyone. Its doors are gated by it below; a host asked and handed no key does not start, and one not asked keeps
+// today's trust (the person-door design §2.1). PersonKey says why the input, and why nothing ever writes the key down.
+var (personKey, personKeyRefusal) = PersonKey.FromInput(
+    mode, Environment.GetEnvironmentVariable(PersonKey.InputVariable), () => Console.In, PersonKey.Wait);
+if (personKeyRefusal is not null)
+{
+    Console.Error.WriteLine(personKeyRefusal);
+    return 2;
+}
+
+var personGate = new PersonGate(personKey, log);
 
 // The provider is built HOST-SIDE, not in Core: the domain holds `IVectorProvider` and nothing that
 // implements one, so a model never reaches it (D22, D24). What tier that produces is Core's business;
@@ -315,6 +333,16 @@ if (mode == ServiceMode.Local)
     });
 }
 
+// PERSONDOOR1a (D156 point 3): a local host handed its person key gates its doors by the route's class, before any route
+// runs: a read answers anyone; an agent's door answers a keyless call, judged as an agent's; the driver's own and the
+// person's alone want the key; a key from another start is refused at every door but a read. Every refusal is 403 with a
+// sentence and a code, and one `person.refused` line. The four forms a body makes are judged by their routes. A host handed
+// no key has no gate here, and trusts the loopback as before. PersonDoors holds the table and why each door is whose.
+if (personGate.Holds)
+{
+    app.Use(async (context, next) => await personGate.InvokeAsync(context, next));
+}
+
 // Shared mode gates EVERY route under /api, reads included (D47 §7): a remote serving the family's
 // accumulated knowledge to unauthenticated GETs would be the §5 leak with no key leaked. The message
 // never echoes what was presented; the prefix — the audit handle, non-secret by design — names an
@@ -359,13 +387,15 @@ if (mode == ServiceMode.Shared)
 }
 
 // There is deliberately no third credential gate. D36's interim single-key write gate was retired with
-// nothing deployed (D47 §7, as amended): local mode trusts the loopback outright — the OS account is the
+// nothing deployed (D47 §7, as amended): local mode trusts the loopback — the OS account is the
 // boundary (D21), and the startup refusal above keeps local mode ON the loopback — while shared mode
 // gates everything with minted keys. Two credential stories would drift, and the weaker would win. The
 // origin gate above is no credential: it tells a website's page from Daoris's own, which the loopback
-// trust never asked, since a browser on this machine is on the loopback too (ORIGIN1).
+// trust never asked, since a browser on this machine is on the loopback too (ORIGIN1). The person key
+// (D156) narrows the local trust rather than adding a story beside it: minted for each start, never
+// configured, read only by a local host, and enforced only by a host its starter handed one (PERSONDOOR1a).
 
-app.MapGet("/api/status", (ComposedService s) => new StatusResponse(
+app.MapGet("/api/status", (ComposedService s, string? prove) => new StatusResponse(
     Semantic: s.SemanticEnabled,
     Tier: s.SemanticEnabled ? "lexical + semantic" : "lexical only",
     // Said on every response, not only when it is absent. A caller with results has no way to know the
@@ -374,7 +404,10 @@ app.MapGet("/api/status", (ComposedService s) => new StatusResponse(
     Note: s.SemanticEnabled
         ? null
         : $"Set {ServiceOptions.ModelVariable} to enable semantic recall — it is what finds two "
-          + "repositories that reached the same conclusion in different words."));
+          + "repositories that reached the same conclusion in different words.",
+    // The proof of possession (PERSONDOOR1a, design §2.3): the shell hands its modules and the page the key only once the
+    // host it started proves it holds it, so a process that took the port first never learns it. None without a key.
+    Proof: string.IsNullOrEmpty(prove) ? null : personKey?.Prove(prove)));
 
 // Every cross-repository answer below takes `workspace` — the unit of sharing (D48 §4). Absent spans
 // every circle this deployment holds, which for a shared host is one by construction and for a local
@@ -537,6 +570,9 @@ app.MapPost("/api/quests", async (
             Short = body.Short,
             // The chain's review choice (REVIEWENV1b): the person's own at this door, with any words they give.
             Review = ReviewOf(body.Review),
+            // An agent's publish where the host holds a person key and the call carried none (PERSONDOOR1a, design §3.2):
+            // its review choice is judged as a connector's is (REVIEWENV1b3). With the key, the person's.
+            ByAgent = personGate.IsAgent(http),
         },
         DateTimeOffset.UtcNow, ct);
 
@@ -558,6 +594,10 @@ app.MapPost("/api/quests/{id}/respond", async (
 {
     // A done's answers (DRIFT1d): a number left out arrives as 0, a half left out blank, and the exchange refuses
     // each naming which — the same sentence every door gives.
+    // `whileOpen` (PAUSE1c) is an abandon's decline, which the driver sends on the person's press: the person's form of an
+    // agent's door, so it wants the key where the host holds one (PERSONDOOR1a, design §3.2).
+    if (personGate.Refused(http, PersonDoors.Respond, form: body.WhileOpen == true) is { } refusedForm) return refusedForm;
+
     var answers = (body.Answers ?? [])
         .Select(a => new QuestAnswer(a?.Requirement ?? 0, a?.Met, a?.Departed, a?.Quote))
         .ToList();
@@ -648,11 +688,17 @@ if (mode == ServiceMode.Local)
     // read from the step's tree, or the person records their own. LOCAL mode only, as the evidence door is: the commit is read
     // on the machine whose tree holds it, and the set-up travels from there as an operation (D68). No connector tool reaches
     // it, since a session never reports a commit.
+    // Both forms want the key where the host holds one (PERSONDOOR1a, design §3.2): naming a session, the driver's post of what
+    // that session said, which the session never reports of itself; naming none, the person's own.
     app.MapPost("/api/quests/{id}/set-up", async (
         ComposedService s, HttpContext http, string id, QuestSetUpRequest body, CancellationToken ct) =>
-        await ReviewAnswer(await s.Exchange.PostSetUpAsync(
+    {
+        if (personGate.Refused(http, PersonDoors.SetUp, form: body.Session is null) is { } refusedForm) return refusedForm;
+
+        return await ReviewAnswer(await s.Exchange.PostSetUpAsync(
             id, new QuestSetUpPost(body.Commit, body.Kind, body.Session, body.Look, body.Shows, body.Again), DateTimeOffset.UtcNow, ct),
-            s, http, ct));
+            s, http, ct);
+    });
 
     // The person's verdict on a set-up step, or their skip of a review (REVIEWENV1b, D154 point 8): LOCAL mode only, as the yes
     // is, and no connector tool reaches it, since the verdict is a look only the person has taken. A set-up named by half its
@@ -857,8 +903,11 @@ if (mode == ServiceMode.Local)
             }
             : null;
 
+        // Keyless where the host holds a person key, an agent's publish onto the ask, crediting the session it names, if any;
+        // with the key and no session, the person's choice of receiver (PERSONDOOR1a, design §3.2).
         return AskAnswer(
-            await s.Asks.PublishAsync(id, body.To, DateTimeOffset.UtcNow, ct, draft, body.Session), s, http);
+            await s.Asks.PublishAsync(id, body.To, DateTimeOffset.UtcNow, ct, draft, body.Session, byAgent: personGate.IsAgent(http)),
+            s, http);
     });
 
     app.MapPost("/api/asks/{id}/close", async (
