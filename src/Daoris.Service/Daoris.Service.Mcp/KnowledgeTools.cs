@@ -26,11 +26,12 @@ namespace Daoris.Knowledge.Mcp;
 /// </param>
 /// <param name="proposals">Where a proposal to change the rules is written (PERM2, D74) — under the home.</param>
 /// <param name="help">Where Ask Daoris's proposals are written (HELP1c, D89) — under the home.</param>
+/// <param name="opinions">Second opinions (XAGENT1c): what a reviewer says and what a working session answers.</param>
 [McpServerToolType]
 public sealed partial class KnowledgeTools(
     KnowledgeService service, QuestStore quests, QuestExchange exchange, AmbientWorkspace ambient,
     AskDesk? asks = null, IntakeScope? intake = null, RuleProposalBox? proposals = null,
-    SessionLedger? ledger = null, HelpProposalBox? help = null)
+    SessionLedger? ledger = null, HelpProposalBox? help = null, OpinionDesk? opinions = null)
 {
     /// <summary>
     /// Which circle this call answers from: what the caller named, or the workspace of the repository
