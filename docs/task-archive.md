@@ -12393,3 +12393,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **REVIEWENV1c2 — the review's doors stop saying nothing acts on it** (cli, driver, web-settings, web-shell; urgent after REVIEWENV1c). Every door still says *Declared only: nothing reads it yet… no landing waits for it* (`ReviewRules.DeclaredOnly`, the help room, the CLI's `REVIEW_DECLARED_ONLY`, `settings.review.says.declaredOnly`/`settings.review.saved`), which REVIEWENV1c made untrue — change them in one go, saying what now waits. Also: a `landing.unreviewed` note code (`NoteCodes`, both `note.json`, `noteLines.ts`); a handed section for the set-up step (`work.handed.section.*`, `HandedSections`); `work.sitting.CannotShow` in both catalogues. Contract: D154's REVIEWENV1c note. Proof: the twins' table rows, the help golden, vitest per language.
 
 **Outcome** 2026-10-07: the review's doors say what the gate does, from one `gate` table both twins hold (nothing said after a repository's `none`); the look's wait has its own `landing.unreviewed` note, the set-up step its own handed section, and `CannotShow` is worded in both catalogues. Follow-ups: REVIEWENV1c3, CANNOTSHOW1. Detail: D154's REVIEWENV1c2 note; commits d96207f3…b29723e5.
+
+
+## XAGENT1c2 — the connector default allows the opinion tools (2026-10-09, D155)
+
+> - [ ] **XAGENT1c2 — the connector default allows the opinion tools** (driver, cli; after XAGENT1c). `opinion_give` and `opinion_answer` join the `connector` default in both twins (`Permissions.cs`, `permissions.ts`), as `review_serve` did; the service answers each only for its own session. Contract: design §5.4, D155's XAGENT1c note. Proof: `PermissionRulesTests` and `permissions.test.ts`.
+
+**Outcome** 2026-10-07: the connector default allows `opinion_give` and `opinion_answer` in both twins, held by `PermissionRulesTests`' new theory and `permissions.test.ts`; the root README says what a session may do by default. Detail: commits 6738d256, 42615606.
