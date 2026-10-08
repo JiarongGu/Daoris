@@ -95,14 +95,20 @@ public sealed partial class SessionTrees
             if (!Holds(tree)) return Kept($"it is checked out at {tree}, which is not a session tree");
             if (busy is null) return Kept(unasked);
             if (busy.Contains(Normal(tree))) return Kept("a session still running or waiting holds its tree");
-            var (_, dirty, _) = await WorkingTree.GitAsync(tree, ["status", "--porcelain"], ct).ConfigureAwait(false);
-            if (!string.IsNullOrWhiteSpace(dirty)) return Kept($"its tree has {dirty.Trim().Split('\n').Length} path(s) uncommitted");
+            // Everything no commit holds, whatever git's settings hide (SQUASHTIDY1c): what removing the tree would destroy.
+            if (Directory.Exists(tree))
+            {
+                var holds = await HoldsAsync(tree, root, ct).ConfigureAwait(false);
+                if (holds is null) return Kept("git could not say what its tree holds");
+                if (holds.Uncommitted.Count > 0) return Kept($"its tree has {holds.Uncommitted.Count} path(s) uncommitted");
+                if (holds.Ignored.Count > 0) return Kept($"its tree holds {holds.IgnoredSaid}");
+            }
         }
 
         // 🔴 Judged a moment ago; removed only while it is still the commit judged.
         var (code, now, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct)
             .ConfigureAwait(false);
-        if (code != 0 || now.Trim() != tip) return Kept("it moved since it was judged");
+        if (code != 0 || now.Trim() != tip) return Kept(MovedSince);
 
         if (tree is not null)
         {
@@ -113,9 +119,10 @@ public sealed partial class SessionTrees
             }
         }
 
-        // -D, because the proof was made in this call; git's own -d asks only about the checkout's HEAD.
-        var (deleteCode, _, deleteErr) = await WorkingTree.GitAsync(root, ["branch", "-D", branch], ct).ConfigureAwait(false);
-        return deleteCode == 0 ? new(branch, true, tree is not null) : Kept($"git would not delete it: {FirstLine(deleteErr)}");
+        // The look above leaves a moment before the delete, so the delete itself compares (SQUASHTIDY1c); git's own -d asks
+        // only about the checkout's HEAD.
+        var stays = await DeleteJudgedAsync(root, branch, tip, ct).ConfigureAwait(false);
+        return stays is null ? new(branch, true, tree is not null) : Kept(stays);
     }
 
     /// <summary>What the rest of the tidy did, in the landing's words: what went, and what stayed and why.</summary>
@@ -234,6 +241,8 @@ public sealed partial class SessionTrees
     /// <remarks>
     /// Unforced it is the clean-up's proof (D88): it goes only where a branch of the person's holds every commit, or where its
     /// work is held by content (SQUASHTIDY1, <see cref="HeldByContentAsync"/>), and the refusal names the commits it would lose.
+    /// It deletes the branch only while it is the commit judged, and a content-held one's commits stay on a recovery ref the
+    /// sentence names (SQUASHTIDY1c).
     /// <paramref name="force"/> is the person saying it again, meaning it. The record
     /// forgets it once it is gone. <b>It asks no sessions</b>, so forced it would take a tree a live session holds: the
     /// person's doors reach it through <see cref="SessionBranchDiscard"/>, which keeps such a branch (LAND3c).
@@ -271,9 +280,15 @@ public sealed partial class SessionTrees
         }
 
         ContentHold? held = null;
+        string? kept = null;
         if (!force)
         {
-            var (logCode, unlanded, logErr) = await UnlandedLogAsync(root, branch, ct).ConfigureAwait(false);
+            // The commit judged, read once (SQUASHTIDY1c): every question below is asked of it, and the branch goes only while it
+            // is still that commit.
+            var (tipCode, tipOut, tipErr) = await WorkingTree.GitAsync(
+                root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}^{{commit}}"], ct).ConfigureAwait(false);
+            var judged = tipOut.Trim();
+            var (logCode, unlanded, logErr) = tipCode != 0 ? (tipCode, "", tipErr) : await UnlandedLogAsync(root, judged, ct).ConfigureAwait(false);
             if (logCode != 0)
             {
                 return new(false, $"Daoris cannot tell whether the work on `{branch}` is landed: {FirstLine(logErr)} "
@@ -286,19 +301,41 @@ public sealed partial class SessionTrees
                 var grewIn = Grown.All().LastOrDefault(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)
                                                                 && string.Equals(entry.Branch, branch, StringComparison.Ordinal))?.Workspace;
                 var line = (await LineAsync(root, repository, RemoteTarget.Workspace(grewIn), ct).ConfigureAwait(false)).Branch;
-                held = await HeldByContentAsync(root, $"refs/heads/{branch}", line, ct).ConfigureAwait(false);
+                held = await HeldByContentAsync(root, judged, line, LandedHere(repository), ct).ConfigureAwait(false);
                 if (held is null)
                 {
                     return new(false, $"`{branch}` holds commits no branch of yours holds:\n{unlanded.Trim()}\n"
                         + "If its work is not wanted — a failed or superseded attempt — say it again with --force to discard them.");
                 }
+
+                // SQUASHTIDY1c: the proof compared files, so the commits themselves are kept on a ref of their own first.
+                var (reference, why) = await KeepDiscardedAsync(root, branch, judged, ct).ConfigureAwait(false);
+                if (reference is null)
+                {
+                    return new(false, $"Daoris could not keep the commits on `{branch}` on a ref of their own ({why}), so it stays. "
+                        + "Say it again with --force to discard them.");
+                }
+
+                kept = reference;
+            }
+
+            var stays = await DeleteJudgedAsync(root, branch, judged, ct).ConfigureAwait(false);
+            if (stays is not null)
+            {
+                await DropKeptAsync(root, branch, kept, judged, ct).ConfigureAwait(false);
+                return new(false, $"`{branch}` stays: {stays}"
+                    + (stays == MovedSince ? ", so it holds work this removal did not judge." : "."));
             }
         }
+        else
+        {
+            var (deleteCode, _, deleteErr) = await WorkingTree.GitAsync(root, ["branch", "-D", branch], ct).ConfigureAwait(false);
+            if (deleteCode != 0) return new(false, $"git would not delete `{branch}`: {FirstLine(deleteErr)}");
+        }
 
-        var (deleteCode, _, deleteErr) = await WorkingTree.GitAsync(root, ["branch", "-D", branch], ct).ConfigureAwait(false);
-        if (deleteCode != 0) return new(false, $"git would not delete `{branch}`: {FirstLine(deleteErr)}");
         Forget(repository, branch);
-        return new(true, $"removed the session branch `{branch}` from `{repository}`" + (held is null ? "." : $": {held.Said}."));
+        return new(true, $"removed the session branch `{branch}` from `{repository}`" + (held is null ? "." : $": {held.Said}.")
+            + (kept is null ? "" : $" {ContentHold.KeptAt(branch, kept)}"));
     }
 
     /// <summary>The record forgets one branch; a record that could not be written only keeps a name no branch has.</summary>

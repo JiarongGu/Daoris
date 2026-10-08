@@ -203,8 +203,9 @@ internal static class TreesConsole
                 var done = await trees.CleanAsync(repositories, inUse).ConfigureAwait(false);
                 foreach (var result in done.Sessions)
                 {
+                    // A removal on content says where its commits stay (SQUASHTIDY1c); every other removal says nothing more.
                     Console.WriteLine($"  {(result.Removed ? "removed" : "kept   ")} {Describe(result.Item)}"
-                        + (result.Removed || result.Message == "kept" ? "" : $" — {result.Message}"));
+                        + ((result.Removed && result.Item.HeldBy is null) || result.Message == "kept" ? "" : $" — {result.Message}"));
                 }
 
                 foreach (var result in done.Landed)

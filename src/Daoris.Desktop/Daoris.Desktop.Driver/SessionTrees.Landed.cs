@@ -167,9 +167,9 @@ public sealed partial class SessionTrees
     /// <remarks>
     /// 🔴 <b>Judged over the whole set, then again right before each goes</b>, because the list is a fact about a
     /// moment and "inside another landed branch" is a fact about the set: the branches that are inside another
-    /// go before the one they are inside, and each re-judgment proves that one again. Removal is
-    /// <c>git branch -D</c> of exactly the branch judged, at the commit it was judged at, in the repository's
-    /// own checkout — no working tree, no other ref, and never a remote branch.
+    /// go before the one they are inside, and each re-judgment proves that one again. Removal deletes exactly
+    /// the branch judged, only while it is the commit it was judged at (<c>git update-ref -d</c> with that id,
+    /// SQUASHTIDY1c), in the repository's own checkout — no working tree, no other ref, and never a remote branch.
     /// </remarks>
     /// <param name="only">The branches the person saw listed to go, as <c>repository:branch</c>; null for every one the proof clears now.</param>
     public async Task<SweepDone> CleanAsync(
@@ -232,18 +232,18 @@ public sealed partial class SessionTrees
                     continue;
                 }
 
-                // -D, because the proof was made in this call; git's own -d asks only whether HEAD holds the
-                // commits, and a squash merge put none of them anywhere.
-                var (code, _, err) = await WorkingTree.GitAsync(root, ["branch", "-D", item.Branch], ct).ConfigureAwait(false);
-                if (code == 0)
+                // Only while it is still the commit judged (SQUASHTIDY1c): git's own -d asks only whether HEAD holds the
+                // commits, and a squash merge put none of them anywhere, so the proof made here is the one that counts.
+                var kept = await DeleteJudgedAsync(root, item.Branch, now.Tip, ct).ConfigureAwait(false);
+                if (kept is null)
                 {
                     removed.Add(item.Branch);
                     proven.Add(now.Item);
                 }
 
-                results.Add(code == 0
+                results.Add(kept is null
                     ? new(now.Item, true, "removed")
-                    : new(now.Item, false, $"git would not delete the branch: {FirstLine(err)}"));
+                    : new(now.Item, false, kept == MovedSince ? ChangedSince : kept));
             }
 
             // Gone, or no longer the landing's: never judged again — the name may be the person's now — and kept as a
@@ -462,10 +462,14 @@ public sealed partial class SessionTrees
     }
 
     /// <summary>The paths that differ between two commits, as git names them with renames split into their two paths; null where git could not say.</summary>
+    /// <remarks>
+    /// <c>--ignore-submodules=none</c> (SQUASHTIDY1c): <c>diff.ignoreSubmodules</c>, or a submodule's own <c>ignore</c> in its
+    /// configuration, hides a gitlink's change from porcelain <c>git diff</c>, and a proof that cannot see a path calls it the same.
+    /// </remarks>
     private static async Task<IReadOnlyList<string>?> NamesAsync(string root, string from, string to, CancellationToken ct)
     {
         var (code, output, _) = await WorkingTree.GitAsync(
-            root, ["diff", "--no-ext-diff", "--no-renames", "--name-only", "-z", from, to], ct).ConfigureAwait(false);
+            root, ["diff", "--no-ext-diff", "--no-renames", "--ignore-submodules=none", "--name-only", "-z", from, to], ct).ConfigureAwait(false);
         return code != 0 ? null : output.Split('\0', StringSplitOptions.RemoveEmptyEntries);
     }
 
