@@ -154,6 +154,12 @@ with the version and date at release.
 - Adding an API key or saving an account's model keeps what you entered until it is saved, and says a
   refusal there; a key added asks for its name and workspaces, as a sign-in does.
 - Answering a session that stopped to ask you no longer fails it: it carries on with your answer, once.
+- A session that ended with work still on its branch, even a failed one or one finished at a
+  checkpoint, offers *Accept…* on its page to land that work, and the Branches tab says so.
+- The window no longer redraws continuously for a pulsing status dot, and it logs when its own thread
+  is held, so a frozen title bar can be traced.
+- A quest left taken after you finished its session can be marked done by you, with a note, from its
+  page, from the session's *Finish…*, or with `daoris-driver quest done`.
 
 The first version: doctrine that installs, is checked, and flows back.
 

@@ -20,6 +20,7 @@
   "settings.sweep.kind.unknown": "Git could not tell what it holds, so it is kept.",
   "settings.sweep.kind.dirty": "Its tree has uncommitted work.",
   "settings.sweep.kind.inUse": "A session still running or waiting holds its tree.",
+  "settings.sweep.lands": "From session `{{session}}` ({{state}}), its tree still here: its page offers Accept, which lands it, as `daoris-driver trees land {{session}}` does.",
   "settings.sweep.clean": "Clean up {{count}} branch",
   "settings.sweep.clean_other": "Clean up {{count}} branches",
   "settings.sweep.look": "Look again",

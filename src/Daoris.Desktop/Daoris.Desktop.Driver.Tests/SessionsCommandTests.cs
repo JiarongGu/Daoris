@@ -329,6 +329,40 @@ public sealed class SessionsCommandTests : IDisposable
     }
 
     /// <summary>
+    /// LAND4: a session whose tree holds commits no branch of the person's holds offers its landing at the terminal as on the
+    /// screen: <c>--json</c> carries the reader's <c>lands</c> whole, and the listing's line names the branch, its tree and
+    /// the door that accepts it, whatever group the session rests in. A row with none says nothing of landing.
+    /// </summary>
+    [Fact]
+    public void A_session_with_commits_to_land_names_its_branch_its_tree_and_the_door()
+    {
+        var failed = new SessionGrouping("f41led00", SessionGroup.Ended, "failed") { Lands = new LandOffer("daoris/s-4e6837ed", "s-4e6837ed", 1, 0) };
+        var finished = new SessionGrouping("f1n1sh00", SessionGroup.Review, "completed")
+        {
+            Work = new TreeWork(2, 0), Lands = new LandOffer("daoris/s-56cb4d29", "s-56cb4d29", 2, null),
+        };
+        var bare = new SessionGrouping("n0th1ng0", SessionGroup.Ended, "failed");
+
+        using var answer = JsonDocument.Parse(SessionsCommand.Json([failed, bare]));
+        var rows = answer.RootElement.GetProperty("sessions").EnumerateArray().ToList();
+        var lands = rows[0].GetProperty("lands");
+        Assert.Equal(("daoris/s-4e6837ed", "s-4e6837ed", 1, 0),
+            (lands.GetProperty("branch").GetString(), lands.GetProperty("tree").GetString(), lands.GetProperty("commits").GetInt32(),
+                lands.GetProperty("uncommitted").GetInt32()));
+        Assert.Equal(JsonValueKind.Null, rows[1].GetProperty("lands").ValueKind);
+
+        var record = new SessionRecord("f41led00", "engine", "failed") { Quest = "q1" };
+        Assert.Contains(
+            "1 commit on daoris/s-4e6837ed in its tree s-4e6837ed, not landed: daoris-driver trees land f41led00",
+            SessionsCommand.Facts(failed, record));
+        Assert.Contains("2 commits to review", SessionsCommand.Facts(finished, record with { Id = "f1n1sh00", State = "completed" }));
+        Assert.Contains(
+            "2 commits on daoris/s-56cb4d29 in its tree s-56cb4d29, not landed: daoris-driver trees land f1n1sh00",
+            SessionsCommand.Facts(finished, record with { Id = "f1n1sh00", State = "completed" }));
+        Assert.DoesNotContain(SessionsCommand.Facts(bare, record with { Id = "n0th1ng0" }), fact => fact.Contains("land", StringComparison.Ordinal));
+    }
+
+    /// <summary>
     /// §7.1 rule 1–3: a session another process on this machine runs is stopped through a request; the loop that runs it
     /// takes it, and the verb says what happened once the record moved.
     /// </summary>
@@ -429,6 +463,52 @@ public sealed class SessionsCommandTests : IDisposable
         var (declined, _) = await RunAsync(declining, ["decline", "p4rk3d00", "--reason", "Not this way."]);
         Assert.Equal(0, declined);
         Assert.Equal(("declined", "Not this way."), (declining.State("p4rk3d00"), declining.Note("p4rk3d00")));
+    }
+
+    /// <summary>
+    /// 🔴 QUESTCLOSE1 (D126's note): the owner finished two driven sessions at a checkpoint on the install, and each quest
+    /// stayed taken with nothing to close it. A finish at a checkpoint leaves its quest taken, and the terminal says so right
+    /// after it with the door that closes it; the person's done through that door closes the quest with their words.
+    /// </summary>
+    [Fact]
+    public async Task A_finish_at_a_checkpoint_leaves_its_quest_closable_and_the_persons_done_closes_it_with_their_note()
+    {
+        var ledger = Family();
+
+        var (exit, said) = await RunAsync(ledger, ["finish", "p4rk3d00"]);
+
+        Assert.Equal(0, exit);
+        Assert.Equal(("completed", "The person finished this at a checkpoint."), (ledger.State("p4rk3d00"), ledger.Note("p4rk3d00")));
+        Assert.Equal("Taken", ledger.QuestStatus("q1"));
+        Assert.Contains("  its quest #q1 is still taken: daoris-driver quest done q1 [--note \"…\"] marks it done as yours.\n", said);
+
+        using var service = ledger.Client();
+        var output = new StringWriter();
+        var ask = QuestDoneCommand.Read(["done", "q1", "--note", "The write-up is in the shared folder."], out var problem);
+        Assert.True(problem is null, problem);
+        var done = await QuestDoneCommand.RunAsync(ask!, service, output);
+
+        Assert.Equal(0, done);
+        Assert.Equal("Done", ledger.QuestStatus("q1"));
+        // Their words go to the person's own door, never respond's: the service writes the sentence that says the done was
+        // theirs before them (QuestPersonDoneTests), and answers none of the quest's requirements.
+        Assert.Equal("The write-up is in the shared folder.", ledger.DoneWords("q1"));
+        Assert.Equal("daoris-driver: Quest `#q1` is now Done: you marked it done.\n", output.ToString().ReplaceLineEndings("\n"));
+        // The session's record still says the person finished it.
+        Assert.Equal("The person finished this at a checkpoint.", ledger.Note("p4rk3d00"));
+    }
+
+    /// <summary>A finish whose quest is already closed, and a decline, say nothing of closing it: there is nothing to close.</summary>
+    [Fact]
+    public async Task A_finish_whose_quest_is_closed_and_a_decline_name_no_door_to_close_it()
+    {
+        var closed = Family();
+        closed.CloseQuest("q1");
+        var (_, finished) = await RunAsync(closed, ["finish", "p4rk3d00"]);
+        var (_, declined) = await RunAsync(Family(), ["decline", "p4rk3d00", "--reason", "Not this way."]);
+
+        Assert.DoesNotContain("quest done", finished);
+        Assert.DoesNotContain("quest done", declined);
     }
 
     /// <summary>Finish and decline answer a session that waits on you; an intake is answered through its ask.</summary>
@@ -604,6 +684,15 @@ public sealed class SessionsCommandTests : IDisposable
 
         public bool Interrupted(string id) { lock (_gate) return (bool?)Of(id)["interrupted"] ?? false; }
 
+        private JsonObject QuestOf(string id) => _quests.Single(each => (string?)each["id"] == id);
+
+        public string QuestStatus(string id) { lock (_gate) return (string)QuestOf(id)["status"]!; }
+
+        /// <summary>The words the person's done door was given for a quest (QUESTCLOSE1), or null where it was not asked.</summary>
+        public string? DoneWords(string id) { lock (_gate) return (string?)QuestOf(id)["doneWords"]; }
+
+        public void CloseQuest(string id) { lock (_gate) QuestOf(id)["status"] = "Done"; }
+
         public void Move(string id, string state, string note)
         {
             lock (_gate)
@@ -640,6 +729,27 @@ public sealed class SessionsCommandTests : IDisposable
                         // A checkout here, so a plan the listing makes can start what this machine drives (MSG1f3's cool-off).
                         ["root"] = "/work/engine",
                     }));
+                }
+
+                // The person's done door (QUESTCLOSE1): an open or taken quest closes, as the service's own does.
+                if (request.Method == HttpMethod.Post && path.StartsWith("/api/quests/", StringComparison.Ordinal)
+                    && path.EndsWith("/done", StringComparison.Ordinal))
+                {
+                    var quest = QuestOf(Uri.UnescapeDataString(path["/api/quests/".Length..^"/done".Length]));
+                    if ((string)quest["status"]! is not ("Open" or "Taken"))
+                    {
+                        return Answer(HttpStatusCode.Conflict, new JsonObject
+                        {
+                            ["error"] = $"Quest `#{quest["id"]}` is {quest["status"]} — a closed quest does not move; a new ask is a new title.",
+                        });
+                    }
+
+                    quest["status"] = "Done";
+                    quest["doneWords"] = (string?)body?["note"];
+                    return Answer(HttpStatusCode.OK, new JsonObject
+                    {
+                        ["quest"] = quest.DeepClone(), ["message"] = $"Quest `#{quest["id"]}` is now Done: you marked it done.",
+                    });
                 }
 
                 var rest = path["/api/sessions/".Length..];

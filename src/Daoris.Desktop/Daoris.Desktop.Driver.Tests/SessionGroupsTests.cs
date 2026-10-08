@@ -478,6 +478,78 @@ public sealed class SessionGroupsTests
             {
                 Also = row => Assert.False(row.Deletable),
             },
+
+        // LAND4: a session that ended with commits no branch of the person's holds offers its landing, whatever its ending and
+        // whichever group it rests in, naming its branch and its tree; the group is the reader's as before.
+        ["a session finished at a checkpoint with commits offers its landing"] =
+            new(Look([Record("s1", "completed", "q1", Tree)], [Taken], trees: [(Tree, new TreeWork(2, 0))]), "s1", SessionGroup.Review, "completed")
+            {
+                Also = row => Assert.Equal(new LandOffer("daoris/s-1a2b3c4d", "s-1a2b3c4d", 2, 0), row.Lands),
+            },
+        ["a failed session with commits its quest goes back into offers its landing, and rests ended"] =
+            new(Look([Record("s1", "failed", "q1", Tree)], [Taken], [Verdict(Taken, StartVerdict.AtCapacity)], [(Tree, new TreeWork(3, 1))]),
+                "s1", SessionGroup.Ended, "failed")
+            {
+                Also = row => Assert.Equal(new LandOffer("daoris/s-1a2b3c4d", "s-1a2b3c4d", 3, 1), row.Lands),
+            },
+        ["a parked quest's last session with commits offers its landing beside Try again"] =
+            new(Look([Record("s1", "failed", "q1", Tree)], [Taken], [Verdict(Taken, StartVerdict.Exhausted)], [(Tree, new TreeWork(1, 0))]),
+                "s1", SessionGroup.You, ShownState.Parked)
+            {
+                Also = row => Assert.Equal(1, row.Lands!.Commits),
+            },
+        ["a stopped session with commits offers its landing"] =
+            new(Look([Record("s1", "stopped", "q1", Tree)], [Taken], [Verdict(Taken, StartVerdict.Stopped)], [(Tree, new TreeWork(2, 0))]),
+                "s1", SessionGroup.Review, "stopped")
+            {
+                Also = row => Assert.Equal(2, row.Lands!.Commits),
+            },
+        ["the asker of a waiting quest with commits offers its landing while it resumes later"] =
+            new(Look([Record("s1", "completed", "q1", Tree)], [Asking, Question], [Verdict(Asking, StartVerdict.Waiting)], [(Tree, new TreeWork(3, 0))]),
+                "s1", SessionGroup.Later, ShownState.AwaitingReply)
+            {
+                Also = row => Assert.Equal(3, row.Lands!.Commits),
+            },
+        ["a session with no commits offers no landing"] =
+            new(Look([Record("s1", "failed", "q1", Tree)], [Taken], [Verdict(Taken, StartVerdict.Start)], [(Tree, new TreeWork(0, 0))]),
+                "s1", SessionGroup.Ended, "failed")
+            {
+                Also = row => Assert.Null(row.Lands),
+            },
+        ["uncommitted changes alone offer no landing: a branch would leave them behind"] =
+            new(Look([Record("s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(0, 2))]), "s1", SessionGroup.Review, "completed")
+            {
+                Also = row => Assert.Null(row.Lands),
+            },
+        ["commits git could not count offer no landing, though they stay to review"] =
+            new(Look([Record("s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(null, 0))]), "s1", SessionGroup.Review, "completed")
+            {
+                Also = row => Assert.Null(row.Lands),
+            },
+        ["an earlier session on a tree offers no landing: the newest stands for it"] =
+            new(Look([Record("s1", "failed", "q1", Tree), Record("s2", "failed", "q1", Tree, at: 10)], [Taken], [Verdict(Taken, StartVerdict.Start)],
+                    [(Tree, new TreeWork(2, 0))]),
+                "s1", SessionGroup.Ended, "failed")
+            {
+                Also = row => Assert.Null(row.Lands),
+            },
+        ["a tree a live session holds offers no landing"] =
+            new(Look([Record("s1", "failed", "q1", Tree), Record("s2", "working", "q1", Tree, at: 10)], [Taken], trees: [(Tree, new TreeWork(2, 0))]),
+                "s1", SessionGroup.Ended, "failed")
+            {
+                Also = row => Assert.Null(row.Lands),
+            },
+        ["words going on in its tree offer no landing: it is working again"] =
+            new(Look([Record("s1", "completed", "q1", Tree, said: ["w1"])], [Done], [GoesOn(Done)], [(Tree, new TreeWork(2, 0))]),
+                "s1", SessionGroup.Working, ShownState.GoingOn)
+            {
+                Also = row => Assert.Null(row.Lands),
+            },
+        ["a teammate's record offers no landing: its tree is on its machine"] =
+            new(Look([Record("laptop/s1", "failed", "q1", Tree)], [Taken], trees: [(Tree, new TreeWork(3, 0))]), "laptop/s1", SessionGroup.Ended, "failed")
+            {
+                Also = row => Assert.Null(row.Lands),
+            },
     };
 
     public static TheoryData<string> CaseNames => [.. Cases.Keys];
@@ -546,11 +618,12 @@ public sealed class SessionGroupsTests
     }
 
     /// <summary>
-    /// git is asked only of a tree the reader would put to review: an ended session's own tree, this home's, the newest
-    /// on it, held by nothing live and gone back into by no quest. A teammate's tree is on their machine.
+    /// git is asked only of a tree whose work the reader could put to review or offer to land: an ended session's own tree,
+    /// this home's, the newest on it and held by nothing live. LAND4 judges a tree its quest goes back into too, a cut-off's
+    /// and a parked quest's, since its commits are offered to land whatever its ending. A teammate's tree is on their machine.
     /// </summary>
     [Fact]
-    public void Only_a_tree_that_could_be_to_review_is_judged()
+    public void Only_a_tree_whose_work_could_be_reviewed_or_landed_is_judged()
     {
         const string carried = "X:/daoris/trees/aurora/engine/s-carried";
         const string busy = "X:/daoris/trees/aurora/engine/s-busy";
@@ -579,7 +652,7 @@ public sealed class SessionGroupsTests
 
         var judged = SessionGroups.TreesToJudge(look, tree => tree.StartsWith("X:/daoris/trees/", StringComparison.OrdinalIgnoreCase));
 
-        Assert.Equal([SessionGroups.Normal(Tree), held], judged.Select(SessionGroups.Normal), StringComparer.OrdinalIgnoreCase);
+        Assert.Equal([SessionGroups.Normal(Tree), carried, parked, held], judged.Select(SessionGroups.Normal), StringComparer.OrdinalIgnoreCase);
         // Asked for one session, only its tree.
         Assert.Empty(SessionGroups.TreesToJudge(look, _ => true, only: ["bare", "old"]));
     }

@@ -340,7 +340,8 @@ public sealed partial class DriverModule
             ? [.. named.EnumerateArray().Where(id => id.ValueKind == JsonValueKind.String).Select(id => id.GetString()!).Distinct(StringComparer.Ordinal)]
             : null;
 
-    private static object Grouped(SessionGrouping row) => new
+    /// <summary>One row of <c>SESSION_GROUPS</c>, field for field what <c>daoris-driver sessions --json</c> prints (SESSUX1g). Public, as <see cref="SweepRow"/> is, so its shape is tested without a service.</summary>
+    public static object Grouped(SessionGrouping row) => new
     {
         row.Session,
         row.Group,
@@ -359,6 +360,9 @@ public sealed partial class DriverModule
         Holds = row.Holds is { } holds ? new { holds.Why, holds.Reason, holds.Repository, holds.Until } : null,
         // SESSUX1f (D126 §5.4): *Delete…* is offered only where it would be taken.
         row.Deletable,
+        // LAND4: what its own tree offers to land, whatever group it rests in, which its page offers Accept beside. The tree's
+        // name, never its path.
+        Lands = row.Lands is { } lands ? new { lands.Branch, lands.Tree, lands.Commits, lands.Uncommitted } : null,
     };
 
     private static object Mark(ArchiveMark mark) => new { mark.Session, mark.At };

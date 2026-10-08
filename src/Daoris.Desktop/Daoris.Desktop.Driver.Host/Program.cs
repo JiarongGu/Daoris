@@ -83,7 +83,11 @@ using Daoris.Driver;
 //   quest accept <id>
 //                 accept a done's departure from what you required (DRIFT1d, D133 §4): what the departure
 //                 held — the chain's next step, a quest waiting on it — goes on, and the yes travels like any
-//                 verb. Nothing else answers a quest here, since a quest is answered by the session that takes it.
+//                 verb. A quest is otherwise answered by the session that takes it, bar the person's done below.
+//   quest done <id> [--note "…"]
+//                 mark an open or taken quest done as yours (QUESTCLOSE1, D126's note): what a finish at a checkpoint
+//                 that left its quest taken names. Its record says you marked it done, with your words, and it answers
+//                 none of its requirements one by one. The quest page's Mark done… is the other door.
 //   quest check <id> [--commit <sha>]
 //                 read a done's evidence again (EVID1b, D144 §3, §5): each path a met requirement names, at the commit
 //                 a driven end here read, or the one named, which must be that commit or come after it on the same
@@ -300,10 +304,26 @@ try
             return await Daoris.Driver.Host.QuestCheckConsole.RunAsync(questArgs, log);
         }
 
+        // The person marks a quest done (QUESTCLOSE1, D126's note, D50): the quest page's *Mark done…* is the other door, and a
+        // finish at a checkpoint that left its quest taken names this one.
+        if (QuestDoneCommand.Asks(questArgs))
+        {
+            if (QuestDoneCommand.Read(questArgs, out var doneProblem) is not { } doneAsk)
+            {
+                Console.Error.WriteLine($"daoris-driver: {doneProblem}");
+                Console.Error.WriteLine(QuestDoneCommand.Usage);
+                return 2;
+            }
+
+            using var doneClient = ServiceClient.FromEnvironment();
+            return await QuestDoneCommand.RunAsync(doneAsk, doneClient, Console.Out);
+        }
+
         if (questArgs is not [("delete" or "accept") and var verb, var questId])
         {
             Console.Error.WriteLine(
-                "usage: daoris-driver quest delete <id>  ·  quest accept <id>  ·  quest pause <id>  ·  quest resume <id>  ·  "
+                "usage: daoris-driver quest delete <id>  ·  quest accept <id>  ·  quest done <id> [--note \"…\"]  ·  "
+                + "quest pause <id>  ·  quest resume <id>  ·  "
                 + "quest abandon <id> [--reason \"…\" --yes]  ·  quest clear <id> [--failed] [--yes]  ·  "
                 + "quest check <id> [--commit <sha>]");
             return 2;

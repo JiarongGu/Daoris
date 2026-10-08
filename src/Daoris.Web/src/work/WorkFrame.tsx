@@ -3,13 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { SessionConsole } from '../SessionConsole';
 import { sentence } from '../format';
 import { buildChain } from '../map/chain';
-import { useAnswerSession, useAsks, useQuests, useRegistry, useSessions } from '../queries';
+import { useAnswerSession, useAsks, usePersonDone, useQuests, useRegistry, useSessions } from '../queries';
 import {
   type TurnStop, useCancelTurn, useEndChat, useHarnesses, useResolveSession, useSendMessage,
   NO_TURNS, useChatTurns, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionStreams, useSessionWhere,
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
-  useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch,
+  useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree,
 } from '../shell';
 import { sayDiscard } from '../settings/Sweep';
 import { doorOf, toolOf } from '../tools';
@@ -32,7 +32,7 @@ import { SessionConversation } from './SessionConversation';
 import type { Usage } from './conversation';
 import { isIntake, ownTree, sessionOrigin, sessionTitle } from './identity';
 import { doorLabel } from '../tools';
-import type { Resolution } from './AwaitingPerson';
+import type { QuestClose, Resolution } from './AwaitingPerson';
 import { Composer } from './Composer';
 import { DiffPane } from './DiffPane';
 import { useDraft } from './drafts';
@@ -280,6 +280,8 @@ export function WorkFrame({
 
   const startChat = useStartChat();
   const resolve = useResolveSession();
+  // The person's done on the quest a finish at a checkpoint leaves (QUESTCLOSE1): the service's own door for it.
+  const personDone = usePersonDone();
   const answer = useAnswerSession();
   const send = useSendMessage();
   const end = useEndChat();
@@ -588,12 +590,21 @@ export function WorkFrame({
 
   // The person's answer to a parked session (design §4). The refusal — a move that is not theirs,
   // a decline with nothing in it — is the host's own sentence and reaches them word for word.
-  const onResolve = (state: Resolution, note: string | null) => {
+  // A finish that closes its quest (QUESTCLOSE1) sends the person's done once the finish stood: the session first, as the
+  // driver moves the process before the record, then the quest, whose refusal is the service's sentence, the finish kept.
+  const onResolve = (state: Resolution, note: string | null, close?: QuestClose) => {
     if (!attended) return;
+    const closing = state === 'completed' && close?.as === 'done' ? attended.quest ?? null : null;
     resolve.mutate({ id: attended.id, state, note: note ?? undefined }, {
-      onSuccess: () => notify(t('work.awaiting.resolved', {
-        id: attended.id, state: t(`sessionState.${state}`),
-      })),
+      onSuccess: () => {
+        notify(t('work.awaiting.resolved', { id: attended.id, state: t(`sessionState.${state}`) }));
+        if (closing) {
+          personDone.mutate({ id: closing, note: close!.note }, {
+            onSuccess: (result) => notify(result.message),
+            onError: failure(notify),
+          });
+        }
+      },
       onError: failure(notify),
     });
   };
@@ -958,6 +969,11 @@ export function WorkFrame({
 
   // The attended session's page header (§3.2): its acts by the one rule, its stop asking under it (§3.3).
   const grouping = attended ? (groups.data ?? []).find((row) => row.session === attended.id) ?? null : null;
+  // What its own tree offers to land, whatever its ending (LAND4), as the driver's reader said it, and where accepting would
+  // put it: the review's own plan, asked only where there is something to land, under the review's key.
+  const lands = attended && here && grouping?.lands ? grouping.lands : null;
+  const landing = useLanding(lands ? attended!.id : null);
+  const land = useLandSessionTree();
   const attendedFacts: ActFacts | null = attended
     ? { session: attended, quest, grouping, root: rootOf(attended.repository), where: where[attended.id] }
     : null;
@@ -1181,7 +1197,7 @@ export function WorkFrame({
             // An agent on the roster has accounts, so a record naming none ran on the tool's own sign-in (D125 §3.7).
             ownSignIn={Boolean(attended && roster.some((row) => row.harness === attended.adapter))}
             nameOf={nameOf}
-            resolving={resolve.isPending || answer.isPending || parkGoAhead.isPending}
+            resolving={resolve.isPending || answer.isPending || parkGoAhead.isPending || personDone.isPending}
             onResolve={here ? onResolve : undefined}
             onAnswerSession={here && !answering ? onAnswerSession : undefined}
             onAnswerAsk={here ? onAnswerAsk : undefined}
@@ -1204,6 +1220,21 @@ export function WorkFrame({
               })
               : undefined}
             discardingBranch={discardBranch.isPending}
+            // LAND4: commits its tree holds, offered to land beside what it left; the press is the review's Accept, its
+            // sentence said once it landed and a refusal said inside the ask (UXFIX2).
+            lands={lands}
+            landing={landing.data}
+            onLand={lands && attended ? (answered) => land.mutate(attended.id, {
+              onSuccess: (result) => {
+                if (!result.done) {
+                  answered.refused(result.message);
+                  return;
+                }
+                notify(result.message);
+                answered.done();
+              },
+              onError: (error) => answered.refused(sentence(error)),
+            }) : undefined}
             trace={attended && trace.available ? {
               open: tracing === attended.id,
               onToggle: () => setTracing(tracing === attended.id ? null : attended.id),

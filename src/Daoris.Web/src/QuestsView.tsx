@@ -7,7 +7,8 @@ import { sentence } from './format';
 import { buildChain } from './map/chain';
 import { askItem, questsItem } from './opener';
 import {
-  useAcceptQuest, useDeleteQuest, useDismissConflict, usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions,
+  useAcceptQuest, useDeleteQuest, useDismissConflict, usePersonDone, usePublishQuest, useQuests, useRegistry, useRespondQuest,
+  useSessions,
 } from './queries';
 import { EMPTY_QUEST, QuestComposer, type QuestDraft } from './quests/QuestComposer';
 import { QuestList } from './quests/QuestList';
@@ -143,6 +144,8 @@ export function useQuestsView({
   const remove = useDeleteQuest();
   // The person's yes to a done's departure (DRIFT1d2): the service's accept door, `daoris-driver quest accept`'s twin.
   const accept = useAcceptQuest();
+  // The person's done (QUESTCLOSE1): the service's own door for it, `daoris-driver quest done`'s twin.
+  const personDone = usePersonDone();
   // The chosen quest's work on this machine (PAUSE1e, D132 §7.1): its plan while Quests is in front, and the three presses.
   const work = useWorkPlan(item && 'quest' in item ? { scope: 'quest', id: item.quest } : null, { enabled: active });
   const wiring = useRemotes().data;
@@ -186,7 +189,7 @@ export function useQuestsView({
   // Known to be nobody, not merely not loaded yet: a composer that flashed "nobody" would be a lie.
   const nobody = registry.data !== undefined && adopters.length === 0;
   const target = (registry.data ?? []).find((row) => row.repository === draft.to);
-  const busy = publish.isPending || respond.isPending || remove.isPending || accept.isPending || reading;
+  const busy = publish.isPending || respond.isPending || remove.isPending || accept.isPending || personDone.isPending || reading;
   // A quest's lanes as its repository names them (D115 §2.2): the id, and its title where the registration gives
   // one. The ids are the repository's words, so they are shown as it spells them.
   const laneNames = (quest: Quest) => {
@@ -229,7 +232,21 @@ export function useQuestsView({
   };
 
   // The page stays on the quest as it now stands: a take or a done moves it, and its page says so.
-  const onRespond = (quest: Quest, action: 'take' | 'done' | 'decline', why: string | null = null) =>
+  const onRespond = (quest: Quest, action: 'take' | 'done' | 'decline', why: string | null = null, answered?: Answered) => {
+    // The person's done (QUESTCLOSE1) goes to its own door with their words, told back to its ask (UXFIX2): a refusal is said
+    // inside it, and the page stays on the quest, since nothing happened to it.
+    if (action === 'done') {
+      personDone.mutate({ id: quest.id, note: why }, {
+        onSuccess: (result) => {
+          notify(result.message);
+          answered?.done();
+          setHeld(result.quest);
+        },
+        onError: (error) => (answered ? answered.refused(sentence(error)) : failure(notify)(error)),
+      });
+      return;
+    }
+
     respond.mutate({ id: quest.id, action, reason: why }, {
       onSuccess: (result) => {
         notify(result.message);
@@ -237,6 +254,7 @@ export function useQuestsView({
       },
       onError: failure(notify),
     });
+  };
 
   // A person's dismissal (SYNC6c): the quest itself did not move — only what it was waiting on.
   const onDismiss = (quest: Quest, machine: string, sequence: number) =>
@@ -343,7 +361,7 @@ export function useQuestsView({
         granting={trust.isPending}
         dismissing={dismiss.isPending}
         accepting={accept.isPending}
-        onRespond={(action, reason) => onRespond(quest, action, reason ?? null)}
+        onRespond={(action, reason, answered) => onRespond(quest, action, reason ?? null, answered)}
         // The service's own door, so a browser on this machine says yes as the desktop does (D50).
         onAccept={() => onAccept(quest)}
         onDelete={(answered) => onDelete(quest, answered)}

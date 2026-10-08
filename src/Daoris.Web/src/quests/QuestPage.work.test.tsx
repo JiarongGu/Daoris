@@ -56,7 +56,7 @@ describe('pausing and abandoning a quest', () => {
   it('offers Pause… and Abandon… in its ⋯ beside Decline…, where the plan says they apply', async () => {
     page({ work: door() });
     expect(headerActs()).toEqual(['Take', 'Decline…', 'More actions']);
-    expect(await foldedActs()).toEqual(['Mark done', 'Pause…', 'Abandon…', 'Copy quest ID']);
+    expect(await foldedActs()).toEqual(['Mark done…', 'Pause…', 'Abandon…', 'Copy quest ID']);
   });
 
   it('asks once before a pause that stops its running session, then pauses', async () => {
@@ -143,7 +143,7 @@ describe('pausing and abandoning a quest', () => {
     await i18n.changeLanguage('zh');
     page({ work: door() });
     expect(headerActs()).toEqual(['接下', '谢绝…', '更多操作']);
-    expect(await foldedActs()).toEqual(['标为完成', '暂缓…', '放弃…', '复制委托 ID']);
+    expect(await foldedActs()).toEqual(['标为完成…', '暂缓…', '放弃…', '复制委托 ID']);
   });
 });
 
@@ -169,7 +169,7 @@ describe("a quest's page on a right-click", () => {
     withMenus({ work: door() });
     onPage();
     expect(await menuActs('Actions for Expose a streaming budget on the chunk API'))
-      .toEqual(['Take', 'Mark done', 'Pause…', 'Decline…', 'Abandon…', 'Copy quest ID']);
+      .toEqual(['Take', 'Mark done…', 'Pause…', 'Decline…', 'Abandon…', 'Copy quest ID']);
   });
 
   it('presses each as its button does: Take responds, Decline… asks its reason under the header', async () => {
@@ -220,14 +220,14 @@ describe("a quest's page on a right-click", () => {
   it('a link on the page comes first, and the quest’s acts after it', async () => {
     withMenus({});
     rightClick(screen.getByRole('link', { name: 'https://tickets.example/T-1' }));
-    expect(await menuActs()).toEqual(['Open', 'Copy link', 'Take', 'Mark done', 'Decline…', 'Copy quest ID']);
+    expect(await menuActs()).toEqual(['Open', 'Copy link', 'Take', 'Mark done…', 'Decline…', 'Copy quest ID']);
   });
 
   it('names them in 中文', async () => {
     await i18n.changeLanguage('zh');
     withMenus({ work: door() });
     onPage();
-    expect(await menuActs()).toEqual(['接下', '标为完成', '暂缓…', '谢绝…', '放弃…', '复制委托 ID']);
+    expect(await menuActs()).toEqual(['接下', '标为完成…', '暂缓…', '谢绝…', '放弃…', '复制委托 ID']);
   });
 });
 

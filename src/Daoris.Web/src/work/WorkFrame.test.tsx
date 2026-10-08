@@ -2074,7 +2074,8 @@ describe('clearing a parked session', () => {
     show('p4rk3d00');
 
     expect(await screen.findByText(/I recommend the second/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Finish' })).toBeInTheDocument();
+    // Its quest is still open, so its finish asks what becomes of it first (QUESTCLOSE1).
+    expect(screen.getByRole('button', { name: 'Finish…' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Decline…' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Stop session' })).toBeNull();
     expect(within(screen.getByRole('group', { name: 'Session actions' })).getByRole('button', { name: 'Stop…' })).toBeInTheDocument();
@@ -2123,13 +2124,68 @@ describe('clearing a parked session', () => {
     expect(screen.getAllByRole('button', { name: 'Stop…' })).toHaveLength(1);
   });
 
-  it('finishes it over the driver, with no note the person did not write', async () => {
+  it('finishes it over the driver, with no note the person did not write, and leaves its quest as it is', async () => {
+    const fetched = vi.fn(async (input: RequestInfo | URL) => respond(String(input)));
+    vi.stubGlobal('fetch', fetched);
     show('p4rk3d00');
-    await userEvent.click(await screen.findByRole('button', { name: 'Finish' }));
+    // Its quest is still open, so the finish asks what becomes of it first (QUESTCLOSE1), leaving it as it is by default.
+    await userEvent.click(await screen.findByRole('button', { name: 'Finish…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Finish' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RESOLVE_SESSION', {
       payload: { id: 'p4rk3d00', state: 'completed' },
     });
+    expect(fetched.mock.calls.some(([url]) => String(url).endsWith('/done'))).toBe(false);
+  });
+
+  /**
+   * QUESTCLOSE1 (D126's note): on the install a finish at a checkpoint left its quest taken with nothing to close it. Marked
+   * done in the same act, the finish goes over the driver first, then the person's done goes to its quest's own door with
+   * their words, and both are said.
+   */
+  it("finishes it over the driver, then marks its quest done as the person's with their note", async () => {
+    const posted: { url: string; body: unknown }[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (init?.method === 'POST' && url === '/api/quests/abc123/done') {
+        posted.push({ url, body: JSON.parse(String(init.body)) });
+        return Response.json({ quest: { ...QUESTS[0], status: 'Done' }, message: 'Quest `#abc123` is now Done: you marked it done.' });
+      }
+      return respond(url);
+    }));
+    const notify = vi.fn();
+    show('p4rk3d00', notify);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Finish…' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'Mark it done as yours' }));
+    await userEvent.type(screen.getByLabelText(/your note on the quest/), 'The write-up is in the shared folder.');
+    await userEvent.click(screen.getByRole('button', { name: 'Finish' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RESOLVE_SESSION', {
+      payload: { id: 'p4rk3d00', state: 'completed' },
+    });
+    await waitFor(() => expect(posted).toEqual([{ url: '/api/quests/abc123/done', body: { note: 'The write-up is in the shared folder.' } }]));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Quest `#abc123` is now Done: you marked it done.'));
+  });
+
+  /** The finish stood; a refusal of the quest's done is the service's sentence, said as an error. */
+  it("says the service's refusal of its quest's done, the finish having stood", async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (init?.method === 'POST' && url === '/api/quests/abc123/done') {
+        return Response.json({ error: 'Quest `#abc123` is Done — a closed quest does not move; a new ask is a new title.' }, { status: 409 });
+      }
+      return respond(url);
+    }));
+    const notify = vi.fn();
+    show('p4rk3d00', notify);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Finish…' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'Mark it done as yours' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Finish' }));
+
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('a closed quest does not move'), 'error'));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RESOLVE_SESSION', { payload: { id: 'p4rk3d00', state: 'completed' } });
   });
 
   it('carries the reason a decline was given', async () => {
@@ -2160,7 +2216,8 @@ describe('clearing a parked session', () => {
         </Tooltip.Provider>
       </QueryClientProvider>,
     );
-    await userEvent.click(await screen.findByRole('button', { name: 'Finish' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Finish…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Finish' }));
 
     await vi.waitFor(() => expect(notify)
       .toHaveBeenCalledWith(expect.stringContaining('Declining needs a reason'), 'error'));
@@ -2981,6 +3038,48 @@ describe('acting on what a session landed', () => {
     const kept = await within(screen.getByRole('group', { name: 'discard daoris/s-abc12345' })).findByRole('alert');
     expect(kept).toHaveTextContent('there is no branch daoris/s-abc12345 in engine — it is gone already.');
     expect(notify).not.toHaveBeenCalledWith(expect.stringContaining('it is gone already'), 'error');
+  });
+
+  /**
+   * LAND4 (D102's LAND4 note, the owner's case): a failed session's commits stayed in its tree and nothing offered to land
+   * them. Where the driver's reader says what its tree offers to land, its page says the commits, the branch and the tree
+   * beside what it left, and *Accept…* asks once, saying where the rule puts it, then presses the review's own landing; the
+   * driver's sentence is said once it landed, and a refusal inside the ask.
+   */
+  it('offers a failed session’s commits to land on its page, and lands them through the review’s own door', async () => {
+    SESSIONS = [{ ...IN_A_TREE, state: 'failed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
+    let landed = { session: 's1a2b3c4', done: true, message: 'put its work on `feature/kepak` — 1 commit(s).' };
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_GROUPS') {
+        return { sessions: [{ session: 's1a2b3c4', group: 'ended', shown: 'failed', archived: false, teammate: false,
+          lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] };
+      }
+      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/kepak', source: 'workspace' };
+      if (type === 'LAND_SESSION_TREE') return landed;
+      if (type === 'SESSION_DIFF') return DIFF;
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+
+    show('s1a2b3c4', notify);
+    await userEvent.click(await screen.findByRole('button', { name: 'Accept…' }));
+    expect(screen.getByText('in its tree s-4e6837ed')).toBeTruthy();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', expect.anything());
+    const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
+    await within(ask).findByText(/on a new branch/);
+    expect(ask).toHaveTextContent('Accepting puts this work on a new branch, feature/kepak, for you to push and open a pull request from.');
+
+    await userEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', { payload: { id: 's1a2b3c4' }, timeoutMs: 6 * 60_000 });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('put its work on `feature/kepak` — 1 commit(s).'));
+    await vi.waitFor(() => expect(screen.queryByRole('group', { name: 'accept daoris/s-4e6837ed' })).toBeNull());
+
+    // A refusal is the driver's sentence, said inside the ask, which stays open.
+    landed = { session: 's1a2b3c4', done: false, message: 'the session\'s tree has uncommitted work — 2 path(s) — which a branch would leave behind.' };
+    await userEvent.click(await screen.findByRole('button', { name: 'Accept…' }));
+    await userEvent.click(within(screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' })).getByRole('button', { name: 'Accept' }));
+    expect(await within(screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' })).findByRole('alert'))
+      .toHaveTextContent('which a branch would leave behind.');
   });
 
   it('accepts by asking the driver to land the work, and renders whatever it says back', async () => {

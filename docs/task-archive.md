@@ -31,7 +31,7 @@ proof remains UX7b. Review: `docs/2026-10-05-integration-review.md`.
 
 > - [x] **RETRY1b — a retry counts from the quest's real failures** (cli, driver, modules; found on the install,
 >   2026-10-04). `daoris driver retry <quest>` without `--at` marks the strike limit (3), right only on a first park: the
->   AR-2203 quest had 6 failures after an earlier retry, so the mark left it parked, and the page's *Retry* left it so
+>   TK-2203 quest had 6 failures after an earlier retry, so the mark left it parked, and the page's *Retry* left it so
 >   too. Both doors mark the quest's failure count as the driver counts it (the terminal reads it from the session
 >   records it already reaches, or says it cannot). Contract: RETRY1, D46 §3. Proof: a retry after a second park starts
 >   the quest.
@@ -7296,15 +7296,15 @@ and Playwright, unchanged and green.
 
 ## WSR5 — a chain lands named after its first quest (2026-09-29)
 
-The row as filed: *(found landing AR-2202, 2026-09-29). A chain lands from its last step (WSR1), so a
-branch pattern's `{quest}` and `{slug}` are that step's: AR-2202's six commits landed as
-`feature/verify-in-prod-that-ar-2202-s-empty-381807d1f7bd`, named for its verify step. The chain's
+The row as filed: *(found landing TK-2202, 2026-09-29). A chain lands from its last step (WSR1), so a
+branch pattern's `{quest}` and `{slug}` are that step's: TK-2202's six commits landed as
+`feature/verify-in-prod-that-tk-2202-s-empty-381807d1f7bd`, named for its verify step. The chain's
 first quest, the one the ask became, should name the branch.*
 
 **Outcome.** `LandingRules.SubjectAsync` walks up each step's `Parent` to the chain's first quest (the
 service answers for closed quests), stopping where a parent is no longer answered for and after twenty
 steps, and names the landing for it; a chat keeps its opening line. The review's press and the new
-terminal door, `daoris-driver trees land <session> [--plan]`, both use it. AR-2202 itself landed
+terminal door, `daoris-driver trees land <session> [--plan]`, both use it. TK-2202 itself landed
 before this, under its verify step's name.
 
 **Proven by:** `LandingTests.A_chain_lands_named_after_its_first_quest` (a three-step chain, a lone
@@ -8306,7 +8306,7 @@ file the branch changed since leaving the line reads the same on the line or on 
 deletions and both paths of a rename included, compared as blobs; a branch inside another that passes
 goes too. Checked-out branches, pushed-then-moved ones, ones a kept session branch still needs, and
 anything uncertain are kept and named. Only recorded branches are judged, so landings from before the
-record, and people's own branches, are never touched: the owner's two AR-2202 branches still go by hand,
+record, and people's own branches, are never touched: the owner's two TK-2202 branches still go by hand,
 once. **(b)** A recorded branch can be handed to a landing plugin after its landing: `daoris-driver trees
 hand`, the review's *hand it to <plugin>*, or an Ask Daoris `hand` card. The plugin gets D100's frame for
 the branch as it stands; a hand-off whose plugin does not push changes nothing. Not yet seen on the window,
@@ -9235,23 +9235,23 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 ## PARK1 — a parked session's card quotes its whole question (2026-10-01)
 
-> - [ ] **PARK1 — a parked session's card lost its question** (AR-2203, 2026-10-01): the session asked which report
+> - [ ] **PARK1 — a parked session's card lost its question** (TK-2203, 2026-10-01): the session asked which report
 > is the "individual Daily OEE report" in a long message with indented lists, and its card read "to ask you:" and
 > the closing line, since the question was scraped from the console transcript, where an indented line is a
 > tool's output. The card now quotes the record's last message whole (`SessionEvents.LastSaid`), the transcript
 > only as a fallback. Built on branch `park1`; seen failing against the old reading.
 
-**Outcome** (built by the parent, merged in integrate-h with `tools/merge-branch.mjs`, every gate): A parked session's card now quotes the agent's last message whole. `SessionEvents.LastSaid` joins the record's last message from its chunks as the page joins them, and is null when the person spoke after it; the driver's `ParkedWords` prefers it and reads the console transcript's last plain lines only where the record holds none, kept to 4,000 characters from the end. The old reading stopped at the first indented line, which a question's own list has, so AR-2203's card read "to ask you:" and the closing line; a test reproduces that against the old reading and passes against the new. Driver fast half 1427 → 1430.
+**Outcome** (built by the parent, merged in integrate-h with `tools/merge-branch.mjs`, every gate): A parked session's card now quotes the agent's last message whole. `SessionEvents.LastSaid` joins the record's last message from its chunks as the page joins them, and is null when the person spoke after it; the driver's `ParkedWords` prefers it and reads the console transcript's last plain lines only where the record holds none, kept to 4,000 characters from the end. The old reading stopped at the first indented line, which a question's own list has, so TK-2203's card read "to ask you:" and the closing line; a test reproduces that against the old reading and passes against the new. Driver fast half 1427 → 1430.
 
 
 ## METER1 — a turn's meter says cache reads apart (2026-10-01)
 
 > - [ ] **METER1 — a turn's meter summed cache reads into "in"** (owner, 2026-10-01: *"输入 69.1M … there must be an
-> issue"*): AR-2203's 48-minute turn read 663K anew and re-read 68.5M from its cache; the line said 69.1M in. The
+> issue"*): TK-2203's 48-minute turn read 663K anew and re-read 68.5M from its cache; the line said 69.1M in. The
 > line now says them apart (`16.7K in · 51.1K cached · 80 out`, 输入 / 缓存 / 输出), the hover sentence with it.
 > Built on branch `park1`.
 
-**Outcome** (built by the parent, merged in integrate-h with `tools/merge-branch.mjs`, every gate): A finished turn's meter says what the agent read anew apart from what it re-read from its cache: "in" is new input plus what it wrote to its cache, "cached" what it read from it, then "out" (输入 / 缓存 / 输出), and the hover sentence says the same split. AR-2203's 48-minute turn had shown "69.1M in" for 663K read anew and 68.5M re-read from the cache across about a thousand calls. The view's test was changed first and seen failing; both catalogues agree.
+**Outcome** (built by the parent, merged in integrate-h with `tools/merge-branch.mjs`, every gate): A finished turn's meter says what the agent read anew apart from what it re-read from its cache: "in" is new input plus what it wrote to its cache, "cached" what it read from it, then "out" (输入 / 缓存 / 输出), and the hover sentence says the same split. TK-2203's 48-minute turn had shown "69.1M in" for 663K read anew and 68.5M re-read from the cache across about a thousand calls. The view's test was changed first and seen failing; both catalogues agree.
 
 **Corrected 2026-10-03.** The fix was never committed: integrate-h carried PARK1's commit from `park1`, and METER1's edits stayed uncommitted in that worktree. Found clearing merged worktrees; committed as `38255137` and merged in integrate-ac.
 
@@ -9778,7 +9778,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 ## DRIFT1 — why an ask's decision drifted (2026-10-02 → D133)
 
-> - [ ] **DRIFT1 — why an ask's decision drifted** (owner, 2026-10-02: AR-2203 asked for the v3 bridge and the common report,
+> - [ ] **DRIFT1 — why an ask's decision drifted** (owner, 2026-10-02: TK-2203 asked for the v3 bridge and the common report,
 > and the work did neither; *"we need to investigate why the decision drifted"*). Trace the ask through its intake, quests,
 > sessions and commits to where the requirement was lost, and what Daoris should hold so it is not. Contract: D133 (in
 > flight). Proof: the evidence, de-identified; raw notes untracked.
@@ -9922,7 +9922,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 ## KNOWUSE1 — why the work repository's sessions ask what its knowledge answers (2026-10-03 → D135)
 
-> - [ ] **KNOWUSE1 — why report-ui's sessions ask what its knowledge answers** (owner, 2026-10-03: *"I found report-ui itself
+> - [ ] **KNOWUSE1 — why portal-ui's sessions ask what its knowledge answers** (owner, 2026-10-03: *"I found portal-ui itself
 > is kind of ignoring the repo's knowledge docs? since a lot asks back to me should not be there? … we need to check the
 > process properly or the initialize of daoris system still not 100% working and that will need llm/ai to involve"*).
 > Every question sessions put to the owner, classed by what could have answered it (knowledge, code, history, only the
@@ -10293,8 +10293,8 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **TOOL6e — the screen says which account the next start takes, and why** (modules, web-settings, driver; the owner,
 > 2026-10-03: *"I switched to local default for [the work account] since this does have more usage left but I don't see
-> Daoris auto switch to this?"*). The work account was already first in lumachain and had just come out of a cool-off,
-> nothing was running, and the owner's switch was the tool's own sign-in, which lumachain does not use; none of that
+> Daoris auto switch to this?"*). The work account was already first in northwind and had just come out of a cool-off,
+> nothing was running, and the owner's switch was the tool's own sign-in, which northwind does not use; none of that
 > was on the screen. Each workspace's accounts say which account the next start takes and the walk's step that chose it
 > (*least recently started*, *weekly reset within a day*, *cooling until …*), when a cool-off ended, and that the tool's
 > own sign-in carries only work outside the workspace's list. Contract: D130 §3–§4, D125 §2.3. Proof: a driver test of
@@ -10562,8 +10562,8 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **LAND2 — done work reaches a branch you can review, and a pull request** (design first; owner, 2026-10-04:
 > *"so the thing is it's closed? but there is no PR branch opened and there is nothing I can really review on"*). Work
-> lands only at the person's Accept on its review (D87, D100), and lumachain's branch rule names no pull-request
-> plugin, so AR-2203's five done sessions sat on Daoris's session branches with nothing to review elsewhere. Design a
+> lands only at the person's Accept on its review (D87, D100), and northwind's branch rule names no pull-request
+> plugin, so TK-2203's five done sessions sat on Daoris's session branches with nothing to review elsewhere. Design a
 > workspace's choice to land when its quest is done (the branch made, and the rule's plugin pushing it and opening the
 > pull request), today's Accept staying the default until set, and what *To review* then means. Contract: D87, D100,
 > D102. Proof: the design and its decision.
@@ -10680,13 +10680,13 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 ## LAND3 — a landing tidies every session branch its work holds (2026-10-04)
 
 > - [ ] **LAND3 — a landing tidies every session branch its work holds** (driver; owner, 2026-10-04: *"and also it didn't
-> remove the Daoris work branch after"*). The tidy removes the pressed session's tree and branch only: AR-2203's first
+> remove the Daoris work branch after"*). The tidy removes the pressed session's tree and branch only: TK-2203's first
 > session (`daoris/s-795e8ad4`), whose commit rode into the sessions accepted after it, and a failed attempt
 > (`daoris/s-d8e2df01`) stayed in the repository, and `session-branches.json` still lists branches already gone. A
 > landing's tidy removes each session branch whose commits the landed branch contains, a failed or superseded
 > session's branch is offered for removal on its page and at the terminal, and the record drops what is gone.
 > Contract: D102, the rule's `tidy`. Proof: driver tests over git fixtures (a chain whose earlier session's branch is
-> contained; a failed one kept until removed); the install's report-ui read again.
+> contained; a failed one kept until removed); the install's portal-ui read again.
 
 **Outcome** A tidying landing removes every recorded session branch its landed work contains, keeping and naming one a running session holds, one with uncommitted work, or one checked out elsewhere; `session-branches.json` drops what is gone; `daoris-driver trees remove <session|branch> --force` is a failed attempt's door, offered by `trees clean`. Detail: D102's LAND3 note, `1e6897c9`.
 
@@ -10735,7 +10735,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **LAND2c — one branch and one pull request for one piece of work** (driver, cli, examples; after LAND2b; owner,
 > 2026-10-04: *"the PR should be generated one for all those related Daoris work, currently by approve one by one this
 > creates multiple PR branch for the same work"*). The design lands a chain (a quest and its steps) on one branch; the
-> owner's AR-2203 was a quest, its verify step, and a follow-up ask's drill-down, accepted one by one into two
+> owner's TK-2203 was a quest, its verify step, and a follow-up ask's drill-down, accepted one by one into two
 > `feature/` branches, the second containing the first. Land related work on one branch per repository: a chain, and a
 > follow-up ask's quests (`follows #…`) with it; a later done advances it by fast-forward only; the frame gains
 > `pullRequest` and `acceptedBy`, and a plugin pushes without opening a second pull request. Contract: design §3, §7,
@@ -11174,13 +11174,13 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **ROSTER1b — a start refused for its sign-in marks that account and walks past it** (driver; found by ROSTER1;
 > **seen on the install 2026-10-04**). After the update every account read *never read*, so the rotation kept starting
-> AR-2203's quest on the empty account-2: four starts in two minutes each failed *Authentication required*, and the
+> TK-2203's quest on the empty account-2: four starts in two minutes each failed *Authentication required*, and the
 > third parked the quest. A start refused for its sign-in records the account signed out (as a read would), names it
 > and its sign-in, and the next start walks past it; it never counts toward the quest's strikes. Contract: D150 §5.3,
 > D125's TOOL6g and ROSTER1 notes. Proof: a tick where a refused start's next start picks another account, and the
 > quest's strikes stay where they were.
 
-**Outcome** 2026-10-05: built. A start the agent refuses for its sign-in (Claude Code's "Authentication required" on the protocol door, the native door's 401) keeps its account signed out in `reads.json` with the time, so the next start walks past it and the held start names it and its sign-in; a refusal is never one of the quest's strikes (`NoteCodes.AccountsOwn`), and the record says why it ended in both languages. Seen on the install the day before: four starts on an empty account parked AR-2203. Detail: D125's ROSTER1b note, FIX-LOG 2026-10-05, `9087adf3`..`485b842f`.
+**Outcome** 2026-10-05: built. A start the agent refuses for its sign-in (Claude Code's "Authentication required" on the protocol door, the native door's 401) keeps its account signed out in `reads.json` with the time, so the next start walks past it and the held start names it and its sign-in; a refusal is never one of the quest's strikes (`NoteCodes.AccountsOwn`), and the record says why it ended in both languages. Seen on the install the day before: four starts on an empty account parked TK-2203. Detail: D125's ROSTER1b note, FIX-LOG 2026-10-05, `9087adf3`..`485b842f`.
 
 
 ## AGENTS2 — every agent Daoris knows is listed, installed or not, and DeepSeek joins (2026-10-05)
@@ -11207,7 +11207,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **SESSUX1j — a quest's short title** (§6; service, driver, web-shell; any time).
 
-**Outcome** 2026-10-05: built. A quest carries its publisher's short title at every door (the intake's draft, `quest_publish`'s `shortTitle`, the HTTP publish and ask-publish's `short`, the composer's optional *Short title*): at most 40 characters and one line, refused otherwise, a remote's push included. Where none was given the service names it from its own words when it is read (`QuestTitles.Derive`: the first line that says what is wanted, a bracketed note skipped, cut at whole words, a ticket key such as `AR-2203` leading) and never writes that into the record. Lists, chains, heads, session titles, `daoris-driver sessions` and a landing's `{slug}` use it; the whole title stays on the landing's record. It amends D126's rejection of a cut title, and D126's SESSUX1j note says why. The branch name the person types stays with LANDNAME1. Service 1145 → 1170, HTTP 67 → 68, web vitest 3966 → 4017. Detail: D126's SESSUX1j note, commits 239223b4, 3e8b73b3, fe037686.
+**Outcome** 2026-10-05: built. A quest carries its publisher's short title at every door (the intake's draft, `quest_publish`'s `shortTitle`, the HTTP publish and ask-publish's `short`, the composer's optional *Short title*): at most 40 characters and one line, refused otherwise, a remote's push included. Where none was given the service names it from its own words when it is read (`QuestTitles.Derive`: the first line that says what is wanted, a bracketed note skipped, cut at whole words, a ticket key such as `TK-2203` leading) and never writes that into the record. Lists, chains, heads, session titles, `daoris-driver sessions` and a landing's `{slug}` use it; the whole title stays on the landing's record. It amends D126's rejection of a cut title, and D126's SESSUX1j note says why. The branch name the person types stays with LANDNAME1. Service 1145 → 1170, HTTP 67 → 68, web vitest 3966 → 4017. Detail: D126's SESSUX1j note, commits 239223b4, 3e8b73b3, fe037686.
 
 
 ## UX7c — the title sections of a quest's page and a session's page (2026-10-05, D152)
@@ -11879,7 +11879,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 ## HIST1o — the clear's opening sentence says only what goes (2026-10-07, D153)
 
-> - [ ] **HIST1o — the clear's opening sentence says only what goes** (web-shell). Seen on the install (2026-10-07): with no finished work kept and only 1.3 KB of left-over files to take, the ask opens with *从本机清除 lumachain 已完成的工作所保留的一切：它们的对话内容、记录文本和文件，共 1.3 KB* ("everything lumachain's finished work keeps: its conversations, record texts and files"), while its own list says only the left-over files go. Word the opening from the plan's units, as the list already is, in both catalogues. Contract: history-clearing design §6.1, HIST1n. Proof: vitest for a plan of left-over files alone, and one with units.
+> - [ ] **HIST1o — the clear's opening sentence says only what goes** (web-shell). Seen on the install (2026-10-07): with no finished work kept and only 1.3 KB of left-over files to take, the ask opens with *从本机清除 northwind 已完成的工作所保留的一切：它们的对话内容、记录文本和文件，共 1.3 KB* ("everything northwind's finished work keeps: its conversations, record texts and files"), while its own list says only the left-over files go. Word the opening from the plan's units, as the list already is, in both catalogues. Contract: history-clearing design §6.1, HIST1n. Proof: vitest for a plan of left-over files alone, and one with units.
 
 **Outcome** 2026-10-07: a workspace clear with no unit to take opens with only what goes (the left-over files, the intake's room, or both) in both catalogues; where a unit goes the sentence is unchanged. Detail: D153's HIST1o note; commit 41d8c873.
 
@@ -11914,7 +11914,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 ## BRSCOPE1 — a workspace's Branches tab holds only its own repositories (2026-10-07, D150)
 
-> - [ ] **BRSCOPE1 — a workspace's Branches tab holds only its own repositories** (web-shell; driver or modules if the sweep is asked machine-wide). Seen on the install (2026-10-07): lumachain's Branches tab says *另有 31 个有检出的仓库不持有 Daoris 的分支* (31 more checked-out repositories hold no Daoris branch) beside its header's 29 repositories; the list holds `Daoris` and `Daoris.Plugins`, which are not lumachain's. Scope the sweep, its counts and *Check for updates* to the workspace the page is about (WSP5), and say a machine-wide view where one is meant. Contract: D150's Git-inside-Repositories note, WSP1/WSP5, platform-ux §4. Proof: a test with two workspaces' checkouts where each tab counts its own; the install's shot.
+> - [ ] **BRSCOPE1 — a workspace's Branches tab holds only its own repositories** (web-shell; driver or modules if the sweep is asked machine-wide). Seen on the install (2026-10-07): northwind's Branches tab says *另有 31 个有检出的仓库不持有 Daoris 的分支* (31 more checked-out repositories hold no Daoris branch) beside its header's 29 repositories; the list holds `Daoris` and `Daoris.Plugins`, which are not northwind's. Scope the sweep, its counts and *Check for updates* to the workspace the page is about (WSP5), and say a machine-wide view where one is meant. Contract: D150's Git-inside-Repositories note, WSP1/WSP5, platform-ux §4. Proof: a test with two workspaces' checkouts where each tab counts its own; the install's shot.
 
 **Outcome** 2026-10-07: a workspace's Branches tab counts, looks at and leaves apart only its own checkouts: `TREES_SYNC_PLAN` and `TREES_SYNC` take `workspace`, the bridge sends it and keeps each look per workspace, and the page filters the machine's reading and the look's lists. Both the page and the route had lost the scope. Follow-up: BRSCOPE1a. Detail: D150's BRSCOPE1 note, FIX-LOG; commits 3e6b045d, 46ec9773.
 
@@ -12124,13 +12124,34 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 ## ANSWER2 — answering a parked session does not fail it (2026-10-08, D131)
 
-> - [ ] **ANSWER2 — answering a parked session does not fail it** (driver, modules; owner's real case 2026-10-08, urgent). Two driven sessions in `reports-infrastructure` parked to ask the person (20:38:58 and 20:40:04 UTC); the person answered each (`message.sent` `kind: answer`, `reach: resume`, 20:43:08 and 20:43:37); each then ended `failed` with *the service refused moving session `…` to working: Session `…` cannot move working → working* — the answer's path moved the record to working and the resume moved it again; an *unobserved task* `AggregateException` was logged beside each. The person's answer destroyed the session it answered. Make the resume idempotent on a record already working (or move it once), keep the answer delivered, and observe the task. Contract: D137/ANSWER1's notes (answer → resume one record), D126. Proof: a test answering a parked session through the modules' door and the driver's resume, the record moving to working once and the session carrying on; the unobserved task observed.
+> - [ ] **ANSWER2 — answering a parked session does not fail it** (driver, modules; owner's real case 2026-10-08, urgent). Two driven sessions in `release-infrastructure` parked to ask the person (20:38:58 and 20:40:04 UTC); the person answered each (`message.sent` `kind: answer`, `reach: resume`, 20:43:08 and 20:43:37); each then ended `failed` with *the service refused moving session `…` to working: Session `…` cannot move working → working* — the answer's path moved the record to working and the resume moved it again; an *unobserved task* `AggregateException` was logged beside each. The person's answer destroyed the session it answered. Make the resume idempotent on a record already working (or move it once), keep the answer delivered, and observe the task. Contract: D137/ANSWER1's notes (answer → resume one record), D126. Proof: a test answering a parked session through the modules' door and the driver's resume, the record moving to working once and the session carrying on; the unobserved task observed.
 
 **Outcome** 2026-10-07: an answered park goes on once: words wait only on parked or ended records (a working one was planned to go on again since MSG1b, a second run's move to working was refused and failed the record), a look claims a record for its one run, and a given-up run's capture is observed and logged. Follow-up: ANSWER2b. Detail: D131's ANSWER2 note, FIX-LOG; commits 90dee80a, df972c56, 046560f9.
 
 
 ## BGWAIT1 — a turn that ends on background work is not a question (2026-10-08, D83)
 
-> - [ ] **BGWAIT1 — a turn that ends on background work is not a question** (driver; owner's real case). Driven session `report-ui` (AR-2205) sits *awaiting the person* with the "question" *Gates are running in the background (lint → prettier → … → Angular Jest); I'll pick up when they finish.*: the agent ended its turn while its own background commands ran, and Daoris read the turn's end as asking the person. Tell a turn that hands off to background work (Claude Code's background tasks, its own words) from a question, and keep such a session working or resume it when its background work ends, never parking it on the person. Contract: D137 (awaiting the person), D53's wire notes, the adapter's own words (D125's posture rule). Proof: a recorded turn with background tasks running read as working; a real question still parks.
+> - [ ] **BGWAIT1 — a turn that ends on background work is not a question** (driver; owner's real case). Driven session `portal-ui` (TK-2205) sits *awaiting the person* with the "question" *Gates are running in the background (lint → prettier → … → Angular Jest); I'll pick up when they finish.*: the agent ended its turn while its own background commands ran, and Daoris read the turn's end as asking the person. Tell a turn that hands off to background work (Claude Code's background tasks, its own words) from a question, and keep such a session working or resume it when its background work ends, never parking it on the person. Contract: D137 (awaiting the person), D53's wire notes, the adapter's own words (D125's posture rule). Proof: a recorded turn with background tasks running read as working; a real question still parks.
 
 **Outcome** 2026-10-07: a driven protocol-door turn that ends while its own background work runs (the adapter's `async_task_spawned`/`async_task_state_update`) no longer parks on the person when its quest would park: it stays working until the work ends, then Daoris prompts it to go on; a real question still parks. Narrows D105 §3 for this case, which the owner confirmed on 2026-10-08 (keep working, not stop for the person). Follow-ups: BGWAIT1b, BGWAIT1c. Detail: D83's BGWAIT1 note, FIX-LOG; commits 480e1afd, 80e77f87.
+
+
+## LAND4 — work finished at a checkpoint or on a failed session is offered to land (2026-10-08, D102)
+
+> - [ ] **LAND4 — work finished at a checkpoint or on a failed session is offered to land** (driver, web-shell; owner's real case). In `release-infrastructure` two session branches with real commits stayed in Daoris (`daoris/s-…`, each in a tree under the home) after one session failed (ANSWER2) and the person finished the other at a checkpoint; nothing offered to land them on the base, and the person expected the work landed. Offer the landing (or the review that leads to it) for a session that ends with commits, whatever the ending, and say on its page and the Branches tab what is left and how to land or discard it. Contract: D126, the landing designs (LAND*), D89. Proof: a session finished at a checkpoint with commits offers *Land*; a failed one with commits too.
+
+**Outcome** 2026-10-07: a session that ended with commits no branch of the person's holds offers *Accept…* on its page with its branch and tree named, whatever its ending (completed, finished at a checkpoint, failed, stopped); the Branches tab and `trees clean` name the session and `trees land`; a failed session's commits land only on a press. Follow-ups: LAND4b, QUESTCLOSE1. Detail: D102's LAND4 note; commits 0d993448…d7d4de1c.
+
+
+## FREEZE1 — the window's bar froze while its main process burned CPU (2026-10-08, D56)
+
+> - [ ] **FREEZE1 — the window's bar froze while its main process burned CPU** (desktop app, modules, driver; owner's real case 2026-10-08). The owner saw the title bar frozen; the main `Daoris.Desktop` process had used about 1,600 CPU-seconds in roughly 90 minutes (GPU process ~1,740, renderer ~660) while the host answered 500s (KNOW500); a frameless window's caption is handled by the main process, so a busy UI thread freezes the bar while the page still works. After a restart the main process is quiet; a one-minute CPU sampler (`local/scratch/cpu-samples.txt`) watches for it to climb again. **Measured after the restart:** the window's main process was quiet (37 CPU-s at 08:21 local) until the in-app browser opened at 08:22:47, then climbed steadily, 37 → 272 CPU-s by 08:37 and accelerating (about a quarter of a core and rising), with the GPU process alongside; before the freeze the in-app browser was open too (Azure DevOps Releases). Look first at what the main process does while the browser plugin is open (its window, its CDP bridge, `plugin.served browser` handed to sessions). Find what runs on the main process's UI thread under a failing host (the driver loop's tick, the bridge's answers) and move it off; separately, one endless `motion-safe:animate-pulse` dot keeps the page rendering at the display's rate (601 frames in 5 s). Contract: D56 (the frame), D41's motion rule. Proof: the main process's CPU flat under a failing host in a test or a measured run; the pulse stopping or settling.
+
+**Outcome** 2026-10-07: the live dot's endless pulse (the GPU and renderer burn, 601 frames in 5 s) now settles after three cycles; `UiStallWatch` logs `ui.stalled` with what held the window's thread (route, slowest route, requests, bus events, full collections), since the bar's freeze is that thread's; the in-app browser only marks a session's start. The cause is unproven: FREEZE1b. Detail: D56's FREEZE1 note, FIX-LOG; commits db49e20b, 93d338be.
+
+
+## QUESTCLOSE1 — a quest whose last session was finished at a checkpoint is not left taken forever (2026-10-08, D126)
+
+> - [ ] **QUESTCLOSE1 — a quest whose last session was finished at a checkpoint is not left taken forever** (service, driver). Finishing at a checkpoint moves the record to `completed` and leaves its quest taken with nothing to close it (the owner's release-environment write-up, e7c990e60493); offer the quest's done or hand-back beside the checkpoint finish, or close it with the session. Contract: D126, D79, D102's LAND4 note. Proof: a finish at a checkpoint that leaves its quest closable from its page and the terminal.
+
+**Outcome** 2026-10-08: the person's done closes a quest a finished session left taken: a local done route (`POST /api/quests/{id}/done`) that answers no requirements and records the person's note; *Finish…* and *Mark done…* ask with a note; `daoris-driver quest done`. The planner never picks a taken quest up after a completed session, and the old *Mark done* was refused for unanswered requirements. Hand back stays QUESTBACK1's. Detail: D126's QUESTCLOSE1 note; commits 5874b116…4985b1fe.

@@ -102,6 +102,8 @@ public sealed record PublishQuestRequest(
 public sealed record RespondQuestRequest(
     string? Action, string? Reason, string? On = null, IReadOnlyList<QuestAnswerWire?>? Answers = null,
     bool? WhileOpen = null);
+// The person's done (QUESTCLOSE1): their words, kept on the quest after the sentence that says the done was theirs.
+public sealed record PersonDoneRequest(string? Note);
 // A person dismissing a conflict (SYNC6c): the one named, or — naming none — every one the quest carries.
 public sealed record DismissConflictRequest(string? Machine, long? Sequence);
 // An ask (D65 §1a): a sentence at a workspace. Files arrive whole — the ask door is a local host's —
@@ -373,6 +375,7 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(IEnumerable<QuestResponse>))]
 [JsonSerializable(typeof(PublishQuestRequest))]
 [JsonSerializable(typeof(RespondQuestRequest))]
+[JsonSerializable(typeof(PersonDoneRequest))]
 [JsonSerializable(typeof(DismissConflictRequest))]
 [JsonSerializable(typeof(QuestEvidenceVerdictWire))]
 [JsonSerializable(typeof(AskRequestBody))]

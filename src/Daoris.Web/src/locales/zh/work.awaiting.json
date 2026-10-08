@@ -1,6 +1,12 @@
 {
   "work.awaiting.hint": "只有人能了结它。你的选择会写进记录，而备注是之后读到这条记录的人唯一能凭借的东西。",
   "work.awaiting.finish": "完成",
+  "work.awaiting.finishAsk": "完成…",
+  "work.awaiting.finishQuest": "完成会了结这个会话。除非你现在把它标为完成，它的委托 #{{quest}} 保持原样。",
+  "work.awaiting.questChoice": "它的委托",
+  "work.awaiting.questLeave": "保持原样",
+  "work.awaiting.questDone": "以你的名义标为完成",
+  "work.awaiting.questNote": "你对委托的备注（可选）——记录会写明是你标的完成",
   "work.awaiting.decline": "谢绝…",
   "work.awaiting.declineConfirm": "以此理由谢绝",
   "work.awaiting.declinePlaceholder": "理由——之后读到这条记录的人能据以行动的部分",

@@ -13,6 +13,34 @@ repository.
 - **Fix:** `ConnectionGate` holds the connection: each store method runs its commands inside `RunAsync` and each transaction inside `InTransactionAsync`, which keeps `BEGIN IMMEDIATE`, commit on return, rollback on a throw and the uncancellable work token. `Command()` refuses outside the gate. The gate is reentrant within one flow of work (an `AsyncLocal` hold), so a transaction's work calling the stores' own methods runs inside it and joins its transaction. A unit that began on a clean connection ends on one: anything it left open is rolled back, and leaving one without a throw fails it. A transaction the database holds and no object owns is rolled back before the next unit. All six stores and the search go through it. D36's SQLITETX1 note has the reasoning and what was rejected.
 - **Verify:** `ConcurrentRequestsTests` (Http) sends 50 says to a parked session beside 50 of the driver's looks (its reads, then a refresh or a publish) over the host's real store. It failed first in three runs: 46, 2 and 78 of 100 requests failed, 44 of the says with the install's exact exception. In the third, every later `BEGIN` failed, the request after the burst too. After the fix, all 100 answer and every word is kept once on the session and on its ask, in 2.2–3.4 s, the slowest say about 1 s. In `ConnectionGateTests`, three rows failed first: a write beside an open transaction that then rolled back (it had joined, and went with it), a transaction nobody owns (*cannot start a transaction within a transaction*), and the source scan on the old tree. The leak guard's two rows failed with the guard off. A transaction an exception interrupts leaves the store usable passed before too: `await using` already rolled back a throw on one thread. Service 1588 (was 1582), Http 94 (was 93). Not run: the family rehearsal, whose two-machine and sync phases read one request at a time.
 - **Commit:** `7894e610`.
+## 2026-10-08 — the window's bar froze while its page worked
+
+### Web shell and desktop: an endless pulse drew at the display's rate, and nothing said what held the window's thread (FREEZE1)
+- **Symptom:** on the install the owner saw the window's strip frozen while the page still worked. The main `Daoris.Desktop`
+  process had used about 1,600 CPU-s in some 90 minutes, its GPU process about 1,740, its renderer about 660. After a
+  restart a one-minute sampler showed the GPU process climbing about 15 CPU-s a minute from the window's start, the main
+  process under 1 a minute until the in-app browser opened at 08:22:47, then about 12 a minute in bursts (2 to 36 a
+  sample) while the renderer doubled. The page made no requests in 5 s and drew 601 frames in 5 s.
+- **Root cause, proven:** the GPU and renderer burn is the live dot's `motion-safe:animate-pulse`, Tailwind's
+  `infinite` pulse: one endless animation keeps the window drawing at the display's rate for as long as any session is
+  live. **The browser is not the cause**: nothing in the window's process speaks to it once it is up, and with the
+  `in-app-browser` plugin every session start brings it up (`InAppBrowserServers.HandAsync`), so its opening marks a
+  session starting. **Not proven:** what held the window's thread. The strip's move is the page's `START_DRAG` (FRAME2),
+  dispatched on that thread, and the caption buttons are its own, so a thread busy or behind freezes the bar; every bridge
+  route runs there until its first wait, and the kit's flush serializes every bus event there each 50 ms. Nothing measured
+  the thread, so the sighting could say only a CPU total. The suspects, unmeasured: a running session's traffic (large tool
+  results serialized on the thread by the flush), a route's synchronous part, a full collection.
+- **Fix:** `tokens.css` gives `--animate-pulse` a count of three, so the live dot pulses as it turns live and settles
+  (D41's motion line, `docs/2026-09-19-platform-ux.md` §3). `UiStallWatch` posts a probe to the window's thread each second
+  and writes `ui.stalled` (warn) when one waits 250 ms or more: the longest wait, how long, the route found on the thread and
+  the slowest route's synchronous part, how many routes ran, the bus events and full collections meanwhile; once a minute
+  while it lasts (the machine log design §4). The shell composes it beside `RefusalLog`; the form starts it on Load.
+- **Verify:** `motion.test.ts` compiles the live mark's classes from `tokens.css` as the build does, and failed first
+  (`pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite`); `UiStallWatchTests` (8) drive a stall by hand through the kit's
+  dispatcher, and five failed first against a stub. Not run: the window. Owed on the install: the sampler with a session
+  live, before and after this build, where the GPU process should fall well below its 15 CPU-s a minute once the dot has
+  settled, drawing only as the page changes; and at the next frozen bar, the `ui.stalled` lines, which name what held the
+  thread.
 
 ## 2026-10-08 — an answered park failed by a second look
 

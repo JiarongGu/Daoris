@@ -70,6 +70,24 @@ export const Parked: Story = {
   },
 };
 
+/** Presses the parked card's *Finish…* and chooses to mark its quest done (QUESTCLOSE1), as a person would. */
+const finishMarkingDone: Story['play'] = async ({ canvasElement }) => {
+  const press = (name: string) => [...canvasElement.querySelectorAll<HTMLButtonElement>('button')]
+    .find((button) => button.textContent === name)?.click();
+  press('Finish…');
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  canvasElement.querySelectorAll<HTMLButtonElement>('[role="radio"]')[1]?.click();
+};
+
+/**
+ * Finishing a park whose quest is still taken (QUESTCLOSE1, D126's note): *Finish…* asks, in the same act, what becomes of
+ * the quest, *Leave it as it is* by default or *Mark it done as yours* with the person's note. Here it was chosen.
+ */
+export const FinishingMarksItsQuestDone: Story = {
+  args: { ...Parked.args, onResolve: () => {} },
+  play: finishMarkingDone,
+};
+
 /**
  * Answered (ANSWER1c, D131): the park above, once the person answered, for up to one look of the driver's. The record is
  * still parked with the answer set; the head shows the answer, says the same session goes on with it, and offers none
@@ -219,6 +237,33 @@ export const FailedItsBranchLeft: Story = {
     },
     onReview: () => {},
     onDiscardBranch: () => {},
+  },
+};
+
+/**
+ * Failed, its tree still here holding a commit no branch of the person's holds (LAND4, the owner's case): what it left, its
+ * branch and its tree, with *Accept…*, which asks once under the line, saying where the rule puts it.
+ */
+export const FailedItsWorkToLand: Story = {
+  args: {
+    session: {
+      ...SESSION, state: 'failed', created: at(40), updated: at(31), note: 'the process exited 1 with the quest unexplained.',
+    },
+    lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 },
+    landing: { form: 'branch', target: 'feature/streaming-budget', plugin: 'azure-devops-pull-request' },
+    onReview: () => {},
+    onLand: () => {},
+  },
+};
+
+/** Finished at a checkpoint by the person, its commits not landed yet (LAND4): the same offer, with no word that it did not finish. */
+export const FinishedAtACheckpointToLand: Story = {
+  args: {
+    ...FailedItsWorkToLand.args,
+    session: {
+      ...SESSION, state: 'completed', created: at(40), updated: at(31), note: 'The person finished this at a checkpoint.',
+    },
+    lands: { branch: 'daoris/s-56cb4d29', tree: 's-56cb4d29', commits: 2, uncommitted: 0 },
   },
 };
 

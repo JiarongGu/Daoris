@@ -121,7 +121,8 @@ public static class SessionsCommand
 
     /// <summary>The fields of a row in <c>--json</c>, in order: <c>SESSION_GROUPS</c>' row, field for field.</summary>
     public static IReadOnlyList<string> JsonFields { get; } =
-        ["session", "group", "shown", "archived", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "pausedBy", "holds", "deletable"];
+        ["session", "group", "shown", "archived", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "pausedBy", "holds", "deletable",
+            "lands"];
 
     /// <summary>What the words ask, or null with what is wrong with them.</summary>
     public static SessionsAsk? Read(IReadOnlyList<string> args, out string? problem)
@@ -310,6 +311,21 @@ public static class SessionsCommand
                 }
 
                 writer.WriteBoolean("deletable", row.Deletable);
+                // LAND4: what its own tree offers to land, whatever group it rests in.
+                if (row.Lands is { } lands)
+                {
+                    writer.WriteStartObject("lands");
+                    writer.WriteString("branch", lands.Branch);
+                    writer.WriteString("tree", lands.Tree);
+                    writer.WriteNumber("commits", lands.Commits);
+                    if (lands.Uncommitted is { } paths) writer.WriteNumber("uncommitted", paths); else writer.WriteNull("uncommitted");
+                    writer.WriteEndObject();
+                }
+                else
+                {
+                    writer.WriteNull("lands");
+                }
+
                 writer.WriteEndObject();
             }
 
@@ -417,7 +433,7 @@ public static class SessionsCommand
     }
 
     /// <summary>What a row's second line says on the screen (D126 §2.2), in the terminal's words.</summary>
-    private static IEnumerable<string> Facts(SessionGrouping row, SessionRecord record)
+    internal static IEnumerable<string> Facts(SessionGrouping row, SessionRecord record)
     {
         if (row.Teammate) yield return $"on {record.Id[..record.Id.IndexOf('/')]}";
         if (row.Shown == ShownState.Parked)
@@ -438,6 +454,13 @@ public static class SessionsCommand
             yield return work.Commits is > 0 and var commits ? $"{commits} commit{(commits == 1 ? "" : "s")} to review"
                 : work.Commits == 0 && work.Uncommitted > 0 ? "uncommitted changes"
                 : "work to review";
+        }
+
+        // LAND4: commits its own tree holds that no branch of the person's does, whatever its ending, with the door that lands them.
+        if (row.Lands is { } lands)
+        {
+            yield return $"{lands.Commits} commit{(lands.Commits == 1 ? "" : "s")} on {lands.Branch} in its tree {lands.Tree}, not landed: "
+                + $"daoris-driver trees land {row.Session}";
         }
 
         if (row.HoldsQuest && record.Quest is { } quest) yield return $"held here until you try again: daoris driver retry {quest} --session {row.Session}";
@@ -524,22 +547,54 @@ public static class SessionsCommand
         var (move, state, past) = ask.Verb == "finish"
             ? (SessionMove.Finish, "completed", "finished")
             : (SessionMove.Decline, "declined", "declined");
+        int exit;
         if (world.Processes.AliveOnThisMachine(id))
         {
-            return await AskAsync(world, record, new SessionRequest(id, move, DateTimeOffset.UtcNow) { Note = ask.Note, Parked = true }, past, output, ct)
+            exit = await AskAsync(world, record, new SessionRequest(id, move, DateTimeOffset.UtcNow) { Note = ask.Note, Parked = true }, past, output, ct)
                 .ConfigureAwait(false);
         }
+        else
+        {
+            try
+            {
+                var said = await SessionMoves.ResolveAsync(_ => false, world.Service, id, state, ask.Note, ct).ConfigureAwait(false);
+                output.WriteLine($"sessions: {past} {id}: {said}");
+                exit = 0;
+            }
+            catch (DriverException refused)
+            {
+                output.WriteLine($"sessions: {refused.Message}");
+                return 1;
+            }
+        }
 
+        if (exit == 0 && move == SessionMove.Finish) await StillOpenAsync(world, record, output, ct).ConfigureAwait(false);
+        return exit;
+    }
+
+    /// <summary>
+    /// A finish at a checkpoint leaves its quest as it was (QUESTCLOSE1, D126's note): where that is still open or taken, said
+    /// right after it with the door that closes it as the person's, since nothing here carries a finished session's quest on.
+    /// A quest that cannot be read says nothing: the finish stood, and <c>quest done</c> answers for itself.
+    /// </summary>
+    private static async Task StillOpenAsync(SessionsWorld world, SessionRecord record, TextWriter output, CancellationToken ct)
+    {
+        if (record.Quest is not { } id) return;
+        QuestView? quest;
         try
         {
-            var said = await SessionMoves.ResolveAsync(_ => false, world.Service, id, state, ask.Note, ct).ConfigureAwait(false);
-            output.WriteLine($"sessions: {past} {id}: {said}");
-            return 0;
+            quest = await world.Service.FindQuestAsync(id, ct).ConfigureAwait(false);
         }
-        catch (DriverException refused)
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
         {
-            output.WriteLine($"sessions: {refused.Message}");
-            return 1;
+            return;
+        }
+
+        if (quest?.Status is "Open" or "Taken")
+        {
+            output.WriteLine(
+                $"  its quest #{quest.Id} is still {quest.Status.ToLowerInvariant()}: daoris-driver quest done {quest.Id} [--note \"…\"] "
+                + "marks it done as yours.");
         }
     }
 

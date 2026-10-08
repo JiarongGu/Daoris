@@ -7,11 +7,12 @@ import { ChainLine } from '../map/ChainLine';
 import { ChainStrip } from '../map/ChainStrip';
 import type { SweepBranch } from '../settings/Sweep';
 import type { AccountNamer } from '../tools';
-import type { Resolution } from './AwaitingPerson';
+import type { QuestClose, Resolution } from './AwaitingPerson';
 import { HowItCameToBe, type TraceDoor } from './HowItCameToBe';
 import type { Answered } from './InlineConfirm';
+import type { LandOffer } from './groups';
 import type { Relations } from './relations';
-import { SessionHead } from './SessionHead';
+import { type LandingPlan, SessionHead } from './SessionHead';
 import { SessionRelations } from './SessionRelations';
 import { SessionTimeline } from './SessionTimeline';
 
@@ -47,8 +48,14 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
 export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, onDiscardBranch, discardingBranch,
-  headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf,
+  headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, onLand,
 }: {
+  /** Passed straight through to the head: what its own tree offers to land, as the driver's reader said it (LAND4). */
+  lands?: LandOffer | null;
+  /** And where accepting would put it, the review's own plan (D87). */
+  landing?: LandingPlan | null;
+  /** And its press, the review's Accept, told back to its ask. Absent where nothing can press it. */
+  onLand?: (answered: Answered) => void;
   /** Its agent has accounts, so a record naming none ran on the tool's own sign-in (D125 §3.7), said in its head. */
   ownSignIn?: boolean;
   /**
@@ -93,7 +100,7 @@ export function AttendedSession({
   lastTurn?: string | null;
   resolving?: boolean;
   /** Passed straight through to the head, where a parked session's moves live (design §4); its stop is the page header's. */
-  onResolve?: (state: Resolution, note: string | null) => void;
+  onResolve?: (state: Resolution, note: string | null, close?: QuestClose) => void;
   /** Passed straight through too: where an intake's answer is, its ask (INT4g). */
   onAnswerAsk?: (ask: string) => void;
   /** And the answer to a driven session that parked to ask the person (STANDDOWN2). */
@@ -150,6 +157,9 @@ export function AttendedSession({
         onGoAhead={onGoAhead}
         ownSignIn={ownSignIn}
         nameOf={nameOf}
+        lands={lands}
+        landing={landing}
+        onLand={onLand}
       />
       {/* Every stop a door (the study's §5: "every stop pressable"): a session attends, a quest opens.
           One line of stops by default, since the whole strip stood 350 to 450px between the head and

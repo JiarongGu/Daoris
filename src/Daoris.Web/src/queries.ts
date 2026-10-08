@@ -360,6 +360,19 @@ export const useAcceptQuest = () => {
 };
 
 /**
+ * The person's done (QUESTCLOSE1, D126's note): their words to the service's own door for it, from the quest's page and from
+ * a finish at a checkpoint. A chain's next step may be published and the ask it came from may be done now, so the quests and
+ * the asks are read again, as a respond's are.
+ */
+export const usePersonDone = () => {
+  const invalidate = useInvalidateQuestWork();
+  return useMutation({
+    mutationFn: ({ id, note }: { id: string; note: string | null }) => api.personDone(id, note),
+    onSuccess: invalidate,
+  });
+};
+
+/**
  * Answer a driven session that parked to ask the person (STANDDOWN2): its record stays parked with
  * their words (ANSWER1b), and the same session goes on with them at the driver's next tick (D131). The
  * sessions are read again, so the page shows it going on (ANSWER1c) rather than still waiting.

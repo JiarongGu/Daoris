@@ -60,7 +60,17 @@ export type SessionGrouping = {
    * host older than the fact, which offers none.
    */
   deletable?: boolean;
+  /**
+   * What its own tree offers to land (LAND4, D102's LAND4 note), whatever group it rests in bar Working: the commits on it no
+   * branch of the person's holds, by the clean-up's proof, on its branch in its tree (the tree's name, never its path), with
+   * its uncommitted paths, null where git could not say. Its page offers *Accept…* beside it. Absent where it offers none,
+   * and on a host older than the fact.
+   */
+  lands?: LandOffer | null;
 };
+
+/** What an ended session's tree offers to land (LAND4): the driver's `LandOffer`, as `SESSION_GROUPS` answers it. */
+export type LandOffer = { branch: string; tree: string; commits: number; uncommitted: number | null };
 
 /** How the list is arranged (D126 §4.1): by state, the default, or by repository, the arrangement it had before. */
 export type SessionArrangement = 'state' | 'repository';
