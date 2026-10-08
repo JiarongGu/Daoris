@@ -12274,3 +12274,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **REVIEWENV1a — the review rule** (cli, driver, modules, web-settings, service). `reviews` and `workspaceReviews` in `driver.json`: both twins on one table, the refusals, each door's sentence, `daoris driver review`, the Setup rows, Ask Daoris's `setting` door, the room's table. Contract: §1.1–§1.3, §1.7–§1.8. Proof: `ReviewRulesTests` and `driverconfig.test.ts` cell for cell, module tests, vitest, `HelpSettingProposalTests`.
 
 **Outcome** 2026-10-07: the review rule is declared: `reviews` (per repository, a rule or `false`) and `workspaceReviews` in `driver.json`, the CLI's and the driver's readers held to one table, its refusals (a production name among them), and every door — `daoris driver review`, the Setup rows on a repository's and a workspace's page, `SET_REVIEW`, Ask Daoris's `review` door, the room's column — each saying nothing acts on it yet. Detail: D154's REVIEWENV1a note; commits b11ad027…d151c792.
+
+
+## MCPDISCOVER1 — the connector answers `server/discover` or stays quiet about it (2026-10-08)
+
+> - [ ] **MCPDISCOVER1 — the connector answers `server/discover` or stays quiet about it** (service). Every connector start on the install logs a warning: *received request for method 'server/discover', but no handler is available* with its exception, one per session, filling Settings → Logs. Answer it if the protocol defines it for this server, or log it once at debug. Contract: the machine-log design §4 (a warning is something a person should look at). Proof: an MCP host test that the request leaves no warning.
+
+**Outcome** 2026-10-07: the connector answers the harness's `server/discover` probe (the 2026-07-28 protocol revision's) itself, with the same method-not-found error and one debug line instead of two warnings per session; another unknown method still warns. Taking the 2.x SDK, which answers it, is MCPSDK2. Detail: FIX-LOG MCPDISCOVER1, the machine-log design §4's note; commits 170d6748, bab54755.
