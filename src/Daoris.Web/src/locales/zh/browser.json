@@ -6,5 +6,15 @@
   "browser.driving.severalLabel": "{{count}} 个会话正在操作 Daoris 的浏览器",
   "browser.driving.tip": "已交给它 Daoris 的浏览器，且仍在运行：它的智能体可以在那里的任何页面上动手，就在你两次按键之间。从交出那一刻算起，直到会话结束，不论它是否已经用过。",
   "browser.driving.menu": "正在操作 Daoris 浏览器的会话",
-  "browser.driving.unknown": "会话 {{id}}"
+  "browser.driving.unknown": "会话 {{id}}",
+  "browser.review.one": "审阅中：#{{quest}}",
+  "browser.review.several": "审阅中：{{count}} 个",
+  "browser.review.oneLabel": "搭建步骤 #{{quest}} 等你审阅：{{title}}",
+  "browser.review.severalLabel": "{{count}} 个搭建步骤等你审阅",
+  "browser.review.tip": "一个搭建步骤已在 Daoris 浏览器中展示了它所在链的工作，这些工作的落地正等你审阅。请在那里看：在你说它是否正确之前，Daoris 会一直在那个标签页里展示它的构建。",
+  "browser.review.menu": "等你审阅",
+  "browser.review.served": "已在 Daoris 浏览器中为 {{environment}} 展示",
+  "browser.review.unserved": "已不再展示：在那里刷新会加载你自己的服务器。再展示一次即可重新提供它的构建。",
+  "browser.review.again": "再展示一次 #{{quest}}",
+  "browser.review.shownAgain": "已在 Daoris 浏览器中再次展示：#{{quest}}"
 }

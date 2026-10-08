@@ -187,6 +187,25 @@ public sealed partial class DriverModule
         }
     }
 
+    /// <summary>
+    /// *Show it again* on the strip's review chip (REVIEWENV1d, D154 point 5; the review environment design §3.3): the set-up
+    /// step's newest set-up served to its tab again, the tab opened where the person closed it and brought forward where the
+    /// set-up left it, with no session and no model. Refused in the driver's words wherever it would show anything but that build
+    /// at the rule's address. Answers the state, with what was said. The verdict is never a route here: it is the person's alone,
+    /// beside the browser and never inside it (REVIEWENV1g).
+    /// </summary>
+    [DriverRoute("SHOW_REVIEW_AGAIN")]
+    private async Task<object?> ShowReviewAgainAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var quest = PayloadHelper.GetRequiredValue<string>(request.Payload, "quest").Trim().TrimStart('#');
+        var desk = _loop.Reviews
+                   ?? throw new DriverException("this window carries no browser to show a review in, so nothing was shown again.");
+        var service = _loop.Service ?? throw NotReady();
+        var (ok, message) = await desk.ShowAgainAsync(service, DriverConfig.Load(_loop.ConfigPath), quest, cancellationToken);
+        if (!ok) throw new DriverException(message);
+        return State(shownAgain: new { Quest = quest, Message = message });
+    }
+
     // "Look now": a person who just published a quest should not watch a poll countdown.
     [DriverRoute("NUDGE")]
     private async Task<object?> NudgeAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -214,13 +233,15 @@ public sealed partial class DriverModule
     /// <param name="retried">What *Try again* did (SESSUX1b): the quest, <c>marked</c> or <c>released</c>, and the stop's
     /// session for a release. Null for every other answer, which the bridge leaves out.</param>
     /// <param name="reviewed">What a review's procedure look found (REVIEWENV1a), on the answer to <c>SET_REVIEW</c> alone.</param>
-    private object State(object? retried = null, object? reviewed = null)
+    /// <param name="shownAgain">What *Show it again* said (REVIEWENV1d), on the answer to <c>SHOW_REVIEW_AGAIN</c> alone.</param>
+    private object State(object? retried = null, object? reviewed = null, object? shownAgain = null)
     {
         var config = DriverConfig.Load(_loop.ConfigPath);
         return new
         {
             Retried = retried,
             Reviewed = reviewed,
+            ShownAgain = shownAgain,
             // Whether the loop's service is up (LOOK2a): until it is, every route that reads it refuses *still coming up*,
             // so the status bar says starting rather than ready, which this file alone would claim.
             Ready = _loop.Service is not null,
@@ -293,6 +314,11 @@ public sealed partial class DriverModule
             Running = _loop.Processes.Running,
             // Who is driving Daoris's browser (BRW8): the running sessions handed a server that drives it.
             DrivingBrowser = _loop.Processes.DrivingBrowser,
+            // The set-ups waiting for the person here (REVIEWENV1d, design §3.3), each with whether Daoris serves its tab now: the
+            // strip's chip beside the browser's door. Left out where the loop carries no browser, which shows nothing.
+            InReview = _loop.Reviews?.Waiting
+                .Select(row => new { row.Quest, row.Title, row.Environment, row.Look, row.Shows, row.Served })
+                .ToArray(),
         };
     }
 }

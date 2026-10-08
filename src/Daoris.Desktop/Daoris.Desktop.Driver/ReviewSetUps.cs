@@ -65,10 +65,14 @@ public static class ReviewSetUps
     /// </summary>
     /// <param name="quest">The quest as the conclusion read it; nothing is posted for one that is no set-up step.</param>
     /// <param name="started">When the run opened, for the log's seconds until shown.</param>
+    /// <param name="showing">
+    /// Daoris's browser's review half, where the loop carries one (REVIEWENV1d): once a set-up is posted, the folder its session
+    /// named is served to the step's tab from then until the person's verdict, and the conversation is told so. Null serves nothing.
+    /// </param>
     /// <returns>What was said, or null where nothing was posted.</returns>
     public static async Task<string?> PostAsync(
         ServiceClient service, DriverConfig config, SessionEvents events, QuestView? quest, string session, string tree, string? workspace,
-        DateTimeOffset started, CancellationToken ct)
+        DateTimeOffset started, CancellationToken ct, ReviewDesk? showing = null)
     {
         if (quest?.SetUpIn is not { } named) return null;
         string said;
@@ -96,6 +100,10 @@ public static class ReviewSetUps
                     service.LandingSaid(ReviewLines.Shown(
                         quest.Id, session, environment.Kind, served: newest?.Served is not null, run: newest?.Run is not null,
                         seconds: newest?.At is { } at ? (long)Math.Max(0, (at - started).TotalSeconds) : null));
+                    if (showing is not null && await showing.ServeSetUpAsync(after, session, tree, environment, ct).ConfigureAwait(false) is { } served)
+                    {
+                        said += $" {char.ToUpperInvariant(served[0])}{served[1..]}";
+                    }
                 }
             }
         }
