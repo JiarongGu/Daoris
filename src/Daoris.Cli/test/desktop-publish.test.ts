@@ -9,13 +9,16 @@ import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 // Untyped workspace tooling, suppressed at the one site — see desktop-tool.test.ts for why.
 import {
-  BUILD_MANIFEST, CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, GATE_COMMAND, HOME, HOST_HOME, KEPT_LOCALES, LAUNCHER, MANIFEST_SCHEMA,
-  MARKER, MARKER_HEADER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RESOURCES_SOURCE, RETIRED_IN_APP, RETIRED_LAUNCHERS, SHELL_EXE,
-  SHELL_FILES, SHELL_HOME, STAGE, STAGED, STAGED_REQUIRED, SWAP_JOURNAL, buildId, cliLaunchers, insideFixtures, installedNote, isInstall, layCli,
-  layOffers, layResources, promoteStage, recordedShellFiles, refusal, retiredPaths, stageRefusal, stagedManifest, ungatedRefusal, unstage,
-  writeManifest,
+  BUILD_MANIFEST, CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, CONNECTOR_EXE, CONNECTOR_HOME, GATE_COMMAND, HOME, HOST_EXE, HOST_HOME,
+  KEPT_LOCALES, LAUNCHER, MANIFEST_SCHEMA, MARKER, MARKER_HEADER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RESOURCES_SOURCE, RETIRED_IN_APP,
+  RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME, STAGE, STAGED, STAGED_REQUIRED, SWAP_JOURNAL, buildId, cliLaunchers, insideFixtures,
+  installedNote, isInstall, layCli, layOffers, layResources, promoteStage, recordedShellFiles, refusal, retiredPaths, servicePlan, stageRefusal,
+  stagedManifest, ungatedRefusal, unstage, writeManifest,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop-publish.mjs';
+// The service hosts' one build recipe (CONNECTOR1), which the desktop's `--service` publishes by.
+// @ts-expect-error — untyped workspace tooling; see above
+import { HOSTS, publishCommand } from '../../../tools/service-publish.mjs';
 // @ts-expect-error — untyped workspace tooling; see above
 import { renameHeld } from '../../../tools/fsx.mjs';
 import { resolveCanonRoot } from '../src/canon.ts';
@@ -335,6 +338,19 @@ test('the install note is the marker, and says how to pin Daoris from its runnin
 });
 
 /**
+ * CONNECTOR1: the note names both service hosts `--service` lays under `app/`, the connector a session is handed
+ * among them, and says what they outrank: whoever opens the folder to ask which connector runs reads it here.
+ */
+test('the install note says where both service hosts are, and that they come before any in the home’s bin/', () => {
+  const note: string = installedNote();
+  const row = note.split('\n').find((line) => line.startsWith(`| \`${SHELL_HOME[0]}/\``)) ?? '';
+  assert.ok(row.includes(`\`${HOST_HOME.slice(1).join('/')}/\``), 'the HTTP host’s folder');
+  assert.ok(row.includes(`\`${CONNECTOR_HOME.slice(1).join('/')}/\``), 'the connector’s folder');
+  assert.match(row, /handed/, 'what the connector is for');
+  assert.match(note, /ahead of any in `bin\/`/);
+});
+
+/**
  * WSSETUP2 (D124 §1.2): the note says the install carries its doctrine tool, where, how each shell runs it,
  * on which Node, and that nothing changed the account's PATH (D124 §10 refused that), so whoever opens
  * the folder is not left wondering why a terminal of theirs still runs another `daoris`.
@@ -435,6 +451,44 @@ test('the launcher starts the application the publish lays out, by the name its 
   const app = readFileSync(join(desktop, 'Daoris.Desktop.App', 'Daoris.Desktop.App.csproj'), 'utf8');
   const assembly = /<AssemblyName>([^<]+)</.exec(app)?.[1] ?? '';
   assert.equal(`${assembly.replace(/\.App$/, '')}.exe`, SHELL_EXE);
+});
+
+/**
+ * CONNECTOR1: `--service` lays the knowledge connector beside the HTTP host under `app/`. An install that
+ * carried only its HTTP host handed every session the home's `bin/` copy, which one `publish:service --install`
+ * laid down and no republish refreshed, and an eight-day-old connector rebuilt the shared store at its own
+ * older schema. Each host goes in the folder `service-publish` publishes it into, built by that script's
+ * recipe, so there is one way to build a host and one name for its folder.
+ */
+test('--service lays the connector beside the HTTP host under app/, each built by service-publish’s one recipe', () => {
+  const root = join(tmpdir(), 'an-install');
+  const plan = servicePlan(root);
+
+  assert.deepEqual(plan.map((step: { executable: string }) => step.executable),
+    [join(root, ...CONNECTOR_HOME, CONNECTOR_EXE), join(root, ...HOST_HOME, HOST_EXE)]);
+  // Every host the service publish makes, and none of its own.
+  assert.deepEqual(plan.map((step: { host: unknown }) => step.host), [...HOSTS]);
+  for (const step of plan) {
+    assert.equal(step.folder, dirname(step.executable));
+    assert.equal(step.command, publishCommand(step.host, 'win-x64', step.folder), `${step.host.binary} is built by another recipe`);
+  }
+  // Under the application's folder, where a swap carries them (D139) and the locators look.
+  assert.deepEqual([CONNECTOR_HOME[0], HOST_HOME[0]], [SHELL_HOME[0], SHELL_HOME[0]]);
+});
+
+/**
+ * The recipe itself: self-contained single-file, with the native libraries inside it. Without
+ * `IncludeNativeLibrariesForSelfExtract`, `e_sqlite3` lands beside the executable, and a copy that took only the
+ * executable died on its first store open (FIX-LOG). One recipe means one place this can be lost.
+ */
+test('a service host is published self-contained, single-file, its native libraries inside, into its own folder', () => {
+  const [connector] = HOSTS;
+  assert.equal(connector.binary, CONNECTOR_HOME.at(-1));
+  const command: string = publishCommand(connector, 'win-x64', join(tmpdir(), 'an-install', ...CONNECTOR_HOME));
+  assert.ok(command.startsWith(`dotnet publish "${connector.project}" -c Release -r win-x64 --self-contained `), command);
+  assert.match(command, / -p:PublishSingleFile=true /);
+  assert.match(command, / -p:IncludeNativeLibrariesForSelfExtract=true /);
+  assert.ok(command.endsWith(` -o "${join(tmpdir(), 'an-install', ...CONNECTOR_HOME)}"`), command);
 });
 
 /**
