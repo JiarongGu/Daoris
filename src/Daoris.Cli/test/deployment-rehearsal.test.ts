@@ -10,13 +10,13 @@ import { readText } from '../src/fsx.ts';
 import { makeFixture } from './_fixture.ts';
 import {
   CLOSED_NOTE, SWEPT_NOTE, bridgeCall, cliProblems, concludedByTheClose, firstUnder, gitBashBeside, hookLines, insideWorkspace,
-  invokeInPage, isMarkedProcess, launchers, loggedData, markedProcess, offerProblems, stageLiveBuild, strays, swapOutcome,
-  transcriptHolds, utf8Of,
+  invokeInPage, isInstallsConnector, isMarkedProcess, launchers, loggedData, markedProcess, offerProblems, offeredConnector, stageLiveBuild,
+  strays, swapOutcome, transcriptHolds, utf8Of,
   // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
 } from '../../../tools/deployment-rehearsal.mjs';
 // The install's layout, from the script that makes it: the gate reads the same constants.
 import {
-  CLI_BIN, CLI_ENTRY, CLI_LAUNCHERS, CLI_PACKAGE, HOST_EXE, HOST_HOME, OFFERED_PLUGINS, PLUGIN_OFFERS,
+  CLI_BIN, CLI_ENTRY, CLI_LAUNCHERS, CLI_PACKAGE, CONNECTOR_EXE, CONNECTOR_HOME, HOST_EXE, HOST_HOME, OFFERED_PLUGINS, PLUGIN_OFFERS,
   // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
 } from '../../../tools/desktop-publish.mjs';
 // The protocol stub both rehearsals run (DEPLOY5): one copy, where the family rehearsal's used to be.
@@ -222,6 +222,56 @@ test('the host’s home in an install is a path the locator actually looks in', 
   assert.ok(
     locator.includes(`Path.Combine("${HOST_HOME[0]}", "${HOST_HOME[1]}")`),
     `the publish puts the host in ${HOST_HOME.join('/')} and ServiceHostLocator does not look there`);
+});
+
+/**
+ * CONNECTOR1, the same counterpart set one host over: the publish lays the connector under `app/`, and
+ * `KnowledgeConnector.Candidates` must look there before the home's `bin/`, or `--service` publishes a connector
+ * nothing hands out and every session goes on being handed the home's older copy.
+ */
+test('the connector’s home in an install is a path KnowledgeConnector looks in, ahead of the home’s bin/', () => {
+  const connector = readText(join(
+    repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'KnowledgeConnector.cs'));
+  assert.ok(connector.includes(`Folder = "${CONNECTOR_HOME[1]}"`),
+    `the publish puts the connector in ${CONNECTOR_HOME.join('/')} and KnowledgeConnector names another folder`);
+  const own = connector.indexOf(`Path.Combine("${CONNECTOR_HOME[0]}", Folder)`);
+  const home = connector.indexOf('Path.Combine(home, "bin", ExecutableName)');
+  assert.ok(own !== -1, `KnowledgeConnector does not look in ${CONNECTOR_HOME.join('/')}`);
+  assert.ok(home !== -1 && own < home, 'KnowledgeConnector looks in the home’s bin/ before the install’s own connector');
+  assert.ok(connector.includes(`"${CONNECTOR_EXE}"`), `KnowledgeConnector does not look for ${CONNECTOR_EXE}`);
+});
+
+/**
+ * Phase 7 reads which connector the conversation was handed from what the agent itself said on `session/new`: the
+ * protocol stub says each server's command, and this reads the knowledge server's back. Nothing said is null, never
+ * a guess at a neighbouring line.
+ */
+test('the connector a session was handed is read from the stub’s own line, and none said is none', () => {
+  const said = [
+    'acp-agent: session on X:\\family\\newcomer',
+    'acp-agent: mcp servers offered: daoris-knowledge, browser',
+    'acp-agent: mcp server daoris-knowledge runs X:\\an install\\app\\daoris-knowledge\\daoris-knowledge.exe',
+    'acp-agent: mcp server browser runs node',
+  ].join('\r\n');
+  assert.equal(offeredConnector(said), 'X:\\an install\\app\\daoris-knowledge\\daoris-knowledge.exe');
+  assert.equal(offeredConnector('acp-agent: mcp servers offered: (none)\n'), null);
+  assert.equal(offeredConnector('acp-agent: mcp server browser runs node\n'), null, 'another server is not the connector');
+  assert.equal(offeredConnector(''), null);
+});
+
+/**
+ * The check on what was read: the install's own connector, by resolved path and in Windows' case, and so never the
+ * home's `bin/` copy the gate plants beside it, which is what every session on an install was handed before.
+ */
+test('the connector handed is the install’s only when it is the one under its app/, and the home’s copy never is', () => {
+  const install = join(repoRoot, '_fixtures', 'x', 'install');
+  const own = join(install, ...CONNECTOR_HOME, CONNECTOR_EXE);
+  assert.equal(isInstallsConnector(own, install), true);
+  assert.equal(isInstallsConnector(own.toUpperCase(), install), true, 'Windows compares paths without case');
+  assert.equal(isInstallsConnector(join(install, '..', 'install', ...CONNECTOR_HOME, CONNECTOR_EXE), install), true);
+  assert.equal(isInstallsConnector(join(repoRoot, '_fixtures', 'x', 'home', 'bin', CONNECTOR_EXE), install), false);
+  assert.equal(isInstallsConnector(join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Mcp', 'bin', 'Debug', 'net10.0', CONNECTOR_EXE), install), false);
+  assert.equal(isInstallsConnector(null, install), false);
 });
 
 /**
@@ -507,5 +557,49 @@ test('the protocol stub both rehearsals run holds a conversation open until its 
 
   child.stdin.end();
   assert.equal(await exited, 0, 'end of input is the ending');
+  fx.cleanup();
+});
+
+/**
+ * CONNECTOR1: the stub says the command of each server it was offered on `session/new`, beside the names it already
+ * said, so phase 7 can read back which connector binary the deployed shell handed a session. The names' line stays as
+ * it was: the family rehearsal reads it.
+ */
+test('the protocol stub says the command of each server it was offered, which is what the gate reads back', async () => {
+  const fx = makeFixture('deployment-rehearsal-acp-servers');
+  const agent = join(fx.root, 'acp-agent.mjs');
+  writeFileSync(agent, ACP_STUB_AGENT);
+  const env = { ...process.env };
+  delete env.DAORIS_QUEST_ID;
+  const child = spawn(process.execPath, [agent], { cwd: fx.root, env, stdio: ['pipe', 'pipe', 'pipe'] });
+  let said = '';
+  child.stderr.on('data', (chunk) => { said += chunk; });
+  const exited = new Promise<number | null>((resolve) => child.on('exit', (code) => resolve(code)));
+
+  let created: () => void = () => {};
+  const sessionMade = new Promise<void>((resolve) => { created = resolve; });
+  createInterface({ input: child.stdout }).on('line', (line) => {
+    if (JSON.parse(line).id === 2) created();
+  });
+
+  const connector = join(fx.root, 'an install', ...CONNECTOR_HOME, CONNECTOR_EXE);
+  const send = (frame: object) => child.stdin.write(`${JSON.stringify(frame)}\n`);
+  send({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: 1 } });
+  send({
+    jsonrpc: '2.0', id: 2, method: 'session/new', params: {
+      cwd: fx.root,
+      mcpServers: [
+        { name: 'daoris-knowledge', command: connector, args: [], env: [] },
+        { name: 'browser', command: 'node', args: ['-e', '0'], env: [] },
+      ],
+    },
+  });
+  await sessionMade;
+  child.stdin.end();
+  assert.equal(await exited, 0);
+
+  assert.match(said, /acp-agent: mcp servers offered: daoris-knowledge, browser/);
+  assert.equal(offeredConnector(said), connector);
+  assert.match(said, /acp-agent: mcp server browser runs node/);
   fx.cleanup();
 });

@@ -461,6 +461,10 @@ const handle = async (line) => {
       // than asserted here: a stub that refused to start would tell the gate nothing about WHY.
       const offered = (frame.params?.mcpServers ?? []).map((s) => s.name).join(', ');
       say('mcp servers offered:', offered || '(none)');
+      // CONNECTOR1: and what each one runs, so the deployment gate can tell WHICH connector binary the shell
+      // handed over, the install's own or the home's older copy. A line each, after the names' line, which
+      // the family rehearsal reads as it was.
+      for (const server of frame.params?.mcpServers ?? []) say('mcp server', server.name, 'runs', server.command);
       send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: session } });
       break;
     }
