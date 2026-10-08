@@ -52,14 +52,16 @@ public sealed class ApiKeyStore
     private const string Marker = "dk_";
     private const int PrefixLength = 8;
 
-    private readonly SqliteConnection _connection;
+    /// <summary>The connection's gate: every command here runs inside it (SQLITETX1).</summary>
+    private readonly ConnectionGate _db;
 
-    private ApiKeyStore(SqliteConnection connection) => _connection = connection;
+    private ApiKeyStore(SqliteConnection connection) => _db = ConnectionGate.For(connection);
 
-    public static async Task<ApiKeyStore> OpenAsync(SqliteConnection connection, CancellationToken ct = default)
+    public static Task<ApiKeyStore> OpenAsync(SqliteConnection connection, CancellationToken ct = default) =>
+        ConnectionGate.For(connection).RunAsync(async () =>
     {
         var store = new ApiKeyStore(connection);
-        await using var command = connection.CreateCommand();
+        await using var command = store._db.Command();
         command.CommandText = """
             CREATE TABLE IF NOT EXISTS api_keys (
               prefix  TEXT PRIMARY KEY,
@@ -72,17 +74,17 @@ public sealed class ApiKeyStore
             """;
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         return store;
-    }
+    }, ct);
 
     /// <summary>Mint a key. The returned secret is shown once by the caller and never stored.</summary>
-    public async Task<MintedKey> MintAsync(
-        string name, TimeSpan lifetime, DateTimeOffset now, CancellationToken ct = default)
+    public Task<MintedKey> MintAsync(
+        string name, TimeSpan lifetime, DateTimeOffset now, CancellationToken ct = default) => _db.RunAsync<MintedKey>(async () =>
     {
         var key = Marker + Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(24));
         var record = new ApiKeyRecord(
             key.Substring(Marker.Length, PrefixLength), name, now, now.Add(lifetime), Revoked: null);
 
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = """
             INSERT INTO api_keys (prefix, hash, name, created, expires, revoked)
             VALUES ($prefix, $hash, $name, $created, $expires, NULL)
@@ -95,15 +97,15 @@ public sealed class ApiKeyStore
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
 
         return new(key, record);
-    }
+    }, ct);
 
     /// <summary>
     /// Judge a presented key. Unknown carries no record at all, so a caller learns nothing by guessing;
     /// expired and revoked carry theirs, because naming the state to the key's own holder is what lets
     /// them fix it.
     /// </summary>
-    public async Task<KeyValidation> ValidateAsync(
-        string presented, DateTimeOffset now, CancellationToken ct = default)
+    public Task<KeyValidation> ValidateAsync(
+        string presented, DateTimeOffset now, CancellationToken ct = default) => _db.RunAsync<KeyValidation>(async () =>
     {
         presented = presented.Trim();
         if (!presented.StartsWith(Marker, StringComparison.Ordinal)
@@ -112,7 +114,7 @@ public sealed class ApiKeyStore
             return new(KeyVerdict.Unknown, Key: null);
         }
 
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText =
             "SELECT prefix, hash, name, created, expires, revoked FROM api_keys WHERE prefix = $prefix";
         command.Parameters.AddWithValue("$prefix", presented.Substring(Marker.Length, PrefixLength));
@@ -132,23 +134,23 @@ public sealed class ApiKeyStore
         if (record.Revoked is not null) return new(KeyVerdict.Revoked, record);
         if (record.Expires <= now) return new(KeyVerdict.Expired, record);
         return new(KeyVerdict.Valid, record);
-    }
+    }, ct);
 
     /// <summary>End a key by its prefix. True when the prefix named a key; idempotent on a re-revoke.</summary>
-    public async Task<bool> RevokeAsync(string prefix, DateTimeOffset now, CancellationToken ct = default)
+    public Task<bool> RevokeAsync(string prefix, DateTimeOffset now, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText =
             "UPDATE api_keys SET revoked = COALESCE(revoked, $now) WHERE prefix = $prefix";
         command.Parameters.AddWithValue("$now", now.ToString("O"));
         command.Parameters.AddWithValue("$prefix", prefix);
         return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
-    }
+    }, ct);
 
     /// <summary>Every key ever minted, by its public face — the audit view.</summary>
-    public async Task<IReadOnlyList<ApiKeyRecord>> ListAsync(CancellationToken ct = default)
+    public Task<IReadOnlyList<ApiKeyRecord>> ListAsync(CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<ApiKeyRecord>>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText =
             "SELECT prefix, name, created, expires, revoked FROM api_keys ORDER BY created, prefix";
 
@@ -163,7 +165,7 @@ public sealed class ApiKeyStore
         }
 
         return records;
-    }
+    }, ct);
 
     private static string HashOf(string key) =>
         Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(key)));

@@ -142,14 +142,17 @@ public sealed record AskWord(AskWordKind Kind, string Text, DateTimeOffset At, s
 /// <summary>Asks, held by the service beside the quests they become — machine-local, like the intake.</summary>
 public sealed class AskStore
 {
-    private readonly SqliteConnection _connection;
+    /// <summary>The connection's gate: every command here runs inside it (SQLITETX1).</summary>
+    private readonly ConnectionGate _db;
 
-    private AskStore(SqliteConnection connection) => _connection = connection;
+    private AskStore(SqliteConnection connection) => _db = ConnectionGate.For(connection);
 
-    public static async Task<AskStore> OpenAsync(SqliteConnection connection, CancellationToken ct = default)
+    public static Task<AskStore> OpenAsync(SqliteConnection connection, CancellationToken ct = default) =>
+        ConnectionGate.For(connection).RunAsync(() => new AskStore(connection).EnsureSchemaAsync(ct), ct);
+
+    private async Task<AskStore> EnsureSchemaAsync(CancellationToken ct)
     {
-        var store = new AskStore(connection);
-        await using var command = connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = """
             CREATE TABLE IF NOT EXISTS asks (
               id          TEXT PRIMARY KEY,
@@ -172,18 +175,18 @@ public sealed class AskStore
 
         // INT4b: which intake session served it. An ask made before the intake existed keeps every
         // word it had — it is the record of what a person asked, and nothing re-derives it.
-        await SchemaColumns.EnsureAsync(connection, "asks", "intake", "intake TEXT NULL", ct).ConfigureAwait(false);
+        await SchemaColumns.EnsureAsync(_db, "asks", "intake", "intake TEXT NULL", ct).ConfigureAwait(false);
 
         // DRIFT1a (D133 §1): the person's words after the ask, appended where they are kept. A store from
         // before keeps every row it had, and their earlier answers and messages were never kept, so the
         // moment keeping began is written on each of them, once, rather than read as nothing more said.
-        await SchemaColumns.EnsureAsync(connection, "asks", "words", "words TEXT NOT NULL DEFAULT '[]'", ct)
+        await SchemaColumns.EnsureAsync(_db, "asks", "words", "words TEXT NOT NULL DEFAULT '[]'", ct)
             .ConfigureAwait(false);
-        if (!await SchemaColumns.HasAsync(connection, "asks", "words_kept_from", ct).ConfigureAwait(false))
+        if (!await SchemaColumns.HasAsync(_db, "asks", "words_kept_from", ct).ConfigureAwait(false))
         {
-            await SchemaColumns.EnsureAsync(connection, "asks", "words_kept_from", "words_kept_from TEXT NULL", ct)
+            await SchemaColumns.EnsureAsync(_db, "asks", "words_kept_from", "words_kept_from TEXT NULL", ct)
                 .ConfigureAwait(false);
-            await using var mark = connection.CreateCommand();
+            await using var mark = _db.Command();
             mark.CommandText = "UPDATE asks SET words_kept_from = $now WHERE words_kept_from IS NULL";
             mark.Parameters.AddWithValue("$now", DateTimeOffset.UtcNow.ToString("O"));
             await mark.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
@@ -191,10 +194,10 @@ public sealed class AskStore
 
         // KNOWUSE1a (D135 §2): the go-aheads its sessions asked for, beside the person's words. A store from before keeps
         // every ask it had, each holding none: nothing was ever asked on one in a way a later session could be handed.
-        await SchemaColumns.EnsureAsync(connection, "asks", "go_aheads", "go_aheads TEXT NOT NULL DEFAULT '[]'", ct)
+        await SchemaColumns.EnsureAsync(_db, "asks", "go_aheads", "go_aheads TEXT NOT NULL DEFAULT '[]'", ct)
             .ConfigureAwait(false);
 
-        return store;
+        return this;
     }
 
     /// <summary>The ask's handle: the same words in the same circle are the same ask.</summary>
@@ -210,9 +213,9 @@ public sealed class AskStore
             .ToLowerInvariant();
 
     /// <summary>Write the ask whole — insert, or replace the row this id already names.</summary>
-    public async Task SaveAsync(Ask ask, CancellationToken ct = default)
+    public Task SaveAsync(Ask ask, CancellationToken ct = default) => _db.RunAsync(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = """
             INSERT INTO asks (id, workspace, sentence, state, tier, asked, updated, asker, note, links, attachments, proposal, quests, intake)
             VALUES ($id, $workspace, $sentence, $state, $tier, $asked, $updated, $asker, $note, $links, $attachments, $proposal, $quests, $intake)
@@ -244,7 +247,7 @@ public sealed class AskStore
         }));
         command.Parameters.AddWithValue("$quests", Json(ask.Quests, (w, id) => w.WriteStringValue(id)));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-    }
+    }, ct);
 
     /// <summary>
     /// Record that the ask became <paramref name="quest"/>: appended where the list is kept, in one
@@ -256,10 +259,10 @@ public sealed class AskStore
     /// closed: a quest that was published before the close landed is still one the ask became.
     /// </remarks>
     /// <param name="tier">The tier the ask is now answered at, or null to keep it.</param>
-    public async Task RecordPublishedAsync(
-        string id, string quest, string? tier, DateTimeOffset now, CancellationToken ct = default)
+    public Task RecordPublishedAsync(
+        string id, string quest, string? tier, DateTimeOffset now, CancellationToken ct = default) => _db.RunAsync(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = """
             UPDATE asks SET
               quests = CASE WHEN EXISTS (SELECT 1 FROM json_each(asks.quests) WHERE json_each.value = $quest)
@@ -274,41 +277,41 @@ public sealed class AskStore
         command.Parameters.AddWithValue("$tier", (object?)tier ?? DBNull.Value);
         command.Parameters.AddWithValue("$updated", now.ToString("O"));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-    }
+    }, ct);
 
     /// <summary>
     /// Close the ask with its reason — only the columns a close owns, so a quest published meanwhile
     /// stays on it (REV3).
     /// </summary>
-    public async Task RecordClosedAsync(string id, string note, DateTimeOffset now, CancellationToken ct = default)
+    public Task RecordClosedAsync(string id, string note, DateTimeOffset now, CancellationToken ct = default) => _db.RunAsync(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = "UPDATE asks SET state = 'Closed', note = $note, updated = $updated WHERE id = $id";
         command.Parameters.AddWithValue("$id", id.TrimStart('#'));
         command.Parameters.AddWithValue("$note", note);
         command.Parameters.AddWithValue("$updated", now.ToString("O"));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-    }
+    }, ct);
 
     /// <summary>Remove the ask's row — the desk deleted it, and every quest asked by it first (D95).</summary>
-    public async Task DeleteAsync(string id, CancellationToken ct = default)
+    public Task DeleteAsync(string id, CancellationToken ct = default) => _db.RunAsync(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = "DELETE FROM asks WHERE id = $id";
         command.Parameters.AddWithValue("$id", id.TrimStart('#'));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-    }
+    }, ct);
 
     /// <summary>Record the intake session serving the ask — that column alone, for the same reason (REV3).</summary>
-    public async Task RecordIntakeAsync(string id, string session, DateTimeOffset now, CancellationToken ct = default)
+    public Task RecordIntakeAsync(string id, string session, DateTimeOffset now, CancellationToken ct = default) => _db.RunAsync(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = "UPDATE asks SET intake = $intake, updated = $updated WHERE id = $id";
         command.Parameters.AddWithValue("$id", id.TrimStart('#'));
         command.Parameters.AddWithValue("$intake", session);
         command.Parameters.AddWithValue("$updated", now.ToString("O"));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-    }
+    }, ct);
 
     /// <summary>
     /// Keep a word the person gave on the ask (DRIFT1a): appended where the list is kept, in one statement,
@@ -316,9 +319,9 @@ public sealed class AskStore
     /// processes, and a whole-record save would drop the other's word.
     /// </summary>
     /// <returns>False when no ask has that id, and nothing was kept.</returns>
-    public async Task<bool> RecordWordAsync(string id, AskWord word, DateTimeOffset now, CancellationToken ct = default)
+    public Task<bool> RecordWordAsync(string id, AskWord word, DateTimeOffset now, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = """
             UPDATE asks SET words = json_insert(words, '$[#]', json($word)), updated = $updated WHERE id = $id
             """;
@@ -335,7 +338,7 @@ public sealed class AskStore
         }));
         command.Parameters.AddWithValue("$updated", now.ToString("O"));
         return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
-    }
+    }, ct);
 
     /// <summary>
     /// Read the ask's go-aheads, decide, and write what was decided, as one step across hosts (KNOWUSE1a): two sessions
@@ -347,22 +350,18 @@ public sealed class AskStore
     /// read kept as it was), or null to write nothing; and what to answer.
     /// </param>
     /// <returns>Whether an ask has that id, and what <paramref name="decide"/> answered; nothing is decided for none.</returns>
-    public async Task<(bool Found, T? Result)> DecideGoAheadsAsync<T>(
+    public Task<(bool Found, T? Result)> DecideGoAheadsAsync<T>(
         string id,
         Func<IReadOnlyList<(JsonElement Raw, GoAhead? Read)>, (IReadOnlyList<(JsonElement Raw, GoAhead? Read)>? Next, T Result)> decide,
-        DateTimeOffset now, CancellationToken ct = default)
-    {
-        var gate = ConnectionGate.For(_connection);
-        await gate.WaitAsync(ct).ConfigureAwait(false);
-        try
+        DateTimeOffset now, CancellationToken ct = default) =>
+        _db.InTransactionAsync<(bool Found, T? Result)>(async (_, inside) =>
         {
-            await using var transaction = _connection.BeginTransaction(deferred: false);
             string? stored;
-            await using (var read = _connection.CreateCommand())
+            await using (var read = _db.Command())
             {
                 read.CommandText = "SELECT go_aheads FROM asks WHERE id = $id";
                 read.Parameters.AddWithValue("$id", id.TrimStart('#'));
-                stored = await read.ExecuteScalarAsync(CancellationToken.None).ConfigureAwait(false) as string;
+                stored = await read.ExecuteScalarAsync(inside).ConfigureAwait(false) as string;
             }
 
             if (stored is null) return (false, default);
@@ -370,37 +369,31 @@ public sealed class AskStore
             var (next, result) = decide(GoAheads.Entries(stored));
             if (next is not null)
             {
-                await using var write = _connection.CreateCommand();
+                await using var write = _db.Command();
                 write.CommandText = "UPDATE asks SET go_aheads = $goAheads, updated = $updated WHERE id = $id";
                 write.Parameters.AddWithValue("$id", id.TrimStart('#'));
                 write.Parameters.AddWithValue("$goAheads", GoAheads.Written(next));
                 write.Parameters.AddWithValue("$updated", now.ToString("O"));
-                await write.ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
+                await write.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
             }
 
-            await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
             return (true, result);
-        }
-        finally
-        {
-            gate.Release();
-        }
-    }
+        }, ct);
 
-    public async Task<Ask?> FindAsync(string id, CancellationToken ct = default)
+    public Task<Ask?> FindAsync(string id, CancellationToken ct = default) => _db.RunAsync<Ask?>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = "SELECT * FROM asks WHERE id = $id";
         command.Parameters.AddWithValue("$id", id.TrimStart('#'));
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
-    }
+    }, ct);
 
     /// <summary>A circle's asks — or every circle's — newest first; closed ones only when asked for.</summary>
-    public async Task<IReadOnlyList<Ask>> ListAsync(
-        string? workspace = null, bool includeClosed = false, CancellationToken ct = default)
+    public Task<IReadOnlyList<Ask>> ListAsync(
+        string? workspace = null, bool includeClosed = false, CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<Ask>>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = $"""
             SELECT * FROM asks
             WHERE ($workspace IS NULL OR workspace = $workspace COLLATE NOCASE)
@@ -413,7 +406,7 @@ public sealed class AskStore
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         while (await reader.ReadAsync(ct).ConfigureAwait(false)) asks.Add(Read(reader));
         return asks;
-    }
+    }, ct);
 
     private static Ask Read(SqliteDataReader reader)
     {

@@ -574,9 +574,10 @@ public sealed class QuestLogTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Pins what the store's commit-on-refusal rests on: a host serves concurrent requests over one
-    /// connection, and a statement run while a quest transaction is open JOINS it rather than failing.
-    /// A driver version that changed this would change which of the two hazards the store must guard.
+    /// Pins what the connection's gate rests on: a command made while a transaction is open JOINS it rather
+    /// than failing, so a store method a transaction's work calls inside the gate it holds writes in that
+    /// transaction (SQLITETX1). Another request's command never meets it now: it waits for the gate. A driver
+    /// version that changed this would fail every store call made inside a transaction's work.
     /// </summary>
     [Fact]
     public async Task A_statement_run_during_an_open_transaction_joins_it_rather_than_failing()

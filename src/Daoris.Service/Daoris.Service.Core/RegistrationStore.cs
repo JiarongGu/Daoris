@@ -23,20 +23,21 @@ namespace Daoris.Knowledge;
 /// </remarks>
 public sealed class RegistrationStore
 {
-    private readonly SqliteConnection _connection;
+    /// <summary>The connection's gate: every command here runs inside it (SQLITETX1).</summary>
+    private readonly ConnectionGate _db;
 
-    private RegistrationStore(SqliteConnection connection) => _connection = connection;
+    private RegistrationStore(SqliteConnection connection) => _db = ConnectionGate.For(connection);
 
     public static async Task<RegistrationStore> OpenAsync(SqliteConnection connection, CancellationToken ct = default)
     {
         var store = new RegistrationStore(connection);
-        await store.EnsureSchemaAsync(ct).ConfigureAwait(false);
+        await store._db.RunAsync(() => store.EnsureSchemaAsync(ct), ct).ConfigureAwait(false);
         return store;
     }
 
     private async Task EnsureSchemaAsync(CancellationToken ct)
     {
-        await using (var command = _connection.CreateCommand())
+        await using (var command = _db.Command())
         {
             command.CommandText = $"""
                 CREATE TABLE IF NOT EXISTS registrations (
@@ -113,7 +114,7 @@ public sealed class RegistrationStore
 
         // What the held knowledge says, hashed (SYNC5a). NULL on every row from before it, which the
         // ordering reads as "compare nothing, take the same commit once".
-        await SchemaColumns.EnsureAsync(_connection, "feed_provenance", "digest", "digest TEXT NULL", ct).ConfigureAwait(false);
+        await SchemaColumns.EnsureAsync(_db, "feed_provenance", "digest", "digest TEXT NULL", ct).ConfigureAwait(false);
 
         // A store created before the driver existed has no root column — and one created before the
         // remote existed has no declaration columns. Registrations must survive the upgrade: a schema
@@ -143,12 +144,12 @@ public sealed class RegistrationStore
             ("lanes", "lanes TEXT NULL"),
         })
         {
-            await SchemaColumns.EnsureAsync(_connection, "registrations", column, definition, ct).ConfigureAwait(false);
+            await SchemaColumns.EnsureAsync(_db, "registrations", column, definition, ct).ConfigureAwait(false);
         }
 
         // After the columns, because the triggers name three of them an old store only has once
         // migrated.
-        await using (var command = _connection.CreateCommand())
+        await using (var command = _db.Command())
         {
             command.CommandText = """
                 -- 🔴 The tombstone is written by the statement that ends the row, not by its callers.
@@ -203,10 +204,10 @@ public sealed class RegistrationStore
     /// would race on.
     /// </remarks>
     /// <returns>The row as it now stands, so the caller never has to guess which workspace took.</returns>
-    public async Task<Registration> UpsertAsync(
-        Registration registration, DateTimeOffset now, CancellationToken ct = default)
+    public Task<Registration> UpsertAsync(
+        Registration registration, DateTimeOffset now, CancellationToken ct = default) => _db.RunAsync<Registration>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = $"""
             INSERT INTO registrations (repository, summary, owns, accepts, packs, updated, root, joined, shares_knowledge, workspace, adopted, default_branch, uses, lanes)
             VALUES ($repository, $summary, $owns, $accepts, $packs, $updated, $root, $joined, $shares,
@@ -261,12 +262,12 @@ public sealed class RegistrationStore
             DefaultBranch = reader.IsDBNull(1) ? null : reader.GetString(1),
             Lanes = reader.IsDBNull(2) ? null : LanesFromJson(reader.GetString(2)),
         };
-    }
+    }, ct);
 
     /// <summary>What commit a repository's knowledge was last fed from, or null where nothing has fed.</summary>
-    public async Task<FeedProvenance?> ProvenanceAsync(string repository, CancellationToken ct = default)
+    public Task<FeedProvenance?> ProvenanceAsync(string repository, CancellationToken ct = default) => _db.RunAsync<FeedProvenance?>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText =
             "SELECT commit_id, committed_at, branch, origin, digest FROM feed_provenance "
             + "WHERE repository = $repository COLLATE NOCASE";
@@ -274,12 +275,12 @@ public sealed class RegistrationStore
 
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
-    }
+    }, ct);
 
     /// <summary>What commit a repository's code map was last fed from, or null where none has fed (MAP3b).</summary>
-    public async Task<FeedProvenance?> CodeMapProvenanceAsync(string repository, CancellationToken ct = default)
+    public Task<FeedProvenance?> CodeMapProvenanceAsync(string repository, CancellationToken ct = default) => _db.RunAsync<FeedProvenance?>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText =
             "SELECT commit_id, committed_at, branch, origin, digest FROM fed_code_maps "
             + "WHERE repository = $repository COLLATE NOCASE";
@@ -287,12 +288,12 @@ public sealed class RegistrationStore
 
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
-    }
+    }, ct);
 
     /// <summary>The fed code map as held: which file it was, and its canonical text — both null when none is.</summary>
-    public async Task<(string? File, string? Body)?> FedCodeMapAsync(string repository, CancellationToken ct = default)
+    public Task<(string? File, string? Body)?> FedCodeMapAsync(string repository, CancellationToken ct = default) => _db.RunAsync<(string? File, string? Body)?>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = "SELECT file, body FROM fed_code_maps WHERE repository = $repository COLLATE NOCASE";
         command.Parameters.AddWithValue("$repository", repository);
 
@@ -300,13 +301,13 @@ public sealed class RegistrationStore
         if (!await reader.ReadAsync(ct).ConfigureAwait(false)) return null;
 
         return (reader.IsDBNull(0) ? null : reader.GetString(0), reader.IsDBNull(1) ? null : reader.GetString(1));
-    }
+    }, ct);
 
     /// <summary>Hold a repository's code map at a commit — or, with no body, hold that it keeps none there.</summary>
-    public async Task RecordCodeMapAsync(
-        string repository, string? file, string? body, FeedProvenance provenance, CancellationToken ct = default)
+    public Task RecordCodeMapAsync(
+        string repository, string? file, string? body, FeedProvenance provenance, CancellationToken ct = default) => _db.RunAsync(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = """
             INSERT INTO fed_code_maps (repository, file, body, commit_id, committed_at, branch, origin, digest)
             VALUES ($repository, $file, $body, $commit, $committed_at, $branch, $origin, $digest)
@@ -323,32 +324,32 @@ public sealed class RegistrationStore
         command.Parameters.AddWithValue("$origin", (object?)provenance.Origin ?? DBNull.Value);
         command.Parameters.AddWithValue("$digest", provenance.Digest ?? "");
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-    }
+    }, ct);
 
     /// <summary>Stop holding a repository's code map, and the commit it was held at.</summary>
     /// <returns>Whether there was one; false is an answer, not a failure.</returns>
-    public async Task<bool> ForgetCodeMapAsync(string repository, CancellationToken ct = default)
+    public Task<bool> ForgetCodeMapAsync(string repository, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = "DELETE FROM fed_code_maps WHERE repository = $repository COLLATE NOCASE";
         command.Parameters.AddWithValue("$repository", repository);
         return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
-    }
+    }, ct);
 
     /// <summary>
     /// Stop holding what a repository fed — its knowledge's commit and its code map — while its
     /// registration stays: it joined without sharing, or unjoined, and its knowledge is home now (REV3).
     /// </summary>
-    public async Task ForgetKnowledgeAsync(string repository, CancellationToken ct = default)
+    public Task ForgetKnowledgeAsync(string repository, CancellationToken ct = default) => _db.RunAsync(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = """
             DELETE FROM feed_provenance WHERE repository = $repository COLLATE NOCASE;
             DELETE FROM fed_code_maps WHERE repository = $repository COLLATE NOCASE;
             """;
         command.Parameters.AddWithValue("$repository", repository);
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-    }
+    }, ct);
 
     /// <summary>
     /// Forget the commit every repository's knowledge was fed at — the index that held it was rebuilt.
@@ -357,17 +358,17 @@ public sealed class RegistrationStore
     /// Knowledge only. A code map and a declaration are held here with their bodies, so they survive a
     /// rebuild of the index, and so does the commit each was taken at.
     /// </remarks>
-    public async Task ForgetAllKnowledgeProvenanceAsync(CancellationToken ct = default)
+    public Task ForgetAllKnowledgeProvenanceAsync(CancellationToken ct = default) => _db.RunAsync(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = "DELETE FROM feed_provenance;";
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-    }
+    }, ct);
 
     /// <summary>Every repository's fed provenance, for the one read a summary needs.</summary>
-    public async Task<IReadOnlyDictionary<string, FeedProvenance>> AllProvenanceAsync(CancellationToken ct = default)
+    public Task<IReadOnlyDictionary<string, FeedProvenance>> AllProvenanceAsync(CancellationToken ct = default) => _db.RunAsync<IReadOnlyDictionary<string, FeedProvenance>>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = "SELECT repository, commit_id, committed_at, branch, origin FROM feed_provenance";
 
         var all = new Dictionary<string, FeedProvenance>(StringComparer.OrdinalIgnoreCase);
@@ -382,13 +383,13 @@ public sealed class RegistrationStore
         }
 
         return all;
-    }
+    }, ct);
 
     /// <summary>Record which commit this deployment's copy of a repository's knowledge now stands on.</summary>
-    public async Task RecordProvenanceAsync(
-        string repository, FeedProvenance provenance, CancellationToken ct = default)
+    public Task RecordProvenanceAsync(
+        string repository, FeedProvenance provenance, CancellationToken ct = default) => _db.RunAsync(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = """
             INSERT INTO feed_provenance (repository, commit_id, committed_at, branch, origin, digest)
             VALUES ($repository, $commit, $committed_at, $branch, $origin, $digest)
@@ -403,12 +404,12 @@ public sealed class RegistrationStore
         command.Parameters.AddWithValue("$origin", (object?)provenance.Origin ?? DBNull.Value);
         command.Parameters.AddWithValue("$digest", (object?)provenance.Digest ?? DBNull.Value);
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-    }
+    }, ct);
 
     /// <summary>What commit a repository's declaration was registered at, or null where none named one (SYNC5b).</summary>
-    public async Task<FeedProvenance?> RegistrationProvenanceAsync(string repository, CancellationToken ct = default)
+    public Task<FeedProvenance?> RegistrationProvenanceAsync(string repository, CancellationToken ct = default) => _db.RunAsync<FeedProvenance?>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText =
             "SELECT commit_id, committed_at, branch, origin, digest FROM registration_provenance "
             + "WHERE repository = $repository COLLATE NOCASE";
@@ -416,13 +417,13 @@ public sealed class RegistrationStore
 
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
-    }
+    }, ct);
 
     /// <summary>Record the commit a repository's declaration now stands on here.</summary>
-    public async Task RecordRegistrationProvenanceAsync(
-        string repository, FeedProvenance provenance, CancellationToken ct = default)
+    public Task RecordRegistrationProvenanceAsync(
+        string repository, FeedProvenance provenance, CancellationToken ct = default) => _db.RunAsync(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = """
             INSERT INTO registration_provenance (repository, commit_id, committed_at, branch, origin, digest)
             VALUES ($repository, $commit, $committed_at, $branch, $origin, $digest)
@@ -437,12 +438,12 @@ public sealed class RegistrationStore
         command.Parameters.AddWithValue("$origin", (object?)provenance.Origin ?? DBNull.Value);
         command.Parameters.AddWithValue("$digest", (object?)provenance.Digest ?? DBNull.Value);
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-    }
+    }, ct);
 
     /// <summary>The repositories this machine's checkouts took out of a circle that has not been told yet (SYNC5b).</summary>
-    public async Task<IReadOnlyList<string>> RetiredAsync(string workspace, CancellationToken ct = default)
+    public Task<IReadOnlyList<string>> RetiredAsync(string workspace, CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<string>>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText =
             "SELECT repository FROM registry_retired WHERE workspace = $workspace ORDER BY repository";
         command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(workspace));
@@ -451,19 +452,19 @@ public sealed class RegistrationStore
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         while (await reader.ReadAsync(ct).ConfigureAwait(false)) retired.Add(reader.GetString(0));
         return retired;
-    }
+    }, ct);
 
     /// <summary>The circle has been told, or no longer needs to be.</summary>
     /// <returns>Whether there was a tombstone to clear; false is an answer, not a failure.</returns>
-    public async Task<bool> ClearRetiredAsync(string repository, string workspace, CancellationToken ct = default)
+    public Task<bool> ClearRetiredAsync(string repository, string workspace, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText =
             "DELETE FROM registry_retired WHERE repository = $repository AND workspace = $workspace";
         command.Parameters.AddWithValue("$repository", repository);
         command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(workspace));
         return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
-    }
+    }, ct);
 
     /// <summary>A held commit, read as (commit, committed_at, branch, origin, digest).</summary>
     private static FeedProvenance Read(SqliteDataReader reader) => new(
@@ -480,9 +481,9 @@ public sealed class RegistrationStore
     /// the repository's files are its own (D48 §3/§7).
     /// </summary>
     /// <returns>Whether there was a row to retire; false is an answer, not a failure.</returns>
-    public async Task<bool> DeleteAsync(string repository, CancellationToken ct = default)
+    public Task<bool> DeleteAsync(string repository, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         // The provenance goes with the registration: a repository off the map holds no position in
         // anyone's history here, and a leftover row would refuse the first feed after it re-joined as
         // though this deployment still held a newer commit — which it would not. The declaration's
@@ -495,7 +496,7 @@ public sealed class RegistrationStore
             """;
         command.Parameters.AddWithValue("$repository", repository);
         return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
-    }
+    }, ct);
 
     /// <summary>
     /// Whether this store has ever been managed — and marking that it now has.
@@ -506,27 +507,27 @@ public sealed class RegistrationStore
     /// "until the next restart". The marker is set whether or not the import found anything: an empty
     /// root is still an answer, and asking again next time would re-open the same hole.
     /// </remarks>
-    public async Task<bool> WasImportedAsync(CancellationToken ct = default)
+    public Task<bool> WasImportedAsync(CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = "SELECT COUNT(*) FROM registry_meta WHERE key = 'bootstrap-import'";
         return Convert.ToInt32(await command.ExecuteScalarAsync(ct).ConfigureAwait(false)) > 0;
-    }
+    }, ct);
 
     /// <summary>Record that the bootstrap import has happened, and from where.</summary>
-    public async Task MarkImportedAsync(string folder, CancellationToken ct = default)
+    public Task MarkImportedAsync(string folder, CancellationToken ct = default) => _db.RunAsync(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText =
             "INSERT OR REPLACE INTO registry_meta (key, value) VALUES ('bootstrap-import', $folder)";
         command.Parameters.AddWithValue("$folder", folder);
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-    }
+    }, ct);
 
     /// <summary>Every registration this machine holds. Entry counts are the index's to add, not ours to store.</summary>
-    public async Task<IReadOnlyList<Registration>> AllAsync(CancellationToken ct = default)
+    public Task<IReadOnlyList<Registration>> AllAsync(CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<Registration>>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText =
             "SELECT repository, summary, owns, accepts, packs, root, joined, shares_knowledge, workspace, adopted, "
             + "default_branch, uses, lanes FROM registrations";
@@ -553,7 +554,7 @@ public sealed class RegistrationStore
         }
 
         return registrations;
-    }
+    }, ct);
 
     /// <summary>A registration's lanes as the store keeps them: their words, in the declared order.</summary>
     private static string LanesJson(IReadOnlyList<DeclaredLane> lanes)
