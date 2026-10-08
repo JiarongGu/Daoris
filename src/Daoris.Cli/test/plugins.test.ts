@@ -163,6 +163,27 @@ test('two plugins declaring the same harness keep the first by id and refuse the
   fx.cleanup();
 });
 
+/**
+ * XAGENT1b2 (D155 point 4, the second-agent design §3.1): a declared harness may say what a person calls its tool and who
+ * makes it, so a plugin's agent can count as another maker's. Each is the plugin's word, read trimmed; one that is not text,
+ * or is blank, declares none and never refuses the plugin. Twin: `PluginCatalogTests`'
+ * `A_declared_harness_may_say_its_product_and_maker_and_an_older_manifest_reads_as_before`, the same manifest read the same.
+ */
+test('a declared harness may say its product and maker, and an older manifest reads as before', () => {
+  const fx = makeFixture('plugins-maker');
+  plugin(fx.root, 'acme.agent', `{ "id": "acme.agent",
+    "harnesses": [ { "name": "acme-agent", "command": ["acme"], "product": " Acme Agent ", "maker": "Acme" },
+                   { "name": "older-agent", "command": ["older"] },
+                   { "name": "odd-agent", "command": ["odd"], "product": 7, "maker": "  " } ] }`);
+
+  const [entry] = readPlugins(fx.root).plugins;
+  assert.equal(entry!.problem, null);
+  assert.deepEqual(
+    entry!.manifest.harnesses.map((harness) => [harness.name, harness.product, harness.maker]),
+    [['acme-agent', 'Acme Agent', 'Acme'], ['older-agent', null, null], ['odd-agent', null, null]]);
+  fx.cleanup();
+});
+
 // ——— Servers (D65 §1f, INT1): what a plugin hands every session, beside the knowledge host.
 
 test('servers are read with the placeholder expanded in the command and the environment', () => {
