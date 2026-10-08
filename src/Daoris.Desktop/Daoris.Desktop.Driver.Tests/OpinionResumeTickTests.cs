@@ -94,8 +94,9 @@ public sealed class OpinionResumeTickTests : IDisposable
 
     /// <summary>
     /// 🔴 The native door: the findings go on in the kept conversation (<c>--resume</c>) as the one argument, unchanged, and the
-    /// run is handed rules that let it answer them (<c>opinion_answer</c>), which no default names; its answer is read as its
-    /// turn ends.
+    /// run is handed rules that let it answer them (<c>opinion_answer</c>); its answer is read as its turn ends. Since XAGENT1c2
+    /// the connector's default allows the tool on every run too — harmless, the service answering it only for the session it
+    /// handed findings to — so only the resumed run's allowing it is asserted.
     /// </summary>
     [Fact]
     public async Task Findings_go_on_in_the_kept_conversation_on_the_native_door_with_the_tool_that_answers_them()
@@ -127,7 +128,6 @@ public sealed class OpinionResumeTickTests : IDisposable
         Assert.Equal(2, runs.Length);
         Assert.Equal(("native-1", Findings), (runs[1]["resume"]!.GetValue<string>(), runs[1]["prompt"]!.GetValue<string>()));
         Assert.True(runs[1]["answers"]!.GetValue<bool>(), "the resumed run's rules did not allow opinion_answer");
-        Assert.False(runs[0]["answers"]!.GetValue<bool>());
         Assert.Equal((1, "completed"), (service.SessionCount, service.State("s1")));
         Assert.Contains(Events("s1"), e => e is { Kind: SessionEventKind.User, Origin: "target", Opinion: "op1" } && e.Text == Findings);
         Assert.Equal(OpinionViews.Fixed, Assert.Single(new OpinionDeliveries(_home).Read("op1").Answered!.Findings).Counts);
