@@ -26,8 +26,9 @@
  *
  * A session a driver started (it names `DAORIS_REPOSITORY`) is the driver's: its environment is passed on whole,
  * so its connector speaks to the driver's store, as this file did for a pipe-door session before (D70). It runs
- * the machine's own host first, where the driver would find it for the protocol door (`DAORIS_MCP_HOST`, then
- * `bin/` under the home: `KnowledgeConnector.Candidates`), and this workspace's build after.
+ * the machine's own host first, where the driver would find it for the protocol door (`DAORIS_MCP_HOST`, then the
+ * connector an install carries in `app/daoris-knowledge/` when the home is that install's `data/`, then `bin/` under
+ * the home: `KnowledgeConnector.Candidates`, CONNECTOR1), and this workspace's build after.
  *
  * With nothing to run, it answers the protocol itself: the handshake says why in the server's instructions,
  * no tool is listed, and the session works as it did before there was a server.
@@ -138,11 +139,35 @@ export function serverEnvironment(env, located) {
   return { mode: 'workspace', env: out };
 }
 
+/**
+ * Where an install keeps the connector it carries, and what makes a folder an install with its home in it (CONNECTOR1).
+ * Copies of `CONNECTOR_HOME`, `MARKER` and `HOME` in `tools/desktop-publish.mjs`, not imports: this file starts with every
+ * session, and that one carries the whole publish. `knowledge-server.test.ts` holds the copies to the originals.
+ */
+export const INSTALL_CONNECTOR = Object.freeze(['app', 'daoris-knowledge']);
+export const INSTALL_MARKER = 'INSTALLED.md';
+export const INSTALL_HOME = 'data';
+
+/**
+ * The connector the install carries, when the home is an install's own `data/` — the home an install's shell gives every
+ * session it starts (D63) — or null. It is the copy the driver hands a protocol-door session first
+ * (`KnowledgeConnector.Candidates`), found there from the application's folder and here from the home above it.
+ */
+export function installConnector(home, executable) {
+  if (!home?.trim()) return null;
+  const full = resolve(home.trim());
+  if (basename(full).toLowerCase() !== INSTALL_HOME || !existsSync(join(dirname(full), INSTALL_MARKER))) return null;
+  return join(dirname(full), ...INSTALL_CONNECTOR, executable);
+}
+
 /** What to run, or null when there is nothing: the machine's host first for a driven session, then the build. */
 export function serverCommand(mode, env, located, platform = process.platform) {
   if (mode === 'driven') {
     const executable = platform === 'win32' ? 'daoris-knowledge.exe' : 'daoris-knowledge';
-    const machine = [env.DAORIS_MCP_HOST?.trim(), env.DAORIS_HOME?.trim() ? join(env.DAORIS_HOME.trim(), 'bin', executable) : null]
+    const home = env.DAORIS_HOME?.trim();
+    // The driver's order (CONNECTOR1): the person's word, the install's own copy, then the home's `bin/`, which no
+    // republish refreshes.
+    const machine = [env.DAORIS_MCP_HOST?.trim(), installConnector(home, executable), home ? join(home, 'bin', executable) : null]
       .filter(Boolean)
       .find((path) => existsSync(path));
     if (machine) return { command: machine, args: [], what: `the machine's host, ${machine}` };
@@ -155,7 +180,8 @@ export function serverCommand(mode, env, located, platform = process.platform) {
 /** Why there is no server, in the words the session reads. */
 export function absenceSentence(checkout, mode) {
   return mode === 'driven'
-    ? 'no knowledge server for this session: no host at DAORIS_MCP_HOST, none under bin/ in DAORIS_HOME, and no build '
+    ? 'no knowledge server for this session: no host at DAORIS_MCP_HOST, none in the install\'s app/daoris-knowledge/, '
+      + 'none under bin/ in DAORIS_HOME, and no build '
       + `of this workspace's (\`npm run knowledge:build\` in ${mainCheckout(checkout)} makes one). The session works `
       + 'without its connector.'
     : `the workspace's knowledge server is not built: \`npm run knowledge:build\` in ${mainCheckout(checkout)} builds it, `
