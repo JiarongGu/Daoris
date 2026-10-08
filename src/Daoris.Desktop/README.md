@@ -104,8 +104,12 @@ repository. Built on the family's desktop runtime sibling, consumed at a release
 `npm run publish:desktop -- --to <folder> --service` publishes the application (D93): `Daoris.exe`, a
 small launcher, at the folder's root; the application in `app/` beside its Chromium (its files listed in
 `app/shell-files.txt`, which the next publish removes before placing its own), which is Daoris's
-browser too (CHR8: the `app/daoris-browser/` an older publish wrote is removed by name), and the
-service host with its bundle under `app/daoris-knowledge-http/`; **the doctrine tool** (WSSETUP2,
+browser too (CHR8: the `app/daoris-browser/` an older publish wrote is removed by name), and both
+service hosts, each replaced whole by `service-publish`'s one recipe: the HTTP host with its bundle
+under `app/daoris-knowledge-http/`, and **the knowledge connector** under `app/daoris-knowledge/`,
+which the driver hands every protocol-door session ahead of the home's `bin/` copy (CONNECTOR1: an
+install that carried none handed its sessions a `bin/` copy no republish refreshed, eight days old on
+the install that found it, and it rebuilt the shared store at its own older schema); **the doctrine tool** (WSSETUP2,
 D124 §1.2), the CLI package the release packs laid out as npm lays one out in
 `app/cli/node_modules/daoris/`, with a launcher for each shell in `app/bin/` (`daoris` for Git Bash,
 `daoris.cmd` for Command Prompt and PowerShell), run on the `node` a child's `PATH` finds; the
@@ -198,7 +202,9 @@ person or an agent starts the shell and sees what it actually rendered.
 the workspace built, and that gate publishes the shell to a scratch folder and drives the **artefact**
 — a window that finds its host without being told where it is, a session transcript compared as
 bytes, and a conversation open when the window closes, whose record must carry the close's own note
-(DEPLOY5: the gate starts the install with `run --install`'s debug port to open it over the bridge).
+(DEPLOY5: the gate starts the install with `run --install`'s debug port to open it over the bridge),
+and whose transcript must name the connector the install carries rather than the home's `bin/` copy
+the gate plants beside it (CONNECTOR1).
 Its phase 8 runs the doctrine tool the install carries (WSSETUP2): with the install's `app/bin/` first
 on `PATH`, `daoris` by its bare name from Command Prompt, PowerShell and Git Bash where the runner has
 one, prints the canon's version, and `init`, `sync` and `check` run clean in a scratch repository.
