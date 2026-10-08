@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// <summary>An ask as the local service answered it (D65 §1a) — enough to open an intake and observe it.</summary>
 /// <param name="State">`Open`, `Proposed`, `Published` or `Closed`, as the record spells it.</param>
 /// <param name="Tier">Which tier answered — `declarations`, `named` or `intake` — never a model (D24).</param>
-public sealed record AskView(string Id, string Workspace, string Sentence, string State, string Tier)
+public sealed partial record AskView(string Id, string Workspace, string Sentence, string State, string Tier)
 {
     public string? Asker { get; init; }
 

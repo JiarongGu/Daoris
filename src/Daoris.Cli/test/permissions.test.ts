@@ -29,6 +29,8 @@ const CONNECTOR = [
   'mcp__daoris-knowledge__quest_publish',
   'mcp__daoris-knowledge__permission_propose',
   'mcp__daoris-knowledge__go_ahead_ask',
+  'mcp__daoris-knowledge__review_serve',
+  'mcp__daoris-knowledge__review_ready',
 ];
 
 function run(argv: string[], home: string): { code: number; out: string } {
@@ -128,6 +130,20 @@ test('nothing written hands the defaults alone: the connector and a commit allow
     assert.deepEqual(rules.ask, []);
     // Rebuilding the index is the machine's job, never a session's.
     assert.equal(rules.allow.includes('mcp__daoris-knowledge__knowledge_refresh'), false);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+// REVIEWENV1b2 (the review environment design §2.6): a set-up step's session asks Daoris to serve its build and says what it
+// showed. An ask over the protocol door is a refusal, so the default allows both, as it allows `go_ahead_ask`.
+test('a set-up step\'s two tools reach a session by default: serving its build, and saying what it showed', () => {
+  const fx = makeFixture('permissions-set-up-tools');
+  try {
+    const { allow } = composeRules(readPermissions(at(fx.root)), 'default', 'engine');
+    for (const tool of ['review_serve', 'review_ready']) {
+      assert.ok(allow.includes(`mcp__daoris-knowledge__${tool}`), `\`${tool}\` is not allowed: ${allow.join(', ')}`);
+    }
   } finally {
     fx.cleanup();
   }

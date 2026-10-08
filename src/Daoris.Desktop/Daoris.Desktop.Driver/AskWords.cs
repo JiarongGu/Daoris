@@ -5,12 +5,16 @@ namespace Daoris.Driver;
 
 /// <summary>One of the person's words on an ask (DRIFT1a, D133 §1), as the service answers it.</summary>
 /// <param name="Kind">
-/// <c>asked</c>, <c>answered</c>, <c>added</c> or <c>reopened</c>, as the service spells it. A kind this build does not know is kept as
-/// spelled and said as a word they said, never dropped: what the person said outranks what this build can name.
+/// <c>asked</c>, <c>answered</c>, <c>added</c>, <c>reopened</c>, or a review's <c>reviewed</c>, <c>not-yet</c> or <c>skipped</c>, as the
+/// service spells it. A kind this build does not know is kept as spelled and said as a word they said, never dropped: what the
+/// person said outranks what this build can name.
 /// </param>
 /// <param name="Text">Their words, verbatim.</param>
-/// <param name="Session">The session it was said to; none for the ask's own sentence.</param>
-/// <param name="Quest">The quest that session worked; none for the ask's own sentence, an intake's, and a conversation's.</param>
+/// <param name="Session">The session it was said to; none for the ask's own sentence, and none for a review's verdict.</param>
+/// <param name="Quest">
+/// The quest that session worked, or the quest a review's verdict was given on; none for the ask's own sentence, an intake's,
+/// and a conversation's.
+/// </param>
 public sealed record AskWordView(string Kind, string Text, DateTimeOffset At, string? Session = null, string? Quest = null)
 {
     public const string Asked = "asked";
@@ -19,6 +23,15 @@ public sealed record AskWordView(string Kind, string Text, DateTimeOffset At, st
 
     /// <summary>Said to a session after it ended, kept once a session took them (MSG1a's <c>reopened</c>, D137 §2.4).</summary>
     public const string Reopened = "reopened";
+
+    /// <summary>Their words with a <c>reviewed</c> on a set-up step (REVIEWENV1b, D154 point 8; design §3.5).</summary>
+    public const string Reviewed = "reviewed";
+
+    /// <summary>Their words with a <c>not-yet</c> on a set-up step: what is not right yet (REVIEWENV1b; design §3.4).</summary>
+    public const string NotYet = "not-yet";
+
+    /// <summary>Their words with a skip of a review (REVIEWENV1b; design §3.6).</summary>
+    public const string Skipped = "skipped";
 }
 
 /// <summary>
@@ -209,6 +222,10 @@ public static class AskWordsText
             AskWordView.Answered => $"They answered a session{on}",
             AskWordView.Added => $"They added, while a session{on} ran",
             AskWordView.Reopened => $"They added, after a session{on} ended",
+            // A review's verdict (REVIEWENV1b2): said as the verdict it came with, of the set-up or the work on its quest.
+            AskWordView.Reviewed => $"They reviewed the set-up shown{on}",
+            AskWordView.NotYet => $"They said not yet to the set-up shown{on}",
+            AskWordView.Skipped => $"They skipped the review of the work{on}",
             _ => on.Length == 0 ? "They said" : $"They said,{on}",
         };
     }
