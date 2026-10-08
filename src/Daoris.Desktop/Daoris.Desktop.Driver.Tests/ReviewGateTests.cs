@@ -397,6 +397,26 @@ public sealed class ReviewGateTests
         Assert.True(AutoLandingNotes.Says(AutoLandingCode.Unreviewed));
     }
 
+    /// <summary>
+    /// REVIEWENV1c2: the look's note for a wait on the review has a code of its own, never a refused landing's, with the gate's
+    /// sentence beneath it as the driver said it, a program's words.
+    /// </summary>
+    [Fact]
+    public void An_unreviewed_try_is_noted_as_a_wait_for_the_review_with_the_gate_s_sentence_beneath()
+    {
+        const string gate = "Waits for your review in `local`: nothing shows it there yet: no set-up step for `web-app` is in its chain.";
+
+        var note = AutoLandingNotes.Of(AutoLandingCode.Unreviewed, new TreeLanding(false, gate) { Refusal = AutoLandingCode.Unreviewed });
+
+        Assert.Equal(NoteCodes.LandingUnreviewed.Code, note.Parts![0].Code);
+        Assert.Equal(
+            "not accepted automatically: its work waits for your review before it lands, as follows. It lands at the first look "
+            + "after you review it or skip the review.",
+            note.Parts[0].Text);
+        Assert.Equal((gate, NoteBy.Program), (note.Parts[1].Words, note.Parts[1].By));
+        Assert.DoesNotContain("refused", note.Text, StringComparison.Ordinal);
+    }
+
     private static (string Level, string? Environment) Of(ReviewDecision decided) => (decided.Level, decided.Environment);
 
     private static Task<ReviewGateState> Judge(ReviewDecision decision, bool? holds = true) =>

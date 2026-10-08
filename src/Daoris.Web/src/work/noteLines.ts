@@ -112,6 +112,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'landing.uncommitted': { values: ['paths'] },
   'landing.exists': { values: ['branch'] },
   'landing.refused': { values: [] },
+  // Held by the review's gate (REVIEWENV1c), the gate's sentence beneath it; a note from before it says `landing.refused`.
+  'landing.unreviewed': { values: [] },
   'landing.no-tree': { values: [] },
   'landing.not-done': { values: [] },
   // The service's own lines.

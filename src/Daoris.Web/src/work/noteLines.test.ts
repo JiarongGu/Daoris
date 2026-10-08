@@ -161,6 +161,34 @@ describe('noteLines', () => {
     expect(noteLines(zh, { parts: [words('System.IO.IOException: The process cannot access the file.', 'program')] }, 'zh'))
       .toEqual([{ kind: 'words', text: 'System.IO.IOException: The process cannot access the file.', by: 'program' }]);
   });
+
+  /**
+   * REVIEWENV1c2: the look under *Accept automatically* that the review's gate holds says so with a code of its own, the gate's
+   * sentence beneath it as the driver wrote it, in either language. A note written before it, under `landing.refused`, keeps
+   * being worded as it was.
+   */
+  it('words a look held for the person’s review as its own line, never as a refused landing, in either language', () => {
+    const gate = 'Waits for your review in `dev`: nothing shows it there yet: no set-up step for `storefront` is in its chain.';
+    const parts = [
+      coded('landing.unreviewed', 'not accepted automatically: its work waits for your review before it lands, as follows. …'),
+      words(gate, 'program'),
+    ];
+
+    expect(noteLines(t, { parts }, 'en')).toEqual([
+      {
+        kind: 'said',
+        text: 'Not accepted automatically: its work waits for your review before it lands, as follows. It lands at the first look '
+          + 'after you review it or skip the review.',
+      },
+      { kind: 'words', text: gate, by: 'program' },
+    ]);
+    expect(noteLines(zh, { parts }, 'zh')).toEqual([
+      { kind: 'said', text: '未自动采纳：它的工作在落地前等你审阅，详情如下。你审阅或跳过审阅后的下一轮会落地它的工作。' },
+      { kind: 'words', text: gate, by: 'program' },
+    ]);
+    expect(noteLines(zh, { parts: [coded('landing.refused', 'not accepted automatically: the landing was refused, as follows.')] }, 'zh'))
+      .toEqual([{ kind: 'said', text: '未自动采纳：落地被拒绝，原因如下。它等待你的审阅。' }]);
+  });
 });
 
 describe('noteBlocks', () => {
