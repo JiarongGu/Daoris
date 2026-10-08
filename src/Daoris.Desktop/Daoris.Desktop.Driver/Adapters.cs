@@ -174,6 +174,13 @@ public sealed record SessionTarget(
     public ReviewEnvironment? SetUp { get; init; }
 
     /// <summary>
+    /// Where the review rule naming <see cref="SetUp"/> was set (<see cref="ReviewSource"/>), so the instruction's account says
+    /// its set-up section came from the rule on this machine for its repository or its workspace (REVIEWENV1c2). Null reads as
+    /// the repository's.
+    /// </summary>
+    public string? SetUpFrom { get; init; }
+
+    /// <summary>
     /// The target a quest's session is handed: the quest as the service answered it, run in
     /// <paramref name="workTree"/> — the repository's own tree where it opted in (D51), its root
     /// otherwise — naming the code map that tree keeps.
@@ -257,9 +264,9 @@ public static class TargetPrompt
     /// </summary>
     private static IEnumerable<Piece> Tail(SessionTarget target, string close) =>
     [
-        // A set-up step's own section (REVIEWENV1c, design §2.2), before the close it changes. Accounted with what the quest carries
-        // until the page words a section of its own for it.
-        new(HandedSections.Carried, SetUp(target)),
+        // A set-up step's own section (REVIEWENV1c, design §2.2), before the close it changes, and accounted as its own since the
+        // page words it (REVIEWENV1c2).
+        new(HandedSections.SetUp, SetUp(target)),
         new(HandedSections.Close, close),
         new(HandedSections.Language, Language(target)),
         new(HandedSections.Close, "\n"),

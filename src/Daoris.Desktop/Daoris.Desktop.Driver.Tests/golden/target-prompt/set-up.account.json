@@ -11,9 +11,16 @@
     {
       "name": "carried",
       "source": "quest",
-      "said": "what the quest carries: 2,235 characters from quest #def456: the quest it follows, #abc123 and the set-up in `local`, local, by `README.md` as the rule here declares it",
-      "chars": 2235,
+      "said": "what the quest carries: 258 characters from quest #def456: the quest it follows, #abc123",
+      "chars": 258,
       "from": "def456"
+    },
+    {
+      "name": "set-up",
+      "source": "repository",
+      "said": "the set-up for your review: 1,977 characters, in `local`, local, by `README.md`, as the rule set for its repository here declares it",
+      "chars": 1977,
+      "from": "local"
     },
     {
       "name": "close",

@@ -101,6 +101,8 @@ public sealed class TargetPromptGoldenTests
         Parent = "abc123",
         GrewFrom = "daoris/s-1a2b3c4d",
         SetUp = new ReviewEnvironment("local", "local", "README.md", "http://localhost:4200"),
+        // Its own section in the account, from the rule set for its repository here (REVIEWENV1c2).
+        SetUpFrom = ReviewSource.Repository,
     };
 
     private static string RepositoryRoot()

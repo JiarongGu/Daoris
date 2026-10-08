@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import i18n from '../i18n';
 import { moment } from '../format';
 import { HandedAccount } from './HandedAccount';
-import { BARE, CLAIMED, CUT, NEWER, UNREAD } from './handedFixtures';
+import { BARE, CLAIMED, CUT, NEWER, SET_UP, UNREAD } from './handedFixtures';
 
 // Props-only, like every molecule here (CONTEXT1, D143 point 1): what a session was handed, section by section, worded from
 // the account's codes in the reader's language, every state reached by passing an account.
@@ -100,6 +100,26 @@ describe('what a session was handed', () => {
     expect(screen.getByText('1 word left out by the session budget')).toBeInTheDocument();
     expect(screen.getByText('the standing answer: held for the person')).toBeInTheDocument();
     expect(rowOf('The quest')).toHaveTextContent('#abc123');
+  });
+
+  /** REVIEWENV1c2: a set-up step's instruction is its own section, no longer counted with what the quest carries. */
+  it('names a set-up step’s own section, from the rule set on this machine, in English', () => {
+    render(<HandedAccount account={SET_UP} defaultOpen />);
+
+    const setUp = rowOf('The set-up for your review');
+    expect(within(setUp).getByText('2,199')).toBeInTheDocument();
+    expect(setUp).toHaveTextContent('set on this machine for its repository · local');
+    expect(within(setUp).queryByText('shown as recorded')).toBeNull();
+    expect(rowOf('What the quest carries')).toHaveTextContent('36');
+  });
+
+  it('names a set-up step’s own section in 中文, the environment as written', async () => {
+    await i18n.changeLanguage('zh');
+    render(<HandedAccount account={SET_UP} defaultOpen />);
+
+    const setUp = rowOf('供你审阅的搭建');
+    expect(setUp).toHaveTextContent('本机为其仓库设定 · local');
+    expect(within(setUp).queryByText('按原文显示')).toBeNull();
   });
 
   it('words it in 中文, leaving ids and names as written', async () => {

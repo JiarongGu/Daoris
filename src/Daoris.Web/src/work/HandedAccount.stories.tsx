@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../storyLanguage';
 import { HandedAccount } from './HandedAccount';
-import { BARE, CLAIMED, CUT, NEWER, UNREAD } from './handedFixtures';
+import { BARE, CLAIMED, CUT, NEWER, SET_UP, UNREAD } from './handedFixtures';
 
 // What a driven session was handed, section by section (CONTEXT1, D143 point 1), as it sits beneath the target on the
 // session's page: folded to its size; a claim on an ask, open, with the rules handed beside it and what was not handed; a
@@ -64,6 +64,12 @@ export const WordsUnread: Story = { args: { account: UNREAD, defaultOpen: true }
 
 /** A repository's quest that carries nothing, on an agent that takes no rules from Daoris: most of it the driver's own. */
 export const CarriesNothing: Story = { args: { account: BARE, defaultOpen: true } };
+
+/** A set-up step's: its own section, from the review rule set on this machine, beside what the quest carries (REVIEWENV1c2). */
+export const SetUpStep: Story = { args: { account: SET_UP, defaultOpen: true } };
+
+/** A set-up step's, in 中文. */
+export const SetUpStepChinese: Story = { ...SetUpStep, decorators: [chinese] };
 
 /** A target handed before the account was kept says so, rather than showing nothing (D143 point 3). */
 export const NotKept: Story = { args: { account: null } };

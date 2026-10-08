@@ -127,6 +127,7 @@ internal static class InstructionAccounting
                 : "asking another repository, and stopping for the person, a go-ahead asked once on the ask"),
             HandedSections.Closing => Own("the closing note's two lists, each item naming its source"),
             HandedSections.Proposing => Own("proposing a rule"),
+            HandedSections.SetUp => SetUp(target, chars, size),
             HandedSections.Boundary => target.WritesAcross.Count == 0
                 ? Own("the boundary")
                 : new HandedSection(
@@ -147,8 +148,6 @@ internal static class InstructionAccounting
         if (target.Attachments.Count > 0) parts.Add(Plural(target.Attachments.Count, "file"));
         if (target.Parent is { } parent) parts.Add($"the quest it follows, #{parent}");
         if (target.Then.Count > 0) parts.Add(target.Then.Count == 1 ? $"its next step, to `{target.Then[0].To}`" : $"its next {target.Then.Count} steps");
-        // A set-up step's section rides here until the page words one of its own (REVIEWENV1c).
-        if (target.SetUp is { } setUp) parts.Add($"the set-up in `{setUp.Name}`, {setUp.Kind}, by `{setUp.Procedure}` as the rule here declares it");
 
         var elsewhere = target.Attachments.Count(file => file.Path is null);
         return new HandedSection(
@@ -159,6 +158,24 @@ internal static class InstructionAccounting
             Cuts = elsewhere == 0
                 ? null
                 : [new HandedCut(HandedCuts.FilesElsewhere, $"{Plural(elsewhere, "file")} not on this machine, named without a path") { Count = elsewhere }],
+        };
+    }
+
+    /// <summary>
+    /// A set-up step's own section (REVIEWENV1c2): the environment it shows its chain's work in, its kind and its procedure, from
+    /// the review rule set on this machine for its repository or its workspace.
+    /// </summary>
+    private static HandedSection SetUp(SessionTarget target, int chars, string size)
+    {
+        var environment = target.SetUp!;
+        var workspace = target.SetUpFrom == ReviewSource.Workspace;
+        return new HandedSection(
+            HandedSections.SetUp, workspace ? HandedSources.Workspace : HandedSources.Repository,
+            $"the set-up for your review: {size}, in `{environment.Name}`, {environment.Kind}, by `{environment.Procedure}`, as the rule "
+            + $"set for its {(workspace ? "workspace" : "repository")} here declares it")
+        {
+            Chars = chars,
+            From = environment.Name,
         };
     }
 

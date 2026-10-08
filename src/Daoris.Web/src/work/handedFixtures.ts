@@ -71,6 +71,24 @@ export const BARE: InstructionAccount = {
   ],
 };
 
+/**
+ * A set-up step's (the `set-up` golden, REVIEWENV1c2): the chain's step that shows the work of the step before for the person's
+ * review, its own section from the review rule set on this machine for its repository, named by its environment.
+ */
+export const SET_UP: InstructionAccount = {
+  chars: 6538,
+  sections: [
+    { name: 'quest', source: 'quest', from: 'def456', chars: 460, said: 'the quest: 460 characters, quest #def456 asked by `ask #a1b2c3`, as the service answered it' },
+    { name: 'carried', source: 'quest', from: 'def456', chars: 36, said: 'what the quest carries: 36 characters from quest #def456: the quest it follows, #abc123' },
+    {
+      name: 'set-up', source: 'repository', from: 'local', chars: 2199,
+      said: 'the set-up for your review: 2,199 characters, in `local`, local, by `README.md`, as the rule set for its repository here declares it',
+    },
+    own('close', 340, 'how to take it and close it'),
+    ...BARE.sections.slice(2, 8),
+  ],
+};
+
 /** The instruction's length as the record counts it: its handed sections' characters, which add up to it by construction. */
 const counted = (sections: HandedSection[]): InstructionAccount =>
   ({ chars: sections.reduce((sum, section) => sum + (section.none ? 0 : section.chars ?? 0), 0), sections });
