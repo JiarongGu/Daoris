@@ -26,5 +26,7 @@
   "update.why.previous": "what the last update left could not be cleared.",
   "update.why.exited": "the new build ended before it came up.",
   "update.why.start": "the new build would not start.",
-  "update.why.interrupted": "the update was interrupted, and what it had moved was put back."
+  "update.why.interrupted": "the update was interrupted, and what it had moved was put back.",
+  "update.why.move": "a file could not be moved for a reason other than being held open, so what had moved was put back; daoris-driver update says why.",
+  "update.why.error": "the launcher met an error before it could put the build in place, so the build before it runs on; stage this one again to retry."
 }
