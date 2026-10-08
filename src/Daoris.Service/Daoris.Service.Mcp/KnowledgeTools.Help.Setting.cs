@@ -6,6 +6,17 @@ namespace Daoris.Knowledge.Mcp;
 /// <summary>Ask Daoris's <c>setting_propose</c> (HELP1c): the <c>setting</c> kind's tool, written by <see cref="HelpProposalBox.ProposeSetting"/>.</summary>
 public sealed partial class KnowledgeTools
 {
+    /// <summary>
+    /// What the landing's gate does with work that waits for the person's review, the sentence every other door says after a
+    /// review rule's own (REVIEWENV1c3): the shared table's <c>gate</c> rows,
+    /// <c>src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/review-rules.json</c>, which the driver's
+    /// <c>ReviewRules.Waiting</c> and the CLI's <c>REVIEW_WAITING</c> are held to. Copied, since the service references
+    /// neither: the doors' words change together, this one with them.
+    /// </summary>
+    private const string ReviewWaiting = "Where work here waits for your review, it lands only once you say it is reviewed, "
+        + "`daoris-driver quest review <quest> reviewed`, or skip the review, `daoris-driver quest review <quest> skip`. "
+        + "No set-up step is composed for you yet.";
+
     [McpServerTool(Name = "setting_propose")]
     [Description(
         "Ask Daoris only: propose a change to how this machine drives its repositories, for the person to "
@@ -20,7 +31,8 @@ public sealed partial class KnowledgeTools
         + "`review` declares where a repository's or a workspace's work is shown to the person before it is offered to land: an "
         + "environment, `local` (shown in Daoris's browser at the address where the app runs) or `deployed`, named by the "
         + "repository's own procedure document, never production; `--required` is the person's say-so that work waits for "
-        + "their look, so propose it only when they ask; declared only, nothing reads it yet; "
+        + "their look, so propose it only when they ask; the door then tells the person what the landing does with work "
+        + "that waits: \"" + ReviewWaiting + "\"; "
         + "`opinion` declares which other agent reads a repository's or a workspace's work before it lands, in a copy of its own "
         + "that nothing is taken back from: `--reviewers` names adapters in the order they are tried, only the agents the person "
         + "names and never one you chose, ideally another maker's than the one doing the work; `--required` (work waits for "
