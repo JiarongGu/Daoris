@@ -178,7 +178,7 @@ files per harness, an import's depth, the skill roots, and the byte limits. Noth
 it.
 
 **Opened during the work** is not measured anywhere. The parent's account in this row's dispatch is
-that the sessions that worked the owner's ticket AR-2201 read the repository's `.claude/knowledge/`
+that the sessions that worked the owner's ticket TK-2201 read the repository's `.claude/knowledge/`
 documents. No tracked document records it, and the transcripts are the owner's, not this design's to
 read. On D77's account none of that workspace's 29 repositories had adopted, so what those sessions
 opened was the repository's own tier, found with no roster pointing at it. That supports one
