@@ -15,7 +15,7 @@ import { AwaitingPerson, type QuestClose, type Resolution } from './AwaitingPers
 import { DetailsFold } from './DetailsFold';
 import { type Answered, InlineConfirm } from './InlineConfirm';
 import { useCut } from './ViewMain';
-import type { LandOffer } from './groups';
+import type { DiscardOffer, LandOffer } from './groups';
 import { isIntake, sessionOrigin, sessionTitle, shortened } from './identity';
 import { Note } from './Note';
 import { hasNote, noteBlocks, noteLines } from './noteLines';
@@ -61,6 +61,11 @@ import { RunningIntake } from './RunningIntake';
  * saying where accepting puts the work by the repository's rule, as the review's foot says it, and for a session that did
  * not finish that only what it committed lands. The press is the review's Accept; a refusal is said inside the ask.
  *
+ * **Commits the line holds by content are never offered to land again** (SQUASHTIDY1b, D102's note): where a squash merge or
+ * a cherry-pick put its work elsewhere (`discards`), accepting would make a branch of work already there, so no *Accept…*
+ * stands. The driver's sentence says where the work is, in Discard's own clause, and *Discard branch…* asks once with the
+ * driver's sentence naming the ref its commits stay at; the press is the review's Discard, unforced.
+ *
  * **An absence is never a dash.** No tree is the registered root, no profile is the harness's own
  * configuration home, no machine is this deployment's own — and a browser over a keyed remote is
  * told none of them (D47 §4). `MetaLine` drops a pair it has no value for, which is why all four
@@ -69,13 +74,20 @@ import { RunningIntake } from './RunningIntake';
 export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
   onAnswerSession, branch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
-  ownSignIn = false, nameOf, lands, landing, onLand,
+  ownSignIn = false, nameOf, lands, landing, onLand, discards, onDiscardTree,
 }: {
   /**
    * What its own tree offers to land (LAND4), as the driver's reader said it: commits no branch of the person's holds, on its
    * branch in its tree, whatever its ending. Absent where it offers none, or nothing has answered.
    */
   lands?: LandOffer | null;
+  /**
+   * What its own tree offers where the line holds its commits by content (SQUASHTIDY1b), as the driver's reader said it: its
+   * sentences, shown as they are, and whether an unforced discard would go. Absent where it offers none.
+   */
+  discards?: DiscardOffer | null;
+  /** Discard its tree, unforced: the review's Discard, told back to its ask. Absent where nothing can press it. */
+  onDiscardTree?: (answered: Answered) => void;
   /**
    * Where accepting would put it, by the repository's rule (D87, D100): the review's own plan, said in the ask before the
    * press. Absent while it is read.
@@ -224,6 +236,8 @@ export function SessionHead({
           its tree offers to land are the reader's to say (LAND4), keyed by the session for the same reason. */}
       {lands ? (
         <Lands key={session.id} session={session} lands={lands} landing={landing} onReview={onReview} onLand={onLand} />
+      ) : discards ? (
+        <Discards key={session.id} discards={discards} onReview={onReview} onDiscard={onDiscardTree} />
       ) : branch && (
         <Left key={branch.branch} branch={branch} onReview={onReview} onDiscard={onDiscardBranch} discarding={discardingBranch} />
       )}
@@ -423,6 +437,48 @@ function Lands({ session, lands, landing, onReview, onLand }: {
           )}
           meanIt={t('work.head.landMeanIt')}
           onConfirm={onLand}
+          onClose={() => setAsking(false)}
+        />
+      )}
+    </>
+  );
+}
+
+/**
+ * What its own tree offers where the line holds its commits by content (SQUASHTIDY1b, D102's note): the driver's sentence where
+ * *Accept…* would be, its branch and tree, *Review*, and *Discard branch…* where an unforced discard would go now. The ask says
+ * the driver's sentence naming the ref the commits stay at; the press is the review's Discard, unforced, and its tree goes
+ * with the branch. Open until the discard answers, a refusal said inside it (UXFIX2). The driver's words are content here, as
+ * the review's own sentence is (`DiffPane`'s `said`), so no catalogue words them again.
+ */
+function Discards({ discards, onReview, onDiscard }: {
+  discards: DiscardOffer;
+  onReview?: () => void;
+  onDiscard?: (answered: Answered) => void;
+}) {
+  const { t } = useTranslation();
+  const [asking, setAsking] = useState(false);
+  const discardable = Boolean(onDiscard && discards.keptAt);
+  return (
+    <>
+      <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small">
+        <span className="min-w-0 text-ink-soft"><Inline text={discards.says} /></span>
+        <PathText path={discards.branch} className="min-w-0 text-meta text-ink-faint" />
+        <span className="text-ink-faint">{t('work.head.inTree', { tree: discards.tree })}</span>
+        {discardable && !asking && (
+          <Button variant="danger" className="px-2 py-0.5 text-small" onClick={() => setAsking(true)}>
+            {t('settings.sweep.discard')}
+          </Button>
+        )}
+        {onReview && <Button className="px-2 py-0.5 text-small" onClick={onReview}>{t('work.head.review')}</Button>}
+      </p>
+      {discardable && asking && (
+        <InlineConfirm
+          block
+          label={t('settings.sweep.discardTitle', { branch: discards.branch })}
+          says={<p className="m-0 text-small text-ink-soft"><Inline text={discards.keptAt!} /></p>}
+          meanIt={t('settings.sweep.discardMeanIt')}
+          onConfirm={onDiscard!}
           onClose={() => setAsking(false)}
         />
       )}

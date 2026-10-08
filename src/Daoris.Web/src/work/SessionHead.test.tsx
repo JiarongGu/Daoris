@@ -466,6 +466,95 @@ describe('the attended session\'s head', () => {
   });
 
   /**
+   * SQUASHTIDY1b (D102's SQUASHTIDY1b note): a session whose commits the line holds by content, a squash-merged pull request's,
+   * is offered no *Accept…*, since accepting would make a branch of work already there. Where *Accept…* would be, the head
+   * says the driver's sentence, in Discard's own clause, and offers the review's Discard unforced, asking once with the
+   * driver's sentence naming the ref the commits stay at. The press is told back to its ask.
+   */
+  describe('a session whose work the line holds by content', () => {
+    const KEPT = 'refs/daoris/discarded/daoris/s-4e6837ed';
+    const DISCARDS = {
+      branch: 'daoris/s-4e6837ed',
+      tree: 's-4e6837ed',
+      says: 'Its work is on `main` by content (a squash merge).',
+      keeps: KEPT,
+      keptAt: `Its commits stay at \`${KEPT}\` until you delete that ref; \`git branch daoris/s-4e6837ed ${KEPT}\` brings the branch back.`,
+    };
+
+    it('says where its work is, offers no Accept…, and discards its tree unforced on the second press', () => {
+      const onDiscardTree = vi.fn();
+      const { container } = render(
+        <SessionHead session={session({ state: 'completed' })} discards={DISCARDS} onDiscardTree={onDiscardTree} onReview={vi.fn()} />,
+      );
+
+      expect(container).toHaveTextContent('Its work is on main by content (a squash merge).');
+      expect(screen.getByText('daoris/s-4e6837ed')).toBeInTheDocument();
+      expect(screen.getByText('in its tree s-4e6837ed')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
+      expect(screen.getByRole('button', { name: 'Review' })).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Discard branch…' }));
+      expect(onDiscardTree).not.toHaveBeenCalled();
+      const ask = screen.getByRole('group', { name: 'discard daoris/s-4e6837ed' });
+      expect(ask).toHaveTextContent(`Its commits stay at ${KEPT} until you delete that ref; git branch daoris/s-4e6837ed ${KEPT} brings the branch back.`);
+      fireEvent.click(within(ask).getByRole('button', { name: 'Discard branch' }));
+      expect(onDiscardTree).toHaveBeenCalledOnce();
+      act(() => (onDiscardTree.mock.calls[0]![0] as Answered).done());
+      expect(screen.queryByRole('group', { name: 'discard daoris/s-4e6837ed' })).toBeNull();
+    });
+
+    it('says a refusal inside the ask, and offers no discard where it would not go or nothing can press it', () => {
+      const onDiscardTree = vi.fn();
+      const { container, rerender } = render(
+        <SessionHead session={session({ state: 'failed' })} discards={DISCARDS} onDiscardTree={onDiscardTree} />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Discard branch…' }));
+      const ask = screen.getByRole('group', { name: 'discard daoris/s-4e6837ed' });
+      fireEvent.click(within(ask).getByRole('button', { name: 'Discard branch' }));
+      act(() => (onDiscardTree.mock.calls[0]![0] as Answered).refused('the tree at s-4e6837ed has uncommitted work — 1 path(s).'));
+      expect(within(ask).getByRole('alert')).toHaveTextContent('the tree at s-4e6837ed has uncommitted work — 1 path(s).');
+
+      // The tree holds what no commit does: the driver says why it stays, and no unforced discard is offered.
+      rerender(
+        <SessionHead
+          session={session({ id: 's9f8e7d6', state: 'failed' })}
+          discards={{
+            ...DISCARDS,
+            says: 'Its work is on `main` by content (a squash merge). Its tree stays: it holds 1 ignored path(s) your checkout does not have: local.db, which a discard would destroy.',
+            keeps: null,
+            keptAt: null,
+          }}
+          onDiscardTree={onDiscardTree}
+        />,
+      );
+      expect(container).toHaveTextContent('Its tree stays: it holds 1 ignored path(s) your checkout does not have: local.db');
+      expect(screen.queryByRole('button', { name: 'Discard branch…' })).toBeNull();
+
+      // Nothing here can press it (a browser, a story): the sentence is said, with no press.
+      rerender(<SessionHead session={session({ state: 'completed' })} discards={DISCARDS} />);
+      expect(container).toHaveTextContent('Its work is on main by content (a squash merge).');
+      expect(screen.queryByRole('button', { name: 'Discard branch…' })).toBeNull();
+    });
+
+    it('says it in Chinese, the driver’s sentence as it is', async () => {
+      await i18n.changeLanguage('zh');
+      try {
+        const { container } = render(
+          <SessionHead session={session({ state: 'completed' })} discards={DISCARDS} onDiscardTree={vi.fn()} onReview={vi.fn()} />,
+        );
+        expect(container).toHaveTextContent('Its work is on main by content (a squash merge).');
+        expect(screen.getByText('在它的工作树 s-4e6837ed 中')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: '采纳…' })).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: '丢弃分支…' }));
+        const ask = screen.getByRole('group', { name: '丢弃 daoris/s-4e6837ed' });
+        expect(within(ask).getByRole('button', { name: '确认丢弃分支' })).toBeInTheDocument();
+      } finally {
+        await i18n.changeLanguage('en');
+      }
+    });
+  });
+
+  /**
    * LAND3b (D102's LAND3 note): a failed session's tree is gone and its branch stands, holding commits no branch of the
    * person's holds, so no clean-up takes it and the review has no tree to discard. Its head offers the discard beside
    * what it left, asking once, naming the branch and its commits; while the tree is here, the review's Discard serves.

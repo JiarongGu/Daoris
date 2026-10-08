@@ -67,10 +67,24 @@ export type SessionGrouping = {
    * and on a host older than the fact.
    */
   lands?: LandOffer | null;
+  /**
+   * What its own tree offers where the line holds its commits by content (SQUASHTIDY1b, D102's note): a squash merge or a
+   * cherry-pick put its work elsewhere, so its page offers no *Accept…* but says where the work is and offers the review's
+   * *Discard*, unforced. Never beside `lands`. Absent where it offers none, and on a host older than the fact.
+   */
+  discards?: DiscardOffer | null;
 };
 
 /** What an ended session's tree offers to land (LAND4): the driver's `LandOffer`, as `SESSION_GROUPS` answers it. */
 export type LandOffer = { branch: string; tree: string; commits: number; uncommitted: number | null };
+
+/**
+ * What a tree whose commits the line holds by content offers (SQUASHTIDY1b): the driver's `DiscardOffer`, as `SESSION_GROUPS`
+ * answers it. `says` is the driver's sentence where *Accept…* would be: where its work is, in Discard's own clause, and why
+ * its tree stays where an unforced discard would not go. `keeps` is the ref an unforced discard keeps its commits at, and
+ * `keptAt` the ask's sentence naming it; both null where the discard would not go now. Shown as they are.
+ */
+export type DiscardOffer = { branch: string; tree: string; says: string; keeps: string | null; keptAt: string | null };
 
 /** How the list is arranged (D126 §4.1): by state, the default, or by repository, the arrangement it had before. */
 export type SessionArrangement = 'state' | 'repository';

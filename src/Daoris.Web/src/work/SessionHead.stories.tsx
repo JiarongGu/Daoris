@@ -284,6 +284,42 @@ export const FinishedAtACheckpointToLand: Story = {
 };
 
 /**
+ * Finished, its work squash-merged as a pull request and its tree still here (SQUASHTIDY1b, the owner's case): no *Accept…*,
+ * the driver's sentence where it would be, and *Discard branch…*, which asks once naming the ref its commits stay at.
+ */
+export const SquashMergedItsDiscard: Story = {
+  args: {
+    session: {
+      ...SESSION, state: 'completed', created: at(40), updated: at(31), note: 'The person finished this at a checkpoint.',
+    },
+    discards: {
+      branch: 'daoris/s-56cb4d29',
+      tree: 's-56cb4d29',
+      says: 'Its work is on `main` by content (a squash merge).',
+      keeps: 'refs/daoris/discarded/daoris/s-56cb4d29',
+      keptAt: 'Its commits stay at `refs/daoris/discarded/daoris/s-56cb4d29` until you delete that ref; '
+        + '`git branch daoris/s-56cb4d29 refs/daoris/discarded/daoris/s-56cb4d29` brings the branch back.',
+    },
+    onReview: () => {},
+    onDiscardTree: () => {},
+  },
+};
+
+/** The same, its tree holding a file no commit does: the driver says why it stays, and no unforced discard is offered. */
+export const SquashMergedItsTreeStays: Story = {
+  args: {
+    ...SquashMergedItsDiscard.args,
+    discards: {
+      ...SquashMergedItsDiscard.args!.discards!,
+      says: 'Its work is on `main` by content (a squash merge). Its tree stays: it holds 1 ignored path(s) your checkout does '
+        + 'not have: local.db, which a discard would destroy.',
+      keeps: null,
+      keptAt: null,
+    },
+  },
+};
+
+/**
  * UXFIX4b: the same with a long branch name, at the main area's 400 px floor less a page's gutters. The name is whole,
  * wrapping after its separators on the line's own row, where it was cut to one line with nothing to read the rest by.
  */

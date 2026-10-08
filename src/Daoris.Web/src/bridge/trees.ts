@@ -348,6 +348,8 @@ export const useDiscardSessionTree = () => {
       if (result.done) {
         void client.invalidateQueries({ queryKey: keys.diff(result.session) });
         void client.invalidateQueries({ queryKey: keys.allSessions });
+        // Its branch went with its tree: the clean-up's list, which the session's head reads what it left from (SQUASHTIDY1b).
+        void client.invalidateQueries({ queryKey: keys.sweep });
       }
     },
   });

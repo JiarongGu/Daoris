@@ -10,7 +10,7 @@ import type { AccountNamer } from '../tools';
 import type { QuestClose, Resolution } from './AwaitingPerson';
 import { HowItCameToBe, type TraceDoor } from './HowItCameToBe';
 import type { Answered } from './InlineConfirm';
-import type { LandOffer } from './groups';
+import type { DiscardOffer, LandOffer } from './groups';
 import type { Relations } from './relations';
 import { type LandingPlan, SessionHead } from './SessionHead';
 import { SessionRelations } from './SessionRelations';
@@ -48,10 +48,14 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
 export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, onDiscardBranch, discardingBranch,
-  headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, onLand,
+  headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, onLand, discards, onDiscardTree,
 }: {
   /** Passed straight through to the head: what its own tree offers to land, as the driver's reader said it (LAND4). */
   lands?: LandOffer | null;
+  /** And what it offers where the line holds its commits by content (SQUASHTIDY1b): no landing, its discard. */
+  discards?: DiscardOffer | null;
+  /** And that discard's press, the review's Discard unforced, told back to its ask. Absent where nothing can press it. */
+  onDiscardTree?: (answered: Answered) => void;
   /** And where accepting would put it, the review's own plan (D87). */
   landing?: LandingPlan | null;
   /** And its press, the review's Accept, told back to its ask. Absent where nothing can press it. */
@@ -160,6 +164,8 @@ export function AttendedSession({
         lands={lands}
         landing={landing}
         onLand={onLand}
+        discards={discards}
+        onDiscardTree={onDiscardTree}
       />
       {/* Every stop a door (the study's §5: "every stop pressable"): a session attends, a quest opens.
           One line of stops by default, since the whole strip stood 350 to 450px between the head and
