@@ -377,6 +377,68 @@ describe("a repository's review before landing", () => {
   });
 });
 
+/**
+ * XAGENT1a (D155 point 3, design §2.5–§2.6): *Second opinion before landing*, beside *Review before landing*, as the driver
+ * resolves it. Nothing set says today's behaviour; a workspace's rule says so and offers *Set for this repository*; its own
+ * carries Clear, which hands it back to its workspace's. Each says it is declared only, until the gate reads it.
+ */
+describe("a repository's second opinion before landing", () => {
+  const withOpinion = (opinion: NonNullable<RepositorySetupProps['work']>['opinion'], onOpinion = vi.fn()) => ({
+    ...SETUP_DEFAULTS, work: { ...SETUP_DEFAULTS.work, opinion, onOpinion },
+  });
+
+  it("says none set as today's behaviour, Daoris's default in its folded line, and its terminal twin", async () => {
+    draw(withOpinion({ repository: 'engine', workspace: 'default' }));
+
+    expect(head('Line and landing')).toHaveAccessibleDescription(
+      "line main (the workspace's default) · lands into its line (Daoris's default) · no second opinion (Daoris's default)");
+    await userEvent.click(head('Line and landing'));
+    const opinion = row(section('Line and landing'), 'Second opinion before landing');
+    expect(opinion).toHaveTextContent('None: no other agent reads work here.');
+    expect(within(opinion).getByText(code('daoris driver opinion engine --reviewers <adapter,adapter>'))).toBeInTheDocument();
+    expect(within(opinion).getByRole('button', { name: 'Set for this repository' })).toBeInTheDocument();
+  });
+
+  it("says its workspace's rule, the working agent's own family and that it is declared only, and sets none in place", async () => {
+    const onOpinion = vi.fn();
+    draw(withOpinion({
+      repository: 'engine', workspace: 'work', source: 'workspace',
+      rule: { on: ['landing'], reviewers: ['codex-acp', 'claude-code-acp'], required: true, minutes: 20, recheck: true, sameAgent: ['claude-code-acp'] },
+    }, onOpinion));
+    await userEvent.click(head('Line and landing'));
+    const opinion = row(section('Line and landing'), 'Second opinion before landing');
+
+    expect(opinion).toHaveTextContent('Before work here lands, codex-acp, else claude-code-acp, reads it, in a copy of its own');
+    expect(opinion).toHaveTextContent('If no reviewer can read it, the work waits for you.');
+    expect(opinion).toHaveTextContent('claude-code-acp is the same agent as the one that does the work here');
+    expect(opinion).toHaveTextContent('Declared only: nothing reads it yet');
+    expect(opinion).toHaveTextContent('From the workspace work.');
+    await userEvent.click(within(opinion).getByRole('button', { name: 'Set for this repository' }));
+    await userEvent.click(within(opinion).getByRole('button', { name: 'None here' }));
+    expect(onOpinion).toHaveBeenLastCalledWith({ none: true });
+  });
+
+  it('opens on a rule of its own, which carries Clear, handing it back to its workspace', async () => {
+    const onOpinion = vi.fn();
+    draw(withOpinion({
+      repository: 'engine', workspace: 'work', source: 'repository',
+      rule: { on: ['steps'], reviewers: ['dsh'], minutes: 30, recheck: true, sameAgent: [] },
+    }, onOpinion));
+
+    expect(head('Line and landing')).toHaveAttribute('aria-expanded', 'true');
+    const opinion = row(section('Line and landing'), 'Second opinion before landing');
+    expect(opinion).toHaveTextContent("Before a chain's next step starts, dsh reads the work of the step before it here");
+    expect(opinion).toHaveTextContent('Set for this repository.');
+    await userEvent.click(within(opinion).getByRole('button', { name: 'Clear' }));
+    expect(onOpinion).toHaveBeenLastCalledWith({ clear: true });
+  });
+
+  it('is absent on a shell older than it', () => {
+    draw(SETUP_OWN);
+    expect(screen.queryByText('Second opinion before landing')).toBeNull();
+  });
+});
+
 describe('Setup in 中文', () => {
   it('names its sections and marks a default in Chinese', async () => {
     await i18n.changeLanguage('zh');

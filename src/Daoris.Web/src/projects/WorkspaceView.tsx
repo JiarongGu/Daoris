@@ -3,14 +3,15 @@ import { useTranslation } from 'react-i18next';
 import { sentence } from '../format';
 import { useSyncStanding } from '../queries';
 import type { LandingRule } from '../settings/Landings';
+import { opinionToast } from '../settings/Opinions';
 import { reviewToast } from '../settings/Reviews';
 import { namer } from '../settings/namer';
 import { sayDiscard, sweepKey, SweepList } from '../settings/Sweep';
 import { SyncSection } from '../settings/Sync';
 import {
   stoppedWaiting, useAccounts, useAcross, useDriver, useHarnesses, useHistoryPlan, usePlugins, useRemotes, useRuleAction, useRules,
-  useDiscardSessionBranch, useSetLanding, useSetLanguage, useSetLine, useSetReadAcross, useSetReview, useStarts, useSweep, useSweepPlan,
-  useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote,
+  useDiscardSessionBranch, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useStarts,
+  useSweep, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote,
 } from '../shell';
 import { byTool } from '../tools';
 import { failure, type Notify, useErrorNotify } from '../ui';
@@ -276,6 +277,7 @@ function SetupPart({ workspace, notify, open, wiring }: {
   const setLanding = useSetLanding();
   const setLanguage = useSetLanguage();
   const setReview = useSetReview();
+  const setOpinion = useSetOpinion();
   const setRead = useSetReadAcross();
   const act = useRuleAction();
   useErrorNotify(remotes.error ?? across.error ?? rules.error, notify);
@@ -298,8 +300,8 @@ function SetupPart({ workspace, notify, open, wiring }: {
     workspace,
     open,
     wiring,
-    busy: setLine.isPending || setLanding.isPending || setLanguage.isPending || setReview.isPending || setRead.isPending || act.isPending
-      || wire.isPending || unwire.isPending,
+    busy: setLine.isPending || setLanding.isPending || setLanguage.isPending || setReview.isPending || setOpinion.isPending
+      || setRead.isPending || act.isPending || wire.isPending || unwire.isPending,
     defaults: {
       line: state && {
         set: ofWorkspace(state.workspaceLines)?.branch,
@@ -358,6 +360,16 @@ function SetupPart({ workspace, notify, open, wiring }: {
             set: ofWorkspace(state.workspaceReviews)?.rule,
             onChange: (edit) => setReview.mutate({ workspace, ...edit }, {
               onSuccess: (answered) => notify(reviewToast(t, workspace, edit, answered.reviewed)),
+              onError,
+            }),
+          }
+        : null,
+      // Which other agent reads its repositories' work before it lands (XAGENT1a); a shell older than it answers no opinions.
+      opinion: state && Array.isArray(state.workspaceOpinions)
+        ? {
+            set: ofWorkspace(state.workspaceOpinions)?.rule,
+            onChange: (edit) => setOpinion.mutate({ workspace, ...edit }, {
+              onSuccess: () => notify(opinionToast(t, workspace, edit)),
               onError,
             }),
           }

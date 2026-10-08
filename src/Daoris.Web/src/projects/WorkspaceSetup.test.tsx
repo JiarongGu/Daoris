@@ -257,3 +257,46 @@ describe("a workspace's review before landing", () => {
     expect(onChange).toHaveBeenLastCalledWith({ clear: true });
   });
 });
+
+/**
+ * XAGENT1a (D155 point 3, design §2.5–§2.6): a workspace's *Second opinion before landing*, among its Defaults, for every
+ * repository there that sets none of its own. Nothing set says today's behaviour; one set carries Clear and says it is
+ * declared only.
+ */
+describe("a workspace's second opinion before landing", () => {
+  const withOpinion = (opinion: WorkspaceSetupProps['defaults']['opinion']) => at({
+    defaults: { line: { onSet: vi.fn() }, opinion },
+  });
+
+  it("names none set as Daoris's default, says today's behaviour, and offers it to be set with its terminal twin", async () => {
+    const onChange = vi.fn();
+    withOpinion({ onChange });
+
+    expect(section('Defaults')).toHaveAccessibleDescription(
+      "each checkout's own line (Daoris's default) · no second opinion (Daoris's default)");
+    await userEvent.click(section('Defaults'));
+    expect(screen.getByText('None: no other agent reads work here.')).toBeInTheDocument();
+    expect(screen.getByText(code('daoris driver opinion --workspace aurora --reviewers <adapter,adapter>'))).toBeInTheDocument();
+    const row = screen.getByText('Second opinion before landing', { selector: 'span' }).closest('.\\@container') as HTMLElement;
+    await userEvent.click(within(row).getByRole('button', { name: 'Set for this workspace' }));
+    expect(screen.queryByRole('button', { name: 'None here' })).toBeNull();
+    await userEvent.type(screen.getByRole('textbox', { name: 'Its reviewers for aurora, in the order they are tried' }), 'codex-acp');
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onChange).toHaveBeenLastCalledWith({
+      set: { reviewers: ['codex-acp'], on: ['landing'], required: false, verify: false, minutes: 20, recheck: true },
+    });
+  });
+
+  it('opens on a rule it sets, says what it lets a reviewer do and that nothing reads it yet, and clears it', async () => {
+    const onChange = vi.fn();
+    withOpinion({
+      set: { on: ['landing'], reviewers: ['codex-acp', 'dsh'], required: true, minutes: 20, recheck: true, sameAgent: [] },
+      onChange,
+    });
+
+    expect(screen.getByText(/reads it, in a copy of its own that nothing is taken back from/)).toBeInTheDocument();
+    expect(screen.getByText(/Declared only: nothing reads it yet, so no reviewer is chosen/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Clear' }));
+    expect(onChange).toHaveBeenLastCalledWith({ clear: true });
+  });
+});

@@ -385,6 +385,8 @@ public sealed partial class HelpCoverageTests
         ("projects", "useSetLanguage", null, new Door("setting", "language")),
         // REVIEWENV1a: *Review before landing*, on a repository's Setup and a workspace's Defaults.
         ("projects", "useSetReview", null, new Door("setting", "review")),
+        // XAGENT1a: *Second opinion before landing*, on a repository's Setup and a workspace's Defaults.
+        ("projects", "useSetOpinion", null, new Door("setting", "opinion")),
         ("projects", "useSetStanding", null, new Door("setting", "standing")),
         ("projects", "useSetReadAcross", null, new Door("setting", "across")),
         ("projects", "useSetWriteAcross", null, new Door("setting", "across")),

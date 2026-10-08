@@ -5,6 +5,7 @@ import { keys } from '../queries';
 import type { AccountWaitTick, Consideration, TrustHold } from '../signals';
 import type { LandingRule } from '../settings/Landings';
 import type { LanguageOption } from '../settings/Languages';
+import type { OpinionRule } from '../settings/Opinions';
 import type { ReviewLook, ReviewRule } from '../settings/Reviews';
 import { call, refusedNotReady } from './call';
 
@@ -112,6 +113,13 @@ export type DriverState = {
   workspaceReviews?: { workspace: string; rule: ReviewRule }[];
   /** What a review's procedure look found, on the answer to `SET_REVIEW`'s put alone; absent on every other answer. */
   reviewed?: ReviewLook | null;
+  /**
+   * The second-opinion rules as set (XAGENT1a, D155 point 3): which other agent reads each repository's work before it lands,
+   * or none here — absent on a shell older than it, which offers no second-opinion row.
+   */
+  opinions?: { repository: string; rule: OpinionRule }[];
+  /** And by workspace, for each repository there that sets none of its own. */
+  workspaceOpinions?: { workspace: string; rule: OpinionRule }[];
 };
 
 export const useDriver = () => {
