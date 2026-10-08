@@ -363,6 +363,11 @@ public sealed class AutoLandingTests : IDisposable
 
         public Task<IReadOnlySet<string>> InUseAsync(CancellationToken ct) =>
             Task.FromResult<IReadOnlySet<string>>(Records.Where(r => r.Live && r.Tree is not null).Select(r => r.Tree!).ToHashSet());
+
+        // The review's gate reads the chain and its ask (REVIEWENV1c): no rule names a review here, so these decide nothing.
+        public Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<QuestView>>([.. Quests.Values]);
+
+        public Task<AskView?> AskAsync(string id, CancellationToken ct) => Task.FromResult<AskView?>(null);
     }
 
     private sealed class FakeLander(Func<object, PluginLanding> land) : IHookChannel

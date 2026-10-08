@@ -319,7 +319,8 @@ public sealed partial class Driver(
         // The words a record could not go on with, read again at each look (MSG1b): the planner leaves them waiting.
         snapshot = snapshot with { Unable = _marks.For(snapshot.LastRun.Values) };
         _harnesses.Look(snapshot.Started, mark);
-        var plan = Planner.Plan(snapshot, config, Door());
+        // Whether this loop carries Daoris's browser decides whether a local set-up step can be shown here (REVIEWENV1c).
+        var plan = Planner.Plan(snapshot, config, Door(), window: browser is not null);
         var progressed = false;
 
         // What held at spawn, by quest — the plan said Start and the spawn said no. Folded back into
@@ -1013,6 +1014,15 @@ public sealed partial class Driver(
 
         var workTree = opened?.Path ?? resumedIn ?? root;
 
+        // A set-up step follows its repository's own procedure, which its tree must hold (REVIEWENV1c, design §2.1): checked
+        // here, once the tree exists, and held before any record, a fresh tree going as a refused open's does.
+        var setUp = ReviewSetUps.Environment(config, quest, start.Workspace);
+        if (setUp is not null && ReviewSetUps.ProcedureMissing(setUp, quest, workTree) is { } unfollowable)
+        {
+            if (opened is not null) await _trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
+            return Hold(unfollowable);
+        }
+
         // 🔴 Can this harness use what the repository allows it? (DEPLOY1.) Claude Code ignores a
         // repository's `permissions.allow` until a person has accepted that path, so a session in an
         // untrusted tree does the work and then cannot take or close the quest it exists to serve —
@@ -1108,6 +1118,7 @@ public sealed partial class Driver(
         starting?.Dispose();
         restarting?.Dispose();
         onOpened();
+        var openedAt = DateTimeOffset.UtcNow;
 
         // Which account it opened on and why (TOOL4f, D125 §3.6; TOOL6b, D130 §16.4): its record's first line names the step
         // that chose it, and, for a carry-on, the cut-off session and the turn a limit refused; a start moved off where its
@@ -1170,6 +1181,8 @@ public sealed partial class Driver(
                 LastPlan = lastPlan,
                 LastWords = lastWords,
                 AccountChanged = elsewhere && prior!.Limit && _harnesses.CoolingOf(config.Adapter, prior.Profile) is not null,
+                // A set-up step is told its environment as the rule declares it now (REVIEWENV1c, design §2.2).
+                SetUp = setUp,
             };
             var (info, harnessNotice) = Prepare(adapter, target, selection);
 
@@ -1275,6 +1288,10 @@ public sealed partial class Driver(
                     await service.AdvanceAsync(
                         sessionId, conclusion.State, note: conclusion.Note, evidence: evidence, ct: ct, limit: limited,
                         parts: conclusion.Parts).ConfigureAwait(false);
+
+                    // REVIEWENV1c (design §2.6): a set-up step's said set-ups posted with the commit Daoris reads from its tree now.
+                    await ReviewSetUps.PostAsync(service, config, _events, after, sessionId, workTree, start.Workspace, openedAt, ct)
+                        .ConfigureAwait(false);
 
                     // LAND2b: a done under a rule that accepts automatically is due, and a later look lands it beside itself.
                     ConcludedForLanding(sessionId, quest, after?.Status, conclusion.State, workTree, start.Workspace);
