@@ -97,9 +97,9 @@ public sealed class QuestShortTitleTests : IAsyncLifetime
 
     /// <summary>A ticket key in the ask leads the name, so two quests on one ticket's work read as that ticket's.</summary>
     [Theory]
-    [InlineData("Continue the production half", "Per AR-2203, the dev half is done.", "AR-2203 Continue the production half")]
-    [InlineData("AR-2203: continue the production half", "", "AR-2203: continue the production half")]
-    [InlineData("Fix the crash reported in AR-2203 last week by support", "", "AR-2203 Fix the crash reported in last…")]
+    [InlineData("Continue the production half", "Per TK-2203, the dev half is done.", "TK-2203 Continue the production half")]
+    [InlineData("TK-2203: continue the production half", "", "TK-2203: continue the production half")]
+    [InlineData("Fix the crash reported in TK-2203 last week by support", "", "TK-2203 Fix the crash reported in last…")]
     public void A_ticket_key_leads_the_name(string title, string body, string expected)
     {
         var name = QuestTitles.Derive(title, body);
@@ -272,7 +272,7 @@ public sealed class QuestShortTitleTests : IAsyncLifetime
         var ask = (await _desk.AskAsync(new AskRequest(
             "default",
             "(Re-filed from ask #39c495, whose quest was taken outside the driver with no session.)\n"
-            + "continue the prod half of AR-2203\nWhere it stands: the dev half is done.")
+            + "continue the prod half of TK-2203\nWhere it stands: the dev half is done.")
         {
             To = "engine",
         }, Now)).Ask!;
@@ -280,6 +280,6 @@ public sealed class QuestShortTitleTests : IAsyncLifetime
         var quest = Assert.Single(await _quests.ListAsync(receiver: "engine"));
         Assert.Equal(AskState.Published, ask.State);
         Assert.Null(quest.Short);
-        Assert.Equal("AR-2203 continue the prod half of", quest.Name);
+        Assert.Equal("TK-2203 continue the prod half of", quest.Name);
     }
 }

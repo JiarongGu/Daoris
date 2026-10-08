@@ -178,7 +178,7 @@ repository.
 ## 2026-10-07 — a workspace's Branches tab counted every checkout on the machine
 
 ### Web and modules: a workspace's look fetched, counted and left apart the machine's checkouts (BRSCOPE1)
-- **Symptom:** seen on the install: lumachain's Branches tab said *另有 31 个有检出的仓库不持有 Daoris 的分支* (31 more checked-out repositories hold no branch of Daoris's) beside its header's 29 repositories, and its list held `Daoris` and `Daoris.Plugins`, which are another circle's.
+- **Symptom:** seen on the install: the work workspace's Branches tab said *另有 31 个有检出的仓库不持有 Daoris 的分支* (31 more checked-out repositories hold no branch of Daoris's) beside its header's 29 repositories, and its list held `Daoris` and `Daoris.Plugins`, which are another circle's.
 - **Root cause:** UX6g filtered the clean-up's rows and the look's rows to the workspace, and nothing else. `BranchesPart` handed the section the machine's `TREES_SYNC_SCOPE` reading and the look's `looked` and `apart` whole, so the count, the list apart and *Looking at N* were the machine's. The page sent no workspace and `TREES_SYNC_PLAN` and `TREES_SYNC` took none, so the look fetched every checkout holding Daoris's branches and *All N* included every other one; the look had one cache key for every workspace.
 - **Fix:** the two routes take `workspace` (`DriverModule.Checkouts`), the bridge's look and press send it and keep the look per workspace, and the page filters the reading and the look's lists to its own. D150's BRSCOPE1 note has the detail.
 - **Verify:** `ProjectsView.test.tsx`'s two workspaces' checkouts (aurora's tab counted the machine's 3 first) and `DriverModuleLinesTests.A_look_asked_for_a_workspace_takes_its_own_checkouts_alone` (every circle's checkouts first) failed, then passed with the web suite and the modules' fast half. Not covered: the window, the modules' `Process` half and the rehearsals.
@@ -429,6 +429,11 @@ green. No child had died, so the wait, not a held file, is the repeat; what the 
 `SessionsSayCommandTests.Held_words_say_the_drivers_next_look_where_nothing_holds_them` (driver, fast half) exited 2
 where 0 was expected, under its 600 ms wait, once in AGT3c's full fast run after merging main; it passed alone three
 times and in a full rerun (4656/4656). A fast-half test waiting on a clock is the shape to look at.
+The same wait in the family rehearsal (403/404) at HOSTLOG1's merge, 2026-10-08, with three worktrees building beside it
+and the run taking 14 m against its usual 8: *with the headless loop running, words said to it are taken up by the SAME
+session … going on* read `held: the same session goes on with this at the driver's next look`, while the next check
+found the record had worked and ended again in its own conversation. The verb's wait for the loop to take the words
+ended first; the change merged (the host's error answer) touches neither the say route nor the loop.
 `setup-kit.test.ts:807` (STUB3) failed once in EVID1b3's verify: its stub did not answer `initialize` within 1000 ms,
 right after a dotnet run on the same machine; it passed alone and the next verify was green. *Fixed 2026-10-08 (STUB3b
 above):* the bound counted the stub's start; it counts from the stub's first answer now.

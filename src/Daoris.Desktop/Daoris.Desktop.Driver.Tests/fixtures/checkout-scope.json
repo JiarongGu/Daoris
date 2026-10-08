@@ -1,24 +1,24 @@
 {
   "_why": "Which checkouts a look over the branches takes (BRSCOPE1, BRSCOPE1a; D150's BRSCOPE1 note, WSP5): the registry's rows with a checkout here, the one repository named where one is, matched without case, and one workspace's alone where one is named, matched without case and trimmed, a row with no workspace read as the default's; ordered by name, ordinal. Two readers keep it: the driver's TreesCommand.Checkouts, which `daoris-driver trees clean|sync --workspace` take, and the modules' DriverModule.Checkouts, which TREES_SYNC_PLAN and TREES_SYNC take. Each reader's test reads these rows; a row a reader answers differently is the drift.",
   "registry": [
-    { "repository": "engine", "root": "C:/somewhere/engine", "workspace": "lumachain" },
+    { "repository": "engine", "root": "C:/somewhere/engine", "workspace": "northwind" },
     { "repository": "Daoris", "root": "C:/somewhere/Daoris", "workspace": "family" },
-    { "repository": "game", "root": "C:/somewhere/game", "workspace": "Lumachain" },
-    { "repository": "unrooted", "root": null, "workspace": "lumachain" },
+    { "repository": "game", "root": "C:/somewhere/game", "workspace": "Northwind" },
+    { "repository": "unrooted", "root": null, "workspace": "northwind" },
     { "repository": "blank", "root": "   ", "workspace": "family" },
     { "repository": "Daoris.Plugins", "root": "C:/somewhere/plugins" },
     { "repository": "spaced", "root": "C:/somewhere/spaced", "workspace": " Family " },
     { "repository": "unnamed", "root": "C:/somewhere/unnamed", "workspace": "" }
   ],
   "asks": [
-    { "repository": null, "workspace": "lumachain", "takes": ["engine", "game"] },
+    { "repository": null, "workspace": "northwind", "takes": ["engine", "game"] },
     { "repository": null, "workspace": "FAMILY", "takes": ["Daoris", "spaced"] },
     { "repository": null, "workspace": " family ", "takes": ["Daoris", "spaced"] },
     { "repository": null, "workspace": "default", "takes": ["Daoris.Plugins", "unnamed"] },
     { "repository": null, "workspace": "Default", "takes": ["Daoris.Plugins", "unnamed"] },
     { "repository": null, "workspace": "nowhere", "takes": [] },
-    { "repository": "Daoris", "workspace": "lumachain", "takes": [] },
-    { "repository": "GAME", "workspace": "LUMACHAIN", "takes": ["game"] },
+    { "repository": "Daoris", "workspace": "northwind", "takes": [] },
+    { "repository": "GAME", "workspace": "NORTHWIND", "takes": ["game"] },
     { "repository": "unrooted", "workspace": null, "takes": [] },
     { "repository": "GAME", "workspace": null, "takes": ["game"] },
     { "repository": null, "workspace": null, "takes": ["Daoris", "Daoris.Plugins", "engine", "game", "spaced", "unnamed"] }

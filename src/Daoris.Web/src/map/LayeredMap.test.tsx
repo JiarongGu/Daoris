@@ -14,12 +14,12 @@ const node = (id: string, extra: Partial<MapNode> = {}): MapNode => ({ id, owns:
 
 const IDS = Array.from({ length: 20 }, (_, index) => `repo-${String(index).padStart(2, '0')}`);
 const TOPOLOGY: Topology = {
-  nodes: [...IDS.map((id) => node(id)), node('report-ui', { open: 2, working: true }), node('reports-db')],
-  quests: [{ from: 'report-ui', to: 'reports-db', quests: [], open: 1, live: null }],
+  nodes: [...IDS.map((id) => node(id)), node('portal-ui', { open: 2, working: true }), node('portals-db')],
+  quests: [{ from: 'portal-ui', to: 'portals-db', quests: [], open: 1, live: null }],
   asks: [],
   chains: [],
   depends: [],
-  knowledge: [{ a: 'reports-db', b: 'repo-03', groups: 2 }],
+  knowledge: [{ a: 'portals-db', b: 'repo-03', groups: 2 }],
   outside: 0,
   circles: 1,
 };
@@ -27,9 +27,9 @@ const TOPOLOGY: Topology = {
 describe('the layered map', () => {
   it('draws every repository as a card a keyboard reaches, named for what it holds', () => {
     render(<LayeredMap topology={TOPOLOGY} selected={null} onSelect={vi.fn()} />);
-    expect(screen.getByRole('button', { name: /^report-ui, / })).toHaveAttribute('tabindex', '0');
+    expect(screen.getByRole('button', { name: /^portal-ui, / })).toHaveAttribute('tabindex', '0');
     expect(screen.getAllByRole('button', { name: /^repo-\d\d/ })).toHaveLength(20);
-    expect(screen.getByRole('button', { name: /from report-ui to reports-db/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /from portal-ui to portals-db/ })).toBeInTheDocument();
     // What nothing connects is set apart, and says so.
     expect(screen.getByText('No line drawn to these')).toBeInTheDocument();
   });
@@ -39,12 +39,12 @@ describe('the layered map', () => {
     render(<LayeredMap topology={TOPOLOGY} selected={null} onSelect={onSelect} />);
     const find = screen.getByRole('textbox', { name: 'find a repository' });
 
-    fireEvent.change(find, { target: { value: 'report' } });
+    fireEvent.change(find, { target: { value: 'portal' } });
     expect(screen.getByText('2 matches')).toBeInTheDocument();
     // The rest step back, so the matches stand out.
     expect(screen.getByRole('button', { name: /^repo-00/ }).getAttribute('class')).toContain('opacity-25');
     fireEvent.keyDown(find, { key: 'Enter' });
-    expect(onSelect).toHaveBeenCalledWith({ kind: 'node', id: 'report-ui' });
+    expect(onSelect).toHaveBeenCalledWith({ kind: 'node', id: 'portal-ui' });
   });
 
   it('sizes from a menu behind the size itself, with no arrow standing for a size', async () => {
@@ -118,11 +118,11 @@ describe('the layered map', () => {
   it('draws a pair asked both ways as two lines apart, each with its own count in view', () => {
     const both: Topology = {
       ...TOPOLOGY,
-      quests: [...TOPOLOGY.quests, { from: 'reports-db', to: 'report-ui', quests: [], open: 1, live: null }],
+      quests: [...TOPOLOGY.quests, { from: 'portals-db', to: 'portal-ui', quests: [], open: 1, live: null }],
     };
     render(<LayeredMap topology={both} selected={null} onSelect={vi.fn()} />);
-    const there = screen.getByRole('button', { name: /from report-ui to reports-db/ });
-    const back = screen.getByRole('button', { name: /from reports-db to report-ui/ });
+    const there = screen.getByRole('button', { name: /from portal-ui to portals-db/ });
+    const back = screen.getByRole('button', { name: /from portals-db to portal-ui/ });
     expect(there.querySelector('path')!.getAttribute('d')).not.toBe(back.querySelector('path')!.getAttribute('d'));
     // The counts stand apart by more than a bubble's width, so neither hides the other.
     const y = (line: HTMLElement) => Number(line.querySelector('circle')!.getAttribute('cy'));
@@ -134,10 +134,10 @@ describe('the layered map', () => {
     // the left, and the view must take in the room it needs rather than keep the first frame.
     const asked: Topology = {
       ...TOPOLOGY,
-      quests: [...TOPOLOGY.quests, { from: 'repo-00', to: 'reports-db', quests: [], open: 1, live: null }],
+      quests: [...TOPOLOGY.quests, { from: 'repo-00', to: 'portals-db', quests: [], open: 1, live: null }],
       knowledge: [],
     };
-    const later: Topology = { ...asked, knowledge: [{ a: 'report-ui', b: 'repo-00', groups: 1 }] };
+    const later: Topology = { ...asked, knowledge: [{ a: 'portal-ui', b: 'repo-00', groups: 1 }] };
     const x = () => Number(screen.getByRole('group', { name: 'the workspace map' }).getAttribute('viewBox')!.split(' ')[0]);
     const view = (topology: Topology) => <Tooltip.Provider><LayeredMap topology={topology} selected={null} onSelect={vi.fn()} /></Tooltip.Provider>;
 
@@ -158,10 +158,10 @@ describe('the layered map', () => {
   it('chooses and releases as the ring does: a second press, or Escape', () => {
     const onSelect = vi.fn();
     const { rerender } = render(<LayeredMap topology={TOPOLOGY} selected={null} onSelect={onSelect} />);
-    fireEvent.click(screen.getByRole('button', { name: /^report-ui, / }));
-    expect(onSelect).toHaveBeenLastCalledWith({ kind: 'node', id: 'report-ui' });
+    fireEvent.click(screen.getByRole('button', { name: /^portal-ui, / }));
+    expect(onSelect).toHaveBeenLastCalledWith({ kind: 'node', id: 'portal-ui' });
 
-    rerender(<Tooltip.Provider><LayeredMap topology={TOPOLOGY} selected={{ kind: 'node', id: 'report-ui' }} onSelect={onSelect} /></Tooltip.Provider>);
+    rerender(<Tooltip.Provider><LayeredMap topology={TOPOLOGY} selected={{ kind: 'node', id: 'portal-ui' }} onSelect={onSelect} /></Tooltip.Provider>);
     fireEvent.keyDown(screen.getByRole('region', { name: 'the workspace map' }), { key: 'Escape' });
     expect(onSelect).toHaveBeenLastCalledWith(null);
   });

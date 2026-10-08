@@ -440,7 +440,7 @@ public static class LandingRules
     /// one the ask became — walking up each step's parent; a chat with no quest has its opening line.
     /// </summary>
     /// <remarks>
-    /// 🔴 A chain lands from its last step (WSR1), so naming it for that step's quest named AR-2202's work
+    /// 🔴 A chain lands from its last step (WSR1), so naming it for that step's quest named TK-2202's work
     /// `feature/verify-in-prod-…-381807d1f7bd`, after its verify step. The walk stops where the service no
     /// longer answers for a parent, and after twenty steps, which no chain reaches.
     /// </remarks>

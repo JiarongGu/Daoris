@@ -36,7 +36,7 @@ public sealed class SessionEventsTests : IDisposable
     public void The_last_thing_said_is_the_agents_last_message_whole()
     {
         var events = new SessionEvents(_directory);
-        events.Append("park1", Asked("You are report-ui's agent…", origin: "target"));
+        events.Append("park1", Asked("You are portal-ui's agent…", origin: "target"));
         events.Append("park1", Message("Looking at it."));
         events.Append("park1", new SessionEvent { Kind = SessionEventKind.Tool, Id = "t1", Title = "Read a file" });
         events.Append("park1", Message("**Decision needed:** which report?\n- **The Angular one:**"));

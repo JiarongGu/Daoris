@@ -53,7 +53,7 @@ nested. A reader skips a line it cannot parse and a field it does not know.
 | Event | Source | Data | Why it is kept |
 |---|---|---|---|
 | `app.started` / `app.stopped` | every | version, installed, uptime on stop | a period of use, and a version to blame |
-| `error` | every | where, type, message, stack | an unhandled exception, which left no trace |
+| `error` | every | where, type, message, stack; a request's also method, route, inner (host, HOSTLOG1) | an unhandled exception, which left no trace |
 | `log` | every | category, message, exception | the framework's own warnings and errors |
 | `session.started` | desktop | session, kind, adapter, repository, workspace; setup, only for a set-up's session | what the person runs, on what, and where (WSSETUP11) |
 | `session.opened` | desktop | session, adapter, openMs | spawn to ready: what a person waits through |
@@ -268,6 +268,27 @@ the scope's *near*), `clear`, or null where it said nothing; never a number, a r
 - **Not yet written**: a conversation's servers, and a trial from the screen's door. Both wait for the shell
   to hand its log to the chat runner and to `PLUGIN_TRY`, a modules change PLUGUI1d did not make.
   `plugin.tested` has its shape (`PluginLog.Tested`) and no writer until PLUGUI1g's runner.
+
+**As built (HOSTLOG1): a route's exception, on the host**, measured against the code and its tests
+(`UnhandledRequestTests`, `RequestLogTests`). On the install, two routes answered 500 for a stretch and the log
+held only the server's line that something was thrown. The host's outermost middleware (`Program.cs`, beside
+`request.failed`) now catches what a request throws and writes the `error` event through the host's one
+`MachineLog` (`UnhandledRequests.Write`):
+
+- **The fields.** `where` is the method and the route's pattern (`GET /api/repositories`), so the report groups
+  an `error` by route without change; `method` and `route` are also on their own. `type` and `message` are the
+  exception's; `stack` its first five frames as the runtime gives them (which method is on top can vary
+  between runs, since a hot throw helper is inlined once tiered up); `inner` the innermost exception's type
+  and message when it wraps one, null otherwise.
+- **Nobody's words.** Never the body, the query or a header. A value of the query or the path (three
+  characters or longer) that the exception's message repeats, such as a search a parser refused, is cut out as
+  `…`. A body field a message repeats is not cut: the host does not buffer bodies to compare them.
+- **The answer.** A 500 in the `ErrorResponse` shape, *The service hit an error it did not expect, and wrote
+  what it was to its log.*, or, on a host with no home, which writes no log, the sentence that says so. Neither
+  names the exception, whose message and frames can carry a machine path (D47 §4). A response already started
+  is left to the server as before, and a caller that hung up (a cancellation on the request's own token) is
+  no error of the service's and is not written. `request.failed` is written as it was. **Not covered by a
+  test**: those two cases.
 
 ## 5. What is never logged
 

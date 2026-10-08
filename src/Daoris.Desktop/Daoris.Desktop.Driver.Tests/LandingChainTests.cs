@@ -32,7 +32,7 @@ public sealed class LandingChainTests : IDisposable
     // ——— what is related
 
     /// <summary>
-    /// The owner's AR-2203, as its shape: a quest, its verify step, and a follow-up ask's drill-down that follows the verify
+    /// The owner's TK-2203, as its shape: a quest, its verify step, and a follow-up ask's drill-down that follows the verify
     /// step. The drill-down was published by another ask, and still lands on the chain's branch, named for its first quest; a
     /// quest of the second ask that follows nothing is its own work, on its own branch.
     /// </summary>
@@ -41,21 +41,21 @@ public sealed class LandingChainTests : IDisposable
     {
         var quests = new Dictionary<string, QuestView>
         {
-            ["q1"] = new("q1", "ask #a1", "report-ui", "AR-2203: the common report", "", "Done"),
-            ["q2"] = new("q2", "ask #a1", "report-ui", "Verify the common report in the browser", "", "Done") { Parent = "q1" },
-            ["q3"] = new("q3", "ask #a2", "report-ui", "Drill down into the report's totals", "", "Done") { Parent = "q2" },
-            ["q4"] = new("q4", "ask #a2", "report-ui", "Rename the report's export", "", "Done"),
+            ["q1"] = new("q1", "ask #a1", "portal-ui", "TK-2203: the common report", "", "Done"),
+            ["q2"] = new("q2", "ask #a1", "portal-ui", "Verify the common report in the browser", "", "Done") { Parent = "q1" },
+            ["q3"] = new("q3", "ask #a2", "portal-ui", "Drill down into the report's totals", "", "Done") { Parent = "q2" },
+            ["q4"] = new("q4", "ask #a2", "portal-ui", "Rename the report's export", "", "Done"),
         };
         Task<QuestView?> Find(string id) => Task.FromResult(quests.GetValueOrDefault(id));
 
         var drillDown = await LandingRules.SubjectAsync("s3", "q3", Find, opening: null);
         var unrelated = await LandingRules.SubjectAsync("s4", "q4", Find, opening: null);
 
-        Assert.Equal(new LandingSubject("s3", "q1", "AR-2203: the common report"), drillDown);
+        Assert.Equal(new LandingSubject("s3", "q1", "TK-2203: the common report"), drillDown);
         Assert.Equal(new LandingSubject("s4", "q4", "Rename the report's export"), unrelated);
         var rule = "feature/{slug}-{quest}";
-        Assert.Equal(LandingRules.Expand(rule, new LandingNames("q1", LandingRules.Slug("AR-2203: the common report"), "report-ui", "s1")),
-            LandingRules.Expand(rule, new LandingNames(drillDown.Quest!, LandingRules.Slug(drillDown.Title), "report-ui", "s3")));
+        Assert.Equal(LandingRules.Expand(rule, new LandingNames("q1", LandingRules.Slug("TK-2203: the common report"), "portal-ui", "s1")),
+            LandingRules.Expand(rule, new LandingNames(drillDown.Quest!, LandingRules.Slug(drillDown.Title), "portal-ui", "s3")));
     }
 
     /// <summary>

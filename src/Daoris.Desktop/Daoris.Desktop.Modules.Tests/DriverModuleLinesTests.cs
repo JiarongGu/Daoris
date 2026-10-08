@@ -332,7 +332,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     /// <summary>
     /// BRSCOPE1 (WSP5): a look or a press asked for a workspace takes that workspace's checkouts alone, its name matched
     /// without case and a row with none read as the default's, as every door reads a registry row's workspace. Asked for
-    /// none, it is the machine's, as before. The install's lumachain looked at every checkout on the machine, another
+    /// none, it is the machine's, as before. The install's work workspace looked at every checkout on the machine, another
     /// circle's included. Read off the registry rows alone, since a look at a real checkout runs git.
     /// </summary>
     [Fact]
@@ -340,19 +340,19 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     {
         RepoView[] registry =
         [
-            new("engine", true, "C:/somewhere/engine", "lumachain"),
+            new("engine", true, "C:/somewhere/engine", "northwind"),
             new("Daoris", true, "C:/somewhere/Daoris", "family"),
-            new("game", true, "C:/somewhere/game", "Lumachain"),
-            new("unrooted", true, null, "lumachain"),
+            new("game", true, "C:/somewhere/game", "Northwind"),
+            new("unrooted", true, null, "northwind"),
             new("Daoris.Plugins", true, "C:/somewhere/plugins"),
         ];
         string[] Names(string? repository, string? workspace) =>
             [.. DriverModule.Checkouts(registry, repository, workspace).Select(each => each.Repository)];
 
-        Assert.Equal(["engine", "game"], Names(null, "lumachain"));
+        Assert.Equal(["engine", "game"], Names(null, "northwind"));
         Assert.Equal(["Daoris"], Names(null, "FAMILY"));
         Assert.Equal(["Daoris.Plugins"], Names(null, RemoteTarget.DefaultWorkspace));
-        Assert.Empty(Names("Daoris", "lumachain"));
+        Assert.Empty(Names("Daoris", "northwind"));
         Assert.Equal(["Daoris", "Daoris.Plugins", "engine", "game"], Names(null, null));
         Assert.Equal(["game"], Names("GAME", null));
     }

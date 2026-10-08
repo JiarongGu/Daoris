@@ -502,7 +502,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         landed = landed with
         {
             // 🔴 The sentence that the tree stays goes when the tidy removed it: the message said both
-            // (found landing AR-2202, 2026-09-29).
+            // (found landing TK-2202, 2026-09-29).
             Message = tidied.Removed
                 ? landed.Message.Replace(TreeStays, "", StringComparison.Ordinal) + $" Cleaned up, as the rule says: {tidied.Message}"
                 : landed.Message + $" The rule says to clean up, and the tree stays: {tidied.Message}",

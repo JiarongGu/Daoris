@@ -15,7 +15,7 @@ const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 const KNOWN: ReviewKnown = {
   title: 'Draw the report header from the quarter’s columns, and keep the totals row pinned',
-  repository: 'report-ui',
+  repository: 'portal-ui',
   branch: 'daoris/s-2394e5d9',
   base: '0fda18c2b7e4a9d1',
   commits: 4,
