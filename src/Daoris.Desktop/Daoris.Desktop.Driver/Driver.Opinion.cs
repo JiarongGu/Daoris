@@ -91,6 +91,9 @@ public sealed partial class Driver
                         ask.Occasion, ask.Working, candidate, reviewer, label, OpinionPass.Families(choice.Working), posture,
                         ask.Rule.Bound, copy.Path)
                     {
+                        // The one recheck reads the commits since its first pass's tip (XAGENT1e, design §6.5).
+                        Pass = ask.Rechecks is null ? OpinionViews.FirstPass : OpinionViews.RecheckPass,
+                        Rechecks = ask.Rechecks?.First.Id,
                         Product = family.Product,
                         Maker = family.Maker,
                         Account = selection.Profile,
@@ -136,6 +139,7 @@ public sealed partial class Driver
                 Diff = diff,
                 Verify = ask.Rule.Verify,
                 Minutes = ask.Rule.Bound,
+                Rechecks = ask.Rechecks,
             };
             var target = new SessionTarget(
                 QuestId: "", $"Second opinion on {ask.Repository}", "", "Daoris", ask.Repository, copy.Path, service.BaseUrl)

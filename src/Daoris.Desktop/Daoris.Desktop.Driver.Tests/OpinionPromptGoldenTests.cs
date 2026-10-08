@@ -65,6 +65,47 @@ public sealed class OpinionPromptGoldenTests
     /// <summary>The person's ask of one session's tip, any time: the candidate alone, read by reading.</summary>
     internal static readonly OpinionPacket Bare = new("asked", Candidate with { Commits = [Candidate.Tip], Paths = [new OpinionPath("M", "README.md")] });
 
+    /// <summary>
+    /// The one recheck (XAGENT1e, design §6.5): the commits since the first pass's tip, handed the first pass's findings and how
+    /// the session answered each, a fix's commit as git read it.
+    /// </summary>
+    internal static readonly OpinionPacket Recheck = new(
+        OpinionRules.Landing,
+        new OpinionCandidateRead(
+            "reports", "2222222222222222222222222222222222222222", "5555555555555555555555555555555555555555",
+            ["4444444444444444444444444444444444444444", "5555555555555555555555555555555555555555"],
+            [new OpinionPath("M", "src/report.ts")]))
+    {
+        Quests = Full.Quests,
+        Rules = Full.Rules,
+        Minutes = 30,
+        Rechecks = new OpinionRecheckOf(
+            new OpinionView(
+                "op1", OpinionRules.Landing, "first", "s1", "r1", "reports", "1111111111111111111111111111111111111111",
+                "2222222222222222222222222222222222222222", "codex-acp", "another-maker", "given")
+            {
+                Findings =
+                [
+                    new OpinionFindingView(1, "must", "src/report.ts:42", "The window's end is exclusive, so the last day is dropped.",
+                        "Each daily report misses its last day.", "Ran the report for one day: it held no rows.", "sure"),
+                    new OpinionFindingView(2, "should", "src/bridge/v3.ts:7", "The table is written twice.",
+                        "Two places to change for one rule.", "Read both files.", "likely"),
+                    new OpinionFindingView(3, "note", "general", "The commit message names no quest.", "Harder to trace.", "Read the log.", "unsure"),
+                ],
+                Answers =
+                [
+                    new OpinionAnswerView(1, "fixed") { Commit = "4444444" },
+                    new OpinionAnswerView(2, "rejected") { Evidence = "The twin test holds the two tables equal; one is the CLI's, one the driver's." },
+                ],
+            },
+            new OpinionReading("s1", "5555555555555555555555555555555555555555", DateTimeOffset.Parse("2026-10-09T09:30:00Z"),
+            [
+                new OpinionAnswerRead(1, "must", "fixed") { Said = "fixed", Commit = "4444444", Fix = "4444444444444444444444444444444444444444" },
+                new OpinionAnswerRead(2, "should", "rejected") { Said = "rejected" },
+                new OpinionAnswerRead(3, "note", "unresolved") { Why = OpinionAnswerWhy.NotAnswered },
+            ])),
+    };
+
     private static string RepositoryRoot()
     {
         var at = new DirectoryInfo(AppContext.BaseDirectory);
@@ -78,9 +119,35 @@ public sealed class OpinionPromptGoldenTests
     [Theory]
     [InlineData("full")]
     [InlineData("bare")]
+    [InlineData("recheck")]
     public void The_reviewer_s_instruction_is_its_golden_text(string which)
     {
-        Assert.Equal(File.ReadAllText(GoldenPath($"{which}.md")), OpinionInstruction.Compose(which == "full" ? Full : Bare));
+        Assert.Equal(
+            File.ReadAllText(GoldenPath($"{which}.md")),
+            OpinionInstruction.Compose(which switch { "full" => Full, "bare" => Bare, _ => Recheck }));
+    }
+
+    /// <summary>
+    /// The recheck (XAGENT1e, design §6.5) is told what the first reading found and how each was answered, each answer the
+    /// session's claim beside what git read of a fix; it says of each first-pass finding that it stands or is withdrawn, and its
+    /// findings go to the person, never back to the session.
+    /// </summary>
+    [Fact]
+    public void The_recheck_is_handed_the_first_reading_and_says_stands_or_withdrawn_for_the_person()
+    {
+        var text = OpinionInstruction.Compose(Recheck);
+
+        Assert.Contains("what the session made in answer to a first reading's findings", text);
+        Assert.Contains("- Finding 1 (must, sure), at `src/report.ts:42`: The window's end is exclusive", text);
+        Assert.Contains("Answered: fixed, in `4444444444444444444444444444444444444444`, which Daoris read from git", text);
+        Assert.Contains("Answered: rejected, with this evidence: The twin test holds", text);
+        Assert.Contains("Answered: not answered.", text);
+        Assert.Contains("`rechecked`", text);
+        Assert.Contains("`stands` or is `withdrawn`", text);
+        Assert.Contains("they go to the person", text);
+        Assert.DoesNotContain("the session that did the work checks each against the code and answers it", text);
+        // A first pass is told none of it.
+        Assert.DoesNotContain("`rechecked`", OpinionInstruction.Compose(Full));
     }
 
     /// <summary>

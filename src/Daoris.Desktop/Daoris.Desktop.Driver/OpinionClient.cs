@@ -16,6 +16,9 @@ public sealed record OpinionAskBody(
     /// <summary><c>first</c>, or a recheck's (XAGENT1e).</summary>
     public string Pass { get; init; } = "first";
 
+    /// <summary>For a recheck (XAGENT1e, design §6.5), the first pass whose findings it reads again; null for a first pass.</summary>
+    public string? Rechecks { get; init; }
+
     /// <summary>The reviewer's declared product and maker, as every opinion carries them (§3.4); null where none is declared.</summary>
     public string? Product { get; init; }
 
@@ -36,6 +39,7 @@ public sealed record OpinionAskBody(
             writer.WriteStartObject();
             writer.WriteString("occasion", Occasion);
             writer.WriteString("pass", Pass);
+            if (Rechecks is not null) writer.WriteString("rechecks", Rechecks);
             writer.WriteString("working", Working);
             writer.WriteStartObject("candidate");
             writer.WriteString("repository", Candidate.Repository);

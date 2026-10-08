@@ -59,6 +59,12 @@ public sealed record OpinionPacket(string Occasion, OpinionCandidateRead Candida
 
     /// <summary>How long the pass may take, in minutes: the rule's bound.</summary>
     public int Minutes { get; init; } = OpinionRules.DefaultMinutes;
+
+    /// <summary>
+    /// For the one recheck (XAGENT1e, design §4, §6.5): the first pass's findings and each answer, so it says of each whether it
+    /// stands or is withdrawn. Null for a first pass.
+    /// </summary>
+    public OpinionRecheckOf? Rechecks { get; init; }
 }
 
 /// <summary>

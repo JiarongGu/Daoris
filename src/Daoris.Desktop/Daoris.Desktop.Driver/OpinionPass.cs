@@ -21,7 +21,19 @@ public sealed record OpinionPassAsk(
 
     /// <summary>The person's words on the ask the work was asked by; null for work no ask asked.</summary>
     public AskWords? Words { get; init; }
+
+    /// <summary>
+    /// For the one recheck (XAGENT1e, design §6.5), the first pass whose findings it reads again and the working session's
+    /// answers as the driver read them; null for a first pass. Its base is that pass's tip, and its tip the working tree's.
+    /// </summary>
+    public OpinionRecheckOf? Rechecks { get; init; }
 }
+
+/// <summary>
+/// What a recheck reads again (XAGENT1e, design §4, §6.5): the first pass, its findings, and the working session's answers as
+/// the driver read them when its turn ended, each fix's commit checked.
+/// </summary>
+public sealed record OpinionRecheckOf(OpinionView First, OpinionReading Answers);
 
 /// <summary>
 /// How a pass went (XAGENT1d): its line, whether its reviewer's record opened, the opinion and the session, how the record

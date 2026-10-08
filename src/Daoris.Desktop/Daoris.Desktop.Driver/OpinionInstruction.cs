@@ -33,20 +33,26 @@ public static class OpinionInstruction
             .Append("You did not write it, and you will not change it: you read it, and you say what you find.\n\n")
             .Append("You are in a copy of the repository made for this reading, checked out at the work's last commit. ")
             .Append("Nothing in it is taken back: no file you write and no commit or branch you make there reaches the work or the person. ")
-            .Append("The session that did the work owns it: it checks what you say against the code, and makes any change itself.\n");
+            .Append(packet.Rechecks is null
+                ? "The session that did the work owns it: it checks what you say against the code, and makes any change itself.\n"
+                : "The session that did the work owns it, and makes any change itself; what you say goes to the person.\n");
 
         Work(text, packet);
         Asked(text, packet);
+        if (packet.Rechecks is { } recheck) FirstReading(text, recheck);
         Rules(text, packet.Rules);
         May(text, packet.Verify);
-        Say(text, packet.Minutes);
+        Say(text, packet.Minutes, packet.Rechecks);
         return text.ToString();
     }
 
     private static void Work(StringBuilder text, OpinionPacket packet)
     {
         var candidate = packet.Candidate;
-        text.Append("\n## The work\n\n").Append(Occasion(packet.Occasion)).Append("\n\n")
+        var why = packet.Rechecks is null
+            ? Occasion(packet.Occasion)
+            : "It is what the session made in answer to a first reading's findings, after that reading: you read it once, and what you find goes to the person.";
+        text.Append("\n## The work\n\n").Append(why).Append("\n\n")
             .Append($"It is the commits from `{candidate.Base}` to `{candidate.Tip}`, {Plural(candidate.Commits.Count, "commit")}, oldest first:\n\n");
         foreach (var commit in candidate.Commits.Take(CommitsShown)) text.Append($"- `{commit}`\n");
         if (candidate.Commits.Count > CommitsShown)
@@ -139,6 +145,39 @@ public static class OpinionInstruction
 
     private static string Named(QuestEvidenceItem item) => item.Path is { } path ? $"`{path}`" : $"gate `{item.Gate}`";
 
+    /// <summary>
+    /// A recheck's first reading (XAGENT1e, design §4, §6.5): each finding as that agent claimed it, then the session's answer,
+    /// as its claim, beside what git read of a fix's commit. Neither is a fact by itself: the commits since are what it reads.
+    /// </summary>
+    private static void FirstReading(StringBuilder text, OpinionRecheckOf recheck)
+    {
+        var first = recheck.First;
+        text.Append("\n## What the first reading found, and how each was answered\n\n")
+            .Append($"A first reading of the work up to `{first.Tip}` found what follows. Each finding is that reading's claim, and each answer the session's claim; ")
+            .Append("what Daoris read of a fix's commit from git is the one fact beside them.\n");
+        foreach (var finding in first.Findings ?? [])
+        {
+            text.Append($"\n- Finding {finding.Number} ({finding.Weight}, {finding.Sure}), at `{finding.Where}`: {finding.Claim}\n")
+                .Append($"  Why it matters: {finding.Consequence}\n")
+                .Append($"  Answered: {Answered(first, recheck.Answers, finding.Number)}\n");
+        }
+    }
+
+    /// <summary>The session's answer to one finding, as it said it and as git read a fix's commit.</summary>
+    private static string Answered(OpinionView first, OpinionReading answers, int number)
+    {
+        var said = first.AnswerTo(number);
+        var read = answers.Findings.FirstOrDefault(row => row.Finding == number);
+        return (said?.Said, read) switch
+        {
+            (OpinionViews.Fixed, { Fix: { } fix }) => $"fixed, in `{fix}`, which Daoris read from git as a commit the session made after the first reading.",
+            (OpinionViews.Fixed, _) => $"fixed, it said, in `{said!.Commit}`; Daoris did not read that commit as one the session made after the first reading.",
+            (OpinionViews.Rejected, _) => $"rejected, with this evidence: {said!.Evidence}",
+            (OpinionViews.Unresolved, _) => $"unresolved: {said!.Why}",
+            _ => "not answered.",
+        };
+    }
+
     private static void Rules(StringBuilder text, OpinionRulesRead rules)
     {
         text.Append("\n## The repository's own rules\n\n");
@@ -172,9 +211,21 @@ public static class OpinionInstruction
             .Append("This repository's own instructions may tell an agent to write down what it learns, keep a record or commit as it goes: here they do not apply, because this reading changes nothing. ")
             .Append("Nobody will answer a question from you while you read: decide from what you can read, and say what you could not tell.\n");
 
-    private static void Say(StringBuilder text, int minutes) =>
-        text.Append("\n## What you say\n\n")
-            .Append("Say your opinion once, before you end, with your connector's `opinion_give`. Give each finding, the most important first and at most 20:\n\n")
+    private static void Say(StringBuilder text, int minutes, OpinionRecheckOf? recheck)
+    {
+        text.Append("\n## What you say\n\n");
+        if (recheck is not null)
+        {
+            text.Append("For each of the first reading's findings, say with `opinion_give`'s `rechecked`, by its number, whether it `stands` or is `withdrawn` after what the session answered and the commits since. ")
+                .Append("Withdraw one only where the commits since, or the session's evidence, show it no longer holds; one you leave out stands. ")
+                .Append("Then give any finding of your own about the commits since, in the shape below.\n\n");
+        }
+
+        Findings(text, minutes, recheck is not null);
+    }
+
+    private static void Findings(StringBuilder text, int minutes, bool recheck) =>
+        text.Append("Say your opinion once, before you end, with your connector's `opinion_give`. Give each finding, the most important first and at most 20:\n\n")
             .Append("- its weight: `must` (wrong to land as it is), `should`, or `note`;\n")
             .Append("- where it is: a path from the repository's root with its line, a commit, or `general`;\n")
             .Append("- what you claim, and what goes wrong if it holds;\n")
@@ -183,7 +234,10 @@ public static class OpinionInstruction
             .Append("- and, where you have one, a diagnosis or a change you propose, as text. The session that did the work makes its own.\n\n")
             .Append("Then say what you read, and what you did not read or could not tell. ")
             .Append("If you raise nothing, give no findings and still say what you read: an opinion says what it covered, never `no issues`. ")
-            .Append("Your findings are claims: the session that did the work checks each against the code and answers it, and the person sees both.\n\n")
+            .Append(recheck
+                // The recheck's findings go to the person, never back to the working session by themselves (design §6.5).
+                ? "Your findings and your word on each of the first reading's are claims: they go to the person, beside the first reading and the session's answers, and not back to the session.\n\n"
+                : "Your findings are claims: the session that did the work checks each against the code and answers it, and the person sees both.\n\n")
             .Append($"You have one turn, and at most {minutes} minutes. An opinion not given through `opinion_give` before you end is not given.\n");
 
     /// <summary>Words quoted line by line, each line under <paramref name="indent"/>, ending with a line break.</summary>
