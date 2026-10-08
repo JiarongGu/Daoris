@@ -42,6 +42,28 @@ export const ErrorsOnly: Story = {
 
 export const MoreThanShown: Story = { args: { reading: { ...READING, total: 1234, skipped: 2 } } };
 
+/** A host line whose exception is longer than a line shows (LOGVIEW1): it says how much more, and opens whole. */
+const EXCEPTION = [
+  'Example.Transport.ConnectionLostException: The peer closed the connection before the reply was read.',
+  ' ---> Example.Transport.SocketClosedException (0x800704CD): An operation was attempted on a connection that no longer exists.',
+  ...Array.from({ length: 18 }, (_, frame) => `   at Example.Transport.Pipeline.Stage${frame}.RunAsync(Context context, CancellationToken cancelled)`),
+].join('\r\n');
+
+export const ACutException: Story = {
+  args: {
+    reading: {
+      ...READING,
+      lines: [
+        { time: '2026-09-30T11:40:00.000Z', source: 'host', level: 'error', event: 'log', data: { category: 'Example.Server.Connections', message: 'A connection ended before its request was read.', exception: EXCEPTION } },
+        ...READING.lines,
+      ],
+      total: 8,
+      counts: { info: 4, warn: 1, error: 3 },
+      events: ['log', ...READING.events],
+    },
+  },
+};
+
 export const Nothing: Story = {
   args: { reading: { ...READING, lines: [], total: 0, counts: { info: 0, warn: 0, error: 0 }, events: [] } },
 };

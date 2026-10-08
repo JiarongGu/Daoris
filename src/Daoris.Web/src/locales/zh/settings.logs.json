@@ -27,6 +27,8 @@
   "settings.logs.count.error_other": "{{shown}} 条错误",
   "settings.logs.refresh": "重新读取",
   "settings.logs.lines": "日志行",
+  "settings.logs.more": "还有 {{shown}} 个字符",
+  "settings.logs.more_other": "还有 {{shown}} 个字符",
   "settings.logs.none": "按这些条件，日志里什么也没有。",
   "settings.logs.partial": "最新的 {{shown}} 行，共 {{total}} 行。",
   "settings.logs.skipped": "{{shown}} 行无法读取，已跳过。",

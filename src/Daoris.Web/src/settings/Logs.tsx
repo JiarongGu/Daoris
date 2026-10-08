@@ -1,7 +1,8 @@
+import { Fragment, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { figure, stamp } from '../format';
 import { cn } from '../lib/cn';
-import { Button, Card, Icon, Inline, PathText, Prose, Segmented, SelectField, SettingRow, SkeletonRows } from '../ui';
+import { Button, Card, Icon, Inline, MonoWell, PathText, Prose, Segmented, SelectField, SettingRow, SkeletonRows } from '../ui';
 
 /** The process kinds that write a file (D94 §2), in the order the terminal names them. */
 export const LOG_SOURCES = ['desktop', 'host', 'mcp', 'browser', 'driver'] as const;
@@ -48,22 +49,132 @@ export type LogReading = {
   skipped: number;
 };
 
-/** The longest a value is shown: a stack is the file's to hold, and a clue is the screen's. */
+/** The longest a value is shown on its line: a stack is the file's to hold, and a clue is the line's. */
 const SHOWN = 160;
 
+/** One value of a line's data as its line shows it. */
+export type DataPart = {
+  key: string;
+  /** `key=value` as the terminal prints it, the value cut at the line's length. */
+  text: string;
+  /** How many characters the cut left out: 0 where the value is whole. */
+  more: number;
+};
+
 /**
- * A line's data as `key=value`, the way the terminal prints it: a value that would break the line (a
- * space, a quote, an equals sign) is quoted, and a long one is cut.
+ * A line's data as `key=value` parts, the way the terminal prints them: a value that would break the line (a space, a
+ * quote, an equals sign) is quoted, and a long one is cut, counting what it left out in characters, so a cut never
+ * splits one (LOGVIEW1).
  */
-export function dataText(data: LogRow['data']): string {
+export function dataParts(data: LogRow['data']): DataPart[] {
   return Object.entries(data).map(([key, value]) => {
-    if (typeof value !== 'string') return `${key}=${String(value)}`;
-    const shown = value.length > SHOWN ? `${value.slice(0, SHOWN)}…` : value;
-    return /^[^\s"=]+$/.test(shown) ? `${key}=${shown}` : `${key}=${JSON.stringify(shown)}`;
-  }).join(' ');
+    if (typeof value !== 'string') return { key, text: `${key}=${String(value)}`, more: 0 };
+    const characters = Array.from(value);
+    const more = Math.max(0, characters.length - SHOWN);
+    const shown = more > 0 ? `${characters.slice(0, SHOWN).join('')}…` : value;
+    return { key, text: /^[^\s"=]+$/.test(shown) ? `${key}=${shown}` : `${key}=${JSON.stringify(shown)}`, more };
+  });
+}
+
+/** A line's data as one `key=value` line, each long value cut. */
+export function dataText(data: LogRow['data']): string {
+  return dataParts(data).map((part) => part.text).join(' ');
 }
 
 const EVERY = '*';
+
+/**
+ * Each line's key: its moment, process and event, and how many such came before it, since two lines of one moment are as
+ * likely as not. Never its place in the list: a reading again puts newer lines above, and a line opened to read its
+ * exception would close under the reader (LOGVIEW1).
+ */
+export function lineKeys(lines: readonly LogRow[]): string[] {
+  const seen = new Map<string, number>();
+  return lines.map((line) => {
+    const key = `${line.time} ${line.source} ${line.event}`;
+    const before = seen.get(key) ?? 0;
+    seen.set(key, before + 1);
+    return `${key} ${before}`;
+  });
+}
+
+/** A value as its well shows it: whole, each line break one, since .NET writes an exception's frames CRLF apart. */
+const whole = (value: string) => value.replace(/\r\n?/g, '\n');
+
+/**
+ * One line of the log: when, which process, how loud, the event and its data as the terminal prints them.
+ *
+ * @remarks
+ * **A value cut short says so, and opens whole** (LOGVIEW1): beside the cut, how many characters it left out, a press
+ * that opens the value beneath the line in a monospace well, its line breaks kept, so an exception reads a frame a
+ * line and selects for copying. A line whose values are whole offers nothing to open. A host's exception cut at
+ * Kestrel's sentence and a type's first words was read as "no type logged" for a day.
+ */
+function LogLine({ line, level }: { line: LogRow; level: string }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
+  const id = useId();
+  const parts = dataParts(line.data);
+  const toggle = (key: string) => setOpen((was) => {
+    const next = new Set(was);
+    if (!next.delete(key)) next.add(key);
+    return next;
+  });
+  const opened = parts.filter((part) => part.more > 0 && open.has(part.key));
+
+  return (
+    <li
+      aria-label={line.event}
+      className="grid grid-cols-[minmax(0,10rem)_4.5rem_4.5rem_minmax(0,1fr)] items-baseline gap-x-3 border-b border-line py-1.5 text-small"
+    >
+      <span className="truncate tabular-nums text-ink-faint">{stamp(line.time)}</span>
+      <span className="truncate font-mono text-meta text-ink-soft">{line.source}</span>
+      <span className={cn(
+        'truncate text-meta',
+        // A failure wears an outcome's hue, as a failed tool call does, in the danger ink a red word wears
+        // (UXFIX5b); the rest stay quiet.
+        line.level === 'error' ? 'font-medium text-ink-danger' : line.level === 'warn' ? 'font-medium text-ink' : 'text-ink-faint',
+      )}
+      >
+        {level}
+      </span>
+      <span className="min-w-0">
+        <span className="font-mono text-small text-ink">{line.event}</span>
+        {parts.length > 0 && (
+          <span className="mt-0.5 block font-mono text-meta text-ink-soft [overflow-wrap:anywhere]">
+            {parts.map((part, index) => (
+              <Fragment key={part.key}>
+                {index > 0 && ' '}
+                {part.text}
+                {part.more > 0 && (
+                  <button
+                    type="button"
+                    aria-expanded={open.has(part.key)}
+                    aria-controls={`${id}-${part.key}`}
+                    onClick={() => toggle(part.key)}
+                    className="ml-1.5 inline-flex cursor-pointer items-baseline gap-0.5 border-0 bg-transparent p-0 font-sans text-meta text-accent hover:underline"
+                  >
+                    <Icon name={open.has(part.key) ? 'chevronDown' : 'chevronRight'} size={12} className="self-center" />
+                    {t('settings.logs.more', { count: part.more, shown: figure(part.more) })}
+                  </button>
+                )}
+              </Fragment>
+            ))}
+          </span>
+        )}
+      </span>
+      {opened.length > 0 && (
+        <div className="col-span-full mt-1.5 grid min-w-0 gap-2 pb-1">
+          {opened.map((part) => (
+            <div key={part.key} id={`${id}-${part.key}`} className="min-w-0">
+              <MonoWell label={<span className="font-mono">{part.key}</span>} text={whole(String(line.data[part.key]))} />
+            </div>
+          ))}
+        </div>
+      )}
+    </li>
+  );
+}
 
 /**
  * Settings → Logs (LOG1c, D94): what happens on this machine, read back — the recent lines newest first,
@@ -172,31 +283,8 @@ export function LogList({ reading, filters, busy, onFilters, onOpenFolder, onRef
 
       {reading && reading.lines.length > 0 && (
         <ol aria-label={t('settings.logs.lines')} className="m-0 mt-2 list-none border-t border-line p-0">
-          {reading.lines.map((line, index) => (
-            <li
-              // Two lines of one moment are as likely as not: the index keeps them apart.
-              key={`${line.time}-${index}`}
-              aria-label={line.event}
-              className="grid grid-cols-[minmax(0,10rem)_4.5rem_4.5rem_minmax(0,1fr)] items-baseline gap-x-3 border-b border-line py-1.5 text-small"
-            >
-              <span className="truncate tabular-nums text-ink-faint">{stamp(line.time)}</span>
-              <span className="truncate font-mono text-meta text-ink-soft">{line.source}</span>
-              <span className={cn(
-                'truncate text-meta',
-                // A failure wears an outcome's hue, as a failed tool call does, in the danger ink a red word wears
-                // (UXFIX5b); the rest stay quiet.
-                line.level === 'error' ? 'font-medium text-ink-danger' : line.level === 'warn' ? 'font-medium text-ink' : 'text-ink-faint',
-              )}
-              >
-                {level(line.level)}
-              </span>
-              <span className="min-w-0">
-                <span className="font-mono text-small text-ink">{line.event}</span>
-                {Object.keys(line.data).length > 0 && (
-                  <span className="mt-0.5 block font-mono text-meta text-ink-soft [overflow-wrap:anywhere]">{dataText(line.data)}</span>
-                )}
-              </span>
-            </li>
+          {lineKeys(reading.lines).map((key, index) => (
+            <LogLine key={key} line={reading.lines[index]!} level={level(reading.lines[index]!.level)} />
           ))}
         </ol>
       )}

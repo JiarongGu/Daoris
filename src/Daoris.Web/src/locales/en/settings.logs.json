@@ -27,6 +27,8 @@
   "settings.logs.count.error_other": "{{shown}} errors",
   "settings.logs.refresh": "Read again",
   "settings.logs.lines": "log lines",
+  "settings.logs.more": "{{shown}} more character",
+  "settings.logs.more_other": "{{shown}} more characters",
   "settings.logs.none": "Nothing in the log for these filters.",
   "settings.logs.partial": "The newest {{shown}} of {{total}} lines.",
   "settings.logs.skipped": "{{shown}} line could not be read and was skipped.",
