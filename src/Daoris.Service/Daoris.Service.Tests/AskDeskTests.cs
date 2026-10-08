@@ -20,6 +20,7 @@ public sealed class AskDeskTests : IAsyncLifetime
     private QuestExchange _exchange = null!;
     private AskDesk _desk = null!;
     private QuestFiles _files = null!;
+    private KnowledgeService _service = null!;
     private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-09-23T10:00:00Z");
 
     public async Task InitializeAsync()
@@ -33,7 +34,7 @@ public sealed class AskDeskTests : IAsyncLifetime
         var asks = await AskStore.OpenAsync(_connection);
 
         var store = new InMemoryKnowledgeStore();
-        var service = new KnowledgeService(
+        var service = _service = new KnowledgeService(
             store, new LexicalKnowledgeSearch(store), new EmptyKnowledgeSource(),
             DisclosurePolicy.LocalOnly, registry: new Registry());
         await service.ImportAsync(Path.Combine(_root, "family"), Now);
@@ -78,6 +79,31 @@ public sealed class AskDeskTests : IAsyncLifetime
         Assert.Contains("media-api", outcome.Message);
         Assert.Null(outcome.Quest);
         Assert.Empty(await _quests.ListAsync());
+    }
+
+    /// <summary>
+    /// ASKNAME1: the ask reaches the tier with every registration, so a repository registered here with a
+    /// root and no manifest (D70) that the sentence names is proposed first, ahead of the adopted one its
+    /// words overlap — said in the answer, and kept on the ask's record.
+    /// </summary>
+    [Fact]
+    public async Task A_named_unadopted_repository_is_proposed_first_and_kept_on_the_record()
+    {
+        await _service.RegisterAsync(
+            new Registration("release-infra", Adopted: false, null, [], [], [], 0, Root: "/trees/release-infra", Workspace: "work"),
+            Now);
+
+        var outcome = await _desk.AskAsync(new AskRequest("work", $"In release-infra: {Sentence}"), Now);
+
+        Assert.Equal(AskState.Proposed, outcome.Ask!.State);
+        Assert.Equal(["release-infra", "media-api"], outcome.Ask.Proposal.Select(match => match.Repository).ToArray());
+        Assert.Contains("proposed, best first: `release-infra` (release-infra); `media-api`", outcome.Message);
+        Assert.Empty(await _quests.ListAsync());
+
+        var kept = (await _desk.FindAsync(outcome.Ask.Id))!;
+        Assert.Equal(
+            outcome.Ask.Proposal.Select(match => (match.Repository, match.Score, string.Join(" ", match.Matched))),
+            kept.Proposal.Select(match => (match.Repository, match.Score, string.Join(" ", match.Matched))));
     }
 
     [Fact]

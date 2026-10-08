@@ -210,9 +210,11 @@ session's view can say what it asked of other repositories without guessing from
 **An ask is a sentence entered at a workspace, not at a repository** (D65 §1a). It keeps its words,
 links and files (under `<home>/asks/<id>/`), who asked, and what became of it, and every record names
 the tier that answered. With no intake harness, the **declarations tier** ranks the workspace's
-adopted repositories by the words their summary, `owns` and `accepts` share with the sentence. It
-proposes, with the matched words as evidence, and **publishes nothing**; a person turns a proposal
-into a quest. Naming the receiver publishes at once. An ask's quests are asked *by the ask*
+adopted repositories by the words their summary, `owns` and `accepts` share with the sentence. A
+repository of the circle that can be asked, adopted or not, whose exact name the sentence holds whole
+comes before every overlap, in the sentence's order, with its name as the evidence (ASKNAME1):
+`portal` is not named by `portal-ui`. It proposes, with the matched words as evidence, and
+**publishes nothing**; a person turns a proposal into a quest. Naming the receiver publishes at once. An ask's quests are asked *by the ask*
 (`ask #<id>`), in the ask's own circle. The same words in the same circle are the same ask. Asks
 are machine-local: a local host's door, and `daoris-driver ask` from a terminal. An ask is **done**
 (USE1c) once it became a quest and every quest asked by it, chain steps included, has closed. That is
