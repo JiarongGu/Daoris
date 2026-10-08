@@ -1161,7 +1161,9 @@ public sealed class QuestStore
                 return new QuestMove(await FindAsync(id, transaction, inside).ConfigureAwait(false), Moved: false);
             }
 
-            var shown = setUp with { At = null, Machine = null, Sequence = null };
+            // Its identity is made here, where its local address is still known, and crosses with it (REVIEWENV1b3).
+            var said = setUp with { At = null, Machine = null, Sequence = null };
+            var shown = said with { Id = said.Id ?? Reviews.IdentityOf(said) };
             var judged = new QuestOperation(id, QuestOperationKind.SetUp, Machine, 0, now, SetUp: shown);
             if (!QuestLog.Applies(quest, judged)) return new QuestMove(quest, Moved: false);
             if (QuestLog.OnALostTake(quest, history, judged)) return new QuestMove(quest, Moved: false) { ClaimLost = true };
@@ -1208,19 +1210,49 @@ public sealed class QuestStore
         }, ct);
 
     /// <summary>
-    /// The set-up steps already following <paramref name="parent"/> (REVIEWENV1b): a chain step published by its close, or one
-    /// a door published after it. One set-up step per repository per chain, so a second is refused rather than published.
+    /// Every quest of the <c>follows</c> chain <paramref name="id"/> is on (D149 point 1; REVIEWENV1b3): its first quest, found by
+    /// walking <c>parent</c> up, and every quest that follows it at any depth, a chain step its close published or a set-up step
+    /// a door published after it. Empty for an unknown id. The late set-up door judges a repository's part of the chain on it.
     /// </summary>
-    public Task<IReadOnlyList<Quest>> SetUpStepsAfterAsync(string parent, CancellationToken ct = default) =>
+    public Task<IReadOnlyList<Quest>> ChainAsync(string id, CancellationToken ct = default) =>
         _db.RunAsync<IReadOnlyList<Quest>>(async () =>
         {
-            await using var command = _db.Command();
-            command.CommandText = "SELECT * FROM quests WHERE parent = $parent AND set_up_in IS NOT NULL ORDER BY filed";
-            command.Parameters.AddWithValue("$parent", parent);
-            var steps = new List<Quest>();
-            await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
-            while (await reader.ReadAsync(ct).ConfigureAwait(false)) steps.Add(Read(reader));
-            return steps;
+            async Task<Quest?> One(string named)
+            {
+                await using var command = _db.Command();
+                command.CommandText = "SELECT * FROM quests WHERE id = $id";
+                command.Parameters.AddWithValue("$id", named);
+                await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+                return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
+            }
+
+            async Task<List<Quest>> Following(string parent)
+            {
+                await using var command = _db.Command();
+                command.CommandText = "SELECT * FROM quests WHERE parent = $parent ORDER BY filed";
+                command.Parameters.AddWithValue("$parent", parent);
+                var steps = new List<Quest>();
+                await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+                while (await reader.ReadAsync(ct).ConfigureAwait(false)) steps.Add(Read(reader));
+                return steps;
+            }
+
+            // Up to the first quest; a parent seen twice, which no chain makes, ends the walk rather than looping.
+            if (await One(id).ConfigureAwait(false) is not { } first) return [];
+            var seen = new HashSet<string>(StringComparer.Ordinal) { first.Id };
+            while (first.Parent is { } parent && seen.Add(parent) && await One(parent).ConfigureAwait(false) is { } above) first = above;
+
+            var chain = new List<Quest> { first };
+            var visited = new HashSet<string>(StringComparer.Ordinal) { first.Id };
+            for (var next = 0; next < chain.Count; next++)
+            {
+                foreach (var step in await Following(chain[next].Id).ConfigureAwait(false))
+                {
+                    if (visited.Add(step.Id)) chain.Add(step);
+                }
+            }
+
+            return chain;
         }, ct);
 
     /// <summary>

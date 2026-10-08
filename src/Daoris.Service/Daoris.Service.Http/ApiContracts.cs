@@ -117,14 +117,14 @@ public sealed record QuestAttachmentRequest(string? Name, byte[]? Content, strin
 public sealed record PublishQuestRequest(
     string From, string To, string Title, string Body,
     IReadOnlyList<string>? Links = null, IReadOnlyList<QuestAttachmentRequest>? Attachments = null,
-    IReadOnlyList<QuestStepWire>? Then = null, IReadOnlyList<QuestRequirementWire?>? Requirements = null,
+    IReadOnlyList<QuestStepWire?>? Then = null, IReadOnlyList<QuestRequirementWire?>? Requirements = null,
     string? Short = null, QuestReviewWire? Review = null);
 // A set-up posted on a set-up step (REVIEWENV1b, design §2.6, §3.3): the commit Daoris read and the environment's kind (`local`
 // or `deployed`), with `Session`, whose said set-ups the driver posts, or the person's own `Look`, `Shows` and `Again`.
 public sealed record QuestSetUpRequest(
     string? Commit, string? Kind, string? Session = null, string? Look = null, string? Shows = null, string? Again = null);
 // The person's verdict (REVIEWENV1b, design §3.3–§3.6): `reviewed`, `not-yet` or `skipped`, their words (a `not-yet`'s always),
-// and the set-up it answers, the newest when absent.
+// and the set-up it answers, as their view showed it: a `reviewed`'s and a `not-yet`'s always, whole (REVIEWENV1b3); a skip's never.
 public sealed record QuestReviewRequest(string? Verdict, string? Words = null, QuestSetUpRefWire? SetUp = null);
 // The person's *Set it up in `<environment>`* (REVIEWENV1b, design §2.1, §3.6): the environment the set-up step shows the work in.
 public sealed record SetUpStepRequest(string? Environment);
@@ -149,7 +149,7 @@ public sealed record AskRequestBody(
 // the person's quoted words; `ReviewProposal` an intake's proposal with its reason, kept on the ask (REVIEWENV1b).
 public sealed record AskPublishRequest(
     string? To, string? Title = null, string? Body = null, IReadOnlyList<string>? Links = null,
-    IReadOnlyList<QuestAttachmentRequest>? Attachments = null, IReadOnlyList<QuestStepWire>? Then = null,
+    IReadOnlyList<QuestAttachmentRequest>? Attachments = null, IReadOnlyList<QuestStepWire?>? Then = null,
     string? Session = null, IReadOnlyList<QuestRequirementWire?>? Requirements = null, string? Short = null,
     QuestReviewWire? Review = null, ReviewProposalWire? ReviewProposal = null);
 // An intake's review proposal (REVIEWENV1b, design §1.5): a choice and its reason, at most 300 characters.

@@ -197,18 +197,23 @@ person's yes (`accept`) takes the done as it stands.
 **A chain's work may be reviewed where it runs** (REVIEWENV1b, D154;
 `docs/2026-10-08-review-environment-design.md` §1.4–§1.5, §2.1, §2.6, §3.5). A chain carries a review
 choice, `review` (`off`, `on` or an environment's name, with the person's `words`), inherited by each
-step: the person's own at their door, a session's only on the person's words, checked against the ask's
-as a requirement's quote is (`quest_publish`'s `review`). An ask keeps the person's choices, the latest
+step: the person's own at their door, an agent's only on the person's words, checked against the ask's
+as a requirement's quote is (`quest_publish`'s `review`). Every connector is an agent's, whether or not
+it names a session, and an agent's `off`, quoted or not, is kept as a proposal, never as the choice
+(REVIEWENV1b3). An ask keeps the person's choices, the latest
 standing, and its intake's proposals with their reasons (`reviewProposal`), which only the person's press
 applies. A **set-up step** is a chain step whose `setUpIn` names its environment: the exchange judges it
 when the chain is composed (a name that never reads as production, the repository of the step before it
 and none of that repository's steps after it, and no set-up step on a chain whose choice is `off`), and
-the person's *Set it up* door publishes one following done work. Its done is refused until a set-up
+the person's *Set it up* door publishes one following that repository's last done work in the whole
+`follows` chain, one per repository per chain. Its done is refused until a set-up
 was said, and closes held, `unreviewed`, after a departure and evidence. A set-up is a `SetUp`
 operation (`look`, `shows`, `again`, `served`, `run`, the `commit` the driver read, the session or the
-person), and a local one crosses the wire without its address, since its tab is on the machine that
-showed it. The person's verdict is a `Verdict` operation: `reviewed` or `not-yet` on the newest set-up,
-or `skipped`, with their words, kept on the ask as words of those kinds. Only a `reviewed` or a skip
+person, and `id`, its identity, made from all of that where it was said), and a local one crosses the
+wire without its address, since its tab is on the machine that showed it; its `id` crosses whole, so
+every machine dedupes it alike. The person's verdict is a `Verdict` operation: `reviewed` or `not-yet`
+on the set-up they name, which must be the newest, or `skipped`,
+with their words, kept on the ask as words of those kinds. Only a `reviewed` or a skip
 lifts the review's hold; a yes accepts a departure or its evidence and never a review. What reads the
 record, the gate at every landing door and the step's driving, is the driver's (REVIEWENV1c).
 
@@ -450,8 +455,8 @@ dotnet run --project src/Daoris.Service/Daoris.Service.Http     # http://localho
 | `POST /api/quests/{id}/done` | local mode only: the person marks an open or taken quest done (`note`, their words, optional). It answers none of their requirements, and its note says it was theirs: *The person marked this done*, then their words. The chain's next step is published and a quest waiting on it resumes, as any done's; 409 for a closed quest, 404 for no quest (QUESTCLOSE1) |
 | `POST /api/quests/{id}/evidence` | local mode only: the driver's verdict on a done's evidence (`commit`, `how`, `session`, `items`: `requirement`, `path` or `gate`, `result`, `object`, `changed`, `spelled`). Found lifts the hold and publishes the held step; missing keeps it held. 400 for a verdict that is not one in shape or does not read exactly what the done waits on, naming why; 409 for a quest whose done waits on no evidence; 404 for no quest (EVID1a) |
 | `POST /api/quests/{id}/set-up` | local mode only: a set-up on a set-up step, with the `commit` Daoris read and the environment's `kind` (`local` or `deployed`), and either the `session` whose said set-ups the driver posts, each once, or the person's own `look`, `shows` and `again`. 400 for one that is not one in shape, 409 for a quest that is no set-up step or a take this machine lost, 404 for no quest or no such session of this machine's on it (REVIEWENV1b) |
-| `POST /api/quests/{id}/review` | local mode only: the person's verdict, `verdict` `reviewed`, `not-yet` (with `words`) or `skipped`, on the newest set-up unless `setUp` (`machine`, `sequence`) names it. A `reviewed` or a skip lifts the review's hold and publishes the held step; their words are kept on the ask as their own kind. 400 for a verdict that is not one, 409 for one the review's state refuses (nothing shown, a newer set-up, already reviewed or skipped), 404 for no quest. No connector tool reaches it (REVIEWENV1b) |
-| `POST /api/quests/{id}/set-up-step` | local mode only: the person's *Set it up*, an `environment`; publishes a set-up step following that done quest, in Daoris's words, with its requirements and its chain's choice. 400 for a name that is not one or reads as production, 409 for work not done, a set-up step, or a chain with one already, 404 for no quest (REVIEWENV1b) |
+| `POST /api/quests/{id}/review` | local mode only: the person's verdict, `verdict` `reviewed`, `not-yet` (with `words`) or `skipped`. A `reviewed` and a `not-yet` name the set-up the person looked at, `setUp` (`machine` and `sequence`, as the quest's `setUps` answer them), and a skip names none (REVIEWENV1b3). A `reviewed` or a skip lifts the review's hold and publishes the held step; their words are kept on the ask as their own kind. 400 for a verdict that is not one, or a `reviewed` or `not-yet` naming no set-up or half of one; 409 for one the review's state refuses (nothing shown, a newer set-up than the one named, already reviewed or skipped), 404 for no quest. No connector tool reaches it (REVIEWENV1b) |
+| `POST /api/quests/{id}/set-up-step` | local mode only: the person's *Set it up*, an `environment`; publishes a set-up step following that done quest, in Daoris's words, with its requirements and its chain's choice. 400 for a name that is not one or reads as production, 409 for work not done, a set-up step, a quest a later step of the same repository adds to, or a chain that already composes or holds a set-up step for that repository, read over the whole `follows` chain (REVIEWENV1b3), 404 for no quest (REVIEWENV1b) |
 | `POST /api/quests/{id}/conflicts/dismiss` | a person dismisses a conflict: `{ machine, sequence }` names one, and naming none dismisses every one the quest carries. It is an operation the next pass carries, so every machine drops it. It moves no status (SYNC6c) |
 | `GET /api/asks` · `POST /api/asks` · `POST /api/asks/{id}/publish` · `POST /api/asks/{id}/close` | local mode only: an ask made at a workspace (D65 §1a), the quest a person turns it into, and closing it with a reason. Every ask answers `words`, the person's own, oldest first (DRIFT1a), and `goAheads`, what its sessions asked the person for, one per act (KNOWUSE1a). A publish's `requirements` quote them, and a quote they never said is refused, 409 (DRIFT1c) |
 | `POST /api/asks/{id}/go-aheads/{number}` | local mode only: the person's answer to a go-ahead, `answer` `approved` or `refused` with their `words` if any; a later answer replaces the earlier. 400 for any other answer or words past 2,000 characters, 404 for an ask or a go-ahead not held. No connector tool answers one: the production acts stay the person's (KNOWUSE1a) |

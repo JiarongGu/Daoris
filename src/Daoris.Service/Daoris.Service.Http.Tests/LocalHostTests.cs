@@ -771,13 +771,15 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(400, (await host.PostAsync($"/api/quests/{stepId}/review", new { verdict = "not-yet" })).Status);
         Assert.Equal(400, (await host.PostAsync($"/api/quests/{stepId}/review", new { verdict = "fine" })).Status);
         Assert.Equal(404, (await host.PostAsync("/api/quests/feedfacecafe/review", new { verdict = "reviewed" })).Status);
-        var reviewed = await host.PostAsync($"/api/quests/{stepId}/review", new { verdict = "reviewed", words = "That is the setting." });
+        // The set-up the person looked at, named as the quest answers it (REVIEWENV1b3).
+        var looked = new { machine = setUp.GetProperty("machine").GetString(), sequence = setUp.GetProperty("sequence").GetInt64() };
+        var reviewed = await host.PostAsync($"/api/quests/{stepId}/review", new { verdict = "reviewed", words = "That is the setting.", setUp = looked });
         Assert.Equal(200, reviewed.Status);
         Assert.False(reviewed.Json.GetProperty("quest").GetProperty("held").GetBoolean());
         var verdict = reviewed.Json.GetProperty("quest").GetProperty("verdicts")[0];
         Assert.Equal(("reviewed", Commit), (verdict.GetProperty("said").GetString(), verdict.GetProperty("commit").GetString()));
         Assert.Equal(setUp.GetProperty("sequence").GetInt64(), verdict.GetProperty("setUp").GetProperty("sequence").GetInt64());
-        Assert.Equal(409, (await host.PostAsync($"/api/quests/{stepId}/review", new { verdict = "reviewed" })).Status);
+        Assert.Equal(409, (await host.PostAsync($"/api/quests/{stepId}/review", new { verdict = "reviewed", setUp = looked })).Status);
 
         Assert.Equal(409, (await host.PostAsync($"/api/quests/{buildId}/set-up-step", new { environment = "dev" })).Status);
         Assert.Equal(400, (await host.PostAsync($"/api/quests/{buildId}/set-up-step", new { environment = "production" })).Status);

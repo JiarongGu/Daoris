@@ -62,12 +62,27 @@ public sealed record QuestSetUp(string Commit)
     public QuestOperationRef? Ref => Machine is not null && Sequence is { } sequence ? new QuestOperationRef(Machine, sequence) : null;
 
     /// <summary>
-    /// Whether it says what <paramref name="other"/> says: the same commit, words, folder, command, session and kind. A
-    /// second post of one set-up is then no move, whichever door or machine posts it again.
+    /// What it says, as one identity that crosses the wire with it (REVIEWENV1b3): a digest of everything it says, its local
+    /// address included, made on the machine that said it (<see cref="Reviews.IdentityOf"/>). Null on a set-up a build from
+    /// before kept, which is compared by what it says instead (<see cref="Same"/>).
     /// </summary>
+    public string? Id { get; init; }
+
+    /// <summary>
+    /// Whether it says what <paramref name="other"/> says, so a second post of one set-up is no move, whichever door or
+    /// machine posts it again: the same identity where both carry one, and otherwise the same commit, words, folder, command,
+    /// session and kind, with the address only where neither is local.
+    /// </summary>
+    /// <remarks>
+    /// <b>Never a field the wire drops</b> (REVIEWENV1b3): a local set-up crosses without its address, so comparing it held a
+    /// second set-up at another address here and refused it on the remote, leaving the step held on one machine and let go
+    /// on the next. The identity carries the address across instead.
+    /// </remarks>
     public bool Same(QuestSetUp other) =>
-        Commit == other.Commit && Look == other.Look && Shows == other.Shows && Again == other.Again
-        && Served == other.Served && Run == other.Run && Session == other.Session && Local == other.Local;
+        Id is not null && other.Id is not null
+            ? Id == other.Id
+            : Commit == other.Commit && (Local || Look == other.Look) && Shows == other.Shows && Again == other.Again
+              && Served == other.Served && Run == other.Run && Session == other.Session && Local == other.Local;
 }
 
 /// <summary>
@@ -184,6 +199,20 @@ public static class Reviews
 
     private static readonly Regex NameShape = new(@"^[a-z0-9]+(?:-[a-z0-9]+)*\z", RegexOptions.CultureInvariant);
 
+    private static readonly Regex IdShape = new(@"^[0-9a-f]{32}\z", RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// A set-up's identity (REVIEWENV1b3): the first 32 hex characters of the SHA-256 of what it says, in its payload's own
+    /// shape, its local address included and when, where and which operation left out. The same set-up posted again has the
+    /// same identity on every door and machine; one said at another address has another.
+    /// </summary>
+    public static string IdentityOf(QuestSetUp setUp)
+    {
+        var said = Written(writer => Write(writer, setUp with { Id = null, At = null, Machine = null, Sequence = null }));
+        return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(said)))[..32]
+            .ToLowerInvariant();
+    }
+
     /// <summary>
     /// Why <paramref name="name"/> is not an environment's name, or null when it is (design §1.1, §1.3): lower-case letters,
     /// digits and dashes, at most <see cref="NameLimit"/>, never <c>none</c>, <c>off</c> or <c>on</c>, and never one that
@@ -239,6 +268,7 @@ public static class Reviews
         }
 
         if (setUp.Session is { } session && !QuestEvidenceCodes.IsSessionId(session)) return $"`{Clip(session)}` is not a session's id";
+        if (setUp.Id is { } id && !IdShape.IsMatch(id)) return $"`{Clip(id)}` is not a set-up's identity: 32 lower-case hex characters";
         return null;
     }
 
@@ -291,6 +321,8 @@ public static class Reviews
     {
         writer.WriteStartObject();
         writer.WriteString("commit", setUp.Commit);
+        // Its identity crosses whole, the local address it was made from included (REVIEWENV1b3); absent on one from before.
+        if (setUp.Id is not null) writer.WriteString("id", setUp.Id);
         if (setUp.Look is not null && !(crossing && setUp.Local)) writer.WriteString("look", setUp.Look);
         if (setUp.Shows is not null) writer.WriteString("shows", setUp.Shows);
         if (setUp.Again is not null) writer.WriteString("again", setUp.Again);
@@ -311,7 +343,7 @@ public static class Reviews
     internal static QuestSetUp? JudgedSetUp(JsonElement element)
     {
         if (element.ValueKind != JsonValueKind.Object || Text(element, "commit") is not { } commit) return null;
-        foreach (var name in new[] { "look", "shows", "again", "served", "run", "session", "machine", "at" })
+        foreach (var name in new[] { "id", "look", "shows", "again", "served", "run", "session", "machine", "at" })
         {
             if (element.TryGetProperty(name, out var value) && value.ValueKind != JsonValueKind.String) return null;
         }
@@ -325,6 +357,7 @@ public static class Reviews
 
         var setUp = new QuestSetUp(commit)
         {
+            Id = Text(element, "id"),
             Look = Text(element, "look"),
             Shows = Text(element, "shows"),
             Again = Text(element, "again"),

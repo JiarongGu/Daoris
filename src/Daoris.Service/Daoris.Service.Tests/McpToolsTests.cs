@@ -11,7 +11,7 @@ namespace Daoris.Service.Tests;
 /// what only the door does is turn a PATH into bytes (D65 §2) and take a chain as a list of steps
 /// (D65 §4), and a schema the agent cannot read is a parameter that does not exist.
 /// </summary>
-public sealed class McpToolsTests : IAsyncLifetime
+public sealed partial class McpToolsTests : IAsyncLifetime
 {
     private readonly string _root = Path.Combine(
         Path.GetTempPath(), "daoris-mcp-" + Guid.NewGuid().ToString("N")[..8]);

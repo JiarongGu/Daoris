@@ -95,23 +95,23 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Service/Daoris.Service.Core/Asks.cs` | 59 | 1112 |
+| `src/Daoris.Service/Daoris.Service.Core/Asks.cs` | 59 | 1119 |
 | `src/Daoris.Service/Daoris.Service.Core/History.cs` | 40 | 824 |
 | `src/Daoris.Service/Daoris.Service.Core/KnowledgeService.cs` | 53 | 1055 |
-| `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 100 | 1884 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 144 | 2613 |
+| `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 101 | 1899 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 146 | 2645 |
 | `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 63 | 1210 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 63 | 1138 |
-| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 93 | 1652 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 104 | 1859 |
-| `src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs` | 48 | 855 |
+| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 93 | 1654 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 105 | 1869 |
+| `src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs` | 49 | 860 |
 | `src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs` | 44 | 839 |
 | `src/Daoris.Service/Daoris.Service.Tests/IndexEntriesTests.cs` | 45 | 855 |
 | `src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.cs` | 48 | 863 |
 | `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 82 | 1691 |
 | `src/Daoris.Service/Daoris.Service.Tests/ReviewStepTests.cs` | 41 | 734 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 67 | 1385 |
-| `src/Daoris.Service/README.md` | 67 | 667 |
+| `src/Daoris.Service/README.md` | 67 | 672 |
 
 ### CLI (`cli`)
 
@@ -172,7 +172,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-04-ux6-redesign.md` | 72 | 892 |
 | `docs/2026-10-05-ux7-design.md` | 66 | 784 |
 | `docs/2026-10-07-history-clearing-design.md` | 51 | 615 |
-| `docs/2026-10-08-review-environment-design.md` | 55 | 686 |
+| `docs/2026-10-08-review-environment-design.md` | 55 | 688 |
 | `docs/2026-10-08-second-agent-design.md` | 56 | 765 |
 | `docs/DAORIS_FUTURE_DIRECTIONS.md` | 51 | 3466 |
 | `src/Daoris.Desktop/README.md` | 49 | 294 |
