@@ -10,6 +10,9 @@ import {
 import {
   REVIEW_DECLARED_ONLY, applyReviewEdit, holdsProcedure, reviewFor, reviewRuleOf, reviewSays, type CheckoutsReader,
 } from '../src/reviews.ts';
+import {
+  OPINION_DECLARED_ONLY, applyOpinionEdit, oneFamily, opinionFor, opinionRuleOf, opinionSays, sameAgentOf,
+} from '../src/opinions.ts';
 import type { RecordsReader } from '../src/strikes.ts';
 import { driverRows as csharpRows } from './_csharp.ts';
 import { makeFixture, captureError } from './_fixture.ts';
@@ -589,7 +592,7 @@ test('an unknown verb names the ones that exist', () => {
 
   assert.match(error.message, /unknown driver verb 'frobnicate'/);
   assert.match(
-    error.message, /list, drive, undrive, hold, resume, trees, line, landing, across, standing, language, review, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper/);
+    error.message, /list, drive, undrive, hold, resume, trees, line, landing, across, standing, language, review, opinion, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper/);
   fx.cleanup();
 });
 
@@ -1692,5 +1695,173 @@ test('a review rule is written only once set, and a verb that knows nothing of i
   const kept = JSON.parse(readFileSync(at(fx), 'utf8'));
   assert.deepEqual(kept.reviews, { storefront: false });
   assert.deepEqual(kept.workspaceReviews, { work: { environments: [{ name: 'dev', kind: 'deployed', procedure: 'README.md' }] } });
+  fx.cleanup();
+});
+
+/**
+ * The second-opinion rule, `opinions` and `workspaceOpinions` (XAGENT1a, D155 point 3, the second-agent design §2.2–§2.6).
+ * 🔴 A TWIN with the driver's `OpinionRules`: both hold ONE table, the driver suite's `fixtures/opinion-rules.json`, cell for
+ * cell — the reading and its precedence, every refusal in the same words, each door's sentences, the edits both doors make,
+ * and which reviewers are the working agent's own family. The driver's `OpinionRulesTests` reads the same file.
+ */
+const OPINION_TABLE = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
+  'Daoris.Desktop.Driver.Tests', 'fixtures', 'opinion-rules.json'), 'utf8')) as {
+  read: [name: string, file: string, repository: string, workspace: string | null, source: string | null, rule: string | null][];
+  problems: [name: string, value: string, problem: string | null][];
+  says: [name: string, rule: string, sameAgent: string[], sentences: string[]][];
+  edits: [name: string, file: string, edit: string, after: string | null, refusal: string | null][];
+  families: [name: string, working: string, reviewer: string, same: boolean][];
+};
+
+test('an opinion rule resolves as the driver resolves it (the shared table)', () => {
+  const fx = makeFixture('driver-opinion-read');
+  for (const [name, file, repository, workspace, source, rule] of OPINION_TABLE.read) {
+    writeFileSync(at(fx), file, 'utf8');
+    const read = opinionFor(readDriverChoices(at(fx)), repository, workspace);
+    assert.equal(read?.source ?? null, source, name);
+    assert.deepEqual(read === null ? null : read.rule, rule === null ? null : JSON.parse(rule), `${name}: the rule`);
+  }
+  fx.cleanup();
+});
+
+test('an opinion rule\'s first problem is the driver\'s, in its words (the shared table)', () => {
+  for (const [name, value, problem] of OPINION_TABLE.problems) {
+    assert.equal(opinionRuleOf(JSON.parse(value)).problem, problem, name);
+  }
+});
+
+test('each door says what an opinion rule lets a reviewer do, in the driver\'s words (the shared table)', () => {
+  for (const [name, rule, sameAgent, sentences] of OPINION_TABLE.says) {
+    const read = opinionRuleOf(JSON.parse(rule));
+    assert.equal(read.problem, null, `${name}: the rule reads`);
+    assert.deepEqual(opinionSays(read.rule!, sameAgent), sentences, name);
+  }
+});
+
+test('an opinion edit writes what the driver writes, or refuses in its words (the shared table)', () => {
+  const fx = makeFixture('driver-opinion-edits');
+  for (const [name, file, edit, after, refusal] of OPINION_TABLE.edits) {
+    writeFileSync(at(fx), file, 'utf8');
+    const choices = readDriverChoices(at(fx));
+    if (refusal !== null) {
+      assert.equal(captureError(() => applyOpinionEdit(choices, JSON.parse(edit))).message, refusal, name);
+      continue;
+    }
+
+    writeDriverChoices(at(fx), { ...choices, ...applyOpinionEdit(choices, JSON.parse(edit)) });
+    const written = JSON.parse(readFileSync(at(fx), 'utf8'));
+    const maps = Object.fromEntries(['opinions', 'workspaceOpinions'].filter((key) => key in written).map((key) => [key, written[key]]));
+    assert.deepEqual(maps, JSON.parse(after!), name);
+  }
+  fx.cleanup();
+});
+
+test('two agents are one family as the driver judges them, by the toolchains\' owners and makers (the shared table)', () => {
+  for (const [name, working, reviewer, same] of OPINION_TABLE.families) {
+    assert.equal(oneFamily(working, reviewer), same, name);
+    assert.deepEqual(sameAgentOf({ on: ['landing'], reviewers: [reviewer] }, working), same ? [reviewer] : [], `${name}: the rule's`);
+  }
+});
+
+/**
+ * The terminal's door onto the second-opinion rule (XAGENT1a, D50; design §2.5): `--reviewers` and the switches set over what
+ * stands, `none`, `--clear`, and `list`. Each says what it lets a reviewer do, in the driver's sentences, and that nothing
+ * reads it yet.
+ */
+test('opinion declares a repository\'s reviewers, says what they do, and lists it', () => {
+  const fx = makeFixture('driver-opinion');
+  assert.match(run(['list'], at(fx)).out, /opinion\s+none set/);
+
+  const said = run(['opinion', 'web-app', '--reviewers', 'codex-acp', '--on', 'landing,steps', '--verify', '--minutes', '30'], at(fx));
+  assert.equal(said.code, 0);
+  assert.deepEqual(JSON.parse(readFileSync(at(fx), 'utf8')).opinions, {
+    'web-app': { on: ['landing', 'steps'], reviewers: ['codex-acp'], verify: true, minutes: 30 },
+  });
+  assert.match(said.out, /second opinions for `web-app`: `codex-acp`\./);
+  assert.match(said.out, /Before work here lands, `codex-acp` reads it, in a copy of its own that nothing is taken back from/);
+  assert.match(said.out, /It may build and run what this repository declares safe, in that copy\./);
+  assert.match(said.out, new RegExp(OPINION_DECLARED_ONLY.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+
+  const listed = run(['list'], at(fx)).out;
+  assert.match(listed, /opinion\s+web-app\s+codex-acp; before landing and each next step; may build and run what is declared safe; at most 30 minutes a pass/);
+  assert.doesNotMatch(listed, /opinion\s+none set/);
+  fx.cleanup();
+});
+
+test('opinion for a workspace says when one of its reviewers is the working agent\'s own family', () => {
+  const fx = makeFixture('driver-opinion-workspace');
+  const said = run(['opinion', '--workspace', 'work', '--reviewers', 'codex-acp, claude-code-acp', '--required'], at(fx));
+
+  assert.deepEqual(JSON.parse(readFileSync(at(fx), 'utf8')).workspaceOpinions, {
+    work: { on: ['landing'], reviewers: ['codex-acp', 'claude-code-acp'], required: true },
+  });
+  assert.match(said.out, /second opinions for repositories in the workspace `work` that set none of their own: `codex-acp`, else `claude-code-acp`\./);
+  assert.match(said.out, /If no reviewer can read it, the work waits for you\./);
+  // This machine's work runs on `claude-code` by default, whose family both Claude Code doors are.
+  assert.match(said.out, /`claude-code-acp` is the same agent as the one that does the work here/);
+  assert.match(said.out, /A repository with a rule of its own keeps it/);
+  assert.match(run(['list'], at(fx)).out, /opinion\s+workspace work\s+codex-acp, else claude-code-acp; before landing; required; at most 20 minutes a pass\s+\(for each repository there that sets none\)/);
+  fx.cleanup();
+});
+
+test('opinion switches change only what they name, none and --clear say it, and each is said', () => {
+  const fx = makeFixture('driver-opinion-edit');
+  run(['opinion', 'web-app', '--reviewers', 'dsh', '--required', '--verify'], at(fx));
+
+  const relaxed = run(['opinion', 'Web-App', '--not-required', '--no-verify', '--no-recheck'], at(fx));
+  assert.deepEqual(JSON.parse(readFileSync(at(fx), 'utf8')).opinions, { 'web-app': { on: ['landing'], reviewers: ['dsh'], recheck: false } });
+  assert.match(relaxed.out, /If no reviewer can read it, you are told so, and nothing waits\./);
+  assert.match(relaxed.out, /Commits made in answer to its findings are not read again\./);
+
+  const none = run(['opinion', 'notes-site', 'none'], at(fx));
+  assert.equal(JSON.parse(readFileSync(at(fx), 'utf8')).opinions['notes-site'], false);
+  assert.match(none.out, /No second opinion here, whatever its workspace says/);
+  assert.match(run(['list'], at(fx)).out, /opinion\s+notes-site\s+none here, whatever its workspace says/);
+
+  const cleared = run(['opinion', 'web-app', '--clear'], at(fx));
+  assert.equal('web-app' in JSON.parse(readFileSync(at(fx), 'utf8')).opinions, false);
+  assert.match(cleared.out, /`web-app` takes its workspace's second-opinion rule again, else none/);
+  fx.cleanup();
+});
+
+test('opinion refuses in the driver\'s words, and a form it does not take, and writes nothing', () => {
+  const fx = makeFixture('driver-opinion-refused');
+  const refused = (argv: string[]) => captureError(() => run(argv, at(fx))).message;
+
+  assert.equal(refused(['opinion', 'web-app', '--reviewers', 'codex-acp', '--on', 'merge']),
+    '`merge` is not an occasion — `landing`, `steps` or both.');
+  assert.equal(refused(['opinion', 'web-app', '--reviewers', 'codex-acp', '--minutes', 'half']),
+    '`minutes` is a whole number from 5 to 120: how long one pass may take, 20 when absent.');
+  assert.equal(refused(['opinion', 'web-app', '--required']),
+    '`web-app` has no second-opinion rule of its own — name its reviewers first.');
+  assert.equal(refused(['opinion', '--workspace', 'work', 'none']),
+    '`none` is a repository\'s: a workspace with no second opinion sets none, and `--clear` takes its rule away.');
+  assert.equal(refused(['opinion', 'web-app', 'none', '--reviewers', 'dsh']),
+    'one change at a time: set its reviewers and how they read, say none, or clear.');
+  assert.match(refused(['opinion']), /`driver opinion` needs <repository>\|--workspace <name>/);
+  assert.match(refused(['opinion', 'web-app']), /`driver opinion` needs <repository>\|--workspace <name>/);
+  assert.match(refused(['opinion', 'web-app', 'codex-acp']), /`driver opinion` needs <repository>\|--workspace <name>/);
+  assert.match(refused(['opinion', 'web-app', '--reviewer', 'dsh']), /`--reviewer` is not a flag `driver opinion` takes/);
+  assert.equal(refused(['opinion', 'web-app', '--reviewers', 'dsh', '--verify', '--no-verify']),
+    'a reviewer may build and run or it may not — say `--verify` or `--no-verify`, not both.');
+  assert.throws(() => readFileSync(at(fx)));
+  fx.cleanup();
+});
+
+test('an opinion rule is written only once set, and a verb that knows nothing of it preserves it', () => {
+  const fx = makeFixture('driver-opinion-preserve');
+  run(['drive', 'web-app'], at(fx));
+  const fresh = JSON.parse(readFileSync(at(fx), 'utf8'));
+  assert.equal('opinions' in fresh, false);
+  assert.equal('workspaceOpinions' in fresh, false);
+
+  run(['opinion', 'notes-site', 'none'], at(fx));
+  run(['opinion', '--workspace', 'work', '--reviewers', 'codex-acp'], at(fx));
+  run(['hold', 'web-app'], at(fx));
+  run(['language', 'web-app', 'zh'], at(fx));
+
+  const kept = JSON.parse(readFileSync(at(fx), 'utf8'));
+  assert.deepEqual(kept.opinions, { 'notes-site': false });
+  assert.deepEqual(kept.workspaceOpinions, { work: { on: ['landing'], reviewers: ['codex-acp'] } });
   fx.cleanup();
 });

@@ -104,6 +104,17 @@ public sealed partial class DriverModule
                     pair.review?.Source,
                 })
                 .ToArray(),
+            // Which other agent reads each one's work before it lands, and where that was set (XAGENT1a): the driver's
+            // resolution, read rather than recomputed by the page. Nothing set anywhere leaves the rule and its source out.
+            Opinions = lines.Select(line => (line, opinion: OpinionRules.Resolve(config, line.Repository, line.Workspace)))
+                .Select(pair => new
+                {
+                    pair.line.Repository,
+                    pair.line.Workspace,
+                    Rule = pair.opinion is null ? null : OpinionWire(pair.opinion.Rule, config.Adapter),
+                    pair.opinion?.Source,
+                })
+                .ToArray(),
         };
     }
 
@@ -443,5 +454,42 @@ public sealed partial class DriverModule
         None = rule.IsNone,
         rule.Required,
         Environments = rule.Environments.Select(each => new { each.Name, each.Kind, each.Procedure, each.Address, each.Run }).ToArray(),
+    };
+
+    // XAGENT1a (D155 point 3, the second-agent design §2.5): which other agent reads each repository's work before it lands,
+    // the screens' half of `daoris driver opinion`, sent by `bridge/lines.ts`. Declared only: nothing here chooses a reviewer,
+    // starts a pass or holds a landing.
+
+    /// <summary>
+    /// One change to a second-opinion rule, as the page sends it: the twin's edit in the shared table's own shape
+    /// (<c>repository</c> or <c>workspace</c>; <c>set</c> with any of <c>reviewers</c>, <c>on</c>, <c>required</c>,
+    /// <c>verify</c>, <c>minutes</c> and <c>recheck</c>, <c>none</c>, or <c>clear</c>), judged by
+    /// <see cref="OpinionRules.Apply"/> before anything is written. It reads nothing else, so it waits for nothing.
+    /// </summary>
+    [DriverRoute("SET_OPINION")]
+    private object? SetOpinion(IpcRequest request)
+    {
+        var edit = OpinionRules.EditOf(request.Payload ?? default);
+        // The twin's refusals come first, in its words, before anything is written.
+        OpinionRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
+        Change(config => OpinionRules.Apply(config, edit));
+        return State();
+    }
+
+    /// <summary>
+    /// A rule as the bridge carries it (XAGENT1a): whether it is none here, its occasions and reviewers in order, each switch,
+    /// the bound of a pass (the default where none is written), and the reviewers of the working agent's own family, judged
+    /// against <paramref name="working"/>, the agent this machine's work runs on, so the page says what the terminal says.
+    /// </summary>
+    internal static object OpinionWire(OpinionRule rule, string working) => new
+    {
+        None = rule.IsNone,
+        rule.On,
+        rule.Reviewers,
+        rule.Required,
+        rule.Verify,
+        Minutes = rule.Bound,
+        rule.Recheck,
+        SameAgent = OpinionRules.SameAgent(rule, working),
     };
 }

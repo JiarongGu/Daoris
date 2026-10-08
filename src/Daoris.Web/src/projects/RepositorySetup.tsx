@@ -5,6 +5,7 @@ import type { RuleListName } from '../settings/AgentRules';
 import { type Accepting, AcceptingNote, LandingField, type LandingRule, type RepositoryLanding } from '../settings/Landings';
 import { LanguageChoice, type LanguageOption, type RepositoryLanguage } from '../settings/Languages';
 import { LineField, type RepositoryLine } from '../settings/Lines';
+import { type OpinionEdit, OpinionField, opinionRowSays, opinionSummary, type RepositoryOpinion } from '../settings/Opinions';
 import { type RepositoryReview, type ReviewEdit, ReviewField, reviewRowSays, reviewSummary } from '../settings/Reviews';
 import { Button, CheckField, Chip, Icon, Segmented, SelectField, SettingRow } from '../ui';
 import { RepositoryRules, type RuleLists } from './RepositoryRules';
@@ -44,6 +45,12 @@ export type WorkSetup = {
    */
   review?: RepositoryReview | null;
   onReview?: (edit: ReviewEdit) => void;
+  /**
+   * Which other agent reads its work before it lands (XAGENT1a, D155 point 3), as the driver resolves it: its own, its
+   * workspace's, or none set; absent on a shell older than it, and no row is offered.
+   */
+  opinion?: RepositoryOpinion | null;
+  onOpinion?: (edit: OpinionEdit) => void;
 };
 
 /** The language its sessions write to the person in (LANG1c) and its standing answer (KNOWUSE1b). */
@@ -129,6 +136,9 @@ export function RepositorySetup({ repository, driving, work, sessions, reach, bu
   // Where its work is reviewed before it lands (REVIEWENV1a): its own, its workspace's, or none set, which is Daoris's.
   const review = work?.onReview ? work.review : undefined;
   const reviewOwn = review?.source === 'repository';
+  // Which other agent reads its work before it lands (XAGENT1a): its own, its workspace's, or none set, which is Daoris's.
+  const opinion = work?.onOpinion ? work.opinion : undefined;
+  const opinionOwn = opinion?.source === 'repository';
   const workParts = work && [
     ...(line
       ? [marked(
@@ -137,6 +147,7 @@ export function RepositorySetup({ repository, driving, work, sessions, reach, bu
       : []),
     ...(landing ? [marked(landingSays(t, landing), landing.source === 'default' ? 'daoris' : landing.source)] : []),
     ...(review ? [marked(reviewSummary(t, review.rule), review.rule && review.source ? review.source : 'daoris')] : []),
+    ...(opinion ? [marked(opinionSummary(t, opinion.rule), opinion.rule && opinion.source ? opinion.source : 'daoris')] : []),
   ];
 
   // Sessions: the language they write in, then the standing answer.
@@ -177,7 +188,7 @@ export function RepositorySetup({ repository, driving, work, sessions, reach, bu
   // What opens on its own: a section holding a value set for this repository.
   const opensItself: Record<SetupSectionId, boolean> = {
     driving: false,
-    work: lineOwn || landingOwn || reviewOwn,
+    work: lineOwn || landingOwn || reviewOwn || opinionOwn,
     sessions: languageOwn || standing !== null,
     reach: readOwn || writesTo.length > 0 || ruleCount > 0,
   };
@@ -272,6 +283,28 @@ export function RepositorySetup({ repository, driving, work, sessions, reach, bu
                   set={reviewOwn ? review.rule ?? undefined : undefined}
                   busy={busy}
                   onChange={(edit) => work.onReview?.(edit)}
+                />
+              )}
+            />
+          )}
+          {opinion && work.onOpinion && (
+            <Inheritable
+              setHere={t('projects.setup.setHere')}
+              label={t('settings.opinion.label')}
+              twin={t('settings.opinion.twin.repository', { repository })}
+              why={t('settings.opinion.body')}
+              says={opinionRowSays(t, opinion.rule, { source: opinion.source, workspace: opinion.workspace })}
+              own={opinionOwn}
+              busy={busy}
+              wide
+              onClear={() => work.onOpinion?.({ clear: true })}
+              editor={() => (
+                <OpinionField
+                  name={repository}
+                  owner="repository"
+                  set={opinionOwn ? opinion.rule ?? undefined : undefined}
+                  busy={busy}
+                  onChange={(edit) => work.onOpinion?.(edit)}
                 />
               )}
             />

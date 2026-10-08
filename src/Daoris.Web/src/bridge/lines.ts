@@ -4,6 +4,7 @@ import { keys } from '../queries';
 import type { LineChange, RepositoryLine } from '../settings/Lines';
 import type { LandingChange, RepositoryLanding } from '../settings/Landings';
 import type { LanguageChange, RepositoryLanguage } from '../settings/Languages';
+import type { OpinionChange, RepositoryOpinion } from '../settings/Opinions';
 import type { RepositoryReview, ReviewChange } from '../settings/Reviews';
 import type { BranchDiscard, LandedBranch, SweepBranch } from '../settings/Sweep';
 import type { LinePull, RebaseBranch, SyncInclude, SyncPlan, SyncRepository } from '../settings/Sync';
@@ -28,6 +29,8 @@ export const useLines = () => {
       lines: RepositoryLine[]; landings?: RepositoryLanding[]; languages?: RepositoryLanguage[];
       // Where each repository's work is reviewed before it lands, as the driver resolves it (REVIEWENV1a); absent on an older shell.
       reviews?: RepositoryReview[];
+      // Which other agent reads each one's work before it lands, as the driver resolves it (XAGENT1a); absent on an older shell.
+      opinions?: RepositoryOpinion[];
     }>('LINES'),
     enabled: isAvailable,
   });
@@ -300,6 +303,22 @@ export const useSetReview = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (change: ReviewChange) => call<DriverState>('SET_REVIEW', change),
+    onSuccess: (state) => {
+      client.setQueryData(keys.driver, state);
+      void client.invalidateQueries({ queryKey: keys.lines });
+    },
+  });
+};
+
+/**
+ * Change which other agent reads a repository's work before it lands, or a workspace's (XAGENT1a, D155 point 3): the twins'
+ * edit, over the file `daoris driver opinion` edits (D50). What each repository resolves to moves with it, so the lines are
+ * asked again. A refusal is the driver's sentence, verbatim. Declared only: nothing reads it yet.
+ */
+export const useSetOpinion = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (change: OpinionChange) => call<DriverState>('SET_OPINION', change),
     onSuccess: (state) => {
       client.setQueryData(keys.driver, state);
       void client.invalidateQueries({ queryKey: keys.lines });

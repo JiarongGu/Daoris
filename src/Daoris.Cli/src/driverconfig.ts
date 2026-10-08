@@ -31,6 +31,10 @@ import {
   REVIEW_DECLARED_ONLY, applyReviewEdit, holdsProcedure, inScope, reviewListed, reviewSays, reviewsOf, type CheckoutsReader,
   type ReviewEdit, type ReviewRule, type ReviewSetting,
 } from './reviews.ts';
+import {
+  OPINION_DECLARED_ONLY, applyOpinionEdit, opinionListed, opinionSays, opinionsOf, sameAgentOf, type OpinionEdit,
+  type OpinionRule, type OpinionSetting,
+} from './opinions.ts';
 import type { CommandArgs } from './types.ts';
 import type { ExitCode } from './errors.ts';
 
@@ -116,6 +120,14 @@ export interface DriverChoices {
   reviews: Record<string, ReviewSetting>;
   /** A workspace's review rule, for every repository in it that sets none of its own. */
   workspaceReviews: Record<string, ReviewRule>;
+  /**
+   * Which other agent reads each repository's work before it lands (XAGENT1a, D155 point 3), or `false` for none whatever its
+   * workspace says; it replaces its workspace's whole. The driver's `DriverConfig.Opinions` is the twin, read by one shared
+   * table (`opinions.ts`).
+   */
+  opinions: Record<string, OpinionSetting>;
+  /** A workspace's second-opinion rule, for every repository in it that sets none of its own. */
+  workspaceOpinions: Record<string, OpinionRule>;
   rest: Record<string, unknown>;
 }
 
@@ -197,7 +209,7 @@ const EMPTY: DriverChoices = {
   drivable: [], holds: [], trees: [], cap: 2, adapter: 'claude-code', notify: true,
   strikes: 3, forgiven: {}, released: {}, pausedAsks: {}, pausedQuests: {}, intakeAdapter: null, helperAdapter: null, timeoutMinutes: null, cooloff: null, lines: {}, workspaceLines: {},
   landings: {}, workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, standing: {}, languages: {},
-  workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, rest: {},
+  workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, opinions: {}, workspaceOpinions: {}, rest: {},
 };
 
 /**
@@ -362,14 +374,14 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     return {
       ...EMPTY, forgiven: {}, released: {}, pausedAsks: {}, pausedQuests: {}, lines: {}, workspaceLines: {}, landings: {},
       workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, standing: {}, languages: {},
-      workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, rest: {},
+      workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, opinions: {}, workspaceOpinions: {}, rest: {},
     };
   }
 
   const {
     drivable, holds, trees, cap, adapter, notify, strikes, forgiven, released, intakeAdapter, helperAdapter, timeoutMinutes,
     cooloff, lines, workspaceLines, landings, workspaceLandings, readAcross, workspaceReadAcross, writeAcross, standing,
-    languages, workspaceLanguages, reviews, workspaceReviews, ...rest
+    languages, workspaceLanguages, reviews, workspaceReviews, opinions, workspaceOpinions, ...rest
   } = parsed;
   return {
     drivable: names(drivable),
@@ -424,6 +436,9 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     // As the driver reads them (REVIEWENV1a): a rule with a problem is not read, and `false` only for a repository.
     reviews: reviewsOf(reviews, true),
     workspaceReviews: reviewsOf(workspaceReviews, false),
+    // As the driver reads them (XAGENT1a): a rule with a problem is not read, and `false` only for a repository.
+    opinions: opinionsOf(opinions, true),
+    workspaceOpinions: opinionsOf(workspaceOpinions, false),
     rest,
   };
 }
@@ -475,6 +490,9 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
     // Written only when set (REVIEWENV1a), as the driver writes them: absent is no review environment, today's behaviour.
     ...(Object.keys(choices.reviews).length > 0 ? { reviews: choices.reviews } : {}),
     ...(Object.keys(choices.workspaceReviews).length > 0 ? { workspaceReviews: choices.workspaceReviews } : {}),
+    // Written only when set (XAGENT1a), as the driver writes them: absent is no second opinion, today's behaviour.
+    ...(Object.keys(choices.opinions).length > 0 ? { opinions: choices.opinions } : {}),
+    ...(Object.keys(choices.workspaceOpinions).length > 0 ? { workspaceOpinions: choices.workspaceOpinions } : {}),
   });
 }
 
@@ -1066,10 +1084,17 @@ export function commandDriver(
     case 'review':
       return review();
 
+    // Which other agent reads work before it lands (XAGENT1a, D155 point 3, design §2.5): for a repository, or with
+    // `--workspace` for each repository there that sets none of its own. `--reviewers` and the switches set what they name
+    // over the rule set there; `none`; `--clear`. The repository's and the workspace's Setup and Ask Daoris's `setting` kind
+    // are its other doors (D50). Nothing reads it yet: the choice of a reviewer and the gate are XAGENT1b–f.
+    case 'opinion':
+      return opinion();
+
     default:
       throw new DaorisError(
         `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, trees, line, landing, across, standing, `
-        + 'language, review, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper');
+        + 'language, review, opinion, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper');
   }
 
   function list(): ExitCode {
@@ -1203,6 +1228,20 @@ export function commandDriver(
         + '<environment> --kind local|deployed --procedure <path>` declares one');
     }
 
+    // XAGENT1a: each second-opinion rule and where it was set; a workspace's is said for the repositories there that set none.
+    for (const [repository, rule] of Object.entries(choices.opinions)) {
+      write(`  opinion    ${repository}  ${opinionListed(rule)}`);
+    }
+
+    for (const [workspace, rule] of Object.entries(choices.workspaceOpinions)) {
+      write(`  opinion    workspace ${workspace}  ${opinionListed(rule)}  (for each repository there that sets none)`);
+    }
+
+    if (Object.keys(choices.opinions).length === 0 && Object.keys(choices.workspaceOpinions).length === 0) {
+      write('  opinion    none set — no other agent reads work before it lands; `daoris driver opinion <repository> '
+        + '--reviewers <adapter>` declares one');
+    }
+
     // A hold on something not opted in is inert, and saying so is the point: it reads as protection
     // and is not. Reported even when NOTHING is drivable — which is exactly the machine where a
     // person is most likely to believe a hold is what is stopping things.
@@ -1332,6 +1371,91 @@ export function commandDriver(
       write(`  Written to ${path}.`);
       return 0 as ExitCode;
     });
+  }
+
+  /**
+   * `opinion` (XAGENT1a): the person's words made one edit, judged by the twin's table (`opinions.ts`), and said in the
+   * driver's sentences, the working agent's own family named among the reviewers, then that nothing reads it yet.
+   */
+  function opinion(): ExitCode {
+    const valued = new Set(['--workspace', '--reviewers', '--on', '--minutes']);
+    const switches = new Set(['--required', '--not-required', '--verify', '--no-verify', '--recheck', '--no-recheck', '--clear']);
+    const usage = '`driver opinion` needs <repository>|--workspace <name>, then --reviewers <adapter,adapter> [--on landing,steps] '
+      + '[--required|--not-required] [--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck], or none, or --clear — '
+      + 'e.g. `daoris driver opinion web-app --reviewers codex-acp --required`.';
+    for (let at = 1; at < argv.length; at += 1) {
+      const token = argv[at]!;
+      if (valued.has(token)) at += 1;
+      else if (token.startsWith('--') && !switches.has(token)) {
+        throw new DaorisError(`\`${token}\` is not a flag \`driver opinion\` takes — ${usage}`);
+      }
+    }
+
+    const both = (on: string, off: string, why: string) => {
+      if (argv.includes(on) && argv.includes(off)) throw new DaorisError(`${why} — say \`${on}\` or \`${off}\`, not both.`);
+      return argv.includes(on) ? true : argv.includes(off) ? false : undefined;
+    };
+    const required = both('--required', '--not-required', 'a rule is required or not');
+    const verify = both('--verify', '--no-verify', 'a reviewer may build and run or it may not');
+    const recheck = both('--recheck', '--no-recheck', 'the answers are read again or they are not');
+    const workspace = flagValue(argv, '--workspace');
+    const words = operands(argv, valued).slice(1);
+    const name = workspace ?? words.shift();
+    const none = words[0] === 'none';
+    const clear = argv.includes('--clear');
+    const listed = (flag: string) => flagValue(argv, flag)?.split(',').map((each) => each.trim());
+    const reviewers = listed('--reviewers');
+    const on = listed('--on');
+    const minutes = flagValue(argv, '--minutes');
+    // The same set the screen and Ask Daoris send: each part only where it was said.
+    const set: Record<string, unknown> = {
+      ...(reviewers !== undefined ? { reviewers } : {}),
+      ...(on !== undefined ? { on } : {}),
+      ...(required !== undefined ? { required } : {}),
+      ...(verify !== undefined ? { verify } : {}),
+      // A number only as digits: anything else is refused in the rule's own words.
+      ...(minutes !== undefined ? { minutes: /^[0-9]+$/.test(minutes) ? Number(minutes) : Number.NaN } : {}),
+      ...(recheck !== undefined ? { recheck } : {}),
+    };
+    if (!name || words.length > (none ? 1 : 0) || (!none && !clear && Object.keys(set).length === 0)) throw new DaorisError(usage);
+
+    const edit: OpinionEdit = {
+      ...(workspace ? { workspace } : { repository: name }),
+      ...(Object.keys(set).length > 0 ? { set } : {}),
+      ...(none ? { none: true } : {}),
+      ...(clear ? { clear: true } : {}),
+    };
+    const after = applyOpinionEdit(choices, edit);
+    writeDriverChoices(path, { ...choices, ...after });
+
+    const map = workspace ? after.workspaceOpinions : after.opinions;
+    const key = Object.keys(map).find((each) => sameName(each, name))
+      ?? Object.keys(workspace ? choices.workspaceOpinions : choices.opinions).find((each) => sameName(each, name)) ?? name;
+    const rule = map[key];
+    if (clear) {
+      write(workspace
+        ? `daoris: repositories in the workspace \`${key}\` keep their own second-opinion rule, else none.`
+        : `daoris: \`${key}\` takes its workspace's second-opinion rule again, else none.`);
+    } else if (none) {
+      write(`daoris: \`${key}\` declares no second opinion.`);
+    } else if (rule !== undefined && rule !== false) {
+      const named = rule.reviewers.map((each) => `\`${each}\``).join(', else ');
+      write(workspace
+        ? `daoris: second opinions for repositories in the workspace \`${key}\` that set none of their own: ${named}.`
+        : `daoris: second opinions for \`${key}\`: ${named}.`);
+    }
+
+    if (rule !== undefined) {
+      // The working agent is the one this machine's work runs on: a reviewer of its family is no independent reading.
+      for (const sentence of opinionSays(rule, rule === false ? [] : sameAgentOf(rule, choices.adapter))) write(`  ${sentence}`);
+      write(`  ${OPINION_DECLARED_ONLY}`);
+    }
+    if (rule !== undefined && rule !== false && workspace) {
+      write('  A repository with a rule of its own keeps it — `daoris driver opinion <repository> --clear` hands it back.');
+    }
+
+    write(`  Written to ${path}.`);
+    return 0;
   }
 
   function toggle(field: 'drivable' | 'holds', repository: string, present: boolean): ExitCode {

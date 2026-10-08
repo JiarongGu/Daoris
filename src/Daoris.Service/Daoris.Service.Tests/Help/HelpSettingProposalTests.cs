@@ -102,6 +102,13 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("review", "storefront", null, "--drop dev")]
     [InlineData("review", null, "work", "--not-required")]
     [InlineData("review", "storefront", null, "--clear")]
+    // XAGENT1a (D155 point 3): a second-opinion rule for a repository or a workspace, as `daoris driver opinion` takes its
+    // words, a quoted list kept whole; the rule and the registry are the driver's to judge.
+    [InlineData("opinion", "web-app", null, "--reviewers codex-acp,dsh --on landing,steps --required --verify --minutes 30")]
+    [InlineData("opinion", null, "work", "--reviewers \"codex-acp, dsh\" --no-recheck")]
+    [InlineData("opinion", "web-app", null, "--not-required --no-verify --recheck")]
+    [InlineData("opinion", "notes-site", null, "none")]
+    [InlineData("opinion", "web-app", null, "--clear")]
     public void Across_a_cap_and_an_adapter_are_written_as_the_terminal_spells_them(string door, string? target, string? workspace, string value)
     {
         var (id, _) = Box().ProposeSetting(new SettingChange(door, target, workspace, value), "the person asked", session: "h1", Now);
@@ -202,6 +209,29 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
         Assert.Contains("declared only, nothing reads it yet", tool);
     }
 
+    /// <summary>
+    /// XAGENT1a (D155 point 3, design §2.4–§2.5): the tool tells the helper what an opinion takes, that its reviewers are only
+    /// the ones the person names, that `--required` and `--verify` are the person's say-so, and that nothing reads it yet.
+    /// </summary>
+    [Fact]
+    public void The_tool_says_what_an_opinion_takes_that_its_reviewers_are_the_persons_and_that_nothing_reads_it_yet()
+    {
+        var method = typeof(Daoris.Knowledge.Mcp.KnowledgeTools).GetMethod(nameof(Daoris.Knowledge.Mcp.KnowledgeTools.ProposeSetting))!;
+        string Described(string name) => method.GetParameters().Single(parameter => parameter.Name == name)
+            .GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
+            .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
+        var tool = method.GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
+            .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
+
+        Assert.Contains("`--reviewers <adapter,adapter> [--on landing,steps]", Described("value"));
+        Assert.Contains("opinion", Described("door"));
+        Assert.Contains("a second opinion", Described("target"));
+        Assert.Contains("a second opinion", Described("workspace"));
+        Assert.Contains("only the agents the person names", tool);
+        Assert.Contains("`opinion` declares which other agent reads", tool);
+        Assert.Contains("declared only, nothing reads it yet", tool);
+    }
+
     /// <summary>The shape is checked here, and nothing more: what the route would say is the driver's.</summary>
     [Theory]
     [InlineData("push", "engine", null, null, "is not a door")]
@@ -243,6 +273,12 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("review", "storefront", "work", "none", "review rule is set for a repository or a workspace — name exactly one")]
     [InlineData("review", "storefront", null, null, "review is `<environment> --kind local|deployed --procedure <path>")]
     [InlineData("review", "storefront", null, "dev --kind local --colour blue", "`none`, `--drop <environment>`, `--required|--not-required` or `--clear`")]
+    // XAGENT1a: exactly one of a repository or a workspace, some words, and only the flags `daoris driver opinion` takes.
+    [InlineData("opinion", null, null, "none", "second-opinion rule is set for a repository or a workspace — name exactly one")]
+    [InlineData("opinion", "web-app", "work", "--clear", "second-opinion rule is set for a repository or a workspace — name exactly one")]
+    [InlineData("opinion", "web-app", null, null, "opinion is `--reviewers <adapter,adapter> [--on landing,steps]")]
+    [InlineData("opinion", "web-app", null, "  ", "opinion is `--reviewers <adapter,adapter> [--on landing,steps]")]
+    [InlineData("opinion", "web-app", null, "--reviewers dsh --colour blue", "`none` or `--clear`")]
     [InlineData("retry", null, null, null, "names the quest its failed sessions parked or the person's stop holds")]
     [InlineData("retry", "q1 q2", null, null, "names the quest its failed sessions parked or the person's stop holds")]
     [InlineData("retry", "q1a2b3c4", "work", null, "names the quest its failed sessions parked or the person's stop holds")]

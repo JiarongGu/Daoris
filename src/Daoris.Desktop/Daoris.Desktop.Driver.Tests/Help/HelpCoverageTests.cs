@@ -280,6 +280,8 @@ public sealed partial class HelpCoverageTests
         ("language", new Door("setting", "language")),
         // REVIEWENV1a: where work is shown to the person before it lands, with the service's writer in the same change.
         ("review", new Door("setting", "review")),
+        // XAGENT1a: which other agent reads work before it lands, with the service's writer in the same change.
+        ("opinion", new Door("setting", "opinion")),
         ("notify", new Door("setting", "notify")),
         ("intake", new Door("setting", "intake")),
         ("helper", new Door("setting", "helper")),
@@ -383,6 +385,8 @@ public sealed partial class HelpCoverageTests
         ("projects", "useSetLanguage", null, new Door("setting", "language")),
         // REVIEWENV1a: *Review before landing*, on a repository's Setup and a workspace's Defaults.
         ("projects", "useSetReview", null, new Door("setting", "review")),
+        // XAGENT1a: *Second opinion before landing*, on a repository's Setup and a workspace's Defaults.
+        ("projects", "useSetOpinion", null, new Door("setting", "opinion")),
         ("projects", "useSetStanding", null, new Door("setting", "standing")),
         ("projects", "useSetReadAcross", null, new Door("setting", "across")),
         ("projects", "useSetWriteAcross", null, new Door("setting", "across")),

@@ -29,6 +29,8 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
                 Standing = config.StandingFor(known.Repository)?.Says,
                 // REVIEWENV1a: where its work is shown to the person before it lands, and where that was set.
                 Review = ReviewRules.Resolve(config, known.Repository, known.Workspace),
+                // XAGENT1a: which other agent reads its work before it lands, and where that was set.
+                Opinion = OpinionRules.Resolve(config, known.Repository, known.Workspace),
             })],
         };
     }
@@ -49,13 +51,14 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
         {
             text.Append($"### Workspace `{circle.Key}`\n\n");
             // REVIEWENV1a (design §1.7–§1.8): the room's table names each repository's review rule, and *no review
-            // environment* where nothing is set, which is today's behaviour.
-            text.Append("| Repository | Driven | Line | Work lands | Reviewed before landing |\n");
-            text.Append("|---|---|---|---|---|\n");
+            // environment* where nothing is set, which is today's behaviour. XAGENT1a (design §2.5–§2.6) adds each one's second
+            // opinion, and *no second opinion* where nothing is set.
+            text.Append("| Repository | Driven | Line | Work lands | Reviewed before landing | Second opinion before landing |\n");
+            text.Append("|---|---|---|---|---|---|\n");
             foreach (var repository in circle.OrderBy(repository => repository.Name, StringComparer.Ordinal))
             {
                 text.Append($"| `{repository.Name}` | {Driven(repository)} | {LineOf(repository.Line)} | {Lands(repository.Landing)} | "
-                    + $"{ReviewRules.RoomCell(repository.Review)} |\n");
+                    + $"{ReviewRules.RoomCell(repository.Review)} | {OpinionRules.RoomCell(repository.Opinion)} |\n");
             }
 
             text.Append('\n');
@@ -134,6 +137,9 @@ public sealed record HelpRepository(string Name, string Workspace)
 
     /// <summary>The review rule standing for it and where it was set (REVIEWENV1a); null where nothing is set anywhere.</summary>
     public ResolvedReview? Review { get; init; }
+
+    /// <summary>The second-opinion rule standing for it and where it was set (XAGENT1a); null where nothing is set anywhere.</summary>
+    public ResolvedOpinion? Opinion { get; init; }
 }
 
 public sealed partial record HelpMachine

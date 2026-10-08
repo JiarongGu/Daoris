@@ -12,10 +12,12 @@ import { WorkspaceView } from './projects/WorkspaceView';
 import { useRegistry, useRepositories } from './queries';
 import { useScope } from './scope';
 import type { LandingRule } from './settings/Landings';
+import { type OpinionEdit, opinionToast } from './settings/Opinions';
 import { type ReviewEdit, reviewToast } from './settings/Reviews';
 import {
   useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetDrivable, useSetHold, useSetLanding,
-  useSetLanguage, useSetLine, useSetReadAcross, useSetReview, useSetStanding, useSetTrees, useSetWriteAcross, useSweepPlan,
+  useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetStanding, useSetTrees, useSetWriteAcross,
+  useSweepPlan,
 } from './shell';
 import { doorOf } from './tools';
 import { failure, type Notify, useErrorNotify } from './ui';
@@ -115,6 +117,7 @@ export function useProjectsView({
   const setLine = useSetLine();
   const setLanding = useSetLanding();
   const setReview = useSetReview();
+  const setOpinion = useSetOpinion();
   const setRead = useSetReadAcross();
   const setWrite = useSetWriteAcross();
   const ruleAction = useRuleAction();
@@ -131,6 +134,9 @@ export function useProjectsView({
     .find((one) => one.repository === repository);
   // And where its work is reviewed before it lands (REVIEWENV1a), the driver's resolution.
   const reviewOf = (repository: string) => (Array.isArray(lines.data?.reviews) ? lines.data.reviews : [])
+    .find((one) => one.repository === repository);
+  // And which other agent reads its work before it lands (XAGENT1a), the driver's resolution.
+  const opinionOf = (repository: string) => (Array.isArray(lines.data?.opinions) ? lines.data.opinions : [])
     .find((one) => one.repository === repository);
   // And how its work lands (WSR1), the driver's choice.
   const landingOf = (repository: string) => (Array.isArray(lines.data?.landings) ? lines.data.landings : [])
@@ -296,6 +302,14 @@ export function useProjectsView({
             onError: onDriverError,
           })
         : undefined,
+      // Which other agent reads its work before it lands (XAGENT1a); a shell older than it answers no opinions, and no row is offered.
+      opinion: Array.isArray(lines.data?.opinions) ? opinionOf(repository) ?? { repository, workspace } : undefined,
+      onOpinion: Array.isArray(lines.data?.opinions)
+        ? (edit: OpinionEdit) => setOpinion.mutate({ repository, ...edit }, {
+            onSuccess: () => notify(opinionToast(t, repository, edit)),
+            onError: onDriverError,
+          })
+        : undefined,
     };
 
     // Its standing answer (KNOWUSE1b), matched without case as the driver matches it; a shell older than it answers no
@@ -356,8 +370,8 @@ export function useProjectsView({
       work,
       sessions,
       reach,
-      busy: setLine.isPending || setLanding.isPending || setReview.isPending || setLanguage.isPending || setStanding.isPending
-        || setRead.isPending || setWrite.isPending || ruleAction.isPending,
+      busy: setLine.isPending || setLanding.isPending || setReview.isPending || setOpinion.isPending || setLanguage.isPending
+        || setStanding.isPending || setRead.isPending || setWrite.isPending || ruleAction.isPending,
     };
   };
 

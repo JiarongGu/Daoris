@@ -15,7 +15,7 @@
   {"argv":["agent","frobnicate"],"code":2,"out":["daoris: unknown agent verb 'frobnicate' — one of: list, install, update, login, key, pin, unpin, profile, settings, trust, rules"]},
   {"argv":["agent","profile","frobnicate"],"code":2,"out":["daoris: unknown agent profile verb 'frobnicate' — one of: list, add, remove, default, order, ready, use, rename, join"]},
   {"argv":["agent","rules","frobnicate"],"code":2,"out":["daoris: unknown rules verb 'frobnicate' — one of: list, allow, ask, deny, remove, default, proposals, accept, decline"]},
-  {"argv":["driver","frobnicate"],"code":2,"out":["daoris: unknown driver verb 'frobnicate' — one of: list, drive, undrive, hold, resume, trees, line, landing, across, standing, language, review, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper"]},
+  {"argv":["driver","frobnicate"],"code":2,"out":["daoris: unknown driver verb 'frobnicate' — one of: list, drive, undrive, hold, resume, trees, line, landing, across, standing, language, review, opinion, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper"]},
   {"argv":["driver","drive"],"code":2,"out":["daoris: `driver drive` needs a name — e.g. `daoris driver drive aurora-engine`."]},
   {"argv":["driver","cooloff","0"],"code":2,"out":["daoris: `driver cooloff` needs a whole number of minutes, at least 1 — e.g. `daoris driver cooloff 60`; a zero cool-off would start a spent account again at every look."]},
   {"argv":["agent","profile","order","claude-code"],"code":2,"out":["daoris: `agent profile order` needs the accounts, in order, or --clear — e.g. `daoris agent profile order claude-code account-1 account-2`."]},

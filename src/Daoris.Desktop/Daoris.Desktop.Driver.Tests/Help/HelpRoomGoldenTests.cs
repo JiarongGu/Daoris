@@ -34,6 +34,8 @@ public sealed class HelpRoomGoldenTests
                 // REVIEWENV1a: a workspace's required review rule, its one environment local.
                 Review = new ResolvedReview(
                     new ReviewRule([new("dev", "local", "README.md", "http://localhost:4200")], Required: true), ReviewSource.Workspace),
+                // XAGENT1a: a workspace's required second opinion, another maker's agent first.
+                Opinion = new ResolvedOpinion(new OpinionRule(["codex-acp", "dsh"], ["landing"], Required: true), OpinionSource.Workspace),
             },
             new("reports-db", "work")
             {
@@ -44,6 +46,8 @@ public sealed class HelpRoomGoldenTests
                 Checkout = false, Landing = new Landing(new LandingRule("merge", null), LandingSource.Repository),
                 // REVIEWENV1a: none here, whatever its workspace says.
                 Review = new ResolvedReview(ReviewRule.None, ReviewSource.Repository),
+                // XAGENT1a: no second opinion here, whatever its workspace says.
+                Opinion = new ResolvedOpinion(OpinionRule.None, OpinionSource.Repository),
             },
             new("tools", "default")
             {

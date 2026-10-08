@@ -190,6 +190,8 @@ with the version and date at release.
   the page says which one it waits on.
 - A session branch discarded because its work is held elsewhere now keeps its commits at a recovery ref the
   sentence names, and a tree holding files only it has is kept.
+- A workspace or repository can name the agents that give a second opinion before its work lands (Setup →
+  *Second opinion before landing*, or `daoris driver opinion`); nothing asks one yet.
 
 The first version: doctrine that installs, is checked, and flows back.
 

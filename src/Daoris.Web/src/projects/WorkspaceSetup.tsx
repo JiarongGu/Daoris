@@ -4,6 +4,7 @@ import type { RuleListName } from '../settings/AgentRules';
 import { type Accepting, AcceptingNote, LandingField, type LandingRule } from '../settings/Landings';
 import { LanguageChoice, type LanguageOption } from '../settings/Languages';
 import { LineField } from '../settings/Lines';
+import { type OpinionEdit, OpinionField, type OpinionRule, opinionRowSays, opinionSummary } from '../settings/Opinions';
 import { type ReviewEdit, ReviewField, type ReviewRule, reviewRowSays, reviewSummary } from '../settings/Reviews';
 import { shellWord } from '../shellWord';
 import { Button, Icon, Inline, PathText, Prose, Segmented, SettingRow, Tip } from '../ui';
@@ -28,6 +29,8 @@ export type WorkspaceDefaults = {
   read?: { set?: boolean; onSet: (read: boolean | undefined) => void } | null;
   /** Where its repositories' work is reviewed before it lands (REVIEWENV1a): `daoris driver review --workspace`. */
   review?: { set?: ReviewRule; onChange: (edit: ReviewEdit) => void } | null;
+  /** Which other agent reads its repositories' work before it lands (XAGENT1a): `daoris driver opinion --workspace`. */
+  opinion?: { set?: OpinionRule; onChange: (edit: OpinionEdit) => void } | null;
 };
 
 /** Where it syncs (D48 §5), and Claude Code's rules for it (PERM1): its remote and its reach. */
@@ -83,7 +86,7 @@ const plain = (text: string) => text.replace(/`/g, '');
 export function WorkspaceSetup({ workspace, defaults, remote, busy = false, open, wiring: startWiring = false }: WorkspaceSetupProps) {
   const { t } = useTranslation();
   const daoris = (value: string) => t('projects.setup.marked.daoris', { value });
-  const { line, landing, language, read, review } = defaults;
+  const { line, landing, language, read, review, opinion } = defaults;
 
   const defaultsParts = [
     ...(line ? [line.set ? t('projects.setup.summary.line', { branch: line.set }) : daoris(t('projects.workspace.summary.noLine'))] : []),
@@ -99,6 +102,7 @@ export function WorkspaceSetup({ workspace, defaults, remote, busy = false, open
           : t(read.set ? 'projects.setup.summary.read' : 'projects.setup.summary.unread')]
       : []),
     ...(review ? [review.set ? reviewSummary(t, review.set) : daoris(reviewSummary(t, null))] : []),
+    ...(opinion ? [opinion.set ? opinionSummary(t, opinion.set) : daoris(opinionSummary(t, null))] : []),
   ];
 
   const wired = remote.wiring?.remote ?? null;
@@ -112,7 +116,7 @@ export function WorkspaceSetup({ workspace, defaults, remote, busy = false, open
   ];
 
   const opensItself: Record<WorkspaceSection, boolean> = {
-    defaults: Boolean(line?.set || landing?.set || language?.set || read?.set !== undefined || review?.set),
+    defaults: Boolean(line?.set || landing?.set || language?.set || read?.set !== undefined || review?.set || opinion?.set),
     remote: Boolean(wired) || ruleCount > 0 || startWiring,
   };
 
@@ -211,6 +215,22 @@ export function WorkspaceSetup({ workspace, defaults, remote, busy = false, open
               onClear={() => review.onChange({ clear: true })}
               editor={() => (
                 <ReviewField name={workspace} owner="workspace" set={review.set} busy={busy} onChange={review.onChange} />
+              )}
+            />
+          )}
+          {opinion && (
+            <Inheritable
+              setHere={t('projects.workspace.setHere')}
+              label={t('settings.opinion.label')}
+              twin={t('settings.opinion.twin.workspace', { workspace: shellWord(workspace, '<workspace>') })}
+              why={plain(t('settings.opinion.body'))}
+              says={opinionRowSays(t, opinion.set, opinion.set ? { source: 'workspace', workspace } : undefined)}
+              own={opinion.set !== undefined}
+              busy={busy}
+              wide
+              onClear={() => opinion.onChange({ clear: true })}
+              editor={() => (
+                <OpinionField name={workspace} owner="workspace" set={opinion.set} busy={busy} onChange={opinion.onChange} />
               )}
             />
           )}
