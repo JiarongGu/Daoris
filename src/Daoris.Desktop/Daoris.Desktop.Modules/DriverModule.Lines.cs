@@ -93,6 +93,17 @@ public sealed partial class DriverModule
                     pair.language?.Source,
                 })
                 .ToArray(),
+            // Where each one's work is reviewed before it lands, and where that was set (REVIEWENV1a): the driver's resolution,
+            // read rather than recomputed by the page. Nothing set anywhere leaves the rule and its source out.
+            Reviews = lines.Select(line => (line, review: ReviewRules.Resolve(config, line.Repository, line.Workspace)))
+                .Select(pair => new
+                {
+                    pair.line.Repository,
+                    pair.line.Workspace,
+                    Rule = pair.review is null ? null : ReviewWire(pair.review.Rule),
+                    pair.review?.Source,
+                })
+                .ToArray(),
         };
     }
 
@@ -351,4 +362,86 @@ public sealed partial class DriverModule
     private static async Task<HashSet<string>> InUseAsync(ServiceClient service, CancellationToken cancellationToken) =>
         (await service.ActiveSessionsAsync(cancellationToken))
             .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    // REVIEWENV1a (D154 point 2, design §1.7): where each repository's work is reviewed before it lands, the screens' half of
+    // `daoris driver review`, sent by `bridge/lines.ts`. Declared only: nothing here composes a step, gates or serves.
+
+    /// <summary>
+    /// One change to a review rule, as the page sends it: the twin's edit in the shared table's own shape (<c>repository</c>
+    /// or <c>workspace</c>; <c>put</c> with <c>required</c> if given, <c>none</c>, <c>drop</c>, <c>required</c> alone, or
+    /// <c>clear</c>), judged by <see cref="ReviewRules.Apply"/> before anything is read or written. An environment put has its
+    /// procedure looked for in each checkout the rule reaches, as the terminal looks: a repository's checkout that does not hold
+    /// it refuses the change; a workspace's names each one that does not.
+    /// </summary>
+    /// <remarks>
+    /// The answer is the state, with <c>reviewed</c> saying what the procedure's look found: the repositories of the workspace
+    /// whose checkout lacks it, and whether it could be looked for at all (no checkout here).
+    /// </remarks>
+    [DriverRoute("SET_REVIEW")]
+    private async Task<object?> SetReviewAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var edit = ReviewEditOf(request.Payload);
+        // The twin's refusals come first, in its words, before the registry is asked anything.
+        ReviewRules.Apply(DriverConfig.Load(_loop.ConfigPath), edit);
+
+        IReadOnlyList<string> lacking = [];
+        var unchecked_ = false;
+        if (edit.Put is { Procedure: { } procedure })
+        {
+            var service = _loop.Service ?? throw NotReady();
+            var registry = (await service.RegistryAsync(cancellationToken).ConfigureAwait(false))
+                .Select(row => (Repository: row.Repository, Workspace: (string?)row.Workspace, Root: row.Root)).ToList();
+            lacking = ReviewRules.Lacking(registry, edit, procedure);
+            if (edit.Repository is { } repository)
+            {
+                if (lacking.Count > 0) throw new DriverException(ReviewRules.NotHeld(repository.Trim(), procedure));
+                unchecked_ = !registry.Any(row => row.Root is { Length: > 0 }
+                    && string.Equals(row.Repository, repository.Trim(), StringComparison.OrdinalIgnoreCase));
+            }
+            else
+            {
+                unchecked_ = !registry.Any(row => row.Root is { Length: > 0 }
+                    && string.Equals(RemoteTarget.Workspace(row.Workspace), RemoteTarget.Workspace(edit.Workspace), StringComparison.OrdinalIgnoreCase));
+            }
+        }
+
+        Change(config => ReviewRules.Apply(config, edit));
+        // Only a put looked for anything, so only a put says what the look found.
+        return State(reviewed: edit.Put is null ? null : new { Lacking = lacking, Unchecked = unchecked_ });
+    }
+
+    /// <summary>The page's edit, read as the shared table's: a field of another type is absent, <c>none</c> and <c>clear</c> only when true.</summary>
+    private static ReviewEdit ReviewEditOf(JsonElement? payload)
+    {
+        if (payload is not { ValueKind: JsonValueKind.Object } root) return new ReviewEdit();
+        static string? Text(JsonElement element, string name) =>
+            element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+
+        return new ReviewEdit
+        {
+            Repository = Text(root, "repository"),
+            Workspace = Text(root, "workspace"),
+            Put = root.TryGetProperty("put", out var put) && put.ValueKind == JsonValueKind.Object
+                ? new ReviewSpelled(Text(put, "name"), Text(put, "kind"), Text(put, "procedure"), Text(put, "address"), Text(put, "run"))
+                : null,
+            Required = root.TryGetProperty("required", out var required) && required.ValueKind is JsonValueKind.True or JsonValueKind.False
+                ? required.GetBoolean()
+                : null,
+            None = root.TryGetProperty("none", out var none) && none.ValueKind == JsonValueKind.True,
+            Drop = Text(root, "drop"),
+            Clear = root.TryGetProperty("clear", out var clear) && clear.ValueKind == JsonValueKind.True,
+        };
+    }
+
+    /// <summary>
+    /// A rule as the bridge carries it (REVIEWENV1a): whether it is none here, whether work waits for the person's look, and
+    /// each environment, the first the default. Rows rather than an object's keys, as every map here: a key policy on the
+    /// bridge would respell a name.
+    /// </summary>
+    internal static object ReviewWire(ReviewRule rule) => new
+    {
+        None = rule.IsNone,
+        rule.Required,
+        Environments = rule.Environments.Select(each => new { each.Name, each.Kind, each.Procedure, each.Address, each.Run }).ToArray(),
+    };
 }
