@@ -244,7 +244,10 @@ public static class SweepKind
     /// <summary>Nothing beyond the line.</summary>
     public const string Empty = "empty";
 
-    /// <summary>Every commit on a branch of the person's.</summary>
+    /// <summary>
+    /// Every commit on a branch of the person's; or, where a squash merge or a cherry-pick left them on none, its work there by
+    /// content (SQUASHTIDY1, <see cref="SweepItem.HeldBy"/>).
+    /// </summary>
     public const string Landed = "landed";
 
     /// <summary>Commits only Daoris's branches hold — kept, and named.</summary>
@@ -264,7 +267,7 @@ public static class SweepKind
 }
 
 /// <param name="Commits">Unlanded and carried: how many only Daoris holds. Landed: how many it carried.</param>
-/// <param name="Where">Landed: the first branch of the person's that holds it. Empty: the line. Carried: the landed branch whose pull request carried it.</param>
+/// <param name="Where">Landed: the first branch of the person's that holds it, or by content what holds its work. Empty: the line. Carried: the landed branch whose pull request carried it.</param>
 /// <param name="Detail">Git's own lines where they say more: the unlanded commits, the uncommitted count.</param>
 public sealed record SweepItem(
     string Repository, string Workspace, string Branch, string? Tree, string Kind, int Commits, string? Where, string? Detail)
@@ -273,6 +276,12 @@ public sealed record SweepItem(
 
     /// <summary>Carried: the landing entry whose completed pull request carried it (PLUGHOOK1a), on which its removal is kept.</summary>
     public LandedBranch? CarriedBy { get; init; }
+
+    /// <summary>
+    /// Landed by content (SQUASHTIDY1): where its work is, though no branch of the person's holds its commits, and how it was
+    /// found there. Null for a branch landed by ancestry, and for every other kind.
+    /// </summary>
+    public ContentHold? HeldBy { get; init; }
 }
 
 /// <summary>What the clean-up did with one branch, in the driver's words.</summary>
