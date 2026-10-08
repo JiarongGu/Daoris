@@ -785,12 +785,14 @@ test('tool download reaches a host only through the fetcher the dispatcher hands
  * `driver retry <quest>` without `--at` reads this machine's session records since RETRY1b (D126's RETRY1b note), to mark
  * the quest at its failures as the driver counts them. The same shape again: the count (`strikes.ts`) and the verb
  * (`driverconfig.ts`) import no network module (the file-local test above), and the records arrive through
- * `service.ts`, handed in by the `driver` row, `cli/driver.ts`, the one line where the two meet.
+ * `service.ts`, handed in by the `driver` row, `cli/driver.ts`, the one line where the two meet. `driver review` reads the
+ * registry's checkouts the same way since REVIEWENV1a, to look for a procedure in them (`reviews.ts` imports no network
+ * module either).
  */
-test('driver retry reads the session records only through the reader the dispatcher hands in', () => {
+test('driver retry and review read the service only through the readers the dispatcher hands in', () => {
   const row = readText(join(cliRoot, 'src', 'cli', 'driver.ts'));
-  assert.match(row, /import \{ sessionRecords \} from '\.\.\/service\.ts';/);
-  assert.match(row, /run: \(args\) => commandDriver\(args, \(\) => sessionRecords\(\)\)/);
+  assert.match(row, /import \{ registryCheckouts, sessionRecords \} from '\.\.\/service\.ts';/);
+  assert.match(row, /run: \(args\) => commandDriver\(args, \(\) => sessionRecords\(\), \(\) => registryCheckouts\(\)\)/);
 });
 
 /**

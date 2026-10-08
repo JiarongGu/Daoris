@@ -411,6 +411,8 @@ public sealed partial class DriverModule
             Parked = _loop.Parked.Latest,
             // Or one its last look held by the person's stop (SESSUX1b), released from the session that look named.
             Held = HeldQuest.From(_loop.Look.Latest),
+            // A review's procedure is looked for in the checkouts it reaches (REVIEWENV1a), as `SET_REVIEW` looks.
+            Registered = [.. snapshot.Repositories.Select(known => (known.Repository, (string?)known.Workspace, known.Root))],
         };
 
         if (proposals.Any(proposal => proposal.Kind is "agent" or "account"))

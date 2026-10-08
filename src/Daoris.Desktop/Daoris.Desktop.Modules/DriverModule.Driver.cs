@@ -213,12 +213,14 @@ public sealed partial class DriverModule
 
     /// <param name="retried">What *Try again* did (SESSUX1b): the quest, <c>marked</c> or <c>released</c>, and the stop's
     /// session for a release. Null for every other answer, which the bridge leaves out.</param>
-    private object State(object? retried = null)
+    /// <param name="reviewed">What a review's procedure look found (REVIEWENV1a), on the answer to <c>SET_REVIEW</c> alone.</param>
+    private object State(object? retried = null, object? reviewed = null)
     {
         var config = DriverConfig.Load(_loop.ConfigPath);
         return new
         {
             Retried = retried,
+            Reviewed = reviewed,
             // Whether the loop's service is up (LOOK2a): until it is, every route that reads it refuses *still coming up*,
             // so the status bar says starting rather than ready, which this file alone would claim.
             Ready = _loop.Service is not null,
@@ -277,6 +279,11 @@ public sealed partial class DriverModule
             WorkspaceLanguages = config.WorkspaceLanguages.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Workspace = p.Key, Language = p.Value }).ToArray(),
             LanguageTable = SessionLanguages.Table.Select(row => new { row.Code, row.Name }).ToArray(),
+            // The review rules as set (REVIEWENV1a), as rows for the same reason: a repository's may be none here.
+            Reviews = config.Reviews.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Repository = p.Key, Rule = ReviewWire(p.Value) }).ToArray(),
+            WorkspaceReviews = config.WorkspaceReviews.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Workspace = p.Key, Rule = ReviewWire(p.Value) }).ToArray(),
             Running = _loop.Processes.Running,
             // Who is driving Daoris's browser (BRW8): the running sessions handed a server that drives it.
             DrivingBrowser = _loop.Processes.DrivingBrowser,

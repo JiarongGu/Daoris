@@ -131,6 +131,46 @@ export async function sessionRecords(
 }
 
 /**
+ * Each registered repository's workspace and checkout on this machine, for `daoris driver review` to look for a procedure in
+ * (REVIEWENV1a, design §1.1): the registry the host answers, or why it could not be read. It never throws, so a terminal that
+ * cannot read it writes the rule and says it was not checked.
+ *
+ * @remarks
+ * Only a host on this machine is asked: a checkout's path is answered only to a local caller (D46), and the check is of
+ * this machine's checkouts. The type is `reviews.ts`'s `Checkout`, spelled here so this module imports nothing it holds.
+ */
+export async function registryCheckouts(
+  env: NodeJS.ProcessEnv = process.env, get: Get = fetch,
+): Promise<{ checkouts: { repository: string; workspace: string | null; root: string | null }[] } | { unread: string }> {
+  const url = env.DAORIS_SERVICE_URL?.trim().replace(/\/+$/, '');
+  if (!url) return { unread: 'no DAORIS_SERVICE_URL is set, so this terminal knows no host to ask (the desktop\'s own is usually http://localhost:5177)' };
+  if (!isLocalService(url)) {
+    return { unread: `DAORIS_SERVICE_URL names ${url}, which is not this machine, and only this machine's host answers where its checkouts are` };
+  }
+
+  const key = env.DAORIS_SERVICE_KEY;
+  let response: Response;
+  try {
+    response = await get(`${url}/api/registry`, { method: 'GET', headers: key ? { authorization: `Bearer ${key}` } : {} });
+  } catch (error) {
+    return { unread: `the service at ${url} did not answer: ${error instanceof Error ? error.message : String(error)}` };
+  }
+
+  const json: unknown = await response.json().catch(() => null);
+  if (!response.ok) return { unread: `the service at ${url} answered ${response.status}` };
+  if (!Array.isArray(json)) return { unread: `the service at ${url} answered no list of repositories` };
+  return {
+    checkouts: json
+      .filter((row): row is Record<string, unknown> => typeof row === 'object' && row !== null && typeof (row as Record<string, unknown>).repository === 'string')
+      .map((row) => ({
+        repository: row.repository as string,
+        workspace: typeof row.workspace === 'string' ? row.workspace : null,
+        root: typeof row.root === 'string' && row.root.length > 0 ? row.root : null,
+      })),
+  };
+}
+
+/**
  * How a fetcher may follow a host (TOOLS4, D121 §3.6). Absent, it follows redirects as `fetch` does, as a maker's
  * release channel always has been.
  */

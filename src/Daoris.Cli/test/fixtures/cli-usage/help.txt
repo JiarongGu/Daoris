@@ -142,6 +142,16 @@ daoris <command> [options]
                                                    to you in (--workspace <name>
                                                    for each repo there with none);
                                                    the window's is Appearance's
+                         review <repo> <environment> --kind local|deployed
+                                --procedure <path> [--address <url>] [--run "…"]
+                                                   where its work is shown to you
+                                                   before it lands (--workspace
+                                                   <name> too; --required: work
+                                                   is to wait for your look);
+                                                   none, --drop <environment>,
+                                                   --not-required, or --clear;
+                                                   declared only: nothing reads
+                                                   it yet
                          notify on|off           say so when a session parks,
                                                    or ends without you asking
                          intake <adapter>|off      answer an ask the declarations

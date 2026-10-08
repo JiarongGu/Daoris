@@ -94,6 +94,14 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("language", null, "work", "en")]
     [InlineData("language", "engine", null, "ZH")]
     [InlineData("language", null, "work", "--clear")]
+    // REVIEWENV1a (D154 point 2): a review rule for a repository or a workspace, as `daoris driver review` takes its words, a
+    // quoted command kept whole whatever it holds; the rule, the registry and the procedure are the driver's to judge.
+    [InlineData("review", "storefront", null, "dev --kind local --procedure README.md --address http://localhost:4200 --required")]
+    [InlineData("review", null, "work", "local --kind local --procedure README.md --address http://localhost:4200 --run \"npm run serve -- --port 4300\"")]
+    [InlineData("review", "media-api", null, "none")]
+    [InlineData("review", "storefront", null, "--drop dev")]
+    [InlineData("review", null, "work", "--not-required")]
+    [InlineData("review", "storefront", null, "--clear")]
     public void Across_a_cap_and_an_adapter_are_written_as_the_terminal_spells_them(string door, string? target, string? workspace, string value)
     {
         var (id, _) = Box().ProposeSetting(new SettingChange(door, target, workspace, value), "the person asked", session: "h1", Now);
@@ -172,6 +180,28 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
         Assert.Contains("never the window's", tool);
     }
 
+    /// <summary>
+    /// REVIEWENV1a (D154 points 1–2, design §1.7): the tool tells the helper what a review takes, that production is never
+    /// one, that `--required` is the person's say-so, and that nothing reads it yet, so it proposes the shape the box takes.
+    /// </summary>
+    [Fact]
+    public void The_tool_says_what_a_review_takes_that_production_is_never_one_and_that_nothing_reads_it_yet()
+    {
+        var method = typeof(Daoris.Knowledge.Mcp.KnowledgeTools).GetMethod(nameof(Daoris.Knowledge.Mcp.KnowledgeTools.ProposeSetting))!;
+        string Described(string name) => method.GetParameters().Single(parameter => parameter.Name == name)
+            .GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
+            .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
+        var tool = method.GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
+            .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
+
+        Assert.Contains("`<environment> --kind local|deployed --procedure <path> [--address <url>]", Described("value"));
+        Assert.Contains("a review", Described("target"));
+        Assert.Contains("a review", Described("workspace"));
+        Assert.Contains("never production", tool);
+        Assert.Contains("propose it only when they ask", tool);
+        Assert.Contains("declared only, nothing reads it yet", tool);
+    }
+
     /// <summary>The shape is checked here, and nothing more: what the route would say is the driver's.</summary>
     [Theory]
     [InlineData("push", "engine", null, null, "is not a door")]
@@ -208,6 +238,11 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("language", "engine", null, null, "`language` is set to `en` or `zh`, or `--clear`")]
     [InlineData("language", null, "work", "fr", "`language` is set to `en` or `zh`, or `--clear`")]
     [InlineData("language", "engine", null, "en zh", "`language` is set to `en` or `zh`, or `--clear`")]
+    // REVIEWENV1a: exactly one of a repository or a workspace, some words, and only the flags `daoris driver review` takes.
+    [InlineData("review", null, null, "none", "review rule is set for a repository or a workspace — name exactly one")]
+    [InlineData("review", "storefront", "work", "none", "review rule is set for a repository or a workspace — name exactly one")]
+    [InlineData("review", "storefront", null, null, "review is `<environment> --kind local|deployed --procedure <path>")]
+    [InlineData("review", "storefront", null, "dev --kind local --colour blue", "`none`, `--drop <environment>`, `--required|--not-required` or `--clear`")]
     [InlineData("retry", null, null, null, "names the quest its failed sessions parked or the person's stop holds")]
     [InlineData("retry", "q1 q2", null, null, "names the quest its failed sessions parked or the person's stop holds")]
     [InlineData("retry", "q1a2b3c4", "work", null, "names the quest its failed sessions parked or the person's stop holds")]

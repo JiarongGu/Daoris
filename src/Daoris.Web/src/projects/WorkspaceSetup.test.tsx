@@ -214,3 +214,46 @@ describe("a workspace's Setup", () => {
     expect(screen.getByText("None of its own. This machine's still hold.")).toBeInTheDocument();
   });
 });
+
+/**
+ * REVIEWENV1a (D154 point 2, design §1.7–§1.8): a workspace's *Review before landing*, among its Defaults, for every repository
+ * there that sets none of its own. Nothing set says today's behaviour; one set carries Clear and says it is declared only.
+ */
+describe("a workspace's review before landing", () => {
+  const withReview = (review: WorkspaceSetupProps['defaults']['review']) => at({
+    defaults: { line: { onSet: vi.fn() }, review },
+  });
+
+  it("names none set as Daoris's default, says today's behaviour, and offers it to be set with its terminal twin", async () => {
+    const onChange = vi.fn();
+    withReview({ onChange });
+
+    expect(section('Defaults')).toHaveAccessibleDescription(
+      "each checkout's own line (Daoris's default) · no review environment (Daoris's default)");
+    await userEvent.click(section('Defaults'));
+    expect(screen.getByText('None: work is offered to land once its quest is done.')).toBeInTheDocument();
+    expect(screen.getByText(code(
+      'daoris driver review --workspace aurora <environment> --kind local|deployed --procedure <path>'))).toBeInTheDocument();
+    const row = screen.getByText('Review before landing', { selector: 'span' }).closest('.\\@container') as HTMLElement;
+    await userEvent.click(within(row).getByRole('button', { name: 'Set for this workspace' }));
+    expect(screen.queryByRole('button', { name: 'None here' })).toBeNull();
+    await userEvent.type(screen.getByRole('textbox', { name: "The environment's name for aurora" }), 'dev');
+    await userEvent.click(screen.getByRole('radio', { name: 'Deployed' }));
+    await userEvent.type(screen.getByRole('textbox', { name: 'Its procedure in aurora, a path in the repository' }), 'README.md');
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onChange).toHaveBeenLastCalledWith({ put: { name: 'dev', kind: 'deployed', procedure: 'README.md' }, required: false });
+  });
+
+  it('opens on a rule it sets, says what it lets a step do and that nothing reads it yet, and clears it', async () => {
+    const onChange = vi.fn();
+    withReview({
+      set: { required: true, environments: [{ name: 'local', kind: 'local', procedure: 'README.md', address: 'http://localhost:4200' }] },
+      onChange,
+    });
+
+    expect(screen.getByText(/shows it in Daoris's browser at/)).toBeInTheDocument();
+    expect(screen.getByText(/Declared only: nothing reads it yet/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Clear' }));
+    expect(onChange).toHaveBeenLastCalledWith({ clear: true });
+  });
+});

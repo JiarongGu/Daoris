@@ -5,6 +5,7 @@ import { keys } from '../queries';
 import type { AccountWaitTick, Consideration, TrustHold } from '../signals';
 import type { LandingRule } from '../settings/Landings';
 import type { LanguageOption } from '../settings/Languages';
+import type { ReviewLook, ReviewRule } from '../settings/Reviews';
 import { call, refusedNotReady } from './call';
 
 // The driver's standing state and its dials (MOD3): what this machine drives and holds, what it says
@@ -102,6 +103,15 @@ export type DriverState = {
    * language is a row there and needs no catalogue here. Absent on a shell older than it, which offers no session language.
    */
   languageTable?: LanguageOption[];
+  /**
+   * The review rules as set (REVIEWENV1a, D154 point 2): where each repository's work is shown to the person before it lands,
+   * or none here — absent on a shell older than it, which offers no review row.
+   */
+  reviews?: { repository: string; rule: ReviewRule }[];
+  /** And by workspace, for each repository there that sets none of its own. */
+  workspaceReviews?: { workspace: string; rule: ReviewRule }[];
+  /** What a review's procedure look found, on the answer to `SET_REVIEW`'s put alone; absent on every other answer. */
+  reviewed?: ReviewLook | null;
 };
 
 export const useDriver = () => {

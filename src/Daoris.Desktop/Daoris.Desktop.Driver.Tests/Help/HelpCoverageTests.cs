@@ -278,6 +278,8 @@ public sealed partial class HelpCoverageTests
         ("standing", new Door("setting", "standing")),
         // LANG1c: the work's session language, for a repository or a workspace; LANG1c2 gave it the service's writer.
         ("language", new Door("setting", "language")),
+        // REVIEWENV1a: where work is shown to the person before it lands, with the service's writer in the same change.
+        ("review", new Door("setting", "review")),
         ("notify", new Door("setting", "notify")),
         ("intake", new Door("setting", "intake")),
         ("helper", new Door("setting", "helper")),
@@ -379,6 +381,8 @@ public sealed partial class HelpCoverageTests
         ("projects", "useSetLine", null, new Door("setting", "line")),
         ("projects", "useSetLanding", null, new Door("setting", "landing")),
         ("projects", "useSetLanguage", null, new Door("setting", "language")),
+        // REVIEWENV1a: *Review before landing*, on a repository's Setup and a workspace's Defaults.
+        ("projects", "useSetReview", null, new Door("setting", "review")),
         ("projects", "useSetStanding", null, new Door("setting", "standing")),
         ("projects", "useSetReadAcross", null, new Door("setting", "across")),
         ("projects", "useSetWriteAcross", null, new Door("setting", "across")),

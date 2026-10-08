@@ -178,6 +178,8 @@ with the version and date at release.
   leave behind.
 - An ask's proposal of a repository its words name says *named in the ask*, not *shares …*.
 - Answering every go-ahead a waiting session asked on its ask now sends that session on with your answers.
+- A workspace or repository can declare where its work is reviewed before it lands (Setup → *Review before
+  landing*, or `daoris driver review`); nothing waits on it yet.
 
 The first version: doctrine that installs, is checked, and flows back.
 

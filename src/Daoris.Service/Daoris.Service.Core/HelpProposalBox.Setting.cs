@@ -3,9 +3,9 @@ using System.Globalization;
 namespace Daoris.Knowledge;
 
 /// <summary>A setting Ask Daoris proposes (HELP1c, D89): one of the driver's doors, spelled as the CLI's verbs are.</summary>
-/// <param name="Door">One of <see cref="HelpProposalBox.Doors"/>: `drive`, `undrive`, `hold`, `resume`, `trees`, `line`, `landing`, `across`, `standing`, `language`, `intake`, `helper`, `strikes`, `retry`, `timeout`, `notify`, `cap` or `adapter`.</param>
+/// <param name="Door">One of <see cref="HelpProposalBox.Doors"/>: `drive`, `undrive`, `hold`, `resume`, `trees`, `line`, `landing`, `across`, `standing`, `language`, `review`, `intake`, `helper`, `strikes`, `retry`, `timeout`, `notify`, `cap` or `adapter`.</param>
 /// <param name="Target">The repository, for the doors that take one; for `retry`, the quest its failed sessions parked or the person's stop holds.</param>
-/// <param name="Workspace">The workspace, for a line, a landing, a session language or reading across set for a whole workspace.</param>
+/// <param name="Workspace">The workspace, for a line, a landing, a session language, a review rule or reading across set for a whole workspace.</param>
 /// <param name="Value">What it is set to, as the CLI takes it: `on`, a branch, `branch &lt;pattern&gt; --tidy`, `read off`, `write-to &lt;other&gt;`, `zh`, an agent…</param>
 public sealed record SettingChange(string Door, string? Target, string? Workspace, string? Value);
 
@@ -15,13 +15,17 @@ public sealed partial class HelpProposalBox
     /// <summary>
     /// The doors a setting may name, as the CLI's verbs spell them, in the order the driver's <c>HelpSettingProposals</c>
     /// lists them — every <c>daoris driver</c> verb but <c>list</c> (HELP9, D110; <c>retry</c> since HELP10; <c>standing</c>
-    /// since KNOWUSE1b; <c>language</c> since LANG1c2).
+    /// since KNOWUSE1b; <c>language</c> since LANG1c2; <c>review</c> since REVIEWENV1a).
     /// </summary>
     public static readonly IReadOnlyList<string> Doors =
     [
-        "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "standing", "language", "intake", "helper",
-        "strikes", "retry", "timeout", "notify", "cap", "adapter",
+        "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "standing", "language", "review", "intake",
+        "helper", "strikes", "retry", "timeout", "notify", "cap", "adapter",
     ];
+
+    /// <summary>The flags a review's words may carry, as <c>daoris driver review</c> takes them (REVIEWENV1a).</summary>
+    private static readonly IReadOnlyList<string> ReviewFlags =
+        ["--kind", "--procedure", "--address", "--run", "--drop", "--clear", "--required", "--not-required"];
 
     /// <summary>The most characters a standing answer holds — the driver's <c>DriverConfig.StandingLimit</c>, a deliberate copy.</summary>
     private const int StandingLimit = 2_000;
@@ -87,6 +91,18 @@ public sealed partial class HelpProposalBox
                 return value is not null && (value == "--clear" || Languages.Contains(value.ToLowerInvariant()))
                     ? null
                     : $"`language` is set to {string.Join(" or ", Languages.Select(code => $"`{code}`"))}, or `--clear`.";
+            case "review":
+                // REVIEWENV1a (D154 point 2): where work is shown to the person before it lands, as `daoris driver review` takes
+                // its words; the rule itself, the registry and the procedure are the driver's to judge, in the twins' words.
+                if (named == circle) return "a review rule is set for a repository or a workspace — name exactly one.";
+                // A quoted run, a command or a path with spaces, is one word whatever it holds.
+                return string.IsNullOrWhiteSpace(value)
+                       || System.Text.RegularExpressions.Regex.Replace(value, "\"(?:[^\"\\\\]|\\\\.)*\"", "quoted")
+                           .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                           .Any(word => word.StartsWith("--", StringComparison.Ordinal) && !ReviewFlags.Contains(word))
+                    ? "a review is `<environment> --kind local|deployed --procedure <path> [--address <url>] [--run \"<command>\"] "
+                      + "[--required|--not-required]`, `none`, `--drop <environment>`, `--required|--not-required` or `--clear`."
+                    : null;
             case "cap":
                 return int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var cap) && cap >= 1
                     ? null

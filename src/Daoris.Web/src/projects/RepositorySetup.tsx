@@ -5,6 +5,7 @@ import type { RuleListName } from '../settings/AgentRules';
 import { type Accepting, AcceptingNote, LandingField, type LandingRule, type RepositoryLanding } from '../settings/Landings';
 import { LanguageChoice, type LanguageOption, type RepositoryLanguage } from '../settings/Languages';
 import { LineField, type RepositoryLine } from '../settings/Lines';
+import { type RepositoryReview, type ReviewEdit, ReviewField, reviewRowSays, reviewSummary } from '../settings/Reviews';
 import { Button, CheckField, Chip, Icon, Segmented, SelectField, SettingRow } from '../ui';
 import { RepositoryRules, type RuleLists } from './RepositoryRules';
 import { Inheritable, landingSays, SetupSection } from './SetupParts';
@@ -37,6 +38,12 @@ export type WorkSetup = {
   /** The plugins here that land work, which a branch rule may hand its branch to (D100). */
   landers?: string[];
   onLanding?: (rule: LandingRule | undefined) => void;
+  /**
+   * Where its work is reviewed before it lands (REVIEWENV1a, D154 point 2), as the driver resolves it: its own, its
+   * workspace's, or none set; absent on a shell older than it, and no row is offered.
+   */
+  review?: RepositoryReview | null;
+  onReview?: (edit: ReviewEdit) => void;
 };
 
 /** The language its sessions write to the person in (LANG1c) and its standing answer (KNOWUSE1b). */
@@ -119,6 +126,9 @@ export function RepositorySetup({ repository, driving, work, sessions, reach, bu
   const lineOwn = line?.source === 'repository';
   const landing = work?.landing;
   const landingOwn = landing?.source === 'repository';
+  // Where its work is reviewed before it lands (REVIEWENV1a): its own, its workspace's, or none set, which is Daoris's.
+  const review = work?.onReview ? work.review : undefined;
+  const reviewOwn = review?.source === 'repository';
   const workParts = work && [
     ...(line
       ? [marked(
@@ -126,6 +136,7 @@ export function RepositorySetup({ repository, driving, work, sessions, reach, bu
           line.source === 'repository' ? 'repository' : line.source === 'workspace' ? 'workspace' : 'daoris')]
       : []),
     ...(landing ? [marked(landingSays(t, landing), landing.source === 'default' ? 'daoris' : landing.source)] : []),
+    ...(review ? [marked(reviewSummary(t, review.rule), review.rule && review.source ? review.source : 'daoris')] : []),
   ];
 
   // Sessions: the language they write in, then the standing answer.
@@ -166,7 +177,7 @@ export function RepositorySetup({ repository, driving, work, sessions, reach, bu
   // What opens on its own: a section holding a value set for this repository.
   const opensItself: Record<SetupSectionId, boolean> = {
     driving: false,
-    work: lineOwn || landingOwn,
+    work: lineOwn || landingOwn || reviewOwn,
     sessions: languageOwn || standing !== null,
     reach: readOwn || writesTo.length > 0 || ruleCount > 0,
   };
@@ -241,6 +252,28 @@ export function RepositorySetup({ repository, driving, work, sessions, reach, bu
               landers={work.landers ?? []}
               busy={busy}
               onLanding={work.onLanding}
+            />
+          )}
+          {review && work.onReview && (
+            <Inheritable
+              setHere={t('projects.setup.setHere')}
+              label={t('settings.review.label')}
+              twin={t('settings.review.twin.repository', { repository })}
+              why={t('settings.review.body')}
+              says={reviewRowSays(t, review.rule, { source: review.source, workspace: review.workspace })}
+              own={reviewOwn}
+              busy={busy}
+              wide
+              onClear={() => work.onReview?.({ clear: true })}
+              editor={() => (
+                <ReviewField
+                  name={repository}
+                  owner="repository"
+                  set={reviewOwn ? review.rule ?? undefined : undefined}
+                  busy={busy}
+                  onChange={(edit) => work.onReview?.(edit)}
+                />
+              )}
             />
           )}
         </>

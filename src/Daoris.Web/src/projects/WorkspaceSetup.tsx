@@ -4,6 +4,7 @@ import type { RuleListName } from '../settings/AgentRules';
 import { type Accepting, AcceptingNote, LandingField, type LandingRule } from '../settings/Landings';
 import { LanguageChoice, type LanguageOption } from '../settings/Languages';
 import { LineField } from '../settings/Lines';
+import { type ReviewEdit, ReviewField, type ReviewRule, reviewRowSays, reviewSummary } from '../settings/Reviews';
 import { shellWord } from '../shellWord';
 import { Button, Icon, Inline, PathText, Prose, Segmented, SettingRow, Tip } from '../ui';
 import { RepositoryRules, type RuleLists } from './RepositoryRules';
@@ -25,6 +26,8 @@ export type WorkspaceDefaults = {
   language?: { set?: string; table: LanguageOption[]; onSet: (code: string | undefined) => void } | null;
   /** Whether agents outside its repositories read their checkouts (READ1, D107): `daoris driver across --workspace`. */
   read?: { set?: boolean; onSet: (read: boolean | undefined) => void } | null;
+  /** Where its repositories' work is reviewed before it lands (REVIEWENV1a): `daoris driver review --workspace`. */
+  review?: { set?: ReviewRule; onChange: (edit: ReviewEdit) => void } | null;
 };
 
 /** Where it syncs (D48 §5), and Claude Code's rules for it (PERM1): its remote and its reach. */
@@ -80,7 +83,7 @@ const plain = (text: string) => text.replace(/`/g, '');
 export function WorkspaceSetup({ workspace, defaults, remote, busy = false, open, wiring: startWiring = false }: WorkspaceSetupProps) {
   const { t } = useTranslation();
   const daoris = (value: string) => t('projects.setup.marked.daoris', { value });
-  const { line, landing, language, read } = defaults;
+  const { line, landing, language, read, review } = defaults;
 
   const defaultsParts = [
     ...(line ? [line.set ? t('projects.setup.summary.line', { branch: line.set }) : daoris(t('projects.workspace.summary.noLine'))] : []),
@@ -95,6 +98,7 @@ export function WorkspaceSetup({ workspace, defaults, remote, busy = false, open
           ? daoris(t('projects.setup.summary.read'))
           : t(read.set ? 'projects.setup.summary.read' : 'projects.setup.summary.unread')]
       : []),
+    ...(review ? [review.set ? reviewSummary(t, review.set) : daoris(reviewSummary(t, null))] : []),
   ];
 
   const wired = remote.wiring?.remote ?? null;
@@ -108,7 +112,7 @@ export function WorkspaceSetup({ workspace, defaults, remote, busy = false, open
   ];
 
   const opensItself: Record<WorkspaceSection, boolean> = {
-    defaults: Boolean(line?.set || landing?.set || language?.set || read?.set !== undefined),
+    defaults: Boolean(line?.set || landing?.set || language?.set || read?.set !== undefined || review?.set),
     remote: Boolean(wired) || ruleCount > 0 || startWiring,
   };
 
@@ -191,6 +195,22 @@ export function WorkspaceSetup({ workspace, defaults, remote, busy = false, open
                   ]}
                   onChange={(choice) => !busy && read.onSet(choice === 'on')}
                 />
+              )}
+            />
+          )}
+          {review && (
+            <Inheritable
+              setHere={t('projects.workspace.setHere')}
+              label={t('settings.review.label')}
+              twin={t('settings.review.twin.workspace', { workspace: shellWord(workspace, '<workspace>') })}
+              why={plain(t('settings.review.body'))}
+              says={reviewRowSays(t, review.set, review.set ? { source: 'workspace', workspace } : undefined)}
+              own={review.set !== undefined}
+              busy={busy}
+              wide
+              onClear={() => review.onChange({ clear: true })}
+              editor={() => (
+                <ReviewField name={workspace} owner="workspace" set={review.set} busy={busy} onChange={review.onChange} />
               )}
             />
           )}

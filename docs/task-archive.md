@@ -12267,3 +12267,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SHOTPICK1 — `shot` takes the application's window, never the browser beside it** (tools). On the install (2026-10-08) `npm run desktop -- shot` said *2 matching windows are open; took the first* and photographed Daoris's own browser (`<page> - Chromium`, the same exe with `--daoris-browser`, D99) instead of the application (`Daoris (道衍)`); `--window "Daoris (道衍)"` failed in the capture script. With no `--window`, the capture takes the process without `--daoris-browser` (as `eval` does), and `--window browser` stays the way to the other. Contract: D99, CLAUDE.md's two traps. Proof: a test of the process choice with both present; a shot of the install.
 
 **Outcome** 2026-10-07: `shot` takes the application's process by id, chosen by command line (no `--type=`, no `--daoris-browser`), never the browser beside it; `--window browser` stays the way to the browser, and the capture script refuses a pid with no window. Detail: `tools/desktop.mjs`'s `shotTarget`, FIX-LOG SHOTPICK1; commits b933d004, 43bf8e59.
+
+
+## REVIEWENV1a — the review rule (2026-10-08, D154)
+
+> - [ ] **REVIEWENV1a — the review rule** (cli, driver, modules, web-settings, service). `reviews` and `workspaceReviews` in `driver.json`: both twins on one table, the refusals, each door's sentence, `daoris driver review`, the Setup rows, Ask Daoris's `setting` door, the room's table. Contract: §1.1–§1.3, §1.7–§1.8. Proof: `ReviewRulesTests` and `driverconfig.test.ts` cell for cell, module tests, vitest, `HelpSettingProposalTests`.
+
+**Outcome** 2026-10-07: the review rule is declared: `reviews` (per repository, a rule or `false`) and `workspaceReviews` in `driver.json`, the CLI's and the driver's readers held to one table, its refusals (a production name among them), and every door — `daoris driver review`, the Setup rows on a repository's and a workspace's page, `SET_REVIEW`, Ask Daoris's `review` door, the room's column — each saying nothing acts on it yet. Detail: D154's REVIEWENV1a note; commits b11ad027…d151c792.

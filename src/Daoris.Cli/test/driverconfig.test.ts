@@ -5,8 +5,11 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   DEFAULT_COOLOFF_MINUTES, SESSION_LANGUAGES, commandDriver, driverConfigPath, isBranchName, landingProblem, languageFor,
-  pausedAsk, pausedQuest, readDriverChoices, releasedFor, standingFor, writeAcrossProblem,
+  pausedAsk, pausedQuest, readDriverChoices, releasedFor, standingFor, writeAcrossProblem, writeDriverChoices,
 } from '../src/driverconfig.ts';
+import {
+  REVIEW_DECLARED_ONLY, applyReviewEdit, holdsProcedure, reviewFor, reviewRuleOf, reviewSays, type CheckoutsReader,
+} from '../src/reviews.ts';
 import type { RecordsReader } from '../src/strikes.ts';
 import { driverRows as csharpRows } from './_csharp.ts';
 import { makeFixture, captureError } from './_fixture.ts';
@@ -586,7 +589,7 @@ test('an unknown verb names the ones that exist', () => {
 
   assert.match(error.message, /unknown driver verb 'frobnicate'/);
   assert.match(
-    error.message, /list, drive, undrive, hold, resume, trees, line, landing, across, standing, language, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper/);
+    error.message, /list, drive, undrive, hold, resume, trees, line, landing, across, standing, language, review, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper/);
   fx.cleanup();
 });
 
@@ -1060,7 +1063,7 @@ test('language sets a repository\'s and a workspace\'s, replaces, lists and clea
   const listed = run(['list'], at(fx)).out;
   assert.match(listed, /language\s+Work-App\s+en \(English\)\s+\(set for it\)/);
   assert.match(listed, /language\s+workspace work\s+en \(English\)\s+\(for each repository there that sets none\)/);
-  assert.doesNotMatch(listed, /none set/);
+  assert.doesNotMatch(listed, /language\s+none set/);
   assert.equal(languageFor(readDriverChoices(at(fx)), 'other', 'WORK')?.source, 'workspace');
 
   const cleared = run(['language', 'work-app', '--clear'], at(fx));
@@ -1456,5 +1459,238 @@ test('the setting survives edits by verbs that do not know it', () => {
   assert.deepEqual(held.readAcross, { engine: false });
   assert.deepEqual(held.workspaceReadAcross, { aurora: false });
   assert.deepEqual(held.writeAcross, { plugins: ['engine'] });
+  fx.cleanup();
+});
+
+/**
+ * The review rule, `reviews` and `workspaceReviews` (REVIEWENV1a, D154 point 2, the review-environment design §1.1–§1.3,
+ * §1.7). 🔴 A TWIN with the driver's `ReviewRules`: both hold ONE table, the driver suite's `fixtures/review-rules.json`, cell for cell — the
+ * reading and its precedence, every refusal in the same words, each door's sentences, the edits both doors make, and what a
+ * checkout holding a procedure means. The driver's `ReviewRulesTests` reads the same file.
+ */
+const REVIEW_TABLE = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
+  'Daoris.Desktop.Driver.Tests', 'fixtures', 'review-rules.json'), 'utf8')) as {
+  read: [name: string, file: string, repository: string, workspace: string | null, source: string | null, rule: string | null][];
+  problems: [name: string, value: string, problem: string | null][];
+  says: [name: string, rule: string, sentences: string[]][];
+  edits: [name: string, file: string, edit: string, after: string | null, refusal: string | null][];
+  procedures: [name: string, files: string[], procedure: string, holds: boolean][];
+};
+
+test('a review rule resolves as the driver resolves it (the shared table)', () => {
+  const fx = makeFixture('driver-review-read');
+  for (const [name, file, repository, workspace, source, rule] of REVIEW_TABLE.read) {
+    writeFileSync(at(fx), file, 'utf8');
+    const read = reviewFor(readDriverChoices(at(fx)), repository, workspace);
+    assert.equal(read?.source ?? null, source, name);
+    assert.deepEqual(read === null ? null : read.rule, rule === null ? null : JSON.parse(rule), `${name}: the rule`);
+  }
+  fx.cleanup();
+});
+
+test('a review rule\'s first problem is the driver\'s, in its words (the shared table)', () => {
+  for (const [name, value, problem] of REVIEW_TABLE.problems) {
+    assert.equal(reviewRuleOf(JSON.parse(value)).problem, problem, name);
+  }
+});
+
+test('each door says what a review rule lets a step do, in the driver\'s words (the shared table)', () => {
+  for (const [name, rule, sentences] of REVIEW_TABLE.says) {
+    const read = reviewRuleOf(JSON.parse(rule));
+    assert.equal(read.problem, null, `${name}: the rule reads`);
+    assert.deepEqual(reviewSays(read.rule!), sentences, name);
+  }
+});
+
+test('a review edit writes what the driver writes, or refuses in its words (the shared table)', () => {
+  const fx = makeFixture('driver-review-edits');
+  for (const [name, file, edit, after, refusal] of REVIEW_TABLE.edits) {
+    writeFileSync(at(fx), file, 'utf8');
+    const choices = readDriverChoices(at(fx));
+    if (refusal !== null) {
+      assert.equal(captureError(() => applyReviewEdit(choices, JSON.parse(edit))).message, refusal, name);
+      continue;
+    }
+
+    writeDriverChoices(at(fx), { ...choices, ...applyReviewEdit(choices, JSON.parse(edit)) });
+    const written = JSON.parse(readFileSync(at(fx), 'utf8'));
+    const maps = Object.fromEntries(['reviews', 'workspaceReviews'].filter((key) => key in written).map((key) => [key, written[key]]));
+    assert.deepEqual(maps, JSON.parse(after!), name);
+  }
+  fx.cleanup();
+});
+
+test('a checkout holds a procedure only as a regular file at that path (the shared table)', () => {
+  for (const [name, files, procedure, holds] of REVIEW_TABLE.procedures) {
+    const fx = makeFixture('driver-review-procedure');
+    for (const file of files) fx.write(file, '# how\n');
+    assert.equal(holdsProcedure(fx.root, procedure), holds, name);
+    fx.cleanup();
+  }
+});
+
+/** Each repository's checkout as the registry would answer it to `driver review`, through the one module that reads it. */
+function checkoutsOf(rows: { repository: string; workspace: string; root: string | null }[]): CheckoutsReader {
+  return async () => ({ checkouts: rows });
+}
+
+async function runReview(argv: string[], path: string, checkouts: CheckoutsReader): Promise<{ code: number; out: string }> {
+  const saved = process.env.DAORIS_DRIVER_CONFIG;
+  process.env.DAORIS_DRIVER_CONFIG = path;
+  const lines: string[] = [];
+  try {
+    const code = await commandDriver({
+      root: process.cwd(), argv, write: (line) => lines.push(line), packageRoot: process.cwd(),
+    }, undefined, checkouts);
+    return { code, out: lines.join('\n') };
+  } finally {
+    if (saved === undefined) delete process.env.DAORIS_DRIVER_CONFIG;
+    else process.env.DAORIS_DRIVER_CONFIG = saved;
+  }
+}
+
+async function reviewRefusal(argv: string[], path: string, checkouts: CheckoutsReader): Promise<string> {
+  try {
+    await runReview(argv, path, checkouts);
+  } catch (error) {
+    return (error as Error).message;
+  }
+  throw new Error('expected a refusal');
+}
+
+/**
+ * The terminal's door onto the review rule (REVIEWENV1a, D50; design §1.7): an environment added or replaced, keeping the
+ * others; `none`; `--drop`; `--required|--not-required`; `--clear`; and `list`. Each says what it lets a step do, in the
+ * driver's sentences, and that nothing reads it yet.
+ */
+test('review declares a repository\'s environment, says what it lets a step do, checks the procedure, and lists it', async () => {
+  const fx = makeFixture('driver-review');
+  const checkout = join(fx.root, 'storefront');
+  fx.write('storefront/README.md', '# Run it against dev\n');
+  const checkouts = checkoutsOf([{ repository: 'storefront', workspace: 'work', root: checkout }]);
+  assert.match(run(['list'], at(fx)).out, /review\s+none set/);
+
+  const said = await runReview(['review', 'storefront', 'dev', '--kind', 'local', '--procedure', 'README.md',
+    '--address', 'http://localhost:4200', '--required'], at(fx), checkouts);
+  assert.equal(said.code, 0);
+  assert.deepEqual(JSON.parse(readFileSync(at(fx), 'utf8')).reviews, {
+    storefront: { required: true, environments: [{ name: 'dev', kind: 'local', procedure: 'README.md', address: 'http://localhost:4200' }] },
+  });
+  assert.match(said.out, /`storefront` declares the review environment `dev`, its default/);
+  assert.match(said.out, /Before work here lands, it is shown to you in `dev` and waits for you to say it is right\./);
+  assert.match(said.out, /shows it in Daoris's browser at `http:\/\/localhost:4200`; your own servers and processes are not touched/);
+  assert.match(said.out, new RegExp(REVIEW_DECLARED_ONLY.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.match(said.out, /`README\.md` is in `storefront`'s checkout here/);
+
+  const listed = run(['list'], at(fx)).out;
+  assert.match(listed, /review\s+storefront\s+dev \(local, http:\/\/localhost:4200, by README\.md\), required before landing/);
+  assert.doesNotMatch(listed, /review\s+none set/);
+  fx.cleanup();
+});
+
+test('review refuses a procedure the repository\'s checkout does not hold, and writes nothing', async () => {
+  const fx = makeFixture('driver-review-missing');
+  const checkout = join(fx.root, 'storefront');
+  fx.write('storefront/README.md', '# Run it\n');
+  const message = await reviewRefusal(['review', 'storefront', 'dev', '--kind', 'deployed', '--procedure', 'docs/deploying-to-dev.md'],
+    at(fx), checkoutsOf([{ repository: 'StoreFront', workspace: 'work', root: checkout }]));
+
+  assert.match(message, /`docs\/deploying-to-dev\.md` is not a file in `storefront`'s checkout here/);
+  assert.match(message, /Nothing was written/);
+  assert.throws(() => readFileSync(at(fx)));
+  fx.cleanup();
+});
+
+test('review writes a rule it could not check, and says so', async () => {
+  const fx = makeFixture('driver-review-unchecked');
+  const nowhere = await runReview(['review', 'storefront', 'dev', '--kind', 'deployed', '--procedure', 'README.md'],
+    at(fx), checkoutsOf([{ repository: 'storefront', workspace: 'work', root: null }]));
+  assert.match(nowhere.out, /Not checked: `storefront` has no checkout on this machine; a set-up step sits until its tree holds `README\.md`/);
+
+  const unread = await runReview(['review', 'media-api', 'dev', '--kind', 'deployed', '--procedure', 'README.md'],
+    at(fx), async () => ({ unread: 'no DAORIS_SERVICE_URL is set' }));
+  assert.match(unread.out, /Not checked: the registry could not be read — no DAORIS_SERVICE_URL is set/);
+  assert.deepEqual(Object.keys(JSON.parse(readFileSync(at(fx), 'utf8')).reviews), ['storefront', 'media-api']);
+  fx.cleanup();
+});
+
+test('review for a workspace names each repository there whose checkout lacks the procedure, and writes the rule', async () => {
+  const fx = makeFixture('driver-review-workspace');
+  fx.write('storefront/README.md', '# Run it\n');
+  fx.write('media-api/src/main.ts', '');
+  const said = await runReview(['review', '--workspace', 'work', 'local', '--kind', 'local', '--procedure', 'README.md',
+    '--address', 'http://localhost:4200', '--run', 'npm run serve'], at(fx), checkoutsOf([
+    { repository: 'storefront', workspace: 'work', root: join(fx.root, 'storefront') },
+    { repository: 'media-api', workspace: 'Work', root: join(fx.root, 'media-api') },
+    { repository: 'elsewhere', workspace: 'home', root: join(fx.root, 'elsewhere') },
+  ]));
+
+  assert.deepEqual(JSON.parse(readFileSync(at(fx), 'utf8')).workspaceReviews, {
+    work: { environments: [{ name: 'local', kind: 'local', procedure: 'README.md', address: 'http://localhost:4200', run: 'npm run serve' }] },
+  });
+  assert.match(said.out, /repositories in the workspace `work` that set none of their own declare the review environment `local`/);
+  assert.match(said.out, /may run `npm run serve` in its tree on a port nobody holds, without asking you each time/);
+  assert.match(said.out, /`media-api` holds no `README\.md` here: its set-up steps sit until it does/);
+  assert.doesNotMatch(said.out, /`storefront` holds no/);
+  assert.doesNotMatch(said.out, /elsewhere/);
+  assert.match(run(['list'], at(fx)).out, /review\s+workspace work\s+local \(local, http:\/\/localhost:4200, by README\.md, runs `npm run serve`\), on a task's asking\s+\(for each repository there that sets none\)/);
+  fx.cleanup();
+});
+
+test('review none, --drop, --not-required and --clear each change only what they name, and say it', async () => {
+  const fx = makeFixture('driver-review-edit');
+  const checkouts = checkoutsOf([]);
+  await runReview(['review', 'storefront', 'local', '--kind', 'local', '--procedure', 'README.md', '--address', 'http://localhost:4200', '--required'], at(fx), checkouts);
+  await runReview(['review', 'storefront', 'dev', '--kind', 'deployed', '--procedure', 'docs/deploying-to-dev.md'], at(fx), checkouts);
+
+  const dropped = await runReview(['review', 'storefront', '--drop', 'local'], at(fx), checkouts);
+  assert.match(dropped.out, /`storefront` no longer declares `local`; `dev` is its default now/);
+  assert.deepEqual(JSON.parse(readFileSync(at(fx), 'utf8')).reviews.storefront.environments.map((each: { name: string }) => each.name), ['dev']);
+
+  const relaxed = await runReview(['review', 'storefront', '--not-required'], at(fx), checkouts);
+  assert.equal('required' in JSON.parse(readFileSync(at(fx), 'utf8')).reviews.storefront, false);
+  assert.match(relaxed.out, /When a task asks for it, work here may be shown to you in `dev`; nothing waits for it\./);
+
+  const none = await runReview(['review', 'media-api', 'none'], at(fx), checkouts);
+  assert.equal(JSON.parse(readFileSync(at(fx), 'utf8')).reviews['media-api'], false);
+  assert.match(none.out, /No review environment here, whatever its workspace says/);
+  assert.match(run(['list'], at(fx)).out, /review\s+media-api\s+none here, whatever its workspace says/);
+
+  const cleared = await runReview(['review', 'storefront', '--clear'], at(fx), checkouts);
+  assert.equal('storefront' in JSON.parse(readFileSync(at(fx), 'utf8')).reviews, false);
+  assert.match(cleared.out, /`storefront` takes its workspace's review rule again, else none/);
+  fx.cleanup();
+});
+
+test('review refuses production, a missing name and an unknown form, in the driver\'s words, and writes nothing', async () => {
+  const fx = makeFixture('driver-review-refused');
+  const checkouts = checkoutsOf([]);
+  assert.equal(await reviewRefusal(['review', 'storefront', 'prod', '--kind', 'deployed', '--procedure', 'README.md'], at(fx), checkouts),
+    '`prod` reads as production, and production is never a review environment — name where work is looked at before it lands, such as `local` or `dev`.');
+  assert.match(await reviewRefusal(['review'], at(fx), checkouts), /`driver review` needs <repository>\|--workspace <name>/);
+  assert.match(await reviewRefusal(['review', 'storefront'], at(fx), checkouts), /`driver review` needs <repository>\|--workspace <name>/);
+  assert.equal(await reviewRefusal(['review', 'storefront', 'dev', '--procedure', 'README.md'], at(fx), checkouts),
+    'an environment\'s `kind` is `local` or `deployed`.');
+  assert.equal(await reviewRefusal(['review', 'storefront', 'none', '--required'], at(fx), checkouts),
+    'one change at a time: add an environment (and whether it is required), drop one, say none, say whether it is required, or clear.');
+  assert.throws(() => readFileSync(at(fx)));
+  fx.cleanup();
+});
+
+test('a review rule is written only once set, and a verb that knows nothing of it preserves it', async () => {
+  const fx = makeFixture('driver-review-preserve');
+  run(['drive', 'storefront'], at(fx));
+  const fresh = JSON.parse(readFileSync(at(fx), 'utf8'));
+  assert.equal('reviews' in fresh, false);
+  assert.equal('workspaceReviews' in fresh, false);
+
+  await runReview(['review', 'storefront', 'none'], at(fx), checkoutsOf([]));
+  await runReview(['review', '--workspace', 'work', 'dev', '--kind', 'deployed', '--procedure', 'README.md'], at(fx), checkoutsOf([]));
+  run(['hold', 'storefront'], at(fx));
+  run(['language', 'storefront', 'zh'], at(fx));
+
+  const kept = JSON.parse(readFileSync(at(fx), 'utf8'));
+  assert.deepEqual(kept.reviews, { storefront: false });
+  assert.deepEqual(kept.workspaceReviews, { work: { environments: [{ name: 'dev', kind: 'deployed', procedure: 'README.md' }] } });
   fx.cleanup();
 });

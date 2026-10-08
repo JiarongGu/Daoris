@@ -4,6 +4,7 @@ import { keys } from '../queries';
 import type { LineChange, RepositoryLine } from '../settings/Lines';
 import type { LandingChange, RepositoryLanding } from '../settings/Landings';
 import type { LanguageChange, RepositoryLanguage } from '../settings/Languages';
+import type { RepositoryReview, ReviewChange } from '../settings/Reviews';
 import type { BranchDiscard, LandedBranch, SweepBranch } from '../settings/Sweep';
 import type { LinePull, RebaseBranch, SyncInclude, SyncPlan, SyncRepository } from '../settings/Sync';
 import { call, lookBound, pressBound } from './call';
@@ -23,7 +24,11 @@ export const useLines = () => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: keys.lines,
-    queryFn: () => call<{ lines: RepositoryLine[]; landings?: RepositoryLanding[]; languages?: RepositoryLanguage[] }>('LINES'),
+    queryFn: () => call<{
+      lines: RepositoryLine[]; landings?: RepositoryLanding[]; languages?: RepositoryLanguage[];
+      // Where each repository's work is reviewed before it lands, as the driver resolves it (REVIEWENV1a); absent on an older shell.
+      reviews?: RepositoryReview[];
+    }>('LINES'),
     enabled: isAvailable,
   });
 };
@@ -278,6 +283,23 @@ export const useSetLanguage = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (change: LanguageChange) => call<DriverState>('SET_LANGUAGE', change),
+    onSuccess: (state) => {
+      client.setQueryData(keys.driver, state);
+      void client.invalidateQueries({ queryKey: keys.lines });
+    },
+  });
+};
+
+/**
+ * Change where a repository's work is reviewed before it lands, or a workspace's (REVIEWENV1a, D154 point 2): the twins' edit,
+ * over the file `daoris driver review` edits (D50). An environment put has its procedure looked for in the checkouts it
+ * reaches, and the answer's `reviewed` says what was found. What each repository resolves to moves with it, so the lines are
+ * asked again. A refusal is the driver's sentence, verbatim. Declared only: nothing reads it yet.
+ */
+export const useSetReview = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (change: ReviewChange) => call<DriverState>('SET_REVIEW', change),
     onSuccess: (state) => {
       client.setQueryData(keys.driver, state);
       void client.invalidateQueries({ queryKey: keys.lines });
