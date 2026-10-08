@@ -19,6 +19,18 @@ export const PROPOSED: Ask = {
   quests: [],
 };
 
+/**
+ * Its sentence names a repository (ASKNAME1), proposed first with that name alone as the evidence, here in another case
+ * than the sentence's; then a repository whose declaration shares one of its words.
+ */
+export const NAMES_ITS_REPOSITORY: Ask = {
+  ...PROPOSED, id: '9d8c7b6a5f4e', sentence: 'In Lantern: the glow fades a frame late.', links: [], attachments: [],
+  proposal: [
+    { repository: 'lantern', score: 4, matched: ['Lantern'] },
+    { repository: 'engine', score: 3, matched: ['frame'] },
+  ],
+};
+
 /** Nothing in the circle's declarations shares its words — the tier says so, and proposes nobody. */
 export const UNMATCHED: Ask = {
   ...PROPOSED, id: '0b9f3c21aa77', sentence: 'Tidy the release notes.', proposal: [], links: [], attachments: [],
