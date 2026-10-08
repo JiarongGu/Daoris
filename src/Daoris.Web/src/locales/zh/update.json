@@ -26,5 +26,7 @@
   "update.why.previous": "上次更新留下的文件无法清除。",
   "update.why.exited": "新构建在启动完成前就退出了。",
   "update.why.start": "新构建无法启动。",
-  "update.why.interrupted": "更新被中断，已移动的文件都已放回原处。"
+  "update.why.interrupted": "更新被中断，已移动的文件都已放回原处。",
+  "update.why.move": "有文件因被占用以外的原因无法移动，已移动的文件都已放回原处；daoris-driver update 会说明原因。",
+  "update.why.error": "启动器在把构建换上之前出错，之前的构建照常运行；请重新暂存这个构建再试。"
 }

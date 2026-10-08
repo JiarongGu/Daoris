@@ -12281,3 +12281,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **MCPDISCOVER1 — the connector answers `server/discover` or stays quiet about it** (service). Every connector start on the install logs a warning: *received request for method 'server/discover', but no handler is available* with its exception, one per session, filling Settings → Logs. Answer it if the protocol defines it for this server, or log it once at debug. Contract: the machine-log design §4 (a warning is something a person should look at). Proof: an MCP host test that the request leaves no warning.
 
 **Outcome** 2026-10-07: the connector answers the harness's `server/discover` probe (the 2026-07-28 protocol revision's) itself, with the same method-not-found error and one debug line instead of two warnings per session; another unknown method still warns. Taking the 2.x SDK, which answers it, is MCPSDK2. Detail: FIX-LOG MCPDISCOVER1, the machine-log design §4's note; commits 170d6748, bab54755.
+
+
+## SWAP2c — the update banner has words for `move` and `error` (2026-10-08, D139)
+
+> - [ ] **SWAP2c — the update banner has words for `move` and `error`** (web-shell; after SWAP2). SWAP2 added the codes `move` (a move failed for a reason other than a hold) and `error` (the launcher failed with nothing under way); the banner and Settings show the journal's English detail for them, in Chinese too. Add `update.why.move` and `update.why.error` to both catalogues and to `UpdateBanner.tsx`'s set. Contract: D139, D41. Proof: a vitest per code, both catalogues.
+
+**Outcome** 2026-10-07: `update.why.move` and `update.why.error` in both catalogues and the banner's set; Settings reads them through `i18n.exists`; a test per code in both languages, and a guard that the banner words every reason the catalogue holds. Follow-up: SWAP2d. Detail: commits 30ecdd96, 5821f346.

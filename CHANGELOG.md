@@ -181,6 +181,7 @@ with the version and date at release.
 - A workspace or repository can declare where its work is reviewed before it lands (Setup → *Review before
   landing*, or `daoris driver review`); nothing waits on it yet.
 - Settings → Logs no longer fills with a warning about `server/discover` for every session.
+- The update banner says in your language why an update was put back or refused for its two newest reasons.
 
 The first version: doctrine that installs, is checked, and flows back.
 
