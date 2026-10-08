@@ -144,6 +144,12 @@ public static class HandedSections
 
     public const string Proposing = "proposing";
 
+    /// <summary>
+    /// A set-up step's own instruction (REVIEWENV1c2): the environment it shows its chain's work in, as the review rule set on this
+    /// machine declares it, and how to show it and say it. Counted with what the quest carries before this section was its own.
+    /// </summary>
+    public const string SetUp = "set-up";
+
     /// <summary>Never writing outside the repository, and what may be written where the person declared it.</summary>
     public const string Boundary = "boundary";
 

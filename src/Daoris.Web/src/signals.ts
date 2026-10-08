@@ -173,8 +173,10 @@ export function sittingBecause(considered: readonly Consideration[], quest: stri
  * change (D48 §6). Only the verdicts whose words need nothing the page lacks have a translation
  * (`NotDrivable`, `Held`, `NoRoot`), `Stopped`, whose session the tick names as a fact (`heldBy`,
  * SESSUX1d), `Exhausted`, whose number of failed sessions it names (`strikes`, SESSUX1i), `Paused`, whose ask or
- * quest it names (`pausedBy`, PAUSE1e), a `Blocked` hold that is an update's drain (`forUpdate`, UPDATE1), and
- * `TakenElsewhere`, whose take it names (`takenBy`, CARRY2c). The rest
+ * quest it names (`pausedBy`, PAUSE1e), a `Blocked` hold that is an update's drain (`forUpdate`, UPDATE1),
+ * `TakenElsewhere`, whose take it names (`takenBy`, CARRY2c), and `CannotShow` (REVIEWENV1c2), a set-up step with nowhere to
+ * show its work here, said in the reader's language with the driver's sentence beneath as written, since it names an
+ * environment, an address and the door that declares one, which the tick does not carry. The rest
  * keep the driver's words, since their sentences name a session or a cap the tick does not carry, and
  * so does a verdict the page has not heard of, and a stop, a park or a take on a shell that names no session,
  * number or machine. English passes the driver's sentence through as its only copy, as the rules' defaults do

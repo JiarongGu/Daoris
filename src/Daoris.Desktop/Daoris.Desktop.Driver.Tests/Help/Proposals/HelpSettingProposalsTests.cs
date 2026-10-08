@@ -102,8 +102,9 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
 
     /// <summary>
     /// REVIEWENV1a (D154 point 2, design §1.7): a review rule for a registered repository or a workspace, in the terminal's
-    /// words with a quoted command kept whole, judged by the twin's table and planned with what it lets a step do and that
-    /// nothing reads it yet; the procedure looked for in each checkout it reaches, as the screen and the terminal look.
+    /// words with a quoted command kept whole, judged by the twin's table and planned with what it lets a step do and what the
+    /// landing's gate does with it (REVIEWENV1c2), nothing of it after none; the procedure looked for in each checkout it
+    /// reaches, as the screen and the terminal look.
     /// </summary>
     [Theory]
     [InlineData("engine", null, "dev --kind local --procedure README.md --address http://localhost:4200 --required",
@@ -126,7 +127,10 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         Assert.Null(plan.Refusal);
         Assert.Equal(terminal, plan.Terminal);
         Assert.Contains(says, plan.Describe);
-        if (value != "--clear") Assert.Contains(ReviewRules.DeclaredOnly, plan.Describe);
+        // Nothing waits where a repository has none, and a clear says what it hands back to.
+        if (value is not ("--clear" or "none")) Assert.Contains(ReviewRules.Waiting, plan.Describe);
+        else Assert.DoesNotContain(ReviewRules.Waiting, plan.Describe);
+        Assert.DoesNotContain("nothing reads it yet", plan.Describe);
         Assert.NotNull(plan.Apply);
     }
 

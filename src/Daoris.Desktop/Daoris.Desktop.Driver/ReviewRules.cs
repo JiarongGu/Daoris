@@ -64,7 +64,8 @@ public sealed record ReviewEdit
 /// <remarks>
 /// <para>A TWIN with the CLI's <c>reviews.ts</c>: both hold one table, this suite's tests' <c>fixtures/review-rules.json</c>, cell
 /// for cell (<c>ReviewRulesTests</c> and <c>driverconfig.test.ts</c>): the reading and its precedence, every refusal in the
-/// same words, each door's sentences, the edits, and what a checkout holding a procedure means.</para>
+/// same words, each door's sentences and what each says after them of the gate, the edits, and what a checkout holding a
+/// procedure means.</para>
 ///
 /// <para>Nothing here composes a step, gates a landing or serves anything: the gate (<see cref="ReviewGate"/>) and the planner's
 /// sit (<see cref="ReviewSetUps"/>) read it since REVIEWENV1c, and the intake's composing is REVIEWENV1f's.</para>
@@ -81,10 +82,14 @@ public static class ReviewRules
     public static readonly IReadOnlyList<string> Production = ["production", "prod", "prd", "live"];
 
     /// <summary>
-    /// Said by each door after what the rule lets a step do. The gate reads the rule since REVIEWENV1c, so its words are owed a
-    /// change at every door together (this, the CLI's <c>REVIEW_DECLARED_ONLY</c> and the page's catalogue), never at one alone.
+    /// Said by each door after what the rule lets a step do (REVIEWENV1c2, through <see cref="Gate"/>): what the landing's gate
+    /// does with it since REVIEWENV1c, the person's verdict by the terminal's door, and that the intake composes no set-up step
+    /// yet (REVIEWENV1f). The CLI's <c>REVIEW_WAITING</c> and the page's <c>settings.review.says.waiting</c>, held to the shared
+    /// table's <c>gate</c> rows: the doors' words change together, never at one alone.
     /// </summary>
-    public const string DeclaredOnly = "Declared only: nothing reads it yet, so no set-up step is composed and no landing waits for it.";
+    public const string Waiting = "Where work here waits for your review, it lands only once you say it is reviewed, "
+        + "`daoris-driver quest review <quest> reviewed`, or skip the review, `daoris-driver quest review <quest> skip`. "
+        + "No set-up step is composed for you yet.";
 
     /// <summary>What stands where nothing is set anywhere (design §1.8): today's behaviour, said as such.</summary>
     public const string NoneSet = "None: work is offered to land once its quest is done.";
@@ -301,6 +306,13 @@ public static class ReviewRules
         var ticked = names.Select(name => $"`{name}`").ToList();
         return ticked.Count <= 1 ? string.Concat(ticked) : $"{string.Join(", ", ticked.Take(ticked.Count - 1))} or {ticked[^1]}";
     }
+
+    /// <summary>
+    /// What each door says after the rule's own sentences (REVIEWENV1c2): what the landing's gate does with work that waits for the
+    /// person's review (<see cref="Waiting"/>); nothing after <see cref="ReviewRule.None"/>, where nothing waits. The CLI's
+    /// <c>reviewGate</c>, by the shared table's <c>gate</c> rows.
+    /// </summary>
+    public static IReadOnlyList<string> Gate(ReviewRule rule) => rule.IsNone ? [] : [Waiting];
 
     /// <summary>
     /// What each door says as a rule is set (design §1.7): whether work waits for the person's look and where, then what a

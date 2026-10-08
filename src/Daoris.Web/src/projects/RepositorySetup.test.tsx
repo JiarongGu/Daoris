@@ -339,7 +339,7 @@ describe("a repository's review before landing", () => {
     expect(within(review).getByRole('button', { name: 'Set for this repository' })).toBeInTheDocument();
   });
 
-  it("says its workspace's rule and that it is declared only, and sets one of its own or none in place", async () => {
+  it("says its workspace's rule and what the gate does with it, and sets one of its own or none in place", async () => {
     const onReview = vi.fn();
     draw(withReview({
       repository: 'engine', workspace: 'work', source: 'workspace',
@@ -349,7 +349,9 @@ describe("a repository's review before landing", () => {
     const review = row(section('Line and landing'), 'Review before landing');
 
     expect(review).toHaveTextContent('Before work here lands, it is shown to you in dev and waits for you to say it is right.');
-    expect(review).toHaveTextContent('Declared only: nothing reads it yet');
+    // What the landing's gate does with it since REVIEWENV1c (REVIEWENV1c2), never that nothing reads it.
+    expect(review).toHaveTextContent('Where work here waits for your review, it lands only once you say it is reviewed');
+    expect(review).not.toHaveTextContent('Declared only');
     expect(review).toHaveTextContent('From the workspace work.');
     await userEvent.click(within(review).getByRole('button', { name: 'Set for this repository' }));
     await userEvent.click(within(review).getByRole('button', { name: 'None here' }));

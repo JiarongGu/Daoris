@@ -244,7 +244,7 @@ describe("a workspace's review before landing", () => {
     expect(onChange).toHaveBeenLastCalledWith({ put: { name: 'dev', kind: 'deployed', procedure: 'README.md' }, required: false });
   });
 
-  it('opens on a rule it sets, says what it lets a step do and that nothing reads it yet, and clears it', async () => {
+  it('opens on a rule it sets, says what it lets a step do and what the gate does with it, and clears it', async () => {
     const onChange = vi.fn();
     withReview({
       set: { required: true, environments: [{ name: 'local', kind: 'local', procedure: 'README.md', address: 'http://localhost:4200' }] },
@@ -252,7 +252,8 @@ describe("a workspace's review before landing", () => {
     });
 
     expect(screen.getByText(/shows it in Daoris's browser at/)).toBeInTheDocument();
-    expect(screen.getByText(/Declared only: nothing reads it yet/)).toBeInTheDocument();
+    expect(screen.getByText(/Where work here waits for your review, it lands only once you say it is reviewed/)).toBeInTheDocument();
+    expect(screen.queryByText(/Declared only: nothing reads it yet, so no set-up step/)).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Clear' }));
     expect(onChange).toHaveBeenLastCalledWith({ clear: true });
   });

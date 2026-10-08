@@ -437,6 +437,10 @@ public static class AutoLandingNotes
             AutoLandingCode.Exists => Noted.Of(NoteCodes.LandingExists,
                 $"not accepted automatically: `{named}` is already a branch, and Daoris does not move it. It waits for your review.",
                 ("branch", named)),
+            // The review's gate held it (REVIEWENV1c): its own code, the gate's sentence beneath (REVIEWENV1c2).
+            AutoLandingCode.Unreviewed => Noted.Of(NoteCodes.LandingUnreviewed,
+                "not accepted automatically: its work waits for your review before it lands, as follows. It lands at the first look "
+                + "after you review it or skip the review."),
             _ => Noted.Of(NoteCodes.LandingRefused, "not accepted automatically: the landing was refused, as follows. It waits for your review."),
         };
 

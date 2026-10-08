@@ -8,7 +8,7 @@ import {
   pausedAsk, pausedQuest, readDriverChoices, releasedFor, standingFor, writeAcrossProblem, writeDriverChoices,
 } from '../src/driverconfig.ts';
 import {
-  REVIEW_DECLARED_ONLY, applyReviewEdit, holdsProcedure, reviewFor, reviewRuleOf, reviewSays, type CheckoutsReader,
+  REVIEW_WAITING, applyReviewEdit, holdsProcedure, reviewFor, reviewGate, reviewRuleOf, reviewSays, type CheckoutsReader,
 } from '../src/reviews.ts';
 import {
   OPINION_DECLARED_ONLY, applyOpinionEdit, oneFamily, opinionFor, opinionRuleOf, opinionSays, sameAgentOf,
@@ -1476,6 +1476,7 @@ const REVIEW_TABLE = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.m
   read: [name: string, file: string, repository: string, workspace: string | null, source: string | null, rule: string | null][];
   problems: [name: string, value: string, problem: string | null][];
   says: [name: string, rule: string, sentences: string[]][];
+  gate: [name: string, rule: string, sentences: string[]][];
   edits: [name: string, file: string, edit: string, after: string | null, refusal: string | null][];
   procedures: [name: string, files: string[], procedure: string, holds: boolean][];
 };
@@ -1503,6 +1504,20 @@ test('each door says what a review rule lets a step do, in the driver\'s words (
     assert.equal(read.problem, null, `${name}: the rule reads`);
     assert.deepEqual(reviewSays(read.rule!), sentences, name);
   }
+});
+
+/**
+ * REVIEWENV1c2: what each door says after the rule's sentences, now that the landing's gate reads the rule (REVIEWENV1c): that
+ * work waiting for the person's review lands only on their verdict, by the terminal's door, and that no set-up step is composed
+ * for them yet; nothing after none here. One sentence on each side, held to the shared table's `gate` rows.
+ */
+test('each door says what the gate does with a review rule, in the driver\'s words (the shared table)', () => {
+  for (const [name, rule, sentences] of REVIEW_TABLE.gate) {
+    const read = reviewRuleOf(JSON.parse(rule));
+    assert.equal(read.problem, null, `${name}: the rule reads`);
+    assert.deepEqual(reviewGate(read.rule!), sentences, name);
+  }
+  assert.deepEqual(reviewGate({ environments: [{ name: 'dev', kind: 'deployed', procedure: 'README.md' }] }), [REVIEW_WAITING]);
 });
 
 test('a review edit writes what the driver writes, or refuses in its words (the shared table)', () => {
@@ -1564,7 +1579,7 @@ async function reviewRefusal(argv: string[], path: string, checkouts: CheckoutsR
 /**
  * The terminal's door onto the review rule (REVIEWENV1a, D50; design §1.7): an environment added or replaced, keeping the
  * others; `none`; `--drop`; `--required|--not-required`; `--clear`; and `list`. Each says what it lets a step do, in the
- * driver's sentences, and that nothing reads it yet.
+ * driver's sentences, and what the landing's gate does with it (REVIEWENV1c2).
  */
 test('review declares a repository\'s environment, says what it lets a step do, checks the procedure, and lists it', async () => {
   const fx = makeFixture('driver-review');
@@ -1582,7 +1597,8 @@ test('review declares a repository\'s environment, says what it lets a step do, 
   assert.match(said.out, /`storefront` declares the review environment `dev`, its default/);
   assert.match(said.out, /Before work here lands, it is shown to you in `dev` and waits for you to say it is right\./);
   assert.match(said.out, /shows it in Daoris's browser at `http:\/\/localhost:4200`; your own servers and processes are not touched/);
-  assert.match(said.out, new RegExp(REVIEW_DECLARED_ONLY.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.ok(said.out.includes(`  ${REVIEW_WAITING}`), 'what the gate does with it');
+  assert.doesNotMatch(said.out, /Declared only|nothing reads it yet/);
   assert.match(said.out, /`README\.md` is in `storefront`'s checkout here/);
 
   const listed = run(['list'], at(fx)).out;
@@ -1657,6 +1673,8 @@ test('review none, --drop, --not-required and --clear each change only what they
   const none = await runReview(['review', 'media-api', 'none'], at(fx), checkouts);
   assert.equal(JSON.parse(readFileSync(at(fx), 'utf8')).reviews['media-api'], false);
   assert.match(none.out, /No review environment here, whatever its workspace says/);
+  // Nothing waits where a repository has none, so the gate's sentence is not said after it (REVIEWENV1c2).
+  assert.equal(none.out.includes(REVIEW_WAITING), false);
   assert.match(run(['list'], at(fx)).out, /review\s+media-api\s+none here, whatever its workspace says/);
 
   const cleared = await runReview(['review', 'storefront', '--clear'], at(fx), checkouts);

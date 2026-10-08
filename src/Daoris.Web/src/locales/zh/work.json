@@ -222,6 +222,7 @@
   "work.sitting.TakenElsewhere": "委托 `#{{quest}}` 已在 {{machine}} 上由会话 `{{session}}` 接下：这次接下属于对方，所以本机不会接续会话 `{{last}}`。",
   "work.sitting.TakenElsewhere_another": "委托 `#{{quest}}` 已在另一台机器上接下：这次接下属于对方，所以本机不会接续会话 `{{last}}`。",
   "work.sitting.TakenElsewhere_here": "委托 `#{{quest}}` 在会话 `{{last}}` 结束后才在本机被接下，接下它的是一次聊天或 Daoris 之外的工作：这次接下不属于该会话，所以不会接续会话 `{{last}}`。",
+  "work.sitting.CannotShow": "这个搭建步骤无法在本机开始，原因如下：{{why}}",
   "work.scope.ask": "需求 #{{id}}",
   "work.scope.quest": "委托 #{{id}}",
   "work.facts.ran": "运行了 {{time}}",

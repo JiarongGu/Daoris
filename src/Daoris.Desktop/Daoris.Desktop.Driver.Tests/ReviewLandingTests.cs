@@ -150,7 +150,7 @@ public sealed class ReviewLandingTests : IDisposable
         var entry = new AutoLandings(_home).Of("s1")!;
         Assert.Equal(AutoLandingCode.Unreviewed, entry.Last!.Code);
         Assert.Null(entry.Closed);
-        Assert.Equal(NoteCodes.LandingRefused.Code, Notes("s1").Last().Parts![0].Code);
+        Assert.Equal(NoteCodes.LandingUnreviewed.Code, Notes("s1").Last().Parts![0].Code);
         var logged = Assert.Single(_lines, line => line.Event == "review.held");
         Assert.Equal((ReviewStates.Shown, ReviewLevels.SetUpStep, ReviewDoors.Look),
             (Value(logged, "state"), Value(logged, "level"), Value(logged, "door")));

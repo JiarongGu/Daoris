@@ -67,14 +67,15 @@ export function reviewSays(t: TFunction, rule: ReviewRule | null | undefined): s
 }
 
 /**
- * What a Setup row says of the rule standing (design §1.7–§1.8): the door's sentences, that nothing reads it yet, and where it
- * was set; nothing set says today's behaviour and nothing more.
+ * What a Setup row says of the rule standing (design §1.7–§1.8): the door's sentences, what the landing's gate does with it
+ * (the twins' `reviewGate` and `ReviewRules.Gate`, REVIEWENV1c2), nothing after none here, and where it was set; nothing set
+ * says today's behaviour and nothing more.
  */
 export function reviewRowSays(t: TFunction, rule: ReviewRule | null | undefined, from?: { source?: ReviewSource | null; workspace?: string }): string {
   if (!rule) return t('settings.review.says.noneSet');
   return [
     ...reviewSays(t, rule),
-    t('settings.review.says.declaredOnly'),
+    ...(rule.none ? [] : [t('settings.review.says.waiting')]),
     ...(from?.source === 'repository' ? [t('settings.review.from.repository')] : []),
     ...(from?.source === 'workspace' ? [t('settings.review.from.workspace', { workspace: from.workspace })] : []),
   ].join(t('projects.setup.sentenceJoin'));

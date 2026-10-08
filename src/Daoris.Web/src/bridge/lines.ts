@@ -297,7 +297,7 @@ export const useSetLanguage = () => {
  * Change where a repository's work is reviewed before it lands, or a workspace's (REVIEWENV1a, D154 point 2): the twins' edit,
  * over the file `daoris driver review` edits (D50). An environment put has its procedure looked for in the checkouts it
  * reaches, and the answer's `reviewed` says what was found. What each repository resolves to moves with it, so the lines are
- * asked again. A refusal is the driver's sentence, verbatim. Declared only: nothing reads it yet.
+ * asked again. A refusal is the driver's sentence, verbatim. The landing's gate reads the rule since REVIEWENV1c.
  */
 export const useSetReview = () => {
   const client = useQueryClient();

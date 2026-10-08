@@ -62,6 +62,26 @@ public sealed class ReviewRulesTests : IDisposable
         Assert.Equal(sentences, ReviewRules.Says(read.Rule!));
     }
 
+    public static TheoryData<string, string, string[]> GateRows() => Rows(
+        "gate", row => (Cell(row, 0)!, Cell(row, 1)!, row[2].EnumerateArray().Select(each => each.GetString()!).ToArray()));
+
+    /// <summary>
+    /// REVIEWENV1c2: what each door says after the rule's sentences, now that the landing's gate reads the rule (REVIEWENV1c): that
+    /// work waiting for the person's review lands only on their verdict, by the terminal's door, and that no set-up step is composed
+    /// for them yet; nothing after none here, where nothing waits.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(GateRows))]
+    public void Each_door_says_what_the_gate_does_with_a_rule_in_the_cli_s_words(string name, string rule, string[] sentences)
+    {
+        using var document = JsonDocument.Parse(rule);
+        var read = ReviewRules.Read(document.RootElement);
+
+        Assert.True(read.Problem is null, $"{name}: {read.Problem}");
+        Assert.Equal(sentences, ReviewRules.Gate(read.Rule!));
+        Assert.DoesNotContain("nothing reads it yet", string.Join(" ", ReviewRules.Gate(read.Rule!)), StringComparison.Ordinal);
+    }
+
     public static TheoryData<string, string, string, string?, string?> EditRows() => Rows(
         "edits", row => (Cell(row, 0)!, Cell(row, 1)!, Cell(row, 2)!, Cell(row, 3), Cell(row, 4)));
 

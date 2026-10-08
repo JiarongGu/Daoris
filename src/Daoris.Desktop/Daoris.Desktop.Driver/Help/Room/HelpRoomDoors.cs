@@ -55,11 +55,13 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "and on a branch `--plugin <id>`: an installed plugin that pushes it and opens the pull request, and "
             + "`--auto-accept`: a quest's done lands it with no press)"),
         // REVIEWENV1a (D154 point 2): where work is shown to the person before it is offered to land; Ask Daoris proposes it
-        // as the `setting` kind's `review` door. Declared only until the set-up step and the gate read it (REVIEWENV1c).
+        // as the `setting` kind's `review` door. The landing's gate reads it since REVIEWENV1c, and the room says what lets work
+        // that waits go, and that the intake composes no set-up step yet (REVIEWENV1c2, REVIEWENV1f), as every door does.
         ("declare where a repository's work is shown to you before it is offered to land, or a workspace's: a review "
             + "environment, local (shown in Daoris's browser at the address where the app runs) or deployed (by the "
-            + "repository's documented procedure), and whether work waits for your look (declared only: nothing reads it yet; "
-            + "production is never one)",
+            + "repository's documented procedure), and whether work waits for your look (work that waits lands only once you "
+            + "say it is reviewed, `daoris-driver quest review <quest> reviewed`, or skip the review; no set-up step is composed "
+            + "for you yet; production is never one)",
             Setup + "Line and landing → Review before landing; a workspace's, Repositories → the workspace's page → Setup → Defaults",
             "`daoris driver review <repository> <environment> --kind local|deployed --procedure <path> [--address <url>] "
             + "[--run \"<command>\"] [--required|--not-required]` (`--workspace <name>` for a whole workspace), "

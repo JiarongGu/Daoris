@@ -54,6 +54,14 @@ const SAYS: SaysRow[] = [
   ]],
 ];
 
+/**
+ * The twins' `gate` rows, copied (REVIEWENV1c2): what each door says after the rule's sentences, now that the landing's gate
+ * reads it (REVIEWENV1c). None here says nothing after.
+ */
+const WAITING = 'Where work here waits for your review, it lands only once you say it is reviewed, '
+  + '`daoris-driver quest review <quest> reviewed`, or skip the review, `daoris-driver quest review <quest> skip`. '
+  + 'No set-up step is composed for you yet.';
+
 const t = i18n.t.bind(i18n);
 
 const LOCAL: ReviewRule = {
@@ -77,13 +85,19 @@ describe('what a review rule says', () => {
     for (const [name, rule, sentences] of SAYS) expect(reviewSays(t, rule), name).toEqual(sentences);
   });
 
-  it("says nothing set as today's behaviour, and a rule as declared only, with where it was set", () => {
+  it("says nothing set as today's behaviour, and a rule with what the gate does with it and where it was set", () => {
     expect(reviewRowSays(t, null)).toBe('None: work is offered to land once its quest is done.');
     expect(reviewRowSays(t, LOCAL, { source: 'workspace', workspace: 'work' })).toBe(
       'Before work here lands, it is shown to you in `dev` and waits for you to say it is right. A set-up step here builds the '
       + "work in its own tree and shows it in Daoris's browser at `http://localhost:4200`; your own servers and processes are not "
-      + 'touched. Declared only: nothing reads it yet, so no set-up step is composed and no landing waits for it. From the '
-      + 'workspace work.');
+      + `touched. ${WAITING} From the workspace work.`);
+    // The twins' `gate` rows: nothing waits where a repository has none, so nothing is said after it.
+    expect(reviewRowSays(t, { none: true, environments: [] }, { source: 'repository' })).toBe(
+      'No review environment here, whatever its workspace says: work is offered to land once its quest is done. Set for this '
+      + 'repository.');
+    expect(reviewRowSays(t, { environments: [{ name: 'dev', kind: 'deployed', procedure: 'docs/deploying-to-dev.md' }] }))
+      .toContain(WAITING);
+    expect(reviewRowSays(t, LOCAL)).not.toMatch(/Declared only|nothing reads it yet/);
     expect(reviewSummary(t, null)).toBe('no review environment');
     expect(reviewSummary(t, { none: true, environments: [] })).toBe('no review environment here');
     expect(reviewSummary(t, LOCAL)).toBe('reviewed in `dev` before landing');
@@ -97,13 +111,24 @@ describe('what a review rule says', () => {
     expect(said[1]).toContain('`http://localhost:4200`');
     expect(reviewSummary(t, { environments: [LOCAL.environments[0]!, { name: 'test', kind: 'deployed', procedure: 'README.md' }] }))
       .toBe('要求时在 `dev` 或 `test` 中展示');
+
+    // The Setup row's sentence after the rule's (REVIEWENV1c2): what the gate does, its doors as written, nothing after none.
+    expect(reviewRowSays(t, LOCAL, { source: 'repository' })).toBe([
+      '这里的工作落地之前，会在 `dev` 中展示给你，并等你确认无误。',
+      '这里的搭建步骤在它自己的工作树中构建工作，并在 Daoris 的浏览器中于 `http://localhost:4200` 展示；你自己的服务器和进程不会被动到。',
+      '这里等你审阅的工作，要等你说已审阅（`daoris-driver quest review <quest> reviewed`）或跳过审阅（`daoris-driver quest review <quest> skip`）之后才会落地。目前还不会为你组成搭建步骤。',
+      '为这个仓库设定。',
+    ].join(t('projects.setup.sentenceJoin')));
+    expect(reviewRowSays(t, { none: true, environments: [] })).not.toContain('daoris-driver quest review');
+    expect(reviewToast(t, 'work', { put: { name: 'dev', kind: 'deployed', procedure: 'README.md' } })).toBe(
+      'work 声明了审阅环境 dev。那里等你审阅的工作，要等你审阅或跳过审阅之后才会落地。');
   });
 
   it('toasts what a change did, and for a put what its procedure look found', () => {
     const put = { put: { name: 'dev', kind: 'deployed', procedure: 'README.md' } };
     expect(reviewToast(t, 'work', put, { lacking: ['media-api', 'storefront'], unchecked: false })).toBe(
-      'work declares the review environment dev. Declared only: nothing reads it yet. media-api, storefront hold no README.md '
-      + 'here: their set-up steps sit until they do.');
+      'work declares the review environment dev. Where work there waits for your review, it lands only once you review it or '
+      + 'skip the review. media-api, storefront hold no README.md here: their set-up steps sit until they do.');
     expect(reviewToast(t, 'storefront', put, { lacking: [], unchecked: true })).toContain('README.md was not looked for');
     expect(reviewToast(t, 'storefront', { none: true })).toBe('storefront has no review environment now, whatever its workspace says.');
     expect(reviewToast(t, 'storefront', { drop: 'dev' })).toBe('storefront no longer declares dev.');

@@ -222,6 +222,7 @@
   "work.sitting.TakenElsewhere": "{{why}}",
   "work.sitting.TakenElsewhere_another": "{{why}}",
   "work.sitting.TakenElsewhere_here": "{{why}}",
+  "work.sitting.CannotShow": "{{why}}",
   "work.scope.ask": "ask #{{id}}",
   "work.scope.quest": "quest #{{id}}",
   "work.facts.ran": "ran {{time}}",

@@ -1181,8 +1181,10 @@ public sealed partial class Driver(
                 LastPlan = lastPlan,
                 LastWords = lastWords,
                 AccountChanged = elsewhere && prior!.Limit && _harnesses.CoolingOf(config.Adapter, prior.Profile) is not null,
-                // A set-up step is told its environment as the rule declares it now (REVIEWENV1c, design §2.2).
+                // A set-up step is told its environment as the rule declares it now (REVIEWENV1c, design §2.2), and its account
+                // says where that rule was set (REVIEWENV1c2).
                 SetUp = setUp,
+                SetUpFrom = setUp is null ? null : ReviewRules.Resolve(config, quest.To, start.Workspace)?.Source,
             };
             var (info, harnessNotice) = Prepare(adapter, target, selection);
 

@@ -195,6 +195,7 @@ with the version and date at release.
 - Work in a repository whose review rule says so now waits for your *reviewed* (or a skip) before it lands;
   `daoris-driver quest review` gives it.
 - A web page in your browser can no longer press a door on Daoris's local service.
+- Setup's *Review before landing* now says that work there waits for your review, and how to give it.
 
 The first version: doctrine that installs, is checked, and flows back.
 
