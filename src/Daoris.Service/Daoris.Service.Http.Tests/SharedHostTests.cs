@@ -389,4 +389,23 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
         Assert.DoesNotContain(("POST", "/api/sessions/{id}/say"), routes);
         Assert.DoesNotContain(("POST", "/api/sessions/{id}/taken"), routes);
     }
+
+    /// <summary>
+    /// XAGENT1c (D155 point 11; the second agent design §6.2): a second opinion is kept on the machine whose work it read, so a
+    /// shared host has none of its doors, keyed or not, and its desk refuses with the sentence that says why.
+    /// </summary>
+    [Fact]
+    public async Task The_opinion_doors_do_not_exist_on_a_shared_host()
+    {
+        Assert.DoesNotContain(host.Routes(), route => route.Pattern.StartsWith("/api/opinions", StringComparison.Ordinal));
+        var key = (await host.MintAsync("opinion@a-machine")).Key;
+        foreach (var (method, path) in new[] { ("POST", "/api/opinions"), ("GET", "/api/opinions/abcd1234"), ("POST", "/api/opinions/abcd1234/hand") })
+        {
+            var refused = await host.SendAsync(method, path, DaorisHost.Loopback, key, BodyFor(method));
+            Assert.True(refused.Status is 404 or 405, $"{method} {path} answered {refused.Status}");
+        }
+
+        Assert.False(host.Composed.Opinions.Local);
+        Assert.Equal(Opinions.SharedSentence, (await host.Composed.Opinions.HandAsync("abcd1234", DateTimeOffset.UtcNow)).Message);
+    }
 }

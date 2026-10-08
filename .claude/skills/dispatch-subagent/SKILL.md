@@ -33,6 +33,9 @@ Follow the dispatch-subagent skill's subagent half.
 
 ### While working
 
+- **Commit as you go.** A piece that passes its tests is committed before the next begins. A subagent stopped
+  by a usage limit keeps its worktree only while it holds a commit; one stopped with every change
+  uncommitted lost its worktree and all of its work (2026-10-09).
 - **Stay in your lane.** Change the files your lane owns (`daoris.lanes.json` lists each lane's paths
   under its id) and the tests beside them. If you need a change in another lane, say so in the
   hand-back and leave it to the parent to schedule. Never make it yourself.

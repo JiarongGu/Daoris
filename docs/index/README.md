@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (114)
+## Files over 40 KB (115)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -100,18 +100,19 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/KnowledgeService.cs` | 53 | 1055 |
 | `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 101 | 1899 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 146 | 2645 |
-| `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 63 | 1210 |
-| `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 63 | 1138 |
+| `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 64 | 1230 |
+| `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 66 | 1179 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 93 | 1654 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 106 | 1894 |
-| `src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs` | 49 | 860 |
+| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 42 | 522 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 113 | 2002 |
+| `src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs` | 49 | 861 |
 | `src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs` | 44 | 839 |
 | `src/Daoris.Service/Daoris.Service.Tests/IndexEntriesTests.cs` | 45 | 855 |
 | `src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.cs` | 48 | 863 |
 | `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 82 | 1691 |
 | `src/Daoris.Service/Daoris.Service.Tests/ReviewStepTests.cs` | 41 | 734 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 67 | 1385 |
-| `src/Daoris.Service/README.md` | 68 | 682 |
+| `src/Daoris.Service/README.md` | 71 | 700 |
 
 ### CLI (`cli`)
 

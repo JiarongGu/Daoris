@@ -94,6 +94,12 @@ public enum SessionSayRefusal
 
     /// <summary>It runs: words to a running session reach it through the driver that runs it (D136), not its record.</summary>
     Running,
+
+    /// <summary>
+    /// It read another session's work for a second opinion (XAGENT1c, D155 point 7): a pass is one turn, takes no words, and
+    /// is never resumed. The person asks again, with their words, instead.
+    /// </summary>
+    Opinion,
 }
 
 /// <param name="Refusal"><see cref="SessionSayRefusal.None"/> when the words were kept.</param>
@@ -110,6 +116,9 @@ public sealed record SessionSayOutcome(SessionSayRefusal Refusal, string Message
 
     /// <summary>The machine a teammate's record ran on, where that refused the words.</summary>
     public string? Origin { get; init; }
+
+    /// <summary>The second opinion a reviewer's record read the work for, where that refused the words.</summary>
+    public string? Opinion { get; init; }
 }
 
 /// <param name="Refusal"><see cref="SessionSayRefusal.None"/> when the words were taken off the record.</param>
@@ -551,6 +560,15 @@ public sealed partial class SessionLedger(
                 return new SessionSayOutcome(SessionSayRefusal.Intake, IntakeRefusal(id, ask), Session: null) { Ask = ask };
             }
 
+            if (session.Opinion is { } opinion)
+            {
+                return new SessionSayOutcome(
+                    SessionSayRefusal.Opinion,
+                    $"Session `{id}` read another session's work for second opinion `{opinion}`: a pass takes one turn and no words, "
+                    + "and is never resumed. Ask again, with your words, for a fresh one.",
+                    Session: null) { Opinion = opinion };
+            }
+
             if (session.State == SessionState.StoodDown)
             {
                 return new SessionSayOutcome(
@@ -948,6 +966,8 @@ public sealed partial class SessionLedger(
             { Origin: { } origin } => $"Session `{id}` ran on `{origin}`; a finished record of another machine's does not move here.",
             { State: SessionState.StoodDown } => $"Session `{id}` stood down — a stand-down has nothing to go on with, so it does not move.",
             { Ask: { } ask } => $"Session `{id}` is an intake — it is answered through its ask `#{ask}`, so it does not move.",
+            // XAGENT1c: a pass is one turn, read afresh each time (design §4), so a reviewer's record never goes on.
+            { Opinion: { } opinion } => $"Session `{id}` read the work for second opinion `{opinion}` — a pass is never resumed, so it does not move.",
             { Said.Count: 0 } =>
                 $"Session `{id}` is {Spell(session.State)} — a finished session goes on only with the person's words, and none wait for it.",
             _ => null,
