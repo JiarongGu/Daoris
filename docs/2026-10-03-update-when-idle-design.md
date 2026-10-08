@@ -67,14 +67,18 @@ refusal by the application leaves everything as it was and ends the drain; a ref
 
 ## 5. Rolling back
 
-- **A move fails** (a file in `app/` held): the moves made are undone in reverse; the journal says `rolled-back`, `busy`.
+- **A move fails**: the moves made are undone in reverse. A move a held file refuses is tried for two minutes by the
+  clock, and each hold met is journalled in `holds` with how long it lasted; one that outlasts the wait is `busy`, and
+  any other failed move is `move` (SWAP2). An undo that meets such a hold leaves the journal under way with its reason and
+  the moves still to undo, and the next start, or the launcher's own catch, finishes it with that reason.
 - **The new application ends before it confirms**, or will not start: its three are moved to `update/failed/` and
   `update/previous/` moved back; the old application starts; `exited` or `start`.
 - **The launcher dies mid-swap**: the next start reads `swapping` and undoes the journal (`interrupted`), or reads
   `started` with nothing running from `app/` and undoes it (`exited`), or reads `confirmed` and finishes it.
 - **Something still runs from `app/` after the wait**, or the launcher meets an error before it can swap: the build is
-  refused, `busy`, and moved aside, so the old build is not closed for it again. An application whose close did not take
-  stops draining once the build is gone.
+  refused, `busy` or `error`, and moved aside, so the old build is not closed for it again. An error part way through a
+  swap is put right from the journal first, and a refusal is never written over a swap under way (SWAP2). An application
+  whose close did not take stops draining once the build is gone.
 
 No path retries a build: whatever did not install is in `update/failed/`, and the next stage replaces it.
 
