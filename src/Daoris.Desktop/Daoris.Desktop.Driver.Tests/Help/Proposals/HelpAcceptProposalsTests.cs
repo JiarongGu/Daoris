@@ -96,6 +96,31 @@ public sealed class HelpAcceptProposalsTests : HelpProposalsFixture
         Assert.Null(plan.Accept);
     }
 
+    /// <summary>
+    /// A set-up step held for the person's review alone (REVIEWENV1b2; D154 point 9): a yes accepts a departure or its
+    /// evidence, never a review, so the accept door refuses it (409), and the card is never shown. The helper hears the door's
+    /// own words, which name what does let it go.
+    /// </summary>
+    [Fact]
+    public void A_set_up_step_held_for_its_review_alone_is_refused_in_the_doors_words()
+    {
+        var unreviewed = new QuestView("q8show00", "ask #a1", "engine", "Show q3done00 in local for review", "Set it up.", "Done")
+        {
+            Held = true,
+            Hold = "unreviewed",
+            SetUpIn = "local",
+        };
+
+        var plan = HelpProposals.Plan(Of("accept", "accept", "q8show00"), DriverConfig.Empty, Records with { QuestRecords = [unreviewed] });
+
+        Assert.Equal(
+            "quest `#q8show00` waits for your review in `local`, which a yes does not give: say `reviewed` once you have looked "
+            + "at what it shows, or skip the review for this work.",
+            plan.Refusal);
+        Assert.Null(plan.Accept);
+        Assert.Equal("daoris-driver quest accept q8show00", plan.Terminal);
+    }
+
     [Fact]
     public void A_door_the_kind_does_not_take_is_refused()
     {

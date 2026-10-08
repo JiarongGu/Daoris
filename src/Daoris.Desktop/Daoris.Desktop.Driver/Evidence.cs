@@ -189,6 +189,12 @@ public static class EvidenceCodes
     public const string Unread = "evidence-unread";
     public const string MissingHold = "evidence-missing";
 
+    /// <summary>
+    /// A set-up step's done, waiting for the person's verdict on its review (REVIEWENV1b, D154 point 9): after a departure and
+    /// evidence, and lifted by their <c>reviewed</c> or skip alone, never by a yes.
+    /// </summary>
+    public const string Unreviewed = "unreviewed";
+
     /// <summary>Whether <paramref name="id"/> is a git object's full id: 40 hex characters, or 64 under SHA-256.</summary>
     public static bool IsObjectId(string? id) => id is { Length: 40 or 64 } && id.All(char.IsAsciiHexDigit);
 }
