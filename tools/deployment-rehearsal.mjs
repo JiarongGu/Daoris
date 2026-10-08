@@ -1342,10 +1342,10 @@ if (!done.ok) throw new Error(done.text);
       : JSON.stringify(closedRecord ?? afterClose.text));
 
   // 🔴 CONNECTOR1: which connector binary the deployed shell handed that conversation, as the agent said it on
-  // `session/new`. Read here because the close is what writes the transcript out. An install that carried no connector
-  // handed every session the home's `bin/` copy, which one `publish:service --install` laid down and no republish
-  // refreshed, and an eight-day-old one rebuilt the shared store at its own older schema. The decoy planted in phase 4
-  // is that copy, so this goes red on every machine where the order is wrong.
+  // `session/new`, read once the close has ended the conversation and its transcript holds all it said. An install
+  // that carried no connector handed every session the home's `bin/` copy, which one `publish:service --install` laid
+  // down and no republish refreshed, and an eight-day-old one rebuilt the shared store at its own older schema. The
+  // decoy planted in phase 4 is that copy, so this goes red on every machine where the order is wrong.
   const conversationTranscript = closedRecord?.transcript ?? chatRecord?.transcript ?? '';
   const conversationSaid = existsSync(conversationTranscript) ? readFileSync(conversationTranscript, 'utf8') : '';
   const handed = offeredConnector(conversationSaid);
