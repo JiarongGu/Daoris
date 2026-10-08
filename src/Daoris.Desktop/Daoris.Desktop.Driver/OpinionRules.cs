@@ -320,26 +320,19 @@ public static class OpinionRules
     /// <summary>
     /// Whether two adapters are one family (design §3.1): they run as the same agent's accounts (AGT7's owner), or both declare
     /// the same maker — read from the adapters this build carries, as the CLI reads its toolchain table. A name this build
-    /// does not carry is its own owner and declares no maker: its own family only by its own name.
+    /// does not carry is its own owner and declares no maker: its own family only by its own name. The judgement is
+    /// <see cref="AgentFamily"/>'s, the one the reviewer's choice makes over the machine's agents, a plugin's among them
+    /// (XAGENT1b); the doors read the built-in set alone, since that is the set their CLI twin declares.
     /// </summary>
     public static bool OneFamily(string a, string b)
     {
-        var (ownerA, makerA) = Family(a);
-        var (ownerB, makerB) = Family(b);
-        return string.Equals(ownerA, ownerB, StringComparison.OrdinalIgnoreCase)
-            || (makerA is not null && makerB is not null && string.Equals(makerA, makerB, StringComparison.OrdinalIgnoreCase));
+        var built = AdapterSet.Built();
+        return AgentFamily.Of(built, a).Same(AgentFamily.Of(built, b));
     }
 
     /// <summary>The reviewers of <paramref name="rule"/> that are the family of <paramref name="working"/>, the agent this machine's work runs on.</summary>
     public static IReadOnlyList<string> SameAgent(OpinionRule rule, string working) =>
         [.. rule.Reviewers.Where(reviewer => OneFamily(working, reviewer))];
-
-    private static (string Owner, string? Maker) Family(string name)
-    {
-        var built = AdapterSet.Built();
-        var toolchain = built.Names.Contains(name, StringComparer.OrdinalIgnoreCase) ? built.Resolve(name).Toolchain : built.Holder(name);
-        return (toolchain?.Owner(name) ?? name, toolchain?.Maker);
-    }
 
     /// <summary>
     /// The config with one change made, or the refusal thrown in the CLI's words, nothing changed — the CLI's
