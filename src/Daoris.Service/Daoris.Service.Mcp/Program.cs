@@ -4,7 +4,6 @@ using Daoris.Knowledge.Hosting;
 using Daoris.Knowledge.Mcp;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 
 // The knowledge index as an MCP server over stdio.
@@ -49,21 +48,12 @@ catch (IOException)
 
 var builder = Host.CreateApplicationBuilder(args);
 
-// stdio IS the protocol channel, so anything written to stdout corrupts it. Logs go to stderr —
-// the single most common way to break a stdio MCP server, and silently, since the transport just
-// stops parsing.
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Trace);
-// Quiet by default: a stdio server's stderr is the operator's only channel, and per-request info
-// logs bury the one line that matters when something is actually wrong.
-builder.Logging.SetMinimumLevel(LogLevel.Warning);
-
 // The machine log (LOG1, D94): this host's start and stop and its warnings and errors, in a file of its
 // own beside the desktop's, since this standard error belongs to the agent that started it and nobody
-// keeps it. With no home it writes nothing.
+// keeps it. With no home it writes nothing. The framework's lines go to stderr and here, from warnings up.
 using var log = MachineLog.Open("mcp");
 log.WatchUnhandled();
-builder.Logging.AddProvider(new MachineLogProvider(log));
+McpHostLogging.Use(builder.Logging, log);
 var started = DateTimeOffset.UtcNow;
 
 // The index lives under the Daoris home (D63) unless named directly. No home and no name is a
@@ -142,6 +132,9 @@ builder.Services
         options.ServerInstructions = KnowledgeTools.Instructions(serviceOptions, composed.SemanticEnabled);
     })
     .WithStdioServerTransport()
+    // The harness's client opens with the 2026-07-28 revision's probe, which this server predates: answered
+    // method not found, so it falls back to initialize, and said at debug rather than warned (MCPDISCOVER1).
+    .AnswerDiscoverProbe()
     .WithTools<KnowledgeTools>();
 
 log.Info("app.started", ("repository", Path.GetFileName(Directory.GetCurrentDirectory())));
