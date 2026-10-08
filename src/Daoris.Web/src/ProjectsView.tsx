@@ -12,9 +12,10 @@ import { WorkspaceView } from './projects/WorkspaceView';
 import { useRegistry, useRepositories } from './queries';
 import { useScope } from './scope';
 import type { LandingRule } from './settings/Landings';
+import { type ReviewEdit, reviewToast } from './settings/Reviews';
 import {
   useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetDrivable, useSetHold, useSetLanding,
-  useSetLanguage, useSetLine, useSetReadAcross, useSetStanding, useSetTrees, useSetWriteAcross, useSweepPlan,
+  useSetLanguage, useSetLine, useSetReadAcross, useSetReview, useSetStanding, useSetTrees, useSetWriteAcross, useSweepPlan,
 } from './shell';
 import { doorOf } from './tools';
 import { failure, type Notify, useErrorNotify } from './ui';
@@ -113,6 +114,7 @@ export function useProjectsView({
   const setLanguage = useSetLanguage();
   const setLine = useSetLine();
   const setLanding = useSetLanding();
+  const setReview = useSetReview();
   const setRead = useSetReadAcross();
   const setWrite = useSetWriteAcross();
   const ruleAction = useRuleAction();
@@ -126,6 +128,9 @@ export function useProjectsView({
   };
   // And its session language (LANG1c), the driver's resolution, read rather than recomputed.
   const languageOf = (repository: string) => (Array.isArray(lines.data?.languages) ? lines.data.languages : [])
+    .find((one) => one.repository === repository);
+  // And where its work is reviewed before it lands (REVIEWENV1a), the driver's resolution.
+  const reviewOf = (repository: string) => (Array.isArray(lines.data?.reviews) ? lines.data.reviews : [])
     .find((one) => one.repository === repository);
   // And how its work lands (WSR1), the driver's choice.
   const landingOf = (repository: string) => (Array.isArray(lines.data?.landings) ? lines.data.landings : [])
@@ -283,6 +288,14 @@ export function useProjectsView({
             : t('settings.landing.savedMerge', { name: repository })),
         onError: onDriverError,
       }),
+      // Where its work is reviewed before it lands (REVIEWENV1a); a shell older than it answers no reviews, and no row is offered.
+      review: Array.isArray(lines.data?.reviews) ? reviewOf(repository) ?? { repository, workspace } : undefined,
+      onReview: Array.isArray(lines.data?.reviews)
+        ? (edit: ReviewEdit) => setReview.mutate({ repository, ...edit }, {
+            onSuccess: (state) => notify(reviewToast(t, repository, edit, state.reviewed)),
+            onError: onDriverError,
+          })
+        : undefined,
     };
 
     // Its standing answer (KNOWUSE1b), matched without case as the driver matches it; a shell older than it answers no
@@ -343,7 +356,7 @@ export function useProjectsView({
       work,
       sessions,
       reach,
-      busy: setLine.isPending || setLanding.isPending || setLanguage.isPending || setStanding.isPending
+      busy: setLine.isPending || setLanding.isPending || setReview.isPending || setLanguage.isPending || setStanding.isPending
         || setRead.isPending || setWrite.isPending || ruleAction.isPending,
     };
   };

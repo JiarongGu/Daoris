@@ -316,6 +316,67 @@ describe("Setup's Reach", () => {
   });
 });
 
+/**
+ * REVIEWENV1a (D154 point 2, design §1.7–§1.8): *Review before landing*, beside how its work lands, as the driver resolves it.
+ * Nothing set says today's behaviour; a workspace's rule says so and offers *Set for this repository*; its own carries Clear,
+ * which hands it back to its workspace's. Each says it is declared only, until the gate reads it.
+ */
+describe("a repository's review before landing", () => {
+  const withReview = (review: NonNullable<RepositorySetupProps['work']>['review'], onReview = vi.fn()) => ({
+    ...SETUP_DEFAULTS, work: { ...SETUP_DEFAULTS.work, review, onReview },
+  });
+
+  it("says none set as today's behaviour, Daoris's default in its folded line, and its terminal twin", async () => {
+    draw(withReview({ repository: 'engine', workspace: 'default' }));
+
+    expect(head('Line and landing')).toHaveAccessibleDescription(
+      "line main (the workspace's default) · lands into its line (Daoris's default) · no review environment (Daoris's default)");
+    await userEvent.click(head('Line and landing'));
+    const review = row(section('Line and landing'), 'Review before landing');
+    expect(review).toHaveTextContent('None: work is offered to land once its quest is done.');
+    expect(within(review).getByText(code('daoris driver review engine <environment> --kind local|deployed --procedure <path>')))
+      .toBeInTheDocument();
+    expect(within(review).getByRole('button', { name: 'Set for this repository' })).toBeInTheDocument();
+  });
+
+  it("says its workspace's rule and that it is declared only, and sets one of its own or none in place", async () => {
+    const onReview = vi.fn();
+    draw(withReview({
+      repository: 'engine', workspace: 'work', source: 'workspace',
+      rule: { required: true, environments: [{ name: 'dev', kind: 'local', procedure: 'README.md', address: 'http://localhost:4200' }] },
+    }, onReview));
+    await userEvent.click(head('Line and landing'));
+    const review = row(section('Line and landing'), 'Review before landing');
+
+    expect(review).toHaveTextContent('Before work here lands, it is shown to you in dev and waits for you to say it is right.');
+    expect(review).toHaveTextContent('Declared only: nothing reads it yet');
+    expect(review).toHaveTextContent('From the workspace work.');
+    await userEvent.click(within(review).getByRole('button', { name: 'Set for this repository' }));
+    await userEvent.click(within(review).getByRole('button', { name: 'None here' }));
+    expect(onReview).toHaveBeenLastCalledWith({ none: true });
+  });
+
+  it('opens on a rule of its own, which carries Clear, handing it back to its workspace', async () => {
+    const onReview = vi.fn();
+    draw(withReview({
+      repository: 'engine', workspace: 'work', source: 'repository',
+      rule: { environments: [{ name: 'dev', kind: 'deployed', procedure: 'docs/deploying-to-dev.md' }] },
+    }, onReview));
+
+    expect(head('Line and landing')).toHaveAttribute('aria-expanded', 'true');
+    const review = row(section('Line and landing'), 'Review before landing');
+    expect(review).toHaveTextContent('A set-up step here follows docs/deploying-to-dev.md toward dev');
+    expect(review).toHaveTextContent('Set for this repository.');
+    await userEvent.click(within(review).getByRole('button', { name: 'Clear' }));
+    expect(onReview).toHaveBeenLastCalledWith({ clear: true });
+  });
+
+  it('is absent on a shell older than it', () => {
+    draw(SETUP_OWN);
+    expect(screen.queryByText('Review before landing')).toBeNull();
+  });
+});
+
 describe('Setup in 中文', () => {
   it('names its sections and marks a default in Chinese', async () => {
     await i18n.changeLanguage('zh');

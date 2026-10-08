@@ -3,12 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { sentence } from '../format';
 import { useSyncStanding } from '../queries';
 import type { LandingRule } from '../settings/Landings';
+import { reviewToast } from '../settings/Reviews';
 import { namer } from '../settings/namer';
 import { sayDiscard, sweepKey, SweepList } from '../settings/Sweep';
 import { SyncSection } from '../settings/Sync';
 import {
   stoppedWaiting, useAccounts, useAcross, useDriver, useHarnesses, useHistoryPlan, usePlugins, useRemotes, useRuleAction, useRules,
-  useDiscardSessionBranch, useSetLanding, useSetLanguage, useSetLine, useSetReadAcross, useStarts, useSweep, useSweepPlan,
+  useDiscardSessionBranch, useSetLanding, useSetLanguage, useSetLine, useSetReadAcross, useSetReview, useStarts, useSweep, useSweepPlan,
   useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote,
 } from '../shell';
 import { byTool } from '../tools';
@@ -274,6 +275,7 @@ function SetupPart({ workspace, notify, open, wiring }: {
   const setLine = useSetLine();
   const setLanding = useSetLanding();
   const setLanguage = useSetLanguage();
+  const setReview = useSetReview();
   const setRead = useSetReadAcross();
   const act = useRuleAction();
   useErrorNotify(remotes.error ?? across.error ?? rules.error, notify);
@@ -296,7 +298,7 @@ function SetupPart({ workspace, notify, open, wiring }: {
     workspace,
     open,
     wiring,
-    busy: setLine.isPending || setLanding.isPending || setLanguage.isPending || setRead.isPending || act.isPending
+    busy: setLine.isPending || setLanding.isPending || setLanguage.isPending || setReview.isPending || setRead.isPending || act.isPending
       || wire.isPending || unwire.isPending,
     defaults: {
       line: state && {
@@ -346,6 +348,16 @@ function SetupPart({ workspace, notify, open, wiring }: {
               onSuccess: () => notify(read === undefined
                 ? t('settings.across.cleared', { name: workspace })
                 : t(read ? 'settings.across.savedOn' : 'settings.across.savedOff', { name: workspace })),
+              onError,
+            }),
+          }
+        : null,
+      // Where its repositories' work is reviewed before it lands (REVIEWENV1a); a shell older than it answers no reviews.
+      review: state && Array.isArray(state.workspaceReviews)
+        ? {
+            set: ofWorkspace(state.workspaceReviews)?.rule,
+            onChange: (edit) => setReview.mutate({ workspace, ...edit }, {
+              onSuccess: (answered) => notify(reviewToast(t, workspace, edit, answered.reviewed)),
               onError,
             }),
           }
