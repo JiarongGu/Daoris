@@ -32,6 +32,8 @@ The probe was a scratch script; the table is everything it set up.
 | 4 | The contrast: the session's route alone, the shell not serving; then the session goes, and the tab is reloaded | While it lived, its build showed. Once it ended, **the reload loaded the person's server, with no word** (two hits under `/v3/`). This is D154 point 5's reason, seen |
 | 5 | The shell serves again, then stops (`Fetch.disable`), as a verdict ends it | Served, then the person's server again. Nothing of theirs was stopped or restarted |
 | 6 | Another tab opened at the same address while the shell serves the step's | It loaded the person's server: **the interception is the step's tab's alone** |
+| 7 | A second run, on a fresh profile: the person's own tab registers a service worker at the address, answering every page under `/v3/` itself; then the step's tab is sent to `/v3/reports/42` with the shell serving | **The service worker answered, and the shell saw no request.** The step's tab showed the person's worker's page, with no word |
+| 8 | The same, with `Network.enable` and `Network.setBypassServiceWorker` (`bypass: true`) on the shell's own session for the step's tab | The shell answered, and the branch's build showed. The person's own tab, meanwhile, still went through their worker |
 
 ## 2. What it settles for the build
 
@@ -43,6 +45,9 @@ The probe was a scratch script; the table is everything it set up.
   served paths whichever way the session works, and once it ends Daoris's answer is what stands.
 - **One tab, one address pattern.** A pattern at the address and the build's base covers the page, its routes and its
   files. A call outside the pattern, the app's data under `/api` here, goes where it goes for the person.
+- **A service worker of the person's comes before any interception.** One registered at the address by their own tab
+  answers the step's tab first, silently, with their build. So the shell's session asks the step's tab to bypass service
+  workers while it serves it; the person's own tabs keep theirs.
 
 ## 3. What it does not cover
 
@@ -51,6 +56,7 @@ The probe was a scratch script; the table is everything it set up.
   which is the mode used here, but this exact sequence was run against Edge's own port only.
 - **Playwright MCP itself was not run**: the library it is built on was, by the call it makes to attach. Chrome DevTools
   MCP, the other server D78 names, was not.
-- **Ordering past two clients, service workers, and a request the session's route aborts** were not measured.
+- **Ordering past two clients, a service worker the session's own build registers, and a request the session's route
+  aborts** were not measured.
 - **Edge as the person's chosen browser (BRW12)** is the same protocol on its own port, with no relay, and was the
   browser measured here, headless rather than windowed.

@@ -75,7 +75,7 @@ public sealed class ReviewShowingTests : IDisposable
         Assert.Equal("Review #q2", serve.Title);
         Assert.Equal(Path.GetFullPath(Path.Combine(_tree, "dist", "app")), serve.Folder);
         Assert.Equal((Address, "/"), (serve.Address, serve.Base));
-        Assert.Equal("http://localhost:4200/*", serve.Pattern);
+        Assert.Equal(["http://localhost:4200/*"], serve.Patterns);
         Assert.Equal("http://localhost:4200/reports", serve.Look);
         Assert.Equal("desk/41", serve.SetUp);
         Assert.NotNull(said);
@@ -95,6 +95,7 @@ public sealed class ReviewShowingTests : IDisposable
         var elsewhere = Assert.Single(_tabs.Serving);
 
         Assert.Equal(("/v3/", "http://localhost:4200/v3/*", "http://localhost:4200/v3/reports/42"), (under.Base, under.Pattern, under.Look));
+        Assert.Equal(["http://localhost:4200/v3/*", "http://localhost:4200/v3"], under.Patterns);
         Assert.Equal("http://localhost:4200/v3/", elsewhere.Look);
     }
 

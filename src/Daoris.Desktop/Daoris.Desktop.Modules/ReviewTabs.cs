@@ -41,13 +41,16 @@ public static class ReviewRequests
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out var at)
             || !string.Equals(at.GetLeftPart(UriPartial.Authority), serve.Address, StringComparison.OrdinalIgnoreCase)
-            || !at.AbsolutePath.StartsWith(serve.Base, StringComparison.Ordinal)
             || method is not ("GET" or "HEAD"))
         {
             return new(ReviewAnswerKind.Pass);
         }
 
-        var rest = Uri.UnescapeDataString(at.AbsolutePath[serve.Base.Length..]);
+        // The base without its last slash is the base itself, as a page.
+        var path = at.AbsolutePath + "/" == serve.Base ? serve.Base : at.AbsolutePath;
+        if (!path.StartsWith(serve.Base, StringComparison.Ordinal)) return new(ReviewAnswerKind.Pass);
+
+        var rest = Uri.UnescapeDataString(path[serve.Base.Length..]);
         if (rest.Contains('\\') || rest.Contains(':') || rest.Contains('\0')
             || rest.Split('/').Any(segment => segment is "." or ".."))
         {
@@ -182,9 +185,8 @@ public sealed class ReviewTabs(IInAppBrowser browser) : IReviewTabs, IDisposable
         using var engine = new EngineCdp(port);
         var target = await TabOfAsync(serve.Quest, serve.Title, engine, ct).ConfigureAwait(false);
 
-        // What the tab was served before goes first: one serving per tab, and a newer set-up's build is the one it shows.
-        Release(serve.Quest);
-
+        // The new serving is held before the one it replaces is let go, so a request in between is answered by one or the other,
+        // and never reaches the person's server.
         var channel = await CdpChannel.ConnectAsync(port, ct).ConfigureAwait(false);
         try
         {
@@ -210,15 +212,28 @@ public sealed class ReviewTabs(IInAppBrowser browser) : IReviewTabs, IDisposable
             channel.Closed += () => Forget(serve.Quest, channel, closed: false);
 
             await channel.CallAsync(
-                    "Fetch.enable", new { patterns = new[] { new { urlPattern = serve.Pattern, requestStage = "Request" } } }, session, ct)
+                    "Fetch.enable",
+                    new { patterns = serve.Patterns.Select(pattern => new { urlPattern = pattern, requestStage = "Request" }).ToArray() },
+                    session, ct)
                 .ConfigureAwait(false);
+            // A service worker of the person's at the address answers a tab before any interception sees its request, with their
+            // own build (measured, the evidence's §1 row 7). Bypassed for this tab alone while it is served; their own tabs keep
+            // it, and this one has it back once the serving is let go.
+            await channel.CallAsync("Network.enable", new { }, session, ct).ConfigureAwait(false);
+            await channel.CallAsync("Network.setBypassServiceWorker", new { bypass = true }, session, ct).ConfigureAwait(false);
+
+            CdpChannel? replaced;
             lock (_gate)
             {
                 var tab = _tabs.TryGetValue(serve.Quest, out var known) ? known : _tabs[serve.Quest] = new Tab();
+                replaced = tab.Channel;
                 tab.Target = target;
                 tab.Channel = channel;
                 tab.Serve = serve;
             }
+
+            // One serving per tab: what it was served before goes now, and a newer set-up's build is the one it shows.
+            if (replaced is not null) _ = replaced.DisposeAsync().AsTask();
 
             await channel.CallAsync("Page.navigate", new { url = serve.Look }, session, ct).ConfigureAwait(false);
             await engine.ActivateAsync(target, ct).ConfigureAwait(false);

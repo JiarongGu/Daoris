@@ -56,6 +56,9 @@ internal sealed class StandInChromium : IDisposable
         }
     }
 
+    /// <summary>The tabs a session asked to bypass service workers for (<c>Network.setBypassServiceWorker</c>).</summary>
+    public List<string> Bypassing { get; } = [];
+
     /// <summary>The patterns each live client holds on <paramref name="target"/>, one list per session.</summary>
     public IReadOnlyList<IReadOnlyList<string>> PatternsOn(string target)
     {
@@ -315,6 +318,13 @@ internal sealed class StandInChromium : IDisposable
 
                 case "Fetch.disable" when session is not null:
                     client.Patterns.Remove(session);
+                    return new { id, result = new { } };
+
+                case "Network.enable" when session is not null && client.Sessions.ContainsKey(session):
+                    return new { id, result = new { } };
+
+                case "Network.setBypassServiceWorker" when session is not null && client.Sessions.TryGetValue(session, out var bypassing):
+                    if (parameters.GetProperty("bypass").GetBoolean()) Bypassing.Add(bypassing);
                     return new { id, result = new { } };
 
                 case "Page.navigate" when session is not null && client.Sessions.TryGetValue(session, out var navigated):

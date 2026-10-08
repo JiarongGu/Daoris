@@ -24,6 +24,12 @@ public sealed record ReviewServe(string Quest, string Title, string Folder, stri
     /// person (design §2.3 step 3, measured in <c>docs/2026-10-09-review-serving-evidence.md</c>).
     /// </summary>
     public string Pattern => Address + Base + "*";
+
+    /// <summary>
+    /// Every pattern held: <see cref="Pattern"/>, and under a base of its own the base without its last slash too, since
+    /// <c>/v3</c> is the same page as <c>/v3/</c> and would otherwise reach the person's server.
+    /// </summary>
+    public IReadOnlyList<string> Patterns => Base == "/" ? [Pattern] : [Pattern, Address + Base.TrimEnd('/')];
 }
 
 /// <summary>

@@ -60,7 +60,7 @@ public sealed class ReviewServingTests : IDisposable
         var script = await _chromium.LoadAsync(tab.Id, $"{_person.Address}/v3/main.js", "Script");
         var logo = await _chromium.LoadAsync(tab.Id, $"{_person.Address}/v3/assets/logo.svg", "Image");
 
-        Assert.Equal([[$"{_person.Address}/v3/*"]], _chromium.PatternsOn(tab.Id));
+        Assert.Equal([[$"{_person.Address}/v3/*", $"{_person.Address}/v3"]], _chromium.PatternsOn(tab.Id));
         Assert.Equal((200, "fulfilled", "text/html"), (page.Status, page.By, page.Type?.Split(';')[0]));
         Assert.Contains("<title>BRANCH</title>", page.Body, StringComparison.Ordinal);
         Assert.Equal(("document.body.dataset.app = 'branch';", "fulfilled"), (script.Body, script.By));
@@ -106,6 +106,18 @@ public sealed class ReviewServingTests : IDisposable
         var tab = Assert.Single(_chromium.Pages);
         Assert.Equal([$"{_person.Address}/v3/reports/42"], tab.Navigations);
         Assert.True(tab.Activated > 0);
+    }
+
+    /// <summary>
+    /// A service worker of the person's at the address answers the step's tab before any interception sees a request, with
+    /// their own build (measured, the evidence's §1 row 7), so the step's tab bypasses service workers while it is served.
+    /// </summary>
+    [Fact]
+    public async Task The_step_s_tab_bypasses_the_person_s_service_workers_while_it_is_served()
+    {
+        await _tabs.ServeAsync(Serve);
+
+        Assert.Equal([Assert.Single(_chromium.Pages).Id], _chromium.Bypassing);
     }
 
     [Fact]
@@ -194,6 +206,9 @@ public sealed class ReviewServingTests : IDisposable
     [Theory]
     [InlineData("/v3/reports/42", "Document", "index")]
     [InlineData("/v3/", "Document", "index")]
+    [InlineData("/v3", "Document", "index")]
+    [InlineData("/v3", "Fetch", "pass")]
+    [InlineData("/v30/reports", "Document", "pass")]
     [InlineData("/v3/main.js", "Script", "file")]
     [InlineData("/v3/main.js", "Document", "file")]
     [InlineData("/v3/assets/logo.svg", "Image", "file")]
