@@ -319,20 +319,29 @@ public static class OpinionRules
 
     /// <summary>
     /// Whether two adapters are one family (design §3.1): they run as the same agent's accounts (AGT7's owner), or both declare
-    /// the same maker — read from the adapters this build carries, as the CLI reads its toolchain table. A name this build
-    /// does not carry is its own owner and declares no maker: its own family only by its own name. The judgement is
-    /// <see cref="AgentFamily"/>'s, the one the reviewer's choice makes over the machine's agents, a plugin's among them
-    /// (XAGENT1b); the doors read the built-in set alone, since that is the set their CLI twin declares.
+    /// the same maker — read from <paramref name="adapters"/>, as the CLI reads its toolchain table and the plugins it is
+    /// handed. A name the set does not carry is its own owner and declares no maker: its own family only by its own name. The
+    /// judgement is <see cref="AgentFamily"/>'s, the one the reviewer's choice makes over the machine's agents.
     /// </summary>
-    public static bool OneFamily(string a, string b)
+    /// <param name="adapters">
+    /// The machine's set, a plugin's harnesses among them, so a maker a plugin declares counts at a door as it counts in the
+    /// choice (XAGENT1b2); null is the built-in set alone.
+    /// </param>
+    public static bool OneFamily(string a, string b, AdapterSet? adapters = null)
     {
-        var built = AdapterSet.Built();
-        return AgentFamily.Of(built, a).Same(AgentFamily.Of(built, b));
+        var set = adapters ?? AdapterSet.Built();
+        return AgentFamily.Of(set, a).Same(AgentFamily.Of(set, b));
     }
 
-    /// <summary>The reviewers of <paramref name="rule"/> that are the family of <paramref name="working"/>, the agent this machine's work runs on.</summary>
-    public static IReadOnlyList<string> SameAgent(OpinionRule rule, string working) =>
-        [.. rule.Reviewers.Where(reviewer => OneFamily(working, reviewer))];
+    /// <summary>
+    /// The reviewers of <paramref name="rule"/> that are the family of <paramref name="working"/>, the agent this machine's work
+    /// runs on, judged over <paramref name="adapters"/> as <see cref="OneFamily"/> judges them.
+    /// </summary>
+    public static IReadOnlyList<string> SameAgent(OpinionRule rule, string working, AdapterSet? adapters = null)
+    {
+        var set = adapters ?? AdapterSet.Built();
+        return [.. rule.Reviewers.Where(reviewer => OneFamily(working, reviewer, set))];
+    }
 
     /// <summary>
     /// The config with one change made, or the refusal thrown in the CLI's words, nothing changed — the CLI's

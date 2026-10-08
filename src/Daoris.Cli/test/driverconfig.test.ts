@@ -13,6 +13,7 @@ import {
 import {
   OPINION_DECLARED_ONLY, applyOpinionEdit, oneFamily, opinionFor, opinionRuleOf, opinionSays, sameAgentOf,
 } from '../src/opinions.ts';
+import { MANIFEST, pluginsRoot, readPlugins } from '../src/plugins.ts';
 import type { RecordsReader } from '../src/strikes.ts';
 import { driverRows as csharpRows } from './_csharp.ts';
 import { makeFixture, captureError } from './_fixture.ts';
@@ -1711,7 +1712,17 @@ const OPINION_TABLE = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.
   says: [name: string, rule: string, sameAgent: string[], sentences: string[]][];
   edits: [name: string, file: string, edit: string, after: string | null, refusal: string | null][];
   families: [name: string, working: string, reviewer: string, same: boolean][];
+  pluginFamilies: [name: string, plugins: Record<string, string>, working: string, reviewer: string, same: boolean][];
 };
+
+/** A home holding each plugin folder of a row, its `plugin.json` written as the row spells it. */
+function pluginHome(fx: { root: string }, plugins: Record<string, string>): string {
+  for (const [folder, manifest] of Object.entries(plugins)) {
+    mkdirSync(join(pluginsRoot(fx.root), folder), { recursive: true });
+    writeFileSync(join(pluginsRoot(fx.root), folder, MANIFEST), manifest, 'utf8');
+  }
+  return fx.root;
+}
 
 test('an opinion rule resolves as the driver resolves it (the shared table)', () => {
   const fx = makeFixture('driver-opinion-read');
@@ -1761,6 +1772,37 @@ test('two agents are one family as the driver judges them, by the toolchains\' o
     assert.equal(oneFamily(working, reviewer), same, name);
     assert.deepEqual(sameAgentOf({ on: ['landing'], reviewers: [reviewer] }, working), same ? [reviewer] : [], `${name}: the rule's`);
   }
+});
+
+/**
+ * XAGENT1b2 (design §3.1): a plugin's harness is judged as the driver's choice judges it, by its `accountOf` and the maker its
+ * plugin declares, read by this side's own catalogue from the same folders; a refused plugin contributes nothing.
+ */
+test('a plugin\'s agent is one family by its owner or its declared maker, as the driver judges it (the shared table)', () => {
+  for (const [name, plugins, working, reviewer, same] of OPINION_TABLE.pluginFamilies) {
+    const fx = makeFixture('driver-opinion-plugin-families');
+    const catalog = readPlugins(pluginHome(fx, plugins));
+    assert.equal(oneFamily(working, reviewer, catalog), same, name);
+    assert.deepEqual(sameAgentOf({ on: ['landing'], reviewers: [reviewer] }, working, catalog), same ? [reviewer] : [], `${name}: the rule's`);
+    fx.cleanup();
+  }
+});
+
+/** The terminal's door reads the plugins beside its file (XAGENT1b2), as a landing rule's plugin is read there. */
+test('opinion names a plugin\'s agent of the working agent\'s maker as the same agent, from the plugins beside the file', () => {
+  const fx = makeFixture('driver-opinion-plugins');
+  pluginHome(fx, {
+    'acme.agent': '{"id":"acme.agent","harnesses":[{"name":"acme-agent","command":["acme"],"maker":"Acme"}]}',
+    'acme.other': '{"id":"acme.other","harnesses":[{"name":"acme-other","command":["other"],"maker":"ACME"}]}',
+    'older.agent': '{"id":"older.agent","harnesses":[{"name":"older-agent","command":["older"]}]}',
+  });
+  run(['adapter', 'acme-agent'], at(fx));
+
+  const said = run(['opinion', 'web-app', '--reviewers', 'older-agent,acme-other'], at(fx));
+  assert.equal(said.code, 0);
+  assert.match(said.out, /  `acme-other` is the same agent as the one that does the work here: a fresh conversation/);
+  assert.doesNotMatch(said.out, /`older-agent`[^\n]* the same agent as the one/);
+  fx.cleanup();
 });
 
 /**
