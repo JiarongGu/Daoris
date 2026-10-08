@@ -223,6 +223,9 @@ public sealed class SessionStoreTests : IAsyncLifetime
         Assert.Equal(("answer", "8080.", DateTimeOffset.Parse("2026-10-02T10:05:00Z"), false), (first.Id, first.Text, first.At, first.Reopens));
         Assert.Empty(first.Files);
         Assert.Equal("8080.", before.Answer);
+        // XAGENT1c: a record from before reads as before: its answer is the person's, and it names no opinion.
+        Assert.Null(first.By);
+        Assert.Null(before.Opinion);
 
         await store.KeepSaidAsync("abcd1234", new SaidWord("w2", "9090, not 8080.", Now, []));
 
@@ -255,6 +258,8 @@ public sealed class SessionStoreTests : IAsyncLifetime
 
         Assert.Equal(("w1", "kept"), (word.Id, word.Text));
         Assert.Equal(["a.md"], word.Files);
+        // XAGENT1c: a word with no `by` is the person's, as every word kept before the field is.
+        Assert.Null(word.By);
     }
 
     /// <summary>
@@ -546,6 +551,40 @@ public sealed class SessionStoreTests : IAsyncLifetime
         Assert.Null(read.Tree);
     }
 
+    /// <summary>
+    /// XAGENT1c (D155 points 7 and 11): a reviewer's record is a chat that names the opinion it reads for, and another
+    /// agent's claims wait in `said` naming that opinion as `by`. `answer`, which every reader takes as the person's words,
+    /// joins only theirs; a word with no `by` is the person's, as every word before the field was. Neither travels: the
+    /// mirror writes no opinion.
+    /// </summary>
+    [Fact]
+    public async Task A_reviewers_record_names_its_opinion_and_another_agents_words_say_by_whom()
+    {
+        var reviewer = await _sessions.CreateAsync(
+            null, "Owner", "codex-acp", Now, kind: SessionKind.Chat, tree: "clones/abcd1234", opinion: "abcd1234");
+        var read = (await _sessions.FindAsync(reviewer.Id))!;
+        Assert.Equal((SessionKind.Chat, null, "abcd1234"), (read.Kind, read.Quest, read.Opinion));
+        Assert.Null((await Create()).Opinion);
+
+        var working = await Create();
+        await _sessions.SetStateAsync(working.Id, SessionState.Completed, "landed.", null, null, Now);
+        await _sessions.KeepSaidAsync(working.Id, new SaidWord("w1", "Also add the changelog line.", Now, [], Reopens: true));
+        await _sessions.KeepSaidAsync(working.Id, new SaidWord("w2", "Another agent claims…", Now, [], Reopens: true, By: "abcd1234"));
+
+        var words = (await _sessions.FindAsync(working.Id))!;
+        Assert.Equal(new string?[] { null, "abcd1234" }, words.Said.Select(word => word.By));
+        Assert.Equal([true, false], words.Said.Select(word => word.Persons));
+        Assert.Equal("Also add the changelog line.", words.Answer);
+
+        await _sessions.TakeSaidAsync(working.Id, ["w1"]);
+        var theirs = (await _sessions.FindAsync(working.Id))!;
+        Assert.Equal("abcd1234", Assert.Single(theirs.Said).By);
+        Assert.Null(theirs.Answer);
+
+        await _sessions.MirrorAsync(reviewer with { Id = "alice-laptop/" + reviewer.Id, Origin = "alice-laptop" });
+        Assert.Null((await _sessions.FindAsync("alice-laptop/" + reviewer.Id))!.Opinion);
+    }
+
     /// <summary>A chat is the same row with no quest in it (D49 §3).</summary>
     [Fact]
     public async Task A_chat_round_trips_with_no_quest()
@@ -625,6 +664,8 @@ public sealed class SessionSchemaUpgradeTests : IAsyncLifetime
         Assert.False(elder.Interrupted);
         // …nor about an account's limit (TOOL4c): the old reading, a failure like any other.
         Assert.False(elder.Limit);
+        // …and it names no second opinion (XAGENT1c): the old reading, a session that read nobody's work for one.
+        Assert.Null(elder.Opinion);
 
         var chat = await sessions.CreateAsync(
             null, "Elder", "stub", Now, workspace: null, kind: SessionKind.Chat);

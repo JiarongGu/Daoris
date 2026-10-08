@@ -135,6 +135,19 @@ public sealed record Session(
     public string? Ask { get; init; }
 
     /// <summary>
+    /// The second opinion this session reads another session's work for, as its reviewer (XAGENT1c, D155 point 11) — null
+    /// for every other session.
+    /// </summary>
+    /// <remarks>
+    /// <para>The kind stays <see cref="SessionKind.Chat"/>, serving no quest, for the intake's reason above: a build from
+    /// before reads it as a conversation nothing plans from, which is what it is.</para>
+    ///
+    /// <para><b>This machine's own, like the opinion it names</b> (D47 §4): no wire carries it, so a teammate reads a
+    /// conversation, and a caller off this machine is never answered it.</para>
+    /// </remarks>
+    public string? Opinion { get; init; }
+
+    /// <summary>
     /// Whether this session took its own quest, through its own connector (STANDDOWN2). A session
     /// ending with its quest still taken is then waiting on the person, not standing down for
     /// somebody else — which the quest's state alone cannot tell.
@@ -154,10 +167,15 @@ public sealed record Session(
     public IReadOnlyList<SaidWord> Said { get; init; } = [];
 
     /// <summary>
-    /// The words waiting, joined by a blank line, or null when none wait: what an answer was before <see cref="Said"/>
+    /// The person's words waiting, joined by a blank line, or null when none wait: what an answer was before <see cref="Said"/>
     /// (ANSWER1b), kept for every reader from before it — the driver's resume, its carry-on and the page's answered park.
     /// </summary>
-    public string? Answer => Said.Count == 0 ? null : string.Join("\n\n", Said.Select(word => word.Text));
+    /// <remarks>
+    /// <b>Never another agent's</b> (XAGENT1c, D155 point 7): every reader of this field reads it as the person's, and a
+    /// carry-on hands it to a new session as theirs. An opinion's findings wait in <see cref="Said"/> alone, marked by whom.
+    /// </remarks>
+    public string? Answer =>
+        Said.Where(word => word.By is null).Select(word => word.Text).ToList() is { Count: > 0 } persons ? string.Join("\n\n", persons) : null;
 
     /// <summary>
     /// A <see cref="SessionState.Stopped"/> record that was not the person's stop (D104): the orphan
@@ -217,16 +235,29 @@ public sealed record Session(
         && Enum.IsDefined(state);
 }
 
-/// <summary>One thing the person said to a session, waiting for it to go on with it (MSG1a, D137 §2.4).</summary>
+/// <summary>
+/// One thing said to a session, waiting for it to go on with it (MSG1a, D137 §2.4): the person's, or, naming
+/// <see cref="By"/>, another agent's claims Daoris handed it (XAGENT1c, D155 point 7).
+/// </summary>
 /// <param name="Id">The word's own handle, so the record can say again where the session took it (D136 §3).</param>
 /// <param name="Text">Their words, trimmed at the ends only.</param>
 /// <param name="At">When they said it.</param>
 /// <param name="Files">The names of the files they gave with it — names alone, never where the files are.</param>
 /// <param name="Reopens">
-/// Said after the record ended, so it goes on by reopening it; such a word is kept on its ask once taken, as
-/// <c>reopened</c> (D133 §1). False for an answer to a park, which its door keeps on the ask at once.
+/// Said after the record ended, so it goes on by reopening it; such a word of the person's is kept on its ask once taken,
+/// as <c>reopened</c> (D133 §1). False for an answer to a park, which its door keeps on the ask at once.
 /// </param>
-public sealed record SaidWord(string Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens = false);
+/// <param name="By">
+/// The second opinion whose findings these are, or null for the person's words: so absent is the person's, and every word
+/// kept before the field reads as it did. Another agent's claims are never kept on the ask, where every later session would
+/// read them as the person's requirements (DRIFT1a).
+/// </param>
+public sealed record SaidWord(
+    string Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens = false, string? By = null)
+{
+    /// <summary>Whether the person said it: every word but another agent's.</summary>
+    public bool Persons => By is null;
+}
 
 /// <summary>
 /// Session records, held by the service beside the quests they serve.
@@ -365,6 +396,10 @@ public sealed partial class SessionStore
         // posts each with the commit it read. This machine's own, like the person's words beside it: no wire names it, and
         // a record from before says nothing, which is the old reading.
         await SchemaColumns.EnsureAsync(_db, "sessions", "review", "review TEXT NULL", ct).ConfigureAwait(false);
+
+        // XAGENT1c (D155 point 11): the second opinion a reviewer's record reads another session's work for. This machine's
+        // own, like the opinion it names: no wire carries it, and a record from before says none, which is the old reading.
+        await SchemaColumns.EnsureAsync(_db, "sessions", "opinion", "opinion TEXT NULL", ct).ConfigureAwait(false);
 
         await using (var cursor = _db.Command())
         {
@@ -513,7 +548,7 @@ public sealed partial class SessionStore
         string? quest, string repository, string adapter, DateTimeOffset now,
         string? workspace = null, SessionKind kind = SessionKind.Driven,
         string? harnessVersion = null, string? profile = null, string? tree = null,
-        string? baseCommit = null, CancellationToken ct = default, string? ask = null) => _db.RunAsync<Session>(async () =>
+        string? baseCommit = null, CancellationToken ct = default, string? ask = null, string? opinion = null) => _db.RunAsync<Session>(async () =>
     {
         var session = new Session(
             Guid.NewGuid().ToString("N")[..8], quest, repository, adapter,
@@ -523,14 +558,16 @@ public sealed partial class SessionStore
             Blank(harnessVersion), Blank(profile), Trees.Normalize(tree), Blank(baseCommit))
         {
             Ask = Blank(ask),
+            Opinion = Blank(opinion),
         };
 
         await using var command = _db.Command();
         command.CommandText = $"""
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, base_commit, ask, revision)
-            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $harnessVersion, $profile, $tree, $baseCommit, $ask, {NextRevision})
+            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, base_commit, ask, opinion, revision)
+            VALUES ($id, $quest, $repository, $adapter, $state, NULL, NULL, NULL, $created, $updated, $workspace, $kind, $harnessVersion, $profile, $tree, $baseCommit, $ask, $opinion, {NextRevision})
             """;
         command.Parameters.AddWithValue("$ask", (object?)session.Ask ?? DBNull.Value);
+        command.Parameters.AddWithValue("$opinion", (object?)session.Opinion ?? DBNull.Value);
         command.Parameters.AddWithValue("$workspace", session.Workspace);
         command.Parameters.AddWithValue("$kind", session.Kind.ToString());
         command.Parameters.AddWithValue("$harnessVersion", (object?)session.HarnessVersion ?? DBNull.Value);
@@ -933,6 +970,7 @@ public sealed partial class SessionStore
     {
         Origin = reader.IsDBNull(reader.GetOrdinal("origin")) ? null : reader.GetString(reader.GetOrdinal("origin")),
         Ask = reader.IsDBNull(reader.GetOrdinal("ask")) ? null : reader.GetString(reader.GetOrdinal("ask")),
+        Opinion = reader.IsDBNull(reader.GetOrdinal("opinion")) ? null : reader.GetString(reader.GetOrdinal("opinion")),
         Took = !reader.IsDBNull(reader.GetOrdinal("took")) && reader.GetInt64(reader.GetOrdinal("took")) != 0,
         Said = SaidOf(reader),
         Interrupted = !reader.IsDBNull(reader.GetOrdinal("interrupted")) && reader.GetInt64(reader.GetOrdinal("interrupted")) != 0,
@@ -1086,7 +1124,9 @@ public sealed partial class SessionStore
                     .Select(file => file.GetString()!)
                     .ToList();
                 var reopens = element.TryGetProperty("reopens", out var flag) && flag.ValueKind == JsonValueKind.True;
-                words.Add(new SaidWord(wordId, text, at, files, reopens));
+                // XAGENT1c: whose claims these are; absent, or not a name, is the person's, which every word before it was.
+                var by = JsonFields.Text(element, "by") is { Length: > 0 } opinion ? opinion : null;
+                words.Add(new SaidWord(wordId, text, at, files, reopens, by));
             }
 
             return words;
@@ -1117,6 +1157,7 @@ public sealed partial class SessionStore
         foreach (var file in word.Files) writer.WriteStringValue(file);
         writer.WriteEndArray();
         if (word.Reopens) writer.WriteBoolean("reopens", true);
+        if (word.By is not null) writer.WriteString("by", word.By);
         writer.WriteEndObject();
     }
 
