@@ -3,8 +3,10 @@
     <RootNamespace>Daoris.Knowledge.Http</RootNamespace>
     <AssemblyName>daoris-knowledge-http</AssemblyName>
     <!-- Doctrine stays read-only (D31); service-state writes exist and are gated by mode — loopback
-         trust in local, minted keys on every route in shared (D47 §7). No cookies, so no antiforgery
-         surface: the browser authenticates nothing, and a shared deployment serves no page at all. -->
+         trust in local, minted keys on every route in shared (D47 §7). No cookies, and a shared
+         deployment serves no page at all. A browser authenticates nothing, yet a browser on this machine
+         is on the loopback, so a write from a page the host does not allow is refused by its origin
+         (ORIGIN1, BrowserOrigins.cs): loopback trust is no reason a website's page may press a door. -->
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
   <ItemGroup>

@@ -85,6 +85,7 @@ nested. A reader skips a line it cannot parse and a field it does not know.
 | `proposal.settled` | desktop, from the page | applied | whether Ask Daoris's proposals help |
 | `page.error` | desktop, from the page | where, message | a render or request failure the page caught |
 | `request.failed` | host | method, route, status, ms | a request that failed, or took over two seconds |
+| `origin.refused` (warn) | host | method, route, by, site | a write a web page sent that this host does not allow, refused 403 before its route ran (ORIGIN1): by the route's pattern, `by` the header that refused it (`origin` or `site`), and `site` the browser's own word for it where it said one; never the page's address, another header or the body |
 | `index.refused` (warn) | host, mcp | found, known | the knowledge index's schema is newer than this build's (KSCHEMA1, D36's note): written once at the start, the index left as it is and refused at every door while the rest works; by the two versions, never the path |
 | `tool.download.started` / `.verified` / `.refused` / `.stopped` | the process that runs the download (D121 §3.6, TOOLS4) | tool, version, check when refused | a managed version fetched, and the check that refused it |
 | `tool.location.fetched` / `.failed` | the process that looks (D121 §3.7, TOOLS4) | position in the list, versions or check | a resource location looked at, by its place and never by the address the person typed |
