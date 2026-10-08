@@ -81,8 +81,15 @@ public static class AutoLandingCode
     /// <summary>The landing was refused for another reason, git's or the pattern's, in its own sentence.</summary>
     public const string Refused = "refused";
 
+    /// <summary>
+    /// Its work waits for the person's review (REVIEWENV1c, D154 point 7; the review environment design §3.1): the level says
+    /// review, and no <i>reviewed</i> on a set-up that holds its tip, and no skip, lets it go yet. Kept once, read again at every
+    /// look as a hold is, and landed at the first look after the review.
+    /// </summary>
+    public const string Unreviewed = "unreviewed";
+
     /// <summary>Whether a try with this code closes its entry; the rest wait for a change, a release or the person's press.</summary>
-    public static bool Closes(string code) => code is not (Held or Uncommitted or Exists or Completed or Refused);
+    public static bool Closes(string code) => code is not (Held or Uncommitted or Exists or Completed or Refused or Unreviewed);
 
     /// <summary>Whether a try with this code is tried again only once its tree's tip or status moves (design §2).</summary>
     public static bool OnChange(string code) => code is Uncommitted or Exists or Completed or Refused;
@@ -167,7 +174,8 @@ public static class AutoLandingRules
         null => true,
         { Code: var code } last when AutoLandingCode.OnChange(code) =>
             !string.Equals(last.Tip, tip, StringComparison.Ordinal) || !string.Equals(last.Status, status, StringComparison.Ordinal),
-        { Code: AutoLandingCode.Held } => true,
+        // A hold and a review wait on the person, not on the tree, so each is read again at every look.
+        { Code: AutoLandingCode.Held or AutoLandingCode.Unreviewed } => true,
         _ => false,
     };
 
@@ -396,7 +404,7 @@ public static class AutoLandingNotes
     /// <summary>Whether a try with this code is said in the conversation; the closings without a landing stay the due list's and the log's.</summary>
     public static bool Says(string code) => code is AutoLandingCode.Landed or AutoLandingCode.Advanced or AutoLandingCode.PluginUnready
         or AutoLandingCode.PluginFailed or AutoLandingCode.Nothing or AutoLandingCode.Held or AutoLandingCode.Uncommitted
-        or AutoLandingCode.Exists or AutoLandingCode.Completed or AutoLandingCode.Refused;
+        or AutoLandingCode.Exists or AutoLandingCode.Completed or AutoLandingCode.Refused or AutoLandingCode.Unreviewed;
 
     /// <summary>
     /// The note for one try: its lead-in by its code, then the landing's sentence where there was a landing to say it.

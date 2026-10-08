@@ -66,20 +66,20 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/ToolResourcesTests.cs` | 40 | 559 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/AccountRotation.cs` | 49 | 849 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Acp.cs` | 91 | 1845 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 104 | 1890 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 109 | 1946 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 80 | 1520 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 148 | 2567 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 150 | 2584 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 55 | 1008 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 198 | 3649 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 58 | 1019 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 60 | 1044 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 89 | 1639 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionGroups.cs` | 55 | 987 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.Sync.cs` | 68 | 1146 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.cs` | 73 | 1285 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.cs` | 75 | 1308 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionsCommand.cs` | 55 | 1104 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/StagedBuild.cs` | 46 | 959 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trace.Chain.cs` | 56 | 1236 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trace.Chain.cs` | 56 | 1246 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/WorkAbandoning.cs` | 53 | 983 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/WorkingTree.cs` | 47 | 1003 |
 

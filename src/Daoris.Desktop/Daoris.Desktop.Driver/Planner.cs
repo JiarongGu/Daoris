@@ -498,6 +498,13 @@ public enum StartVerdict
     /// so the quest sits with the ledger's own sentence and nothing is asked. No strike: nothing ran.
     /// </summary>
     TakenElsewhere,
+
+    /// <summary>
+    /// A set-up step this machine cannot honestly start (REVIEWENV1c, D154 point 4; the review environment design §2.1): no review
+    /// rule here names its environment, or a local one has no address or no window here to show the work in (a headless loop).
+    /// The reason names the door that would let it start. No strike: nothing ran.
+    /// </summary>
+    CannotShow,
 }
 
 /// <param name="Quest">The quest considered.</param>
@@ -614,8 +621,13 @@ public static class Planner
     /// repository that registered without adopting can be driven (D70). Defaults to the pipe, the door
     /// with the stricter requirement, so a caller that does not know cannot start more than it should.
     /// </param>
+    /// <param name="window">
+    /// Whether this loop carries Daoris's browser (D78), the window a local set-up step shows its chain's work in (REVIEWENV1c,
+    /// design §2.1). Defaults to none, the headless loop's case, so a caller that does not know sits such a step rather than
+    /// start one with nowhere to show it.
+    /// </param>
     public static IReadOnlyList<Consideration> Plan(
-        Snapshot snapshot, DriverConfig config, SessionWire door = SessionWire.Pipe)
+        Snapshot snapshot, DriverConfig config, SessionWire door = SessionWire.Pipe, bool window = false)
     {
         var considerations = new List<Consideration>();
         // 🔴 Grouped, never keyed straight off the list: two active sessions in one repository is a
@@ -864,6 +876,12 @@ public static class Planner
                 EvidenceCodes.MissingHold =>
                     $"waits on `#{question.Id}`, which `{question.To}` closed done without the evidence it names — it resumes, in the "
                     + $"same tree, once a later commit holds it, `daoris-driver quest check {question.Id} --commit <sha>`, or {yes}",
+                // A set-up step waits for the person's review (REVIEWENV1c, D154 point 9), which a yes does not give.
+                EvidenceCodes.Unreviewed =>
+                    $"waits on `#{question.Id}`, which `{question.To}` closed done: it waits for your review"
+                    + (question.SetUpIn is { } environment ? $" in `{environment}`" : "")
+                    + $" — it resumes, in the same tree, once you say it is reviewed, `daoris-driver quest review {question.Id} reviewed`, "
+                    + $"or skip the review, `daoris-driver quest review {question.Id} skip`.",
                 _ =>
                     $"waits on `#{question.Id}`, which `{question.To}` closed done departing from what you required — it "
                     + $"resumes, in the same tree, once you accept that, your yes: `daoris-driver quest accept {question.Id}`.",
@@ -917,6 +935,13 @@ public static class Planner
             if (config.Holds.Contains(quest.To, StringComparer.OrdinalIgnoreCase))
             {
                 return new(quest, StartVerdict.Held, $"`{quest.To}` is held by the person.");
+            }
+
+            // A set-up step it cannot honestly start (REVIEWENV1c, design §2.1): no rule here names its environment, or a local one
+            // has nowhere to show it. It sits saying why, and no session starts with nothing to show the work in.
+            if (ReviewSetUps.Sits(config, quest, repo.Workspace, window) is { } sits)
+            {
+                return new(quest, StartVerdict.CannotShow, sits);
             }
 
             if (repo.Root is null)

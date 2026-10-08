@@ -1,7 +1,10 @@
 namespace Daoris.Driver;
 
-/// <summary>What the landing at done reads of the service (LAND2b): a seam, so its tests stand in for the ledger.</summary>
-public interface IAutoLandingWorld
+/// <summary>
+/// What the landing at done reads of the service (LAND2b): a seam, so its tests stand in for the ledger. Its quests and asks are
+/// what the review's gate reads too (REVIEWENV1c), so a look lands nothing the gate holds.
+/// </summary>
+public interface IAutoLandingWorld : IReviewWorld
 {
     /// <summary>One quest as it stands, closed ones included; null where the service holds none.</summary>
     Task<QuestView?> QuestAsync(string id, CancellationToken ct);
@@ -16,15 +19,21 @@ public interface IAutoLandingWorld
 /// <summary>The world over this machine's service: the quests read once per instance, since a look builds one.</summary>
 public sealed class ServiceAutoLandingWorld(ServiceClient service) : IAutoLandingWorld
 {
+    private IReadOnlyList<QuestView>? _every;
     private IReadOnlyDictionary<string, QuestView>? _quests;
 
     public async Task<QuestView?> QuestAsync(string id, CancellationToken ct)
     {
-        _quests ??= (await service.EveryQuestAsync(ct).ConfigureAwait(false))
+        _quests ??= (await QuestsAsync(ct).ConfigureAwait(false))
             .GroupBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
         return _quests.GetValueOrDefault(id.TrimStart('#'));
     }
+
+    public async Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct) =>
+        _every ??= await service.EveryQuestAsync(ct).ConfigureAwait(false);
+
+    public Task<AskView?> AskAsync(string id, CancellationToken ct) => service.FindAskAsync(id, ct);
 
     public Task<IReadOnlyList<SessionRecord>> RecordsAsync(CancellationToken ct) => service.SessionRecordsAsync(ct);
 
@@ -35,7 +44,11 @@ public sealed class ServiceAutoLandingWorld(ServiceClient service) : IAutoLandin
 }
 
 /// <summary>A due session the look chose to try, with what it read of it there: its quest, and its tree's tip and status.</summary>
-public sealed record AutoChoice(AutoLanding Entry, QuestView Quest, string? Tip, string Status);
+public sealed record AutoChoice(AutoLanding Entry, QuestView Quest, string? Tip, string Status)
+{
+    /// <summary>The review's gate as the look read it (REVIEWENV1c): one that let it go, which its landing record keeps.</summary>
+    public ReviewGateState? Review { get; init; }
+}
 
 /// <summary>What the look chose to land beside it, and what it said of the rest as it looked.</summary>
 public sealed record AutoChosen(IReadOnlyList<AutoChoice> Chosen, IReadOnlyList<string> Said);
@@ -127,8 +140,9 @@ public sealed class AutoLander(
                 continue;
             }
 
-            // Held for the person's yes (D133) or evidence's verdict (D144): kept once, and read again at every look.
-            if (quest.Held)
+            // Held for the person's yes (D133) or evidence's verdict (D144): kept once, and read again at every look. A set-up step
+            // held for its review alone is the gate's below, which says what lets it go (REVIEWENV1c).
+            if (quest is { Held: true } && quest.Hold != EvidenceCodes.Unreviewed)
             {
                 if (entry.Last?.Code != AutoLandingCode.Held) said.Add(Tried(entry, AutoLandingCode.Held, tip: null, status: null));
                 continue;
@@ -137,6 +151,21 @@ public sealed class AutoLander(
             var (tip, status, uncommitted) = await ReadTreeAsync(entry.Tree, ct).ConfigureAwait(false);
             if (!AutoLandingRules.ShouldTry(entry, tip, status)) continue;
 
+            // The review's gate (REVIEWENV1c, design §3.1): where the level says review, the session stays due as `unreviewed`, said
+            // once and read again at every look, until the person's reviewed on a set-up that holds its tip, or their skip.
+            var review = await trees.ReviewAsync(entry.Tree, entry.Quest, world, ct).ConfigureAwait(false);
+            if (!review.LetsGo)
+            {
+                if (entry.Last?.Code != AutoLandingCode.Unreviewed)
+                {
+                    said.Add(Tried(entry, AutoLandingCode.Unreviewed, tip, status,
+                        new TreeLanding(false, review.Says) { Refusal = AutoLandingCode.Unreviewed }));
+                    log?.Invoke(ReviewLines.Held(entry.Session, entry.Repository, entry.Workspace, review, ReviewDoors.Look));
+                }
+
+                continue;
+            }
+
             // Uncommitted work would not travel with the branch (design §5): it stays to review, with the count of its paths.
             if (uncommitted > 0)
             {
@@ -144,7 +173,7 @@ public sealed class AutoLander(
                 continue;
             }
 
-            chosen.Add(new AutoChoice(entry, quest, tip, status));
+            chosen.Add(new AutoChoice(entry, quest, tip, status) { Review = review });
         }
 
         return new(chosen, said);
@@ -203,7 +232,7 @@ public sealed class AutoLander(
             entry.Session, entry.Quest, id => world.QuestAsync(id, ct), events.Openings([entry.Session]).GetValueOrDefault(entry.Session))
             .ConfigureAwait(false);
         var plan = await trees.PlanAsync(entry.Tree, subject, ct).ConfigureAwait(false);
-        var landed = await trees.LandAsync(entry.Tree, subject, ct, world.InUseAsync, AcceptedBy.Auto).ConfigureAwait(false);
+        var landed = await trees.LandAsync(entry.Tree, subject, ct, world.InUseAsync, AcceptedBy.Auto, choice.Review).ConfigureAwait(false);
         var code = AutoLandingRules.CodeOf(landed);
         return Tried(entry, code, choice.Tip, choice.Status, landed, plan.Plugin, plan.Target, unlanded);
     }

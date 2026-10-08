@@ -83,6 +83,26 @@ public sealed class TargetPromptGoldenTests
         InFlight = [" M src/report.ts"],
     };
 
+    /// <summary>
+    /// A set-up step (REVIEWENV1c, design §2.2): a chain's step that shows the work of the step before, which its tree grew from,
+    /// in a local environment for the person's review, by the procedure the rule names.
+    /// </summary>
+    internal static readonly SessionTarget SetUpStep = new(
+        QuestId: "def456",
+        Title: "Show #abc123 in `local` for review",
+        Body: "Set the work of #abc123 up in `local` for the person's review, by the route this repository documents for `local`, and "
+              + "show it to them there. Your tree holds that work: add none of your own. Say what you showed, then close this quest "
+              + "done; it then waits for the person's review.",
+        Asker: "ask #a1b2c3",
+        Repository: "reports",
+        Root: "C:/work/reports",
+        ServiceUrl: "http://localhost:5177")
+    {
+        Parent = "abc123",
+        GrewFrom = "daoris/s-1a2b3c4d",
+        SetUp = new ReviewEnvironment("local", "local", "README.md", "http://localhost:4200"),
+    };
+
     private static string RepositoryRoot()
     {
         var at = new DirectoryInfo(AppContext.BaseDirectory);
@@ -98,6 +118,7 @@ public sealed class TargetPromptGoldenTests
         "bare" => Bare,
         "full" => Full,
         "carry-on" => CarryOn,
+        "set-up" => SetUpStep,
         _ => throw new ArgumentOutOfRangeException(nameof(which), which, null),
     };
 
@@ -105,6 +126,7 @@ public sealed class TargetPromptGoldenTests
     [InlineData("bare")]
     [InlineData("full")]
     [InlineData("carry-on")]
+    [InlineData("set-up")]
     public void The_quests_instruction_is_its_golden_text(string which)
     {
         Assert.Equal(File.ReadAllText(GoldenPath($"{which}.md")), TargetPrompt.Compose(Of(which)));
@@ -121,6 +143,7 @@ public sealed class TargetPromptGoldenTests
     [InlineData("bare")]
     [InlineData("full")]
     [InlineData("carry-on")]
+    [InlineData("set-up")]
     public void The_account_beside_it_is_its_golden(string which)
     {
         var account = TargetPrompt.Composed(Of(which)).Account;

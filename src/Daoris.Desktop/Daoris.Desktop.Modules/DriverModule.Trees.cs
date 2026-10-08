@@ -397,16 +397,25 @@ public sealed partial class DriverModule
         var trees = new SessionTrees(_loop.Home, new LandingPlugins(
             _loop.Home, say: (plugin, line) => _loop.Output.Append($"plugin:{plugin}", line), log: _loop.Log, health: _loop.Health));
 
+        // The review's gate (REVIEWENV1c, D154 point 7): what holds the press says so before it, and the press refuses it.
+        var review = await trees.ReviewAsync(tree, questId, new ServiceReviewWorld(service), cancellationToken);
+
         if (request.Type == "LANDING")
         {
             var plan = await trees.PlanAsync(tree, subject, cancellationToken);
-            return new { Session = id, plan.Form, plan.Target, plan.Source, plan.Plugin, plan.Problem };
+            return new { Session = id, plan.Form, plan.Target, plan.Source, plan.Plugin, plan.Problem, Review = Waits(review) };
         }
 
         // The sessions in use, asked when the rule's tidy reaches the other session branches the work holds (LAND3).
-        var landed = await trees.LandAsync(tree, subject, cancellationToken, async token => await InUseAsync(service, token));
+        var landed = await trees.LandAsync(tree, subject, cancellationToken, async token => await InUseAsync(service, token), review: review);
         // Kept where the conversation is kept, so the landing and the plugin's word outlast the press (D100).
         if (landed.Landed) _loop.Events.Keep(id, LandingRules.Note(landed), line => _loop.Output.Append(id, line));
+        if (landed.Refusal == AutoLandingCode.Unreviewed && _loop.Log is { } log)
+        {
+            var (workspace, repository) = trees.Owner(tree);
+            SessionLog.WriteLanding(log, ReviewLines.Held(id, repository, workspace, review, ReviewDoors.Screen));
+        }
+
         _loop.Nudge();
         return new
         {
@@ -414,8 +423,18 @@ public sealed partial class DriverModule
             Plugin = landed.Plugin is { } said
                 ? new { Id = said.Plugin, said.Pushed, said.PullRequest, said.Message, said.Failed }
                 : null,
+            Review = Waits(review),
         };
     }
+
+    /// <summary>
+    /// What the review's gate says beside a landing's plan or press (REVIEWENV1c, design §3.1): its state, the environment and the
+    /// sentence while it holds the work, so the page can say <i>Waits for your review in <c>environment</c></i> where <i>Accept…</i>
+    /// would be (REVIEWENV1g); null where nothing waits, so a landing no review touches answers as it did.
+    /// </summary>
+    public static object? Waits(ReviewGateState review) => review.LetsGo
+        ? null
+        : new { review.State, review.Decision.Environment, review.Decision.Level, Quest = review.Decision.SetUpStep?.Id, Says = review.Says };
 
     // A branch a landing made, handed to a landing plugin afterwards (WSR5b): what a press would do,
     // said before it, and the press — `daoris-driver trees hand` is the terminal's door (D50).

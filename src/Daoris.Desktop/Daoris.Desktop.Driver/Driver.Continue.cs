@@ -237,6 +237,7 @@ public sealed partial class Driver
                 said: SaidFilesFolder(home, sessionId, resume));
 
             onOpened();
+            var openedAt = DateTimeOffset.UtcNow;
             _runs.Live[quest.Id] = sessionId;
             using var live = new Disposer(() => _runs.Live.TryRemove(quest.Id, out var _));
 
@@ -256,7 +257,8 @@ public sealed partial class Driver
                 goOn: GoOnWith(adapter, target, selection, rules.File, handed),
                 working: () => starting?.Dispose(),
                 conclude: (exitCode, used, turnFailed, ended) =>
-                    ConcludeResumedAsync(quest, park, adapter, selection, resume, workTree, transcript, before, exitCode, used, turnFailed, ended, ct))
+                    ConcludeResumedAsync(quest, park, adapter, selection, resume, workTree, transcript, before, exitCode, used, turnFailed, ended,
+                        openedAt, ct))
                 .ConfigureAwait(false);
             return (run, refusedWhy, resume.Spoken);
         }
@@ -354,7 +356,7 @@ public sealed partial class Driver
     private async Task<(StartRun? Run, ContinueReason? FellBack)> ConcludeResumedAsync(
         QuestView quest, PriorSession park, ISessionAdapter adapter, HarnessSelection selection, ResumeAsk resume,
         string workTree, string transcript, string? before, int? exitCode, AcpUsage? used, string? turnFailed, HarnessEnding ended,
-        CancellationToken ct)
+        DateTimeOffset openedAt, CancellationToken ct)
     {
         var sessionId = park.Session;
 
@@ -425,6 +427,10 @@ public sealed partial class Driver
                 sessionId, conclusion.State, note: conclusion.Note, evidence: evidence, ct: ct, limit: limited, parts: conclusion.Parts)
             .ConfigureAwait(false);
         service.AccountSaid(Took(park, adapter.Name, why: null));
+
+        // REVIEWENV1c (design §2.6, §3.4): a set-up step that went on with the person's not yet says a new set-up, posted with
+        // the commit its tree holds now, its correction among it.
+        await ReviewSetUps.PostAsync(service, config, _events, after, sessionId, workTree, quest.Workspace, openedAt, ct).ConfigureAwait(false);
 
         // LAND2b: as a first run's ending, so a resumed session that closes its quest done is due too. One that went on after
         // its landing moves its own branch on at the next look (LAND2c).

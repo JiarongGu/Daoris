@@ -372,7 +372,10 @@ public sealed record TraceQuestLink(string Id)
     /// <summary>Held: its done waits for the person's yes, or for its evidence (<see cref="Hold"/> says which).</summary>
     public bool Held { get; init; }
 
-    /// <summary>Why it is held (EVID1a, D144 §6): <c>departed</c>, <c>evidence-unread</c> or <c>evidence-missing</c>; null where nothing holds it or a host said none.</summary>
+    /// <summary>
+    /// Why it is held (EVID1a, D144 §6): <c>departed</c>, <c>evidence-unread</c>, <c>evidence-missing</c> or, a set-up step's,
+    /// <c>unreviewed</c> (REVIEWENV1b); null where nothing holds it or a host said none.
+    /// </summary>
     public string? Hold { get; init; }
 
     /// <summary>What Daoris last read of its evidence (EVID1b, D144 §5), or null while nothing was.</summary>
@@ -642,6 +645,12 @@ public sealed record TraceBranch(string Branch, string Tip, DateTimeOffset At)
 
     /// <summary>The landing rule it was made under, as it stood then; null for one recorded before it was kept.</summary>
     public TraceRule? Rule { get; init; }
+
+    /// <summary>
+    /// The review that let it land (REVIEWENV1c, design §3.5): the person's reviewed, with its environment and the set-up's commit,
+    /// or their skip; null where no review was asked, and for a landing recorded before it was kept.
+    /// </summary>
+    public LandingReview? Review { get; init; }
 }
 
 /// <summary>What stood when a driven session on a quest started, by the moments the stores keep (D143 point 3).</summary>
@@ -1148,6 +1157,7 @@ internal static partial class TraceChains
         RemovedOn = landing.GoneAt is null || landing.RemovedAs is null ? null : landing.RemovedOn,
         AcceptedBy = landing.AcceptedBy,
         Rule = landing.Rule is { } rule ? new TraceRule(rule.Plugin, rule.AutoAccept, rule.Source) : null,
+        Review = landing.Review,
     };
 
     /// <summary>

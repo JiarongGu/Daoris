@@ -66,7 +66,8 @@ public sealed record ReviewEdit
 /// for cell (<c>ReviewRulesTests</c> and <c>driverconfig.test.ts</c>): the reading and its precedence, every refusal in the
 /// same words, each door's sentences, the edits, and what a checkout holding a procedure means.</para>
 ///
-/// <para>Declared only (design §9): nothing here composes a step, gates a landing or serves anything; REVIEWENV1b–h read it.</para>
+/// <para>Nothing here composes a step, gates a landing or serves anything: the gate (<see cref="ReviewGate"/>) and the planner's
+/// sit (<see cref="ReviewSetUps"/>) read it since REVIEWENV1c, and the intake's composing is REVIEWENV1f's.</para>
 /// </remarks>
 public static class ReviewRules
 {
@@ -79,7 +80,10 @@ public static class ReviewRules
     /// </summary>
     public static readonly IReadOnlyList<string> Production = ["production", "prod", "prd", "live"];
 
-    /// <summary>Said by each door after what the rule lets a step do, until the set-up step and the gate read it (REVIEWENV1c).</summary>
+    /// <summary>
+    /// Said by each door after what the rule lets a step do. The gate reads the rule since REVIEWENV1c, so its words are owed a
+    /// change at every door together (this, the CLI's <c>REVIEW_DECLARED_ONLY</c> and the page's catalogue), never at one alone.
+    /// </summary>
     public const string DeclaredOnly = "Declared only: nothing reads it yet, so no set-up step is composed and no landing waits for it.";
 
     /// <summary>What stands where nothing is set anywhere (design §1.8): today's behaviour, said as such.</summary>

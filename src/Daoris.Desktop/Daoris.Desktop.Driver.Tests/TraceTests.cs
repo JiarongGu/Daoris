@@ -493,6 +493,40 @@ public sealed class TraceTests : IDisposable
     }
 
     /// <summary>
+    /// REVIEWENV1c (design §3.5): the landing record's review reads back on the landing it let go, the person's reviewed with its
+    /// environment, set-up step and commit, or their skip with their words; a landing no review was asked of says nothing of one.
+    /// </summary>
+    [Fact]
+    public async Task A_landings_review_reads_back_as_reviewed_or_skipped()
+    {
+        new LandedBranches(_home).Record(new LandedBranch(
+            "dashboards", "work", "feature/q1-fix-the-dashboard-figure", "main", "1a2b3c4d5e6f708192a3b4c5d6e7f80910111213", "s2", "q1",
+            "Fix the dashboard figure", At(10, 5))
+        {
+            AcceptedBy = AcceptedBy.Person,
+            Review = new LandingReview(ReviewVerdicts.Reviewed, "local", "q2")
+            {
+                Commit = "0123456789abcdef0123456789abcdef01234567", At = At(10, 2), Words = "right",
+            },
+        });
+
+        var (_, reviewed, _) = await TraceAsync(new TraceAsk("s2"));
+        Assert.Contains("; accepted by the person's press; reviewed by you in `local` on set-up step #q2 at 01234567, 2026-10-03 10:02 UTC",
+            Block(reviewed, "session s2"));
+
+        new LandedBranches(_home).Record(new LandedBranch(
+            "dashboards", "work", "feature/q1-fix-the-dashboard-figure", "main", "1a2b3c4d5e6f708192a3b4c5d6e7f80910111213", "s2", "q1",
+            "Fix the dashboard figure", At(10, 5))
+        {
+            AcceptedBy = AcceptedBy.Person,
+            Review = new LandingReview(ReviewVerdicts.Skipped, null, "q1") { Words = "a readme change" },
+        });
+
+        var (_, skipped, _) = await TraceAsync(new TraceAsk("s2"));
+        Assert.Contains("; landed without a review, which you skipped on quest #q1, saying: \"a readme change\"", Block(skipped, "session s2"));
+    }
+
+    /// <summary>
     /// LAND2b (D145 point 6, design §8): a landing at the quest's done is read back as accepted automatically, with the rule it
     /// was made under; the conversation's acceptance note is read as one; the due list's tries are each read by their code. A
     /// landing from before who accepted it was kept says so, never guessed.
