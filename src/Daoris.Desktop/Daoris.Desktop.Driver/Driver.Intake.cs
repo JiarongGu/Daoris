@@ -20,11 +20,16 @@ namespace Daoris.Driver;
 /// </remarks>
 public sealed partial class Driver
 {
-    /// <summary>What an intake with no connector can and cannot do — said on its transcript.</summary>
-    private const string NoConnectorForIntake =
-        "— no daoris-knowledge on this machine, so this intake has no connector: it can decide, but "
-        + "cannot publish what it decides, and will end by asking you. `npm run publish:service -- "
-        + "--install` lands one.";
+    /// <summary>
+    /// What an intake with no connector can and cannot do, said on its transcript, and the two commands that lay one
+    /// down in the words a session is told (CONNECTOR1c): the install's first, as <see cref="KnowledgeConnector.Candidates"/>
+    /// ranks them.
+    /// </summary>
+    internal static string NoConnectorForIntake =>
+        $"— no {KnowledgeConnector.ExecutableName} on this machine, so this intake has no connector: it can decide, but "
+        + "cannot publish what it decides, and will end by asking you. "
+        + "`npm run publish:desktop -- --to <install> --service` lays one beside the application, and "
+        + "`npm run publish:service -- --install` lands one in the home's `bin/`.";
 
     /// <summary>
     /// Why a person's line is refused for a running intake, and where their answer goes instead — the
