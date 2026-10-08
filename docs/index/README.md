@@ -70,7 +70,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 80 | 1520 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 148 | 2567 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 55 | 1008 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 197 | 3626 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 198 | 3649 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 58 | 1019 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 89 | 1639 |

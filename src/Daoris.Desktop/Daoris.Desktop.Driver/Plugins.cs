@@ -12,6 +12,15 @@ namespace Daoris.Driver;
 /// <param name="Command">The default command, `${plugin}` already expanded; the machine's `commands` row outranks it.</param>
 /// <param name="Posture">D37 in this harness's own vocabulary, or null for a wire that carries none (ACP3).</param>
 /// <param name="ProfileVariable">The environment variable that makes a directory an account (D49 §4).</param>
+/// <param name="Product">
+/// What a person calls the tool it runs, as the plugin says (XAGENT1b, D155 point 4): trimmed, and null where it says none, says
+/// a blank or says something that is not text. Never a reason to refuse the plugin.
+/// </param>
+/// <param name="Maker">
+/// Who makes that tool, as the plugin says, read as <paramref name="Product"/> is: the plugin's word, by which its agent may count
+/// as another maker's for a second opinion (the second-agent design §3.1). Null is a maker not declared, which is never taken
+/// as independent.
+/// </param>
 public sealed record PluginHarness(
     string Name,
     IReadOnlyList<string> Command,
@@ -20,7 +29,9 @@ public sealed record PluginHarness(
     string? Package = null,
     IReadOnlyList<string>? Install = null,
     IReadOnlyList<string>? VersionArguments = null,
-    string? AccountOf = null);
+    string? AccountOf = null,
+    string? Product = null,
+    string? Maker = null);
 
 /// <summary>What a plugin speaks (D64 §4): the process, and the points it listens on.</summary>
 public sealed record PluginHooks(IReadOnlyList<string> Command, IReadOnlyList<string> Points);
@@ -396,7 +407,10 @@ public sealed class PluginCatalog
                         Package: Text(row, "package"),
                         Install: Strings(row, "install", folder, data),
                         VersionArguments: Strings(row, "versionArguments", folder, data),
-                        AccountOf: Text(row, "accountOf")));
+                        AccountOf: Text(row, "accountOf"),
+                        // XAGENT1b: the plugin's word for its tool and its maker; a manifest written before says neither.
+                        Product: Text(row, "product")?.Trim() is { Length: > 0 } product ? product : null,
+                        Maker: Text(row, "maker")?.Trim() is { Length: > 0 } maker ? maker : null));
                 }
             }
 
@@ -653,7 +667,10 @@ public sealed class DeclaredAcpAdapter(PluginHarness harness, string plugin) : I
         Package: harness.Package,
         AccountOf: harness.AccountOf,
         // No version question declared: presence is asked of the file or PATH, never by running it.
-        ProbeByPresence: harness.VersionArguments is null);
+        ProbeByPresence: harness.VersionArguments is null,
+        // What the plugin says its tool is and who makes it (XAGENT1b), so its agent's family reads as a built-in one's.
+        Product: harness.Product,
+        Maker: harness.Maker);
 
     private IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
         command is { Count: > 0 } ? command : harness.Command;
