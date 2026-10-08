@@ -177,6 +177,22 @@ describe('sittingSentence', () => {
   });
 
   /**
+   * REVIEWENV1c2: a set-up step the planner sits because it cannot be shown here (`CannotShow`, REVIEWENV1c) says so in 中文,
+   * with the driver's sentence as written beneath: it names an environment, an address and the door that declares one, none of
+   * which the tick carries. English passes the driver's words through, as every verdict's does.
+   */
+  it('says a set-up step that cannot be shown here in 中文, the driver’s sentence and its door kept as written', async () => {
+    const reason = "set-up step `#9a9492` shows its chain's work in `dev`, and no review rule here names `dev` for `engine`: "
+      + '`daoris driver review engine dev --kind local|deployed --procedure <path>` declares it.';
+
+    await i18n.changeLanguage('en');
+    expect(sittingSentence(sits('CannotShow', reason))).toBe(reason);
+
+    await i18n.changeLanguage('zh');
+    expect(sittingSentence(sits('CannotShow', reason))).toBe(`这个搭建步骤无法在本机开始，原因如下：${reason}`);
+  });
+
+  /**
    * UPDATE1 (D139 §2): a quest an update's drain holds says so in 中文 from the tick's `forUpdate`, never from the driver's
    * English; any other `Blocked` hold keeps the driver's words.
    */
