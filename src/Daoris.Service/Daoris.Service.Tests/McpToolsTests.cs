@@ -228,6 +228,62 @@ public sealed class McpToolsTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// SHORTFIT1: a publish that gives no short title is told what a list will call its quest, the name read from its own
+    /// words, so the publisher sees what it left to be derived. One that gave a short title is told nothing more.
+    /// </summary>
+    [Fact]
+    public async Task A_publish_with_no_short_title_is_told_what_a_list_will_call_it()
+    {
+        var answer = await _tools.PublishQuestAsync(
+            "Asker", "Owner", "Create release/delta-northwind-and-harbor from master with three branches merged (no push)", "b");
+
+        Assert.Contains("Published quest", answer);
+        Assert.Contains(
+            "It has no short title, so a list will call it \"Create release/delta-northwind-and…\", a name read from its own words.",
+            answer);
+
+        var named = await _tools.PublishQuestAsync("Asker", "Owner", "Cap the frame's work", "b", shortTitle: "Frame cap");
+        Assert.Contains("Published quest", named);
+        Assert.DoesNotContain("a list will call it", named);
+    }
+
+    /// <summary>
+    /// SHORTFIT1 (DRIFT1c, D133 §3): an intake's publish with no requirements is told that nothing of the person's words
+    /// will be checked, since a done answers only the requirements its quest carries. One that carries a requirement is
+    /// not told it, and neither is a repository's own publish, on which requirements are refused.
+    /// </summary>
+    [Fact]
+    public async Task An_intakes_publish_with_no_requirements_is_told_nothing_of_the_persons_words_will_be_checked()
+    {
+        var asks = await AskStore.OpenAsync(_connection);
+        var sessions = await SessionStore.OpenAsync(_connection);
+        var exchange = new QuestExchange(_service, _quests, files: _files, asks: asks);
+        var desk = new AskDesk(_service, asks, exchange, _files);
+        var ask = (await desk.AskAsync(new AskRequest("default", "the report will need the v3 bridge"), DateTimeOffset.UtcNow)).Ask!;
+        var room = Path.Combine(_root, "home", "intake", "default");
+        var session = (await new SessionLedger(_quests, sessions, _service, asks)
+            .OpenIntakeAsync(ask.Id, "stub", room, DateTimeOffset.UtcNow)).Session!;
+        var tools = new KnowledgeTools(
+            _service, _quests, exchange, new AmbientWorkspace(room, ask.Workspace), desk, new IntakeScope(ask.Id, session.Id));
+        const string Unchecked = "It carries no requirements, so nothing of the person's words will be checked when it is done.";
+
+        var bare = await tools.PublishQuestAsync("intake", "Owner", "Build the report", "Reached through the bridge.", shortTitle: "Report");
+
+        Assert.Contains("Published quest", bare);
+        Assert.Contains(Unchecked, bare);
+
+        var required = await tools.PublishQuestAsync(
+            "intake", "Owner", "Build the second report", "Reached through the bridge.", shortTitle: "Second report",
+            requirements: [new Requirement("will need the v3 bridge", "The report opens through the bridge's route.")]);
+        Assert.Contains("Published quest", required);
+        Assert.DoesNotContain(Unchecked, required);
+
+        var repository = await _tools.PublishQuestAsync("Asker", "Owner", "Read the field names from config", "b", shortTitle: "Field names");
+        Assert.Contains("Published quest", repository);
+        Assert.DoesNotContain("nothing of the person's words", repository);
+    }
+
+    /// <summary>
     /// A requirement the agent leaves half of reaches the exchange half-made and is refused there, naming
     /// which — a missing half is never published blank.
     /// </summary>

@@ -458,7 +458,7 @@ public sealed partial class KnowledgeTools(
                     intake.Session)
                 .ConfigureAwait(false);
             return answered.Refusal == AskRefusal.None
-                ? $"As ask `#{askId}`: {answered.Message}"
+                ? $"As ask `#{askId}`: {answered.Message}{LeftUnsaid(answered.Quest, onAnAsk: true)}"
                 : answered.Message;
         }
 
@@ -478,7 +478,33 @@ public sealed partial class KnowledgeTools(
                 },
                 DateTimeOffset.UtcNow, ct)
             .ConfigureAwait(false);
-        return outcome.Message;
+        return outcome.Refusal == QuestPublishRefusal.None
+            ? outcome.Message + LeftUnsaid(outcome.Quest, onAnAsk: false)
+            : outcome.Message;
+    }
+
+    /// <summary>
+    /// What a publish left for Daoris to fill, said beneath its answer (SHORTFIT1), of the quest as it stands: with no short
+    /// title, the name a list will call it, read from its words (SESSUX1j); and on an ask's quest with no requirements, that
+    /// nothing of the person's words will be checked, since a done answers only those it carries (DRIFT1c, D133 §3). A
+    /// repository's quest carries none by design, so it is not told so.
+    /// </summary>
+    private static string LeftUnsaid(Quest? quest, bool onAnAsk)
+    {
+        if (quest is null) return "";
+
+        var said = new List<string>();
+        if (quest.Short is null)
+        {
+            said.Add($"It has no short title, so a list will call it \"{quest.Name}\", a name read from its own words.");
+        }
+
+        if (onAnAsk && quest.Requirements.Count == 0)
+        {
+            said.Add("It carries no requirements, so nothing of the person's words will be checked when it is done.");
+        }
+
+        return said.Count == 0 ? "" : "\n\n" + string.Join(" ", said);
     }
 
     [McpServerTool(Name = "quest_list")]

@@ -198,7 +198,11 @@ one with a line break; a remote refuses a pushed one the same way. It travels in
 operation and the sync only when given. Every quest answers `short` with what a list calls it: the
 publisher's, else a name read from its own words (`QuestTitles.Derive`): whole words, an ellipsis
 where words were left off, a bracketed note line skipped, and a ticket key the ask names leading it.
-A derived name is never written into the record.
+Where only one word would be kept, the next is cut by its characters, at its last `/`, `-` or `_`
+that fits (SHORTFIT1), so a verb and a long branch name read as more than the verb. A derived name is
+never written into the record, and `quest_publish`'s answer to a publish with no short title says
+it; to an intake's publish with no requirements, it says nothing of the person's words will be
+checked.
 
 **A quest names the session that published it** (SESS1) as `publishedBy`, when a session's
 connector did. The driver names every session on the connector it hands over and on its spawn
