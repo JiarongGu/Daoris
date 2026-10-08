@@ -89,7 +89,8 @@ makes accounts **named profiles**: isolated configuration directories whose *loc
 (`harnesses/<agent>/<profile>/` under the home), selected at spawn through the variable that agent
 already has. Logging in runs the agent's own flow inside one, so **Daoris never
 sees, stores or copies a sign-in**; `agent key` keeps an API key, and `agent rules` what a
-session may do (D72). Pick one per machine, per
+session may do (D72). By default that is Daoris's connector, through which it works its quest and says or
+answers a second opinion, a commit in its own tree, and never a push or a write outside it. Pick one per machine, per
 workspace, or for a single conversation, or `--clear` it; the session record names the account and tool
 version it ran as. A spawn onto a missing agent, a profile nobody signed into, or a workspace the agent
 has never been trusted in refuses **naming the action that fixes it**. `agent list` says what each account's
