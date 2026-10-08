@@ -14,7 +14,9 @@ namespace Daoris.Knowledge;
 ///
 /// <para><b>A derived name is honest about what it is</b> (SESSUX1j, as the dispatch asked it after the install's long
 /// titles): only the quest's own words, chosen and never rewritten; whole words, a Chinese character being the smallest
-/// cut; an ellipsis where words were left off; the first line that says what is wanted, skipping a line that is wholly a
+/// cut, save where a single word would be kept: then the next is cut by its characters, at its last <c>/</c>, <c>-</c> or
+/// <c>_</c> that fits, so a verb and a long branch name say more than the verb (SHORTFIT1); an ellipsis where words were
+/// left off, never after one that only joins; the first line that says what is wanted, skipping a line that is wholly a
 /// bracketed note and setting aside a note that leads a line (the install's re-filed asks put theirs first); and a ticket key
 /// the ask names (<c>TK-2203</c>) leading it, as trackers name work. It is read when asked, never written into the
 /// record, so the record keeps only what a publisher said, and a quest from before the field is named the same way.</para>
@@ -166,18 +168,20 @@ public static partial class QuestTitles
 
     /// <summary>
     /// The words joined, whole when they fit <see cref="MaxShort"/> columns, else as many as fit with room for the cut's
-    /// mark, never ending on one that only joins what was left off. A first word too wide alone is cut by its characters.
+    /// mark, never ending on one that only joins what was left off. A first word too wide alone is cut by its characters;
+    /// so is the word after a single one kept, at its last joiner that fits (<see cref="Part"/>).
     /// </summary>
     private static string Fit(List<Word> words)
     {
         var whole = Joined(words);
         if (Width(whole) <= MaxShort) return whole;
 
+        var room = MaxShort - Width(Cut);
         var kept = new List<Word>();
         foreach (var word in words)
         {
             var next = Joined([.. kept, word]);
-            if (Width(next) > MaxShort - Width(Cut)) break;
+            if (Width(next) > room) break;
             kept.Add(word);
         }
 
@@ -186,15 +190,47 @@ public static partial class QuestTitles
             var cut = new StringBuilder();
             foreach (var element in Elements(words[0].Text))
             {
-                if (Width(cut.ToString() + element) > MaxShort - Width(Cut)) break;
+                if (Width(cut.ToString() + element) > room) break;
                 cut.Append(element);
             }
 
             return cut + Cut;
         }
 
+        // A single word kept says only a verb when the next is a long one, a branch name most often (SHORTFIT1): that word
+        // is cut too, so the name says what the verb acts on. A part left empty keeps the single word, as before.
+        if (kept.Count == 1)
+        {
+            var next = words[1];
+            var part = Part(next, room - Width(kept[0].Text) - (next.SpaceBefore ? 1 : 0));
+            if (part.Length > 0) kept.Add(next with { Text = part });
+        }
+
         var text = Joined(kept).TrimEnd(Dangling).TrimEnd();
         return (text.Length > 0 ? text : Joined(kept)) + Cut;
+    }
+
+    /// <summary>What separates the parts of a long name, a branch's or an identifier's: where a cut word may end.</summary>
+    private static readonly char[] Joiners = ['/', '-', '_'];
+
+    /// <summary>
+    /// As much of a word as fits <paramref name="room"/> columns (SHORTFIT1): up to its last joiner whose part before it
+    /// fits, the joiner left off so the name never ends on it; where none falls inside the room, its characters as fit.
+    /// </summary>
+    private static string Part(Word word, int room)
+    {
+        if (room <= 0) return "";
+
+        var cut = new StringBuilder();
+        var atJoiner = -1;
+        foreach (var element in Elements(word.Text))
+        {
+            if (element.Length == 1 && Joiners.Contains(element[0]) && cut.Length > 0) atJoiner = cut.Length;
+            if (Width(cut.ToString() + element) > room) break;
+            cut.Append(element);
+        }
+
+        return atJoiner > 0 ? cut.ToString(0, atJoiner) : cut.ToString();
     }
 
     private static string Joined(IEnumerable<Word> words)

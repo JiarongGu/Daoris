@@ -173,6 +173,7 @@ with the version and date at release.
 - Settings → Logs says when a value is cut short, and opens it whole — an error's frames one per line.
 - An older Daoris meeting a knowledge index a newer one wrote leaves it alone and says so, instead of
   rebuilding it at its own version; quests and sessions keep working meanwhile.
+- A quest published without a short title gets a list name that says more than its first word.
 
 The first version: doctrine that installs, is checked, and flows back.
 
