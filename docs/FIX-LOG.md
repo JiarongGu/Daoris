@@ -593,6 +593,10 @@ and the run taking 14 m against its usual 8: *with the headless loop running, wo
 session … going on* read `held: the same session goes on with this at the driver's next look`, while the next check
 found the record had worked and ended again in its own conversation. The verb's wait for the loop to take the words
 ended first; the change merged (the host's error answer) touches neither the say route nor the loop.
+`setup-kit.test.ts:531` (*a set-up quest is done as its body says*) failed once at SWEEPCARRIED1's merge, 2026-10-08, a
+web-only change: *the stub never answered 3 (session/prompt) within 30000 ms* after it had run all four commands, with
+a Codex review and two subagents building beside the gate. The same file's stub bound as STUB3's, after its command
+runs rather than at its start.
 `AccountGoalTickTests.One_look_spreads_K_starts_over_N_accounts_and_a_limit_cuts_off_only_its_own` (driver, Process)
 failed once in LOGVIEW1's full set, 2026-10-08 (722/723, 32 m), and passed alone: `events.After(id, 0).Events[0]` at
 `AccountGoalTickTests.cs:94` found a record with no event yet. The tick returns once its starts are chosen and their

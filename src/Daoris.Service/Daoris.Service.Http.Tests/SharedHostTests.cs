@@ -303,6 +303,48 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
     }
 
     /// <summary>
+    /// REVIEWENV1b (D154 points 8–9): a set-up is posted on the machine whose tree holds its commit, the verdict is the person's
+    /// on their own machine, and both travel from there as operations — so a shared host has none of the review's doors. A
+    /// pushed set-up step, its set-up and a verdict are kept and answered; a set-up step that reads as production is not whole.
+    /// </summary>
+    [Fact]
+    public async Task The_review_doors_do_not_exist_and_a_set_up_crosses_a_push()
+    {
+        foreach (var route in new[] { "/api/quests/{id}/set-up", "/api/quests/{id}/review", "/api/quests/{id}/set-up-step", "/api/asks/{id}/review" })
+        {
+            Assert.DoesNotContain(("POST", route), host.Routes());
+        }
+
+        var key = (await host.MintAsync("review@a-machine")).Key;
+        await RegisterAsync("ReviewKeeper", key);
+        // A machine of its own: the fixture's remote keeps every push of the class, and an operation is named by its machine
+        // and sequence, so another test's `m1` would be this push's first operation already held.
+        const string Push = """
+            { "base": 0, "operations": [
+              { "machine": "review-m", "sequence": 1, "quest": "r1r2r3r4r5r6", "kind": "published", "at": "2026-10-08T09:00:00Z",
+                "asked": { "from": "ask #a1b2c3", "to": "ReviewKeeper", "title": "Show it", "body": "b", "links": [], "attachments": [],
+                  "then": [], "review": { "choice": "local" }, "setUpIn": "ENVIRONMENT" } },
+              { "machine": "review-m", "sequence": 2, "quest": "r1r2r3r4r5r6", "kind": "taken", "at": "2026-10-08T09:01:00Z" },
+              { "machine": "review-m", "sequence": 3, "quest": "r1r2r3r4r5r6", "kind": "done", "at": "2026-10-08T09:02:00Z" },
+              { "machine": "review-m", "sequence": 4, "quest": "r1r2r3r4r5r6", "kind": "setup", "at": "2026-10-08T09:03:00Z",
+                "setUp": { "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "shows": "The report.", "local": true } }] }
+            """;
+
+        var production = await host.SendAsync("POST", "/api/quests/operations", DaorisHost.Loopback, key, Push.Replace("ENVIRONMENT", "prod"));
+        var local = await host.SendAsync("POST", "/api/quests/operations", DaorisHost.Loopback, key, Push.Replace("ENVIRONMENT", "local"));
+
+        Assert.Equal(400, production.Status);
+        Assert.Equal(200, local.Status);
+        Assert.True(local.Json.GetProperty("refused").GetArrayLength() == 0, local.Json.ToString());
+        var listed = await host.GetAsync("/api/quests?includeClosed=true", key: key);
+        var kept = Assert.Single(listed.Json.EnumerateArray(), row => row.GetProperty("id").GetString() == "r1r2r3r4r5r6");
+        Assert.Equal(("local", "unreviewed"), (kept.GetProperty("setUpIn").GetString(), kept.GetProperty("hold").GetString()));
+        var setUp = Assert.Single(kept.GetProperty("setUps").EnumerateArray().ToList());
+        Assert.True(setUp.GetProperty("local").GetBoolean());
+        Assert.False(setUp.TryGetProperty("look", out _));
+    }
+
+    /// <summary>
     /// EVID1a (D144 §3): a done's evidence is read on the machine whose tree holds the commit, and the verdict travels from
     /// there as an operation — a shared host has no evidence door. What a push carries is names and codes: a requirement
     /// whose evidence names a machine's path, or a verdict that does, is not whole, 400, and nothing of it is kept.

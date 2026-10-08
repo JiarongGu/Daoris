@@ -115,6 +115,12 @@ public enum QuestHold
 
     /// <summary>The evidence was read, and something it names was not in the commit read.</summary>
     EvidenceMissing,
+
+    /// <summary>
+    /// A set-up step's done waits for the person's review (REVIEWENV1b, D154 point 9): only their <c>reviewed</c> on its
+    /// newest set-up, or their skip, lets it go.
+    /// </summary>
+    Unreviewed,
 }
 
 /// <summary>The codes a hold and a verdict are written in (LANG1a): codes, never sentences, so every reader words them itself.</summary>
@@ -125,7 +131,8 @@ public static class QuestEvidenceCodes
     {
         QuestHold.Departed => "departed",
         QuestHold.EvidenceUnread => "evidence-unread",
-        _ => "evidence-missing",
+        QuestHold.EvidenceMissing => "evidence-missing",
+        _ => "unreviewed",
     };
 
     /// <summary>What a path's read may say (D144 §3, §5).</summary>

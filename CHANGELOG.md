@@ -184,6 +184,8 @@ with the version and date at release.
 - The update banner says in your language why an update was put back or refused for its two newest reasons.
 - A session branch whose work a squash-merged pull request or a cherry-pick already holds can be discarded
   without forcing, and Daoris says where its work is.
+- The Branches tab says which completed pull request carried a session branch's work, instead of saying a
+  session still holds it.
 
 The first version: doctrine that installs, is checked, and flows back.
 

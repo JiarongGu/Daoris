@@ -60,6 +60,12 @@ public enum QuestPublishRefusal
     /// it closed, and would refuse a fresh copy on every pass, so a new ask is a new title.
     /// </summary>
     Cleared,
+
+    /// <summary>
+    /// A review choice that is not one (REVIEWENV1b, D154 point 3): not <c>off</c>, <c>on</c> or an environment's name, words
+    /// past their bound, or a session setting one without the person's words, or on no ask whose words it could quote.
+    /// </summary>
+    BadReview,
 }
 
 /// <summary>
@@ -104,6 +110,12 @@ public sealed record QuestAsk(string From, string To, string Title, string Body)
     /// door refuses the same one. Null or blank is none, and the quest is then named from its words.
     /// </summary>
     public string? Short { get; init; }
+
+    /// <summary>
+    /// The chain's review choice (REVIEWENV1b, D154 point 3), inherited by each step: the person's, with any words they give,
+    /// or a session's quoting them, which is judged here against the ask's words as a requirement's quote is. Null for none.
+    /// </summary>
+    public QuestReview? Review { get; init; }
 }
 
 /// <param name="Refusal"><see cref="QuestPublishRefusal.None"/> when the quest was published.</param>
@@ -170,6 +182,33 @@ public enum QuestRespondRefusal
     /// left unread. The answer names which.
     /// </summary>
     BadVerdict,
+
+    /// <summary>
+    /// A set-up step's done before it said what it showed (REVIEWENV1b, design §2.6): a done always has a set-up, so the
+    /// person's review has something to look at.
+    /// </summary>
+    NotShown,
+
+    /// <summary>A set-up or a review's verdict on a quest that is no set-up step (REVIEWENV1b): only a set-up step is shown.</summary>
+    NotSetUpStep,
+
+    /// <summary>
+    /// A set-up that is not one in shape (REVIEWENV1b, <see cref="Reviews.JudgeSetUp"/>), or a set-up step's environment that
+    /// is not one: no full commit, no kind, no address to look at, words past a bound. The answer names which.
+    /// </summary>
+    BadSetUp,
+
+    /// <summary>
+    /// A review's verdict that is not one in shape (REVIEWENV1b): not <c>reviewed</c>, <c>not-yet</c> or <c>skipped</c>, a
+    /// <c>not-yet</c> without the person's words, or words past their bound.
+    /// </summary>
+    BadReviewVerdict,
+
+    /// <summary>
+    /// A verdict, or a set-up step, the review's state refuses (REVIEWENV1b): nothing shown yet, a newer set-up than the one
+    /// named, one already reviewed or skipped; a set-up step after work that is not done, or after one already composed.
+    /// </summary>
+    ReviewRefused,
 }
 
 /// <param name="Refusal"><see cref="QuestRespondRefusal.None"/> when the status moved.</param>
@@ -235,7 +274,7 @@ public sealed record QuestDeleteOutcome(QuestDeleteRefusal Refusal, string Messa
 /// The asks — whose words a requirement's quote is checked against (DRIFT1c, D133 §3). Null where none
 /// are kept, where a requirement has no words to quote and is refused rather than kept unchecked.
 /// </param>
-public sealed class QuestExchange(
+public sealed partial class QuestExchange(
     KnowledgeService service, QuestStore quests, IRemotes? remotes = null, QuestFiles? files = null,
     SessionStore? sessions = null, AskStore? asks = null)
 {
@@ -376,9 +415,16 @@ public sealed class QuestExchange(
         // answer — not at a close nobody is watching (D65 §4). Whether this circle shares with a team
         // is this machine's wiring; whether a receiver is shared is its registration (design §8).
         var circleWired = remotes?.For(home) is not null;
-        if (JudgeChain(ask, registered, home, circleWired, circleWired && target.Joined, addressable) is { } unfitChain)
+        if (JudgeChain(ask, to, registered, home, circleWired, circleWired && target.Joined, addressable) is { } unfitChain)
         {
             return new(QuestPublishRefusal.BadChain, unfitChain, Quest: null, addressable);
+        }
+
+        // The chain's review choice (REVIEWENV1b, D154 point 3): its shape, then, from a session, the person's words it quotes.
+        var (review, unfitReview) = await JudgeReviewAsync(from, ask, ct).ConfigureAwait(false);
+        if (unfitReview is { } refusedReview)
+        {
+            return new(refusedReview.Refusal, refusedReview.Message, Quest: null, addressable);
         }
 
         // What the person requires is judged against what they said (DRIFT1c, D133 §3), here, so every door
@@ -407,7 +453,8 @@ public sealed class QuestExchange(
 
         var quest = await quests.PublishAsync(
             from, to, title, body, now, home, carried.Links, carried.Attachments, ask.Then, ct: ct,
-            publishedBy: ask.PublishedBy, lanes: lanes, requirements: required, shortTitle: shortTitle).ConfigureAwait(false);
+            publishedBy: ask.PublishedBy, lanes: lanes, requirements: required, shortTitle: shortTitle, review: review)
+            .ConfigureAwait(false);
 
         var caution = !target.Adopted
             // Registered is addressable; adopted is disciplined (D70). Said at publish, because it is
@@ -428,10 +475,11 @@ public sealed class QuestExchange(
             1 => " It carries 1 requirement, in the person's own words.",
             var count => $" It carries {count} requirements, each in the person's own words.",
         };
+        var reviewed = quest.Review is { } chosen ? $" Its chain's review choice is `{chosen.Choice}`, and each step inherits it." : "";
 
         return new(
             QuestPublishRefusal.None,
-            $"Published quest `#{quest.Id}` to `{QuestAddress.Spell(quest.To, quest.Lanes)}` — {quest.Status}.{requirements}{caution}\n\n"
+            $"Published quest `#{quest.Id}` to `{QuestAddress.Spell(quest.To, quest.Lanes)}` — {quest.Status}.{requirements}{reviewed}{caution}\n\n"
             + "It is held by the service, not written into that repository. Its agent will see it and "
             + "decide. Do not make the change yourself."
             + await KeepAsync(quest, ask, carried, ct).ConfigureAwait(false),
@@ -500,7 +548,7 @@ public sealed class QuestExchange(
     /// refused when composed rather than stranded later.
     /// </remarks>
     private static string? JudgeChain(
-        QuestAsk ask, IReadOnlyList<Registration> registered, string home, bool circleWired, bool shared,
+        QuestAsk ask, string to, IReadOnlyList<Registration> registered, string home, bool circleWired, bool shared,
         IReadOnlyList<string> addressable)
     {
         if (ask.Then.Count > MaxChain)
@@ -537,6 +585,48 @@ public sealed class QuestExchange(
                        + "Each step is published on the machine that closes the one before it, so a chain is all "
                        + "shared or all local. Publish the other half as its own quest when this one is done.";
             }
+        }
+
+        return JudgeSetUpSteps(ask, to);
+    }
+
+    /// <summary>
+    /// A chain's set-up steps, each judged as its composition must leave it (REVIEWENV1b, D154 point 4, design §2.1): the
+    /// environment's name, never production; the repository of the step before it, and none of that repository's steps after
+    /// it, so its tree grows from the work it shows and holds all of it, once; and never on a chain whose choice is
+    /// <c>off</c>. Null when every one is fit, or there is none.
+    /// </summary>
+    private static string? JudgeSetUpSteps(QuestAsk ask, string to)
+    {
+        var before = to;
+        foreach (var (step, index) in ask.Then.Select((step, index) => (step, index + 1)))
+        {
+            if (step.SetUpIn is { } environment)
+            {
+                if (Reviews.JudgeEnvironment(environment) is { } unfit) return $"Step {index} is a set-up step, and {unfit}.";
+                if (ask.Review is { Choice: Reviews.Off })
+                {
+                    return $"Step {index} sets the work up for review in `{environment}`, and this chain's review choice is `off`: "
+                           + "a chain the person chose no review for composes no set-up step.";
+                }
+
+                if (!string.Equals(step.To, before, StringComparison.OrdinalIgnoreCase))
+                {
+                    return $"Step {index} sets up `{step.To}`'s work in `{environment}`, and the step before it asks `{before}`: a "
+                           + "set-up step follows the last step of the repository whose work it shows, so its tree holds that work.";
+                }
+
+                var after = ask.Then.Skip(index)
+                    .Select((later, offset) => (Later: later, Number: index + offset + 1))
+                    .FirstOrDefault(each => string.Equals(each.Later.To, step.To, StringComparison.OrdinalIgnoreCase));
+                if (after.Later is not null)
+                {
+                    return $"Step {index} sets up `{step.To}`'s work in `{environment}`, and step {after.Number} asks `{step.To}` after "
+                           + "it: a set-up step comes after that repository's last step, so what it shows is all its work, once.";
+                }
+            }
+
+            before = step.To;
         }
 
         return null;
@@ -1029,6 +1119,10 @@ public sealed class QuestExchange(
         if (status == QuestStatus.Done
             && await quests.FindAsync(id.TrimStart('#'), ct).ConfigureAwait(false) is { Status: QuestStatus.Open or QuestStatus.Taken } live)
         {
+            // A set-up step closes done once it has said what it showed (REVIEWENV1b, design §2.6), so a done always has a
+            // set-up for the person to look at.
+            if (await NotShownAsync(live, ct).ConfigureAwait(false) is { } unshown) return new(QuestRespondRefusal.NotShown, unshown, Quest: null);
+
             var judged = await JudgeAnswersAsync(live, answers ?? [], ct).ConfigureAwait(false);
             if (judged.Refusal is { } refusal) return new(refusal, judged.Message!, Quest: null);
             answered = judged.Answers;
@@ -1203,6 +1297,10 @@ public sealed class QuestExchange(
                 { Status: not QuestStatus.Done } =>
                     $"Quest `#{standing.Id}` is {standing.Status}: only a quest closed done with a departure from what you "
                     + "required waits for your yes.",
+                // A yes accepts a departure or its evidence, never a review (REVIEWENV1b, D154 point 9): said for what it is.
+                { Hold: QuestHold.Unreviewed } =>
+                    $"Quest `#{standing.Id}` waits for your review in `{standing.SetUpIn}`, which a yes does not give: say "
+                    + "`reviewed` once you have looked at what it shows, or skip the review for this work.",
                 { Accepted: { } at } =>
                     $"Quest `#{standing.Id}`'s departure was already accepted, {When(at)}: nothing waits for a yes.",
                 _ => $"Quest `#{standing.Id}` closed done departing from none of what you required: nothing waits for a yes.",
@@ -1219,6 +1317,12 @@ public sealed class QuestExchange(
         var accepted = move.Quest.Answers.Any(answer => answer.IsDeparture)
             ? $"Accepted the departure on quest `#{move.Quest.Id}`"
             : $"Accepted quest `#{move.Quest.Id}`'s done as it stands, its evidence {(move.Quest.Evidence is null ? "unread" : "not found")}";
+        // A set-up step's review still holds it once a yes accepts the rest (REVIEWENV1b), and what follows waits on that.
+        if (move.Quest.Hold == QuestHold.Unreviewed)
+        {
+            return new(QuestRespondRefusal.None, $"{accepted}.{await ReviewWaitsAsync(move.Quest, ct).ConfigureAwait(false)}", move.Quest);
+        }
+
         return new(QuestRespondRefusal.None, $"{accepted}: what it held goes on.{resumes}{Then(move.FollowUp)}", move.Quest);
     }
 
@@ -1246,6 +1350,14 @@ public sealed class QuestExchange(
     public async Task<QuestRespondOutcome> PersonDoneAsync(string id, string? words, DateTimeOffset now, CancellationToken ct = default)
     {
         var quest = id.TrimStart('#');
+
+        // A set-up step's done has a set-up, the person's own included (REVIEWENV1b, design §3.3: *I set it up myself…*).
+        if (await quests.FindAsync(quest, ct).ConfigureAwait(false) is { Status: QuestStatus.Open or QuestStatus.Taken } live
+            && await NotShownAsync(live, ct).ConfigureAwait(false) is { } unshown)
+        {
+            return new(QuestRespondRefusal.NotShown, unshown, Quest: null);
+        }
+
         var move = await quests.MoveAsync(quest, QuestStatus.Done, PersonDoneNote(words), now, ct).ConfigureAwait(false);
         if (move.Quest is null)
         {
@@ -1275,7 +1387,8 @@ public sealed class QuestExchange(
               + "at the driver's next look.";
         return new(
             QuestRespondRefusal.None,
-            $"Quest `#{move.Quest.Id}` is now Done: you marked it done.{resumes}{Then(move.FollowUp)}",
+            $"Quest `#{move.Quest.Id}` is now Done: you marked it done.{await ReviewWaitsAsync(move.Quest, ct).ConfigureAwait(false)}"
+            + $"{resumes}{Then(move.FollowUp)}",
             move.Quest);
     }
 
@@ -1421,6 +1534,12 @@ public sealed class QuestExchange(
             {
                 return $"{at}: each of its {Count(verdict.Items.Count, "item")} is there. It still departs from a requirement, "
                        + $"so it waits for the person's yes: `daoris-driver quest accept {quest.Id}`.";
+            }
+
+            if (quest.Hold == QuestHold.Unreviewed)
+            {
+                return $"{at}: each of its {Count(verdict.Items.Count, "item")} is there."
+                       + await ReviewWaitsAsync(quest, ct).ConfigureAwait(false);
             }
 
             var waiting = await quests.WaitingOnAsync(quest.Id, ct).ConfigureAwait(false);
@@ -1579,12 +1698,16 @@ public sealed class QuestExchange(
     /// What a done said of its requirements (DRIFT1d), for whoever closed it: each met, or which departed and what that
     /// holds — the next step, a quest waiting on it, or the ask — until the person accepts it. Nothing for a quest with none.
     /// </summary>
-    private async Task<string> AnsweredAsync(Quest closed, CancellationToken ct)
+    private async Task<string> AnsweredAsync(Quest closed, CancellationToken ct) =>
+        await RequirementsAnsweredAsync(closed, ct).ConfigureAwait(false) + await ReviewWaitsAsync(closed, ct).ConfigureAwait(false);
+
+    /// <summary>What a done said of its requirements (DRIFT1d, EVID1a): each met, or what a departure or its evidence holds.</summary>
+    private async Task<string> RequirementsAnsweredAsync(Quest closed, CancellationToken ct)
     {
         if (closed.Answers.Count == 0) return "";
         var departed = closed.Answers.Count(answer => answer.IsDeparture);
         var met = closed.Answers.Count == 1 ? " Its requirement is met." : $" Each of its {closed.Answers.Count} requirements is met.";
-        if (!closed.Held) return met;
+        if (closed.Hold is null or QuestHold.Unreviewed) return met;
 
         // What a met answer's evidence is, for the session that can still commit it (EVID1a, D144 §2): Daoris reads the
         // work's last commit when the session ends, and a met answer without it holds the quest for the person.

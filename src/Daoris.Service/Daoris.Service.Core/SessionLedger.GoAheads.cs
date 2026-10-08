@@ -59,6 +59,18 @@ public sealed partial class SessionLedger
             "so no go-ahead is held for it: say exactly what you need and why in your last message, commit what you have, "
             + "and end your turn with the quest still taken.";
         var quest = session.Quest is { } questId ? await quests.FindAsync(questId, ct).ConfigureAwait(false) : null;
+
+        // A set-up step never acts on production (REVIEWENV1b, D154 point 6, design §2.5): refused here by the place words a
+        // go-ahead is named by, so no wording of the act reaches the person as something they could approve.
+        if (quest is { SetUpIn: { } environment } && GoAheadAct.ReadsAsProduction(on))
+        {
+            return new(GoAheadRefusal.Production,
+                $"Session `{session.Id}` works set-up step `#{quest.Id}`, which shows work in `{environment}` for the person's review, "
+                + $"and `{where}` reads as production, which is never where a set-up step acts: no go-ahead is asked for it. Stop "
+                + "here, and say in your last message, under Needs you, that the procedure reaches production, naming its line. "
+                + "Nothing was asked.");
+        }
+
         var askId = session.Ask ?? AskDesk.AskOf(quest?.From);
         if (askId is null || asks is null)
         {

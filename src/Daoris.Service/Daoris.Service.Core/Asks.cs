@@ -102,7 +102,36 @@ public sealed record Ask(
     /// approved and refused rather than asking it again.
     /// </summary>
     public IReadOnlyList<GoAhead> GoAheads { get; init; } = [];
+
+    /// <summary>
+    /// The person's review choices for every chain it publishes that sets none (REVIEWENV1b, D154 point 3; design §1.4 row 4,
+    /// §1.5), oldest first, each with when and any words they gave. The latest stands, as a go-ahead's answer does.
+    /// </summary>
+    public IReadOnlyList<AskReviewChoice> ReviewChoices { get; init; } = [];
+
+    /// <summary>
+    /// Its intake's review proposals (REVIEWENV1b, design §1.5–§1.6), oldest first, each with its reason: a reading, kept
+    /// beside the person's choice and applied only by their press.
+    /// </summary>
+    public IReadOnlyList<AskReviewProposal> ReviewProposals { get; init; } = [];
 }
+
+/// <summary>A review choice the person set on an ask (REVIEWENV1b, design §1.5): <c>off</c>, <c>on</c> or an environment's name.</summary>
+/// <param name="Choice">What they chose.</param>
+/// <param name="At">When they chose it.</param>
+/// <param name="Words">Their words with it, where they gave any.</param>
+public sealed record AskReviewChoice(string Choice, DateTimeOffset At, string? Words = null);
+
+/// <summary>
+/// A review choice an intake proposed for a chain it published (REVIEWENV1b, design §1.5–§1.6), with its reason: a reading
+/// the person may apply, never a choice.
+/// </summary>
+/// <param name="Choice">What it proposes: <c>off</c>, <c>on</c> or an environment's name.</param>
+/// <param name="Reason">Why, in at most <see cref="Reviews.ReasonLimit"/> characters.</param>
+/// <param name="At">When it proposed it.</param>
+/// <param name="Session">The intake session that proposed it: the record that names the tier.</param>
+/// <param name="Quest">The quest it published the proposal with, the chain's first; null for none.</param>
+public sealed record AskReviewProposal(string Choice, string Reason, DateTimeOffset At, string? Session = null, string? Quest = null);
 
 /// <summary>How the person gave a word on an ask (DRIFT1a, D133 §1).</summary>
 public enum AskWordKind
@@ -121,6 +150,15 @@ public enum AskWordKind
     /// them — the reopened record itself, or the session a fallback handed them to.
     /// </summary>
     Reopened,
+
+    /// <summary>Their words with a <c>reviewed</c> on a set-up step (REVIEWENV1b, design §3.5).</summary>
+    Reviewed,
+
+    /// <summary>Their words with a <c>not-yet</c> on a set-up step (REVIEWENV1b, design §3.4): what is not right yet.</summary>
+    NotYet,
+
+    /// <summary>Their words with a skip of a review (REVIEWENV1b, design §3.6).</summary>
+    Skipped,
 }
 
 /// <summary>One thing the person said on an ask, verbatim (DRIFT1a, D133 §1).</summary>
@@ -131,8 +169,8 @@ public enum AskWordKind
 /// <param name="Quest">The quest that session worked; null for the ask's sentence and for an intake, which works none yet.</param>
 public sealed record AskWord(AskWordKind Kind, string Text, DateTimeOffset At, string? Session = null, string? Quest = null)
 {
-    /// <summary>The kind's spelling, in the store and on the wire.</summary>
-    public static string Spell(AskWordKind kind) => kind.ToString().ToLowerInvariant();
+    /// <summary>The kind's spelling, in the store and on the wire: a not-yet as the verdict says it (REVIEWENV1b).</summary>
+    public static string Spell(AskWordKind kind) => kind == AskWordKind.NotYet ? Reviews.NotYet : kind.ToString().ToLowerInvariant();
 
     /// <summary>The reverse of <see cref="Spell"/>: null for a kind this build does not know.</summary>
     internal static AskWordKind? Parse(string? spelled) =>
@@ -197,8 +235,53 @@ public sealed class AskStore
         await SchemaColumns.EnsureAsync(_db, "asks", "go_aheads", "go_aheads TEXT NOT NULL DEFAULT '[]'", ct)
             .ConfigureAwait(false);
 
+        // REVIEWENV1b (D154 point 3): the person's review choices and the intake's proposals, each appended where it is kept. A
+        // store from before keeps every ask it had, each holding none: nothing was chosen or proposed on it.
+        await SchemaColumns.EnsureAsync(_db, "asks", "review_choices", "review_choices TEXT NOT NULL DEFAULT '[]'", ct)
+            .ConfigureAwait(false);
+        await SchemaColumns.EnsureAsync(_db, "asks", "review_proposals", "review_proposals TEXT NOT NULL DEFAULT '[]'", ct)
+            .ConfigureAwait(false);
+
         return this;
     }
+
+    /// <summary>
+    /// Keep a review choice the person set on the ask (REVIEWENV1b), appended in one statement, for the reason a word is
+    /// (REV3). The latest stands. False when no ask has that id.
+    /// </summary>
+    public Task<bool> RecordReviewChoiceAsync(string id, AskReviewChoice choice, DateTimeOffset now, CancellationToken ct = default) =>
+        AppendAsync(id, "review_choices", JsonFields.Written(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("choice", choice.Choice);
+            writer.WriteString("at", choice.At.ToString("O"));
+            if (choice.Words is { } words) writer.WriteString("words", words);
+            writer.WriteEndObject();
+        }), now, ct);
+
+    /// <summary>Keep an intake's review proposal on the ask (REVIEWENV1b), appended as a choice is. False when no ask has that id.</summary>
+    public Task<bool> RecordReviewProposalAsync(string id, AskReviewProposal proposal, DateTimeOffset now, CancellationToken ct = default) =>
+        AppendAsync(id, "review_proposals", JsonFields.Written(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("choice", proposal.Choice);
+            writer.WriteString("reason", proposal.Reason);
+            writer.WriteString("at", proposal.At.ToString("O"));
+            if (proposal.Session is { } session) writer.WriteString("session", session);
+            if (proposal.Quest is { } quest) writer.WriteString("quest", quest);
+            writer.WriteEndObject();
+        }), now, ct);
+
+    /// <summary>One item appended to one of the ask's lists, in one statement (REV3). The column is this class's own name.</summary>
+    private Task<bool> AppendAsync(string id, string column, string item, DateTimeOffset now, CancellationToken ct) => _db.RunAsync<bool>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = $"UPDATE asks SET {column} = json_insert({column}, '$[#]', json($item)), updated = $updated WHERE id = $id";
+        command.Parameters.AddWithValue("$id", id.TrimStart('#'));
+        command.Parameters.AddWithValue("$item", item);
+        command.Parameters.AddWithValue("$updated", now.ToString("O"));
+        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
+    }, ct);
 
     /// <summary>The ask's handle: the same words in the same circle are the same ask.</summary>
     /// <param name="again">
@@ -216,13 +299,23 @@ public sealed class AskStore
     public Task SaveAsync(Ask ask, CancellationToken ct = default) => _db.RunAsync(async () =>
     {
         await using var command = _db.Command();
+        // The review choices are written with a new ask, from its composer (REVIEWENV1b), and only appended after: a later save
+        // of the whole record never drops one a door appended meanwhile (REV3).
         command.CommandText = """
-            INSERT INTO asks (id, workspace, sentence, state, tier, asked, updated, asker, note, links, attachments, proposal, quests, intake)
-            VALUES ($id, $workspace, $sentence, $state, $tier, $asked, $updated, $asker, $note, $links, $attachments, $proposal, $quests, $intake)
+            INSERT INTO asks (id, workspace, sentence, state, tier, asked, updated, asker, note, links, attachments, proposal, quests, intake, review_choices)
+            VALUES ($id, $workspace, $sentence, $state, $tier, $asked, $updated, $asker, $note, $links, $attachments, $proposal, $quests, $intake, $reviewChoices)
             ON CONFLICT (id) DO UPDATE SET
               state = $state, tier = $tier, updated = $updated, note = $note,
               links = $links, attachments = $attachments, proposal = $proposal, quests = $quests, intake = $intake
             """;
+        command.Parameters.AddWithValue("$reviewChoices", Json(ask.ReviewChoices, (w, choice) =>
+        {
+            w.WriteStartObject();
+            w.WriteString("choice", choice.Choice);
+            w.WriteString("at", choice.At.ToString("O"));
+            if (choice.Words is { } words) w.WriteString("words", words);
+            w.WriteEndObject();
+        }));
         command.Parameters.AddWithValue("$intake", (object?)ask.Intake ?? DBNull.Value);
         command.Parameters.AddWithValue("$id", ask.Id);
         command.Parameters.AddWithValue("$workspace", ask.Workspace);
@@ -428,8 +521,50 @@ public sealed class AskStore
             Later = LaterWords(Text("words")),
             WordsKeptFrom = Maybe("words_kept_from") is { } from ? DateTimeOffset.Parse(from) : null,
             GoAheads = GoAheads.Read(Text("go_aheads")),
+            ReviewChoices = ReviewChoicesOf(Text("review_choices")),
+            ReviewProposals = ReviewProposalsOf(Text("review_proposals")),
         };
     }
+
+    /// <summary>
+    /// The review choices kept, oldest first. One this build cannot read — not a choice, or missing its moment — is passed
+    /// over, never a failed read of the ask.
+    /// </summary>
+    private static IReadOnlyList<AskReviewChoice> ReviewChoicesOf(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var choices = new List<AskReviewChoice>();
+        foreach (var element in document.RootElement.EnumerateArray())
+        {
+            if (JsonFields.Text(element, "choice") is not { } choice || Reviews.JudgeChoice(choice) is not null) continue;
+            if (Moment(element, "at") is not { } at) continue;
+            choices.Add(new AskReviewChoice(choice, at, JsonFields.Text(element, "words")));
+        }
+
+        return choices;
+    }
+
+    /// <summary>The review proposals kept, oldest first; one this build cannot read is passed over, as a choice is.</summary>
+    private static IReadOnlyList<AskReviewProposal> ReviewProposalsOf(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var proposals = new List<AskReviewProposal>();
+        foreach (var element in document.RootElement.EnumerateArray())
+        {
+            if (JsonFields.Text(element, "choice") is not { } choice || Reviews.JudgeChoice(choice) is not null) continue;
+            if (JsonFields.Text(element, "reason") is not { } reason || Moment(element, "at") is not { } at) continue;
+            proposals.Add(new AskReviewProposal(choice, reason, at, JsonFields.Text(element, "session"), JsonFields.Text(element, "quest")));
+        }
+
+        return proposals;
+    }
+
+    private static DateTimeOffset? Moment(JsonElement element, string name) =>
+        DateTimeOffset.TryParse(
+            JsonFields.Text(element, name), System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.RoundtripKind, out var at)
+            ? at
+            : null;
 
     /// <summary>
     /// The words kept after the ask, oldest first. A word whose kind this build does not know — a newer
@@ -486,7 +621,21 @@ public sealed record AskRequest(string Workspace, string Sentence)
 
     /// <summary>Who asked, when the door knows.</summary>
     public string? Asker { get; init; }
+
+    /// <summary>
+    /// The person's review choice for the ask, from the composer (REVIEWENV1b, design §1.5): <c>off</c>, <c>on</c> or an
+    /// environment's name. Null for none.
+    /// </summary>
+    public string? Review { get; init; }
+
+    /// <summary>The person's words with their review choice, where they give any.</summary>
+    public string? ReviewWords { get; init; }
 }
+
+/// <summary>An intake's review proposal for the chain it publishes (REVIEWENV1b, design §1.5): a choice and its reason.</summary>
+/// <param name="Choice"><c>off</c>, <c>on</c> or an environment's name.</param>
+/// <param name="Reason">Why, in at most <see cref="Reviews.ReasonLimit"/> characters.</param>
+public sealed record ReviewProposed(string? Choice, string? Reason);
 
 /// <summary>
 /// The quest an ask becomes, in words other than the ask's own — what an intake session writes once
@@ -516,6 +665,18 @@ public sealed record AskDraft(string? Title, string? Body)
     /// quest to be named from its own words.
     /// </summary>
     public string? Short { get; init; }
+
+    /// <summary>
+    /// The chain's review choice (REVIEWENV1b, design §1.5): from an intake, only with the person's words it quotes, which
+    /// the exchange checks against the ask's. Null for none.
+    /// </summary>
+    public QuestReview? Review { get; init; }
+
+    /// <summary>
+    /// The intake's review proposal for this chain, where it has none of the person's words to set one on (design §1.5–§1.6):
+    /// kept on the ask, beside the choice, for the person's press. Null for none.
+    /// </summary>
+    public ReviewProposed? ReviewProposal { get; init; }
 }
 
 /// <summary>Why an ask did not do what was asked of it — or <see cref="None"/> when it did.</summary>
@@ -546,6 +707,12 @@ public enum AskRefusal
     /// or answered, or that a session was started for — so the ask stays whole (D95).
     /// </summary>
     Kept,
+
+    /// <summary>
+    /// A review choice or proposal that is not one (REVIEWENV1b): not <c>off</c>, <c>on</c> or an environment's name, words
+    /// or a reason past its bound, a proposal with no reason or from no intake, or a choice and a proposal at once.
+    /// </summary>
+    BadReview,
 }
 
 /// <param name="Refusal"><see cref="AskRefusal.None"/> when it did what was asked.</param>
@@ -731,6 +898,15 @@ public sealed partial class AskDesk(KnowledgeService service, AskStore asks, Que
         var (unfit, why, links) = exchange.JudgeCarry(request.Links, request.Uploads);
         if (unfit is not null) return new(AskRefusal.BadCarry, why, Ask: null);
 
+        // The person's review choice from the composer (REVIEWENV1b), judged before anything is kept.
+        AskReviewChoice? chosen = null;
+        if (request.Review is not null)
+        {
+            var (choice, unfitChoice) = JudgeChoice(request.Review, request.ReviewWords, now);
+            if (unfitChoice is not null) return new(AskRefusal.BadReview, unfitChoice, Ask: null);
+            chosen = choice;
+        }
+
         // The same words in the same circle are the same ask — a retry, or a person repeating
         // themselves, is answered with what became of the first, never a second copy. 🔴 Unless the
         // person CLOSED it (ASKAGAIN1): they ended that one, so the same words afterwards ask anew,
@@ -758,6 +934,7 @@ public sealed partial class AskDesk(KnowledgeService service, AskStore asks, Que
             Links = links,
             Attachments = attachments.DistinctBy(a => a.Sha256).ToList(),
             Proposal = DeclarationsTier.Rank(sentence, registered, workspace),
+            ReviewChoices = chosen is null ? [] : [chosen],
         };
 
         if (request.To is { Length: > 0 } to)
@@ -810,14 +987,26 @@ public sealed partial class AskDesk(KnowledgeService service, AskStore asks, Que
             return new(AskRefusal.Closed, $"Ask `#{ask.Id}` is closed ({ask.Note}) — it becomes nothing more.", ask);
         }
 
+        // An intake's review proposal (REVIEWENV1b), judged before anything is published, so a refused one leaves nothing behind.
+        var (proposed, unfitProposal) = JudgeProposal(draft, session, now);
+        if (unfitProposal is not null) return new(AskRefusal.BadReview, unfitProposal, ask);
+
         var published = await PublishQuestAsync(ask, to, now, ct, draft, session).ConfigureAwait(false);
         if (published.Quest is null) return new(AskRefusal.QuestRefused, published.Message, ask);
 
         var byIntake = session is { Length: > 0 } && string.Equals(session, ask.Intake, StringComparison.Ordinal);
         await asks.RecordPublishedAsync(ask.Id, published.Quest.Id, byIntake ? ByIntake : null, now, ct)
             .ConfigureAwait(false);
+        var message = published.Message;
+        if (proposed is not null)
+        {
+            await asks.RecordReviewProposalAsync(ask.Id, proposed with { Quest = published.Quest.Id }, now, ct).ConfigureAwait(false);
+            message += $"\n\nProposed review `{proposed.Choice}` for this chain, kept on ask `#{ask.Id}` with your reason: a proposal, which "
+                       + "only the person's press applies.";
+        }
+
         var took = await FindAsync(ask.Id, ct).ConfigureAwait(false) ?? ask;
-        return new(AskRefusal.None, published.Message, took, published.Quest);
+        return new(AskRefusal.None, message, took, published.Quest);
     }
 
     /// <summary>The person answers their own ask: closed, with the reason, and final.</summary>
@@ -870,6 +1059,8 @@ public sealed partial class AskDesk(KnowledgeService service, AskStore asks, Que
                 Requirements = draft?.Requirements ?? [],
                 // The intake's short title (SESSUX1j); a publish with none is named from the ask's words.
                 Short = draft?.Short,
+                // The chain's review choice (REVIEWENV1b): the exchange checks a session's quote against this ask's words.
+                Review = draft?.Review,
                 Workspace = ask.Workspace,
                 // The session publishing, as its connector names it (SESS1): the intake that read the ask.
                 PublishedBy = session,

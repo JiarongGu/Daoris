@@ -574,6 +574,96 @@ public sealed class McpToolsTests : IAsyncLifetime
         Assert.Contains("last message", nobody);
     }
 
+    /// <summary>
+    /// REVIEWENV1b (D154; the review environment design §1.5, §2.1): an intake composes a set-up step through this door and
+    /// sets the chain's review choice on the person's quoted words, or proposes one with its reason, kept on the ask; a choice
+    /// on words the person never said is refused, and so is a proposal from a connector that speaks for no intake. The listing
+    /// says the choice and the set-up step.
+    /// </summary>
+    [Fact]
+    public async Task An_intake_sets_a_chains_review_on_the_persons_words_or_proposes_one()
+    {
+        var asks = await AskStore.OpenAsync(_connection);
+        var sessions = await SessionStore.OpenAsync(_connection);
+        var exchange = new QuestExchange(_service, _quests, files: _files, asks: asks);
+        var desk = new AskDesk(_service, asks, exchange, _files);
+        var ask = (await desk.AskAsync(new AskRequest("default", "add the setting, and run it locally against dev data"), DateTimeOffset.UtcNow)).Ask!;
+        var room = Path.Combine(_root, "home", "intake", "default");
+        var intake = (await new SessionLedger(_quests, sessions, _service, asks)
+            .OpenIntakeAsync(ask.Id, "stub", room, DateTimeOffset.UtcNow)).Session!;
+        var tools = new KnowledgeTools(
+            _service, _quests, exchange, new AmbientWorkspace(room, ask.Workspace), desk, new IntakeScope(ask.Id, intake.Id));
+
+        var unsaid = await tools.PublishQuestAsync(
+            "intake", "Owner", "Add the setting", "b", review: new ReviewChoice("local", "please show me"));
+        Assert.Contains("never said", unsaid);
+
+        var published = await tools.PublishQuestAsync(
+            "intake", "Owner", "Add the setting", "The report gains it.",
+            then: [new ChainStep("Owner", "Show {parent} in local for review", "Set it up.", SetUpIn: "local")],
+            review: new ReviewChoice("local", "run it locally against dev data"));
+        Assert.Contains("review choice is `local`", published);
+        var quest = (await _quests.ListAsync(receiver: "Owner")).Single();
+        Assert.Equal(new QuestReview("local", "run it locally against dev data"), quest.Review);
+        Assert.Equal("local", Assert.Single(quest.Then).SetUpIn);
+        var listed = await tools.ListQuestsAsync("Owner");
+        Assert.Contains("(set-up step, in `local`)", listed);
+        Assert.Contains("review: `local`, on the person's words \"run it locally against dev data\"", listed);
+
+        var proposed = await tools.PublishQuestAsync(
+            "intake", "Owner", "Fix the wording", "A typo.", reviewProposal: new ReviewProposal("off", "It changes only a document."));
+        Assert.Contains("Proposed review `off`", proposed);
+        Assert.Equal("It changes only a document.", Assert.Single((await desk.FindAsync(ask.Id))!.ReviewProposals).Reason);
+
+        var nobody = new KnowledgeTools(_service, _quests, exchange, new AmbientWorkspace(Path.Combine(_root, "family", "Asker")));
+        var refused = await nobody.PublishQuestAsync(
+            "Asker", "Owner", "Another", "b", reviewProposal: new ReviewProposal("off", "Why."));
+        Assert.Contains("speaks for no intake", refused);
+        Assert.DoesNotContain(await _quests.ListAsync(receiver: "Owner"), each => each.Title == "Another");
+    }
+
+    /// <summary>
+    /// REVIEWENV1b (design §2.6): a set-up step's own session asks Daoris to serve its build and says what it showed through
+    /// its connector; its done is refused until one is said, and once said closes held for the person's review, which the
+    /// listing says. A connector for a session on another quest, and one that speaks for no session, are refused.
+    /// </summary>
+    [Fact]
+    public async Task A_set_up_steps_session_says_its_set_up_through_its_own_connector()
+    {
+        var sessions = await SessionStore.OpenAsync(_connection);
+        var asks = await AskStore.OpenAsync(_connection);
+        var ledger = new SessionLedger(_quests, sessions, _service, asks);
+        var exchange = new QuestExchange(_service, _quests, files: _files, sessions: sessions, asks: asks);
+        await _tools.PublishQuestAsync(
+            "Asker", "Owner", "Add the setting", "b",
+            then: [new ChainStep("Owner", "Show {parent} in local for review", "Set it up.", SetUpIn: "local")]);
+        var build = (await _quests.ListAsync(receiver: "Owner")).Single();
+        await exchange.RespondAsync(build.Id, "take", null, DateTimeOffset.UtcNow);
+        await exchange.RespondAsync(build.Id, "done", "Built.", DateTimeOffset.UtcNow);
+        var setUp = (await _quests.ListAsync(receiver: "Owner")).Single(quest => quest.Parent == build.Id);
+        var tree = Path.Combine(_root, "trees", "setup");
+        Directory.CreateDirectory(Path.Combine(tree, "dist"));
+        var session = (await ledger.OpenAsync(setUp.Id, "stub", DateTimeOffset.UtcNow, tree: tree)).Session!;
+        KnowledgeTools Connector(string? id) => new(
+            _service, _quests, exchange, new AmbientWorkspace(Path.Combine(_root, "family", "Owner")),
+            new AskDesk(_service, asks, exchange, _files), new IntakeScope(null, id), ledger: ledger);
+        var tools = Connector(session.Id);
+        await tools.RespondToQuestAsync(setUp.Id, "take");
+
+        Assert.Contains("review_ready", await tools.RespondToQuestAsync(setUp.Id, "done", "Shown."));
+        Assert.Contains("Kept: `dist`", await tools.ServeForReviewAsync("dist", "http://localhost:4200"));
+        var said = await tools.ReadyForReviewAsync("http://localhost:4200/reports/7", "The report with the setting on.", "Open the report.");
+        Assert.Contains("Said set-up 1", said);
+        Assert.Contains("Close your quest done", said);
+        Assert.Contains("waits for the person's review in `local`", await tools.RespondToQuestAsync(setUp.Id, "done", "Shown."));
+        Assert.Contains("held for the person's review in `local`", await tools.ListQuestsAsync("Owner", includeClosed: true));
+
+        var other = (await sessions.CreateAsync(build.Id, "Owner", "stub", DateTimeOffset.UtcNow, tree: Path.Combine(_root, "trees", "b")));
+        Assert.Contains("no set-up step", await Connector(other.Id).ReadyForReviewAsync("http://localhost:4200", "x", "y"));
+        Assert.Contains("no session", await Connector(null).ServeForReviewAsync("dist", "http://localhost:4200"));
+        Assert.Contains("no session", await _tools.ReadyForReviewAsync("http://localhost:4200", "x", "y"));
+    }
+
     [Fact]
     public async Task A_path_that_is_not_a_file_is_refused_and_nothing_is_published()
     {

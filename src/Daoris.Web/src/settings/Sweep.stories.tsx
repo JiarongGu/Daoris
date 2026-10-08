@@ -26,6 +26,8 @@ export const EveryKind: Story = {
     branches: [
       branch({ branch: 'daoris/s-1f2e3d4c', kind: 'empty', where: 'main', removable: true }),
       branch({ branch: 'daoris/s-5a6b7c8d', kind: 'landed', where: 'feature/0fda18-fix-the-api-gap', removable: true }),
+      // SWEEPCARRIED1: a squash left its commits on no branch of the person's; the landed branch's pull request carried them.
+      branch({ branch: 'daoris/s-2d3e4f5a', kind: 'carried', commits: 2, where: 'feature/0fda16-squashed', removable: true }),
       branch({ branch: 'daoris/s-9e0f1a2b', kind: 'unlanded', commits: 2, detail: 'a1b2c3d the work\ne4f5a6b more work' }),
       branch({ branch: 'daoris/s-3c4d5e6f', kind: 'dirty', detail: '3 path(s) uncommitted' }),
       branch({ repository: 'game', branch: 'daoris/s-7a8b9c0d', kind: 'in-use' }),

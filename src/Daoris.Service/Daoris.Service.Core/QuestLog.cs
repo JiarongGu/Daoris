@@ -54,6 +54,20 @@ public enum QuestOperationKind
     /// verdict on evidence already found is no move; found, it lets go what the done held, and it moves no status.
     /// </summary>
     Evidenced,
+
+    /// <summary>
+    /// A set-up step said where it showed the work for the person's review (REVIEWENV1b, D154 point 9): what to look at,
+    /// how to show it again, and the commit its tree held, which the driver read. It applies only to a set-up step, and a
+    /// second post of the same set-up is no move. It moves no status; a newer one holds the step for the person again.
+    /// </summary>
+    SetUp,
+
+    /// <summary>
+    /// The person's verdict on a set-up step (REVIEWENV1b, D154 point 8): <c>reviewed</c> or <c>not-yet</c> on its newest
+    /// set-up, or <c>skipped</c> for the work. A <c>reviewed</c> or a skip lets go what the step's review held, and nothing
+    /// else; it moves no status.
+    /// </summary>
+    Verdict,
 }
 
 /// <summary>
@@ -92,6 +106,8 @@ public sealed record QuestOperationRef(string Machine, long Sequence);
 /// False on every other kind, and on every decline made before it, which is a plain one.
 /// </param>
 /// <param name="Evidence">For a <see cref="QuestOperationKind.Evidenced"/>: what was read (EVID1a). Null on every other kind.</param>
+/// <param name="SetUp">For a <see cref="QuestOperationKind.SetUp"/>: the set-up said (REVIEWENV1b). Null on every other kind.</param>
+/// <param name="Verdict">For a <see cref="QuestOperationKind.Verdict"/>: the person's verdict (REVIEWENV1b). Null on every other kind.</param>
 public sealed record QuestOperation(
     string Quest,
     QuestOperationKind Kind,
@@ -105,7 +121,9 @@ public sealed record QuestOperation(
     QuestOperationRef? Dismisses = null,
     IReadOnlyList<QuestAnswer>? Answers = null,
     bool WhileOpen = false,
-    QuestEvidenceVerdict? Evidence = null);
+    QuestEvidenceVerdict? Evidence = null,
+    QuestSetUp? SetUp = null,
+    QuestReviewVerdict? Verdict = null);
 
 /// <summary>Where this machine's claim on a quest stands (D68 §4, D69).</summary>
 public enum QuestClaim
@@ -236,11 +254,17 @@ public static class QuestLog
         // Only a taken quest waits: an open one has nobody's work in it, and a closed one has none left.
         QuestOperationKind.Waited => quest is { Status: QuestStatus.Taken } && !string.IsNullOrEmpty(operation.Note),
         QuestOperationKind.Deleted => quest is { Status: QuestStatus.Open },
-        // A yes only while something holds the done (DRIFT1d, EVID1a): a second machine's yes is the same yes, never a move.
-        QuestOperationKind.Accepted => quest is { Held: true },
+        // A yes only while a departure or its evidence holds the done (DRIFT1d, EVID1a): a second machine's yes is the same yes,
+        // never a move. A review's hold is the person's verdict's to lift, never a yes's (REVIEWENV1b, D154 point 9).
+        QuestOperationKind.Accepted => quest?.Hold is QuestHold.Departed or QuestHold.EvidenceUnread or QuestHold.EvidenceMissing,
         // A verdict only while the done waits on its evidence, and only one that reads exactly that (EVID1a): a second
         // machine's verdict on evidence already found is no move, and a verdict on what the done never named is none.
         QuestOperationKind.Evidenced => quest is { AwaitsEvidence: true } && operation.Evidence?.Covers(quest) == true,
+        // A set-up only on a set-up step not declined, and a second post of one already kept is no move (REVIEWENV1b).
+        QuestOperationKind.SetUp => quest is { SetUpIn: not null, Status: not QuestStatus.Declined }
+                                    && operation.SetUp is { } setUp && !quest.SetUps.Any(setUp.Same),
+        QuestOperationKind.Verdict => quest is { Status: not QuestStatus.Declined } && operation.Verdict is { } verdict
+                                      && QuestReviewing.Takes(quest, verdict),
         _ => quest is not null && QuestTransitions.Target(operation.Kind) is { } target
              && QuestTransitions.Allows(quest.Status, target),
     };
@@ -276,11 +300,20 @@ public static class QuestLog
     /// such a build left pending, so an upgraded machine stops pushing what the remote refuses (WAITCLAIM4). A dismissal,
     /// a yes and a verdict are no move on the take. An open quest is nobody's work, whatever an earlier incarnation of it held
     /// (D95). And a machine whose take was numbered reads held, never lost, so a winner's own moves are never judged here.
+    /// A set-up is the taker's too (REVIEWENV1b): its driver posts what its session showed, and a set-up from the tree of a
+    /// take that lost would show the winner's step as work it never held.
     /// </remarks>
     public static bool OnALostTake(Quest? standing, IEnumerable<QuestOperation> history, QuestOperation operation) =>
         standing is { Status: QuestStatus.Taken }
-        && (QuestTransitions.Target(operation.Kind) is not null || operation.Kind == QuestOperationKind.Waited)
+        && TakersOwn(operation.Kind)
         && Claim(history, operation.Machine) == QuestClaim.Lost;
+
+    /// <summary>
+    /// Whether a kind is made on a take, by the machine holding it: a move, a wait, or a set-up (WAITCLAIM1, REVIEWENV1b). One
+    /// list for <see cref="OnALostTake"/> and for a rebase's losing of what a lost take made.
+    /// </summary>
+    public static bool TakersOwn(QuestOperationKind kind) =>
+        QuestTransitions.Target(kind) is not null || kind is QuestOperationKind.Waited or QuestOperationKind.SetUp;
 
     /// <summary>The quest after an operation that <see cref="Applies"/> — none after a delete.</summary>
     public static Quest? Step(Quest? quest, QuestOperation operation) => operation.Kind switch
@@ -313,6 +346,17 @@ public static class QuestLog
         {
             Evidence = operation.Evidence! with { At = operation.At, Machine = operation.Machine }, Updated = operation.At,
         },
+        // A set-up and a verdict as the quest keeps them: when, where and which operation are the operation's own (REVIEWENV1b).
+        QuestOperationKind.SetUp => quest! with
+        {
+            SetUps = [.. quest.SetUps, operation.SetUp! with { At = operation.At, Machine = operation.Machine, Sequence = operation.Sequence }],
+            Updated = operation.At,
+        },
+        QuestOperationKind.Verdict => quest! with
+        {
+            Verdicts = [.. quest.Verdicts, operation.Verdict! with { At = operation.At, Machine = operation.Machine }],
+            Updated = operation.At,
+        },
         // A done carries how it answered each requirement (DRIFT1d); a take or a decline answers none.
         _ => quest! with
         {
@@ -342,9 +386,12 @@ public static class QuestLog
         // and the remote never kept (WAITCLAIM4). A delete that lost to a take, or that another machine's delete
         // already made (D95). A yes to a done nothing holds any more (DRIFT1d): its done lost, or another machine's yes came
         // first. A verdict on evidence nothing waits on any more (EVID1a): another machine's verdict found it first, or the
-        // person accepted the done as it stood.
+        // person accepted the done as it stood. A set-up on a step another machine declined or deleted, the same set-up
+        // posted first elsewhere, or one made on this machine's take that lost (REVIEWENV1b). A review's verdict another
+        // machine's came before, or on a set-up a newer one stands beside.
         QuestOperationKind.Dismissed or QuestOperationKind.Waited or QuestOperationKind.Deleted
-            or QuestOperationKind.Accepted or QuestOperationKind.Evidenced => QuestLoss.Forgotten,
+            or QuestOperationKind.Accepted or QuestOperationKind.Evidenced
+            or QuestOperationKind.SetUp or QuestOperationKind.Verdict => QuestLoss.Forgotten,
         _ => throw new ArgumentOutOfRangeException(
             nameof(kind), kind,
             "A rebase has no rule for this kind of quest operation; .claude/knowledge/quest-operations.md names every place a kind goes."),

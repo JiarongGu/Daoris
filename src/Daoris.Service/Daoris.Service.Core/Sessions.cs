@@ -240,7 +240,7 @@ public sealed record SaidWord(string Id, string Text, DateTimeOffset At, IReadOn
 /// and judgement lives in <see cref="SessionLedger"/> — one implementation for every door, for the same
 /// reason <see cref="QuestExchange"/> exists.</para>
 /// </remarks>
-public sealed class SessionStore
+public sealed partial class SessionStore
 {
     /// <summary>The connection's gate: every command here runs inside it (SQLITETX1).</summary>
     private readonly ConnectionGate _db;
@@ -360,6 +360,11 @@ public sealed class SessionStore
         // LANG1a (D142 point 2): the note's parts, a JSON list beside it. A record from before says none, and its note stands
         // as kept: nothing re-reads the English, and nothing rewrites it (the language design §6).
         await SchemaColumns.EnsureAsync(_db, "sessions", "note_parts", "note_parts TEXT NULL", ct).ConfigureAwait(false);
+
+        // REVIEWENV1b (D154 point 9): what a set-up step's session asked Daoris to serve and said it showed, until its driver
+        // posts each with the commit it read. This machine's own, like the person's words beside it: no wire names it, and
+        // a record from before says nothing, which is the old reading.
+        await SchemaColumns.EnsureAsync(_db, "sessions", "review", "review TEXT NULL", ct).ConfigureAwait(false);
 
         await using (var cursor = _db.Command())
         {
