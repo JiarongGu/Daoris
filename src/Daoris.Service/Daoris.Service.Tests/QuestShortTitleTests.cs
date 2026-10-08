@@ -124,6 +124,35 @@ public sealed class QuestShortTitleTests : IAsyncLifetime
         Assert.Equal("继续完成工单的生产部分，开发部分已经合…", name);
     }
 
+    /// <summary>
+    /// SHORTFIT1: a verb and then a branch name too long to fit whole named the quest by the verb alone (*Create…*). Where
+    /// a name would keep a single word, the next is cut by its characters, at the last joiner that fits, and never ends on
+    /// the joiner.
+    /// </summary>
+    [Theory]
+    [InlineData("Create release/delta-northwind-and-harbor from master with three branches merged (no push)", "Create release/delta-northwind-and…")]
+    [InlineData("Create release/northwindharborandcoastline from master", "Create release…")]
+    [InlineData("Merge feature_northwind_harbor_coastline_docs into main", "Merge feature_northwind_harbor…")]
+    public void A_long_word_after_a_single_one_is_cut_at_its_last_joiner_that_fits(string title, string expected)
+    {
+        var name = QuestTitles.Derive(title, "");
+
+        Assert.Equal(expected, name);
+        Assert.True(name.Length <= QuestTitles.MaxShort);
+    }
+
+    /// <summary>SHORTFIT1: with no joiner inside the room, the next word is cut by its characters, up to the width.</summary>
+    [Theory]
+    [InlineData("Rename TheConfigurationLoaderFactoryProviderService everywhere")]
+    [InlineData("Rename TheConfigurationLoaderFactoryProvider-Service everywhere")]
+    public void A_long_word_with_no_joiner_that_fits_is_cut_by_its_characters(string title)
+    {
+        var name = QuestTitles.Derive(title, "");
+
+        Assert.Equal("Rename TheConfigurationLoaderFactoryPro…", name);
+        Assert.Equal(QuestTitles.MaxShort, name.Length);
+    }
+
     [Fact]
     public void A_title_of_nothing_but_a_note_keeps_its_words()
     {
