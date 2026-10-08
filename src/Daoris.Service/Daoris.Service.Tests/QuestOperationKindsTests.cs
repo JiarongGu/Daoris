@@ -22,12 +22,17 @@ public sealed class QuestOperationKindsTests
 
     private static DateTimeOffset At(long sequence) => Now.AddMinutes(sequence);
 
-    /// <summary>The quest as asked: a requirement naming evidence, so a done can wait on it, and all else a publish carries.</summary>
+    /// <summary>
+    /// The quest as asked: a requirement naming evidence, so a done can wait on it, a set-up step's environment, so a set-up
+    /// and a review's verdict have a quest to apply to, and all else a publish carries.
+    /// </summary>
     private static readonly Quest Asked = new(Id, "ask #a1b2c3", "reports", "Write the report", "Through the bridge.", QuestStatus.Open, null, Now, Now)
     {
         Links = ["https://tickets.example/T-1"],
         Attachments = [new QuestAttachment("trace.log", new string('a', 64), 300)],
-        Then = [new QuestStep("checker", "Verify {parent}", "Open it and look.")],
+        Then = [new QuestStep("checker", "Verify {parent}", "Open it and look.") { SetUpIn = "dev" }],
+        Review = new QuestReview("local", "run it locally against dev data"),
+        SetUpIn = "local",
         PublishedBy = "s1a2b3c4",
         Lanes = ["web"],
         Requirements =
@@ -75,6 +80,25 @@ public sealed class QuestOperationKindsTests
             ])
             { Session = "s1a2b3c4" },
         },
+        // A deployed set-up, so its address crosses as given: a local one leaves it behind on the wire, which
+        // ReviewStepTests holds.
+        [QuestOperationKind.SetUp] = s => Op(QuestOperationKind.SetUp, s) with
+        {
+            SetUp = new QuestSetUp(Commit)
+            {
+                Look = "https://dev.example.test/reports/7", Shows = "The report with the new setting on.",
+                Again = "Open https://dev.example.test/reports/7 and turn on the setting.", Served = "dist/app",
+                Run = "npm run serve:dev", Session = "s1a2b3c4",
+            },
+        },
+        // The person's reviewed, on the set-up the states below show at sequence 4.
+        [QuestOperationKind.Verdict] = s => Op(QuestOperationKind.Verdict, s) with
+        {
+            Verdict = new QuestReviewVerdict(Reviews.Reviewed)
+            {
+                SetUp = new QuestOperationRef("m1", 4), Commit = Commit, Words = "That is the setting.",
+            },
+        },
     };
 
     /// <summary>The kind's sample, or a failure saying where a new kind goes before it is given one.</summary>
@@ -96,13 +120,17 @@ public sealed class QuestOperationKindsTests
             ("open", [published]),
             ("taken", [published, taken]),
             ("done, waiting on its evidence", [published, taken, Sample(QuestOperationKind.Done, 3)]),
-            ("done, departed", [published, taken, Sample(QuestOperationKind.Done, 3) with
-            {
-                Answers = [new QuestAnswer(1, null, Departed: "It went into the wiki instead.", Quote: "write the report")],
-            }]),
+            ("done, departed", [published, taken, Departure()]),
+            ("done, shown for review", [published, taken, Departure(), Sample(QuestOperationKind.SetUp, 4)]),
             ("declined", [published, Sample(QuestOperationKind.Declined, 2) with { WhileOpen = false }]),
         ];
     }
+
+    /// <summary>A done departing from its requirement: held for the person's yes, and for a set-up step its review after it.</summary>
+    private static QuestOperation Departure() => Sample(QuestOperationKind.Done, 3) with
+    {
+        Answers = [new QuestAnswer(1, null, Departed: "It went into the wiki instead.", Quote: "write the report")],
+    };
 
     /// <summary>The histories the kind's sample applies to, each with the sample as it would follow them.</summary>
     private static IReadOnlyList<(string State, IReadOnlyList<QuestOperation> History, QuestOperation Operation)> Applying(
@@ -181,6 +209,8 @@ public sealed class QuestOperationKindsTests
         [QuestOperationKind.Conflict] = "conflict",
         [QuestOperationKind.Dismissed] = "dismissal",
         [QuestOperationKind.Evidenced] = "evidenced",
+        [QuestOperationKind.SetUp] = "a set-up names",
+        [QuestOperationKind.Verdict] = "a review's verdict",
     };
 
     /// <summary>

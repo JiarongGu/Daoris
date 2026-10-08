@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (113)
+## Files over 40 KB (114)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -95,22 +95,23 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Service/Daoris.Service.Core/Asks.cs` | 48 | 921 |
+| `src/Daoris.Service/Daoris.Service.Core/Asks.cs` | 59 | 1112 |
 | `src/Daoris.Service/Daoris.Service.Core/History.cs` | 40 | 824 |
 | `src/Daoris.Service/Daoris.Service.Core/KnowledgeService.cs` | 53 | 1055 |
-| `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 93 | 1761 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 131 | 2387 |
+| `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 100 | 1884 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 144 | 2613 |
 | `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 63 | 1210 |
-| `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 63 | 1133 |
-| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 85 | 1549 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 99 | 1783 |
-| `src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs` | 44 | 801 |
+| `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 63 | 1138 |
+| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 93 | 1652 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 104 | 1859 |
+| `src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs` | 48 | 855 |
 | `src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs` | 44 | 839 |
 | `src/Daoris.Service/Daoris.Service.Tests/IndexEntriesTests.cs` | 45 | 855 |
-| `src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.cs` | 42 | 773 |
+| `src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.cs` | 48 | 863 |
 | `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 82 | 1691 |
+| `src/Daoris.Service/Daoris.Service.Tests/ReviewStepTests.cs` | 41 | 734 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 67 | 1385 |
-| `src/Daoris.Service/README.md` | 62 | 643 |
+| `src/Daoris.Service/README.md` | 67 | 667 |
 
 ### CLI (`cli`)
 

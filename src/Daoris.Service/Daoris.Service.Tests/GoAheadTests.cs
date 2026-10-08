@@ -470,4 +470,43 @@ public sealed partial class GoAheadTests : IAsyncLifetime
     public void Two_wordings_join_when_the_later_names_every_word_of_the_earlier(
         string kind, string on, string act, string laterKind, string laterOn, string laterAct, GoAheadMatch match) =>
         Assert.Equal(match, GoAheadAct.Match(new GoAhead(1, kind, on, act), laterKind, laterOn, laterAct));
+
+    /// <summary>
+    /// 🔴 REVIEWENV1b (D154 point 6, design §2.5): production is refused by construction for a set-up step. Its session asking a
+    /// go-ahead whose place reads as production, in any of the place table's words or as a word of a longer one, is refused
+    /// and told to stop and say so, and nothing is asked of the person; a go-ahead toward dev is asked as any other, and a
+    /// session on any other quest still asks production's.
+    /// </summary>
+    [Theory]
+    [InlineData("production")]
+    [InlineData("Prod")]
+    [InlineData("the live site")]
+    [InlineData("prd-eu")]
+    public async Task A_set_up_steps_go_ahead_for_production_is_refused_and_nothing_is_asked(string on)
+    {
+        var (ask, build) = await Asked();
+        await _exchange.RespondAsync(build.Id, "take", null, Now);
+        await _desk.PublishAsync(ask.Id, "dashboards", Now, draft: new AskDraft("Fix the figure", "It reads zero.")
+        {
+            Then = [new QuestStep("dashboards", "Show {parent} in dev for review", "Set it up.") { SetUpIn = "dev" }],
+        });
+        var fix = (await _quests.FromAsync(AskDesk.SenderOf(ask.Id))).Single(quest => quest.Title == "Fix the figure");
+        await _exchange.RespondAsync(fix.Id, "take", null, Now);
+        await _exchange.RespondAsync(fix.Id, "done", "Fixed.", Now);
+        var setUp = (await _quests.FromAsync(AskDesk.SenderOf(ask.Id))).Single(quest => quest.Parent == fix.Id);
+        var session = await Working(setUp, "setup");
+
+        var refused = await _ledger.AskGoAheadAsync(session.Id, "write", on, "dashboard configuration", "The procedure deploys there.", Now);
+
+        Assert.Equal(GoAheadRefusal.Production, refused.Refusal);
+        Assert.Contains("never where a set-up step acts", refused.Message);
+        Assert.Contains("Stop here", refused.Message);
+        Assert.Empty((await _desk.FindAsync(ask.Id))!.GoAheads);
+
+        var dev = await _ledger.AskGoAheadAsync(session.Id, "release", "dev", "the report page", "The procedure deploys to dev.", Now);
+        Assert.Equal(GoAheadRefusal.None, dev.Refusal);
+        var buildSession = (await _sessions.CreateAsync(build.Id, "dashboards", "stub", Now, "work", tree: Tree("build")));
+        Assert.Equal(GoAheadRefusal.None,
+            (await _ledger.AskGoAheadAsync(buildSession.Id, "write", on, "dashboard configuration", "The tile's target.", Now)).Refusal);
+    }
 }
