@@ -92,8 +92,11 @@ export function browsersIn(rows) {
   return rowsOf(rows).filter(({ commandLine }) => isBrowserProcess(commandLine)).map(({ pid }) => pid);
 }
 
-/** Every process running from `exe`, as `pid|command line` rows: what the judgements above read. */
-const commandLinesAt = (exe) => powershell(
+/**
+ * Every process running from `exe`, as `pid|command line` rows: what the judgements above read. Exported
+ * for `shot`, which reads both judgements from one query (SHOTPICK1): each costs a PowerShell start.
+ */
+export const commandLinesAt = (exe) => powershell(
   'Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | '
   + `Where-Object { $_.ExecutablePath -eq ${psQuote(exe)} } | `
   + 'ForEach-Object { "$($_.ProcessId)|$($_.CommandLine)" }');

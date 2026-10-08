@@ -5,6 +5,15 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-08 — `shot` photographed the browser beside the application
+
+### Tools: a capture chose by path, and since D99 the application and its browser share an exe (SHOTPICK1)
+- **Symptom:** on the install, `npm run desktop -- shot` said *2 matching windows are open; took the first* and photographed Daoris's own browser, not the application; `--window` with the application's caption failed in the capture script.
+- **Root cause:** `shot-window.ps1` took the first process from the path with a window. The browser runs from the application's own exe (`--daoris-browser` first, D99), so the path cannot tell them apart and Windows' order decided.
+- **Fix:** `desktop.mjs`'s `shotTarget` chooses by command line (no `--type=`, no `--daoris-browser` for the application; `--window browser` for the browser) and always passes `-ProcessId`; the script refuses a pid with no window.
+- **Verify:** four `desktop-tool.test.ts` cases (both listed, browser first; each alone; the recorded application among several); a shot of the install.
+- **Commit:** b933d004.
+
 ## 2026-10-08 — an older connector rebuilt a newer index
 
 ### Service: an older build read a newer index's schema as one to rebuild, and dropped it (KSCHEMA1)

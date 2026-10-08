@@ -17,7 +17,9 @@ param(
     # capture silently photographs whichever window the OS calls main. Empty = the main window.
     [string]$WindowTitle = '',
     # WHICH process, by id, when two share an executable and a path cannot tell them apart: a browser
-    # a probe started beside the person's own, from the same msedge.exe (2026-09-28).
+    # a probe started beside the person's own, from the same msedge.exe (2026-09-28), and Daoris's
+    # application and its own browser, both from the application's exe since D99. `desktop.mjs shot`
+    # always passes it (SHOTPICK1): left to this script, the first of the two was Windows' choice.
     [int]$ProcessId = 0
 )
 
@@ -100,6 +102,13 @@ if ($WindowTitle) {
     $handle = [IntPtr]::new([int64]$parts[0])
     Write-Host "  window: $($parts[1])"
     if ($matched.Count -gt 1) { Write-Host "  $($matched.Count) titles matched; took the first." }
+}
+
+# A process named by id is taken without the window filter above, so one with no main window is said
+# here rather than photographed as nothing (SHOTPICK1).
+if ($handle -eq [IntPtr]::Zero) {
+    Write-Error "pid $($window.Id) has no window to capture - is it still starting, or hidden?"
+    exit 1
 }
 
 $rect = New-Object DaorisShot+RECT
