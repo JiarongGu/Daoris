@@ -172,6 +172,12 @@ public sealed record ComposedService(
     /// </summary>
     public HistoryDesk History { get; init; } = null!;
 
+    /// <summary>
+    /// Second opinions (XAGENT1c, D155 point 11): kept by a local host beside its session records. Composed on every host, and
+    /// a shared host's refuses every door with its sentence, since it keeps none.
+    /// </summary>
+    public OpinionDesk Opinions { get; init; } = null!;
+
     public ValueTask DisposeAsync() => Store?.DisposeAsync() ?? ValueTask.CompletedTask;
 }
 
@@ -260,6 +266,9 @@ public static class ServiceFactory
         // The rule proposals a clear reads and tidies (HIST1b, design §2.2): a pending one keeps the work that made it, and
         // a settled one goes with it. A local host passes the home's box; with none, no proposal is read or removed.
         RuleProposalBox? proposals = null,
+        // Which host this is (D47 §3): what is this machine's alone, a second opinion first (XAGENT1c), is kept by a local
+        // host and refused by a shared one. The MCP host is always local.
+        ServiceMode mode = ServiceMode.Local,
         CancellationToken ct = default)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(options.DatabasePath)!);
@@ -267,6 +276,7 @@ public static class ServiceFactory
         var store = await SqliteKnowledgeStore.OpenAsync(options.DatabasePath).ConfigureAwait(false);
         var quests = await QuestStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var sessions = await SessionStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
+        var opinions = await OpinionStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var registrations = await RegistrationStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var keys = await ApiKeyStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var asks = await AskStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
@@ -356,6 +366,7 @@ public static class ServiceFactory
             // An ask's quests go through the same exchange every other door uses (D65 §1a).
             Asks = new AskDesk(service, asks, exchange, files),
             History = new HistoryDesk(quests, sessions, asks, service, remotes, files, proposals),
+            Opinions = new OpinionDesk(opinions, sessions, local: mode == ServiceMode.Local),
         };
     }
 
