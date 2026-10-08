@@ -29,11 +29,10 @@ public sealed class RequestLogTests : IDisposable
             await drop.ExecuteNonQueryAsync();
         }
 
-        // In Production nothing turns the exception into a page: the in-memory server hands it to its
-        // caller, where a real server would answer 500. The log line is written on the way out either way.
-        var failed = await Record.ExceptionAsync(() =>
-            _host.GetAsync("/api/asks/secret-id-in-the-path?workspace=secret-words-in-the-query"));
-        Assert.IsType<SqliteException>(failed);
+        // The host answers the throw itself (HOSTLOG1): a 500 with its sentence, and the line on the way out.
+        var failed = await _host.GetAsync("/api/asks/secret-id-in-the-path?workspace=secret-words-in-the-query");
+        Assert.Equal(500, failed.Status);
+        Assert.Equal(Daoris.Knowledge.Http.UnhandledRequests.Logged, failed.Error);
 
         var lines = _host.LogLines();
         var logged = Assert.Single(lines, line => Parse(line).GetProperty("event").GetString() == "request.failed");
