@@ -1223,6 +1223,63 @@ public sealed class QuestExchange(
     }
 
     /// <summary>
+    /// The sentence a person's done writes on its quest (QUESTCLOSE1, D126's note): theirs, with their words after it where
+    /// they gave any. Never translated: it is data, as a session's <i>The person finished this at a checkpoint.</i> is.
+    /// </summary>
+    public static string PersonDoneNote(string? words) =>
+        Blank(words) is { } said ? $"The person marked this done: {said}" : "The person marked this done.";
+
+    /// <summary>
+    /// The person marks a quest done (QUESTCLOSE1, D126's note), open or taken: what the quest page's *Mark done…* and
+    /// <c>daoris-driver quest done</c> say, after a session finished at a checkpoint left its quest taken, or whenever they
+    /// decide its work is done. It is the person's done, so it answers none of their requirements one by one: they are the
+    /// person's own words, and the done is their word on them. Its note says it was theirs (<see cref="PersonDoneNote"/>).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>The person's door, never an agent's</b>, as a yes is: no connector tool reaches it, and an agent's done still
+    /// answers each requirement through <see cref="RespondAsync"/>. It commits here, publishes a chain's next step and lets a
+    /// quest waiting on it resume, and travels like any done (D68): it is a done with a note and no answers.</para>
+    ///
+    /// <para><b>A closed quest does not move</b> (D46 §3), and a done on a take this machine lost is the lost take's
+    /// stand-down (WAITCLAIM2), each said as the respond door says it.</para>
+    /// </remarks>
+    public async Task<QuestRespondOutcome> PersonDoneAsync(string id, string? words, DateTimeOffset now, CancellationToken ct = default)
+    {
+        var quest = id.TrimStart('#');
+        var move = await quests.MoveAsync(quest, QuestStatus.Done, PersonDoneNote(words), now, ct).ConfigureAwait(false);
+        if (move.Quest is null)
+        {
+            return new(QuestRespondRefusal.NotFound, $"No quest `#{quest}`. Ids come from `quest_list`.", Quest: null);
+        }
+
+        if (move.ClaimLost)
+        {
+            return new(
+                QuestRespondRefusal.AlreadyTaken,
+                LostTake(move.Quest.Id, "so this done is not this machine's to make. Nothing moved."),
+                Quest: null);
+        }
+
+        if (!move.Moved)
+        {
+            return new(
+                QuestRespondRefusal.Closed,
+                $"Quest `#{move.Quest.Id}` is {move.Quest.Status} — a closed quest does not move; a new ask is a new title.",
+                Quest: null);
+        }
+
+        var waiting = await quests.WaitingOnAsync(move.Quest.Id, ct).ConfigureAwait(false);
+        var resumes = waiting.Count == 0
+            ? ""
+            : $"\n\n{Listed(waiting)} {(waiting.Count == 1 ? "waits" : "wait")} on it, and {(waiting.Count == 1 ? "resumes" : "resume")} "
+              + "at the driver's next look.";
+        return new(
+            QuestRespondRefusal.None,
+            $"Quest `#{move.Quest.Id}` is now Done: you marked it done.{resumes}{Then(move.FollowUp)}",
+            move.Quest);
+    }
+
+    /// <summary>
     /// Daoris read a done's evidence (EVID1a, D144 §3): the driver's verdict at the end of the session that made the done,
     /// the orphan sweep's, or the person's check at the terminal. The quest must be done and waiting on its evidence, and
     /// the verdict must name the commit read and read every item of every met requirement, and nothing else. Found, what

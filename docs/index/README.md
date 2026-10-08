@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (107)
+## Files over 40 KB (108)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -32,18 +32,19 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Web/e2e/platform.spec.ts` | 56 | 957 |
+| `src/Daoris.Web/e2e/platform.spec.ts` | 56 | 965 |
 | `src/Daoris.Web/src/App.test.tsx` | 50 | 966 |
 | `src/Daoris.Web/src/App.tsx` | 66 | 1225 |
 | `src/Daoris.Web/src/ProjectsView.test.tsx` | 70 | 1272 |
-| `src/Daoris.Web/src/QuestsView.test.tsx` | 59 | 1146 |
+| `src/Daoris.Web/src/QuestsView.test.tsx` | 62 | 1200 |
 | `src/Daoris.Web/src/agents/AgentPage.tsx` | 47 | 887 |
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 96 | 1872 |
+| `src/Daoris.Web/src/quests/QuestPage.tsx` | 43 | 815 |
 | `src/Daoris.Web/src/ui.test.tsx` | 43 | 872 |
 | `src/Daoris.Web/src/ui.tsx` | 76 | 1620 |
 | `src/Daoris.Web/src/work/ConversationView.test.tsx` | 43 | 817 |
-| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 191 | 3750 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 74 | 1407 |
+| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 195 | 3807 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 75 | 1418 |
 | `src/Daoris.Web/src/work/conversation.test.ts` | 44 | 857 |
 | `src/Daoris.Web/src/work/frame.tsx` | 40 | 877 |
 
@@ -72,11 +73,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 197 | 3626 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 58 | 1019 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 86 | 1581 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 87 | 1606 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionGroups.cs` | 55 | 987 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.Sync.cs` | 68 | 1146 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.cs` | 66 | 1163 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionsCommand.cs` | 53 | 1072 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionsCommand.cs` | 55 | 1104 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trace.Chain.cs` | 56 | 1236 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/WorkAbandoning.cs` | 53 | 983 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/WorkingTree.cs` | 47 | 1003 |
@@ -96,18 +97,18 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Asks.cs` | 48 | 928 |
 | `src/Daoris.Service/Daoris.Service.Core/History.cs` | 40 | 824 |
 | `src/Daoris.Service/Daoris.Service.Core/KnowledgeService.cs` | 51 | 1021 |
-| `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 90 | 1704 |
+| `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 93 | 1761 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 132 | 2418 |
 | `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 62 | 1198 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 63 | 1146 |
-| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 80 | 1461 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 96 | 1733 |
+| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 82 | 1495 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 97 | 1750 |
 | `src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs` | 42 | 750 |
 | `src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs` | 44 | 839 |
 | `src/Daoris.Service/Daoris.Service.Tests/IndexEntriesTests.cs` | 45 | 855 |
 | `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 82 | 1691 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 67 | 1385 |
-| `src/Daoris.Service/README.md` | 60 | 624 |
+| `src/Daoris.Service/README.md` | 60 | 625 |
 
 ### CLI (`cli`)
 

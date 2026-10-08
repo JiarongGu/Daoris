@@ -158,6 +158,8 @@ with the version and date at release.
   checkpoint, offers *Accept…* on its page to land that work, and the Branches tab says so.
 - The window no longer redraws continuously for a pulsing status dot, and it logs when its own thread
   is held, so a frozen title bar can be traced.
+- A quest left taken after you finished its session can be marked done by you, with a note, from its
+  page, from the session's *Finish…*, or with `daoris-driver quest done`.
 
 The first version: doctrine that installs, is checked, and flows back.
 

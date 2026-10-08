@@ -2074,7 +2074,8 @@ describe('clearing a parked session', () => {
     show('p4rk3d00');
 
     expect(await screen.findByText(/I recommend the second/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Finish' })).toBeInTheDocument();
+    // Its quest is still open, so its finish asks what becomes of it first (QUESTCLOSE1).
+    expect(screen.getByRole('button', { name: 'Finish…' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Decline…' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Stop session' })).toBeNull();
     expect(within(screen.getByRole('group', { name: 'Session actions' })).getByRole('button', { name: 'Stop…' })).toBeInTheDocument();
@@ -2123,13 +2124,68 @@ describe('clearing a parked session', () => {
     expect(screen.getAllByRole('button', { name: 'Stop…' })).toHaveLength(1);
   });
 
-  it('finishes it over the driver, with no note the person did not write', async () => {
+  it('finishes it over the driver, with no note the person did not write, and leaves its quest as it is', async () => {
+    const fetched = vi.fn(async (input: RequestInfo | URL) => respond(String(input)));
+    vi.stubGlobal('fetch', fetched);
     show('p4rk3d00');
-    await userEvent.click(await screen.findByRole('button', { name: 'Finish' }));
+    // Its quest is still open, so the finish asks what becomes of it first (QUESTCLOSE1), leaving it as it is by default.
+    await userEvent.click(await screen.findByRole('button', { name: 'Finish…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Finish' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RESOLVE_SESSION', {
       payload: { id: 'p4rk3d00', state: 'completed' },
     });
+    expect(fetched.mock.calls.some(([url]) => String(url).endsWith('/done'))).toBe(false);
+  });
+
+  /**
+   * QUESTCLOSE1 (D126's note): on the install a finish at a checkpoint left its quest taken with nothing to close it. Marked
+   * done in the same act, the finish goes over the driver first, then the person's done goes to its quest's own door with
+   * their words, and both are said.
+   */
+  it("finishes it over the driver, then marks its quest done as the person's with their note", async () => {
+    const posted: { url: string; body: unknown }[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (init?.method === 'POST' && url === '/api/quests/abc123/done') {
+        posted.push({ url, body: JSON.parse(String(init.body)) });
+        return Response.json({ quest: { ...QUESTS[0], status: 'Done' }, message: 'Quest `#abc123` is now Done: you marked it done.' });
+      }
+      return respond(url);
+    }));
+    const notify = vi.fn();
+    show('p4rk3d00', notify);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Finish…' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'Mark it done as yours' }));
+    await userEvent.type(screen.getByLabelText(/your note on the quest/), 'The write-up is in the shared folder.');
+    await userEvent.click(screen.getByRole('button', { name: 'Finish' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RESOLVE_SESSION', {
+      payload: { id: 'p4rk3d00', state: 'completed' },
+    });
+    await waitFor(() => expect(posted).toEqual([{ url: '/api/quests/abc123/done', body: { note: 'The write-up is in the shared folder.' } }]));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Quest `#abc123` is now Done: you marked it done.'));
+  });
+
+  /** The finish stood; a refusal of the quest's done is the service's sentence, said as an error. */
+  it("says the service's refusal of its quest's done, the finish having stood", async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (init?.method === 'POST' && url === '/api/quests/abc123/done') {
+        return Response.json({ error: 'Quest `#abc123` is Done — a closed quest does not move; a new ask is a new title.' }, { status: 409 });
+      }
+      return respond(url);
+    }));
+    const notify = vi.fn();
+    show('p4rk3d00', notify);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Finish…' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'Mark it done as yours' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Finish' }));
+
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('a closed quest does not move'), 'error'));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RESOLVE_SESSION', { payload: { id: 'p4rk3d00', state: 'completed' } });
   });
 
   it('carries the reason a decline was given', async () => {
@@ -2160,7 +2216,8 @@ describe('clearing a parked session', () => {
         </Tooltip.Provider>
       </QueryClientProvider>,
     );
-    await userEvent.click(await screen.findByRole('button', { name: 'Finish' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Finish…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Finish' }));
 
     await vi.waitFor(() => expect(notify)
       .toHaveBeenCalledWith(expect.stringContaining('Declining needs a reason'), 'error'));

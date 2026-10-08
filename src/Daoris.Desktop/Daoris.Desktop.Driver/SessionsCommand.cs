@@ -547,22 +547,54 @@ public static class SessionsCommand
         var (move, state, past) = ask.Verb == "finish"
             ? (SessionMove.Finish, "completed", "finished")
             : (SessionMove.Decline, "declined", "declined");
+        int exit;
         if (world.Processes.AliveOnThisMachine(id))
         {
-            return await AskAsync(world, record, new SessionRequest(id, move, DateTimeOffset.UtcNow) { Note = ask.Note, Parked = true }, past, output, ct)
+            exit = await AskAsync(world, record, new SessionRequest(id, move, DateTimeOffset.UtcNow) { Note = ask.Note, Parked = true }, past, output, ct)
                 .ConfigureAwait(false);
         }
+        else
+        {
+            try
+            {
+                var said = await SessionMoves.ResolveAsync(_ => false, world.Service, id, state, ask.Note, ct).ConfigureAwait(false);
+                output.WriteLine($"sessions: {past} {id}: {said}");
+                exit = 0;
+            }
+            catch (DriverException refused)
+            {
+                output.WriteLine($"sessions: {refused.Message}");
+                return 1;
+            }
+        }
 
+        if (exit == 0 && move == SessionMove.Finish) await StillOpenAsync(world, record, output, ct).ConfigureAwait(false);
+        return exit;
+    }
+
+    /// <summary>
+    /// A finish at a checkpoint leaves its quest as it was (QUESTCLOSE1, D126's note): where that is still open or taken, said
+    /// right after it with the door that closes it as the person's, since nothing here carries a finished session's quest on.
+    /// A quest that cannot be read says nothing: the finish stood, and <c>quest done</c> answers for itself.
+    /// </summary>
+    private static async Task StillOpenAsync(SessionsWorld world, SessionRecord record, TextWriter output, CancellationToken ct)
+    {
+        if (record.Quest is not { } id) return;
+        QuestView? quest;
         try
         {
-            var said = await SessionMoves.ResolveAsync(_ => false, world.Service, id, state, ask.Note, ct).ConfigureAwait(false);
-            output.WriteLine($"sessions: {past} {id}: {said}");
-            return 0;
+            quest = await world.Service.FindQuestAsync(id, ct).ConfigureAwait(false);
         }
-        catch (DriverException refused)
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
         {
-            output.WriteLine($"sessions: {refused.Message}");
-            return 1;
+            return;
+        }
+
+        if (quest?.Status is "Open" or "Taken")
+        {
+            output.WriteLine(
+                $"  its quest #{quest.Id} is still {quest.Status.ToLowerInvariant()}: daoris-driver quest done {quest.Id} [--note \"…\"] "
+                + "marks it done as yours.");
         }
     }
 

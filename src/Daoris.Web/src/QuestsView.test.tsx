@@ -1014,7 +1014,7 @@ describe('QuestsView', () => {
 
     expect(within(header).getByRole('button', { name: 'Take' }).className).toContain('bg-accent');
     // UX7c (D152 §7): marking done a quest nobody has taken is rarely the next step, so it is in the head's ⋯.
-    expect(within(header).queryByRole('button', { name: 'Mark done' })).toBeNull();
+    expect(within(header).queryByRole('button', { name: 'Mark done…' })).toBeNull();
     expect(within(header).getAllByRole('button').map((button) => button.textContent || button.getAttribute('aria-label')))
       .toEqual(['Take', 'Decline…', 'More actions']);
     // U35: taking wore a check mark, the sign of done, beside a done that wore none.
@@ -1061,8 +1061,8 @@ describe('QuestsView', () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url.startsWith('/api/asks')) asked.push(url);
-      if (init?.method === 'POST' && url === '/api/quests/abc123/respond') {
-        return Response.json({ quest: { ...QUESTS[0], status: 'Done' }, message: 'Quest `#abc123` is now Done.' });
+      if (init?.method === 'POST' && url === '/api/quests/abc123/done') {
+        return Response.json({ quest: { ...QUESTS[0], status: 'Done' }, message: 'Quest `#abc123` is now Done: you marked it done.' });
       }
       return respond(url);
     }));
@@ -1071,9 +1071,63 @@ describe('QuestsView', () => {
     await waitFor(() => expect(asked.length).toBeGreaterThan(0));
     const before = asked.length;
 
-    await moreAct(page, 'Mark done');
+    await moreAct(page, 'Mark done…');
+    await userEvent.click(within(screen.getByRole('group', { name: 'mark this quest done' })).getByRole('button', { name: 'Mark done' }));
 
     await waitFor(() => expect(asked.length).toBeGreaterThan(before));
+  });
+
+  /**
+   * QUESTCLOSE1 (D126's note): the person's done goes to the service's own door for it with their words, never to respond's,
+   * which is an agent's done and would ask the person's requirements answered one by one. The page stays on the quest as the
+   * answer left it, the ask closed, and the service's sentence is the notice.
+   */
+  it("sends the person's done with their note to its own door, and closes its ask once it landed", async () => {
+    const sent: { url: string; body: unknown }[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (init?.method === 'POST' && url.startsWith('/api/quests/abc123/')) {
+        sent.push({ url, body: JSON.parse(String(init.body)) });
+        return Response.json({
+          quest: { ...QUESTS[0], status: 'Done', note: 'The person marked this done: It is in the shared folder.' },
+          message: 'Quest `#abc123` is now Done: you marked it done.',
+        });
+      }
+      return url.startsWith('/api/quests') ? Response.json([{ ...QUESTS[0], status: 'Taken' }]) : respond(url);
+    }));
+    const notify = view();
+    const page = await chooseRow('Expose a streaming budget');
+
+    await userEvent.click(within(page).getByRole('button', { name: 'Mark done…' }));
+    const ask = within(page).getByRole('group', { name: 'mark this quest done' });
+    await userEvent.type(within(ask).getByLabelText('Your note (optional)'), 'It is in the shared folder.');
+    await userEvent.click(within(ask).getByRole('button', { name: 'Mark done' }));
+
+    await waitFor(() => expect(sent).toEqual([{ url: '/api/quests/abc123/done', body: { note: 'It is in the shared folder.' } }]));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Quest `#abc123` is now Done: you marked it done.'));
+    await waitFor(() => expect(within(questMain()).queryByRole('group', { name: 'mark this quest done' })).toBeNull());
+    expect(await within(questMain()).findByText('The person marked this done: It is in the shared folder.')).toBeInTheDocument();
+  });
+
+  /** A refusal of the person's done is the service's sentence, said inside its ask, and the quest stays as it was. */
+  it("says the service's refusal of the person's done inside its ask", async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (init?.method === 'POST' && url === '/api/quests/abc123/done') {
+        return Response.json(
+          { error: 'Quest `#abc123` is Done — a closed quest does not move; a new ask is a new title.' }, { status: 409 },
+        );
+      }
+      return url.startsWith('/api/quests') ? Response.json([{ ...QUESTS[0], status: 'Taken' }]) : respond(url);
+    }));
+    view();
+    const page = await chooseRow('Expose a streaming budget');
+
+    await userEvent.click(within(page).getByRole('button', { name: 'Mark done…' }));
+    const ask = within(page).getByRole('group', { name: 'mark this quest done' });
+    await userEvent.click(within(ask).getByRole('button', { name: 'Mark done' }));
+
+    expect(await within(ask).findByRole('alert')).toHaveTextContent('a closed quest does not move');
   });
 
   it("makes closing a taken quest the page's one loud control", async () => {
@@ -1085,7 +1139,7 @@ describe('QuestsView', () => {
     const page = await chooseRow('Expose a streaming budget');
 
     expect(within(page).queryByRole('button', { name: 'Take' })).toBeNull();
-    expect(within(page).getByRole('button', { name: 'Mark done' }).className).toContain('bg-accent');
+    expect(within(page).getByRole('button', { name: 'Mark done…' }).className).toContain('bg-accent');
   });
 
   it('publish stays disabled until the ask is complete — the form does not offer the mistake', async () => {

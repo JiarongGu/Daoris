@@ -514,6 +514,23 @@ if (mode == ServiceMode.Local)
         };
     });
 
+    // The person marks a quest done (QUESTCLOSE1, D126's note): their done, which answers none of their requirements and
+    // says it was theirs, with their words. LOCAL mode only, as the yes is: said on their own machine, travelling from there
+    // as a done (D68). No connector tool reaches it, since an agent's done answers each requirement through respond.
+    app.MapPost("/api/quests/{id}/done", async (
+        ComposedService s, HttpContext http, string id, PersonDoneRequest? body, CancellationToken ct) =>
+    {
+        var outcome = await s.Exchange.PersonDoneAsync(id, body?.Note, DateTimeOffset.UtcNow, ct);
+        return outcome.Refusal switch
+        {
+            QuestRespondRefusal.None => Results.Ok(
+                new QuestActionResponse(await QuestAnswerAsync(s, http, outcome.Quest!, ct), outcome.Message)),
+            QuestRespondRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+            // A closed quest, or a take this machine lost: a state, the lock's own shape.
+            _ => Results.Conflict(new ErrorResponse(outcome.Message)),
+        };
+    });
+
     // What the driver read of a done's evidence (EVID1a, D144 §3): its verdict at the end of the session that made the
     // done, the sweep's, or the person's check at the terminal. LOCAL mode only, as the yes is: the commit is read on the
     // machine whose tree holds it, and the verdict travels from there as an operation (D68). No connector tool reaches it,

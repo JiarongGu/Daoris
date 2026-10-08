@@ -514,6 +514,40 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// QUESTCLOSE1 (D126's note): the person's done door closes a taken quest that carries their requirements, answering
+    /// none, its note saying it was theirs with their words: 200 once, 409 after, 404 for a quest nobody holds.
+    /// </summary>
+    [Fact]
+    public async Task The_persons_done_door_closes_a_quest_with_requirements_and_says_it_was_theirs()
+    {
+        var asked = await host.PostAsync("/api/asks", new
+        {
+            workspace = "default", sentence = "Write up the onboarding for the client, through the v3 bridge.",
+        });
+        var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
+        var published = await host.PostAsync($"/api/asks/{ask}/publish", new
+        {
+            to = "Keeper", title = "Write up the onboarding", body = "For the client.",
+            requirements = new[] { new { quote = "through the v3 bridge", check = "The write-up names the bridge's route." } },
+        });
+        var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
+
+        Assert.Contains(("POST", "/api/quests/{id}/done"), host.Routes());
+        var done = await host.PostAsync($"/api/quests/{quest}/done", new { note = "It is in the shared folder." });
+
+        Assert.Equal(200, done.Status);
+        var closed = done.Json.GetProperty("quest");
+        Assert.Equal("Done", closed.GetProperty("status").GetString());
+        Assert.Equal("The person marked this done: It is in the shared folder.", closed.GetProperty("note").GetString());
+        Assert.Equal(0, closed.GetProperty("answers").GetArrayLength());
+        Assert.False(closed.GetProperty("held").GetBoolean());
+        Assert.Contains("you marked it done", done.Json.GetProperty("message").GetString());
+        Assert.Equal(409, (await host.PostAsync($"/api/quests/{quest}/done", new { })).Status);
+        Assert.Equal(404, (await host.PostAsync("/api/quests/feedfacecafe/done", new { })).Status);
+    }
+
+    /// <summary>
     /// EVID1a (D144 §2–§3, §6): the publish doors take a requirement's evidence and answer it on the quest; a gate is
     /// refused naming the queue. A met done waits for its evidence (<c>hold</c> <c>evidence-unread</c>); the evidence
     /// door takes the driver's verdict: missing keeps it held (<c>evidence-missing</c>), a verdict that is not one is 400,

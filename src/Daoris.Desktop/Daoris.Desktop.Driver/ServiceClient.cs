@@ -805,6 +805,31 @@ public sealed partial class ServiceClient : IDisposable
     }
 
     /// <summary>
+    /// The person marks a quest done (QUESTCLOSE1, D126's note): their words, verbatim, to the service's own door for it, which
+    /// writes the sentence saying the done was theirs before them and answers none of their requirements. Never respond's
+    /// door, which is an agent's done. The service's sentence comes back verbatim, a refusal (a closed quest, no such quest)
+    /// included, and a host older than the door is said to be.
+    /// </summary>
+    public async Task<(bool Ok, string Message)> PersonDoneAsync(string id, string? note, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            // Written only when given: no words is the service's sentence alone.
+            if (!string.IsNullOrWhiteSpace(note)) writer.WriteString("note", note.Trim());
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync(
+            $"/api/quests/{Uri.EscapeDataString(id.TrimStart('#'))}/done", body, ct).ConfigureAwait(false);
+        if (root is not { } answer)
+        {
+            return (false, $"the service at {_base} has no done door for a person ({status}) — is it older than this driver?");
+        }
+
+        return ok ? (true, Text(answer, "message") ?? "") : (false, Text(answer, "error") ?? payload);
+    }
+
+    /// <summary>
     /// What Daoris read of a done's evidence, posted to the one door that takes it (EVID1a, EVID1b; D144 §3): the local host's
     /// <c>POST /api/quests/{id}/evidence</c>, with this client's key, as records are written. A refusal is an answer, in the
     /// service's words: the done no longer waits on evidence (409), the verdict does not read what it waits on (400), or no

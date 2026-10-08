@@ -1,11 +1,17 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { NotePart } from '../api';
-import { Button, WaitingCard } from '../ui';
+import type { NotePart, Quest } from '../api';
+import { Button, Segmented, WaitingCard } from '../ui';
 import { Note } from './Note';
 
 /** What the ledger lets a person do from `awaiting-person` — and nothing this surface invented. */
 export type Resolution = 'completed' | 'declined' | 'stopped';
+
+/**
+ * What a finish does with the quest its session holds (QUESTCLOSE1, D126's note): marks it done as the person's, with their
+ * words or none. Absent leaves it as it is, the default.
+ */
+export type QuestClose = { as: 'done'; note: string | null };
 
 /**
  * A session parked at a checkpoint, and the person's answer to it (design §4).
@@ -32,10 +38,15 @@ export type Resolution = 'completed' | 'declined' | 'stopped';
  * same reason: the note is the only part whoever reads the record later can act on, and a decline
  * that slipped out on one click would routinely carry nothing.
  *
+ * **A finish asks what becomes of its quest, in the same act** (QUESTCLOSE1, D126's note): where the session holds a
+ * quest still open or taken, *Finish…* opens the choice in place, *leave it as it is* by default or *mark it done as
+ * yours* with the person's note. On the install two sessions finished at a checkpoint left their quests taken with
+ * nothing to close them, since nothing carries a finished session's quest on. With no such quest, *Finish* is one press.
+ *
  * A molecule: it is handed the note and reports a move, so a parked session with a three-paragraph
  * analysis and one with none are both reachable by passing them.
  */
-export function AwaitingPerson({ note, parts, pending = false, onResolve, onAnswer }: {
+export function AwaitingPerson({ note, parts, quest = null, pending = false, onResolve, onAnswer }: {
   /** The session's note: its English, shown as kept where it has no parts. */
   note?: string | null;
   /**
@@ -43,17 +54,32 @@ export function AwaitingPerson({ note, parts, pending = false, onResolve, onAnsw
    * word (LANG1b, `Note`).
    */
   parts?: readonly NotePart[] | null;
+  /** The quest its session holds, where it is still open or taken: what a finish may close (QUESTCLOSE1). */
+  quest?: Pick<Quest, 'id' | 'status'> | null;
   pending?: boolean;
-  /** The ledger's moves this card makes, finish and decline, where this surface can make them (the shell). */
-  onResolve?: (state: Resolution, note: string | null) => void;
+  /**
+   * The ledger's moves this card makes, finish and decline, where this surface can make them (the shell); a finish that
+   * closes its quest says how (QUESTCLOSE1).
+   */
+  onResolve?: (state: Resolution, note: string | null, close?: QuestClose) => void;
   /** The answer to a session with no process left — its quest carried on with the words (STANDDOWN2). */
   onAnswer?: (answer: string | null) => void;
 }) {
   const { t } = useTranslation();
   const [declining, setDeclining] = useState(false);
   const [answering, setAnswering] = useState(false);
+  const [finishing, setFinishing] = useState(false);
   const [reason, setReason] = useState('');
   const [words, setWords] = useState('');
+  // What the finish does with its quest: left as it is unless the person chooses (QUESTCLOSE1).
+  const [questTo, setQuestTo] = useState<'leave' | 'done'>('leave');
+  const [questNote, setQuestNote] = useState('');
+  const closable = quest !== null && (quest.status === 'Open' || quest.status === 'Taken');
+  const finish = () => {
+    if (!onResolve) return;
+    if (questTo === 'done' && closable) onResolve('completed', null, { as: 'done', note: questNote.trim() || null });
+    else onResolve('completed', null);
+  };
 
   const field = 'min-h-14 resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink';
 
@@ -83,6 +109,50 @@ export function AwaitingPerson({ note, parts, pending = false, onResolve, onAnsw
                 {t('work.awaiting.answerConfirm')}
               </Button>
               <Button variant="ghost" onClick={() => setAnswering(false)}>{t('common.cancel')}</Button>
+            </div>
+          </div>
+        )
+        : finishing && onResolve && closable
+        ? (
+          <div className="mt-2.5 grid gap-2">
+            <p className="m-0 text-small text-ink-soft">{t('work.awaiting.finishQuest', { quest: quest!.id })}</p>
+            <div>
+              <Segmented
+                label={t('work.awaiting.questChoice')}
+                value={questTo}
+                options={[
+                  { value: 'leave', label: t('work.awaiting.questLeave') },
+                  { value: 'done', label: t('work.awaiting.questDone') },
+                ]}
+                onChange={setQuestTo}
+              />
+            </div>
+            {questTo === 'done' && (
+              <label className="grid gap-1 text-small text-ink-faint">
+                <span className="sr-only">{t('work.awaiting.questNote')}</span>
+                <textarea
+                  autoFocus
+                  value={questNote}
+                  aria-label={t('work.awaiting.questNote')}
+                  onChange={(event) => setQuestNote(event.target.value)}
+                  placeholder={t('work.awaiting.questNote')}
+                  className={field}
+                />
+              </label>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <Button variant="primary" disabled={pending} onClick={finish}>{t('work.awaiting.finish')}</Button>
+              {/* Put down, it forgets the choice: the next finish asks again from leaving the quest as it is. */}
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setFinishing(false);
+                  setQuestTo('leave');
+                  setQuestNote('');
+                }}
+              >
+                {t('common.cancel')}
+              </Button>
             </div>
           </div>
         )
@@ -121,8 +191,13 @@ export function AwaitingPerson({ note, parts, pending = false, onResolve, onAnsw
             )}
             {onResolve && (
               <>
-                <Button variant={onAnswer ? 'default' : 'primary'} disabled={pending} onClick={() => onResolve('completed', null)}>
-                  {t('work.awaiting.finish')}
+                {/* With a quest still to close, the finish asks what becomes of it first (QUESTCLOSE1); with none, one press. */}
+                <Button
+                  variant={onAnswer ? 'default' : 'primary'}
+                  disabled={pending}
+                  onClick={() => (closable ? setFinishing(true) : onResolve('completed', null))}
+                >
+                  {t(closable ? 'work.awaiting.finishAsk' : 'work.awaiting.finish')}
                 </Button>
                 <Button disabled={pending} onClick={() => setDeclining(true)}>
                   {t('work.awaiting.decline')}

@@ -8,8 +8,8 @@ import type { WorkDoor } from '../work/pausing';
 import { ABANDONED_ENTRY, PAUSABLE_QUEST, PAUSED_QUEST } from '../work/pausingFixtures';
 import { answer, QUEST_CHAIN } from '../work/traceFixtures';
 import {
-  ACCEPTED, CHAINED, CJK, CONFLICTED, DECLINED, DELETABLE, DONE, EXHAUSTED, FAILED, HELD, HELD_BY_PERSON, HELD_CJK, LANED, MET,
-  OPEN, PAUSED_ITSELF, PAUSED_WITH_ASK, PAUSED_WITH_QUEST, QUESTION, REFILED, REFILED_NAMED, REFILED_UNNAMED, REQUIRING, STARTING,
+  ACCEPTED, CHAINED, CJK, CONFLICTED, DECLINED, DELETABLE, DONE, EXHAUSTED, FAILED, FINISHED_HERE, HELD, HELD_BY_PERSON, HELD_CJK,
+  LANED, MET, OPEN, PAUSED_ITSELF, PAUSED_WITH_ASK, PAUSED_WITH_QUEST, QUESTION, REFILED, REFILED_NAMED, REFILED_UNNAMED, REQUIRING, STARTING,
   STOPPED, TAKEN, TAKEN_ELSEWHERE, TRUST, WAITING, WAITS_FOR_ACCOUNT, WORKING,
 } from './fixtures';
 import { QuestPage, QuestsMainNotice } from './QuestPage';
@@ -45,11 +45,28 @@ export default meta;
 
 type Story = StoryObj<typeof QuestPage>;
 
-/** Open: *Take* is the loud act in its header, then *Decline…*, and *Mark done* in its ⋯ (UX7c); it carries a link and two files. */
+/** Open: *Take* is the loud act in its header, then *Decline…*, and *Mark done…* in its ⋯ (UX7c); it carries a link and two files. */
 export const Open: Story = {};
 
-/** Taken: *Mark done* is the loud act now (UX5 U31). */
+/** Taken: *Mark done…* is the loud act now (UX5 U31); it asks once under the header, with the person's note (QUESTCLOSE1). */
 export const Taken: Story = { args: { quest: TAKEN } };
+
+/**
+ * The install's case (QUESTCLOSE1, D126's note): its session here finished at a checkpoint and the quest still taken. *Sitting*
+ * says nothing here carries it on, with *Mark done…* where it is read and loud in its head.
+ */
+export const FinishedAtACheckpoint: Story = { args: { quest: TAKEN, session: FINISHED_HERE, onAttend: nothing } };
+
+/** The same in 中文. */
+export const FinishedAtACheckpointChinese: Story = { ...FinishedAtACheckpoint, decorators: [chinese] };
+
+/** The same in dark. */
+export const FinishedAtACheckpointDark: Story = { ...FinishedAtACheckpoint, decorators: [dark] };
+
+/** Carrying the person's requirements: *Mark done…*'s ask says they are not answered one by one. */
+export const FinishedWithRequirements: Story = {
+  args: { quest: REQUIRING, session: { ...FINISHED_HERE, quest: REQUIRING.id }, onAttend: nothing },
+};
 
 /** Sitting because the person holds its repository: the driver's sentence, in the page's language. */
 export const Sitting: Story = { args: { sitting: HELD_BY_PERSON } };
