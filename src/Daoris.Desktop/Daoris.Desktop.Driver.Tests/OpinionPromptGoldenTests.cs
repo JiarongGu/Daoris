@@ -57,7 +57,7 @@ public sealed class OpinionPromptGoldenTests
             new AskWordView(AskWordView.Added, "test locally against dev first", Asked.AddHours(4), "s2", "abc123"),
         ]),
         Rules = new OpinionRulesRead(["AGENTS.md", "CLAUDE.md", "docs/README.md"], "docs/decisions", "daoris.gates.json"),
-        Diff = "C:/home/opinions/op1/candidate.diff",
+        Diff = "C:/data/opinions/op1/candidate.diff",
         Verify = true,
         Minutes = 30,
     };

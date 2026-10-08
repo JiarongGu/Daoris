@@ -72,7 +72,7 @@ public sealed class ReviewTreeTests : IDisposable
         Assert.Equal("", In(opened.Path, "branch -r"));
         Assert.True(File.Exists(Path.Combine(opened.Path, "comparison.md")));
         // Its own repository, never a worktree of the person's: the person's lists one working tree, its own.
-        Assert.Single(_repository.Output("worktree list --porcelain").Split('\n').Where(line => line.StartsWith("worktree ", StringComparison.Ordinal)));
+        Assert.Single(_repository.Output("worktree list --porcelain").Split('\n'), line => line.StartsWith("worktree ", StringComparison.Ordinal));
         Assert.NotEqual(
             Path.GetFullPath(In(opened.Path, "rev-parse --path-format=absolute --git-common-dir")),
             Path.GetFullPath(_repository.Output("rev-parse --path-format=absolute --git-common-dir")));
