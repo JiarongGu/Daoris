@@ -50,7 +50,8 @@
  * `ServiceHostLocator`, and the connector it hands each protocol-door session through
  * `KnowledgeConnector`, both of which look beside the shell before the home's `bin/`. `--service`
  * publishes both there, by the service publish's one recipe (CONNECTOR1), so the folder is
- * self-sufficient and a republish refreshes both with the shell.
+ * self-sufficient and a republish refreshes both with the shell. A republish into an install that carries
+ * either, without `--service`, is refused (CONNECTOR1b): it would leave an earlier build's hosts ranked first.
  */
 import { execSync, spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
@@ -166,6 +167,18 @@ export function servicePlan(root, rid = INSTALL_RID) {
     const folder = join(root, SHELL_HOME[0], host.binary);
     return { host, folder, executable: join(folder, executableFor(host.binary, rid)), command: publishCommand(host, rid, folder) };
   });
+}
+
+/**
+ * The service hosts `install` carries under `app/` (CONNECTOR1b), as each one's folder relative to the install with `/`:
+ * every host {@link servicePlan} lays out whose executable is there. Both locators run these ahead of the home's `bin/`,
+ * so a publish in place that leaves them is one whose sessions run the build before it. A folder without its executable is
+ * nothing either locator finds, and is not counted.
+ */
+export function carriedHosts(install) {
+  return servicePlan(install)
+    .filter((step) => existsSync(step.executable))
+    .map((step) => `${relative(install, step.folder).split(sep).join('/')}/`);
 }
 
 /**
@@ -630,7 +643,8 @@ Stage a new build beside it while it runs: \`npm run publish:desktop -- --to <th
 application then starts nothing new, lets the running sessions end or park, closes, and \`${LAUNCHER}\` checks the
 staged build, swaps \`${SHELL_HOME[0]}/\` and starts it again, putting the build before it back if the new one does not
 come up (D139). The banner in the window and \`daoris-driver update --when-idle|--now|--cancel\` say when.
-Re-publishing over this folder with the application closed still works; nothing here is edited by hand.
+Re-publishing over this folder with the application closed still works, with \`--service\` while it carries the hosts
+(a re-publish without it is refused rather than leave the last build's); nothing here is edited by hand.
 `;
 }
 
@@ -721,12 +735,25 @@ export function isInstall(folder) {
  * `OWN`, so beside other things it refuses only when one of THOSE names is already taken by
  * something it did not write — the one case where "install next to it" would be "install over it".
  *
+ * **Its own install, without `--service`, while it carries a service host** (CONNECTOR1b). Such a publish never touches
+ * the hosts' folders, so the hosts an earlier `--service` laid under `app/` would stay, from that build, and both
+ * locators run them ahead of the home's `bin/`: the stale binary CONNECTOR1 fixed, by another road. It is
+ * refused, naming each and `--service`, as `--stage` refuses an install that carries its HTTP host. Removing them instead
+ * would hand every session the home's `bin/` copy, which no publish refreshes: the same defect by the first road.
+ *
  * @returns the refusal, as the sentence to print — or null when the folder may be written.
  */
-export function refusal(to, { beside = false } = {}) {
+export function refusal(to, { beside = false, service = false } = {}) {
   if (!existsSync(to)) return null;
   const held = readdirSync(to);
-  if (held.length === 0 || isInstall(to)) return null;
+  if (held.length === 0) return null;
+  if (isInstall(to)) {
+    const carried = service ? [] : carriedHosts(to);
+    if (carried.length === 0) return null;
+    return `desktop-publish: \`${to}\` carries ${carried.join(' and ')} from an earlier publish, so this one must carry them too —\n`
+      + '  publish it with --service, which lays this build\'s in their place. Without it the earlier build\'s would stay, and\n'
+      + '  Daoris runs them ahead of any in the home\'s bin/. Refusing to write into it.';
+  }
 
   if (!beside) {
     // Naming what it found, not the first few things it listed: a refusal that points at the wrong
@@ -775,7 +802,9 @@ async function main() {
   // `--stage` (UPDATE1, D139 §1): the same build, written beside the install into `update/staged/` instead of over it, for
   // the desktop to install when its work allows. Everything below writes under `root`, which is the install or the staging.
   const stage = flag('--stage');
-  const refused = stage ? stageRefusal(to, { service: flag('--service') }) : refusal(to, { beside: flag('--beside') });
+  const refused = stage
+    ? stageRefusal(to, { service: flag('--service') })
+    : refusal(to, { beside: flag('--beside'), service: flag('--service') });
   if (refused) {
     console.error(refused);
     process.exit(2);

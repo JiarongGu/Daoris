@@ -130,4 +130,26 @@ public sealed class KnowledgeConnectorTests : IDisposable
 
         Assert.Null(KnowledgeConnector.Offer(null, Home, Application, new Dictionary<string, string?>()));
     }
+
+    /// <summary>
+    /// CONNECTOR1b: a session handed no connector is told both commands that lay one down, the install's first, in the
+    /// order the locator ranks them: `publish:desktop --service` beside the application, `publish:service --install` in
+    /// the home's `bin/`. Each is a script the workspace has, so the sentence names nothing that does not run.
+    /// </summary>
+    [Fact]
+    public void A_session_with_no_connector_is_told_the_install_and_the_home_commands_that_lay_one_down()
+    {
+        var said = Daoris.Driver.Driver.NoConnectorForSession;
+
+        Assert.Contains($"no {KnowledgeConnector.ExecutableName} on this machine", said);
+        var install = said.IndexOf("`npm run publish:desktop -- --to <install> --service`", StringComparison.Ordinal);
+        var home = said.IndexOf("`npm run publish:service -- --install`", StringComparison.Ordinal);
+        Assert.True(install >= 0, said);
+        Assert.True(home > install, said);
+
+        using var package = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "package.json")));
+        var scripts = package.RootElement.GetProperty("scripts");
+        Assert.True(scripts.TryGetProperty("publish:desktop", out _), "no publish:desktop script");
+        Assert.True(scripts.TryGetProperty("publish:service", out _), "no publish:service script");
+    }
 }

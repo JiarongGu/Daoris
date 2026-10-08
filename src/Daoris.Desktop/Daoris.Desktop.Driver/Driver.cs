@@ -2082,6 +2082,16 @@ public sealed partial class Driver(
     };
 
     /// <summary>
+    /// What a session with no connector is told on its transcript: what it can and cannot do, and the two commands that
+    /// lay one down, the install's first, as <see cref="KnowledgeConnector.Candidates"/> ranks them (CONNECTOR1b).
+    /// </summary>
+    internal static string NoConnectorForSession =>
+        $"— no {KnowledgeConnector.ExecutableName} on this machine, so this session has no "
+        + "connector: it can do the work but cannot take or close its own quest. "
+        + "`npm run publish:desktop -- --to <install> --service` lays one beside the application, and "
+        + "`npm run publish:service -- --install` lands one in the home's `bin/`.";
+
+    /// <summary>
     /// The protocol door's capture (D53): an ACP session held over this process's stdio, with the
     /// RENDERED updates reaching the transcript and the console rather than the wire itself.
     /// </summary>
@@ -2167,11 +2177,7 @@ public sealed partial class Driver(
             var connector = Connector(sessionId, scope);
             if (connector is null)
             {
-                Said(scope is null
-                    ? $"— no {KnowledgeConnector.ExecutableName} on this machine, so this session has no "
-                      + "connector: it can do the work but cannot take or close its own quest. "
-                      + "`npm run publish:service -- --install` lands one."
-                    : NoConnectorForIntake);
+                Said(scope is null ? NoConnectorForSession : NoConnectorForIntake);
             }
 
             // The knowledge host first, then whatever the plugins hand every session (D65 §1f): a
