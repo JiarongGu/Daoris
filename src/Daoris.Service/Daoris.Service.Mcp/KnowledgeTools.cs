@@ -444,6 +444,15 @@ public sealed partial class KnowledgeTools(
             "A short title: the few words that tell this quest apart in a list, at most 40 characters, about 20 in Chinese. "
             + "Your own words, never the title cut short. Omit it and the quest is named from its own words.")]
         string? shortTitle = null,
+        [Description(
+            "Whether the person looks at this chain's work running before it lands, for a quest an ask asks: off, on (the "
+            + "repository's default environment) or an environment's name, set only on the person's own words, which you quote "
+            + "exactly. Every step inherits it. Without their words, propose one with reviewProposal instead.")]
+        ReviewChoice? review = null,
+        [Description(
+            "For an intake, where the person said nothing on it: the review you propose for this chain and your reason, kept on "
+            + "the ask beside their choice. Only their press applies it; compose no set-up step for a chain you propose off.")]
+        ReviewProposal? reviewProposal = null,
         CancellationToken ct = default)
     {
         // A path becomes bytes at the door, on the machine that has the file (D65 §2): the exchange
@@ -457,7 +466,9 @@ public sealed partial class KnowledgeTools(
             uploads.Add(upload!);
         }
 
-        var steps = (then ?? []).Select(step => new QuestStep(step.To ?? "", step.Title ?? "", step.Body ?? "")).ToList();
+        var steps = (then ?? []).Select(step => new QuestStep(step.To ?? "", step.Title ?? "", step.Body ?? "") { SetUpIn = step.SetUpIn }).ToList();
+        // A choice left out arrives blank and is refused by the exchange naming why (REVIEWENV1b), and so does a proposal.
+        var chosen = review is null ? null : new QuestReview(review.Choice ?? "", review.Words);
         // A half left out arrives blank and is refused by the exchange naming which (DRIFT1c); so does an evidence item
         // naming both or neither (EVID1a).
         var required = (requirements ?? [])
@@ -477,12 +488,21 @@ public sealed partial class KnowledgeTools(
                     new AskDraft(title, body)
                     {
                         Links = links ?? [], Uploads = uploads, Then = steps, Requirements = required, Short = shortTitle,
+                        Review = chosen,
+                        ReviewProposal = reviewProposal is null ? null : new ReviewProposed(reviewProposal.Choice, reviewProposal.Reason),
                     },
                     intake.Session)
                 .ConfigureAwait(false);
             return answered.Refusal == AskRefusal.None
                 ? $"As ask `#{askId}`: {answered.Message}{LeftUnsaid(answered.Quest, onAnAsk: true)}"
                 : answered.Message;
+        }
+
+        // A proposal is an intake's reading, kept on its ask (REVIEWENV1b): a session on no ask's intake has none to keep it on.
+        if (reviewProposal is not null)
+        {
+            return "A review proposal is an intake's, kept on its ask for the person's press, and this connector speaks for no "
+                   + "intake. Say the review you would propose in the body. Nothing was published.";
         }
 
         // The judgement — who may be addressed, what a refusal says — lives in the exchange, shared
@@ -496,6 +516,7 @@ public sealed partial class KnowledgeTools(
                     Then = steps,
                     Requirements = required,
                     Short = shortTitle,
+                    Review = chosen,
                     // Which session asked (SESS1), as the driver named it on this connector (PERM2).
                     PublishedBy = intake?.Session,
                 },
@@ -574,7 +595,32 @@ public sealed partial class KnowledgeTools(
                 if (quest.Parent is { } parent) text.AppendLine($"  follows `#{parent}`");
                 // Ask and wait (D79): what its taker waits on.
                 if (quest.Awaits is { } awaits) text.AppendLine($"  waits on `#{awaits}`");
-                foreach (var step in quest.Then) text.AppendLine($"  then → `{step.To}`: {step.Title}");
+                foreach (var step in quest.Then)
+                {
+                    text.AppendLine($"  then → `{step.To}`: {step.Title}" + (step.SetUpIn is { } shownIn ? $" (set-up step, in `{shownIn}`)" : ""));
+                }
+
+                // The review on the record (REVIEWENV1b): the chain's choice, a set-up step's environment, what it showed, and
+                // the person's verdicts, so the session working a step reads what it set up and what they said of it.
+                if (quest.Review is { } chosen)
+                {
+                    text.AppendLine($"  review: `{chosen.Choice}`" + (chosen.Words is { } said ? $", on the person's words \"{said}\"" : ""));
+                }
+
+                if (quest.SetUpIn is { } environment) text.AppendLine($"  set-up step: shows the work it follows in `{environment}` for the person's review");
+                foreach (var setUp in quest.SetUps)
+                {
+                    text.AppendLine($"  set up at `{setUp.Commit[..Math.Min(7, setUp.Commit.Length)]}`"
+                        + (setUp.Look is { } look ? $": <{look}>" : setUp.Local ? ", locally on the machine that showed it" : "")
+                        + (setUp.Shows is { } shows ? $" — {shows}" : "")
+                        + (setUp.Session is null ? " (the person's own)" : ""));
+                }
+
+                foreach (var verdict in quest.Verdicts)
+                {
+                    text.AppendLine($"  the person said {verdict.Said}" + (verdict.Commit is { } at ? $" of the set-up at `{at[..Math.Min(7, at.Length)]}`" : "")
+                        + (verdict.Words is { } words ? $": \"{words}\"" : ""));
+                }
                 // What the person requires (DRIFT1c): their words as quoted, and the check, whole.
                 foreach (var requirement in quest.Requirements)
                 {
@@ -611,9 +657,12 @@ public sealed partial class KnowledgeTools(
                         QuestHold.EvidenceUnread =>
                             "  ⚠ held until Daoris reads its evidence: the driver reads it when the session that closed it ends, and "
                             + "what follows it waits until it is found or the person accepts the done as it stands.",
-                        _ =>
+                        QuestHold.EvidenceMissing =>
                             "  ⚠ held for the person: its evidence was not found in the commit read, and what follows it waits until "
                             + "a later commit holds it or they accept the done as it stands.",
+                        _ =>
+                            $"  ⚠ held for the person's review in `{quest.SetUpIn}`: what follows it waits until they say the newest "
+                            + "set-up is reviewed, or skip the review.",
                     });
                 }
                 if (quest.Accepted is { } accepted)
@@ -755,7 +804,12 @@ public sealed record ChainStep(
     [property: Description("One line: what is wanted. {parent} becomes the id of the quest this step follows.")]
     string? Title,
     [property: Description("Why, and how to tell it is done — e.g. where to look in the browser. {parent} works here too.")]
-    string? Body);
+    string? Body,
+    [property: Description(
+        "Only for a set-up step, which shows the work for the person's review: the review environment it is shown in, one the "
+        + "repository declares, never production. It asks the same repository as the step before it, after that repository's "
+        + "last step, and its done waits for the person's review.")]
+    string? SetUpIn = null);
 
 /// <summary>
 /// One requirement as an agent writes it (DRIFT1c) — nullable for the chain step's reason: the exchange
