@@ -176,6 +176,7 @@ with the version and date at release.
 - A quest published without a short title gets a list name that says more than its first word.
 - Re-publishing an install that carries its own service without `--service` is refused, naming what it would
   leave behind.
+- An ask's proposal of a repository its words name says *named in the ask*, not *shares …*.
 
 The first version: doctrine that installs, is checked, and flows back.
 

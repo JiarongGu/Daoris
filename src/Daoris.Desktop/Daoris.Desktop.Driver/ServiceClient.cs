@@ -640,8 +640,10 @@ public sealed partial class ServiceClient : IDisposable
     private static DateTimeOffset? Moment(JsonElement element, string name) =>
         DateTimeOffset.TryParse(Text(element, name), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at) ? at : null;
 
-    private static AskView ReadAsk(JsonElement ask) =>
-        new(
+    private static AskView ReadAsk(JsonElement ask)
+    {
+        var proposal = ReadProposal(ask);
+        return new(
             Text(ask, "id") ?? "", Text(ask, "workspace") ?? "", Text(ask, "sentence") ?? "",
             Text(ask, "state") ?? "", Text(ask, "tier") ?? "")
         {
@@ -657,9 +659,9 @@ public sealed partial class ServiceClient : IDisposable
                     Text(file, "path")))]
                 : [],
             Quests = Strings(ask, "quests"),
-            Proposed = ask.TryGetProperty("proposal", out var proposal) && proposal.ValueKind == JsonValueKind.Array
-                ? [.. proposal.EnumerateArray().Select(match => Text(match, "repository")).OfType<string>()]
-                : [],
+            Proposed = [.. proposal.Select(match => match.Repository)],
+            // ASKNAME1b: a proposal whose evidence is its own name is one the sentence names, and the intake is told so.
+            Named = [.. proposal.Where(match => Asks.IsNamed(match.Repository, match.Matched)).Select(match => match.Repository)],
             Deletable = Flag(ask, "deletable"),
             // The person's words (DRIFT1a), which every session on the ask is handed (DRIFT1b).
             Words = ReadWords(ask),
@@ -667,6 +669,18 @@ public sealed partial class ServiceClient : IDisposable
             // The go-aheads its sessions asked (KNOWUSE1a), which every session on the ask is handed beside the words.
             GoAheads = ReadGoAheads(ask),
         };
+    }
+
+    /// <summary>
+    /// What the declarations tier proposed for an ask, best first: each repository with the words it matched, or with its
+    /// name alone where the sentence names it (ASKNAME1). One without a repository is passed over, as before.
+    /// </summary>
+    private static List<(string Repository, IReadOnlyList<string> Matched)> ReadProposal(JsonElement ask) =>
+        ask.TryGetProperty("proposal", out var proposal) && proposal.ValueKind == JsonValueKind.Array
+            ? [.. proposal.EnumerateArray()
+                .Where(match => Text(match, "repository") is not null)
+                .Select(match => (Text(match, "repository")!, Strings(match, "matched")))]
+            : [];
 
     /// <summary>
     /// The go-aheads an ask holds (KNOWUSE1a), oldest first; null where the host answered none, a host from before them. One

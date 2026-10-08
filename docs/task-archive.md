@@ -12246,3 +12246,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CONNECTOR1c — every no-connector and no-host sentence names the install's own command** (driver, modules; after CONNECTOR1b). The intake's `NoConnectorForIntake` (`Driver.Intake.cs`) and `HostSupervisor`'s no-host sentence (`HostSupervisor.cs:87`) name only `publish:service -- --install`, though the install's own copy ranks first; each names `publish:desktop -- --to <install> --service` first, as `Driver.NoConnectorForSession` does. Contract: D93's CONNECTOR1b note. Proof: a fast test per sentence.
 
 **Outcome** 2026-10-07: the intake's no-connector sentence and the supervisor's no-host sentence name `publish:desktop -- --to <install> --service` before `publish:service -- --install`, in `NoConnectorForSession`'s words; each has a fast test. Detail: commits db9a0c4c, 0ec4b03e.
+
+
+## ASKNAME1b — a named proposal says it was named (2026-10-08, D77)
+
+> - [ ] **ASKNAME1b — a named proposal says it was named** (driver, web-shell; after ASKNAME1). The intake's brief says *By words alone the declarations proposed …* (`Intake.cs:384`), and the ask page labels every proposal *shares <words>*; a repository proposed because the sentence names it (`Matched` is exactly its name) should read *named* in both, and D77's *the no-model tier still ranks declarations only* and the intake design's §1b get a note. Contract: D65 §1b, D77. Proof: an intake brief test with a named proposal; a vitest for the ask page's label, both catalogues.
+
+**Outcome** 2026-10-07: a proposal made because the ask names its repository reads as named in the intake's brief (*The ask names `x`*) and on the ask page (*named in the ask* / 需求中点名提到); word matches read as before, and the golden brief is unchanged. The rule (`matched` is exactly the repository) lives in the driver and the page, each pointing at the other (→ ASKNAME1c). Detail: D77's and the intake design §1b's notes; commits d66d628f, d958f5c0, f704f3f9.

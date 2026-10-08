@@ -40,6 +40,7 @@
   "asks.record.proposal": "Where it belongs",
   "asks.record.noProposal": "No repository's declarations share its words. Name the receiver below.",
   "asks.record.matched": "shares {{words}}",
+  "asks.record.named": "named in the ask",
   "asks.record.publishTo": "Publish to {{repository}}",
   "asks.record.another": "publish to another",
   "asks.record.anotherPlaceholder": "any repository in workspace {{circle}}",

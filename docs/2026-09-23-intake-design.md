@@ -86,6 +86,16 @@ is proposed *as a proposal* — never published unasked — and the report says 
 no intake harness ran"*. The intake never edits a repository: it publishes, which is the whole
 constraint (D32).
 
+*(Amended by ASKNAME1 and ASKNAME1b, 2026-10-08: a name comes before the overlap. A repository of the
+ask's own circle that can be asked, adopted or not, whose exact name the sentence holds whole, is
+proposed first, with that name alone as its evidence. An ask that names its repository has said whose
+it is, and since D70 a registered repository with no manifest can be asked but declares nothing, so no
+word overlap could reach it: on the owner's install the named one went unproposed and a different,
+adopted one was proposed on words. A name is still a proposal and never a publish, because a sentence
+can name a repository it only mentions. The intake's instruction says *the ask names …* of such a
+proposal and keeps *by words alone …* for the rest, and the ask page reads *named in the ask* where
+it read *shares …*. D77's note has the same.)*
+
 **Traps for the build (INT4b), found by mapping the conversation plumbing on 2026-09-23.** Each is
 something the existing code assumes that an intake session breaks:
 

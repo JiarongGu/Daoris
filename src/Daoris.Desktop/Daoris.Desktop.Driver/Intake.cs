@@ -23,8 +23,14 @@ public sealed record AskView(string Id, string Workspace, string Sentence, strin
     /// <summary>The quests it became, in order.</summary>
     public IReadOnlyList<string> Quests { get; init; } = [];
 
-    /// <summary>What the declarations tier proposed, best first — a word match, offered as one.</summary>
+    /// <summary>What the declarations tier proposed, best first — a name the sentence holds, or a word match, offered as one.</summary>
     public IReadOnlyList<string> Proposed { get; init; } = [];
+
+    /// <summary>
+    /// Those of <see cref="Proposed"/> the ask's sentence names (ASKNAME1b): a proposal whose evidence is its own name alone,
+    /// which the tier ranks above every word match (ASKNAME1). The rest are word matches. Absent is none.
+    /// </summary>
+    public IReadOnlyList<string> Named { get; init; } = [];
 
     /// <summary>Whether the service would delete it with its quests (D95). Absent is false.</summary>
     public bool Deletable { get; init; }
@@ -57,6 +63,14 @@ public static class Asks
         string.Join("\n", asks
             .Select(ask => $"{ask.Id}\t{ask.State}\t{ask.Intake}\t{ask.Quests.Count}")
             .OrderBy(line => line, StringComparer.Ordinal));
+
+    /// <summary>
+    /// Whether a proposal was made because the ask's sentence names its repository (ASKNAME1b): its evidence is that name
+    /// alone, which is what the tier writes for one (ASKNAME1). Without case, as the tier finds the name. The page reads a
+    /// proposal by the same rule, so the intake and the person are told the same thing.
+    /// </summary>
+    public static bool IsNamed(string repository, IReadOnlyList<string> matched) =>
+        matched is [var only] && string.Equals(only, repository, StringComparison.OrdinalIgnoreCase);
 }
 
 /// <summary>A repository's declaration as the registry answered it — what the intake decides from (D34).</summary>
@@ -381,10 +395,20 @@ public static class IntakePrompt
         text.Append("and accepts, and — for one that declares nothing — what its own files say about it.\n");
         text.Append("A declaration outranks what a repository says about itself. Decide from those; the `registry`\n");
         text.Append("tool answers the declarations, live.");
-        if (ask.Proposed.Count > 0)
+        // ASKNAME1b: a repository the sentence names was proposed for that name, not for its words, so it is said as named.
+        var named = ask.Proposed.Where(repository => ask.Named.Contains(repository, StringComparer.Ordinal)).ToList();
+        var matched = ask.Proposed.Where(repository => !named.Contains(repository, StringComparer.Ordinal)).ToList();
+        if (named.Count > 0)
+        {
+            text.Append(" The ask names ");
+            text.Append(string.Join(", ", named.Select(repository => $"`{repository}`")));
+            text.Append("; a name is proposed first, but is not a decision: a sentence can name a repository it only mentions.");
+        }
+
+        if (matched.Count > 0)
         {
             text.Append(" By words alone the declarations proposed ");
-            text.Append(string.Join(", ", ask.Proposed.Select(repository => $"`{repository}`")));
+            text.Append(string.Join(", ", matched.Select(repository => $"`{repository}`")));
             text.Append(" — a word match, not a decision.");
         }
 

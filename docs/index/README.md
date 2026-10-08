@@ -73,7 +73,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 197 | 3626 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 58 | 1019 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 87 | 1606 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 88 | 1620 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionGroups.cs` | 55 | 987 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.Sync.cs` | 68 | 1146 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.cs` | 66 | 1163 |

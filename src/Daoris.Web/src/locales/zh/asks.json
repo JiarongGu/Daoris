@@ -40,6 +40,7 @@
   "asks.record.proposal": "归属",
   "asks.record.noProposal": "没有哪个仓库的声明与它的措辞相符。请在下方指定受托方。",
   "asks.record.matched": "共同词：{{words}}",
+  "asks.record.named": "需求中点名提到",
   "asks.record.publishTo": "发布给 {{repository}}",
   "asks.record.another": "发布给其他仓库",
   "asks.record.anotherPlaceholder": "工作区 {{circle}} 中的任一仓库",
