@@ -2118,7 +2118,7 @@ public sealed partial class Driver(
         Action<JsonElement>? said = null, string? keepAs = null, ResumeAsk? resume = null, InstructionAccount? account = null,
         Func<CancellationToken, Task<bool>>? waitsOnBackground = null)
     {
-        await using var file = new StreamWriter(transcript, append: resume is not null);
+        await using var file = TranscriptFile.Open(transcript, append: resume is not null);
 
         void Line(string text)
         {
@@ -2403,20 +2403,29 @@ public sealed partial class Driver(
     /// A fact about how this run was set up, written ahead of anything the process says — the pipe
     /// door's form of the protocol door's first transcript lines.
     /// </param>
-    internal static async Task CaptureAsync(
+    internal static Task CaptureAsync(
         Process process, string transcript, string sessionId, SessionOutput? output, CancellationToken ct,
-        string? preamble = null)
+        string? preamble = null) =>
+        CaptureAsync(process.StandardOutput, process.StandardError, transcript, sessionId, output, ct, preamble);
+
+    /// <summary>
+    /// The pipe door's capture over the two streams themselves, so it is testable without a process: what a harness says
+    /// on either reaches the transcript and the console.
+    /// </summary>
+    internal static async Task CaptureAsync(
+        TextReader stdout, TextReader stderr, string transcript, string sessionId, SessionOutput? output,
+        CancellationToken ct, string? preamble = null)
     {
-        await using var file = new StreamWriter(transcript, append: false);
+        await using var file = TranscriptFile.Open(transcript, append: false);
         if (preamble is { Length: > 0 })
         {
             lock (file) file.WriteLine(preamble);
             output?.Append(sessionId, preamble);
         }
 
-        var stdout = PumpAsync(process.StandardOutput, file, sessionId, output, ct);
-        var stderr = PumpAsync(process.StandardError, file, sessionId, output, ct);
-        await Task.WhenAll(stdout, stderr).ConfigureAwait(false);
+        var said = PumpAsync(stdout, file, sessionId, output, ct);
+        var errors = PumpAsync(stderr, file, sessionId, output, ct);
+        await Task.WhenAll(said, errors).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -2457,7 +2466,7 @@ public sealed partial class Driver(
         Action<string>? named = null, InstructionAccount? account = null, HarnessWords? own = null)
     {
         own?.Begin();
-        await using var file = new StreamWriter(transcript, append);
+        await using var file = TranscriptFile.Open(transcript, append);
         // Told once, the moment the harness names its conversation (MSG1c): a conversation that lives for hours keeps it
         // before it ends, as the protocol door keeps `session/new`'s id.
         var told = false;

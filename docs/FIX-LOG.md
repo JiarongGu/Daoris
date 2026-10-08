@@ -13,6 +13,29 @@ repository.
 - **Fix:** `ConnectionGate` holds the connection: each store method runs its commands inside `RunAsync` and each transaction inside `InTransactionAsync`, which keeps `BEGIN IMMEDIATE`, commit on return, rollback on a throw and the uncancellable work token. `Command()` refuses outside the gate. The gate is reentrant within one flow of work (an `AsyncLocal` hold), so a transaction's work calling the stores' own methods runs inside it and joins its transaction. A unit that began on a clean connection ends on one: anything it left open is rolled back, and leaving one without a throw fails it. A transaction the database holds and no object owns is rolled back before the next unit. All six stores and the search go through it. D36's SQLITETX1 note has the reasoning and what was rejected.
 - **Verify:** `ConcurrentRequestsTests` (Http) sends 50 says to a parked session beside 50 of the driver's looks (its reads, then a refresh or a publish) over the host's real store. It failed first in three runs: 46, 2 and 78 of 100 requests failed, 44 of the says with the install's exact exception. In the third, every later `BEGIN` failed, the request after the burst too. After the fix, all 100 answer and every word is kept once on the session and on its ask, in 2.2–3.4 s, the slowest say about 1 s. In `ConnectionGateTests`, three rows failed first: a write beside an open transaction that then rolled back (it had joined, and went with it), a transaction nobody owns (*cannot start a transaction within a transaction*), and the source scan on the old tree. The leak guard's two rows failed with the guard off. A transaction an exception interrupts leaves the store usable passed before too: `await using` already rolled back a throw on one thread. Service 1588 (was 1582), Http 94 (was 93). Not run: the family rehearsal, whose two-machine and sync phases read one request at a time.
 - **Commit:** `7894e610`.
+## 2026-10-08 — a working session's transcript held nothing until it ended
+
+### Driver: a session's transcript reached the disk only at its end (TRANSCRIPT1)
+- **Symptom:** found by DEV3d (below): a transcript of a few lines held 0 bytes while its session worked and everything
+  once it ended, so the family rehearsal's wait for its stub's line never saw it. Anything reading a live session's
+  transcript (a rehearsal, a person opening the file) saw nothing until the end.
+- **Root cause:** every door's capture wrote the transcript through a `StreamWriter` it never flushed (`Driver.CaptureAsync`,
+  `CaptureStructuredAsync`, `CaptureAcpAsync`, `ChatRunner.CaptureProtocolAsync`; `PumpAsync` writes into it). The writer
+  holds what it is given until its buffer fills or it is disposed, and a session says far less than a buffer between its
+  start and its end. Not a regression: the transcript was written so from the driver's first loop (`a9c9e9a7`, DRV2), and
+  each door after copied it. The events file (`<id>.events.jsonl`, `SessionEvents.Append`) was never of this shape: it
+  opens, writes and closes the file for each event, so each is on the disk as it is kept. The session's other files (its
+  conversation id, its marks) are written whole, atomically.
+- **Fix:** `TranscriptFile` (driver), the one writer the four captures open: a line asks the thread pool for a flush, at
+  most one queued at a time, so the lines written before it runs share it and no pump waits on the file. A flush that
+  fails on the pool is swallowed (the bytes stay with the writer for the next flush and the close). The file opens as
+  before, shared for reading; a line written after the close still throws, as a closed writer's did.
+- **Verify:** `TranscriptAsSaidTests` (4): a stand-in harness says a line and waits, and the test reads the file sharing it
+  for writing, on the pipe door (its preamble, stdout and stderr), the native door's structured stdout, and the writer
+  itself, fresh and going on. All four failed first, each wait running out with *the transcript held 0 character(s)*
+  (16, the earlier run's line, for the one going on). Not run: the protocol doors, which need a real process; they open
+  the same writer.
+
 ## 2026-10-08 — the window's bar froze while its page worked
 
 ### Web shell and desktop: an endless pulse drew at the display's rate, and nothing said what held the window's thread (FREEZE1)

@@ -1028,7 +1028,7 @@ public sealed partial class ChatRunner : IDisposable
         Action<string>? keep)
     {
         // A conversation going on appends to the transcript of the run before it (MSG1c).
-        await using var file = new StreamWriter(transcript, append: chat.GoOn is not null);
+        await using var file = TranscriptFile.Open(transcript, append: chat.GoOn is not null);
         var closed = false;
 
         void Line(string text)

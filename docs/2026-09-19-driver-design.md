@@ -151,6 +151,10 @@ AOT-published build.
 the database. They are diagnostic, not the record — the reviewable record is the repository's own commits
 and documents, per `autonomous-development`.
 
+*As built (TRANSCRIPT1, 2026-10-08).* A transcript is on the disk as it is said, not only once its session ends: every
+door writes it through one writer (`TranscriptFile`), whose line asks the thread pool for a flush that every line written
+before it runs shares, so no pump waits on the file. A reader beside the driver opens it sharing it for writing.
+
 **The registration gains the one field spawning needs: the root.** The registry today holds no
 filesystem path anywhere (`Registry.cs:15-26`), and reconstructing `knowledge-root/<name>` breaks for any
 repository living elsewhere. `connect` runs *in* the repository and already knows its root

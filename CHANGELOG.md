@@ -164,6 +164,7 @@ with the version and date at release.
   service's database now takes one request at a time on its shared connection.
 - An ask that names its repository now proposes that repository first, even one that has declared
   nothing, instead of whichever repository its other words matched.
+- A working session's transcript file now fills as the session speaks, not only when it ends.
 
 The first version: doctrine that installs, is checked, and flows back.
 
