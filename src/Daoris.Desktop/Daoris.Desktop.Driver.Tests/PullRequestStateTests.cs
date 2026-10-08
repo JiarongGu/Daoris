@@ -169,7 +169,9 @@ public sealed class PullRequestStateTests : LandedFixture
         var other = await trees.LandAsync(unknown.Path, new LandingSubject("s2", "q2", "Unconfirmed"));
         var source = (await GitAsync(root, "rev-parse", landing.Branch!)).Trim();
         var merge = await SquashOnPlatformAsync(origin, landing.Branch!);
-        var otherMerge = await SquashOnPlatformAsync(origin, other.Branch!);
+        // The line changes its file again after the squash, so its work is not on the line by content either (SQUASHTIDY1):
+        // only the plugin's word could carry it, and that word is not confirmed.
+        var otherMerge = await SquashOnPlatformAsync(origin, other.Branch!, then: ("unknown.txt", "changed on the line since\n"));
         await GitAsync(root, "fetch", "--quiet", "--prune", "origin");
         await GitAsync(root, "branch", "-D", landing.Branch!);
         await GitAsync(root, "branch", "-D", other.Branch!);

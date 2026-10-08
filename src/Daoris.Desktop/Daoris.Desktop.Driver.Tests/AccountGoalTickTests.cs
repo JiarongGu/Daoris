@@ -86,11 +86,17 @@ public sealed class AccountGoalTickTests : IDisposable
         Assert.All(byAccount.Values, count => Assert.InRange(count, Cap / Accounts.Length, share));
         Assert.Equal(share, byAccount["account-1"]);
 
-        // Each record opens naming the step that chose its account, and that no account has said what it has left.
+        // Each record opens naming the step that chose its account, and that no account has said what it has left. The look
+        // returns once its starts' records are open, and each start keeps its opening note on its own path after that, so the
+        // read waits for the note rather than racing it (FLAKE1).
         var events = new SessionEvents(Path.Combine(_home, "sessions"));
         foreach (var record in records)
         {
             var id = record["id"]!.GetValue<string>();
+            await Poll.Until(
+                () => events.After(id, 0).Events.Count > 0,
+                () => $"session {id} has kept no event yet",
+                TimeSpan.FromSeconds(90));
             var opening = events.After(id, 0).Events[0];
             Assert.Equal(SessionEventKind.Note, opening.Kind);
             Assert.StartsWith($"opened on `{record["profile"]!.GetValue<string>()}`: ", opening.Text);

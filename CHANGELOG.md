@@ -182,6 +182,8 @@ with the version and date at release.
   landing*, or `daoris driver review`); nothing waits on it yet.
 - Settings → Logs no longer fills with a warning about `server/discover` for every session.
 - The update banner says in your language why an update was put back or refused for its two newest reasons.
+- A session branch whose work a squash-merged pull request or a cherry-pick already holds can be discarded
+  without forcing, and Daoris says where its work is.
 
 The first version: doctrine that installs, is checked, and flows back.
 

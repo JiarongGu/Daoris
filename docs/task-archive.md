@@ -12288,3 +12288,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SWAP2c — the update banner has words for `move` and `error`** (web-shell; after SWAP2). SWAP2 added the codes `move` (a move failed for a reason other than a hold) and `error` (the launcher failed with nothing under way); the banner and Settings show the journal's English detail for them, in Chinese too. Add `update.why.move` and `update.why.error` to both catalogues and to `UpdateBanner.tsx`'s set. Contract: D139, D41. Proof: a vitest per code, both catalogues.
 
 **Outcome** 2026-10-07: `update.why.move` and `update.why.error` in both catalogues and the banner's set; Settings reads them through `i18n.exists`; a test per code in both languages, and a guard that the banner words every reason the catalogue holds. Follow-up: SWAP2d. Detail: commits 30ecdd96, 5821f346.
+
+
+## SQUASHTIDY1 — a session branch a squash merge carried is offered to go, saying so (2026-10-08, D102)
+
+> - [ ] **SQUASHTIDY1 — a session branch a squash merge carried is offered to go, saying so** (driver, web-shell; owner's real case 2026-10-08). The owner squash-merged a session's work as a pull request with no landing plugin; the session branches then held commits no ref contains, so *Discard* refused unforced, git refused too, and the owner could not clean up. Where a branch's tree equals a commit on the line, or each of its changes is on a person's branch by patch, the refusal says so and offers the discard as losing nothing; force stays for work held nowhere. Contract: D51 rule 7, PLUGHOOK1a (a plugin's word for squash), D102. Proof: a driver test with a squash-merged line and a cherry-picked branch; the page's sentence, both catalogues.
+
+**Outcome** 2026-10-07: *Discard* and the Branches tab's clean-up let a session branch go unforced when a squash merge (its tree on the line) or a cherry-pick (each file it changed the same on the line or a person's branch) holds its work by content, and say where; a branch with one file differing is refused as before. Follow-ups: SQUASHTIDY1b, SWEEPCARRIED1. Detail: D102's SQUASHTIDY1 note; commit 0a7b9c72.

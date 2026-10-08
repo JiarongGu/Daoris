@@ -47,7 +47,8 @@ public sealed record SessionTree(string Path, string Workspace, string Repositor
 /// <para><b>Nothing merges itself and nothing deletes itself</b> (rules 6–7). Opening never touches
 /// the root's own state; removal refuses while the tree holds uncommitted changes or commits the
 /// canonical line has not taken, naming what would be lost — and the person may say it again with
-/// force, meaning it.</para>
+/// force, meaning it. Commits whose work a squash merge or a cherry-pick holds by content lose nothing,
+/// and go unforced saying where that work is (SQUASHTIDY1).</para>
 ///
 /// <para><b>The name is minted here, not borrowed from the session id</b>, because the order is
 /// tree → open → spawn: the ledger's open needs the tree path for the lock, so the id it would borrow
@@ -704,6 +705,14 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                 return Item(SweepKind.Carried, unlanded.Length, carrier.Entry.Branch, string.Join('\n', unlanded.Take(3))) with { CarriedBy = carrier.Entry };
             }
 
+            // SQUASHTIDY1: the review's Discard's proof by content, so the list offers what that door would take unforced. Its
+            // work is where the row says, and the row is landed. Not a branch checked out outside the trees home, as above.
+            if ((tree is null || Holds(tree))
+                && await HeldByContentAsync(root, $"refs/heads/{branch}", line, ct).ConfigureAwait(false) is { } held)
+            {
+                return Item(SweepKind.Landed, unlanded.Length, held.Where, string.Join('\n', unlanded.Take(3))) with { HeldBy = held };
+            }
+
             return Item(SweepKind.Unlanded, unlanded.Length, detail: string.Join('\n', unlanded.Take(3)));
         }
 
@@ -991,6 +1000,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         var (_, branchOut, _) = await WorkingTree.GitAsync(
             full, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
         var branch = branchOut.Trim();
+        ContentHold? held = null;
 
         if (!force)
         {
@@ -1007,7 +1017,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             }
 
             var (workspace, repository) = OwnerOf(full);
-            var canonical = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch ?? "HEAD";
+            var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+            var canonical = line ?? "HEAD";
             // Landed (D88): a branch of the person's holds every commit — the line, a branch the branch form
             // made, one they pushed. Asked of the tree's own HEAD, so a detached tree is judged by what it
             // holds. 🔴 A comparison git could not make keeps the tree: an empty answer is not "landed".
@@ -1019,7 +1030,10 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                     + "The tree stays; say it again with --force to discard it.");
             }
 
-            if (!string.IsNullOrWhiteSpace(unmerged))
+            // SQUASHTIDY1: a squash merge or a cherry-pick holds the work under commits of its own, which ancestry cannot see;
+            // the content can. Work held nowhere still refuses, and force stays its door.
+            if (!string.IsNullOrWhiteSpace(unmerged)
+                && (held = await HeldByContentAsync(full, "HEAD", line, ct).ConfigureAwait(false)) is null)
             {
                 return new(false,
                     $"the tree at {path} holds commits `{canonical}` has not taken, and no other branch of yours holds "
@@ -1053,7 +1067,9 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             if (deleted == 0) Forget(OwnerOf(full).Repository, branch);
         }
 
-        return new(true, $"removed the session tree at {path} (branch `{branch}`)." + (left is null ? "" : $" {left}"));
+        // How the work was found held, where ancestry could not say (SQUASHTIDY1): the sentence the review's Discard shows as it is.
+        return new(true, $"removed the session tree at {path} (branch `{branch}`)" + (held is null ? "." : $": {held.Said}.")
+            + (left is null ? "" : $" {left}"));
     }
 
     /// <summary>
