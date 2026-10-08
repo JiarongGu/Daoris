@@ -67,4 +67,61 @@ public sealed class ChatRunnerTests : IDisposable
         await Assert.ThrowsAnyAsync<HttpRequestException>(() =>
             runner.StartAsync("engine", "acme-agent", config));
     }
+
+    /// <summary>
+    /// CHATSERVERS1: a plugin that declares an agent and a server hands the server to a conversation, as the driver loop hands
+    /// it to a driven session. The runner read the catalogue reserving the roster's live set, which already holds the plugin's
+    /// own agent, so the plugin was refused as one this build already carries and its servers were withheld. Nothing starts:
+    /// the harness's program does not exist, so the start fails after its servers are handed, and the tree is no checkout.
+    /// </summary>
+    [Fact]
+    public async Task A_plugin_that_also_declares_an_agent_hands_a_conversation_its_servers()
+    {
+        var folder = Path.Combine(_home, "plugins", "acme.agent");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "plugin.json"), """
+            { "id": "acme.agent",
+              "harnesses": [ { "name": "acme-agent", "command": ["acme"] } ],
+              "servers": [ { "name": "tickets", "command": ["node", "tickets.mjs"] } ] }
+            """);
+        var talk = new PipeTalk(Path.Combine(_home, "no-such-harness.exe"));
+        var own = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = talk });
+        // The live set, as the driver's tick hands the roster it: this set and the plugin's agent.
+        var live = own.WithPlugins(PluginCatalog.Load(_home, own.Names));
+        Assert.Equal("acme.agent", live.DeclaredBy("acme-agent"));
+        var ledger = new ChatLedger().Register("engine", Path.Combine(_home, "engine"));
+        using var client = ledger.Client();
+        using var runner = new ChatRunner(
+            client, live, _home, new SessionProcesses(Path.Combine(_home, "sessions")),
+            harnesses: new HarnessRoster(live, Path.Combine(_home, "harnesses.json")));
+
+        var start = await runner.StartAsync("engine", "talk", DriverConfig.Empty);
+
+        Assert.Null(start.SessionId);
+        Assert.Equal(["starting", "failed"], ledger.Moves("c1"));
+        Assert.Equal(["tickets"], talk.Handed);
+    }
+
+    /// <summary>A conversation's adapter on the pipe door whose program does not exist, keeping the servers it is handed.</summary>
+    private sealed class PipeTalk(string program) : ISessionAdapter
+    {
+        public List<string> Handed { get; } = [];
+
+        public string Name => "talk";
+
+        public bool Interactive => true;
+
+        public System.Diagnostics.ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) =>
+            throw new InvalidOperationException("this test drives no session");
+
+        public System.Diagnostics.ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) =>
+            new(program) { UseShellExecute = false };
+
+        // Read as it is handed: a start that fails removes the file after.
+        public void HandServers(System.Diagnostics.ProcessStartInfo info, string configFile)
+        {
+            using var file = System.Text.Json.JsonDocument.Parse(File.ReadAllText(configFile));
+            Handed.AddRange(file.RootElement.GetProperty("mcpServers").EnumerateObject().Select(server => server.Name));
+        }
+    }
 }

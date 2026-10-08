@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-09 — a conversation withheld the servers of a plugin that also declares an agent (CHATSERVERS1)
+
+### Driver: a plugin declaring an agent and a server handed its server to driven sessions and never to a conversation
+- **Symptom:** a plugin whose manifest declares a harness and a server had its server handed to every driven session, and
+  withheld from every conversation, which read the plugin as refused: *declares agent `…`, which this build already carries*.
+- **Root cause:** `ChatRunner.HandServersAsync` read the catalogue reserving `_harnesses.Adapters.Names`, the roster's live
+  set, which the driver's tick hands it as the build's adapters plus every harness the plugins declare. The plugin's own
+  agent was in it, so the catalogue refused the plugin and took nothing of it. The driver loop reserves the build's set
+  (`Driver.cs`, `_built.Names`), so only the conversation was wrong. In since CONV3b (`0a78ff6d`), which first read the
+  conversation's servers that way; REV3 and BRW2 moved the line and kept the argument.
+- **Fix:** `HandServersAsync` takes no names and reads the catalogue as `LandingPlugins.Catalog()` does, reserving
+  `AdapterSet.Built().Names` (PLUGINRESERVE1 makes the catalogue reserve the build's names whatever it is handed). No
+  other caller hands the live set as reserved names: every other `PluginCatalog.Load`, `RefusedByThisBuild` and install
+  path hands the build's names or none, and `DriverModule.Help`'s use of the live set is the agents a proposal may name.
+- **Verify:** `ChatRunnerTests.A_plugin_that_also_declares_an_agent_hands_a_conversation_its_servers` (the class is in the
+  `Process` half; the row starts nothing, its harness's program missing and its tree no checkout) failed first, the file
+  handed to the conversation naming no server, then passed, run alone. The driver's fast half passed (5270).
+- **Commit:** pending.
+
 ## 2026-10-09 — a website could press a door on the local host (ORIGIN1)
 
 ### Service: a page on any site, in any browser on this machine, could give the yes to a departure
