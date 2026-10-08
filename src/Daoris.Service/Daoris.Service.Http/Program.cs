@@ -336,8 +336,9 @@ if (mode == ServiceMode.Local)
 // PERSONDOOR1a (D156 point 3): a local host handed its person key gates its doors by the route's class, before any route
 // runs: a read answers anyone; an agent's door answers a keyless call, judged as an agent's; the driver's own and the
 // person's alone want the key; a key from another start is refused at every door but a read. Every refusal is 403 with a
-// sentence and a code, and one `person.refused` line. The four forms a body makes are judged by their routes. A host handed
-// no key has no gate here, and trusts the loopback as before. PersonDoors holds the table and why each door is whose.
+// sentence and a code, and one `person.refused` line. The forms a body makes (respond's `whileOpen`, a set-up naming a
+// session or none) are judged by their routes, and a publish reads who called. A host handed no key has no gate here, and
+// trusts the loopback as before. PersonDoors holds the table and why each door is whose.
 if (personGate.Holds)
 {
     app.Use(async (context, next) => await personGate.InvokeAsync(context, next));

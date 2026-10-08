@@ -31,9 +31,10 @@ public enum DoorClass
 public sealed record Door(string Method, string Pattern, DoorClass Class, string? Act = null)
 {
     /// <summary>
-    /// A form of a call that moves it to another class, by a field of the body its route binds (design §3.2: four forms).
-    /// The route judges it with <see cref="PersonGate.Refused"/>, since only the route binds the body as the exchange
-    /// reads it; the gate before the route leaves such a door to it, refusing only a stale key.
+    /// A form of a call that moves it to another class, by a field of the body its route binds (design §3.2; the
+    /// publishes' person's form is the key's, which the route reads through <see cref="PersonGate.IsAgent"/>). The route
+    /// judges it with <see cref="PersonGate.Refused"/>, since only the route binds the body as the exchange reads it; the
+    /// gate before the route leaves such a door to it, refusing only a stale key.
     /// </summary>
     public DoorForm? Form { get; init; }
 }
@@ -200,8 +201,8 @@ public enum Presented
 /// The gate the person key keeps (PERSONDOOR1a; the person-door design §3, §5): before a local host's routes, it refuses
 /// a call to the person's or the driver's door that carried no key, and any call but a read that carried a key from
 /// another start, each <c>403</c> with a sentence and a code, never a <c>500</c>; it tells an agent's door who called, so
-/// the route judges a keyless publish as an agent's; and the four forms are judged by their routes through
-/// <see cref="Refused"/>.
+/// the route judges a keyless publish as an agent's (<see cref="IsAgent"/>); and the forms a body makes are judged by their
+/// routes through <see cref="Refused"/>.
 /// </summary>
 /// <remarks>
 /// <para><b>A host handed no key keeps today's trust</b> (design §2.1): every call is the person's, nothing is refused, and
