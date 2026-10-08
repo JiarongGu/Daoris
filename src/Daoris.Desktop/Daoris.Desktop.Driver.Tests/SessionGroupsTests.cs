@@ -99,6 +99,12 @@ public sealed class SessionGroupsTests
     private static readonly QuestView Asking = Quest("q1", "Taken", awaits: "q2");
     private static readonly QuestView Question = Quest("q2", "Open", to: "game");
 
+    /// <summary>The ref an unforced discard of <see cref="Tree"/> keeps its commits at (SQUASHTIDY1c).</summary>
+    private const string Kept = "refs/daoris/discarded/daoris/s-1a2b3c4d";
+
+    /// <summary>A squash merge onto <c>main</c> holds the tree's work, and its discard would go now (SQUASHTIDY1b). Before the table, which reads it.</summary>
+    private static readonly HeldWork Squashed = new(new ContentHold("main", Squash: true), Kept, null);
+
     private static readonly Dictionary<string, Case> Cases = new()
     {
         // Working: it is moving, and the person may watch it.
@@ -549,6 +555,64 @@ public sealed class SessionGroupsTests
             new(Look([Record("laptop/s1", "failed", "q1", Tree)], [Taken], trees: [(Tree, new TreeWork(3, 0))]), "laptop/s1", SessionGroup.Ended, "failed")
             {
                 Also = row => Assert.Null(row.Lands),
+            },
+
+        // SQUASHTIDY1b: commits the line holds by content (a squash merge, a cherry-pick) are not offered to land again, since
+        // accepting would make a branch of work already there. The tree offers its discard instead, saying where the work is
+        // in Discard's own words and naming the ref an unforced discard keeps its commits at.
+        ["a session whose work the line holds by content offers its discard, not its landing"] =
+            new(Look([Record("s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(2, 0) { Held = Squashed })]),
+                "s1", SessionGroup.Review, "completed")
+            {
+                Also = row =>
+                {
+                    Assert.Null(row.Lands);
+                    Assert.Equal(new DiscardOffer("daoris/s-1a2b3c4d", "s-1a2b3c4d", Squashed), row.Discards);
+                },
+            },
+        ["a failed session whose work a person's branch holds by content offers its discard wherever it rests"] =
+            new(Look([Record("s1", "failed", "q1", Tree)], [Taken], [Verdict(Taken, StartVerdict.AtCapacity)],
+                    [(Tree, new TreeWork(1, 0) { Held = new HeldWork(new ContentHold("feature/x", Squash: false), Kept, null) })]),
+                "s1", SessionGroup.Ended, "failed")
+            {
+                Also = row =>
+                {
+                    Assert.Null(row.Lands);
+                    Assert.Equal("feature/x", row.Discards!.Work.Held.Where);
+                },
+            },
+        ["a held tree that holds what no commit does offers no landing, and says why its tree stays"] =
+            new(Look([Record("s1", "completed", "q1", Tree)], [Done],
+                    trees: [(Tree, new TreeWork(2, 0) { Held = Squashed with { Keeps = null, Stays = "it has 1 uncommitted path(s), which a discard would destroy" } })]),
+                "s1", SessionGroup.Review, "completed")
+            {
+                Also = row =>
+                {
+                    Assert.Null(row.Lands);
+                    Assert.Null(row.Discards!.Work.Keeps);
+                    Assert.Null(row.Discards.KeptAt);
+                },
+            },
+        ["a tree with commits held nowhere else offers its landing and no discard"] =
+            new(Look([Record("s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(2, 0))]), "s1", SessionGroup.Review, "completed")
+            {
+                Also = row =>
+                {
+                    Assert.NotNull(row.Lands);
+                    Assert.Null(row.Discards);
+                },
+            },
+        ["words going on in a held tree offer no discard: it is working again"] =
+            new(Look([Record("s1", "completed", "q1", Tree, said: ["w1"])], [Done], [GoesOn(Done)], [(Tree, new TreeWork(2, 0) { Held = Squashed })]),
+                "s1", SessionGroup.Working, ShownState.GoingOn)
+            {
+                Also = row => Assert.Null(row.Discards),
+            },
+        ["a teammate's held record offers no discard: its tree is on its machine"] =
+            new(Look([Record("laptop/s1", "failed", "q1", Tree)], [Taken], trees: [(Tree, new TreeWork(3, 0) { Held = Squashed })]),
+                "laptop/s1", SessionGroup.Ended, "failed")
+            {
+                Also = row => Assert.Null(row.Discards),
             },
     };
 
