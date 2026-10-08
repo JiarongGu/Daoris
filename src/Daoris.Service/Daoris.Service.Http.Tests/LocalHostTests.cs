@@ -698,6 +698,109 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// REVIEWENV1b (D154; the review environment design §2.1, §2.6, §3.3–§3.6): the publish doors take a chain's review choice
+    /// and a set-up step and answer them on the quest; a set-up step that reads as production is refused. The set-up step's
+    /// done waits on a set-up, here the person's own posted at the set-up door, then holds (<c>hold</c> <c>unreviewed</c>)
+    /// until the review door's <c>reviewed</c>. The person's <i>Set it up</i> door publishes one after done work, and the ask's
+    /// review door keeps the person's choice. Each door says a shape that is not one 400, a state 409, an unknown quest 404.
+    /// </summary>
+    [Fact]
+    public async Task A_set_up_step_holds_its_done_until_the_review_door_says_reviewed()
+    {
+        const string Commit = "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678";
+        foreach (var route in new[] { "/api/quests/{id}/set-up", "/api/quests/{id}/review", "/api/quests/{id}/set-up-step", "/api/asks/{id}/review" })
+        {
+            Assert.Contains(("POST", route), host.Routes());
+        }
+
+        var asked = await host.PostAsync("/api/asks", new
+        {
+            workspace = "default", sentence = "Add the compare setting to the weekly report.", review = "local", reviewWords = "show me first",
+        });
+        Assert.Equal(200, asked.Status);
+        var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
+        Assert.Equal("local", asked.Json.GetProperty("ask").GetProperty("reviewChoices")[0].GetProperty("choice").GetString());
+
+        var production = await host.PostAsync($"/api/asks/{ask}/publish", new
+        {
+            to = "Keeper", title = "Add the setting", body = "b",
+            then = new[] { new { to = "Keeper", title = "Show {parent} in prod", body = "b", setUpIn = "prod" } },
+        });
+        Assert.Equal(409, production.Status);
+        Assert.Contains("production", production.Error);
+
+        var published = await host.PostAsync($"/api/asks/{ask}/publish", new
+        {
+            to = "Keeper", title = "Add the setting", body = "For the weekly report.", review = new { choice = "local" },
+            then = new[] { new { to = "Keeper", title = "Show {parent} in local for review", body = "Set it up.", setUpIn = "local" } },
+        });
+        Assert.Equal(200, published.Status);
+        var build = published.Json.GetProperty("quest");
+        Assert.Equal("local", build.GetProperty("review").GetProperty("choice").GetString());
+        Assert.Equal("local", build.GetProperty("then")[0].GetProperty("setUpIn").GetString());
+        Assert.False(build.TryGetProperty("setUps", out _));
+        var buildId = build.GetProperty("id").GetString()!;
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{buildId}/respond", new { action = "take" })).Status);
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{buildId}/respond", new { action = "done", reason = "Built." })).Status);
+        var step = (await host.GetAsync("/api/quests?includeClosed=true")).Json.EnumerateArray()
+            .Single(row => row.TryGetProperty("parent", out var parent) && parent.GetString() == buildId);
+        var stepId = step.GetProperty("id").GetString()!;
+        Assert.Equal("local", step.GetProperty("setUpIn").GetString());
+
+        var unshown = await host.PostAsync($"/api/quests/{stepId}/done", new { });
+        Assert.Equal(409, unshown.Status);
+        Assert.Contains("review_ready", unshown.Error);
+        Assert.Equal(400, (await host.PostAsync($"/api/quests/{stepId}/set-up", new { commit = "abc", kind = "deployed", look = "https://dev.example.test/r/7" })).Status);
+        Assert.Equal(409, (await host.PostAsync($"/api/quests/{buildId}/set-up", new { commit = Commit, kind = "deployed", look = "https://dev.example.test/r/7" })).Status);
+        Assert.Equal(404, (await host.PostAsync("/api/quests/feedfacecafe/set-up", new { commit = Commit, kind = "deployed", look = "https://dev.example.test/r/7" })).Status);
+        Assert.Equal(404, (await host.PostAsync($"/api/quests/{stepId}/set-up", new { commit = Commit, kind = "local", session = "nobody" })).Status);
+        var own = await host.PostAsync($"/api/quests/{stepId}/set-up", new
+        {
+            commit = Commit, kind = "deployed", look = "https://dev.example.test/r/7", shows = "I deployed it to dev.",
+        });
+        Assert.Equal(200, own.Status);
+        var setUp = Assert.Single(own.Json.GetProperty("quest").GetProperty("setUps").EnumerateArray().ToList());
+        Assert.Equal(("https://dev.example.test/r/7", Commit, false), (setUp.GetProperty("look").GetString(), setUp.GetProperty("commit").GetString(), setUp.GetProperty("local").GetBoolean()));
+
+        var done = await host.PostAsync($"/api/quests/{stepId}/done", new { });
+        Assert.Equal(200, done.Status);
+        Assert.Equal("unreviewed", done.Json.GetProperty("quest").GetProperty("hold").GetString());
+        Assert.True(done.Json.GetProperty("quest").GetProperty("held").GetBoolean());
+        Assert.Equal(409, (await host.PostAsync($"/api/quests/{stepId}/accept", new { })).Status);
+
+        Assert.Equal(400, (await host.PostAsync($"/api/quests/{stepId}/review", new { verdict = "not-yet" })).Status);
+        Assert.Equal(400, (await host.PostAsync($"/api/quests/{stepId}/review", new { verdict = "fine" })).Status);
+        Assert.Equal(404, (await host.PostAsync("/api/quests/feedfacecafe/review", new { verdict = "reviewed" })).Status);
+        var reviewed = await host.PostAsync($"/api/quests/{stepId}/review", new { verdict = "reviewed", words = "That is the setting." });
+        Assert.Equal(200, reviewed.Status);
+        Assert.False(reviewed.Json.GetProperty("quest").GetProperty("held").GetBoolean());
+        var verdict = reviewed.Json.GetProperty("quest").GetProperty("verdicts")[0];
+        Assert.Equal(("reviewed", Commit), (verdict.GetProperty("said").GetString(), verdict.GetProperty("commit").GetString()));
+        Assert.Equal(setUp.GetProperty("sequence").GetInt64(), verdict.GetProperty("setUp").GetProperty("sequence").GetInt64());
+        Assert.Equal(409, (await host.PostAsync($"/api/quests/{stepId}/review", new { verdict = "reviewed" })).Status);
+
+        Assert.Equal(409, (await host.PostAsync($"/api/quests/{buildId}/set-up-step", new { environment = "dev" })).Status);
+        Assert.Equal(400, (await host.PostAsync($"/api/quests/{buildId}/set-up-step", new { environment = "production" })).Status);
+        var plain = await PublishAsync("Plain work to show");
+        Assert.Equal(409, (await host.PostAsync($"/api/quests/{plain}/set-up-step", new { environment = "local" })).Status);
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{plain}/respond", new { action = "take" })).Status);
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{plain}/respond", new { action = "done", reason = "Built." })).Status);
+        var pressed = await host.PostAsync($"/api/quests/{plain}/set-up-step", new { environment = "local" });
+        Assert.Equal(200, pressed.Status);
+        Assert.Equal(plain, pressed.Json.GetProperty("quest").GetProperty("parent").GetString());
+
+        var chosen = await host.PostAsync($"/api/asks/{ask}/review", new { choice = "off", words = "no need" });
+        Assert.Equal(200, chosen.Status);
+        var choices = (await host.GetAsync($"/api/asks/{ask}")).Json.GetProperty("reviewChoices");
+        Assert.Equal(["local", "off"], choices.EnumerateArray().Select(each => each.GetProperty("choice").GetString()));
+        Assert.Equal(400, (await host.PostAsync($"/api/asks/{ask}/review", new { choice = "live" })).Status);
+        Assert.Equal(404, (await host.PostAsync("/api/asks/ffffff/review", new { choice = "on" })).Status);
+        var words = (await host.GetAsync($"/api/asks/{ask}")).Json.GetProperty("words");
+        Assert.Contains(words.EnumerateArray(), word => word.GetProperty("kind").GetString() == "reviewed"
+                                                        && word.GetProperty("text").GetString() == "That is the setting.");
+    }
+
+    /// <summary>
     /// DRIFT1a: the added door keeps nothing for a session on no ask, and says so with a 200 — its own record
     /// holds what was said, which is no error; it refuses a session it does not hold, 404, and no words, 400.
     /// </summary>

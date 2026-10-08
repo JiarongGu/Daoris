@@ -28,7 +28,10 @@ public static class QuestWire
         + "with its quote; a decline's whileOpen, where it says one, is true or false; a conflict names "
         + "what it attempted; a dismissal names the conflict's machine and sequence; an evidenced verdict names "
         + "the full commit read, how it was read, and each item's requirement, path or gate, and result, with a "
-        + "spelling only on a `case` read";
+        + "spelling only on a `case` read; a publish's review choice, where it has one, is off, on or an environment's "
+        + "name, and a set-up step's environment is a name that never reads as production; a set-up names its full "
+        + "commit and, unless it is local, where to look; a review's verdict says reviewed or not-yet, naming the "
+        + "set-up's machine, sequence and commit, or skipped, and a not-yet carries the person's words";
 
     /// <summary>A page of what a remote accepted — the answer to a fetch.</summary>
     public static string Page(QuestFetch page) => Written(writer =>
@@ -153,6 +156,20 @@ public static class QuestWire
             verdict.Write(writer);
         }
 
+        // A set-up and a review's verdict (REVIEWENV1b). A local set-up crosses without its address: its tab is on the
+        // machine that showed it (the review environment design §3.5).
+        if (operation is { Kind: QuestOperationKind.SetUp, SetUp: { } setUp })
+        {
+            writer.WritePropertyName("setUp");
+            Reviews.Write(writer, setUp, crossing: true);
+        }
+
+        if (operation is { Kind: QuestOperationKind.Verdict, Verdict: { } review })
+        {
+            writer.WritePropertyName("verdict");
+            Reviews.Write(writer, review);
+        }
+
         if (operation.Attempted is { } attempted) writer.WriteString("attempted", attempted.ToString());
         if (operation.Dismisses is { } named)
         {
@@ -190,6 +207,16 @@ public static class QuestWire
             // Only when its publisher gave one (SESSUX1j): an older build reads the quest as it always did, named by its title.
             if (asked.Short is not null) writer.WriteString("short", asked.Short);
 
+            // Only when set (REVIEWENV1b): a quest that chose nothing and is no set-up step crosses exactly as it did, and an
+            // older build reads one as the quest it always was.
+            if (asked.Review is { } chosen)
+            {
+                writer.WritePropertyName("review");
+                Reviews.Write(writer, chosen);
+            }
+
+            if (asked.SetUpIn is not null) writer.WriteString("setUpIn", asked.SetUpIn);
+
             writer.WriteStartArray("links");
             foreach (var link in asked.Links) writer.WriteStringValue(link);
             writer.WriteEndArray();
@@ -203,6 +230,7 @@ public static class QuestWire
                 writer.WriteString("to", step.To);
                 writer.WriteString("title", step.Title);
                 writer.WriteString("body", step.Body);
+                if (step.SetUpIn is not null) writer.WriteString("setUpIn", step.SetUpIn);
                 writer.WriteEndObject();
             }
 
@@ -303,7 +331,26 @@ public static class QuestWire
                     return null;
                 }
 
-                steps.Add(new(stepTo, stepTitle, stepBody));
+                // A set-up step's environment that is not one, production above all, is half a step (REVIEWENV1b).
+                var stepSetUpIn = Text(step, "setUpIn");
+                if ((step.TryGetProperty("setUpIn", out _) && stepSetUpIn is null)
+                    || (stepSetUpIn is not null && Reviews.JudgeEnvironment(stepSetUpIn) is not null))
+                {
+                    return null;
+                }
+
+                steps.Add(new(stepTo, stepTitle, stepBody) { SetUpIn = stepSetUpIn });
+            }
+
+            // A review choice or a set-up step's environment that is not one is half a quest (REVIEWENV1b): replayed, it
+            // would hold a landing, or show work, in a place nobody named.
+            QuestReview? choice = null;
+            if (asked.TryGetProperty("review", out var chosen) && (choice = Reviews.JudgedReview(chosen)) is null) return null;
+            var setUpIn = Text(asked, "setUpIn");
+            if ((asked.TryGetProperty("setUpIn", out _) && setUpIn is null)
+                || (setUpIn is not null && Reviews.JudgeEnvironment(setUpIn) is not null))
+            {
+                return null;
             }
 
             // A lane that is not a string is half an address, and a quest half-addressed is not whole.
@@ -338,6 +385,8 @@ public static class QuestWire
                 Lanes = lanes.Select(lane => lane.GetString()!).ToList(),
                 Requirements = requirements,
                 Short = Text(asked, "short"),
+                Review = choice,
+                SetUpIn = setUpIn,
             };
         }
 
@@ -377,9 +426,25 @@ public static class QuestWire
             return null;
         }
 
+        // A set-up or a review's verdict is its operation's whole point (REVIEWENV1b): one missing, or not whole, makes the
+        // operation half of one, which a replay would read as work shown, or a review given, that nobody said.
+        QuestSetUp? setUp = null;
+        if (kind == QuestOperationKind.SetUp
+            && (!item.TryGetProperty("setUp", out var shown) || (setUp = Reviews.JudgedSetUp(shown)) is null))
+        {
+            return null;
+        }
+
+        QuestReviewVerdict? review = null;
+        if (kind == QuestOperationKind.Verdict
+            && (!item.TryGetProperty("verdict", out var said) || (review = Reviews.JudgedVerdict(said)) is null))
+        {
+            return null;
+        }
+
         return new QuestOperation(
             quest, kind, machine, sequence, at, Text(item, "note"), published, attempted, numbered ? number : null,
-            dismisses, answers is { Count: > 0 } ? answers : null, whileOpen, verdict);
+            dismisses, answers is { Count: > 0 } ? answers : null, whileOpen, verdict, setUp, review);
     }
 
 }

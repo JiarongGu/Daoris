@@ -37,8 +37,25 @@ public sealed record ConvergenceResponse(
 // and not held, and a null path is how a reader, and the driver, learn that rather than guess it.
 public sealed record QuestAttachmentResponse(string Name, string Sha256, long Bytes, string? Path);
 // A chain's step (D65 §4), the same shape both ways. Nullable on the way in and judged by the
-// exchange, which refuses a step without its words naming which step it was.
-public sealed record QuestStepWire(string? To, string? Title, string? Body);
+// exchange, which refuses a step without its words naming which step it was. `SetUpIn` (REVIEWENV1b) makes it a set-up step,
+// naming the environment it shows the chain's work in; absent on every other step.
+public sealed record QuestStepWire(string? To, string? Title, string? Body, string? SetUpIn = null);
+// A chain's review choice (REVIEWENV1b, D154 point 3): `off`, `on` or an environment's name, and the person's words it was set
+// on — the same shape both ways, judged by the exchange.
+public sealed record QuestReviewWire(string? Choice, string? Words = null);
+// A set-up on a set-up step (REVIEWENV1b, D154 point 9), answered only: the commit Daoris read, where to look (absent on another
+// machine for a local one, whose tab is on the machine that showed it), what it shows, how to show it again, the folder served
+// and a review run's command where there were any, the session that said it (absent for the person's own), whether it was
+// local, and when, where and as which operation it was kept: `Machine` and `Sequence` are what a verdict names it by.
+public sealed record QuestSetUpWire(
+    string Commit, string? Look, string? Shows, string? Again, string? Served, string? Run, string? Session, bool Local,
+    DateTimeOffset? At, string? Machine, long? Sequence);
+// Which set-up a verdict answers, by the machine and sequence that name it everywhere (REVIEWENV1b).
+public sealed record QuestSetUpRefWire(string? Machine, long? Sequence);
+// The person's verdict (REVIEWENV1b, D154 point 8), answered only: `reviewed`, `not-yet` or `skipped`, the set-up it answers and
+// that set-up's commit (absent on a skip), their words, and when and where it was given.
+public sealed record QuestReviewVerdictWire(
+    string Said, QuestSetUpRefWire? SetUp, string? Commit, string? Words, DateTimeOffset? At, string? Machine);
 // A requirement (DRIFT1c, D133 §3): the person's words, quoted, and the check that proves them — the same
 // shape both ways. Nullable on the way in and judged by the exchange, which refuses one missing a half.
 // `Evidence` (EVID1a, D144 §2): what Daoris reads itself, each item a `path` or a `gate`; answered `[]` for none.
@@ -84,10 +101,15 @@ public sealed record QuestResponse(
     // What a list calls it (SESSUX1j): its publisher's short title, else a name read from its own words. A host from
     // before the field answers none, and a reader names it by its title.
     string? Short = null,
-    // Why it is held (EVID1a, D144 §6): `departed`, `evidence-unread` or `evidence-missing`, null when `Held` is false.
-    // `AwaitsEvidence` whether its done waits for Daoris to find its evidence, a departure beside it or not; `Evidence`
-    // what was last read of it, null while nothing was. A host from before answers none of the three.
-    string? Hold = null, bool AwaitsEvidence = false, QuestEvidenceVerdictWire? Evidence = null);
+    // Why it is held (EVID1a, D144 §6): `departed`, `evidence-unread`, `evidence-missing` or `unreviewed` (REVIEWENV1b), null
+    // when `Held` is false. `AwaitsEvidence` whether its done waits for Daoris to find its evidence, a departure beside it or not;
+    // `Evidence` what was last read of it, null while nothing was. A host from before answers none of the three.
+    string? Hold = null, bool AwaitsEvidence = false, QuestEvidenceVerdictWire? Evidence = null,
+    // The review on the record (REVIEWENV1b): its chain's choice, the environment a set-up step shows its work in, the set-ups
+    // said on it and the person's verdicts, oldest first. Each absent where there is none, so a quest no review touches is
+    // answered as it was, and a host from before answers none.
+    QuestReviewWire? Review = null, string? SetUpIn = null, IReadOnlyList<QuestSetUpWire>? SetUps = null,
+    IReadOnlyList<QuestReviewVerdictWire>? Verdicts = null);
 // An attachment arrives with its CONTENT at a local host — base64 on the wire, which is what a byte
 // array is in JSON — and by NAME at a shared one, which keeps names and never bytes (D65 §2). The door
 // decides which shape its mode takes and refuses the other; the exchange never sees the wrong one.
@@ -96,7 +118,16 @@ public sealed record PublishQuestRequest(
     string From, string To, string Title, string Body,
     IReadOnlyList<string>? Links = null, IReadOnlyList<QuestAttachmentRequest>? Attachments = null,
     IReadOnlyList<QuestStepWire>? Then = null, IReadOnlyList<QuestRequirementWire?>? Requirements = null,
-    string? Short = null);
+    string? Short = null, QuestReviewWire? Review = null);
+// A set-up posted on a set-up step (REVIEWENV1b, design §2.6, §3.3): the commit Daoris read and the environment's kind (`local`
+// or `deployed`), with `Session`, whose said set-ups the driver posts, or the person's own `Look`, `Shows` and `Again`.
+public sealed record QuestSetUpRequest(
+    string? Commit, string? Kind, string? Session = null, string? Look = null, string? Shows = null, string? Again = null);
+// The person's verdict (REVIEWENV1b, design §3.3–§3.6): `reviewed`, `not-yet` or `skipped`, their words (a `not-yet`'s always),
+// and the set-up it answers, the newest when absent.
+public sealed record QuestReviewRequest(string? Verdict, string? Words = null, QuestSetUpRefWire? SetUp = null);
+// The person's *Set it up in `<environment>`* (REVIEWENV1b, design §2.1, §3.6): the environment the set-up step shows the work in.
+public sealed record SetUpStepRequest(string? Environment);
 // `On` is the question a `wait` waits on (D79); `Answers` how a done answers each requirement (DRIFT1d);
 // `WhileOpen` a decline that applies only while the quest is open (PAUSE1c), an abandon's.
 public sealed record RespondQuestRequest(
@@ -108,16 +139,23 @@ public sealed record PersonDoneRequest(string? Note);
 public sealed record DismissConflictRequest(string? Machine, long? Sequence);
 // An ask (D65 §1a): a sentence at a workspace. Files arrive whole — the ask door is a local host's —
 // and `To` is the asker naming the receiver, which publishes at once.
+// `Review` and `ReviewWords` (REVIEWENV1b, design §1.5): the person's review choice from the composer, and their words with it.
 public sealed record AskRequestBody(
     string? Workspace, string? Sentence, IReadOnlyList<string>? Links,
-    IReadOnlyList<QuestAttachmentRequest>? Attachments, string? To);
+    IReadOnlyList<QuestAttachmentRequest>? Attachments, string? To, string? Review = null, string? ReviewWords = null);
 // A publish is a person's `To` alone; an intake (D65 §1b) adds its own words, carry and chain, and
 // names its `Session` — which moves the ask's tier to `intake` only when it is the ask's own. Its
-// `Requirements` quote the person (DRIFT1c), judged against the ask's words.
+// `Requirements` quote the person (DRIFT1c), judged against the ask's words. `Review` is the chain's choice, an intake's only on
+// the person's quoted words; `ReviewProposal` an intake's proposal with its reason, kept on the ask (REVIEWENV1b).
 public sealed record AskPublishRequest(
     string? To, string? Title = null, string? Body = null, IReadOnlyList<string>? Links = null,
     IReadOnlyList<QuestAttachmentRequest>? Attachments = null, IReadOnlyList<QuestStepWire>? Then = null,
-    string? Session = null, IReadOnlyList<QuestRequirementWire?>? Requirements = null, string? Short = null);
+    string? Session = null, IReadOnlyList<QuestRequirementWire?>? Requirements = null, string? Short = null,
+    QuestReviewWire? Review = null, ReviewProposalWire? ReviewProposal = null);
+// An intake's review proposal (REVIEWENV1b, design §1.5): a choice and its reason, at most 300 characters.
+public sealed record ReviewProposalWire(string? Choice, string? Reason);
+// The person's review choice on an ask's page (REVIEWENV1b, design §1.5), and their words with it.
+public sealed record AskReviewRequest(string? Choice, string? Words = null);
 public sealed record AskCloseRequest(string? Reason);
 public sealed record DeclarationMatchResponse(string Repository, int Score, IReadOnlyList<string> Matched);
 // `Tier` is said on every record (model-decoupling): which tier answered, never implied. `Intake` is
@@ -128,15 +166,20 @@ public sealed record DeclarationMatchResponse(string Repository, int Score, IRea
 // answer and each message added to a session, with when, the session and its quest. `WordsKeptFrom` is
 // said only of an ask made before the words were kept: from when they are, since nothing is back-filled.
 // `GoAheads` (KNOWUSE1a, D135 §2) is every go-ahead its sessions asked the person for, oldest first, one per act.
+// `ReviewChoices` (REVIEWENV1b, design §1.5) is the person's review choices on it, oldest first, the latest standing;
+// `ReviewProposals` its intake's proposals, each with its reason and the quest it came with. Each absent where there is none.
 public sealed record AskResponse(
     string Id, string Workspace, string Sentence, string State, string Tier, DateTimeOffset Asked,
     DateTimeOffset Updated, string? Asker, string? Note, IReadOnlyList<string> Links,
     IReadOnlyList<QuestAttachmentResponse> Attachments, IReadOnlyList<DeclarationMatchResponse> Proposal,
     IReadOnlyList<string> Quests, string? Intake = null, bool Deletable = false,
     IReadOnlyList<AskWordResponse>? Words = null, DateTimeOffset? WordsKeptFrom = null,
-    IReadOnlyList<GoAheadResponse>? GoAheads = null);
+    IReadOnlyList<GoAheadResponse>? GoAheads = null,
+    IReadOnlyList<AskReviewChoiceResponse>? ReviewChoices = null, IReadOnlyList<AskReviewProposalResponse>? ReviewProposals = null);
+public sealed record AskReviewChoiceResponse(string Choice, DateTimeOffset At, string? Words);
+public sealed record AskReviewProposalResponse(string Choice, string Reason, DateTimeOffset At, string? Session, string? Quest);
 // One word (DRIFT1a): `kind` is `asked`, `answered`, `added` or `reopened` (MSG1a: said after its session ended, which
-// went on with it); the ask's own sentence names no session.
+// went on with it), or a review's `reviewed`, `not-yet` or `skipped` (REVIEWENV1b); the ask's own sentence names no session.
 public sealed record AskWordResponse(string Kind, string Text, DateTimeOffset At, string? Session, string? Quest);
 // One go-ahead (KNOWUSE1a): the act by its `kind` (write, release, push, sign-in, run), where it lands (`on`) and what it
 // touches (`act`); `state` is `asked`, `approved` or `refused`; `asked` is each session's request, oldest first; `answer`
@@ -380,6 +423,10 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(PersonDoneRequest))]
 [JsonSerializable(typeof(DismissConflictRequest))]
 [JsonSerializable(typeof(QuestEvidenceVerdictWire))]
+[JsonSerializable(typeof(QuestSetUpRequest))]
+[JsonSerializable(typeof(QuestReviewRequest))]
+[JsonSerializable(typeof(SetUpStepRequest))]
+[JsonSerializable(typeof(AskReviewRequest))]
 [JsonSerializable(typeof(AskRequestBody))]
 [JsonSerializable(typeof(AskPublishRequest))]
 [JsonSerializable(typeof(AskCloseRequest))]

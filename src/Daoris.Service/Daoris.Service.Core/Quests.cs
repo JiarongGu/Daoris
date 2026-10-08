@@ -149,19 +149,42 @@ public sealed record Quest(
         Status == QuestStatus.Done && Accepted is null && Evidence is not { Found: true } && EvidenceWanted.Count > 0;
 
     /// <summary>
-    /// Why it waits for the person, or null when nothing holds it (DRIFT1d, EVID1a; D133 §4, D144 §6): a departure,
-    /// which only their yes lets go, comes first; then evidence nobody read, or evidence read and not found.
+    /// The chain's review choice (REVIEWENV1b, D154 point 3): <c>off</c>, <c>on</c> or an environment's name, set at publish
+    /// and inherited by each step. Null for a quest whose chain chose nothing, which is every quest from before it.
     /// </summary>
-    public QuestHold? Hold =>
-        Status != QuestStatus.Done || Accepted is not null ? null
-        : Answers.Any(answer => answer.IsDeparture) ? QuestHold.Departed
-        : !AwaitsEvidence ? null
-        : Evidence is null ? QuestHold.EvidenceUnread
-        : QuestHold.EvidenceMissing;
+    public QuestReview? Review { get; init; }
 
     /// <summary>
-    /// Whether it waits (DRIFT1d, D133 §4; EVID1a, D144 §6): closed done, held for one of <see cref="Hold"/>'s causes,
-    /// and not yet accepted. What follows it, a chain's next step or a quest waiting on it, waits with it.
+    /// The environment a set-up step shows its chain's work in (REVIEWENV1b, D154 point 4): what makes it one. Null for
+    /// every other quest, and for every quest from before it.
+    /// </summary>
+    public string? SetUpIn { get; init; }
+
+    /// <summary>
+    /// The set-ups said on a set-up step (REVIEWENV1b, D154 point 9), oldest first, each with its commit. Empty for any other
+    /// quest, and for a set-up step nothing has shown yet.
+    /// </summary>
+    public IReadOnlyList<QuestSetUp> SetUps { get; init; } = [];
+
+    /// <summary>The person's verdicts on its review (REVIEWENV1b, D154 point 8), oldest first. Empty for a quest none was given on.</summary>
+    public IReadOnlyList<QuestReviewVerdict> Verdicts { get; init; } = [];
+
+    /// <summary>
+    /// Why it waits for the person, or null when nothing holds it (DRIFT1d, EVID1a; D133 §4, D144 §6): a departure,
+    /// which only their yes lets go, comes first; then evidence nobody read, or evidence read and not found. A set-up step's
+    /// review comes after both (REVIEWENV1b, D154 point 9), so their order is unchanged, and only the person's verdict
+    /// lets it go: their yes accepts a departure or its evidence, never a review.
+    /// </summary>
+    public QuestHold? Hold =>
+        Status != QuestStatus.Done ? null
+        : Accepted is null && Answers.Any(answer => answer.IsDeparture) ? QuestHold.Departed
+        : AwaitsEvidence ? Evidence is null ? QuestHold.EvidenceUnread : QuestHold.EvidenceMissing
+        : QuestReviewing.Waits(this) ? QuestHold.Unreviewed
+        : null;
+
+    /// <summary>
+    /// Whether it waits (DRIFT1d, D133 §4; EVID1a, D144 §6; REVIEWENV1b): closed done, held for one of <see cref="Hold"/>'s
+    /// causes. What follows it, a chain's next step or a quest waiting on it, waits with it.
     /// </summary>
     public bool Held => Hold is not null;
 }
@@ -222,7 +245,14 @@ public sealed record QuestRequirement(string Quote, string Check)
 /// <param name="To">The repository asked — addressable from the chain's asker, judged when composed.</param>
 /// <param name="Title">One line. <c>{parent}</c> becomes the id of the quest this step follows.</param>
 /// <param name="Body">Why, and the evidence. <c>{parent}</c> is expanded here too.</param>
-public sealed record QuestStep(string To, string Title, string Body);
+public sealed record QuestStep(string To, string Title, string Body)
+{
+    /// <summary>
+    /// The environment this step shows the chain's work in, which makes it a set-up step (REVIEWENV1b, D154 point 4; the
+    /// design's §2.1 calls it the step's <c>review</c>, a word the chain's choice already has). Null for every other step.
+    /// </summary>
+    public string? SetUpIn { get; init; }
+}
 
 /// <summary>A file a quest carries, as its record names it — never where it lies on a disk.</summary>
 /// <param name="Name">The file's own name, made safe to keep: what a reader and a session see.</param>
@@ -458,7 +488,11 @@ public sealed class QuestStore
                   accepted    TEXT NULL,
                   held        INTEGER NOT NULL DEFAULT 0,
                   short_title TEXT NULL,
-                  evidence    TEXT NULL
+                  evidence    TEXT NULL,
+                  review      TEXT NULL,
+                  set_up_in   TEXT NULL,
+                  set_ups     TEXT NOT NULL DEFAULT '[]',
+                  verdicts    TEXT NOT NULL DEFAULT '[]'
                 );
                 CREATE INDEX IF NOT EXISTS quests_receiver ON quests (receiver, status);
                 """;
@@ -495,6 +529,12 @@ public sealed class QuestStore
             ("quests", "short_title", "short_title TEXT NULL"),
             // What Daoris last read of a done's evidence (EVID1a); a quest from before named none, so none was read.
             ("quests", "evidence", "evidence TEXT NULL"),
+            // The chain's review choice, a set-up step's environment, its set-ups and the person's verdicts (REVIEWENV1b); a
+            // quest from before chose nothing, is no set-up step, and was never shown or reviewed.
+            ("quests", "review", "review TEXT NULL"),
+            ("quests", "set_up_in", "set_up_in TEXT NULL"),
+            ("quests", "set_ups", "set_ups TEXT NOT NULL DEFAULT '[]'"),
+            ("quests", "verdicts", "verdicts TEXT NOT NULL DEFAULT '[]'"),
             ("quest_log", "remote", "remote INTEGER NULL"),
         })
         {
@@ -670,6 +710,12 @@ public sealed class QuestStore
     /// <param name="lanes">The lanes of <paramref name="to"/> it addresses, already judged by the exchange (D115 §2.2).</param>
     /// <param name="requirements">What the person requires, already judged by the exchange against their words (DRIFT1c).</param>
     /// <param name="shortTitle">The publisher's short title, already judged by the exchange (SESSUX1j); null for none.</param>
+    /// <param name="review">The chain's review choice, already judged by the exchange (REVIEWENV1b); null for none.</param>
+    /// <param name="setUpIn">A set-up step's environment, already judged by the exchange (REVIEWENV1b); null for any other quest.</param>
+    /// <param name="parent">
+    /// The quest a set-up step follows, when a door publishes one after its chain's close (REVIEWENV1b, D149 point 1): its id
+    /// derives from it as a chain step's does, so pressing twice is one step. Null for every other publish.
+    /// </param>
     public async Task<Quest> PublishAsync(
         string from, string to, string title, string body, DateTimeOffset now,
         string? workspace = null,
@@ -680,15 +726,18 @@ public sealed class QuestStore
         string? publishedBy = null,
         IReadOnlyList<string>? lanes = null,
         IReadOnlyList<QuestRequirement>? requirements = null,
-        string? shortTitle = null)
+        string? shortTitle = null,
+        QuestReview? review = null,
+        string? setUpIn = null,
+        string? parent = null)
     {
         var sorted = Sorted(lanes);
-        var id = MakeId(from, to, title, lanes: sorted);
+        var id = MakeId(from, to, title, parent, sorted);
         return await InTransactionAsync(async (transaction, inside) =>
         {
             // The same ask already held is the answer, whichever width of id it was published under.
             var existing = await FindAsync(id, transaction, inside).ConfigureAwait(false)
-                           ?? await FindAsync(id[..LegacyIdLength], transaction, inside).ConfigureAwait(false);
+                           ?? (parent is null ? await FindAsync(id[..LegacyIdLength], transaction, inside).ConfigureAwait(false) : null);
             if (existing is not null) return existing;
 
             var asked = new Quest(
@@ -702,6 +751,9 @@ public sealed class QuestStore
                 Lanes = sorted,
                 Requirements = requirements ?? [],
                 Short = string.IsNullOrWhiteSpace(shortTitle) ? null : shortTitle.Trim(),
+                Review = review,
+                SetUpIn = setUpIn,
+                Parent = parent,
             };
 
             return await PublishInAsync(asked, transaction, inside).ConfigureAwait(false);
@@ -755,7 +807,8 @@ public sealed class QuestStore
     private async Task<QuestOperation> AppendAsync(
         string quest, QuestOperationKind kind, DateTimeOffset at, string? note, Quest? published,
         SqliteTransaction transaction, CancellationToken ct, QuestOperationRef? dismisses = null,
-        IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, QuestEvidenceVerdict? evidence = null)
+        IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, QuestEvidenceVerdict? evidence = null,
+        QuestSetUp? setUp = null, QuestReviewVerdict? review = null)
     {
         await using var command = _db.Command();
         command.Transaction = transaction;
@@ -774,8 +827,10 @@ public sealed class QuestStore
         command.Parameters.AddWithValue("$at", at.ToString("O"));
         var flagged = whileOpen && kind == QuestOperationKind.Declined;
         var verdict = kind == QuestOperationKind.Evidenced ? evidence : null;
+        var shown = kind == QuestOperationKind.SetUp ? setUp : null;
+        var said = kind == QuestOperationKind.Verdict ? review : null;
         command.Parameters.AddWithValue(
-            "$payload", PayloadJson(note, published, attempted: null, dismisses, answers, flagged, verdict));
+            "$payload", PayloadJson(note, published, attempted: null, dismisses, answers, flagged, verdict, shown, said));
         var sequence = Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
 
         // Handed back as it will read back: a publish carries the quest as asked, open from this moment.
@@ -785,7 +840,9 @@ public sealed class QuestStore
             Dismisses: dismisses,
             Answers: answers is { Count: > 0 } ? answers : null,
             WhileOpen: flagged,
-            Evidence: verdict);
+            Evidence: verdict,
+            SetUp: shown,
+            Verdict: said);
     }
 
     /// <summary>
@@ -813,7 +870,9 @@ public sealed class QuestStore
             "$payload", PayloadJson(
                 operation.Note, operation.Published, operation.Attempted, operation.Dismisses, operation.Answers,
                 operation.WhileOpen && operation.Kind == QuestOperationKind.Declined,
-                operation.Kind == QuestOperationKind.Evidenced ? operation.Evidence : null));
+                operation.Kind == QuestOperationKind.Evidenced ? operation.Evidence : null,
+                operation.Kind == QuestOperationKind.SetUp ? operation.SetUp : null,
+                operation.Kind == QuestOperationKind.Verdict ? operation.Verdict : null));
         command.Parameters.AddWithValue("$remote", (object?)number ?? DBNull.Value);
         return Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
     }
@@ -841,8 +900,8 @@ public sealed class QuestStore
         await using var command = _db.Command();
         command.Transaction = transaction;
         command.CommandText = """
-            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by, lanes, requirements, answers, accepted, held, short_title, evidence)
-            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy, $lanes, $requirements, $answers, $accepted, $held, $short, $evidence)
+            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by, lanes, requirements, answers, accepted, held, short_title, evidence, review, set_up_in, set_ups, verdicts)
+            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy, $lanes, $requirements, $answers, $accepted, $held, $short, $evidence, $review, $setUpIn, $setUps, $verdicts)
             ON CONFLICT (id) DO UPDATE SET
               sender = excluded.sender, receiver = excluded.receiver, title = excluded.title, body = excluded.body,
               status = excluded.status, note = excluded.note, filed = excluded.filed, updated = excluded.updated,
@@ -850,8 +909,24 @@ public sealed class QuestStore
               then_steps = excluded.then_steps, parent = excluded.parent, conflicts = excluded.conflicts,
               awaits = excluded.awaits, published_by = excluded.published_by, lanes = excluded.lanes,
               requirements = excluded.requirements, answers = excluded.answers, accepted = excluded.accepted,
-              held = excluded.held, short_title = excluded.short_title, evidence = excluded.evidence
+              held = excluded.held, short_title = excluded.short_title, evidence = excluded.evidence,
+              review = excluded.review, set_up_in = excluded.set_up_in, set_ups = excluded.set_ups, verdicts = excluded.verdicts
             """;
+        command.Parameters.AddWithValue(
+            "$review", quest.Review is { } chosen ? JsonFields.Written(writer => Reviews.Write(writer, chosen)) : DBNull.Value);
+        command.Parameters.AddWithValue("$setUpIn", (object?)quest.SetUpIn ?? DBNull.Value);
+        command.Parameters.AddWithValue("$setUps", JsonFields.Written(writer =>
+        {
+            writer.WriteStartArray();
+            foreach (var setUp in quest.SetUps) Reviews.Write(writer, setUp, standing: true);
+            writer.WriteEndArray();
+        }));
+        command.Parameters.AddWithValue("$verdicts", JsonFields.Written(writer =>
+        {
+            writer.WriteStartArray();
+            foreach (var verdict in quest.Verdicts) Reviews.Write(writer, verdict, standing: true);
+            writer.WriteEndArray();
+        }));
         command.Parameters.AddWithValue("$short", (object?)quest.Short ?? DBNull.Value);
         command.Parameters.AddWithValue(
             "$evidence", quest.Evidence is { } read ? (object)JsonFields.Written(writer => read.Write(writer, standing: true)) : DBNull.Value);
@@ -937,6 +1012,9 @@ public sealed class QuestStore
             Requirements = left.Count == 0
                 ? parent.Requirements
                 : [.. parent.Requirements.Select(requirement => requirement with { Evidence = [] })],
+            // The chain's review choice is every step's (REVIEWENV1b, D154 point 3), and a set-up step is one by its step.
+            Review = parent.Review,
+            SetUpIn = step.SetUpIn,
         };
 
         return (next, left.Count == 0
@@ -1048,13 +1126,101 @@ public sealed class QuestStore
                 return new QuestMove(await FindAsync(id, transaction, inside).ConfigureAwait(false), Moved: false);
             }
 
-            if (!quest.Held) return new QuestMove(quest, Moved: false);
+            // The replay's own rule: a departure or its evidence takes a yes, and a review's hold does not (REVIEWENV1b).
+            if (!QuestLog.Applies(quest, new QuestOperation(id, QuestOperationKind.Accepted, Machine, 0, now)))
+            {
+                return new QuestMove(quest, Moved: false);
+            }
 
             var operation = await AppendAsync(
                 id, QuestOperationKind.Accepted, now, note: null, published: null, transaction, inside).ConfigureAwait(false);
             var accepted = QuestLog.Step(quest, operation)!;
             await WriteCacheAsync(accepted, transaction, inside).ConfigureAwait(false);
-            return new QuestMove(accepted, Moved: true, await PublishNextAsync(accepted, now, transaction, inside).ConfigureAwait(false));
+            // A set-up step accepted for its departure still waits for its review, and what follows it waits with it.
+            return new QuestMove(
+                accepted, Moved: true,
+                accepted.Held ? null : await PublishNextAsync(accepted, now, transaction, inside).ConfigureAwait(false));
+        }, ct);
+
+    /// <summary>
+    /// A set-up step's set-up (REVIEWENV1b, D154 point 9): a <see cref="QuestOperationKind.SetUp"/> operation, judged against
+    /// the replayed history inside the write as every move is, so it applies only to a set-up step not declined, a second
+    /// post of the same set-up is no move, and one from a take this machine lost is refused (<see cref="QuestLog.OnALostTake"/>).
+    /// It releases nothing: a newer set-up holds a reviewed step for the person again.
+    /// </summary>
+    /// <returns>
+    /// The quest as it now stands and whether this call kept the set-up; a null quest means no such id. Refused with
+    /// <see cref="QuestMove.ClaimLost"/> where this machine's take on the quest lost.
+    /// </returns>
+    public Task<QuestMove> SetUpAsync(string id, QuestSetUp setUp, DateTimeOffset now, CancellationToken ct = default) =>
+        InTransactionAsync(async (transaction, inside) =>
+        {
+            var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
+            if (QuestLog.Replay(history) is not { } quest)
+            {
+                return new QuestMove(await FindAsync(id, transaction, inside).ConfigureAwait(false), Moved: false);
+            }
+
+            var shown = setUp with { At = null, Machine = null, Sequence = null };
+            var judged = new QuestOperation(id, QuestOperationKind.SetUp, Machine, 0, now, SetUp: shown);
+            if (!QuestLog.Applies(quest, judged)) return new QuestMove(quest, Moved: false);
+            if (QuestLog.OnALostTake(quest, history, judged)) return new QuestMove(quest, Moved: false) { ClaimLost = true };
+
+            var operation = await AppendAsync(
+                id, QuestOperationKind.SetUp, now, note: null, published: null, transaction, inside, setUp: shown).ConfigureAwait(false);
+            var kept = QuestLog.Step(quest, operation)!;
+            await WriteCacheAsync(kept, transaction, inside).ConfigureAwait(false);
+            return new QuestMove(kept, Moved: true);
+        }, ct);
+
+    /// <summary>
+    /// The person's verdict on a set-up step's review, or their skip of a review (REVIEWENV1b, D154 point 8): a
+    /// <see cref="QuestOperationKind.Verdict"/> operation, judged against the replayed history inside the write. A
+    /// <c>reviewed</c> or a skip that lets the step's review go publishes the chain's next step in the same transaction, as
+    /// the yes publishes one; a <c>not-yet</c> keeps it held.
+    /// </summary>
+    /// <returns>
+    /// The quest as it now stands, whether this call kept the verdict, and the step it published; a null quest means no
+    /// such id.
+    /// </returns>
+    public Task<QuestMove> VerdictAsync(string id, QuestReviewVerdict verdict, DateTimeOffset now, CancellationToken ct = default) =>
+        InTransactionAsync(async (transaction, inside) =>
+        {
+            var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
+            if (QuestLog.Replay(history) is not { } quest)
+            {
+                return new QuestMove(await FindAsync(id, transaction, inside).ConfigureAwait(false), Moved: false);
+            }
+
+            var said = verdict with { At = null, Machine = null };
+            if (!QuestLog.Applies(quest, new QuestOperation(id, QuestOperationKind.Verdict, Machine, 0, now, Verdict: said)))
+            {
+                return new QuestMove(quest, Moved: false);
+            }
+
+            var operation = await AppendAsync(
+                id, QuestOperationKind.Verdict, now, note: null, published: null, transaction, inside, review: said).ConfigureAwait(false);
+            var given = QuestLog.Step(quest, operation)!;
+            await WriteCacheAsync(given, transaction, inside).ConfigureAwait(false);
+            var released = quest.Held && !given.Held;
+            return new QuestMove(
+                given, Moved: true, released ? await PublishNextAsync(given, now, transaction, inside).ConfigureAwait(false) : null);
+        }, ct);
+
+    /// <summary>
+    /// The set-up steps already following <paramref name="parent"/> (REVIEWENV1b): a chain step published by its close, or one
+    /// a door published after it. One set-up step per repository per chain, so a second is refused rather than published.
+    /// </summary>
+    public Task<IReadOnlyList<Quest>> SetUpStepsAfterAsync(string parent, CancellationToken ct = default) =>
+        _db.RunAsync<IReadOnlyList<Quest>>(async () =>
+        {
+            await using var command = _db.Command();
+            command.CommandText = "SELECT * FROM quests WHERE parent = $parent AND set_up_in IS NOT NULL ORDER BY filed";
+            command.Parameters.AddWithValue("$parent", parent);
+            var steps = new List<Quest>();
+            await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+            while (await reader.ReadAsync(ct).ConfigureAwait(false)) steps.Add(Read(reader));
+            return steps;
         }, ct);
 
     /// <summary>
@@ -1424,8 +1590,7 @@ public sealed class QuestStore
         var replayed = new List<QuestOperation>();
         foreach (var operation in await HistoryAsync(id, transaction, ct).ConfigureAwait(false))
         {
-            var lostClaim = claimLost && operation.Number is null
-                && (QuestTransitions.Target(operation.Kind) is not null || operation.Kind == QuestOperationKind.Waited);
+            var lostClaim = claimLost && operation.Number is null && QuestLog.TakersOwn(operation.Kind);
 
             // A stray (WAITCLAIM4): a done, a decline or a wait a build before WAITCLAIM2 made after the take's conflict
             // was written, which the remote refuses at every pass (WAITCLAIM3), so the circle never pushed clean. Judged by
@@ -1465,6 +1630,13 @@ public sealed class QuestStore
                 // step with it (EVID1a). A verdict that lost to another machine's, or to the person's yes, leaves the
                 // step standing, since the winner published the same one.
                 if (operation.Kind == QuestOperationKind.Accepted && quest is not { Accepted: not null })
+                {
+                    await ForgetFollowUpsAsync(id, transaction, ct).ConfigureAwait(false);
+                }
+
+                // A review's verdict that lost while the step is still held takes the step it published with it, as a lost
+                // yes does (REVIEWENV1b); one that lost to another machine's leaves the step the winner published.
+                if (operation.Kind == QuestOperationKind.Verdict && quest is { Held: true })
                 {
                     await ForgetFollowUpsAsync(id, transaction, ct).ConfigureAwait(false);
                 }
@@ -1518,8 +1690,8 @@ public sealed class QuestStore
     }
 
     /// <summary>
-    /// The circle's quests where this machine holds a done, a decline or a wait not yet pushed beside a take of its own
-    /// that is a conflict (WAITCLAIM4): where a stray can be. <see cref="RebaseAsync"/> judges each operation by
+    /// The circle's quests where this machine holds a done, a decline, a wait or a set-up not yet pushed beside a take of its
+    /// own that is a conflict (WAITCLAIM4, REVIEWENV1b): where a stray can be. <see cref="RebaseAsync"/> judges each operation by
     /// <see cref="QuestLog.OnALostTake"/>, so a quest this finds and nothing strays on is replayed as it stands.
     /// </summary>
     private async Task<IReadOnlyList<string>> StrayQuestsAsync(string circle, SqliteTransaction transaction, CancellationToken ct)
@@ -1531,7 +1703,7 @@ public sealed class QuestStore
             JOIN quest_log AS asked ON asked.position = (
               SELECT MIN(first.position) FROM quest_log AS first
               WHERE first.quest = stray.quest AND first.kind = 'published')
-            WHERE stray.remote IS NULL AND stray.machine = $machine AND stray.kind IN ('done', 'declined', 'waited')
+            WHERE stray.remote IS NULL AND stray.machine = $machine AND stray.kind IN ('done', 'declined', 'waited', 'setup')
               AND json_extract(asked.payload, '$.workspace') = $workspace COLLATE NOCASE
               AND EXISTS (
                 SELECT 1 FROM quest_log AS lost
@@ -2047,7 +2219,27 @@ public sealed class QuestStore
             : DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("accepted")), System.Globalization.CultureInfo.InvariantCulture),
         Short = reader.IsDBNull(reader.GetOrdinal("short_title")) ? null : reader.GetString(reader.GetOrdinal("short_title")),
         Evidence = reader.IsDBNull(reader.GetOrdinal("evidence")) ? null : ReadVerdict(reader.GetString(reader.GetOrdinal("evidence"))),
+        Review = reader.IsDBNull(reader.GetOrdinal("review")) ? null : ReadColumn(reader.GetString(reader.GetOrdinal("review")), Reviews.JudgedReview),
+        SetUpIn = reader.IsDBNull(reader.GetOrdinal("set_up_in")) ? null : reader.GetString(reader.GetOrdinal("set_up_in")),
+        SetUps = ReadList(reader.GetString(reader.GetOrdinal("set_ups")), Reviews.JudgedSetUp),
+        Verdicts = ReadList(reader.GetString(reader.GetOrdinal("verdicts")), Reviews.JudgedVerdict),
     };
+
+    /// <summary>One value of this store's own column, read through the judge the wire reads it with (REVIEWENV1b).</summary>
+    private static T? ReadColumn<T>(string json, Func<System.Text.Json.JsonElement, T?> judged) where T : class
+    {
+        using var document = System.Text.Json.JsonDocument.Parse(json);
+        return judged(document.RootElement);
+    }
+
+    /// <summary>A list of this store's own column, each item read through its judge; one that is not whole is passed over.</summary>
+    private static IReadOnlyList<T> ReadList<T>(string json, Func<System.Text.Json.JsonElement, T?> judged) where T : class
+    {
+        using var document = System.Text.Json.JsonDocument.Parse(json);
+        return document.RootElement.ValueKind != System.Text.Json.JsonValueKind.Array
+            ? []
+            : [.. document.RootElement.EnumerateArray().Select(judged).OfType<T>()];
+    }
 
     private static QuestEvidenceVerdict? ReadVerdict(string json)
     {
@@ -2090,6 +2282,9 @@ public sealed class QuestStore
                 Requirements = payload.TryGetProperty("requirements", out var required) ? ReadRequirements(required) : [],
                 // Absent from every publish before short titles, and from one that gave none (SESSUX1j).
                 Short = payload.TryGetProperty("short", out var shortTitle) ? shortTitle.GetString() : null,
+                // Absent from every publish before reviews, and from one that chose none or is no set-up step (REVIEWENV1b).
+                Review = payload.TryGetProperty("review", out var chosen) ? Reviews.JudgedReview(chosen) : null,
+                SetUpIn = payload.TryGetProperty("setUpIn", out var setUpIn) ? setUpIn.GetString() : null,
             };
 
         QuestOperationRef? dismisses = payload.TryGetProperty("dismisses", out var named)
@@ -2107,7 +2302,10 @@ public sealed class QuestStore
             // An evidenced operation's verdict (EVID1a), which this store wrote only after the exchange judged it.
             kind == QuestOperationKind.Evidenced && payload.TryGetProperty("evidence", out var read)
                 ? QuestEvidenceVerdict.Judged(read)
-                : null);
+                : null,
+            // A set-up and a review's verdict (REVIEWENV1b), each written only after the exchange judged it.
+            kind == QuestOperationKind.SetUp && payload.TryGetProperty("setUp", out var shown) ? Reviews.JudgedSetUp(shown) : null,
+            kind == QuestOperationKind.Verdict && payload.TryGetProperty("verdict", out var given) ? Reviews.JudgedVerdict(given) : null);
     }
 
     /// <summary>How a kind is written in the log: its name in lowercase, as the design names it.</summary>
@@ -2119,7 +2317,8 @@ public sealed class QuestStore
     /// </summary>
     private static string PayloadJson(
         string? note, Quest? published, QuestStatus? attempted, QuestOperationRef? dismisses = null,
-        IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, QuestEvidenceVerdict? evidence = null) => JsonFields.Written(writer =>
+        IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, QuestEvidenceVerdict? evidence = null,
+        QuestSetUp? setUp = null, QuestReviewVerdict? review = null) => JsonFields.Written(writer =>
     {
         if (dismisses is not null)
         {
@@ -2174,6 +2373,15 @@ public sealed class QuestStore
 
             // Only when its publisher gave one (SESSUX1j), for the lanes' reason; a derived name is never written.
             if (published.Short is not null) writer.WriteString("short", published.Short);
+
+            // Only when set (REVIEWENV1b), for the lanes' reason: a quest that chose nothing and is no set-up step reads as it did.
+            if (published.Review is { } chosen)
+            {
+                writer.WritePropertyName("review");
+                Reviews.Write(writer, chosen);
+            }
+
+            if (published.SetUpIn is not null) writer.WriteString("setUpIn", published.SetUpIn);
         }
 
         if (note is not null) writer.WriteString("note", note);
@@ -2193,6 +2401,19 @@ public sealed class QuestStore
         {
             writer.WritePropertyName("evidence");
             evidence.Write(writer);
+        }
+
+        // Only on a set-up or a verdict (REVIEWENV1b), for the evidence's reason: its when and machine are the operation's own.
+        if (setUp is not null)
+        {
+            writer.WritePropertyName("setUp");
+            Reviews.Write(writer, setUp);
+        }
+
+        if (review is not null)
+        {
+            writer.WritePropertyName("verdict");
+            Reviews.Write(writer, review);
         }
 
         writer.WriteEndObject();
@@ -2279,6 +2500,8 @@ public sealed class QuestStore
             writer.WriteString("to", step.To);
             writer.WriteString("title", step.Title);
             writer.WriteString("body", step.Body);
+            // Only on a set-up step (REVIEWENV1b), for the lanes' reason: every other step reads as it did.
+            if (step.SetUpIn is not null) writer.WriteString("setUpIn", step.SetUpIn);
             writer.WriteEndObject();
         }
 
@@ -2296,7 +2519,10 @@ public sealed class QuestStore
             .Select(item => new QuestStep(
                 item.GetProperty("to").GetString() ?? "",
                 item.GetProperty("title").GetString() ?? "",
-                item.GetProperty("body").GetString() ?? ""))
+                item.GetProperty("body").GetString() ?? "")
+            {
+                SetUpIn = item.TryGetProperty("setUpIn", out var setUpIn) ? setUpIn.GetString() : null,
+            })
             .ToList();
 
     private static string RequirementsJson(IReadOnlyList<QuestRequirement> requirements) =>

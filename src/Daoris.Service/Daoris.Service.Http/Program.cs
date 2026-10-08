@@ -477,10 +477,12 @@ app.MapPost("/api/quests", async (
             Named = named,
             // The chain (D65 §4). A step missing its words arrives blank and is refused by the
             // exchange naming which step — the same sentence every door gives.
-            Then = (body.Then ?? []).Select(step => new QuestStep(step.To ?? "", step.Title ?? "", step.Body ?? "")).ToList(),
+            Then = StepsOf(body.Then),
             Requirements = RequirementsOf(body.Requirements),
             // The person's short title from the composer (SESSUX1j), judged by the exchange with every other door's.
             Short = body.Short,
+            // The chain's review choice (REVIEWENV1b): the person's own at this door, with any words they give.
+            Review = ReviewOf(body.Review),
         },
         DateTimeOffset.UtcNow, ct);
 
@@ -587,7 +589,43 @@ if (mode == ServiceMode.Local)
             _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
         };
     });
+
+    // A set-up on a set-up step (REVIEWENV1b, design §2.6, §3.3): the driver posts each set-up a session said, with the commit it
+    // read from the step's tree, or the person records their own. LOCAL mode only, as the evidence door is: the commit is read
+    // on the machine whose tree holds it, and the set-up travels from there as an operation (D68). No connector tool reaches
+    // it, since a session never reports a commit.
+    app.MapPost("/api/quests/{id}/set-up", async (
+        ComposedService s, HttpContext http, string id, QuestSetUpRequest body, CancellationToken ct) =>
+        await ReviewAnswer(await s.Exchange.PostSetUpAsync(
+            id, new QuestSetUpPost(body.Commit, body.Kind, body.Session, body.Look, body.Shows, body.Again), DateTimeOffset.UtcNow, ct),
+            s, http, ct));
+
+    // The person's verdict on a set-up step, or their skip of a review (REVIEWENV1b, D154 point 8): LOCAL mode only, as the yes
+    // is, and no connector tool reaches it, since the verdict is a look only the person has taken.
+    app.MapPost("/api/quests/{id}/review", async (
+        ComposedService s, HttpContext http, string id, QuestReviewRequest body, CancellationToken ct) =>
+        await ReviewAnswer(await s.Exchange.ReviewAsync(
+            id, body.Verdict, body.Words,
+            body.SetUp is { Machine: { } machine, Sequence: { } sequence } ? new QuestOperationRef(machine, sequence) : null,
+            DateTimeOffset.UtcNow, ct),
+            s, http, ct));
+
+    // The person's *Set it up in `<environment>`* (REVIEWENV1b, design §2.1, §3.6): a set-up step published following a done
+    // quest, in Daoris's words. LOCAL mode only: the person's press, on their own machine.
+    app.MapPost("/api/quests/{id}/set-up-step", async (
+        ComposedService s, HttpContext http, string id, SetUpStepRequest body, CancellationToken ct) =>
+        await ReviewAnswer(await s.Exchange.PublishSetUpStepAsync(id, body.Environment, DateTimeOffset.UtcNow, ct), s, http, ct));
 }
+
+// A review door's answer (REVIEWENV1b): a state the review refuses is the lock's own shape, 409, and a shape is a bad request.
+async Task<IResult> ReviewAnswer(QuestRespondOutcome outcome, ComposedService s, HttpContext http, CancellationToken ct) =>
+    outcome.Refusal switch
+    {
+        QuestRespondRefusal.None => Results.Ok(new QuestActionResponse(await QuestAnswerAsync(s, http, outcome.Quest!, ct), outcome.Message)),
+        QuestRespondRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+        QuestRespondRefusal.BadSetUp or QuestRespondRefusal.BadReviewVerdict => Results.BadRequest(new ErrorResponse(outcome.Message)),
+        _ => Results.Conflict(new ErrorResponse(outcome.Message)),
+    };
 
 // A person dismissing a conflict (SYNC6c): committed here like any verb, and carried by the next pass,
 // so the conflict goes on every machine. It moves no status, which is why it is not a `respond`
@@ -696,10 +734,19 @@ if (mode == ServiceMode.Local)
                 Links = body.Links ?? [],
                 Uploads = uploads,
                 To = body.To,
+                // The person's review choice from the composer (REVIEWENV1b), judged by the desk.
+                Review = body.Review,
+                ReviewWords = body.ReviewWords,
             },
             DateTimeOffset.UtcNow, ct);
         return AskAnswer(outcome, s, http);
     });
+
+    // The person sets the ask's review choice on its page, or applies its intake's proposal (REVIEWENV1b, design §1.5): the
+    // latest stands. Local like every ask route.
+    app.MapPost("/api/asks/{id}/review", async (
+        ComposedService s, HttpContext http, string id, AskReviewRequest body, CancellationToken ct) =>
+        AskAnswer(await s.Asks.ChooseReviewAsync(id, body.Choice, body.Words, DateTimeOffset.UtcNow, ct), s, http));
 
     // One ask, whole — how the driver observes what its intake made of it (D65 §1b).
     app.MapGet("/api/asks/{id}", async (ComposedService s, HttpContext http, string id, CancellationToken ct) =>
@@ -730,16 +777,20 @@ if (mode == ServiceMode.Local)
         // A person's publish names a receiver and nothing else; an intake's carries its own words (D65
         // §1b). Anything beyond `to` makes a draft — words, links, files or a chain alone included.
         var drafted = body.Title is not null || body.Body is not null || body.Links is { Count: > 0 }
-            || uploads.Count > 0 || body.Then is { Count: > 0 } || body.Requirements is { Count: > 0 } || body.Short is not null;
+            || uploads.Count > 0 || body.Then is { Count: > 0 } || body.Requirements is { Count: > 0 } || body.Short is not null
+            || body.Review is not null || body.ReviewProposal is not null;
         var draft = drafted
             ? new AskDraft(body.Title, body.Body)
             {
                 Links = body.Links ?? [],
                 Uploads = uploads,
-                Then = (body.Then ?? []).Select(step => new QuestStep(step.To ?? "", step.Title ?? "", step.Body ?? "")).ToList(),
+                Then = StepsOf(body.Then),
                 Requirements = RequirementsOf(body.Requirements),
                 // The intake's short title (SESSUX1j), judged by the exchange with every other door's.
                 Short = body.Short,
+                // The chain's review choice and an intake's proposal (REVIEWENV1b), judged by the exchange and the desk.
+                Review = ReviewOf(body.Review),
+                ReviewProposal = body.ReviewProposal is { } proposal ? new ReviewProposed(proposal.Choice, proposal.Reason) : null,
             }
             : null;
 
@@ -1623,7 +1674,7 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal, bool
     q.Attachments.Select(a => new QuestAttachmentResponse(
         a.Name, a.Sha256, a.Bytes,
         Path: machineLocal && files is not null && files.Has(q.Id, a) ? files.PathOf(q.Id, a) : null)).ToList(),
-    q.Then.Select(s => new QuestStepWire(s.To, s.Title, s.Body)).ToList(),
+    q.Then.Select(s => new QuestStepWire(s.To, s.Title, s.Body, s.SetUpIn)).ToList(),
     q.Parent,
     q.Conflicts.Select(c => new QuestConflictResponse(c.Machine, c.Attempted.ToString(), c.Note, c.At, c.Sequence)).ToList(),
     q.Awaits,
@@ -1645,7 +1696,18 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal, bool
             read.Commit, read.How, read.Session,
             read.Items.Select(i => (QuestEvidenceReadWire?)new QuestEvidenceReadWire(i.Requirement, i.Path, i.Gate, i.Result, i.Object, i.Changed, i.Spelled)).ToList(),
             read.At, read.Machine)
-        : null);
+        : null,
+    // The review on the record (REVIEWENV1b): names, words and codes, which every door may answer; a local set-up's address is
+    // absent where it came from another machine, as the wire left it.
+    q.Review is { } chosen ? new QuestReviewWire(chosen.Choice, chosen.Words) : null,
+    q.SetUpIn,
+    q.SetUps.Count == 0
+        ? null
+        : q.SetUps.Select(s => new QuestSetUpWire(s.Commit, s.Look, s.Shows, s.Again, s.Served, s.Run, s.Session, s.Local, s.At, s.Machine, s.Sequence)).ToList(),
+    q.Verdicts.Count == 0
+        ? null
+        : q.Verdicts.Select(v => new QuestReviewVerdictWire(
+            v.Said, v.SetUp is { } named ? new QuestSetUpRefWire(named.Machine, named.Sequence) : null, v.Commit, v.Words, v.At, v.Machine)).ToList());
 
 // Requirements as a door hands them to the exchange (DRIFT1c): a half left out, or a whole one, arrives
 // blank and is refused there naming which — the same sentence every door gives. So does an evidence item
@@ -1687,8 +1749,22 @@ static AskResponse ToAsk(Ask a, QuestFiles? files, bool machineLocal)
             g.Number, g.Kind, g.On, g.Act, GoAhead.Spell(g.State),
             g.Asked.Select(r => new GoAheadRequestResponse(r.Session, r.Quest, r.At, r.Why)).ToList(),
             g.Answer is { } answer ? new GoAheadAnswerResponse(answer.Approved, answer.Words, answer.At) : null,
-            g.Near)).ToList());
+            g.Near)).ToList(),
+        // The person's review choices and the intake's proposals (REVIEWENV1b), each absent where there is none.
+        ReviewChoices: a.ReviewChoices.Count == 0
+            ? null
+            : a.ReviewChoices.Select(c => new AskReviewChoiceResponse(c.Choice, c.At, c.Words)).ToList(),
+        ReviewProposals: a.ReviewProposals.Count == 0
+            ? null
+            : a.ReviewProposals.Select(p => new AskReviewProposalResponse(p.Choice, p.Reason, p.At, p.Session, p.Quest)).ToList());
 }
+
+// A chain's steps as a door hands them to the exchange (D65 §4, REVIEWENV1b): a set-up step's environment rides with its words.
+static IReadOnlyList<QuestStep> StepsOf(IReadOnlyList<QuestStepWire>? given) =>
+    (given ?? []).Select(step => new QuestStep(step.To ?? "", step.Title ?? "", step.Body ?? "") { SetUpIn = step.SetUpIn }).ToList();
+
+// A chain's review choice as a door hands it to the exchange (REVIEWENV1b): a choice left out arrives blank, refused there.
+static QuestReview? ReviewOf(QuestReviewWire? given) => given is null ? null : new QuestReview(given.Choice ?? "", given.Words);
 
 static EntryResponse ToEntry(KnowledgeEntry entry) => new(
     entry.Id, entry.Repository, entry.Kind.ToString(), entry.Provenance.ToString(),

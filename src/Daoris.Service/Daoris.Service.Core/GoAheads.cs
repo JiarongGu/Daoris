@@ -151,6 +151,15 @@ public static class GoAheadAct
     }
 
     /// <summary>
+    /// Whether any word of <paramref name="said"/> reads as production, by this table's names for it (<c>production</c>,
+    /// <c>prod</c>, <c>prd</c>, <c>live</c>): the whole of it, or a word between its dashes or spaces. Where a set-up step
+    /// asks a go-ahead, and what an environment may be named, are judged by it (REVIEWENV1b, D154 points 1 and 6), so
+    /// production reads one way wherever a review meets it.
+    /// </summary>
+    public static bool ReadsAsProduction(string? said) =>
+        Split(said).Any(word => Environments.TryGetValue(word, out var environment) && environment == "production");
+
+    /// <summary>
     /// What an act touches, by its words: lower-case, split at anything that is not a letter or a digit, without the small
     /// words, single letters (a possessive's <c>s</c>), a plural's ending, and the words that say its own kind or place again.
     /// </summary>
@@ -235,6 +244,12 @@ public enum GoAheadRefusal
 
     /// <summary>The session is on no ask held here, so there is no ask to hold the go-ahead on.</summary>
     NoAsk,
+
+    /// <summary>
+    /// A set-up step's session asked one for production (REVIEWENV1b, D154 point 6): production is never where work is set up
+    /// for review, so it is refused by construction, whatever the words of the act.
+    /// </summary>
+    Production,
 }
 
 /// <summary>What became of a request (KNOWUSE1a).</summary>
