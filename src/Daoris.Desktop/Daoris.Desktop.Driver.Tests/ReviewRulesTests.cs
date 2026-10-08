@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// The driver's half of a TWIN with the CLI's <c>reviews.ts</c>: both are held, cell for cell, to ONE table, the CLI's
-/// <c>test/fixtures/review-rules.json</c>, which <c>driverconfig.test.ts</c> reads too. A row changed on one side alone is the
+/// <c>fixtures/review-rules.json</c>, which <c>driverconfig.test.ts</c> reads too. A row changed on one side alone is the
 /// other side's failure.
 /// </remarks>
 public sealed class ReviewRulesTests : IDisposable
@@ -242,7 +242,7 @@ public sealed class ReviewRulesTests : IDisposable
     /// <summary>One kind of the shared table's rows, as the CLI's fixture holds them.</summary>
     private static IReadOnlyList<JsonElement> Table(string kind)
     {
-        var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "test", "fixtures", "review-rules.json")));
+        var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "review-rules.json")));
         return [.. document.RootElement.GetProperty(kind).EnumerateArray().Select(row => row.Clone())];
     }
 }

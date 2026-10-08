@@ -3,7 +3,7 @@
 // edited exactly as the driver's `ReviewRules` does.
 //
 // 🔴 A TWIN with the driver's `ReviewRules.cs`: the CLI and the driver share no code, so both hold ONE table,
-// `test/fixtures/review-rules.json`, cell for cell — the reading and its precedence, every refusal in the same words, each
+// the driver's `Daoris.Desktop.Driver.Tests/fixtures/review-rules.json`, cell for cell — the reading and its precedence, every refusal in the same words, each
 // door's sentences, the edits, and what a checkout holding a procedure means (`.claude/knowledge/twins.md`).
 //
 // Pure but for `holdsProcedure`, which reads a checkout's file system. It reaches no network and spawns nothing: the

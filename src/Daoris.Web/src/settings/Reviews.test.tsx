@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -9,15 +7,52 @@ import { ReviewField, type ReviewRule, reviewRowSays, reviewSays, reviewSummary,
 
 // REVIEWENV1a (D154 point 2, the review-environment design §1.7–§1.8): where a repository's work is shown to the person before
 // it lands, set on a repository's Setup and a workspace's Defaults as `daoris driver review` sets it from a terminal (D50).
-// The words each door says are the twins' (`reviews.ts`, `ReviewRules.cs`), held here to their one table in English, and the
-// field sends the twins' edit, which the driver judges.
+// The words each door says are the twins' (`reviews.ts`, `ReviewRules.cs`), held here in English to rows of their one table
+// (the driver suite's `fixtures/review-rules.json`, `says`), copied, and the field sends the twins' edit, which the driver judges.
 
-type SaysRow = [name: string, rule: string, sentences: string[]];
+type SaysRow = [name: string, rule: ReviewRule, sentences: string[]];
 
-/** The twins' table, `src/Daoris.Cli/test/fixtures/review-rules.json`: its `says` rows, a rule as kept and what each door says. */
-const TABLE = JSON.parse(readFileSync(join(process.cwd(), '..', 'Daoris.Cli', 'test', 'fixtures', 'review-rules.json'), 'utf8')) as {
-  says: SaysRow[];
-};
+/** Rows of the twins' `says` table, copied: a rule as the bridge carries it, and what each door says of it. */
+const SAYS: SaysRow[] = [
+  ['none here', { none: true, environments: [] },
+    ['No review environment here, whatever its workspace says: work is offered to land once its quest is done.']],
+  ['a local environment that runs a process', {
+    required: true,
+    environments: [{ name: 'local', kind: 'local', procedure: 'README.md', address: 'http://localhost:4200', run: 'npm run serve' }],
+  }, [
+    'Before work here lands, it is shown to you in `local` and waits for you to say it is right.',
+    "A set-up step here builds the work in its own tree and shows it in Daoris's browser at `http://localhost:4200`; your own "
+      + 'servers and processes are not touched.',
+    'A set-up step here may run `npm run serve` in its tree on a port nobody holds, without asking you each time; it stops once '
+      + 'you have reviewed.',
+  ]],
+  ['two environments, the first the default', {
+    required: true,
+    environments: [
+      { name: 'local', kind: 'local', procedure: 'README.md', address: 'http://localhost:4200' },
+      { name: 'dev', kind: 'deployed', procedure: 'docs/deploying-to-dev.md', address: 'https://dev.example.test' },
+    ],
+  }, [
+    'Before work here lands, it is shown to you in `local` and waits for you to say it is right.',
+    'A task may ask for `dev` instead.',
+    "A set-up step here builds the work in its own tree and shows it in Daoris's browser at `http://localhost:4200`; your own "
+      + 'servers and processes are not touched.',
+    'A set-up step here follows `docs/deploying-to-dev.md` toward `dev`; each deploy or write there asks your go-ahead once per ask.',
+  ]],
+  ['three environments nobody requires', {
+    environments: [
+      { name: 'local', kind: 'local', procedure: 'README.md', address: 'http://localhost:4200' },
+      { name: 'dev', kind: 'deployed', procedure: 'README.md' },
+      { name: 'test', kind: 'deployed', procedure: 'README.md' },
+    ],
+  }, [
+    'When a task asks for it, work here may be shown to you in `local`, `dev` or `test`; nothing waits for it.',
+    "A set-up step here builds the work in its own tree and shows it in Daoris's browser at `http://localhost:4200`; your own "
+      + 'servers and processes are not touched.',
+    'A set-up step here follows `README.md` toward `dev`; each deploy or write there asks your go-ahead once per ask.',
+    'A set-up step here follows `README.md` toward `test`; each deploy or write there asks your go-ahead once per ask.',
+  ]],
+];
 
 const t = i18n.t.bind(i18n);
 
@@ -38,13 +73,8 @@ const draw = (set: ReviewRule | undefined, owner: 'repository' | 'workspace' = '
 describe('what a review rule says', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
-  it("says, in English, the twins' sentences for each rule, cell for cell", () => {
-    expect(TABLE.says.length).toBeGreaterThan(3);
-    for (const [name, rule, sentences] of TABLE.says) {
-      const read = JSON.parse(rule) as ReviewRule | false;
-      const wire: ReviewRule = read === false ? { none: true, environments: [] } : read;
-      expect(reviewSays(t, wire), name).toEqual(sentences);
-    }
+  it("says, in English, the twins' sentences for each rule, word for word", () => {
+    for (const [name, rule, sentences] of SAYS) expect(reviewSays(t, rule), name).toEqual(sentences);
   });
 
   it("says nothing set as today's behaviour, and a rule as declared only, with where it was set", () => {

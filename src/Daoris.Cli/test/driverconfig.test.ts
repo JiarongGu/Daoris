@@ -1464,11 +1464,12 @@ test('the setting survives edits by verbs that do not know it', () => {
 
 /**
  * The review rule, `reviews` and `workspaceReviews` (REVIEWENV1a, D154 point 2, the review-environment design §1.1–§1.3,
- * §1.7). 🔴 A TWIN with the driver's `ReviewRules`: both hold ONE table, `fixtures/review-rules.json`, cell for cell — the
+ * §1.7). 🔴 A TWIN with the driver's `ReviewRules`: both hold ONE table, the driver suite's `fixtures/review-rules.json`, cell for cell — the
  * reading and its precedence, every refusal in the same words, each door's sentences, the edits both doors make, and what a
  * checkout holding a procedure means. The driver's `ReviewRulesTests` reads the same file.
  */
-const REVIEW_TABLE = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'review-rules.json'), 'utf8')) as {
+const REVIEW_TABLE = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
+  'Daoris.Desktop.Driver.Tests', 'fixtures', 'review-rules.json'), 'utf8')) as {
   read: [name: string, file: string, repository: string, workspace: string | null, source: string | null, rule: string | null][];
   problems: [name: string, value: string, problem: string | null][];
   says: [name: string, rule: string, sentences: string[]][];
