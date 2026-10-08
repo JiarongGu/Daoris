@@ -1,10 +1,12 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
 import i18n from '../i18n';
 import type { Answered } from '../work/InlineConfirm';
-import { SweepList, type LandedBranch, type SweepBranch } from './Sweep';
+import { SweepList, type LandedBranch, type SweepBranch, type SweepKind } from './Sweep';
 
 // WSR3 (D88): every session branch with what it holds, listed first — then one press removes those
 // whose work is on a branch of the person's, or that hold nothing, and only those it listed to go.
@@ -61,6 +63,83 @@ describe('the session branches card', () => {
   it('names a machine with no session branch', () => {
     draw({ branches: [] });
     expect(screen.getByText(/No session branches/)).toBeInTheDocument();
+  });
+});
+
+// SWEEPCARRIED1 (D148 point 4, PLUGHOOK1a): a squash left a session branch's commits on no branch of the person's, and a
+// landed branch's completed pull request carried them, as its plugin answered and git confirmed. The row goes, and says
+// which pull request carried its work; it fell through to the in-use sentence, which is false of it.
+
+describe('a session branch a completed pull request carried', () => {
+  const CARRIED = branch({ branch: 'daoris/s-carried', kind: 'carried', commits: 2, where: 'feature/0fda18-fix', removable: true });
+  const row = () => screen.getByRole('listitem', { name: 'daoris/s-carried' });
+
+  it('says whose completed pull request carried its work, and that it goes', async () => {
+    const onClean = draw({ branches: [CARRIED] });
+
+    expect(row()).toHaveTextContent("Its work is carried by feature/0fda18-fix's completed pull request.");
+    expect(within(row()).getByText('feature/0fda18-fix', { selector: 'code' })).toBeInTheDocument();
+    expect(within(row()).getByText('goes')).toBeInTheDocument();
+    expect(row()).not.toHaveTextContent(/still running or waiting/);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Clean up 1 branch' }));
+    expect(onClean).toHaveBeenCalledWith(['engine:daoris/s-carried']);
+  });
+
+  it('says it in 中文 too', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      draw({ branches: [CARRIED] });
+      expect(row()).toHaveTextContent('它的工作已由 feature/0fda18-fix 已完成的拉取请求承载。');
+      expect(within(row()).getByText('移除')).toBeInTheDocument();
+      expect(row()).not.toHaveTextContent(/仍在运行或等待中/);
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+});
+
+/**
+ * Every kind the clean-up's list can send (SWEEPCARRIED1). The modules' `SweepRow` sends the driver's `SweepItem.Kind` as it
+ * is, one of the `SweepKind` constants in `Daoris.Desktop.Driver/Landing.cs`; this side parses that class, as `trace.test.ts`
+ * parses the same file's codes, so a kind the driver adds fails here until the page words it. Each is drawn and must say a
+ * sentence of its own: never another kind's, and never the words for a kind this window does not know.
+ */
+describe('every kind the driver sends a session branch as', () => {
+  const source = readFileSync(join(process.cwd(), '..', '..', 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'Landing.cs'), 'utf8');
+  const block = /public static class SweepKind\s*\{([\s\S]*?)\n\}/.exec(source)?.[1] ?? '';
+  const declared = [...block.matchAll(/public const string \w+ = "([a-z-]+)";/g)].map((match) => match[1]! as SweepKind);
+  const name = (kind: string) => `daoris/s-${kind}`;
+
+  it('is read from the driver', () => {
+    // A scan that matched nothing would pass on a moved or renamed class: it has to see them.
+    expect([...declared].sort()).toEqual(['carried', 'dirty', 'empty', 'in-use', 'landed', 'unlanded']);
+  });
+
+  it.each(['en', 'zh'])('says a sentence of its own for each in %s', async (language) => {
+    await i18n.changeLanguage(language);
+    try {
+      draw({ branches: declared.map((kind) => branch({ branch: name(kind), kind, commits: 2, where: 'main' })) });
+
+      // Every row is kept here, so what tells them apart is the sentence alone.
+      const said = declared.map((kind) => screen.getByRole('listitem', { name: name(kind) }).textContent!.replace(name(kind), ''));
+      expect(new Set(said).size).toBe(declared.length);
+      declared.forEach((kind, i) => {
+        expect(said[i], kind).not.toContain(i18n.t('settings.sweep.kind.other', { kind }).replace(/`/g, ''));
+        if (kind !== 'in-use') expect(said[i], kind).not.toContain(i18n.t('settings.sweep.kind.inUse'));
+      });
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  it('says a kind this window has no words for as the driver named it, never as another kind', () => {
+    draw({ branches: [branch({ branch: 'daoris/s-new', kind: 'mended' as SweepKind })] });
+
+    const row = screen.getByRole('listitem', { name: 'daoris/s-new' });
+    expect(row).toHaveTextContent('Judged mended: a word unknown to this window.');
+    expect(within(row).getByText('mended', { selector: 'code' })).toBeInTheDocument();
+    expect(row).not.toHaveTextContent(/still running or waiting/);
   });
 });
 

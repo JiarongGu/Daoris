@@ -4,8 +4,12 @@ import { cn } from '../lib/cn';
 import { Button, Card, Chip, Inline, type Notify, PathText, Prose, SectionTitle } from '../ui';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 
-/** What a session branch holds (D88). Only `empty` and `landed` go. */
-export type SweepKind = 'empty' | 'landed' | 'unlanded' | 'dirty' | 'in-use';
+/**
+ * What a session branch holds (D88), one of the driver's `SweepKind` constants (`Landing.cs`), which the modules send as they
+ * are. Only `empty`, `landed` and `carried` go: `carried` is work a completed pull request carried, by its plugin's word
+ * where git confirms it (PLUGHOOK1a, D148 point 4).
+ */
+export type SweepKind = 'empty' | 'landed' | 'carried' | 'unlanded' | 'dirty' | 'in-use';
 
 /** One session branch on this machine, as the driver judged it — the clean-up's list. */
 export type SweepBranch = {
@@ -14,9 +18,12 @@ export type SweepBranch = {
   branch: string;
   hasTree: boolean;
   kind: SweepKind;
-  /** Unlanded: how many commits only Daoris's branches hold. */
+  /** Unlanded and carried: how many commits only Daoris's branches hold. */
   commits: number;
-  /** Landed: the first branch of the person's that holds it. Empty: the line. */
+  /**
+   * Landed: the first branch of the person's that holds it, or what holds its work by content (SQUASHTIDY1). Empty: the line.
+   * Carried: the landed branch whose completed pull request carried it.
+   */
   where?: string | null;
   /** Git's own lines, where they say more. Content, never translated. */
   detail?: string | null;
@@ -176,6 +183,10 @@ export function BranchRow({ name, moving, word, children, under }: {
  * unmerged, so each is proven by content — every file it changed reads on the line as it left it, or it is
  * inside another that does — and goes by the same press. Only branches a landing made here are listed.
  *
+ * **A session branch a completed pull request carried goes too** (PLUGHOOK1a, D148 point 4): a squash left its commits on no
+ * branch of the person's, and the landed branch's plugin answered that its pull request carried them, where git confirms it.
+ * Its row names that landed branch (SWEEPCARRIED1).
+ *
  * **A failed or superseded attempt's branch is discarded by its own press** (LAND3b, D102's LAND3 note): its commits are on
  * no branch of the person's, so the clean-up keeps it. Beside each row the driver says `discardable`, *Discard branch…*
  * asks once under the row and then discards it, as `daoris-driver trees remove … --force` does beside the same rows. The
@@ -210,17 +221,25 @@ export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, 
   const repositories = [...new Set((branches ?? []).map((branch) => branch.repository))].sort((a, b) => a.localeCompare(b));
   const landedIn = [...new Set((landed ?? []).map((branch) => branch.repository))].sort((a, b) => a.localeCompare(b));
 
-  const holds = (branch: SweepBranch) => {
+  // Each kind the driver sends has its own case (SWEEPCARRIED1): a kind left to a shared fallthrough said another kind's
+  // sentence, as `carried` said the in-use one. A kind this window has no words for is said as the driver named it.
+  const holds = (branch: SweepBranch): string => {
     switch (branch.kind) {
       case 'empty': return t('settings.sweep.kind.empty', { line: branch.where ?? '' });
       case 'landed': return branch.where
         ? t('settings.sweep.kind.landedOn', { where: branch.where })
         : t('settings.sweep.kind.landed');
+      case 'carried': return t('settings.sweep.kind.carried', { where: branch.where ?? '' });
       case 'unlanded': return branch.commits > 0
         ? t('settings.sweep.kind.unlanded', { count: branch.commits })
         : t('settings.sweep.kind.unknown');
       case 'dirty': return t('settings.sweep.kind.dirty');
-      default: return t('settings.sweep.kind.inUse');
+      case 'in-use': return t('settings.sweep.kind.inUse');
+      default: {
+        // Unreachable by type, so a kind added to `SweepKind` without its case fails the build.
+        const unknown: never = branch.kind;
+        return t('settings.sweep.kind.other', { kind: unknown });
+      }
     }
   };
 
