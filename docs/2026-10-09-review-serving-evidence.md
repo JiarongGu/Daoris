@@ -1,6 +1,6 @@
 # REVIEWENV1d — the shell's interception beside a session's browser server (evidence note)
 
-**Carried by:** D154 point 5 and REVIEWENV1d. A record of one measurement, not a contract.
+**Carried by:** D154 point 5 and REVIEWENV1d. A record of what was measured, not a contract.
 
 > Written 2026-10-09, before REVIEWENV1d was built, because D154 and the review environment design (§2.3, §8) left one
 > question to be measured first: whether the shell's own request interception on a set-up step's tab works beside a
@@ -18,7 +18,8 @@
 | The person's server | A loopback HTTP server that answers every path and counts each hit: a page titled `PERSON` with its own script, and `/api/data` as `{"from":"person"}` |
 | The build | `index.html` with `<base href="/v3/">`, titled `BRANCH`, and `app.js`, which marks the page and fetches `/api/data` |
 
-The probe was a scratch script; the table is everything it set up.
+The probes were two scratch scripts, tracked nowhere; the table is everything they set up, and row 7's worker is said
+where it is used.
 
 ## 1. What held
 
@@ -37,6 +38,10 @@ The probe was a scratch script; the table is everything it set up.
 
 ## 2. What it settles for the build
 
+- **CDP is the shell's only way in.** The kit runs Daoris's browser as a process of its own whose options are its profile,
+  its port, its session cookies, its locale and a start page (`ChromiumBrowserProcessOptions`, read from the kit's own
+  documentation at 0.19). Its interceptor pipeline serves the application's own origin, never the browser's pages. So the
+  shell holds a tab's requests with CDP's `Fetch` over the browser's port, as measured here.
 - **The shell's interception coexists with a session's browser server on the same tab.** Attaching Playwright over CDP
   did not disturb it, and closing that connection left it standing. Nothing needs the session to stop driving for Daoris to
   serve.
