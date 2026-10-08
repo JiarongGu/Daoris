@@ -770,6 +770,14 @@ timed out (20 s) once in CARRY2d's web run and passed in the next.
 The full set on `99b2a858` (2026-10-08) caught `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one`
 (modules, Process half) failing in the full run and passing alone, with one worktree building beside it; the plugin-kit
 repeat FLAKE1's row names.
+`DriverModuleStartFromTests.The_press_starts_a_conversation_whose_end_reaches_the_page` (modules, fast half) was answered
+*conversation `c1` is going on with its words already* under load (FLAKE2's row). *Fixed 2026-10-09 (FLAKE2):* the loop's
+own look as it comes up (MSG1c2) takes up the stand-in record's waiting word and says it cannot go on. The test waited for
+that line, but the runner holds the chat as going on until after the line is kept (`GoOnAsync`'s `finally`), and a press
+inside the hold is refused. The test now marks the word judged before the loop comes up, as an earlier look leaves it, so
+the look leaves it waiting and the press is judged alone. A 3 s delay before the hold's release (a probe, since removed)
+failed the old test at once as the sighting did, and the new one passed 5/5 under it; then 10 runs passed without it. Its
+siblings that wait for a look's line only read after it (`DriverLoopChatTakenUpTests`, `ChatGoOnTests`): none presses.
 
 *Fixed the same day:* `desktop-publish.test.ts`'s "retries a held rename at each package and launcher step" failed
 twice (AGENTREAD1's verify, ACCTQUOTE1d's merge gate) with a real EPERM. It handed `layCli` two tries with no wait, the
