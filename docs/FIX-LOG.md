@@ -22,7 +22,7 @@ repository.
 - **Verify:** `ChatRunnerTests.A_plugin_that_also_declares_an_agent_hands_a_conversation_its_servers` (the class is in the
   `Process` half; the row starts nothing, its harness's program missing and its tree no checkout) failed first, the file
   handed to the conversation naming no server, then passed, run alone. The driver's fast half passed (5270).
-- **Commit:** pending.
+- **Commit:** `f97c8166`.
 
 ## 2026-10-09 — a website could press a door on the local host (ORIGIN1)
 
@@ -726,7 +726,13 @@ ended first; the change merged (the host's error answer) touches neither the say
 `setup-kit.test.ts:531` (*a set-up quest is done as its body says*) failed once at SWEEPCARRIED1's merge, 2026-10-08, a
 web-only change: *the stub never answered 3 (session/prompt) within 30000 ms* after it had run all four commands, with
 a Codex review and two subagents building beside the gate. The same file's stub bound as STUB3's, after its command
-runs rather than at its start.
+runs rather than at its start. *Fixed 2026-10-09 (FLAKE2):* `driveTurn()` counted the prompt's 30 s from the request, so
+a turn that kept working under load (six doctrine commands, each said as a call and its end) was counted as silent. The
+answer's bound now runs from the stub's last output on either stream (`bounded`'s `quiet`), after a start bound of its
+own as STUB3b gave `speak()`; its exit keeps 30 s. Two rows are new: a stub that talks every 400 ms for 2.4 s under a
+1000 ms bound failed first exactly as the sighting did (*never answered 3 (session/prompt) within 1000 ms*) and passes,
+and one that falls silent still fails *within 1000 ms of its last output*. The set-up row and both passed 5/5 with
+`dotnet build --no-incremental` running beside them; `setup-kit.test.ts` went from 29 cases to 31.
 `AccountGoalTickTests.One_look_spreads_K_starts_over_N_accounts_and_a_limit_cuts_off_only_its_own` (driver, Process)
 failed once in LOGVIEW1's full set, 2026-10-08 (722/723, 32 m), and passed alone: `events.After(id, 0).Events[0]` at
 `AccountGoalTickTests.cs:94` found a record with no event yet. The tick returns once its starts are chosen and their
