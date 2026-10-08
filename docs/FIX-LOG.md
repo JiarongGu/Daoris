@@ -464,6 +464,11 @@ and the run taking 14 m against its usual 8: *with the headless loop running, wo
 session … going on* read `held: the same session goes on with this at the driver's next look`, while the next check
 found the record had worked and ended again in its own conversation. The verb's wait for the loop to take the words
 ended first; the change merged (the host's error answer) touches neither the say route nor the loop.
+`AccountGoalTickTests.One_look_spreads_K_starts_over_N_accounts_and_a_limit_cuts_off_only_its_own` (driver, Process)
+failed once in LOGVIEW1's full set, 2026-10-08 (722/723, 32 m), and passed alone: `events.After(id, 0).Events[0]` at
+`AccountGoalTickTests.cs:94` found a record with no event yet. The tick returns once its starts are chosen and their
+records written; each opening note is appended on its start's own path, so a test reading the notes at once races
+them. The read is the repeat: it should wait for the opening event as the other Process rows wait (`Poll.Until`).
 `setup-kit.test.ts:807` (STUB3) failed once in EVID1b3's verify: its stub did not answer `initialize` within 1000 ms,
 right after a dotnet run on the same machine; it passed alone and the next verify was green. *Fixed 2026-10-08 (STUB3b
 above):* the bound counted the stub's start; it counts from the stub's first answer now.

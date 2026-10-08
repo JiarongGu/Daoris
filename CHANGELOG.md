@@ -170,6 +170,7 @@ with the version and date at release.
   older copy that could rebuild the knowledge index at an older version and break search.
 - An update that meets a folder held by a scanner now waits for it rather than rolling back, and says how
   long it waited.
+- Settings → Logs says when a value is cut short, and opens it whole — an error's frames one per line.
 
 The first version: doctrine that installs, is checked, and flows back.
 
