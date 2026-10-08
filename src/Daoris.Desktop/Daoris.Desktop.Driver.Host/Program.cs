@@ -94,6 +94,10 @@ using Daoris.Driver;
 //                 history; with no driven end on record, the commit must be named. Posts what it read to the evidence
 //                 door as the terminal's, and prints it: 0 when all is found, 1 when anything is missing or unread, 2
 //                 when a store did not answer. The quest page's Check again is EVID1c's door to the same read.
+//   quest review <id> reviewed|not-yet|skip ["…"]
+//                 the person's verdict on a review (REVIEWENV1c, D154 point 8): prints what the set-up step showed and how to
+//                 show it again, sends the verdict with that set-up, and says what the gate now says. not-yet needs your words,
+//                 which go to the step's session as its next turn; skip lets the work land without a review.
 //
 //   history [--workspace <name>] [--json]
 //   history clear --workspace <name> [--yes]
@@ -304,6 +308,13 @@ try
             return await Daoris.Driver.Host.QuestCheckConsole.RunAsync(questArgs, log);
         }
 
+        // The person's verdict on a review (REVIEWENV1c, D154 point 8, D50): the quest's page and the strip's chip are
+        // REVIEWENV1g's doors to the same verdict. Ask Daoris is exempt: the verdict is a look only the person took (D110).
+        if (QuestReviewCommand.Asks(questArgs))
+        {
+            return await Daoris.Driver.Host.QuestReviewConsole.RunAsync(questArgs, log);
+        }
+
         // The person marks a quest done (QUESTCLOSE1, D126's note, D50): the quest page's *Mark done…* is the other door, and a
         // finish at a checkpoint that left its quest taken names this one.
         if (QuestDoneCommand.Asks(questArgs))
@@ -325,7 +336,7 @@ try
                 "usage: daoris-driver quest delete <id>  ·  quest accept <id>  ·  quest done <id> [--note \"…\"]  ·  "
                 + "quest pause <id>  ·  quest resume <id>  ·  "
                 + "quest abandon <id> [--reason \"…\" --yes]  ·  quest clear <id> [--failed] [--yes]  ·  "
-                + "quest check <id> [--commit <sha>]");
+                + "quest check <id> [--commit <sha>]  ·  quest review <id> reviewed|not-yet|skip [\"…\"]");
             return 2;
         }
 

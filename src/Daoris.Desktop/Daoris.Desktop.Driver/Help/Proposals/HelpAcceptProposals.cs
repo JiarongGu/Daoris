@@ -43,9 +43,14 @@ internal sealed class HelpAcceptProposals : IHelpProposalKind
         var departed = departures.Count == 1
             ? $"it departed from requirement {departures[0].Requirement}"
             : $"it departed from requirements {Spoken(departures.Select(each => each.Requirement.ToString(System.Globalization.CultureInfo.InvariantCulture)))}";
+        // A set-up step's review still holds it after the yes (REVIEWENV1c, D154 point 9): the card says so, never that what
+        // follows goes on, which waits for the person's look.
+        var after = ReviewGate.Waits(quest)
+            ? $"{departed}. Its review still holds it after your yes: it waits for your review in `{quest.SetUpIn}`, and what follows "
+              + $"it waits until you say it is reviewed (`daoris-driver quest review {quest.Id} reviewed`) or skip the review"
+            : $"{departed}, and what it held goes on — {GoesOn(quest, facts.QuestRecords)}";
         return new HelpPlan(null,
-            $"Accept the departure on quest `#{quest.Id}` “{quest.Title}”, for `{quest.To}`: {departed}, and what it held goes on — "
-            + $"{GoesOn(quest, facts.QuestRecords)}.",
+            $"Accept the departure on quest `#{quest.Id}` “{quest.Title}”, for `{quest.To}`: {after}.",
             terminal, null)
         {
             Accept = new HelpAcceptPlan(quest.Id, quest.Title, departures),

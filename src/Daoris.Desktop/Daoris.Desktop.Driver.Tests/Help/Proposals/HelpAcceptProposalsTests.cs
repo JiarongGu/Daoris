@@ -121,6 +121,30 @@ public sealed class HelpAcceptProposalsTests : HelpProposalsFixture
         Assert.Equal("daoris-driver quest accept q8show00", plan.Terminal);
     }
 
+    /// <summary>
+    /// A set-up step held for its departure still waits for the person's review after the yes (REVIEWENV1c, D154 point 9): the
+    /// card says so, never that what follows goes on; once its newest set-up is reviewed, the card says what goes on as before.
+    /// </summary>
+    [Fact]
+    public void A_set_up_step_held_for_its_departure_says_its_review_still_holds_it_after_the_yes()
+    {
+        var setUp = new QuestSetUpView("0123456789abcdef0123456789abcdef01234567") { Machine = "desk", Sequence = 41 };
+        var step = Held with { Id = "q8show00", SetUpIn = "local", Hold = "departed", SetUps = [setUp] };
+
+        var plan = HelpProposals.Plan(Of("accept", "accept", "q8show00"), DriverConfig.Empty, Records with { QuestRecords = [step] });
+
+        Assert.Null(plan.Refusal);
+        Assert.Contains(
+            "it departed from requirement 2. Its review still holds it after your yes: it waits for your review in `local`, and what "
+            + "follows it waits until you say it is reviewed (`daoris-driver quest review q8show00 reviewed`) or skip the review.",
+            plan.Describe);
+        Assert.DoesNotContain("goes on", plan.Describe);
+
+        var reviewed = step with { Verdicts = [new QuestReviewVerdictView("reviewed") { SetUpMachine = "desk", SetUpSequence = 41 }] };
+        Assert.Contains("and what it held goes on — its next step",
+            HelpProposals.Plan(Of("accept", "accept", "q8show00"), DriverConfig.Empty, Records with { QuestRecords = [reviewed] }).Describe);
+    }
+
     [Fact]
     public void A_door_the_kind_does_not_take_is_refused()
     {

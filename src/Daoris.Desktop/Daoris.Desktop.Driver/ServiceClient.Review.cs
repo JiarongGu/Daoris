@@ -187,6 +187,59 @@ public sealed partial class ServiceClient
                 Text(proposed, "session"), Text(proposed, "quest"))),
     ];
 
+    /// <summary>
+    /// Post a set-up step's session's said set-ups with the commit Daoris read from its tree (REVIEWENV1c, design §2.6): the local
+    /// host's <c>POST /api/quests/{id}/set-up</c>, <c>{ session, commit, kind }</c>, which keeps each said set-up once. The commit
+    /// is read, never the session's word. A refusal is an answer, in the service's words, and a host older than the door says so.
+    /// </summary>
+    /// <param name="kind">The environment's kind, as the rule declares it: <c>local</c> or <c>deployed</c>.</param>
+    public async Task<(bool Ok, string Message)> PostSetUpAsync(
+        string quest, string session, string commit, string kind, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("session", session);
+            writer.WriteString("commit", commit);
+            writer.WriteString("kind", kind);
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync($"/api/quests/{Uri.EscapeDataString(quest.TrimStart('#'))}/set-up", body, ct)
+            .ConfigureAwait(false);
+        if (root is not { } answer) return (false, $"the service at {_base} has no set-up door ({status}) — is it older than this driver?");
+        return ok ? (true, Text(answer, "message") ?? "") : (false, Text(answer, "error") ?? payload);
+    }
+
+    /// <summary>
+    /// The person's verdict on a review (REVIEWENV1c, design §3.3): the local host's <c>POST /api/quests/{id}/review</c>, with the
+    /// set-up they were shown, named by its <c>machine</c> and <c>sequence</c> whole (REVIEWENV1b3); a skip names none. The
+    /// service's sentence comes back verbatim, a refusal included, and a host older than the door says so.
+    /// </summary>
+    /// <param name="verdict"><c>reviewed</c>, <c>not-yet</c> or <c>skipped</c>.</param>
+    public async Task<(bool Ok, string Message)> ReviewAsync(
+        string quest, string verdict, string? words, string? machine, long? sequence, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("verdict", verdict);
+            if (!string.IsNullOrWhiteSpace(words)) writer.WriteString("words", words.Trim());
+            if (machine is not null && sequence is { } at)
+            {
+                writer.WriteStartObject("setUp");
+                writer.WriteString("machine", machine);
+                writer.WriteNumber("sequence", at);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync($"/api/quests/{Uri.EscapeDataString(quest.TrimStart('#'))}/review", body, ct)
+            .ConfigureAwait(false);
+        if (root is not { } answer) return (false, $"the service at {_base} has no review door ({status}) — is it older than this driver?");
+        return ok ? (true, Text(answer, "message") ?? "") : (false, Text(answer, "error") ?? payload);
+    }
+
     /// <summary>The objects of an array field; none where the field is absent or no array, and an item that is no object is passed over.</summary>
     private static IEnumerable<JsonElement> Items(JsonElement element, string name) =>
         element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var items) && items.ValueKind == JsonValueKind.Array
