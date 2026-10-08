@@ -361,6 +361,60 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// GOAHEAD2: the go-ahead door answers a park the last of whose go-aheads it answers. A session asks two and parks; the
+    /// first answered keeps it waiting, the sentence naming the one still open; the second keeps the park's blank answer,
+    /// the sentence saying it goes on. A caller that answers the park itself says `goesOn: false`, and the park is left to it.
+    /// </summary>
+    [Fact]
+    public async Task Answering_the_last_go_ahead_a_park_waited_on_is_its_answer_unless_the_caller_answers_it()
+    {
+        async Task<(string Ask, string Session)> ParkedAsync(string tree, string sentence)
+        {
+            var asked = await host.PostAsync("/api/asks", new { workspace = "default", sentence, to = "Keeper" });
+            var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
+            var id = await RunningAsync(asked.Json.GetProperty("quest").GetProperty("id").GetString()!, tree);
+            await host.Composed.Ledger.AskGoAheadAsync(id, "write", "production", "dashboard configuration", "The tile's target.", DateTimeOffset.UtcNow);
+            await host.Composed.Ledger.AskGoAheadAsync(id, "release", "production", "comparison report", "Ship it.", DateTimeOffset.UtcNow);
+            Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state = "awaiting-person", note = "Go-aheads 1 and 2?" })).Status);
+            return (ask, id);
+        }
+
+        async Task<JsonElement> RecordAsync(string id) =>
+            (await host.GetAsync("/api/sessions?includeClosed=true")).Json.EnumerateArray().Single(row => row.GetProperty("id").GetString() == id);
+
+        var (ask, parked) = await ParkedAsync("goahead2-park", "The dashboard figure reads zero; ship the fix.");
+
+        var first = await host.PostAsync($"/api/asks/{ask}/go-aheads/1", new { answer = "approved", words = "run the put" });
+
+        Assert.Equal(200, first.Status);
+        Assert.EndsWith($"Session `{parked}` is still waiting on you for go-ahead 2.", first.Json.GetProperty("message").GetString());
+        Assert.False((await RecordAsync(parked)).TryGetProperty("answer", out _));
+
+        var last = await host.PostAsync($"/api/asks/{ask}/go-aheads/2", new { answer = "refused" });
+
+        Assert.Equal(200, last.Status);
+        Assert.EndsWith(
+            $"Session `{parked}` was waiting on you for its go-aheads: it goes on with your answers at the driver's next look.",
+            last.Json.GetProperty("message").GetString());
+        var answered = await RecordAsync(parked);
+        Assert.Equal(("awaiting-person", "carry on."), (answered.GetProperty("state").GetString(), answered.GetProperty("answer").GetString()));
+
+        var (ownAsk, own) = await ParkedAsync("goahead2-own", "The report tile shows last week; ship that fix too.");
+        await host.PostAsync($"/api/asks/{ownAsk}/go-aheads/1", new { answer = "approved", goesOn = false });
+        var left = await host.PostAsync($"/api/asks/{ownAsk}/go-aheads/2", new { answer = "approved", goesOn = false });
+
+        Assert.Equal(200, left.Status);
+        Assert.DoesNotContain("Session", left.Json.GetProperty("message").GetString());
+        Assert.False((await RecordAsync(own)).TryGetProperty("answer", out _));
+
+        // Each record holds its tree until the driver goes on with it; stopped, nothing of them holds a later test.
+        foreach (var id in new[] { parked, own })
+        {
+            Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state = "stopped" })).Status);
+        }
+    }
+
+    /// <summary>
     /// DRIFT1c (D133 §3): the ask's publish door takes requirements, each the person's words with its check.
     /// A quote they never said is refused, 409 with the exchange's sentence naming the words, and nothing is
     /// published; one they said is published, and the quest answers it on the publish and on the list.
