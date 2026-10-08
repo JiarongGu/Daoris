@@ -385,6 +385,34 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.Contains("command", catalog.Plugins.Single(p => p.Manifest.Id == "silent").Problem);
     }
 
+    /// <summary>
+    /// XAGENT1b (D155 point 4, the second-agent design §3.1): a declared harness may say what a person calls its tool and who
+    /// makes it, as the built-in toolchains do, so a plugin's agent can count as another maker's. Each is the plugin's word, read
+    /// trimmed. A manifest that says neither reads as it always did; one that is not text, or is blank, declares none and never
+    /// refuses the plugin, since a maker not declared is only never taken as independent.
+    /// </summary>
+    [Fact]
+    public void A_declared_harness_may_say_its_product_and_maker_and_an_older_manifest_reads_as_before()
+    {
+        Plugin("acme.agent", """
+            { "id": "acme.agent",
+              "harnesses": [ { "name": "acme-agent", "command": ["acme"], "product": " Acme Agent ", "maker": "Acme" },
+                             { "name": "older-agent", "command": ["older"] },
+                             { "name": "odd-agent", "command": ["odd"], "product": 7, "maker": "  " } ] }
+            """);
+
+        var entry = Assert.Single(PluginCatalog.Load(_home).Plugins);
+
+        Assert.Null(entry.Problem);
+        Assert.Equal(
+            [("acme-agent", "Acme Agent", "Acme"), ("older-agent", null, null), ("odd-agent", null, null)],
+            entry.Manifest.Harnesses.Select(harness => (harness.Name, harness.Product, harness.Maker)));
+
+        var adapters = AdapterSet.Built().WithPlugins(PluginCatalog.Load(_home, AdapterSet.Built().Names));
+        Assert.Equal(("Acme Agent", "Acme"), (adapters.Resolve("acme-agent").Toolchain!.Product, adapters.Resolve("acme-agent").Toolchain!.Maker));
+        Assert.Equal(((string?)null, (string?)null), (adapters.Resolve("older-agent").Toolchain!.Product, adapters.Resolve("older-agent").Toolchain!.Maker));
+    }
+
     /// <summary>What the loop watches between ticks: a plugin added, removed, enabled or disabled changes it; nothing else does.</summary>
     [Fact]
     public void The_signature_moves_when_the_set_of_enabled_plugins_moves_and_only_then()
