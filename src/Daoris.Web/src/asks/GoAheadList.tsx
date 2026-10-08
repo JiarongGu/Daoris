@@ -25,8 +25,8 @@ const KINDS = new Set(['write', 'release', 'push', 'sign-in', 'run']);
  * page's language. `daoris-driver ask --go-ahead` is the terminal's twin (D50). **Props only, no hook** (components §2):
  * without `onAnswer` there is no door, and nothing offers one.
  *
- * The same list stands on a parked session's page (KNOWUSE1a2), the go-aheads that session asked, where answering one
- * answers the session too: its lead says so there, handed in as `lead`.
+ * The same list stands on a parked session's page (KNOWUSE1a2), the go-aheads that session asked, where answering the
+ * last one open sends the session on (GOAHEAD2b): its lead says so there, handed in as `lead`.
  */
 export function GoAheadList({ goAheads, busy = false, onAnswer, lead }: {
   goAheads: GoAhead[];

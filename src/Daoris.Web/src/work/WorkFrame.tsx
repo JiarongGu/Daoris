@@ -334,7 +334,8 @@ export function WorkFrame({
   // refuses such a line too; the frame offers no box, and the page header carries the stop (D126 §3.3).
   const intake = attended ? isIntake(attended) : false;
   // The go-aheads a park asked on its quest's ask (KNOWUSE1a2, D135 §2), read only for a driven park whose quest an ask
-  // asked: shown in its head, where answering one answers the park too. The asks are asked for nowhere else here.
+  // asked: shown in its head, where answering the last one open sends it on (GOAHEAD2b). The asks are asked for nowhere
+  // else here.
   const parkAsk = attended?.state === 'awaiting-person' && !intake ? askOf(quest) : null;
   const asks = useAsks(false, parkAsk !== null);
   const goAheads = attended && parkAsk ? goAheadsAsked(asks.data, parkAsk, attended.id) : [];
@@ -625,18 +626,16 @@ export function WorkFrame({
     });
   };
 
-  // A go-ahead the park asked, answered on its page (KNOWUSE1a2, D135 §2): the go-ahead and the park through one door, so
-  // the same session goes on with one press. The person's words, where they gave any, are the park's answer too, counted
-  // as an answer's are once they went; with none, the park takes its blank answer and nothing is counted.
+  // A go-ahead the park asked, answered on its page (KNOWUSE1a2, D135 §2): through one door, which sends the same session
+  // on once none of the go-aheads it asked is open, as the ask's page does (GOAHEAD2b). The person's words are the
+  // go-ahead's, never a message to the park, so nothing is counted as one; the toast names any go-ahead still open from the
+  // list as it stood at the press.
   const onGoAhead = (number: number, approved: boolean, words?: string) => {
     if (!attended || !parkAsk) return;
-    const session = attended.id;
     const sessionQuest = attended.quest;
-    parkGoAhead.mutate({ id: session, ask: parkAsk, number, approved, words }, {
-      onSuccess: (answered) => {
-        if (answered.sent && words) counted(session, 'answer', words, 0, answered);
-        notify(goAheadToast(t, number, approved, answered, { quest: sessionQuest }));
-      },
+    const asked = goAheads;
+    parkGoAhead.mutate({ id: attended.id, ask: parkAsk, number, approved, words }, {
+      onSuccess: (answered) => notify(goAheadToast(t, number, approved, answered, { quest: sessionQuest, asked })),
       onError: failure(notify),
     });
   };

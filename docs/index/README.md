@@ -43,8 +43,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/ui.test.tsx` | 43 | 872 |
 | `src/Daoris.Web/src/ui.tsx` | 76 | 1620 |
 | `src/Daoris.Web/src/work/ConversationView.test.tsx` | 43 | 817 |
-| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 195 | 3807 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 75 | 1418 |
+| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 196 | 3827 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 75 | 1417 |
 | `src/Daoris.Web/src/work/conversation.test.ts` | 44 | 857 |
 | `src/Daoris.Web/src/work/frame.tsx` | 40 | 877 |
 

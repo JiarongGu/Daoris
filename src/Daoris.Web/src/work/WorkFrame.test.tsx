@@ -3674,9 +3674,10 @@ const ASK_WITH_GO_AHEADS = {
 };
 
 /**
- * KNOWUSE1a2 (D135 §2, D131, D137): a park that asked go-aheads shows them on its page with *Approve* and *Refuse*, and
- * answering one there answers the park too, through one door, so the same session goes on: one press where the ask's
- * page and the box took two. The go-aheads are read from its quest's ask, and only where its quest was asked by one.
+ * KNOWUSE1a2 and GOAHEAD2b (D135 §2, D131, D137): a park that asked go-aheads shows them on its page with *Approve* and
+ * *Refuse*, and answering one there goes through one door, which sends the same session on once none of them is open, as
+ * the ask's page does, and says which one it still waits on where one is. The go-aheads are read from its quest's ask, and
+ * only where its quest was asked by one.
  */
 describe('a park\'s go-aheads', () => {
   let ASKS: unknown[] = [ASK_WITH_GO_AHEADS];
@@ -3721,7 +3722,7 @@ describe('a park\'s go-aheads', () => {
     expect(screen.getByLabelText('Message')).toBeInTheDocument();
   });
 
-  it('approves one with the person\'s words through one door, which answers it and the park, and says it goes on', async () => {
+  it('approves one with the person\'s words through one door, and says the session goes on where the door sent it on', async () => {
     const notify = vi.fn();
     show('g0ah3ad0', notify);
     const section = await screen.findByRole('region', { name: 'Go-aheads it asked' });
@@ -3753,6 +3754,25 @@ describe('a park\'s go-aheads', () => {
       payload: { id: 'g0ah3ad0', ask: 'a5k001', number: 1, approved: false },
     }));
     expect(notify).toHaveBeenCalledWith("Refused go-ahead #1; the same session goes on with it at the driver's next look.");
+  });
+
+  /** GOAHEAD2b: a go-ahead the park asked still open keeps it parked, as at the ask's door, and the page says which. */
+  it('says which go-ahead the park still waits on where the door kept it parked, the other one still answerable', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_GO_AHEAD'
+      ? { message: 'Go-ahead 1 on ask `#a5k001` is approved.', sent: false, waits: true }
+      : DRIVER_STATE));
+    const notify = vi.fn();
+    show('g0ah3ad0', notify);
+    const first = within(await screen.findByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('listitem')[0]!;
+
+    await userEvent.click(within(first).getByRole('button', { name: 'Approve' }));
+
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      'Approved go-ahead #1. It still waits on you for go-ahead #2, and goes on once that is answered.',
+    ));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', expect.anything());
+    const second = within(screen.getByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('listitem')[1]!;
+    expect(within(second).getByRole('button', { name: 'Approve' })).toBeInTheDocument();
   });
 
   it('says when the session was no longer waiting, so only the go-ahead was answered', async () => {

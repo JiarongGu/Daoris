@@ -19,9 +19,14 @@
   "work.awaiting.yourAnswer": "Your answer",
   "work.awaiting.goesOn": "The same session goes on with this answer at the driver's next look.",
   "work.awaiting.goAheads": "Go-aheads it asked",
-  "work.awaiting.goAheadsLead": "Answering one here answers this session too: the same session goes on with your answer at the driver's next look. Every session on the ask is handed it.",
+  "work.awaiting.goAheadsLead": "This session goes on once every go-ahead it asked is answered, here or on its ask, with your answers at the driver's next look. Every session on the ask is handed them.",
   "work.awaiting.goAheadApproved": "Approved go-ahead #{{number}}; the same session goes on with it at the driver's next look.",
   "work.awaiting.goAheadRefused": "Refused go-ahead #{{number}}; the same session goes on with it at the driver's next look.",
   "work.awaiting.goAheadOnly": "Answered go-ahead #{{number}}.",
-  "work.awaiting.goAheadNotWaiting": "The session was no longer waiting on you, so the ask keeps your answer for every later start."
+  "work.awaiting.goAheadNotWaiting": "The session was no longer waiting on you, so the ask keeps your answer for every later start.",
+  "work.awaiting.goAheadWaits.approved": "Approved go-ahead #{{number}}.",
+  "work.awaiting.goAheadWaits.refused": "Refused go-ahead #{{number}}.",
+  "work.awaiting.goAheadWaits.for": "It still waits on you for go-ahead {{open}}, and goes on once that is answered.",
+  "work.awaiting.goAheadWaits.for_other": "It still waits on you for go-aheads {{open}}, and goes on once those are answered.",
+  "work.awaiting.goAheadWaits.onYou": "It still waits on you: answer it below to send it on."
 }

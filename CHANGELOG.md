@@ -186,6 +186,8 @@ with the version and date at release.
   without forcing, and Daoris says where its work is.
 - The Branches tab says which completed pull request carried a session branch's work, instead of saying a
   session still holds it.
+- Answering one of a waiting session's go-aheads on its page no longer sends it on while another is still open;
+  the page says which one it waits on.
 
 The first version: doctrine that installs, is checked, and flows back.
 

@@ -70,7 +70,7 @@ export function AttendedSession({
   trace?: TraceDoor & { onSession?: (id: string) => void; onQuest?: (id: string) => void; onAsk?: (id: string) => void };
   /** The go-aheads it asked on its quest's ask, shown in the head while it is parked (KNOWUSE1a2). */
   goAheads?: GoAhead[];
-  /** Passed straight through to the head: one of them answered, and the park with it (KNOWUSE1a2). */
+  /** Passed straight through to the head: one of them answered, the park with it once none is open (KNOWUSE1a2, GOAHEAD2b). */
   onGoAhead?: (number: number, approved: boolean, words?: string) => void;
   /**
    * A page header above carries its state, its id and its acts (SESSUX1d, D126 §3.2), so the record head says neither
