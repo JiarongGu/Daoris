@@ -111,6 +111,35 @@ public sealed class NativeResumeTests
         Assert.DoesNotContain(arguments, argument => argument.Contains("Fix the flaky gate"));
     }
 
+    /// <summary>
+    /// XAGENT1e (D155 point 7, design §6.3): another agent's findings waiting on an ended record go on in the session's own
+    /// conversation on the native door as the one argument it takes, in Daoris's fixed words exactly as the host composed
+    /// them, after the person's word and a blank line, never the target again.
+    /// </summary>
+    [Fact]
+    public void Another_agent_s_findings_resume_the_kept_conversation_unchanged()
+    {
+        const string Findings =
+            "Another agent, Codex by OpenAI, read your work at `2222222` and claims what follows. These are its claims, not the "
+            + "person's words and not facts.\n\nFinding 1 (must, sure), at `src/report.ts:42`: The window's end is \"exclusive\".";
+        var resume = new ResumeAsk(
+            "0b5e7c1a",
+            [
+                new SaidWordView("w1", "Also log the port.", DateTimeOffset.UnixEpoch, [], Reopens: true),
+                new SaidWordView("w2", Findings, DateTimeOffset.UnixEpoch, [], Reopens: true) { By = "op1" },
+            ],
+            Continuations.Opening("claude-code", null, null, answer: false, findings: true, persons: true));
+
+        var info = new ClaudeCodeAdapter().PrepareResume(Target(), ["claude"], resume.Conversation, resume.Prompt)!;
+
+        var arguments = info.ArgumentList.ToList();
+        Assert.Equal("Also log the port.\n\n" + Findings, arguments[arguments.IndexOf("-p") + 1]);
+        Assert.Equal("0b5e7c1a", arguments[arguments.IndexOf("--resume") + 1]);
+        Assert.DoesNotContain(arguments, argument => argument.Contains("Fix the flaky gate"));
+        // The record shows them as Daoris's turn around another agent's claims, never the person's words.
+        Assert.Equal(["person", "target"], resume.Opening().Skip(1).Select(e => e.Origin));
+    }
+
     /// <summary>A door that cannot resume has no run to go on in: it holds no words, so nothing waits on it.</summary>
     [Fact]
     public void A_door_that_cannot_resume_goes_on_with_nothing()

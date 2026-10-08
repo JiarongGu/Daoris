@@ -12456,3 +12456,17 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **KNOW500 — the install's knowledge routes fail after a session starts** (service; after HOSTLOG1). On the install, `/api/repositories` and `/api/search` both go through `KnowledgeService.EnsureIndexedAsync` and failed together from the moment an intake started (20:19:36 UTC) while a driven session worked the reporting app; a second host on a copy of the install's data (registry, knowledge.db, sessions) answered 200 and refreshed 8,863 entries over 30 repositories, so the fault lived in the running host. With HOSTLOG1 on the install, read the exception at the next sighting and fix its cause (SQLITETX1 found a burst leaving the shared connection in a transaction nobody owned, after which every `BEGIN` failed — this shape; confirm it is gone, or else: a re-index racing a session's writes, a stuck refresh, or an in-memory index the store no longer matches). Contract: D24, D151's index notes. Proof: the exception named; a test reproducing it; the install's routes answering through a session.
 
 **Outcome** 2026-10-07: the install's knowledge routes failed because every session was handed an old connector that rebuilt the shared index at its own older schema (`no such column: first_line`, 523 times in a day): CONNECTOR1 gives sessions the install's own connector, KSCHEMA1 makes an older build leave a newer index alone, SQLITETX1 closed the connection race beside it; on the republished install the index is at schema 5 and the routes answer. Detail: the CONNECTOR1, KSCHEMA1 and SQLITETX1 entries.
+
+
+## XAGENT1d — the pass (2026-10-09, D155)
+
+> - [ ] **XAGENT1d — the pass** (driver; after b, c). The packet; the clone at the candidate with no remote, removed after; the instruction; the rules handed; `minutes`; one turn; the `opinion` say code; posture and tier recorded. Contract: §4, §5. Proof: `OpinionPacketTests`, the instruction's golden, `ReviewTreeTests` (`Process`: a ref written in the clone never reaches the repository).
+
+**Outcome** 2026-10-07: the pass reads the candidate, makes a clone with no remote under the trees home (`o-<8hex>`), opens the opinion record, hands the reviewer the packet, the diff and the repository's rules, runs the chosen reviewer for one bounded turn under the opinion's rules (writes and git's acts denied, only `opinion_give` among the connector's acting tools), and removes the clone however the run ended; a stub reviewer that writes, commits, tags and pushes reaches nothing of the repository. Detail: D155's XAGENT1d note; commit e933c8c2.
+
+
+## XAGENT1e — delivered and answered (2026-10-09, D155)
+
+> - [ ] **XAGENT1e — delivered and answered** (driver; after d). The working session's next turn (D137) with `by` and the fixed words; answers and the fix commit checked; unanswered as unresolved; one recheck, to the person; the fallback to the person; failure as *Try again*. Contract: §6.3–§6.7. Proof: `OpinionDeliveryTests`, `OpinionRecheckTests`, resume rows on both doors.
+
+**Outcome** 2026-10-07: a first pass's findings are handed once to the working session's own conversation (D137), marked as another agent's, or to the person where it cannot take them; answers are read as its turn ends, a `fixed` counting only where git reads its commit after the candidate and on the tree; one recheck, from the new tip, goes to the person; a failed pass is *Try again*, never *no issues*. Follow-up: XAGENT1e2. Detail: D155's XAGENT1e note; commits 13838b70, ed85b71d, e1023ab5.
