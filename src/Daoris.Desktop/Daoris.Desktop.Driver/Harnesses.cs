@@ -1605,6 +1605,23 @@ public sealed record HarnessSelection(
     /// the log.
     /// </summary>
     public SignedOutAccounts? SignedOut { get; init; }
+
+    /// <summary>
+    /// Why the agent itself cannot run, where that is why this start must not happen (XAGENT1b, the second-agent design §3.3):
+    /// nothing of it installed, or a pin with nothing installed at it (D57). Null where the agent may run, or the start was
+    /// held for an account (<see cref="NotReady"/>). A fact beside the sentence, so a reader judges no words.
+    /// </summary>
+    public AgentAbsence? Absent { get; init; }
+}
+
+/// <summary>Why an agent itself cannot run (XAGENT1b): what <see cref="HarnessSelection.Absent"/> says.</summary>
+public enum AgentAbsence
+{
+    /// <summary>Nothing of it is installed on this machine: no binary to spawn.</summary>
+    NotInstalled,
+
+    /// <summary>Pinned to a version nothing is installed at (D57): refused, never run from <c>PATH</c> instead.</summary>
+    PinNotInstalled,
 }
 
 /// <summary>Which rung of the resolution answered (D49 §4, TOOL2): the order a start asks in.</summary>
@@ -2585,7 +2602,10 @@ public sealed partial class HarnessRoster(AdapterSet adapters, string? settingsP
                     $"`{resolved.Name}` is pinned to {pinned} on this machine, and nothing is "
                     + $"installed at that version — `daoris agent pin {resolved.Name} {pinned}` "
                     + $"installs it, and `daoris agent unpin {resolved.Name}` goes back to PATH. "
-                    + "Daoris will not quietly run a different version than the one you asked for.");
+                    + "Daoris will not quietly run a different version than the one you asked for.")
+                {
+                    Absent = AgentAbsence.PinNotInstalled,
+                };
             }
         }
 
@@ -2607,7 +2627,10 @@ public sealed partial class HarnessRoster(AdapterSet adapters, string? settingsP
             return new HarnessSelection(
                 $"`{resolved.Name}` is not installed on this machine, so there is nothing to spawn — "
                 + $"{install}. Daoris never installs an agent unasked: a tool that changed under a "
-                + "running loop is a moving target.");
+                + "running loop is a moving target.")
+            {
+                Absent = AgentAbsence.NotInstalled,
+            };
         }
 
         // The ACP adapter's own seam (ACP2): it runs the Agent SDK, which needs to be told which
