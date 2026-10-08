@@ -160,6 +160,8 @@ with the version and date at release.
   is held, so a frozen title bar can be traced.
 - A quest left taken after you finished its session can be marked done by you, with a note, from its
   page, from the session's *Finish…*, or with `daoris-driver quest done`.
+- Saying something to a session while the driver looks at it no longer fails with a server error: the
+  service's database now takes one request at a time on its shared connection.
 
 The first version: doctrine that installs, is checked, and flows back.
 

@@ -315,14 +315,10 @@ public sealed class QuestStore
     /// <summary>What an id was before it widened — a quest published then keeps the id it was quoted by.</summary>
     private const int LegacyIdLength = 6;
 
-    private readonly SqliteConnection _connection;
-    private readonly SemaphoreSlim _gate;
+    /// <summary>The connection's gate: every command here runs inside it (SQLITETX1).</summary>
+    private readonly ConnectionGate _db;
 
-    private QuestStore(SqliteConnection connection)
-    {
-        _connection = connection;
-        _gate = ConnectionGate.For(connection);
-    }
+    private QuestStore(SqliteConnection connection) => _db = ConnectionGate.For(connection);
 
     /// <summary>
     /// This store's machine: the stable id every operation it writes is stamped with (D68 §2) — never
@@ -335,15 +331,16 @@ public sealed class QuestStore
     /// </remarks>
     public string Machine { get; private set; } = "";
 
-    public static async Task<QuestStore> OpenAsync(SqliteConnection connection, CancellationToken ct = default)
-    {
-        var store = new QuestStore(connection);
-        await store.EnsureSchemaAsync(ct).ConfigureAwait(false);
-        store.Machine = await store.EnsureMachineAsync(ct).ConfigureAwait(false);
-        await store.GiveHistoriesAsync(ct).ConfigureAwait(false);
-        await store.RecacheUnnamedConflictsAsync(ct).ConfigureAwait(false);
-        return store;
-    }
+    public static Task<QuestStore> OpenAsync(SqliteConnection connection, CancellationToken ct = default) =>
+        ConnectionGate.For(connection).RunAsync(async () =>
+        {
+            var store = new QuestStore(connection);
+            await store.EnsureSchemaAsync(ct).ConfigureAwait(false);
+            store.Machine = await store.EnsureMachineAsync(ct).ConfigureAwait(false);
+            await store.GiveHistoriesAsync(ct).ConfigureAwait(false);
+            await store.RecacheUnnamedConflictsAsync(ct).ConfigureAwait(false);
+            return store;
+        }, ct);
 
     /// <summary>
     /// A cache written before dismissals (SYNC6c) holds conflicts without the sequence that names them,
@@ -354,7 +351,7 @@ public sealed class QuestStore
     {
         const string Unnamed = "SELECT id FROM quests WHERE conflicts <> '[]' AND conflicts NOT LIKE '%\"sequence\"%'";
 
-        await using (var probe = _connection.CreateCommand())
+        await using (var probe = _db.Command())
         {
             probe.CommandText = $"SELECT EXISTS ({Unnamed})";
             if (Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false)) == 0) return;
@@ -363,7 +360,7 @@ public sealed class QuestStore
         await InTransactionAsync(async (transaction, inside) =>
         {
             var ids = new List<string>();
-            await using (var select = _connection.CreateCommand())
+            await using (var select = _db.Command())
             {
                 select.Transaction = transaction;
                 select.CommandText = Unnamed;
@@ -385,7 +382,7 @@ public sealed class QuestStore
 
     private async Task EnsureSchemaAsync(CancellationToken ct)
     {
-        await using (var command = _connection.CreateCommand())
+        await using (var command = _db.Command())
         {
             // The log's position is this store's order of appending — and, on a remote, the NUMBER it
             // gives what it accepts (design §8). Machine + sequence names one operation anywhere;
@@ -434,7 +431,7 @@ public sealed class QuestStore
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
-        await using (var command = _connection.CreateCommand())
+        await using (var command = _db.Command())
         {
             command.CommandText = $"""
                 CREATE TABLE IF NOT EXISTS quests (
@@ -501,15 +498,15 @@ public sealed class QuestStore
             ("quest_log", "remote", "remote INTEGER NULL"),
         })
         {
-            await SchemaColumns.EnsureAsync(_connection, table, column, definition, ct).ConfigureAwait(false);
+            await SchemaColumns.EnsureAsync(_db, table, column, definition, ct).ConfigureAwait(false);
         }
 
         // The mirror is gone (design §8). Its rows were copies of a remote's quests, so they are
         // dropped rather than migrated: this machine's cursor starts at zero, and its first fetch
         // brings every one of them back as history. The column that marked them goes with them.
-        if (await SchemaColumns.HasAsync(_connection, "quests", "home", ct).ConfigureAwait(false))
+        if (await SchemaColumns.HasAsync(_db, "quests", "home", ct).ConfigureAwait(false))
         {
-            await using var drop = _connection.CreateCommand();
+            await using var drop = _db.Command();
             drop.CommandText = """
                 DELETE FROM quests WHERE home IS NOT NULL;
                 ALTER TABLE quests DROP COLUMN home;
@@ -520,9 +517,9 @@ public sealed class QuestStore
         // HIST1a: a store from before the mark starts it at the highest sequence its own machine holds in the log, which
         // is what every number so far was one past. Nothing changes for a store that never removed anything; one that
         // removes rows after the upgrade cannot take the sequence back.
-        if (!await SchemaColumns.HasAsync(_connection, "quest_machine", "sequence", ct).ConfigureAwait(false))
+        if (!await SchemaColumns.HasAsync(_db, "quest_machine", "sequence", ct).ConfigureAwait(false))
         {
-            await using var mark = _connection.CreateCommand();
+            await using var mark = _db.Command();
             mark.CommandText = """
                 ALTER TABLE quest_machine ADD COLUMN sequence INTEGER NOT NULL DEFAULT 0;
                 UPDATE quest_machine SET sequence =
@@ -534,7 +531,7 @@ public sealed class QuestStore
         // After the column, which it names. The mark is moved by the statement that writes the operation, not by its
         // callers, so no way into the log can forget it (the registry's tombstones are kept the same way). An operation
         // of this machine's kept back from a remote raises it too: that number was this machine's, and is held there.
-        await using (var trigger = _connection.CreateCommand())
+        await using (var trigger = _db.Command())
         {
             trigger.CommandText = """
                 CREATE TRIGGER IF NOT EXISTS quest_sequence_issued AFTER INSERT ON quest_log
@@ -554,7 +551,7 @@ public sealed class QuestStore
     /// </summary>
     private async Task<string> EnsureMachineAsync(CancellationToken ct)
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = """
             INSERT OR IGNORE INTO quest_machine (one, id) VALUES (1, $id);
             SELECT id FROM quest_machine WHERE one = 1;
@@ -581,7 +578,7 @@ public sealed class QuestStore
             ORDER BY filed, id
             """;
 
-        await using (var probe = _connection.CreateCommand())
+        await using (var probe = _db.Command())
         {
             probe.CommandText = $"SELECT EXISTS ({Unlogged})";
             if (Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false)) == 0) return;
@@ -590,7 +587,7 @@ public sealed class QuestStore
         await InTransactionAsync(async (transaction, inside) =>
         {
             var unlogged = new List<Quest>();
-            await using (var select = _connection.CreateCommand())
+            await using (var select = _db.Command())
             {
                 select.Transaction = transaction;
                 select.CommandText = Unlogged;
@@ -628,35 +625,16 @@ public sealed class QuestStore
     /// two hosts over one file could both judge the same open quest and both append a take (D47 §5).
     /// </summary>
     /// <remarks>
-    /// <para>Within one host, the connection's gate holds every other transaction off until this one
-    /// ends — SQLite does not nest them, and a host answers requests at once (<see cref="ConnectionGate"/>).</para>
+    /// <para>Within one host, the connection's gate holds every other request's work off until this one
+    /// ends, its commands as well as its transactions (<see cref="ConnectionGate"/>, SQLITETX1).</para>
     ///
-    /// <para>It COMMITS whenever the work returns, including a refusal that wrote nothing. A statement
-    /// another request runs meanwhile, outside any transaction, joins this one rather than failing
-    /// (measured on this driver version, and pinned by a test) — so a rollback would quietly undo
-    /// somebody else's write along with our nothing. Only a throw rolls back — and cancellation is not
-    /// one, once the transaction has begun.</para>
+    /// <para>It COMMITS whenever the work returns, including a refusal that wrote nothing, and rolls back
+    /// only on a throw. Cancellation is not one, once the transaction has begun: the wait honours the
+    /// caller, and the work is handed a token nobody cancels (REV3).</para>
     /// </remarks>
-    private async Task<T> InTransactionAsync<T>(
-        Func<SqliteTransaction, CancellationToken, Task<T>> work, CancellationToken ct)
-    {
-        // The wait honours the caller; the transaction does not. Once BEGIN has run, a cancelled
-        // request (a client that went away) must not throw halfway, because the rollback that follows
-        // takes every write that joined meanwhile with it (REV3). So the work runs to its end, and the
-        // work is handed a token nobody cancels rather than capturing the caller's.
-        await _gate.WaitAsync(ct).ConfigureAwait(false);
-        try
-        {
-            await using var transaction = _connection.BeginTransaction(deferred: false);
-            var result = await work(transaction, CancellationToken.None).ConfigureAwait(false);
-            await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
-            return result;
-        }
-        finally
-        {
-            _gate.Release();
-        }
-    }
+    private Task<T> InTransactionAsync<T>(
+        Func<SqliteTransaction, CancellationToken, Task<T>> work, CancellationToken ct) =>
+        _db.InTransactionAsync(work, ct);
 
     /// <summary>
     /// A handle derived from who asked, of whom, and for what — twelve hex characters (design §7).
@@ -779,7 +757,7 @@ public sealed class QuestStore
         SqliteTransaction transaction, CancellationToken ct, QuestOperationRef? dismisses = null,
         IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, QuestEvidenceVerdict? evidence = null)
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.Transaction = transaction;
         command.CommandText = """
             INSERT INTO quest_log (quest, kind, machine, sequence, at, payload)
@@ -819,7 +797,7 @@ public sealed class QuestStore
     private async Task<long> KeepAsync(
         QuestOperation operation, long? number, SqliteTransaction transaction, CancellationToken ct)
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.Transaction = transaction;
         command.CommandText = """
             INSERT INTO quest_log (quest, kind, machine, sequence, at, payload, remote)
@@ -844,7 +822,7 @@ public sealed class QuestStore
     private async Task<long?> PositionOfAsync(
         string machine, long sequence, SqliteTransaction transaction, CancellationToken ct)
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.Transaction = transaction;
         command.CommandText = "SELECT position FROM quest_log WHERE machine = $machine AND sequence = $sequence";
         command.Parameters.AddWithValue("$machine", machine);
@@ -860,7 +838,7 @@ public sealed class QuestStore
     /// </summary>
     private async Task WriteCacheAsync(Quest quest, SqliteTransaction transaction, CancellationToken ct)
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.Transaction = transaction;
         command.CommandText = """
             INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by, lanes, requirements, answers, accepted, held, short_title, evidence)
@@ -912,7 +890,7 @@ public sealed class QuestStore
     private async Task<IReadOnlyList<QuestOperation>> HistoryAsync(
         string id, SqliteTransaction? transaction, CancellationToken ct)
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         // None handed in keeps the one the command was made in: the connection hands a new command the transaction it
         // has open, and a caller holding one without its object (HistoryDesk's, HistoryWithinAsync) must not lose it.
         if (transaction is not null) command.Transaction = transaction;
@@ -1213,7 +1191,7 @@ public sealed class QuestStore
 
             // A push reads the log, so a quest with no history was never pushed, and goes like a local one.
             var tombstoned = history.Count > 0 && (travels || history.Any(operation => operation.Number is not null));
-            await using (var command = _connection.CreateCommand())
+            await using (var command = _db.Command())
             {
                 command.Transaction = transaction;
                 command.CommandText = tombstoned
@@ -1242,45 +1220,46 @@ public sealed class QuestStore
     /// written, so nothing travels: the team's copy is untouched, and a new store fetches it whole.
     /// </summary>
     /// <remarks>
-    /// Blind, like every write here, and taking no gate of its own: <see cref="HistoryDesk"/> judges the unit and calls this
-    /// inside the one transaction it clears the unit in, so the mark, the log and the row go together or not at all.
+    /// Blind, like every write here, and opening no transaction of its own: <see cref="HistoryDesk"/> judges the unit and
+    /// calls this inside the one transaction it clears the unit in, so the mark, the log and the row go together or not at
+    /// all. The gate it takes is the one that transaction's work already holds (SQLITETX1).
     /// </remarks>
     /// <returns>Whether it was forgotten, rather than simply going because nothing of it was ever numbered.</returns>
-    internal async Task<bool> ForgetAsync(string id, DateTimeOffset at, CancellationToken ct)
+    internal Task<bool> ForgetAsync(string id, DateTimeOffset at, CancellationToken ct) => _db.RunAsync<bool>(async () =>
     {
         bool numbered;
-        await using (var probe = _connection.CreateCommand())
+        await using (var probe = _db.Command())
         {
             probe.CommandText = "SELECT EXISTS (SELECT 1 FROM quest_log WHERE quest = $id AND remote IS NOT NULL)";
             probe.Parameters.AddWithValue("$id", id);
             numbered = Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false)) != 0;
         }
 
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = (numbered ? "INSERT OR IGNORE INTO quest_forgotten (id, at) VALUES ($id, $at);" : "")
                               + "DELETE FROM quest_log WHERE quest = $id; DELETE FROM quests WHERE id = $id;";
         command.Parameters.AddWithValue("$id", id);
         command.Parameters.AddWithValue("$at", at.ToString("O"));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         return numbered;
-    }
+    }, ct);
 
     /// <summary>Whether this machine forgot the quest (HIST1b): it cleared it after a remote numbered it.</summary>
-    public async Task<bool> ForgottenAsync(string id, CancellationToken ct = default)
+    public Task<bool> ForgottenAsync(string id, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = "SELECT EXISTS (SELECT 1 FROM quest_forgotten WHERE id = $id)";
         command.Parameters.AddWithValue("$id", id);
         return Convert.ToInt32(await command.ExecuteScalarAsync(ct).ConfigureAwait(false)) != 0;
-    }
+    }, ct);
 
     /// <summary>Every quest this machine forgot (HIST1b): what the quest fetch and the session fetch skip.</summary>
     public Task<IReadOnlySet<string>> ForgottenAsync(CancellationToken ct = default) =>
-        ForgottenAsync(transaction: null, ct);
+        InGateAsync(() => ForgottenAsync(transaction: null, ct), ct);
 
     private async Task<IReadOnlySet<string>> ForgottenAsync(SqliteTransaction? transaction, CancellationToken ct)
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         if (transaction is not null) command.Transaction = transaction;
         command.CommandText = "SELECT id FROM quest_forgotten";
         var forgotten = new HashSet<string>(StringComparer.Ordinal);
@@ -1291,19 +1270,19 @@ public sealed class QuestStore
 
     /// <summary>
     /// A quest's history read inside a transaction the caller already holds — <see cref="HistoryDesk"/>'s, which judges a
-    /// unit again where it clears it. <see cref="HistoryAsync(string, CancellationToken)"/> takes the connection's gate,
-    /// which is not reentrant.
+    /// unit again where it clears it. The same read as <see cref="HistoryAsync(string, CancellationToken)"/>: the gate is
+    /// reentrant within the work that holds it (SQLITETX1), and the read joins that work's transaction.
     /// </summary>
     internal Task<IReadOnlyList<QuestOperation>> HistoryWithinAsync(string id, CancellationToken ct) =>
-        HistoryAsync(id, transaction: null, ct);
+        HistoryAsync(id, ct);
 
     /// <summary>
     /// The taken quests waiting on <paramref name="question"/> (D79) — what keeps a question from being
     /// deleted: deleted, the quests waiting on it would wait on nothing for good.
     /// </summary>
-    public async Task<IReadOnlyList<Quest>> WaitingOnAsync(string question, CancellationToken ct = default)
+    public Task<IReadOnlyList<Quest>> WaitingOnAsync(string question, CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<Quest>>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = "SELECT * FROM quests WHERE awaits = $question AND status = 'Taken' ORDER BY filed";
         command.Parameters.AddWithValue("$question", question);
 
@@ -1311,19 +1290,19 @@ public sealed class QuestStore
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         while (await reader.ReadAsync(ct).ConfigureAwait(false)) quests.Add(Read(reader));
         return quests;
-    }
+    }, ct);
 
     /// <summary>Every question a taken quest waits on (D79) — what <see cref="WaitingOnAsync"/> answers, for a whole list at once.</summary>
-    public async Task<IReadOnlySet<string>> AwaitedAsync(CancellationToken ct = default)
+    public Task<IReadOnlySet<string>> AwaitedAsync(CancellationToken ct = default) => _db.RunAsync<IReadOnlySet<string>>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = "SELECT DISTINCT awaits FROM quests WHERE awaits IS NOT NULL AND status = 'Taken'";
 
         var awaited = new HashSet<string>(StringComparer.Ordinal);
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         while (await reader.ReadAsync(ct).ConfigureAwait(false)) awaited.Add(reader.GetString(0));
         return awaited;
-    }
+    }, ct);
 
     // ——— A machine's half of the sync (D68 §3, design §8).
 
@@ -1333,8 +1312,9 @@ public sealed class QuestStore
 
     private async Task<long> CursorAsync(string workspace, SqliteTransaction? transaction, CancellationToken ct)
     {
-        await using var command = _connection.CreateCommand();
-        command.Transaction = transaction;
+        await using var command = _db.Command();
+        // None handed in keeps the one the command was made in, as HistoryAsync's does.
+        if (transaction is not null) command.Transaction = transaction;
         command.CommandText = "SELECT number FROM quest_cursor WHERE workspace = $workspace";
         command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(workspace));
         return await command.ExecuteScalarAsync(ct).ConfigureAwait(false) is { } number and not DBNull
@@ -1400,7 +1380,7 @@ public sealed class QuestStore
             }
 
             var cursor = Math.Max(await CursorAsync(circle, transaction, inside).ConfigureAwait(false), through);
-            await using (var command = _connection.CreateCommand())
+            await using (var command = _db.Command())
             {
                 command.Transaction = transaction;
                 command.CommandText = """
@@ -1544,7 +1524,7 @@ public sealed class QuestStore
     /// </summary>
     private async Task<IReadOnlyList<string>> StrayQuestsAsync(string circle, SqliteTransaction transaction, CancellationToken ct)
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.Transaction = transaction;
         command.CommandText = """
             SELECT DISTINCT stray.quest FROM quest_log AS stray
@@ -1585,7 +1565,7 @@ public sealed class QuestStore
     /// <summary>Take a quest's row out of the cache — the replay says there is no quest (D95).</summary>
     private async Task DropCacheAsync(string id, SqliteTransaction transaction, CancellationToken ct)
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.Transaction = transaction;
         command.CommandText = "DELETE FROM quests WHERE id = $id";
         command.Parameters.AddWithValue("$id", id);
@@ -1600,7 +1580,7 @@ public sealed class QuestStore
     private async Task ForgetFollowUpsAsync(string parent, SqliteTransaction transaction, CancellationToken ct)
     {
         var children = new List<string>();
-        await using (var command = _connection.CreateCommand())
+        await using (var command = _db.Command())
         {
             command.Transaction = transaction;
             command.CommandText = "SELECT id FROM quests WHERE parent = $parent";
@@ -1617,7 +1597,7 @@ public sealed class QuestStore
             await ForgetOperationAsync(
                 (await PositionOfAsync(only.Machine, only.Sequence, transaction, ct).ConfigureAwait(false))!.Value,
                 transaction, ct).ConfigureAwait(false);
-            await using var drop = _connection.CreateCommand();
+            await using var drop = _db.Command();
             drop.Transaction = transaction;
             drop.CommandText = "DELETE FROM quests WHERE id = $id";
             drop.Parameters.AddWithValue("$id", child);
@@ -1627,7 +1607,7 @@ public sealed class QuestStore
 
     private async Task NumberAsync(long position, long number, SqliteTransaction transaction, CancellationToken ct)
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.Transaction = transaction;
         command.CommandText = "UPDATE quest_log SET remote = $number WHERE position = $position";
         command.Parameters.AddWithValue("$number", number);
@@ -1638,7 +1618,7 @@ public sealed class QuestStore
     /// <summary>Drop one pending operation a rebase found was never anybody's decision (a quest's clear is <see cref="ForgetAsync"/>).</summary>
     private async Task ForgetOperationAsync(long position, SqliteTransaction transaction, CancellationToken ct)
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.Transaction = transaction;
         command.CommandText = "DELETE FROM quest_log WHERE position = $position AND remote IS NULL";
         command.Parameters.AddWithValue("$position", position);
@@ -1649,7 +1629,7 @@ public sealed class QuestStore
     private async Task RewriteAsync(
         long position, QuestOperation operation, SqliteTransaction transaction, CancellationToken ct)
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.Transaction = transaction;
         command.CommandText =
             "UPDATE quest_log SET kind = $kind, payload = $payload WHERE position = $position AND remote IS NULL";
@@ -1677,7 +1657,7 @@ public sealed class QuestStore
         string workspace, Func<string, bool> shared, CancellationToken ct = default) =>
         InGateAsync<IReadOnlyList<QuestOperation>>(async () =>
         {
-            await using var command = _connection.CreateCommand();
+            await using var command = _db.Command();
             command.CommandText = $"""
                 SELECT {OperationColumns}, json_extract(asked.payload, '$.to') FROM quest_log
                 JOIN quest_log AS asked ON asked.position = (
@@ -1708,7 +1688,7 @@ public sealed class QuestStore
     public Task<QuestClaim> ClaimAsync(string id, CancellationToken ct = default) =>
         InGateAsync(async () =>
         {
-            await using var command = _connection.CreateCommand();
+            await using var command = _db.Command();
             command.CommandText = $"SELECT {OperationColumns} FROM quest_log WHERE quest = $id AND machine = $machine";
             command.Parameters.AddWithValue("$id", id);
             command.Parameters.AddWithValue("$machine", Machine);
@@ -1727,7 +1707,7 @@ public sealed class QuestStore
     public Task RecordPassAsync(string workspace, QuestSyncReport report, DateTimeOffset at, CancellationToken ct = default) =>
         InTransactionAsync(async (transaction, inside) =>
         {
-            await using var command = _connection.CreateCommand();
+            await using var command = _db.Command();
             command.Transaction = transaction;
             command.CommandText = """
                 INSERT INTO quest_passes (workspace, synced, tried, behind, problem)
@@ -1758,7 +1738,7 @@ public sealed class QuestStore
         return await InGateAsync(async () =>
         {
             var conflicts = new List<string>();
-            await using (var command = _connection.CreateCommand())
+            await using (var command = _db.Command())
             {
                 command.CommandText =
                     "SELECT id FROM quests WHERE workspace = $workspace COLLATE NOCASE AND conflicts <> '[]' ORDER BY updated DESC";
@@ -1767,7 +1747,7 @@ public sealed class QuestStore
                 while (await reader.ReadAsync(ct).ConfigureAwait(false)) conflicts.Add(reader.GetString(0));
             }
 
-            await using (var command = _connection.CreateCommand())
+            await using (var command = _db.Command())
             {
                 command.CommandText = "SELECT synced, tried, behind, problem FROM quest_passes WHERE workspace = $workspace";
                 command.Parameters.AddWithValue("$workspace", circle);
@@ -1814,7 +1794,7 @@ public sealed class QuestStore
     public Task<QuestFetch> OperationsSinceAsync(long since, int limit = 500, CancellationToken ct = default) =>
         InGateAsync(async () =>
         {
-            await using var command = _connection.CreateCommand();
+            await using var command = _db.Command();
             command.CommandText = $"""
                 SELECT {OperationColumns}, position FROM quest_log
                 WHERE position > $since ORDER BY position LIMIT $take
@@ -1951,7 +1931,7 @@ public sealed class QuestStore
         string quest, long @base, IReadOnlySet<(string Machine, long Sequence)> carried,
         SqliteTransaction transaction, CancellationToken ct)
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.Transaction = transaction;
         command.CommandText = "SELECT machine, sequence FROM quest_log WHERE quest = $quest AND position > $base";
         command.Parameters.AddWithValue("$quest", quest);
@@ -1966,34 +1946,23 @@ public sealed class QuestStore
     }
 
     /// <summary>
-    /// A read the sync depends on, taken inside the connection's gate: a statement run while another
-    /// request's transaction is open joins it (<see cref="InTransactionAsync{T}"/>), and a pending
-    /// operation read from a transaction that then rolled back would be pushed as if it existed.
+    /// A read inside the connection's gate, as every command here is (SQLITETX1): it never meets another
+    /// request's open transaction, so a pending operation is never read from one that then rolled back.
     /// </summary>
-    private async Task<T> InGateAsync<T>(Func<Task<T>> read, CancellationToken ct)
-    {
-        await _gate.WaitAsync(ct).ConfigureAwait(false);
-        try
-        {
-            return await read().ConfigureAwait(false);
-        }
-        finally
-        {
-            _gate.Release();
-        }
-    }
+    private Task<T> InGateAsync<T>(Func<Task<T>> read, CancellationToken ct) => _db.RunAsync(read, ct);
 
     /// <summary>The columns <see cref="ReadOperation"/> reads, in its order.</summary>
     private const string OperationColumns =
         "quest_log.quest, quest_log.kind, quest_log.machine, quest_log.sequence, quest_log.at, quest_log.payload, quest_log.remote";
 
     public Task<Quest?> FindAsync(string id, CancellationToken ct = default) =>
-        FindAsync(id, transaction: null, ct);
+        InGateAsync(() => FindAsync(id, transaction: null, ct), ct);
 
     private async Task<Quest?> FindAsync(string id, SqliteTransaction? transaction, CancellationToken ct)
     {
-        await using var command = _connection.CreateCommand();
-        command.Transaction = transaction;
+        await using var command = _db.Command();
+        // None handed in keeps the one the command was made in, as HistoryAsync's does.
+        if (transaction is not null) command.Transaction = transaction;
         command.CommandText = "SELECT * FROM quests WHERE id = $id";
         command.Parameters.AddWithValue("$id", id);
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
@@ -2009,11 +1978,11 @@ public sealed class QuestStore
     /// person's yes is outstanding too (DRIFT1d): it waits on someone, and what follows it waits with it — the
     /// driver keeps a quest waiting on it waiting because it is listed here.
     /// </remarks>
-    public async Task<IReadOnlyList<Quest>> ListAsync(
+    public Task<IReadOnlyList<Quest>> ListAsync(
         string? receiver = null, bool includeClosed = false, string? workspace = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<Quest>>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = $"""
             SELECT * FROM quests
             WHERE ($receiver IS NULL OR receiver = $receiver)
@@ -2029,17 +1998,17 @@ public sealed class QuestStore
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         while (await reader.ReadAsync(ct).ConfigureAwait(false)) quests.Add(Read(reader));
         return quests;
-    }
+    }, ct);
 
     /// <summary>
     /// Every quest one sender asked, closed ones included — or, <paramref name="startingWith"/>, every
     /// quest whose sender begins with it. What an ask's standing is read from (USE1c): its quests are
     /// the ones asked BY it, chain steps included, whichever machine last moved them.
     /// </summary>
-    public async Task<IReadOnlyList<Quest>> FromAsync(
-        string sender, bool startingWith = false, CancellationToken ct = default)
+    public Task<IReadOnlyList<Quest>> FromAsync(
+        string sender, bool startingWith = false, CancellationToken ct = default) => _db.RunAsync<IReadOnlyList<Quest>>(async () =>
     {
-        await using var command = _connection.CreateCommand();
+        await using var command = _db.Command();
         command.CommandText = startingWith
             ? "SELECT * FROM quests WHERE substr(sender, 1, length($sender)) = $sender ORDER BY filed"
             : "SELECT * FROM quests WHERE sender = $sender ORDER BY filed";
@@ -2049,7 +2018,7 @@ public sealed class QuestStore
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         while (await reader.ReadAsync(ct).ConfigureAwait(false)) quests.Add(Read(reader));
         return quests;
-    }
+    }, ct);
 
     private static Quest Read(SqliteDataReader reader) => new(
         reader.GetString(reader.GetOrdinal("id")),

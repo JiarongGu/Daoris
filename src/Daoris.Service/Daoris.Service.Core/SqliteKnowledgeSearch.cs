@@ -36,12 +36,16 @@ public sealed class SqliteKnowledgeSearch(SqliteKnowledgeStore store) : IKnowled
     /// <summary>Where bm25's rank lands: immediately after the entry's own columns.</summary>
     private static int RankOrdinal => SqliteKnowledgeStore.ColumnCount;
 
-    public async Task<IReadOnlyList<KnowledgeHit>> SearchAsync(KnowledgeQuery query, CancellationToken ct = default)
+    /// <remarks>Inside the connection's gate, as every command on the stores' one connection is (SQLITETX1).</remarks>
+    public Task<IReadOnlyList<KnowledgeHit>> SearchAsync(KnowledgeQuery query, CancellationToken ct = default) =>
+        store.Gate.RunAsync(() => SearchInAsync(query, ct), ct);
+
+    private async Task<IReadOnlyList<KnowledgeHit>> SearchInAsync(KnowledgeQuery query, CancellationToken ct)
     {
         var (filter, parameters) = BuildFilter(query);
         var match = BuildMatchExpression(query.Text);
 
-        await using var command = store.Connection.CreateCommand();
+        await using var command = store.Gate.Command();
 
         if (match is null)
         {
