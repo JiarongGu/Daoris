@@ -16,6 +16,7 @@
  */
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { request } from 'node:http';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
@@ -220,6 +221,32 @@ async function preflight(base, origin) {
   return response.headers.get('access-control-allow-origin');
 }
 
+/**
+ * A read as a website's page makes it once its DNS name points at the loopback (ORIGIN2): the request reaches this
+ * machine, naming the website. `fetch` sends the address's own name whatever it is told, so `node:http` names it.
+ */
+function asRebound(base, path) {
+  return new Promise((resolve) => {
+    const url = new URL(path, base);
+    const call = request(url, { headers: { host: `rebound.example:${url.port}` } }, (response) => {
+      let text = '';
+      response.on('data', (chunk) => { text += chunk; });
+      response.on('end', () => {
+        let json = null;
+        try {
+          json = JSON.parse(text);
+        } catch {
+          // not JSON — the text is still worth printing on a failure
+        }
+        resolve({ status: response.statusCode, json, text });
+      });
+    });
+    call.setTimeout(API_TIMEOUT, () => call.destroy(new Error(`no answer to GET ${path} within ${API_TIMEOUT / 1000}s`)));
+    call.on('error', (error) => resolve({ status: 0, json: null, text: String(error) }));
+    call.end();
+  });
+}
+
 async function startHost(extraEnv = {}) {
   host = await startServer({
     DAORIS_KNOWLEDGE_ROOT: family,
@@ -289,6 +316,14 @@ check('the host answers /api/status', await startHost());
 // host at the loopback address, cross-origin. A local host allows exactly that origin, and no other.
 check('a local host allows the desktop page’s origin', await preflight(BASE, DESKTOP_ORIGIN) === DESKTOP_ORIGIN);
 check('…and no other origin', await preflight(BASE, 'https://elsewhere.example') === null);
+// ORIGIN1, on Kestrel: CORS keeps a page from reading an answer, never from sending a no-body POST, so the host refuses
+// a page elsewhere before the route runs.
+const pressedElsewhere = await fetch(`${BASE}/api/quests/x/accept`, { method: 'POST', headers: { Origin: 'https://elsewhere.example' } });
+const pressedSays = await pressedElsewhere.text();
+check('a page on another site cannot press a door', pressedElsewhere.status === 403 && pressedSays.includes('"code":"cross-site"'), pressedSays);
+// ORIGIN2, on Kestrel: a website's name pointed at the loopback reads nothing, the roots in the registry among it.
+const rebound = await asRebound(BASE, '/api/registry');
+check('a name rebound to the loopback reads nothing', rebound.status === 403 && rebound.json?.code === 'host', rebound.text);
 
 const registry = await api('GET', '/api/registry');
 const adopted = (registry.json ?? []).filter((r) => r.adopted).map((r) => r.repository);

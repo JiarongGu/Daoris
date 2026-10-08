@@ -41,7 +41,8 @@ using Daoris.Knowledge.Http;
 // carry it. There are exactly two trust shapes (D47 §7, as amended): LOCAL trusts the loopback — the
 // OS account is the boundary (D21) — and SHARED gates every route with minted keys. Binding beyond
 // loopback without shared mode refuses to start, so no third shape can exist by accident. Neither shape
-// takes a write from a web page it does not allow (ORIGIN1): a browser on this machine is on the loopback.
+// takes a write from a web page it does not allow (ORIGIN1): a browser on this machine is on the loopback. And a
+// local host answers only its loopback names (ORIGIN2), since a website's name can be pointed at the loopback too.
 //
 // A REGISTRATION'S ROOT NEVER LEAVES THE MACHINE (D46). The filesystem path a repository registers is
 // answered only to loopback callers — the local driver — so a remote deployment never serves anyone's
@@ -232,6 +233,32 @@ app.Use(async (context, next) =>
         }
     }
 });
+
+// ORIGIN2: a local host answers only its loopback names. A website whose DNS name is pointed at 127.0.0.1 is its own
+// origin here, so neither CORS nor the origin gate below can tell its page from the host's own, and every read a
+// loopback caller is given would be its: the index, the quests, the registration roots. So any request, read, write or
+// preflight, under a name that is not `localhost` or a loopback address is refused before anything else runs. A request
+// that names no host is no browser's (every browser names the host it asked for) and passes as a program's. Local mode
+// only: a shared host is reached by whatever name its deployment gives it, and its key gate is what keeps a page off it
+// (D47 §7), since a browser never sends a bearer key on its own.
+if (mode == ServiceMode.Local)
+{
+    app.Use(async (context, next) =>
+    {
+        if (context.Request.Host.HasValue && !BrowserOrigins.IsLoopbackName(context.Request.Host.Host))
+        {
+            // Once per request, by the route's pattern: never the name the request used, its address, or the body.
+            log.Warn(BrowserOrigins.HostEvent,
+                ("method", context.Request.Method),
+                ("route", UnhandledRequests.RouteOf(context)));
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await context.Response.WriteAsJsonAsync(new ErrorResponse(BrowserOrigins.HostSentence, BrowserOrigins.HostCode));
+            return;
+        }
+
+        await next();
+    });
+}
 
 if (origins.Count > 0) app.UseCors();
 
