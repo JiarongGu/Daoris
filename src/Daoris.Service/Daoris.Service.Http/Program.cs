@@ -93,8 +93,9 @@ if (args is ["keys", .. var keyArgs])
 }
 
 // The machine log (LOG1, D94): this host's start and stop, the framework's warnings and errors, every
-// exception nothing caught, and each request that failed or was slow — by route and status, never its
-// query or body. In a file of its own beside the desktop's; with no home it writes nothing.
+// exception nothing caught, what a request's route threw (HOSTLOG1), and each request that failed or was
+// slow — by route and status, never its query or body. In a file of its own beside the desktop's; with no
+// home it writes nothing.
 using var log = MachineLog.Open("host");
 log.WatchUnhandled();
 var started = DateTimeOffset.UtcNow;
@@ -180,7 +181,10 @@ if (origins.Count > 0)
 var app = builder.Build();
 
 // A request that failed or took over two seconds, into the log (LOG1a). By its route's pattern, so an
-// id in the path and a search in the query never reach the file.
+// id in the path and a search in the query never reach the file. Outermost, so a throw from anything
+// after it (the gate, the page, a route) is the host's to write and answer (HOSTLOG1): the exception
+// by its type, message and first frames, and the caller a sentence that names none of it, where the
+// server alone wrote a line with no cause and answered an empty 500.
 app.Use(async (context, next) =>
 {
     var clock = System.Diagnostics.Stopwatch.StartNew();
@@ -189,6 +193,12 @@ app.Use(async (context, next) =>
     {
         await next();
         status = context.Response.StatusCode;
+    }
+    catch (Exception error) when (!UnhandledRequests.CallerLeft(context, error))
+    {
+        status = StatusCodes.Status500InternalServerError;
+        var logged = UnhandledRequests.Write(log, context, error);
+        if (!await UnhandledRequests.AnswerAsync(context, logged)) throw;
     }
     catch
     {
@@ -201,7 +211,7 @@ app.Use(async (context, next) =>
         {
             log.Warn("request.failed",
                 ("method", context.Request.Method),
-                ("route", (context.GetEndpoint() as RouteEndpoint)?.RoutePattern.RawText ?? "(no route)"),
+                ("route", UnhandledRequests.RouteOf(context)),
                 ("status", status),
                 ("ms", clock.ElapsedMilliseconds));
         }

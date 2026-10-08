@@ -420,6 +420,11 @@ green. No child had died, so the wait, not a held file, is the repeat; what the 
 `SessionsSayCommandTests.Held_words_say_the_drivers_next_look_where_nothing_holds_them` (driver, fast half) exited 2
 where 0 was expected, under its 600 ms wait, once in AGT3c's full fast run after merging main; it passed alone three
 times and in a full rerun (4656/4656). A fast-half test waiting on a clock is the shape to look at.
+The same wait in the family rehearsal (403/404) at HOSTLOG1's merge, 2026-10-08, with three worktrees building beside it
+and the run taking 14 m against its usual 8: *with the headless loop running, words said to it are taken up by the SAME
+session … going on* read `held: the same session goes on with this at the driver's next look`, while the next check
+found the record had worked and ended again in its own conversation. The verb's wait for the loop to take the words
+ended first; the change merged (the host's error answer) touches neither the say route nor the loop.
 `setup-kit.test.ts:807` (STUB3) failed once in EVID1b3's verify: its stub did not answer `initialize` within 1000 ms,
 right after a dotnet run on the same machine; it passed alone and the next verify was green. *Fixed 2026-10-08 (STUB3b
 above):* the bound counted the stub's start; it counts from the stub's first answer now.
