@@ -730,8 +730,8 @@ public sealed partial class ServiceClient : IDisposable
     /// </summary>
     /// <param name="goesOn">
     /// Whether the answer that leaves none of a parked session's go-aheads waiting is that park's answer, so the session goes
-    /// on with it (GOAHEAD2), as the ask's page has it: the terminal's door says so. False by default, for the session page's
-    /// door, which answers the park itself with the person's own words (KNOWUSE1a2), so the service leaves the park to it.
+    /// on with it (GOAHEAD2), as the ask's page has it: the terminal's door and the session page's (GOAHEAD2b) both say so.
+    /// False by default, for a caller that answers the park itself, which leaves the park to it.
     /// </param>
     public async Task<(bool Ok, string Message)> AnswerGoAheadAsync(
         string ask, int number, bool approved, string? words, CancellationToken ct = default, bool goesOn = false)
