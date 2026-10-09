@@ -5,6 +5,34 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-09 — a cherry-pick in the driver's fixtures was sometimes the session's own commit (AUTOTIDY1r)
+
+### Driver tests: the cherry-picked offer and landing tests failed whenever the cherry-pick fell in the commit's second
+- **Symptom:** `ContentOfferTests.A_cherry_picked_session_is_offered_its_discard_naming_the_branch_that_holds_it` (`Process`)
+  failed in the full set, a `NullReferenceException` at `row.Discards!.Says`, and blocked the install. Bisected to
+  AUTOTIDY1's merge (`ea1d256b`), passing at `ae9f00cc`. Run alone at main's tip it was not deterministic: 3 of 6 runs
+  failed. `ContentLandingTests.A_cherry_picked_trees_landing_is_refused_naming_the_branch_that_holds_it` failed 1 of 6 the
+  same way (`Refusal` null where `carried` was expected).
+- **Root cause:** the fixture's, not the driver's, and not AUTOTIDY1's. Both tests made `feature/x` from `main` and at once
+  cherry-picked the session's one commit onto it. That commit's parent is `main`'s tip, which is `feature/x`'s HEAD; a
+  cherry-pick keeps the author, its date, the tree and the message, and the fixture's committer is the same, so within the
+  same second git writes the identical commit. `feature/x` then holds the session's own commit by ancestry: D88's proof
+  counts nothing unlanded, the content proof is never asked, and the head rightly offers neither a landing nor a discard.
+  The unmodified test failed 5 of 8 runs at `ae9f00cc` too: the bisect's pass there was a lucky run. Latent since
+  SQUASHTIDY1b added the test (`e1651005`), and in SQUASHTIDY1f's landing test, written in the same shape.
+- **Fix:** `LandedFixture.CherryPickAsync` cherry-picks with `-x`, which names the original in the message so the copy's id
+  always differs, and asserts that the copy is a commit of its own; both tests use it. `ContentHeldTests.CherryPickOntoAsync`
+  was safe already: it commits on the person's branch first, so its cherry-pick has another parent. No driver code changed,
+  and every AUTOTIDY1 guard stands as merged.
+- **Verify:** the precondition, asserted before the fix, failed in exactly the runs that failed (3 of 6), and every run whose
+  ids differed passed. After the fix, the three cherry-pick tests passed 10 runs in a row. The content and clean-up
+  `Process` classes, which AUTOTIDY1 never ran, each alone by filter with `process.runsettings`, all green:
+  `ContentOfferTests` 6, `ContentLandingTests` 5, `ContentProofLossTests` 13, `SweepTests` 11, `LandedKeepTests` 6,
+  `PullRequestStateTests` 7, `BranchTidyingProcessTests` 16, `ProcessJobTests` 1, `ContentHeldTests` 7. **The trap, for
+  any fixture:** a copy of a commit by cherry-pick, rebase or a recreated commit is a new commit only where something in
+  it differs; with the same parent, tree, message and identity, the second of its date is all that does.
+- **Commit:** `d2a54804`.
+
 ## 2026-10-09 — a host that died at start said only that it exited (HOSTSTART1)
 
 ### Modules and service: the window said the host exited, never why, and its log kept nothing of the exception
@@ -5596,5 +5624,3 @@ did, with the old heuristic as the last resort.
 **Verification.** Launched with no environment at all: right port, right family. The family rehearsal
 re-ran after the change, 22/22. No store pollution had occurred — no request ever reached the
 mis-rooted instance.
-
-2026-10-09 — AUTOTIDY1r (in progress): a cherry-picked session offered no discard after AUTOTIDY1.
