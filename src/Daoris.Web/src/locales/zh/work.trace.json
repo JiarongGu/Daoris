@@ -161,6 +161,7 @@
   "work.trace.try.plugin-unready": "已落地；它的插件此处无法落地，因此没有推送",
   "work.trace.try.plugin-failed": "已落地；它的插件没有推送",
   "work.trace.try.already": "它的工作已通过别的方式到了你的某个分支",
+  "work.trace.try.carried": "它的工作已按内容在主线或你的某个分支上，因此没有再次落地",
   "work.trace.try.superseded": "它工作树中更新的会话接替了它",
   "work.trace.try.gone": "它的工作树已丢弃",
   "work.trace.try.undone": "它的委托不再是完成状态",
