@@ -792,7 +792,8 @@ test('tool download reaches a host only through the fetcher the dispatcher hands
 test('driver retry and review read the service only through the readers the dispatcher hands in', () => {
   const row = readText(join(cliRoot, 'src', 'cli', 'driver.ts'));
   assert.match(row, /import \{ registryCheckouts, sessionRecords \} from '\.\.\/service\.ts';/);
-  assert.match(row, /run: \(args\) => commandDriver\(args, \(\) => sessionRecords\(\), \(\) => registryCheckouts\(\)\)/);
+  // WORKFLOW1d hands the `workflow` verbs in after them, which read the registry through the same reader.
+  assert.match(row, /run: \(args\) => commandDriver\(args, \(\) => sessionRecords\(\), \(\) => registryCheckouts\(\), \(each, context\) => commandWorkflow\(each, context\)\)/);
 });
 
 /**

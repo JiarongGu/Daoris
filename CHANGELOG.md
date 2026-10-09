@@ -221,6 +221,8 @@ with the version and date at release.
 - Ask Daoris's history no longer runs past the side bar's edge when a conversation's title is a long link.
 - The review choice can be set from a terminal: `daoris-driver ask … --review`, `ask --set-review` and
   `quest review <id> off|on|<environment>`.
+- Workflows can be named and saved: `daoris driver workflow new|edit|apply|list|show|export|import`, each version
+  kept and each change shown with your part first; nothing chooses one yet.
 
 The first version: doctrine that installs, is checked, and flows back.
 

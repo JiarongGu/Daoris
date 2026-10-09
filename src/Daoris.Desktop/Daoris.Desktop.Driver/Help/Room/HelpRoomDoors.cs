@@ -76,6 +76,14 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "`daoris driver opinion <repository> --reviewers <adapter,adapter> [--on landing,steps] [--required|--not-required] "
             + "[--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck]` (`--workspace <name>` for a whole workspace), "
             + "`daoris driver opinion <repository> none|--clear`"),
+        // WORKFLOW1d (D157 points 5 and 6): a named workflow, its versions never edited; Ask Daoris's `workflow` kind is
+        // WORKFLOW1h's and its screen WORKFLOW1g's, and nothing chooses one until WORKFLOW1e.
+        ("name a workflow: its steps from a preset, a repository's Current or another workflow, each change saved as its next "
+            + "version, never edited, said step by step with your part first (nothing chooses a named workflow yet: every "
+            + "repository's work follows Current)",
+            "(no screen yet)",
+            "`daoris driver workflow new <id> --from <preset>|current:<repository>|<id>[@<version>]`, `daoris driver workflow "
+            + "edit|apply|export|import …`, `daoris driver workflow list|show`"),
         // WSR6: after a pull request merges — the line pulled, what merged deleted, what still works replayed onto it. It
         // takes the repositories holding Daoris's branches, and the others where included (WSR7, D112); one workspace's
         // alone with `--workspace`, as its Branches tab does (BRSCOPE1a).
