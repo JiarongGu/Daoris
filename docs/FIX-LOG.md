@@ -5,6 +5,35 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-09 — a landing read the home's driver.json, not the file the loop read (CONFIGSEAM1)
+
+### Driver: `trees land`, the review's press and every landing door ignored a per-file override's landing and review rules
+- **Symptom:** found by REVIEWENV1h's family rehearsal phase. A config in a second file of the home, named by
+  `DAORIS_DRIVER_CONFIG`, held the branch rule `review/{quest}` and a review rule. The planner, reading that file, sat a
+  review step; `trees land --plan` read no rule and no gate line, and `trees land` merged into the line regardless.
+- **Root cause:** two resolutions of one file. The loop, the planner, the hosts and the CLI resolve the config through
+  `DriverConfig.ResolvePath()`, the override where set and the home's `driver.json` otherwise (D63). A door that held
+  only its home joined the home to `driver.json` itself: `SessionTrees.Config()` (since `a4f31399`, WSR2), so the plan,
+  the review gate, the landing, the hand-off and the canonical line read it; and `PluginPage`'s landing rules (since
+  `c703cdbc`, PLUGUI1d). `RemoteSync` and a chat going on (`ChatRunner.MachineConfig`) each wrote out a resolution of their
+  own. An install keeps one file, so nothing differed there; a gate that names its config otherwise is where it showed.
+- **Fix:** `DriverConfig` holds the one resolution and the file's name: `FindPath()` (the override, then the home's
+  file, then null), `ResolvePath()` (refused with neither, as before) and `ResolvePath(home)` for a door that holds its
+  home: the override where it is a file in that home, as every home is the folder its config sits in (`HomeOf`), and
+  this home's `driver.json` otherwise, never another home's. The four readers ask it. The CLI's twin,
+  `driverConfigPath`, already resolved as `ResolvePath()` does and has no door that holds a home.
+- **Verify:** `ConfigSeamTests` (fast, 5): an override of another name in the home is read, with a trailing separator
+  too; one in another home is not; no override, a blank one or another `DAORIS_HOME` reads the home's own; `FindPath`'s
+  order; and a scan of the driver, its host, the modules and the app finding no source but `DriverConfig.cs` that names
+  `"driver.json"`, `"DAORIS_DRIVER_CONFIG"`, `DriverConfig.PathVariable` or `DriverConfig.DefaultPath`, with the
+  variable read once there. `ConfigSeamLandingTests` (Process, 1, run alone): beside an empty `driver.json`, the
+  override's `review/q1` and `shown` are the plan and the gate, the press is refused unreviewed with nothing made and the
+  line unmoved, and once reviewed it lands on `review/q1`, the line still unmoved. Watched failing: the scan named the
+  four readers, and the plan read `merge` to `main` from the `default` rule. Driver fast half 5484 → 5489, modules
+  739 → 739, `npm run verify` green. **Not covered:** the family rehearsal's phase, which keeps its config as its own
+  home's `driver.json` since REVIEWENV1h and so passes either way.
+- **Commit:** `c9474b3c`, `77f3f84c`.
+
 ## 2026-10-09 — a host that died at start said only that it exited (HOSTSTART1)
 
 ### Modules and service: the window said the host exited, never why, and its log kept nothing of the exception
@@ -5596,5 +5625,3 @@ did, with the old heuristic as the last resort.
 **Verification.** Launched with no environment at all: right port, right family. The family rehearsal
 re-ran after the change, 22/22. No store pollution had occurred — no request ever reached the
 mis-rooted instance.
-
-- 2026-10-09: CONFIGSEAM1 (in progress)
