@@ -220,6 +220,22 @@ describe('the composer', () => {
   });
 
   /**
+   * ASKHIST1b: words waiting with a word wider than the box, a pasted URL as Ask Daoris's first words, stay inside it. Every
+   * grid from them to the form bounds its column, or its widest word sets the width of the box and its presses too.
+   */
+  it('keeps waiting words with a word wider than the box inside it, broken at its edge', () => {
+    const words = 'to complete this https://example.atlassian.net/browse/TK-2205?focusedCommentId=1234567&page=com.example.plugin.tabpanels';
+    const { container } = show({ taking: false, queued: [{ text: words, files: [] }] });
+
+    const waiting = screen.getByText(words);
+    expect(waiting).toHaveClass('line-clamp-2', 'wrap-anywhere');
+    const form = container.querySelector('form')!;
+    for (let at: HTMLElement | null = waiting; at && at !== form.parentElement; at = at.parentElement) {
+      if (at.classList.contains('grid')) expect(at).toHaveClass('grid-cols-[minmax(0,1fr)]');
+    }
+  });
+
+  /**
    * CONV4c: files go with the message. Chosen, dropped or pasted, they wait above the box as chips a
    * person can take back off, travel with the next send, and are let go of once sent. A message may be
    * files alone.
