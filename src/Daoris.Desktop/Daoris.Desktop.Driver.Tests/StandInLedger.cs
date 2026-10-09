@@ -490,7 +490,8 @@ internal sealed class StandInLedger : HttpMessageHandler
 /// <summary>
 /// A start's run, standing in (DEV3): it opens its record through the real client, moves it to working,
 /// says it opened, and holds its session until the test ends it. When the look's token is cancelled it
-/// ends as the driver's shutdown ends a session: <c>stopped</c>, interrupted (D104).
+/// ends as the driver's shutdown ends a session: <c>stopped</c>, interrupted (D104), unless the driver
+/// had stopped it first, whose stop is then the record's (FLAKE3, <see cref="Observation.Closed"/>).
 /// </summary>
 internal sealed class StandInRuns(ServiceClient service, StandInLedger ledger)
 {
@@ -589,6 +590,18 @@ internal sealed class StandInRuns(ServiceClient service, StandInLedger ledger)
                 // A moment before the record is written, as ending a real process takes one: a caller that let go
                 // without waiting for it would find the record still working.
                 await Task.Delay(200, CancellationToken.None);
+
+                // A stop the driver made before the close decided the end, as the driver's own close reads it (FLAKE3).
+                var (closed, interrupted) = Observation.Closed(
+                    _stoppedFor.TryGetValue(id, out var first) ? new SessionStop(first, Note: null) : null);
+                if (!interrupted)
+                {
+                    await service.AdvanceAsync(id, closed.State, closed.AsNoted(), ct: CancellationToken.None);
+                    return new StartRun(
+                        $"{closed.State}  session {id} (#{quest.Id} → {quest.To}): {closed.Note}", true,
+                        new SessionEnded(id, quest.To, closed.State, ByPerson: false, closed.Note, Quest: quest.Id));
+                }
+
                 await service.AdvanceAsync(
                     id, "stopped", note: "the driver was stopped while this ran.", ct: CancellationToken.None, interrupted: true);
                 return new StartRun(

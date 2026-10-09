@@ -12603,3 +12603,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **REVIEWENV1c4 — the service's gate sentence read from the twins' table** (service; after REVIEWENV1c2 and REVIEWENV1c3 merge). `HelpSettingProposalTests` reads the `gate` rows from `review-rules.json` instead of spelling them, so the service's copy cannot drift from the twins. Contract: D154's REVIEWENV1c2 note. Proof: the test failing when the table's sentence changes.
 
 **Outcome** 2026-10-09: `HelpSettingProposalTests` reads the review gate's sentences from `review-rules.json`'s `gate` rows instead of spelling them, so the service's copy cannot drift from the twins; a narrow merge-tool reach row sends the table to the service's suite. Detail: D154's REVIEWENV1c4 note; commits b59854d8, c96581b5.
+
+
+## FLAKE3 — the two flakes that repeated, fixed by their cause (2026-10-09)
+
+> - [ ] **FLAKE3 — the two flakes that repeated, fixed by their cause** (driver, tools; dispatched from its brief, under FLAKE1). `SessionsOutliveTheirLookTests`' stop before a failed look read `stopped` for `stood-down` twice under load; the family rehearsal's say check failed twice at the verb's wait. Fix each at its cause, never with a longer clock. Proof: the loaded loop before and after; a driver test of the verb's wait.
+
+**Outcome** 2026-10-09: a stop made before the driver's close is the record's (one rule, `Observation.Closed`, for the start's close and the carry-on's: a stop made first wins, stood down or the person's, never interrupted); `sessions say` waits on the answer of a loop that took its words (up to 30 s) instead of reading once at its deadline; the family rehearsal's say check accepts the held line D137's contract gives. Under load the watch test went from 6 failures in 60 to 60 of 60. Merged from a clean branch: a failed rehearsal's git fallback had committed in the agent's worktree (REHEARSEGIT1). Detail: FIX-LOG FLAKE3, notes under D104 and D137.
