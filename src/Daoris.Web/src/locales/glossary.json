@@ -49,7 +49,8 @@
       "budget": { "en": 10, "zh": 4 },
       "case": "sentence",
       "keys": [
-        "help.title", "projects.tab.branches", "projects.tab.details", "projects.tab.setup", "work.panel.title", "work.preview.tab",
+        "help.title", "projects.tab.branches", "projects.tab.details", "projects.tab.setup", "projects.tab.workflow", "work.panel.title",
+        "work.preview.tab",
         "work.review.tab",
         "work.review.timelineTab", "work.timeline.title", "work.views.console", "work.views.terminal"
       ]
@@ -91,7 +92,10 @@
         "work.group.you", "work.head.waiting", "work.intake.waiting", "work.intakeRunning.title", "work.list.groupBy",
         "work.rail.ended",
         "work.rail.label", "work.rail.search.byContent", "work.rail.search.byName", "work.relations.title",
-        "work.sync.inConflict", "work.trace.title", "work.head.details"
+        "work.sync.inConflict", "work.trace.title", "work.head.details",
+        "workflow.head.title", "workflow.section.*", "workflow.finished", "workflow.step.work", "workflow.step.opinion",
+        "workflow.step.look", "workflow.step.lookAnywhere", "workflow.step.landingMerge", "workflow.step.landingBranch",
+        "workflow.step.pullRequest", "workflow.repositories.title"
       ]
     },
     "field": {
@@ -253,7 +257,7 @@
         "work.rail.open", "work.review.accept", "work.review.accepting", "work.review.discard",
         "work.review.discardMeanIt", "work.review.hand", "work.review.handing", "work.review.pullRequest",
         "work.review.readAgain", "work.review.sendBack", "work.say.goOnNew", "work.say.startChat", "work.start.go", "work.steer.now", "work.terminal.again", "work.terminal.close",
-        "work.terminal.new", "work.terminal.open"
+        "work.terminal.new", "work.terminal.open", "workflow.door.setup", "workflow.door.workspaceSetup"
       ]
     },
     "status": {
@@ -296,7 +300,8 @@
         "work.status.remote", "work.status.remoteLocal", "work.status.remoteWired", "work.status.sessions",
         "work.status.sessionsLabel", "work.status.setup", "work.status.setupLabel", "work.status.tierLabel",
         "work.shown.*", "work.status.workspace", "work.sync.label", "work.sync.level", "work.sync.never",
-        "work.sync.walled", "work.terminal.default", "work.terminal.endedMark", "work.tool.status.*"
+        "work.sync.walled", "work.terminal.default", "work.terminal.endedMark", "work.tool.status.*",
+        "workflow.participation.*", "workflow.runtime.*", "workflow.repositories.follows", "workflow.repositories.own"
       ]
     },
     "menu": {
@@ -414,7 +419,9 @@
     { "door": "search.toConvergence", "opens": "nav.convergence" },
     { "door": "overview.repositories.button", "opens": "nav.projects" },
     { "door": "work.head.review", "opens": "work.review.tab" },
-    { "door": "help.proposal.look", "opens": "settings.sync.look" }
+    { "door": "help.proposal.look", "opens": "settings.sync.look" },
+    { "door": "workflow.door.setup", "opens": "projects.tab.setup" },
+    { "door": "workflow.door.workspaceSetup", "opens": "projects.tab.setup" }
   ],
 
   "terms": [
@@ -435,6 +442,8 @@
     { "term": "owns", "en": "owns", "zh": "拥有", "means": "The part of a declaration naming what a repository is responsible for.", "match": "\\bowns\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "accepts", "en": "accepts", "zh": "接受", "means": "The part of a declaration naming the quests a repository takes.", "match": "\\baccepts\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "chain", "en": "chain", "zh": "委托链", "means": "Quests that follow one another, each published when the one before it closes done.", "match": "\\bchains?\\b", "avoid": { "en": [], "zh": [] } },
+    { "term": "workflow", "en": "workflow", "zh": "工作流", "means": "How a repository's work moves from the agent's work to its last stage: which steps, in what order, who takes part in each and what is automatic (D157). Current is the one drawn from the rules as they stand; a chain is its work step.", "why": "工作流 is what a workflow tool's Chinese calls one. 工作流转 is How this work ran, a chain's story, and 流程 is any process at all (WORKFLOW1b).", "match": "\\bworkflows?\\b", "avoid": { "en": [], "zh": ["流程"] } },
+    { "term": "kind of task", "en": "kind of task", "zh": "工作类型", "means": "A name a workspace gives a sort of work, such as Documentation or Feature, which chooses the workflow work of that sort follows (D157 §4.2).", "why": "类型 is a sort of thing; 任务 is the family's word for a task, which a quest is not.", "match": "\\bkinds? of tasks?\\b", "avoid": { "en": ["task type", "task types"], "zh": ["任务类型"] } },
     { "term": "publish", "en": "publish", "zh": "发布", "means": "Hand a quest to the service, where its receiver pulls it.", "match": "\\bpublish(es|ed|ing)?\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "take", "en": "take", "zh": "接下", "zhForms": ["接"], "means": "A repository's agent accepts a quest to work on; the quest is then taken (已接下).", "match": "\\btake\\b|\\btaken\\b", "avoid": { "en": [], "zh": ["进行中"] } },
     { "term": "done", "en": "done", "zh": "完成", "means": "A quest's work finished, or a session finished by its person; the state is 已完成.", "match": "\\bdone\\b|\\bfinish(ed)?\\b", "pair": false, "avoid": { "en": [], "zh": ["结束"] } },

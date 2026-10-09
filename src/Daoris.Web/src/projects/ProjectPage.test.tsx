@@ -6,6 +6,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../i18n';
 import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
+import { FULL } from '../workflow/fixtures';
 import { COUNTS, ENGINE, LINE, NEWBIE, SETUP_DEFAULTS } from './fixtures';
 import { ProjectPage } from './ProjectPage';
 
@@ -107,7 +108,59 @@ describe("a repository's tabs", () => {
 
   it('names its tabs in 中文', async () => {
     await i18n.changeLanguage('zh');
-    render(<ProjectPage registration={ENGINE} counts={COUNTS.engine} setup={SETUP_DEFAULTS} tab="details" onTab={vi.fn()} />);
-    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['详情', '配置']);
+    render(<ProjectPage registration={ENGINE} counts={COUNTS.engine} setup={SETUP_DEFAULTS} workflow={{ current: FULL }} tab="details" onTab={vi.fn()} />);
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['详情', '工作流', '配置']);
+  });
+});
+
+// WORKFLOW1b (the workflow design §6.1): how its work moves is a tab of its own between Details and Setup, a shell's like
+// Setup; each step's door opens the Setup section that sets it, or its workspace's Setup where its workspace set it.
+describe("a repository's Workflow tab", () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  it('sits between Details and Setup, and draws how its work moves', async () => {
+    const onTab = vi.fn();
+    render(<ProjectPage registration={ENGINE} setup={SETUP_DEFAULTS} workflow={{ current: FULL }} tab="details" onTab={onTab} />);
+
+    const tabs = screen.getByRole('tablist', { name: "engine's pages" });
+    expect(within(tabs).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Details', 'Workflow', 'Setup']);
+    await userEvent.click(within(tabs).getByRole('tab', { name: 'Workflow' }));
+    expect(onTab).toHaveBeenLastCalledWith('workflow');
+  });
+
+  it("opens the Setup section that sets a step, and hands a step its workspace set to the workspace's Setup", async () => {
+    const onTab = vi.fn();
+    const workspaceSetup = vi.fn();
+    const { rerender } = render(
+      <ProjectPage registration={ENGINE} setup={SETUP_DEFAULTS} workflow={{ current: FULL, doors: { workspaceSetup } }} tab="workflow" onTab={onTab} />,
+    );
+    const panel = screen.getByRole('tabpanel', { name: 'Workflow' });
+    const look = within(panel).getAllByRole('listitem').find((item) => item.getAttribute('data-step') === 'look')!;
+    const opinion = within(panel).getAllByRole('listitem').find((item) => item.getAttribute('data-step') === 'opinion')!;
+
+    await userEvent.click(within(opinion).getByRole('button', { name: 'Open workspace Setup' }));
+    expect(workspaceSetup).toHaveBeenCalledOnce();
+    await userEvent.click(within(look).getByRole('button', { name: 'Change in Setup' }));
+    expect(onTab).toHaveBeenLastCalledWith('setup');
+
+    rerender(
+      <Tooltip.Provider>
+        <ProjectPage registration={ENGINE} setup={SETUP_DEFAULTS} workflow={{ current: FULL }} tab="setup" onTab={onTab} />
+      </Tooltip.Provider>,
+    );
+    expect(screen.getByRole('button', { name: 'Line and landing' })).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('shows Details for a remembered Workflow tab on a page handed none, and has no Workflow tab there', () => {
+    render(<ProjectPage registration={ENGINE} setup={SETUP_DEFAULTS} tab="workflow" onTab={vi.fn()} />);
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Details', 'Setup']);
+    expect(screen.getByRole('tabpanel', { name: 'Details' })).toBeInTheDocument();
+  });
+
+  it('is absent in a browser, which gets Details alone', () => {
+    render(<ProjectPage registration={ENGINE} counts={COUNTS.engine} tab="workflow" />);
+    expect(screen.queryByRole('tab')).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Current workflow' })).toBeNull();
+    expect(screen.getByText('Owns')).toBeInTheDocument();
   });
 });
