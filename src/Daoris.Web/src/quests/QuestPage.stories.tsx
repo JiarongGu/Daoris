@@ -8,6 +8,7 @@ import type { WorkDoor } from '../work/pausing';
 import { ABANDONED_ENTRY, PAUSABLE_QUEST, PAUSED_QUEST } from '../work/pausingFixtures';
 import { STEP_REVIEWED, STEP_SETTING_UP, STEP_SHOWN, STEP_SHOWN_AGAIN } from '../work/reviewFixtures';
 import { answer, QUEST_CHAIN } from '../work/traceFixtures';
+import { IN_REVIEW } from '../workflow/runFixtures';
 import {
   ACCEPTED, CHAINED, CJK, CONFLICTED, DECLINED, DELETABLE, DONE, EXHAUSTED, FAILED, FINISHED_HERE, HELD, HELD_BY_PERSON, HELD_CJK,
   LANED, MET, OPEN, PAUSED_ITSELF, PAUSED_WITH_ASK, PAUSED_WITH_QUEST, QUESTION, REFILED, REFILED_NAMED, REFILED_UNNAMED, REQUIRING, STARTING,
@@ -51,6 +52,15 @@ export const Open: Story = {};
 
 /** Taken: *Mark done…* is the loud act now (UX5 U31); it asks once under the header, with the person's note (QUESTCLOSE1). */
 export const Taken: Story = { args: { quest: TAKEN } };
+
+/**
+ * Its work in its workflow (WORKFLOW1c, the workflow design §7): one line among the head's facts, *Workflow: waits for your look*,
+ * in open's hue since it waits on the person, whose door opens the run in the session's side bar.
+ */
+export const InItsWorkflow: Story = { args: { quest: TAKEN, workflow: { runs: [IN_REVIEW], onOpen: nothing } } };
+
+/** The same in 中文. */
+export const InItsWorkflowChinese: Story = { ...InItsWorkflow, decorators: [chinese] };
 
 /**
  * The install's case (QUESTCLOSE1, D126's note): its session here finished at a checkpoint and the quest still taken. *Sitting*

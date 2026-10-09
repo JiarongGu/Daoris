@@ -17,7 +17,7 @@ import {
   Monitor, Network,
   PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, Paperclip, Pause, Play, Plug, Plus, Redo2, Reply,
   RotateCw, Scissors, Search, Settings, Shield, Square, SquareArrowOutUpRight, SquareTerminal, Terminal, TextSelect, Trash2, TriangleAlert,
-  Undo2, Wrench, X,
+  Undo2, Workflow, Wrench, X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, SessionState } from './api';
@@ -153,6 +153,8 @@ const ICONS = {
   stepPullRequest: GitPullRequest,
   stepHold: Hand,
   stepFinished: Flag,
+  // Where a piece of work stands in its workflow (WORKFLOW1c, design §7): the session's side bar view and the doors into it.
+  workflow: Workflow,
 } as const;
 
 export type IconName = keyof typeof ICONS;

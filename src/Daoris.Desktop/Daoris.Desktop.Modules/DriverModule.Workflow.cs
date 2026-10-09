@@ -8,8 +8,9 @@ namespace Daoris.Desktop;
 /// <summary>
 /// How work moves in a repository or a workspace, the page's `bridge/workflow.ts` (WORKFLOW1b; D157 point 7, the workflow
 /// design §2.7, §6.1): its Current workflow, which <see cref="WorkflowCurrent.Derive"/> draws from this machine's driver file,
-/// its plugins and its registry exactly as `daoris driver workflow show` reads them. Read-only: nothing here writes, and every
-/// gate goes on reading the rules as it did.
+/// its plugins and its registry exactly as `daoris driver workflow show` reads them; and where a piece of work stands in it
+/// (WORKFLOW1c), the runs <see cref="WorkflowRunReader"/> reads. Read-only: nothing here writes, and every gate goes on
+/// reading the rules as it did.
 /// </summary>
 public sealed partial class DriverModule
 {
@@ -89,4 +90,77 @@ public sealed partial class DriverModule
     /// </summary>
     private static string Shape(CurrentWorkflow drawn) =>
         string.Join('\n', drawn.Steps.Select(step => WorkflowCurrent.ToJson(step.Kind == WorkflowKinds.Work ? step with { Settings = [] } : step)));
+
+    // Where a piece of work stands in its workflow (WORKFLOW1c; D157 point 11, design §5.1–§5.2, §7): the runs
+    // `WorkflowRunReader` reads from this machine's records for `{session}`, `{quest}` or `{ask}`, exactly one, each step
+    // Current's cell beside where it stands. The records are the service's and this machine's, so it waits for the driver.
+    // What names nothing that runs (a chat, a quest not here) is answered as no run with the driver's sentence. Read-only,
+    // and a run is never kept as a copy.
+    [DriverRoute("WORKFLOW_RUN")]
+    private async Task<object?> WorkflowRunAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var asked = new WorkflowRunAsk(Optional(request, "session"), Optional(request, "quest"), Optional(request, "ask"));
+        if (new[] { asked.Session, asked.Quest, asked.Ask }.Count(each => each is not null) != 1)
+        {
+            throw new DriverException("a run is read for a `session`, a `quest` or an `ask` — name one of them.");
+        }
+
+        var service = _loop.Service ?? throw NotReady();
+        var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
+        var config = DriverConfig.Load(_loop.ConfigPath);
+        var plugins = WorkflowCurrent.PluginsOf(PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names));
+        // A repository's workspace is the registry's, read as `WORKFLOW_CURRENT` reads it; one it does not hold is in none.
+        string? WorkspaceOf(string repository) => snapshot.Repositories
+            .FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase))?.Workspace;
+
+        var read = await WorkflowRunReader
+            .ReadAsync(asked, new WorkflowRunSources(service, _loop.Home, config, plugins, WorkspaceOf), cancellationToken)
+            .ConfigureAwait(false);
+        return new { Runs = read.Runs.Select(RunAnswer).ToArray(), read.Problem };
+    }
+
+    /// <summary>
+    /// One run as the page draws it: its Current's version, the plugins that may hold a start and each limit's sentence, as
+    /// `WORKFLOW_CURRENT` answers them; then each step, the shared table's cell beside where it stands and its facts.
+    /// </summary>
+    private static object RunAnswer(WorkflowRun run)
+    {
+        var limits = new JsonObject();
+        foreach (var code in run.Steps.Select(step => step.Step.Limit).OfType<string>().Distinct(StringComparer.Ordinal))
+        {
+            limits[code] = WorkflowLimits.Says(code);
+        }
+
+        return new
+        {
+            run.Repository,
+            run.Workspace,
+            run.Ask,
+            run.Quests,
+            run.Session,
+            run.At,
+            Workflow = new { run.Current.Version, run.Current.StartHolds, Limits = limits },
+            Steps = run.Steps.Select(step => new
+            {
+                Step = JsonDocument.Parse(WorkflowCurrent.ToJson(step.Step)).RootElement.Clone(),
+                step.State,
+                step.Detail,
+                step.Added,
+                step.Session,
+                step.Quest,
+                step.Agent,
+                step.At,
+                step.Environment,
+                step.Commit,
+                step.Branch,
+                step.PullRequest,
+                step.Plugin,
+                step.Count,
+                step.Of,
+                step.GoAhead,
+                step.Words,
+                step.Code,
+            }).ToArray(),
+        };
+    }
 }

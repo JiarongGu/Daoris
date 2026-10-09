@@ -6,7 +6,8 @@ import type { CurrentWorkflow, WorkflowStep } from './current';
 
 /** The driver's words for each limit, as the table holds them (`WorkflowLimits.Table`). */
 export const LIMITS: Record<string, string> = {
-  'opinion-declared': 'Declared only: nothing reads it yet, so no reviewer is chosen and no landing waits for it.',
+  'opinion-partial': "Partial: work here lands only once another agent's reading of it is settled, or you go on without one by "
+    + '`daoris-driver opinion`; the review does not draw it yet, and no task chooses its own reviewer yet.',
   'look-partial': "Partial: work here lands only once you say it is reviewed or skip the review, and a set-up step's build is "
     + "shown in Daoris's browser from its session's end until then; no set-up step is composed for you yet, and nothing runs a "
     + 'process of its own for one.',
@@ -32,12 +33,12 @@ export const MERGE_YOU_ACCEPT: WorkflowStep = {
   settings: { form: 'merge', accept: 'you', pattern: null, plugin: null, tidy: false }, runtime: 'built', limit: null,
 };
 
-/** The workspace's second opinion before landing and between steps, its recheck off: declared only. */
+/** The workspace's second opinion before landing and between steps, its recheck off: in part, since XAGENT1f's gate. */
 export const OPINION: WorkflowStep = {
   id: 'opinion', kind: 'opinion', participation: 'agent', executor: 'agent', press: null,
   source: { rule: 'opinion', level: 'workspace' },
   settings: { reviewers: ['codex-acp', 'dsh'], on: ['landing', 'steps'], required: false, recheck: false },
-  runtime: 'declared', limit: 'opinion-declared',
+  runtime: 'partial', limit: 'opinion-partial',
 };
 
 /** The repository's required review: the person's look in `dev`, in part. */

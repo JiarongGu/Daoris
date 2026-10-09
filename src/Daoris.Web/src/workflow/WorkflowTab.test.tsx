@@ -62,8 +62,9 @@ describe("a repository's Workflow tab", () => {
     expect(opinion).toHaveTextContent('by codex-acp, else dsh');
     expect(opinion).toHaveTextContent('Read before it lands and before each next step; not required; commits that answer it not read again.');
     expect(opinion).toHaveTextContent("Set by the workspace aurora's second-opinion rule.");
-    expect(opinion).toHaveTextContent('declared only');
-    expect(opinion).toHaveTextContent('Nothing reads it yet, so no reviewer is chosen and no landing waits for it.');
+    // In part since XAGENT1f's gate: the landing waits for it, and its limit says what is not built.
+    expect(opinion).toHaveTextContent('works in part');
+    expect(opinion).toHaveTextContent("The work here lands only once another agent's reading of it is settled");
 
     expect(look).toHaveTextContent('agent + you');
     expect(look).toHaveTextContent("Set by this repository's review rule.");
