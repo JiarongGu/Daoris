@@ -63,6 +63,12 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     public TimeSpan Poll { get; init; } = TimeSpan.FromMilliseconds(250);
 
     /// <summary>
+    /// How long the answer of a loop that took a say is waited for once <see cref="Wait"/> is over (FLAKE3): that loop's own bound
+    /// on a say, its client's timeout, since a loop that took one always answers it, a failure included.
+    /// </summary>
+    public TimeSpan Answer { get; init; } = DriverHttp.Timeout;
+
+    /// <summary>
     /// Whether a driver loop holds this home (DRV8a, <see cref="DriverLock.HeldBy"/>): where none does, nothing would take a
     /// say up, so the verb keeps the words on the record itself (MSG1e, D137 §5.2).
     /// </summary>
@@ -742,7 +748,7 @@ public static class SessionsCommand
         if (taken)
         {
             output.WriteLine(
-                $"sessions: the loop that runs {id} took your words, and had not said where they stand after {Seconds(world)} seconds; "
+                $"sessions: the loop that runs {id} took your words, and gave no answer of where they stand; "
                 + "`daoris-driver sessions` says where it stands.");
             return 2;
         }
@@ -760,9 +766,10 @@ public static class SessionsCommand
     }
 
     /// <summary>
-    /// A say asked of the loops on this home and waited for, until its answer or the wait's end (§5.2). A session winding up is
-    /// asked again until its record has ended, since the say door keeps nothing for a record still running. Null and not taken
-    /// where nothing took it, which is withdrawn so no loop acts on it after the person was told.
+    /// A say asked of the loops on this home and waited for, until its answer or the wait's end (§5.2); one a loop took by then
+    /// is waited for until that loop answers it (FLAKE3). A session winding up is asked again until its record has ended, since
+    /// the say door keeps nothing for a record still running. Null and not taken where nothing took it, which is withdrawn so
+    /// no loop acts on it after the person was told.
     /// </summary>
     private static async Task<(WordsHeld? Held, bool Taken)> AskLoopAsync(
         SessionsWorld world, SessionRecord record, string text, IReadOnlyList<string> files, Stopwatch waited, CancellationToken ct)
@@ -786,13 +793,33 @@ public static class SessionsCommand
 
             if (held is null)
             {
-                return requests.Withdraw(request)
-                    ? (winding, winding is not null)
-                    : (requests.AnswerOf(request) ?? winding, true);
+                if (requests.Withdraw(request)) return (winding, winding is not null);
+
+                // 🔴 Taken (FLAKE3): the loop that took it answers it whatever became of the words, a failure included, so that
+                // answer is waited for rather than the clock read. Read once at the wait's end, a loop under load was said to
+                // have taken the words and not said where they stood while it was writing its answer.
+                return (await AnsweredAsync(world, requests, request, ct).ConfigureAwait(false) ?? winding, true);
             }
 
             if (held.Why != WordsHeld.Running || waited.Elapsed >= world.Wait) return (held, true);
             winding = held;
+        }
+    }
+
+    /// <summary>
+    /// The answer of a loop that took a say (FLAKE3), waited for while a loop holds the home and within that loop's own bound on
+    /// a say (<see cref="SessionsWorld.Answer"/>); null where none came, as from a loop that went away with the words.
+    /// </summary>
+    private static async Task<WordsHeld?> AnsweredAsync(
+        SessionsWorld world, SessionRequests requests, SessionRequest request, CancellationToken ct)
+    {
+        var answering = Stopwatch.StartNew();
+        while (true)
+        {
+            if (requests.AnswerOf(request) is { } held) return held;
+            // Read once more as it gives up, for an answer written as its loop let go of the home.
+            if (answering.Elapsed >= world.Answer || !world.LoopRuns()) return requests.AnswerOf(request);
+            await Task.Delay(world.Poll, ct).ConfigureAwait(false);
         }
     }
 
