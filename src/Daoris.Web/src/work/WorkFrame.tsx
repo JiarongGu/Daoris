@@ -10,6 +10,7 @@ import {
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree,
+  useDiscardSessionTree,
 } from '../shell';
 import { sayDiscard } from '../settings/Sweep';
 import { doorOf, toolOf } from '../tools';
@@ -973,6 +974,9 @@ export function WorkFrame({
   const lands = attended && here && grouping?.lands ? grouping.lands : null;
   const landing = useLanding(lands ? attended!.id : null);
   const land = useLandSessionTree();
+  // SQUASHTIDY1b: where the line holds its commits by content, no landing but its discard, the review's own, unforced.
+  const discards = attended && here && !lands && grouping?.discards ? grouping.discards : null;
+  const discardTree = useDiscardSessionTree();
   const attendedFacts: ActFacts | null = attended
     ? { session: attended, quest, grouping, root: rootOf(attended.repository), where: where[attended.id] }
     : null;
@@ -1224,6 +1228,20 @@ export function WorkFrame({
             lands={lands}
             landing={landing.data}
             onLand={lands && attended ? (answered) => land.mutate(attended.id, {
+              onSuccess: (result) => {
+                if (!result.done) {
+                  answered.refused(result.message);
+                  return;
+                }
+                notify(result.message);
+                answered.done();
+              },
+              onError: (error) => answered.refused(sentence(error)),
+            }) : undefined}
+            // SQUASHTIDY1b: its discard, never forced from here: a refusal is the driver's sentence inside the ask, and the
+            // review's Discard is the door that asks twice.
+            discards={discards}
+            onDiscardTree={discards && attended ? (answered) => discardTree.mutate({ id: attended.id }, {
               onSuccess: (result) => {
                 if (!result.done) {
                   answered.refused(result.message);

@@ -159,7 +159,25 @@ public sealed record TreeWork(int? Commits, int? Uncommitted)
     /// the clean-up keeps what it cannot clear (D88).
     /// </summary>
     public bool Holds => Commits != 0 || Uncommitted != 0;
+
+    /// <summary>
+    /// Where the commits D88 counted are held by content (SQUASHTIDY1b): a squash merge or a cherry-pick put them elsewhere, so
+    /// nothing offers to land them again. Null where they are held nowhere, or nothing was counted.
+    /// </summary>
+    public HeldWork? Held { get; init; }
 }
+
+/// <summary>
+/// A tree whose commits no branch of the person's holds by ancestry, found held by content (SQUASHTIDY1b, SQUASHTIDY1's proof
+/// with SQUASHTIDY1c's guarantees), and what an unforced discard of it would do now.
+/// </summary>
+/// <param name="Held">Where its work is, and how it was found: the clause Discard says (<see cref="ContentHold.Said"/>).</param>
+/// <param name="Keeps">
+/// The ref an unforced discard would keep its commits at (SQUASHTIDY1c), named as the discard numbers it; null where the
+/// discard would not go now.
+/// </param>
+/// <param name="Stays">Why the discard would not go now: what the tree holds that no commit does, in a clause; null where it would.</param>
+public sealed record HeldWork(ContentHold Held, string? Keeps, string? Stays);
 
 /// <summary>
 /// What an ended session's own tree offers to land (LAND4): the commits on it no branch of the person's holds, by D88's
@@ -174,12 +192,52 @@ public sealed record LandOffer(string Branch, string Tree, int Commits, int? Unc
 {
     /// <summary>
     /// The offer a judged tree makes, or null: only commits git counted, above zero. Uncommitted work alone lands nothing, and
-    /// a count git could not give offers no press, though it stays to review (the clean-up's keep, D88).
+    /// a count git could not give offers no press, though it stays to review (the clean-up's keep, D88). Commits the line holds
+    /// by content offer none either (SQUASHTIDY1b): accepting them would make a branch of work already there.
     /// </summary>
     public static LandOffer? Of(string tree, TreeWork work)
     {
-        if (work.Commits is not > 0 || SessionGroups.Normal(tree).Split('/')[^1] is not { Length: > 0 } name) return null;
+        if (work.Commits is not > 0 || work.Held is not null || SessionGroups.Normal(tree).Split('/')[^1] is not { Length: > 0 } name) return null;
         return new LandOffer(SessionTrees.SessionPrefix + name, name, work.Commits.Value, work.Uncommitted);
+    }
+}
+
+/// <summary>
+/// What an ended session's own tree offers where its commits are held by content (SQUASHTIDY1b): no landing, since accepting
+/// would make a branch of work a squash merge or a cherry-pick already put elsewhere, but where its work is, in Discard's own
+/// clause, and the review's Discard, unforced, naming the ref its commits stay at. The press is that Discard, which judges
+/// again and keeps the ref at its press (SQUASHTIDY1c); this only says what it would do.
+/// </summary>
+/// <param name="Branch">The session's branch, as <see cref="LandOffer.Branch"/>.</param>
+/// <param name="Tree">The tree's name under its repository's folder: never a path.</param>
+/// <param name="Work">Where its work is held, and what a discard would keep or why the tree stays.</param>
+public sealed record DiscardOffer(string Branch, string Tree, HeldWork Work)
+{
+    /// <summary>
+    /// What the session's page says where <i>Accept…</i> would be, the page showing it as it is: where its work is, in the clause
+    /// the discard says, as a sentence; and where an unforced discard would not go now, why its tree stays.
+    /// </summary>
+    public string Says
+    {
+        get
+        {
+            var said = Work.Held.Said;
+            var where = $"{char.ToUpperInvariant(said[0])}{said[1..]}.";
+            return Work.Stays is { } why ? $"{where} Its tree stays: {why}." : where;
+        }
+    }
+
+    /// <summary>
+    /// What the discard's ask says before its press: where its commits stay and how to have the branch back, in the words the
+    /// discard says once it went (<see cref="ContentHold.KeptAt"/>). Null where the discard would not go now.
+    /// </summary>
+    public string? KeptAt => Work.Keeps is { } reference ? ContentHold.KeptAt(Branch, reference) : null;
+
+    /// <summary>The offer a judged tree makes, or null: only commits git counted, above zero, that the content proof found held.</summary>
+    public static DiscardOffer? Of(string tree, TreeWork work)
+    {
+        if (work.Commits is not > 0 || work.Held is not { } held || SessionGroups.Normal(tree).Split('/')[^1] is not { Length: > 0 } name) return null;
+        return new DiscardOffer(SessionTrees.SessionPrefix + name, name, held);
     }
 }
 
@@ -338,6 +396,13 @@ public sealed record SessionGrouping(string Session, string Group, string Shown)
     /// offers Accept beside it, and its review does, whatever its ending.
     /// </summary>
     public LandOffer? Lands { get; init; }
+
+    /// <summary>
+    /// What its own tree offers where its commits are held by content (SQUASHTIDY1b), in the groups <see cref="Lands"/> is
+    /// offered in: no landing, where its work is, and the review's Discard, unforced. Null otherwise; never beside
+    /// <see cref="Lands"/>.
+    /// </summary>
+    public DiscardOffer? Discards { get; init; }
 
     /// <summary>
     /// Whether this session's stop holds its quest here (SESSUX1b, D126 §2.2): the person stopped it, it is its quest's
@@ -801,17 +866,20 @@ public static class SessionGroups
 
         /// <summary>
         /// Where a session is listed, and what its own tree offers to land (LAND4) wherever it rests bar Working: a session that
-        /// goes on, or runs, is about to write into that tree again.
+        /// goes on, or runs, is about to write into that tree again. Where the line holds its commits by content, its discard
+        /// instead (SQUASHTIDY1b).
         /// </summary>
         public SessionGrouping Place(SessionRecord record)
         {
             var row = PlaceInGroup(record);
-            return row.Group != SessionGroup.Working
-                   && LandableTree(record) is { } tree
-                   && _look.Trees.TryGetValue(Normal(tree), out var work)
-                   && LandOffer.Of(tree, work) is { } offer
-                ? row with { Lands = offer }
-                : row;
+            if (row.Group == SessionGroup.Working
+                || LandableTree(record) is not { } tree
+                || !_look.Trees.TryGetValue(Normal(tree), out var work))
+            {
+                return row;
+            }
+
+            return row with { Lands = LandOffer.Of(tree, work), Discards = DiscardOffer.Of(tree, work) };
         }
 
         private SessionGrouping PlaceInGroup(SessionRecord record)

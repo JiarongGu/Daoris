@@ -3082,6 +3082,45 @@ describe('acting on what a session landed', () => {
       .toHaveTextContent('which a branch would leave behind.');
   });
 
+  /**
+   * SQUASHTIDY1b (D102's SQUASHTIDY1b note, the owner's case): a session whose work a squash-merged pull request carried, its
+   * tree still standing, was offered *Accept…* again. Where the driver's reader says the line holds its commits by content,
+   * its page offers no *Accept…*: the driver's sentence says where the work is, and *Discard branch…* asks once with the
+   * driver's sentence naming the ref the commits stay at, then presses the review's Discard, unforced.
+   */
+  it('offers a squash-merged session’s discard on its page, never its landing, and discards through the review’s door unforced', async () => {
+    const kept = 'refs/daoris/discarded/daoris/s-4e6837ed';
+    SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_GROUPS') {
+        return { sessions: [{ session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false, lands: null,
+          discards: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', says: 'Its work is on `main` by content (a squash merge).',
+            keeps: kept, keptAt: `Its commits stay at \`${kept}\` until you delete that ref; \`git branch daoris/s-4e6837ed ${kept}\` brings the branch back.` } }] };
+      }
+      if (type === 'DISCARD_SESSION_TREE') {
+        return { session: 's1a2b3c4', done: true,
+          message: `removed the session tree at s-4e6837ed (branch \`daoris/s-4e6837ed\`): its work is on \`main\` by content (a squash merge). Its commits stay at \`${kept}\` until you delete that ref.` };
+      }
+      if (type === 'SESSION_DIFF') return DIFF;
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+
+    show('s1a2b3c4', notify);
+    await userEvent.click(await screen.findByRole('button', { name: 'Discard branch…' }));
+    expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'LANDING', expect.anything());
+    expect(screen.getByText('in its tree s-4e6837ed')).toBeTruthy();
+    const ask = screen.getByRole('group', { name: 'discard daoris/s-4e6837ed' });
+    expect(ask).toHaveTextContent(`Its commits stay at ${kept} until you delete that ref`);
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'DISCARD_SESSION_TREE', expect.anything());
+
+    await userEvent.click(within(ask).getByRole('button', { name: 'Discard branch' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'DISCARD_SESSION_TREE', { payload: { id: 's1a2b3c4' } });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('its work is on `main` by content (a squash merge)')));
+    await vi.waitFor(() => expect(screen.queryByRole('group', { name: 'discard daoris/s-4e6837ed' })).toBeNull());
+  });
+
   it('accepts by asking the driver to land the work, and renders whatever it says back', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_DIFF') return DIFF;

@@ -12484,3 +12484,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PERSONDOOR1a — the key and the gate** (service). The key from the host's first input line, checked by route class (§3.2); keyless publishes as an agent's; `403` with §5.2's codes; the log lines; status's proof. A host handed none keeps today's trust. Contract: §2.1, §2.3, §3, §5. Proof: `PersonDoorHostTests`, keyless and keyed per route; the class table.
 
 **Outcome** 2026-10-07: a local host handed its key on its first input line gates the person's and the driver's doors by the route's class (all 63 routes classed, an unclassed write the person's), judges a keyless publish as an agent's, refuses with §5.2's codes and one `person.refused` line, and proves the key at `/api/status?prove=`; a host handed none answers as before, so nothing enforces until PERSONDOOR1d–h hand one. Detail: D156's PERSONDOOR1a note; commits 76770d2d…4d5796e5.
+
+
+## SQUASHTIDY1b — a session a squash merge carried is not offered *Accept… (2026-10-09, D102)
+
+> - [ ] **SQUASHTIDY1b — a session a squash merge carried is not offered *Accept…*** (driver, web-shell; after SQUASHTIDY1). LAND4's offer (`LandOffer`/`SessionTreeWork`) still judges by ancestry alone, so a session whose work the line holds by content, its tree still standing, is offered *Accept…* again. Use SQUASHTIDY1's content proof there, and say where the work is instead. Contract: D102's LAND4 and SQUASHTIDY1 notes. Proof: a driver test of the offer over a squash-merged line; the page's sentence.
+
+**Outcome** 2026-10-07: a session whose commits the line holds by content (a squash merge or a cherry-pick) is no longer offered *Accept…*: its page and `sessions --json` say where the work is in Discard's own clause and offer the unforced discard, naming the ref its commits stay at; one file differing is still offered *Accept…*. Follow-up: SQUASHTIDY1f. Detail: D102's SQUASHTIDY1b note; commits e1651005, 9a9bfcd4, 8fc212ad.

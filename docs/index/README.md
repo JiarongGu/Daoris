@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (117)
+## Files over 40 KB (119)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -43,8 +43,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/ui.test.tsx` | 43 | 872 |
 | `src/Daoris.Web/src/ui.tsx` | 76 | 1620 |
 | `src/Daoris.Web/src/work/ConversationView.test.tsx` | 43 | 817 |
-| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 196 | 3827 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 75 | 1417 |
+| `src/Daoris.Web/src/work/SessionHead.test.tsx` | 45 | 860 |
+| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 199 | 3866 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 76 | 1435 |
 | `src/Daoris.Web/src/work/conversation.test.ts` | 44 | 857 |
 | `src/Daoris.Web/src/work/frame.tsx` | 40 | 877 |
 
@@ -61,7 +62,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/PlannerTests.cs` | 65 | 1304 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/PluginKitTests.cs` | 46 | 937 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/RemoteSyncTests.cs` | 68 | 1391 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/SessionGroupsTests.cs` | 47 | 806 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/SessionGroupsTests.cs` | 51 | 870 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/SessionsCommandTests.cs` | 42 | 836 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/ToolInstallTests.cs` | 41 | 726 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/ToolResourcesTests.cs` | 40 | 559 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/AccountRotation.cs` | 49 | 849 |
@@ -75,10 +77,10 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 61 | 1060 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 90 | 1640 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionGroups.cs` | 55 | 987 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionGroups.cs` | 58 | 1055 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.Sync.cs` | 68 | 1146 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.cs` | 75 | 1308 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionsCommand.cs` | 55 | 1104 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionsCommand.cs` | 56 | 1130 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/StagedBuild.cs` | 46 | 959 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trace.Chain.cs` | 56 | 1246 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/WorkAbandoning.cs` | 53 | 983 |
@@ -88,7 +90,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleSessionsTests.cs` | 44 | 731 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleSessionsTests.cs` | 45 | 758 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs` | 48 | 877 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs` | 62 | 1151 |
 
