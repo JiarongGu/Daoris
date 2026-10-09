@@ -41,11 +41,12 @@ public sealed class BranchTidyingProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The row's own case: a session branch whose work a merge took onto the line, a fresh tree that made nothing, and a
-    /// branch whose tree was removed by hand all go, each said once in the report and the machine log. Every other branch
-    /// stays, as the press finds it, and says nothing: commits beyond the line, on a branch of the person's, or on the line by
-    /// content after a squash; an uncommitted change, an untracked file, an ignored file only the tree holds, a build's output
-    /// the checkout holds too; a session working in its tree, and one waiting on the person.
+    /// 🔴 The row's own case: a session branch whose work a merge took onto the line goes with its tree, and a branch whose tree
+    /// was removed by hand goes too, each said once in the report and the machine log. Every other branch stays, as the press
+    /// finds it, and says nothing: commits beyond the line, on a branch of the person's, or on the line by content after a
+    /// squash; a tree whose branch never moved, which words to its session go on in; and, each on a branch the line took, an
+    /// uncommitted change, an untracked file, an ignored file only the tree holds, a build's output the checkout holds too, a
+    /// session working in its tree, and one waiting on the person.
     /// </summary>
     [Fact]
     public async Task The_look_removes_an_empty_branch_and_keeps_every_other()
@@ -53,9 +54,7 @@ public sealed class BranchTidyingProcessTests : IDisposable
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(_home);
 
-        var fresh = await trees.OpenAsync(root, "engine", "default");
-        var merged = await TreeWithWorkAsync(trees, root);
-        await GitAsync(root, "merge", "--no-ff", "--no-edit", merged.Branch);
+        var merged = await LandedTreeAsync(trees, root);
         await GitAsync(root, "branch", "daoris/s-treeless");
 
         var beyond = await TreeWithWorkAsync(trees, root);
@@ -64,17 +63,18 @@ public sealed class BranchTidyingProcessTests : IDisposable
         var squashed = await TreeWithWorkAsync(trees, root);
         await GitAsync(root, "merge", "--squash", squashed.Branch);
         await GitAsync(root, "commit", "--quiet", "-m", "the work, squashed");
-        var changed = await trees.OpenAsync(root, "engine", "default");
+        var unmoved = await trees.OpenAsync(root, "engine", "default");
+        var changed = await LandedTreeAsync(trees, root);
         await File.WriteAllTextAsync(Path.Combine(changed.Path, "README.md"), "# engine, edited\n");
-        var untracked = await trees.OpenAsync(root, "engine", "default");
+        var untracked = await LandedTreeAsync(trees, root);
         await File.WriteAllTextAsync(Path.Combine(untracked.Path, "loose.txt"), "not committed\n");
-        var ignored = await trees.OpenAsync(root, "engine", "default");
+        var ignored = await LandedTreeAsync(trees, root);
         await File.WriteAllTextAsync(Path.Combine(ignored.Path, "local.db"), "made here alone\n");
-        var built = await trees.OpenAsync(root, "engine", "default");
+        var built = await LandedTreeAsync(trees, root);
         Directory.CreateDirectory(Path.Combine(built.Path, "build"));
         await File.WriteAllTextAsync(Path.Combine(built.Path, "build", "out.txt"), "a build's output\n");
-        var running = await trees.OpenAsync(root, "engine", "default");
-        var waiting = await trees.OpenAsync(root, "engine", "default");
+        var running = await LandedTreeAsync(trees, root);
+        var waiting = await LandedTreeAsync(trees, root);
 
         _ledger.Register("engine", root);
         _ledger.Working("s-running", "engine", running.Path);
@@ -86,27 +86,23 @@ public sealed class BranchTidyingProcessTests : IDisposable
         var said = await tidying.LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
 
         var branches = await GitAsync(root, "branch", "--list", "daoris/*");
-        foreach (var gone in new[] { fresh.Branch, merged.Branch, "daoris/s-treeless" })
-        {
-            Assert.DoesNotContain(gone, branches, StringComparison.Ordinal);
-        }
-
-        Assert.False(Directory.Exists(fresh.Path));
+        Assert.DoesNotContain(merged.Branch, branches, StringComparison.Ordinal);
+        Assert.DoesNotContain("daoris/s-treeless", branches, StringComparison.Ordinal);
         Assert.False(Directory.Exists(merged.Path));
-        foreach (var kept in new[] { beyond, featured, squashed, changed, untracked, ignored, built, running, waiting })
+        foreach (var kept in new[] { beyond, featured, squashed, unmoved, changed, untracked, ignored, built, running, waiting })
         {
             Assert.Contains(kept.Branch, branches, StringComparison.Ordinal);
             Assert.True(Directory.Exists(kept.Path), kept.Path);
         }
 
-        Assert.Equal(3, said.Count);
-        Assert.Contains($"tidy  engine: removed `{fresh.Branch}` with its tree, which held nothing beyond `main`.", said);
+        Assert.Equal(2, said.Count);
         Assert.Contains($"tidy  engine: removed `{merged.Branch}` with its tree, which held nothing beyond `main`.", said);
         Assert.Contains("tidy  engine: removed `daoris/s-treeless`, which held nothing beyond `main`.", said);
-        Assert.Equal(3, Events("branch.tidied").Length);
+        Assert.Equal(2, Events("branch.tidied").Length);
         Assert.Empty(Events("branch.kept"));
-        // The record of where session branches grew from forgets them, as the press's does.
-        Assert.DoesNotContain(trees.Grown.All(), entry => entry.Branch == fresh.Branch || entry.Branch == merged.Branch);
+        // The record of where session branches grew from forgets it, as the press's does.
+        Assert.DoesNotContain(trees.Grown.All(), entry => entry.Branch == merged.Branch);
+        Assert.Contains(trees.Grown.All(), entry => entry.Branch == unmoved.Branch);
     }
 
     /// <summary>
@@ -123,7 +119,7 @@ public sealed class BranchTidyingProcessTests : IDisposable
         var link = Path.Combine(unreadable.Path, ".git");
         File.SetAttributes(link, FileAttributes.Normal);
         await File.WriteAllTextAsync(link, $"gitdir: {Path.Combine(_scratch, "nowhere")}\n");
-        var locked = await trees.OpenAsync(root, "engine", "default");
+        var locked = await LandedTreeAsync(trees, root);
         await GitAsync(root, "worktree", "lock", "--reason", "a person's", locked.Path);
         _ledger.Register("engine", root);
         using var log = Log();
@@ -147,14 +143,15 @@ public sealed class BranchTidyingProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A fresh tree a start just opened is an empty branch until its record opens: while a start holds the repository's
-    /// trees, the look leaves every branch for another look, says so once, and takes it at the next look once nothing does.
+    /// 🔴 A tree a start is choosing, a fresh one or one it resumes in, is held from that choice until its record opens: while a
+    /// start holds the repository's trees, the look leaves every branch for another look, says so once, and takes what it may
+    /// at the next look once nothing does.
     /// </summary>
     [Fact]
     public async Task A_start_holding_the_repository_leaves_its_branches_for_another_look()
     {
         var root = await RepositoryAsync("engine");
-        var fresh = await new SessionTrees(_home).OpenAsync(root, "engine", "default");
+        var landed = await LandedTreeAsync(new SessionTrees(_home), root);
         _ledger.Register("engine", root);
         using var log = Log();
         var tidying = new BranchTidying(_home) { Pace = TimeSpan.Zero };
@@ -165,13 +162,13 @@ public sealed class BranchTidyingProcessTests : IDisposable
             held = await tidying.LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
         }
 
-        Assert.Contains(fresh.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
+        Assert.Contains(landed.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
         Assert.Equal(["tidy  engine: a session was starting in one of `engine`'s trees, so its branches were left as they were for another look."], held);
 
         var next = await tidying.LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
 
-        Assert.Equal([$"tidy  engine: removed `{fresh.Branch}` with its tree, which held nothing beyond `main`."], next);
-        Assert.False(Directory.Exists(fresh.Path));
+        Assert.Equal([$"tidy  engine: removed `{landed.Branch}` with its tree, which held nothing beyond `main`."], next);
+        Assert.False(Directory.Exists(landed.Path));
     }
 
     /// <summary>
@@ -198,7 +195,7 @@ public sealed class BranchTidyingProcessTests : IDisposable
     public async Task The_watch_s_look_removes_an_empty_branch_and_says_so_in_a_report()
     {
         var root = await RepositoryAsync("engine");
-        var fresh = await new SessionTrees(_home).OpenAsync(root, "engine", "default");
+        var landed = await LandedTreeAsync(new SessionTrees(_home), root);
         _ledger.Register("engine", root);
         var config = Path.Combine(_home, "driver.json");
         await File.WriteAllTextAsync(config, """{ "drivable": [], "pollSeconds": 1 }""");
@@ -222,8 +219,8 @@ public sealed class BranchTidyingProcessTests : IDisposable
         {
             await Poll.Until(() => { lock (said) return said.Count > 0; }, () => "no look said the tidy", Bound);
 
-            lock (said) Assert.Equal([$"tidy  engine: removed `{fresh.Branch}` with its tree, which held nothing beyond `main`."], said);
-            Assert.DoesNotContain(fresh.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
+            lock (said) Assert.Equal([$"tidy  engine: removed `{landed.Branch}` with its tree, which held nothing beyond `main`."], said);
+            Assert.DoesNotContain(landed.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
             Assert.Single(Events("branch.tidied"));
         }
         finally
@@ -253,6 +250,14 @@ public sealed class BranchTidyingProcessTests : IDisposable
     {
         var tree = await trees.OpenAsync(root, "engine", "default");
         await CommitAsync(tree.Path, $"{Guid.NewGuid():N}.txt", "the session's work", "the work");
+        return tree;
+    }
+
+    /// <summary>A session tree whose work a merge took onto the line, as a pull request completed with a merge commit leaves one.</summary>
+    private async Task<TreeOpened> LandedTreeAsync(SessionTrees trees, string root)
+    {
+        var tree = await TreeWithWorkAsync(trees, root);
+        await GitAsync(root, "merge", "--no-ff", "--no-edit", tree.Branch);
         return tree;
     }
 

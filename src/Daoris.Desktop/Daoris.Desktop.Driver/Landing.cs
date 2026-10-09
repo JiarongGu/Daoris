@@ -294,6 +294,13 @@ public sealed record SweepItem(
     /// at the press (SQUASHTIDY1c) and keeps the tree from the look's own tidy. Zero for a branch with no tree here.
     /// </summary>
     public int IgnoredShared { get; init; }
+
+    /// <summary>
+    /// Empty: it made commits, and the line holds every one (AUTOTIDY1). Its tip is not the commit it started at, by the record
+    /// of where it grew from (WSR6); false where the record has no entry for it. A branch that never moved is a conversation's
+    /// place, which words to it go on in (D137), so the look's own tidy leaves its tree for the press.
+    /// </summary>
+    public bool Worked { get; init; }
 }
 
 /// <summary>What the clean-up did with one branch, in the driver's words.</summary>

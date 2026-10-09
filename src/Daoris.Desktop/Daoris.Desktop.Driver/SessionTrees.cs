@@ -793,7 +793,12 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         if (against is not null)
         {
             var (_, ahead, _) = await WorkingTree.GitAsync(root, ["rev-list", "--count", $"{against}..{tip}"], ct).ConfigureAwait(false);
-            if (ahead.Trim() == "0") return (Item(SweepKind.Empty, where: line), tip);
+            if (ahead.Trim() == "0")
+            {
+                // Whether it made commits since it grew (AUTOTIDY1): a tree that never moved is a conversation's place (D137).
+                var worked = Grown.Of(repository, branch) is { } grown && !string.Equals(grown.From, tip, StringComparison.OrdinalIgnoreCase);
+                return (Item(SweepKind.Empty, where: line) with { Worked = worked }, tip);
+            }
         }
 
         // Where it landed, for the list: the first branch of the person's that holds its tip.

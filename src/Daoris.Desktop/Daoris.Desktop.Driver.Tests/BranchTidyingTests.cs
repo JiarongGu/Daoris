@@ -30,40 +30,49 @@ public sealed class BranchTidyingTests : IDisposable
 
     /// <summary>
     /// The table: each kind the clean-up sorts a session branch into, where its tree is, the ignored paths it shares with the
-    /// checkout (a build's output), whether git could not answer a guard, and whether the look takes it without a press.
+    /// checkout (a build's output), whether git could not answer a guard, whether it made commits the line then took, and
+    /// whether the look takes it without a press.
     /// </summary>
-    public static TheoryData<string, At, int, bool, bool> Table => new()
+    public static TheoryData<string, At, int, bool, bool, bool> Table => new()
     {
-        // Nothing beyond the line, and nothing in its tree: the one kind that goes by itself, with its tree or without one.
-        { SweepKind.Empty, At.None, 0, false, true },
-        { SweepKind.Empty, At.Home, 0, false, true },
+        // Nothing beyond the line: with no tree it goes, whether or not it ever made a commit (a start's failed open left
+        // sixteen such, FG5).
+        { SweepKind.Empty, At.None, 0, false, false, true },
+        { SweepKind.Empty, At.None, 0, false, true, true },
+        // With its tree, it goes once its work reached the line and the tree holds nothing at all: the row's own case, a pull
+        // request merged.
+        { SweepKind.Empty, At.Home, 0, false, true, true },
+        // A tree whose branch never moved is a conversation's place, which words to its session go on in (D137): the press's.
+        { SweepKind.Empty, At.Home, 0, false, false, false },
         // An ignored path the checkout also holds goes with the tree at the press (SQUASHTIDY1c); never by itself.
-        { SweepKind.Empty, At.Home, 2, false, false },
+        { SweepKind.Empty, At.Home, 2, false, true, false },
         // A tree a person checked the branch out in is the person's, whatever it holds.
-        { SweepKind.Empty, At.Outside, 0, false, false },
+        { SweepKind.Empty, At.Outside, 0, false, true, false },
         // What git could not read keeps it.
-        { SweepKind.Empty, At.Home, 0, true, false },
+        { SweepKind.Empty, At.Home, 0, true, true, false },
         // Every other kind stays exactly as it is: landed (ancestry, or content after a squash), carried by a completed pull
         // request, holding commits no branch of the person's holds, dirty, or in use.
-        { SweepKind.Landed, At.None, 0, false, false },
-        { SweepKind.Landed, At.Home, 0, false, false },
-        { SweepKind.Carried, At.None, 0, false, false },
-        { SweepKind.Unlanded, At.Home, 0, false, false },
-        { SweepKind.Unlanded, At.None, 0, true, false },
-        { SweepKind.Dirty, At.Home, 0, false, false },
-        { SweepKind.Dirty, At.Home, 0, true, false },
-        { SweepKind.InUse, At.Home, 0, false, false },
+        { SweepKind.Landed, At.None, 0, false, true, false },
+        { SweepKind.Landed, At.Home, 0, false, true, false },
+        { SweepKind.Carried, At.None, 0, false, true, false },
+        { SweepKind.Unlanded, At.Home, 0, false, true, false },
+        { SweepKind.Unlanded, At.None, 0, true, false, false },
+        { SweepKind.Dirty, At.Home, 0, false, true, false },
+        { SweepKind.Dirty, At.Home, 0, true, false, false },
+        { SweepKind.InUse, At.Home, 0, false, true, false },
     };
 
     [Theory]
     [MemberData(nameof(Table))]
-    public void Only_an_empty_branch_with_nothing_in_its_tree_goes_by_itself(string kind, At at, int ignoredShared, bool unread, bool goes)
+    public void Only_an_empty_branch_with_nothing_in_its_tree_goes_by_itself(
+        string kind, At at, int ignoredShared, bool unread, bool worked, bool goes)
     {
         var tree = at switch { At.Home => HomeTree, At.Outside => OutsideTree, _ => null };
         var item = new SweepItem("engine", "default", "daoris/s-1a2b3c4d", tree, kind, 0, "main", null)
         {
             IgnoredShared = ignoredShared,
             Unread = unread,
+            Worked = worked,
         };
 
         Assert.Equal(goes, new SessionTrees(_home).GoesByItself(item));
