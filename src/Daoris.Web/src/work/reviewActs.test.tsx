@@ -33,8 +33,7 @@ function acts() {
   return { result, notify };
 }
 
-const answered = (): Answered & { done: ReturnType<typeof vi.fn>; refused: ReturnType<typeof vi.fn> } =>
-  ({ done: vi.fn(), refused: vi.fn() });
+const answered = () => ({ done: vi.fn<Answered['done']>(), refused: vi.fn<Answered['refused']>() });
 
 /**
  * REVIEWENV1g (D154 point 8; the review environment design §3.3–§3.4, §3.6): each press of a review goes to its door, names the
