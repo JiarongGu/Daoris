@@ -175,6 +175,7 @@
   "work.say.teammate": "This session ran on another machine, where its conversation is.",
   "work.say.stoodDown": "It stood down: #{{quest}} is someone else's, so it has nothing to go on with.",
   "work.say.intake": "An intake takes no words: it is answered through its ask.",
+  "work.say.opinion": "A second opinion's reviewer takes no words: it reads the work once and says its opinion, which goes to the session whose work it read, and to you.",
   "work.say.help": "Ask Daoris's conversations take words in its own panel, which starts a new one.",
   "work.say.superseded": "#{{quest}} went on in a later session here, so write to that one.",
   "work.say.notFound": "Daoris no longer has this session's record, so nothing can take words for it.",

@@ -127,6 +127,15 @@ describe('a session row', () => {
     expect(screen.queryByText(/chat/)).toBeNull();
   });
 
+  /** XAGENT1g (the second-agent design §9): a second opinion's reviewer is marked as one, not as a chat. */
+  it('marks a second opinion’s reviewer as one — not a chat', () => {
+    render(<SessionRow session={session({ kind: 'chat', repository: 'engine', opinion: 'o1a2b3c4' })} />);
+
+    expect(screen.getByText('Second opinion')).toBeInTheDocument();
+    expect(screen.getByText(/^second opinion · moved/)).toBeInTheDocument();
+    expect(screen.queryByText(/chat/)).toBeNull();
+  });
+
   it('names a session with no quest by its derived identity rather than by nothing', () => {
     render(<SessionRow session={session({ kind: 'chat', quest: null })} />);
     expect(screen.getByText('Chat')).toBeInTheDocument();

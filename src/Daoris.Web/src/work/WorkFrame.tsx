@@ -36,7 +36,7 @@ import type { FrameIntent } from '../commands';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { SessionConversation } from './SessionConversation';
 import type { Usage } from './conversation';
-import { isIntake, ownTree, sessionOrigin, sessionTitle } from './identity';
+import { isIntake, isOpinion, ownTree, sessionOrigin, sessionTitle } from './identity';
 import { doorLabel } from '../tools';
 import type { QuestClose, Resolution } from './AwaitingPerson';
 import { Composer } from './Composer';
@@ -340,6 +340,8 @@ export function WorkFrame({
   // there sent a person's words into nothing, or into the middle of the JSON-RPC stream. The driver
   // refuses such a line too; the frame offers no box, and the page header carries the stop (D126 §3.3).
   const intake = attended ? isIntake(attended) : false;
+  // So does a second opinion's reviewer (XAGENT1g): one turn and no words, which its record's host refuses besides.
+  const oneTurn = intake || (attended ? isOpinion(attended) : false);
   // The go-aheads a park asked on its quest's ask (KNOWUSE1a2, D135 §2), read only for a driven park whose quest an ask
   // asked: shown in its head, where answering the last one open sends it on (GOAHEAD2b). The asks are asked for nowhere
   // else here.
@@ -347,15 +349,15 @@ export function WorkFrame({
   const asks = useAsks(false, parkAsk !== null);
   const goAheads = attended && parkAsk ? goAheadsAsked(asks.data, parkAsk, attended.id) : [];
   const parkGoAhead = useParkGoAhead();
-  const talking = Boolean(attended && conversation && here && !intake);
+  const talking = Boolean(attended && conversation && here && !oneTurn);
   // A driven session still working may be told something (SESS3): its words are held and are its next prompt. Offered only
   // where the driver says it listens, which is the protocol door; the pipe door has nothing to hear it.
-  const steerable = Boolean(attended && here && !intake && !conversation && attended.quest
+  const steerable = Boolean(attended && here && !oneTurn && !conversation && attended.quest
     && SESSION_ACTIVE.has(attended.state) && attended.state !== 'awaiting-person');
 
   // What the person was typing to this session, kept per session and across a reload (CONV4b): one draft for whichever
   // box its page offers, so words typed as it ends are still there in the box that goes on with them (MSG1f).
-  const [draft, setDraft] = useDraft(attended && here && !intake ? attended.id : null);
+  const [draft, setDraft] = useDraft(attended && here && !oneTurn ? attended.id : null);
   // Where each live conversation's turns stand, as the driver holds them: the attended one's stop and
   // queue follow it, not the record, which learns a turn began only when its first event lands
   // (CONV4a); and the rail and the head read a chat between turns as idle (UX5 U17).
@@ -372,7 +374,7 @@ export function WorkFrame({
   // door was a button at the top of a record of 1,800 events, and the question is read at its foot. The card above keeps
   // the endings and says the box carries it on: one owner for the answer (D56). Answered, a second word joins the first
   // (D137 §2.4), so the box stays.
-  const reach = useSessionReach(attended && here && !intake ? attended : null, steering);
+  const reach = useSessionReach(attended && here && !oneTurn ? attended : null, steering);
   const box = boxOf({ session: attended, here, intake, listening: steering, reach });
   const answering = box.kind === 'say' && box.mode === 'answer';
   // Words said as the attended session winds up, held for its record to end (D137 §2.1), shown above its box until then.

@@ -330,6 +330,11 @@ export type Session = {
   /** The ask an intake session answers (D65 §1b) — absent for every other session. */
   ask?: string | null;
   /**
+   * The second opinion this session reads another session's work for, as its reviewer (XAGENT1c, D155 point 11): a chat on no
+   * quest, one turn and no words. This machine's own, like the opinion: a teammate's record and a browser have none.
+   */
+  opinion?: string | null;
+  /**
    * The person's answer to a driven session that parked to ask them (STANDDOWN2). The service keeps the record parked
    * with it until the driver's next look (ANSWER1b, D131), so a parked record that holds one goes on rather than waits
    * (ANSWER1c). The person's own words, answered to this machine only: null over a keyed remote and on a teammate's.
