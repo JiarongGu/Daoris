@@ -11,7 +11,11 @@ const short = (commit: string) => (commit.length > 8 ? commit.slice(0, 8) : comm
 /** The details each kind words; a detail a newer driver names is said as recorded. */
 const DETAILS: Record<string, readonly string[]> = {
   work: ['queued', 'agent', 'answered', 'park', 'go-ahead', 'held', 'awaits', 'unclosed', 'failed', 'stopped', 'declined', 'finished'],
-  opinion: ['declared', 'agent', 'answering', 'given', 'failed', 'unread'],
+  // The second opinion's gate's own states (XAGENT1f, `OpinionGateStates`), and a landing that let it go.
+  opinion: [
+    'none', 'waits-chain', 'not-asked', 'reading', 'read-again', 'with-session', 'disputed', 'commits-since', 'unavailable', 'settled',
+    'anyway', 'myself', 'answered', 'landed', 'unread',
+  ],
   look: ['not-shown', 'being-set-up', 'shown', 'not-yet', 'not-held', 'reviewed', 'skip', 'off', 'unread'],
   landing: ['accept', 'automatic', 'branch', 'merge', 'already', 'nothing', 'refused', 'gone', 'elsewhere'],
   'pull-request': ['merge', 'merged', 'abandoned', 'not-pushed', 'ask-failed', 'no-branch', 'nothing'],
@@ -22,6 +26,9 @@ const HOLDS = ['departed', 'evidence-unread', 'evidence-missing'];
 
 /** A landing try's codes that can stand in the way of an automatic landing (LAND2b). */
 const TRIES = ['uncommitted', 'exists', 'completed', 'refused'];
+
+/** Why no second opinion could be had, the codes this page words (`ReviewerUnavailable`, a failed pass's); another is the general. */
+const OPINION_WHY = ['no-reviewer', 'cooling', 'signed-out', 'not-independent', 'ended', 'out-of-time'];
 
 /** A state's word, a status: the driver's own spelling where the page has none. */
 export function stateSaid(t: TFunction, state: string): string {
@@ -49,11 +56,18 @@ export function runSaid(t: TFunction, step: RunStep): string | null {
     case 'work.unclosed':
     case 'work.declined': return t(at, { quest: step.quest ?? '' });
     case 'work.finished': return t(at, { count: step.count ?? 0 });
-    case 'opinion.agent': return t(at, { agent: step.agent ?? '' });
-    case 'opinion.answering': return t(at, { count: step.count ?? 0, of: step.of ?? 0 });
-    case 'opinion.given': return t(at, { agent: step.agent ?? '', count: step.count ?? 0 });
-    case 'opinion.failed':
-      return step.code === 'ended' || step.code === 'out-of-time' ? t(`${at}.${step.code}`) : t(at, { code: step.code ?? '—' });
+    case 'opinion.reading': return step.agent ? t(at, { agent: step.agent }) : t('workflow.run.said.opinion.readingAnyone');
+    case 'opinion.read-again': return step.agent ? t(at, { agent: step.agent }) : t('workflow.run.said.opinion.readingAnyone');
+    case 'opinion.with-session':
+    case 'opinion.disputed':
+    case 'opinion.commits-since': return t(at, { count: step.count ?? 0 });
+    case 'opinion.unavailable': {
+      const why = t(`workflow.run.opinionWhy.${OPINION_WHY.includes(step.code ?? '') ? step.code : 'other'}`);
+      // Required, it waits on the person; not, it is passed over and holds nothing (the second-agent design §8.4).
+      return t(step.state === 'waiting-on-you' ? at : 'workflow.run.said.opinion.unavailableOptional', { why });
+    }
+    case 'opinion.settled': return step.agent ? t(at, { agent: step.agent }) : t('workflow.run.said.opinion.settledAnyone');
+    case 'opinion.answered': return t(step.code === 'reviewed' ? 'workflow.run.said.opinion.answeredReviewed' : at);
     case 'opinion.unread':
     case 'look.unread': return step.words ? t(`${at}Why`, { why: step.words }) : t(at);
     case 'look.not-shown':
@@ -76,10 +90,9 @@ export function runSaid(t: TFunction, step: RunStep): string | null {
   }
 }
 
-/** Why a step Current does not draw is in this run (design §4.6): a look the work's own choice added, or a reading nothing declares. */
+/** Why a step Current does not draw is in this run (design §4.6): a look the work's own choice added. */
 export function addedSaid(t: TFunction, step: RunStep): string | null {
   if (!step.added) return null;
-  if (step.step.kind === 'opinion') return t('workflow.run.added.opinion');
   return ['chain', 'ask', 'set-up-step'].includes(step.added) ? t(`workflow.run.added.${step.added}`) : t('workflow.run.added.other');
 }
 
@@ -112,7 +125,7 @@ export function runShort(t: TFunction, run: WorkflowRun): string {
 /** The short phrases each kind words, by state; any other is the state's word. */
 const SHORT: Record<string, readonly string[]> = {
   work: ['working', 'waiting-on-agent', 'failed', 'stopped'],
-  opinion: ['working', 'waiting-on-agent', 'failed'],
+  opinion: ['working', 'waiting-on-agent', 'waiting-on-you', 'not-known'],
   look: ['waiting-on-you', 'working', 'waiting-on-agent'],
   landing: ['waiting-on-you', 'working', 'cannot-start', 'not-known', 'stopped'],
   'pull-request': ['waiting-on-you', 'cannot-start', 'not-known', 'stopped'],

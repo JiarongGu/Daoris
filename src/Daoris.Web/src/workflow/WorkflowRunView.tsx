@@ -51,6 +51,9 @@ function StepMark({ run, step, here, doors, control }: {
   const kind = step.step.kind;
   const quoted = QUOTES.has(`${kind}.${step.detail}`) && step.words ? step.words : null;
   const door = doorOf(t, run, step, doors);
+  // The second opinion's gate holding the work on the person (XAGENT1f): *Go on anyway…* has no page's press yet (XAGENT1g), so
+  // its terminal twin is said where the page's would be, and the door opens the review, where the gate's presses will stand.
+  const twin = kind === 'opinion' && step.state === 'waiting-on-you' && step.session ? t('workflow.run.opinionTwin', { session: step.session }) : null;
 
   return (
     <div className="mt-1 grid min-w-0 gap-1">
@@ -65,6 +68,7 @@ function StepMark({ run, step, here, doors, control }: {
       {quoted && <p className="m-0 text-small text-ink">{t('workflow.run.quoted', { words: quoted })}</p>}
       {added && <p className="m-0 text-meta text-ink-faint">{added}</p>}
       {control}
+      {twin && <p className="m-0 text-meta text-ink-faint"><Inline text={twin} /></p>}
       {door && <div className="flex flex-wrap items-center gap-1.5">{door}</div>}
     </div>
   );
@@ -86,6 +90,10 @@ function doorOf(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, ste
   }
   if (kind === 'work' && ['awaits', 'queued', 'unclosed', 'declined'].includes(step.detail) && step.quest && doors?.quest) {
     return button(t('workflow.run.door.quest', { id: step.quest }), () => doors.quest?.(step.quest!));
+  }
+  // The gate holds the work on the person: its presses stand beside the review's Accept (XAGENT1f's `LANDING` answers it there).
+  if (kind === 'opinion' && step.state === 'waiting-on-you' && step.session && doors?.review) {
+    return button(t('workflow.run.door.review'), () => doors.review?.(step.session!));
   }
   if ((kind === 'work' || kind === 'opinion') && step.session && doors?.session) {
     return button(t('workflow.run.door.session'), () => doors.session?.(step.session!));

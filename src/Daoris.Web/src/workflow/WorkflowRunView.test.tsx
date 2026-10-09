@@ -7,7 +7,8 @@ import i18n from '../i18n';
 import { code } from '../test/code';
 import type { RunStep, WorkflowRun } from './run';
 import {
-  answerOf, FAILED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DECLARED, PULL_REQUEST_OPEN, SEVERAL, WAITING_ON_YOU, WORKING,
+  answerOf, FAILED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED, OPINION_SETTLED, PULL_REQUEST_OPEN, SEVERAL,
+  WAITING_ON_YOU, WORKING,
 } from './runFixtures';
 import { WorkflowLine } from './WorkflowLine';
 import { WorkflowRunView } from './WorkflowRunView';
@@ -91,7 +92,7 @@ describe("the session's Workflow view", () => {
     expect(doors.ask).toHaveBeenCalledWith('a1');
     again.unmount();
 
-    const accept = render(<WorkflowRunView answer={answerOf(OPINION_DECLARED)} doors={doors} />);
+    const accept = render(<WorkflowRunView answer={answerOf(OPINION_SETTLED)} doors={doors} />);
     await userEvent.click(within(row('landing')).getByRole('button', { name: 'Open its review' }));
     expect(doors.review).toHaveBeenCalledWith('s1');
     accept.unmount();
@@ -110,17 +111,63 @@ describe("the session's Workflow view", () => {
     expect(screen.queryByRole('button', { name: 'Never' })).toBeNull();
   });
 
-  it('says a declared second opinion holds nothing, and one being answered where a gate holds on it', () => {
-    const { unmount } = render(<WorkflowRunView answer={answerOf(OPINION_DECLARED)} />);
-    expect(row('opinion')).toHaveTextContent('declared only');
-    expect(row('opinion')).toHaveTextContent('Declared only: nothing reads it yet, so it holds nothing.');
-    expect(row('landing')).toHaveAttribute('aria-current', 'step');
+  it("stands at the second opinion while its gate holds, in the gate's words, and past it once settled", () => {
+    const { unmount } = render(<WorkflowRunView answer={answerOf(HELD_FOR_OPINION)} />);
+    expect(row('opinion')).toHaveAttribute('aria-current', 'step');
+    expect(row('opinion')).toHaveTextContent('waiting on an agent');
+    expect(row('opinion')).toHaveTextContent('The working session is answering its 3 findings.');
+    expect(row('landing')).toHaveTextContent('not reached');
+    expect(screen.getByText('Workflow: answering a second opinion')).toBeInTheDocument();
     unmount();
 
-    render(<WorkflowRunView answer={answerOf(HELD_FOR_OPINION)} />);
-    expect(row('opinion')).toHaveTextContent('waiting on an agent');
-    expect(row('opinion')).toHaveTextContent('The working session is answering 2 of its 3 findings.');
-    expect(screen.getByText('Workflow: answering a second opinion')).toBeInTheDocument();
+    const settled = render(<WorkflowRunView answer={answerOf(OPINION_SETTLED)} />);
+    expect(row('opinion')).toHaveTextContent('Settled: read by Codex (OpenAI), with nothing left disputed.');
+    expect(row('landing')).toHaveAttribute('aria-current', 'step');
+    settled.unmount();
+  });
+
+  it("opens the review where the gate holds the work on you, and says Go on anyway's terminal twin until the review draws it", async () => {
+    const review = vi.fn();
+    render(<WorkflowRunView answer={answerOf(OPINION_DISPUTED)} doors={{ review, session: vi.fn() }} />);
+    const opinion = row('opinion');
+
+    expect(opinion).toHaveTextContent('waiting on you');
+    expect(within(opinion).getByText('waiting on you')).toHaveClass('text-ink-open');
+    expect(opinion).toHaveTextContent('1 finding is disputed: a must the working session did not fix and no recheck withdrew.');
+    expect(opinion).toHaveTextContent('daoris-driver opinion anyway s1 "…" goes on without it');
+    // No page's press for it yet (XAGENT1g): the door is the review, beside its Accept.
+    expect(within(opinion).queryByRole('button', { name: /Go on anyway/ })).toBeNull();
+    await userEvent.click(within(opinion).getByRole('button', { name: 'Open its review' }));
+    expect(review).toHaveBeenCalledWith('s1');
+    expect(screen.getByText('Workflow: a second opinion waits for you')).toBeInTheDocument();
+  });
+
+  it("words each of the gate's states", () => {
+    const step = (detail: string, state: string, facts: Partial<RunStep> = {}): WorkflowRun => ({
+      ...OPINION_SETTLED, steps: [OPINION_SETTLED.steps[0]!, { ...OPINION_SETTLED.steps[1]!, state, detail, ...facts }, OPINION_SETTLED.steps[2]!],
+    });
+    const said = (run: WorkflowRun) => {
+      const { unmount } = render(<WorkflowRunView answer={answerOf(run)} />);
+      const text = row('opinion').textContent;
+      unmount();
+      return text;
+    };
+
+    expect(said(step('not-asked', 'working'))).toContain("Asked at the driver's next look.");
+    expect(said(step('reading', 'working'))).toContain('Being read by Codex (OpenAI).');
+    expect(said(step('read-again', 'working'))).toContain('Read again by Codex (OpenAI): the commits made in answer.');
+    expect(said(step('commits-since', 'waiting-on-you', { count: 2 }))).toContain('2 commits since were not read by another agent');
+    expect(said(step('unavailable', 'waiting-on-you', { code: 'no-reviewer' })))
+      .toContain('No second opinion could be had: no listed reviewer of another maker is installed. The rule requires one');
+    expect(said(step('unavailable', 'skipped', { code: 'out-of-time' }))).toContain('The rule does not require one, so nothing waits for it.');
+    expect(said(step('anyway', 'done', { words: 'a typo' }))).toContain('You went on without a settled second opinion.');
+    expect(said(step('myself', 'done'))).toContain("You looked at it yourself in place of another agent's reading.");
+    expect(said(step('answered', 'done', { code: 'reviewed' }))).toContain('Your Reviewed answered the second opinion.');
+    expect(said(step('answered', 'done', { code: 'press' }))).toContain('Your Accept answered the second opinion.');
+    expect(said(step('none', 'skipped'))).toContain('No second opinion is asked before this work lands.');
+    expect(said(step('landed', 'done'))).toContain('It let the work go when the work landed.');
+    expect(said(step('unread', 'not-known', { words: 'the service did not answer' })))
+      .toContain('Whether a second opinion holds it could not be read: the service did not answer');
   });
 
   it('says a run finished: landed, merged, at the end of the line', () => {

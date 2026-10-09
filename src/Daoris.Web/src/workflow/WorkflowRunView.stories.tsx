@@ -3,7 +3,8 @@ import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../storyLanguage';
 import { Button } from '../ui';
 import {
-  answerOf, FAILED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DECLARED, PULL_REQUEST_OPEN, SEVERAL, WAITING_ON_YOU, WORKING,
+  answerOf, FAILED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED, OPINION_SETTLED, PULL_REQUEST_OPEN, SEVERAL,
+  WAITING_ON_YOU, WORKING,
 } from './runFixtures';
 import { WorkflowLine } from './WorkflowLine';
 import { WorkflowRunView } from './WorkflowRunView';
@@ -49,13 +50,19 @@ export const InReview: Story = {
 };
 
 /**
- * **Held for an opinion**: the working session answering two of three findings, the state XAGENT1f's gate holds a landing in.
- * Until that gate reads the rule the step is declared, as the next story draws it.
+ * **Held for an opinion**: XAGENT1f's gate at `with-session`, Codex's three findings with the working session, which answers them;
+ * the run stands at the opinion, and the landing is not reached until the gate settles.
  */
 export const HeldForAnOpinion: Story = { args: { answer: answerOf(HELD_FOR_OPINION) } };
 
-/** **A declared opinion**: as main holds it, holding nothing, so the run stands at the landing, which waits for *Accept*. */
-export const OpinionDeclared: Story = { args: { answer: answerOf(OPINION_DECLARED) } };
+/**
+ * **A dispute waits on you**: in open's hue, its door the review, where the gate's presses stand beside *Accept…*, and *Go on
+ * anyway…*'s terminal twin said until the review draws it (XAGENT1g).
+ */
+export const OpinionDisputed: Story = { args: { answer: answerOf(OPINION_DISPUTED), doors } };
+
+/** **A settled opinion**: done, the run standing at the landing, which waits for *Accept…*. */
+export const OpinionSettled: Story = { args: { answer: answerOf(OPINION_SETTLED) } };
 
 /** **Landed**: into its line by the person's accept; the run finished, *done* at the end of the line. */
 export const Landed: Story = { args: { answer: answerOf(LANDED) } };

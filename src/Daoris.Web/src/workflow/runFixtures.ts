@@ -21,7 +21,7 @@ const run = (steps: RunStep[], fields: Partial<WorkflowRun> = {}): WorkflowRun =
   ask: 'a1',
   quests: ['q1'],
   session: 's1',
-  at: steps.find((step) => !['done', 'skipped', 'declared'].includes(step.state))?.step.id ?? null,
+  at: steps.find((step) => !['done', 'skipped'].includes(step.state))?.step.id ?? null,
   workflow: { version: '06e90f358edc', startHolds: [], limits: limitsOf(steps) },
   steps,
   ...fields,
@@ -53,21 +53,29 @@ export const IN_REVIEW = run([
 ], { quests: ['q1', 'q2'], session: 's2' });
 
 /**
- * The second opinion's findings handed to the working session, which is answering them: the state XAGENT1f's gate holds a landing
- * in. Until that gate reads the rule the step is declared and holds nothing (`OPINION_DECLARED`), so the run stands past it.
+ * Held for an opinion: its gate's `with-session` (XAGENT1f), Codex's three findings with the working session, which answers them
+ * as its next turn (*findings with the working session wait on its agent*). The landing is not reached until the gate settles.
  */
 export const HELD_FOR_OPINION = run([
   at(WORK(), 'done', 'finished', { session: 's1', quest: 'q1', agent: 'claude-code', at: AT, count: 1, of: 1 }),
-  at({ ...OPINION, runtime: 'partial', limit: null }, 'waiting-on-agent', 'answering', {
-    session: 's1', agent: 'Codex (OpenAI)', commit: COMMIT, count: 2, of: 3,
-  }),
+  at(OPINION, 'waiting-on-agent', 'with-session', { session: 's1', agent: 'Codex (OpenAI)', commit: COMMIT, count: 3 }),
   at(MERGE_YOU_ACCEPT, 'not-reached', ''),
 ]);
 
-/** The second opinion as main holds it: declared, holding nothing, so the landing waits for the person's accept. */
-export const OPINION_DECLARED = run([
+/**
+ * A dispute the gate holds on the person (*a dispute waits on you*): a `must` the working session did not fix. Its door opens the
+ * review, where the gate's presses stand beside *Accept…*, and *Go on anyway…* is the terminal's until the review draws it.
+ */
+export const OPINION_DISPUTED = run([
   at(WORK(), 'done', 'finished', { session: 's1', quest: 'q1', agent: 'claude-code', at: AT, count: 1, of: 1 }),
-  at(OPINION, 'declared', 'declared'),
+  at(OPINION, 'waiting-on-you', 'disputed', { session: 's1', agent: 'Codex (OpenAI)', commit: COMMIT, count: 1 }),
+  at(MERGE_YOU_ACCEPT, 'not-reached', ''),
+]);
+
+/** A settled opinion (*a settled opinion lets the landing go*): the landing waits for the person's accept. */
+export const OPINION_SETTLED = run([
+  at(WORK(), 'done', 'finished', { session: 's1', quest: 'q1', agent: 'claude-code', at: AT, count: 1, of: 1 }),
+  at(OPINION, 'done', 'settled', { session: 'r1', agent: 'Codex (OpenAI)', commit: COMMIT, count: 3 }),
   at(MERGE_YOU_ACCEPT, 'waiting-on-you', 'accept', { session: 's1', at: AT }),
 ]);
 

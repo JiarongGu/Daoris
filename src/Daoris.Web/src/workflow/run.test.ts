@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { knownState, runSessionOf, runTone, standsAt, waitsOnYou } from './run';
-import { FAILED, IN_REVIEW, LANDED, OPINION_DECLARED, PULL_REQUEST_OPEN, WORKING } from './runFixtures';
+import { FAILED, HELD_FOR_OPINION, IN_REVIEW, LANDED, OPINION_SETTLED, PULL_REQUEST_OPEN, WORKING } from './runFixtures';
 
 // WORKFLOW1c (the workflow design §5.2, §7): what the page reads of a run the driver answered: the step it stands at, the hue a
 // state wears, and the session a door into it attends. The driver derives every state; nothing here does.
@@ -10,8 +10,9 @@ describe('a run as the page reads it', () => {
     expect(standsAt(WORKING)?.step.id).toBe('work');
     expect(standsAt(IN_REVIEW)?.step.id).toBe('look');
     expect(standsAt(PULL_REQUEST_OPEN)?.step.id).toBe('pull-request');
-    // A declared opinion holds nothing, so the run stands past it.
-    expect(standsAt(OPINION_DECLARED)?.step.id).toBe('landing');
+    // The second opinion's gate holds the run while an agent answers it, and lets it go once settled (XAGENT1f).
+    expect(standsAt(HELD_FOR_OPINION)?.step.id).toBe('opinion');
+    expect(standsAt(OPINION_SETTLED)?.step.id).toBe('landing');
     expect(standsAt(LANDED)).toBeNull();
   });
 
@@ -27,7 +28,7 @@ describe('a run as the page reads it', () => {
     expect(runTone('waiting-on-you')).toBe('open');
     expect(runTone('done')).toBe('done');
     expect(runTone('failed')).toBe('declined');
-    for (const state of ['working', 'waiting-on-agent', 'not-known', 'cannot-start', 'skipped', 'stopped', 'declared', 'not-reached', 'later']) {
+    for (const state of ['working', 'waiting-on-agent', 'not-known', 'cannot-start', 'skipped', 'stopped', 'not-reached', 'later']) {
       expect(runTone(state)).toBe('neutral');
     }
   });

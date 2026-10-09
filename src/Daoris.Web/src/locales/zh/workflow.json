@@ -72,7 +72,7 @@
   "workflow.runtimeTip.built": "Daoris 现在完整地运行这一步。",
   "workflow.runtimeTip.partial": "Daoris 现在只运行这一步的一部分；没有做到的写在它下面。",
   "workflow.runtimeTip.declared": "规则已设定并保存，但还没有东西依据它行动。",
-  "workflow.limit.opinion-declared": "目前还没有东西读取它，所以不会选出阅读者，也没有落地会等它。",
+  "workflow.limit.opinion-partial": "只有在另一个智能体对它的阅读了结之后，或者你通过 `daoris-driver opinion` 不等它继续时，这里的工作才会落地；审阅还没有画出它，也还没有任务能选自己的阅读者。",
   "workflow.limit.look-partial": "落地会一直等到你确认已审阅或跳过审阅；在那之前，准备步骤的构建从它的会话结束起在 Daoris 的浏览器中展示。目前还不会为你编排准备步骤，也没有为它单独运行的进程。",
   "workflow.limit.plugin-unready": "它的插件现在无法在本机落地工作：它没有安装、已停用、什么都不提供，或者不在 `work/land` 挂点上说话。`daoris plugin list` 会说明是哪一种。",
   "workflow.limit.pull-request-unread": "它的插件不回答 `work/state`，所以 Daoris 从不读取这个拉取请求是被合并还是被放弃。",

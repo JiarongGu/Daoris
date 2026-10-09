@@ -8,12 +8,11 @@ import type { WorkflowStep } from './current';
 /** Where a step stands (design §5.2), as the driver spells it (`WorkflowRunStates`). */
 export type RunState =
   | 'not-reached' | 'working' | 'waiting-on-you' | 'waiting-on-agent' | 'not-known' | 'cannot-start'
-  | 'done' | 'skipped' | 'failed' | 'stopped' | 'declared';
+  | 'done' | 'skipped' | 'failed' | 'stopped';
 
 /** The states this page words; one a newer driver names is said as recorded, never dropped. */
 export const KNOWN_STATES: readonly RunState[] = [
   'not-reached', 'working', 'waiting-on-you', 'waiting-on-agent', 'not-known', 'cannot-start', 'done', 'skipped', 'failed', 'stopped',
-  'declared',
 ];
 
 /** One step of a run: Current's cell beside where it stands, and the facts its words and its door are made of. */
@@ -23,7 +22,7 @@ export interface RunStep {
   state: string;
   /** Which row of the state's table, read with the step's kind (`WorkflowRunDetails`). */
   detail: string;
-  /** Why a step Current does not draw is in this run: the review's level that asked for a look, or `opinion`. */
+  /** Why a step Current does not draw is in this run: the review's level that asked for a look for this work. */
   added?: string | null;
   session?: string | null;
   quest?: string | null;
