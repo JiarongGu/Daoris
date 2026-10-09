@@ -479,7 +479,7 @@ describe('QuestsView', () => {
         message: 'Accepted the departure on quest `#abc123`: what it held goes on.',
       }));
       const notify = view();
-      expect(await within(questList()).findByText('Awaiting your yes (1)')).toBeInTheDocument();
+      expect(await within(questList()).findByText('Waiting on you (1)')).toBeInTheDocument();
       const page = await chooseRow('Expose a streaming budget');
 
       await userEvent.click(within(page).getByRole('button', { name: 'Accept the departure' }));

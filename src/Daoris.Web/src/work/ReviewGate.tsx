@@ -175,7 +175,8 @@ export function ReviewGate({
       )}
 
       {newest && (state === 'shown' || state === 'not-yet' || state === 'not-held' || whole) && (
-        <SetUpShown setUp={newest} step={step!} served={served} lead={t('review.setUp.newest')} full />
+        // Whether it is still served matters only while it waits for the look: a verdict lets the tab go (REVIEWENV1d).
+        <SetUpShown setUp={newest} step={step!} served={state === 'shown' ? served : null} lead={t('review.setUp.newest')} full />
       )}
 
       {(offered.length > 0 || (acts.open && quest && !whole)) && asking === null && (
