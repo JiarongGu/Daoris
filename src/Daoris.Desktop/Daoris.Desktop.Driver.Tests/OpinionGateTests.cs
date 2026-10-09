@@ -371,6 +371,13 @@ public sealed class OpinionGateTests
         Assert.Null(OpinionGate.LaterStep(chain, "q1", "api"));
         Assert.Equal("q2", OpinionGate.LaterStep(composed, "q1", "web-app"));
         Assert.Null(OpinionGate.LaterStep(setUp, "q1", "web-app"));
+
+        // The look asks an earlier step's opinion of nobody: its chain's later work here, run or to run, asks one for the whole.
+        var done = new List<QuestView> { Quest("q1"), Quest("q2") with { Parent = "q1" } };
+        Assert.True(OpinionGate.HasLaterWork(done, "q1", "web-app"));
+        Assert.False(OpinionGate.HasLaterWork(done, "q2", "web-app"));
+        Assert.False(OpinionGate.HasLaterWork([Quest("q1"), Quest("q2", "Declined") with { Parent = "q1" }], "q1", "web-app"));
+        Assert.False(OpinionGate.HasLaterWork(setUp, "q1", "web-app"));
     }
 
     [Fact]

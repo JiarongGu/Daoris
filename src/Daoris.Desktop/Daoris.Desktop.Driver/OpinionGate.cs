@@ -573,6 +573,17 @@ public static class OpinionGate
     }
 
     /// <summary>
+    /// Whether a work step of the chain in <paramref name="repository"/> comes after <paramref name="quest"/>, run or still to run,
+    /// and not declined (design §8.1): then the opinion on the chain's work there is that step's to ask, once, at its end.
+    /// </summary>
+    public static bool HasLaterWork(IReadOnlyList<QuestView> chain, string quest, string repository)
+    {
+        var at = chain.ToList().FindIndex(each => string.Equals(each.Id, quest.TrimStart('#'), StringComparison.OrdinalIgnoreCase));
+        return at >= 0 && chain.Skip(at + 1).Any(later => later.SetUpIn is null && later.Status != "Declined"
+            && string.Equals(later.To, repository, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
     /// The quest of the chain in <paramref name="repository"/> still to run after <paramref name="quest"/> (design §8.1): a work
     /// step, open or taken, listed after it, or one still composed in an open quest's <c>then</c>; null where none is. A set-up step
     /// is D154's, never a later step of the work.

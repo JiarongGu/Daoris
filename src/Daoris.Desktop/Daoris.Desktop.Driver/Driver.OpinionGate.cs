@@ -117,8 +117,10 @@ public sealed partial class Driver
                         OpinionBeside(claim, token => AskPassAsync(due, key, chain, request.Occasion, request, snapshot, token), ct);
                     }
                 }
-                else if ((gate.State == OpinionGateStates.NotAsked && !gate.Held)
-                         || (gate is { State: OpinionGateStates.Unavailable, Code: ReviewerUnavailable.Cooling, Until: { } reset } && reset <= now))
+                else if (((gate.State == OpinionGateStates.NotAsked && !gate.Held)
+                          || (gate is { State: OpinionGateStates.Unavailable, Code: ReviewerUnavailable.Cooling, Until: { } reset } && reset <= now))
+                         // One opinion reads a chain's whole work here (§8.1): an earlier step's is its last step's to ask.
+                         && (due.Occasion == OpinionRules.Steps || !OpinionGate.HasLaterWork(chain, due.Quest, due.Repository)))
                 {
                     if (_runs.TryOpinion(claim))
                     {
