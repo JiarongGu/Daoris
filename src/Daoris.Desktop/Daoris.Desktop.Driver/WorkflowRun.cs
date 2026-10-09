@@ -242,11 +242,8 @@ public sealed record WorkflowRunStep(WorkflowStep Step, string State, string Det
     /// <summary>Of how many.</summary>
     public int? Of { get; init; }
 
-    /// <summary>A go-ahead's number on its ask.</summary>
+    /// <summary>A go-ahead's number on the run's ask.</summary>
     public int? GoAhead { get; init; }
-
-    /// <summary>The ask a go-ahead is on.</summary>
-    public string? Ask { get; init; }
 
     /// <summary>Words the record kept: the person's (a skip's, a <i>not yet</i>'s) or a session's note, shown as written.</summary>
     public string? Words { get; init; }
