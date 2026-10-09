@@ -252,8 +252,9 @@ export function Composer({
   return (
     <form
       // The box follows the centre's width, as the conversation above it does (UX5 U16:
-      // capped, it was half a maximized window).
-      className="grid gap-2 border-t border-line px-4 py-3"
+      // capped, it was half a maximized window). Its columns are bounded, here and in what waits: an `auto` column grows
+      // to its widest word, and a pasted URL as Ask Daoris's first words ran the box past the dock (ASKHIST1b).
+      className="grid grid-cols-[minmax(0,1fr)] gap-2 border-t border-line px-4 py-3"
       onSubmit={(event) => { event.preventDefault(); say(); }}
       {...(live && attachments ? attach.handlers : {})}
     >
@@ -261,15 +262,15 @@ export function Composer({
       {!live && writing && <p className="m-0 text-small text-ink-soft">{t('work.composer.over')}</p>}
 
       {live && queued.length > 0 && (
-        <div className="grid gap-1">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-1">
           <span id={waitingLabel} className="text-meta text-ink-faint">{queuedLabel ?? t(taking && !opening ? 'work.composer.queued' : 'work.composer.opening')}</span>
-          <ol aria-labelledby={waitingLabel} className="m-0 grid list-none gap-1 p-0">
+          <ol aria-labelledby={waitingLabel} className="m-0 grid list-none grid-cols-[minmax(0,1fr)] gap-1 p-0">
             {queued.map((message, index) => (
               <li
                 key={`${index}:${message.text}`}
                 className="rounded-control border border-dashed border-line-strong px-2.5 py-1 text-small text-ink-soft"
               >
-                <span className="line-clamp-2 whitespace-pre-wrap">{message.text}</span>
+                <span className="line-clamp-2 whitespace-pre-wrap wrap-anywhere">{message.text}</span>
                 {message.files.length > 0 && (
                   <span className="mt-0.5 flex min-w-0 items-center gap-1 text-meta text-ink-faint">
                     <Icon name="attach" size={11} className="shrink-0" />

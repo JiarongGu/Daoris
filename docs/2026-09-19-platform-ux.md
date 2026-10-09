@@ -126,7 +126,10 @@ D75), where its own rules live; this is what a view may assume of it.
   about a tree (*busy*) is words, never the live mark (U60).
 - **A path breaks at its separators**: `PathText`, never `break-all`, which broke a tree inside a name
   (`family\g` / `ame`). Anything else that may be wider than its line (an account name, a tool's raw
-  output) wraps `anywhere`, which breaks inside a word only when that one word will not fit (U8).
+  output) wraps `anywhere`, which breaks inside a word only when that one word will not fit (U8). **A grid that holds
+  a cut line or someone's words bounds its column** (`grid-cols-[minmax(0,1fr)]`, ASKHIST1b): an implicit column is
+  `auto`, which grows to its widest item's min-content, and a `truncate` line's is the whole line, so a pasted URL in
+  Ask Daoris's history widened every row past the dock, cut nothing, and scrolled the panel sideways.
 - **A command breaks between its words**: `CodeText`, every code span, one box per word, since a line
   may break after any hyphen and a setting's terminal twin read `--no-` / `keep` in 中文 (LOOK5). A word
   breaks inside only when it alone is wider than its line. **The marks after a span stay on its last word's line**
