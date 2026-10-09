@@ -16,6 +16,7 @@ import { DetailsFold } from './DetailsFold';
 import { type Answered, InlineConfirm } from './InlineConfirm';
 import { useCut } from './ViewMain';
 import type { DiscardOffer, LandOffer } from './groups';
+import { HeldDiscardAsk, HeldDiscardButton, heldDiscardable } from './HeldDiscard';
 import { isIntake, sessionOrigin, sessionTitle, shortened } from './identity';
 import { Note } from './Note';
 import { hasNote, noteBlocks, noteLines } from './noteLines';
@@ -485,7 +486,8 @@ function Lands({ session, lands, landing, onReview, onLand, review }: {
  * *Accept…* would be, its branch and tree, *Review*, and *Discard branch…* where an unforced discard would go now. The ask says
  * the driver's sentence naming the ref the commits stay at; the press is the review's Discard, unforced, and its tree goes
  * with the branch. Open until the discard answers, a refusal said inside it (UXFIX2). The driver's words are content here, as
- * the review's own sentence is (`DiffPane`'s `said`), so no catalogue words them again.
+ * the review's own sentence is (`DiffPane`'s `said`), so no catalogue words them again. The press and its ask are
+ * `HeldDiscard`'s, which the review offers in *Accept*'s place too (SQUASHTIDY1f).
  */
 function Discards({ discards, onReview, onDiscard }: {
   discards: DiscardOffer;
@@ -494,29 +496,18 @@ function Discards({ discards, onReview, onDiscard }: {
 }) {
   const { t } = useTranslation();
   const [asking, setAsking] = useState(false);
-  const discardable = Boolean(onDiscard && discards.keptAt);
+  const discardable = heldDiscardable(discards, onDiscard);
   return (
     <>
       <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small">
         <span className="min-w-0 text-ink-soft"><Inline text={discards.says} /></span>
         <PathText path={discards.branch} className="min-w-0 text-meta text-ink-faint" />
         <span className="text-ink-faint">{t('work.head.inTree', { tree: discards.tree })}</span>
-        {discardable && !asking && (
-          <Button variant="danger" className="px-2 py-0.5 text-small" onClick={() => setAsking(true)}>
-            {t('settings.sweep.discard')}
-          </Button>
-        )}
+        {discardable && !asking && <HeldDiscardButton className="px-2 py-0.5 text-small" onAsk={() => setAsking(true)} />}
         {onReview && <Button className="px-2 py-0.5 text-small" onClick={onReview}>{t('work.head.review')}</Button>}
       </p>
       {discardable && asking && (
-        <InlineConfirm
-          block
-          label={t('settings.sweep.discardTitle', { branch: discards.branch })}
-          says={<p className="m-0 text-small text-ink-soft"><Inline text={discards.keptAt!} /></p>}
-          meanIt={t('settings.sweep.discardMeanIt')}
-          onConfirm={onDiscard!}
-          onClose={() => setAsking(false)}
-        />
+        <HeldDiscardAsk branch={discards.branch} keptAt={discards.keptAt!} onDiscard={onDiscard!} onClose={() => setAsking(false)} />
       )}
     </>
   );

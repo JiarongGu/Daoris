@@ -44,8 +44,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/ui.tsx` | 76 | 1632 |
 | `src/Daoris.Web/src/work/ConversationView.test.tsx` | 43 | 817 |
 | `src/Daoris.Web/src/work/SessionHead.test.tsx` | 45 | 860 |
-| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 199 | 3866 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 77 | 1457 |
+| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 202 | 3909 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 78 | 1463 |
 | `src/Daoris.Web/src/work/conversation.test.ts` | 44 | 857 |
 | `src/Daoris.Web/src/work/frame.tsx` | 40 | 877 |
 
@@ -77,9 +77,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 61 | 1060 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 90 | 1640 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionGroups.cs` | 58 | 1055 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionGroups.cs` | 59 | 1064 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.Sync.cs` | 68 | 1146 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.cs` | 75 | 1308 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.cs` | 76 | 1319 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionsCommand.cs` | 56 | 1134 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/StagedBuild.cs` | 46 | 959 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trace.Chain.cs` | 56 | 1246 |

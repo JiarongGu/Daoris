@@ -348,6 +348,39 @@ public sealed class AutoLandingTests : IDisposable
         Assert.Contains("This work goes through review. When it is done and the person accepts it", Instruction(root));
     }
 
+    /// <summary>
+    /// SQUASHTIDY1f: a due session whose work a squash merge put on the line before the look lands nothing. The landing the look
+    /// runs is the press's own, which refuses it by its own code in the head's clause; the code closes the entry, the look's line
+    /// says the sentence, and no branch, record or plugin call is made. Its tree stays, for its discard.
+    /// </summary>
+    [Fact]
+    public async Task A_due_session_the_line_holds_by_content_is_not_landed_and_its_entry_closes()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin, AutoAccept: true));
+        InstallManifest();
+        var tree = await DoneSessionAsync(root, "s1", "q1");
+        var branch = (await GitAsync(tree, "rev-parse", "--abbrev-ref", "HEAD")).Trim();
+        await GitAsync(root, "merge", "--squash", branch);
+        await GitAsync(root, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "-m", $"{branch} (squashed)");
+
+        var line = Assert.Single(await LookAsync());
+
+        Assert.Equal(
+            "landing  session s1 (#q1 → engine): Its work is on `main` by content (a squash merge), so it is not landed again: that "
+            + "would make a second copy of it. Discard its tree instead.",
+            line);
+        Assert.False(await BranchAsync(root, "feature/q1-fix-the-gap"));
+        Assert.Null(new LandedBranches(_home).Landing("s1"));
+        Assert.Empty(_frames);
+        var entry = new AutoLandings(_home).Of("s1")!;
+        Assert.NotNull(entry.Closed);
+        Assert.Equal(AutoLandingCode.Carried, entry.Last!.Code);
+        Assert.Equal(AutoLandingCode.Carried, Value(Assert.Single(_lines), "code"));
+        Assert.True(Directory.Exists(tree));
+        Assert.Empty((await Lander().ChooseAsync(Config())).Chosen);
+    }
+
     // ——— the world, the plugin and the fixtures
 
     /// <summary>The service's quests and records, standing in.</summary>

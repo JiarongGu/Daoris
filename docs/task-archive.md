@@ -12533,3 +12533,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **REVIEWENV1h — the family rehearsal phase** (tools, examples; after c). An example declares a local environment. A stub chain says a set-up; its landing is refused until `quest review … reviewed`; *not yet* reaches the stub's next turn; a later commit holds again; a repository set to none lands at once. Contract: §3. Proof: `rehearse:family`'s new phase.
 
 **Outcome** 2026-10-07: phase 17e of `rehearse:family` proves D154's chain over the example family with no model: a local set-up step sits in the headless loop; a stub chain's set-up in a deployed environment is said through its connector (`review_ready`); `trees land` refuses with the gate's sentence until `quest review … reviewed`; *not yet* reaches the stub's next turn and a second set-up is posted; a later commit holds again; the landing record keeps the verdict; `review … none` lands at once. 425 checks. Found: SessionTrees.Config() ignores `DAORIS_DRIVER_CONFIG` (CONFIGSEAM1). Detail: D154's REVIEWENV1h note; commits e20f8d62…ae884155.
+
+
+## SQUASHTIDY1f — the review pane's own Accept reads the content proof (2026-10-09, D102)
+
+> - [ ] **SQUASHTIDY1f — the review pane's own Accept reads the content proof** (driver, web-shell; after SQUASHTIDY1b). The review side bar's *Accept* (`DiffPane`) is still offered, and `LandAsync` still lands, a tree the line holds by content. Refuse there with the content clause and offer the discard, as the session's head now does. Contract: D102's SQUASHTIDY1b note. Proof: a `LandAsync` Process test over a squash-merged line; the pane's vitest.
+
+**Outcome** 2026-10-07: every landing door (the review's Accept, `trees land`, Ask Daoris's accept card, the look's automatic landing) goes through `LandAsync`, which now asks the head's own judgement first and refuses work the line holds by content with the code `carried` and one sentence, writing nothing; the review pane shows the head's *Discard branch…* (`HeldDiscard`, one molecule for both) where Accept stood. Detail: D102's SQUASHTIDY1f note, the fix log's entry; commits 501dbcc6…2a2ed2b3.

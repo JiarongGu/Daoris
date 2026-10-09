@@ -211,6 +211,8 @@ with the version and date at release.
   choose its review when it is written.
 - A repository's and a workspace's page have a *Workflow* tab: how work moves there, drawn step by step, with who
   does each step, which rule sets it, and a door to change it in Setup.
+- Work already on the line by a squash merge is no longer landed a second time from the review's *Accept*: the review
+  says so and offers to discard the branch instead.
 
 The first version: doctrine that installs, is checked, and flows back.
 

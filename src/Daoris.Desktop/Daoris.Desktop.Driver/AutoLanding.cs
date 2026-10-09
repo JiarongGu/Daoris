@@ -88,6 +88,13 @@ public static class AutoLandingCode
     /// </summary>
     public const string Unreviewed = "unreviewed";
 
+    /// <summary>
+    /// Its work is on the line, or on a branch of the person's, by content already (SQUASHTIDY1f; SQUASHTIDY1's proof, as the
+    /// session's head reads it since SQUASHTIDY1b): a squash merge or a cherry-pick carried it, so landing it again would make a
+    /// second copy. Refused at every door, and an entry it ends stays closed: the tree's discard is the way.
+    /// </summary>
+    public const string Carried = "carried";
+
     /// <summary>Whether a try with this code closes its entry; the rest wait for a change, a release or the person's press.</summary>
     public static bool Closes(string code) => code is not (Held or Uncommitted or Exists or Completed or Refused or Unreviewed);
 

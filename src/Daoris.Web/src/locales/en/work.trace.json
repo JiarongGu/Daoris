@@ -161,6 +161,7 @@
   "work.trace.try.plugin-unready": "landed; its plugin cannot land work here, so nothing was pushed",
   "work.trace.try.plugin-failed": "landed; its plugin did not push it",
   "work.trace.try.already": "its work reached a branch of yours another way",
+  "work.trace.try.carried": "its work is already on the line or a branch of yours by content, so it was not landed again",
   "work.trace.try.superseded": "a newer session in its tree stands for it",
   "work.trace.try.gone": "its tree was discarded",
   "work.trace.try.undone": "its quest is no longer done",
