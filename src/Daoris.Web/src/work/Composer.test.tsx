@@ -39,6 +39,26 @@ describe('the composer', () => {
     expect(send).toHaveBeenCalledWith('first\nsecond', []);
   });
 
+  /**
+   * IME1: the Enter that accepts an input method's candidate is the input method's. Sent, it was half a message in
+   * every conversation (sessions, chats, Ask Daoris), since this box is all of theirs.
+   */
+  it('sends nothing on the Enter an input method is composing with, and sends on the plain one after', () => {
+    const send = vi.fn();
+    show({ onSend: send });
+    const field = box();
+    fireEvent.change(field, { target: { value: '你好' } });
+
+    expect(fireEvent.keyDown(field, { key: 'Enter', isComposing: true })).toBe(true);
+    // The press that ends a composition can come with the flag already down, and 229 for its code.
+    expect(fireEvent.keyDown(field, { key: 'Enter', keyCode: 229 })).toBe(true);
+    expect(send).not.toHaveBeenCalled();
+    expect(field).toHaveValue('你好');
+
+    fireEvent.keyDown(field, { key: 'Enter', keyCode: 13 });
+    expect(send).toHaveBeenCalledWith('你好', []);
+  });
+
   it('will not send nothing, nor send twice while one is in flight', async () => {
     const send = vi.fn();
     const { rerender } = show({ onSend: send });
@@ -423,6 +443,29 @@ describe('a mention', () => {
 
     expect(box()).toHaveValue('see @src/main.ts ');
     expect(box()).toHaveFocus();
+  });
+
+  // IME1: while an input method composes, its Enter, Tab, arrows and Escape are its own, and the list keeps still.
+  it('leaves the list alone while an input method composes: no pick, no move, no close', () => {
+    const send = vi.fn();
+    show({ onSend: send, mentions: tree });
+    const field = box() as HTMLTextAreaElement;
+    field.focus();
+    fireEvent.change(field, { target: { value: 'read @de' } });
+    expect(screen.getByRole('option', { name: 'docs/design.md' })).toHaveAttribute('aria-selected', 'true');
+
+    expect(fireEvent.keyDown(field, { key: 'ArrowDown', isComposing: true })).toBe(true);
+    expect(screen.getByRole('option', { name: 'docs/design.md' })).toHaveAttribute('aria-selected', 'true');
+    expect(fireEvent.keyDown(field, { key: 'Enter', isComposing: true })).toBe(true);
+    expect(fireEvent.keyDown(field, { key: 'Tab', keyCode: 229 })).toBe(true);
+    expect(fireEvent.keyDown(field, { key: 'Escape', isComposing: true })).toBe(true);
+    expect(field).toHaveValue('read @de');
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+    expect(send).not.toHaveBeenCalled();
+
+    // Composed, the same Enter is the list's again.
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(field).toHaveValue('read @docs/design.md ');
   });
 
   it('closes on Escape, and Enter then sends what was typed', async () => {

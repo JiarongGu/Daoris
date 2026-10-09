@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { isComposing } from '../lib/composing';
 import { Button, Icon } from '../ui';
 
 /**
@@ -52,7 +53,8 @@ export function ConversationFind({
           placeholder={t('work.find.placeholder')}
           onChange={(event) => onQuery(event.target.value)}
           onKeyDown={(event) => {
-            if (event.key !== 'Enter' || found === 0) return;
+            // Words found through an input method: its Enter accepts a candidate and steps nowhere (IME1).
+            if (isComposing(event) || event.key !== 'Enter' || found === 0) return;
             event.preventDefault();
             onStep(event.shiftKey ? -1 : 1);
           }}

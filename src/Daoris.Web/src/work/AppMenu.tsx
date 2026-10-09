@@ -1,6 +1,7 @@
 import { type FocusEvent, type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 import { Icon, type IconName, Menu, Tip } from '../ui';
 import { cn } from '../lib/cn';
+import { isComposing } from '../lib/composing';
 
 /** One row of a menu: an act, a choice, or a row that opens a submenu. */
 export interface MenuItem {
@@ -380,6 +381,8 @@ export function AppMenuBar({ menus, open, onOpen, onChoose, mnemonics = false, l
           onHover={() => { if (openNow.current !== null && openNow.current !== menu.id) switchTo(menu.id); }}
           onWalk={(by) => switchTo(neighbour(menu.id, by))}
           onTriggerKey={(event) => {
+            // A menu's name is no field, and still asks, as every handler of Enter or Escape does (IME1).
+            if (isComposing(event)) return;
             if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
               event.preventDefault();
               const all = names();
@@ -446,7 +449,7 @@ function Fold({ menus, open, label, mnemonics, onOpen, isOpen, anyOpen, onEscape
             aria-label={label}
             className={NAME}
             onKeyDown={(event) => {
-              if (event.key !== 'Escape' || anyOpen()) return;
+              if (isComposing(event) || event.key !== 'Escape' || anyOpen()) return;
               event.preventDefault();
               onEscape();
             }}

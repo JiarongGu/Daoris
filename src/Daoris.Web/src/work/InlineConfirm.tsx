@@ -1,6 +1,7 @@
 import { type KeyboardEvent, type ReactNode, useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
+import { isComposing } from '../lib/composing';
 import { Button, Inline } from '../ui';
 
 /**
@@ -276,7 +277,8 @@ export function InlineConfirm({
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key !== 'Escape') return;
+    // A reason typed through an input method drops its composition on Escape, and the ask stays (IME1).
+    if (isComposing(event) || event.key !== 'Escape') return;
     // Its own Escape: nothing behind it closes on the same key.
     event.stopPropagation();
     event.preventDefault();

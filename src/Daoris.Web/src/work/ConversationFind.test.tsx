@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '../i18n';
 import { ConversationFind } from './ConversationFind';
@@ -51,6 +51,19 @@ describe('the way through a long run', () => {
     await userEvent.type(screen.getByRole('searchbox', { name: 'find in this session' }), '{Shift>}{Enter}{/Shift}');
 
     expect(calls.step.mock.calls).toEqual([[1], [-1], [1], [-1]]);
+  });
+
+  // IME1: words found through an input method are composed, and the Enter that accepts a candidate steps nowhere.
+  it('steps nowhere on an Enter an input method is composing with', () => {
+    const calls = draw({ query: '闸门', hits: 3, at: 0 });
+    const box = screen.getByRole('searchbox', { name: 'find in this session' });
+
+    expect(fireEvent.keyDown(box, { key: 'Enter', isComposing: true })).toBe(true);
+    expect(fireEvent.keyDown(box, { key: 'Enter', keyCode: 229 })).toBe(true);
+    expect(calls.step).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(box, { key: 'Enter' });
+    expect(calls.step).toHaveBeenCalledWith(1);
   });
 
   it('says so when nothing is found, and when the host left places out', () => {

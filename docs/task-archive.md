@@ -12708,3 +12708,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **OPINIONTWIN1 — the opinion row's twin is one command** (web-settings). Setup's *Second opinion* row writes its terminal twin's alternatives as separate code spans joined by 、 in 中文 (`settings.opinion.twin.*`), where the review row is now one span with `|` (REVIEWENV1g, `be797978`). Proof: its settings vitest in both catalogues.
 
 **Outcome** 2026-10-09: Setup's *Second opinion* row's terminal twin is one command with `|` alternatives in both languages, as the review row's is. Detail: D155's XAGENT1f4 note; commit bd1c6d5f.
+
+
+## IME1 — Enter never sends mid-composition (2026-10-09)
+
+> - [ ] **IME1 — Enter never sends mid-composition** (web-shell; found by a second agent's review of the history panel, dispatched from its brief). The composer sent on Enter without asking whether an input method was composing, so accepting a Chinese candidate sent half a message; the same in every handler of Enter or Escape. One helper every handler asks first, and a scan that holds it. Proof: vitest per handler, the scan.
+
+**Outcome** 2026-10-09: Enter, Escape, Tab and the arrows no longer act while an input method composes: one helper (`lib/composing.ts`, the native flag or keyCode 229) asked first by all 22 handlers (the composer and its mention list, the palette, find, the inline ask, the list pane, history's rename and search, the search boxes, the maps, the menu bar), and the `Drawer`'s and `QuickPanel`'s Radix Escape kept from closing on a composition's Escape; `composingKeys.test.ts` parses every shipped file and fails a handler that checks Enter or Escape before it. Not tried with a real input method yet. Detail: FIX-LOG IME1, platform-ux §6; commits 3f00b2fd…4a64d54e.

@@ -3,6 +3,7 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
+import { isComposing } from '../lib/composing';
 import { Icon, Menu, Tip } from '../ui';
 import { CARD_H, type Card, layoutLayers, lineKey, type Point, ROUND } from './layers';
 import {
@@ -202,13 +203,16 @@ export function LayeredMap({ topology, selected, onSelect, tools }: {
   const forward = (line: MapSelection, ...ends: string[]) =>
     lit === null || (lit.kind === 'node' ? ends.includes(lit.id) : sameSelection(lit, line));
   const choose = (selection: MapSelection) => onSelect(sameSelection(selection, selected) ? null : selection);
+  // Every handler that reads Enter or Escape asks first, so none acts on an input method's press (IME1).
   const press = (selection: MapSelection) => (event: KeyboardEvent) => {
+    if (isComposing(event)) return;
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       choose(selection);
     }
   };
   const onKeys = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (isComposing(event)) return;
     if (event.target !== event.currentTarget && event.key !== 'Escape') return;
     const moves: Record<string, () => void> = {
       '+': () => zoomAt(ZOOM.step), '=': () => zoomAt(ZOOM.step), '-': () => zoomAt(1 / ZOOM.step),
@@ -234,6 +238,7 @@ export function LayeredMap({ topology, selected, onSelect, tools }: {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={(event) => {
+              if (isComposing(event)) return;
               if (event.key === 'Enter' && matches[0]) {
                 event.preventDefault();
                 onSelect({ kind: 'node', id: matches[0] });

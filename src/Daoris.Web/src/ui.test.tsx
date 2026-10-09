@@ -698,6 +698,47 @@ describe('every modal surface says it is modal', () => {
 });
 
 /**
+ * IME1: Radix closes a dialog on any Escape, heard on the document before the field it was pressed in, so dropping an
+ * input method's composition in Quick Ask's box closed the box. The atoms that open one keep that Escape.
+ */
+describe('a dialog keeps the Escape an input method is composing with', () => {
+  it('the box at the palette\'s place stays open on it, and closes on a plain one', () => {
+    const onClose = vi.fn();
+    render(
+      <Tooltip.Provider>
+        <QuickPanel open onClose={onClose} title="Quick Ask" header={{ icon: 'help', closeLabel: 'Close' }}>
+          <textarea aria-label="message" />
+        </QuickPanel>
+      </Tooltip.Provider>,
+    );
+    const field = screen.getByRole('textbox', { name: 'message' });
+
+    fireEvent.keyDown(field, { key: 'Escape', isComposing: true });
+    fireEvent.keyDown(field, { key: 'Escape', keyCode: 229 });
+    expect(onClose).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(field, { key: 'Escape', keyCode: 27 });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('the drawer does too', () => {
+    const onClose = vi.fn();
+    render(
+      <Tooltip.Provider>
+        <Drawer title="New quest" onClose={onClose}><input aria-label="title" /></Drawer>
+      </Tooltip.Provider>,
+    );
+    const field = screen.getByRole('textbox', { name: 'title' });
+
+    fireEvent.keyDown(field, { key: 'Escape', isComposing: true });
+    expect(onClose).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(field, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});
+
+/**
  * A tooltip follows the editor's rules (2026-09-23): below its control, and gone on any scroll, key,
  * click or loss of focus — not only when the pointer leaves a trigger that can still say so.
  */

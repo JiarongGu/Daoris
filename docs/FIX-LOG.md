@@ -5,6 +5,32 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-09 — Enter and Escape acted while an input method was composing (IME1)
+
+- **Symptom:** writing 中文 through an input method, the Enter that accepts a candidate sent the half-composed message,
+  from every conversation's composer: sessions, chats, Ask Daoris and Quick Ask share the one box. The same press picked
+  a file from the composer's `@` list (Tab too, the arrows moved it, Escape closed it), ran the palette's chosen command,
+  stepped the conversation's find and the map's find; Escape cleared a search box, put down Ask Daoris's rename and an
+  inline confirmation's reason field, and the list's ↓ left its search box for the rows.
+- **Root cause:** every key handler read `event.key` alone. The engine still hands the page a keydown while a composition
+  is open (`isComposing` set, keyCode 229), so a handler that reads only the key acts on the input method's press. Behind
+  them, Radix's dismissable layer closes a dialog on any Escape, heard on the document in the capture phase before the
+  field's own handler, so Quick Ask, the palette and a drawer closed on the Escape that drops a composition, guard or no.
+- **Fix:** one helper, `isComposing` in `src/Daoris.Web/src/lib/composing.ts`: composing when the native flag is set or
+  the keyCode is 229, since with some input methods the press that ends a composition arrives with the flag already
+  down. Every handler that reads Enter or Escape asks it first: the composer and its list, the palette, the find box,
+  the inline confirmation, the list pane's Escape, the list's keys, the history's rename and search, the three other
+  search boxes, the three maps and the menu bar's two. `ui.tsx`'s `Drawer` and `QuickPanel` prevent Radix's Escape on a
+  composing press, the one way it leaves a dialog open; Radix prevented the same press itself when it closed. A form's
+  submit on Enter is the engine's, not a handler's, and was left alone: Chromium submits on the Enter's keypress, and
+  sends none for a press an input method took.
+- **Verify:** vitest: the composer sends nothing on a composing Enter or a 229 and sends on the plain Enter after; the
+  mention list neither picks, moves nor closes; the palette neither runs, moves nor closes; the history's rename and
+  search, the inline confirmation, the find box, the list's ↓, the drawer and the box at the palette's place each hold.
+  All ten failed with the helper made to answer no. `composingKeys.test.ts` reads every shipped source with the
+  TypeScript parser and fails on a check of Enter or Escape whose own function does not ask first; it named 22 on the
+  tree before. Not looked at on the window: a real input method in the shell, nor a form's submit under one.
+
 ## 2026-10-09 — a `driver.json` that does not read ended the headless driver on a stack trace (CONFIGREAD1)
 
 - **Symptom:** `daoris-driver drive --once` over a `driver.json` that does not parse ended on a `JsonException`'s stack

@@ -231,6 +231,8 @@ with the version and date at release.
   session's answers, and the presses to ask again, go on anyway or say you looked yourself.
 - A repository or a workspace can choose its workflow, per kind of task (`daoris driver workflow use|kind`), and an
   ask can name its kind; work started then is bound to the version chosen, though no gate reads it yet.
+- Accepting a candidate with Enter in a Chinese (or any) input method no longer sends the message or runs the
+  command; Escape that drops a composition no longer closes the box.
 
 The first version: doctrine that installs, is checked, and flows back.
 

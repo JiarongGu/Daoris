@@ -613,3 +613,8 @@ on the menu key and Shift+F10 with its first act focused, ESC closing it and the
 icons are decorative (`aria-hidden`) beside real
 labels; status is text plus hue, never hue alone; hit targets ≥ 28px; both themes are first-class —
 the dark status palette is its own validated set, not a filter.
+
+**A press an input method is composing with is the input method's** (IME1): its Enter accepts a candidate and its
+Escape drops the composition, so no handler sends, picks, steps, clears or closes on one, and no dialog closes on that
+Escape. Every handler that reads Enter or Escape asks `isComposing` (`lib/composing.ts`) first, and
+`composingKeys.test.ts` holds it.

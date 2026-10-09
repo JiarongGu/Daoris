@@ -1,6 +1,7 @@
 import { Fragment, type KeyboardEvent, type ReactNode, useEffect, useRef } from 'react';
 import { Button, EmptyState, Icon, Menu, SkeletonRows, Tip } from '../ui';
 import { cn } from '../lib/cn';
+import { isComposing } from '../lib/composing';
 import { Splitter } from './frame';
 import { LIST_STRIP, type ListBounds, type ListLayout } from './layout';
 import { LIST_DOOR, useListKeys } from './listKeys';
@@ -99,7 +100,8 @@ export function ListPane({
   }, [laid]);
 
   const onOverKey = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key !== 'Escape' || event.defaultPrevented) return;
+    // An Escape that drops an input method's composition in the list's search leaves the list where it is (IME1).
+    if (isComposing(event) || event.key !== 'Escape' || event.defaultPrevented) return;
     event.preventDefault();
     onDismiss();
     aside.current?.querySelector<HTMLElement>(`[${OPEN_ATTRIBUTE}]`)?.focus();
