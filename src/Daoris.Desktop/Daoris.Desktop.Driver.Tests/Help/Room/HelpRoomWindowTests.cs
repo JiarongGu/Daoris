@@ -19,7 +19,7 @@ public sealed class HelpRoomWindowTests
         Assert.Contains("## The window", agents);
         foreach (var said in new[]
         {
-            "the right side bar", "the panel", "the timeline, the review and the console", "Every view sits in one frame",
+            "the right side bar", "the panel", "the timeline, the review, the workflow and the console", "Every view sits in one frame",
             "tab list", "right-click", "drag", "Reset view locations",
             "`Ctrl+B`", "`Ctrl+J`", "`Ctrl+Alt+B`", "`F1`", "`Ctrl+Alt+I`", "`Ctrl+Shift+Alt+L`", "`Ctrl+K`",
             // The person's own terminal (CONSOLE4b), and that it is theirs rather than a session's.
@@ -47,6 +47,21 @@ public sealed class HelpRoomWindowTests
         Assert.Contains("The menu bar across the top holds Workspace, Edit, View, Go, Run, Terminal and Help", agents);
         Assert.Contains("(`Ctrl+1` to `Ctrl+8`)", agents);
         Assert.Contains("Help → Keyboard shortcuts lists every key", agents);
+    }
+
+    /// <summary>
+    /// WORKFLOW1c4 (D157 point 12; the workflow design §7): the session's *Workflow* view joined the views that stand in the
+    /// two regions and move between them, beside the timeline and the review, so the room no longer counts five; asked where
+    /// a piece of work stands, the helper names the view the window has, and the room's doors say what it draws.
+    /// </summary>
+    [Fact]
+    public void The_room_names_the_sessions_workflow_view_among_the_views_that_move()
+    {
+        var window = new HelpRoomWindow().Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("Six views stand in the two regions and move between them:", window);
+        Assert.Contains("the timeline, the review, the workflow and the console of the session attended on Sessions", window);
+        Assert.DoesNotContain("Five views", window);
     }
 
     /// <summary>

@@ -23,8 +23,10 @@ internal sealed class HelpRoomWindow : IHelpRoomSection
         text.Append("VS Code's does: Go opens the places (`Ctrl+1` to `Ctrl+8`), Run acts on the session or the quest in front, and\n");
         text.Append("Help → Keyboard shortcuts lists every key. Every view sits in one frame: the view in the centre, the panel beneath it,\n");
         text.Append("and the right side bar beside it; on Sessions the session list is at the left and the centre is the\n");
-        text.Append("attended session. Five views stand in the two regions and move between them:\n");
-        text.Append("the timeline, the review and the console of the session attended on Sessions, Ask Daoris, and the\n");
+        // WORKFLOW1c4: the session's Workflow view (WORKFLOW1c, the workflow design §7) stands beside the timeline and the
+        // review and moves as they do; the doors say what it draws.
+        text.Append("attended session. Six views stand in the two regions and move between them:\n");
+        text.Append("the timeline, the review, the workflow and the console of the session attended on Sessions, Ask Daoris, and the\n");
         text.Append("terminal: the person's own shell (PowerShell unless they choose another), in the panel beside the\n");
         text.Append("console, which starts where the attended session works. A session's console takes no typing; the\n");
         text.Append("terminal is the person's, never a session's.\n");

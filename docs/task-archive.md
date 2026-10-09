@@ -12680,3 +12680,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **XAGENT1g — the screens** (web-shell, web-settings, modules; after f). The review's *Second opinion* beside D154's states, findings with answers, §8.5's presses, What needs you, the conversation's block, the reviewer's session row, the task level's choice, the glossary. Contract: §1, §8.5, §9. Proof: vitest, stories, `i18n:check`, `names:check --strict`, `HelpCoverageTests`, the look in both themes and 中文.
 
 **Outcome** 2026-10-09: the second opinion is drawn: `OpinionGate` (after `ReviewGate`'s pattern) words every §8.5 state and each finding beside the working session's answer, before the review's gate on the session head, *Accept…* sending back the gate's `answers` token where it answers a dispute; the review pane waits for it; What needs you lists one waiting on the person (`OPINION_WAITS`); the conversation shows another agent's findings as a block of their own; the reviewer's session is named and marked, with no box; the run's opinion step draws *Go on anyway…*; one owner, `useOpinionActs`, for every press; `landing.opinion` and the two ledger codes worded; the glossary's *second opinion*, *reviewer*, *finding*, *disputed*. Follow-ups: XAGENT1g2–g4. Detail: D155's XAGENT1g note; commits e477390a…db448094.
+
+
+## WORKFLOW1c4 — Ask Daoris names the workflow (2026-10-09, D157)
+
+> - [ ] **WORKFLOW1c4 — Ask Daoris names the workflow** (driver Help; after WORKFLOW1c). Ask Daoris's room (`Help/Room/HelpRoomWindow.cs` and its goldens) names neither the repository's *Workflow* tab nor the session's *Workflow* view, so it cannot send the person there. Contract: D157 §6, HELP rules on the room's table. Proof: `HelpRoomWindowTests` and its goldens.
+
+**Outcome** 2026-10-09: Ask Daoris's room names Current's *Workflow* tab with `daoris driver workflow show`, and the run's view, its line on a quest's and an ask's head and What needs you's door with `daoris-driver workflow run`, both as reads it never proposes; WORKFLOW1d's verbs are spelled apart from `show`'s; six views move between the regions. Detail: D157's WORKFLOW1c4 note; commits 1cc3e84e, e771575b.
