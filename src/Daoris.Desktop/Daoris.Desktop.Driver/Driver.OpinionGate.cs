@@ -76,7 +76,7 @@ public sealed partial class Driver
     /// before any quest's first start (D130 point 10). A service that does not answer is said, and everything is looked at again
     /// at the next look.
     /// </summary>
-    private async Task<(IReadOnlyDictionary<string, string> Sits, int Passes)> OpinionsAsync(
+    internal async Task<(IReadOnlyDictionary<string, string> Sits, int Passes)> OpinionsAsync(
         Snapshot snapshot, List<string> events, CancellationToken ct)
     {
         var sits = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
