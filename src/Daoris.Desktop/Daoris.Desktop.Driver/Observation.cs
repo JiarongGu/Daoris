@@ -1,5 +1,20 @@
 namespace Daoris.Driver;
 
+/// <summary>
+/// A stop made of a session while its process ran (FLAKE3): the driver's own, for its <paramref name="Reason"/> (a take that
+/// lost, D68 §5), or the person's, saying <paramref name="Note"/> where the door that stopped it said more (a pause, PAUSE1b).
+/// </summary>
+public sealed record SessionStop(Noted? Reason, Noted? Note)
+{
+    /// <summary>Whose decision the end was (SURF5b): the person's wherever the driver gave no reason of its own.</summary>
+    public bool ByPerson => Reason is null;
+
+    /// <summary>What the record says it ended in: stood down for the driver's reason, or stopped as the person's.</summary>
+    public SessionConclusion Conclusion => Reason is { } reason
+        ? SessionConclusion.Of("stood-down", reason)
+        : SessionConclusion.Of("stopped", Note ?? Observation.Stopped);
+}
+
 /// <param name="State">The terminal state, in the wire spelling the ledger accepts.</param>
 /// <param name="Note">What was observed — the sentence the record keeps.</param>
 public sealed record SessionConclusion(string State, string Note)
@@ -201,6 +216,20 @@ public static class Observation
     /// <summary>A session the driver's own shutdown ended (row 21), for a driven session, a resumed one and an intake alike.</summary>
     public static Noted DriverClosed =>
         Noted.Of(NoteCodes.EndedDriverClosed, "the driver was stopped while this ran; the session's process was ended with it.");
+
+    /// <summary>
+    /// How a driven session the driver's close ended is recorded (D104): stopped and interrupted, to be carried on at the next
+    /// start, unless a stop came first.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 FLAKE3: a stop made before the close decided the end, so the record says that stop, as its conclusion would have, and
+    /// is never interrupted: the driver's, for a take that lost, is no take to carry on, and the person's never is (D104). Which
+    /// of the two reached the record first was a race: a process killed for its lost take was still exiting, or its conclusion
+    /// still asking the service, when a failure closed the watch, and the record read <c>stopped</c> by the close.
+    /// </remarks>
+    /// <param name="first">The stop made of the session before the close, or null for none.</param>
+    public static (SessionConclusion Conclusion, bool Interrupted) Closed(SessionStop? first) =>
+        first is not null ? (first.Conclusion, false) : (SessionConclusion.Of("stopped", DriverClosed), true);
 
     /// <summary>A failure in a program's own words, an exception's message, which no catalogue re-authors (the design §2).</summary>
     public static Noted Failure(string message) => Noted.Said(message, NoteBy.Program);
