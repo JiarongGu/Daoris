@@ -214,10 +214,12 @@ public sealed class DriverWatch(
                     if (tidying is { IsCompleted: true } tidied)
                     {
                         tidying = null;
-                        if (tidied.IsCompletedSuccessfully && tidied.Result.Count > 0)
-                        {
-                            report = report with { Events = [.. report.Events, .. tidied.Result] };
-                        }
+                        // A pass that failed past its own catches is said, and so observed, rather than left to the finalizer.
+                        IReadOnlyList<string> lines = tidied.IsCompletedSuccessfully ? tidied.Result
+                            : tidied.Exception?.InnerException is { } failure
+                                ? [$"tidy  the empty session branches were not looked at this time, and are looked at again later: {failure.Message}"]
+                                : [];
+                        if (lines.Count > 0) report = report with { Events = [.. report.Events, .. lines] };
                     }
 
                     if (tidying is null && tidy.Due) tidying = TidyAsync(tidy, ct);
@@ -298,7 +300,7 @@ public sealed class DriverWatch(
             catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
                                               or IOException or UnauthorizedAccessException)
             {
-                return [$"tidy  the empty session branches could not be looked at this time, and are looked at again later: {error.Message}"];
+                return [$"tidy  the empty session branches were not looked at this time, and are looked at again later: {error.Message}"];
             }
         }, CancellationToken.None);
     }
