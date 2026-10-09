@@ -67,7 +67,9 @@ public sealed class WorkflowCurrentTests
         var rows = Table("limits").Select(row => (row.GetProperty("code").GetString()!, row.GetProperty("says").GetString()!)).ToList();
 
         Assert.Equal(rows, WorkflowLimits.Table.Select(limit => (limit.Code, limit.Says)));
-        Assert.Equal(OpinionRules.DeclaredOnly, WorkflowLimits.Says(WorkflowLimits.OpinionDeclared));
+        // XAGENT1f: the opinion's limit says what its gate runs, never that nothing reads the rule.
+        Assert.StartsWith("Partial: work here lands only once another agent's reading of it is settled", WorkflowLimits.Says(WorkflowLimits.OpinionPartial));
+        Assert.DoesNotContain(OpinionRules.DeclaredOnly, WorkflowLimits.Table.Select(limit => limit.Says));
     }
 
     [Fact]
