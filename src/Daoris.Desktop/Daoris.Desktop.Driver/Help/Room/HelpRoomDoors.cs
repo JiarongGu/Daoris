@@ -241,7 +241,8 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("see where a piece of work stands in its workflow: each step's state (waiting on you, waiting on an agent, working, "
             + "done, …) and what it says, the step the run stands at, and a door to where each step's record is; a session's run "
             + "is its quest's, an ask's one per repository its work reaches, and a chat has none (Ask Daoris never proposes it: "
-            + "it reads and changes nothing, and each press a waiting step needs is its owner's, where the step's door opens)",
+            + "it reads and changes nothing, and each press a waiting step needs is its owner's: the step's door opens it, or the "
+            + "view names its command)",
             "Sessions → the session's *Workflow* view, in the right side bar beside Timeline and Review (View → Workflow); "
             + "*Workflow:* in a quest's page's head and an ask's, and *Workflow* on a row of What needs you, each attending its "
             + "session in Sessions with the view open",
