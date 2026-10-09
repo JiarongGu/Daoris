@@ -70,7 +70,7 @@
         "harness.doors", "harness.use.machine", "harness.use.title", "harness.use.workspace",
         "help.proposal.title", "help.proposal.titleDelete",
         "help.proposal.titleGo", "help.proposal.titleHand", "help.proposal.titlePlugin",
-        "help.proposal.titleSync", "help.proposal.titleAccept", "quests.requirements.title",
+        "help.proposal.titleSync", "help.proposal.titleAccept", "help.history.title", "quests.requirements.title",
         "map.asks", "map.when.title", "overview.outstanding.title",
         "overview.repositories.title", "menu.run.quest", "menu.run.session", "palette.title", "plugin.group.*",
         "plugin.section.*", "plugin.tests.trial", "plugin.update.title", "projects.group.*",
@@ -196,7 +196,8 @@
         "harness.pin.action", "harness.pin.open", "harness.pin.unpin", "harness.profile.addKey",
         "harness.profile.keySave", "harness.profile.removeMeanIt",
         "harness.profile.signInNew", "harness.settings.open",
-        "harness.settings.save", "harness.update", "help.close", "help.door.*", "help.new",
+        "harness.settings.save", "harness.update", "help.close", "help.door.*", "help.new", "help.goOn", "help.history.open",
+        "help.history.save", "help.history.deleteMeanIt",
         "help.proposal.apply", "help.proposal.delete", "help.proposal.dismiss", "help.proposal.go",
         "help.proposal.look", "help.proposal.accept", "quests.requirements.accept",
         "help.quick.close", "help.quick.expand", "help.setup", "map.detail.openCode",
@@ -317,7 +318,8 @@
         "menu.help.*", "menu.language", "menu.refresh", "menu.refreshing", "menu.run.start", "menu.settings", "menu.setup", "menu.terminal.*",
         "menu.view.*", "menu.workspace.*", "plugin.list.ask", "plugin.list.make", "plugin.list.tryFolder", "projects.list.import",
         "work.list.archiveEnded", "work.list.byRepository", "work.list.byState", "work.list.showArchived", "work.menu.*",
-        "work.monitor.detach", "work.rail.menu.copy", "asks.record.clear", "quests.detail.clear", "quests.detail.clearFailed",
+        "work.monitor.detach", "work.rail.menu.copy", "help.history.rename", "help.history.pin", "help.history.unpin",
+        "help.history.startFrom", "help.history.delete", "asks.record.clear", "quests.detail.clear", "quests.detail.clearFailed",
         "work.sync.now", "work.sync.remotes", "work.sync.syncing", "work.views.reset",
         "work.views.toPanel", "work.views.toRight"
       ]
@@ -365,7 +367,8 @@
         "settings.lines.eachCheckout", "settings.lines.unnamed", "settings.tools.filePlaceholder",
         "settings.tools.locations.placeholder", "projects.list.filter",
         "signin.codePlaceholder", "work.find.placeholder", "work.rail.search.placeholder", "work.say.placeholder",
-        "review.ask.notYetWords", "review.ask.skipWords", "asks.compose.reviewWords", "asks.record.reviewChoose"
+        "review.ask.notYetWords", "review.ask.skipWords", "asks.compose.reviewWords", "asks.record.reviewChoose",
+        "help.history.search.placeholder"
       ]
     },
     "toast": {

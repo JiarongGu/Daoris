@@ -33,6 +33,24 @@ public sealed partial class DriverModule
             return new { SessionId = running.Id, Message = $"Ask Daoris `{running.Id}` is carried on.", Running = true };
         }
 
+        var machine = await HelpMachineAsync(service, config, snapshot, cancellationToken).ConfigureAwait(false);
+        var start = await chat.StartHelpAsync(
+            helper, config, machine,
+            onEnded: (session, state) => DriverLoop.Ended(_events, session, state),
+            ct: cancellationToken).ConfigureAwait(false);
+
+        _loop.Nudge();
+        return new { start.SessionId, start.Message, Running = false };
+    }
+
+    /// <summary>
+    /// The machine as Ask Daoris's room says it (HELP1a), from the driver's own answers: its file, the registry and each
+    /// repository's line, the roster, the asks, the plugins and offers, the landings, what the loop parked and held, and the
+    /// browser's files. What every open writes the room from, and since ASKHIST1 a conversation going on too.
+    /// </summary>
+    private async Task<HelpMachine> HelpMachineAsync(
+        ServiceClient service, DriverConfig config, Snapshot snapshot, CancellationToken cancellationToken)
+    {
         var lines = await CanonicalLine.OfAsync(
             config,
             snapshot.Repositories
@@ -44,7 +62,7 @@ public sealed partial class DriverModule
         var asks = standing.Count(ask => ask.State == "Proposed");
         // The asks by id too (HELP6), so a delete of one made by mistake can name it.
         // And the branches landings made here (WSR5b), so a hand-off names one the record holds.
-        var machine = HelpRoom.Describe(
+        return HelpRoom.Describe(
             config, snapshot, lines, roster, adapter => _loop.Harnesses.Toolchain(adapter)?.Product, asks, standing,
             PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names), new LandedBranches(_loop.Home).All(),
             // The install's own plugins (PLUG9 d), which the helper may propose installing by id.
@@ -55,14 +73,18 @@ public sealed partial class DriverModule
             BrowserModule.HelpFacts(BrowserModule.Home),
             // And what its last look held by the person's stop (SESSUX1b), so a retry names a stop Try again releases.
             HeldQuest.From(_loop.Look.Latest));
+    }
 
-        var start = await chat.StartHelpAsync(
-            helper, config, machine,
-            onEnded: (session, state) => DriverLoop.Ended(_events, session, state),
-            ct: cancellationToken).ConfigureAwait(false);
-
-        _loop.Nudge();
-        return new { start.SessionId, start.Message, Running = false };
+    /// <summary>
+    /// The room's reading for a conversation going on (ASKHIST1): the loop's service and this machine's file as they are now;
+    /// null before the service answers, when the room as last written serves.
+    /// </summary>
+    private async Task<HelpMachine?> HelpMachineNowAsync(CancellationToken cancellationToken)
+    {
+        if (_loop.Service is not { } service) return null;
+        var config = DriverConfig.Load(_loop.ConfigPath);
+        var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
+        return await HelpMachineAsync(service, config, snapshot, cancellationToken).ConfigureAwait(false);
     }
 
     // Ask Daoris's proposals (HELP1c, D89): what one conversation proposed that waits for the
@@ -472,4 +494,115 @@ public sealed partial class DriverModule
     /// person's message renders verbatim and a sentence full of backticks read as noise on the window.
     /// </summary>
     private static string InPersonsWords(string told) => told.Replace("`", "", StringComparison.Ordinal);
+
+    // ——— Ask Daoris's history (ASKHIST1): its conversations listed and searched, named, pinned and started from. Going on in
+    // one is the person's words to it (`SESSION_INPUT`), and deleting one is `SESSION_DELETE`'s, so each has the one owner the
+    // rest of the window uses; `daoris-driver help` is the terminal's door to the same (D50). This machine's and the person's:
+    // the words are this machine's record (D76), what the person keeps of each a file beside them (`HelpConversations`), and
+    // nothing here reaches a remote.
+
+    // Ask Daoris's conversations, pinned first, then the newest; with `q`, those whose name or words hold it, each with where.
+    [DriverRoute("HELP_CONVERSATIONS")]
+    private async Task<object?> HelpConversationsAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var service = _loop.Service ?? throw NotReady();
+        var records = SessionRecords.Parse(await service.SessionRecordsJsonAsync(cancellationToken).ConfigureAwait(false));
+        var listing = new HelpConversations(_loop.Home).List(records, _loop.Events, Resumes, Optional(request, "q"));
+        return HistoryAnswer(listing);
+    }
+
+    /// <summary>
+    /// A listing as the page reads it, its <c>HelpConversation</c>s: field for field what <c>daoris-driver help list --json</c>
+    /// prints (<see cref="HelpCommand.JsonFields"/>). Public, as <see cref="Grouped"/> is, so its shape is tested without a service.
+    /// </summary>
+    public static object HistoryAnswer(HelpListing listing) => new
+    {
+        Conversations = listing.Conversations.Select(row => new
+        {
+            row.Session, row.Title, row.Name, row.Opening, row.About, row.Created, row.Last, row.Pinned, row.Live, row.Resumable,
+            row.From, row.Handed, row.Found,
+        }).ToArray(),
+        listing.Cut,
+    };
+
+    // Name an Ask Daoris conversation, or clear its name with none: its first question is its title again.
+    [DriverRoute("HELP_RENAME")]
+    private async Task<object?> HelpRenameAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = await HelpConversationOfAsync(PayloadHelper.GetRequiredValue<string>(request.Payload, "id"), cancellationToken)
+            .ConfigureAwait(false);
+        var kept = new HelpConversations(_loop.Home);
+        kept.Rename(id, Optional(request, "name"));
+        return new { Session = id, kept.Read(id).Name };
+    }
+
+    // Pin an Ask Daoris conversation to the top of its history, or unpin it.
+    [DriverRoute("HELP_PIN")]
+    private async Task<object?> HelpPinAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = await HelpConversationOfAsync(PayloadHelper.GetRequiredValue<string>(request.Payload, "id"), cancellationToken)
+            .ConfigureAwait(false);
+        var kept = new HelpConversations(_loop.Home);
+        kept.Pin(id, PayloadHelper.GetRequiredValue<bool>(request.Payload, "pinned"), DateTimeOffset.UtcNow);
+        return new { Session = id, kept.Read(id).Pinned };
+    }
+
+    // A new Ask Daoris conversation from an earlier one's words (ASKHIST1): opened as START_HELP opens one, on the helper's
+    // agent, the room's running conversation set aside first, and the earlier one's transcript handed with the person's first
+    // words. Its end reaches the page as a start's does.
+    [DriverRoute("HELP_START_FROM")]
+    private async Task<object?> HelpStartFromAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var config = DriverConfig.Load(_loop.ConfigPath);
+        if (config.HelperAdapter is not { Length: > 0 } helper)
+        {
+            throw new DriverException(
+                "Ask Daoris has no agent to run on — name one under Settings → AI features, or "
+                + "`daoris driver helper <agent>`. Its starters need none.");
+        }
+
+        var id = await HelpConversationOfAsync(PayloadHelper.GetRequiredValue<string>(request.Payload, "id"), cancellationToken)
+            .ConfigureAwait(false);
+        var chat = _loop.Chat ?? throw NotReady();
+        var service = _loop.Service ?? throw NotReady();
+        var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
+        var machine = await HelpMachineAsync(service, config, snapshot, cancellationToken).ConfigureAwait(false);
+        var start = await chat.StartHelpFromAsync(
+            id, helper, config, machine, onEnded: (session, state) => DriverLoop.Ended(_events, session, state),
+            ct: cancellationToken).ConfigureAwait(false);
+
+        _loop.Nudge();
+        return new { start.SessionId, start.Message, From = id };
+    }
+
+    /// <summary>
+    /// The id when it names an Ask Daoris conversation of this machine's, judged from the records as the service answers them;
+    /// otherwise the sentence why not, which the page says where it was pressed.
+    /// </summary>
+    private async Task<string> HelpConversationOfAsync(string id, CancellationToken cancellationToken)
+    {
+        var service = _loop.Service ?? throw NotReady();
+        var record = SessionRecords.Parse(await service.SessionRecordsJsonAsync(cancellationToken).ConfigureAwait(false))
+            .FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
+        if (record is null) throw new DriverException($"no conversation here is `{id}` any more.");
+        if (record.Teammate || !WordsNever.IsHelp(record))
+        {
+            throw new DriverException($"`{id}` is no Ask Daoris conversation of this machine's.");
+        }
+
+        return id;
+    }
+
+    /// <summary>Whether an adapter's door resumes a conversation by its id: one this machine no longer has cannot.</summary>
+    private bool Resumes(string adapter)
+    {
+        try
+        {
+            return _loop.Harnesses.Adapters.Resolve(adapter).Resumes;
+        }
+        catch (DriverException)
+        {
+            return false;
+        }
+    }
 }

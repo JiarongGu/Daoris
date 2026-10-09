@@ -49,6 +49,8 @@ public sealed partial class DriverModule : ModuleBase
         _loop = loop;
         _openFolder = openFolder;
         _pickFile = pickFile;
+        // Ask Daoris's room as START_HELP writes it, for a conversation going on in it (ASKHIST1).
+        _loop.DescribeHelp = HelpMachineNowAsync;
     }
 
     public override string ModuleName => "DAORIS.DRIVER";

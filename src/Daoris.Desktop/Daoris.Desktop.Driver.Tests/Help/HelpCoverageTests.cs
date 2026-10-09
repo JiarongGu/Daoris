@@ -243,6 +243,16 @@ public sealed partial class HelpCoverageTests
         + "banner, Settings → Driver or `daoris-driver update --when-idle|--now|--cancel`.");
 
     /// <summary>
+    /// ASKHIST1's history of Ask Daoris's own conversations: the panel's rename, pin and new conversation from an earlier one,
+    /// and the headless host's <c>daoris-driver help</c>. Exempt, since the conversations and what the person keeps of them are
+    /// their own; the room names both doors, so the helper points there.
+    /// </summary>
+    private static readonly Exempt HistoryDoor = new(
+        "Ask Daoris's conversations are the person's own words and knowledge, kept on this machine only (ASKHIST1): going on in "
+        + "one is their words (D133 §1), and naming, pinning, starting from or deleting one is their tidy of their own history, so "
+        + "Ask Daoris proposes none; the room names the panel's History and `daoris-driver help`.");
+
+    /// <summary>
     /// The page's bridge hooks that change something and that no Settings domain presses, answered one by one (UPDATE1f):
     /// only a Settings domain's controls are derived, so a hook pressed elsewhere is read and otherwise answered for nowhere.
     /// Each row is held to a hook the bridge still exports, that still changes something, and that no domain presses, where
@@ -264,6 +274,10 @@ public sealed partial class HelpCoverageTests
             "it serves a set-up's build to its tab of Daoris's browser again for the person to look at, and changes nothing of "
             + "the work, its review or the machine's settings; what the person sees there is theirs to judge, and the verdict "
             + "beside it is theirs alone (D154 point 8), so there is nothing to propose.")),
+        // ASKHIST1: the Ask Daoris panel's history.
+        ("useRenameHelp", HistoryDoor),
+        ("usePinHelp", HistoryDoor),
+        ("useHelpStartFrom", HistoryDoor),
     ];
 
     /// <summary>Each <c>daoris driver</c> verb, and <c>across</c> by its two forms, as the CLI's command table spells them.</summary>
@@ -287,6 +301,10 @@ public sealed partial class HelpCoverageTests
         ("review", new Door("setting", "review")),
         // XAGENT1a: which other agent reads work before it lands, with the service's writer in the same change.
         ("opinion", new Door("setting", "opinion")),
+        // WORKFLOW1a: Current, drawn from the rules as they stand; a named workflow's Ask Daoris door is WORKFLOW1h's.
+        ("workflow show", new Exempt(
+            "it reads `driver.json` and the plugins beside it and changes nothing; it draws the landing, review and opinion rules "
+            + "the room already carries, from the same file.")),
         ("notify", new Door("setting", "notify")),
         ("intake", new Door("setting", "intake")),
         ("helper", new Door("setting", "helper")),
@@ -684,6 +702,24 @@ public sealed partial class HelpCoverageTests
             && door.Screen.Contains("box", StringComparison.Ordinal)
             && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));
         Assert.Contains("D133", SayDoor.Reason);
+    }
+
+    /// <summary>
+    /// ASKHIST1: the headless host's <c>help</c> is exempt from Ask Daoris while its usage spells it, as the panel's history is:
+    /// the room names both doors, marked exempt with the reason, and no kind of that name takes it.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_help_history_is_exempt_and_the_room_says_so()
+    {
+        Assert.Contains("help list [--search \"…\"] [--json]", DriverCommand.Usage);
+        Assert.Contains("help rename <id> \"…\" | --clear", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("help"));
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver help list [--search \"…\"]`", StringComparison.Ordinal)
+            && door.Terminal.Contains("`daoris-driver help rename|pin|unpin|delete <id>`", StringComparison.Ordinal)
+            && door.Screen.Contains("History", StringComparison.Ordinal)
+            && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));
+        Assert.Contains("ASKHIST1", HistoryDoor.Reason);
+        Assert.All(["useRenameHelp", "usePinHelp", "useHelpStartFrom"], hook => Assert.Same(HistoryDoor, Elsewhere.Single(row => row.Hook == hook).Answer));
     }
 
     /// <summary>

@@ -789,6 +789,9 @@ gate (UXFIX2d…SESSDEL1b, which touch no CLI or tools file): "git could not wri
 repository, with three worktrees building beside it; the same git-on-scratch shape as the `--rerun` sightings above.
 `landing-plugins.test.ts:267` failed once in UXFIX5b's verify: its fixture's `git config user.email` exited -1
 (4294967295), a spawn failure; the file passed 19/19 alone and the next verify was green. A third git-spawn shape.
+Again in WORKFLOW1a's verify, 2026-10-09, with two other worktrees building beside it: *the GitHub plugin pushes the
+branch to origin…* failed when its fixture's `git remote add` ended with a null status (no exit code, so ended by a
+signal or never started), and passed alone. The same file, the fourth git-spawn shape.
 The family rehearsal's *…its driver stops its own losing session, with the reason on the record* failed again (399/400)
 at ORIENT2h2's merge, after DEV3a's fix above: the record WAS stood down (`ended.lost-claim`, its note right), and the
 run's print held no `stop  session` line; its one sync line read *quests: the remote could not be reached (… actively
@@ -810,6 +813,10 @@ once in ORIENT2h6's merge gate (no web file changed), with three worktrees build
 under the same load in one day: a page test that renders the whole shell is the shape to look at. A third, the same
 evening: `WorkFrame.test.tsx`'s "hands the words back into the box, and names the files, when a send does not arrive"
 timed out (20 s) once in CARRY2d's web run and passed in the next.
+`rememberedChoice.test.tsx`'s "opens Quests by its place with nothing chosen once the quest read there has closed"
+timed out at WORKFLOW1a's merge, 2026-10-09 (no web file changed), with three worktrees building beside it. It timed out
+again alone (20.3 s) under the same load, then passed alone in 9.4 s with the file's other three at 1 to 6 s: it is the
+file's first test, so it pays the shell's first render and imports. That first test is the one to bound or warm.
 The full set on `99b2a858` (2026-10-08) caught `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one`
 (modules, Process half) failing in the full run and passing alone, with one worktree building beside it; the plugin-kit
 repeat FLAKE1's row names.

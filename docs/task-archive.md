@@ -12491,3 +12491,24 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SQUASHTIDY1b — a session a squash merge carried is not offered *Accept…*** (driver, web-shell; after SQUASHTIDY1). LAND4's offer (`LandOffer`/`SessionTreeWork`) still judges by ancestry alone, so a session whose work the line holds by content, its tree still standing, is offered *Accept…* again. Use SQUASHTIDY1's content proof there, and say where the work is instead. Contract: D102's LAND4 and SQUASHTIDY1 notes. Proof: a driver test of the offer over a squash-merged line; the page's sentence.
 
 **Outcome** 2026-10-07: a session whose commits the line holds by content (a squash merge or a cherry-pick) is no longer offered *Accept…*: its page and `sessions --json` say where the work is in Discard's own clause and offer the unforced discard, naming the ref its commits stay at; one file differing is still offered *Accept…*. Follow-up: SQUASHTIDY1f. Detail: D102's SQUASHTIDY1b note; commits e1651005, 9a9bfcd4, 8fc212ad.
+
+
+## REVIEWENV1d — shown in Daoris's browser (2026-10-09, D154)
+
+> - [ ] **REVIEWENV1d — shown in Daoris's browser** (modules, driver; after c). Measured first: the shell's interception beside a session's browser server. Then the step's tab, `review_serve` at the rule's address only, kept served until the verdict, the chip, *Show it again*. Contract: §2.3 steps 1–5, §3.3. Proof: the measurement, `ReviewServingTests`, the person's own server never reached.
+
+**Outcome** 2026-10-07: a local set-up step's work is shown in Daoris's own browser: the driver opens a `Review #<quest>` tab before the step starts, and once the set-up is posted the shell serves its build there (CDP `Fetch`, that tab and the rule's address only, service workers bypassed, the person's server reached for nothing it serves) until the verdict; the strip's *In review* chip offers *Show it again*. Measured first: `docs/2026-10-09-review-serving-evidence.md`. Follow-up: REVIEWENV1d2. Detail: D154's REVIEWENV1d note; commits 9bd5b65a…f2b20ae6.
+
+
+## ASKHIST1 — Ask Daoris's conversations are kept, listed and resumed (2026-10-09, D158)
+
+> - [ ] **ASKHIST1 — Ask Daoris's conversations are kept, listed and resumed** (driver, modules, web-shell; owner, 2026-10-09: *"we are also missing a chat history resume and management with Ask Daoris, so that we can reuse a session or continue with more knowledge"*; *"this is local knowledge, more bound to the user, for Ask Daoris"*). Ask Daoris starts a new conversation each time and an ended one cannot be gone back to. Keep each conversation on this machine only (bound to the person, never synced or shared, D63's home), list them (title, when, what it was about), resume one in its own conversation (D137), rename, pin, delete and search them, and let a new one start from an earlier one's knowledge. Contract: D76 (the conversation), D137 (words to an ended session), D63. Proof: a module test of the list and the resume; vitest of the history panel in both catalogues; a shot of it.
+
+**Outcome** 2026-10-07: Ask Daoris's conversations are kept on this machine only (its help records, never synced), listed by what the person did in them, searched, renamed, pinned and deleted, resumed in their own harness conversation by the id now kept, or used to start a new one handed their transcript; from the panel's *History* and from `daoris-driver help list|resume|rename|pin|unpin|delete`. Detail: D158, the ask-daoris design §9.11; commits 80da36ce…38e874a3.
+
+
+## WORKFLOW1a — Current, derived and said (2026-10-09, D157)
+
+> - [ ] **WORKFLOW1a — Current, derived and said** (driver, cli). One pure function per twin derives a repository's workflow from its rules, each step with its source and limit, held to a shared fixture table; `daoris driver workflow show --repository|--workspace` prints it. Contract: §2.7, §3.2, §4.7. Proof: `WorkflowCurrentTests` and `workflows.test.ts`, cell for cell.
+
+**Outcome** 2026-10-07: a repository's or a workspace's Current is derived from the landing, review and opinion rules and the standing answer by twin functions, `workflows.ts` and `WorkflowCurrent.cs`, held cell for cell to `fixtures/workflow-current.json` (22 rows and the limits' sentences, version included); `daoris driver workflow show --repository|--workspace` prints it. Detail: D157's WORKFLOW1a note and the twins row; commits b9ba3e38…1730eedc.

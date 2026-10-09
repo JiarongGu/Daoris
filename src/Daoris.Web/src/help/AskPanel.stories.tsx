@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { AskHistory } from './AskHistory';
 import { AskPanel } from './AskPanel';
 import { ProposalCard } from './ProposalCard';
 import { starters } from './starters';
@@ -197,4 +198,56 @@ export const ProposingEveryKind: Story = {
 
 export const Ended: Story = {
   args: { ...Talking.args, conversation: { ...Talking.args!.conversation!, ended: true } },
+};
+
+/** ASKHIST1: the history open in the conversation's place, its door pressed, and no box while it is. */
+export const History: Story = {
+  args: {
+    ...Talking.args,
+    conversation: {
+      ...Talking.args!.conversation!,
+      historyOpen: true,
+      onHistory: () => {},
+      history: (
+        <AskHistory
+          rows={[
+            {
+              session: 'h1a2b3c4', title: 'Landing on feature branches', name: 'Landing on feature branches',
+              opening: 'how do I make engine land on a feature branch?', about: 'Repositories → engine → Setup → Line and landing.',
+              created: new Date(Date.now() - 86_400_000).toISOString(), last: new Date(Date.now() - 3_600_000).toISOString(),
+              pinned: new Date().toISOString(), live: false, resumable: true, from: null, handed: null, found: null,
+            },
+            {
+              session: 'h2b3c4d5', title: 'why is engine held?', name: null, opening: 'why is engine held?',
+              about: 'It is held by your press on Repositories → engine.', created: new Date(Date.now() - 600_000).toISOString(),
+              last: new Date(Date.now() - 60_000).toISOString(), pinned: null, live: true, resumable: true, from: null, handed: null,
+              found: null,
+            },
+          ]}
+          search=""
+          onSearch={() => {}}
+          onOpen={() => {}}
+          onRename={() => {}}
+          onPin={() => {}}
+          onStartFrom={() => {}}
+          onDelete={() => {}}
+        />
+      ),
+    },
+  },
+};
+
+/** ASKHIST1: an earlier conversation chosen from the history, which goes on in itself with the next words. */
+export const GoesOn: Story = {
+  args: {
+    ...Talking.args,
+    conversation: {
+      ...Talking.args!.conversation!,
+      ended: true,
+      onHistory: () => {},
+      note: (
+        <p className="m-0 mt-3 text-small text-ink-faint">This conversation has ended. Write to go on in it: it remembers what was said.</p>
+      ),
+    },
+  },
 };

@@ -918,8 +918,11 @@ public static class SessionsCommand
         {
             output.WriteLine(loop
                 ? $"sessions: the driver on this machine took nothing within {Seconds(world)} seconds, so your words were withdrawn; say them again in a moment."
-                : $"sessions: {record.Id} is a conversation, and no driver runs on this machine to open it again: start the desktop, "
-                  + "or `daoris-driver drive`, then say it again.");
+                : WordsNever.IsHelp(record)
+                    // ASKHIST1: Ask Daoris's conversation goes on in the window, whose panel holds it.
+                    ? $"sessions: {record.Id} is Ask Daoris's conversation, which goes on in the window: start Daoris, then say it again."
+                    : $"sessions: {record.Id} is a conversation, and no driver runs on this machine to open it again: start the desktop, "
+                      + "or `daoris-driver drive`, then say it again.");
             return loop ? 2 : 1;
         }
 
@@ -959,7 +962,8 @@ public static class SessionsCommand
         WordsNever.NotFound => $"no session here is {id}.",
         WordsNever.Teammate =>
             $"{id} ran on {(id.Contains('/') ? id[..id.IndexOf('/')] : "another machine")}, where its conversation is; nothing said here reaches it.",
-        WordsNever.Help => $"{id} is Ask Daoris's own conversation, which goes on nowhere: its panel opens a new one.",
+        // Only a window from before ASKHIST1 answers it: Ask Daoris's conversations go on in themselves since.
+        WordsNever.Help => $"{id} is Ask Daoris's own conversation, which the Daoris running here does not go on with: its panel opens a new one.",
         WordsNever.Intake => $"{id} is an intake; answer its ask #{record?.Ask} instead: publish it or close it.",
         WordsNever.StoodDown => $"it stood down: #{record?.Quest} is someone else's, so it has nothing to go on with.",
         WordsNever.Superseded =>
