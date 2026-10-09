@@ -40,13 +40,14 @@ import { type SettingsAnchor, type SettingsSection, useSettingsLayout } from './
 import { ShellSignals } from './ShellSignals';
 import {
   logEvent, useConsidered, useDismissUpdate, useDriver, useHarnesses, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes,
-  useRules, useSayUpdate, useSessionGroups, useSyncNow, useUntrusted, useUpdateState,
+  useRules, useSayUpdate, useSessionGroups, useShowReviewAgain, useSyncNow, useUntrusted, useUpdateState,
 } from './shell';
 import { byTool } from './tools';
 import { UpdateBanner } from './update/UpdateBanner';
 import { LinkOpener } from './links';
 import { BrowserDoor } from './work/BrowserDoor';
 import { browserDrivers } from './work/browserDrivers';
+import { ReviewChip } from './work/ReviewChip';
 import { menuRows } from './work/appMenus';
 import { KeyboardShortcuts } from './work/KeyboardShortcuts';
 import { offeredActs } from './work/acts';
@@ -284,6 +285,8 @@ export function App() {
   // which is why the commands that use it are gated on a shell being here.
   const openWindow = useOpenWindow();
   const openBrowser = useOpenBrowser();
+  // *Show it again* on the strip's review chip (REVIEWENV1d): a set-up's build served to its tab again, and the tab in front.
+  const showReviewAgain = useShowReviewAgain();
   // Where the page's links open (BRW7): Daoris's browser where the person chose it and a shell is here
   // to open one, and otherwise null — a link then opens as a link always has.
   const linkOpener = useLinkOpener(notify);
@@ -961,6 +964,15 @@ export function App() {
         trailing={attached ? (
           <div className="flex items-center gap-2">
             <BrowserDoor onOpen={() => openBrowser.mutate()} drivers={driving} onAttend={openInWork} />
+            {/* A set-up waiting for the person's review (REVIEWENV1d): said beside the browser, never inside it, which an
+                agent drives. */}
+            <ReviewChip
+              reviews={driver.data?.inReview}
+              onShowAgain={(quest) => showReviewAgain.mutate({ quest }, {
+                onSuccess: () => notify(t('browser.review.shownAgain', { quest })),
+                onError: failure(notify),
+              })}
+            />
             <div className={TOGGLES_ROOM}>
               <LayoutToggles
                 regions={['list', 'panel', 'right']}

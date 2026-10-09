@@ -259,6 +259,11 @@ public sealed partial class HelpCoverageTests
         ("useLinkOpener", new Exempt(
             "it opens a link the person pressed in Daoris's browser, their own click, and changes nothing on the machine; "
             + "where links open is Settings → Browser's, which the `browser` kind's `links` door proposes (D110 §4).")),
+        // REVIEWENV1d: *Show it again* on the strip's review chip, a set-up's build served to its tab again.
+        ("useShowReviewAgain", new Exempt(
+            "it serves a set-up's build to its tab of Daoris's browser again for the person to look at, and changes nothing of "
+            + "the work, its review or the machine's settings; what the person sees there is theirs to judge, and the verdict "
+            + "beside it is theirs alone (D154 point 8), so there is nothing to propose.")),
     ];
 
     /// <summary>Each <c>daoris driver</c> verb, and <c>across</c> by its two forms, as the CLI's command table spells them.</summary>

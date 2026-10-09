@@ -12491,3 +12491,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SQUASHTIDY1b — a session a squash merge carried is not offered *Accept…*** (driver, web-shell; after SQUASHTIDY1). LAND4's offer (`LandOffer`/`SessionTreeWork`) still judges by ancestry alone, so a session whose work the line holds by content, its tree still standing, is offered *Accept…* again. Use SQUASHTIDY1's content proof there, and say where the work is instead. Contract: D102's LAND4 and SQUASHTIDY1 notes. Proof: a driver test of the offer over a squash-merged line; the page's sentence.
 
 **Outcome** 2026-10-07: a session whose commits the line holds by content (a squash merge or a cherry-pick) is no longer offered *Accept…*: its page and `sessions --json` say where the work is in Discard's own clause and offer the unforced discard, naming the ref its commits stay at; one file differing is still offered *Accept…*. Follow-up: SQUASHTIDY1f. Detail: D102's SQUASHTIDY1b note; commits e1651005, 9a9bfcd4, 8fc212ad.
+
+
+## REVIEWENV1d — shown in Daoris's browser (2026-10-09, D154)
+
+> - [ ] **REVIEWENV1d — shown in Daoris's browser** (modules, driver; after c). Measured first: the shell's interception beside a session's browser server. Then the step's tab, `review_serve` at the rule's address only, kept served until the verdict, the chip, *Show it again*. Contract: §2.3 steps 1–5, §3.3. Proof: the measurement, `ReviewServingTests`, the person's own server never reached.
+
+**Outcome** 2026-10-07: a local set-up step's work is shown in Daoris's own browser: the driver opens a `Review #<quest>` tab before the step starts, and once the set-up is posted the shell serves its build there (CDP `Fetch`, that tab and the rule's address only, service workers bypassed, the person's server reached for nothing it serves) until the verdict; the strip's *In review* chip offers *Show it again*. Measured first: `docs/2026-10-09-review-serving-evidence.md`. Follow-up: REVIEWENV1d2. Detail: D154's REVIEWENV1d note; commits 9bd5b65a…f2b20ae6.
