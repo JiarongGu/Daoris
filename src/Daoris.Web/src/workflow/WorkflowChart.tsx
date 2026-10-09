@@ -1,4 +1,4 @@
-import { type KeyboardEvent, useId } from 'react';
+import { type KeyboardEvent, type ReactNode, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { Button, Icon, type IconName, Inline, Tip } from '../ui';
@@ -14,6 +14,12 @@ export type WorkflowDoors = {
   /** A repository's own workflow, from its workspace's page. */
   repository?: (repository: string) => void;
 };
+
+/**
+ * Where each step of a run stands (WORKFLOW1c, design §7), drawn on the same chart in place of what each step is set to: a
+ * step's mark, whether the work has come to it (a step not reached is drawn faint), and whether the run stands at it.
+ */
+export type RunMarks = Record<string, { mark: ReactNode; reached: boolean; at?: boolean }>;
 
 /** A step's kind as its glyph: what it is, beside the rail's mark for who takes part. */
 const GLYPH: Record<string, IconName> = {
@@ -90,7 +96,7 @@ function moveAlong(event: KeyboardEvent<HTMLElement>) {
  * to; where that was set, with a door to the Setup that sets it, and how much of it this build runs; its limit whole,
  * never folded away; and at its foot, beside the rail, what moves work on to the next.
  */
-function StepRow({ step, first, into, page, workspace, limits, doors }: {
+function StepRow({ step, first, into, page, workspace, limits, doors, run }: {
   step: WorkflowStep;
   /** The first row the keys stop at: Tab lands here, and ↑ and ↓ go on from it. */
   first: boolean;
@@ -100,6 +106,8 @@ function StepRow({ step, first, into, page, workspace, limits, doors }: {
   workspace: string;
   limits: Record<string, string>;
   doors?: WorkflowDoors;
+  /** Where the step stands in a run (WORKFLOW1c): drawn in place of what it is set to, where it was set and its edge. */
+  run?: RunMarks[string];
 }) {
   const { t } = useTranslation();
   const titleId = useId();
@@ -115,8 +123,10 @@ function StepRow({ step, first, into, page, workspace, limits, doors }: {
     <li
       data-step={step.id}
       aria-labelledby={titleId}
+      // The step a run stands at (design §7), which a door into the run opens on.
+      aria-current={run?.at ? 'step' : undefined}
       tabIndex={first ? 0 : -1}
-      className={cn(RAIL_ROW, 'rounded-control')}
+      className={cn(RAIL_ROW, 'rounded-control', run && !run.reached && 'opacity-60')}
     >
       <div aria-hidden className="flex flex-col items-center">
         <span className="flex h-5 items-center"><PartMark participation={step.participation} /></span>
@@ -133,35 +143,67 @@ function StepRow({ step, first, into, page, workspace, limits, doors }: {
           </span>
           <span className="min-w-0 text-small text-ink-soft"><Inline text={executorSaid(t, step)} /></span>
         </div>
-        {set && <p className="m-0 mt-1 text-small text-ink-soft"><Inline text={set} /></p>}
-        {standing && (
-          <p className="m-0 mt-1 text-small text-ink-soft">
-            {t('workflow.set.standing', { says: standing })}
-            {doors?.setup && page === 'repository' && (
-              <Button variant="ghost" className="ml-1 min-h-0 px-1.5 py-0 text-small" onClick={() => doors.setup?.('sessions')}>
-                {t('workflow.door.setup')}
-              </Button>
-            )}
-          </p>
-        )}
-        <p className="m-0 mt-1 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-meta text-ink-faint">
-          <span className="min-w-0">{sourceSaid(t, step, page, workspace)}</span>
-          <Tip content={t(`workflow.runtimeTip.${step.runtime}`)}>
-            <span className="text-ink-soft">{t(`workflow.runtime.${step.runtime}`)}</span>
-          </Tip>
-          {press && (
-            <Button variant="ghost" className="min-h-0 px-1.5 py-0 text-small" onClick={press.open}>{press.label}</Button>
-          )}
-        </p>
-        {limit && (
-          <p className="m-0 mt-2 border-l-[3px] border-warn bg-raised px-3 py-1.5 text-small text-ink-soft">
-            <Inline text={limit.text} />
-            {limit.recorded && <span className="ml-1.5 text-meta text-ink-faint">{t('workflow.limit.recorded')}</span>}
-          </p>
-        )}
-        <p data-edge className="m-0 mb-1 mt-2 text-meta text-ink-soft">{edgeSaid(t, step)}</p>
+        {run
+          ? (
+            <>
+              {run.mark}
+              {limit && (
+                <p className="m-0 mt-1.5 border-l-[3px] border-warn bg-raised px-2.5 py-1 text-meta text-ink-soft">
+                  <Inline text={limit.text} />
+                  {limit.recorded && <span className="ml-1.5 text-ink-faint">{t('workflow.limit.recorded')}</span>}
+                </p>
+              )}
+              <span aria-hidden className="block h-1.5" />
+            </>
+          )
+          : <StepSettings step={step} page={page} workspace={workspace} set={set} standing={standing} limit={limit} press={press} doors={doors} />}
       </div>
     </li>
+  );
+}
+
+/** What a step is set to, where that was set with its door, how much of it this build runs, its limit, and its edge. */
+function StepSettings({ step, page, workspace, set, standing, limit, press, doors }: {
+  step: WorkflowStep;
+  page: 'repository' | 'workspace';
+  workspace: string;
+  set: string | null;
+  standing: string | null;
+  limit: { text: string; recorded: boolean } | null;
+  press: false | undefined | null | { label: string; open: () => void };
+  doors?: WorkflowDoors;
+}) {
+  const { t } = useTranslation();
+  return (
+    <>
+      {set && <p className="m-0 mt-1 text-small text-ink-soft"><Inline text={set} /></p>}
+      {standing && (
+        <p className="m-0 mt-1 text-small text-ink-soft">
+          {t('workflow.set.standing', { says: standing })}
+          {doors?.setup && page === 'repository' && (
+            <Button variant="ghost" className="ml-1 min-h-0 px-1.5 py-0 text-small" onClick={() => doors.setup?.('sessions')}>
+              {t('workflow.door.setup')}
+            </Button>
+          )}
+        </p>
+      )}
+      <p className="m-0 mt-1 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-meta text-ink-faint">
+        <span className="min-w-0">{sourceSaid(t, step, page, workspace)}</span>
+        <Tip content={t(`workflow.runtimeTip.${step.runtime}`)}>
+          <span className="text-ink-soft">{t(`workflow.runtime.${step.runtime}`)}</span>
+        </Tip>
+        {press && (
+          <Button variant="ghost" className="min-h-0 px-1.5 py-0 text-small" onClick={press.open}>{press.label}</Button>
+        )}
+      </p>
+      {limit && (
+        <p className="m-0 mt-2 border-l-[3px] border-warn bg-raised px-3 py-1.5 text-small text-ink-soft">
+          <Inline text={limit.text} />
+          {limit.recorded && <span className="ml-1.5 text-meta text-ink-faint">{t('workflow.limit.recorded')}</span>}
+        </p>
+      )}
+      <p data-edge className="m-0 mb-1 mt-2 text-meta text-ink-soft">{edgeSaid(t, step)}</p>
+    </>
   );
 }
 
@@ -185,14 +227,22 @@ function StepRow({ step, first, into, page, workspace, limits, doors }: {
  * **Narrow**: nothing has a fixed width. A title, its chip and who acts wrap as one line of words, a path or a command
  * breaks at its separators, and at the main area's floor the chip goes under the title.
  *
+ * **A run is drawn on the same chart** (WORKFLOW1c, design §7): handed `run`, each step keeps its glyph, its title, the
+ * person's part by its shape and word and who acts, and in place of what it is set to says where it stands; a step the work
+ * has not come to is faint, and the one the run stands at is the current step.
+ *
  * A molecule: the workflow arrives answered, and every door goes out.
  */
-export function WorkflowChart({ workflow, page, name, doors }: {
+export function WorkflowChart({ workflow, page, name, doors, run, end }: {
   workflow: CurrentWorkflow;
   page: 'repository' | 'workspace';
   /** The repository or the workspace whose work it draws, which names the chart for a reader. */
   name: string;
   doors?: WorkflowDoors;
+  /** Where each step of a run stands, by its id: the chart then draws the run. */
+  run?: RunMarks;
+  /** What stands beside the end of the line: a run's own finish. */
+  end?: ReactNode;
 }) {
   const { t } = useTranslation();
   const beforeId = useId();
@@ -209,6 +259,7 @@ export function WorkflowChart({ workflow, page, name, doors }: {
       workspace={workflow.workspace}
       limits={workflow.limits}
       doors={doors}
+      run={run?.[step.id]}
     />
   );
 
@@ -239,9 +290,10 @@ export function WorkflowChart({ workflow, page, name, doors }: {
       )}
       <div className={RAIL_ROW}>
         <span aria-hidden className="flex h-5 items-center justify-center"><EndMark /></span>
-        <p className="m-0 inline-flex items-baseline gap-1.5 text-body font-semibold text-ink">
+        <p className="m-0 inline-flex flex-wrap items-baseline gap-1.5 text-body font-semibold text-ink">
           <Icon name="stepFinished" size={14} className="translate-y-0.5 text-ink-soft" />
           {t('workflow.finished')}
+          {end}
         </p>
       </div>
     </div>

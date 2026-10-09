@@ -78,7 +78,7 @@ export const KNOWN_KINDS = ['work', 'opinion', 'look', 'landing', 'pull-request'
 
 /** The limits this page words; a code it does not know is said in the driver's words, marked as such. */
 export const KNOWN_LIMITS = [
-  'opinion-declared', 'look-partial', 'plugin-unready', 'pull-request-unread', 'pull-request-at-clean-up',
+  'opinion-partial', 'look-partial', 'plugin-unready', 'pull-request-unread', 'pull-request-at-clean-up',
 ] as const;
 
 /**

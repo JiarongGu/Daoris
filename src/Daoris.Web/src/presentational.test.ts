@@ -176,6 +176,14 @@ describe('the presentational boundary', () => {
     expect(paths).toEqual(expect.arrayContaining(['./workflow/WorkflowTab.tsx', './workflow/WorkflowChart.tsx', './workflow/said.ts']));
   });
 
+  // WORKFLOW1c: the run's view and its one line are molecules too, so every stage of a run is a story's props (design §7).
+  it("holds a run's view and its one line to it", () => {
+    const paths = presentational.map(([path]) => path);
+    expect(paths).toEqual(expect.arrayContaining([
+      './workflow/WorkflowRunView.tsx', './workflow/WorkflowLine.tsx', './workflow/runSaid.ts', './workflow/run.ts',
+    ]));
+  });
+
   it('holds: no presentational component reaches the service or the shell', () => {
     expect(offenders(presentational)).toEqual([]);
   });

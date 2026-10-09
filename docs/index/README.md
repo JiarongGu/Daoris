@@ -34,18 +34,18 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Web/e2e/platform.spec.ts` | 56 | 965 |
 | `src/Daoris.Web/src/App.test.tsx` | 50 | 966 |
-| `src/Daoris.Web/src/App.tsx` | 68 | 1253 |
+| `src/Daoris.Web/src/App.tsx` | 68 | 1257 |
 | `src/Daoris.Web/src/ProjectsView.test.tsx` | 70 | 1272 |
 | `src/Daoris.Web/src/QuestsView.test.tsx` | 62 | 1200 |
 | `src/Daoris.Web/src/agents/AgentPage.tsx` | 47 | 887 |
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 96 | 1872 |
-| `src/Daoris.Web/src/quests/QuestPage.tsx` | 45 | 844 |
+| `src/Daoris.Web/src/quests/QuestPage.tsx` | 46 | 852 |
 | `src/Daoris.Web/src/ui.test.tsx` | 43 | 872 |
-| `src/Daoris.Web/src/ui.tsx` | 76 | 1632 |
+| `src/Daoris.Web/src/ui.tsx` | 76 | 1634 |
 | `src/Daoris.Web/src/work/ConversationView.test.tsx` | 44 | 841 |
 | `src/Daoris.Web/src/work/SessionHead.test.tsx` | 45 | 860 |
-| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 202 | 3909 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 78 | 1463 |
+| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 202 | 3910 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 80 | 1511 |
 | `src/Daoris.Web/src/work/conversation.test.ts` | 44 | 857 |
 | `src/Daoris.Web/src/work/frame.tsx` | 40 | 877 |
 
@@ -182,4 +182,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-08-second-agent-design.md` | 56 | 765 |
 | `docs/2026-10-09-workflow-design.md` | 79 | 1034 |
 | `docs/DAORIS_FUTURE_DIRECTIONS.md` | 51 | 3466 |
-| `src/Daoris.Desktop/README.md` | 50 | 297 |
+| `src/Daoris.Desktop/README.md` | 51 | 297 |

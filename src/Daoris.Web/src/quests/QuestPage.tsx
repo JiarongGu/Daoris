@@ -24,6 +24,8 @@ import { QuestRequirements } from './Requirements';
 import { TrustAsk } from '../work/TrustAsk';
 import { type MainNotice, PageHead, PageSection, ViewMain } from '../work/ViewMain';
 import { AbandonAsk, AbandonedWork, PauseAsk } from '../work/WorkAsks';
+import type { RunLineDoor } from '../workflow/run';
+import { WorkflowLine } from '../workflow/WorkflowLine';
 
 /** The acts a quest's page offers: its header's, then its body's (CTX1, D138 §4). */
 type QuestAct =
@@ -128,8 +130,13 @@ export function QuestPage({
   quest, lanes, question, sitting, hold, chain = [], session,
   busy = false, retrying = false, trusting = false, granting = false, dismissing = false, accepting = false,
   onRespond, onDelete, onDismiss, onRetry, onTrusting, onGrant, onOpenQuest, onAttend, onOpenAsk, onAccept, work, history, trace,
-  nameOf, review,
+  nameOf, review, workflow,
 }: {
+  /**
+   * Where its chain's work here stands in its workflow (WORKFLOW1c, the workflow design §7), said in one line among the head's
+   * facts whose door opens the run. Absent in a browser, which has no driver to read one.
+   */
+  workflow?: RunLineDoor;
   /**
    * A set-up step's review (REVIEWENV1g): its presses, whether one is on its way, and whether Daoris still serves its newest
    * set-up's tab here (null where no shell says). Absent, its review is shown with no press.
@@ -367,6 +374,7 @@ export function QuestPage({
       )}
       clamp={2}
       facts={questFacts(t, { quest, session, sitting })}
+      fact={workflow && workflow.runs.length > 0 ? <WorkflowLine runs={workflow.runs} onOpen={workflow.onOpen} /> : undefined}
       acts={acts}
     />
   );
