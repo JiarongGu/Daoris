@@ -68,8 +68,9 @@ export type WorkflowRules = Pick<DriverChoices,
  */
 export const WORKFLOW_LIMITS: Readonly<Record<string, string>> = {
   'opinion-declared': OPINION_DECLARED_ONLY,
-  'look-partial': 'Partial: work here lands only once you say it is reviewed or skip the review, but no set-up step is composed '
-    + 'for you yet, and nothing shows the work in Daoris\'s browser.',
+  'look-partial': 'Partial: work here lands only once you say it is reviewed or skip the review, and a set-up step\'s build is '
+    + 'shown in Daoris\'s browser from its session\'s end until then; no set-up step is composed for you yet, and nothing runs a '
+    + 'process of its own for one.',
   'plugin-unready': 'Its plugin cannot land work on this machine now: it is not installed, is switched off, contributes '
     + 'nothing, or speaks on no `work/land` point. `daoris plugin list` says which.',
   'pull-request-unread': 'Its plugin answers no `work/state`, so Daoris never reads whether the pull request was merged or '

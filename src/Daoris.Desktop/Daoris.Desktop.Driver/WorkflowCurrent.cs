@@ -79,8 +79,10 @@ public static class WorkflowLimits
     public static IReadOnlyList<(string Code, string Says)> Table { get; } =
     [
         (OpinionDeclared, OpinionRules.DeclaredOnly),
-        (LookPartial, "Partial: work here lands only once you say it is reviewed or skip the review, but no set-up step is composed "
-            + "for you yet, and nothing shows the work in Daoris's browser."),
+        // REVIEWENV1d shows a posted set-up's build from its session's end; the intake's step (1f) and a run of its own (1e) are not built.
+        (LookPartial, "Partial: work here lands only once you say it is reviewed or skip the review, and a set-up step's build is "
+            + "shown in Daoris's browser from its session's end until then; no set-up step is composed for you yet, and nothing runs a "
+            + "process of its own for one."),
         (PluginUnready, "Its plugin cannot land work on this machine now: it is not installed, is switched off, contributes "
             + "nothing, or speaks on no `work/land` point. `daoris plugin list` says which."),
         (PullRequestUnread, "Its plugin answers no `work/state`, so Daoris never reads whether the pull request was merged or "
