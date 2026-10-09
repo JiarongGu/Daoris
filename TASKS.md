@@ -4,7 +4,7 @@ Open work only. Finished rows move to `docs/task-archive.md`; `CHANGELOG.md` des
 
 ## State
 
-Development remains at `0.0.x`; nothing is published. Verified 2026-10-09: 1,442 CLI, 1,745 service, 223 HTTP host, 6,092 driver (5,342 fast, 750 Process), 795 modules (676 fast, 119 Process), 85 devkit, 4,712 web unit and 24 Playwright; rehearsals: release 114, family 404, deployment 114. The full set (14 gates) passed the XAGENT1c merge and that tree is on the install; earlier receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,887 bytes, advisory budget 26,000.
+Development remains at `0.0.x`; nothing is published. Verified 2026-10-10: 1,480 CLI, 1,758 service, 245 HTTP host, 6,758 driver (5,957 fast, 801 Process), 885 modules (763 fast, 122 Process), 85 devkit, 5,097 web unit and 24 Playwright; rehearsals: release 114, family 425, deployment 114. The full set (14 gates) passed the XAGENT1f4 merge; the install carries the WORKFLOW1a merge's tree, which the full set passed on 2026-10-09; earlier receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,887 bytes, advisory budget 26,000.
 
 Live consumer count is zero. Adoption is the owner's call. The existing desktop-runtime rehearsal remains evidence: 6 collisions, 2 twins to retire, budget 40,000, check at 38,782 bytes; supporting mechanics are in `docs/adoption/shenora-repo-mechanics.md`.
 
