@@ -33,7 +33,7 @@ public sealed record WorkflowKindRow(string Kind, string Runtime, string? Limit,
 /// <summary>
 /// The kinds a named workflow may hold, as main runs them (WORKFLOW1d, D157 point 8, the workflow design §3.2, §3.9) — the CLI's
 /// <c>WORKFLOW_KINDS</c>, cell for cell. A kind this build runs <see cref="None"/> of is never offered, and a version naming it
-/// does not read here. 🔴 The opinion is <c>declared</c> until XAGENT1f's gate reads it, then <c>partial</c>.
+/// does not read here. The opinion is <c>partial</c> since XAGENT1f's gate reads its rule, with Current's limit for it.
 /// </summary>
 public static class WorkflowKindTable
 {
@@ -51,7 +51,7 @@ public static class WorkflowKindTable
     public static IReadOnlyList<WorkflowKindRow> Table { get; } =
     [
         new(WorkflowKinds.Work, WorkflowRuntime.Built, null, []),
-        new(WorkflowKinds.Opinion, WorkflowRuntime.Declared, WorkflowLimits.OpinionDeclared,
+        new(WorkflowKinds.Opinion, WorkflowRuntime.Partial, WorkflowLimits.OpinionPartial,
         [
             new("reviewers", WorkflowFieldTypes.Names, null, false, null),
             new("required", WorkflowFieldTypes.Flag, null, false, false),

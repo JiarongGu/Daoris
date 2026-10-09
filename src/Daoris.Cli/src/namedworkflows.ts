@@ -44,13 +44,13 @@ export interface KindRow {
 const FAILED: KindField = { name: 'failed', type: 'choice', choices: ['wait', 'send-back', 'stop'], required: false, default: 'wait' };
 
 /**
- * The kinds, as main runs them (D157 point 8) — the driver's `WorkflowKinds.Table`, cell for cell. 🔴 The opinion is
- * `declared` until XAGENT1f's gate reads it, then `partial`, and its limit's sentence moves with it.
+ * The kinds, as main runs them (D157 point 8) — the driver's `WorkflowKindTable.Table`, cell for cell. The opinion is `partial`
+ * since XAGENT1f's gate reads its rule, with Current's limit for it.
  */
 export const WORKFLOW_KINDS: readonly KindRow[] = [
   { kind: 'work', runtime: 'built', limit: null, fields: [] },
   {
-    kind: 'opinion', runtime: 'declared', limit: 'opinion-declared', fields: [
+    kind: 'opinion', runtime: 'partial', limit: 'opinion-partial', fields: [
       { name: 'reviewers', type: 'names', required: false, default: null },
       { name: 'required', type: 'flag', required: false, default: false },
       { name: 'steps', type: 'flag', required: false, default: false },

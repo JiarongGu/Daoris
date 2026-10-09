@@ -219,7 +219,8 @@ test('apply saves a file\'s steps as the next version; show draws a version, its
     '  Another agent reads the work first. You accept each piece of work, and it merges into the line.',
     '  work · work — Agent alone.',
     '  opinion · opinion — Agent alone. reviewers `codex-acp`; required false; steps false; recheck true.',
-    '      Declared only: nothing reads it yet, so no reviewer is chosen and no landing waits for it.',
+    '      Partial: work here lands only once another agent\'s reading of it is settled, or you go on without one by '
+      + '`daoris-driver opinion`; the review does not draw it yet, and no task chooses its own reviewer yet.',
     '  landing · landing — You · your press: Accept. form `merge`; accept `you`; pattern as declared; plugin as declared.',
     '  Versions kept: v1, v2.',
     NOT_CHOSEN,
