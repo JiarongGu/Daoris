@@ -457,9 +457,9 @@ public static class AutoLandingNotes
             AutoLandingCode.Unreviewed => Noted.Of(NoteCodes.LandingUnreviewed,
                 "not accepted automatically: its work waits for your review before it lands, as follows. It lands at the first look "
                 + "after you review it or skip the review."),
-            // The second opinion's gate held it (XAGENT1f): said under `landing.refused` until the page words a code of its own
-            // (XAGENT1g), as the review's wait was before REVIEWENV1c2; the gate's sentence beneath says what waits.
-            AutoLandingCode.Opinion => Noted.Of(NoteCodes.LandingRefused,
+            // The second opinion's gate held it (XAGENT1f): its own code since the page words it (XAGENT1g), as the review's wait
+            // has since REVIEWENV1c2; the gate's sentence beneath says what waits.
+            AutoLandingCode.Opinion => Noted.Of(NoteCodes.LandingOpinion,
                 "not accepted automatically: its work waits for a second opinion before it lands, as follows. It lands at the first "
                 + "look once the opinion is settled, or you go on without one."),
             _ => Noted.Of(NoteCodes.LandingRefused, "not accepted automatically: the landing was refused, as follows. It waits for your review."),

@@ -445,6 +445,9 @@ public static class NoteCodes
     // Held by the review's gate (REVIEWENV1c2): a code of its own, so a look's wait is never said as a refused landing; a note
     // written before it keeps `landing.refused`.
     public static readonly NoteCode LandingUnreviewed = new("landing.unreviewed", []);
+    // Held by the second opinion's gate (XAGENT1g): a code of its own once the page words it; a note written before it keeps
+    // `landing.refused`.
+    public static readonly NoteCode LandingOpinion = new("landing.opinion", []);
     public static readonly NoteCode LandingNoTree = new("landing.no-tree", []);
     public static readonly NoteCode LandingNotDone = new("landing.not-done", []);
 

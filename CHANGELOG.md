@@ -227,6 +227,8 @@ with the version and date at release.
   doors from a quest, an ask and What needs you.
 - A `driver.json` that does not read is said with its file and where, instead of a stack trace.
 - `daoris-driver workflow run` prints where a piece of work stands in its workflow, step by step.
+- Where a second opinion holds work, the session shows it before the review: what the other agent found, the working
+  session's answers, and the presses to ask again, go on anyway or say you looked yourself.
 
 The first version: doctrine that installs, is checked, and flows back.
 

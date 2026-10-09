@@ -53,6 +53,12 @@ export const keys = {
   allLandings: ['driver', 'landing'] as const,
   sweep: ['driver', 'sweep'] as const,
   landing: (session: string) => ['driver', 'landing', session] as const,
+  /**
+   * A session's second opinion at its gate, with the findings and their answers (XAGENT1g), and what of every gate waits on
+   * the person: under the landings' key, so whatever asks every landing's plan again asks these again too.
+   */
+  opinion: (session: string) => ['driver', 'landing', 'opinion', session] as const,
+  opinionWaits: ['driver', 'landing', 'opinion-waits'] as const,
   /** Whether a session's landed branch can be handed to a landing plugin now (WSR5b). */
   handOff: (session: string) => ['driver', 'hand', session] as const,
   /** This machine's harnesses and the accounts they run as — shell-only too (D49 §4). */

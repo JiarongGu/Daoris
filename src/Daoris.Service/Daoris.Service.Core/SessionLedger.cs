@@ -1014,23 +1014,22 @@ public sealed partial class SessionLedger(
     /// <remarks>
     /// <b>Whose words, from <c>by</c></b> (XAGENT1e2): the person's alone keep <see cref="LedgerNoteCodes.WentOn"/> as it was.
     /// Another agent's findings are never "your words", since the person said nothing; with the person's beside them the line
-    /// says both, as the driver's opening line does. Those two lines are carried as their English, with no code, as the
-    /// driver carries its own findings note, since a code the page's catalogues do not hold would be shown as a key: they
-    /// gain codes when the page words them (XAGENT1g).
+    /// says both, as the driver's opening line does. Each is a coded line with its moment (<see cref="LedgerNoteCodes.WentOnFindings"/>,
+    /// <see cref="LedgerNoteCodes.WentOnBoth"/>) since the page words them (XAGENT1g); a note written before keeps its English.
     /// </remarks>
     internal static (string Note, string Parts) WentOnNote(Session session, string? note, string? noteParts, DateTimeOffset now)
     {
         var at = $"{now.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC";
-        var (line, said) = WentOnWith(session) switch
+        var (line, code) = WentOnWith(session) switch
         {
-            (Persons: false, Findings: true) => ($"Went on with another agent's findings at {at}.", true),
-            (Persons: true, Findings: true) => ($"Went on with your words and another agent's findings at {at}.", true),
-            _ => ($"Went on with your words at {at}.", false),
+            (Persons: false, Findings: true) => ($"Went on with another agent's findings at {at}.", LedgerNoteCodes.WentOnFindings),
+            (Persons: true, Findings: true) => ($"Went on with your words and another agent's findings at {at}.", LedgerNoteCodes.WentOnBoth),
+            _ => ($"Went on with your words at {at}.", LedgerNoteCodes.WentOn),
         };
         var went = string.Join("\n\n", new[] { session.Note, line, note }.Where(part => !string.IsNullOrWhiteSpace(part)));
         var parts = NoteParts.After(
             string.IsNullOrWhiteSpace(session.Note) ? null : session.NoteParts, session.Note,
-            [said ? NoteLine.Said(line, "before") : NoteLine.Coded(LedgerNoteCodes.WentOn, line, ("at", NoteParts.Moment(now)))],
+            [NoteLine.Coded(code, line, ("at", NoteParts.Moment(now)))],
             string.IsNullOrWhiteSpace(note) ? null : noteParts, note);
         return (went, parts);
     }

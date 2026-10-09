@@ -48,6 +48,8 @@ export function sessionTitle(session: Session, quest?: Quest | null, opening?: s
   if (quest?.title) return questName(quest);
   if (session.quest) return `#${session.quest}`;
   if (session.ask) return i18n.t('work.intake.title', { ask: session.ask });
+  // A reviewer's record is a chat only by the way it was opened (XAGENT1c): it reads another session's work once.
+  if (isOpinion(session)) return i18n.t('opinion.session.title');
   if (isHelp(session) && !opening) return i18n.t('help.title');
   if (session.kind === 'chat' && opening) return opening;
   return i18n.t(session.kind === 'chat' ? 'work.identity.conversation' : 'work.identity.session');
@@ -55,6 +57,9 @@ export function sessionTitle(session: Session, quest?: Quest | null, opening?: s
 
 /** Whether a session is an intake (INT4b): the one kind of record that names an ask. */
 export const isIntake = (session: Session): boolean => Boolean(session.ask);
+
+/** Whether a session is a second opinion's reviewer (XAGENT1c, D155 point 11): the one kind of record that names an opinion. */
+export const isOpinion = (session: Session): boolean => Boolean(session.opinion);
 
 /** Whether a session is Ask Daoris's conversation (HELP1a, D89), by the repository it is recorded in. */
 export const isHelp = (session: Session): boolean => session.repository === HELP_REPOSITORY;

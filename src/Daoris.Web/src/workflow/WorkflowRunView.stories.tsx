@@ -6,6 +6,8 @@ import {
   answerOf, FAILED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED, OPINION_SETTLED, PULL_REQUEST_OPEN, SEVERAL,
   WAITING_ON_YOU, WORKING,
 } from './runFixtures';
+import { OpinionGate } from '../work/OpinionGate';
+import { DETAIL, GATES } from '../work/opinionFixtures';
 import { WorkflowLine } from './WorkflowLine';
 import { WorkflowRunView } from './WorkflowRunView';
 
@@ -56,10 +58,34 @@ export const InReview: Story = {
 export const HeldForAnOpinion: Story = { args: { answer: answerOf(HELD_FOR_OPINION) } };
 
 /**
- * **A dispute waits on you**: in open's hue, its door the review, where the gate's presses stand beside *Accept…*, and *Go on
- * anyway…*'s terminal twin said until the review draws it (XAGENT1g).
+ * **A dispute waits on you**, in another session's run: in open's hue, its door the review, where the gate's presses stand beside
+ * *Accept…*, and *Go on anyway…*'s twins said, the session's own page and the terminal's.
  */
 export const OpinionDisputed: Story = { args: { answer: answerOf(OPINION_DISPUTED), doors } };
+
+/**
+ * **A dispute waits on you**, in the attended session's own run: the second opinion's own gate drawn under its step, *Go on
+ * anyway…* among its presses (XAGENT1g, WORKFLOW1c3's remainder).
+ */
+export const OpinionDisputedWithItsGate: Story = {
+  args: {
+    answer: answerOf(OPINION_DISPUTED),
+    doors,
+    controls: {
+      opinion: (
+        <OpinionGate
+          gate={{ ...GATES.disputed, answers: null }}
+          detail={DETAIL}
+          working="s1"
+          acts={{ ask: nothing, anyway: nothing, sendBack: nothing, myself: nothing }}
+        />
+      ),
+    },
+  },
+};
+
+/** The same in 中文. */
+export const OpinionDisputedWithItsGateChinese: Story = { ...OpinionDisputedWithItsGate, decorators: [chinese] };
 
 /** **A settled opinion**: done, the run standing at the landing, which waits for *Accept…*. */
 export const OpinionSettled: Story = { args: { answer: answerOf(OPINION_SETTLED) } };
