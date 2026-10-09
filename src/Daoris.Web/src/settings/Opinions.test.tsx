@@ -3,13 +3,13 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../i18n';
-import { OpinionField, type OpinionRule, opinionRowSays, opinionSays, opinionSummary, opinionToast } from './Opinions';
+import { OpinionField, type OpinionRule, opinionGate, opinionRowSays, opinionSays, opinionSummary, opinionToast } from './Opinions';
 
 // XAGENT1a (D155 point 3, the second-agent design §2.5–§2.6): which other agent reads a repository's work before it lands,
 // set on a repository's Setup and a workspace's Defaults as `daoris driver opinion` sets it from a terminal (D50). The words
 // each door says are the twins' (`opinions.ts`, `OpinionRules.cs`), held here in English to rows of their one table (the
-// driver suite's `fixtures/opinion-rules.json`, `says`), copied with the rule as the bridge carries it, and the field sends
-// the twins' edit, which the driver judges.
+// driver suite's `fixtures/opinion-rules.json`, `says` and `gate`), copied with the rule as the bridge carries it, and the
+// field sends the twins' edit, which the driver judges.
 
 type SaysRow = [name: string, rule: OpinionRule, sentences: string[]];
 
@@ -66,6 +66,28 @@ const SAYS: SaysRow[] = [
   ]],
 ];
 
+/**
+ * The twins' `gate` rows, copied (XAGENT1f4): what each door says after the rule's sentences, now that the gate reads it
+ * (XAGENT1f), at landing, before a chain's next step, and with `verify`. None here says nothing after.
+ */
+const WAITING = "Where work here waits for another agent's reading, it lands only once that reading is settled, or once you go "
+  + 'on without it, `daoris-driver opinion anyway <session>`, or say you looked yourself, `daoris-driver opinion myself <session>`.';
+const STEP_WAITING = "Where a chain's next step here waits for another agent's reading of the step before it, it starts only "
+  + 'once that reading is settled.';
+const SAFE_NOT_HANDED = 'What this repository declares safe is not handed to a reviewer yet.';
+
+type GateRow = [name: string, rule: OpinionRule, sentences: string[]];
+
+/** Rows of the twins' `gate` table, copied: a rule as the bridge carries it, and what each door says after its sentences. */
+const GATE: GateRow[] = [
+  ['none here says nothing after', { none: true, on: [], reviewers: [] }, []],
+  ['one reviewer before landing says what its landing waits for', { on: ['landing'], reviewers: ['codex-acp'] }, [WAITING]],
+  ['a required rule says the same', { on: ['landing'], reviewers: ['codex-acp', 'dsh'], required: true }, [WAITING]],
+  ["steps alone says what a chain's next step waits for", { on: ['steps'], reviewers: ['codex-acp'] }, [STEP_WAITING]],
+  ["the design's repository rule says both, then what verify is not handed yet",
+    { on: ['landing', 'steps'], reviewers: ['codex-acp'], verify: true, minutes: 30 }, [WAITING, STEP_WAITING, SAFE_NOT_HANDED]],
+];
+
 const t = i18n.t.bind(i18n);
 
 const SET: OpinionRule = {
@@ -88,12 +110,22 @@ describe('what a second-opinion rule says', () => {
     for (const [name, rule, sentences] of SAYS) expect(opinionSays(t, rule), name).toEqual(sentences);
   });
 
-  it("says nothing set as today's behaviour, and a rule as declared only, with where it was set", () => {
+  it("says, in English, the twins' gate sentences for each rule, word for word, and never that nothing reads it", () => {
+    for (const [name, rule, sentences] of GATE) {
+      expect(opinionGate(t, rule), name).toEqual(sentences);
+      expect(opinionRowSays(t, rule), name).not.toMatch(/Declared only|nothing reads it yet/);
+    }
+  });
+
+  it("says nothing set as today's behaviour, and a rule with what the gate does with it and where it was set", () => {
     expect(opinionRowSays(t, null)).toBe('None: no other agent reads work here.');
     expect(opinionRowSays(t, { ...SET, verify: false, on: ['landing'] }, { source: 'workspace', workspace: 'work' })).toBe(
       `Before work here lands, \`codex-acp\` reads it, ${COPY} If no reviewer can read it, the work waits for you. One pass `
-      + 'takes at most 30 minutes. Declared only: nothing reads it yet, so no reviewer is chosen and no landing waits for it. '
-      + 'From the workspace work.');
+      + `takes at most 30 minutes. ${WAITING} From the workspace work.`);
+    // The twins' `gate` rows: nothing waits where a repository has none, so nothing is said after it.
+    expect(opinionRowSays(t, { none: true, on: [], reviewers: [] }, { source: 'repository' })).toBe(
+      'No second opinion here, whatever its workspace says: no other agent reads work here before it lands. Set for this '
+      + 'repository.');
     expect(opinionSummary(t, null)).toBe('no second opinion');
     expect(opinionSummary(t, { none: true, on: [], reviewers: [] })).toBe('no second opinion here');
     expect(opinionSummary(t, SET)).toBe('a second opinion from `codex-acp`, required');
@@ -107,11 +139,50 @@ describe('what a second-opinion rule says', () => {
     expect(said[0]).toBe('这里的工作落地之前，由 `codex-acp`，其次 `dsh` 阅读它，用它自己的一份副本，副本里的任何东西都不会被取回；它的发现交给做这项工作的会话，也交给你。');
     expect(said).toContain('一次阅读最多 30 分钟。');
     expect(opinionSummary(t, SET)).toBe('来自 `codex-acp` 的第二意见，必需');
+
+    // The Setup row's sentences after the rule's (XAGENT1f4): what the gate does, its doors as written, nothing after none.
+    const gate = opinionGate(t, SET);
+    expect(gate).toHaveLength(3);
+    expect(gate[0]).toContain('`daoris-driver opinion anyway <session>`');
+    expect(gate[0]).toContain('`daoris-driver opinion myself <session>`');
+    expect(opinionRowSays(t, SET, { source: 'repository' })).toBe([
+      ...opinionSays(t, SET),
+      '这里等待另一个智能体阅读的工作，要等那次阅读有了定论，或者你不等它继续（`daoris-driver opinion anyway <session>`），'
+        + '或者说明你自己看过了（`daoris-driver opinion myself <session>`），才会落地。',
+      '委托链在这里的下一步若在等另一个智能体阅读上一步的工作，要等那次阅读有了定论才会开始。',
+      '这个仓库声明为安全的内容目前还不会交给阅读者。',
+      '为这个仓库设定。',
+    ].join(t('projects.setup.sentenceJoin')));
+    expect(opinionRowSays(t, { none: true, on: [], reviewers: [] })).not.toContain('daoris-driver opinion');
+    expect(opinionToast(t, 'web-app', { set: { reviewers: ['codex-acp'] } }))
+      .toBe('web-app 有了来自 codex-acp 的第二意见。那里等它阅读的工作，要等阅读有了定论或你不等它继续，才会往下走。');
+  });
+
+  /**
+   * OPINIONTWIN1: the Setup row's terminal twin joins its alternatives with `|` inside its one command, as the review row's
+   * does (REVIEWENV1g) and its neighbours' (`daoris driver line … <branch>|--clear`), in both languages; a command is code,
+   * never translated, so 中文 says it as English does, never with 、 between spans.
+   */
+  it('says its terminal twin as its neighbours do, one command with its alternatives joined by |, in both languages', () => {
+    for (const key of ['settings.opinion.twin.repository', 'settings.opinion.twin.workspace']) {
+      const english = i18n.getFixedT('en')(key, { repository: 'engine', workspace: 'aurora' });
+      const chinese = i18n.getFixedT('zh')(key, { repository: 'engine', workspace: 'aurora' });
+
+      expect(chinese).toBe(english);
+      expect(english.match(/`/g)).toHaveLength(2);
+      expect(chinese).not.toMatch(/、/);
+      expect(english).toMatch(/--reviewers <adapter,adapter>\|(none\|)?--clear`$/);
+    }
+    expect(i18n.getFixedT('en')('settings.opinion.twin.repository', { repository: 'engine' }))
+      .toBe('`daoris driver opinion engine --reviewers <adapter,adapter>|none|--clear`');
+    expect(i18n.getFixedT('en')('settings.opinion.twin.workspace', { workspace: 'aurora' }))
+      .toBe('`daoris driver opinion --workspace aurora --reviewers <adapter,adapter>|--clear`');
   });
 
   it('toasts what a change did', () => {
-    expect(opinionToast(t, 'web-app', { set: { reviewers: ['codex-acp', 'dsh'] } }))
-      .toBe('web-app has a second opinion from codex-acp, dsh. Declared only: nothing reads it yet.');
+    expect(opinionToast(t, 'web-app', { set: { reviewers: ['codex-acp', 'dsh'] } })).toBe(
+      'web-app has a second opinion from codex-acp, dsh. Where work there waits for its reading, it goes on only once that '
+      + 'reading is settled, or you go on without it.');
     expect(opinionToast(t, 'notes-site', { none: true })).toBe('notes-site has no second opinion now, whatever its workspace says.');
     expect(opinionToast(t, 'web-app', { clear: true })).toBe('web-app takes its second-opinion rule from what stands above it again.');
   });

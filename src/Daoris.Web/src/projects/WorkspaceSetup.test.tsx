@@ -261,8 +261,8 @@ describe("a workspace's review before landing", () => {
 
 /**
  * XAGENT1a (D155 point 3, design §2.5–§2.6): a workspace's *Second opinion before landing*, among its Defaults, for every
- * repository there that sets none of its own. Nothing set says today's behaviour; one set carries Clear and says it is
- * declared only.
+ * repository there that sets none of its own. Nothing set says today's behaviour; one set carries Clear and says what the gate
+ * does with it (XAGENT1f4).
  */
 describe("a workspace's second opinion before landing", () => {
   const withOpinion = (opinion: WorkspaceSetupProps['defaults']['opinion']) => at({
@@ -277,7 +277,7 @@ describe("a workspace's second opinion before landing", () => {
       "each checkout's own line (Daoris's default) · no second opinion (Daoris's default)");
     await userEvent.click(section('Defaults'));
     expect(screen.getByText('None: no other agent reads work here.')).toBeInTheDocument();
-    expect(screen.getByText(code('daoris driver opinion --workspace aurora --reviewers <adapter,adapter>'))).toBeInTheDocument();
+    expect(screen.getByText(code('daoris driver opinion --workspace aurora --reviewers <adapter,adapter>|--clear'))).toBeInTheDocument();
     const row = screen.getByText('Second opinion before landing', { selector: 'span' }).closest('.\\@container') as HTMLElement;
     await userEvent.click(within(row).getByRole('button', { name: 'Set for this workspace' }));
     expect(screen.queryByRole('button', { name: 'None here' })).toBeNull();
@@ -288,7 +288,7 @@ describe("a workspace's second opinion before landing", () => {
     });
   });
 
-  it('opens on a rule it sets, says what it lets a reviewer do and that nothing reads it yet, and clears it', async () => {
+  it('opens on a rule it sets, says what it lets a reviewer do and what the gate does with it, and clears it', async () => {
     const onChange = vi.fn();
     withOpinion({
       set: { on: ['landing'], reviewers: ['codex-acp', 'dsh'], required: true, minutes: 20, recheck: true, sameAgent: [] },
@@ -296,7 +296,10 @@ describe("a workspace's second opinion before landing", () => {
     });
 
     expect(screen.getByText(/reads it, in a copy of its own that nothing is taken back from/)).toBeInTheDocument();
-    expect(screen.getByText(/Declared only: nothing reads it yet, so no reviewer is chosen/)).toBeInTheDocument();
+    // XAGENT1f4: the twins' gate sentence, never that nothing reads it.
+    expect(screen.getByText(/Where work here waits for another agent's reading, it lands only once that reading is settled/))
+      .toBeInTheDocument();
+    expect(screen.queryByText(/Declared only: nothing reads it yet/)).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Clear' }));
     expect(onChange).toHaveBeenLastCalledWith({ clear: true });
   });

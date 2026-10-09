@@ -6,8 +6,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// XAGENT1a (D155 point 3, the second-agent design §2.2–§2.6): the second-opinion rule, <c>opinions</c> and
-/// <c>workspaceOpinions</c> in <c>driver.json</c> — read, refused, resolved, said and edited. Nothing here chooses a reviewer
-/// or starts a process: the rule is declared only.
+/// <c>workspaceOpinions</c> in <c>driver.json</c> — read, refused, resolved, said and edited, and what each door says of the
+/// gate that reads it (XAGENT1f4). Nothing here chooses a reviewer or starts a process: the gate's own tests hold that.
 /// </summary>
 /// <remarks>
 /// The driver's half of a TWIN with the CLI's <c>opinions.ts</c>: both are held, cell for cell, to ONE table, this suite's
@@ -54,6 +54,27 @@ public sealed class OpinionRulesTests
 
         Assert.True(read.Problem is null, $"{name}: {read.Problem}");
         Assert.Equal(sentences, OpinionRules.Says(read.Rule!, sameAgent));
+    }
+
+    public static TheoryData<string, string, string[]> GateRows() => Rows(
+        "gate", row => (Cell(row, 0)!, Cell(row, 1)!, Strings(row[2])));
+
+    /// <summary>
+    /// XAGENT1f4: what each door says after the rule's sentences, now that the gate reads the rule (XAGENT1f): what work that
+    /// waits for another agent's reading at landing, and a chain's next step under <c>steps</c>, wait for, with the person's
+    /// terminal doors, and that what is declared safe is not handed to a reviewer yet; nothing after none here.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(GateRows))]
+    public void Each_door_says_what_the_gate_does_with_a_rule_in_the_cli_s_words(string name, string rule, string[] sentences)
+    {
+        using var document = JsonDocument.Parse(rule);
+        var read = OpinionRules.Read(document.RootElement);
+
+        Assert.True(read.Problem is null, $"{name}: {read.Problem}");
+        Assert.Equal(sentences, OpinionRules.Gate(read.Rule!));
+        Assert.DoesNotContain(OpinionRules.DeclaredOnly, OpinionRules.Gate(read.Rule!));
+        Assert.DoesNotContain("nothing reads it yet", string.Join(" ", OpinionRules.Gate(read.Rule!)), StringComparison.Ordinal);
     }
 
     public static TheoryData<string, string, string, string?, string?> EditRows() => Rows(

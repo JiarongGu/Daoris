@@ -18,6 +18,24 @@ public sealed partial class KnowledgeTools
         + "`daoris-driver quest review <quest> reviewed`, or skip the review, `daoris-driver quest review <quest> skip`. "
         + "No set-up step is composed for you yet.";
 
+    /// <summary>
+    /// What the gate does with work that waits for another agent's reading, the sentences every other door says after a
+    /// second-opinion rule's own (XAGENT1f4): at landing, before a chain's next step under <c>steps</c>, and with <c>verify</c>.
+    /// The shared table's <c>gate</c> rows, <c>src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/opinion-rules.json</c>,
+    /// which the driver's <c>OpinionRules.Gate</c> and the CLI's <c>opinionGate</c> are held to. Copied, since the service
+    /// references neither, and held to the table by <c>HelpSettingProposalTests</c>, which reads its <c>gate</c> rows.
+    /// </summary>
+    private const string OpinionWaiting = "Where work here waits for another agent's reading, it lands only once that reading is "
+        + "settled, or once you go on without it, `daoris-driver opinion anyway <session>`, or say you looked yourself, "
+        + "`daoris-driver opinion myself <session>`.";
+
+    /// <summary>Said after a rule reading before each next step (XAGENT1f4): the twins' <c>StepWaiting</c>, by the same table.</summary>
+    private const string OpinionStepWaiting = "Where a chain's next step here waits for another agent's reading of the step before "
+        + "it, it starts only once that reading is settled.";
+
+    /// <summary>Said after a rule letting a reviewer run what is declared safe (XAGENT1f4): the twins' <c>SafeNotHanded</c>.</summary>
+    private const string OpinionSafeNotHanded = "What this repository declares safe is not handed to a reviewer yet.";
+
     [McpServerTool(Name = "setting_propose")]
     [Description(
         "Ask Daoris only: propose a change to how this machine drives its repositories, for the person to "
@@ -38,7 +56,9 @@ public sealed partial class KnowledgeTools
         + "that nothing is taken back from: `--reviewers` names adapters in the order they are tried, only the agents the person "
         + "names and never one you chose, ideally another maker's than the one doing the work; `--required` (work waits for "
         + "them when no reviewer can read it) and `--verify` (a reviewer may run what the repository declares safe) are their "
-        + "say-so, so propose them only when they ask; declared only, nothing reads it yet; "
+        + "say-so, so propose them only when they ask; the door then tells the person what the gate does with work that waits: "
+        + "at landing, \"" + OpinionWaiting + "\"; with `--on steps`, \"" + OpinionStepWaiting + "\"; with `--verify`, \""
+        + OpinionSafeNotHanded + "\"; those two presses are the person's own, never yours to propose; "
         + "`retry` takes a quest parked by its failed sessions, or held by the person's stop, as the room lists them; "
         + "a `landing` on a branch may add `--auto-accept`: a quest's done then lands its work with no press, and the rule's "
         + "plugin pushes it and opens a pull request without asking each time, which is the person's standing say-so for that "

@@ -532,7 +532,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     /// <c>--reviewers</c> and the switches set over the rule set there, <c>none</c> or <c>--clear</c>, for a repository or a
     /// whole workspace, a quoted word kept whole. Judged by the twin's table (<see cref="OpinionRules.Apply"/>); the card says
     /// what the rule lets a reviewer do, names the reviewers of the working agent's own family over this machine's agents, a
-    /// plugin's among them (XAGENT1b2), and says nothing reads it yet.
+    /// plugin's among them (XAGENT1b2), and says what the gate does with it (<see cref="OpinionRules.Gate"/>, XAGENT1f4).
     /// </summary>
     private static (string? Refusal, (string Describe, string Terminal, Func<DriverConfig, DriverConfig> Edit) Planned) Opinion(
         string? target, string? workspace, string value, DriverConfig config, HelpMachineFacts facts)
@@ -619,7 +619,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
         // plugin's agent is judged by what its plugin declares (XAGENT1b2), as the terminal and the reviewer's choice judge it.
         var adapters = AdapterSet.Built().WithPlugins(facts.Plugins);
         List<string> said = map.TryGetValue((circle ? workspace : target)!, out var standing)
-            ? [.. OpinionRules.Says(standing, OpinionRules.SameAgent(standing, config.Adapter, adapters)), OpinionRules.DeclaredOnly]
+            ? [.. OpinionRules.Says(standing, OpinionRules.SameAgent(standing, config.Adapter, adapters)), .. OpinionRules.Gate(standing)]
             : [];
         var scope = circle ? $"--workspace {ShellWord.Of(workspace!, ShellWord.Workspace)}" : target!;
         return (null, (string.Join(" ", [head, .. said]), $"daoris driver opinion {scope} {value}", c => OpinionRules.Apply(c, edit)));
