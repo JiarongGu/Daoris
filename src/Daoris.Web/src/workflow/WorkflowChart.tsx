@@ -138,7 +138,7 @@ function StepRow({ step, first, into, page, workspace, limits, doors }: {
           <p className="m-0 mt-1 text-small text-ink-soft">
             {t('workflow.set.standing', { says: standing })}
             {doors?.setup && page === 'repository' && (
-              <Button variant="ghost" className="ml-1 px-1.5 py-0 text-small" onClick={() => doors.setup?.('sessions')}>
+              <Button variant="ghost" className="ml-1 min-h-0 px-1.5 py-0 text-small" onClick={() => doors.setup?.('sessions')}>
                 {t('workflow.door.setup')}
               </Button>
             )}
@@ -150,7 +150,7 @@ function StepRow({ step, first, into, page, workspace, limits, doors }: {
             <span className="text-ink-soft">{t(`workflow.runtime.${step.runtime}`)}</span>
           </Tip>
           {press && (
-            <Button variant="ghost" className="px-1.5 py-0 text-small" onClick={press.open}>{press.label}</Button>
+            <Button variant="ghost" className="min-h-0 px-1.5 py-0 text-small" onClick={press.open}>{press.label}</Button>
           )}
         </p>
         {limit && (

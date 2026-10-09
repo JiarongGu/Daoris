@@ -104,24 +104,31 @@ function Repositories({ repositories, onOpen }: {
           : (
             <>
               <Prose className="mb-2 text-small">{t('workflow.repositories.body')}</Prose>
-              <ul aria-label={title} className="m-0 grid list-none gap-1 p-0">
+              {/* The names are a column and the words beside them another (platform-ux §4, *labels are a column*): each row
+                  takes the list's two columns as its own. */}
+              <ul aria-label={title} className="m-0 grid list-none grid-cols-[minmax(0,max-content)_minmax(0,1fr)] gap-x-3 gap-y-1 p-0">
                 {repositories.map(({ repository, own }) => (
-                  <li key={repository} className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+                  <li key={repository} className="col-span-2 grid grid-cols-subgrid items-center">
                     {/* One that sets its own rules is a door to its own workflow, named by its name as a workspace's
                         Details names each repository's door. */}
                     {own && onOpen
                       ? (
                         <Button
                           variant="ghost"
-                          className="min-w-0 border border-line px-2.5 py-0.5 text-small [overflow-wrap:anywhere]"
+                          className="min-w-0 justify-self-start border border-line px-2.5 py-0.5 text-small text-ink [overflow-wrap:anywhere]"
                           aria-label={t('workflow.door.repositoryNamed', { repository })}
                           onClick={() => onOpen(repository)}
                         >
                           {repository}
                         </Button>
                       )
-                      : <span className="min-w-0 text-small text-ink [overflow-wrap:anywhere]">{repository}</span>}
-                    <span className="rounded-full border border-line-strong px-2 py-px text-meta text-ink-soft">
+                      // The same box without its line, so a name that is no door stands where a door's name does.
+                      : (
+                        <span className="inline-flex min-h-[1.9rem] min-w-0 items-center border border-transparent px-2.5 py-0.5 text-small text-ink [overflow-wrap:anywhere]">
+                          {repository}
+                        </span>
+                      )}
+                    <span className="justify-self-start rounded-full border border-line-strong px-2 py-px text-meta text-ink-soft">
                       {t(own ? 'workflow.repositories.own' : 'workflow.repositories.follows')}
                     </span>
                   </li>
