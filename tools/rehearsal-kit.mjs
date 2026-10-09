@@ -320,22 +320,24 @@ export function gitRefusal(command, cwd, { within } = {}) {
   const words = wordsOf(command);
   if (words[0] !== 'git') return null;
 
+  // The refusal is the answer's print, and a phase may put a print into its next command, so its words are inert to a shell:
+  // no backtick, parenthesis, quote or separator.
   let at = 1;
   while (at < words.length && words[at].startsWith('-')) {
     if (GIT_ELSEWHERE.test(words[at])) {
-      return `\`git ${words[at].split('=')[0]}\` refused: it names another folder than the one the command runs in; run it there `
-        + 'instead (REHEARSEGIT1)';
+      return `refused: git ${words[at].split('=')[0]} names another folder than the one the command runs in, `
+        + 'so run it there instead. REHEARSEGIT1';
     }
     at += words[at] === '-c' ? 2 : 1;
   }
-  const verb = words[at] ? `\`git ${words[at]}\`` : '`git`';
+  const verb = words[at] ? `git ${words[at]}` : 'git';
 
-  if (!cwd) return `${verb} refused: no folder was named, and git would answer for whatever repository this process runs in (REHEARSEGIT1)`;
+  if (!cwd) return `refused: ${verb} with no folder named, where git would answer for whatever repository this process runs in. REHEARSEGIT1`;
   if (within && !isWithin(cwd, within)) {
-    return `${verb} refused in ${cwd}: it is outside ${within}, where this run makes its repositories (REHEARSEGIT1)`;
+    return `refused: ${verb} in ${cwd}, which is outside ${within}, where this run makes its repositories. REHEARSEGIT1`;
   }
   if (GIT_MAKES.has(words[at])) return null;
-  if (!existsSync(cwd)) return `${verb} refused in ${cwd}: there is no such folder (REHEARSEGIT1)`;
+  if (!existsSync(cwd)) return `refused: ${verb} in ${cwd}, where there is no such folder. REHEARSEGIT1`;
 
   const asked = (args) => spawnSync('git', args, { cwd, encoding: 'utf8', windowsHide: true });
   const top = asked(['rev-parse', '--show-toplevel']);
@@ -348,8 +350,8 @@ export function gitRefusal(command, cwd, { within } = {}) {
   }
 
   return toplevel
-    ? `${verb} refused in ${cwd}: it is not a repository of its own, and git would answer for the one at ${toplevel} (REHEARSEGIT1)`
-    : `${verb} refused in ${cwd}: it is not a git repository (REHEARSEGIT1)`;
+    ? `refused: ${verb} in ${cwd}, which is not a repository of its own: git would answer for the one at ${toplevel}. REHEARSEGIT1`
+    : `refused: ${verb} in ${cwd}, which is not a git repository. REHEARSEGIT1`;
 }
 
 /**
@@ -363,7 +365,7 @@ export function rehearsalRun({ within }) {
   return (command, cwd, env = {}, timeout = 0) => {
     const refused = gitRefusal(command, cwd, { within });
     if (refused) {
-      console.log(`  refused ${refused}`);
+      console.log(`  ${refused}`);
       return { code: 2, out: refused };
     }
     return capture(command, cwd, { env, timeout });

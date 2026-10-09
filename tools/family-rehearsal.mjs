@@ -22,7 +22,8 @@ import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { copyTree, treeDiff } from './fsx.mjs';
 import {
-  ACP_STUB_AGENT, capture, evidenceFolder, makeChecker, openTranscript, restartBetweenRequests, waitFor,
+  ACP_STUB_AGENT, STUB_COMMIT, capture, evidenceFolder, makeChecker, openTranscript, portRefusal, rehearsalRun,
+  restartBetweenRequests, takePorts, waitFor,
 } from './rehearsal-kit.mjs';
 import {
   SETUP_RULES, SETUP_TITLE, readEvents, readFollowed, readRegister, readSetup, readWorkspaceSetup, withFirstOnPath,
@@ -40,12 +41,6 @@ const driverDll = join(driverProject, 'bin', 'Debug', 'net10.0', 'daoris-driver.
 const scratch = join(repoRoot, '_fixtures', 'family-rehearsal');
 const family = join(scratch, 'family');
 
-const BASE = 'http://localhost:5199';
-const REMOTE_BASE = 'http://localhost:5198';
-const HOST_B_BASE = 'http://localhost:5197';
-// 5200, not 5196: the platform's e2e host owns that one, the two suites run in the same CI job, and
-// an orphaned host on a shared port makes one gate's readiness probe answer against the other's.
-const AURORA_BASE = 'http://localhost:5200';
 const EXAMPLES = ['engine', 'game'];
 
 // Hermetic by construction: every host and driver in this rehearsal points its remote-config lookup at
@@ -70,7 +65,9 @@ openTranscript(repoRoot, 'family', { beforeExit: () => stopEverything() });
 // wiped at the next start, and the rerun after a failure took the failed run's session transcript with it.
 const { totals, check, section } = makeChecker({ keep: evidenceFolder(repoRoot, 'family') });
 
-const run = (command, cwd, env = {}, timeout = 0) => capture(command, cwd, { env, timeout });
+// Every command this run makes, its git held to the repositories it made, under its scratch (REHEARSEGIT1): git walks UP from
+// a folder that is not one, and a fallback to the scratch committed a worktree's uncommitted work as "Family Rehearsal".
+const run = rehearsalRun({ within: scratch });
 
 // ONE helper for every driver invocation. Three copies had already diverged three ways: one dropped
 // the kill-timeout (four invocations any of which could freeze the gate), one dropped the hermetic
@@ -180,6 +177,24 @@ async function api(method, path, { body, key, base = BASE } = {}) {
 let host = null;
 const children = [];
 
+// Each host's port, taken free for this run (REHEARSEPORT1). They were fixed, and a run beside another (the merge gate's on
+// the main checkout, a branch's in its worktree) found the other's host answering on them, read its registry and failed ten
+// checks. Taken before anything starts, so a machine without them refuses here, and each host's start asks again
+// (`startServer`). `refused` is the port a host must refuse to start on (§12) and `absent` the remote nothing listens on
+// (§11): taken free, and never bound by this run.
+let PORTS;
+try {
+  PORTS = await takePorts(['host', 'remote', 'hostB', 'aurora', 'refused', 'absent']);
+} catch (error) {
+  console.log(`family rehearsal: refused before any host started: ${error.message} (REHEARSEPORT1)`);
+  process.exit(2);
+}
+console.log(`ports: ${Object.entries(PORTS).map(([name, port]) => `${name} ${port}`).join(', ')}`);
+const BASE = `http://localhost:${PORTS.host}`;
+const REMOTE_BASE = `http://localhost:${PORTS.remote}`;
+const HOST_B_BASE = `http://localhost:${PORTS.hostB}`;
+const AURORA_BASE = `http://localhost:${PORTS.aurora}`;
+
 /**
  * The built DLL is spawned directly rather than through `dotnet run`: `run` wraps the app in a child
  * process, and killing the wrapper on Windows orphans the server on its port — after which every
@@ -187,8 +202,18 @@ const children = [];
  *
  * Readiness accepts 401 as listening: a shared-mode host answers nothing without a key, and "the gate
  * is up" is exactly the signal being waited for.
+ *
+ * Only on a port nobody holds, and only while the host it started runs (REHEARSEPORT1): a host started on a held port fails
+ * to bind and ends, and the probe then reads the holder's answer as this host's. A held port is refused, naming its holder,
+ * after the wait a host this run stopped needs to let it go; and a host that ended is never up, whatever answers there.
  */
 async function startServer(env, base) {
+  const refused = await portRefusal(Number(new URL(base).port));
+  if (refused) {
+    console.log(`  refused ${refused}`);
+    return null;
+  }
+
   const child = spawn('dotnet', [httpDll], {
     cwd: repoRoot,
     stdio: 'ignore',
@@ -196,6 +221,10 @@ async function startServer(env, base) {
   });
   children.push(child);
   for (let attempt = 0; attempt < 100; attempt += 1) {
+    if (child.exitCode !== null || child.signalCode !== null) {
+      console.log(`  the host for ${base} ended (${child.exitCode ?? child.signalCode}) before it answered`);
+      return null;
+    }
     try {
       const { status } = await api('GET', '/api/status', { base });
       if (status === 200 || status === 401) return child;
@@ -716,10 +745,9 @@ const stubAgent = join(scratch, 'stub-agent.mjs');
 const stubSaidFolder = join(scratch, 'stub-said');
 const stubSaid = (quest) => join(stubSaidFolder, `${quest}.log`);
 writeFileSync(stubAgent, `
-import { execSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-
+${STUB_COMMIT}
 // The stub is a fake BINARY as well as a fake session (D49 §4): before anything else it answers the
 // two questions the toolchain probe asks any harness — its version, and whether a configuration home
 // has been logged into. Answered FIRST and exited immediately, because a probe that fell through
@@ -906,9 +934,8 @@ if (/decline/i.test(title)) {
 
 if (!forgets) leaveNotes();
 writeFileSync('answered-' + id + '.md', '# ' + title + '\\n\\nAnswered by the stub session.\\n');
-const git = 'git -c user.name="Stub Session" -c user.email="stub@example.invalid"';
-execSync(git + ' add -A', { stdio: 'ignore' });
-execSync(git + ' commit -q -m "stub: answer quest ' + id + '"', { stdio: 'ignore' });
+// Only in the tree it was started in, the top of a repository of its own (REHEARSEGIT1).
+await commitHere({ name: 'Stub Session', email: 'stub@example.invalid' }, 'stub: answer quest ' + id);
 if (forgets) leaveNotes();
 
 // A done answers each requirement by its number (DRIFT1d). One answering none is refused, naming each, and nothing
@@ -2402,10 +2429,13 @@ const bConfig = (extra) => writeFileSync(driverConfigB, `${JSON.stringify({
 }, null, 2)}\n`);
 bConfig({ holds: ['borealis'] });
 driveB('--once');
-// b goes offline: its host is restarted pointed at a remote that is not there.
+// b goes offline: its host is restarted pointed at a remote that is not there, on a port this run took free and never binds
+// (REHEARSEPORT1). Asked again here: one another process took since would be reached, and is said instead.
 if (hostB && !hostB.killed) hostB.kill();
 await sleep(700);
-hostB = await startServer({ ...hostBEnv, DAORIS_REMOTE_URL: 'http://localhost:5191' }, HOST_B_BASE);
+const absentHeld = await portRefusal(PORTS.absent, { within: 0 });
+if (absentHeld) console.log(`  the absent remote is not absent: ${absentHeld}`);
+hostB = await startServer({ ...hostBEnv, DAORIS_REMOTE_URL: `http://localhost:${PORTS.absent}` }, HOST_B_BASE);
 bConfig({ holds: [] });
 // Bounded by what the run holds through (DEV3b): its session's own two minutes (`timeoutMinutes`), which cover this
 // phase's wait, a host's restart and the stub's minute of lingering, and a minute more for its look and its ending. The
@@ -2932,8 +2962,9 @@ mkdirSync(auroraRoot, { recursive: true });
 
 // A workspace's host declares which workspace it is. A LOCAL host may not: it holds every circle the
 // person wired, so an identity there is a claim it cannot honour — and it refuses to start rather
-// than ignoring the variable, the same fail-safe inversion as the loopback rule (D47 §3).
-const localWithIdentity = run(`dotnet "${httpDll}" --urls http://localhost:5195`, repoRoot, {
+// than ignoring the variable, the same fail-safe inversion as the loopback rule (D47 §3). On a port of this run's
+// (REHEARSEPORT1): a host that started after all would hold it, never another run's.
+const localWithIdentity = run(`dotnet "${httpDll}" --urls http://localhost:${PORTS.refused}`, repoRoot, {
   DAORIS_WORKSPACE: 'aurora',
   DAORIS_KNOWLEDGE_DB: join(scratch, 'never-created.db'),
   ...NO_REMOTE,
@@ -5632,11 +5663,14 @@ check(
   reviewedSaid.out,
 );
 
-// A commit after the verdict, in the tree that would land: work the person has not seen run.
-writeFileSync(join(wentOn?.tree ?? scratch, 'late.md'), 'added after the look\n');
-run(`git ${GIT_ID} add -A`, wentOn?.tree ?? scratch);
-run(`git ${GIT_ID} commit -q -m "a change after the look"`, wentOn?.tree ?? scratch);
-const lateTip = headOf(wentOn?.tree);
+// A commit after the verdict, in the tree that would land: work the person has not seen run. In that tree alone: with none on
+// the record nothing is written, git refuses the folder it is not handed, and the checks below fail on it (REHEARSEGIT1). This
+// fell back to the scratch once, which is no repository, so git walked up and committed the enclosing checkout's work.
+const lateTree = wentOn?.tree ?? '';
+if (lateTree && existsSync(lateTree)) writeFileSync(join(lateTree, 'late.md'), 'added after the look\n');
+run(`git ${GIT_ID} add -A`, lateTree);
+run(`git ${GIT_ID} commit -q -m "a change after the look"`, lateTree);
+const lateTip = headOf(lateTree);
 const lateLanding = reviewDrive(`trees land ${devStepRecord?.id}`);
 check(
   'a commit after the verdict holds the landing again: what the person reviewed does not hold it, and nothing is made',
@@ -5648,7 +5682,7 @@ check(
 );
 
 // Taken back, the tip is again the commit the person reviewed: the gate reads git at each press, never a flag the verdict set.
-run(`git reset -q --hard ${correctedTip}`, wentOn?.tree ?? scratch);
+run(`git reset -q --hard ${correctedTip}`, lateTree);
 const reviewedLanding = reviewDrive(`trees land ${devStepRecord?.id}`);
 const reviewedRecord = landingOf(devStepRecord?.id);
 check(

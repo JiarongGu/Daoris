@@ -501,10 +501,10 @@ test('git in a scratch folder inside a repository is refused, naming the reposit
 
   for (const answer of [added, committed, reset]) {
     assert.equal(answer.code, 2);
-    assert.match(answer.out, /refused in .*scratch: it is not a repository of its own, and git would answer for the one at /);
+    assert.match(answer.out, /^refused: git \w+ in .*scratch, which is not a repository of its own: git would answer for the one at /);
   }
   assert.equal(said.length, 3, said.join('\n'));
-  assert.ok(said.every((line) => line.startsWith('  refused `git ')), said.join('\n'));
+  assert.ok(said.every((line) => line.startsWith('  refused: git ')), said.join('\n'));
   assert.equal(git(outer, 'status', '--porcelain'), '?? scratch/');
   assert.equal(git(outer, 'rev-list', '--count', 'HEAD'), '1');
   assert.equal(git(outer, 'log', '-1', '--format=%an'), 'Kit Test');
@@ -535,13 +535,34 @@ test('git with no folder named, outside the run, or pointed elsewhere by its own
   const own = folder('git-elsewhere-sibling');
   git(own, 'init', '-q');
 
-  assert.match(gitRefusal(`git ${ID} add -A`, undefined, { within: outer }) ?? '', /^`git add` refused: no folder was named/);
-  assert.match(gitRefusal(`git ${ID} add -A`, '', { within: outer }) ?? '', /^`git add` refused: no folder was named/);
-  assert.match(gitRefusal('git status', own, { within: outer }) ?? '', /refused in .*git-elsewhere-sibling: it is outside /);
-  assert.match(gitRefusal('git init -q', own, { within: outer }) ?? '', /it is outside /);
-  assert.match(gitRefusal(`git -C "${outer}" status`, own) ?? '', /^`git -C` refused: /);
-  assert.match(gitRefusal('git status', join(outer, 'never-made')) ?? '', /refused in .*never-made: there is no such folder/);
+  assert.match(gitRefusal(`git ${ID} add -A`, undefined, { within: outer }) ?? '', /^refused: git add with no folder named/);
+  assert.match(gitRefusal(`git ${ID} add -A`, '', { within: outer }) ?? '', /^refused: git add with no folder named/);
+  assert.match(gitRefusal('git status', own, { within: outer }) ?? '', /^refused: git status in .*git-elsewhere-sibling, which is outside /);
+  assert.match(gitRefusal('git init -q', own, { within: outer }) ?? '', /which is outside /);
+  assert.match(gitRefusal(`git -C "${outer}" status`, own) ?? '', /^refused: git -C names another folder/);
+  assert.match(gitRefusal('git status', join(outer, 'never-made')) ?? '', /^refused: git status in .*never-made, where there is no such folder/);
   assert.equal(gitRefusal('git status', own), null);
+});
+
+test("a refusal's words are inert to a shell, since a phase may put a print into its next command", () => {
+  const { outer, inner } = enclosingCheckout('git-inert');
+  const refusals = [
+    gitRefusal(`git ${ID} add -A`, inner),
+    gitRefusal('git status', undefined),
+    gitRefusal('git status', inner, { within: join(outer, 'elsewhere') }),
+    gitRefusal(`git -C "${outer}" status`, inner),
+    gitRefusal('git status', join(outer, 'never-made')),
+    gitRefusal('git status', folder('git-inert-plain')),
+  ];
+
+  // The words, the folders named aside: a folder is the run's own, as git or Node spells it.
+  const enclosing = execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: here, encoding: 'utf8' }).trim();
+  const folders = [scratch, scratch.replace(/\\/g, '/'), enclosing];
+  for (const refusal of refusals) {
+    assert.ok(refusal, 'every one is refused');
+    const words = folders.reduce((text, path) => text.split(path).join(''), refusal);
+    assert.doesNotMatch(words, /[`"'()$;&|<>*?[\]{}]/, refusal);
+  }
 });
 
 test("a stub commits in the repository it was started in, and refuses to commit in a folder that is not one", () => {
