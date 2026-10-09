@@ -81,6 +81,7 @@
   "note.landing.exists": "未自动采纳：`{{branch}}` 已经是一个分支，Daoris 不会移动它。它等待你的审阅。",
   "note.landing.refused": "未自动采纳：落地被拒绝，原因如下。它等待你的审阅。",
   "note.landing.unreviewed": "未自动采纳：它的工作在落地前等你审阅，详情如下。你审阅或跳过审阅后的下一轮会落地它的工作。",
+  "note.landing.opinion": "未自动采纳：它的工作在落地前等第二意见，详情如下。第二意见了结后，或你决定不等它继续后，下一轮会落地它的工作。",
   "note.landing.no-tree": "委托已完成，且它在仓库自己的检出中工作，所以工作已经在那里：不会自动落地任何东西。",
   "note.landing.not-done": "它的委托没有完成，所以不会自动落地任何东西：它的工作等待你的审阅。",
   "note.ledger.answered": "已答复：",

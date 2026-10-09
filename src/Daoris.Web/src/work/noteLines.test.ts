@@ -189,6 +189,31 @@ describe('noteLines', () => {
     expect(noteLines(zh, { parts: [coded('landing.refused', 'not accepted automatically: the landing was refused, as follows.')] }, 'zh'))
       .toEqual([{ kind: 'said', text: '未自动采纳：落地被拒绝，原因如下。它等待你的审阅。' }]);
   });
+
+  /**
+   * XAGENT1g: the look held for a second opinion says so with a code of its own, the gate's sentence beneath it as the driver
+   * wrote it, in either language; one written before the page worded it says `landing.refused`, and keeps being worded as that.
+   */
+  it('words a look held for a second opinion as its own line, never as a refused landing, in either language', () => {
+    const gate = 'Waits for a second opinion: being read by Codex (OpenAI), another maker\'s agent.';
+    const parts = [
+      coded('landing.opinion', 'not accepted automatically: its work waits for a second opinion before it lands, as follows. …'),
+      words(gate, 'program'),
+    ];
+
+    expect(noteLines(t, { parts }, 'en')).toEqual([
+      {
+        kind: 'said',
+        text: 'Not accepted automatically: its work waits for a second opinion before it lands, as follows. It lands at the first '
+          + 'look once the opinion is settled, or you go on without one.',
+      },
+      { kind: 'words', text: gate, by: 'program' },
+    ]);
+    expect(noteLines(zh, { parts }, 'zh')).toEqual([
+      { kind: 'said', text: '未自动采纳：它的工作在落地前等第二意见，详情如下。第二意见了结后，或你决定不等它继续后，下一轮会落地它的工作。' },
+      { kind: 'words', text: gate, by: 'program' },
+    ]);
+  });
 });
 
 describe('noteBlocks', () => {
