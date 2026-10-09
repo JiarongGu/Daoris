@@ -451,6 +451,12 @@ export const REACH = Object.freeze([
     gates: ['driver', 'service'],
     why: "the driver's ReviewRulesTests and the service's HelpSettingProposalTests read the review rules' table (REVIEWENV1c4); the CLI's twin runs in verify",
   },
+  // XAGENT1f4: the same for the second-opinion rules' table, whose `gate` rows the service's tool test reads too.
+  {
+    paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/opinion-rules.json'],
+    gates: ['driver', 'service'],
+    why: "the driver's OpinionRulesTests and the service's HelpSettingProposalTests read the second-opinion rules' table (XAGENT1f4); the CLI's twin runs in verify",
+  },
   { paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**'], gates: ['driver', 'driver-process'], why: "the driver's tests, both halves" },
   { paths: ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/**'], gates: ['modules', 'modules-process'], why: "the modules' tests, both halves" },
   // Before the service's tests, which would place it first: the driver's twin reads it too.

@@ -197,12 +197,28 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     {
         using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(
             Root(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "review-rules.json")));
-        return
-        [
-            .. table.RootElement.GetProperty("gate").EnumerateArray()
-                .SelectMany(row => row[2].EnumerateArray()).Select(sentence => sentence.GetString()!).Distinct(),
-        ];
+        return Sentences(table);
     }
+
+    /// <summary>
+    /// What every door says after a second-opinion rule's own sentences, in the gate's words (XAGENT1f4): each sentence of the
+    /// shared table's <c>gate</c> rows, <c>src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/opinion-rules.json</c>, which
+    /// the driver's <c>OpinionRulesTests</c> and the CLI's <c>driverconfig.test.ts</c> read too, read as REVIEWENV1c4 reads the
+    /// review's: never spelled here.
+    /// </summary>
+    private static IReadOnlyList<string> OpinionGateSays()
+    {
+        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(
+            Root(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "opinion-rules.json")));
+        return Sentences(table);
+    }
+
+    /// <summary>Each sentence of a shared table's <c>gate</c> rows, once, in the order first said.</summary>
+    private static IReadOnlyList<string> Sentences(JsonDocument table) =>
+    [
+        .. table.RootElement.GetProperty("gate").EnumerateArray()
+            .SelectMany(row => row[2].EnumerateArray()).Select(sentence => sentence.GetString()!).Distinct(),
+    ];
 
     /// <summary>The workspace root, found by walking up from the test binaries to <c>daoris.json</c>.</summary>
     private static string Root()
@@ -234,7 +250,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
         Assert.Contains("never production", tool);
         Assert.Contains("propose it only when they ask", tool);
 
-        // The review's clause runs from its door's name to the opinion's, whose rule nothing reads yet.
+        // The review's clause runs from its door's name to the opinion's.
         var review = tool[tool.IndexOf("`review` declares", StringComparison.Ordinal)..tool.IndexOf("`opinion` declares", StringComparison.Ordinal)];
         var gate = GateSays();
         Assert.NotEmpty(gate);
@@ -244,11 +260,13 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     }
 
     /// <summary>
-    /// XAGENT1a (D155 point 3, design §2.4–§2.5): the tool tells the helper what an opinion takes, that its reviewers are only
-    /// the ones the person names, that `--required` and `--verify` are the person's say-so, and that nothing reads it yet.
+    /// XAGENT1a (D155 point 3, design §2.4–§2.5), as XAGENT1f4 words it: the tool tells the helper what an opinion takes, that
+    /// its reviewers are only the ones the person names, that `--required` and `--verify` are the person's say-so, and what the
+    /// gate then does with work that waits, in the sentences every other door says, the twins' table's. Never that nothing
+    /// reads it: the gate does (XAGENT1f).
     /// </summary>
     [Fact]
-    public void The_tool_says_what_an_opinion_takes_that_its_reviewers_are_the_persons_and_that_nothing_reads_it_yet()
+    public void The_tool_says_what_an_opinion_takes_that_its_reviewers_are_the_persons_and_what_the_gate_does()
     {
         var method = typeof(Daoris.Knowledge.Mcp.KnowledgeTools).GetMethod(nameof(Daoris.Knowledge.Mcp.KnowledgeTools.ProposeSetting))!;
         string Described(string name) => method.GetParameters().Single(parameter => parameter.Name == name)
@@ -263,7 +281,14 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
         Assert.Contains("a second opinion", Described("workspace"));
         Assert.Contains("only the agents the person names", tool);
         Assert.Contains("`opinion` declares which other agent reads", tool);
-        Assert.Contains("declared only, nothing reads it yet", tool);
+
+        // The opinion's clause runs from its door's name to the next door's.
+        var opinion = tool[tool.IndexOf("`opinion` declares", StringComparison.Ordinal)..tool.IndexOf("`retry` takes", StringComparison.Ordinal)];
+        var gate = OpinionGateSays();
+        Assert.NotEmpty(gate);
+        foreach (var sentence in gate) Assert.Contains(sentence, opinion);
+        Assert.DoesNotContain("declared only", tool, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("nothing reads it", tool, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>The shape is checked here, and nothing more: what the route would say is the driver's.</summary>
