@@ -432,15 +432,17 @@ public sealed class PersonGate(PersonKey? key, MachineLog log, PersonConfirmatio
     }
 
     /// <summary>
-    /// Whether the grant covers this very call: its body read whole and put back for the route, so the bytes judged are
-    /// the bytes the route binds (PERSONDOOR1b).
+    /// Whether the grant covers this very call (PERSONDOOR1b): its body read whole and handed to the route from memory, so
+    /// the bytes judged are the bytes the route binds. Held in memory rather than by the framework's buffering, which keeps
+    /// a large body in a temporary file: nothing of a confirmed request is written down.
     /// </summary>
     private async Task<bool> TakeAsync(HttpContext context, string secret, string pattern)
     {
-        context.Request.EnableBuffering();
-        using var body = new MemoryStream();
+        var body = new MemoryStream();
         await context.Request.Body.CopyToAsync(body, context.RequestAborted);
-        context.Request.Body.Position = 0;
+        body.Position = 0;
+        context.Request.Body = body;
+        context.Response.RegisterForDispose(body);
         return confirmations.Take(
             secret, context.Request.Method, pattern, context.Request.Path.Value ?? "", context.Request.QueryString.Value ?? "",
             body.ToArray());
