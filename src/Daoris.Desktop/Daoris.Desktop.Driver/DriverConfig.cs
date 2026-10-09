@@ -451,14 +451,46 @@ public sealed record DriverConfig(
     public const string PathVariable = "DAORIS_DRIVER_CONFIG";
 
     /// <summary>
+    /// The file's name in a home, written here alone (CONFIGSEAM1): a reader that joined it to its home itself read another file
+    /// than the loop's wherever the override named one, and so landed without the override's landing and review rules.
+    /// </summary>
+    private const string FileName = "driver.json";
+
+    /// <summary>
     /// The conventional home, beside the store the driver watches — under the Daoris home (D63). A
     /// machine with no home and no override is refused, naming what to set, rather than written to.
     /// </summary>
-    public static string DefaultPath => DaorisHome.Require("driver.json");
+    public static string DefaultPath => DaorisHome.Require(FileName);
 
-    /// <summary>The file every door reads and writes — the override, or the conventional home.</summary>
-    public static string ResolvePath() =>
-        Environment.GetEnvironmentVariable(PathVariable) ?? DefaultPath;
+    /// <summary>
+    /// The one resolution of the person's choices (D63, CONFIGSEAM1): the override where set, the home's <c>driver.json</c>
+    /// otherwise, and null on a machine that names neither. Every reader comes here, through this or a <c>ResolvePath</c>, and
+    /// <c>ConfigSeamTests</c> scans for one that does not.
+    /// </summary>
+    public static string? FindPath(Func<string, string?> environment) =>
+        environment(PathVariable) ?? DaorisHome.File(environment, FileName);
+
+    /// <summary>The same, from the process environment: for a reader with no home in hand that reads nothing on a machine with none.</summary>
+    public static string? FindPath() => FindPath(Environment.GetEnvironmentVariable);
+
+    /// <summary>The file every door reads and writes — the override, or the conventional home; refused, naming what to set, with neither.</summary>
+    public static string ResolvePath() => FindPath() ?? DefaultPath;
+
+    /// <summary>
+    /// The same file, for a door that holds its home rather than the path — the trees and every landing, a plugin's page, a chat
+    /// going on (CONFIGSEAM1): the one resolution where it is a file in this home, as every home is the folder its config sits in
+    /// (<see cref="HomeOf"/>), and this home's <c>driver.json</c> otherwise. Never another home's file: an override naming one
+    /// elsewhere is another machine's, or another test's.
+    /// </summary>
+    public static string ResolvePath(string home) => ResolvePath(Environment.GetEnvironmentVariable, home);
+
+    /// <summary>The same, over an environment a test hands in.</summary>
+    public static string ResolvePath(Func<string, string?> environment, string home) =>
+        FindPath(environment) is { Length: > 0 } found && SameFolder(HomeOf(found), home) ? found : Path.Combine(home, FileName);
+
+    private static bool SameFolder(string left, string right) => string.Equals(
+        Path.TrimEndingDirectorySeparator(Path.GetFullPath(left)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(right)),
+        OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
 
     /// <summary>
     /// The Daoris home a config file lives in — the directory holding <c>driver.json</c>, which every

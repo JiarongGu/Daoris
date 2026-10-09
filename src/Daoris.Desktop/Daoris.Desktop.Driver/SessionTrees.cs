@@ -1090,7 +1090,11 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     private static string Sentence(string words) =>
         words.TrimEnd() is var trimmed && trimmed.Length > 0 && ".!?".Contains(trimmed[^1]) ? trimmed : $"{trimmed}.";
 
-    private DriverConfig Config() => DriverConfig.Load(Path.Combine(home, "driver.json"));
+    /// <summary>
+    /// The person's choices, from the file the loop and the planner read (CONFIGSEAM1): this home's <c>driver.json</c> alone
+    /// ignored an override's landing and review rules, so the work merged into the line while the planner sat a review for it.
+    /// </summary>
+    private DriverConfig Config() => DriverConfig.Load(DriverConfig.ResolvePath(home));
 
     /// <summary>What a pattern is expanded from: the quest, or the session where there is none; the quest's name's words (LANDNAME1).</summary>
     private static LandingNames NamesOf(LandingSubject subject, string repository) =>
