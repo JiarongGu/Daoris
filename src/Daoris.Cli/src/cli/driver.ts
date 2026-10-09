@@ -1,6 +1,7 @@
 import type { CliCommand } from '../types.ts';
 import { commandDriver } from '../driverconfig.ts';
 import { registryCheckouts, sessionRecords } from '../service.ts';
+import { commandWorkflow } from '../workflowdoor.ts';
 
 export const command: CliCommand = {
   name: 'driver',
@@ -73,6 +74,25 @@ export const command: CliCommand = {
     '                                                   step, who takes part, who',
     '                                                   acts, where it was set, and',
     '                                                   what it cannot do yet',
+    '                         workflow list · workflow show <id>[@<version>]',
+    '                                                   the workflows you named, under',
+    '                                                   $DAORIS_HOME/workflows/, each',
+    '                                                   a list of versions never',
+    '                                                   edited; and the presets',
+    '                         workflow new <id> --from <preset>|current:<repo>|<id>[@<v>]',
+    '                                [--with-opinion] [--with-look] [--name "…"]',
+    '                         workflow edit <id> [--base <v>] <change>…',
+    '                                                   add <kind> --after <step>,',
+    '                                                   remove, set <step> <f>=<v>,',
+    '                                                   move <step> --after <step>,',
+    '                                                   on <step> failed=…',
+    '                         workflow apply <id> <file> [--base <v>]',
+    '                         workflow export <id> [--to <file>] · workflow import <file>',
+    '                                                   each change saved as the next',
+    '                                                   version, said step by step and',
+    '                                                   your part first (--plan: say',
+    '                                                   it, save nothing); nothing',
+    '                                                   chooses a named one yet',
     '                         notify on|off           say so when a session parks,',
     '                                                   or ends without you asking',
     '                         intake <adapter>|off      answer an ask the declarations',
@@ -96,6 +116,6 @@ export const command: CliCommand = {
   ],
   // `retry` without `--at` counts the quest's failures from this machine's records (RETRY1b), and `review` looks for a
   // procedure in the registry's checkouts (REVIEWENV1a), through the one module that may reach a network, handed in here so
-  // `driverconfig.ts` never holds a socket of its own.
-  run: (args) => commandDriver(args, () => sessionRecords(), () => registryCheckouts()),
+  // `driverconfig.ts` never holds a socket of its own. The `workflow` verbs are handed in too (WORKFLOW1d, `WorkflowDoor`).
+  run: (args) => commandDriver(args, () => sessionRecords(), () => registryCheckouts(), (each, context) => commandWorkflow(each, context)),
 };

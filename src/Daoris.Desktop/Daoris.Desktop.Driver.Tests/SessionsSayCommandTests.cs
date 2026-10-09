@@ -328,6 +328,92 @@ public sealed class SessionsSayCommandTests : IDisposable
         Assert.Equal(["w1"], room.Said("d0ne0000"));
     }
 
+    /// <summary>
+    /// 🔴 FLAKE3: a loop under load takes the words in time and keeps them, and nudges its look, only after the verb's wait is over.
+    /// A loop that took a say always answers it, so the verb waits on that answer rather than its clock, and follows the words:
+    /// it said the loop had taken them and not said where they stood, exit 2, while the loop was writing its answer.
+    /// </summary>
+    [Fact]
+    public async Task A_loop_that_took_the_words_and_answers_after_the_wait_is_waited_for()
+    {
+        var room = Ended();
+        using var service = room.Client();
+        var processes = new SessionProcesses(Sessions);
+        var world = World(service, wait: TimeSpan.FromMilliseconds(300));
+        var words = new LoopWords(processes, () => service) { Nudge = () => room.GoOn("d0ne0000") };
+        await using var loop = new SessionRequestWatch(_home, processes, () => service, every: TimeSpan.FromMilliseconds(20))
+        {
+            // Its pass is late: the words are kept, and its look nudged, only once the verb's wait is over.
+            Say = async (request, ct) =>
+            {
+                await Task.Delay(world.Wait * 2, ct);
+                return await words.HoldAsync(request, ct);
+            },
+        };
+
+        var (exit, said) = await SayAsync(room, ["d0ne0000", "also the changelog"], world);
+
+        Assert.Equal(0, exit);
+        Assert.Equal("sessions: going on: the same session took it.\n", said);
+        Assert.Equal(1, room.Says);
+    }
+
+    /// <summary>
+    /// The answer is waited for only while a loop holds the home (FLAKE3): one that took the words and went away without
+    /// answering is said at once, never waited out to the loop's bound on a say.
+    /// </summary>
+    [Fact]
+    public async Task A_loop_that_took_the_words_and_went_away_unanswered_is_said_at_once()
+    {
+        var room = Ended();
+        using var service = room.Client();
+        var holds = 1;
+        var world = World(service, wait: TimeSpan.FromMilliseconds(300)) with
+        {
+            LoopRuns = () => Volatile.Read(ref holds) == 1,
+            Answer = TimeSpan.FromMinutes(1),
+        };
+        await using var loop = new SessionRequestWatch(_home, new SessionProcesses(Sessions), () => service, every: TimeSpan.FromMilliseconds(20))
+        {
+            Say = async (_, ct) =>
+            {
+                await Task.Delay(world.Wait * 2, ct);
+                Volatile.Write(ref holds, 0);
+                await Task.Delay(Timeout.Infinite, ct);
+                return WordsHeld.Failed("never");
+            },
+        };
+        var waited = Stopwatch.StartNew();
+
+        var (exit, said) = await SayAsync(room, ["d0ne0000", "also the changelog"], world);
+
+        Assert.Equal(2, exit);
+        Assert.Contains("took your words, and gave no answer of where they stand", said);
+        Assert.True(waited.Elapsed < TimeSpan.FromSeconds(20), $"{waited.Elapsed} waited");
+    }
+
+    /// <summary>And no longer than the loop's own bound on a say (FLAKE3), where a loop that holds the home never answers.</summary>
+    [Fact]
+    public async Task A_loop_that_took_the_words_and_never_answers_is_said_after_its_bound()
+    {
+        var room = Ended();
+        using var service = room.Client();
+        var world = World(service, wait: TimeSpan.FromMilliseconds(300)) with { Answer = TimeSpan.FromMilliseconds(300) };
+        await using var loop = new SessionRequestWatch(_home, new SessionProcesses(Sessions), () => service, every: TimeSpan.FromMilliseconds(20))
+        {
+            Say = async (_, ct) =>
+            {
+                await Task.Delay(Timeout.Infinite, ct);
+                return WordsHeld.Failed("never");
+            },
+        };
+
+        var (exit, said) = await SayAsync(room, ["d0ne0000", "also the changelog"], world);
+
+        Assert.Equal(2, exit);
+        Assert.Contains("took your words, and gave no answer of where they stand", said);
+    }
+
     /// <summary>What holds a start holds a reopen, and the line names it (D137 §2.2), by the planner's own verdict.</summary>
     [Fact]
     public async Task Held_words_name_what_holds_them()

@@ -219,6 +219,12 @@ with the version and date at release.
 - Where a repository asks for a second opinion, its work waits for it before landing, at every door; the person can
   ask, stop, land anyway or say they looked themselves (`daoris-driver opinion`).
 - Ask Daoris's history no longer runs past the side bar's edge when a conversation's title is a long link.
+- The review choice can be set from a terminal: `daoris-driver ask … --review`, `ask --set-review` and
+  `quest review <id> off|on|<environment>`.
+- Workflows can be named and saved: `daoris driver workflow new|edit|apply|list|show|export|import`, each version
+  kept and each change shown with your part first; nothing chooses one yet.
+- A session's side bar has a *Workflow* view: where its work stands in its repository's workflow, step by step, with
+  doors from a quest, an ask and What needs you.
 
 The first version: doctrine that installs, is checked, and flows back.
 

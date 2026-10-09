@@ -164,15 +164,7 @@ public static class ReviewRules
     private static string? Problem(ReviewSpelled environment, IReadOnlyList<ReviewEnvironment> earlier)
     {
         var (name, kind, procedure, address, run) = environment;
-        if (name is null || name.Trim().Length == 0) return $"an environment is named: {NameRule}";
-        if (!NameShape.IsMatch(name) || name.Length > 32) return $"`{name}` is not an environment's name — {NameRule}";
-        if (name == "none") return "`none` says a repository has no review environment, so no environment is named it.";
-        if (ReadsAsProduction(name))
-        {
-            return $"`{name}` reads as production, and production is never a review environment — name where work is looked at "
-                + "before it lands, such as `local` or `dev`.";
-        }
-
+        if (NameProblem(name) is { } unnamed) return unnamed;
         if (earlier.Any(each => each.Name == name)) return $"`{name}` is named twice in one rule — each environment has a name of its own.";
 
         if (kind is null) return KindMissing;
@@ -194,6 +186,22 @@ public static class ReviewRules
         if (run is not null && kind != "local") return RunDeployed;
         if (run is not null && (run.Trim().Length == 0 || run.Contains('\r') || run.Contains('\n'))) return RunShape;
         return null;
+    }
+
+    /// <summary>
+    /// Why <paramref name="name"/> cannot name a review environment, or null when it can: its shape, <c>none</c>, and production.
+    /// The rule's own judgement of a name, which the terminal's review choice reads too (REVIEWENV1j), so a choice is refused in
+    /// the words a rule is.
+    /// </summary>
+    public static string? NameProblem(string? name)
+    {
+        if (name is null || name.Trim().Length == 0) return $"an environment is named: {NameRule}";
+        if (!NameShape.IsMatch(name) || name.Length > 32) return $"`{name}` is not an environment's name — {NameRule}";
+        if (name == "none") return "`none` says a repository has no review environment, so no environment is named it.";
+        return ReadsAsProduction(name)
+            ? $"`{name}` reads as production, and production is never a review environment — name where work is looked at "
+              + "before it lands, such as `local` or `dev`."
+            : null;
     }
 
     /// <summary>Whether a name reads as production: the whole of it, or a word between its dashes, is one of <see cref="Production"/>.</summary>
@@ -300,8 +308,8 @@ public static class ReviewRules
                 ? new ResolvedReview(shared, ReviewSource.Workspace)
                 : null;
 
-    /// <summary>Names in backticks, the last after <c>or</c>: <c>a</c>, <c>a or b</c>, <c>a, b or c</c>.</summary>
-    private static string Either(IReadOnlyList<string> names)
+    /// <summary>Names in backticks, the last after <c>or</c>: <c>a</c>, <c>a or b</c>, <c>a, b or c</c>; the review choice's doors say them so too.</summary>
+    internal static string Either(IReadOnlyList<string> names)
     {
         var ticked = names.Select(name => $"`{name}`").ToList();
         return ticked.Count <= 1 ? string.Concat(ticked) : $"{string.Join(", ", ticked.Take(ticked.Count - 1))} or {ticked[^1]}";

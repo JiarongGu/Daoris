@@ -25,7 +25,7 @@ import { usePublishedOffer } from '../menus/mainOffer';
  * whole in its tip and on *Show all* where it was cut; and `facts` is the line under it, the facts the state makes
  * matter, said once. Such a head has no id line: the id is its ⋯'s and its *Details*'.
  */
-export function PageHead({ title, version, pills, id, line, acts, icon, lead, clamp, facts }: {
+export function PageHead({ title, version, pills, id, line, acts, icon, lead, clamp, facts, fact }: {
   title: string; version?: string; pills?: ReactNode; id?: string; line?: string; acts?: ReactNode; icon?: ReactNode;
   /** What leads the title: a record's state, on its pill. */
   lead?: ReactNode;
@@ -33,7 +33,13 @@ export function PageHead({ title, version, pills, id, line, acts, icon, lead, cl
   clamp?: 1 | 2;
   /** The facts line under the title, in order; none draws no line. */
   facts?: readonly string[];
+  /**
+   * A fact that is a door, last on the facts line (WORKFLOW1c, the workflow design §7): where the record's work stands in its
+   * workflow, whose door opens the run.
+   */
+  fact?: ReactNode;
 }) {
+  const said = facts && facts.length > 0 ? facts.join(' · ') : null;
   return (
     <header className="mb-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
       <div className="flex min-w-0 flex-1 basis-64 items-start gap-3">
@@ -47,7 +53,13 @@ export function PageHead({ title, version, pills, id, line, acts, icon, lead, cl
             {version && <span className="font-mono text-small text-ink-faint">{version}</span>}
             {pills}
           </div>
-          {facts && facts.length > 0 && <p className="m-0 mt-0.5 text-small text-ink-faint wrap-anywhere">{facts.join(' · ')}</p>}
+          {(said || fact) && (
+            <p className="m-0 mt-0.5 text-small text-ink-faint wrap-anywhere">
+              {said}
+              {said && fact && <span aria-hidden> · </span>}
+              {fact}
+            </p>
+          )}
           {id && <p className="m-0 mt-0.5 font-mono text-meta text-ink-faint">{id}</p>}
           {line && <Prose className="mt-1 wrap-anywhere">{line}</Prose>}
         </div>

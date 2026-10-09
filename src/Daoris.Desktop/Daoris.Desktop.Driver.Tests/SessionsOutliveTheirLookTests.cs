@@ -770,6 +770,32 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 FLAKE3, the case above with its order held: the stopped session is still ending when the failure closes the watch, as a
+    /// real process killed for its lost take may still be exiting then. The stop decided the end first, so the record says the
+    /// stop, stood down for the lost take and never interrupted, rather than the close's own stop. Under load the case above met
+    /// this order now and then, and read <c>stopped</c>.
+    /// </summary>
+    [Fact]
+    public async Task A_session_still_ending_from_its_stop_when_the_watch_closes_records_the_stop_not_the_close()
+    {
+        using var sync = new RemoteSyncSet([]);
+        _ledger.Publish("q1", "engine");
+        _ledger.Claim = "lost";
+        var (watch, runs) = Watch(sync: sync);
+        runs.OnOpen = _ => _ledger.Down = true;
+        // The stopped run never finishes ending before the close reaches it.
+        runs.StopLands = new TaskCompletionSource().Task;
+
+        var failed = await Assert.ThrowsAsync<DriverException>(() => watch.RunAsync(
+            (_, _) => Task.CompletedTask, onError: null, _closing.Token).WaitAsync(Bound));
+
+        Assert.Contains("503", failed.Message);
+        var record = _ledger.Session("s1");
+        Assert.Equal(("stood-down", false), (State("s1"), record["interrupted"]?.GetValue<bool>() == true));
+        Assert.Equal("ended.lost-claim", record["noteParts"]![0]!["code"]!.GetValue<string>());
+    }
+
+    /// <summary>
     /// The watch whose door says only whole looks (the desktop's, which keeps watching through a failure): a failed look's lines
     /// and what it ended join the next look's report, as the orphan sweep's do, rather than a part that would replace the page's
     /// standing answers with nothing. Said once, after the failure.

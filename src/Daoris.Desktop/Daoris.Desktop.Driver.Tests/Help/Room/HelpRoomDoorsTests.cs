@@ -42,6 +42,9 @@ public sealed class HelpRoomDoorsTests
             // TOOL6a (D130 §16.6): how a list is used, the terminal's door (on the screen since TOOL4g).
             "daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--early on|off] [--near <percent>] "
                 + "[--workspace <name>]",
+            // REVIEWENV1j (D154 point 3, D50): the person's review choice, the composer's, the ask page's and the gate's.
+            "daoris-driver ask … --review rule|on|<environment>|off", "daoris-driver ask --set-review <id> on|<environment>|off",
+            "daoris-driver quest review <quest> off [\"…\"]", "daoris-driver quest review <quest> on|<environment>",
         })
         {
             Assert.Contains(command, agents);
