@@ -987,24 +987,50 @@ public sealed partial class SessionLedger(
             .SetStateAsync(id, SessionState.Working, went, evidence, transcript, now, inside, forgive: true, noteParts: parts)
             .ConfigureAwait(false);
 
+        var with = WentOnWith(session) switch
+        {
+            (Persons: false, Findings: true) => "another agent's findings",
+            (Persons: true, Findings: true) => "the person's words and another agent's findings",
+            _ => "the person's words",
+        };
         return new SessionAdvanceOutcome(
             SessionAdvanceRefusal.None,
-            $"Session `{id}` is working again: it goes on from {Spell(session.State)} with the person's words.",
+            $"Session `{id}` is working again: it goes on from {Spell(session.State)} with {with}.",
             moved);
     }
+
+    /// <summary>
+    /// Whose words an ended record goes on with, read from each waiting word's <see cref="SaidWord.By"/> (XAGENT1e2, D155's
+    /// XAGENT1e note): the person's, another agent's findings, or both. A record with none reads as the person's, as it did.
+    /// </summary>
+    private static (bool Persons, bool Findings) WentOnWith(Session session) =>
+        (session.Said.Count == 0 || session.Said.Any(word => word.Persons), session.Said.Any(word => !word.Persons));
 
     /// <summary>
     /// The note an ended record goes on with (MSG1a, D137 §2.3): what ended it, when it went on, and the note the move passed,
     /// each with its parts (LANG1a, the language design §4 row 66): the record's own, or its note carried whole; the ledger's
     /// line with its moment; the move's own, or its note carried whole.
     /// </summary>
+    /// <remarks>
+    /// <b>Whose words, from <c>by</c></b> (XAGENT1e2): the person's alone keep <see cref="LedgerNoteCodes.WentOn"/> as it was.
+    /// Another agent's findings are never "your words", since the person said nothing; with the person's beside them the line
+    /// says both, as the driver's opening line does. Those two lines are carried as their English, with no code, as the
+    /// driver carries its own findings note, since a code the page's catalogues do not hold would be shown as a key: they
+    /// gain codes when the page words them (XAGENT1g).
+    /// </remarks>
     internal static (string Note, string Parts) WentOnNote(Session session, string? note, string? noteParts, DateTimeOffset now)
     {
-        var line = $"Went on with your words at {now.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC.";
+        var at = $"{now.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC";
+        var (line, said) = WentOnWith(session) switch
+        {
+            (Persons: false, Findings: true) => ($"Went on with another agent's findings at {at}.", true),
+            (Persons: true, Findings: true) => ($"Went on with your words and another agent's findings at {at}.", true),
+            _ => ($"Went on with your words at {at}.", false),
+        };
         var went = string.Join("\n\n", new[] { session.Note, line, note }.Where(part => !string.IsNullOrWhiteSpace(part)));
         var parts = NoteParts.After(
             string.IsNullOrWhiteSpace(session.Note) ? null : session.NoteParts, session.Note,
-            [NoteLine.Coded(LedgerNoteCodes.WentOn, line, ("at", NoteParts.Moment(now)))],
+            [said ? NoteLine.Said(line, "before") : NoteLine.Coded(LedgerNoteCodes.WentOn, line, ("at", NoteParts.Moment(now)))],
             string.IsNullOrWhiteSpace(note) ? null : noteParts, note);
         return (went, parts);
     }
