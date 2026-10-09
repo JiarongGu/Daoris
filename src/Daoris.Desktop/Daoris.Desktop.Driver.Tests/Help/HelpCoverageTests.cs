@@ -221,6 +221,26 @@ public sealed partial class HelpCoverageTests
         + "(D144 §5), and until then `daoris-driver quest check` is the terminal's door.");
 
     /// <summary>
+    /// XAGENT1f's <c>daoris-driver opinion ask</c> and <c>opinion stop</c> (D155 point 10; the second-agent design §9), verbs of the
+    /// headless host: exempt, since asking another agent for a second opinion spends an account at the person's choice, as going on
+    /// in a new session does (MSG1g), and a stop is the person's own (D104). <c>opinion show</c> reads and changes nothing.
+    /// </summary>
+    private static readonly Exempt OpinionAskDoor = new(
+        "asking another agent for a second opinion, or the same agent in a fresh conversation, spends an account at the person's "
+        + "choice, as going on in a new session does (D137 §2.2), and stopping a reviewer is their own stop (D104), so Ask Daoris "
+        + "proposes neither (the second-agent design §9); it can name `daoris-driver opinion ask`, and `opinion show` changes nothing.");
+
+    /// <summary>
+    /// XAGENT1f's <c>daoris-driver opinion anyway</c> and <c>opinion myself</c> (D155 point 10; the second-agent design §9): exempt,
+    /// since going on without a settled opinion, or reading the work oneself in its place, is a judgement Ask Daoris cannot have
+    /// made (D110), as D154's verdict is.
+    /// </summary>
+    private static readonly Exempt OpinionJudgementDoor = new(
+        "going on without a settled second opinion, or recording one's own reading in its place, is a judgement Ask Daoris cannot "
+        + "have made (D110), as D154's verdict is, so it proposes neither (the second-agent design §9); it can name "
+        + "`daoris-driver opinion anyway` and `opinion myself`.");
+
+    /// <summary>
     /// GIT1c's <c>daoris-driver git branches</c> (D147 §3.3), a verb of the headless host: exempt, since it reads each
     /// repository's branches and changes nothing, as <c>trace</c> is. The acts (fetch, branch, push, delete) are owed to a
     /// <c>git</c> kind, GIT1k's, once GIT1g and GIT1h build them.
@@ -583,6 +603,8 @@ public sealed partial class HelpCoverageTests
             .Append(CheckDoor)
             .Append(GitBranchesDoor)
             .Append(TreesStateDoor)
+            .Append(OpinionAskDoor)
+            .Append(OpinionJudgementDoor)
             .Append(UpdateDoor)
             .Append(RenameDoor)
             .Append(JoinDoor)
@@ -666,6 +688,18 @@ public sealed partial class HelpCoverageTests
     /// EVID1b: the headless host's <c>quest check</c> (D144 §5) is a door owed to EVID1c's check card while the host's usage
     /// spells it and no kind takes it; the room names it meanwhile, so the helper can point the person at it.
     /// </summary>
+    [Fact]
+    public void The_headless_hosts_opinion_verbs_are_the_persons_own_and_exempt()
+    {
+        Assert.Contains("opinion ask <session> [--reviewer <adapter>] [--same-agent]", DriverCommand.Usage);
+        Assert.Contains("opinion stop <opinion>", DriverCommand.Usage);
+        Assert.Contains("opinion anyway <session>", DriverCommand.Usage);
+        Assert.Contains("opinion myself <session>", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("opinion"));
+        Assert.Contains("second-agent design §9", OpinionAskDoor.Reason);
+        Assert.Contains("D110", OpinionJudgementDoor.Reason);
+    }
+
     [Fact]
     public void The_headless_hosts_quest_check_is_a_door_owed_to_the_check_card()
     {

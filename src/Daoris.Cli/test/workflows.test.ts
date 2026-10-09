@@ -58,9 +58,10 @@ test('Current is derived from the rules as the driver derives it, step for step 
   fx.cleanup();
 });
 
-test('each limit is said in the table\'s words, in its order, and the opinion\'s is the rule\'s own declared-only sentence', () => {
+test('each limit is said in the table\'s words, in its order, and the opinion\'s says what its gate runs (XAGENT1f)', () => {
   assert.deepEqual(Object.entries(WORKFLOW_LIMITS).map(([code, says]) => ({ code, says })), TABLE.limits);
-  assert.equal(WORKFLOW_LIMITS['opinion-declared'], OPINION_DECLARED_ONLY);
+  assert.match(WORKFLOW_LIMITS['opinion-partial']!, /^Partial: work here lands only once another agent's reading of it is settled/);
+  assert.ok(!Object.values(WORKFLOW_LIMITS).includes(OPINION_DECLARED_ONLY), 'no limit says that nothing reads the rule');
 });
 
 test('the version is a digest of the text drawn: twelve hex characters, changed by any cell, escaped by hand', () => {
@@ -144,7 +145,7 @@ test('workflow show --repository finds its workspace in the registry, and reads 
   assert.match(out, /in the workspace `work`/);
   assert.match(out, /Plugins that may hold a start: `example\.hold`\./);
   assert.match(out, /Second opinion — Agent alone · an agent\. Read by `codex-acp` before it lands; required; its answers read again\. This repository's opinion rule\./);
-  assert.match(out, /Declared only: nothing reads it yet/);
+  assert.match(out, /Partial: work here lands only once another agent's reading of it is settled/);
   assert.match(out, /The pull request — You · `example\.pull-request`/);
   assert.match(out, /Its plugin answers no `work\/state`/);
   fx.cleanup();

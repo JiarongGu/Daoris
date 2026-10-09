@@ -1,5 +1,5 @@
 {
-  "about": "WORKFLOW1a's shared table: a repository's Current workflow, derived from its rules (D157 §2.7, the workflow design §2.7, §3.2), the table both twins hold, the CLI's workflows.ts and the driver's WorkflowCurrent. `current`: a name; `config`, the driver.json each side reads with its own reader; a `repository` (null draws the workspace's Current) and its `workspace` (null is none, read as the default one); the `plugins` switched on and sound, in catalogue order, each its id and the points it speaks on; then what is derived: `startHolds`, the plugins that may hold a start; `steps`, in order, each its id (its kind), kind, participation, executor, press, source (the rule and the level it was read at), settings (in the order the version reads them), runtime and limit (a code of `limits`, or null); and `version`, the first 12 hex characters of the SHA-256 of the text both sides build by hand. No row names a repository twice in different case in a landing map: the driver keeps the last spelling's rule and the CLI finds the first (the as-built note on D157). `limits`: each code a step may carry and the sentence it is said in, in order; `opinion-declared` is OpinionRules.DeclaredOnly word for word, and `go-ahead-partial` is a named workflow's go-ahead's (WORKFLOW1d, workflow-named.json's `kinds`), which Current never draws.",
+  "about": "WORKFLOW1a's shared table: a repository's Current workflow, derived from its rules (D157 §2.7, the workflow design §2.7, §3.2), the table both twins hold, the CLI's workflows.ts and the driver's WorkflowCurrent. `current`: a name; `config`, the driver.json each side reads with its own reader; a `repository` (null draws the workspace's Current) and its `workspace` (null is none, read as the default one); the `plugins` switched on and sound, in catalogue order, each its id and the points it speaks on; then what is derived: `startHolds`, the plugins that may hold a start; `steps`, in order, each its id (its kind), kind, participation, executor, press, source (the rule and the level it was read at), settings (in the order the version reads them), runtime and limit (a code of `limits`, or null); and `version`, the first 12 hex characters of the SHA-256 of the text both sides build by hand. No row names a repository twice in different case in a landing map: the driver keeps the last spelling's rule and the CLI finds the first (the as-built note on D157). `limits`: each code a step may carry and the sentence it is said in, in order; `opinion-partial` says what the second opinion's gate runs since XAGENT1f, where `opinion-declared` quoted OpinionRules.DeclaredOnly before it. `go-ahead-partial` is a named workflow's go-ahead's (WORKFLOW1d, workflow-named.json's `kinds`), which Current never draws.",
   "current": [
     {
       "name": "nothing set anywhere: the work, then a merge you accept",
@@ -164,7 +164,7 @@
       "version": "06e90f358edc"
     },
     {
-      "name": "a second opinion before landing and between steps, required: declared, and said so",
+      "name": "a second opinion before landing and between steps, required: partial, and said so",
       "config": {"opinions": {"web-app": {"reviewers": ["codex-acp", "dsh"], "on": ["steps", "landing"], "required": true}}},
       "repository": "web-app",
       "workspace": null,
@@ -172,10 +172,10 @@
       "startHolds": [],
       "steps": [
         {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
-        {"id": "opinion", "kind": "opinion", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": "opinion", "level": "repository"}, "settings": {"reviewers": ["codex-acp", "dsh"], "on": ["landing", "steps"], "required": true, "recheck": true}, "runtime": "declared", "limit": "opinion-declared"},
+        {"id": "opinion", "kind": "opinion", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": "opinion", "level": "repository"}, "settings": {"reviewers": ["codex-acp", "dsh"], "on": ["landing", "steps"], "required": true, "recheck": true}, "runtime": "partial", "limit": "opinion-partial"},
         {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "default"}, "settings": {"form": "merge", "accept": "you", "pattern": null, "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
       ],
-      "version": "772407929371"
+      "version": "56fa35e810df"
     },
     {
       "name": "a workspace's opinion between steps only, its recheck off, is drawn with its own occasions",
@@ -186,10 +186,10 @@
       "startHolds": [],
       "steps": [
         {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
-        {"id": "opinion", "kind": "opinion", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": "opinion", "level": "workspace"}, "settings": {"reviewers": ["codex-acp"], "on": ["steps"], "required": false, "recheck": false}, "runtime": "declared", "limit": "opinion-declared"},
+        {"id": "opinion", "kind": "opinion", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": "opinion", "level": "workspace"}, "settings": {"reviewers": ["codex-acp"], "on": ["steps"], "required": false, "recheck": false}, "runtime": "partial", "limit": "opinion-partial"},
         {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "default"}, "settings": {"form": "merge", "accept": "you", "pattern": null, "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
       ],
-      "version": "182c65091e37"
+      "version": "d407f5297fe9"
     },
     {
       "name": "a repository's false opinion: no second opinion here, whatever its workspace says",
@@ -226,11 +226,11 @@
       "startHolds": [],
       "steps": [
         {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
-        {"id": "opinion", "kind": "opinion", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": "opinion", "level": "workspace"}, "settings": {"reviewers": ["codex-acp"], "on": ["landing"], "required": true, "recheck": true}, "runtime": "declared", "limit": "opinion-declared"},
+        {"id": "opinion", "kind": "opinion", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": "opinion", "level": "workspace"}, "settings": {"reviewers": ["codex-acp"], "on": ["landing"], "required": true, "recheck": true}, "runtime": "partial", "limit": "opinion-partial"},
         {"id": "look", "kind": "look", "participation": "agent-and-you", "executor": "agent", "press": "reviewed", "source": {"rule": "review", "level": "workspace"}, "settings": {"environment": "dev"}, "runtime": "partial", "limit": "look-partial"},
         {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "workspace"}, "settings": {"form": "branch", "accept": "you", "pattern": "work/{quest}", "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
       ],
-      "version": "9c9f0df1dbed"
+      "version": "4eec5937bae7"
     },
     {
       "name": "a workspace with nothing set at its level: Daoris's default",
@@ -282,11 +282,11 @@
       "startHolds": [],
       "steps": [
         {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": "ok"}, "runtime": "built", "limit": null},
-        {"id": "opinion", "kind": "opinion", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": "opinion", "level": "repository"}, "settings": {"reviewers": ["codex-acp"], "on": ["landing"], "required": false, "recheck": true}, "runtime": "declared", "limit": "opinion-declared"},
+        {"id": "opinion", "kind": "opinion", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": "opinion", "level": "repository"}, "settings": {"reviewers": ["codex-acp"], "on": ["landing"], "required": false, "recheck": true}, "runtime": "partial", "limit": "opinion-partial"},
         {"id": "look", "kind": "look", "participation": "agent-and-you", "executor": "agent", "press": "reviewed", "source": {"rule": "review", "level": "repository"}, "settings": {"environment": "local"}, "runtime": "partial", "limit": "look-partial"},
         {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "default"}, "settings": {"form": "merge", "accept": "you", "pattern": null, "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
       ],
-      "version": "eb09eab15885"
+      "version": "f7cd96cc40d0"
     },
     {
       "name": "everything at once: a hold, the opinion, the look, an automatic landing and its pull request, and words the version escapes",
@@ -297,16 +297,16 @@
       "startHolds": ["example.hold"],
       "steps": [
         {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": "say \"yes\"\tfirst\\then\nlook at 中文"}, "runtime": "built", "limit": null},
-        {"id": "opinion", "kind": "opinion", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": "opinion", "level": "workspace"}, "settings": {"reviewers": ["codex-acp", "dsh"], "on": ["landing", "steps"], "required": false, "recheck": false}, "runtime": "declared", "limit": "opinion-declared"},
+        {"id": "opinion", "kind": "opinion", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": "opinion", "level": "workspace"}, "settings": {"reviewers": ["codex-acp", "dsh"], "on": ["landing", "steps"], "required": false, "recheck": false}, "runtime": "partial", "limit": "opinion-partial"},
         {"id": "look", "kind": "look", "participation": "agent-and-you", "executor": "agent", "press": "reviewed", "source": {"rule": "review", "level": "repository"}, "settings": {"environment": "dev"}, "runtime": "partial", "limit": "look-partial"},
         {"id": "landing", "kind": "landing", "participation": "automatic", "executor": "daoris", "press": null, "source": {"rule": "landing", "level": "workspace"}, "settings": {"form": "branch", "accept": "automatic", "pattern": "work/{quest}-{slug}", "plugin": "example.pull-request", "tidy": true}, "runtime": "built", "limit": null},
         {"id": "pull-request", "kind": "pull-request", "participation": "you", "executor": "plugin", "press": "merge", "source": {"rule": "landing", "level": "workspace"}, "settings": {"plugin": "example.pull-request"}, "runtime": "partial", "limit": "pull-request-at-clean-up"}
       ],
-      "version": "4740fb017006"
+      "version": "83b8aa0b7aa6"
     }
   ],
   "limits": [
-    {"code": "opinion-declared", "says": "Declared only: nothing reads it yet, so no reviewer is chosen and no landing waits for it."},
+    {"code": "opinion-partial", "says": "Partial: work here lands only once another agent's reading of it is settled, or you go on without one by `daoris-driver opinion`; the review does not draw it yet, and no task chooses its own reviewer yet."},
     {"code": "look-partial", "says": "Partial: work here lands only once you say it is reviewed or skip the review, and a set-up step's build is shown in Daoris's browser from its session's end until then; no set-up step is composed for you yet, and nothing runs a process of its own for one."},
     {"code": "plugin-unready", "says": "Its plugin cannot land work on this machine now: it is not installed, is switched off, contributes nothing, or speaks on no `work/land` point. `daoris plugin list` says which."},
     {"code": "pull-request-unread", "says": "Its plugin answers no `work/state`, so Daoris never reads whether the pull request was merged or abandoned."},

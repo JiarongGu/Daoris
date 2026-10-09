@@ -1,0 +1,6 @@
+usage: daoris-driver opinion ask <session> [--reviewer <adapter>] [--same-agent] ["…"]  ·  opinion show <session|opinion>
+       opinion stop <opinion>  ·  opinion anyway <session> ["…"]  ·  opinion myself <session> ["…"]
+       ask another agent to read a session's work before it lands, one of its rule's reviewers by name, or the working
+       agent in a fresh conversation, from the driver's next look; say where its second opinion stands, its findings and
+       their answers; stop a reviewer reading; go on without a settled opinion; or record your own reading in its place.
+       Each prints what the gate says after it. `sessions say` sends the work back with your words.

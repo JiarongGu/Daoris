@@ -61,6 +61,13 @@ public sealed record LandedBranch(
     public LandingReview? Review { get; init; }
 
     /// <summary>
+    /// The second opinion that let its first landing go (XAGENT1f, D155 point 11; the second-agent design §8.6): settled, or the
+    /// person's answer, with the reviewer, the candidate, the passes and the findings counted; or why it landed with none. Null
+    /// where none was asked, and for one recorded before.
+    /// </summary>
+    public LandingOpinion? Opinion { get; init; }
+
+    /// <summary>
     /// Each time a later done moved it on (LAND2c, D149 point 2), oldest first: a chain's later step, or a session that went on
     /// after its landing. <see cref="Tip"/> is the newest one's <see cref="LandedAdvance.To"/>.
     /// </summary>
@@ -105,6 +112,9 @@ public sealed record LandedAdvance(string From, string To, DateTimeOffset At, st
 
     /// <summary>The review that let this advance go (REVIEWENV1c, design §3.5); null where none was asked, and in a record from before.</summary>
     public LandingReview? Review { get; init; }
+
+    /// <summary>The second opinion that let this advance go (XAGENT1f, design §8.6); null where none was asked, and in a record from before.</summary>
+    public LandingOpinion? Opinion { get; init; }
 }
 
 /// <summary>
@@ -366,6 +376,7 @@ public sealed class LandedBranches(string home)
                 }
 
                 if (entry.Review is { } review) WriteReview(writer, review);
+                if (entry.Opinion is { } opinion) WriteOpinion(writer, opinion);
 
                 if (entry.Advances.Count > 0)
                 {
@@ -379,6 +390,7 @@ public sealed class LandedBranches(string home)
                         writer.WriteString("session", advance.Session);
                         if (advance.AcceptedBy is not null) writer.WriteString("acceptedBy", advance.AcceptedBy);
                         if (advance.Review is { } advanced) WriteReview(writer, advanced);
+                        if (advance.Opinion is { } read) WriteOpinion(writer, read);
                         writer.WriteEndObject();
                     }
 
@@ -444,6 +456,76 @@ public sealed class LandedBranches(string home)
                 Words = Text(review, "words"),
             }
             : null;
+
+    /// <summary>The second opinion that let a landing go (XAGENT1f, design §8.6), each field only where it is known.</summary>
+    private static void WriteOpinion(Utf8JsonWriter writer, LandingOpinion opinion)
+    {
+        writer.WriteStartObject("opinion");
+        writer.WriteString("said", opinion.Said);
+        if (opinion.Opinion is not null) writer.WriteString("opinion", opinion.Opinion);
+        if (opinion.Reviewer is not null) writer.WriteString("reviewer", opinion.Reviewer);
+        if (opinion.Label is not null) writer.WriteString("label", opinion.Label);
+        if (opinion.Base is not null) writer.WriteString("base", opinion.Base);
+        if (opinion.Tip is not null) writer.WriteString("tip", opinion.Tip);
+        writer.WriteNumber("passes", opinion.Passes);
+        Counts(writer, "weights", opinion.Weights);
+        Counts(writer, "answers", opinion.Answers);
+        writer.WriteNumber("disputes", opinion.Disputes);
+        writer.WriteNumber("unread", opinion.Unread);
+        if (opinion.Person is not null) writer.WriteString("person", opinion.Person);
+        if (opinion.At is { } at) writer.WriteString("at", at.ToString("O", CultureInfo.InvariantCulture));
+        if (opinion.Words is not null) writer.WriteString("words", opinion.Words);
+        if (opinion.Code is not null) writer.WriteString("code", opinion.Code);
+        writer.WriteEndObject();
+
+        static void Counts(Utf8JsonWriter writer, string name, IReadOnlyDictionary<string, int> counts)
+        {
+            writer.WriteStartObject(name);
+            foreach (var (key, count) in counts.OrderBy(pair => pair.Key, StringComparer.Ordinal)) writer.WriteNumber(key, count);
+            writer.WriteEndObject();
+        }
+    }
+
+    /// <summary>The second opinion a landing or an advance kept, or null: absent, which is every landing from before XAGENT1f.</summary>
+    private static LandingOpinion? OpinionOf(JsonElement element)
+    {
+        if (!element.TryGetProperty("opinion", out var opinion) || opinion.ValueKind != JsonValueKind.Object || Text(opinion, "said") is not { } said)
+        {
+            return null;
+        }
+
+        static int Number(JsonElement element, string name) =>
+            element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var n) ? n : 0;
+        static IReadOnlyDictionary<string, int> Counts(JsonElement element, string name)
+        {
+            var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+            if (!element.TryGetProperty(name, out var kept) || kept.ValueKind != JsonValueKind.Object) return counts;
+            foreach (var each in kept.EnumerateObject())
+            {
+                if (each.Value.ValueKind == JsonValueKind.Number && each.Value.TryGetInt32(out var count)) counts[each.Name] = count;
+            }
+
+            return counts;
+        }
+
+        return new LandingOpinion(said)
+        {
+            Opinion = Text(opinion, "opinion"),
+            Reviewer = Text(opinion, "reviewer"),
+            Label = Text(opinion, "label"),
+            Base = Text(opinion, "base"),
+            Tip = Text(opinion, "tip"),
+            Passes = Number(opinion, "passes"),
+            Weights = Counts(opinion, "weights"),
+            Answers = Counts(opinion, "answers"),
+            Disputes = Number(opinion, "disputes"),
+            Unread = Number(opinion, "unread"),
+            Person = Text(opinion, "person"),
+            At = DateTimeOffset.TryParse(Text(opinion, "at"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at) ? at : null,
+            Words = Text(opinion, "words"),
+            Code = Text(opinion, "code"),
+        };
+    }
 
     /// <summary>The kept answer, in the answer's own field names, with who answered and when it was asked (PLUGHOOK1a).</summary>
     private static void WriteState(Utf8JsonWriter writer, PullRequestState state)
@@ -544,6 +626,7 @@ public sealed class LandedBranches(string home)
                     Text(rule, "source") ?? LandingSource.Default)
                 : null,
             Review = ReviewOf(element),
+            Opinion = OpinionOf(element),
             Advances = AdvancesOf(element),
             PullRequestState = StateOf(element),
             PullRequestAskFailed = AskFailedOf(element),
@@ -568,7 +651,10 @@ public sealed class LandedBranches(string home)
                 continue;
             }
 
-            advances.Add(new LandedAdvance(from, to, at, session) { AcceptedBy = Text(each, "acceptedBy"), Review = ReviewOf(each) });
+            advances.Add(new LandedAdvance(from, to, at, session)
+            {
+                AcceptedBy = Text(each, "acceptedBy"), Review = ReviewOf(each), Opinion = OpinionOf(each),
+            });
         }
 
         // The empty case is the property's own default, so an entry from before LAND2c still equals itself read twice.

@@ -1,0 +1,1 @@
+trees: Waits for a second opinion: being read by Codex (OpenAI), another maker's agent, for at most 20 minutes. `daoris-driver opinion stop o1` stops it.

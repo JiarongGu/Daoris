@@ -53,7 +53,7 @@ nested. A reader skips a line it cannot parse and a field it does not know.
 | Event | Source | Data | Why it is kept |
 |---|---|---|---|
 | `app.started` / `app.stopped` | every | version, installed, uptime on stop | a period of use, and a version to blame |
-| `error` | every | where, type, message, stack; a request's also method, route, inner (host, HOSTLOG1); terminating, and `where` `start` for an exception that ended the host before it served (host, HOSTSTART1) | an unhandled exception, which left no trace |
+| `error` | every | where, type, message, stack; a request's also method, route, inner (host, HOSTLOG1); terminating, and `where` `start` for an exception that ended the host before it served (host, HOSTSTART1; mcp and driver, HOSTSTART2) | an unhandled exception, which left no trace |
 | `log` | every | category, message, exception | the framework's own warnings and errors |
 | `session.started` | desktop | session, kind, adapter, repository, workspace; setup, only for a set-up's session | what the person runs, on what, and where (WSSETUP11) |
 | `session.opened` | desktop | session, adapter, openMs | spawn to ready: what a person waits through |
@@ -314,6 +314,20 @@ exception is raised there, once nothing writes through the closed one: the `erro
 `StartFailureTests` (the real executable: a store that cannot open, and a port another program holds; both found no line
 before the change). What the window says of the same start is the shell's: `HostSupervisor` reads the host's standard
 error from its start and says its last lines (`LastLines`), the fix log's HOSTSTART1.
+
+**As built (HOSTSTART2): the connector's and the headless driver's start that threw.** Both entry points had the HTTP
+host's shape and dropped the same line. HOSTSTART1's handler is now a watch on each writer, `MachineLog.WatchEntryPoint()`
+returning an `EntryPointWatch`: the service's, which the HTTP host and the connector share, and the driver's, its twin.
+Made on the entry point's thread beside the log's opening, it writes only an exception raised on that thread, with a
+writer of its own: `where` `start` until `Running()`, `unhandled` after. The connector's start ends when its host's
+lifetime has started (its stdio transport), and the line goes to the log file alone, never to standard output, which is
+the protocol's. The driver's ends as the loop's first look begins; a verb runs once with no start of its own to tell
+apart, so what ends one is `unhandled` from the moment it is chosen. Held by `ConnectorStartFailureTests` (a store that
+cannot open: the line, nothing on standard output, a remote key in the environment said nowhere) and
+`DriverStartFailureTests` (`Process`: a `driver.json` that does not read, a service key said nowhere), both finding no
+line before the change, and by each side's `MachineLogTests` (the line after the log is closed, `unhandled` once running,
+another thread's left to the open log). **Not covered**: a verb's `unhandled`, and the connector's after its transport
+started.
 
 ## 5. What is never logged
 
