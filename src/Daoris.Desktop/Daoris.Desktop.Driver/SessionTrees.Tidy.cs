@@ -63,7 +63,8 @@ public sealed partial class SessionTrees
         var results = new List<TidiedBranch>();
         if (held.Count > 0)
         {
-            var worktrees = await WorktreesAsync(root, ct).ConfigureAwait(false);
+            // A list git could not give is never "no tree here" (AUTOTIDY1): each branch is kept, saying why.
+            var worktrees = await ReadWorktreesAsync(root, ct).ConfigureAwait(false);
             using var hold = TreeLock.TryReplaying(home, workspace, repository);
             var busy = hold is not null && inUse is not null
                 ? new HashSet<string>((await inUse(ct).ConfigureAwait(false)).Select(Normal), StringComparer.OrdinalIgnoreCase)
@@ -73,7 +74,9 @@ public sealed partial class SessionTrees
                 : "a session was starting in one of the repository's trees";
             foreach (var (branch, tip) in held)
             {
-                results.Add(await TidyOneAsync(root, branch, tip, worktrees.GetValueOrDefault(branch), busy, unasked, ct).ConfigureAwait(false));
+                results.Add(worktrees is null
+                    ? new TidiedBranch(branch, false, false, ListUnread)
+                    : await TidyOneAsync(root, branch, tip, worktrees.GetValueOrDefault(branch), busy, unasked, ct).ConfigureAwait(false));
             }
         }
 
@@ -271,7 +274,12 @@ public sealed partial class SessionTrees
             return new(false, $"there is no branch `{branch}` in `{repository}` — it is gone already.");
         }
 
-        var worktrees = await WorktreesAsync(root, ct).ConfigureAwait(false);
+        // A list git could not give is never "no tree here" (AUTOTIDY1): forced, it would take the branch from under a tree.
+        if (await ReadWorktreesAsync(root, ct).ConfigureAwait(false) is not { } worktrees)
+        {
+            return new(false, $"`{branch}` stays: {ListUnread}, so whether a tree has it checked out is not known.");
+        }
+
         if (worktrees.GetValueOrDefault(branch) is { } tree)
         {
             return Holds(tree)

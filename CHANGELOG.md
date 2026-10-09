@@ -213,6 +213,8 @@ with the version and date at release.
   does each step, which rule sets it, and a door to change it in Setup.
 - Work already on the line by a squash merge is no longer landed a second time from the review's *Accept*: the review
   says so and offers to discard the branch instead.
+- Daoris removes by itself a session branch whose work is already on the line and whose tree holds nothing, and
+  says so in the machine log; everything else stays for *Clean up*.
 
 The first version: doctrine that installs, is checked, and flows back.
 

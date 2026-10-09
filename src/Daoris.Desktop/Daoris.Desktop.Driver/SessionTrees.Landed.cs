@@ -282,7 +282,8 @@ public sealed partial class SessionTrees
         string root, string repository, string workspace, IReadOnlyList<LandedBranch> entries, IReadOnlyCollection<string> staying,
         List<string>? stale, CancellationToken ct)
     {
-        var worktrees = await WorktreesAsync(root, ct).ConfigureAwait(false);
+        // A list git could not give is never "no tree here" (AUTOTIDY1): every branch is then kept as one checked out.
+        var worktrees = await ReadWorktreesAsync(root, ct).ConfigureAwait(false);
         var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         var forms = await LineFormsAsync(root, line, ct).ConfigureAwait(false);
 
@@ -317,7 +318,7 @@ public sealed partial class SessionTrees
 
             string? keep = null;
             var ahead = 0;
-            if (worktrees.ContainsKey(entry.Branch))
+            if (worktrees is null || worktrees.ContainsKey(entry.Branch))
             {
                 keep = LandedKind.CheckedOut;
             }
@@ -381,17 +382,27 @@ public sealed partial class SessionTrees
     }
 
     /// <summary>
+    /// One form of the line (D86) this checkout has: its name as a person reads it (<c>main</c>, <c>origin/main</c>), and the
+    /// reference git is asked by. Never the short name to git (AUTOTIDY1): git reads a tag of that name before the branch.
+    /// </summary>
+    private sealed record LineForm(string Name, string Ref)
+    {
+        /// <summary>Its name, as every sentence says it.</summary>
+        public override string ToString() => Name;
+    }
+
+    /// <summary>
     /// The line in both its forms (D86) that this checkout has: its own branch, and origin's copy — a
     /// platform's squash merge reaches the second before anyone pulls it into the first.
     /// </summary>
-    private static async Task<IReadOnlyList<string>> LineFormsAsync(string root, string? line, CancellationToken ct)
+    private static async Task<IReadOnlyList<LineForm>> LineFormsAsync(string root, string? line, CancellationToken ct)
     {
-        var forms = new List<string>();
+        var forms = new List<LineForm>();
         if (line is null) return forms;
         foreach (var (reference, name) in new[] { ($"refs/heads/{line}", line), ($"refs/remotes/origin/{line}", $"origin/{line}") })
         {
             var (code, _, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", reference], ct).ConfigureAwait(false);
-            if (code == 0) forms.Add(name);
+            if (code == 0) forms.Add(new LineForm(name, reference));
         }
 
         return forms;
@@ -406,7 +417,7 @@ public sealed partial class SessionTrees
     /// rename, and a deletion as a path the line must not hold — compared as blobs with the line, in each of
     /// its forms. A commit of it the line holds already is merged, which needs no content.
     /// </summary>
-    private static async Task<Proof> ProveAsync(string root, string tip, string? line, IReadOnlyList<string> forms, CancellationToken ct)
+    private static async Task<Proof> ProveAsync(string root, string tip, string? line, IReadOnlyList<LineForm> forms, CancellationToken ct)
     {
         if (forms.Count == 0)
         {
@@ -417,17 +428,18 @@ public sealed partial class SessionTrees
 
         foreach (var form in forms)
         {
-            var (merged, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", tip, form], ct).ConfigureAwait(false);
-            if (merged == 0) return new(LandedKind.Merged, form, [], null, 0, false);
+            var (merged, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", tip, form.Ref], ct).ConfigureAwait(false);
+            if (merged == 0) return new(LandedKind.Merged, form.Name, [], null, 0, false);
         }
 
-        var (_, count, _) = await WorkingTree.GitAsync(root, ["rev-list", "--count", tip, "--not", .. forms], ct).ConfigureAwait(false);
+        var (_, count, _) = await WorkingTree.GitAsync(root, ["rev-list", "--count", tip, "--not", .. forms.Select(form => form.Ref)], ct)
+            .ConfigureAwait(false);
         var commits = int.TryParse(count.Trim(), out var n) ? n : 0;
         Proof? closest = null;
         string? failed = null;
         foreach (var form in forms)
         {
-            var (baseCode, baseOut, baseErr) = await WorkingTree.GitAsync(root, ["merge-base", tip, form], ct).ConfigureAwait(false);
+            var (baseCode, baseOut, baseErr) = await WorkingTree.GitAsync(root, ["merge-base", tip, form.Ref], ct).ConfigureAwait(false);
             if (baseCode != 0)
             {
                 failed = $"git found no point where it left `{form}`: {FirstLine(baseErr)}";
@@ -435,7 +447,7 @@ public sealed partial class SessionTrees
             }
 
             var changed = await NamesAsync(root, baseOut.Trim(), tip, ct).ConfigureAwait(false);
-            var differing = await NamesAsync(root, tip, form, ct).ConfigureAwait(false);
+            var differing = await NamesAsync(root, tip, form.Ref, ct).ConfigureAwait(false);
             if (changed is null || differing is null)
             {
                 failed = $"git could not compare it with `{form}`";
@@ -451,10 +463,10 @@ public sealed partial class SessionTrees
             }
 
             var still = changed.Where(differing.Contains).ToList();
-            if (still.Count == 0) return new(LandedKind.OnLine, form, [], null, commits, false);
+            if (still.Count == 0) return new(LandedKind.OnLine, form.Name, [], null, commits, false);
             if (closest is null || closest.Kind == LandedKind.Unknown || still.Count < closest.Files.Count)
             {
-                closest = new(LandedKind.Differs, form, still, null, commits, true);
+                closest = new(LandedKind.Differs, form.Name, still, null, commits, true);
             }
         }
 
@@ -500,7 +512,7 @@ public sealed partial class SessionTrees
     /// this branch as holding them, so removing it would leave that session's work looking unlanded.
     /// </summary>
     private static async Task<string?> LeanerAsync(
-        string root, string tip, IReadOnlyCollection<string> staying, IReadOnlyList<string> forms, CancellationToken ct)
+        string root, string tip, IReadOnlyCollection<string> staying, IReadOnlyList<LineForm> forms, CancellationToken ct)
     {
         foreach (var session in staying)
         {
@@ -511,7 +523,7 @@ public sealed partial class SessionTrees
                 var onLine = false;
                 foreach (var form in forms)
                 {
-                    var (held, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", shared, form], ct).ConfigureAwait(false);
+                    var (held, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", shared, form.Ref], ct).ConfigureAwait(false);
                     if (held != 0) continue;
                     onLine = true;
                     break;
