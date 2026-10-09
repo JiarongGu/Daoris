@@ -258,6 +258,53 @@ public sealed class MachineLogTests : IDisposable
         return observe is null ? Task.CompletedTask : observe(failed);
     }
 
+    /// <summary>
+    /// HOSTSTART2: the exception that ends an async entry point arrives once the entry point's <c>using</c> has closed its
+    /// log, which then drops the line; the watch writes it with a writer of its own, at <c>start</c>. The service's twin
+    /// holds the same three rows.
+    /// </summary>
+    [Fact]
+    public void An_entry_points_exception_is_written_at_start_after_its_log_is_closed()
+    {
+        var log = Log("driver");
+        var watch = log.ForEntryPoint();
+        log.Dispose();
+
+        log.Failed("unhandled", new IOException("dropped"), terminating: true);
+        watch.Raised(new IOException("the folder is a file"), terminating: true);
+
+        var line = Assert.Single(Lines("2026-09-30.driver.jsonl"));
+        Assert.Contains("\"level\":\"error\",\"event\":\"error\",\"data\":{\"where\":\"start\",\"type\":\"System.IO.IOException\",\"message\":\"the folder is a file\"", line);
+        Assert.Contains("\"terminating\":true", line);
+    }
+
+    /// <summary>Once the process runs, the same exception is <c>unhandled</c>, as every other unhandled one is.</summary>
+    [Fact]
+    public void An_entry_points_exception_once_it_runs_is_unhandled()
+    {
+        using var log = Log();
+        var watch = log.ForEntryPoint();
+
+        watch.Running();
+        watch.Raised(new InvalidOperationException("later"), terminating: true);
+
+        Assert.Contains("\"where\":\"unhandled\"", Assert.Single(Lines("2026-09-30.desktop.jsonl")));
+    }
+
+    /// <summary>Another thread's exception is the open log's to write, through <c>WatchUnhandled</c>: never written twice.</summary>
+    [Fact]
+    public void Another_threads_exception_is_left_to_the_open_log()
+    {
+        using var log = Log();
+        var watch = log.ForEntryPoint();
+
+        var other = new Thread(() => watch.Raised(new InvalidOperationException("elsewhere"), terminating: true));
+        other.Start();
+        other.Join();
+
+        Assert.Empty(Lines("2026-09-30.desktop.jsonl"));
+    }
+
     /// <summary>A reader opens the file while it is being written — as a person tailing it would.</summary>
     [Fact]
     public void The_file_can_be_read_while_it_is_written()

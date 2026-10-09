@@ -1,0 +1,1 @@
+trees: No second opinion: no listed reviewer of another maker is installed. The rule requires one, so the work waits for you: `daoris-driver opinion ask s1` tries again, with `--same-agent` asks the same agent in a fresh conversation, `daoris-driver opinion myself s1 "…"` records your own reading, or `daoris-driver opinion anyway s1 "…"` lets it land without one.

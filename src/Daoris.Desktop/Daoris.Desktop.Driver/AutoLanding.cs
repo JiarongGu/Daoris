@@ -89,6 +89,13 @@ public static class AutoLandingCode
     public const string Unreviewed = "unreviewed";
 
     /// <summary>
+    /// Its work waits for a second opinion (XAGENT1f, D155 point 10; the second-agent design §8.1): the level says one is read
+    /// before it lands, and none is settled yet, or the chain's last step here is still to run. Kept once, read again at every
+    /// look, and landed at the first look once settled. It comes before <see cref="Unreviewed"/>, as the gate's order does (§7).
+    /// </summary>
+    public const string Opinion = "opinion";
+
+    /// <summary>
     /// Its work is on the line, or on a branch of the person's, by content already (SQUASHTIDY1f; SQUASHTIDY1's proof, as the
     /// session's head reads it since SQUASHTIDY1b): a squash merge or a cherry-pick carried it, so landing it again would make a
     /// second copy. Refused at every door, and an entry it ends stays closed: the tree's discard is the way.
@@ -96,7 +103,7 @@ public static class AutoLandingCode
     public const string Carried = "carried";
 
     /// <summary>Whether a try with this code closes its entry; the rest wait for a change, a release or the person's press.</summary>
-    public static bool Closes(string code) => code is not (Held or Uncommitted or Exists or Completed or Refused or Unreviewed);
+    public static bool Closes(string code) => code is not (Held or Uncommitted or Exists or Completed or Refused or Unreviewed or Opinion);
 
     /// <summary>Whether a try with this code is tried again only once its tree's tip or status moves (design §2).</summary>
     public static bool OnChange(string code) => code is Uncommitted or Exists or Completed or Refused;
@@ -181,8 +188,9 @@ public static class AutoLandingRules
         null => true,
         { Code: var code } last when AutoLandingCode.OnChange(code) =>
             !string.Equals(last.Tip, tip, StringComparison.Ordinal) || !string.Equals(last.Status, status, StringComparison.Ordinal),
-        // A hold and a review wait on the person, not on the tree, so each is read again at every look.
-        { Code: AutoLandingCode.Held or AutoLandingCode.Unreviewed } => true,
+        // A hold, a review and a second opinion wait on the person or another agent, not on the tree, so each is read again at
+        // every look.
+        { Code: AutoLandingCode.Held or AutoLandingCode.Unreviewed or AutoLandingCode.Opinion } => true,
         _ => false,
     };
 
@@ -411,7 +419,8 @@ public static class AutoLandingNotes
     /// <summary>Whether a try with this code is said in the conversation; the closings without a landing stay the due list's and the log's.</summary>
     public static bool Says(string code) => code is AutoLandingCode.Landed or AutoLandingCode.Advanced or AutoLandingCode.PluginUnready
         or AutoLandingCode.PluginFailed or AutoLandingCode.Nothing or AutoLandingCode.Held or AutoLandingCode.Uncommitted
-        or AutoLandingCode.Exists or AutoLandingCode.Completed or AutoLandingCode.Refused or AutoLandingCode.Unreviewed;
+        or AutoLandingCode.Exists or AutoLandingCode.Completed or AutoLandingCode.Refused or AutoLandingCode.Unreviewed
+        or AutoLandingCode.Opinion;
 
     /// <summary>
     /// The note for one try: its lead-in by its code, then the landing's sentence where there was a landing to say it.
@@ -448,6 +457,11 @@ public static class AutoLandingNotes
             AutoLandingCode.Unreviewed => Noted.Of(NoteCodes.LandingUnreviewed,
                 "not accepted automatically: its work waits for your review before it lands, as follows. It lands at the first look "
                 + "after you review it or skip the review."),
+            // The second opinion's gate held it (XAGENT1f): said under `landing.refused` until the page words a code of its own
+            // (XAGENT1g), as the review's wait was before REVIEWENV1c2; the gate's sentence beneath says what waits.
+            AutoLandingCode.Opinion => Noted.Of(NoteCodes.LandingRefused,
+                "not accepted automatically: its work waits for a second opinion before it lands, as follows. It lands at the first "
+                + "look once the opinion is settled, or you go on without one."),
             _ => Noted.Of(NoteCodes.LandingRefused, "not accepted automatically: the landing was refused, as follows. It waits for your review."),
         };
 

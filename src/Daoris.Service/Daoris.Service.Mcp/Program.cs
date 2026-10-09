@@ -53,6 +53,11 @@ var builder = Host.CreateApplicationBuilder(args);
 // keeps it. With no home it writes nothing. The framework's lines go to stderr and here, from warnings up.
 using var log = MachineLog.Open("mcp");
 log.WatchUnhandled();
+// HOSTSTART2: the exception that ends this entry point is written as `error`, at `start` until the connector serves. The
+// entry point is async, so the `using` above has closed `log` by the time the runtime raises that exception as unhandled,
+// and a connector that died at start left nothing of why. The watch writes that one line to the log file alone, never to
+// standard output, which is the protocol's.
+var entryPoint = log.WatchEntryPoint();
 McpHostLogging.Use(builder.Logging, log);
 var started = DateTimeOffset.UtcNow;
 
@@ -140,7 +145,10 @@ builder.Services
     .WithTools<KnowledgeTools>();
 
 log.Info("app.started", ("repository", Path.GetFileName(Directory.GetCurrentDirectory())));
-await builder.Build().RunAsync().ConfigureAwait(false);
+var host = builder.Build();
+// The start is over once the host has started its transport (HOSTSTART2): what ends the connector after it is `unhandled`.
+host.Services.GetRequiredService<IHostApplicationLifetime>().ApplicationStarted.Register(entryPoint.Running);
+await host.RunAsync().ConfigureAwait(false);
 await composed.DisposeAsync().ConfigureAwait(false);
 log.Info("app.stopped", ("uptimeSeconds", (long)(DateTimeOffset.UtcNow - started).TotalSeconds));
 

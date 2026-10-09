@@ -32,6 +32,63 @@ repository.
   any fixture:** a copy of a commit by cherry-pick, rebase or a recreated commit is a new commit only where something in
   it differs; with the same parent, tree, message and identity, the second of its date is all that does.
 - **Commit:** `d2a54804`.
+## 2026-10-09 — a landing read the home's driver.json, not the file the loop read (CONFIGSEAM1)
+
+### Driver: `trees land`, the review's press and every landing door ignored a per-file override's landing and review rules
+- **Symptom:** found by REVIEWENV1h's family rehearsal phase. A config in a second file of the home, named by
+  `DAORIS_DRIVER_CONFIG`, held the branch rule `review/{quest}` and a review rule. The planner, reading that file, sat a
+  review step; `trees land --plan` read no rule and no gate line, and `trees land` merged into the line regardless.
+- **Root cause:** two resolutions of one file. The loop, the planner, the hosts and the CLI resolve the config through
+  `DriverConfig.ResolvePath()`, the override where set and the home's `driver.json` otherwise (D63). A door that held
+  only its home joined the home to `driver.json` itself: `SessionTrees.Config()` (since `a4f31399`, WSR2), so the plan,
+  the review gate, the landing, the hand-off and the canonical line read it; and `PluginPage`'s landing rules (since
+  `c703cdbc`, PLUGUI1d). `RemoteSync` and a chat going on (`ChatRunner.MachineConfig`) each wrote out a resolution of their
+  own. An install keeps one file, so nothing differed there; a gate that names its config otherwise is where it showed.
+- **Fix:** `DriverConfig` holds the one resolution and the file's name: `FindPath()` (the override, then the home's
+  file, then null), `ResolvePath()` (refused with neither, as before) and `ResolvePath(home)` for a door that holds its
+  home: the override where it is a file in that home, as every home is the folder its config sits in (`HomeOf`), and
+  this home's `driver.json` otherwise, never another home's. The four readers ask it. The CLI's twin,
+  `driverConfigPath`, already resolved as `ResolvePath()` does and has no door that holds a home.
+- **Verify:** `ConfigSeamTests` (fast, 5): an override of another name in the home is read, with a trailing separator
+  too; one in another home is not; no override, a blank one or another `DAORIS_HOME` reads the home's own; `FindPath`'s
+  order; and a scan of the driver, its host, the modules and the app finding no source but `DriverConfig.cs` that names
+  `"driver.json"`, `"DAORIS_DRIVER_CONFIG"`, `DriverConfig.PathVariable` or `DriverConfig.DefaultPath`, with the
+  variable read once there. `ConfigSeamLandingTests` (Process, 1, run alone): beside an empty `driver.json`, the
+  override's `review/q1` and `shown` are the plan and the gate, the press is refused unreviewed with nothing made and the
+  line unmoved, and once reviewed it lands on `review/q1`, the line still unmoved. Watched failing: the scan named the
+  four readers, and the plan read `merge` to `main` from the `default` rule. Driver fast half 5484 → 5489, modules
+  739 → 739, `npm run verify` green. **Not covered:** the family rehearsal's phase, which keeps its config as its own
+  home's `driver.json` since REVIEWENV1h and so passes either way.
+- **Commit:** `c9474b3c`, `77f3f84c`.
+## 2026-10-09 — the connector and the headless driver dropped a start that threw (HOSTSTART2)
+
+### Service and driver: a connector or a headless driver that died at start left nothing of why in its log
+- **Symptom:** found by HOSTSTART1 in the source: the MCP connector (`Daoris.Service.Mcp/Program.cs`) and the headless
+  driver (`Daoris.Desktop.Driver.Host/Program.cs`) open their machine log as the HTTP host did, and an exception that
+  ended their start left no `error` line. Reproduced before the fix: the real connector over a store that cannot open,
+  and the real driver's `drive --once` over a `driver.json` that does not read, each exited non-zero with the exception
+  on standard error and nothing in its log.
+- **Root cause:** HOSTSTART1's. Each entry point is async and holds its log in `using var log`; the entry point's task
+  catches the exception, the `using` closes the log as it leaves, and only then does the runtime raise it as unhandled,
+  so `WatchUnhandled`'s line met a closed log and was dropped. The driver's one catch takes only `DriverException`,
+  `HttpRequestException` and a cancellation, so a `driver.json` that does not parse went past it.
+- **Fix:** HOSTSTART1's inline handler became a watch on each writer, `MachineLog.WatchEntryPoint()` returning an
+  `EntryPointWatch`: the service's in Core, which the HTTP host now calls in place of its own copy and the connector
+  beside it, and the driver's, its twin, since the artefacts share no code. Made on the entry point's thread, it writes
+  only an exception raised on that thread, with a writer of its own: `error`, `where` `start` until `Running()`,
+  `unhandled` after. The connector's start ends when its host's lifetime started, and the line goes to the log file
+  alone, never to standard output, which is the protocol's. The driver's ends as the loop's first look begins; a verb is
+  `unhandled` from the moment it is chosen. Nothing new is printed: standard error carries the runtime's own report, as
+  before. The machine-log design §4's HOSTSTART2 note.
+- **Verify:** `ConnectorStartFailureTests` (service, 1): the real connector over a store that cannot open exits non-zero
+  with one `error` line at `start`, terminating, with its type, message and stack; nothing on standard output; a remote
+  key in its environment in neither standard error nor the log. `DriverStartFailureTests` (driver, `Process`, 1, run
+  alone): `drive --once` over a `driver.json` that does not read, the same line, a service key in neither. Both watched
+  failing before the change (no line). `MachineLogTests` on each side (3 each): the line written after the log is
+  closed, `unhandled` once running, another thread's left to the open log. HOSTSTART1's `StartFailureTests` (Http, 2)
+  green over the shared watch. Service 1745 → 1749, Http 243 → 243, driver fast half 5484 → 5487. **Not covered:** a
+  verb's `unhandled`, and the connector's after its transport started.
+- **Commit:** `64d1e6ac` (service), `1815b867` (driver).
 
 ## 2026-10-09 — a host that died at start said only that it exited (HOSTSTART1)
 
@@ -71,6 +128,36 @@ repository.
   (`NoConsoleWindowTests`) green. **Not covered:** the window's label showing the lines (seen by no gate), and a child
   of the host holding the stream after it exits (the two-second wait).
 - **Commit:** `6b15ddc0` (modules), `a74974bb` (service).
+## 2026-10-09 — Ask Daoris's history ran past the right dock and scrolled it sideways (ASKHIST1b)
+
+### Page: a grid's `auto` column grew to a one-line title's whole width
+- **Symptom:** on the owner's install, the right dock 436 px wide at 1546×900, Ask Daoris's *History* overflowed sideways:
+  the search field and every row ran past the dock's right edge, titles and lines were cut mid-word at it, and a
+  horizontal scrollbar sat under the list. The rows that did it had long titles holding a pasted URL (`to complete this
+  https://example.atlassian.net/browse/TK-2205 so…`). Measured on the window: the history's `section.grid` 404 wide and
+  869 to scroll, its scroller 436 and 885, the search's `label` 867.
+- **Root cause:** the history's section and its list were `grid` with no column template, so each had one implicit `auto`
+  column, whose base size is its widest item's min-content. A row's title and lines were `truncate` (`nowrap`), whose
+  min-content is the whole line: the column grew to the longest title, every item stretched to it (the search's label
+  too), the cut never had a narrower box to cut at, and the scroller's `overflow-y: auto` made it a sideways scroll. Built
+  so by ASKHIST1 (`069d7aeb`); its story's 24rem frame held only short titles. The same panel had the defect's other form,
+  a word with no break in a box that never breaks inside one: the line naming the conversation one started from, the
+  person's words as asked and as held (an unnamed conversation's title is its first question), the agent's answer saying
+  the URL again, the box's waiting words inside the composer's own `auto` grids, the rename's terminal twin (a flex item as
+  wide as its longest code word) and the delete's sentence.
+- **Fix:** `grid-cols-[minmax(0,1fr)]`, the conversation's idiom since CONV3, on the history's section and list and on the
+  composer's form, its waiting group and list. A title stays one line, whole in its `title` and its row's name; the meta
+  line truncates; what it was about and a search's find are `line-clamp-2 wrap-anywhere`, clamped as the rail's found
+  words are. `wrap-anywhere` on a search that found nothing, the delete's sentence, the started-from line, the person's
+  words and the waiting words; `min-w-0` on the rename's twin; the agent's Markdown `wrap-break-word`, so a table still
+  measures its words. The rule is in the platform language §3, beside U8.
+- **Verify:** `AskHistory.test.tsx`'s dock's-edge tests (every grid between a row's words or the search and the history
+  bounds its column; the title's cut, tip and name; the lines' clamp; the twin and the sentence), and an edge test each in
+  `AskDaoris.test.tsx`, `ConversationView.test.tsx` and `Composer.test.tsx`, all failing on the old markup first. The
+  stories `Help/AskHistory` *PastedUrl*, *PastedUrlRename* and *PastedUrlDelete* draw it at the dock's 300 px floor. Web
+  vitest 4971/4971, `i18n:check`, `names:check --strict` and `verify`. Nobody has looked at the window yet.
+- **Commit:** `173df22a` (history), `fd6f5e4c` (conversation and box), `a8c13e95` (the agent's answer).
+
 ## 2026-10-09 — the review's Accept landed work a squash merge had already put on the line (SQUASHTIDY1f)
 
 ### Driver and page: a tree the line holds by content was still landed, by every door but the head
@@ -905,6 +992,14 @@ timed out (20 s) once in CARRY2d's web run and passed in the next.
 timed out at WORKFLOW1a's merge, 2026-10-09 (no web file changed), with three worktrees building beside it. It timed out
 again alone (20.3 s) under the same load, then passed alone in 9.4 s with the file's other three at 1 to 6 s: it is the
 file's first test, so it pays the shell's first render and imports. That first test is the one to bound or warm.
+`merge-branch.test.ts`'s "--rerun runs a fixed gate again on the merge in place…" failed once in HOSTSTART2's verify,
+2026-10-09, with `git worktree list --porcelain failed:` and empty output, three worktrees building beside it; it passed
+alone and in a second full run. The git-on-scratch shape of the `--rerun` sightings above. The same shape at CONFIGSEAM1's
+merge that day: "two notes a union merge leaves touching…" met `git diff --name-only HEAD...third failed:` with nothing
+said, three agents building beside it; the CLI gate passed on its rerun.
+`SessionsOutliveTheirLookTests.The_watch_says_a_stop_its_look_made_before_that_look_failed` (driver, fast half) failed in
+XAGENT1f's and REVIEWENV1j's fast runs, 2026-10-09, under load: expected `stood-down`, got `stopped`; it passed alone each
+time. Two sightings in a day of a fast-half test: FLAKE3 carries it.
 The full set on `99b2a858` (2026-10-08) caught `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one`
 (modules, Process half) failing in the full run and passing alone, with one worktree building beside it; the plugin-kit
 repeat FLAKE1's row names.

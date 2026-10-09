@@ -342,8 +342,13 @@ public sealed partial class Driver(
             }
         }
 
+        // The second opinions owed (XAGENT1f, the second-agent design §2.1, §7, §8.1): asked and delivered beside the look, and the
+        // starts they sit held. A pass finishes work already done, so it takes its slot before any quest's first start (D130).
+        var (opinionSits, passes) = await OpinionsAsync(snapshot, events, ct).ConfigureAwait(false);
+        snapshot = snapshot with { Opinions = opinionSits };
+
         // Whether this loop carries Daoris's browser decides whether a local set-up step can be shown here (REVIEWENV1c).
-        var plan = Planner.Plan(snapshot, config, Door(), window: browser is not null);
+        var plan = Planner.Plan(snapshot, passes > 0 ? config with { Cap = Math.Max(0, config.Cap - passes) } : config, Door(), window: browser is not null);
         var progressed = false;
 
         // What held at spawn, by quest — the plan said Start and the spawn said no. Folded back into
@@ -388,7 +393,7 @@ public sealed partial class Driver(
 
         // The asks this machine answers with a session (D65 §1b) — only where a harness is named for
         // it, and only in the slots the quests left: work somebody already asked for goes first.
-        var intakes = await IntakesDueAsync(config.Cap - snapshot.Active.Count - starts.Count, events, ct)
+        var intakes = await IntakesDueAsync(config.Cap - snapshot.Active.Count - starts.Count - passes, events, ct)
             .ConfigureAwait(false);
 
         // 🔴 One run per record the person's words wait on (ANSWER2, D131 §3): a run that took a record up is told it opened
@@ -581,8 +586,12 @@ public sealed partial class Driver(
     /// A driven record that just concluded, read against its repository's rule (LAND2b): a done under the switch joins the due
     /// list, and the rest under it is said in its conversation. Never a reason to fail the run: the record has concluded.
     /// </summary>
-    private void ConcludedForLanding(string sessionId, QuestView quest, string? status, string state, string workTree, string? workspace) =>
+    private void ConcludedForLanding(string sessionId, QuestView quest, string? status, string state, string workTree, string? workspace)
+    {
         AutoLander.Concluded(home, config, _events, sessionId, quest, status, state, workTree, workspace);
+        // XAGENT1f: a done whose rule reads it is owed a second opinion, which a later look asks (the second-agent design §2.1).
+        OpinionLook.Concluded(home, config, sessionId, quest, status, state, workTree);
+    }
 
     /// <summary>
     /// Each repository whose line Daoris moved since it was last followed, registered from its line (WSSETUP5), with what

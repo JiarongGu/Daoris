@@ -397,23 +397,30 @@ public sealed partial class DriverModule
         var trees = new SessionTrees(_loop.Home, new LandingPlugins(
             _loop.Home, say: (plugin, line) => _loop.Output.Append($"plugin:{plugin}", line), log: _loop.Log, health: _loop.Health));
 
-        // The review's gate (REVIEWENV1c, D154 point 7): what holds the press says so before it, and the press refuses it.
-        var review = await trees.ReviewAsync(tree, questId, new ServiceReviewWorld(service), cancellationToken);
+        // The landing gate (XAGENT1f, REVIEWENV1c): the second opinion, then the review. What holds the press says so before it,
+        // and the press refuses it.
+        var gate = await trees.GateAsync(tree, questId, new ServiceReviewWorld(service), id, cancellationToken);
 
         if (request.Type == "LANDING")
         {
             var plan = await trees.PlanAsync(tree, subject, cancellationToken);
-            return new { Session = id, plan.Form, plan.Target, plan.Source, plan.Plugin, plan.Problem, Review = Waits(review) };
+            return new
+            {
+                Session = id, plan.Form, plan.Target, plan.Source, plan.Plugin, plan.Problem, Review = Waits(gate.Review), Opinion = Opinion(gate.Opinion),
+            };
         }
 
+        // The press answers what it showed beside Accept (the second-agent design §8.2–§8.3): a dispute or commits nobody read,
+        // drawn with the gate's token, which the press sends back; a gate that moved since answers nothing.
+        gate = await new OpinionPresses(_loop.Home, service).PressedAsync(id, gate, Optional(request, "answers"), tree, questId, cancellationToken);
+
         // The sessions in use, asked when the rule's tidy reaches the other session branches the work holds (LAND3).
-        var landed = await trees.LandAsync(tree, subject, cancellationToken, async token => await InUseAsync(service, token), review: review);
+        var landed = await trees.LandAsync(tree, subject, cancellationToken, async token => await InUseAsync(service, token), gate: gate);
         // Kept where the conversation is kept, so the landing and the plugin's word outlast the press (D100).
         if (landed.Landed) _loop.Events.Keep(id, LandingRules.Note(landed), line => _loop.Output.Append(id, line));
-        if (landed.Refusal == AutoLandingCode.Unreviewed && _loop.Log is { } log)
+        if (_loop.Log is { } log && LandingGateWords.Held(id, trees.Owner(tree), gate, landed, ReviewDoors.Screen) is { } held)
         {
-            var (workspace, repository) = trees.Owner(tree);
-            SessionLog.WriteLanding(log, ReviewLines.Held(id, repository, workspace, review, ReviewDoors.Screen));
+            SessionLog.WriteLanding(log, held);
         }
 
         _loop.Nudge();
@@ -423,7 +430,87 @@ public sealed partial class DriverModule
             Plugin = landed.Plugin is { } said
                 ? new { Id = said.Plugin, said.Pushed, said.PullRequest, said.Message, said.Failed }
                 : null,
-            Review = Waits(review),
+            Review = Waits(gate.Review),
+            Opinion = Opinion(gate.Opinion),
+        };
+    }
+
+    /// <summary>
+    /// What the second opinion's gate says beside a landing's plan or press (XAGENT1f, the second-agent design §8.1, §8.5): its
+    /// state, whether it holds, whether the rule requires one, the reviewer and its label, the findings and the disputes counted,
+    /// the commits unread, why none could be had, and the sentence; and the token a press sends back to answer what it showed.
+    /// Null where the level asks no opinion, so a landing no rule touches answers as it did. The page draws it (XAGENT1g).
+    /// </summary>
+    public static object? Opinion(OpinionGateState gate) => gate.State == OpinionGateStates.None
+        ? null
+        : new
+        {
+            gate.State,
+            Holds = !gate.LetsGo,
+            gate.Required,
+            Opinion = gate.Opinion?.Id,
+            Reviewer = gate.Opinion?.Adapter,
+            gate.Opinion?.Product,
+            gate.Opinion?.Maker,
+            gate.Opinion?.Label,
+            Reviewing = gate.Opinion?.Session,
+            Findings = gate.Opinion?.Findings?.Count,
+            Disputes = gate.Disputes?.Count,
+            gate.Since,
+            gate.Code,
+            Until = gate.Until?.ToString("O", System.Globalization.CultureInfo.InvariantCulture),
+            gate.Later,
+            Person = gate.Person?.Said,
+            Answers = gate.PressAnswers ? gate.Token : null,
+            Says = gate.Says,
+        };
+
+    // The second opinion's presses (XAGENT1f, the second-agent design §8.5, §9): the screen's half of `daoris-driver opinion`,
+    // each the driver's own press (OpinionPresses), so both doors say and keep the same. A refusal is an answer, as a landing's is.
+    /// <summary>
+    /// The second opinion's gate for a session's work, and the person's presses on it (XAGENT1f): <c>OPINION_GATE</c> reads it;
+    /// <c>ASK_OPINION</c> asks a pass the next look starts (<i>Ask now</i>, <i>Try again</i>, <i>Ask again</i>, <i>Ask the same
+    /// agent, fresh</i> with <c>sameAgent</c>, or a struck quest's <i>Ask another agent for help</i> with <c>occasion: failure</c>);
+    /// <c>OPINION_ANYWAY</c> and <c>OPINION_MYSELF</c> keep the person's answer with their words; <c>STOP_OPINION</c> stops a
+    /// reviewer reading.
+    /// </summary>
+    /// <remarks>
+    /// Never Ask Daoris's (§9, D110): asking spends an account at the person's choice, and going on, or reading it themselves, is a
+    /// judgement no agent has made. Each answers the gate as it then stands, in <see cref="Opinion"/>'s shape.
+    /// </remarks>
+    [DriverRoute("OPINION_GATE")]
+    [DriverRoute("ASK_OPINION")]
+    [DriverRoute("OPINION_ANYWAY")]
+    [DriverRoute("OPINION_MYSELF")]
+    [DriverRoute("STOP_OPINION")]
+    private async Task<object?> OpinionPressAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var service = _loop.Service ?? throw NotReady();
+        var presses = new OpinionPresses(_loop.Home, service);
+        if (request.Type == "STOP_OPINION")
+        {
+            var opinion = PayloadHelper.GetRequiredValue<string>(request.Payload, "opinion");
+            var stopped = await presses.StopAsync(opinion, _loop.Processes, cancellationToken);
+            _loop.Nudge();
+            return new { Opinion = opinion, Done = stopped.Done, stopped.Message };
+        }
+
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var words = Optional(request, "words");
+        var pressed = request.Type switch
+        {
+            "ASK_OPINION" => await presses.AskAsync(
+                id, Optional(request, "reviewer"), Flag(request, "sameAgent"), words,
+                Optional(request, "occasion") == "failure" ? "failure" : "asked", cancellationToken),
+            "OPINION_ANYWAY" => await presses.AnywayAsync(id, words, ReviewDoors.Screen, cancellationToken),
+            "OPINION_MYSELF" => await presses.MyselfAsync(id, words, ReviewDoors.Screen, cancellationToken),
+            _ => await presses.GateAsync(id, cancellationToken),
+        };
+        if (request.Type != "OPINION_GATE") _loop.Nudge();
+        return new
+        {
+            Session = id, Done = pressed.Done, pressed.Message,
+            Opinion = pressed.Gate is { } gate ? Opinion(gate.Opinion) : null,
         };
     }
 

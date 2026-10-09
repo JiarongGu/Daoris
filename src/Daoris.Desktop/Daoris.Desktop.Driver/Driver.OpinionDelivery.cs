@@ -35,7 +35,7 @@ public sealed record OpinionDelivery(string Opinion, string State, string Line)
 /// own, its quest is unmoved. They are never handed to a new session as the person's words (design §6.7).</para>
 ///
 /// <para><b>Idempotent, and read from facts.</b> <see cref="DeliverAsync"/> reads the host's opinion, the working session's
-/// record and what it kept (<see cref="OpinionDeliveries"/>), and does the next thing owed, once: the gate (XAGENT1f) calls it at
+/// record and what it kept (<see cref="OpinionDeliveries"/>), and does the next thing owed, once: the look (XAGENT1f) calls it at
 /// each look for the opinion on a landing until it says the opinion is answered, or with the person.</para>
 /// </remarks>
 public sealed partial class Driver
@@ -242,6 +242,8 @@ public sealed partial class Driver
             Base = first.Tip,
             Tip = reading.Tip!,
             Rechecks = new OpinionRecheckOf(first, reading),
+            // A recheck is no ask of the gate's: it is found through what the delivery keeps (XAGENT1f).
+            Opened = null,
         };
         return await (Passes ?? PassAsync)(ask, choice, ct).ConfigureAwait(false);
     }
@@ -254,6 +256,8 @@ public sealed partial class Driver
     {
         var reading = await OpinionAnswers.ReadAsync(view, session, tree, OpinionGit, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
         Deliveries.Answered(view.Id, reading);
+        // The machine log's line for it (XAGENT1f, design §8.6): counts only.
+        service.LandingSaid(OpinionLines.Answered(view.Id, reading));
         var line = OpinionAnswers.Line(view, reading);
         output?.Append(session, line);
         _events.Keep(session, new SessionEvent { Kind = SessionEventKind.Note, Text = line, Opinion = view.Id }, say: null);

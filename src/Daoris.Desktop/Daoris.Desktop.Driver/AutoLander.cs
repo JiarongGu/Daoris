@@ -2,9 +2,10 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What the landing at done reads of the service (LAND2b): a seam, so its tests stand in for the ledger. Its quests and asks are
-/// what the review's gate reads too (REVIEWENV1c), so a look lands nothing the gate holds.
+/// what the review's gate reads too (REVIEWENV1c), and the opinions the second opinion's part reads (XAGENT1f), so a look lands
+/// nothing the gate holds.
 /// </summary>
-public interface IAutoLandingWorld : IReviewWorld
+public interface IAutoLandingWorld : IOpinionWorld
 {
     /// <summary>One quest as it stands, closed ones included; null where the service holds none.</summary>
     Task<QuestView?> QuestAsync(string id, CancellationToken ct);
@@ -35,6 +36,8 @@ public sealed class ServiceAutoLandingWorld(ServiceClient service) : IAutoLandin
 
     public Task<AskView?> AskAsync(string id, CancellationToken ct) => service.FindAskAsync(id, ct);
 
+    public Task<OpinionView?> OpinionAsync(string id, CancellationToken ct) => service.ReadOpinionAsync(id, ct);
+
     public Task<IReadOnlyList<SessionRecord>> RecordsAsync(CancellationToken ct) => service.SessionRecordsAsync(ct);
 
     public async Task<IReadOnlySet<string>> InUseAsync(CancellationToken ct) =>
@@ -46,8 +49,11 @@ public sealed class ServiceAutoLandingWorld(ServiceClient service) : IAutoLandin
 /// <summary>A due session the look chose to try, with what it read of it there: its quest, and its tree's tip and status.</summary>
 public sealed record AutoChoice(AutoLanding Entry, QuestView Quest, string? Tip, string Status)
 {
-    /// <summary>The review's gate as the look read it (REVIEWENV1c): one that let it go, which its landing record keeps.</summary>
-    public ReviewGateState? Review { get; init; }
+    /// <summary>
+    /// The landing gate as the look read it (XAGENT1f, REVIEWENV1c): the second opinion and the review, each letting it go, which
+    /// its landing record keeps.
+    /// </summary>
+    public LandingGate? Gate { get; init; }
 }
 
 /// <summary>What the look chose to land beside it, and what it said of the rest as it looked.</summary>
@@ -151,9 +157,25 @@ public sealed class AutoLander(
             var (tip, status, uncommitted) = await ReadTreeAsync(entry.Tree, ct).ConfigureAwait(false);
             if (!AutoLandingRules.ShouldTry(entry, tip, status)) continue;
 
+            // The landing gate, read once (XAGENT1f, the second-agent design §7): the second opinion first. Where the level says
+            // one is read before landing, the session stays due as `opinion`, said once and read again at every look, until it is
+            // settled or the person answers it; a chain step whose chain has a later step here waits for that step (§8.1).
+            var gate = await trees.GateAsync(entry.Tree, entry.Quest, world, entry.Session, ct).ConfigureAwait(false);
+            if (!gate.Opinion.LetsGo)
+            {
+                if (entry.Last?.Code != AutoLandingCode.Opinion)
+                {
+                    said.Add(Tried(entry, AutoLandingCode.Opinion, tip, status,
+                        new TreeLanding(false, gate.Opinion.Says) { Refusal = AutoLandingCode.Opinion }));
+                    log?.Invoke(OpinionLines.Held(entry.Session, entry.Repository, entry.Workspace, gate.Opinion, ReviewDoors.Look));
+                }
+
+                continue;
+            }
+
             // The review's gate (REVIEWENV1c, design §3.1): where the level says review, the session stays due as `unreviewed`, said
             // once and read again at every look, until the person's reviewed on a set-up that holds its tip, or their skip.
-            var review = await trees.ReviewAsync(entry.Tree, entry.Quest, world, ct).ConfigureAwait(false);
+            var review = gate.Review;
             if (!review.LetsGo)
             {
                 if (entry.Last?.Code != AutoLandingCode.Unreviewed)
@@ -173,7 +195,7 @@ public sealed class AutoLander(
                 continue;
             }
 
-            chosen.Add(new AutoChoice(entry, quest, tip, status) { Review = review });
+            chosen.Add(new AutoChoice(entry, quest, tip, status) { Gate = gate });
         }
 
         return new(chosen, said);
@@ -232,7 +254,7 @@ public sealed class AutoLander(
             entry.Session, entry.Quest, id => world.QuestAsync(id, ct), events.Openings([entry.Session]).GetValueOrDefault(entry.Session))
             .ConfigureAwait(false);
         var plan = await trees.PlanAsync(entry.Tree, subject, ct).ConfigureAwait(false);
-        var landed = await trees.LandAsync(entry.Tree, subject, ct, world.InUseAsync, AcceptedBy.Auto, choice.Review).ConfigureAwait(false);
+        var landed = await trees.LandAsync(entry.Tree, subject, ct, world.InUseAsync, AcceptedBy.Auto, choice.Gate).ConfigureAwait(false);
         var code = AutoLandingRules.CodeOf(landed);
         return Tried(entry, code, choice.Tip, choice.Status, landed, plan.Plugin, plan.Target, unlanded);
     }

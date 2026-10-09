@@ -211,14 +211,10 @@ public sealed partial class ChatRunner
 
     /// <summary>
     /// The machine's choices for a chat taken up by itself (MSG1c): the file every door reads where its override names this
-    /// home's, as the shell's own config path is; this home's <c>driver.json</c> otherwise.
+    /// home's, as the shell's own config path is; this home's <c>driver.json</c> otherwise — the one resolution for a door that
+    /// holds its home (CONFIGSEAM1).
     /// </summary>
-    private DriverConfig MachineConfig()
-    {
-        var chosen = Environment.GetEnvironmentVariable(DriverConfig.PathVariable);
-        var path = chosen is { Length: > 0 } && SamePath(DriverConfig.HomeOf(chosen), _home) ? chosen : Path.Combine(_home, "driver.json");
-        return DriverConfig.Load(path);
-    }
+    private DriverConfig MachineConfig() => DriverConfig.Load(DriverConfig.ResolvePath(_home));
 
     private async Task<ChatStart> GoingOnAsync(
         string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct)

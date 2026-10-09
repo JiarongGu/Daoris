@@ -165,3 +165,83 @@ describe.each(['en', 'zh'])('Ask Daoris’s history in %s', (language) => {
     await waitFor(() => expect(screen.queryByRole('group', { name: i18n.t('help.history.deleteLabel', { title: 'Landing' }) })).toBeNull());
   });
 });
+
+/**
+ * ASKHIST1b: the history fits the dock at any width down to its floor. A grid's implicit column is `auto`, which grows to its
+ * widest child's min-content, and a one-line title's is the whole line: a pasted URL ran the search and every row past the
+ * dock's edge, and the panel scrolled sideways. jsdom lays nothing out, so what bounds each part is asserted by its class.
+ */
+describe('Ask Daoris’s history at the dock’s edge', () => {
+  const URL = 'https://example.atlassian.net/browse/TK-2205?focusedCommentId=1234567&page=com.example.plugin.tabpanels%3Acomments';
+  const TITLE = `to complete this ${URL} so the sprint closes`;
+  const ABOUT = `Opened ${URL}#comment-1234567 and read the ticket's whole description.`;
+  const FOUND = `…${URL}&selectedIssue=TK-2205…`;
+  const LONG = [row({ session: 'u1', title: TITLE, opening: TITLE, about: ABOUT, found: FOUND, pinned: ago(5), from: 'h1' })];
+
+  afterEach(() => cleanup());
+
+  /** Every grid between `node` and the history: each must bound its column, or its widest child sets the width. */
+  function gridsAbove(node: HTMLElement) {
+    const history = screen.getByRole('region', { name: i18n.t('help.history.title') });
+    const grids: HTMLElement[] = [];
+    for (let at: HTMLElement | null = node; at; at = at === history ? null : at.parentElement) {
+      if (at.classList.contains('grid')) grids.push(at);
+    }
+    return grids;
+  }
+
+  it('bounds every column between a row’s words and the dock, so nothing widens the history', () => {
+    draw({ rows: LONG, search: 'TK-2205' });
+
+    const title = screen.getByText(TITLE);
+    const search = screen.getByRole('searchbox', { name: i18n.t('help.history.search.label') });
+    for (const node of [title, search]) {
+      const grids = gridsAbove(node);
+      expect(grids.length).toBeGreaterThan(0);
+      for (const grid of grids) expect(grid).toHaveClass('grid-cols-[minmax(0,1fr)]');
+    }
+  });
+
+  it('cuts a long title to one line with the whole in its tip and its name, and wraps what it was about at the edge', () => {
+    draw({ rows: LONG, search: 'TK-2205' });
+
+    const title = screen.getByText(TITLE);
+    expect(title).toHaveClass('truncate');
+    expect(title).toHaveAttribute('title', TITLE);
+    // The row's door is named by its whole title, however little of it the line shows.
+    expect(screen.getAllByRole('button', { name: (name) => name.startsWith(TITLE) })).not.toHaveLength(0);
+
+    // The meta line is one line, cut where it must be.
+    expect(screen.getByText(new RegExp(i18n.t('help.history.fromEarlier')))).toHaveClass('truncate');
+
+    // What it was about, and where a search found it: two lines at most, broken inside a word only where one will not fit.
+    for (const words of [ABOUT, FOUND]) {
+      const line = screen.getByText(words);
+      expect(line).toHaveClass('line-clamp-2', 'wrap-anywhere');
+      expect(line).not.toHaveClass('truncate');
+    }
+  });
+
+  it('wraps a search’s words that found nothing at the edge', () => {
+    draw({ rows: [], search: URL });
+    expect(screen.getByText(i18n.t('help.history.none', { words: URL }))).toHaveClass('wrap-anywhere');
+  });
+
+  it('keeps a rename’s terminal twin and a delete’s sentence inside the row, however long the title', async () => {
+    const long = `${URL}-and-more`;
+    draw({ rows: [row({ session: 'u1', title: TITLE, opening: TITLE, name: long })] });
+
+    await menuOf(TITLE);
+    await userEvent.click(await screen.findByRole('menuitem', { name: i18n.t('help.history.rename') }));
+    const form = screen.getByRole('form', { name: i18n.t('help.history.renameTitle', { title: TITLE }) });
+    // The twin's line is a flex item: without `min-w-0` it is as wide as its longest word, which its code then never breaks.
+    const twin = within(form).getByText(code(`daoris-driver help rename u1 "${long}"`)).parentElement;
+    expect(twin).toHaveClass('basis-full', 'min-w-0', 'wrap-anywhere');
+    await userEvent.click(within(form).getByRole('button', { name: i18n.t('common.cancel') }));
+
+    await menuOf(TITLE);
+    await userEvent.click(await screen.findByRole('menuitem', { name: i18n.t('help.history.delete') }));
+    const ask = await screen.findByRole('group', { name: i18n.t('help.history.deleteLabel', { title: TITLE }) });
+    expect(within(ask).getByText(i18n.t('help.history.deleteSays', { title: TITLE }))).toHaveClass('wrap-anywhere');
+  });
+});

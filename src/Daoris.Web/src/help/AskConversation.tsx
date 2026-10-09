@@ -418,9 +418,10 @@ export function useAskConversation(
   ) : null;
 
   // What the foot of the conversation says (ASKHIST1): where one started from, and whether one that ended goes on in itself,
-  // each with its press. Nothing where the history has not answered for it yet: the panel's own line stands.
+  // each with its press. Nothing where the history has not answered for it yet: the panel's own line stands. A title it
+  // names breaks inside a word too wide for the dock, as a pasted URL is (ASKHIST1b).
   const line = (key: string, values?: Record<string, string>) => (
-    <Prose className="m-0 text-small text-ink-faint">{t(key, values)}</Prose>
+    <Prose className="m-0 text-small text-ink-faint wrap-anywhere">{t(key, values)}</Prose>
   );
   const press = (key: string, onClick: () => void) => (
     <Button variant="ghost" className="px-0 text-small text-accent" disabled={startFrom.isPending} onClick={onClick}>{t(key)}</Button>
