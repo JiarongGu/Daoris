@@ -860,7 +860,7 @@ public sealed partial class SessionTrees
             }
             else
             {
-                var proof = await ProveAsync(root, grow, line, [onto], ct).ConfigureAwait(false);
+                var proof = await ProveAsync(root, grow, line, [new LineForm(onto, onto)], ct).ConfigureAwait(false);
                 if (proof.Kind is not (LandedKind.OnLine or LandedKind.Merged)) return Item(RebaseKind.Waits, tip);
                 (cut, cutBy) = (grow, CutBy.Record);
             }
@@ -888,7 +888,7 @@ public sealed partial class SessionTrees
         if (code != 0) return (leaves, CutBy.Line);
         foreach (var commit in list.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
-            var proof = await ProveAsync(root, commit, line, [onto], ct).ConfigureAwait(false);
+            var proof = await ProveAsync(root, commit, line, [new LineForm(onto, onto)], ct).ConfigureAwait(false);
             if (proof.Kind is LandedKind.OnLine or LandedKind.Merged) return (commit, CutBy.Content);
         }
 

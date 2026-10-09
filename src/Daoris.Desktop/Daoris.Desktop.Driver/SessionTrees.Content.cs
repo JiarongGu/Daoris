@@ -70,11 +70,11 @@ public sealed partial class SessionTrees
         string cwd, string tip, string? line, IReadOnlySet<string> notHolders, CancellationToken ct)
     {
         var forms = new List<(string Name, string Id)>();
-        foreach (var name in await LineFormsAsync(cwd, line, ct).ConfigureAwait(false))
+        foreach (var form in await LineFormsAsync(cwd, line, ct).ConfigureAwait(false))
         {
-            var (formCode, formId, _) = await WorkingTree.GitAsync(cwd, ["rev-parse", "--verify", "--quiet", $"{name}^{{commit}}"], ct)
+            var (formCode, formId, _) = await WorkingTree.GitAsync(cwd, ["rev-parse", "--verify", "--quiet", $"{form.Ref}^{{commit}}"], ct)
                 .ConfigureAwait(false);
-            if (formCode == 0) forms.Add((name, formId.Trim()));
+            if (formCode == 0) forms.Add((form.Name, formId.Trim()));
         }
 
         if (forms.Count == 0) return null;
@@ -185,8 +185,14 @@ public sealed partial class SessionTrees
     private async Task<string?> DeleteJudgedAsync(string root, string branch, string judged, CancellationToken ct)
     {
         if (BeforeDeleting is { } seam) await seam(branch).ConfigureAwait(false);
-        // git branch -D refuses a branch a working tree has checked out; update-ref does not ask, so this does.
-        if ((await WorktreesAsync(root, ct).ConfigureAwait(false)).GetValueOrDefault(branch) is { } checkedOut)
+        // git branch -D refuses a branch a working tree has checked out; update-ref does not ask, so this does. A list git could
+        // not give is no answer to that (AUTOTIDY1).
+        if (await ReadWorktreesAsync(root, ct).ConfigureAwait(false) is not { } worktrees)
+        {
+            return $"{ListUnread}, so whether a tree has it checked out is not known";
+        }
+
+        if (worktrees.GetValueOrDefault(branch) is { } checkedOut)
         {
             return $"it is checked out at {checkedOut}";
         }
@@ -223,6 +229,7 @@ public sealed partial class SessionTrees
         if (code != 0) return null;
         var uncommitted = new List<string>();
         var ignored = new List<string>();
+        var shared = new List<string>();
         var entries = porcelain.Split('\0');
         for (var at = 0; at < entries.Length; at++)
         {
@@ -232,7 +239,7 @@ public sealed partial class SessionTrees
             if (entry.StartsWith("!! ", StringComparison.Ordinal))
             {
                 var there = Path.Combine(root, path.TrimEnd('/'));
-                if (!File.Exists(there) && !Directory.Exists(there)) ignored.Add(path);
+                (File.Exists(there) || Directory.Exists(there) ? shared : ignored).Add(path);
                 continue;
             }
 
@@ -241,11 +248,14 @@ public sealed partial class SessionTrees
             if (entry[0] is 'R' or 'C' || entry[1] is 'R' or 'C') at++;
         }
 
-        return new(uncommitted, ignored);
+        return new(uncommitted, ignored, shared);
     }
 
-    /// <summary>What a tree holds that no commit does (SQUASHTIDY1c): uncommitted paths, and ignored paths only it holds.</summary>
-    private sealed record TreeHolds(IReadOnlyList<string> Uncommitted, IReadOnlyList<string> Ignored)
+    /// <summary>
+    /// What a tree holds that no commit does (SQUASHTIDY1c): uncommitted paths, and ignored paths only it holds; and the ignored
+    /// paths the checkout holds too, which a press lets go with the tree and the look's own tidy does not (AUTOTIDY1).
+    /// </summary>
+    private sealed record TreeHolds(IReadOnlyList<string> Uncommitted, IReadOnlyList<string> Ignored, IReadOnlyList<string> Shared)
     {
         /// <summary>The ignored paths, the first three named, in a clause.</summary>
         public string IgnoredSaid => $"{Ignored.Count} ignored path(s) your checkout does not have: "

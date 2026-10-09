@@ -79,7 +79,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 90 | 1640 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionGroups.cs` | 59 | 1064 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.Sync.cs` | 68 | 1146 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.cs` | 76 | 1319 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.cs` | 79 | 1375 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionsCommand.cs` | 56 | 1134 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/StagedBuild.cs` | 46 | 959 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trace.Chain.cs` | 56 | 1246 |
@@ -155,10 +155,10 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `.claude/knowledge/twins.md` | 64 | 124 |
 | `docs/2026-09-19-platform-ux.md` | 57 | 612 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
-| `docs/2026-09-21-working-surface-components.md` | 53 | 352 |
+| `docs/2026-09-21-working-surface-components.md` | 53 | 353 |
 | `docs/2026-09-25-rev3-review.md` | 51 | 407 |
 | `docs/2026-09-26-ux5-screen-audit.md` | 46 | 141 |
-| `docs/2026-09-30-machine-log-design.md` | 45 | 460 |
+| `docs/2026-09-30-machine-log-design.md` | 47 | 464 |
 | `docs/2026-10-01-account-rotation-design.md` | 52 | 613 |
 | `docs/2026-10-01-agent-layout-design.md` | 59 | 790 |
 | `docs/2026-10-01-development-documents-design.md` | 62 | 825 |
