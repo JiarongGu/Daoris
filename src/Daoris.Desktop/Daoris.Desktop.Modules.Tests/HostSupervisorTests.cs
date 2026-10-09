@@ -224,6 +224,64 @@ public sealed class HostSupervisorTests : IDisposable
         Assert.True(await GoneAsync(pid), "the stand-in host is still running");
     }
 
+    /// <summary>
+    /// HOSTSTART1: a host that dies at start says why on its standard error, and the window showed only that it exited.
+    /// The trouble carries what it printed, an em dash and 中文 whole, since the stream is read as UTF-8.
+    /// </summary>
+    [Fact]
+    public async Task A_host_that_exits_at_start_is_said_with_what_it_printed_on_standard_error()
+    {
+        // Written synchronously: an exit drops what a pipe's asynchronous write still holds.
+        var host = StandIn("""
+            import { writeSync } from 'node:fs';
+            writeSync(2, 'the knowledge index is newer than this build — 更新 the install.\n');
+            process.exit(2);
+            """);
+        var supervisor = new HostSupervisor(host.Url, () => host.Location);
+
+        Assert.False(await supervisor.EnsureAsync());
+
+        Assert.NotNull(supervisor.Trouble);
+        Assert.Contains($"the service host at {host.Location.Executable} exited before it answered.", supervisor.Trouble);
+        Assert.EndsWith(
+            "Its last lines on standard error:\nthe knowledge index is newer than this build — 更新 the install.",
+            supervisor.Trouble);
+    }
+
+    /// <summary>A host that printed nothing is said as before.</summary>
+    [Fact]
+    public async Task A_host_that_exits_at_start_having_printed_nothing_is_said_as_before()
+    {
+        var host = StandIn("process.exit(3);");
+        var supervisor = new HostSupervisor(host.Url, () => host.Location);
+
+        Assert.False(await supervisor.EnsureAsync());
+
+        Assert.Equal($"the service host at {host.Location.Executable} exited before it answered.", supervisor.Trouble);
+    }
+
+    /// <summary>
+    /// The stream is read from the start, never held: a host that prints a megabyte before it listens, more than any pipe
+    /// holds, is not left waiting on a full one, and answers. Written synchronously, so an unread pipe would stop it.
+    /// </summary>
+    [Fact]
+    public async Task A_host_that_prints_a_megabyte_on_standard_error_while_starting_is_not_stalled()
+    {
+        var host = StandIn(
+            """
+            import { writeSync } from 'node:fs';
+            for (let line = 0; line < 1024; line++) writeSync(2, 'x'.repeat(1023) + '\n');
+            """,
+            honoursInputEnd: true);
+        var supervisor = new HostSupervisor(host.Url, () => host.Location) { StopWithin = TimeSpan.FromSeconds(20) };
+
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        Assert.True(await supervisor.EnsureAsync(), supervisor.Trouble);
+        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(20), $"answered after {clock.Elapsed}");
+
+        Assert.Equal(HostStop.Exited, supervisor.Stop());
+    }
+
     /// <summary>HOSTID1's other half: a host the shell adopted is somebody else's, and its stop is theirs.</summary>
     [Fact]
     public async Task A_host_it_adopted_is_not_stopped()
@@ -243,7 +301,13 @@ public sealed class HostSupervisorTests : IDisposable
     /// the status probe as a Daoris host does. One that honours its input stops when that input ends,
     /// and only when asked by the variable, as the host does; one that ignores it serves on.
     /// </summary>
-    private StandInHost StandIn(bool honoursInputEnd)
+    private StandInHost StandIn(bool honoursInputEnd) => StandIn(string.Empty, honoursInputEnd);
+
+    /// <summary>
+    /// A stand-in that runs <paramref name="first"/> before it serves (HOSTSTART1): what it prints, and whether it exits
+    /// before it ever listens. Its imports are hoisted, as a module's are.
+    /// </summary>
+    private StandInHost StandIn(string first, bool honoursInputEnd = false)
     {
         var folder = Path.Combine(_root, "stand-in-" + Guid.NewGuid().ToString("N")[..6]);
         Directory.CreateDirectory(folder);
@@ -253,6 +317,7 @@ public sealed class HostSupervisorTests : IDisposable
             import { createServer } from 'node:http';
             import { writeFileSync } from 'node:fs';
             writeFileSync({{JsonSerializer.Serialize(pidFile)}}, String(process.pid));
+            {{first}}
             const server = createServer((request, response) => {
               response.writeHead(200, { 'content-type': 'application/json' });
               response.end(request.url === '/api/status' ? {{JsonSerializer.Serialize(StubHost.DaorisStatus)}} : '<html></html>');
