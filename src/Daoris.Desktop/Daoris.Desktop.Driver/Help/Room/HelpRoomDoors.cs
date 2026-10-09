@@ -76,6 +76,15 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "`daoris driver opinion <repository> --reviewers <adapter,adapter> [--on landing,steps] [--required|--not-required] "
             + "[--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck]` (`--workspace <name>` for a whole workspace), "
             + "`daoris driver opinion <repository> none|--clear`"),
+        // WORKFLOW1c4: Current drawn from the rules above (WORKFLOW1a's verb, WORKFLOW1b's tab, D157 point 7). Exempt from Ask
+        // Daoris, since it reads (HelpCoverageTests' `workflow show`); a change is a rule's, on the Setup row a step opens.
+        ("see how a repository's work moves, or a workspace's, read from its rules as they stand at each gate: each step they "
+            + "make (the work, a second opinion, your look, the landing, a pull request a plugin opens after it) and the plugins "
+            + "that may hold a start, who takes part (agent alone, agent + you, you, automatic) and who acts, where each was set, "
+            + "and what Daoris cannot do of it yet; a step opens the Setup row that sets it, where a change is made (Ask Daoris "
+            + "never proposes it: it reads and changes nothing)",
+            "Repositories → the repository's page → Workflow; a workspace's, Repositories → the workspace's page → Workflow",
+            "`daoris driver workflow show --repository <name>|--workspace <name>`"),
         // WORKFLOW1d (D157 points 5 and 6): a named workflow, its versions never edited; Ask Daoris's `workflow` kind is
         // WORKFLOW1h's and its screen WORKFLOW1g's, and nothing chooses one until WORKFLOW1e.
         ("name a workflow: its steps from a preset, a repository's Current or another workflow, each change saved as its next "
@@ -83,7 +92,7 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "repository's work follows Current)",
             "(no screen yet)",
             "`daoris driver workflow new <id> --from <preset>|current:<repository>|<id>[@<version>]`, `daoris driver workflow "
-            + "edit|apply|export|import …`, `daoris driver workflow list|show`"),
+            + "edit|apply|export|import …`, `daoris driver workflow list`, `daoris driver workflow show <id>[@<version>]`"),
         // WSR6: after a pull request merges — the line pulled, what merged deleted, what still works replayed onto it. It
         // takes the repositories holding Daoris's branches, and the others where included (WSR7, D112); one workspace's
         // alone with `--workspace`, as its Branches tab does (BRSCOPE1a).
@@ -227,6 +236,16 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "*Set it up in `<environment>`*",
             "`daoris-driver ask … --review rule|on|<environment>|off`, `daoris-driver ask --set-review <id> on|<environment>|off "
             + "[\"…\"]`, `daoris-driver quest review <quest> off [\"…\"]`, `daoris-driver quest review <quest> on|<environment>`"),
+        // WORKFLOW1c4: the run (WORKFLOW1c's view, line and door; WORKFLOW1c2's verb; the workflow design §7). Exempt from Ask
+        // Daoris, since it reads (D157, D110 §4); each press a waiting step needs is a row of its own owner's.
+        ("see where a piece of work stands in its workflow: each step's state (waiting on you, waiting on an agent, working, "
+            + "done, …) and what it says, the step the run stands at, and a door to where each step's record is; a session's run "
+            + "is its quest's, an ask's one per repository its work reaches, and a chat has none (Ask Daoris never proposes it: "
+            + "it reads and changes nothing, and each press a waiting step needs is its owner's, where the step's door opens)",
+            "Sessions → the session's *Workflow* view, in the right side bar beside Timeline and Review (View → Workflow); "
+            + "*Workflow:* in a quest's page's head and an ask's, and *Workflow* on a row of What needs you, each attending its "
+            + "session in Sessions with the view open",
+            "`daoris-driver workflow run --session|--quest|--ask <id>`"),
         ("answer what waits on the person", "Sessions, and what needs you", "`daoris-driver answer`"),
         // MSG1e (D137 §5.4): exempt from Ask Daoris, since the words are the person's (D133 §1); the room names both doors.
         ("say something to a session of this machine's, running, parked or ended: it reads your words at its next step or when "

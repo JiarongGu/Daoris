@@ -104,4 +104,59 @@ public sealed class HelpRoomDoorsTests
             Screen("set the language"));
         Assert.Contains("a repository's, Repositories → the repository's page → Setup → Reach", Screen("allow, ask or deny"));
     }
+
+    /// <summary>
+    /// WORKFLOW1c4 (D157 point 12; the workflow design §6.1, §7): the room named none of the places how work moves is drawn, so
+    /// asked how a repository's work lands, or where a quest's work stands, the helper could not send the person there. Current
+    /// is a repository's and a workspace's *Workflow* tab, with `daoris driver workflow show` its twin (WORKFLOW1a, WORKFLOW1b);
+    /// a run is the session's *Workflow* view, the *Workflow:* line in a quest's and an ask's head, and What needs you's
+    /// *Workflow* door, with `daoris-driver workflow run` its twin (WORKFLOW1c, WORKFLOW1c2). Both only read, so Ask Daoris
+    /// proposes neither; changing a workflow is WORKFLOW1h's proposal, and today a step opens the Setup row that sets it.
+    /// </summary>
+    [Fact]
+    public void The_room_names_where_how_work_moves_is_drawn_and_where_a_run_stands_with_their_terminal_twins()
+    {
+        var current = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("`daoris driver workflow show --repository", StringComparison.Ordinal));
+        Assert.Equal("`daoris driver workflow show --repository <name>|--workspace <name>`", current.Terminal);
+        Assert.Equal("Repositories → the repository's page → Workflow; a workspace's, Repositories → the workspace's page → Workflow",
+            current.Screen);
+        foreach (var said in new[]
+        {
+            "who takes part (agent alone, agent + you, you, automatic)", "where each was set", "what Daoris cannot do of it yet",
+            "a step opens the Setup row that sets it", "Ask Daoris never proposes it",
+        })
+        {
+            Assert.Contains(said, current.To);
+        }
+
+        var run = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris-driver workflow run", StringComparison.Ordinal));
+        Assert.Equal("`daoris-driver workflow run --session|--quest|--ask <id>`", run.Terminal);
+        foreach (var said in new[]
+        {
+            "Sessions → the session's *Workflow* view", "beside Timeline and Review", "View → Workflow",
+            "*Workflow:* in a quest's page's head and an ask's", "*Workflow* on a row of What needs you",
+        })
+        {
+            Assert.Contains(said, run.Screen);
+        }
+
+        foreach (var said in new[] { "each step's state", "the step the run stands at", "Ask Daoris never proposes it", "its owner's" })
+        {
+            Assert.Contains(said, run.To);
+        }
+
+        // In the order a person meets them: how work moves beside the rules it is drawn from, before a named workflow; where a
+        // piece of work stands after starting one, before answering what waits on the person.
+        var order = HelpRoomDoors.Doors.Select(door => door.To).ToList();
+        int At(string to) => order.FindIndex(each => each.StartsWith(to, StringComparison.Ordinal));
+        Assert.Equal(At("declare which other agent reads") + 1, order.IndexOf(current.To));
+        Assert.Equal(order.IndexOf(current.To) + 1, At("name a workflow"));
+        Assert.True(order.IndexOf(run.To) > At("start a task") && order.IndexOf(run.To) < At("answer what waits on the person"));
+
+        // WORKFLOW1d's row keeps the named workflows' verbs, its `show` the one that names a saved workflow, so the two shows
+        // are not read as one.
+        var named = HelpRoomDoors.Doors.Single(door => door.To.StartsWith("name a workflow", StringComparison.Ordinal));
+        Assert.Contains("`daoris driver workflow list`, `daoris driver workflow show <id>[@<version>]`", named.Terminal);
+        Assert.DoesNotContain("workflow list|show`", named.Terminal);
+    }
 }
