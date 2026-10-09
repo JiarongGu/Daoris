@@ -212,6 +212,7 @@
   "work.views.reset": "Reset view locations",
   "work.views.console": "Console",
   "work.views.terminal": "Terminal",
+  "work.views.workflow": "Workflow",
   "work.views.empty": "Nothing is here now. Move a view here from its tab's menu, or reset the view locations.",
   "work.act.pauseAsk": "Pause ask…",
   "work.act.pauseQuest": "Pause quest…",

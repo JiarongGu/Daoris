@@ -212,6 +212,7 @@
   "work.views.reset": "重置视图位置",
   "work.views.console": "控制台",
   "work.views.terminal": "终端",
+  "work.views.workflow": "工作流",
   "work.views.empty": "这里现在什么都没有。从某个视图标签的菜单把它移到这里，或重置视图位置。",
   "work.act.pauseAsk": "暂缓需求…",
   "work.act.pauseQuest": "暂缓委托…",
