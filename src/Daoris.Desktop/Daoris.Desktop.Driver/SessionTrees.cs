@@ -594,9 +594,10 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     /// before the clean-up is pressed. Nothing is changed.
     /// </summary>
     /// <param name="inUse">The trees sessions still running or waiting name — kept whatever they hold.</param>
+    /// <param name="only">The branches to judge, as <c>repository:branch</c>; null for every one. The look's own tidy (AUTOTIDY1) judges its few.</param>
     public async Task<IReadOnlyList<SweepItem>> SweepPlanAsync(
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,
-        CancellationToken ct = default)
+        CancellationToken ct = default, IReadOnlySet<string>? only = null)
     {
         var busy = new HashSet<string>(inUse.Select(Normal), StringComparer.OrdinalIgnoreCase);
         var items = new List<SweepItem>();
@@ -613,6 +614,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             var carriers = await CarriersAsync(root, repository, line, ct).ConfigureAwait(false);
             foreach (var branch in refs.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
+                if (only is not null && !only.Contains($"{repository}:{branch}")) continue;
                 items.Add((await JudgeAsync(
                     root, repository, RemoteTarget.Workspace(workspace), branch, worktrees.GetValueOrDefault(branch), line, busy, carriers, ct)
                     .ConfigureAwait(false)).Item);
@@ -627,21 +629,27 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     /// kept and named. 🔴 Each is judged again right before it goes — a list is a fact about a moment.
     /// </summary>
     /// <param name="only">The branches the person saw listed to go, as <c>repository:branch</c>; null for every one the proof clears now.</param>
+    /// <param name="takes">
+    /// Which judged rows go, asked of the first judgement and again of the one right before the delete: every one the proof
+    /// clears (<see cref="SweepItem.Removable"/>) at the person's press, or the empty alone at the look's own tidy
+    /// (<see cref="GoesByItself"/>, AUTOTIDY1), so both doors run one path and one set of guards.
+    /// </param>
     public async Task<IReadOnlyList<SweepResult>> SweepAsync(
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,
-        IReadOnlySet<string>? only = null, CancellationToken ct = default)
+        IReadOnlySet<string>? only = null, CancellationToken ct = default, Func<SweepItem, bool>? takes = null)
     {
         var known = repositories.ToList();
         var busy = new HashSet<string>(inUse.Select(Normal), StringComparer.OrdinalIgnoreCase);
+        var goes = takes ?? (item => item.Removable);
         var results = new List<SweepResult>();
-        foreach (var item in await SweepPlanAsync(known, inUse, ct).ConfigureAwait(false))
+        foreach (var item in await SweepPlanAsync(known, inUse, ct, only).ConfigureAwait(false))
         {
             if (only is not null && !only.Contains($"{item.Repository}:{item.Branch}"))
             {
                 continue;
             }
 
-            if (!item.Removable)
+            if (!goes(item))
             {
                 results.Add(new(item, false, "kept"));
                 continue;
@@ -656,7 +664,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             var (now, judged) = await JudgeAsync(
                     root, item.Repository, item.Workspace, item.Branch, worktrees.GetValueOrDefault(item.Branch), line, busy, carriers, ct)
                 .ConfigureAwait(false);
-            if (!now.Removable || judged is null)
+            if (!goes(now) || judged is null)
             {
                 results.Add(new(now, false, "it changed since the list, and is kept"));
                 continue;
@@ -735,8 +743,10 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         string root, string repository, string workspace, string branch, string? tree, string? line,
         HashSet<string> busy, IReadOnlyList<PullRequestCarrier> carriers, CancellationToken ct)
     {
+        // The ignored paths its tree shares with the checkout, on every row once read (AUTOTIDY1): the look's own tidy keeps such a tree.
+        var shared = 0;
         SweepItem Item(string kind, int commits = 0, string? where = null, string? detail = null) =>
-            new(repository, workspace, branch, tree, kind, commits, where, detail);
+            new(repository, workspace, branch, tree, kind, commits, where, detail) { IgnoredShared = shared };
 
         if (tree is not null && busy.Contains(Normal(tree))) return (Item(SweepKind.InUse), null);
 
@@ -745,18 +755,19 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         {
             // Everything no commit holds, whatever git's settings hide (SQUASHTIDY1c): what a removal would destroy.
             var holds = await HoldsAsync(tree, root, ct).ConfigureAwait(false);
-            if (holds is null) return (Item(SweepKind.Dirty, detail: "git could not say what its tree holds"), null);
+            if (holds is null) return (Item(SweepKind.Dirty, detail: "git could not say what its tree holds") with { Unread = true }, null);
+            shared = holds.Shared.Count;
             if (holds.Uncommitted.Count > 0) return (Item(SweepKind.Dirty, detail: $"{holds.Uncommitted.Count} path(s) uncommitted"), null);
             if (holds.Ignored.Count > 0) return (Item(SweepKind.Dirty, detail: holds.IgnoredSaid), null);
         }
 
         var (tipCode, tipOut, tipErr) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}^{{commit}}"], ct)
             .ConfigureAwait(false);
-        if (tipCode != 0) return (Item(SweepKind.Unlanded, detail: $"git could not tell: {FirstLine(tipErr)}"), null);
+        if (tipCode != 0) return (Item(SweepKind.Unlanded, detail: $"git could not tell: {FirstLine(tipErr)}") with { Unread = true }, null);
         var tip = tipOut.Trim();
 
         var (code, log, err) = await UnlandedLogAsync(root, tip, ct).ConfigureAwait(false);
-        if (code != 0) return (Item(SweepKind.Unlanded, detail: $"git could not tell: {FirstLine(err)}"), null);
+        if (code != 0) return (Item(SweepKind.Unlanded, detail: $"git could not tell: {FirstLine(err)}") with { Unread = true }, null);
         var unlanded = log.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (unlanded.Length > 0)
         {

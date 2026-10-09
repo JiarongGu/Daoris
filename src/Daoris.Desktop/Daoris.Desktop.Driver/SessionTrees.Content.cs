@@ -223,6 +223,7 @@ public sealed partial class SessionTrees
         if (code != 0) return null;
         var uncommitted = new List<string>();
         var ignored = new List<string>();
+        var shared = new List<string>();
         var entries = porcelain.Split('\0');
         for (var at = 0; at < entries.Length; at++)
         {
@@ -232,7 +233,7 @@ public sealed partial class SessionTrees
             if (entry.StartsWith("!! ", StringComparison.Ordinal))
             {
                 var there = Path.Combine(root, path.TrimEnd('/'));
-                if (!File.Exists(there) && !Directory.Exists(there)) ignored.Add(path);
+                (File.Exists(there) || Directory.Exists(there) ? shared : ignored).Add(path);
                 continue;
             }
 
@@ -241,11 +242,14 @@ public sealed partial class SessionTrees
             if (entry[0] is 'R' or 'C' || entry[1] is 'R' or 'C') at++;
         }
 
-        return new(uncommitted, ignored);
+        return new(uncommitted, ignored, shared);
     }
 
-    /// <summary>What a tree holds that no commit does (SQUASHTIDY1c): uncommitted paths, and ignored paths only it holds.</summary>
-    private sealed record TreeHolds(IReadOnlyList<string> Uncommitted, IReadOnlyList<string> Ignored)
+    /// <summary>
+    /// What a tree holds that no commit does (SQUASHTIDY1c): uncommitted paths, and ignored paths only it holds; and the ignored
+    /// paths the checkout holds too, which a press lets go with the tree and the look's own tidy does not (AUTOTIDY1).
+    /// </summary>
+    private sealed record TreeHolds(IReadOnlyList<string> Uncommitted, IReadOnlyList<string> Ignored, IReadOnlyList<string> Shared)
     {
         /// <summary>The ignored paths, the first three named, in a clause.</summary>
         public string IgnoredSaid => $"{Ignored.Count} ignored path(s) your checkout does not have: "

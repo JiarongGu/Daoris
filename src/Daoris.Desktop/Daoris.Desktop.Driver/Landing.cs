@@ -282,6 +282,18 @@ public sealed record SweepItem(
     /// found there. Null for a branch landed by ancestry, and for every other kind.
     /// </summary>
     public ContentHold? HeldBy { get; init; }
+
+    /// <summary>
+    /// git could not answer one of the guards (AUTOTIDY1): what its tree holds, or what its commits are. The kind is the safe
+    /// side's (dirty, unlanded), and the look's own tidy says why it stays, once.
+    /// </summary>
+    public bool Unread { get; init; }
+
+    /// <summary>
+    /// How many ignored paths its tree holds that the checkout holds too (AUTOTIDY1): a build's output, which goes with the tree
+    /// at the press (SQUASHTIDY1c) and keeps the tree from the look's own tidy. Zero for a branch with no tree here.
+    /// </summary>
+    public int IgnoredShared { get; init; }
 }
 
 /// <summary>What the clean-up did with one branch, in the driver's words.</summary>
