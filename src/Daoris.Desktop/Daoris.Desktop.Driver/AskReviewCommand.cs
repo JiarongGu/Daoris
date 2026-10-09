@@ -116,7 +116,8 @@ public static class AskReviewCommand
             ? $"No review environment is declared in workspace `{circle}`, so nothing of its work can be shown in `{choice}`: "
               + $"`daoris driver review <repository>|--workspace {circle} {choice} --kind local|deployed --procedure <path>` declares one. "
               + "Nothing was kept."
-            : $"No review environment `{choice}` is declared in workspace `{circle}`: its rules declare {Either(declared)}. Nothing was kept.";
+            : $"No review environment `{choice}` is declared in workspace `{circle}`: its rules declare {ReviewRules.Either(declared)}. "
+              + "Nothing was kept.";
     }
 
     /// <summary>Set the choice on the ask, as its page's <i>Set</i> does, and print the service's sentence.</summary>
@@ -141,11 +142,4 @@ public static class AskReviewCommand
         : ReviewRules.NameProblem(choice) is { } unnamed
             ? $"`{(choice.Length == 0 ? "--review" : choice)}` is not a review choice: {choices}, and {unnamed}"
             : null;
-
-    /// <summary>Names in backticks, the last after <c>or</c>: <c>a</c>, <c>a or b</c>, <c>a, b or c</c>.</summary>
-    private static string Either(IReadOnlyList<string> names)
-    {
-        var ticked = names.Select(name => $"`{name}`").ToList();
-        return ticked.Count <= 1 ? string.Concat(ticked) : $"{string.Join(", ", ticked.Take(ticked.Count - 1))} or {ticked[^1]}";
-    }
 }

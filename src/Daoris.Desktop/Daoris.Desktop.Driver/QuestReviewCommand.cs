@@ -199,7 +199,7 @@ public static class QuestReviewCommand
         var environment = chosen == "on" ? names[0] : chosen;
         if (!names.Contains(environment))
         {
-            output.WriteLine($"daoris-driver: `{quest.To}` declares no review environment `{environment}`: it declares {Either(names)}. "
+            output.WriteLine($"daoris-driver: `{quest.To}` declares no review environment `{environment}`: it declares {ReviewRules.Either(names)}. "
                 + "Nothing was published.");
             return 1;
         }
@@ -211,13 +211,6 @@ public static class QuestReviewCommand
         output.WriteLine($"daoris-driver: the gate: `{quest.To}`'s work waits for set-up step `#{step ?? "…"}` to show it in `{environment}`, "
             + $"then for your look: `daoris-driver quest review {step ?? "<step>"} reviewed` once you have looked.");
         return 0;
-    }
-
-    /// <summary>Names in backticks, the last after <c>or</c>: <c>a</c>, <c>a or b</c>, <c>a, b or c</c>.</summary>
-    private static string Either(IReadOnlyList<string> names)
-    {
-        var ticked = names.Select(name => $"`{name}`").ToList();
-        return ticked.Count <= 1 ? string.Concat(ticked) : $"{string.Join(", ", ticked.Take(ticked.Count - 1))} or {ticked[^1]}";
     }
 
     /// <summary>What the set-up step showed, where to look and how to show it again, as the person is about to answer it.</summary>

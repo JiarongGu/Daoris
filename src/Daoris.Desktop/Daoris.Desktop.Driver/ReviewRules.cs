@@ -308,8 +308,8 @@ public static class ReviewRules
                 ? new ResolvedReview(shared, ReviewSource.Workspace)
                 : null;
 
-    /// <summary>Names in backticks, the last after <c>or</c>: <c>a</c>, <c>a or b</c>, <c>a, b or c</c>.</summary>
-    private static string Either(IReadOnlyList<string> names)
+    /// <summary>Names in backticks, the last after <c>or</c>: <c>a</c>, <c>a or b</c>, <c>a, b or c</c>; the review choice's doors say them so too.</summary>
+    internal static string Either(IReadOnlyList<string> names)
     {
         var ticked = names.Select(name => $"`{name}`").ToList();
         return ticked.Count <= 1 ? string.Concat(ticked) : $"{string.Join(", ", ticked.Take(ticked.Count - 1))} or {ticked[^1]}";
