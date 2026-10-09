@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (122)
+## Files over 40 KB (123)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -53,10 +53,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs` | 41 | 641 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/AbandonTests.cs` | 43 | 786 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/AcpTests.cs` | 111 | 2065 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/HarnessTests.cs` | 48 | 1089 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 73 | 1192 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 74 | 1215 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/HistoryClearingTests.cs` | 45 | 809 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/IntakeTests.cs` | 46 | 967 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/PlannerTests.cs` | 65 | 1304 |
@@ -73,7 +74,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 82 | 1548 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.Continue.cs` | 42 | 713 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 156 | 2671 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 57 | 1040 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 59 | 1086 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 198 | 3649 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 62 | 1082 |

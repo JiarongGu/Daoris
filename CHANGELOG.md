@@ -225,6 +225,8 @@ with the version and date at release.
   kept and each change shown with your part first; nothing chooses one yet.
 - A session's side bar has a *Workflow* view: where its work stands in its repository's workflow, step by step, with
   doors from a quest, an ask and What needs you.
+- A `driver.json` that does not read is said with its file and where, instead of a stack trace.
+- `daoris-driver workflow run` prints where a piece of work stands in its workflow, step by step.
 
 The first version: doctrine that installs, is checked, and flows back.
 
