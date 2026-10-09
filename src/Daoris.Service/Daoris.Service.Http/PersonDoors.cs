@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Daoris.Knowledge;
 
 namespace Daoris.Knowledge.Http;
@@ -59,6 +60,15 @@ public static class PersonDoors
     /// <summary>The refusal's code for a key from another start of the host.</summary>
     public const string Stale = "stale";
 
+    /// <summary>
+    /// The refusal's code for a confirmation's grant that does not cover the call (PERSONDOOR1b): another act, used already,
+    /// refused, or past its two minutes.
+    /// </summary>
+    public const string Grant = "grant";
+
+    /// <summary>The refusal's code for a sixth ask while five wait for the person (PERSONDOOR1b).</summary>
+    public const string ConfirmationsFull = "confirmations-full";
+
     /// <summary>The machine log's event for a refusal: one warning per refused call, codes only.</summary>
     public const string Event = "person.refused";
 
@@ -81,6 +91,19 @@ public static class PersonDoors
         $"Only Daoris's driver posts {act}: it is what the driver read for itself, never what a session says of its own "
         + "work. Nothing was kept.";
 
+    /// <summary>
+    /// The refusal of a grant that does not cover the call (§5.2, PERSONDOOR1b). The design's sentence names another act
+    /// and a second use; a grant the person refused, or one never confirmed within its two minutes, is refused with the
+    /// same code, so the sentence names those too rather than saying something untrue of them.
+    /// </summary>
+    public const string GrantSentence =
+        "This call's confirmation does not cover it: its address or its words differ from what was confirmed, or it was "
+        + "used already, refused, or not confirmed within its two minutes. Nothing was kept.";
+
+    /// <summary>The refusal of a sixth ask while five wait (§4.2, §5.2): it asks nothing.</summary>
+    public const string FullSentence =
+        "Five acts already wait for the person's confirmation, so this one was not asked. Nothing was kept.";
+
     /// <summary>The respond door: an agent's take, done or decline; with <c>whileOpen</c>, an abandon's decline.</summary>
     public static readonly Door Respond = new("POST", "/api/quests/{id}/respond", DoorClass.Agent, "a quest's take, done or decline")
     {
@@ -95,7 +118,19 @@ public static class PersonDoors
         Form = new DoorForm("look", DoorClass.Person, "a set-up of their own"),
     };
 
-    /// <summary>Every route either host maps, each with its class: 63 at PERSONDOOR1a.</summary>
+    /// <summary>
+    /// A terminal's ask for the person's confirmation (PERSONDOOR1b, design §4.2): any caller's, as a session can ask and
+    /// cannot answer.
+    /// </summary>
+    public static readonly Door AskConfirmation = new("POST", "/api/confirmations", DoorClass.Agent, "an ask for the person's confirmation");
+
+    /// <summary>The person's confirmation of what a terminal asked: the key's alone.</summary>
+    public static readonly Door Confirm = new("POST", "/api/confirmations/{id}/confirm", DoorClass.Person, "the confirmation of a terminal's act");
+
+    /// <summary>The person's refusal of what a terminal asked: the key's alone.</summary>
+    public static readonly Door Refuse = new("POST", "/api/confirmations/{id}/refuse", DoorClass.Person, "the refusal of a terminal's act");
+
+    /// <summary>Every route either host maps, each with its class: 68 at PERSONDOOR1b.</summary>
     public static IReadOnlyList<Door> Table { get; } =
     [
         // Open: reads (design §3.2, 18), and the second opinion's two (D155's XAGENT1c note), answered to loopback only.
@@ -120,11 +155,17 @@ public static class PersonDoors
         new("GET", "/api/sync", DoorClass.Open),
         new("GET", "/api/opinions", DoorClass.Open),
         new("GET", "/api/opinions/{id}", DoorClass.Open),
+        // What waits for the person's confirmation, and one of them, which the terminal that asked polls (PERSONDOOR1b).
+        // Neither answers a secret's hash, so a reader learns nothing that grants.
+        new("GET", "/api/confirmations", DoorClass.Open),
+        new("GET", "/api/confirmations/{id}", DoorClass.Open),
 
-        // What an agent may do (3): the exchange the connector's tools use, so the two doors cannot drift.
+        // What an agent may do (3): the exchange the connector's tools use, so the two doors cannot drift. And asking the
+        // person to confirm (PERSONDOOR1b): a session can ask, and its card is one the person refuses or lets expire.
         Respond,
         new("POST", "/api/quests", DoorClass.Agent, "a quest's publish"),
         new("POST", "/api/asks/{id}/publish", DoorClass.Agent, "a quest's publish from an ask"),
+        AskConfirmation,
 
         // The driver's own (11 and the set-up's session form), and the second opinion's two posts (D155's XAGENT1c note).
         new("POST", "/api/quests/{id}/evidence", DoorClass.Driver, "a done's evidence"),
@@ -165,6 +206,9 @@ public static class PersonDoors
         new("DELETE", "/api/registry/{repository}", DoorClass.Person, "a repository's retire"),
         new("POST", "/api/registry/{repository}/workspace", DoorClass.Person, "a repository's re-wiring"),
         new("POST", "/api/registry/import", DoorClass.Person, "a folder's import"),
+        // The answers to a terminal's ask (PERSONDOOR1b), never themselves asked for.
+        Confirm,
+        Refuse,
 
         // A shared host's alone (design §6, 7): its feed and sync doors, gated by minted keys.
         new("POST", "/api/feed/sessions", DoorClass.Shared),
@@ -182,6 +226,78 @@ public static class PersonDoors
     /// <summary>The door for a route, by its method and its pattern as the host mapped it; null for one the table does not class.</summary>
     public static Door? Find(string method, string pattern) =>
         ByRoute.GetValueOrDefault((method.ToUpperInvariant(), pattern));
+
+    /// <summary>
+    /// The door a concrete, already unescaped path reaches, and the values its parameters take there, in the pattern's
+    /// order; null for a path no door of the table answers (PERSONDOOR1b: a confirmation names its request by its door).
+    /// Matched as the router matches: segment by segment, a literal ignoring case, a parameter any segment that is not
+    /// empty, and where two patterns match, the one with more literals. No two routes of the table tie that way, and the
+    /// gate holds a grant to the pattern that actually answered it, so a path read otherwise grants nothing.
+    /// </summary>
+    public static (Door Door, IReadOnlyList<(string Name, string Value)> Values)? Resolve(string method, string path)
+    {
+        var segments = path.Split('/');
+        if (segments is not ["", .. var asked]) return null;
+
+        (Door Door, IReadOnlyList<(string Name, string Value)> Values)? best = null;
+        var bestLiterals = -1;
+        foreach (var door in Table)
+        {
+            if (!string.Equals(door.Method, method, StringComparison.OrdinalIgnoreCase)) continue;
+            var pattern = door.Pattern.Split('/')[1..];
+            if (pattern.Length != asked.Length) continue;
+
+            var values = new List<(string Name, string Value)>();
+            var literals = 0;
+            var matched = true;
+            for (var i = 0; i < pattern.Length && matched; i++)
+            {
+                if (pattern[i].StartsWith('{'))
+                {
+                    matched = asked[i].Length > 0;
+                    values.Add((pattern[i].Trim('{', '}'), asked[i]));
+                }
+                else
+                {
+                    matched = string.Equals(pattern[i], asked[i], StringComparison.OrdinalIgnoreCase);
+                    literals++;
+                }
+            }
+
+            if (matched && literals > bestLiterals) (best, bestLiterals) = ((door, values), literals);
+        }
+
+        return best;
+    }
+
+    /// <summary>
+    /// The name a keyless call to <paramref name="door"/> with <paramref name="body"/> is refused by, the form's where the
+    /// body makes it; null when such a call is answered, as a read's or an agent's is (design §3.2). What the routes judge
+    /// of the bound body is judged here of the same body, as the binder reads it: a property's name ignoring case, the last
+    /// of two alike standing.
+    /// </summary>
+    public static string? Wanted(Door door, JsonElement? body)
+    {
+        var (@class, act) = door.Form is { } form && MakesForm(door, body) ? (form.Class, form.Act) : (door.Class, door.Act);
+        return @class is DoorClass.Driver or DoorClass.Person ? act : null;
+    }
+
+    // The routes' own judgements of their forms: `respond` with `whileOpen` true; a `set-up` naming no session.
+    private static bool MakesForm(Door door, JsonElement? body) =>
+        ReferenceEquals(door, Respond) ? Property(body, "whileOpen") is { ValueKind: JsonValueKind.True }
+        : ReferenceEquals(door, SetUp) && Property(body, "session") is null or { ValueKind: JsonValueKind.Null };
+
+    private static JsonElement? Property(JsonElement? body, string name)
+    {
+        if (body is not { ValueKind: JsonValueKind.Object } found) return null;
+        JsonElement? last = null;
+        foreach (var property in found.EnumerateObject())
+        {
+            if (string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase)) last = property.Value;
+        }
+
+        return last;
+    }
 }
 
 /// <summary>What a call presented of the person key.</summary>
@@ -195,6 +311,12 @@ public enum Presented
 
     /// <summary>A key that is not this start's: one from an earlier start, as the only way a caller comes to hold one.</summary>
     Stale,
+
+    /// <summary>
+    /// No key, and a grant the person confirmed for exactly this request, used now (PERSONDOOR1b, design §4.2): the
+    /// person's authority for this one call, as the key's is.
+    /// </summary>
+    Grant,
 }
 
 /// <summary>
@@ -212,9 +334,16 @@ public enum Presented
 /// agent's publish) and never widen it, so nothing a body says reads as the key.</para>
 ///
 /// <para><b>The log</b> (§5.1): one <see cref="PersonDoors.Event"/> warning per refusal, by the method, the route's
-/// pattern, what was presented (<c>none</c> or <c>stale</c>) and the code. Never the key, the body or the caller.</para>
+/// pattern, what was presented (<c>none</c>, <c>key</c>, <c>stale</c> or <c>grant</c>) and the code. Never the key, the
+/// secret, the body or the caller.</para>
+///
+/// <para><b>A grant</b> (PERSONDOOR1b, §4.2): a keyless call that presents <see cref="PersonConfirmations.GrantHeader"/>
+/// at any door but a read is judged by the grant first. The secret's request (its method, its door, its path and query,
+/// and its body to the byte) must be the one the person confirmed, within its two minutes, and unused: then the call has
+/// the person's authority, once; otherwise it is refused <c>grant</c>, as a caller that presents a key is never quietly
+/// taken for an agent. A read answers anyone, so a grant presented there is left alone.</para>
 /// </remarks>
-public sealed class PersonGate(PersonKey? key, MachineLog log)
+public sealed class PersonGate(PersonKey? key, MachineLog log, PersonConfirmations confirmations)
 {
     private static readonly object PresentedItem = new();
 
@@ -237,17 +366,32 @@ public sealed class PersonGate(PersonKey? key, MachineLog log)
         connection.RemoteIpAddress is null || System.Net.IPAddress.IsLoopback(connection.RemoteIpAddress);
 
     /// <summary>
+    /// The secret a request presented as a grant, from a caller on this machine only, as the key is read: null for none,
+    /// and an empty one, which grants nothing, for more than one.
+    /// </summary>
+    private static string? GrantOf(HttpContext context)
+    {
+        var values = context.Request.Headers[PersonConfirmations.GrantHeader];
+        if (!FromThisMachine(context.Connection) || values.All(string.IsNullOrWhiteSpace)) return null;
+        return values.Count == 1 ? values[0]! : "";
+    }
+
+    /// <summary>A door's class, or for a route the table does not class, a write's the person's and anything else a read's.</summary>
+    private static DoorClass ClassOf(Door? door, string method) =>
+        door?.Class ?? (BrowserOrigins.IsWrite(method) ? DoorClass.Person : DoorClass.Open);
+
+    /// <summary>
     /// The gate's judgement of a call (design §3.1), pure so it can be held without a host: the code it is refused with,
     /// or null when its route is to answer it. An agent's door answers a keyless call, and a door with a form leaves its
     /// class to its route. A write the table does not class is the person's; anything else it does not class (a read, a
-    /// preflight) is answered.
+    /// preflight) is answered. A grant used for this call (PERSONDOOR1b) is the person's authority, as the key is.
     /// </summary>
     public static (string Code, string Act)? Judge(Door? door, string method, Presented presented)
     {
-        var @class = door?.Class ?? (BrowserOrigins.IsWrite(method) ? DoorClass.Person : DoorClass.Open);
+        var @class = ClassOf(door, method);
         if (@class is DoorClass.Open) return null;
         if (presented == Presented.Stale) return (PersonDoors.Stale, door?.Act ?? PersonDoors.Unclassified);
-        if (presented == Presented.Key || @class == DoorClass.Agent || door?.Form is not null) return null;
+        if (presented is Presented.Key or Presented.Grant || @class == DoorClass.Agent || door?.Form is not null) return null;
         return Required(@class, door?.Act ?? PersonDoors.Unclassified);
     }
 
@@ -257,18 +401,59 @@ public sealed class PersonGate(PersonKey? key, MachineLog log)
         if (key is not null && context.GetEndpoint() is RouteEndpoint endpoint)
         {
             var presented = PresentedBy(context);
+            var pattern = endpoint.RoutePattern.RawText ?? "";
+            var door = PersonDoors.Find(context.Request.Method, pattern);
+            if (presented == Presented.None && GrantOf(context) is { } secret && ClassOf(door, context.Request.Method) is not DoorClass.Open)
+            {
+                presented = Presented.Grant;
+                if (!await TakeAsync(context, secret, pattern))
+                {
+                    await RefuseAsync(context, presented, PersonDoors.Grant, door?.Act ?? PersonDoors.Unclassified);
+                    return;
+                }
+            }
+
             context.Items[PresentedItem] = presented;
-            var door = PersonDoors.Find(context.Request.Method, endpoint.RoutePattern.RawText ?? "");
             if (Judge(door, context.Request.Method, presented) is { } refused)
             {
-                Write(context, presented, refused.Code);
-                context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                await context.Response.WriteAsJsonAsync(new ErrorResponse(Sentence(refused.Code, refused.Act), refused.Code));
+                await RefuseAsync(context, presented, refused.Code, refused.Act);
                 return;
             }
         }
 
         await next();
+    }
+
+    private async Task RefuseAsync(HttpContext context, Presented presented, string code, string act)
+    {
+        Write(context, presented, code);
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        await context.Response.WriteAsJsonAsync(new ErrorResponse(Sentence(code, act), code));
+    }
+
+    /// <summary>
+    /// Whether the grant covers this very call: its body read whole and put back for the route, so the bytes judged are
+    /// the bytes the route binds (PERSONDOOR1b).
+    /// </summary>
+    private async Task<bool> TakeAsync(HttpContext context, string secret, string pattern)
+    {
+        context.Request.EnableBuffering();
+        using var body = new MemoryStream();
+        await context.Request.Body.CopyToAsync(body, context.RequestAborted);
+        context.Request.Body.Position = 0;
+        return confirmations.Take(
+            secret, context.Request.Method, pattern, context.Request.Path.Value ?? "", context.Request.QueryString.Value ?? "",
+            body.ToArray());
+    }
+
+    /// <summary>
+    /// A refusal a route gives on the gate's behalf, in its shape and with its one log line: a sixth ask for the person's
+    /// confirmation (PERSONDOOR1b, design §4.2), by what the call presented.
+    /// </summary>
+    public IResult Refusal(HttpContext http, string code)
+    {
+        Write(http, http.Items[PresentedItem] as Presented? ?? Presented.None, code);
+        return Results.Json(new ErrorResponse(Sentence(code, PersonDoors.Unclassified), code), statusCode: StatusCodes.Status403Forbidden);
     }
 
     /// <summary>
@@ -299,14 +484,22 @@ public sealed class PersonGate(PersonKey? key, MachineLog log)
     {
         PersonDoors.Stale => PersonDoors.StaleSentence,
         PersonDoors.DriverOnly => PersonDoors.DriverSentence(act),
+        PersonDoors.Grant => PersonDoors.GrantSentence,
+        PersonDoors.ConfirmationsFull => PersonDoors.FullSentence,
         _ => PersonDoors.PersonSentence(act),
     };
 
-    // Once per refused call, codes only (design §5.1): the route's pattern, never its values, the key or the body.
+    // Once per refused call, codes only (design §5.1): the route's pattern, never its values, the key, the secret or the body.
     private void Write(HttpContext context, Presented presented, string code) =>
         log.Warn(PersonDoors.Event,
             ("method", context.Request.Method),
             ("route", UnhandledRequests.RouteOf(context)),
-            ("presented", presented == Presented.Stale ? "stale" : "none"),
+            ("presented", presented switch
+            {
+                Presented.Key => "key",
+                Presented.Stale => "stale",
+                Presented.Grant => "grant",
+                _ => "none",
+            }),
             ("code", code));
 }

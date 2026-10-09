@@ -80,9 +80,13 @@ public class DaorisHost : IDisposable
     /// What the host's starter writes on its standard input, the person key first (PERSONDOOR1a): given, the host is asked
     /// to read its key there (<see cref="Daoris.Knowledge.Http.PersonKey.InputVariable"/>), as the shell will ask it.
     /// </param>
+    /// <param name="clock">
+    /// The time the host's confirmations are judged by (PERSONDOOR1b), for a test that moves it instead of waiting two
+    /// minutes; the system's when none is given.
+    /// </param>
     public DaorisHost(
         ServiceMode mode, IReadOnlyDictionary<string, string?>? settings = null, Action<string>? seed = null,
-        IReadOnlyDictionary<string, string?>? environment = null, string? input = null)
+        IReadOnlyDictionary<string, string?>? environment = null, string? input = null, TimeProvider? clock = null)
     {
         Scratch = Path.Combine(Path.GetTempPath(), "daoris-http1-" + Guid.NewGuid().ToString("N")[..8]);
         Home = Path.Combine(Scratch, "home");
@@ -124,7 +128,7 @@ public class DaorisHost : IDisposable
         foreach (var (name, value) in environment ?? new Dictionary<string, string?>()) variables[name] = value;
         _environment = new ScopedEnvironment(variables);
 
-        _factory = new Factory(WebRoot, settings ?? new Dictionary<string, string?>());
+        _factory = new Factory(WebRoot, settings ?? new Dictionary<string, string?>(), clock);
         // The entry point reads the key from the console's input on the way up; in this process that is the starter's.
         var before = Console.In;
         if (input is not null) Console.SetIn(new StringReader(input));
@@ -176,11 +180,12 @@ public class DaorisHost : IDisposable
             .ToList();
 
     /// <summary>
-    /// One request, from <paramref name="from"/>, with a bearer key, the person key (PERSONDOOR1a) and a JSON body when
-    /// given.
+    /// One request, from <paramref name="from"/>, with a bearer key, the person key (PERSONDOOR1a), a confirmation's grant
+    /// (PERSONDOOR1b) and a JSON body when given.
     /// </summary>
     public async Task<Answer> SendAsync(
-        string method, string pathAndQuery, IPAddress from, string? key = null, string? json = null, string? person = null)
+        string method, string pathAndQuery, IPAddress from, string? key = null, string? json = null, string? person = null,
+        string? grant = null)
     {
         var query = pathAndQuery.IndexOf('?');
         var context = await Server.SendAsync(http =>
@@ -191,6 +196,7 @@ public class DaorisHost : IDisposable
             http.Connection.RemoteIpAddress = from;
             if (key is not null) http.Request.Headers.Authorization = "Bearer " + key;
             if (person is not null) http.Request.Headers[Daoris.Knowledge.Http.PersonKey.Header] = person;
+            if (grant is not null) http.Request.Headers[Daoris.Knowledge.Http.PersonConfirmations.GrantHeader] = grant;
             if (json is not null)
             {
                 var bytes = Encoding.UTF8.GetBytes(json);
@@ -267,10 +273,10 @@ public class DaorisHost : IDisposable
     }
 
     /// <summary>
-    /// The factory's only additions: the deployed environment and the web root. Nothing is replaced —
-    /// the routes, the gate and the store are the host's own.
+    /// The factory's only additions: the deployed environment, the web root, and a clock when a test moves one. Nothing
+    /// else is replaced — the routes, the gate and the store are the host's own.
     /// </summary>
-    private sealed class Factory(string webRoot, IReadOnlyDictionary<string, string?> settings)
+    private sealed class Factory(string webRoot, IReadOnlyDictionary<string, string?> settings, TimeProvider? clock)
         : WebApplicationFactory<Program>
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -280,6 +286,7 @@ public class DaorisHost : IDisposable
             builder.UseEnvironment("Production");
             builder.UseSetting(WebHostDefaults.WebRootKey, webRoot);
             foreach (var (key, value) in settings) builder.UseSetting(key, value);
+            if (clock is not null) builder.ConfigureTestServices(services => services.AddSingleton(clock));
         }
     }
 }

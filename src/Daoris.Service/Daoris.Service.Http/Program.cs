@@ -152,8 +152,6 @@ if (personKeyRefusal is not null)
     return 2;
 }
 
-var personGate = new PersonGate(personKey, log);
-
 // The provider is built HOST-SIDE, not in Core: the domain holds `IVectorProvider` and nothing that
 // implements one, so a model never reaches it (D22, D24). What tier that produces is Core's business;
 // the construction itself is HostComposition's, shared with the MCP host so the two cannot drift.
@@ -205,6 +203,11 @@ if (origins.Count > 0)
 }
 
 var app = builder.Build();
+
+// PERSONDOOR1b (D156 point 4): what a terminal asks the person to confirm, held in this start's memory only and judged by
+// the clock the services hold (the system's, unless a test moves one), and the gate that takes a confirmed grant once.
+var confirmations = new PersonConfirmations(app.Services.GetService<TimeProvider>() ?? TimeProvider.System, log, holds: personKey is not null);
+var personGate = new PersonGate(personKey, log, confirmations);
 
 // A request that failed or took over two seconds, into the log (LOG1a). By its route's pattern, so an
 // id in the path and a search in the query never reach the file. Outermost, so a throw from anything
@@ -734,6 +737,48 @@ async Task<IResult> ReviewAnswer(QuestRespondOutcome outcome, ComposedService s,
         QuestRespondRefusal.None => Results.Ok(new QuestActionResponse(await QuestAnswerAsync(s, http, outcome.Quest!, ct), outcome.Message)),
         QuestRespondRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
         QuestRespondRefusal.BadSetUp or QuestRespondRefusal.BadReviewVerdict => Results.BadRequest(new ErrorResponse(outcome.Message)),
+        _ => Results.Conflict(new ErrorResponse(outcome.Message)),
+    };
+
+// The window's confirmation of what a terminal asked (PERSONDOOR1b, D156 point 4; the person-door design §4.2). A terminal
+// cannot be told from a session, so a keyless call to the person's or the driver's door is refused, and its client asks
+// here with the exact request and its secret's SHA-256. The window lists what waits and the person answers with the key;
+// the terminal polls its one, and sends the same request again with its secret, which the gate takes once. LOCAL mode
+// only: a shared host has no door that is the person's alone (§6). PersonConfirmations holds the rules and the reasons.
+if (mode == ServiceMode.Local)
+{
+    app.MapGet("/api/confirmations", () => confirmations.Waiting().Select(PersonConfirmations.Wire));
+
+    app.MapGet("/api/confirmations/{id}", (string id) =>
+        confirmations.Find(id) is { } found
+            ? Results.Ok(PersonConfirmations.Wire(found))
+            : Results.NotFound(new ErrorResponse(PersonConfirmations.NotFoundSentence(id))));
+
+    app.MapPost("/api/confirmations", (HttpContext http, ConfirmationAskRequest body) =>
+    {
+        var (asked, refusal, message) = confirmations.Ask(body.Method, body.Path, body.Body, body.SecretSha256);
+        return refusal switch
+        {
+            ConfirmationAskRefusal.None => Results.Ok(new ConfirmationActionResponse(PersonConfirmations.Wire(asked!), message)),
+            // A host handed no key refused nothing, so there is nothing to confirm: a state, the lock's own shape.
+            ConfirmationAskRefusal.NoKey => Results.Conflict(new ErrorResponse(message)),
+            // The sixth (design §4.2): the gate's refusal, in its shape and with its log line, asking nothing.
+            ConfirmationAskRefusal.Full => personGate.Refusal(http, PersonDoors.ConfirmationsFull),
+            _ => Results.BadRequest(new ErrorResponse(message)),
+        };
+    });
+
+    // The person's answers, each behind the key (the gate's Person class): confirmed or refused while it waits, and a
+    // state that refuses it is the lock's own shape.
+    app.MapPost("/api/confirmations/{id}/confirm", (string id) => ConfirmationAnswer(confirmations.Answer(id, confirm: true)));
+    app.MapPost("/api/confirmations/{id}/refuse", (string id) => ConfirmationAnswer(confirmations.Answer(id, confirm: false)));
+}
+
+static IResult ConfirmationAnswer((Confirmation? Confirmation, ConfirmationAnswerRefusal Refusal, string Message) outcome) =>
+    outcome.Refusal switch
+    {
+        ConfirmationAnswerRefusal.None => Results.Ok(new ConfirmationActionResponse(PersonConfirmations.Wire(outcome.Confirmation!), outcome.Message)),
+        ConfirmationAnswerRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
         _ => Results.Conflict(new ErrorResponse(outcome.Message)),
     };
 
