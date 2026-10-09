@@ -142,7 +142,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/deployment-rehearsal.mjs` | 98 | 1708 |
 | `tools/desktop-publish.mjs` | 59 | 1047 |
 | `tools/desktop.mjs` | 50 | 1038 |
-| `tools/family-rehearsal.mjs` | 316 | 5633 |
+| `tools/family-rehearsal.mjs` | 337 | 5941 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
 | `tools/merge-branch.mjs` | 129 | 2362 |
 | `tools/orient-index.mjs` | 66 | 1435 |

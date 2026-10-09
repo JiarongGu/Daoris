@@ -66,6 +66,10 @@ transcript in `_fixtures/rehearsal-logs/`:
   first quest on day one;
 - the **driver drives** (D46): a quest becomes a stub session becomes a commit becomes done, a dirty
   tree holds the start, and the person's stop is honoured — no model in the gate;
+- work is **reviewed where it runs** before it lands (D154): the newcomer declares where its work is
+  shown, from a terminal; a stub chain's set-up step says what it showed through its connector; the
+  landing waits for the person's `daoris-driver quest review … reviewed`, their *not yet* reaches the
+  stub's next turn, a later commit holds it again, and a repository set to none lands at once;
 - the **remote crosses** (D47): a shared host with minted keys, two simulated machines, a quest
   crossing them to done, a raced take standing down, and the remote's store scanned to hold nothing
   machine-local;

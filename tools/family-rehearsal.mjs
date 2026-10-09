@@ -35,6 +35,7 @@ const cliBin = join(repoRoot, 'src', 'Daoris.Cli', 'bin', 'daoris.mjs');
 const httpProject = join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Http');
 const httpDll = join(httpProject, 'bin', 'Debug', 'net10.0', 'daoris-knowledge-http.dll');
 const driverProject = join(repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Host');
+const connectorProject = join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Mcp');
 const driverDll = join(driverProject, 'bin', 'Debug', 'net10.0', 'daoris-driver.dll');
 const scratch = join(repoRoot, '_fixtures', 'family-rehearsal');
 const family = join(scratch, 'family');
@@ -672,6 +673,11 @@ section('7. The driver starts what should start (D46)');
 // real repository and must never be spawned into by a test.
 const driverBuild = run(`dotnet build "${driverProject}"`, repoRoot);
 check('the driver host builds', driverBuild.code === 0, driverBuild.out.split('\n').slice(-4).join('\n'));
+// The connector the protocol door hands every session (ACP4), which the driver finds as a development build. Section 17 reads that
+// it is offered, and 17e's stub calls it (REVIEWENV1h), so it is built here: one another gate built may be older than the tools a
+// phase calls on it, and a fresh checkout has none.
+const connectorBuild = run(`dotnet build "${connectorProject}"`, repoRoot);
+check('the knowledge connector a session is handed builds', connectorBuild.code === 0, connectorBuild.out.split('\n').slice(-4).join('\n'));
 
 // A session spawns only onto a clean git tree, so the newcomer becomes one. Identity is passed
 // per-command: the rehearsal must work on a machine with no git config at all.
@@ -5409,6 +5415,305 @@ check(
   `${stoppedPlan.out}\n${plannedTreesRemoved.map((removed) => removed.out).join('\n')}\n${plannedRetired.map((r) => r.text).join('\n')}`,
 );
 
+// -------------------------------------------------- 17e. reviewed where it runs before it lands
+
+section('17e. Work is reviewed where it runs before it lands: a set-up said, the person’s verdict at a terminal, a landing that waits for it (D154/REVIEWENV1)');
+
+// The review's chain over the example family, with no model, no account and no credential (D154, the review environment design
+// §3). The newcomer declares where its work is shown to the person, from a terminal: the rule is this machine's (`driver.json`),
+// and the procedures it names are the newcomer's own documents, committed on its line. A stub chain does the work over the
+// protocol door, its set-up step says what it showed through the connector the door hands it, and the landing waits for the
+// person's verdict, given at `daoris-driver quest review`.
+//
+// Two environments, because the shell is not in this rehearsal. A local one is shown in Daoris's browser, which a headless loop
+// does not carry, so a local set-up step sits here saying so, and what this phase checks of it is what the record and the
+// terminal show (design §2.1). The stub chain is set up in the deployed one, whose step a headless loop starts.
+const REVIEW_LOCAL = 'http://localhost:4210';
+const REVIEW_DEV = 'https://dev.example.test';
+// A home of its own, whose `driver.json` is this phase's config, as an install's is: a landing reads its rules from its home's
+// `driver.json` (`SessionTrees`), whatever other file the per-file override names, which the loop and the CLI read instead.
+const reviewHome = join(scratch, 'review-home');
+mkdirSync(reviewHome, { recursive: true });
+const reviewConfig = join(reviewHome, 'driver.json');
+writeFileSync(reviewConfig, `${JSON.stringify({ ...JSON.parse(readFileSync(acpConfig, 'utf8')), trees: ['newcomer'] }, null, 2)}\n`);
+// The connector a session is handed opens the store this rehearsal's host keeps, so what the stub says through it is what the host
+// reads: the driver passes these two through to it, as an install's environment does (KnowledgeConnector).
+const REVIEW_STORE = { DAORIS_KNOWLEDGE_ROOT: family, DAORIS_KNOWLEDGE_DB: join(scratch, 'knowledge.db') };
+const reviewDrive = (mode = '--until-idle') => driver({ serviceUrl: BASE, config: reviewConfig, env: REVIEW_STORE, mode });
+// `daoris driver review` looks for a procedure in the checkouts the registry names, so it is handed the host to read them from.
+const reviewCli = (args) => run(`node "${cliBin}" driver ${args}`, scratch, { DAORIS_DRIVER_CONFIG: reviewConfig, DAORIS_SERVICE_URL: BASE });
+const reviewQuests = async () => (await api('GET', '/api/quests?repository=newcomer&includeClosed=true')).json ?? [];
+const reviewRecords = async (quest) => (quest
+  ? ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? []).filter((s) => s.quest === quest)
+  : []);
+const reviewTranscript = (record) => (existsSync(record?.transcript ?? '') ? readFileSync(record.transcript, 'utf8') : '');
+const headOf = (tree) => (tree && existsSync(tree) ? run('git rev-parse HEAD', tree).out.trim() : '');
+const landedBranches = () => run('git branch --list "review/*"', newcomer).out.trim();
+const landingOf = (session) => {
+  try {
+    return (JSON.parse(readFileSync(join(reviewHome, 'landings.json'), 'utf8')).branches ?? []).find((entry) => entry.session === session) ?? null;
+  } catch {
+    return null;
+  }
+};
+
+// PERSONDOOR1a (D156): a local host is gated only once its starter hands it a person key, and this rehearsal's hosts are handed
+// none, so the person's doors (the verdict among them) answer a terminal on the loopback as they did. Said by the host itself.
+const keyless = await api('GET', '/api/status?prove=rehearsal');
+check(
+  'the rehearsal’s host was handed no person key: asked to prove one, it answers no proof, so the verdict’s door answers the terminal',
+  keyless.status === 200 && (keyless.json?.proof ?? null) === null,
+  keyless.text,
+);
+
+mkdirSync(join(newcomer, 'docs'), { recursive: true });
+writeFileSync(join(newcomer, 'docs', 'reviewing-locally.md'),
+  '# Reviewing locally\n\nBuild the report, then open it where the app normally runs.\n');
+writeFileSync(join(newcomer, 'docs', 'deploying-to-dev.md'),
+  '# Deploying to dev\n\nThe report is shown on the development site once its build is deployed there.\n');
+run(`git ${GIT_ID} add docs`, newcomer);
+run(`git ${GIT_ID} commit -q -m "docs: how the newcomer's work is reviewed"`, newcomer);
+const reviewLanding = reviewCli('landing newcomer branch "review/{quest}"');
+
+const declaredLocal = reviewCli(
+  `review newcomer local --kind local --procedure docs/reviewing-locally.md --address ${REVIEW_LOCAL} --required`);
+check(
+  'the newcomer declares a local review environment from a terminal, required, its procedure found in its checkout, and the door says what a step may do there',
+  reviewLanding.code === 0 && declaredLocal.code === 0
+    && declaredLocal.out.includes('daoris: `newcomer` declares the review environment `local`, its default.')
+    && declaredLocal.out.includes('Before work here lands, it is shown to you in `local` and waits for you to say it is right.')
+    && declaredLocal.out.includes(`shows it in Daoris's browser at \`${REVIEW_LOCAL}\`; your own servers and processes are not touched.`)
+    && declaredLocal.out.includes("`docs/reviewing-locally.md` is in `newcomer`'s checkout here.")
+    && declaredLocal.out.includes('`daoris-driver quest review <quest> reviewed`'),
+  `${reviewLanding.out}\n${declaredLocal.out}`,
+);
+
+const declaredDev = reviewCli(`review newcomer dev --kind deployed --procedure docs/deploying-to-dev.md --address ${REVIEW_DEV}`);
+const declaredRule = JSON.parse(readFileSync(reviewConfig, 'utf8')).reviews?.newcomer;
+check(
+  '…and a deployed one beside it, the local staying its default: `driver.json` holds both, required',
+  declaredDev.code === 0 && declaredDev.out.includes('declares the review environment `dev`; `local` stays its default.')
+    && declaredDev.out.includes('A set-up step here follows `docs/deploying-to-dev.md` toward `dev`; each deploy or write there asks your go-ahead once per ask.')
+    && declaredRule?.required === true
+    && JSON.stringify((declaredRule.environments ?? []).map((each) => [each.name, each.kind])) === '[["local","local"],["dev","deployed"]]',
+  `${declaredDev.out}\n${JSON.stringify(declaredRule)}`,
+);
+
+// A chain whose set-up step is local: its work runs, its step is published at the work's done, and the planner sits the step.
+const localChain = await api('POST', '/api/quests', {
+  body: {
+    from: 'game', to: 'newcomer', title: 'Put a heading on the report', body: 'The report gains a heading.',
+    then: [{
+      to: 'newcomer', title: 'Show {parent} in `local` for review', setUpIn: 'local',
+      body: `Show the work of {parent} in \`local\`, at ${REVIEW_LOCAL}/report, for the person's review.`,
+    }],
+  },
+});
+const localWorkId = localChain.json?.quest?.id ?? '';
+const localRun = reviewDrive();
+const localStep = (await reviewQuests()).find((q) => q.parent === localWorkId) ?? null;
+check(
+  'the shell is not here: a local set-up step its chain published sits in this headless loop, saying it has no window to show it in',
+  localChain.status === 200 && localRun.code === 0 && localStep?.setUpIn === 'local' && localStep.status === 'Open'
+    && localRun.out.includes(`#${localStep.id} → newcomer — set-up step \`#${localStep.id}\` shows its chain's work in Daoris's browser `
+      + `at \`${REVIEW_LOCAL}\`, and this loop has no window to show it in: the desktop's loop starts it.`),
+  `${localChain.text}\n${localRun.out}`,
+);
+
+const [localWork] = await reviewRecords(localWorkId);
+const localPlan = reviewDrive(`trees land ${localWork?.id} --plan`);
+check(
+  '…and the work it follows waits at the landing door, the plan saying for what: the step that shows it there',
+  localPlan.code === 0
+    && localPlan.out.includes(`Waits for your review in \`local\`: set-up step \`#${localStep?.id}\` is open: it shows the work there, then waits for your look.`),
+  localPlan.out,
+);
+// Nothing of it is carried further here: the step is declined, as the person would where no window will ever show it, and the
+// work's tree goes with its branch.
+await api('POST', `/api/quests/${localStep?.id}/respond`, { body: { action: 'decline', reason: 'This rehearsal has no window to show it in.' } });
+reviewDrive(`trees remove "${localWork?.tree}" --force`);
+
+// The stub chain, set up in the deployed environment: its work, then its set-up step, in one run of the loop.
+const devChain = await api('POST', '/api/quests', {
+  body: {
+    from: 'game', to: 'newcomer', title: 'Make the report say hello', body: 'The report greets its reader.',
+    then: [{
+      to: 'newcomer', title: 'Show {parent} in `dev` for review', setUpIn: 'dev',
+      body: `Show the work of {parent} in \`dev\`, at ${REVIEW_DEV}/report, for the person's review.`,
+    }],
+  },
+});
+const devWorkId = devChain.json?.quest?.id ?? '';
+const devRun = reviewDrive();
+const devStep = (await reviewQuests()).find((q) => q.parent === devWorkId) ?? null;
+const [devWork] = await reviewRecords(devWorkId);
+const [devStepRecord] = await reviewRecords(devStep?.id);
+const devStepTranscript = reviewTranscript(devStepRecord);
+const shownTip = headOf(devStepRecord?.tree);
+check(
+  'a stub chain does the work, and its set-up step’s session says what it showed through the connector the protocol door handed it',
+  devChain.status === 200 && devRun.code === 0 && devStep?.setUpIn === 'dev' && devStep.status === 'Done'
+    && devStepRecord?.state === 'completed' && devStepTranscript.includes(`review_ready answered: Said set-up 1 on quest \`#${devStep.id}\``),
+  `${devRun.out}\n${JSON.stringify(devStep)}\n${devStepTranscript.slice(-1600)}`,
+);
+const [firstSetUp] = devStep?.setUps ?? [];
+check(
+  '…and Daoris read the commit from the step’s tree and posted it: held for the person’s review, at the work’s own commit, said by that session',
+  devStep?.held === true && devStep.hold === 'unreviewed' && devStep.setUps?.length === 1
+    && shownTip !== '' && firstSetUp?.commit === shownTip && shownTip === headOf(devWork?.tree)
+    && firstSetUp.session === devStepRecord?.id && firstSetUp.look === `${REVIEW_DEV}/report` && firstSetUp.local === false,
+  `${shownTip} ${headOf(devWork?.tree)}\n${JSON.stringify(devStep)}`,
+);
+
+const heldLanding = reviewDrive(`trees land ${devStepRecord?.id}`);
+check(
+  '`daoris-driver trees land` refuses its landing with the gate’s sentence, exit 1, and makes nothing',
+  heldLanding.code === 1
+    && heldLanding.out.includes(`trees: Waits for your review in \`dev\`: set-up step \`#${devStep?.id}\` showed it at \`${shownTip.slice(0, 8)}\`, `
+      + `at <${REVIEW_DEV}/report>`)
+    && heldLanding.out.includes(`\`daoris-driver quest review ${devStep?.id} reviewed\``)
+    && landedBranches() === '',
+  heldLanding.out,
+);
+
+// The person's not yet, with words, at the terminal: kept on the quest and held on the step's record for its next turn.
+const NOT_YET = 'the report still reads the old name';
+const notYet = reviewDrive(`quest review ${devStep?.id} not-yet "${NOT_YET}"`);
+const [notYetHeld] = await reviewRecords(devStep?.id);
+const notYetKept = (await reviewQuests()).find((q) => q.id === devStep?.id)?.verdicts?.at(-1);
+check(
+  '`daoris-driver quest review … not-yet` prints what was shown, keeps the words, and holds them for the step’s session',
+  notYet.code === 0
+    && notYet.out.includes(`daoris-driver: set-up step \`#${devStep?.id}\` showed it in \`dev\` at \`${shownTip.slice(0, 8)}\`, said by session ${devStepRecord?.id}`)
+    && /held: the same session goes on with this when a driver next runs on this machine/.test(notYet.out)
+    && notYet.out.includes(`daoris-driver: the gate: it waits for the set-up \`#${devStep?.id}\` shows next, in \`dev\`.`)
+    && notYetHeld?.said?.[0]?.text === NOT_YET && notYetKept?.said === 'not-yet' && notYetKept.words === NOT_YET,
+  `${notYet.out}\n${JSON.stringify(notYetHeld)}\n${JSON.stringify(notYetKept)}`,
+);
+
+const notYetRun = reviewDrive();
+const [wentOn, ...wentOnMore] = await reviewRecords(devStep?.id);
+const wentOnTranscript = reviewTranscript(wentOn);
+check(
+  '…and *not yet* reaches the stub’s next turn: the same record goes on, its conversation resumed, and the stub heard the words',
+  notYetRun.code === 0 && /\[resumed its conversation\]/.test(notYetRun.out) && wentOnMore.length === 0
+    && wentOn?.id === devStepRecord?.id && wentOn.state === 'completed' && (wentOn.said ?? []).length === 0
+    && wentOnTranscript.includes(`acp-agent: the set-up step heard not yet: ${NOT_YET}`)
+    && (wentOnTranscript.match(/acp-agent: resumed conversation acp-session-1/g) ?? []).length === 1,
+  `${notYetRun.out}\n${JSON.stringify(wentOn)}\n${wentOnTranscript.slice(-1600)}`,
+);
+
+const correctedStep = (await reviewQuests()).find((q) => q.id === devStep?.id) ?? null;
+const secondSetUp = correctedStep?.setUps?.[1];
+const correctedTip = headOf(wentOn?.tree);
+check(
+  '…which corrected the work in its tree under the words, and said a new set-up, posted at the commit that holds the correction',
+  correctedStep?.setUps?.length === 2 && correctedTip !== '' && correctedTip !== shownTip && secondSetUp?.commit === correctedTip
+    && run('git log -1 --format=%s', wentOn?.tree).out.trim() === `review: correct what the person said not yet to (quest ${devStep?.id})`
+    && (secondSetUp.shows ?? '').includes(NOT_YET) && correctedStep.held === true && correctedStep.hold === 'unreviewed',
+  `${correctedTip}\n${JSON.stringify(correctedStep)}`,
+);
+
+const stillHeld = reviewDrive(`trees land ${devStepRecord?.id}`);
+check(
+  '…and the landing still waits, now on the new set-up',
+  stillHeld.code === 1
+    && stillHeld.out.includes(`Waits for your review in \`dev\`: set-up step \`#${devStep?.id}\` showed it at \`${correctedTip.slice(0, 8)}\``)
+    && landedBranches() === '',
+  stillHeld.out,
+);
+
+const REVIEWED = 'the report reads right now';
+const reviewedSaid = reviewDrive(`quest review ${devStep?.id} reviewed "${REVIEWED}"`);
+check(
+  '`daoris-driver quest review … reviewed` answers the newest set-up, and says the work up to its commit may land',
+  reviewedSaid.code === 0 && reviewedSaid.out.includes(`showed it in \`dev\` at \`${correctedTip.slice(0, 8)}\``)
+    && reviewedSaid.out.includes(`daoris-driver: the gate: work up to \`${correctedTip.slice(0, 8)}\` in \`newcomer\` may land`),
+  reviewedSaid.out,
+);
+
+// A commit after the verdict, in the tree that would land: work the person has not seen run.
+writeFileSync(join(wentOn?.tree ?? scratch, 'late.md'), 'added after the look\n');
+run(`git ${GIT_ID} add -A`, wentOn?.tree ?? scratch);
+run(`git ${GIT_ID} commit -q -m "a change after the look"`, wentOn?.tree ?? scratch);
+const lateTip = headOf(wentOn?.tree);
+const lateLanding = reviewDrive(`trees land ${devStepRecord?.id}`);
+check(
+  'a commit after the verdict holds the landing again: what the person reviewed does not hold it, and nothing is made',
+  lateTip !== correctedTip && lateLanding.code === 1
+    && lateLanding.out.includes(`Waits for your review in \`dev\`: what you reviewed does not hold these commits: set-up step \`#${devStep?.id}\` `
+      + `was reviewed at \`${correctedTip.slice(0, 8)}\`, and \`${lateTip.slice(0, 8)}\` is not that commit or one before it.`)
+    && landedBranches() === '',
+  lateLanding.out,
+);
+
+// Taken back, the tip is again the commit the person reviewed: the gate reads git at each press, never a flag the verdict set.
+run(`git reset -q --hard ${correctedTip}`, wentOn?.tree ?? scratch);
+const reviewedLanding = reviewDrive(`trees land ${devStepRecord?.id}`);
+const reviewedRecord = landingOf(devStepRecord?.id);
+check(
+  '…and taken back, the press lands what was reviewed, the landing record keeping the review: the environment, the set-up step, its commit, the words',
+  reviewedLanding.code === 0 && /put the work on `review\//.test(reviewedLanding.out) && landedBranches() !== ''
+    && reviewedRecord?.review?.said === 'reviewed' && reviewedRecord.review.environment === 'dev'
+    && reviewedRecord.review.quest === devStep?.id && reviewedRecord.review.commit === correctedTip && reviewedRecord.review.words === REVIEWED,
+  `${reviewedLanding.out}\n${JSON.stringify(reviewedRecord)}`,
+);
+
+const reviewLines = (event) => readEvents(reviewDrive(`logs --event ${event} --json`).out, event)
+  .filter((data) => data.quest === devStep?.id || data.session === devStepRecord?.id);
+const shownLines = reviewLines('review.shown');
+const verdictLines = reviewLines('review.verdict');
+const heldLines = reviewLines('review.held');
+check(
+  'the machine log says it in codes: two set-ups shown, the not-yet and the reviewed given at the terminal, and three landings held',
+  shownLines.length === 2 && shownLines.every((data) => data.kind === 'deployed')
+    && JSON.stringify(verdictLines.map((data) => `${data.said} ${data.door}`)) === '["not-yet terminal","reviewed terminal"]'
+    && JSON.stringify(heldLines.map((data) => `${data.state} ${data.door}`)) === '["shown terminal","shown terminal","not-held terminal"]',
+  JSON.stringify({ shownLines, verdictLines, heldLines }),
+);
+
+// A repository set to none, whatever its workspace says (design §1.3): the workspace's rule requires a review, and the newcomer's
+// own rule holds its work at first; once it says none, the same work lands at once.
+const workspaceRule = reviewCli(
+  `review --workspace default local --kind local --procedure docs/reviewing-locally.md --address ${REVIEW_LOCAL} --required`);
+const noneQuest = await api('POST', '/api/quests', {
+  body: { from: 'game', to: 'newcomer', title: 'Fix a typo in the report', body: 'A word in the report is misspelled.' },
+});
+const noneQuestId = noneQuest.json?.quest?.id ?? '';
+const noneRun = reviewDrive();
+const [noneRecord] = await reviewRecords(noneQuestId);
+const nonePlan = reviewDrive(`trees land ${noneRecord?.id} --plan`);
+check(
+  'work no set-up step shows waits on its repository’s rule at the landing door, and the plan names the skip',
+  workspaceRule.code === 0 && noneRun.code === 0 && noneRecord?.state === 'completed' && nonePlan.code === 0
+    && nonePlan.out.includes('Waits for your review in `local`: nothing shows it there yet: no set-up step for `newcomer` is in its chain. '
+      + `\`daoris-driver quest review ${noneQuestId} skip "…"\` lets it land without one.`),
+  `${workspaceRule.out}\n${noneRun.out}\n${nonePlan.out}`,
+);
+
+const setNone = reviewCli('review newcomer none');
+const noneChoices = JSON.parse(readFileSync(reviewConfig, 'utf8'));
+const noneLanding = reviewDrive(`trees land ${noneRecord?.id}`);
+const noneLanded = landingOf(noneRecord?.id);
+check(
+  'a repository set to none lands at once, whatever its workspace says: no set-up step, no verdict, and no review on its landing record',
+  setNone.code === 0 && setNone.out.includes('daoris: `newcomer` declares no review environment.')
+    && setNone.out.includes('No review environment here, whatever its workspace says: work is offered to land once its quest is done.')
+    && noneChoices.reviews?.newcomer === false && noneChoices.workspaceReviews?.default?.required === true
+    && noneLanding.code === 0 && /put the work on `review\//.test(noneLanding.out)
+    && noneLanded !== null && noneLanded.review === undefined
+    && !(await reviewQuests()).some((q) => q.parent === noneQuestId || (q.id === noneQuestId && (q.verdicts ?? []).length > 0)),
+  `${setNone.out}\n${noneLanding.out}\n${JSON.stringify(noneLanded)}`,
+);
+
+// Leave the newcomer as the phases after this one expect it: no session tree, no landed branch, the root clean.
+for (const tree of [devWork?.tree, devStepRecord?.tree, noneRecord?.tree]) {
+  if (tree && existsSync(tree)) reviewDrive(`trees remove "${tree}" --force`);
+}
+for (const branch of landedBranches().split('\n').map((line) => line.replace('*', '').trim()).filter(Boolean)) {
+  run(`git branch -D ${branch}`, newcomer);
+}
+
 // -------------------------------------------------- 18. a plugin that declares, and speaks
 
 section('18. Three plugins: one declares a harness, one hands a server, one holds a quest with a sentence (D64, D65)');
@@ -5624,7 +5929,10 @@ if (totals.failures) {
   console.log('  transcript or an account name does. And a SET-UP (D124 §2): a repository nobody adopted, read');
   console.log('  from its line, asked one quest as the person\'s with the doctrine tool\'s exact verbs allowed,');
   console.log('  set up by its own session with `daoris` found by its bare name, landed, then read as already');
-  console.log('  set up, and counted by the usage report as the one set-up of two sessions. And a PLUGIN');
+  console.log('  set up, and counted by the usage report as the one set-up of two sessions. And a REVIEW (D154): a');
+  console.log('  repository declaring where its work is shown, a local set-up step sitting where no window is, a stub chain');
+  console.log('  saying its set-up through its connector, its landing refused until the person said reviewed at a terminal,');
+  console.log('  their not yet heard on the stub\'s next turn, a later commit held again, and none landing at once. And a PLUGIN');
   console.log('  (D64): a folder under the home that');
   console.log('  declared a harness a session then ran on, and spoke — holding one quest with its own');
   console.log('  sentence, told of an ending it kept beside its install, stopped with the loop, and');

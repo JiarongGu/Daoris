@@ -8,13 +8,15 @@
  * `npm run verify` runs it beside the tooling's other tests. The cases write into a gitignored folder of this repository.
  */
 import assert from 'node:assert/strict';
+import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:http';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import {
-  checkFolderName, evidenceFolder, keepEvidence, makeChecker, restartBetweenRequests, waitFor,
+  ACP_STUB_AGENT, checkFolderName, evidenceFolder, keepEvidence, makeChecker, restartBetweenRequests, waitFor,
 } from './rehearsal-kit.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -260,4 +262,137 @@ test('a session never between requests within the bound: the host is restarted a
   assert.ok(stoppedAt >= 150, `the host was stopped ${stoppedAt} ms in, before the bound`);
   assert.ok(restarted.waited >= 150);
   assert.equal(restarted.host, 'host b');
+});
+
+// ——— the ACP stub's set-up step (REVIEWENV1h, D154): the family rehearsal's actor for a review, tried here against a service and
+// a connector that stand in, so a stub that stopped saying its set-up fails in a second rather than in an eight-minute gate.
+
+/** A connector speaking MCP on stdio, as the driver hands one over the protocol: each tool call kept as a line in `CALLS`. */
+const STAND_IN_CONNECTOR = `
+import { appendFileSync } from 'node:fs';
+import { createInterface } from 'node:readline';
+const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\\n');
+createInterface({ input: process.stdin }).on('line', (line) => {
+  const frame = JSON.parse(line);
+  if (frame.method === 'initialize') {
+    send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: frame.params.protocolVersion, capabilities: { tools: {} }, serverInfo: { name: 'stand-in', version: '0' } } });
+  } else if (frame.method === 'tools/call') {
+    appendFileSync(process.env.CALLS, JSON.stringify(frame.params) + '\\n');
+    send({ jsonrpc: '2.0', id: frame.id, result: { content: [{ type: 'text', text: 'kept ' + frame.params.name }] } });
+  }
+});
+`;
+
+/** A service that stands in: every request's path and body kept, each answered 200. */
+async function standInService() {
+  const asked = [];
+  const server = createServer((request, response) => {
+    let body = '';
+    request.on('data', (chunk) => { body += chunk; });
+    request.on('end', () => {
+      asked.push({ path: request.url, body: body ? JSON.parse(body) : null });
+      response.writeHead(200, { 'content-type': 'application/json' });
+      response.end('{}');
+    });
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  return { url: `http://127.0.0.1:${server.address().port}`, asked, close: () => new Promise((resolve) => server.close(resolve)) };
+}
+
+/**
+ * One process of the stub, as the driver runs one: `initialize`, then `opening` (a new session or a resumed one), then one prompt;
+ * its input closed once the prompt is answered. The answer, and what it said on stderr.
+ */
+function stubTurn(stub, { cwd, env, opening, words }) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [stub], { cwd, env: { ...process.env, ...env }, stdio: ['pipe', 'pipe', 'pipe'] });
+    let buffered = '';
+    let said = '';
+    let answer = null;
+    const timer = setTimeout(() => { child.kill(); reject(new Error(`the stub answered no prompt within 30s:\n${said}`)); }, 30_000);
+    child.stdout.on('data', (chunk) => {
+      buffered += chunk;
+      let cut;
+      while ((cut = buffered.indexOf('\n')) >= 0) {
+        const frame = JSON.parse(buffered.slice(0, cut));
+        buffered = buffered.slice(cut + 1);
+        if (frame.id === 3 && answer === null) {
+          answer = frame;
+          child.stdin.end();
+        }
+      }
+    });
+    child.stderr.on('data', (chunk) => { said += chunk; });
+    child.on('close', () => {
+      clearTimeout(timer);
+      resolve({ answer, said });
+    });
+    for (const frame of [
+      { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: 1 } },
+      { jsonrpc: '2.0', id: 2, ...opening },
+      { jsonrpc: '2.0', id: 3, method: 'session/prompt', params: { sessionId: 'acp-session-1', prompt: [{ type: 'text', text: words }] } },
+    ]) child.stdin.write(`${JSON.stringify(frame)}\n`);
+  });
+}
+
+const git = (cwd, ...args) => execFileSync('git', ['-c', 'user.name=Kit Test', '-c', 'user.email=kit@example.invalid', ...args], {
+  cwd, encoding: 'utf8',
+}).trim();
+
+test("a set-up step's stub says what it showed through its connector and closes done, committing nothing; the person's not yet "
+  + 'reaches its next turn, which corrects the work with a commit and says a new set-up', async (t) => {
+  const at = folder('stub-set-up');
+  const stub = join(at, 'acp-agent.mjs');
+  writeFileSync(stub, ACP_STUB_AGENT);
+  const connector = join(at, 'connector.mjs');
+  writeFileSync(connector, STAND_IN_CONNECTOR);
+  const calls = join(at, 'calls.jsonl');
+  const tree = join(at, 'tree');
+  mkdirSync(tree);
+  git(tree, 'init', '-q');
+  writeFileSync(join(tree, 'README.md'), '# the tree\n');
+  git(tree, 'add', '-A');
+  git(tree, 'commit', '-q', '-m', 'the work of #q1');
+  const service = await standInService();
+  t.after(() => service.close());
+
+  const env = {
+    DAORIS_SERVICE_URL: service.url,
+    DAORIS_QUEST_ID: 'q2',
+    DAORIS_QUEST_TITLE: 'Show #q1 in `dev` for review',
+    DAORIS_QUEST_BODY: "Show the work of #q1 in `dev`, at https://dev.example.test/report, for the person's review.",
+  };
+  const servers = [{ name: 'daoris-knowledge', command: process.execPath, args: [connector], env: [{ name: 'CALLS', value: calls }] }];
+  const before = git(tree, 'rev-parse', 'HEAD');
+  const readCalls = () => readFileSync(calls, 'utf8').trim().split('\n').map((line) => JSON.parse(line));
+
+  const first = await stubTurn(stub, {
+    cwd: tree, env, words: 'This quest is a set-up step.',
+    opening: { method: 'session/new', params: { cwd: tree, mcpServers: servers } },
+  });
+
+  assert.equal(first.answer?.result?.stopReason, 'end_turn', first.said);
+  assert.deepEqual(service.asked.map((each) => `${each.path} ${each.body?.action}`),
+    ['/api/quests/q2/respond take', '/api/quests/q2/respond done'], first.said);
+  const [ready] = readCalls();
+  assert.equal(ready.name, 'review_ready');
+  assert.equal(ready.arguments.look, 'https://dev.example.test/report');
+  assert.ok(ready.arguments.shows.length > 0 && ready.arguments.shows.length <= 300, ready.arguments.shows);
+  assert.ok(ready.arguments.again.includes('https://dev.example.test/report'), ready.arguments.again);
+  assert.equal(git(tree, 'rev-parse', 'HEAD'), before, 'a set-up makes no commit of its own');
+
+  const words = 'the report still reads the old name';
+  const again = await stubTurn(stub, {
+    cwd: tree, env, words,
+    opening: { method: 'session/resume', params: { sessionId: 'acp-session-1', cwd: tree, mcpServers: servers } },
+  });
+
+  assert.equal(again.answer?.result?.stopReason, 'end_turn', again.said);
+  assert.match(again.said, new RegExp(`acp-agent: the set-up step heard not yet: ${words}`));
+  assert.equal(service.asked.length, 2, 'its quest is done and stays so: the resumed turn moves nothing');
+  assert.equal(git(tree, 'rev-list', '--count', `${before}..HEAD`), '1');
+  assert.match(git(tree, 'log', '-1', '--format=%s'), /^review: correct what the person said not yet to \(quest q2\)$/);
+  const [, readyAgain] = readCalls();
+  assert.equal(readyAgain?.name, 'review_ready');
+  assert.ok(readyAgain.arguments.shows.includes(words), readyAgain.arguments.shows);
 });

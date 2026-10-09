@@ -12526,3 +12526,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **WORKFLOW1b — drawn on the pages** (modules, web-shell; after a). A *Workflow* tab on a repository's and a workspace's page draws Current read-only: steps, participation, sources, limits, doors to Setup's rows; the glossary's words. Contract: §6.1–§6.2, §6.4. Proof: stories, vitest, `i18n:check`, `names:check --strict`, the look in both themes and 中文 at 1546 and 680 px.
 
 **Outcome** 2026-10-07: a *Workflow* tab on a repository's and a workspace's page draws Current read-only as a vertical flow: the start holds, each step with who takes part (a shape and a word, no status hue, D157 §6.2), who acts, what it is set to, its source, its runtime word and its limit, each edge saying what moves work on, *Your part* and the terminal twin; doors to the Setup row that sets each step; a workspace lists the repositories that set their own. Fed by the modules' `WORKFLOW_CURRENT`; absent where the page has no shell. Detail: D157's WORKFLOW1b note; commits d053add4…4c539e3e.
+
+
+## REVIEWENV1h — the family rehearsal phase (2026-10-09, D154)
+
+> - [ ] **REVIEWENV1h — the family rehearsal phase** (tools, examples; after c). An example declares a local environment. A stub chain says a set-up; its landing is refused until `quest review … reviewed`; *not yet* reaches the stub's next turn; a later commit holds again; a repository set to none lands at once. Contract: §3. Proof: `rehearse:family`'s new phase.
+
+**Outcome** 2026-10-07: phase 17e of `rehearse:family` proves D154's chain over the example family with no model: a local set-up step sits in the headless loop; a stub chain's set-up in a deployed environment is said through its connector (`review_ready`); `trees land` refuses with the gate's sentence until `quest review … reviewed`; *not yet* reaches the stub's next turn and a second set-up is posted; a later commit holds again; the landing record keeps the verdict; `review … none` lands at once. 425 checks. Found: SessionTrees.Config() ignores `DAORIS_DRIVER_CONFIG` (CONFIGSEAM1). Detail: D154's REVIEWENV1h note; commits e20f8d62…ae884155.
