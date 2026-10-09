@@ -246,6 +246,30 @@ describe('ConversationView', () => {
     expect(screen.getByRole('region', { name: 'conversation' }).className).not.toMatch(/max-w-/);
   });
 
+  /**
+   * ASKHIST1b: the person's words, as asked and as held for the next turn, and the agent's answer that says them again,
+   * break a word wider than the column inside it. A pasted URL is one word, and it ran past Ask Daoris's dock, which then
+   * scrolled sideways. The answer breaks only a word that would overflow (`break-word`), so a table keeps its columns and
+   * scrolls in its own box as before.
+   */
+  it('breaks a word wider than its column at the column’s edge, the person’s and the agent’s', () => {
+    const url = 'https://example.atlassian.net/browse/TK-2205?focusedCommentId=1234567&page=com.example.plugin.tabpanels%3Acomments';
+    const { container } = view([
+      ev({ kind: 'user', origin: 'person', text: `to complete this ${url}` }),
+      ev({ kind: 'message', text: `On it: ${url} is open.` }),
+      ev({ kind: 'turn', stopReason: 'end_turn' }),
+      ev({ kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: `and ${url}#comment-1` }),
+    ]);
+
+    expect(screen.getByRole('region', { name: 'conversation' })).toHaveClass('grid-cols-[minmax(0,1fr)]');
+    for (const words of [`to complete this ${url}`, `and ${url}#comment-1`]) {
+      expect(screen.getByText(words)).toHaveClass('whitespace-pre-wrap', 'wrap-anywhere');
+    }
+    const answer = container.querySelector('.markdown')!;
+    expect(answer.textContent).toContain(url);
+    expect(answer).toHaveClass('wrap-break-word');
+  });
+
   it('keeps a line the agent ended, and still makes a paragraph of a blank line', () => {
     const { container } = view([ev({
       kind: 'message', text: 'one\ntwo\nthree\n\nafter\n\n```\na\nb\n```',

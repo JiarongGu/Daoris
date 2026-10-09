@@ -23,10 +23,14 @@ import { CodeBlock } from './CodeBlock';
  * **A line the agent ended stays ended** (UX5 U4). Markdown makes a single newline a space, and an
  * agent's one-item-per-line answer drew as one paragraph on the window. The agent wrote for a
  * terminal, where a newline is a newline, as chat surfaces generally read it.
+ *
+ * **A word wider than its line breaks inside it** (ASKHIST1b): a URL the agent says again is one word, and it ran past Ask
+ * Daoris's dock. `break-word` rather than `anywhere`, since it leaves each word's width in what a table measures, so a
+ * table keeps its columns and scrolls in its own box as before.
  */
 export function Markdown({ text }: { text: string }) {
   return (
-    <div className="markdown text-body leading-relaxed text-ink [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+    <div className="markdown text-body leading-relaxed text-ink wrap-break-word [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
       <ReactMarkdown remarkPlugins={[remarkGfm, keepLineBreaks]} components={COMPONENTS}>
         {text}
       </ReactMarkdown>

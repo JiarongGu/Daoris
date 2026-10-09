@@ -651,6 +651,12 @@ public sealed record TraceBranch(string Branch, string Tip, DateTimeOffset At)
     /// or their skip; null where no review was asked, and for a landing recorded before it was kept.
     /// </summary>
     public LandingReview? Review { get; init; }
+
+    /// <summary>
+    /// The second opinion that let it land (XAGENT1f, the second-agent design §8.6): settled, or the person's answer, or why it
+    /// landed with none; null where none was asked, and for a landing recorded before it was kept.
+    /// </summary>
+    public LandingOpinion? Opinion { get; init; }
 }
 
 /// <summary>What stood when a driven session on a quest started, by the moments the stores keep (D143 point 3).</summary>
@@ -1158,6 +1164,7 @@ internal static partial class TraceChains
         AcceptedBy = landing.AcceptedBy,
         Rule = landing.Rule is { } rule ? new TraceRule(rule.Plugin, rule.AutoAccept, rule.Source) : null,
         Review = landing.Review,
+        Opinion = landing.Opinion,
     };
 
     /// <summary>

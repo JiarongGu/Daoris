@@ -190,7 +190,7 @@ public static class PluginPage
     /// <summary>The rules in <c>driver.json</c> that name the plugin, a repository's before a workspace's, and whether it can land work here.</summary>
     private static PageLanding Landing(string home, string plugin, PluginCatalog catalog)
     {
-        var config = DriverConfig.Load(Path.Combine(home, "driver.json"));
+        var config = DriverConfig.Load(DriverConfig.ResolvePath(home));
         IEnumerable<PageRule> Naming(IReadOnlyDictionary<string, LandingRule> rules, string scope) => rules
             .Where(pair => string.Equals(pair.Value.Plugin, plugin, StringComparison.OrdinalIgnoreCase))
             .OrderBy(pair => pair.Key, StringComparer.Ordinal)

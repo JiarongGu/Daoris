@@ -54,7 +54,9 @@ export function AskHistory({
   const searching = search.trim().length > 0;
 
   return (
-    <section aria-label={t('help.history.title')} className="grid gap-2">
+    // `minmax(0,1fr)`, here and on the list (ASKHIST1b): a grid's implicit column is `auto`, which grows to its widest
+    // child's min-content, and a one-line title's is the whole line. A pasted URL ran the search and every row past the dock.
+    <section aria-label={t('help.history.title')} className="grid grid-cols-[minmax(0,1fr)] gap-2">
       <p className="m-0 text-meta text-ink-faint">{t('help.history.kept')}</p>
       {refusal && <Refused sentence={refusal} />}
       <label className="flex items-center gap-1.5 rounded-control border border-line-strong bg-raised px-2 py-1 text-ink-faint focus-within:border-accent">
@@ -72,13 +74,13 @@ export function AskHistory({
       </label>
 
       {rows.length === 0 && !loading && (
-        <p className="m-0 text-small text-ink-faint">
+        <p className="m-0 text-small text-ink-faint wrap-anywhere">
           {searching ? t('help.history.none', { words: search.trim() }) : t('help.history.empty')}
         </p>
       )}
 
       {rows.length > 0 && (
-        <ul aria-label={t('help.history.title')} className="m-0 grid list-none gap-0.5 p-0">
+        <ul aria-label={t('help.history.title')} className="m-0 grid list-none grid-cols-[minmax(0,1fr)] gap-0.5 p-0">
           {rows.map((row) => (
             <HistoryRow
               key={row.session}
@@ -129,11 +131,13 @@ function HistoryRow({ row, shown, busy, asking, onAsk, onOpen, onRename, onPin, 
   return (
     <li className="group relative">
       <ListRowDoor chosen={shown} onPress={() => onOpen(row.session)}>
+        {/* The title is one line, whole in its tip and in the row's name; what it was about and where a search found it
+            take two lines, broken inside a word only where one will not fit, as the rail's found words do (ASKHIST1b). */}
         <span title={row.title} className="block truncate pr-6 text-body text-ink">{row.title}</span>
         <span className="block truncate text-meta text-ink-faint">{marks.join(' · ')}</span>
-        {row.about && <span className="block truncate text-small text-ink-soft">{row.about}</span>}
+        {row.about && <span className="line-clamp-2 wrap-anywhere text-small text-ink-soft">{row.about}</span>}
         {row.found && row.found !== row.title && (
-          <span className="block truncate text-small text-ink-faint">
+          <span className="line-clamp-2 wrap-anywhere text-small text-ink-faint">
             <Inline text={row.found} />
           </span>
         )}
@@ -171,7 +175,8 @@ function HistoryRow({ row, shown, busy, asking, onAsk, onOpen, onRename, onPin, 
         <InlineConfirm
           className="mx-2.5 my-1"
           label={t('help.history.deleteLabel', { title: row.title })}
-          says={t('help.history.deleteSays', { title: row.title })}
+          // The title is said whole, so a word too long for the row breaks inside it rather than running past the dock.
+          says={<span className="wrap-anywhere">{t('help.history.deleteSays', { title: row.title })}</span>}
           meanIt={t('help.history.deleteMeanIt')}
           busy={busy}
           onConfirm={(answered) => onDelete(row.session, answered)}
@@ -227,7 +232,8 @@ function RenameHelp({ row, onSave, onClose }: {
       <Button type="submit" variant="primary" disabled={pending || unchanged}>{t('help.history.save')}</Button>
       <Button variant="ghost" disabled={pending} onClick={onClose}>{t('common.cancel')}</Button>
       {refusal && <Refused sentence={refusal} />}
-      <span className="basis-full text-meta text-ink-faint [overflow-wrap:anywhere]">
+      {/* `min-w-0`: a flex item is otherwise as wide as its longest word, and a code word breaks only inside its line. */}
+      <span className="min-w-0 basis-full text-meta text-ink-faint wrap-anywhere">
         <Inline text={t('help.command', { command: kept ? `daoris-driver help rename ${row.session} "${kept}"` : `daoris-driver help rename ${row.session} --clear` })} />
       </span>
     </form>

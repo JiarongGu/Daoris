@@ -294,8 +294,9 @@ function AskView({ ask }: { ask: Ask }) {
           </button>
         )}
       </div>
+      {/* A word wider than the column, a pasted URL, breaks inside it rather than scrolling the region sideways (ASKHIST1b). */}
       {ask.text && (
-        <p className={cn('m-0 mt-0.5 whitespace-pre-wrap text-body text-ink', !open && 'line-clamp-2')}>{ask.text}</p>
+        <p className={cn('m-0 mt-0.5 whitespace-pre-wrap wrap-anywhere text-body text-ink', !open && 'line-clamp-2')}>{ask.text}</p>
       )}
       <Attached files={ask.files} />
       {/* What the target was composed of, section by section (CONTEXT1), beside the words it composed. */}
@@ -353,7 +354,7 @@ function HeldAsk({ block }: { block: Block }) {
   return (
     <div className="rounded-card border border-dashed border-line-strong px-3 py-2">
       <span className="text-meta text-ink-faint">{t('work.conversation.you')}</span>
-      {block.text && <p className="m-0 mt-0.5 whitespace-pre-wrap text-body text-ink-soft">{block.text}</p>}
+      {block.text && <p className="m-0 mt-0.5 whitespace-pre-wrap wrap-anywhere text-body text-ink-soft">{block.text}</p>}
       <Attached files={block.files} />
       {when && <p className="m-0 mt-1 text-meta text-ink-faint">{when}</p>}
     </div>

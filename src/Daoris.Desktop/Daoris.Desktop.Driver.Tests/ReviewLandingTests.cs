@@ -220,14 +220,17 @@ public sealed class ReviewLandingTests : IDisposable
         public Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<QuestView>>([.. Quests.Values]);
 
         public Task<AskView?> AskAsync(string id, CancellationToken ct) => Task.FromResult<AskView?>(null);
+
+        // The second opinion's gate reads the host's opinions (XAGENT1f): no rule names a reviewer here, so none is asked.
+        public Task<OpinionView?> OpinionAsync(string id, CancellationToken ct) => Task.FromResult<OpinionView?>(null);
     }
 
     /// <summary>The press, as a door makes it: the gate read for the tree, and handed to the landing.</summary>
     private async Task<TreeLanding> PressAsync(string tree)
     {
         var trees = new SessionTrees(_home);
-        var review = await trees.ReviewAsync(tree, "q1", _world);
-        return await trees.LandAsync(tree, new LandingSubject("s1", "q1", "Fix the gap"), review: review);
+        var gate = await trees.GateAsync(tree, "q1", _world, "s1");
+        return await trees.LandAsync(tree, new LandingSubject("s1", "q1", "Fix the gap"), gate: gate);
     }
 
     private async Task<IReadOnlyList<string>> LookAsync()
