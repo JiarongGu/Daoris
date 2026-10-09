@@ -1,5 +1,6 @@
 import { type RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { cn } from '../lib/cn';
 import { useDebounced } from '../lib/useDebounced';
 import { useHarnesses, useSessionEvents, useSessionSearch } from '../shell';
 import { Icon } from '../ui';
@@ -11,6 +12,30 @@ import { useFollowTail } from './followTail';
 
 /** How many blocks a conversation holds before it is offered a way through (SESS1 S9). */
 const LONG = 20;
+
+/** Whether the reader is at the conversation's tail, and the way there: what a host that draws the press is told. */
+export type TailState = { atTail: boolean; toTail: () => void };
+
+/**
+ * *Back to bottom* as a press of its own (ASKHIST1c): 28 px, for a strip its host keeps outside the transcript, so it takes
+ * its own room and never covers the words it leads back to.
+ */
+export function BackToBottom({ onPress, className }: { onPress: () => void; className?: string }) {
+  const { t } = useTranslation();
+  return (
+    <button
+      type="button"
+      onClick={onPress}
+      className={cn(
+        'flex h-7 cursor-pointer items-center gap-1.5 rounded-control border border-line-strong bg-raised px-2.5 text-small text-ink-soft hover:text-ink',
+        className,
+      )}
+    >
+      <Icon name="toBottom" size={13} />
+      {t('work.conversation.bottom')}
+    </button>
+  );
+}
 
 /**
  * The attended session's conversation (D76, CONV2): the organism that holds its record and its
@@ -28,8 +53,13 @@ const LONG = 20;
  * Desktop-only for the console's reason (D47 §4): the record arrives over the bridge.
  */
 export function SessionConversation({
-  session, adapter, chat = false, tree, live, turnRunning, scroller, onUsage, onSession, onStartFrom, reasons, cooling,
+  session, adapter, chat = false, tree, live, turnRunning, scroller, onUsage, onSession, onStartFrom, reasons, cooling, onTail,
 }: {
+  /**
+   * Told whether the reader is at the tail and how to go there (ASKHIST1c), where the host draws *Back to bottom* in a strip
+   * of its own outside the transcript (`BackToBottom`). Absent, the press is drawn at the transcript's foot, as before.
+   */
+  onTail?: (tail: TailState) => void;
   /** The account the person's words wait for cools, and *Go on in a new session* (MSG1g2) — `ConversationView`'s. */
   cooling?: Cooling;
   /** Attend the session the person's words went to (MSG1f); absent, it is named as text. */
@@ -56,7 +86,6 @@ export function SessionConversation({
    */
   onUsage?: (session: string, usage?: Usage) => void;
 }) {
-  const { t } = useTranslation();
   const { events, opening, firstFailure, earlier, loaded, loadEarlier } = useSessionEvents(session);
   // The door's own word on what an empty record means — undefined until the roster answers, which reads
   // as the console sentence: it claims least.
@@ -79,6 +108,15 @@ export function SessionConversation({
   const last = events[events.length - 1];
   // An ended session opens at its head, which says how it ended (SESS2 H1); a live one follows its tail.
   const { atTail, toTail } = useFollowTail(scroller, `${last?.seq ?? 0}:${turns.length}`, `${session}:${loaded}`, !live);
+  // Told on a change only, as the usage is; and at the tail again once this conversation is gone, so no host keeps a press
+  // for a transcript it no longer shows.
+  const tell = useRef(onTail);
+  tell.current = onTail;
+  const away = !atTail && turns.length > 0;
+  useEffect(() => {
+    tell.current?.({ atTail: !away, toTail: () => toTail(true) });
+  }, [away, toTail]);
+  useEffect(() => () => tell.current?.({ atTail: true, toTail: () => {} }), []);
 
   // The way through a long run (SESS1 S9).
   const long = earlier || turns.reduce((count, turn) => count + turn.items.length, 0) > LONG;
@@ -165,15 +203,10 @@ export function SessionConversation({
           />
         ) : undefined}
       />
-      {!atTail && turns.length > 0 && (
-        <button
-          type="button"
-          onClick={() => toTail(true)}
-          className="sticky bottom-2 ml-auto flex cursor-pointer items-center gap-1.5 rounded-control border border-line-strong bg-overlay px-2.5 py-1 text-small text-ink-soft shadow-sm hover:text-ink"
-        >
-          <Icon name="toBottom" size={13} />
-          {t('work.conversation.bottom')}
-        </button>
+      {/* Where no host draws it: at the transcript's foot, held in view as it scrolls (Sessions' centre, a detached window,
+          the monitor's tile). */}
+      {away && !onTail && (
+        <BackToBottom onPress={() => toTail(true)} className="sticky bottom-2 ml-auto bg-overlay shadow-sm" />
       )}
     </>
   );
