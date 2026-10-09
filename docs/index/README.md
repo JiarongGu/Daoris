@@ -103,7 +103,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/KnowledgeService.cs` | 53 | 1055 |
 | `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 101 | 1899 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 146 | 2645 |
-| `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 64 | 1230 |
+| `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 65 | 1256 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 66 | 1179 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 52 | 913 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 93 | 1657 |
@@ -115,7 +115,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.cs` | 48 | 863 |
 | `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 82 | 1691 |
 | `src/Daoris.Service/Daoris.Service.Tests/ReviewStepTests.cs` | 41 | 734 |
-| `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 67 | 1385 |
+| `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 70 | 1428 |
 | `src/Daoris.Service/README.md` | 74 | 719 |
 
 ### CLI (`cli`)
@@ -130,7 +130,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 41 | 786 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 46 | 820 |
 | `src/Daoris.Cli/test/driverconfig.test.ts` | 103 | 1927 |
-| `src/Daoris.Cli/test/merge-branch.test.ts` | 179 | 2780 |
+| `src/Daoris.Cli/test/merge-branch.test.ts` | 179 | 2782 |
 | `src/Daoris.Cli/test/rotation-use.test.ts` | 44 | 550 |
 | `src/Daoris.Cli/test/setup-kit.test.ts` | 52 | 955 |
 | `src/Daoris.Cli/test/toolchain.test.ts` | 94 | 1834 |
@@ -145,7 +145,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 50 | 1038 |
 | `tools/family-rehearsal.mjs` | 337 | 5941 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 129 | 2362 |
+| `tools/merge-branch.mjs` | 129 | 2368 |
 | `tools/orient-index.mjs` | 66 | 1435 |
 | `tools/usage-report.mjs` | 57 | 1254 |
 
