@@ -81,7 +81,7 @@ public sealed class OpinionPresses(string home, ServiceClient service)
         var (work, refused) = await WorkAsync(session, ct).ConfigureAwait(false);
         if (work is null) return new(false, refused!);
 
-        var config = DriverConfig.Load(Path.Combine(home, "driver.json"));
+        var config = DriverConfig.Load(DriverConfig.ResolvePath(home));
         if (OpinionRules.Resolve(config, work.Repository, work.Workspace) is not { Rule: { IsNone: false } rule })
         {
             return new(false, $"no second opinion is asked for `{work.Repository}`: no rule here names a reviewer. `daoris driver opinion "
