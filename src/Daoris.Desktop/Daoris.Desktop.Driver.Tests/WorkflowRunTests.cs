@@ -24,6 +24,11 @@ public sealed class WorkflowRunTests
 
     private const string OpinionRule = """{"opinions":{"engine":{"reviewers":["codex-acp"]}}}""";
 
+    private const string RequiredOpinionRule = """{"opinions":{"engine":{"reviewers":["codex-acp"],"required":true}}}""";
+
+    private const string OpinionAndLookRule =
+        """{"opinions":{"engine":{"reviewers":["codex-acp"]}},"reviews":{"engine":{"required":true,"environments":[{"name":"local","kind":"local","procedure":"README.md","address":"http://localhost:4200"}]}}}""";
+
     private static readonly IReadOnlyList<WorkflowPlugin> Plugins = [new("example.pull-request", [HookPoints.Land, HookPoints.State])];
 
     /// <summary>One row of the table: the rules, the records, and where each step stands, then where the run stands.</summary>
@@ -231,36 +236,79 @@ public sealed class WorkflowRunTests
             Accepted = new Dictionary<string, DateTimeOffset> { ["s1"] = T },
         }, [("look", "done", "reviewed"), ("landing", "done", "merge")], null),
 
-        // The second opinion, as main holds it: declared, and nothing holds on it until XAGENT1f.
-        ["a declared opinion holds nothing"] = new(OpinionRule, facts => facts with { Quests = [Quest("q1", "Done")], Sessions = [Session("s1", "q1", "completed")] },
-            [("work", "done", "finished"), ("opinion", "declared", "declared"), ("landing", "waiting-on-you", "accept")], "landing"),
-        ["an opinion being read is the reviewer working"] = new(OpinionRule, facts => facts with
+        // The second opinion: its gate's states (XAGENT1f), the run standing at it while the gate holds.
+        ["an opinion is not reached while the work runs"] = new(OpinionRule, facts => facts with
         {
-            Quests = [Quest("q1", "Done")], Sessions = [Session("s1", "q1", "completed")], Opinions = [Opinion(OpinionViews.Reading)],
-        }, [("opinion", "working", "agent"), ("landing", "waiting-on-you", "accept")], "landing"),
-        ["findings handed and unanswered wait on the working session"] = new(OpinionRule, facts => facts with
+            Quests = [Quest("q1", "Taken")], Sessions = [Session("s1", "q1", "working")], Opinion = OpinionAt(OpinionGateStates.WaitsChain),
+        }, [("work", "working", "agent"), ("opinion", "not-reached", ""), ("landing", "not-reached", "")], "work"),
+        ["an opinion not asked yet is asked at the driver's next look"] = new(OpinionRule, facts => Done(facts) with { Opinion = OpinionAt(OpinionGateStates.NotAsked) },
+            [("work", "done", "finished"), ("opinion", "working", "not-asked"), ("landing", "not-reached", "")], "opinion"),
+        ["an opinion being read is the reviewer working"] = new(OpinionRule, facts => Done(facts) with { Opinion = OpinionAt(OpinionGateStates.Reading) },
+            [("opinion", "working", "reading"), ("landing", "not-reached", "")], "opinion"),
+        ["findings with the working session wait on its agent"] = new(OpinionRule, facts => Done(facts) with { Opinion = OpinionAt(OpinionGateStates.WithSession) },
+            [("opinion", "waiting-on-agent", "with-session"), ("landing", "not-reached", "")], "opinion"),
+        ["the commits made in answer read again are the reviewer working"] = new(OpinionRule, facts => Done(facts) with { Opinion = OpinionAt(OpinionGateStates.ReadAgain) },
+            [("opinion", "working", "read-again")], "opinion"),
+        ["a dispute waits on you"] = new(OpinionRule, facts => Done(facts) with
         {
-            Quests = [Quest("q1", "Done")], Sessions = [Session("s1", "q1", "completed")],
-            Opinions = [Opinion(OpinionViews.GivenState) with { Findings = [Finding(1), Finding(2), Finding(3)], HandedTo = "s1", Answers = [new(2, "fixed")] }],
-        }, [("opinion", "waiting-on-agent", "answering")], "landing"),
-        ["an opinion given and answered is done"] = new(OpinionRule, facts => facts with
+            Opinion = OpinionAt(OpinionGateStates.Disputed) with { Disputes = new OpinionDisputes([1, 2], []) },
+        }, [("opinion", "waiting-on-you", "disputed"), ("landing", "not-reached", "")], "opinion"),
+        ["commits no other agent read wait on you"] = new(OpinionRule, facts => Done(facts) with { Opinion = OpinionAt(OpinionGateStates.CommitsSince) with { Since = 2 } },
+            [("opinion", "waiting-on-you", "commits-since"), ("landing", "not-reached", "")], "opinion"),
+        ["an opinion the rule requires and none can be had waits on you"] = new(RequiredOpinionRule, facts => Done(facts) with
         {
-            Quests = [Quest("q1", "Done")], Sessions = [Session("s1", "q1", "completed")],
-            Opinions = [Opinion(OpinionViews.GivenState) with { Findings = [Finding(1)], HandedTo = "s1", Answers = [new(1, "rejected")] }],
-        }, [("opinion", "done", "given")], "landing"),
-        ["a pass that ended without an opinion failed"] = new(OpinionRule, facts => facts with
+            Opinion = OpinionAt(OpinionGateStates.Unavailable, required: true) with { Code = "no-reviewer" },
+        }, [("opinion", "waiting-on-you", "unavailable"), ("landing", "not-reached", "")], "opinion"),
+        ["an opinion none can be had of, not required, is passed over"] = new(OpinionRule, facts => Done(facts) with
         {
-            Quests = [Quest("q1", "Done")], Sessions = [Session("s1", "q1", "completed")], Opinions = [Opinion(OpinionViews.Failed) with { Why = "out-of-time" }],
-        }, [("opinion", "failed", "failed")], "landing"),
-        ["opinions the host did not answer are not known"] = new(OpinionRule, facts => facts with
+            Opinion = OpinionAt(OpinionGateStates.Unavailable) with { Code = "no-reviewer" },
+        }, [("opinion", "skipped", "unavailable"), ("landing", "waiting-on-you", "accept")], "landing"),
+        ["a settled opinion lets the landing go"] = new(OpinionRule, facts => Done(facts) with { Opinion = OpinionAt(OpinionGateStates.Settled) },
+            [("opinion", "done", "settled"), ("landing", "waiting-on-you", "accept")], "landing"),
+        ["your go on anyway lets the landing go"] = new(OpinionRule, facts => Done(facts) with
         {
-            Quests = [Quest("q1", "Done")], Sessions = [Session("s1", "q1", "completed")], Opinions = null, OpinionsUnread = "refused",
-        }, [("opinion", "not-known", "unread")], "landing"),
-        ["an opinion on another session's work is not this run's"] = new("{}", facts => facts with
+            Opinion = OpinionAt(OpinionGateStates.Anyway) with { Person = new OpinionPersonWord(OpinionPersonSaid.Anyway, Commit, T) { Words = "a typo" } },
+        }, [("opinion", "done", "anyway"), ("landing", "waiting-on-you", "accept")], "landing"),
+        ["your own look lets the landing go"] = new(OpinionRule, facts => Done(facts) with
         {
-            Quests = [Quest("q1", "Done")], Sessions = [Session("s1", "q1", "completed")], Opinions = [Opinion(OpinionViews.Reading) with { Working = "s9" }],
-        }, [("work", "done", "finished"), ("landing", "waiting-on-you", "accept")], "landing"),
+            Opinion = OpinionAt(OpinionGateStates.Myself) with { Person = new OpinionPersonWord(OpinionPersonSaid.Myself, Commit, T) },
+        }, [("opinion", "done", "myself")], "landing"),
+        ["a press that answered what it showed lets the landing go"] = new(OpinionRule, facts => Done(facts) with
+        {
+            Opinion = OpinionAt(OpinionGateStates.Answered) with { Person = new OpinionPersonWord(OpinionPersonSaid.Press, Commit, T) },
+        }, [("opinion", "done", "answered")], "landing"),
+        ["a gate that could not be read holds the run, not known"] = new(OpinionRule, facts => Done(facts) with
+        {
+            Opinion = OpinionAt(OpinionGateStates.Unread) with { Problem = "the service did not answer" },
+        }, [("opinion", "not-known", "unread"), ("landing", "not-reached", "")], "opinion"),
+        ["a gate with no tree to read it in is not known"] = new(OpinionRule, facts => Done(facts) with { Opinion = null },
+            [("opinion", "not-known", "unread")], "opinion"),
+        ["a rule that reads only before next steps asks nothing of the landing"] = new(OpinionRule, facts => Done(facts) with { Opinion = OpinionAt(OpinionGateStates.None) },
+            [("opinion", "skipped", "none"), ("landing", "waiting-on-you", "accept")], "landing"),
+        ["no opinion step where no rule stands"] = new("{}", facts => Done(facts) with { Opinion = OpinionAt(OpinionGateStates.Reading) },
+            [("work", "done", "finished"), ("landing", "waiting-on-you", "accept")], "landing"),
+        ["a landing done is what the opinion let go, as its record keeps it"] = new(OpinionRule, facts => Done(facts) with
+        {
+            Opinion = OpinionAt(OpinionGateStates.Unread),
+            Accepted = new Dictionary<string, DateTimeOffset> { ["s1"] = T },
+        }, [("opinion", "done", "landed"), ("landing", "done", "merge")], null),
+        ["a branch's landing record says the opinion that let it go"] = new(OpinionRule, facts => Done(facts) with
+        {
+            Landings = [Landed("s1") with { Opinion = new LandingOpinion(OpinionGateStates.Anyway) { Words = "a typo" } }],
+        }, [("opinion", "done", "anyway"), ("landing", "done", "branch")], null),
+        ["the look waits while an agent is at work on the opinion"] = new(OpinionAndLookRule, facts => Done(facts) with
+        {
+            Review = Gate(ReviewStates.NotShown), Opinion = OpinionAt(OpinionGateStates.Reading),
+        }, [("opinion", "working", "reading"), ("look", "not-reached", ""), ("landing", "not-reached", "")], "opinion"),
+        ["the look goes on beside a dispute, whose Reviewed answers it"] = new(OpinionAndLookRule, facts => Done(facts) with
+        {
+            Review = Gate(ReviewStates.NotShown), Opinion = OpinionAt(OpinionGateStates.Disputed) with { Disputes = new OpinionDisputes([1], []) },
+        }, [("opinion", "waiting-on-you", "disputed"), ("look", "waiting-on-you", "not-shown"), ("landing", "not-reached", "")], "opinion"),
     };
+
+    /// <summary>The work done, its one quest closed and its session completed.</summary>
+    private static WorkflowRunFacts Done(WorkflowRunFacts facts) =>
+        facts with { Quests = [Quest("q1", "Done")], Sessions = [Session("s1", "q1", "completed")] };
 
     public static TheoryData<string> RowNames() => [.. Rows.Keys];
 
@@ -342,6 +390,30 @@ public sealed class WorkflowRunTests
         Assert.Equal("s2", run.Session);
     }
 
+    /// <summary>
+    /// The opinion's step says the gate's facts its words and its door are made of: who reads it and in which session, how many
+    /// findings are with the working session, how many are disputed or how many commits nobody read, and the person's words.
+    /// </summary>
+    [Fact]
+    public void The_opinion_s_step_says_the_gate_s_facts()
+    {
+        var current = WorkflowCurrent.Derive(DriverConfig.Parse(OpinionRule), "engine", "aurora", []);
+        WorkflowRunStep Opinion(OpinionGateState gate) =>
+            WorkflowRuns.Derive(Done(new WorkflowRunFacts("engine", current)) with { Opinion = gate }, "aurora").Steps.Single(step => step.Step.Kind == WorkflowKinds.Opinion);
+
+        var reading = Opinion(OpinionAt(OpinionGateStates.Reading));
+        Assert.Equal(("r1", "Codex (OpenAI)", WorkflowRuntime.Partial), (reading.Session, reading.Agent, reading.Step.Runtime));
+        var with = Opinion(OpinionAt(OpinionGateStates.WithSession));
+        Assert.Equal(("s1", 3), (with.Session, with.Count));
+        var disputed = Opinion(OpinionAt(OpinionGateStates.Disputed) with { Disputes = new OpinionDisputes([1], [4]) });
+        Assert.Equal(("s1", 2), (disputed.Session, disputed.Count));
+        Assert.Equal(3, Opinion(OpinionAt(OpinionGateStates.CommitsSince) with { Since = 3 }).Count);
+        var anyway = Opinion(OpinionAt(OpinionGateStates.Anyway) with { Person = new OpinionPersonWord(OpinionPersonSaid.Anyway, Commit, T) { Words = "a typo" } });
+        Assert.Equal(("a typo", OpinionPersonSaid.Anyway, T), (anyway.Words, anyway.Code, anyway.At));
+        Assert.Equal("no-reviewer", Opinion(OpinionAt(OpinionGateStates.Unavailable, required: true) with { Code = "no-reviewer" }).Code);
+        Assert.Equal("q2", Opinion(OpinionAt(OpinionGateStates.WaitsChain) with { Later = "q2" }).Quest);
+    }
+
     [Fact]
     public void A_go_ahead_names_its_number_its_session_and_its_act()
     {
@@ -372,7 +444,10 @@ public sealed class WorkflowRunTests
     public void Every_state_and_detail_the_table_holds_is_a_known_code()
     {
         var states = typeof(WorkflowRunStates).GetFields().Select(field => (string)field.GetValue(null)!).ToHashSet();
-        var details = typeof(WorkflowRunDetails).GetFields().Select(field => (string)field.GetValue(null)!).Append("").ToHashSet();
+        // The opinion's details are its gate's own states (XAGENT1f).
+        var details = typeof(WorkflowRunDetails).GetFields().Concat(typeof(OpinionGateStates).GetFields())
+            .Where(field => field.IsLiteral)
+            .Select(field => (string)field.GetValue(null)!).Append("").ToHashSet();
 
         foreach (var (name, row) in Rows)
         {
@@ -453,4 +528,22 @@ public sealed class WorkflowRunTests
         };
 
     private static OpinionFindingView Finding(int number) => new(number, "should", "src/app.ts:4", "a claim", "", "", "sure");
+
+    /// <summary>
+    /// The second opinion's gate in a state for session <c>s1</c>'s work, as <see cref="OpinionGate.JudgeAsync"/> answers it: the
+    /// repository's rule reading before landing, required where said, and Codex's pass where one is read.
+    /// </summary>
+    private static OpinionGateState OpinionAt(string state, bool required = false) => new(state, "engine")
+    {
+        Rule = new ResolvedOpinion(new OpinionRule(["codex-acp"], [OpinionRules.Landing], Required: required), OpinionSource.Repository),
+        Session = "s1",
+        Tip = Commit,
+        Opinion = state is OpinionGateStates.None or OpinionGateStates.WaitsChain or OpinionGateStates.NotAsked or OpinionGateStates.Unread
+            ? null
+            : Opinion(state == OpinionGateStates.Reading ? OpinionViews.Reading : OpinionViews.GivenState) with
+            {
+                Findings = state == OpinionGateStates.Reading ? null : [Finding(1), Finding(2), Finding(3)],
+                HandedTo = "s1",
+            },
+    };
 }

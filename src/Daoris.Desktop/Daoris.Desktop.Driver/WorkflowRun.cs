@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// Where a run's step stands (WORKFLOW1c; the workflow design §5.2), as a code a page words and a test holds. The design's table,
-/// less what this build cannot reach yet (a service's wait comes with a check, WORKFLOW1k), and one more: <see cref="Declared"/>.
+/// less what this build cannot reach yet: a service's wait comes with a check (WORKFLOW1k).
 /// </summary>
 public static class WorkflowRunStates
 {
@@ -35,14 +35,8 @@ public static class WorkflowRunStates
     /// <summary>Ended without going on: the person's stop, a decline, a pull request abandoned, a tree discarded.</summary>
     public const string Stopped = "stopped";
 
-    /// <summary>
-    /// A step its rule declares and nothing acts on yet (design §3.9): never drawn as working, waiting or done, and it holds nothing.
-    /// The second opinion's, until XAGENT1f's gate reads it.
-    /// </summary>
-    public const string Declared = "declared";
-
     /// <summary>The states that let the run go past a step: what <see cref="WorkflowRun.At"/> passes over.</summary>
-    public static bool Settled(string state) => state is Done or Skipped or Declared;
+    public static bool Settled(string state) => state is Done or Skipped;
 }
 
 /// <summary>
@@ -88,15 +82,9 @@ public static class WorkflowRunDetails
     /// <summary>Every quest of it here is done, and none is held.</summary>
     public const string Finished = "finished";
 
-    // The second opinion.
-    /// <summary>Declared only: nothing reads it yet.</summary>
-    public const string DeclaredOnly = "declared";
-
-    /// <summary>The working session is answering its findings.</summary>
-    public const string Answering = "answering";
-
-    /// <summary>The reviewer said its opinion, and every finding handed was answered.</summary>
-    public const string Given = "given";
+    // The second opinion: its details are its gate's own states (OpinionGateStates, XAGENT1f), and one more.
+    /// <summary>The work landed, and its landing record keeps no word of the opinion that let it go.</summary>
+    public const string Landed = "landed";
 
     // The look (the review's states, ReviewStates, where they stand at a step).
     public const string NotShown = "not-shown";
@@ -182,11 +170,11 @@ public sealed record WorkflowRunFacts(string Repository, CurrentWorkflow Current
     /// <summary>The review's gate for the chain's work here (<see cref="ReviewGate"/>), or null where it was not read.</summary>
     public ReviewGateState? Review { get; init; }
 
-    /// <summary>The second opinions on this repository's work (D155), oldest first, or null where the host did not answer.</summary>
-    public IReadOnlyList<OpinionView>? Opinions { get; init; } = [];
-
-    /// <summary>Why the opinions could not be read, where they could not.</summary>
-    public string? OpinionsUnread { get; init; }
+    /// <summary>
+    /// The second opinion's gate for the chain's work here (XAGENT1f, <see cref="OpinionGate"/>), as every landing door reads it, or
+    /// null where it was not read: no tree of the work stands here to read it in.
+    /// </summary>
+    public OpinionGateState? Opinion { get; init; }
 
     /// <summary>This machine's landings that name a session of the run, standing or traces (D102, D113).</summary>
     public IReadOnlyList<LandedBranch> Landings { get; init; } = [];
@@ -262,11 +250,8 @@ public sealed record WorkflowRun(string Repository, string Workspace, CurrentWor
     /// <summary>The run's newest session: the one its doors attend.</summary>
     public string? Session { get; init; }
 
-    /// <summary>
-    /// The step the run stands at: the first that is not settled and that something holds on, or null where every step is
-    /// settled, which is the run finished. A step nothing holds on, a declared one, is passed over (design §3.9).
-    /// </summary>
-    public string? At => Steps.FirstOrDefault(step => !WorkflowRunStates.Settled(step.State) && step.Step.Runtime != WorkflowRuntime.Declared)?.Step.Id;
+    /// <summary>The step the run stands at: the first that is not settled, or null where every step is, which is the run finished.</summary>
+    public string? At => Steps.FirstOrDefault(step => !WorkflowRunStates.Settled(step.State))?.Step.Id;
 }
 
 /// <summary>
@@ -276,16 +261,17 @@ public sealed record WorkflowRun(string Repository, string Workspace, CurrentWor
 /// <remarks>
 /// <para><b>Derived, never stored, never inferred from the conversation</b> (design §5.1, §12.1; D55's <i>a timeline is
 /// derived</i>): each step reads the store that keeps it. The work its quests and their sessions, and the go-aheads on its ask;
-/// the second opinion the host's opinions; the look the review's gate (<see cref="ReviewGate"/>); the landing this machine's
-/// landing record, the acceptance its session's conversation keeps, and the due list; the pull request the landing's kept
-/// answer (D148). What only a run would know (a named workflow's version, a check's answers) is WORKFLOW1e's and later.</para>
+/// the second opinion its gate (<see cref="OpinionGate"/>); the look the review's gate (<see cref="ReviewGate"/>); the landing
+/// this machine's landing record, the acceptance its session's conversation keeps, and the due list; the pull request the
+/// landing's kept answer (D148). What only a run would know (a named workflow's version, a check's answers) is WORKFLOW1e's and
+/// later.</para>
 ///
 /// <para><b>A quest done is not a run done</b> (design §5.2): the work finished, landed, the pull request open and merged are
 /// four steps apart, so a closed quest whose work waits on a merge reads as waiting.</para>
 ///
-/// <para><b>The second opinion is read as main holds it.</b> Its pass and its delivery are built, and nothing holds a landing on
-/// it until XAGENT1f: so a reading on the record is said as it stands, and with none the step is <c>declared</c>, which holds
-/// nothing. Once XAGENT1f's gate reads the rule, the step reads the gate's state (design §8.5 of the second-agent design).</para>
+/// <para><b>One gate, in its order</b> (D155 §7, the second-agent design §7): the second opinion, then the person's look, then the
+/// landing. The run stands at the opinion while its gate holds; the look waits while an agent is still at work on the opinion,
+/// as its set-up step sits then (XAGENT1f); and nothing lands past either.</para>
 /// </remarks>
 public static class WorkflowRuns
 {
@@ -307,15 +293,26 @@ public static class WorkflowRuns
         steps.Add(workStep);
         var workDone = workStep.State == WorkflowRunStates.Done;
 
-        if (Opinion(facts, workSessions) is { } opinion) steps.Add(opinion);
-
-        // The landing is read before the look, since a landing done is what the look let go.
+        // The landing is read before the opinion and the look, since a landing done is what both let go.
         var landing = Landing(Cell(facts, WorkflowKinds.Landing), workDone, workSessions, facts);
+        var opinion = Opinion(facts, workDone, landing);
+        if (opinion is not null) steps.Add(opinion);
+
         var look = Look(facts, workDone, landing);
+        // The look's set-up step sits while an agent is still at work on the opinion (XAGENT1f, the second-agent design §7), so
+        // the person looks once, at work that already answered it: the look is not reached until then.
+        if (look is not null && opinion is { State: WorkflowRunStates.Working or WorkflowRunStates.WaitingOnAgent }
+            && !WorkflowRunStates.Settled(look.State))
+        {
+            look = look with { State = WorkflowRunStates.NotReached, Detail = "" };
+        }
+
         if (look is not null) steps.Add(look);
 
-        // Nothing lands past a look that holds it (D154 point 7): the landing is not reached until the look is settled.
-        if (look is not null && !WorkflowRunStates.Settled(look.State) && landing.State != WorkflowRunStates.Done)
+        // Nothing lands past a gate that holds it (D155 §7, D154 point 7): the landing is not reached until the opinion and the
+        // look are settled.
+        if (landing.State != WorkflowRunStates.Done
+            && ((opinion is not null && !WorkflowRunStates.Settled(opinion.State)) || (look is not null && !WorkflowRunStates.Settled(look.State))))
         {
             landing = new WorkflowRunStep(landing.Step, WorkflowRunStates.NotReached, "");
         }
@@ -419,41 +416,67 @@ public static class WorkflowRuns
     }
 
     /// <summary>
-    /// The second opinion, as main holds it (design §3.2's <c>opinion</c>, D155): the newest pass on the work's sessions, said as its
-    /// record stands; with none, <c>declared</c> where Current declares it, which holds nothing. No step where neither is.
+    /// The second opinion (design §3.2's <c>opinion</c>, D155): where Current draws one, its gate's state (XAGENT1f, the
+    /// second-agent design §8.5), the detail being the gate's own code. It is not reached while the work runs, since the gate reads
+    /// the chain's work once it is done here (§8.1); and a landing done is what it let go, as its landing record keeps it.
     /// </summary>
-    private static WorkflowRunStep? Opinion(WorkflowRunFacts facts, IReadOnlyList<TracedSession> workSessions)
+    /// <remarks>
+    /// The gate's states, where they stand at a step: another agent at it (<c>not-asked</c>, which the driver's next look asks;
+    /// <c>reading</c>; <c>read-again</c>) is working; the working session answering its findings is waiting on an agent; a dispute,
+    /// commits no other agent read, and an absence the rule requires all wait on the person; an absence it does not require is
+    /// passed over; <c>settled</c> and the person's answers (<c>anyway</c>, <c>myself</c>, <c>answered</c>) are done.
+    /// </remarks>
+    private static WorkflowRunStep? Opinion(WorkflowRunFacts facts, bool workDone, WorkflowRunStep landing)
     {
-        var cell = facts.Current.Steps.FirstOrDefault(step => step.Kind == WorkflowKinds.Opinion);
-        var ids = new HashSet<string>(workSessions.Select(session => session.Id), StringComparer.OrdinalIgnoreCase);
-        var mine = facts.Opinions?.Where(opinion => ids.Contains(opinion.Working)).ToList() ?? [];
-        if (cell is null && mine.Count == 0) return null;
+        if (facts.Current.Steps.FirstOrDefault(step => step.Kind == WorkflowKinds.Opinion) is not { } cell) return null;
+        WorkflowRunStep Step(string state, string detail) => new(cell, state, detail);
 
-        var step = cell ?? new WorkflowStep(
-            WorkflowKinds.Opinion, WorkflowKinds.Opinion, WorkflowParticipation.Agent, WorkflowExecutor.Agent, null,
-            new WorkflowSource(WorkflowRule.Opinion, LandingSource.Default), [], WorkflowRuntime.Declared, WorkflowLimits.OpinionDeclared);
-        var added = cell is null ? WorkflowKinds.Opinion : null;
-
-        if (facts.Opinions is null)
+        // A landing done is what the gate let go (no door lands what it holds): its record keeps what did.
+        if (landing.State == WorkflowRunStates.Done && landing.Detail is not WorkflowRunDetails.Nothing)
         {
-            return new WorkflowRunStep(step, WorkflowRunStates.NotKnown, WorkflowRunDetails.Unread) { Added = added, Words = facts.OpinionsUnread };
+            var kept = facts.Landings.Select(entry => entry.Opinion).LastOrDefault(opinion => opinion is not null);
+            if (kept is null) return Step(WorkflowRunStates.Done, WorkflowRunDetails.Landed);
+            return Step(kept.Said == OpinionGateStates.Unavailable ? WorkflowRunStates.Skipped : WorkflowRunStates.Done, kept.Said) with
+            {
+                Agent = kept.Reviewer, Commit = kept.Tip, At = kept.At, Words = kept.Words, Code = kept.Code, Count = kept.Disputes,
+            };
         }
 
-        if (mine.LastOrDefault() is not { } newest)
+        if (!workDone) return Step(WorkflowRunStates.NotReached, "");
+        if (facts.Opinion is not { } gate) return Step(WorkflowRunStates.NotKnown, OpinionGateStates.Unread);
+
+        var opinion = gate.Opinion;
+        var on = Step("", gate.State) with
         {
-            return new WorkflowRunStep(step, step.Runtime == WorkflowRuntime.Declared ? WorkflowRunStates.Declared : WorkflowRunStates.NotReached,
-                step.Runtime == WorkflowRuntime.Declared ? WorkflowRunDetails.DeclaredOnly : "");
-        }
-
-        var on = new WorkflowRunStep(step, "", "") { Added = added, Session = newest.Session, Agent = newest.Who, Commit = newest.Tip };
-        if (newest.State == OpinionViews.Reading) return on with { State = WorkflowRunStates.Working, Detail = WorkflowRunDetails.Agent };
-        if (newest.State == OpinionViews.Failed) return on with { State = WorkflowRunStates.Failed, Detail = WorkflowRunDetails.Failed, Code = newest.Why };
-
-        var findings = newest.Findings ?? [];
-        var unanswered = newest.HandedTo is null ? 0 : findings.Count(finding => newest.AnswerTo(finding.Number) is null);
-        return unanswered > 0
-            ? on with { State = WorkflowRunStates.WaitingOnAgent, Detail = WorkflowRunDetails.Answering, Count = unanswered, Of = findings.Count, Session = newest.HandedTo }
-            : on with { State = WorkflowRunStates.Done, Detail = WorkflowRunDetails.Given, Count = findings.Count };
+            Session = opinion?.Session ?? gate.Session,
+            Agent = opinion?.Who,
+            Commit = gate.Recheck is { Given: true } recheck ? recheck.Tip : opinion?.Tip,
+            Code = gate.Code,
+        };
+        return gate.State switch
+        {
+            OpinionGateStates.None => on with { State = WorkflowRunStates.Skipped },
+            OpinionGateStates.WaitsChain => on with { State = WorkflowRunStates.NotReached, Quest = gate.Later },
+            OpinionGateStates.NotAsked or OpinionGateStates.Reading or OpinionGateStates.ReadAgain =>
+                on with { State = WorkflowRunStates.Working, Session = gate.State == OpinionGateStates.ReadAgain ? gate.Recheck?.Session ?? on.Session : on.Session },
+            OpinionGateStates.WithSession => on with
+            {
+                State = WorkflowRunStates.WaitingOnAgent, Session = opinion?.HandedTo ?? opinion?.Working ?? gate.Session,
+                Count = opinion?.Findings?.Count,
+            },
+            OpinionGateStates.Disputed => on with { State = WorkflowRunStates.WaitingOnYou, Session = gate.Session, Count = gate.Disputes?.Count },
+            OpinionGateStates.CommitsSince => on with { State = WorkflowRunStates.WaitingOnYou, Session = gate.Session, Count = gate.Since },
+            OpinionGateStates.Unavailable => on with
+            {
+                State = gate.Required ? WorkflowRunStates.WaitingOnYou : WorkflowRunStates.Skipped, Session = gate.Session, At = gate.Until,
+            },
+            OpinionGateStates.Settled => on with { State = WorkflowRunStates.Done, Count = opinion?.Findings?.Count },
+            OpinionGateStates.Anyway or OpinionGateStates.Myself or OpinionGateStates.Answered => on with
+            {
+                State = WorkflowRunStates.Done, At = gate.Person?.At, Words = gate.Person?.Words, Code = gate.Person?.Said,
+            },
+            _ => on with { State = WorkflowRunStates.NotKnown, Detail = OpinionGateStates.Unread, Words = gate.Problem },
+        };
     }
 
     /// <summary>

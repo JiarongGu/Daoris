@@ -41,7 +41,7 @@ public static class WorkflowRunReader
         var (chains, problem) = ChainsOf(asked, quests, sessions);
         if (problem is not null) return new WorkflowRunRead([], problem);
 
-        var reads = new Reads(sources, ct);
+        var reads = new Reads(sources, quests, ct);
         var runs = new List<WorkflowRun>();
         foreach (var chain in chains)
         {
@@ -111,17 +111,32 @@ public static class WorkflowRunReader
 
         var askId = chain.Select(quest => AskWords.AskOf(quest.From)).FirstOrDefault(id => id is not null);
         var (ask, askUnread) = askId is null ? (null, null) : await reads.AskAsync(askId).ConfigureAwait(false);
-        var opinions = await reads.OpinionsAsync(repository).ConfigureAwait(false);
         var sessionIds = new HashSet<string>(mine.Select(session => session.Id), StringComparer.OrdinalIgnoreCase);
+
+        // The work's newest tree here that still stands: where both gates read the commit that would land, as a landing door does.
+        var work = new HashSet<string>(part.Where(quest => quest.SetUpIn is null).Select(quest => quest.Id), StringComparer.OrdinalIgnoreCase);
+        var standing = mine
+            .Where(session => session.Quest is { } quest && work.Contains(quest) && !session.Teammate && session.Tree is { Length: > 0 })
+            .OrderBy(session => session.Created ?? DateTimeOffset.MinValue)
+            .LastOrDefault(session => Directory.Exists(session.Tree));
+        var review = await ReviewAsync(chain, repository, sources.WorkspaceOf(repository), ask, askUnread, standing?.Tree, reads).ConfigureAwait(false);
+
+        // The second opinion's gate (XAGENT1f) as every landing door reads it, for that tree's session; asked only where Current
+        // draws an opinion, since no rule stands to ask one otherwise. With no tree here, it cannot be read.
+        OpinionGateState? opinion = null;
+        if (standing is not null && current.Steps.Any(step => step.Kind == WorkflowKinds.Opinion))
+        {
+            opinion = await new SessionTrees(sources.Home).OpinionAsync(
+                standing.Tree!, repository, workspace, standing.Quest, standing.Id, reads.World, review, OpinionRules.Landing, reads.Ct).ConfigureAwait(false);
+        }
 
         var facts = new WorkflowRunFacts(repository, current)
         {
             Quests = part,
             Sessions = mine,
             GoAheads = ask?.GoAheads ?? [],
-            Review = await ReviewAsync(chain, repository, sources.WorkspaceOf(repository), ask, askUnread, mine, part, reads).ConfigureAwait(false),
-            Opinions = opinions.Opinions,
-            OpinionsUnread = opinions.Problem,
+            Review = review,
+            Opinion = opinion,
             Landings = [.. reads.Landings.Where(entry => sessionIds.Any(entry.Names))],
             Accepted = Acceptances(mine, sources.Home),
             AutoLandings = [.. reads.AutoLandings.Where(entry => sessionIds.Contains(entry.Session))],
@@ -134,9 +149,9 @@ public static class WorkflowRunReader
     /// then the work's tip in its newest tree here and git's ancestry. An ask that did not answer holds the gate unread where a
     /// rule stands that could ask for a review, as <see cref="ReviewGate.ReadAsync"/> holds it.
     /// </summary>
+    /// <param name="tree">The work's newest tree here that still stands, whose tip would land; null where none does.</param>
     private static async Task<ReviewGateState> ReviewAsync(
-        IReadOnlyList<QuestView> chain, string repository, string? workspace, AskView? ask, string? askUnread,
-        IReadOnlyList<TracedSession> sessions, IReadOnlyList<QuestView> part, Reads reads)
+        IReadOnlyList<QuestView> chain, string repository, string? workspace, AskView? ask, string? askUnread, string? tree, Reads reads)
     {
         var rule = ReviewRules.Resolve(reads.Sources.Config, repository, workspace);
         if (askUnread is not null)
@@ -146,13 +161,7 @@ public static class WorkflowRunReader
         }
 
         var decision = ReviewGate.Decide(chain, repository, ask, rule);
-        // The work's tip is its newest tree here that still stands; git is asked only where a review is asked.
-        var work = new HashSet<string>(part.Where(quest => quest.SetUpIn is null).Select(quest => quest.Id), StringComparer.OrdinalIgnoreCase);
-        var tree = sessions
-            .Where(session => session.Quest is { } quest && work.Contains(quest) && !session.Teammate && session.Tree is { Length: > 0 })
-            .OrderBy(session => session.Created ?? DateTimeOffset.MinValue)
-            .Select(session => session.Tree!)
-            .LastOrDefault(Directory.Exists);
+        // Git is asked only where a review is asked.
         var tip = decision.Reviews && tree is not null ? await ReviewGate.HeadAsync(tree, reads.Ct).ConfigureAwait(false) : null;
         return await ReviewGate.JudgeAsync(decision, tip, commit => tree is null || tip is null
             ? Task.FromResult<bool?>(null)
@@ -193,15 +202,26 @@ public static class WorkflowRunReader
 
     private static bool Same(string? left, string? right) => string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>What one read of several runs reads once: each ask and each repository's opinions, the landing record and the due list.</summary>
-    private sealed class Reads(WorkflowRunSources sources, CancellationToken ct)
+    /// <summary>
+    /// What one read of several runs reads once: each ask, the landing record and the due list; and the world the opinion's gate
+    /// reads, over the quests already read.
+    /// </summary>
+    private sealed class Reads(WorkflowRunSources sources, IReadOnlyList<QuestView> quests, CancellationToken ct) : IOpinionWorld
     {
         private readonly Dictionary<string, (AskView?, string?)> _asks = new(StringComparer.OrdinalIgnoreCase);
-        private readonly Dictionary<string, (IReadOnlyList<OpinionView>?, string?)> _opinions = new(StringComparer.OrdinalIgnoreCase);
 
         public WorkflowRunSources Sources => sources;
 
         public CancellationToken Ct => ct;
+
+        /// <summary>The opinion's gate's world (<see cref="IOpinionWorld"/>): the quests this read holds, an ask, an opinion by id.</summary>
+        public IOpinionWorld World => this;
+
+        public Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken cancel) => Task.FromResult(quests);
+
+        public Task<AskView?> AskAsync(string id, CancellationToken cancel) => sources.Service.FindAskAsync(id, cancel);
+
+        public Task<OpinionView?> OpinionAsync(string id, CancellationToken cancel) => sources.Service.ReadOpinionAsync(id, cancel);
 
         public IReadOnlyList<LandedBranch> Landings { get; } = new LandedBranches(sources.Home).Entries();
 
@@ -221,38 +241,5 @@ public static class WorkflowRunReader
 
             return _asks[id] = kept;
         }
-
-        public async Task<(IReadOnlyList<OpinionView>? Opinions, string? Problem)> OpinionsAsync(string repository)
-        {
-            if (_opinions.TryGetValue(repository, out var kept)) return kept;
-            try
-            {
-                kept = (await sources.Service.OpinionsOfAsync(repository, ct).ConfigureAwait(false), null);
-            }
-            catch (Exception error) when (Unanswered(error, ct))
-            {
-                kept = (null, error.Message.TrimEnd().TrimEnd('.'));
-            }
-
-            return _opinions[repository] = kept;
-        }
-    }
-}
-
-/// <summary>The opinions a run reads (WORKFLOW1c), by the local host's list door (XAGENT1c's <c>GET /api/opinions</c>).</summary>
-public sealed partial class ServiceClient
-{
-    /// <summary>
-    /// The second opinions on one repository's work, oldest first, each where its pass stands; an answer that is not one is passed
-    /// over, as <see cref="OpinionViews.Read(JsonElement)"/> passes it over.
-    /// </summary>
-    /// <exception cref="DriverException">The host refused, a shared host among them, which keeps no opinion (D47 §4).</exception>
-    public async Task<IReadOnlyList<OpinionView>> OpinionsOfAsync(string repository, CancellationToken ct = default)
-    {
-        using var document = JsonDocument.Parse(
-            await GetAsync($"/api/opinions?repository={Uri.EscapeDataString(repository)}", ct).ConfigureAwait(false));
-        return document.RootElement.ValueKind == JsonValueKind.Array
-            ? [.. document.RootElement.EnumerateArray().Select(OpinionViews.Read).OfType<OpinionView>()]
-            : [];
     }
 }
