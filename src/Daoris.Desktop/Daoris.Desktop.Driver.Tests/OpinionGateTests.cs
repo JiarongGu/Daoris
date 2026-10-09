@@ -387,6 +387,27 @@ public sealed class OpinionGateTests
         Assert.Equal([$"trees: {reading.Says}", $"trees: {shown.Says}"], LandingGateWords.Plan(new LandingGate(reading, shown)));
     }
 
+    // ——— the planner's sit (§7, §8.1)
+
+    [Fact]
+    public void The_planner_sits_a_quest_the_look_found_waiting_for_a_second_opinion_saying_why_and_starts_the_rest()
+    {
+        var step = Quest("q2", "Open") with { Parent = "q1" };
+        var other = Quest("q3", "Open");
+        var registered = new RepoView("web-app", Adopted: true, Root: "C:/work/web-app", Workspace: "work");
+        var said = "waits for a second opinion on the step before it, `#q1`, before it starts: Waits for a second opinion: being read by Codex.";
+        var snapshot = new Snapshot([step, other], [registered], [])
+        {
+            Opinions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["q2"] = said },
+        };
+
+        var plan = Planner.Plan(snapshot, DriverConfig.Empty with { Drivable = ["web-app"], Cap = 3 });
+
+        var sits = Assert.Single(plan, considered => considered.Quest.Id == "q2");
+        Assert.Equal((StartVerdict.WaitsForOpinion, said), (sits.Verdict, sits.Reason));
+        Assert.NotEqual(StartVerdict.WaitsForOpinion, Assert.Single(plan, considered => considered.Quest.Id == "q3").Verdict);
+    }
+
     // ——— what the driver keeps at the gate
 
     [Fact]
