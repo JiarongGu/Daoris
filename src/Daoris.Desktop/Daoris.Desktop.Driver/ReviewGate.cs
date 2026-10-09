@@ -185,8 +185,11 @@ public interface IReviewWorld
     Task<AskView?> AskAsync(string id, CancellationToken ct);
 }
 
-/// <summary>The gate's world over this machine's service: the quests read once per instance, as a door reads them once.</summary>
-public sealed class ServiceReviewWorld(ServiceClient service) : IReviewWorld
+/// <summary>
+/// The gate's world over this machine's service: the quests read once per instance, as a door reads them once, and the local
+/// host's opinions (XAGENT1f), which the whole landing gate reads beside them.
+/// </summary>
+public sealed class ServiceReviewWorld(ServiceClient service) : IOpinionWorld
 {
     private IReadOnlyList<QuestView>? _quests;
 
@@ -194,6 +197,8 @@ public sealed class ServiceReviewWorld(ServiceClient service) : IReviewWorld
         _quests ??= await service.EveryQuestAsync(ct).ConfigureAwait(false);
 
     public Task<AskView?> AskAsync(string id, CancellationToken ct) => service.FindAskAsync(id, ct);
+
+    public Task<OpinionView?> OpinionAsync(string id, CancellationToken ct) => service.ReadOpinionAsync(id, ct);
 }
 
 /// <summary>

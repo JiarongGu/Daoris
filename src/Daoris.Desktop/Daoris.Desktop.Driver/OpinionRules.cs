@@ -81,7 +81,9 @@ public sealed record OpinionEdit
 /// cell for cell (<c>OpinionRulesTests</c> and <c>driverconfig.test.ts</c>): the reading and its precedence, every refusal in
 /// the same words, each door's sentences, the edits, and which reviewers are the working agent's own family.</para>
 ///
-/// <para>Declared only (design §15): nothing here chooses a reviewer, starts a pass or holds a landing; XAGENT1b–f read it.</para>
+/// <para>Nothing here chooses a reviewer, starts a pass or holds a landing: the choice (XAGENT1b), the look and the landing gate
+/// (XAGENT1f) read it. <see cref="DeclaredOnly"/> is what its doors still say after a rule's sentences, untrue since XAGENT1f, and
+/// it changes at every door together.</para>
 /// </remarks>
 public static class OpinionRules
 {

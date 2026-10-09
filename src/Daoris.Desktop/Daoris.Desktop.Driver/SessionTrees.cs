@@ -425,25 +425,29 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     /// quest's done. 🔴 One thing differs for <see cref="AcceptedBy.Auto"/>: a plugin that cannot land work here does not stop
     /// the branch, since nobody is there to fix it, so the branch is made and recorded and the push is not tried.
     /// </param>
-    /// <param name="review">
-    /// The review's gate for this tree (REVIEWENV1c, D154 point 7; <see cref="ReviewAsync"/>), read by the door that lands it: one
-    /// that does not let go refuses before anything is made, merge or branch, an advance among them, with its sentence and the
-    /// code <see cref="AutoLandingCode.Unreviewed"/>; one that does is kept on the landing record. Null is a door that asked none.
+    /// <param name="gate">
+    /// The landing gate for this tree (<see cref="GateAsync"/>), read once by the door that lands it: the second opinion
+    /// (XAGENT1f, D155 point 9) and then D154's look (REVIEWENV1c, D154 point 7). The first part that does not let go refuses before
+    /// anything is made, merge or branch, an advance among them, with its sentence and its code
+    /// (<see cref="AutoLandingCode.Opinion"/>, then <see cref="AutoLandingCode.Unreviewed"/>); what let each go is kept on the
+    /// landing record. Null is a door that asked none.
     /// </param>
     public async Task<TreeLanding> LandAsync(
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
-        string acceptedBy = AcceptedBy.Person, ReviewGateState? review = null)
+        string acceptedBy = AcceptedBy.Person, LandingGate? gate = null)
     {
         var full = Path.GetFullPath(path);
-        // SQUASHTIDY1f: the head's own judgement, asked first, since a review of work already on the line lands nothing either.
+        // SQUASHTIDY1f: the head's own judgement, asked first, since a second opinion or a review of work already on the line
+        // lands nothing either.
         if (await DiscardOfferAsync(full, ct).ConfigureAwait(false) is { } carried)
         {
             return new(false, carried.NotLanded) { Refusal = AutoLandingCode.Carried };
         }
 
-        // Wherever the level says review, the work waits for the person's reviewed on a set-up that holds it, or their skip
-        // (design §3.1): a merge rule waits as a branch rule does, and an advance waits the same way.
-        if (review is { LetsGo: false }) return new(false, review.Says) { Refusal = AutoLandingCode.Unreviewed };
+        // One gate, in a fixed order (the second-agent design §7): the second opinion, then the person's review where it runs. A
+        // merge rule waits as a branch rule does, and an advance waits the same way.
+        if (gate?.Refusal is { } refused) return refused;
+        var review = gate?.Review;
 
         var (workspace, repository) = OwnerOf(full);
         var landing = LandingRules.Choose(Config(), repository, workspace);
@@ -483,7 +487,10 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             {
                 // Moved on (LAND2c): the entry's tip is the new commit, and the advance is kept with who accepted it (D143).
                 landed = Remember(landed, () => Recorded.Advanced(repository, landed.Branch!,
-                    new LandedAdvance(advancedFrom, tip, DateTimeOffset.UtcNow, subject.Session) { AcceptedBy = acceptedBy, Review = review?.Landing }));
+                    new LandedAdvance(advancedFrom, tip, DateTimeOffset.UtcNow, subject.Session)
+                    {
+                        AcceptedBy = acceptedBy, Review = review?.Landing, Opinion = gate?.Opinion.Landing,
+                    }));
             }
             else if (landed.Landed && tip is not null)
             {
@@ -499,6 +506,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                     Rule = new LandedRule(plugin, landing.Rule.AutoAccept, landing.Source),
                     // The review that let it go (REVIEWENV1c, design §3.5): reviewed with its set-up's commit, or skipped.
                     Review = review?.Landing,
+                    // The second opinion that let it go (XAGENT1f, design §8.6), or why it landed without one.
+                    Opinion = gate?.Opinion.Landing,
                 }));
             }
 

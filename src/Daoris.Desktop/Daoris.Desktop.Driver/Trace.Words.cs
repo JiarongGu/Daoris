@@ -464,7 +464,34 @@ internal static class TraceWords
             _ => "",
         });
 
+        // The second opinion that let it go (XAGENT1f, design §8.6), before the review it came before: who read it and how it was
+        // settled, or the person's answer, or why it landed with none. Nothing where none was asked.
+        said.Append(OpinionSaid(landing.Opinion));
+
         return said.ToString();
+    }
+
+    /// <summary>A landing's second opinion as the trace says it; empty where none was kept.</summary>
+    internal static string OpinionSaid(LandingOpinion? opinion)
+    {
+        if (opinion is null) return "";
+        var read = opinion.Reviewer is { } reviewer
+            ? $" by {reviewer}{(opinion.Label == ReviewerLabels.SameAgent ? ", the same agent fresh" : "")}"
+              + (opinion.Tip is { } tip ? $" at {Short(tip)}" : "")
+              + $", {opinion.Passes} pass{(opinion.Passes == 1 ? "" : "es")}"
+              + (opinion.Weights.Count == 0 ? ", raising nothing" : $", {string.Join(" ", opinion.Weights.Select(pair => $"{pair.Key} {pair.Value}"))}")
+            : "";
+        var words = opinion.Words is { Length: > 0 } said ? $", saying: \"{OneLine(said)}\"" : "";
+        return opinion.Said switch
+        {
+            OpinionGateStates.Settled => $"; a second opinion{read}, settled",
+            OpinionGateStates.Anyway => $"; you went on without a settled second opinion{read}"
+                + (opinion.Disputes > 0 ? $", over {opinion.Disputes} disputed" : "") + (opinion.Unread > 0 ? $", {opinion.Unread} commit(s) unread" : "") + words,
+            OpinionGateStates.Myself => $"; you looked yourself in place of a second opinion{words}",
+            OpinionGateStates.Answered => $"; a second opinion{read}, answered by your {(opinion.Person == ReviewVerdicts.Reviewed ? "reviewed" : "press")}"
+                + (opinion.Disputes > 0 ? $" over {opinion.Disputes} disputed" : "") + (opinion.Unread > 0 ? $" with {opinion.Unread} commit(s) unread" : ""),
+            _ => $"; landed with no second opinion ({opinion.Code ?? "none"}), which its rule did not require",
+        };
     }
 
     /// <summary>

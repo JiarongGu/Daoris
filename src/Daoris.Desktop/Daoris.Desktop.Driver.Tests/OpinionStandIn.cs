@@ -22,6 +22,23 @@ internal sealed class OpinionStandIn : HttpMessageHandler
     private readonly object _gate = new();
     private readonly Dictionary<string, JsonObject> _opinions = new(StringComparer.Ordinal);
     private readonly List<JsonObject> _sessions = [];
+    private readonly List<JsonObject> _quests = [];
+
+    /// <summary>A quest the service holds, closed ones included (XAGENT1f: the gate reads the chain from them).</summary>
+    public OpinionStandIn Quest(string id, string status = "Done", string? parent = null, string? setUpIn = null, string to = "reports")
+    {
+        lock (_gate)
+        {
+            _quests.RemoveAll(quest => quest["id"]!.GetValue<string>() == id);
+            _quests.Add(new JsonObject
+            {
+                ["id"] = id, ["from"] = "ask #a1", ["to"] = to, ["title"] = $"Work {id}", ["body"] = "", ["status"] = status,
+                ["parent"] = parent, ["setUpIn"] = setUpIn,
+            });
+        }
+
+        return this;
+    }
     private int _words;
 
     /// <summary>Each hand asked, by opinion id, in order, whether it was taken or refused.</summary>
@@ -142,6 +159,9 @@ internal sealed class OpinionStandIn : HttpMessageHandler
             {
                 case ("GET", "/api/sessions"):
                     return Answer(HttpStatusCode.OK, new JsonArray([.. _sessions.Select(session => session.DeepClone())]));
+
+                case ("GET", "/api/quests"):
+                    return Answer(HttpStatusCode.OK, new JsonArray([.. _quests.Select(quest => quest.DeepClone())]));
 
                 case ("GET", _) when path.StartsWith("/api/opinions/", StringComparison.Ordinal):
                 {
