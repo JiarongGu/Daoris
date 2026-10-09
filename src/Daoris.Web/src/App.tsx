@@ -722,6 +722,8 @@ export function App() {
   // view precisely so a door can name which session it is opening (D55: one selection, every
   // region) — the view change alone would land the person on whatever they last attended.
   const openInWork = (session: string) => open('sessions', session);
+  // A door into a run (WORKFLOW1c, the workflow design §7): its session attended in Sessions, the Workflow view opened on it.
+  const openRun = (session: string) => { open('sessions', session); setWorkIntent('workflow'); };
   // A quest's record and an ask's, where quests are read: an ask is named as one, since Quests' list holds both.
   const openQuest = (id: string) => open('quests', id);
   // A row in Overview's band is a door into whatever is waiting, wherever that exists. A parked
@@ -743,6 +745,7 @@ export function App() {
     onFilters: (filters) => lists.setFilters('quests', filters),
     notify,
     onAttend: attached ? openInWork : undefined,
+    onOpenRun: attached ? openRun : undefined,
     opening,
     onOpened: () => setOpening(null),
     asking,
@@ -899,6 +902,7 @@ export function App() {
             doors={attentionDoors}
             notify={notify}
             onSessions={attached ? () => open('sessions') : undefined}
+            onRun={attached ? openRun : undefined}
           />
         )}
         {view === 'map' && (

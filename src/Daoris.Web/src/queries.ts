@@ -43,6 +43,11 @@ export const keys = {
    * Current is drawn from the rules they resolve: every change that asks the lines again asks it again.
    */
   workflow: (scope: 'repository' | 'workspace', name: string) => ['driver', 'lines', 'workflow', scope, name] as const,
+  /**
+   * Where a session's, a quest's or an ask's work stands in its workflow (WORKFLOW1c) — shell-only, and under the driver's key,
+   * so every tick, which asks the driver again, asks it again: a run is read from records that move at every look.
+   */
+  workflowRun: (scope: 'session' | 'quest' | 'ask', id: string) => ['driver', 'workflow-run', scope, id] as const,
   /** How each repository's checkout stands for reading and writing across (D107) — shell-only, like the lines. */
   across: ['driver', 'across'] as const,
   allLandings: ['driver', 'landing'] as const,

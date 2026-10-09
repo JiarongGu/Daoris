@@ -10,11 +10,13 @@ import {
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree,
-  useDiscardSessionTree, useDriver, useOpinionGate,
+  useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun,
 } from '../shell';
+import { WorkflowRunView } from '../workflow/WorkflowRunView';
 import { opinionAsked } from './opinion';
 import { useOpinionActs } from './opinionActs';
 import { reviewHolds, reviewState } from './review';
+import { ReviewGate } from './ReviewGate';
 import { useReviewActs } from './reviewActs';
 import type { HeadOpinion, HeadReview } from './SessionHead';
 import { sayDiscard } from '../settings/Sweep';
@@ -686,6 +688,12 @@ export function WorkFrame({
   // under the pointer in the same task as `dragstart`, and drawing an emptied region is such a change.
   const onDrag = (view: ViewId | null) => { window.setTimeout(() => setDragging(view), 0); };
   const panelView = panelViews.includes(panelPick) ? panelPick : panelViews[0];
+  // Where the followed session's work stands (WORKFLOW1c, the workflow design §7): asked only while the Workflow view shows,
+  // in whichever region it stands, and again at every tick under the driver's key.
+  const workflowShown = following !== null && (placed.places.workflow === 'panel'
+    ? !collapsed && panelView === 'workflow'
+    : !dockClosed && dock === 'workflow');
+  const workflowRun = useWorkflowRun(following ? { session: following.id } : null, { enabled: workflowShown });
   // The person opening the dock on a surface — from its strip.
   const openDock = (tab: DockTab) => {
     setDock(tab);
@@ -755,6 +763,7 @@ export function WorkFrame({
     setTaken(intent);
     if (intent === 'start') setStarting(true);
     else if (intent === 'review') openView('review');
+    else if (intent === 'workflow') openView('workflow');
   }
   if (!intent && taken) setTaken(null);
 
@@ -843,6 +852,45 @@ export function WorkFrame({
           onDiscardTree={following && following.id === attended?.id ? discardHeld : undefined}
         />,
       );
+    }
+    if (view === 'workflow') {
+      // Where the followed session's work stands in its workflow (WORKFLOW1c, design §7). Its look's presses are the review's
+      // own gate, drawn under the step where it waits, never a second implementation; every other step opens where its record is.
+      const lookControl = following && following.id === attended?.id && gateHolds && headReview ? (
+        <ReviewGate
+          environment={gateHolds.environment ?? ''}
+          state={reviewState(gateHolds.state)}
+          step={headReview.step ?? null}
+          stepId={gateHolds.quest ?? null}
+          served={headReview.served ?? null}
+          said={gateHolds.says ?? null}
+          acts={headReview.acts}
+          busy={headReview.busy}
+        />
+      ) : null;
+      return following
+        ? withWhose(
+          <div className="p-3">
+            <WorkflowRunView
+              // A shell older than the route answers something else, which is no run.
+              answer={Array.isArray(workflowRun.data?.runs) ? workflowRun.data : null}
+              reading={workflowRun.isPending}
+              refusal={workflowRun.error ? sentence(workflowRun.error) : null}
+              // The step the followed session is its own: a set-up step's session shows the work for the look.
+              here={following.kind === 'chat' || !following.quest ? null : quest?.setUpIn ? 'look' : 'work'}
+              doors={{
+                session: (id) => { attend(id); if (elsewhere) onOpenSessions?.(); },
+                ...(onOpenQuest ? { quest: onOpenQuest } : {}),
+                ...(onAnswerAsk ? { ask: onAnswerAsk } : {}),
+                review: (id) => { doors.review?.(id); if (elsewhere) onOpenSessions?.(); },
+              }}
+              controls={lookControl ? { look: lookControl } : undefined}
+            />
+          </div>,
+        )
+        : elsewhere
+          ? <NothingFollowed ended={attended !== null} onOpenSessions={onOpenSessions} />
+          : <p className="m-0 p-3 text-small text-ink-faint">{t('work.attended.none.body')}</p>;
     }
     if (view === 'console' && where === 'right') {
       // In the side bar its streams go with it, above it, where the panel carries them in its header.

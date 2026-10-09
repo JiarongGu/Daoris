@@ -12624,3 +12624,24 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **WORKFLOW1d — named workflows and their versions** (cli, driver; after a). `<home>/workflows/<id>.json`: steps, validation (kinds this build runs, the order before the landing, groups, bounds), versions never edited, presets built in; `workflow new|edit|apply|list|show|export|import`, each printing its diff. Contract: §2.4–§2.6, §3.3, §4.7. Proof: twin tests on one table.
 
 **Outcome** 2026-10-09: named workflows: `<home>/workflows/<id>.json`, each version validated (its shape, at most 24 steps, the runtime's order, the kinds this build runs, `check`/`stage`/`all` designed but never offered) and never edited, only added to, the newest 20 kept; a digest over a hand-built canonical text; a diff by step id saying the person's part first and what leaves the machine without a press; four presets built in; twins `namedworkflows.ts` and `WorkflowNamed.cs` held to `fixtures/workflow-named.json`; `daoris driver workflow list|show|new|edit|apply|export|import`, each saying nothing chooses a named workflow yet (WORKFLOW1e). Detail: D157's WORKFLOW1d note, the twins row; commits 637b2817…95398a84.
+
+
+## WORKFLOW1c — the run, derived (2026-10-09, D157)
+
+> - [ ] **WORKFLOW1c — the run, derived** (driver, modules, web-shell; after a). A chain's work in a repository read as steps from its records (quests, sessions, landing record, review state, opinion, go-aheads, kept pull-request state); the side bar's *Workflow* view; the quest's and ask's line; What needs you's door. Contract: §5.2, §7. Proof: `WorkflowRunTests`' state table, vitest, stories.
+
+**Outcome** 2026-10-09: a chain's run in a repository is derived from its records (quests, sessions, go-aheads, the review's gate, second opinions, the landing record, the acceptance note, the due list, the kept pull-request answer) by a pure `WorkflowRuns.Derive`, read by `WorkflowRunReader` and answered by the modules' `WORKFLOW_RUN`, writing nothing; drawn in the session's side bar *Workflow* view on WORKFLOW1b's chart (a state pill per step, the current step marked, the review's own gate under a waiting look), with *Workflow: …* in a quest's and an ask's head and a *Workflow* door on What needs you's rows. Follow-ups: WORKFLOW1c2–c4. Detail: D157's WORKFLOW1c note; commits d7bb67c9…26008c99.
+
+
+## WORKFLOW1c3 — the run's opinion step reads the gate (2026-10-09, D157)
+
+> - [ ] **WORKFLOW1c3 — the run's opinion step reads the gate** (driver, web-shell; after XAGENT1f). WORKFLOW1c reads the opinion step from the opinion records alone, and skips it while its runtime is declared. With XAGENT1f's gate, the run stands at the opinion while the gate holds, its states are the gate's (not asked, being read, with the working session, read again, disputed, unavailable and required, commits since, settled), and *Go on anyway…* is the person's control under the step. Contract: D155's XAGENT1f note, D157's WORKFLOW1c note. Proof: `WorkflowRunTests`' opinion rows; the `HELD_FOR_OPINION` story.
+
+**Outcome** 2026-10-09: the run's opinion step reads XAGENT1f's gate through `SessionTrees.OpinionAsync`, as every landing door does: its state follows the gate's (working, waiting on an agent, waiting on you, skipped, done, not known), the run stands at the opinion while the gate holds, and where the gate holds the work on the person the step opens its review and names `daoris-driver opinion show|anyway`; a landed run reads the landing record's opinion; `declared` is gone. The *Go on anyway…* press under the step waits for XAGENT1g's hooks. Detail: D157's WORKFLOW1c note; commits 720238cf…f761cdbb.
+
+
+## AUTOTIDY1r — the full set's cherry-pick failure (2026-10-09)
+
+> - [ ] **AUTOTIDY1r — the full set's cherry-pick failure** (driver tests; dispatched from its brief). `ContentOfferTests.A_cherry_picked_session_is_offered_its_discard_naming_the_branch_that_holds_it` failed the full set and again alone; a single pass at SQUASHTIDY1f's merge pointed at AUTOTIDY1. Find the cause and fix it, keeping every AUTOTIDY1 guard; run the content and clean-up Process classes.
+
+**Outcome** 2026-10-09: not AUTOTIDY1's: a fixture race since SQUASHTIDY1b. A cherry-pick in the same second as the session's commit (same author, date, tree, message, parent) wrote the identical commit id, so the target branch held the session's own commit by ancestry and nothing was offered; it failed 5 of 8 runs at SQUASHTIDY1f's merge, where the parent's one pass had read as proof. `LandedFixture.CherryPickAsync` picks with `-x` and asserts a distinct id; both cherry-pick tests use it, 10 runs green; the nine content and clean-up Process classes ran green. Follow-up: SQUASHTIDY1g. Detail: FIX-LOG AUTOTIDY1r, D88's dated line.

@@ -15,9 +15,10 @@ import { failure, type Notify } from '../ui';
 import type { AccountsKnown } from './accountAttention';
 import type { Attention, AttentionActs } from './AttentionRow';
 import { attentionKey, AttentionList, type AttentionDoors, AttentionRegion, NothingNeedsYou } from './AttentionList';
-import { needsAPerson } from './attention';
+import { needsAPerson, rowRun } from './attention';
 import { useOpinionActs } from './opinionActs';
 import { useReviewActs } from './reviewActs';
+import { runSessionOf } from '../workflow/run';
 
 export type { AttentionDoors } from './AttentionList';
 
@@ -64,22 +65,29 @@ export function useAccountsKnown(): AccountsKnown {
  *
  * The organism: it holds the queries and the acts, so the list and its rows hold none (components §2).
  */
-export function AttentionBand({ doors = {}, notify = () => {}, onSessions }: {
+export function AttentionBand({ doors = {}, notify = () => {}, onSessions, onRun }: {
   doors?: AttentionDoors;
   /** Where each act's sentence is said: the service's or the driver's, verbatim (frontend §4a). */
   notify?: Notify;
   /** Sessions itself, where *Ready for you*'s rows past its fifth are: a shell's alone. */
   onSessions?: () => void;
+  /**
+   * The door into a run (WORKFLOW1c, the workflow design §7): a row whose step waits on the person opens that step, its session
+   * attended and the side bar on its *Workflow*. A shell's alone.
+   */
+  onRun?: (session: string) => void;
 }) {
   // The application's running action where it holds one (a sign-in outlives the view, SIGNIN1); its own where drawn alone.
   return (
     <WithHarnessRuns notify={notify}>
-      <Band doors={doors} notify={notify} onSessions={onSessions} />
+      <Band doors={doors} notify={notify} onSessions={onSessions} onRun={onRun} />
     </WithHarnessRuns>
   );
 }
 
-function Band({ doors, notify, onSessions }: { doors: AttentionDoors; notify: Notify; onSessions?: () => void }) {
+function Band({ doors, notify, onSessions, onRun }: {
+  doors: AttentionDoors; notify: Notify; onSessions?: () => void; onRun?: (session: string) => void;
+}) {
   const { t } = useTranslation();
   const sessions = useSessions(null, false);
   const quests = useQuests(null, false);
@@ -99,7 +107,9 @@ function Band({ doors, notify, onSessions }: { doors: AttentionDoors; notify: No
   // A session to review has ended, so its record is in the list with the ended ones, which the frame holds too; asked only
   // while there is one to name, so a browser, which has no groups, asks nothing more.
   const reviewing = (groups.data ?? []).some((placed) => placed.group === 'review');
-  const ended = useSessions(null, true, reviewing);
+  // And every record, ended ones too, where a row's door opens its run (WORKFLOW1c): a held done's or a set-up's quest is
+  // found its newest session here. The frame holds the same list on every view of a shell, under the same key.
+  const ended = useSessions(null, true, reviewing || onRun !== undefined);
   const opinionWaits = useOpinionWaits(reviewing);
   // The accounts as last known and the tick's waits (UX6d): a browser has none.
   const accounts = useAccountsKnown();
@@ -250,11 +260,19 @@ function Band({ doors, notify, onSessions }: { doors: AttentionDoors; notify: No
     return <SignIn id={harnessRun.running!} harness={signing.harness} profile={label} />;
   };
 
+  // Each row whose step waits on the person opens its run there (WORKFLOW1c): the session it names, else its quest's newest here.
+  const runDoor = (item: Attention) => {
+    const named = onRun ? rowRun(item) : null;
+    const session = named ? runSessionOf(named, ended.data ?? sessions.data ?? []) : null;
+    return session && onRun ? () => onRun(session) : undefined;
+  };
+
   return (
     <AttentionRegion>
       <AttentionList
         items={waiting}
         doors={doors}
+        run={runDoor}
         acts={acts}
         acting={acting}
         held={(item) => ACCOUNT_KINDS.has(item.kind) && harnessRun.busy}

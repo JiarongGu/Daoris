@@ -260,6 +260,45 @@ export const BandNarrow: StoryObj = {
 export const BandNarrowChinese: StoryObj = { ...BandNarrow, decorators: [chinese] };
 
 /**
+ * Each row that is a step waiting on the person with its door into the run (WORKFLOW1c, the workflow design §7): *Workflow*,
+ * quieter than the row's own, on a parked quest, a go-ahead, a parked session, a departure, a set-up and the reviews.
+ */
+const IN_A_RUN: ReadonlySet<Attention['kind']> = new Set(['parked-quest', 'go-ahead', 'parked', 'departure', 'set-up', 'review']);
+export const BandWithRuns: StoryObj = {
+  render: () => (
+    <Main width={1180}>
+      <AttentionRegion>
+        <AttentionList
+          items={BAND}
+          doors={DOORS}
+          acts={ACTS}
+          run={(item) => (IN_A_RUN.has(item.kind) ? () => {} : undefined)}
+          onSessions={() => {}}
+        />
+      </AttentionRegion>
+    </Main>
+  ),
+};
+
+/** The same at 680 px, in 中文. */
+export const BandWithRunsNarrowChinese: StoryObj = {
+  render: () => (
+    <Main width={600}>
+      <AttentionRegion>
+        <AttentionList
+          items={BAND}
+          doors={DOORS}
+          acts={ACTS}
+          run={(item) => (IN_A_RUN.has(item.kind) ? () => {} : undefined)}
+          onSessions={() => {}}
+        />
+      </AttentionRegion>
+    </Main>
+  ),
+  decorators: [chinese],
+};
+
+/**
  * An intake held on an account read signed out with none cooling (UX6d1, UX6d2): a wait for a sign-in, never a reset, so its
  * line names no time and never the tool's own sign-in. Its sign-in, and *Read* first for the account outside `work`'s list
  * no read answered (UXFIX3), whose readiness nobody knows.

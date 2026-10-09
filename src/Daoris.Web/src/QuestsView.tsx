@@ -19,7 +19,7 @@ import { QuestPage, QuestsMainNotice } from './quests/QuestPage';
 import { namer } from './settings/namer';
 import {
   retryNotice, useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useRetryQuest, useSetHold, useTrace,
-  useTrustFolder, useUntrusted, useWorkPlan,
+  useTrustFolder, useUntrusted, useWorkflowRun, useWorkPlan,
 } from './shell';
 import { sittingBecause } from './signals';
 import { failure, type Notify, useErrorNotify } from './ui';
@@ -56,8 +56,13 @@ const EVERYONE = '*';
  * refusals surfaced verbatim — the service's sentence is the contract, so it is never translated or rephrased here.
  */
 export function useQuestsView({
-  active, chosen, onChoose, filters: kept, onFilters, notify, onAttend, opening, onOpened, asking, onAsked,
+  active, chosen, onChoose, filters: kept, onFilters, notify, onAttend, onOpenRun, opening, onOpened, asking, onAsked,
 }: {
+  /**
+   * The door into a run (WORKFLOW1c, the workflow design §7): its session attended, the side bar on its *Workflow*. Absent where
+   * Sessions is not, a browser, which reads no run.
+   */
+  onOpenRun?: (session: string) => void;
   /** The view is in front: only then are its errors said. */
   active: boolean;
   /** The list's chosen item, which the application remembers (`daoris.list.quests.chosen`). */
@@ -164,6 +169,9 @@ export function useQuestsView({
     : undefined;
   // Its clears (HIST1e, D153 §6.1): the plans of its work and its failed sessions, asked only while Quests is in front and the
   // quest is closed, since a clear never takes work in progress; and the second press.
+  // Where the chosen quest's chain's work here stands in its workflow (WORKFLOW1c): asked while Quests is in front and a door can
+  // open the run, and again at every tick.
+  const questRun = useWorkflowRun(shownQuest ? { quest: shownQuest.id } : null, { enabled: active && onOpenRun !== undefined });
   const closedQuest = shownQuest?.status === 'Done' || shownQuest?.status === 'Declined';
   const historyOf = useHistoryPlan(shownQuest ? { scope: 'quest', id: shownQuest.id } : null, { enabled: active && closedQuest });
   const failedOf = useHistoryPlan(shownQuest ? { scope: 'failed', id: shownQuest.id } : null, { enabled: active && closedQuest });
@@ -183,6 +191,7 @@ export function useQuestsView({
     onChoose,
     notify,
     onAttend,
+    onOpenRun,
     composing: askComposing,
     onComposingChange: setAskComposing,
   });
@@ -398,6 +407,10 @@ export function useQuestsView({
           busy: reviewActs.busy,
           served: inReview ? inReview.find((row) => row.quest === quest.id)?.served ?? false : null,
         } : undefined}
+        // A shell older than the route answers something else, which is no run.
+        workflow={Array.isArray(questRun.data?.runs) && onOpenRun
+          ? { runs: questRun.data.runs, onOpen: (run) => { if (run.session) onOpenRun(run.session); } }
+          : undefined}
       />
     );
   };

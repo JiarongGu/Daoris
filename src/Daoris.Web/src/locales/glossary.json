@@ -52,7 +52,7 @@
         "help.title", "projects.tab.branches", "projects.tab.details", "projects.tab.setup", "projects.tab.workflow", "work.panel.title",
         "work.preview.tab",
         "work.review.tab",
-        "work.review.timelineTab", "work.timeline.title", "work.views.console", "work.views.terminal"
+        "work.review.timelineTab", "work.timeline.title", "work.views.console", "work.views.terminal", "work.views.workflow"
       ]
     },
     "section": {
@@ -263,7 +263,7 @@
         "opinion.act.*", "opinion.ask.anywayMeanIt", "opinion.ask.myselfMeanIt", "opinion.ask.sendBackMeanIt", "opinion.ask.stopMeanIt",
         "opinion.findingsShow", "opinion.findingsHide",
         "asks.record.reviewApply", "asks.record.reviewSet",
-        "workflow.door.setup", "workflow.door.workspaceSetup"
+        "workflow.door.setup", "workflow.door.workspaceSetup", "workflow.run.door.*"
       ]
     },
     "status": {
@@ -309,7 +309,8 @@
         "work.sync.walled", "work.terminal.default", "work.terminal.endedMark", "work.tool.status.*",
         "review.state.*", "review.pill", "work.attention.set-up",
         "opinion.state.*", "opinion.weight.*", "opinion.sure.*", "opinion.disputed", "opinion.session.kind", "work.attention.opinion",
-        "workflow.participation.*", "workflow.runtime.*", "workflow.repositories.follows", "workflow.repositories.own"
+        "workflow.participation.*", "workflow.runtime.*", "workflow.repositories.follows", "workflow.repositories.own",
+        "workflow.run.state.*", "workflow.run.thisSession"
       ]
     },
     "menu": {
@@ -431,7 +432,8 @@
     { "door": "work.head.review", "opens": "work.review.tab" },
     { "door": "help.proposal.look", "opens": "settings.sync.look" },
     { "door": "workflow.door.setup", "opens": "projects.tab.setup" },
-    { "door": "workflow.door.workspaceSetup", "opens": "projects.tab.setup" }
+    { "door": "workflow.door.workspaceSetup", "opens": "projects.tab.setup" },
+    { "door": "workflow.run.door.view", "opens": "work.views.workflow" }
   ],
 
   "terms": [
@@ -453,6 +455,7 @@
     { "term": "accepts", "en": "accepts", "zh": "接受", "means": "The part of a declaration naming the quests a repository takes.", "match": "\\baccepts\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "chain", "en": "chain", "zh": "委托链", "means": "Quests that follow one another, each published when the one before it closes done.", "match": "\\bchains?\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "workflow", "en": "workflow", "zh": "工作流", "means": "How a repository's work moves from the agent's work to its last stage: which steps, in what order, who takes part in each and what is automatic (D157). Current is the one drawn from the rules as they stand; a chain is its work step.", "why": "工作流 is what a workflow tool's Chinese calls one. 工作流转 is How this work ran, a chain's story, and 流程 is any process at all (WORKFLOW1b).", "match": "\\bworkflows?\\b", "avoid": { "en": [], "zh": ["流程"] } },
+    { "term": "run", "en": "run", "zh": "进展", "means": "One piece of work following its workflow: a chain's work in one repository, read as steps from its records, so where it stands is said step by step (D157 §5.1, WORKFLOW1c).", "why": "运行 is a process running and 工作流转 is How this work ran, a chain's story (D157 §1); 进展 is how far a piece of work has come, which is what a run shows.", "match": "\\b(this|the|its|a|each) runs?\\b", "avoid": { "en": [], "zh": ["运行进度"] } },
     { "term": "kind of task", "en": "kind of task", "zh": "工作类型", "means": "A name a workspace gives a sort of work, such as Documentation or Feature, which chooses the workflow work of that sort follows (D157 §4.2).", "why": "类型 is a sort of thing; 任务 is the family's word for a task, which a quest is not.", "match": "\\bkinds? of tasks?\\b", "avoid": { "en": ["task type", "task types"], "zh": ["任务类型"] } },
     { "term": "publish", "en": "publish", "zh": "发布", "means": "Hand a quest to the service, where its receiver pulls it.", "match": "\\bpublish(es|ed|ing)?\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "take", "en": "take", "zh": "接下", "zhForms": ["接"], "means": "A repository's agent accepts a quest to work on; the quest is then taken (已接下).", "match": "\\btake\\b|\\btaken\\b", "avoid": { "en": [], "zh": ["进行中"] } },
@@ -602,6 +605,7 @@
     "_why": "Budget judgements looked at and kept (NAME2; docs/2026-10-01-naming-design.md §6): the length is the name, and the element it renders in gives it more room than its kind's budget assumes, or a placeholder's typical value overstates it. Each holds the name it accepted in each language it accepts, and why, naming the room the code gives the element; the window confirms the room. scripts/names-check.mjs stops reporting a name while it is the one accepted, and reports it again once it is renamed, or once it fits and the acceptance can go.",
     "names": [
       { "key": "opinion.act.sameAgent", "en": "Ask the same agent, fresh", "why": "A press in the second opinion's gate, on a wrapping row of its own beside at most three others in a main area at least 400px wide (XAGENT1g); the design names it whole (D155 §8.4–§8.5), since what it asks is the working agent's own in a fresh conversation, which is never an independent reading." },
+      { "key": "workflow.run.state.waiting-on-agent", "en": "waiting on an agent", "why": "A run step's state on its pill, on a wrapping line of its own beside at most *this session* and a time, in a side bar at least 300px wide (WORKFLOW1c); the design names the state whole (D157 §5.2), and a shorter word would not say whom the work waits on." },
       { "key": "review.act.skip", "en": "Skip the review for this work…", "zh": "为这些工作跳过审阅…", "why": "A press in a review's gate, on a wrapping row of its own beside at most three others in a main area at least 400px wide (REVIEWENV1g); the design names it whole (D154 §3.6), since what is skipped is this work's review and no other's." },
       { "key": "review.act.setUp", "en": "Set it up in `{{environment}}`", "zh": "在 `{{environment}}` 中搭建", "why": "A press in a review's gate, on a wrapping row of its own in a main area at least 400px wide (REVIEWENV1g); the environment is the person's own name for it, which `dev` or `local` is, so the typical value's ten overstates it." },
       { "key": "setup.door.agentRules", "en": "Open what agents may do", "zh": "打开智能体可以做什么", "why": "A door under its setup step's text, which drops under the text when there is no room beside it (SETUP1a), so the button is as wide as its words; it names the section of the agent's page it opens (UX6e), where *Open Agents* would not say which part." },

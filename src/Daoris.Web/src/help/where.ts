@@ -26,7 +26,8 @@ export type HelpWhere = {
 };
 
 const VIEW_NAMES: Record<ViewId, string> = {
-  timeline: 'the timeline', review: 'the review', ask: 'Ask Daoris', console: 'the console', terminal: 'the terminal',
+  timeline: 'the timeline', review: 'the review', workflow: 'the workflow', ask: 'Ask Daoris', console: 'the console',
+  terminal: 'the terminal',
 };
 
 /** "the timeline, the review and Ask Daoris", or "nothing". */
