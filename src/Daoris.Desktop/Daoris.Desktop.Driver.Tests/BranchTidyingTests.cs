@@ -96,13 +96,40 @@ public sealed class BranchTidyingTests : IDisposable
         using var log = new MachineLog(_home, "driver", () => _now);
         var tidying = new BranchTidying(_home);
         var empty = Item("daoris/s-1a2b3c4d", HomeTree);
+        var aside = Path.Combine(_home, "trees", ".tidied", "default", "engine", "s-1a2b3c4d-20261009T090000000Z");
 
-        var said = tidying.Said([Pass("engine", new SweepResult(empty, true, "removed, with its tree"))], log);
+        var said = tidying.Said([Pass("engine", new SweepResult(empty, true, "removed") { MovedTo = aside })], log);
 
-        Assert.Equal(["tidy  engine: removed `daoris/s-1a2b3c4d` with its tree, which held nothing beyond `main`."], said);
+        Assert.Equal(
+            [$"tidy  engine: removed `daoris/s-1a2b3c4d`, which held nothing beyond `main`; its tree's folder was moved aside to {aside}, "
+             + "and goes once it is left untouched for 14 days."],
+            said);
         var line = Assert.Single(LogLines());
         Assert.Contains("\"level\":\"info\",\"event\":\"branch.tidied\"", line, StringComparison.Ordinal);
-        Assert.Contains("\"repository\":\"engine\",\"workspace\":\"default\",\"branch\":\"daoris/s-1a2b3c4d\",\"tree\":true", line, StringComparison.Ordinal);
+        Assert.Contains(
+            "\"repository\":\"engine\",\"workspace\":\"default\",\"branch\":\"daoris/s-1a2b3c4d\",\"tree\":true,"
+            + "\"folder\":\"trees/.tidied/default/engine/s-1a2b3c4d-20261009T090000000Z\"",
+            line, StringComparison.Ordinal);
+    }
+
+    /// <summary>A last guard's keep is said once, by its own code: a tree in use (busy), a hidden change, a nested repository, a link.</summary>
+    [Theory]
+    [InlineData(TidyKept.Busy, "something on this machine is using its tree, so its folder could not be moved aside (in use); a later look tries again")]
+    [InlineData(TidyKept.Hidden, "1 tracked path(s) in its tree are marked assume-unchanged or skip-worktree, which hides their changes from git: README.md")]
+    [InlineData(TidyKept.Nested, "its tree holds another repository at docs/inner")]
+    [InlineData(TidyKept.Linked, "its tree is reached through a link under the trees home")]
+    public void A_last_guard_s_keep_is_said_once_by_its_code(string code, string why)
+    {
+        using var log = new MachineLog(_home, "driver", () => _now);
+        var tidying = new BranchTidying(_home);
+        var kept = new SweepResult(Item("daoris/s-1a2b3c4d", HomeTree), false, why) { Kept = code };
+
+        var first = tidying.Said([Pass("engine", kept)], log);
+        var second = tidying.Said([Pass("engine", kept)], log);
+
+        Assert.Equal([$"tidy  engine: `daoris/s-1a2b3c4d` stays, since {why}."], first);
+        Assert.Empty(second);
+        Assert.Contains($"\"why\":\"{code}\"", Assert.Single(LogLines()), StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -223,16 +250,33 @@ public sealed class BranchTidyingTests : IDisposable
             inUse);
     }
 
-    /// <summary>The shell's review desk names what it serves now; a shell with none, the headless host's, names nothing.</summary>
+    /// <summary>
+    /// A set-up waiting for the person's verdict names the tree of the session that said it, read from the service's records as
+    /// the review's gate reads them, with a desk or none: the headless host has none, and <i>Show it again</i> serves from that
+    /// tree. A shell's desk adds each build it serves now.
+    /// </summary>
     [Fact]
-    public async Task The_review_desk_names_each_folder_it_serves()
+    public async Task A_set_up_waiting_for_the_person_names_its_tree_with_a_desk_or_none()
     {
+        using var ledger = new StandInLedger();
+        ledger.Publish("q1", "engine");
+        ledger.Working("s-setup", "engine", HomeTree, state: "completed");
+        ledger.SetUpShown("q1", "s-setup");
         var folder = Path.Combine(HomeTree, "dist");
         var desk = new ReviewDesk(new ServingTabs(
             new ReviewServe("q1", ReviewDesk.TabTitle("q1"), folder, "http://localhost:5173", "/", "http://localhost:5173/")));
-        using var ledger = new StandInLedger();
 
-        Assert.Equal([folder], await BranchTidying.ReviewingAsync(desk, ledger.Client(), CancellationToken.None));
+        Assert.Equal([HomeTree], await BranchTidying.ReviewingAsync(null, ledger.Client(), CancellationToken.None));
+        Assert.Equal([folder, HomeTree], await BranchTidying.ReviewingAsync(desk, ledger.Client(), CancellationToken.None));
+    }
+
+    /// <summary>With no set-up waiting and no desk, nothing is reviewed here.</summary>
+    [Fact]
+    public async Task With_no_set_up_waiting_and_no_desk_nothing_is_reviewed()
+    {
+        using var ledger = new StandInLedger();
+        ledger.Publish("q1", "engine");
+
         Assert.Empty(await BranchTidying.ReviewingAsync(null, ledger.Client(), CancellationToken.None));
     }
 

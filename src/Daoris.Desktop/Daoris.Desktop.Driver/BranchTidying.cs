@@ -66,34 +66,55 @@ public sealed class BranchTidying(string home)
         Func<CancellationToken, Task<IReadOnlyCollection<string>>>? reviewing = null)
     {
         Began();
-        IReadOnlyList<RepoView> registry;
+        var lines = new List<string>();
+        var met = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var whole = false;
         try
         {
-            registry = await service.RegistryAsync(ct).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is DriverException or HttpRequestException or JsonException)
-        {
-            return Said([new TidyPass([], TidyKept.Sessions, error.Message)], log, whole: false);
-        }
-
-        var trees = new SessionTrees(home);
-        var passes = new List<TidyPass>();
-        foreach (var row in registry.Where(row => !string.IsNullOrWhiteSpace(row.Root) && Directory.Exists(row.Root)))
-        {
+            IReadOnlyList<RepoView> registry;
             try
             {
-                passes.Add(await trees.TidyEmptyAsync(row.Root!, row.Repository, row.Workspace, InUseAsync, ct).ConfigureAwait(false));
+                registry = await service.RegistryAsync(ct).ConfigureAwait(false);
             }
-            catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
+            catch (Exception error) when (error is DriverException or HttpRequestException or JsonException)
             {
-                passes.Add(new TidyPass([], TidyKept.Unread, error.Message)
+                lines.AddRange(Say([new TidyPass([], TidyKept.Sessions, error.Message)], log, met));
+                return lines;
+            }
+
+            var trees = new SessionTrees(home);
+            foreach (var row in registry.Where(row => !string.IsNullOrWhiteSpace(row.Root) && Directory.Exists(row.Root)))
+            {
+                TidyPass pass;
+                try
                 {
-                    Repository = row.Repository, Workspace = RemoteTarget.Workspace(row.Workspace),
-                });
+                    pass = await trees.TidyEmptyAsync(row.Root!, row.Repository, row.Workspace, InUseAsync, ct).ConfigureAwait(false);
+                }
+                catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
+                {
+                    pass = new TidyPass([], TidyKept.Unread, error.Message)
+                    {
+                        Repository = row.Repository, Workspace = RemoteTarget.Workspace(row.Workspace),
+                    };
+                }
+
+                // Said as each repository is done: a removal is written though the look is closed before the next.
+                lines.AddRange(Say([pass], log, met));
+            }
+
+            lines.AddRange(SayPurged(trees.PurgeSetAside(Clock(), SetAsideFor), log, met));
+            whole = true;
+            return lines;
+        }
+        finally
+        {
+            // What a whole pass did not meet again has cleared: met again later, it is said again.
+            lock (_gate)
+            {
+                if (whole) _said = met;
+                else _said.UnionWith(met);
             }
         }
-
-        return Said(passes, log);
 
         // A session running or waiting holds its tree; so does a review step in progress, by the folder it shows from.
         async Task<IReadOnlySet<string>> InUseAsync(CancellationToken token)
@@ -101,25 +122,35 @@ public sealed class BranchTidying(string home)
             var held = (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
                 .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            if (reviewing is not null) held.UnionWith(TreesOf(trees.TreesRoot, await reviewing(token).ConfigureAwait(false)));
+            if (reviewing is not null) held.UnionWith(TreesOf(new SessionTrees(home).TreesRoot, await reviewing(token).ConfigureAwait(false)));
             return held;
         }
     }
 
+    /// <summary>How long a folder the look moved aside waits before a later look deletes it, where nothing was written in it since.</summary>
+    public static readonly TimeSpan SetAsideFor = TimeSpan.FromDays(14);
+
     /// <summary>
-    /// The folders a review step in progress shows from (REVIEWENV1d): each build the shell's desk serves to a tab now, and the
-    /// tree of the session that said each set-up waiting for the person here, which <i>Show it again</i> serves from. None where
-    /// the shell has no desk (the headless host, which sits a local set-up step).
+    /// The folders a review step in progress shows from (REVIEWENV1d): the tree of the session that said each set-up waiting
+    /// for the person's verdict, read from the service's records as the review's gate reads them, whether or not this loop has
+    /// a desk, since <i>Show it again</i> serves from that tree; and, where the shell has a desk, each build it serves to a tab
+    /// now.
     /// </summary>
     public static async Task<IReadOnlyCollection<string>> ReviewingAsync(ReviewDesk? desk, ServiceClient service, CancellationToken ct)
     {
-        if (desk is null) return [];
-        var paths = desk.Tabs.Serving.Select(serve => serve.Folder).ToList();
-        foreach (var waiting in desk.Waiting)
+        var paths = desk?.Tabs.Serving.Select(serve => serve.Folder).ToList() ?? [];
+        var waiting = (await service.EveryQuestAsync(ct).ConfigureAwait(false))
+            .Where(quest => quest.SetUpIn is not null && quest.Status != "Declined")
+            .Select(quest => (Quest: quest, Newest: ReviewServed.Newest(quest)))
+            .Where(each => each.Newest is { Session.Length: > 0 }
+                           && ReviewServed.Answered(each.Quest, ReviewServed.Reference(each.Newest)) is null)
+            .Select(each => each.Newest!.Session!)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (waiting.Count > 0)
         {
-            if (await service.FindQuestAsync(waiting.Quest, ct).ConfigureAwait(false) is not { } quest) continue;
-            if (ReviewServed.Newest(quest)?.Session is not { Length: > 0 } session) continue;
-            if (await service.SessionTreeAsync(session, ct).ConfigureAwait(false) is { Length: > 0 } tree) paths.Add(tree);
+            paths.AddRange((await service.SessionRecordsAsync(ct).ConfigureAwait(false))
+                .Where(record => waiting.Contains(record.Id) && record.Tree is { Length: > 0 })
+                .Select(record => record.Tree!));
         }
 
         return paths;
@@ -153,15 +184,28 @@ public sealed class BranchTidying(string home)
     /// <param name="whole">Whether the pass looked at every repository, so what it did not meet again is forgotten.</param>
     internal IReadOnlyList<string> Said(IReadOnlyList<TidyPass> passes, MachineLog? log, bool whole = true)
     {
-        var lines = new List<string>();
         var met = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var lines = Say(passes, log, met);
+        lock (_gate)
+        {
+            if (whole) _said = met;
+            else _said.UnionWith(met);
+        }
+
+        return lines;
+    }
+
+    /// <summary><see cref="Said"/>'s lines and log for some passes, each reason met added to <paramref name="met"/>.</summary>
+    private IReadOnlyList<string> Say(IReadOnlyList<TidyPass> passes, MachineLog? log, HashSet<string> met)
+    {
+        var lines = new List<string>();
         lock (_gate)
         {
             foreach (var pass in passes)
             {
                 if (pass.Held is { } held)
                 {
-                    if (!First(pass.Repository, "", held)) continue;
+                    if (!First(met, pass.Repository, "", held)) continue;
                     lines.Add($"tidy  {Held(pass)}");
                     log?.Warn("branch.kept", ("repository", Name(pass.Repository)), ("workspace", Name(pass.Workspace)), ("branch", null), ("why", held));
                     continue;
@@ -172,37 +216,64 @@ public sealed class BranchTidying(string home)
                     var item = result.Item;
                     if (result.Removed)
                     {
-                        lines.Add($"tidy  {pass.Repository}: removed `{item.Branch}`" + (item.Tree is null ? "" : " with its tree")
-                            + $", which held nothing beyond `{item.Where}`.");
+                        lines.Add($"tidy  {pass.Repository}: removed `{item.Branch}`, which held nothing beyond `{item.Where}`"
+                            + (result.MovedTo is { } to
+                                ? $"; its tree's folder was moved aside to {to}, and goes once it is left untouched for {SetAsideFor.TotalDays:0} days."
+                                : "."));
                         log?.Info("branch.tidied",
-                            ("repository", pass.Repository), ("workspace", pass.Workspace), ("branch", item.Branch), ("tree", item.Tree is not null));
+                            ("repository", pass.Repository), ("workspace", pass.Workspace), ("branch", item.Branch), ("tree", item.Tree is not null),
+                            ("folder", result.MovedTo is { } moved ? Path.GetRelativePath(home, moved).Replace('\\', '/') : null));
                         continue;
                     }
 
-                    // Kept for what it holds (dirty, in use, a build's output) is the press's, and says nothing; kept because git
-                    // could not read a guard, or refused the press's own removal, is said the first look it is met.
-                    var (why, clause) = item.Unread
-                        ? (TidyKept.Unread, item.Detail ?? "git could not say")
+                    // Kept for what it holds (dirty, in use, a build's output) is the press's, and says nothing; kept by a last guard,
+                    // because git could not read one, or because the removal did not happen, is said the first look it is met.
+                    var (why, clause) = result.Kept is { } code ? (code, result.Message)
+                        : item.Unread ? (TidyKept.Unread, item.Detail ?? "git could not say")
                         : result.Message == "kept" ? (null, null) : (TidyKept.Refused, result.Message);
-                    if (why is null || !First(pass.Repository, item.Branch, why)) continue;
+                    if (why is null || !First(met, pass.Repository, item.Branch, why)) continue;
                     lines.Add($"tidy  {pass.Repository}: `{item.Branch}` stays, since {Clause(clause!)}.");
                     log?.Warn("branch.kept", ("repository", pass.Repository), ("workspace", pass.Workspace), ("branch", item.Branch), ("why", why));
                 }
             }
-
-            // What this pass did not meet again has cleared: met again later, it is said again.
-            if (whole) _said = met;
-            else _said.UnionWith(met);
         }
 
         return lines;
+    }
 
-        bool First(string repository, string branch, string why)
+    /// <summary>What the purge of the folders moved aside says: each deleted, and each kept for a reason met the first time.</summary>
+    private IReadOnlyList<string> SayPurged(IReadOnlyList<SetAside> folders, MachineLog? log, HashSet<string> met)
+    {
+        var lines = new List<string>();
+        lock (_gate)
         {
-            var key = $"{repository}\n{branch}\n{why}";
-            met.Add(key);
-            return !_said.Contains(key);
+            foreach (var folder in folders)
+            {
+                var named = Path.GetRelativePath(home, folder.Folder).Replace('\\', '/');
+                var on = folder.Moved.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+                if (folder.Purged)
+                {
+                    lines.Add($"tidy  deleted the folder moved aside to {folder.Folder} on {on}: nothing was written in it since.");
+                    log?.Info("tidied.purged", ("folder", named), ("days", (int)(Clock() - folder.Moved).TotalDays));
+                    continue;
+                }
+
+                if (!First(met, "", folder.Folder, folder.Code ?? SetAsideKept.Unread)) continue;
+                lines.Add($"tidy  the folder moved aside to {folder.Folder} on {on} stays, since {Clause(folder.Kept ?? "")}. "
+                    + "Look at it, and delete it once it holds nothing you need.");
+                log?.Warn("tidied.kept", ("folder", named), ("why", folder.Code ?? SetAsideKept.Unread));
+            }
         }
+
+        return lines;
+    }
+
+    /// <summary>Whether this reason is met for the first time while it lasts; it is counted as met either way.</summary>
+    private bool First(HashSet<string> met, string repository, string branch, string why)
+    {
+        var key = $"{repository}\n{branch}\n{why}";
+        met.Add(key);
+        return !_said.Contains(key);
     }
 
     /// <summary>What held a whole repository this look, in a sentence after its name.</summary>
@@ -218,7 +289,7 @@ public sealed class BranchTidying(string home)
 
     /// <summary>The press's sentence as a clause: its own "and is kept" and its full stop are the line's to say.</summary>
     private static string Clause(string sentence) =>
-        sentence.Replace(", and is kept", "", StringComparison.Ordinal).Trim().TrimEnd('.');
+        sentence.Replace(", and is kept", "", StringComparison.Ordinal).Replace(", so it is kept", "", StringComparison.Ordinal).Trim().TrimEnd('.');
 
     private static string? Name(string text) => text.Length == 0 ? null : text;
 }

@@ -37,7 +37,15 @@ public sealed class BranchTidyingProcessTests : IDisposable
         // Git leaves read-only objects and tree links on Windows, as GitTree's cleanup says; a failed cleanup is not a failed test.
         try
         {
-            foreach (var file in Directory.EnumerateFiles(_scratch, "*", SearchOption.AllDirectories))
+            // The links a test made go first, alone, so the delete below never meets one.
+            var walk = new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint };
+            foreach (var link in Directory.EnumerateDirectories(_scratch, "*", new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = 0 })
+                         .Where(folder => File.GetAttributes(folder).HasFlag(FileAttributes.ReparsePoint)).ToList())
+            {
+                Directory.Delete(link);
+            }
+
+            foreach (var file in Directory.EnumerateFiles(_scratch, "*", walk))
             {
                 File.SetAttributes(file, FileAttributes.Normal);
             }
@@ -104,8 +112,13 @@ public sealed class BranchTidyingProcessTests : IDisposable
         }
 
         Assert.Equal(2, said.Count);
-        Assert.Contains($"tidy  engine: removed `{merged.Branch}` with its tree, which held nothing beyond `main`.", said);
+        Assert.Contains(said, line => line.StartsWith(Removed(merged), StringComparison.Ordinal));
         Assert.Contains("tidy  engine: removed `daoris/s-treeless`, which held nothing beyond `main`.", said);
+        // Its folder was moved aside, never deleted: what it held is all there.
+        var aside = Assert.Single(Directory.GetDirectories(Path.Combine(_home, "trees", ".tidied", "default", "engine")));
+        Assert.StartsWith(Path.GetFileName(merged.Path) + "-", Path.GetFileName(aside), StringComparison.Ordinal);
+        Assert.True(File.Exists(Path.Combine(aside, "README.md")));
+        Assert.DoesNotContain(merged.Path.Replace('\\', '/'), (await GitAsync(root, "worktree", "list", "--porcelain")).Replace('\\', '/'), StringComparison.OrdinalIgnoreCase);
         Assert.Equal(2, Events("branch.tidied").Length);
         Assert.Empty(Events("branch.kept"));
         // The record of where session branches grew from forgets it, as the press's does.
@@ -138,7 +151,7 @@ public sealed class BranchTidyingProcessTests : IDisposable
 
         Assert.Equal(2, first.Count);
         Assert.Contains($"tidy  engine: `{unreadable.Branch}` stays, since git could not say what its tree holds.", first);
-        Assert.Contains(first, line => line.StartsWith($"tidy  engine: `{locked.Branch}` stays, since git would not remove its tree", StringComparison.Ordinal));
+        Assert.Contains($"tidy  engine: `{locked.Branch}` stays, since its tree is locked (a person's); `git worktree unlock` lets it go.", first);
         Assert.Empty(second);
         var kept = Events("branch.kept");
         Assert.Equal(2, kept.Length);
@@ -175,7 +188,7 @@ public sealed class BranchTidyingProcessTests : IDisposable
 
         var next = await tidying.LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
 
-        Assert.Equal([$"tidy  engine: removed `{landed.Branch}` with its tree, which held nothing beyond `main`."], next);
+        Assert.StartsWith(Removed(landed), Assert.Single(next), StringComparison.Ordinal);
         Assert.False(Directory.Exists(landed.Path));
     }
 
@@ -201,7 +214,7 @@ public sealed class BranchTidyingProcessTests : IDisposable
         shown = [];
         var next = await tidying.LookAsync(_ledger.Client(), null, _closing.Token, _ => Task.FromResult(shown)).WaitAsync(Bound);
 
-        Assert.Equal([$"tidy  engine: removed `{landed.Branch}` with its tree, which held nothing beyond `main`."], next);
+        Assert.StartsWith(Removed(landed), Assert.Single(next), StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -252,7 +265,7 @@ public sealed class BranchTidyingProcessTests : IDisposable
         {
             await Poll.Until(() => { lock (said) return said.Count > 0; }, () => "no look said the tidy", Bound);
 
-            lock (said) Assert.Equal([$"tidy  engine: removed `{landed.Branch}` with its tree, which held nothing beyond `main`."], said);
+            lock (said) Assert.StartsWith(Removed(landed), Assert.Single(said), StringComparison.Ordinal);
             Assert.DoesNotContain(landed.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
             Assert.Single(Events("branch.tidied"));
         }
@@ -262,6 +275,316 @@ public sealed class BranchTidyingProcessTests : IDisposable
             try { await watching.WaitAsync(Bound); } catch (OperationCanceledException) { }
         }
     }
+
+    /// <summary>
+    /// A tracked file marked <c>assume-unchanged</c> or <c>skip-worktree</c> and then edited reads as clean to git's status: the
+    /// look keeps such a tree for the press, saying why, and the edit stays where it was.
+    /// </summary>
+    [Fact]
+    public async Task A_tree_whose_index_hides_a_change_stays_for_the_press()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        var assumed = await LandedTreeAsync(trees, root);
+        await GitAsync(assumed.Path, "update-index", "--assume-unchanged", "README.md");
+        await File.WriteAllTextAsync(Path.Combine(assumed.Path, "README.md"), "# engine, edited where git does not look\n");
+        var skipped = await LandedTreeAsync(trees, root);
+        await GitAsync(skipped.Path, "update-index", "--skip-worktree", "README.md");
+        await File.WriteAllTextAsync(Path.Combine(skipped.Path, "README.md"), "# engine, edited where git does not look\n");
+        _ledger.Register("engine", root);
+        using var log = Log();
+
+        var said = await new BranchTidying(_home).LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
+
+        var branches = await GitAsync(root, "branch", "--list", "daoris/*");
+        foreach (var kept in new[] { assumed, skipped })
+        {
+            Assert.Contains(kept.Branch, branches, StringComparison.Ordinal);
+            Assert.Equal("# engine, edited where git does not look\n", await File.ReadAllTextAsync(Path.Combine(kept.Path, "README.md")));
+            Assert.Contains(said, line => line.StartsWith($"tidy  engine: `{kept.Branch}` stays, since 1 tracked path(s) in its tree are marked", StringComparison.Ordinal));
+        }
+
+        Assert.Equal(2, Events("branch.kept").Count(data => data.GetProperty("why").GetString() == TidyKept.Hidden));
+    }
+
+    /// <summary>
+    /// A repository nested in the tree, marked by a <c>.git</c> file inside a tracked folder, is invisible to the tree's own
+    /// status: the look finds it by reading the tree's folders itself, and keeps the tree for the press.
+    /// </summary>
+    [Fact]
+    public async Task A_repository_nested_in_a_tree_keeps_it_for_the_press()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        var nested = await trees.OpenAsync(root, "engine", "default");
+        Directory.CreateDirectory(Path.Combine(nested.Path, "docs"));
+        await CommitAsync(nested.Path, Path.Combine("docs", "guide.md"), "the session's guide\n", "the guide");
+        await GitAsync(root, "merge", "--no-ff", "--no-edit", nested.Branch);
+        Directory.CreateDirectory(Path.Combine(nested.Path, "docs", "inner"));
+        await File.WriteAllTextAsync(Path.Combine(nested.Path, "docs", "inner", ".git"), $"gitdir: {Path.Combine(_scratch, "elsewhere.git")}\n");
+        Assert.Empty((await GitAsync(nested.Path, "status", "--porcelain", "--untracked-files=all", "--ignored=matching")).Trim());
+        _ledger.Register("engine", root);
+        using var log = Log();
+
+        var said = await new BranchTidying(_home).LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
+
+        Assert.Contains(nested.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
+        Assert.True(File.Exists(Path.Combine(nested.Path, "docs", "inner", ".git")));
+        Assert.Equal([$"tidy  engine: `{nested.Branch}` stays, since its tree holds another repository at docs/inner."], said);
+        Assert.Equal(TidyKept.Nested, Assert.Single(Events("branch.kept")).GetProperty("why").GetString());
+    }
+
+    /// <summary>
+    /// The line is read by its full name: a tag named as the line, which git reads before the branch, never stands for it. A
+    /// session branch a person's feature branch took, which such a tag holds, is landed elsewhere and stays the press's.
+    /// </summary>
+    [Fact]
+    public async Task A_tag_named_as_the_line_never_stands_for_it()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        var featured = await TreeWithWorkAsync(trees, root);
+        await GitAsync(root, "branch", "feature/x", featured.Branch);
+        await GitAsync(root, "tag", "main", "feature/x");
+        _ledger.Register("engine", root);
+
+        var said = await new BranchTidying(_home).LookAsync(_ledger.Client(), null, _closing.Token).WaitAsync(Bound);
+
+        Assert.Empty(said);
+        Assert.Contains(featured.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
+        Assert.True(Directory.Exists(featured.Path));
+        var plan = await trees.SweepPlanAsync([("engine", "default", root)], new HashSet<string>());
+        Assert.Equal(SweepKind.Landed, plan.Single(item => item.Branch == featured.Branch).Kind);
+    }
+
+    /// <summary>
+    /// A tree reached through a link under the trees home is somewhere else: here its repository's folder was moved away after
+    /// the tree was opened, and a link left in its place, so git still lists the tree under the trees home. The look keeps it,
+    /// saying so, and its folder stays where the link points.
+    /// </summary>
+    [Fact]
+    public async Task A_tree_reached_through_a_link_under_the_trees_home_stays()
+    {
+        var root = await RepositoryAsync("engine");
+        var linked = await LandedTreeAsync(new SessionTrees(_home), root);
+        var elsewhere = Path.Combine(_scratch, "elsewhere");
+        Directory.CreateDirectory(elsewhere);
+        Directory.Move(Path.Combine(_home, "trees", "default", "engine"), Path.Combine(elsewhere, "engine"));
+        await JunctionAsync(Path.Combine(_home, "trees", "default", "engine"), Path.Combine(elsewhere, "engine"));
+        _ledger.Register("engine", root);
+
+        var said = await new BranchTidying(_home).LookAsync(_ledger.Client(), null, _closing.Token).WaitAsync(Bound);
+
+        Assert.Contains(linked.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
+        Assert.True(Directory.Exists(Path.Combine(elsewhere, "engine", Path.GetFileName(linked.Path))));
+        Assert.Equal([$"tidy  engine: `{linked.Branch}` stays, since its tree is reached through a link under the trees home."], said);
+    }
+
+    /// <summary>
+    /// A session names its tree by the path its start opened, through the link, where git lists where the tree really is: it
+    /// holds the tree all the same, since the busy match compares resolved paths, at the press's list and the look's alike.
+    /// </summary>
+    [Fact]
+    public async Task A_session_naming_its_tree_through_a_link_holds_it()
+    {
+        var root = await RepositoryAsync("engine");
+        var elsewhere = Path.Combine(_scratch, "elsewhere");
+        Directory.CreateDirectory(elsewhere);
+        await JunctionAsync(Path.Combine(_home, "trees", "default", "engine"), elsewhere);
+        var trees = new SessionTrees(_home);
+        var linked = await LandedTreeAsync(trees, root);
+
+        var plan = await trees.SweepPlanAsync([("engine", "default", root)], new HashSet<string> { linked.Path });
+
+        Assert.Equal(SweepKind.InUse, plan.Single(item => item.Branch == linked.Branch).Kind);
+    }
+
+    /// <summary>
+    /// 🔴 The look never deletes a tree's folder: it moves it aside whole, so a write that lands after the last look is kept.
+    /// Here everything the tree held is in the folder moved aside, and a file written there afterwards stays with it.
+    /// </summary>
+    [Fact]
+    public async Task A_tree_moved_aside_keeps_everything_and_what_is_written_after()
+    {
+        var root = await RepositoryAsync("engine");
+        var landed = await LandedTreeAsync(new SessionTrees(_home), root);
+        var held = Directory.GetFiles(landed.Path, "*", SearchOption.AllDirectories).Select(file => Path.GetRelativePath(landed.Path, file)).ToList();
+        _ledger.Register("engine", root);
+
+        var said = await new BranchTidying(_home).LookAsync(_ledger.Client(), null, _closing.Token).WaitAsync(Bound);
+
+        var aside = Assert.Single(Directory.GetDirectories(Path.Combine(_home, "trees", ".tidied", "default", "engine")));
+        Assert.Equal([$"{Removed(landed)}{aside}, and goes once it is left untouched for 14 days."], said);
+        Assert.False(Directory.Exists(landed.Path));
+        Assert.All(held, file => Assert.True(File.Exists(Path.Combine(aside, file)), file));
+        await File.WriteAllTextAsync(Path.Combine(aside, "late.db"), "a write that came after the last look\n");
+        Assert.True(File.Exists(Path.Combine(aside, "late.db")));
+        Assert.DoesNotContain(landed.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// 🔴 On Windows a folder whose files something holds open cannot be renamed: the tree is in use, so the branch, its tree and
+    /// git's record of it all stay, the look says so once, and a later look takes it once nothing holds it. Elsewhere the rename
+    /// goes, and what the holder reads or writes is in the folder moved aside.
+    /// </summary>
+    [Fact]
+    public async Task A_tree_something_holds_open_stays_until_nothing_does()
+    {
+        var root = await RepositoryAsync("engine");
+        var landed = await LandedTreeAsync(new SessionTrees(_home), root);
+        _ledger.Register("engine", root);
+        using var log = Log();
+        var tidying = new BranchTidying(_home) { Pace = TimeSpan.Zero };
+
+        IReadOnlyList<string> said;
+        IReadOnlyList<string> again;
+        using (new FileStream(Path.Combine(landed.Path, "README.md"), FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            said = await tidying.LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
+            again = await tidying.LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
+        }
+
+        if (!OperatingSystem.IsWindows())
+        {
+            Assert.StartsWith(Removed(landed), Assert.Single(said), StringComparison.Ordinal);
+            return;
+        }
+
+        Assert.StartsWith(
+            $"tidy  engine: `{landed.Branch}` stays, since something on this machine is using its tree, so its folder could not be moved aside",
+            Assert.Single(said), StringComparison.Ordinal);
+        Assert.Empty(again);
+        Assert.Contains(landed.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
+        Assert.True(File.Exists(Path.Combine(landed.Path, "README.md")));
+        Assert.Contains(Path.GetFileName(landed.Path), await GitAsync(root, "worktree", "list", "--porcelain"), StringComparison.Ordinal);
+        Assert.Equal(TidyKept.Busy, Assert.Single(Events("branch.kept")).GetProperty("why").GetString());
+
+        var free = await tidying.LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
+
+        Assert.StartsWith(Removed(landed), Assert.Single(free), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A folder moved aside goes once it has waited fourteen days with nothing written in it since its move; one written in after
+    /// its move stays, said once, for the person to look at; and none goes before its wait.
+    /// </summary>
+    [Fact]
+    public async Task The_purge_deletes_a_folder_left_untouched_and_keeps_one_written_after_its_move()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        var untouched = await LandedTreeAsync(trees, root);
+        var touched = await LandedTreeAsync(trees, root);
+        _ledger.Register("engine", root);
+        await new BranchTidying(_home).LookAsync(_ledger.Client(), null, _closing.Token).WaitAsync(Bound);
+        var asides = Directory.GetDirectories(Path.Combine(_home, "trees", ".tidied", "default", "engine"));
+        var quiet = asides.Single(folder => Path.GetFileName(folder).StartsWith(Path.GetFileName(untouched.Path) + "-", StringComparison.Ordinal));
+        var written = asides.Single(folder => Path.GetFileName(folder).StartsWith(Path.GetFileName(touched.Path) + "-", StringComparison.Ordinal));
+        await File.WriteAllTextAsync(Path.Combine(written, "late.db"), "a write that came after the move\n");
+        using var log = Log();
+
+        var early = await new BranchTidying(_home) { Clock = () => DateTimeOffset.UtcNow.AddDays(13) }
+            .LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
+        var later = new BranchTidying(_home) { Pace = TimeSpan.Zero, Clock = () => DateTimeOffset.UtcNow.AddDays(15) };
+        var said = await later.LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
+        var again = await later.LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
+
+        Assert.Empty(early);
+        Assert.Equal(2, said.Count);
+        Assert.Contains(said, line => line.StartsWith($"tidy  deleted the folder moved aside to {quiet} on ", StringComparison.Ordinal));
+        Assert.Contains(said, line => line.StartsWith($"tidy  the folder moved aside to {written} on ", StringComparison.Ordinal)
+                                      && line.Contains("stays, since something in it was written after it was moved aside: late.db.", StringComparison.Ordinal));
+        Assert.Empty(again);
+        Assert.False(Directory.Exists(quiet));
+        Assert.True(File.Exists(Path.Combine(written, "late.db")));
+        Assert.Single(Events("tidied.purged"));
+        Assert.Equal(SetAsideKept.Written, Assert.Single(Events("tidied.kept")).GetProperty("why").GetString());
+    }
+
+    /// <summary>
+    /// 🔴 A look closed in the middle of a removal finishes it before it lets go of the repository: the token is cancelled as the
+    /// branch is about to be deleted, the repository is still held then, and the delete still runs to its end.
+    /// </summary>
+    [Fact]
+    public async Task A_look_closed_mid_removal_finishes_it_before_letting_go()
+    {
+        var root = await RepositoryAsync("engine");
+        var landed = await LandedTreeAsync(new SessionTrees(_home), root);
+        using var closing = new CancellationTokenSource();
+        bool? heldThen = null;
+        var trees = new SessionTrees(_home)
+        {
+            BeforeDeleting = async _ =>
+            {
+                await closing.CancelAsync();
+                using var starting = TreeLock.TryStarting(_home, "default", "engine");
+                heldThen = starting is null;
+            },
+        };
+
+        var pass = await trees.TidyEmptyAsync(root, "engine", "default", _ => Task.FromResult<IReadOnlySet<string>>(new HashSet<string>()), closing.Token)
+            .WaitAsync(Bound);
+
+        Assert.True(heldThen);
+        Assert.True(Assert.Single(pass.Results).Removed);
+        Assert.DoesNotContain(landed.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
+        Assert.DoesNotContain(Path.GetFileName(landed.Path), await GitAsync(root, "worktree", "list", "--porcelain"), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A list of the working trees git could not give is never "no tree here": the look judges nothing in the repository and
+    /// says why, the press's list says each branch is unread, and the press removes nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_worktree_list_git_could_not_give_keeps_every_branch()
+    {
+        var root = await RepositoryAsync("engine");
+        var landed = await LandedTreeAsync(new SessionTrees(_home), root);
+        await GitAsync(root, "branch", "daoris/s-treeless");
+        var trees = new SessionTrees(_home) { ListFails = _ => true };
+        var nobody = new HashSet<string>();
+
+        var pass = await trees.TidyEmptyAsync(root, "engine", "default", _ => Task.FromResult<IReadOnlySet<string>>(nobody), _closing.Token)
+            .WaitAsync(Bound);
+        var plan = await trees.SweepPlanAsync([("engine", "default", root)], nobody);
+        var swept = await trees.SweepAsync([("engine", "default", root)], nobody);
+
+        Assert.Equal(TidyKept.Unread, pass.Held);
+        Assert.Empty(pass.Results);
+        Assert.Equal(2, plan.Count);
+        Assert.All(plan, item => Assert.True(item.Unread, item.Branch));
+        Assert.DoesNotContain(swept, result => result.Removed);
+        var branches = await GitAsync(root, "branch", "--list", "daoris/*");
+        Assert.Contains(landed.Branch, branches, StringComparison.Ordinal);
+        Assert.Contains("daoris/s-treeless", branches, StringComparison.Ordinal);
+        Assert.True(Directory.Exists(landed.Path));
+    }
+
+    /// <summary>A link at <paramref name="link"/> to <paramref name="target"/>: a junction on Windows, which needs no privilege.</summary>
+    private static async Task JunctionAsync(string link, string target)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(link)!);
+        if (!OperatingSystem.IsWindows())
+        {
+            Directory.CreateSymbolicLink(link, target);
+            return;
+        }
+
+        var info = new System.Diagnostics.ProcessStartInfo("cmd.exe")
+        {
+            UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true,
+        };
+        foreach (var argument in new[] { "/c", "mklink", "/J", link, target }) info.ArgumentList.Add(argument);
+        using var process = System.Diagnostics.Process.Start(info)!;
+        var output = process.StandardOutput.ReadToEndAsync();
+        var error = process.StandardError.ReadToEndAsync();
+        await process.WaitForExitAsync();
+        Assert.True(process.ExitCode == 0, $"mklink failed: {await output} {await error}");
+    }
+
+    /// <summary>How a removal by the look opens: the folder moved aside follows, named for the moment it moved.</summary>
+    private static string Removed(TreeOpened tree) =>
+        $"tidy  engine: removed `{tree.Branch}`, which held nothing beyond `main`; its tree's folder was moved aside to ";
 
     private MachineLog Log() => new(_home, "driver", () => _now);
 

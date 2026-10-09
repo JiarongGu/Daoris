@@ -70,11 +70,11 @@ public sealed partial class SessionTrees
         string cwd, string tip, string? line, IReadOnlySet<string> notHolders, CancellationToken ct)
     {
         var forms = new List<(string Name, string Id)>();
-        foreach (var name in await LineFormsAsync(cwd, line, ct).ConfigureAwait(false))
+        foreach (var form in await LineFormsAsync(cwd, line, ct).ConfigureAwait(false))
         {
-            var (formCode, formId, _) = await WorkingTree.GitAsync(cwd, ["rev-parse", "--verify", "--quiet", $"{name}^{{commit}}"], ct)
+            var (formCode, formId, _) = await WorkingTree.GitAsync(cwd, ["rev-parse", "--verify", "--quiet", $"{form.Ref}^{{commit}}"], ct)
                 .ConfigureAwait(false);
-            if (formCode == 0) forms.Add((name, formId.Trim()));
+            if (formCode == 0) forms.Add((form.Name, formId.Trim()));
         }
 
         if (forms.Count == 0) return null;
@@ -185,8 +185,14 @@ public sealed partial class SessionTrees
     private async Task<string?> DeleteJudgedAsync(string root, string branch, string judged, CancellationToken ct)
     {
         if (BeforeDeleting is { } seam) await seam(branch).ConfigureAwait(false);
-        // git branch -D refuses a branch a working tree has checked out; update-ref does not ask, so this does.
-        if ((await WorktreesAsync(root, ct).ConfigureAwait(false)).GetValueOrDefault(branch) is { } checkedOut)
+        // git branch -D refuses a branch a working tree has checked out; update-ref does not ask, so this does. A list git could
+        // not give is no answer to that (AUTOTIDY1).
+        if (await ReadWorktreesAsync(root, ct).ConfigureAwait(false) is not { } worktrees)
+        {
+            return $"{ListUnread}, so whether a tree has it checked out is not known";
+        }
+
+        if (worktrees.GetValueOrDefault(branch) is { } checkedOut)
         {
             return $"it is checked out at {checkedOut}";
         }

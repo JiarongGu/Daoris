@@ -304,7 +304,14 @@ public sealed record SweepItem(
 }
 
 /// <summary>What the clean-up did with one branch, in the driver's words.</summary>
-public sealed record SweepResult(SweepItem Item, bool Removed, string Message);
+public sealed record SweepResult(SweepItem Item, bool Removed, string Message)
+{
+    /// <summary>Kept by the look's own tidy (AUTOTIDY1): why, as the machine log's code (<see cref="TidyKept"/>); null where the press kept it.</summary>
+    public string? Kept { get; init; }
+
+    /// <summary>Removed by the look's own tidy (AUTOTIDY1): where its tree's folder was moved aside to; null where it had no folder here.</summary>
+    public string? MovedTo { get; init; }
+}
 
 /// <summary>
 /// The landing rules (WSR1, D87): which applies to a repository, whether a pattern can name a branch,
