@@ -7,6 +7,7 @@ import {
 } from '../shell';
 import { Icon, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
 import { cn } from '../lib/cn';
+import { isComposing } from '../lib/composing';
 import { useDebounced } from '../lib/useDebounced';
 import { offeredActs, type SessionActId } from './acts';
 import { endedToArchive, type SessionArrangement } from './groups';
@@ -244,7 +245,7 @@ export function SessionRail({
               placeholder={t('work.rail.search.placeholder')}
               onChange={(event) => setQuery(event.target.value)}
               // Escape clears a search, and one with nothing in it is left to the list laid over (D118 §3a).
-              onKeyDown={(event) => { if (event.key === 'Escape' && query) { event.preventDefault(); setQuery(''); } }}
+              onKeyDown={(event) => { if (!isComposing(event) && event.key === 'Escape' && query) { event.preventDefault(); setQuery(''); } }}
               className="min-w-0 flex-1 bg-transparent text-small text-ink outline-none placeholder:text-ink-faint"
             />
           </label>

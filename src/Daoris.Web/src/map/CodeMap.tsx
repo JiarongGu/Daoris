@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { CodeDependency, CodeModule, Provenance } from '../api';
 import { ago } from '../format';
 import { cn } from '../lib/cn';
+import { isComposing } from '../lib/composing';
 import { PathText } from '../ui';
 import { layerModules } from './codeLayout';
 import { useWidth } from './useWidth';
@@ -95,14 +96,16 @@ export function CodeMapCanvas({ repository, modules, dependencies, selected, onS
   const focus = hovered ?? selected;
   const lit = (from: string, to: string) => focus === null || focus === from || focus === to;
   const choose = (id: string) => onSelect(id === selected ? null : id);
+  // Every handler that reads Enter or Escape asks first, so none acts on an input method's press (IME1).
   const press = (id: string) => (event: KeyboardEvent) => {
+    if (isComposing(event)) return;
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       choose(id);
     }
   };
   const release = (event: KeyboardEvent) => {
-    if (event.key === 'Escape' && selected !== null) {
+    if (!isComposing(event) && event.key === 'Escape' && selected !== null) {
       event.preventDefault();
       onSelect(null);
     }

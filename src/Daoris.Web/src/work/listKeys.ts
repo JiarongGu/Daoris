@@ -1,4 +1,5 @@
 import { type KeyboardEvent, useCallback } from 'react';
+import { isComposing } from '../lib/composing';
 
 /**
  * A list's own keys (D118 §3e, audit A7): ↑ and ↓ move between rows, Home and End go to either end, and
@@ -43,10 +44,12 @@ const FOCUSABLE = 'button:not([disabled]), a[href], input, [tabindex]:not([tabin
  * **A field keeps its own keys.** In a search box Home and End move the caret, so the one key taken there
  * is ↓, into the list, as VS Code's filter boxes hand it on. A key another control already answered — a
  * menu's trigger opens on ↓ — or one with a modifier is left alone, and so is one that arrived through a
- * portal, since a menu drawn elsewhere is not this list.
+ * portal, since a menu drawn elsewhere is not this list. Nor is a key an input method is composing with (IME1): its ↓
+ * walks the candidates, and the focus stays in the box.
  */
 export function useListKeys() {
   return useCallback((event: KeyboardEvent<HTMLElement>) => {
+    if (isComposing(event)) return;
     if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
     const target = event.target as HTMLElement;
     const list = event.currentTarget;

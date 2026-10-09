@@ -4,6 +4,7 @@ import type { Hit } from '../api';
 import { mark } from '../highlight';
 import { Button, CheckField, EmptyState, Icon, Inline, SkeletonRows } from '../ui';
 import { cn } from '../lib/cn';
+import { isComposing } from '../lib/composing';
 import { contextOffer } from '../menus/press';
 import { ListRowDoor } from '../work/ListPane';
 
@@ -87,7 +88,7 @@ export function HitList({
             placeholder={t('search.placeholder')}
             onChange={(event) => onQuery(event.target.value)}
             // Escape clears a search, and one with nothing in it is left to the list laid over (D118 §3a).
-            onKeyDown={(event) => { if (event.key === 'Escape' && query) { event.preventDefault(); onQuery(''); } }}
+            onKeyDown={(event) => { if (!isComposing(event) && event.key === 'Escape' && query) { event.preventDefault(); onQuery(''); } }}
             className="min-h-6 min-w-0 flex-1 bg-transparent text-small text-ink outline-none placeholder:text-ink-faint"
           />
           {query && (

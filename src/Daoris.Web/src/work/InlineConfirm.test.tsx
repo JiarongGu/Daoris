@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { composeStories } from '@storybook/react-vite';
 import { useState } from 'react';
@@ -317,6 +317,24 @@ describe('an inline confirmation', () => {
     answered!.refused('No one to say it to.');
     answered!.done();
     expect(close).toHaveBeenCalledOnce();
+  });
+
+  // IME1: a reason typed through an input method drops its composition on Escape, and the ask is still there.
+  it('stays open on an Escape an input method is composing with in its field, and goes on a plain one', () => {
+    const onClose = vi.fn();
+    render(
+      <InlineConfirm label="decline" says={SAYS} meanIt="Decline" onConfirm={() => {}} onClose={onClose}>
+        <input aria-label="Why" />
+      </InlineConfirm>,
+    );
+    const field = screen.getByRole('textbox', { name: 'Why' });
+
+    expect(fireEvent.keyDown(field, { key: 'Escape', isComposing: true })).toBe(true);
+    expect(fireEvent.keyDown(field, { key: 'Escape', keyCode: 229 })).toBe(true);
+    expect(onClose).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(field, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('waits on the page’s own busy, and on what the move needs first', () => {

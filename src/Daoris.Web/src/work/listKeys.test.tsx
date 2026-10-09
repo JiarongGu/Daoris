@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LIST_ROW, nextRow, useListKeys } from './listKeys';
 
@@ -83,6 +83,20 @@ describe('a list bound to its keys', () => {
     await userEvent.keyboard('{Home}');
     expect(box).toHaveFocus();
     await userEvent.keyboard('{ArrowDown}');
+    expect(screen.getByRole('button', { name: 'one' })).toHaveFocus();
+  });
+
+  // IME1: an input method's ↓ walks its candidates, and the focus stays in the box it is composing in.
+  it('leaves the search box the ↓ an input method is composing with', () => {
+    render(<List />);
+    const box = screen.getByRole('textbox', { name: 'search' });
+    box.focus();
+
+    expect(fireEvent.keyDown(box, { key: 'ArrowDown', isComposing: true })).toBe(true);
+    expect(fireEvent.keyDown(box, { key: 'ArrowDown', keyCode: 229 })).toBe(true);
+    expect(box).toHaveFocus();
+
+    fireEvent.keyDown(box, { key: 'ArrowDown' });
     expect(screen.getByRole('button', { name: 'one' })).toHaveFocus();
   });
 

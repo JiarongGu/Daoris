@@ -4,6 +4,7 @@ import type { Registration } from '../api';
 import { figure } from '../format';
 import { Button, Icon, Inline, Pill } from '../ui';
 import { cn } from '../lib/cn';
+import { isComposing } from '../lib/composing';
 import { contextOffer } from '../menus/press';
 import { ListRowDoor } from '../work/ListPane';
 
@@ -156,7 +157,7 @@ export function ProjectList({ groups, chosen, chosenWorkspace = null, unanswered
               placeholder={t('projects.list.filter')}
               onChange={(event) => setQuery(event.target.value)}
               // Escape clears a filter, and one with nothing in it is left to the list laid over (D118 §3a).
-              onKeyDown={(event) => { if (event.key === 'Escape' && query) { event.preventDefault(); setQuery(''); } }}
+              onKeyDown={(event) => { if (!isComposing(event) && event.key === 'Escape' && query) { event.preventDefault(); setQuery(''); } }}
               className="min-w-0 flex-1 bg-transparent text-small text-ink outline-none placeholder:text-ink-faint"
             />
           </label>

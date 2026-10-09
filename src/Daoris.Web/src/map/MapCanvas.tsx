@@ -1,6 +1,7 @@
 import { type KeyboardEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
+import { isComposing } from '../lib/composing';
 import { ASKS, type ChainEdge, type Live, type Topology, layoutRing } from './topology';
 import { type Frame, textWidth } from './measure';
 import { useTall, useWidth } from './useWidth';
@@ -374,14 +375,16 @@ export function MapCanvas({ topology, selected, onSelect }: {
     lit === null || (lit.kind === 'node' ? ends.includes(lit.id) : sameSelection(lit, line));
 
   const choose = (selection: MapSelection) => onSelect(sameSelection(selection, selected) ? null : selection);
+  // Every handler that reads Enter or Escape asks first, so none acts on an input method's press (IME1).
   const press = (selection: MapSelection) => (event: KeyboardEvent) => {
+    if (isComposing(event)) return;
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       choose(selection);
     }
   };
   const release = (event: KeyboardEvent) => {
-    if (event.key === 'Escape' && selected !== null) {
+    if (!isComposing(event) && event.key === 'Escape' && selected !== null) {
       event.preventDefault();
       onSelect(null);
     }
