@@ -1,5 +1,5 @@
 import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api, type AskAction, HELP_REPOSITORY } from './api';
+import { api, type AskAction, HELP_REPOSITORY, type QuestAction, type SetUpRef, type Verdict } from './api';
 import { useScope } from './scope';
 import { workspaceOf, workspacesOf } from './workspaces';
 
@@ -38,6 +38,11 @@ export const keys = {
   remotes: ['remotes'] as const,
   browserSettings: ['browser-settings'] as const,
   lines: ['driver', 'lines'] as const,
+  /**
+   * A repository's or a workspace's Current workflow (WORKFLOW1b) — shell-only, like the lines, and under their key, since
+   * Current is drawn from the rules they resolve: every change that asks the lines again asks it again.
+   */
+  workflow: (scope: 'repository' | 'workspace', name: string) => ['driver', 'lines', 'workflow', scope, name] as const,
   /** How each repository's checkout stands for reading and writing across (D107) — shell-only, like the lines. */
   across: ['driver', 'across'] as const,
   allLandings: ['driver', 'landing'] as const,
@@ -371,6 +376,40 @@ export const useAcceptQuest = () => {
  * a finish at a checkpoint. A chain's next step may be published and the ask it came from may be done now, so the quests and
  * the asks are read again, as a respond's are.
  */
+/**
+ * What a review's press moves (REVIEWENV1g): the quests (a held step lets go, a set-up step is published), the asks (the
+ * person's words are kept there), and every landing's plan, whose gate it answers (REVIEWENV1c), with the sessions' groups that
+ * read the same gate. Asked again whatever the door said: a stale verdict was refused because the record moved.
+ */
+function useReviewChange<TVariables>(fn: (variables: TVariables) => Promise<QuestAction>) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: fn,
+    onSettled: () => {
+      void client.invalidateQueries({ queryKey: keys.allQuests });
+      void client.invalidateQueries({ queryKey: keys.allAsks });
+      void client.invalidateQueries({ queryKey: keys.allLandings });
+      void client.invalidateQueries({ queryKey: keys.allSessions });
+    },
+  });
+}
+
+/**
+ * The person's verdict on a review (REVIEWENV1g, D154 point 8): `reviewed` or `not-yet` on the set-up the view drew, or a skip
+ * of the review of a quest's work. The host refuses one whose set-up a newer one followed, in its sentence (REVIEWENV1b3).
+ */
+export const useReviewVerdict = () => useReviewChange(
+  ({ id, verdict, words, setUp }: { id: string; verdict: Verdict; words?: string | null; setUp?: SetUpRef | null }) =>
+    api.reviewQuest(id, verdict, words, setUp));
+
+/** The person's *Set it up in `<environment>`* (REVIEWENV1b, design §3.6): a set-up step following a done quest. */
+export const usePublishSetUpStep = () => useReviewChange(
+  ({ id, environment }: { id: string; environment: string }) => api.setUpStep(id, environment));
+
+/** The person's review choice on an ask, or its intake's proposal applied (REVIEWENV1b, design §1.5). */
+export const useChooseAskReview = () =>
+  useAskChange(({ id, choice, words }: { id: string; choice: string; words?: string }) => api.chooseAskReview(id, choice, words));
+
 export const usePersonDone = () => {
   const invalidate = useInvalidateQuestWork();
   return useMutation({

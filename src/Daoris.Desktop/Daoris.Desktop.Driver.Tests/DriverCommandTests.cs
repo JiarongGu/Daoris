@@ -147,6 +147,23 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
+    /// SQUASHTIDY1f: the terminal's `trees land` refuses work the line holds by content where every door does, in the landing
+    /// itself, and its <c>--plan</c> says so before the press in the same sentence, asked of the driver's own judgement, as the
+    /// review's pane shows it where <i>Accept</i> would be. The host composes no content proof of its own. <c>ContentLandingTests</c>
+    /// holds the refusal over real git, and <c>ContentHoldWordsTests</c> its sentence.
+    /// </summary>
+    [Fact]
+    public void The_terminals_landing_plan_says_work_the_line_holds_by_content_in_the_landings_own_sentence()
+    {
+        var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
+
+        Assert.Contains("if (await landing.DiscardOfferAsync(tree).ConfigureAwait(false) is { } carried) Console.WriteLine($\"trees: {carried.NotLanded}\");", program);
+        Assert.Contains("landing.LandAsync(tree, subject, inUse:", program);
+        Assert.DoesNotContain("WorkAsync(", program);
+        Assert.DoesNotContain("ContentHold", program);
+    }
+
+    /// <summary>
     /// LAND3c: the terminal's `trees remove &lt;session|branch&gt;` is the driver's one discard, the call the screen's
     /// <c>DISCARD_SESSION_BRANCH</c> ends in, so it keeps a branch a live session's tree holds as the screen does. The host
     /// composes none of its pieces itself: no layout read, no removal by branch. <c>SessionBranchDiscardTests</c> holds the act.

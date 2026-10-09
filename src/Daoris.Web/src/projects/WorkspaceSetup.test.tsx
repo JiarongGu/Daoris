@@ -233,7 +233,7 @@ describe("a workspace's review before landing", () => {
     await userEvent.click(section('Defaults'));
     expect(screen.getByText('None: work is offered to land once its quest is done.')).toBeInTheDocument();
     expect(screen.getByText(code(
-      'daoris driver review --workspace aurora <environment> --kind local|deployed --procedure <path>'))).toBeInTheDocument();
+      'daoris driver review --workspace aurora <environment> --kind local|deployed --procedure <path>|--drop <environment>|--clear'))).toBeInTheDocument();
     const row = screen.getByText('Review before landing', { selector: 'span' }).closest('.\\@container') as HTMLElement;
     await userEvent.click(within(row).getByRole('button', { name: 'Set for this workspace' }));
     expect(screen.queryByRole('button', { name: 'None here' })).toBeNull();

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { chinese } from '../storyLanguage';
+import { FULL, NOTHING_SET, PLUGIN_UNREADY } from '../workflow/fixtures';
 import { CJK, COUNTS, ELSEWHERE, ENGINE, GAME, LINE, MIRRORED, NEWBIE, SETUP_DEFAULTS, SETUP_OWN, UNDECLARED } from './fixtures';
 import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
 import type { RepositorySetupProps } from './RepositorySetup';
@@ -10,7 +11,8 @@ import type { ProjectTab } from './tabs';
 // line, with unlanded branches, a teammate's with no checkout here, one that declared nothing, one not adopted with a root
 // here and on a direct door, one not adopted with none, a browser's, a 中文 name) and since UX6f (D150 §4.2) its Setup tab,
 // each section folded to what Daoris decides and open: Driving, Line and landing, Sessions, Reach, the person's own values, narrow and
-// in 中文; and the main area with no page: nothing chosen, gone, loading, an error with no answer ever.
+// in 中文; since WORKFLOW1b its Workflow tab, with everything at once, nothing set, a limit, in 中文, narrow and in a browser;
+// and the main area with no page: nothing chosen, gone, loading, an error with no answer ever.
 
 const nothing = () => {};
 
@@ -30,6 +32,8 @@ const meta: Meta<typeof Tabbed> = {
     here: true,
     drivable: true,
     setup: SETUP_DEFAULTS,
+    // How its work moves (WORKFLOW1b): a shell's, beside its Setup.
+    workflow: { current: FULL, doors: { workspaceSetup: nothing } },
     onManage: nothing,
     onOpenCode: nothing,
   },
@@ -102,7 +106,37 @@ export const NotAdoptedNoRoot: Story = {
 };
 
 /** A browser's page: Details alone, no tab row, no *Manage* and no setting, which only a shell's driver says (D47 §4). */
-export const InABrowser: Story = { args: { here: undefined, drivable: undefined, line: undefined, setup: null, onManage: undefined } };
+export const InABrowser: Story = {
+  args: { here: undefined, drivable: undefined, line: undefined, setup: null, workflow: null, onManage: undefined },
+};
+
+/**
+ * **Workflow** (WORKFLOW1b, the workflow design §6.1, §6.2): how its work moves, drawn from its rules as they stand, between
+ * Details and Setup. Everything at once: a plugin that may hold a start, its standing answer, its workspace's second opinion,
+ * its own look in `dev`, an automatic landing on a branch and the pull request the person merges.
+ */
+export const Workflow: Story = { args: { start: 'workflow' } };
+
+/** Its Workflow with nothing set anywhere: the work, then a merge the person accepts, by Daoris's default. */
+export const WorkflowNothingSet: Story = { args: { start: 'workflow', workflow: { current: NOTHING_SET } } };
+
+/** Its Workflow with a limit: the branch rule's plugin is not on this machine, said whole on both steps it reaches. */
+export const WorkflowWithALimit: Story = { args: { start: 'workflow', workflow: { current: PLUGIN_UNREADY } } };
+
+/** Its Workflow in 中文. */
+export const WorkflowChinese: Story = { args: { start: 'workflow' }, decorators: [chinese] };
+
+/** Its Workflow, narrow: the list a strip and the side bar closed, each step's words wrapping under its title. */
+export const WorkflowNarrow: Story = {
+  args: { start: 'workflow' },
+  decorators: [(Story) => <div className="flex h-[44rem] w-[34rem] max-w-full border border-line bg-page"><Story /></div>],
+};
+
+/**
+ * **The bundle without a shell** (D47 §4, the workflow design §6.1): a browser's page remembered at Workflow is Details
+ * alone, with no tab row, since a repository's workflows are this machine's.
+ */
+export const WorkflowInABrowser: Story = { args: { ...InABrowser.args, start: 'workflow' } };
 
 /** A name in 中文: the title and the summary are content, shown as they are. */
 export const ChineseName: Story = { args: { registration: CJK, counts: COUNTS['渲染管线'] } };

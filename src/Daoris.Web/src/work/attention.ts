@@ -10,6 +10,7 @@ import { accountAttention, type AccountsKnown } from './accountAttention';
 import type { SessionGrouping } from './groups';
 import { questName, sessionOrigin, sessionTitle } from './identity';
 import type { Attention, AttentionKind } from './AttentionRow';
+import { newestSetUp, setUpRef, waitsForLook } from './review';
 import { placedFact } from './SessionRow';
 
 /**
@@ -38,6 +39,9 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   proposal: 'word',
   intake: 'word',
   departure: 'word',
+  // A set-up waiting for the person's look (REVIEWENV1g): its chain's landing waits on their verdict, as a departure's next
+  // step waits on their yes, and nothing already running is held by it.
+  'set-up': 'word',
   rule: 'word',
   unanswerable: 'word',
   review: 'ready',
@@ -56,7 +60,7 @@ export function attentionGroups(items: readonly Attention[]): { group: Attention
 /** An act a row offers (design §6.2–§6.3), named as the row's press. */
 export type AttentionActId =
   | 'publish' | 'choose' | 'retry' | 'approve' | 'refuse' | 'trust' | 'accept-departure' | 'accept-rule' | 'decline-rule'
-  | 'sign-in' | 'read' | 'let-run';
+  | 'sign-in' | 'read' | 'let-run' | 'reviewed' | 'not-yet' | 'show-again';
 
 /** An act a row offers, and for an account's act which account it is for (UX6d): a row may sign two in. */
 export type AttentionOffer = { act: AttentionActId; account?: string };
@@ -66,7 +70,11 @@ export type AttentionOffer = { act: AttentionActId; account?: string };
  * session on its ask is handed; a folder's trust, a widening of the rules and an account let into a list (D130 §3.3), which
  * widen what Daoris may do or spend; and a choice of receiver, which is a choice before it is a press.
  */
-export const ASKS_ONCE: ReadonlySet<AttentionActId> = new Set(['choose', 'approve', 'refuse', 'trust', 'accept-rule', 'let-run']);
+export const ASKS_ONCE: ReadonlySet<AttentionActId> = new Set([
+  'choose', 'approve', 'refuse', 'trust', 'accept-rule', 'let-run',
+  // A *not yet* asks for the person's words, which are what the set-up step's session acts on (REVIEWENV1g).
+  'not-yet',
+]);
 
 /** How many acts an account's row offers beside its door: three controls a row at most (design §9.3). */
 const ACCOUNT_ACTS = 2;
@@ -112,6 +120,9 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     case 'go-ahead': return plain('approve', 'refuse');
     case 'trust': return item.trust ? plain('trust') : [];
     case 'departure': return plain('accept-departure');
+    // A set-up shown and waiting (REVIEWENV1g, design §3.3): the strip's chip's and the step's page's own presses, *Show it
+    // again* only for a local set-up, which Daoris serves; *Skip…* is the step's page's, where the work is read.
+    case 'set-up': return item.setUp ? plain('reviewed', 'not-yet', ...(item.local ? ['show-again' as const] : [])) : [];
     case 'rule': return plain('accept-rule', 'decline-rule');
     case 'account-wait':
     case 'signed-out': return accountOffers(item);
@@ -219,6 +230,10 @@ export function waitingInSessions(
  * **A departure waits for the person's word** (DRIFT1d2, D133 §4): a done held for their yes because it departed from
  * what they required, which the quests list carries (`held`) until they accept it.
  *
+ * **A set-up shown waits for the person's look** (REVIEWENV1g, D154 point 8): a set-up step whose newest set-up has no verdict,
+ * from the quests list's own record, with *Reviewed*, *Not yet…* and *Show it again* on its row, the set-up named as the row
+ * drew it. A step held for its review is never a departure's row, since no yes lifts a review's hold.
+ *
  * **Work to review is ready for the person** (D126): each session Sessions' list places *To review*, named from its
  * record where the page holds it and by its id where it does not, so nothing waiting is dropped.
  *
@@ -289,9 +304,10 @@ export function needsAPerson(
         detail: goAhead.asked[0]?.why ?? null,
       })));
 
-  // A done its departure holds for the person's yes (DRIFT1d2), until they accept it.
+  // A done its departure holds for the person's yes (DRIFT1d2), until they accept it. A set-up step its review holds waits
+  // for their review instead (REVIEWENV1g), which no yes lifts, so it is the row below and never this one.
   const departures = quests
-    .filter((quest) => quest.held === true && !quest.accepted)
+    .filter((quest) => quest.held === true && !quest.accepted && quest.hold !== 'unreviewed')
     .map((quest): Attention => ({
       id: quest.id,
       kind: 'departure',
@@ -300,6 +316,27 @@ export function needsAPerson(
       since: quest.updated,
       detail: departureWhy(quest),
     }));
+
+  // A set-up step whose newest set-up waits for the person's look (REVIEWENV1g, design §3.3), oldest first with the rest: what
+  // it showed, and the set-up the row drew, which its verdict names.
+  const setUps = quests
+    .filter(waitsForLook)
+    .map((quest): Attention => {
+      const newest = newestSetUp(quest)!;
+      return {
+        id: quest.id,
+        kind: 'set-up',
+        title: questName(quest),
+        where: quest.to,
+        since: newest.at ?? quest.updated,
+        detail: newest.shows
+          ? i18n.t('work.attention.setUpShows', { environment: quest.setUpIn, shows: newest.shows })
+          : i18n.t('work.attention.setUpShown', { environment: quest.setUpIn }),
+        setUp: setUpRef(newest)!,
+        local: newest.local !== false,
+        session: newest.session ?? null,
+      };
+    });
 
   // What Sessions' list places To review (D126), from the one reader the frame holds: never a reader of its own.
   const reviews = groups
@@ -412,7 +449,7 @@ export function needsAPerson(
     (a.since === null || b.since === null ? Number(a.since === null) - Number(b.since === null) : a.since.localeCompare(b.since));
   return [
     [...accountRows, ...parked, ...parkedQuests, ...goAheads, ...folders.values()],
-    [...waitingAsks, ...departures, ...widenings, ...unanswerable],
+    [...waitingAsks, ...departures, ...setUps, ...widenings, ...unanswerable],
     reviews,
   ].flatMap((group) => group.sort(oldestFirst));
 }

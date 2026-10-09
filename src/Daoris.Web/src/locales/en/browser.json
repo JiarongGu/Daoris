@@ -16,5 +16,7 @@
   "browser.review.served": "Shown in Daoris's browser for {{environment}}",
   "browser.review.unserved": "No longer shown: a reload there loads your own server. Show it again to serve its build.",
   "browser.review.again": "Show #{{quest}} again",
+  "browser.review.reviewed": "Reviewed #{{quest}}",
+  "browser.review.notYet": "Not yet… on #{{quest}}'s page",
   "browser.review.shownAgain": "Shown again in Daoris's browser: #{{quest}}"
 }

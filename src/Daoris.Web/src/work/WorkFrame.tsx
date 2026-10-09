@@ -10,8 +10,11 @@ import {
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree,
-  useDiscardSessionTree,
+  useDiscardSessionTree, useDriver,
 } from '../shell';
+import { reviewHolds, reviewState } from './review';
+import { useReviewActs } from './reviewActs';
+import type { HeadReview } from './SessionHead';
 import { sayDiscard } from '../settings/Sweep';
 import { doorOf, toolOf } from '../tools';
 import { agentOf, machineScope, workspaceScope } from '../settings/accounts';
@@ -43,6 +46,7 @@ import { SessionRail } from './SessionRail';
 import { type ActFacts, actMenu, headerActs, offeredActs, primaryAct, stopAsk } from './acts';
 import { keptSessionFilters, sessionFilters, shownOf } from './groups';
 import { sessionFacts } from './headFacts';
+import type { Answered } from './InlineConfirm';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import { type SessionDoors, useSessionActs } from './sessionActs';
 import { ListMore } from './ListPane';
@@ -830,6 +834,9 @@ export function WorkFrame({
           hasTree={Boolean(following && ownTree(following, (registry.data ?? []).find((row) => row.repository === following.repository)?.root))}
           onSendBack={following && (takesWords(box) || onSendBack) ? sendBack : undefined}
           onPreview={following && here ? (path) => openPreview({ path }) : undefined}
+          // SQUASHTIDY1f: work the line holds by content offers the head's discard in Accept's place, through the head's press.
+          discards={following && following.id === attended?.id ? discards : null}
+          onDiscardTree={following && following.id === attended?.id ? discardHeld : undefined}
         />,
       );
     }
@@ -974,9 +981,40 @@ export function WorkFrame({
   const lands = attended && here && grouping?.lands ? grouping.lands : null;
   const landing = useLanding(lands ? attended!.id : null);
   const land = useLandSessionTree();
+  // The review's gate where it holds that work (REVIEWENV1g, design §3.1): the set-up step's record, whether Daoris still serves
+  // its tab here, and the verdict's presses, each by the one owner; *Set it up* follows the session's own quest.
+  const reviewActs = useReviewActs({ notify });
+  const inReview = useDriver().data?.inReview;
+  const gateHolds = reviewHolds(landing.data);
+  const gateStep = gateHolds?.quest ? (quests.data ?? []).find((each) => each.id === gateHolds.quest) ?? null : null;
+  const headReview: HeadReview | null = gateHolds && attended ? {
+    step: gateStep,
+    served: inReview && gateHolds.quest ? inReview.find((row) => row.quest === gateHolds.quest)?.served ?? false : null,
+    busy: reviewActs.busy,
+    acts: reviewActs.actsFor({
+      state: reviewState(gateHolds.state),
+      step: gateHolds.quest ?? null,
+      record: gateStep,
+      work: attended.quest ?? null,
+      open: gateHolds.quest && onOpenQuest ? () => onOpenQuest(gateHolds.quest!) : undefined,
+    }),
+  } : null;
   // SQUASHTIDY1b: where the line holds its commits by content, no landing but its discard, the review's own, unforced.
   const discards = attended && here && !lands && grouping?.discards ? grouping.discards : null;
   const discardTree = useDiscardSessionTree();
+  // Its one press, for the head and, in Accept's place, the review (SQUASHTIDY1f): never forced from here, a refusal the
+  // driver's sentence inside the ask, and the review's Discard the door that asks twice.
+  const discardHeld = discards && attended ? (answered: Answered) => discardTree.mutate({ id: attended.id }, {
+    onSuccess: (result) => {
+      if (!result.done) {
+        answered.refused(result.message);
+        return;
+      }
+      notify(result.message);
+      answered.done();
+    },
+    onError: (error) => answered.refused(sentence(error)),
+  }) : undefined;
   const attendedFacts: ActFacts | null = attended
     ? { session: attended, quest, grouping, root: rootOf(attended.repository), where: where[attended.id] }
     : null;
@@ -1226,6 +1264,7 @@ export function WorkFrame({
             // LAND4: commits its tree holds, offered to land beside what it left; the press is the review's Accept, its
             // sentence said once it landed and a refusal said inside the ask (UXFIX2).
             lands={lands}
+            review={headReview}
             landing={landing.data}
             onLand={lands && attended ? (answered) => land.mutate(attended.id, {
               onSuccess: (result) => {
@@ -1238,20 +1277,9 @@ export function WorkFrame({
               },
               onError: (error) => answered.refused(sentence(error)),
             }) : undefined}
-            // SQUASHTIDY1b: its discard, never forced from here: a refusal is the driver's sentence inside the ask, and the
-            // review's Discard is the door that asks twice.
+            // SQUASHTIDY1b: its discard, never forced from here (`discardHeld`).
             discards={discards}
-            onDiscardTree={discards && attended ? (answered) => discardTree.mutate({ id: attended.id }, {
-              onSuccess: (result) => {
-                if (!result.done) {
-                  answered.refused(result.message);
-                  return;
-                }
-                notify(result.message);
-                answered.done();
-              },
-              onError: (error) => answered.refused(sentence(error)),
-            }) : undefined}
+            onDiscardTree={discardHeld}
             trace={attended && trace.available ? {
               open: tracing === attended.id,
               onToggle: () => setTracing(tracing === attended.id ? null : attended.id),

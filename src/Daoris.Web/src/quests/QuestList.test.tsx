@@ -48,7 +48,7 @@ describe("Quests' list", () => {
     list({ quests: [{ quest: OPEN }, { quest: HELD }] });
 
     expect(screen.getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent)).toEqual([
-      'Awaiting your yes (1)', 'Open — waiting to be taken (1)',
+      'Waiting on you (1)', 'Open — waiting to be taken (1)',
     ]);
     expect(within(screen.getByRole('button', { name: /Stream the tiles from the cold cache/ })).getByText('awaits your yes'))
       .toBeInTheDocument();

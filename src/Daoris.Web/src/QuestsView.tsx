@@ -25,6 +25,8 @@ import { sittingBecause } from './signals';
 import { failure, type Notify, useErrorNotify } from './ui';
 import type { HistoryDoor } from './work/history';
 import { useHistoryActs } from './work/historyActs';
+import { stepState } from './work/review';
+import { useReviewActs } from './work/reviewActs';
 import type { Answered } from './work/InlineConfirm';
 import { ListMore } from './work/ListPane';
 import { type AbandonAnswer, wiredFor, type WorkDoor, type WorkTarget } from './work/pausing';
@@ -166,6 +168,9 @@ export function useQuestsView({
   const historyOf = useHistoryPlan(shownQuest ? { scope: 'quest', id: shownQuest.id } : null, { enabled: active && closedQuest });
   const failedOf = useHistoryPlan(shownQuest ? { scope: 'failed', id: shownQuest.id } : null, { enabled: active && closedQuest });
   const historyActs = useHistoryActs({ notify });
+  // A set-up step's review (REVIEWENV1g): the presses' one owner, and whether Daoris still serves each waiting set-up's tab here.
+  const reviewActs = useReviewActs({ notify });
+  const inReview = driver.data?.inReview;
   // Every query this view renders from — a session surface or driver bridge that fails silently is
   // indistinguishable from a family with no driver attached. Said once, while the view is in front (D118 §3h).
   useErrorNotify(active ? quests.error ?? registry.error ?? sessions.error ?? driver.error : null, notify);
@@ -386,6 +391,13 @@ export function useQuestsView({
         work={workDoor(quest)}
         history={historyDoor(quest)}
         trace={traceDoor(quest)}
+        // A set-up step's review (REVIEWENV1g): its verdict goes to the step, its skip there, and *Set it up* is the work's,
+        // never this page's, since a set-up step follows the work it shows.
+        review={quest.setUpIn ? {
+          acts: reviewActs.actsFor({ state: stepState(quest), step: quest.id, record: quest }),
+          busy: reviewActs.busy,
+          served: inReview ? inReview.find((row) => row.quest === quest.id)?.served ?? false : null,
+        } : undefined}
       />
     );
   };

@@ -5,6 +5,7 @@ import { ago, figure } from '../format';
 import type { RepositoryLine } from '../settings/Lines';
 import { Button, Chip, Icon, Inline, Prose, Tip, WhyGlyph } from '../ui';
 import { type MainNotice, PageHead, PageSection, PageTabs, ViewMain } from '../work/ViewMain';
+import { WorkflowTab, type WorkflowTabProps } from '../workflow/WorkflowTab';
 import { RepositoryMarks } from './ProjectList';
 import { RepositorySetup, type RepositorySetupProps, type SetupSectionId } from './RepositorySetup';
 import type { ProjectTab } from './tabs';
@@ -25,8 +26,9 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
  * **A repository's page** (FRAME1e, D118 §2): in Repositories' main area beside the list. Its header holds its name, its
  * standing, its summary as its one line, and its acts: the door to its code map (MAP3a) and *Manage*. Beneath, its tabs
  * (UX6f, D150 §4.2): **Details**, its facts (what the index holds, the commit it was fed from, its workspace, its line, its
- * unlanded branches), its declaration and for one not adopted the steps to adopt; and **Setup**, every setting it holds
- * on this machine (`RepositorySetup`).
+ * unlanded branches), its declaration and for one not adopted the steps to adopt; **Workflow**, how its work moves, drawn
+ * read-only from its rules as they stand (WORKFLOW1b, the workflow design §6.1), each step's door opening the Setup row that
+ * sets it; and **Setup**, every setting it holds on this machine (`RepositorySetup`).
  *
  * @remarks
  * **A molecule**: every state is reached by its props, and every press goes out. The tab shown is its holder's,
@@ -34,7 +36,8 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
  *
  * - **A setting has one home, its Setup** (§1 rule 1): Details shows its line read-only, with a door to Setup at *Line
  *   and landing*.
- * - **A browser gets Details alone** (D47 §4): setup is this machine's, and one tab is no tabs, so it has no tab row.
+ * - **A browser gets Details alone** (D47 §4): setup is this machine's, and so are its workflows (design §2.4, §6.1); one
+ *   tab is no tabs, so it has no tab row.
  * - **Adoption is the repository's own act** (D31, D32): one not adopted is offered the steps as text, never a button,
  *   and none of adoption's own acts, like *Manage*, which writes its declaration into it.
  * - **An absent act is absent, never disabled**: *Manage* and Setup only where a shell answers (D48 §7), Setup's
@@ -42,7 +45,7 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
  * - **A page never prints a machine path it was answered** (D47 §4): a checkout here is a mark, never its folder.
  */
 export function ProjectPage({
-  registration, counts, line, unlanded = 0, here, drivable, held, setup, tab = 'details', onTab, onManage, onOpenCode,
+  registration, counts, line, unlanded = 0, here, drivable, held, setup, workflow, tab = 'details', onTab, onManage, onOpenCode,
 }: {
   registration: Registration;
   /** What the index holds of it: absent where it holds nothing. */
@@ -59,6 +62,11 @@ export function ProjectPage({
   held?: boolean;
   /** Its Setup on this machine: a shell's. Absent, the page is Details alone, with no tab row. */
   setup?: RepositorySetupProps | null;
+  /**
+   * How its work moves (WORKFLOW1b): a shell's, beside its Setup. Its doors to the workspace's Setup are its holder's; the
+   * door to its own Setup is the page's, which opens the section that sets the step.
+   */
+  workflow?: WorkflowTabProps | null;
   /** The tab shown, its holder's to remember; Details where it is not handed. */
   tab?: ProjectTab;
   onTab?: (tab: ProjectTab) => void;
@@ -209,6 +217,15 @@ export function ProjectPage({
     </>
   );
 
+  // A remembered Workflow tab on a page handed no workflow (an older shell) shows Details, never a tab with no panel.
+  const shown: ProjectTab = tab === 'workflow' && !workflow ? 'details' : tab;
+  // A step's door into its own Setup opens the section that sets it, as the line's door opens Line and landing.
+  const toSection = (section: 'work' | 'sessions' | 'defaults') => {
+    if (section === 'defaults' || !onTab) return;
+    setAsked(section);
+    onTab('setup');
+  };
+
   return (
     <ViewMain header={head} menu={menu}>
       {setup && onTab
@@ -217,13 +234,18 @@ export function ProjectPage({
             label={t('projects.tab.list', { repository })}
             tabs={[
               { id: 'details', label: t('projects.tab.details') },
+              ...(workflow ? [{ id: 'workflow' as const, label: t('projects.tab.workflow') }] : []),
               { id: 'setup', label: t('projects.tab.setup') },
             ]}
-            chosen={tab}
-            // A tab chosen by its own press opens Setup as it opens itself; only the line's door asks for Work.
+            chosen={shown}
+            // A tab chosen by its own press opens Setup as it opens itself; only a door asks for a section.
             onChoose={(next) => { setAsked(null); onTab(next); }}
           >
-            {tab === 'setup' ? <RepositorySetup {...setup} open={asked ?? setup.open} /> : details}
+            {shown === 'setup'
+              ? <RepositorySetup {...setup} open={asked ?? setup.open} />
+              : shown === 'workflow' && workflow
+                ? <WorkflowTab page="repository" name={repository} {...workflow} doors={{ ...workflow.doors, setup: toSection }} />
+                : details}
           </PageTabs>
         )
         : details}

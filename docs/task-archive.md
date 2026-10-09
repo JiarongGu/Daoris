@@ -12512,3 +12512,31 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **WORKFLOW1a — Current, derived and said** (driver, cli). One pure function per twin derives a repository's workflow from its rules, each step with its source and limit, held to a shared fixture table; `daoris driver workflow show --repository|--workspace` prints it. Contract: §2.7, §3.2, §4.7. Proof: `WorkflowCurrentTests` and `workflows.test.ts`, cell for cell.
 
 **Outcome** 2026-10-07: a repository's or a workspace's Current is derived from the landing, review and opinion rules and the standing answer by twin functions, `workflows.ts` and `WorkflowCurrent.cs`, held cell for cell to `fixtures/workflow-current.json` (22 rows and the limits' sentences, version included); `daoris driver workflow show --repository|--workspace` prints it. Detail: D157's WORKFLOW1a note and the twins row; commits b9ba3e38…1730eedc.
+
+
+## REVIEWENV1g — the screens (2026-10-09, D154)
+
+> - [ ] **REVIEWENV1g — the screens** (web-shell, web-settings, modules; after c, d). *Review in `<environment>`*, the gate's states in place of *Accept…*, the strip's chip, What needs you, the composer's and the ask's choice, the glossary's terms; and REVIEWENV1a's Setup row, whose command in 中文 joins its alternatives with 、 where its neighbours use `|` (seen on the install). Contract: §1.5, §3.1–§3.3, §3.6. Proof: vitest, stories, `i18n:check`, `names:check --strict`, `HelpCoverageTests`, the look in both themes and 中文.
+
+**Outcome** 2026-10-07: the review is answered in the window: *Review in `<environment>`* stands where *Accept…* was, in the gate's states (not shown, being set up, shown, not yet, newer work, unread), on the session head and the review pane's foot, a set-up step's page, *What needs you* and the strip's chip; the person's review choice is in the ask composer and on the ask's page; one owner (`useReviewActs`) for every press, through the person-key seam `asThePerson`. Follow-ups: REVIEWENV1j, REVIEWENV1g2, OPINIONTWIN1. Detail: D154's REVIEWENV1g note; commits ae2ec26f…07570704.
+
+
+## WORKFLOW1b — drawn on the pages (2026-10-09, D157)
+
+> - [ ] **WORKFLOW1b — drawn on the pages** (modules, web-shell; after a). A *Workflow* tab on a repository's and a workspace's page draws Current read-only: steps, participation, sources, limits, doors to Setup's rows; the glossary's words. Contract: §6.1–§6.2, §6.4. Proof: stories, vitest, `i18n:check`, `names:check --strict`, the look in both themes and 中文 at 1546 and 680 px.
+
+**Outcome** 2026-10-07: a *Workflow* tab on a repository's and a workspace's page draws Current read-only as a vertical flow: the start holds, each step with who takes part (a shape and a word, no status hue, D157 §6.2), who acts, what it is set to, its source, its runtime word and its limit, each edge saying what moves work on, *Your part* and the terminal twin; doors to the Setup row that sets each step; a workspace lists the repositories that set their own. Fed by the modules' `WORKFLOW_CURRENT`; absent where the page has no shell. Detail: D157's WORKFLOW1b note; commits d053add4…4c539e3e.
+
+
+## REVIEWENV1h — the family rehearsal phase (2026-10-09, D154)
+
+> - [ ] **REVIEWENV1h — the family rehearsal phase** (tools, examples; after c). An example declares a local environment. A stub chain says a set-up; its landing is refused until `quest review … reviewed`; *not yet* reaches the stub's next turn; a later commit holds again; a repository set to none lands at once. Contract: §3. Proof: `rehearse:family`'s new phase.
+
+**Outcome** 2026-10-07: phase 17e of `rehearse:family` proves D154's chain over the example family with no model: a local set-up step sits in the headless loop; a stub chain's set-up in a deployed environment is said through its connector (`review_ready`); `trees land` refuses with the gate's sentence until `quest review … reviewed`; *not yet* reaches the stub's next turn and a second set-up is posted; a later commit holds again; the landing record keeps the verdict; `review … none` lands at once. 425 checks. Found: SessionTrees.Config() ignores `DAORIS_DRIVER_CONFIG` (CONFIGSEAM1). Detail: D154's REVIEWENV1h note; commits e20f8d62…ae884155.
+
+
+## SQUASHTIDY1f — the review pane's own Accept reads the content proof (2026-10-09, D102)
+
+> - [ ] **SQUASHTIDY1f — the review pane's own Accept reads the content proof** (driver, web-shell; after SQUASHTIDY1b). The review side bar's *Accept* (`DiffPane`) is still offered, and `LandAsync` still lands, a tree the line holds by content. Refuse there with the content clause and offer the discard, as the session's head now does. Contract: D102's SQUASHTIDY1b note. Proof: a `LandAsync` Process test over a squash-merged line; the pane's vitest.
+
+**Outcome** 2026-10-07: every landing door (the review's Accept, `trees land`, Ask Daoris's accept card, the look's automatic landing) goes through `LandAsync`, which now asks the head's own judgement first and refuses work the line holds by content with the code `carried` and one sentence, writing nothing; the review pane shows the head's *Discard branch…* (`HeldDiscard`, one molecule for both) where Accept stood. Detail: D102's SQUASHTIDY1f note, the fix log's entry; commits 501dbcc6…2a2ed2b3.

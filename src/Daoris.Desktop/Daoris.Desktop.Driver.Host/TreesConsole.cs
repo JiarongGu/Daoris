@@ -349,6 +349,8 @@ internal static class TreesConsole
                 {
                     var plan = await landing.PlanAsync(tree, subject).ConfigureAwait(false);
                     Console.WriteLine(Planned(session, plan));
+                    // SQUASHTIDY1f: work the line holds by content, which the press refuses, said before it in the press's own sentence.
+                    if (await landing.DiscardOfferAsync(tree).ConfigureAwait(false) is { } carried) Console.WriteLine($"trees: {carried.NotLanded}");
                     // What the review says before the press (design §3.5): what holds it, or what let it go.
                     if (review.State != ReviewStates.None) Console.WriteLine($"trees: {review.Says}");
                     // Landed before, its branch gone since, its tree still here: said, as the review's note says it.

@@ -145,8 +145,11 @@ function QuestRow({ facts, chosen, resuming, onChoose, onResume }: {
             {/* Taken and waiting on another repository's answer (D79): not stuck, and nothing for the person to
                 do. The waiting tone, as `awaiting-person` wears it. */}
             {waits && <Pill tone="open" title={t('quests.card.waitsHint')}>{t('quests.card.waits', { id: waits })}</Pill>}
-            {/* A departure holds it for the person's yes (DRIFT1d2): what follows waits on them, so open's hue, theirs. */}
-            {quest.held && <Pill tone="open" title={t('quests.card.heldHint')}>{t('quests.card.held')}</Pill>}
+            {/* A departure holds it for the person's yes (DRIFT1d2): what follows waits on them, so open's hue, theirs. A set-up
+                step its review holds waits for their review instead (REVIEWENV1g), which no yes lifts. */}
+            {quest.held && (quest.hold === 'unreviewed'
+              ? <Pill tone="open" title={t('review.pillHint')}>{t('review.pill')}</Pill>
+              : <Pill tone="open" title={t('quests.card.heldHint')}>{t('quests.card.held')}</Pill>)}
             {/* A live driven session marks its quest; finished ones live in its record. */}
             {session && SESSION_ACTIVE.has(session) && (
               <Pill tone={SESSION_TONE[session]} title={t('quests.session.hint')}>{t(`sessionState.${session}`)}</Pill>

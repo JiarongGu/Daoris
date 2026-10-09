@@ -56,6 +56,9 @@ const ORGANISMS = new Set<string>([
   // The one owner of a clear (HIST1e, D153 §6.1): it holds the bridge's hook, so the quest's page, the ask's page and a
   // workspace's Details, which each press it, hold none.
   './work/historyActs.ts',
+  // The one owner of a review's presses (REVIEWENV1g, D154 point 8): it holds the service's and the bridge's hooks, so the
+  // gate, the quest's page and What needs you, which each press them, hold none.
+  './work/reviewActs.ts',
   './work/WorkFrame.tsx',
   // Ask Daoris's organism (HELP1): it reads the machine, so the panel and the starters do not.
   './help/AskDaoris.tsx',
@@ -124,7 +127,9 @@ export function offenders(files: [path: string, source: string][]): string[] {
 // `menus/` since CTX1: the right-click menu and its one handler, handed the frame's doors — App and the secondary
 // window's root hold the bridge, so a surface that offers its acts reaches no data through it.
 // `agents/` since UX6e: the Agents place's list, strip, page and account rows, drawn from props — AgentsView holds the data.
-const sources = import.meta.glob('./{ui.tsx,links.tsx,work/**/*.{ts,tsx},map/**/*.{ts,tsx},asks/**/*.{ts,tsx},compose/**/*.{ts,tsx},settings/**/*.{ts,tsx},projects/**/*.{ts,tsx},help/**/*.{ts,tsx},plugins/**/*.{ts,tsx},quests/**/*.{ts,tsx},knowledge/**/*.{ts,tsx},update/**/*.{ts,tsx},menus/**/*.{ts,tsx},agents/**/*.{ts,tsx}}', {
+// `workflow/` since WORKFLOW1b: the Workflow tab and its chart, drawn from props — the Repositories view and a workspace's
+// page hold the answer.
+const sources = import.meta.glob('./{ui.tsx,links.tsx,work/**/*.{ts,tsx},map/**/*.{ts,tsx},asks/**/*.{ts,tsx},compose/**/*.{ts,tsx},settings/**/*.{ts,tsx},projects/**/*.{ts,tsx},help/**/*.{ts,tsx},plugins/**/*.{ts,tsx},quests/**/*.{ts,tsx},knowledge/**/*.{ts,tsx},update/**/*.{ts,tsx},menus/**/*.{ts,tsx},agents/**/*.{ts,tsx},workflow/**/*.{ts,tsx}}', {
   eager: true, query: '?raw', import: 'default',
 }) as Record<string, string>;
 
@@ -163,6 +168,12 @@ describe('the presentational boundary', () => {
 
   it('is looking at files at all — a vacuous boundary is a boundary that has stopped working', () => {
     expect(presentational.length).toBeGreaterThan(0);
+  });
+
+  // WORKFLOW1b: the Workflow tab and its chart are molecules, so every state is a story's props (the workflow design §6.4).
+  it('holds the Workflow tab and its chart to it', () => {
+    const paths = presentational.map(([path]) => path);
+    expect(paths).toEqual(expect.arrayContaining(['./workflow/WorkflowTab.tsx', './workflow/WorkflowChart.tsx', './workflow/said.ts']));
   });
 
   it('holds: no presentational component reaches the service or the shell', () => {

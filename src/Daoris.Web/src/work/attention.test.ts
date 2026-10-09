@@ -680,7 +680,7 @@ describe('the groups', () => {
     expect(ATTENTION_GROUP).toEqual({
       parked: 'holding', 'parked-quest': 'holding', 'go-ahead': 'holding', trust: 'holding',
       'account-wait': 'holding', 'signed-out': 'holding',
-      proposal: 'word', intake: 'word', departure: 'word', rule: 'word', unanswerable: 'word',
+      proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', rule: 'word', unanswerable: 'word',
       review: 'ready',
     });
   });
@@ -726,7 +726,7 @@ describe('what a row offers', () => {
   });
 
   it('asks once before what widens what Daoris may do, and before a choice', () => {
-    expect([...ASKS_ONCE].sort()).toEqual(['accept-rule', 'approve', 'choose', 'let-run', 'refuse', 'trust']);
+    expect([...ASKS_ONCE].sort()).toEqual(['accept-rule', 'approve', 'choose', 'let-run', 'not-yet', 'refuse', 'trust']);
   });
 });
 

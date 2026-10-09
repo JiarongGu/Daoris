@@ -34,18 +34,18 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Web/e2e/platform.spec.ts` | 56 | 965 |
 | `src/Daoris.Web/src/App.test.tsx` | 50 | 966 |
-| `src/Daoris.Web/src/App.tsx` | 67 | 1237 |
+| `src/Daoris.Web/src/App.tsx` | 68 | 1253 |
 | `src/Daoris.Web/src/ProjectsView.test.tsx` | 70 | 1272 |
 | `src/Daoris.Web/src/QuestsView.test.tsx` | 62 | 1200 |
 | `src/Daoris.Web/src/agents/AgentPage.tsx` | 47 | 887 |
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 96 | 1872 |
-| `src/Daoris.Web/src/quests/QuestPage.tsx` | 43 | 815 |
+| `src/Daoris.Web/src/quests/QuestPage.tsx` | 45 | 844 |
 | `src/Daoris.Web/src/ui.test.tsx` | 43 | 872 |
-| `src/Daoris.Web/src/ui.tsx` | 76 | 1620 |
+| `src/Daoris.Web/src/ui.tsx` | 76 | 1632 |
 | `src/Daoris.Web/src/work/ConversationView.test.tsx` | 43 | 817 |
 | `src/Daoris.Web/src/work/SessionHead.test.tsx` | 45 | 860 |
-| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 199 | 3866 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 76 | 1435 |
+| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 202 | 3909 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 78 | 1463 |
 | `src/Daoris.Web/src/work/conversation.test.ts` | 44 | 857 |
 | `src/Daoris.Web/src/work/frame.tsx` | 40 | 877 |
 
@@ -77,9 +77,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 61 | 1060 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 90 | 1640 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionGroups.cs` | 58 | 1055 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionGroups.cs` | 59 | 1064 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.Sync.cs` | 68 | 1146 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.cs` | 75 | 1308 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.cs` | 76 | 1319 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionsCommand.cs` | 56 | 1134 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/StagedBuild.cs` | 46 | 959 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trace.Chain.cs` | 56 | 1246 |
@@ -142,7 +142,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/deployment-rehearsal.mjs` | 98 | 1708 |
 | `tools/desktop-publish.mjs` | 59 | 1047 |
 | `tools/desktop.mjs` | 50 | 1038 |
-| `tools/family-rehearsal.mjs` | 316 | 5633 |
+| `tools/family-rehearsal.mjs` | 337 | 5941 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
 | `tools/merge-branch.mjs` | 129 | 2362 |
 | `tools/orient-index.mjs` | 66 | 1435 |
@@ -155,7 +155,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `.claude/knowledge/twins.md` | 64 | 124 |
 | `docs/2026-09-19-platform-ux.md` | 57 | 612 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
-| `docs/2026-09-21-working-surface-components.md` | 52 | 349 |
+| `docs/2026-09-21-working-surface-components.md` | 53 | 352 |
 | `docs/2026-09-25-rev3-review.md` | 51 | 407 |
 | `docs/2026-09-26-ux5-screen-audit.md` | 46 | 141 |
 | `docs/2026-09-30-machine-log-design.md` | 45 | 460 |
@@ -180,4 +180,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-08-second-agent-design.md` | 56 | 765 |
 | `docs/2026-10-09-workflow-design.md` | 79 | 1034 |
 | `docs/DAORIS_FUTURE_DIRECTIONS.md` | 51 | 3466 |
-| `src/Daoris.Desktop/README.md` | 49 | 294 |
+| `src/Daoris.Desktop/README.md` | 50 | 295 |

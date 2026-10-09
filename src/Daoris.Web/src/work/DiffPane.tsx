@@ -10,8 +10,12 @@ import {
 } from '../shell';
 import { Button, EmptyState, Inline, SESSION_ACTIVE } from '../ui';
 import { reviewKnown } from './diff';
+import type { DiscardOffer } from './groups';
+import { HeldDiscardAsk, HeldDiscardButton, heldDiscardable } from './HeldDiscard';
+import type { Answered } from './InlineConfirm';
 import { LandedNote } from './LandedNote';
 import type { DiffLayout } from './PatchView';
+import { reviewHolds, reviewState } from './review';
 import { ReviewFailed, ReviewFiles, ReviewHead, ReviewReading } from './ReviewFrame';
 
 /** How a reader likes the changes laid out (REVIEW2) — a per-viewer convenience, like the frame's widths. */
@@ -49,6 +53,12 @@ const LAYOUT = 'daoris.reviewLayout';
  * landed — the branch stands, or the tree is gone — accepting and sending back are not offered, and
  * discarding only where a tree is still here; the hand-off stays where one applies.
  *
+ * **Work the line holds by content is never offered to land again** (SQUASHTIDY1f, D102's note). Where a squash merge or a
+ * cherry-pick put the tree's commits on the line or a branch of the person's (`discards`, the reader's fact the session's head
+ * reads), the landing door refuses them, so no *Accept* stands: in its place the driver's sentence says where the work is, and
+ * the head's *Discard branch…* asks once with the ref the commits stay at, pressed through the head's own press. The review's
+ * two-step Discard stands only where that one would not go unforced, since the tree holds what no commit does.
+ *
  * **It says what it is doing while git reads** (REVIEW4). The frame stands at once with what the record holds —
  * the title, the repository, its own branch, the base and the commits it reported — and the files and the patch as
  * a skeleton under words that say what is read and, after a moment, for how long. A refusal is worded from its code
@@ -57,8 +67,17 @@ const LAYOUT = 'daoris.reviewLayout';
  *
  * Desktop-only, structurally: the hook is gated on the bridge, so in a browser this never asks.
  */
-export function DiffPane({ session, record, title = null, hasTree = false, onSendBack, onPreview }: {
+export function DiffPane({
+  session, record, title = null, hasTree = false, onSendBack, onPreview, discards = null, onDiscardTree,
+}: {
   session: string | null;
+  /**
+   * What its tree offers where the line holds its commits by content (SQUASHTIDY1b), as the driver's reader said it for the
+   * session's head: shown in *Accept*'s place (SQUASHTIDY1f). Absent where it offers none, or nothing has answered.
+   */
+  discards?: DiscardOffer | null;
+  /** That discard's press, the head's own (the review's Discard, unforced), told back to its ask. Absent where nothing presses it. */
+  onDiscardTree?: (answered: Answered) => void;
   /**
    * The attended session's record (REVIEW4): what the review's frame says before git answers, and whether its answer
    * is final — an ended session's range does not move. Absent, the frame says what the answer says.
@@ -98,11 +117,18 @@ export function DiffPane({ session, record, title = null, hasTree = false, onSen
   const treeGone = diff.data?.source === 'branch'
     || (diff.error as { code?: unknown } | null)?.code === 'SESSION_TREE_GONE';
   const treeHere = hasTree && !reading && !treeGone;
-  const canAccept = treeHere && !asLanded;
+  // Work the line holds by content (SQUASHTIDY1f): the landing door refuses it, so its discard stands where Accept would.
+  const held = treeHere && !asLanded && discards ? discards : null;
+  const heldPress = held && heldDiscardable(held, onDiscardTree) ? onDiscardTree! : null;
+  const plannable = treeHere && !asLanded && !held;
   const sendBack = asLanded ? undefined : onSendBack;
   const land = useLandSessionTree();
   // What a press would do, asked only where there is a tree to land and the review does not read as landed.
-  const landing = useLanding(canAccept ? session : null);
+  const landing = useLanding(plannable ? session : null);
+  // While the review's gate holds the work (REVIEWENV1g, design §3.1), the review says it waits where *Accept* would be, and
+  // offers no *Accept*, which the landing door would refuse; the session's head carries the verdict's presses.
+  const waits = reviewHolds(landing.data);
+  const canAccept = plannable && !waits;
   const discard = useDiscardSessionTree();
   // The branch this session's landing made, handed to a landing plugin afterwards (WSR5b) — asked whether
   // or not a tree is still here, since a tidy removes it and the branch stands.
@@ -127,6 +153,8 @@ export function DiffPane({ session, record, title = null, hasTree = false, onSen
   const [opened, setOpened] = useState<string | null>(null);
   // The second press. It exists only because the first one produced the sentence above.
   const [confirmingDiscard, setConfirmingDiscard] = useState(false);
+  // The held discard's ask (SQUASHTIDY1f), open under the acts until it answers.
+  const [askingHeld, setAskingHeld] = useState(false);
 
   if (shown !== session) {
     setShown(session);
@@ -135,6 +163,7 @@ export function DiffPane({ session, record, title = null, hasTree = false, onSen
     // A pending confirm belongs to the session it was asked about. Carrying it across would arm a
     // destructive second press against work the person never looked at.
     setConfirmingDiscard(false);
+    setAskingHeld(false);
     setSaid(null);
     setOpened(null);
   }
@@ -233,6 +262,16 @@ export function DiffPane({ session, record, title = null, hasTree = false, onSen
           <Inline text={t('work.review.landsOnLine', { line: landing.data.target })} />
         </p>
       )}
+      {!said && plannable && waits && (
+        <p className="m-0 border-l-[3px] border-st-open pl-2 text-small text-ink-soft">
+          <Inline text={waits.environment ? t('review.waits', { environment: waits.environment }) : t('review.titleAny')} />
+          {' · '}{t(`review.state.${reviewState(waits.state)}`)}
+        </p>
+      )}
+      {/* Where Accept would be, work the line holds by content (SQUASHTIDY1f): the driver's sentence, as the head says it. */}
+      {!said && held && (
+        <p className="m-0 text-small text-ink-soft"><Inline text={held.says} /></p>
+      )}
       {/* The branch the landing made, and who can push it now (WSR5b) — and what stands in the way. */}
       {!said && handable && (
         <p className="m-0 text-small text-ink-faint">
@@ -256,6 +295,8 @@ export function DiffPane({ session, record, title = null, hasTree = false, onSen
           </Button>
         )}
 
+        {heldPress && !askingHeld && <HeldDiscardButton onAsk={() => setAskingHeld(true)} />}
+
         {handable && (
           <Button
             // A press that could only be refused is not offered (UX5 U66): the sentence above says why.
@@ -268,7 +309,8 @@ export function DiffPane({ session, record, title = null, hasTree = false, onSen
 
         {sendBack && <Button onClick={sendBack}>{t('work.review.sendBack')}</Button>}
 
-        {!treeHere ? null : confirmingDiscard
+        {/* One discard where the held one is offered: unforced, the review's own would do the same without naming the ref. */}
+        {!treeHere || heldPress ? null : confirmingDiscard
           ? (
             <>
               <Button
@@ -303,6 +345,9 @@ export function DiffPane({ session, record, title = null, hasTree = false, onSen
             </Button>
           )}
       </div>
+      {heldPress && askingHeld && held?.keptAt && (
+        <HeldDiscardAsk branch={held.branch} keptAt={held.keptAt} onDiscard={heldPress} onClose={() => setAskingHeld(false)} />
+      )}
     </footer>
   );
 

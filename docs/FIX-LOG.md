@@ -43,6 +43,22 @@ repository.
   (`NoConsoleWindowTests`) green. **Not covered:** the window's label showing the lines (seen by no gate), and a child
   of the host holding the stream after it exits (the two-second wait).
 - **Commit:** `6b15ddc0` (modules), `a74974bb` (service).
+## 2026-10-09 — the review's Accept landed work a squash merge had already put on the line (SQUASHTIDY1f)
+
+### Driver and page: a tree the line holds by content was still landed, by every door but the head
+- **Symptom:** a session whose work a squash-merged pull request or a cherry-pick already carried, its tree still standing,
+  was offered *Accept* in the review's side bar, and `trees land` and the look's automatic landing took it too: a merge
+  copied the work onto the line again, or conflicted with it, and a branch carried it to a second pull request. Named by
+  SQUASHTIDY1b's note as left; reproduced as `ContentLandingTests` and an `AutoLandingTests` row, all landing before the fix.
+- **Root cause:** SQUASHTIDY1b moved the offer at the reader (`SessionGroups`, so the head offered the discard), not at the
+  act. `SessionTrees.LandAsync`, the one path every door lands through, never asked the content proof, and `DiffPane`
+  offered *Accept* wherever the review did not read as landed.
+- **Fix:** `LandAsync` asks the head's own judgement first (`DiscardOfferAsync`) and refuses with `AutoLandingCode.Carried`
+  in the head's clause (`DiscardOffer.NotLanded`), writing nothing; a look's entry closes on it; `trees land --plan` says it.
+  The review shows the driver's sentence where *Accept* stood and the head's discard (`HeldDiscard`), through the head's press.
+- **Verify:** `ContentLandingTests` (`Process`: a squash on both forms, a cherry-pick, a tree that stays, the control), the
+  look's row, `ContentHoldWordsTests`, `AutoLandingRulesTests`, and the page's `DiffPane.held` and `WorkFrame` tests.
+- **Commit:** `501dbcc6` (driver), `3483b4da` (page).
 
 ## 2026-10-09 — a website whose name points at the loopback could read the local host (ORIGIN2)
 
@@ -782,6 +798,8 @@ failed`): git's own files held for a moment, most likely by the scanner, the sam
 `speak` waits for the stub's `close` on every path; what still held the folder (a git the stub started, or the
 scanner) was not captured. The same test failed once more in HIST1c's verify another way, "turn failed: fetch failed"
 (the stub's request to its stand-in quest door), passing alone and rerun: the test, not the folder, is the repeat.
+Again at WORKFLOW1b's merge, 2026-10-09 (no CLI file changed), with two worktrees building beside it: *a set-up quest is
+done as its body says* (`setup-kit.test.ts:561`) answered `session/prompt` with `fetch failed`; the file passed 31/31 alone.
 `landing-plugins.test.ts` hung for over 25 minutes in UXFIX4's verify, its `land.mjs` child waiting with no children
 of its own while another worktree ran the same file; stopped, it passed alone (19/19, 91 s) and the next verify was
 green. No child had died, so the wait, not a held file, is the repeat; what the child waited on was not captured.

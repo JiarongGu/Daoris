@@ -410,6 +410,11 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     /// press cannot use — gone, off, landing nothing — refuses the press before anything is made; one that
     /// fails once the branch is made leaves the branch standing, and the sentence says its step failed and
     /// how the person does it by hand. Nothing here pushes: the plugin's process does.
+    /// <para>🔴 <b>Work the line already holds by content is never landed again</b> (SQUASHTIDY1f): where a squash merge or a
+    /// cherry-pick put the tree's commits on the line or a branch of the person's, as the session's head reads it
+    /// (<see cref="DiscardOfferAsync"/>, SQUASHTIDY1b), every door is refused here, before the review's gate and before anything
+    /// is made, in the head's clause and with <see cref="AutoLandingCode.Carried"/>: a merge would copy the work onto the line
+    /// again, or conflict with it, and a branch would carry it to a second pull request. Its discard is the way.</para>
     /// </remarks>
     /// <param name="inUse">
     /// The trees sessions still running or waiting name, asked when the rule's tidy reaches the other session branches the
@@ -429,11 +434,17 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
         string acceptedBy = AcceptedBy.Person, ReviewGateState? review = null)
     {
+        var full = Path.GetFullPath(path);
+        // SQUASHTIDY1f: the head's own judgement, asked first, since a review of work already on the line lands nothing either.
+        if (await DiscardOfferAsync(full, ct).ConfigureAwait(false) is { } carried)
+        {
+            return new(false, carried.NotLanded) { Refusal = AutoLandingCode.Carried };
+        }
+
         // Wherever the level says review, the work waits for the person's reviewed on a set-up that holds it, or their skip
         // (design §3.1): a merge rule waits as a branch rule does, and an advance waits the same way.
         if (review is { LetsGo: false }) return new(false, review.Says) { Refusal = AutoLandingCode.Unreviewed };
 
-        var full = Path.GetFullPath(path);
         var (workspace, repository) = OwnerOf(full);
         var landing = LandingRules.Choose(Config(), repository, workspace);
         // 🔴 Read again here, not only where the look chose it (LAND2b): a rule changed between the two must never let a landing
