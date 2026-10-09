@@ -1,0 +1,315 @@
+{
+  "about": "WORKFLOW1a's shared table: a repository's Current workflow, derived from its rules (D157 §2.7, the workflow design §2.7, §3.2), the table both twins hold, the CLI's workflows.ts and the driver's WorkflowCurrent. `current`: a name; `config`, the driver.json each side reads with its own reader; a `repository` (null draws the workspace's Current) and its `workspace` (null is none, read as the default one); the `plugins` switched on and sound, in catalogue order, each its id and the points it speaks on; then what is derived: `startHolds`, the plugins that may hold a start; `steps`, in order, each its id (its kind), kind, participation, executor, press, source (the rule and the level it was read at), settings (in the order the version reads them), runtime and limit (a code of `limits`, or null); and `version`, the first 12 hex characters of the SHA-256 of the text both sides build by hand. No row names a repository twice in different case in a landing map: the driver keeps the last spelling's rule and the CLI finds the first (the as-built note on D157). `limits`: each code a step may carry and the sentence it is said in, in order; `opinion-declared` is OpinionRules.DeclaredOnly word for word.",
+  "current": [
+    {
+      "name": "nothing set anywhere: the work, then a merge you accept",
+      "config": {},
+      "repository": "web-app",
+      "workspace": null,
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "default"}, "settings": {"form": "merge", "accept": "you", "pattern": null, "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
+      ],
+      "version": "06e90f358edc"
+    },
+    {
+      "name": "a standing answer rides the work",
+      "config": {"standing": {"web-app": {"says": "dev writes allowed; prod only on a yes", "at": "2026-10-09T09:00:00Z"}}},
+      "repository": "web-app",
+      "workspace": "work",
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": "dev writes allowed; prod only on a yes"}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "default"}, "settings": {"form": "merge", "accept": "you", "pattern": null, "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
+      ],
+      "version": "695774918b9f"
+    },
+    {
+      "name": "a workspace's branch rule whose plugin lands and answers its state: a pull request asked at the clean-up",
+      "config": {"workspaceLandings": {"work": {"form": "branch", "pattern": "work/{quest}-{slug}", "plugin": "example.pull-request"}}},
+      "repository": "web-app",
+      "workspace": "work",
+      "plugins": [{"id": "example.pull-request", "points": ["work/land", "work/state"]}],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "workspace"}, "settings": {"form": "branch", "accept": "you", "pattern": "work/{quest}-{slug}", "plugin": "example.pull-request", "tidy": false}, "runtime": "built", "limit": null},
+        {"id": "pull-request", "kind": "pull-request", "participation": "you", "executor": "plugin", "press": "merge", "source": {"rule": "landing", "level": "workspace"}, "settings": {"plugin": "example.pull-request"}, "runtime": "partial", "limit": "pull-request-at-clean-up"}
+      ],
+      "version": "dee18e4c1436"
+    },
+    {
+      "name": "a plugin that lands but answers no state: its pull request is never read",
+      "config": {"workspaceLandings": {"work": {"form": "branch", "pattern": "work/{quest}-{slug}", "plugin": "example.pull-request"}}},
+      "repository": "web-app",
+      "workspace": "work",
+      "plugins": [{"id": "example.pull-request", "points": ["work/land"]}],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "workspace"}, "settings": {"form": "branch", "accept": "you", "pattern": "work/{quest}-{slug}", "plugin": "example.pull-request", "tidy": false}, "runtime": "built", "limit": null},
+        {"id": "pull-request", "kind": "pull-request", "participation": "you", "executor": "plugin", "press": "merge", "source": {"rule": "landing", "level": "workspace"}, "settings": {"plugin": "example.pull-request"}, "runtime": "partial", "limit": "pull-request-unread"}
+      ],
+      "version": "64cbd82eff7d"
+    },
+    {
+      "name": "a plugin not on this machine: the landing and its pull request say it is not ready",
+      "config": {"workspaceLandings": {"work": {"form": "branch", "pattern": "work/{quest}-{slug}", "plugin": "example.pull-request"}}},
+      "repository": "web-app",
+      "workspace": "work",
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "workspace"}, "settings": {"form": "branch", "accept": "you", "pattern": "work/{quest}-{slug}", "plugin": "example.pull-request", "tidy": false}, "runtime": "built", "limit": "plugin-unready"},
+        {"id": "pull-request", "kind": "pull-request", "participation": "you", "executor": "plugin", "press": "merge", "source": {"rule": "landing", "level": "workspace"}, "settings": {"plugin": "example.pull-request"}, "runtime": "partial", "limit": "plugin-unready"}
+      ],
+      "version": "24bf4508996f"
+    },
+    {
+      "name": "a plugin here that speaks on no work/land point is not ready either",
+      "config": {"workspaceLandings": {"work": {"form": "branch", "pattern": "work/{quest}-{slug}", "plugin": "example.pull-request"}}},
+      "repository": "web-app",
+      "workspace": "work",
+      "plugins": [{"id": "example.pull-request", "points": ["work/state"]}],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "workspace"}, "settings": {"form": "branch", "accept": "you", "pattern": "work/{quest}-{slug}", "plugin": "example.pull-request", "tidy": false}, "runtime": "built", "limit": "plugin-unready"},
+        {"id": "pull-request", "kind": "pull-request", "participation": "you", "executor": "plugin", "press": "merge", "source": {"rule": "landing", "level": "workspace"}, "settings": {"plugin": "example.pull-request"}, "runtime": "partial", "limit": "plugin-unready"}
+      ],
+      "version": "24bf4508996f"
+    },
+    {
+      "name": "accepted automatically and tidied: the landing is Daoris's, with no press",
+      "config": {"landings": {"web-app": {"form": "branch", "pattern": "feature/{quest}", "plugin": "example.pull-request", "tidy": true, "autoAccept": true}}},
+      "repository": "web-app",
+      "workspace": null,
+      "plugins": [{"id": "example.pull-request", "points": ["work/land", "work/state"]}],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "automatic", "executor": "daoris", "press": null, "source": {"rule": "landing", "level": "repository"}, "settings": {"form": "branch", "accept": "automatic", "pattern": "feature/{quest}", "plugin": "example.pull-request", "tidy": true}, "runtime": "built", "limit": null},
+        {"id": "pull-request", "kind": "pull-request", "participation": "you", "executor": "plugin", "press": "merge", "source": {"rule": "landing", "level": "repository"}, "settings": {"plugin": "example.pull-request"}, "runtime": "partial", "limit": "pull-request-at-clean-up"}
+      ],
+      "version": "3cad2e162b95"
+    },
+    {
+      "name": "a branch for you to push: no plugin, so no pull request",
+      "config": {"landings": {"web-app": {"form": "branch", "pattern": "work/{session}"}}},
+      "repository": "web-app",
+      "workspace": null,
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "repository"}, "settings": {"form": "branch", "accept": "you", "pattern": "work/{session}", "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
+      ],
+      "version": "291debbed811"
+    },
+    {
+      "name": "a repository's own merge, tidied, replaces its workspace's branch rule whole",
+      "config": {"landings": {"web-app": {"form": "merge", "tidy": true}}, "workspaceLandings": {"work": {"form": "branch", "pattern": "work/{quest}", "plugin": "example.pull-request", "autoAccept": true}}},
+      "repository": "web-app",
+      "workspace": "work",
+      "plugins": [{"id": "example.pull-request", "points": ["work/land", "work/state"]}],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "repository"}, "settings": {"form": "merge", "accept": "you", "pattern": null, "plugin": null, "tidy": true}, "runtime": "built", "limit": null}
+      ],
+      "version": "7f762e45964d"
+    },
+    {
+      "name": "a required review in the workspace: the look, in its default environment",
+      "config": {"workspaceReviews": {"work": {"required": true, "environments": [{"name": "local", "kind": "local", "procedure": "README.md", "address": "http://localhost:4200"}, {"name": "dev", "kind": "deployed", "procedure": "docs/deploying.md"}]}}},
+      "repository": "web-app",
+      "workspace": "work",
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "look", "kind": "look", "participation": "agent-and-you", "executor": "agent", "press": "reviewed", "source": {"rule": "review", "level": "workspace"}, "settings": {"environment": "local"}, "runtime": "partial", "limit": "look-partial"},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "default"}, "settings": {"form": "merge", "accept": "you", "pattern": null, "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
+      ],
+      "version": "b6702a5fdc46"
+    },
+    {
+      "name": "a review not required draws no look",
+      "config": {"reviews": {"web-app": {"environments": [{"name": "dev", "kind": "deployed", "procedure": "docs/deploying.md"}]}}},
+      "repository": "web-app",
+      "workspace": null,
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "default"}, "settings": {"form": "merge", "accept": "you", "pattern": null, "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
+      ],
+      "version": "06e90f358edc"
+    },
+    {
+      "name": "a repository's false review keeps its workspace's look away",
+      "config": {"reviews": {"web-app": false}, "workspaceReviews": {"work": {"required": true, "environments": [{"name": "local", "kind": "local", "procedure": "README.md", "address": "http://localhost:4200"}]}}},
+      "repository": "web-app",
+      "workspace": "work",
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "default"}, "settings": {"form": "merge", "accept": "you", "pattern": null, "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
+      ],
+      "version": "06e90f358edc"
+    },
+    {
+      "name": "a second opinion before landing and between steps, required: declared, and said so",
+      "config": {"opinions": {"web-app": {"reviewers": ["codex-acp", "dsh"], "on": ["steps", "landing"], "required": true}}},
+      "repository": "web-app",
+      "workspace": null,
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "opinion", "kind": "opinion", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": "opinion", "level": "repository"}, "settings": {"reviewers": ["codex-acp", "dsh"], "on": ["landing", "steps"], "required": true, "recheck": true}, "runtime": "declared", "limit": "opinion-declared"},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "default"}, "settings": {"form": "merge", "accept": "you", "pattern": null, "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
+      ],
+      "version": "772407929371"
+    },
+    {
+      "name": "a workspace's opinion between steps only, its recheck off, is drawn with its own occasions",
+      "config": {"workspaceOpinions": {"work": {"reviewers": ["codex-acp"], "on": ["steps"], "recheck": false}}},
+      "repository": "web-app",
+      "workspace": "work",
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "opinion", "kind": "opinion", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": "opinion", "level": "workspace"}, "settings": {"reviewers": ["codex-acp"], "on": ["steps"], "required": false, "recheck": false}, "runtime": "declared", "limit": "opinion-declared"},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "default"}, "settings": {"form": "merge", "accept": "you", "pattern": null, "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
+      ],
+      "version": "182c65091e37"
+    },
+    {
+      "name": "a repository's false opinion: no second opinion here, whatever its workspace says",
+      "config": {"opinions": {"web-app": false}, "workspaceOpinions": {"work": {"reviewers": ["codex-acp"]}}},
+      "repository": "web-app",
+      "workspace": "work",
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "default"}, "settings": {"form": "merge", "accept": "you", "pattern": null, "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
+      ],
+      "version": "06e90f358edc"
+    },
+    {
+      "name": "the plugins that may hold a start, in catalogue order",
+      "config": {},
+      "repository": "web-app",
+      "workspace": null,
+      "plugins": [{"id": "example.hold-b", "points": ["quest/consider"]}, {"id": "example.watch", "points": ["session/ended"]}, {"id": "example.hold-a", "points": ["work/land", "quest/consider"]}],
+      "startHolds": ["example.hold-b", "example.hold-a"],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "default"}, "settings": {"form": "merge", "accept": "you", "pattern": null, "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
+      ],
+      "version": "dd22247d645e"
+    },
+    {
+      "name": "the workspace's Current: no repository, so no repository's rule and no standing answer",
+      "config": {"standing": {"web-app": {"says": "ok"}}, "landings": {"web-app": {"form": "merge"}}, "workspaceLandings": {"work": {"form": "branch", "pattern": "work/{quest}"}}, "reviews": {"web-app": false}, "workspaceReviews": {"work": {"required": true, "environments": [{"name": "dev", "kind": "deployed", "procedure": "docs/deploying.md"}]}}, "opinions": {"web-app": false}, "workspaceOpinions": {"work": {"reviewers": ["codex-acp"], "required": true}}},
+      "repository": null,
+      "workspace": "work",
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "opinion", "kind": "opinion", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": "opinion", "level": "workspace"}, "settings": {"reviewers": ["codex-acp"], "on": ["landing"], "required": true, "recheck": true}, "runtime": "declared", "limit": "opinion-declared"},
+        {"id": "look", "kind": "look", "participation": "agent-and-you", "executor": "agent", "press": "reviewed", "source": {"rule": "review", "level": "workspace"}, "settings": {"environment": "dev"}, "runtime": "partial", "limit": "look-partial"},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "workspace"}, "settings": {"form": "branch", "accept": "you", "pattern": "work/{quest}", "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
+      ],
+      "version": "9c9f0df1dbed"
+    },
+    {
+      "name": "a workspace with nothing set at its level: Daoris's default",
+      "config": {"standing": {"web-app": {"says": "ok"}}, "landings": {"web-app": {"form": "merge"}}, "workspaceLandings": {"work": {"form": "branch", "pattern": "work/{quest}"}}, "reviews": {"web-app": false}, "workspaceReviews": {"work": {"required": true, "environments": [{"name": "dev", "kind": "deployed", "procedure": "docs/deploying.md"}]}}, "opinions": {"web-app": false}, "workspaceOpinions": {"work": {"reviewers": ["codex-acp"], "required": true}}},
+      "repository": null,
+      "workspace": "docs",
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "default"}, "settings": {"form": "merge", "accept": "you", "pattern": null, "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
+      ],
+      "version": "06e90f358edc"
+    },
+    {
+      "name": "a repository in no workspace reads the default workspace's rules",
+      "config": {"workspaceLandings": {"default": {"form": "branch", "pattern": "work/{quest}"}}},
+      "repository": "web-app",
+      "workspace": null,
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": null}, "runtime": "built", "limit": null},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "workspace"}, "settings": {"form": "branch", "accept": "you", "pattern": "work/{quest}", "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
+      ],
+      "version": "24c5a327da9c"
+    },
+    {
+      "name": "names are matched in any case: the repository's and the workspace's (a plugin's id is lower-case, or the rule does not read)",
+      "config": {"landings": {"Web-App": {"form": "branch", "pattern": "work/{quest}", "plugin": "example.pull-request"}}, "workspaceReviews": {"WORK": {"required": true, "environments": [{"name": "local", "kind": "local", "procedure": "README.md", "address": "http://localhost:4200"}]}}, "standing": {"web-APP": {"says": "ok"}}},
+      "repository": "web-app",
+      "workspace": "Work",
+      "plugins": [{"id": "example.pull-request", "points": ["work/land", "work/state"]}],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": "ok"}, "runtime": "built", "limit": null},
+        {"id": "look", "kind": "look", "participation": "agent-and-you", "executor": "agent", "press": "reviewed", "source": {"rule": "review", "level": "workspace"}, "settings": {"environment": "local"}, "runtime": "partial", "limit": "look-partial"},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "repository"}, "settings": {"form": "branch", "accept": "you", "pattern": "work/{quest}", "plugin": "example.pull-request", "tidy": false}, "runtime": "built", "limit": null},
+        {"id": "pull-request", "kind": "pull-request", "participation": "you", "executor": "plugin", "press": "merge", "source": {"rule": "landing", "level": "repository"}, "settings": {"plugin": "example.pull-request"}, "runtime": "partial", "limit": "pull-request-at-clean-up"}
+      ],
+      "version": "c3fdbc76e1d0"
+    },
+    {
+      "name": "a repository named with spaces around it: the landing does not trim it, the review, the opinion and the standing answer do",
+      "config": {"landings": {"web-app": {"form": "branch", "pattern": "work/{quest}"}}, "reviews": {"web-app": {"required": true, "environments": [{"name": "local", "kind": "local", "procedure": "README.md", "address": "http://localhost:4200"}]}}, "opinions": {"web-app": {"reviewers": ["codex-acp"]}}, "standing": {"web-app": {"says": "ok"}}},
+      "repository": " web-app ",
+      "workspace": null,
+      "plugins": [],
+      "startHolds": [],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": "ok"}, "runtime": "built", "limit": null},
+        {"id": "opinion", "kind": "opinion", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": "opinion", "level": "repository"}, "settings": {"reviewers": ["codex-acp"], "on": ["landing"], "required": false, "recheck": true}, "runtime": "declared", "limit": "opinion-declared"},
+        {"id": "look", "kind": "look", "participation": "agent-and-you", "executor": "agent", "press": "reviewed", "source": {"rule": "review", "level": "repository"}, "settings": {"environment": "local"}, "runtime": "partial", "limit": "look-partial"},
+        {"id": "landing", "kind": "landing", "participation": "you", "executor": "daoris", "press": "accept", "source": {"rule": "landing", "level": "default"}, "settings": {"form": "merge", "accept": "you", "pattern": null, "plugin": null, "tidy": false}, "runtime": "built", "limit": null}
+      ],
+      "version": "eb09eab15885"
+    },
+    {
+      "name": "everything at once: a hold, the opinion, the look, an automatic landing and its pull request, and words the version escapes",
+      "config": {"standing": {"web-app": {"says": "say \"yes\"\tfirst\\then\nlook at 中文"}}, "workspaceOpinions": {"work": {"reviewers": ["codex-acp", "dsh"], "on": ["landing", "steps"], "recheck": false}}, "reviews": {"web-app": {"required": true, "environments": [{"name": "dev", "kind": "deployed", "procedure": "docs/deploying.md"}, {"name": "local", "kind": "local", "procedure": "README.md", "address": "http://localhost:4200"}]}}, "workspaceLandings": {"work": {"form": "branch", "pattern": "work/{quest}-{slug}", "plugin": "example.pull-request", "tidy": true, "autoAccept": true}}},
+      "repository": "web-app",
+      "workspace": "work",
+      "plugins": [{"id": "example.hold", "points": ["quest/consider"]}, {"id": "example.pull-request", "points": ["work/land", "work/state"]}],
+      "startHolds": ["example.hold"],
+      "steps": [
+        {"id": "work", "kind": "work", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": null, "level": "default"}, "settings": {"standing": "say \"yes\"\tfirst\\then\nlook at 中文"}, "runtime": "built", "limit": null},
+        {"id": "opinion", "kind": "opinion", "participation": "agent", "executor": "agent", "press": null, "source": {"rule": "opinion", "level": "workspace"}, "settings": {"reviewers": ["codex-acp", "dsh"], "on": ["landing", "steps"], "required": false, "recheck": false}, "runtime": "declared", "limit": "opinion-declared"},
+        {"id": "look", "kind": "look", "participation": "agent-and-you", "executor": "agent", "press": "reviewed", "source": {"rule": "review", "level": "repository"}, "settings": {"environment": "dev"}, "runtime": "partial", "limit": "look-partial"},
+        {"id": "landing", "kind": "landing", "participation": "automatic", "executor": "daoris", "press": null, "source": {"rule": "landing", "level": "workspace"}, "settings": {"form": "branch", "accept": "automatic", "pattern": "work/{quest}-{slug}", "plugin": "example.pull-request", "tidy": true}, "runtime": "built", "limit": null},
+        {"id": "pull-request", "kind": "pull-request", "participation": "you", "executor": "plugin", "press": "merge", "source": {"rule": "landing", "level": "workspace"}, "settings": {"plugin": "example.pull-request"}, "runtime": "partial", "limit": "pull-request-at-clean-up"}
+      ],
+      "version": "4740fb017006"
+    }
+  ],
+  "limits": [
+    {"code": "opinion-declared", "says": "Declared only: nothing reads it yet, so no reviewer is chosen and no landing waits for it."},
+    {"code": "look-partial", "says": "Partial: work here lands only once you say it is reviewed or skip the review, and a set-up step's build is shown in Daoris's browser from its session's end until then; no set-up step is composed for you yet, and nothing runs a process of its own for one."},
+    {"code": "plugin-unready", "says": "Its plugin cannot land work on this machine now: it is not installed, is switched off, contributes nothing, or speaks on no `work/land` point. `daoris plugin list` says which."},
+    {"code": "pull-request-unread", "says": "Its plugin answers no `work/state`, so Daoris never reads whether the pull request was merged or abandoned."},
+    {"code": "pull-request-at-clean-up", "says": "Its state is asked of its plugin only when branches are cleaned up, never while someone waits on it."}
+  ]
+}
