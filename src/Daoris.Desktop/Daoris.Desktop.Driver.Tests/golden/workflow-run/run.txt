@@ -1,6 +1,6 @@
 engine · Current workflow, version 60d7c608c03a · quest #q1 · ask #a1
   ✓ The work          done                 The agent finished: 1 quest here is done.
-  ✓ Second opinion    done                 Settled: read by Codex (OpenAI), with nothing left disputed.
+  ✓ Second opinion    done                 Settled: read by another maker's agent, with nothing left disputed.
   ✓ Your look         done                 You reviewed it in `local` at `01234567`.
   ✓ The landing       done                 Landed on `work/q1`, accepted by you.
   ● The pull request  waiting on you       Open: waits for you to merge it on the platform.

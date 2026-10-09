@@ -290,7 +290,7 @@ public sealed class WorkflowRunCommandTests : IDisposable
             PullRequest = "https://example.test/pull/7",
             AcceptedBy = AcceptedBy.Person,
             Review = new LandingReview(ReviewVerdicts.Reviewed, "local", "q1") { Commit = Commit, At = T.AddMinutes(35) },
-            Opinion = new LandingOpinion(OpinionGateStates.Settled) { Reviewer = "Codex (OpenAI)", Tip = Commit },
+            Opinion = new LandingOpinion(OpinionGateStates.Settled) { Reviewer = "another maker's agent", Tip = Commit },
             PullRequestState = new PullRequestState(PullRequestStates.Open) { AskedAt = T.AddMinutes(45) },
         });
         return path;
