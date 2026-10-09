@@ -240,6 +240,40 @@ public sealed partial class ServiceClient
         return ok ? (true, Text(answer, "message") ?? "") : (false, Text(answer, "error") ?? payload);
     }
 
+    /// <summary>
+    /// The person's <i>Set it up in <c>environment</c></i> (REVIEWENV1j, design §3.6): the local host's
+    /// <c>POST /api/quests/{id}/set-up-step</c>, <c>{ environment }</c>, the door the gate's press calls, which publishes a set-up step
+    /// following a done quest. The service's sentence comes back verbatim, a refusal included, with the step it published; a host
+    /// older than the door says so.
+    /// </summary>
+    public async Task<(bool Ok, string Message, string? Step)> PublishSetUpStepAsync(string quest, string environment, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("environment", environment);
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync(
+            $"/api/quests/{Uri.EscapeDataString(quest.TrimStart('#'))}/set-up-step", body, ct).ConfigureAwait(false);
+        if (root is not { } answer) return (false, $"the service at {_base} has no set-up step door ({status}) — is it older than this driver?", null);
+        if (!ok) return (false, Text(answer, "error") ?? payload, null);
+        var step = answer.TryGetProperty("quest", out var published) && published.ValueKind == JsonValueKind.Object ? Text(published, "id") : null;
+        return (true, Text(answer, "message") ?? "", step);
+    }
+
+    /// <summary>
+    /// The person's review choice on an ask, or its intake's proposal applied (REVIEWENV1j; design §1.5): the local host's
+    /// <c>POST /api/asks/{id}/review</c>, <c>{ choice, words? }</c>, the door the ask's page presses. The latest stands. The service's
+    /// sentence comes back verbatim, a refusal included, and a host older than the door says so.
+    /// </summary>
+    public Task<AskAnswer> ChooseAskReviewAsync(string ask, string choice, string? words, CancellationToken ct = default) =>
+        PostAskAsync($"/api/asks/{Uri.EscapeDataString(ask.TrimStart('#'))}/review", writer =>
+        {
+            writer.WriteString("choice", choice);
+            if (!string.IsNullOrWhiteSpace(words)) writer.WriteString("words", words.Trim());
+        }, ct);
+
     /// <summary>The objects of an array field; none where the field is absent or no array, and an item that is no object is passed over.</summary>
     private static IEnumerable<JsonElement> Items(JsonElement element, string name) =>
         element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var items) && items.ValueKind == JsonValueKind.Array

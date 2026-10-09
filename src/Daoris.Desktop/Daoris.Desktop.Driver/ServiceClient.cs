@@ -467,9 +467,15 @@ public sealed partial class ServiceClient : IDisposable
     /// Make an ask at a workspace (D65 §1a) — the sentence, its links, and files read from this
     /// machine. The service answers with what became of it; a refusal is an answer, not an exception.
     /// </summary>
+    /// <param name="review">
+    /// The person's review choice for its work (REVIEWENV1j; the review environment design §1.5), as the composer sends it: <c>off</c>,
+    /// <c>on</c> or an environment's name; null sends none, and each repository's rule decides.
+    /// </param>
+    /// <param name="reviewWords">Their words with the choice, sent only with one.</param>
     public Task<AskAnswer> AskAsync(
         string workspace, string sentence, IReadOnlyList<string> links,
-        IReadOnlyList<(string Name, byte[] Content)> files, string? to, CancellationToken ct = default) =>
+        IReadOnlyList<(string Name, byte[] Content)> files, string? to, CancellationToken ct = default,
+        string? review = null, string? reviewWords = null) =>
         PostAskAsync("/api/asks", writer =>
         {
             writer.WriteString("workspace", workspace);
@@ -488,6 +494,11 @@ public sealed partial class ServiceClient : IDisposable
 
             writer.WriteEndArray();
             if (to is not null) writer.WriteString("to", to);
+            if (review is not null)
+            {
+                writer.WriteString("review", review);
+                if (!string.IsNullOrWhiteSpace(reviewWords)) writer.WriteString("reviewWords", reviewWords.Trim());
+            }
         }, ct);
 
     /// <summary>
