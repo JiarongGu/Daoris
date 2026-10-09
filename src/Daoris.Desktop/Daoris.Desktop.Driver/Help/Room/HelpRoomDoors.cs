@@ -211,6 +211,14 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "the update banner, and Settings → Driver → Update: *Update when idle*, *Update now*, *Not now*",
             "`daoris-driver update --when-idle|--now|--cancel`, `daoris-driver update`"),
         ("start a task", "Quests → Ask", "`daoris-driver ask --workspace <name> \"…\"`"),
+        // REVIEWENV1j (D154 point 3, D50): the person's review choice, the composer's and the ask page's (REVIEWENV1g), and at a
+        // done quest's gate, where `off` is the skip and an environment is *Set it up* (design §3.6).
+        ("choose whether an ask's work is reviewed before it lands, and where: as each repository's rule says, in the default "
+            + "environment, in one its workspace declares, or not at all; at a done quest's gate, skip the review or set it up",
+            "Quests → Ask → Review before it lands, and the ask's page; the gate's *Skip the review for this work…* and "
+            + "*Set it up in `<environment>`*",
+            "`daoris-driver ask … --review rule|on|<environment>|off`, `daoris-driver ask --set-review <id> on|<environment>|off "
+            + "[\"…\"]`, `daoris-driver quest review <quest> off [\"…\"]`, `daoris-driver quest review <quest> on|<environment>`"),
         ("answer what waits on the person", "Sessions, and what needs you", "`daoris-driver answer`"),
         // MSG1e (D137 §5.4): exempt from Ask Daoris, since the words are the person's (D133 §1); the room names both doors.
         ("say something to a session of this machine's, running, parked or ended: it reads your words at its next step or when "
