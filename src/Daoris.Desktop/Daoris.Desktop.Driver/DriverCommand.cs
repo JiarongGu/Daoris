@@ -74,6 +74,11 @@ public static class DriverCommand
           quest review <id> reviewed|not-yet|skip ["…"]
               say what you saw of a set-up step's showing: reviewed lets the work it holds land; not-yet, with your
               words, sends them to the step's session as its next turn; skip lets this work land without a review.
+          opinion ask <session> [--reviewer <adapter>] [--same-agent] ["…"]  ·  opinion show <session|opinion>
+          opinion stop <opinion>  ·  opinion anyway <session> ["…"]  ·  opinion myself <session> ["…"]
+              a session's second opinion before its work lands: ask another agent to read it (one of its rule's reviewers by
+              name, or the working agent fresh), say where it stands with its findings and their answers, stop a reviewer
+              reading, go on without a settled one, or record your own reading in its place. `sessions say` sends it back.
           history [--workspace <name>] [--json]
               what this machine keeps of finished work, per workspace: quests, asks, sessions and bytes, what a
               clear would take, and what it keeps and why.

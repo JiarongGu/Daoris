@@ -13,7 +13,7 @@
 import { createHash } from 'node:crypto';
 import { atName, findName, sameName } from './casefold.ts';
 import type { DriverChoices, LandingRule } from './driverconfig.ts';
-import { OPINION_DECLARED_ONLY, opinionFor } from './opinions.ts';
+import { opinionFor } from './opinions.ts';
 import type { PluginCatalog } from './plugins.ts';
 import { normalizeWorkspace } from './remotemap.ts';
 import { reviewFor } from './reviews.ts';
@@ -64,10 +64,12 @@ export type WorkflowRules = Pick<DriverChoices,
 
 /**
  * Each limit a step may carry, said where the step is drawn (design §3.9), in the table's order — the driver's
- * `WorkflowLimits.Table`, word for word. The opinion's is its rule's own *declared only*, until XAGENT1f's gate reads it.
+ * `WorkflowLimits.Table`, word for word. The opinion's says what its gate runs since XAGENT1f: the landing waits for it, while
+ * the review's drawing of it and a task's own choice are not built.
  */
 export const WORKFLOW_LIMITS: Readonly<Record<string, string>> = {
-  'opinion-declared': OPINION_DECLARED_ONLY,
+  'opinion-partial': 'Partial: work here lands only once another agent\'s reading of it is settled, or you go on without one by '
+    + '`daoris-driver opinion`; the review does not draw it yet, and no task chooses its own reviewer yet.',
   'look-partial': 'Partial: work here lands only once you say it is reviewed or skip the review, and a set-up step\'s build is '
     + 'shown in Daoris\'s browser from its session\'s end until then; no set-up step is composed for you yet, and nothing runs a '
     + 'process of its own for one.',
@@ -137,7 +139,7 @@ export function currentWorkflow(
         required: opinion.rule.required === true,
         recheck: opinion.rule.recheck !== false,
       },
-      runtime: 'declared', limit: 'opinion-declared',
+      runtime: 'partial', limit: 'opinion-partial',
     });
   }
 

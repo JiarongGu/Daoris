@@ -53,6 +53,24 @@ public sealed class RunningSessions
         lock (_gate) _goingOn.Remove(session);
     }
 
+    // The chains' work whose second opinion a run of this loop asks or delivers, from the look that began it until it ends (XAGENT1f).
+    private readonly HashSet<string> _opinions = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Claim a chain's work in a repository for the one run that asks or delivers its second opinion (XAGENT1f): false where a run
+    /// of this loop already has it. A pass and a recheck run for minutes, and a look in between would ask the same one again.
+    /// </summary>
+    internal bool TryOpinion(string key)
+    {
+        lock (_gate) return _opinions.Add(key);
+    }
+
+    /// <summary>The run that held the claim has ended, however it ended.</summary>
+    internal void OpinionDone(string key)
+    {
+        lock (_gate) _opinions.Remove(key);
+    }
+
     /// <summary>How many runs are still going: started, opened, and not yet concluded.</summary>
     public int Running
     {

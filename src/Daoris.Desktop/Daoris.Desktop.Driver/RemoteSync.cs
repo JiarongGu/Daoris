@@ -293,8 +293,8 @@ public sealed class RemoteSync : IDisposable
         // about once in its life, and the tick that follows should know.
         // The line the person set wins over the checkout's guess here too (WSR2): the deployment orders
         // feeds by the line this machine says is canonical, and one answer for every door is the point.
-        // No home is no choices, and the guess alone, as before.
-        var configPath = Environment.GetEnvironmentVariable(DriverConfig.PathVariable) ?? DaorisHome.File("driver.json");
+        // No home is no choices, and the guess alone, as before; the file is the one every door resolves (CONFIGSEAM1).
+        var configPath = DriverConfig.FindPath();
         var choices = configPath is null ? DriverConfig.Empty : DriverConfig.Load(configPath);
         var defaultBranch = (await CanonicalLine.ResolveAsync(repo.Root, repo.Repository, _workspace, choices, ct).ConfigureAwait(false)).Branch;
 

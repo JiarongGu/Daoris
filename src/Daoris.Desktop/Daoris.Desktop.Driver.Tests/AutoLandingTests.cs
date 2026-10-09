@@ -401,6 +401,9 @@ public sealed class AutoLandingTests : IDisposable
         public Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<QuestView>>([.. Quests.Values]);
 
         public Task<AskView?> AskAsync(string id, CancellationToken ct) => Task.FromResult<AskView?>(null);
+
+        // The second opinion's gate reads the host's opinions (XAGENT1f): no rule names a reviewer here, so none is asked.
+        public Task<OpinionView?> OpinionAsync(string id, CancellationToken ct) => Task.FromResult<OpinionView?>(null);
     }
 
     private sealed class FakeLander(Func<object, PluginLanding> land) : IHookChannel

@@ -12561,3 +12561,24 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **HOSTSTART1 — a host that dies at start says why on the window** (modules; found by KSCHEMA1). `HostSupervisor` does not read the HTTP host's stderr, so a host that exits at start shows only *the service host at … exited before it answered*, whatever it printed; and the host's machine log keeps nothing of an exception thrown at start, its `using var log` disposed before `UnhandledException` fires. Carry the host's last stderr lines into the supervisor's trouble, and log a start failure before the log closes. Contract: D60, the machine-log design §4. Proof: a modules test with a stand-in host that prints a sentence and exits; a host test for the start failure's log line.
 
 **Outcome** 2026-10-07: when the HTTP host exits before it answers, the window says its newest stderr lines (`LastLines`: drained from the start on a thread of its own, four lines within 500 characters, control characters and .NET frames left out), and a start that threw writes `error` at `start` to the host's machine log through a log of its own, since the entry point's `using var log` closed first. Follow-up: HOSTSTART2. Detail: FIX-LOG HOSTSTART1, the machine-log design §4's note; commits 6b15ddc0…55327547.
+
+
+## XAGENT1f — the gate (2026-10-09, D155)
+
+> - [ ] **XAGENT1f — the gate** (driver, modules; after e). The occasions; the chain's last step here; the set-up step's and `steps`' sits; the gate at every landing door (`opinion` at the look); settled, stale and required; the presses' driver halves and terminal verbs; the landing record; the log. Contract: §7–§8. Proof: `OpinionGateTests`, `OpinionLandingTests` (`Process`), `trees land --plan`'s golden.
+
+**Outcome** 2026-10-07: the second opinion gates every landing door: read once through `SessionTrees.GateAsync` with D154's look, refused after SQUASHTIDY1f's `carried` and before `unreviewed`, as code `opinion`; its states a pure table (`OpinionGate.JudgeAsync`); the person's answers kept at the gate, bound to their commit; the look asks and delivers owed passes and sits a set-up step while an opinion is being read (`WaitsForOpinion`); `daoris-driver opinion ask|show|stop|anyway|myself` and five bridge routes over one `OpinionPresses`; the landing record, the trace and the machine log carry `opinion`; Current's opinion step reads `partial`. Follow-ups: XAGENT1f2 (the presses on the host), XAGENT1f3, XAGENT1f4; XAGENT1g draws it. Detail: D155's XAGENT1f note; commits 7a1c929a…905b818b.
+
+
+## CONFIGSEAM1 — a landing reads the config the loop reads (2026-10-09)
+
+> - [ ] **CONFIGSEAM1 — a landing reads the config the loop reads** (driver; found by REVIEWENV1h). `SessionTrees.Config()` (`SessionTrees.cs:1027`) always loads `<home>/driver.json`, while the loop, the planner and the CLI read the file `DAORIS_DRIVER_CONFIG` names, so `trees land` and the review's press ignore a per-file override's landing and review rules (the planner sat a review the landing then never asked for). Contract: D63's per-file override. Proof: a `SessionTrees` test whose config file is named otherwise, its branch rule and review rule honoured.
+
+**Outcome** 2026-10-07: `DriverConfig` holds the one resolution of the driver's config (`FindPath`, `ResolvePath()`, `ResolvePath(home)`), and the trees (the plan, the gates, the landing, the hand-off, pull requests), a plugin's page, a chat going on and the remote sync read through it, where four had each joined their home to `driver.json`; a source scan holds the seam, and a Process test proves an override's branch and review rules honoured by `trees land --plan` and the landing. Detail: FIX-LOG CONFIGSEAM1; commits c9474b3c…6c4badeb.
+
+
+## HOSTSTART2 — the connector and the headless driver write a start that threw (2026-10-09)
+
+> - [ ] **HOSTSTART2 — the connector and the headless driver write a start that threw** (service, driver; found by HOSTSTART1). The MCP connector (`Daoris.Service.Mcp/Program.cs`) and the headless driver (`Daoris.Desktop.Driver.Host/Program.cs`) are async entry points with `using var log`, so the log is closed before the runtime raises a start's exception and their `error` line is dropped, as the HTTP host's was. Contract: the machine-log design §4, HOSTSTART1's note. Proof: a real-process test per entry point that fails at start and finds its `error` line.
+
+**Outcome** 2026-10-07: the MCP connector and the headless driver write a start that threw as `error` at `start` (`unhandled` once running) through `MachineLog.WatchEntryPoint`, the service's (the HTTP host now shares it) and the driver's twin; nothing new reaches the console, and the connector's stdout stays the protocol's. Follow-up: CONFIGREAD1. Detail: FIX-LOG HOSTSTART2, the machine-log design §4's note; commits 64d1e6ac…3b260c56.

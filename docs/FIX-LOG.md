@@ -5,6 +5,64 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-09 — a landing read the home's driver.json, not the file the loop read (CONFIGSEAM1)
+
+### Driver: `trees land`, the review's press and every landing door ignored a per-file override's landing and review rules
+- **Symptom:** found by REVIEWENV1h's family rehearsal phase. A config in a second file of the home, named by
+  `DAORIS_DRIVER_CONFIG`, held the branch rule `review/{quest}` and a review rule. The planner, reading that file, sat a
+  review step; `trees land --plan` read no rule and no gate line, and `trees land` merged into the line regardless.
+- **Root cause:** two resolutions of one file. The loop, the planner, the hosts and the CLI resolve the config through
+  `DriverConfig.ResolvePath()`, the override where set and the home's `driver.json` otherwise (D63). A door that held
+  only its home joined the home to `driver.json` itself: `SessionTrees.Config()` (since `a4f31399`, WSR2), so the plan,
+  the review gate, the landing, the hand-off and the canonical line read it; and `PluginPage`'s landing rules (since
+  `c703cdbc`, PLUGUI1d). `RemoteSync` and a chat going on (`ChatRunner.MachineConfig`) each wrote out a resolution of their
+  own. An install keeps one file, so nothing differed there; a gate that names its config otherwise is where it showed.
+- **Fix:** `DriverConfig` holds the one resolution and the file's name: `FindPath()` (the override, then the home's
+  file, then null), `ResolvePath()` (refused with neither, as before) and `ResolvePath(home)` for a door that holds its
+  home: the override where it is a file in that home, as every home is the folder its config sits in (`HomeOf`), and
+  this home's `driver.json` otherwise, never another home's. The four readers ask it. The CLI's twin,
+  `driverConfigPath`, already resolved as `ResolvePath()` does and has no door that holds a home.
+- **Verify:** `ConfigSeamTests` (fast, 5): an override of another name in the home is read, with a trailing separator
+  too; one in another home is not; no override, a blank one or another `DAORIS_HOME` reads the home's own; `FindPath`'s
+  order; and a scan of the driver, its host, the modules and the app finding no source but `DriverConfig.cs` that names
+  `"driver.json"`, `"DAORIS_DRIVER_CONFIG"`, `DriverConfig.PathVariable` or `DriverConfig.DefaultPath`, with the
+  variable read once there. `ConfigSeamLandingTests` (Process, 1, run alone): beside an empty `driver.json`, the
+  override's `review/q1` and `shown` are the plan and the gate, the press is refused unreviewed with nothing made and the
+  line unmoved, and once reviewed it lands on `review/q1`, the line still unmoved. Watched failing: the scan named the
+  four readers, and the plan read `merge` to `main` from the `default` rule. Driver fast half 5484 → 5489, modules
+  739 → 739, `npm run verify` green. **Not covered:** the family rehearsal's phase, which keeps its config as its own
+  home's `driver.json` since REVIEWENV1h and so passes either way.
+- **Commit:** `c9474b3c`, `77f3f84c`.
+## 2026-10-09 — the connector and the headless driver dropped a start that threw (HOSTSTART2)
+
+### Service and driver: a connector or a headless driver that died at start left nothing of why in its log
+- **Symptom:** found by HOSTSTART1 in the source: the MCP connector (`Daoris.Service.Mcp/Program.cs`) and the headless
+  driver (`Daoris.Desktop.Driver.Host/Program.cs`) open their machine log as the HTTP host did, and an exception that
+  ended their start left no `error` line. Reproduced before the fix: the real connector over a store that cannot open,
+  and the real driver's `drive --once` over a `driver.json` that does not read, each exited non-zero with the exception
+  on standard error and nothing in its log.
+- **Root cause:** HOSTSTART1's. Each entry point is async and holds its log in `using var log`; the entry point's task
+  catches the exception, the `using` closes the log as it leaves, and only then does the runtime raise it as unhandled,
+  so `WatchUnhandled`'s line met a closed log and was dropped. The driver's one catch takes only `DriverException`,
+  `HttpRequestException` and a cancellation, so a `driver.json` that does not parse went past it.
+- **Fix:** HOSTSTART1's inline handler became a watch on each writer, `MachineLog.WatchEntryPoint()` returning an
+  `EntryPointWatch`: the service's in Core, which the HTTP host now calls in place of its own copy and the connector
+  beside it, and the driver's, its twin, since the artefacts share no code. Made on the entry point's thread, it writes
+  only an exception raised on that thread, with a writer of its own: `error`, `where` `start` until `Running()`,
+  `unhandled` after. The connector's start ends when its host's lifetime started, and the line goes to the log file
+  alone, never to standard output, which is the protocol's. The driver's ends as the loop's first look begins; a verb is
+  `unhandled` from the moment it is chosen. Nothing new is printed: standard error carries the runtime's own report, as
+  before. The machine-log design §4's HOSTSTART2 note.
+- **Verify:** `ConnectorStartFailureTests` (service, 1): the real connector over a store that cannot open exits non-zero
+  with one `error` line at `start`, terminating, with its type, message and stack; nothing on standard output; a remote
+  key in its environment in neither standard error nor the log. `DriverStartFailureTests` (driver, `Process`, 1, run
+  alone): `drive --once` over a `driver.json` that does not read, the same line, a service key in neither. Both watched
+  failing before the change (no line). `MachineLogTests` on each side (3 each): the line written after the log is
+  closed, `unhandled` once running, another thread's left to the open log. HOSTSTART1's `StartFailureTests` (Http, 2)
+  green over the shared watch. Service 1745 → 1749, Http 243 → 243, driver fast half 5484 → 5487. **Not covered:** a
+  verb's `unhandled`, and the connector's after its transport started.
+- **Commit:** `64d1e6ac` (service), `1815b867` (driver).
+
 ## 2026-10-09 — a host that died at start said only that it exited (HOSTSTART1)
 
 ### Modules and service: the window said the host exited, never why, and its log kept nothing of the exception
@@ -877,6 +935,14 @@ timed out (20 s) once in CARRY2d's web run and passed in the next.
 timed out at WORKFLOW1a's merge, 2026-10-09 (no web file changed), with three worktrees building beside it. It timed out
 again alone (20.3 s) under the same load, then passed alone in 9.4 s with the file's other three at 1 to 6 s: it is the
 file's first test, so it pays the shell's first render and imports. That first test is the one to bound or warm.
+`merge-branch.test.ts`'s "--rerun runs a fixed gate again on the merge in place…" failed once in HOSTSTART2's verify,
+2026-10-09, with `git worktree list --porcelain failed:` and empty output, three worktrees building beside it; it passed
+alone and in a second full run. The git-on-scratch shape of the `--rerun` sightings above. The same shape at CONFIGSEAM1's
+merge that day: "two notes a union merge leaves touching…" met `git diff --name-only HEAD...third failed:` with nothing
+said, three agents building beside it; the CLI gate passed on its rerun.
+`SessionsOutliveTheirLookTests.The_watch_says_a_stop_its_look_made_before_that_look_failed` (driver, fast half) failed in
+XAGENT1f's and REVIEWENV1j's fast runs, 2026-10-09, under load: expected `stood-down`, got `stopped`; it passed alone each
+time. Two sightings in a day of a fast-half test: FLAKE3 carries it.
 The full set on `99b2a858` (2026-10-08) caught `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one`
 (modules, Process half) failing in the full run and passing alone, with one worktree building beside it; the plugin-kit
 repeat FLAKE1's row names.

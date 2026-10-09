@@ -155,6 +155,7 @@
   "work.trace.try.nothing": "nothing to land: its work made no commits",
   "work.trace.try.held": "its quest is held for your yes",
   "work.trace.try.unreviewed": "it waits for your review where it runs",
+  "work.trace.try.opinion": "it waits for a second opinion before it lands",
   "work.trace.try.uncommitted": "its tree holds uncommitted work",
   "work.trace.try.exists": "the branch already stands, and Daoris does not move it",
   "work.trace.try.completed": "the chain's branch is already merged, so moving it on would push work no pull request carries",

@@ -444,6 +444,13 @@ public sealed record Snapshot(
     /// </summary>
     public IReadOnlyDictionary<string, QuestTake> Takes { get; init; } =
         new Dictionary<string, QuestTake>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The quests a second opinion sits, by quest id, each with its sentence (XAGENT1f; <see cref="StartVerdict.WaitsForOpinion"/>):
+    /// the look reads them from the opinions owed and the gate's facts, as it reads <see cref="Paused"/>. Absent is none.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Opinions { get; init; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 }
 
 public enum StartVerdict
@@ -521,6 +528,13 @@ public enum StartVerdict
     /// The reason names the door that would let it start. No strike: nothing ran.
     /// </summary>
     CannotShow,
+
+    /// <summary>
+    /// Waits for a second opinion (XAGENT1f, D155 point 9; the second-agent design §7, §8.1): a set-up step while an agent is still
+    /// at work on the opinion of the work it shows, or, under <c>steps</c>, a chain's next step while the opinion on the step
+    /// before is unsettled. The reason says which, and what moves it. No strike: nothing ran.
+    /// </summary>
+    WaitsForOpinion,
 }
 
 /// <param name="Quest">The quest considered.</param>
@@ -958,6 +972,14 @@ public static class Planner
             if (ReviewSetUps.Sits(config, quest, repo.Workspace, window) is { } sits)
             {
                 return new(quest, StartVerdict.CannotShow, sits);
+            }
+
+            // The second opinion (XAGENT1f, the second-agent design §7, §8.1): a set-up step sits while an agent is still at work on
+            // the opinion of the work it shows, and under `steps` a chain's next step sits while the opinion on the step before is
+            // unsettled. The look reads each from its facts; the planner holds no copy of the gate. No strike: nothing ran.
+            if (snapshot.Opinions.TryGetValue(quest.Id, out var opinion))
+            {
+                return new(quest, StartVerdict.WaitsForOpinion, opinion);
             }
 
             if (repo.Root is null)

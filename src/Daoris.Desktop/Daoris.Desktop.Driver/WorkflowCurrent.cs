@@ -65,12 +65,12 @@ public static class WorkflowRule
 
 /// <summary>
 /// The limits a step may carry (design §3.9), each a code and the sentence it is said in, in the shared table's order — the
-/// CLI's <c>WORKFLOW_LIMITS</c>, word for word. The opinion's is its rule's own <see cref="OpinionRules.DeclaredOnly"/>, until
-/// XAGENT1f's gate reads the rule.
+/// CLI's <c>WORKFLOW_LIMITS</c>, word for word. The opinion's says what its gate runs since XAGENT1f: the landing waits for it,
+/// while the review's drawing of it and a task's own choice are not built.
 /// </summary>
 public static class WorkflowLimits
 {
-    public const string OpinionDeclared = "opinion-declared";
+    public const string OpinionPartial = "opinion-partial";
     public const string LookPartial = "look-partial";
     public const string PluginUnready = "plugin-unready";
     public const string PullRequestUnread = "pull-request-unread";
@@ -78,7 +78,9 @@ public static class WorkflowLimits
 
     public static IReadOnlyList<(string Code, string Says)> Table { get; } =
     [
-        (OpinionDeclared, OpinionRules.DeclaredOnly),
+        // XAGENT1f gates every landing door on it; the screens are XAGENT1g's and the task level's choice XAGENT1h's.
+        (OpinionPartial, "Partial: work here lands only once another agent's reading of it is settled, or you go on without one by "
+            + "`daoris-driver opinion`; the review does not draw it yet, and no task chooses its own reviewer yet."),
         // REVIEWENV1d shows a posted set-up's build from its session's end; the intake's step (1f) and a run of its own (1e) are not built.
         (LookPartial, "Partial: work here lands only once you say it is reviewed or skip the review, and a set-up step's build is "
             + "shown in Daoris's browser from its session's end until then; no set-up step is composed for you yet, and nothing runs a "
@@ -172,7 +174,7 @@ public static class WorkflowCurrent
                     new("required", opinion.Rule.Required),
                     new("recheck", opinion.Rule.Recheck),
                 ],
-                WorkflowRuntime.Declared, WorkflowLimits.OpinionDeclared));
+                WorkflowRuntime.Partial, WorkflowLimits.OpinionPartial));
         }
 
         if (ReviewRules.Resolve(read, named, workspace) is { Rule: { IsNone: false, Required: true } } review)

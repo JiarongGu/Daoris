@@ -234,6 +234,13 @@ if (args is ["git", .. var gitArgs])
 using var log = MachineLog.Open("driver");
 log.WatchUnhandled();
 
+// HOSTSTART2: the exception that ends this entry point is written as `error`. The entry point is async, so the `using` above
+// has closed `log` by the time the runtime raises that exception as unhandled, and a driver that died at start left nothing
+// of why. `start` is the loop's start, until its first look; a verb runs once with no start of its own to tell apart, so
+// what ends one is `unhandled` from the moment it is chosen.
+var entryPoint = log.WatchEntryPoint();
+if (DriverCommand.Read(args, out _) is null) entryPoint.Running();
+
 // The loop's close (REV3), cancelled only by the person's Ctrl+C, which is registered below once a loop is asked for. Made
 // here, outside the one catch, so that catch can tell that close from any other cancellation (DEV3b).
 using var closing = new CancellationTokenSource();
@@ -283,6 +290,13 @@ try
     if (args is ["register", .. var registerArgs])
     {
         return await Daoris.Driver.Host.RegisterConsole.RunAsync(registerArgs, log);
+    }
+
+    // The second opinion's gate (XAGENT1f, D155 point 10, D50): ask, show, stop, go on anyway, or look yourself; the review's and
+    // What needs you's presses are XAGENT1g's doors to the same. Ask Daoris is exempt: each is the person's own (D110, design §9).
+    if (args is ["opinion", .. var opinionArgs])
+    {
+        return await Daoris.Driver.Host.OpinionConsole.RunAsync(opinionArgs);
     }
 
     // Deleting a quest made by mistake (D95, D50): the quest drawer's Delete is the other door. Accepting a done's
@@ -515,6 +529,9 @@ try
     // with it. Their diagnostics have no console buffer here, so they go to stderr under their name.
     // What the set does with each, without their words, goes to this host's machine log (PLUGUI1d).
     await using var hooks = new HookSet(home, say: (id, line) => Console.Error.WriteLine($"plugin:{id}  {line}"), log: log);
+
+    // The loop's start is over: its first look begins, and what ends the driver from here is `unhandled` (HOSTSTART2).
+    entryPoint.Running();
 
     if (once)
     {
