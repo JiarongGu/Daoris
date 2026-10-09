@@ -21,7 +21,9 @@
   "settings.opinion.says.noRecheck": "为回应它的发现而做的提交不会再被阅读。",
   "settings.opinion.says.sameAgentOne": "{{names}} 与做这里工作的智能体是同一个智能体：同一个智能体的新对话不是独立的阅读，每份意见都会这样说明。",
   "settings.opinion.says.sameAgentMany": "{{names}} 与做这里工作的智能体是同一个智能体：同一个智能体的新对话不是独立的阅读，每份意见都会这样说明。",
-  "settings.opinion.says.declaredOnly": "仅为声明：目前还没有东西读取它，所以不会选出阅读者，也没有落地会等它。",
+  "settings.opinion.says.waiting": "这里等待另一个智能体阅读的工作，要等那次阅读有了定论，或者你不等它继续（`daoris-driver opinion anyway <session>`），或者说明你自己看过了（`daoris-driver opinion myself <session>`），才会落地。",
+  "settings.opinion.says.stepWaiting": "委托链在这里的下一步若在等另一个智能体阅读上一步的工作，要等那次阅读有了定论才会开始。",
+  "settings.opinion.says.safeNotHanded": "这个仓库声明为安全的内容目前还不会交给阅读者。",
   "settings.opinion.summary.none": "没有第二意见",
   "settings.opinion.summary.noneHere": "这里没有第二意见",
   "settings.opinion.summary.optional": "来自 {{reviewers}} 的第二意见",
@@ -37,7 +39,7 @@
   "settings.opinion.minutes": "{{name}} 一次阅读可用的分钟数",
   "settings.opinion.save": "保存",
   "settings.opinion.noneHere": "这里没有",
-  "settings.opinion.saved": "{{name}} 有了来自 {{reviewers}} 的第二意见。仅为声明：目前还没有东西读取它。",
+  "settings.opinion.saved": "{{name}} 有了来自 {{reviewers}} 的第二意见。那里等它阅读的工作，要等阅读有了定论或你不等它继续，才会往下走。",
   "settings.opinion.noneSaved": "{{name}} 现在没有第二意见，不论工作区怎么设定。",
   "settings.opinion.cleared": "{{name}} 重新沿用上一级的第二意见规则。"
 }

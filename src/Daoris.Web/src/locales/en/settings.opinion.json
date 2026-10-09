@@ -21,7 +21,9 @@
   "settings.opinion.says.noRecheck": "Commits made in answer to its findings are not read again.",
   "settings.opinion.says.sameAgentOne": "{{names}} is the same agent as the one that does the work here: a fresh conversation of the same agent is not an independent reading, and each opinion says so.",
   "settings.opinion.says.sameAgentMany": "{{names}} are the same agent as the one that does the work here: a fresh conversation of the same agent is not an independent reading, and each opinion says so.",
-  "settings.opinion.says.declaredOnly": "Declared only: nothing reads it yet, so no reviewer is chosen and no landing waits for it.",
+  "settings.opinion.says.waiting": "Where work here waits for another agent's reading, it lands only once that reading is settled, or once you go on without it, `daoris-driver opinion anyway <session>`, or say you looked yourself, `daoris-driver opinion myself <session>`.",
+  "settings.opinion.says.stepWaiting": "Where a chain's next step here waits for another agent's reading of the step before it, it starts only once that reading is settled.",
+  "settings.opinion.says.safeNotHanded": "What this repository declares safe is not handed to a reviewer yet.",
   "settings.opinion.summary.none": "no second opinion",
   "settings.opinion.summary.noneHere": "no second opinion here",
   "settings.opinion.summary.optional": "a second opinion from {{reviewers}}",
@@ -37,7 +39,7 @@
   "settings.opinion.minutes": "Minutes one pass may take, for {{name}}",
   "settings.opinion.save": "Save",
   "settings.opinion.noneHere": "None here",
-  "settings.opinion.saved": "{{name}} has a second opinion from {{reviewers}}. Declared only: nothing reads it yet.",
+  "settings.opinion.saved": "{{name}} has a second opinion from {{reviewers}}. Work there that waits for its reading goes on only once that reading is settled, or you go on without it.",
   "settings.opinion.noneSaved": "{{name}} has no second opinion now, whatever its workspace says.",
   "settings.opinion.cleared": "{{name}} takes its second-opinion rule from what stands above it again."
 }
