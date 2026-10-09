@@ -789,6 +789,9 @@ gate (UXFIX2d…SESSDEL1b, which touch no CLI or tools file): "git could not wri
 repository, with three worktrees building beside it; the same git-on-scratch shape as the `--rerun` sightings above.
 `landing-plugins.test.ts:267` failed once in UXFIX5b's verify: its fixture's `git config user.email` exited -1
 (4294967295), a spawn failure; the file passed 19/19 alone and the next verify was green. A third git-spawn shape.
+Again in WORKFLOW1a's verify, 2026-10-09, with two other worktrees building beside it: *the GitHub plugin pushes the
+branch to origin…* failed when its fixture's `git remote add` ended with a null status (no exit code, so ended by a
+signal or never started), and passed alone. The same file, the fourth git-spawn shape.
 The family rehearsal's *…its driver stops its own losing session, with the reason on the record* failed again (399/400)
 at ORIENT2h2's merge, after DEV3a's fix above: the record WAS stood down (`ended.lost-claim`, its note right), and the
 run's print held no `stop  session` line; its one sync line read *quests: the remote could not be reached (… actively
