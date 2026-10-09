@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '../i18n';
 import type { Command } from '../commands';
@@ -58,6 +58,27 @@ describe('the command palette', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
     // Closed BEFORE running, so a command that opens a drawer does not open it under the palette.
     expect(onClose.mock.invocationCallOrder[0]).toBeLessThan(run.mock.invocationCallOrder[0]);
+  });
+
+  // IME1: a question typed through an input method is composed, and accepting its candidate runs nothing, moves
+  // nothing and closes nothing.
+  it('leaves a composing press to the input method: no run, no move, no close', () => {
+    const quests = command('go.quests', 'Quests');
+    const { onClose } = show([command('go.overview', 'Overview'), quests]);
+    const field = screen.getByRole('combobox', { name: 'Commands' });
+
+    expect(fireEvent.keyDown(field, { key: 'ArrowDown', isComposing: true })).toBe(true);
+    expect(fireEvent.keyDown(field, { key: 'Enter', isComposing: true })).toBe(true);
+    expect(fireEvent.keyDown(field, { key: 'Enter', keyCode: 229 })).toBe(true);
+    // The box's Escape is Radix's, heard on the document first, and prevented is the one way it leaves the box open.
+    fireEvent.keyDown(field, { key: 'Escape', isComposing: true });
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByRole('option', { name: /Overview/ })).toHaveAttribute('aria-selected', 'true');
+
+    fireEvent.keyDown(field, { key: 'ArrowDown' });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(quests.run).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('moves with the arrow keys and wraps, so the list has no dead ends', async () => {

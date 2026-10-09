@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { type Command, matching } from '../commands';
 import { Icon, QuickPanel } from '../ui';
 import { cn } from '../lib/cn';
+import { isComposing } from '../lib/composing';
 
 /**
  * The command palette (SURF9): everything the application can do, by name.
@@ -86,6 +87,8 @@ export function CommandPalette({ open, commands, onClose, onAsk }: {
         value={typed}
         onChange={(event) => { setTyped(event.target.value); setActive(0); }}
         onKeyDown={(event) => {
+          // An input method's press is its own (IME1): its Enter accepts a candidate and runs nothing.
+          if (isComposing(event)) return;
           if (event.key === 'ArrowDown') { event.preventDefault(); move(1); }
           else if (event.key === 'ArrowUp') { event.preventDefault(); move(-1); }
           else if (event.key === 'Enter') { event.preventDefault(); run(rows[chosen]); }

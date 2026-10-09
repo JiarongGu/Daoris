@@ -22,6 +22,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import type { Quest, SessionState } from './api';
 import { cn } from './lib/cn';
+import { isComposing } from './lib/composing';
 import { TOAST_LIMIT, withNotice } from './signals';
 
 // The platform's component language (D41), rebuilt on headless primitives (D42): Radix supplies the
@@ -797,6 +798,15 @@ export function SectionTitle({ level = 2, children }: { level?: 2 | 3; children:
 /* ---------------------------------------------------------------- drawer */
 
 /**
+ * A dialog's Escape, kept while an input method composes (IME1). Radix closes a dialog on any Escape, heard on the
+ * document before the field it was pressed in, so dropping a composition in Quick Ask's box or the palette's field
+ * closed the box with it. Prevented, Radix leaves the dialog open; it prevented the same press itself when it closed.
+ */
+const composingEscape = (event: KeyboardEvent) => {
+  if (isComposing(event)) event.preventDefault();
+};
+
+/**
  * The single detail-and-form surface (D41), on Radix Dialog: focus is trapped, ESC and the scrim
  * dismiss, and the list behind it survives. Every pixel is ours; the behaviour is not hand-rolled.
  */
@@ -822,6 +832,7 @@ export function Drawer({ title, meta, onClose, footer, children }: {
           // and false about the page for as long as it had existed. Stated here, and asserted by
           // `ui.test.tsx`, because a claim nothing checks is one nobody notices going wrong.
           aria-modal="true"
+          onEscapeKeyDown={composingEscape}
           // 🔴 `top-9`, like the scrim beside it — the strip is the window's title bar (D56), and
           // the caption buttons the window paints there are painted OVER the page. A panel that
           // started at the top put its own header, close button included, under them: on the
@@ -899,6 +910,7 @@ export function QuickPanel({ open, onClose, title, header, wide = false, fill = 
           aria-describedby={undefined}
           // Radix writes the role and traps focus but not this attribute (see `Drawer`).
           aria-modal="true"
+          onEscapeKeyDown={composingEscape}
           onOpenAutoFocus={(event) => {
             const at = initialFocus ? (event.currentTarget as HTMLElement | null)?.querySelector<HTMLElement>(initialFocus) : null;
             if (at) {
