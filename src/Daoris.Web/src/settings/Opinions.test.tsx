@@ -181,8 +181,8 @@ describe('what a second-opinion rule says', () => {
 
   it('toasts what a change did', () => {
     expect(opinionToast(t, 'web-app', { set: { reviewers: ['codex-acp', 'dsh'] } })).toBe(
-      'web-app has a second opinion from codex-acp, dsh. Work there that waits for its reading goes on only once that reading '
-      + 'is settled, or you go on without it.');
+      'web-app has a second opinion from codex-acp, dsh. Where work there waits for its reading, it goes on only once that '
+      + 'reading is settled, or you go on without it.');
     expect(opinionToast(t, 'notes-site', { none: true })).toBe('notes-site has no second opinion now, whatever its workspace says.');
     expect(opinionToast(t, 'web-app', { clear: true })).toBe('web-app takes its second-opinion rule from what stands above it again.');
   });

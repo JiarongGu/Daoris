@@ -39,7 +39,7 @@
   "settings.opinion.minutes": "Minutes one pass may take, for {{name}}",
   "settings.opinion.save": "Save",
   "settings.opinion.noneHere": "None here",
-  "settings.opinion.saved": "{{name}} has a second opinion from {{reviewers}}. Work there that waits for its reading goes on only once that reading is settled, or you go on without it.",
+  "settings.opinion.saved": "{{name}} has a second opinion from {{reviewers}}. Where work there waits for its reading, it goes on only once that reading is settled, or you go on without it.",
   "settings.opinion.noneSaved": "{{name}} has no second opinion now, whatever its workspace says.",
   "settings.opinion.cleared": "{{name}} takes its second-opinion rule from what stands above it again."
 }
