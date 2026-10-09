@@ -53,7 +53,7 @@ nested. A reader skips a line it cannot parse and a field it does not know.
 | Event | Source | Data | Why it is kept |
 |---|---|---|---|
 | `app.started` / `app.stopped` | every | version, installed, uptime on stop | a period of use, and a version to blame |
-| `error` | every | where, type, message, stack; a request's also method, route, inner (host, HOSTLOG1) | an unhandled exception, which left no trace |
+| `error` | every | where, type, message, stack; a request's also method, route, inner (host, HOSTLOG1); terminating, and `where` `start` for an exception that ended the host before it served (host, HOSTSTART1) | an unhandled exception, which left no trace |
 | `log` | every | category, message, exception | the framework's own warnings and errors |
 | `session.started` | desktop | session, kind, adapter, repository, workspace; setup, only for a set-up's session | what the person runs, on what, and where (WSSETUP11) |
 | `session.opened` | desktop | session, adapter, openMs | spawn to ready: what a person waits through |
@@ -69,6 +69,10 @@ nested. A reader skips a line it cannot parse and a field it does not know.
 | `work.abandoned` | desktop, driver | scope, declined, discarded, branches, archived, kept, lost, door | an ask's or a quest's work abandoned on this machine (PAUSE1d, D132 §4.3): how many quests it declined, trees it discarded with their branches, branches it deleted alone, sessions it archived, pieces it kept (by design, changed since the list, or not reached), shared declines another machine's take beat to the remote, and `door` `screen` or `terminal`; never an id, a branch or the reason, which `<home>/abandoned.json` keeps. An abandon with nothing listed writes nothing |
 | `registry.followed` | desktop, driver | repository, outcome | a registration followed from a repository's line, by a word from a fixed list (`registered`, `unchanged`, `declares-nothing`, `not-set-up`, `no-line`, `unreadable`, `lanes-unreadable`, `worktree`, `no-checkout`, `not-on-registry`, `refused`), never the sentence its row says: whether set-ups reach the registry once they land (WSSETUP5, D124 §3.4) |
 | `landing.auto` | desktop, driver | session, repository, workspace, code, commits, uncommitted, plugin, pushed | each try to land a done session under a rule that accepts automatically (LAND2b, D145 point 6), by its code (`landed`, `nothing`, `held`, `uncommitted`, `exists`, `plugin-unready`, `plugin-failed`, `already`, `superseded`, `gone`, `undone`, `off`, `refused`; `advanced` is LAND2c's): the commits it carried, the paths that held it, the plugin's id and whether it pushed, never a sentence, a branch or a path |
+| `branch.tidied` | desktop, driver | repository, workspace, branch, tree, folder | an empty session branch the watch's look removed without a press (AUTOTIDY1, D88's note): one whose work the line took, or with no tree, by the clean-up's own path; `tree` whether it had a tree here, and `folder` where that tree's folder was moved aside, from the home (`trees/.tidied/<workspace>/<repository>/<name>-<moment>`), or null where it had none. The look never deletes a tree's folder. The branch is Daoris's own name (`daoris/s-…`), which carries no words |
+| `branch.kept` (warn) | desktop, driver | repository, workspace, branch, why | an empty session branch the look would have removed and left (AUTOTIDY1), written once while the reason lasts: `why` `unread` (git could not answer a guard, list the branches or the working trees, or read the tree's folders; or a folder of this home's is here that git lists no tree for), `refused` (a locked tree, git would not let go of its tree's record, or the branch moved), `busy` (something holds the tree's folder open, so it could not be moved aside; a later look tries again), `hidden` (a tracked path is marked `assume-unchanged` or `skip-worktree`, which hides its change), `nested` (another repository is in the tree), `linked` (the tree is reached through a link under the trees home), `starting` (a session was starting in one of the repository's trees; `branch` null), `sessions` (the service did not say which sessions run or which set-ups wait; `branch` null, and `repository` too where its registry did not answer). A branch kept for what it holds is the press's and writes nothing |
+| `tidied.purged` | desktop, driver | folder, days | a tree's folder the look moved aside, deleted by a later look once it waited fourteen days with nothing in it written after its move (AUTOTIDY1): `folder` from the home, `days` since its move |
+| `tidied.kept` (warn) | desktop, driver | folder, why | a tree's folder moved aside that outlived its wait and stays, written once while the reason lasts: `why` `written` (something in it was written after its move, which it was moved to keep), `linked` (it holds a link, which a delete never follows), `unread` (it could not be read or deleted). The person looks at it, and deletes it |
 | `evidence.checked` | desktop, driver | quest, session, how, items, found, missing, uncommitted, case, noQueue, outcome | each read of a done's evidence (EVID1b, D144 §5): at a session's end, by the sweep, or from a terminal (`how`), the session whose end was read (null for the terminal's), how many items were read and how many each code took, and what the evidence door said (`kept`, `not-waiting`, `refused`, `no-door`, `unanswered`, or `unread` where nothing was read); never a path, the commit or the service's words |
 | `setup.planned` | desktop, driver | workspace, repositories, atOnce, pilot | a workspace plan written by its press: how many it set out to set up, at what pace (WSSETUP6, D124 §4.1) |
 | `setup.published` / `setup.skipped` | desktop, driver | workspace, repository, quest; or refusal, by the press's code | each set-up a plan asked, and each repository its press refused at its turn, by a word, never the sentence |
@@ -299,6 +303,17 @@ found so the client falls back to `initialize`. The SDK gave that answer with tw
 asked nothing of anyone. The connector now answers the probe itself, before the SDK's dispatch (`DiscoverProbe`),
 with the same error, and says it once at debug, below every provider's floor; any other method with no handler
 still warns. Held by `DiscoverProbeTests`; the mechanism is the fix log's.
+
+**As built (HOSTSTART1): a host's start that threw, on the host.** A host whose start threw left no line: its entry
+point is async, so the `using` that closes its log ran as the exception left the entry point, before the runtime raised
+it as unhandled, and the `error` line for it was dropped on a closed log. The host (`Program.cs`, beside the log's
+opening) now writes an exception raised on its entry point's own thread with a writer of its own, since only that
+exception is raised there, once nothing writes through the closed one: the `error` event as §4's row has it, `where`
+`start` until the lifetime's started (the server bound), `unhandled` after, `terminating` the runtime's word.
+`app.started` is written before the server starts, so a start that failed to bind has both lines. Held by
+`StartFailureTests` (the real executable: a store that cannot open, and a port another program holds; both found no line
+before the change). What the window says of the same start is the shell's: `HostSupervisor` reads the host's standard
+error from its start and says its last lines (`LastLines`), the fix log's HOSTSTART1.
 
 ## 5. What is never logged
 

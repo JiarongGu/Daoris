@@ -279,6 +279,9 @@ public sealed class MainForm : OptimizedForm
         {
             Dock = DockStyle.Fill,
             Text = message,
+            // Text as it was said, the host's own lines among it (HOSTSTART1): a label reads `&` as a mnemonic marker,
+            // and would drop or underline what the host printed.
+            UseMnemonic = false,
             ForeColor = _palette.Ink,
             BackColor = _palette.Page,
             // Clear of the strip: the window has no title bar, so text docked to the top would start

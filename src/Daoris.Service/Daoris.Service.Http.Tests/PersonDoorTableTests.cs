@@ -17,7 +17,11 @@ public sealed class PersonDoorTableTests
     private const DoorClass Person = DoorClass.Person;
     private const DoorClass Shared = DoorClass.Shared;
 
-    /// <summary>Every route at PERSONDOOR1a, written out: the design's 59 at <c>4004d041</c>, and XAGENT1c's four.</summary>
+    /// <summary>
+    /// Every route at PERSONDOOR1b, written out: the design's 59 at <c>4004d041</c>, XAGENT1c's four, and the window's
+    /// confirmation's five (design §4.2): what waits and one of them are reads, asking is any caller's, and confirming and
+    /// refusing are the person's.
+    /// </summary>
     private static readonly (string Method, string Pattern, DoorClass Class)[] Routes =
     [
         ("GET", "/api/status", Open),
@@ -40,10 +44,13 @@ public sealed class PersonDoorTableTests
         ("GET", "/api/sync", Open),
         ("GET", "/api/opinions", Open),
         ("GET", "/api/opinions/{id}", Open),
+        ("GET", "/api/confirmations", Open),
+        ("GET", "/api/confirmations/{id}", Open),
 
         ("POST", "/api/quests/{id}/respond", Agent),
         ("POST", "/api/quests", Agent),
         ("POST", "/api/asks/{id}/publish", Agent),
+        ("POST", "/api/confirmations", Agent),
 
         ("POST", "/api/quests/{id}/evidence", Driver),
         ("POST", "/api/quests/{id}/set-up", Driver),
@@ -79,6 +86,8 @@ public sealed class PersonDoorTableTests
         ("DELETE", "/api/registry/{repository}", Person),
         ("POST", "/api/registry/{repository}/workspace", Person),
         ("POST", "/api/registry/import", Person),
+        ("POST", "/api/confirmations/{id}/confirm", Person),
+        ("POST", "/api/confirmations/{id}/refuse", Person),
 
         ("POST", "/api/feed/sessions", Shared),
         ("GET", "/api/sessions/since", Shared),
@@ -98,12 +107,13 @@ public sealed class PersonDoorTableTests
         Assert.Equal(Routes, PersonDoors.Table.Select(door => (door.Method, door.Pattern, door.Class)));
         Assert.Equal(PersonDoors.Table.Count, PersonDoors.Table.Select(door => (door.Method, door.Pattern)).Distinct().Count());
 
-        // The design's counts (§3.2), with XAGENT1c's two reads and two driver's posts, and the set-up door, which is the
-        // driver's naming a session and the person's own with where to look.
-        Assert.Equal(20, Routes.Count(route => route.Class == Open));
-        Assert.Equal(3, Routes.Count(route => route.Class == Agent));
+        // The design's counts (§3.2), with XAGENT1c's two reads and two driver's posts, the set-up door, which is the
+        // driver's naming a session and the person's own with where to look, and the confirmation's two reads, its ask and
+        // the person's two answers (PERSONDOOR1b).
+        Assert.Equal(22, Routes.Count(route => route.Class == Open));
+        Assert.Equal(4, Routes.Count(route => route.Class == Agent));
         Assert.Equal(14, Routes.Count(route => route.Class == Driver));
-        Assert.Equal(19, Routes.Count(route => route.Class == Person));
+        Assert.Equal(21, Routes.Count(route => route.Class == Person));
         Assert.Equal(7, Routes.Count(route => route.Class == Shared));
     }
 
