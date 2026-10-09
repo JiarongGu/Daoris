@@ -50,12 +50,12 @@ export interface WorkflowRepository {
 
 /** What `WORKFLOW_CURRENT` answers. */
 export interface CurrentWorkflow {
-  /** The repository drawn, or null for a workspace's Current. */
-  repository: string | null;
+  /** The repository drawn, or none for a workspace's Current: a host may leave a null out. */
+  repository?: string | null;
   /** The workspace whose rules reach it, as the driver names it: one in no workspace is in `default`. */
   workspace: string;
   /** A repository's: whether the registry holds it. One it does not is read as in no workspace. */
-  registered?: boolean;
+  registered?: boolean | null;
   /** The plugins that may hold a start (`quest/consider`), never a step. */
   startHolds: string[];
   steps: WorkflowStep[];
@@ -64,8 +64,8 @@ export interface CurrentWorkflow {
   /** Each limit a step carries, by its code, in the driver's own words: what the page says where it has no words of its own. */
   limits: Record<string, string>;
   /**
-   * A workspace's: its repositories, each with whether it sets rules of its own. Absent for a repository's, and null where
-   * the registry was not read.
+   * A workspace's: its repositories, each with whether it sets rules of its own. None (null, or left out) where the registry
+   * was not read, and for a repository's.
    */
   repositories?: WorkflowRepository[] | null;
 }

@@ -78,9 +78,8 @@ export function WorkflowTab({ page, name, current, reading = false, refusal = nu
 
       <WorkflowChart workflow={current} page={page} name={name} doors={doors} />
 
-      {page === 'workspace' && current.repositories !== undefined && (
-        <Repositories repositories={current.repositories} onOpen={doors?.repository} />
-      )}
+      {/* A host may leave a null out of its answer, so none answered is the registry not read. */}
+      {page === 'workspace' && <Repositories repositories={current.repositories ?? null} onOpen={doors?.repository} />}
     </div>
   );
 }
