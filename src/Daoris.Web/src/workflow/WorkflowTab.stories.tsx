@@ -30,7 +30,7 @@ type Story = StoryObj<typeof WorkflowTab>;
 
 /**
  * **Everything at once**: a plugin that may hold a start, the work with the standing answer, the workspace's second opinion
- * (declared only), the repository's look in `dev` (in part), an automatic landing on a branch, and the pull request its plugin
+ * (in part, since XAGENT1f's gate), the repository's look in `dev` (in part), an automatic landing on a branch, and the pull request its plugin
  * opens, which the person merges. Each step's door opens the Setup that sets it.
  */
 export const FullRepository: Story = {};

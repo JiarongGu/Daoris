@@ -142,7 +142,8 @@ describe('a file\'s preview in the side bar (PREVIEW1)', () => {
    */
   it('opens a side bar that holds nothing else, and closes it again with the preview', async () => {
     SESSIONS = [CHAT];
-    window.localStorage.setItem('daoris.viewPlaces', JSON.stringify({ timeline: 'panel', review: 'panel' }));
+    // Every view the side bar holds by default moved to the panel, the workflow (WORKFLOW1c) among them.
+    window.localStorage.setItem('daoris.viewPlaces', JSON.stringify({ timeline: 'panel', review: 'panel', workflow: 'panel' }));
     frame('c0ffee11');
     const door = await screen.findByRole('button', { name: 'preview src/chunk.ts, lines 10–19' });
     expect(screen.queryByRole('complementary', { name: 'right side bar' })).toBeNull();

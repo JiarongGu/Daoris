@@ -355,20 +355,18 @@ public sealed class DriverWatch(
         }
     }
 
-    /// <summary>The standing choices, or the driver's own sentence about why they could not be read.</summary>
+    /// <summary>The standing choices, or the reader's sentence about why they could not be read and what the loop does about it.</summary>
     private static DriverConfig Load(string path)
     {
         try
         {
             return DriverConfig.Load(path);
         }
-        catch (Exception error) when (
-            error is System.Text.Json.JsonException or FormatException or InvalidOperationException or IOException
-                or UnauthorizedAccessException)
+        catch (DriverConfigUnreadableException error)
         {
+            // The file and where in it are the reader's to say (CONFIGREAD1); what the loop does about it is the watch's.
             throw new DriverException(
-                $"{Path.GetFileName(path)} could not be read ({error.Message}) — nothing is driven until it reads; "
-                + "the loop keeps watching it, and takes the fix at its next look.");
+                $"{error.Message} Nothing is driven until it reads; the loop keeps watching it, and takes the fix at its next look.");
         }
     }
 }

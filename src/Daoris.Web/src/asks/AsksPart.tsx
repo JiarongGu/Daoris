@@ -10,7 +10,7 @@ import {
 } from '../queries';
 import { useScope } from '../scope';
 import { namer } from '../settings/namer';
-import { useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useWorkPlan } from '../shell';
+import { useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useWorkflowRun, useWorkPlan } from '../shell';
 import { workspaceOf, workspacesOf } from '../workspaces';
 import { failure, type Notify, useErrorNotify } from '../ui';
 import { askStanding, freshest } from '../quests/records';
@@ -67,8 +67,13 @@ export type AsksPart = {
  * The organism: it holds the hooks so the row, the page and the composer below it hold none (components §2).
  */
 export function useAsksPart({
-  active, closed, chosen, quests, onChoose, notify, onAttend, composing, onComposingChange,
+  active, closed, chosen, quests, onChoose, notify, onAttend, onOpenRun, composing, onComposingChange,
 }: {
+  /**
+   * The door into a run (WORKFLOW1c, the workflow design §7): its session attended, the side bar on its *Workflow*. Absent where
+   * Sessions is not, a browser, which reads no run.
+   */
+  onOpenRun?: (session: string) => void;
   /** Quests is in front: only then is an error said. */
   active: boolean;
   /** Closed and done asks are listed too, as closed quests are. */
@@ -119,6 +124,9 @@ export function useAsksPart({
   const [held, setHeld] = useState<Ask | null>(null);
   // The chosen ask's work on this machine (PAUSE1e): its plan while Quests is in front, and the three presses.
   const work = useWorkPlan(chosen ? { scope: 'ask', id: chosen } : null, { enabled: active });
+  // Where the chosen ask's work stands in its workflow (WORKFLOW1c): its runs, one per chain and repository, while Quests is in
+  // front and a door can open one.
+  const runs = useWorkflowRun(chosen ? { ask: chosen } : null, { enabled: active && onOpenRun !== undefined });
   const wiring = useRemotes().data;
   const workActs = useWorkActs({ notify });
   // The driver's last look at each quest, which says why one of the chosen ask's work sits (PAUSE1h).
@@ -286,6 +294,10 @@ export function useAsksPart({
           history={historyDoor(shown)}
           considered={considered}
           nameOf={nameOf}
+          // A shell older than the route answers something else, which is no run.
+          workflow={Array.isArray(runs.data?.runs) && onOpenRun
+            ? { runs: runs.data.runs, onOpen: (run) => { if (run.session) onOpenRun(run.session); } }
+            : undefined}
         />
       )
       : <QuestsMainNotice state={every.data === undefined && !every.error ? 'loading' : 'gone'} gone="ask" />;

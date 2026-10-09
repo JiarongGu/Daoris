@@ -7,11 +7,11 @@ import type { Place, ViewId } from './placements';
 export type ViewEntry = { id: ViewId; label: string; icon: IconName };
 
 const VIEW_NAME: Record<ViewId, string> = {
-  timeline: 'work.review.timelineTab', review: 'work.review.tab', ask: 'help.title', console: 'work.views.console',
-  terminal: 'work.views.terminal',
+  timeline: 'work.review.timelineTab', review: 'work.review.tab', workflow: 'work.views.workflow', ask: 'help.title',
+  console: 'work.views.console', terminal: 'work.views.terminal',
 };
 const VIEW_ICON: Record<ViewId, IconName> = {
-  timeline: 'quests', review: 'diff', ask: 'help', console: 'frameWork', terminal: 'terminal',
+  timeline: 'quests', review: 'diff', workflow: 'workflow', ask: 'help', console: 'frameWork', terminal: 'terminal',
 };
 
 /** Where a dragged view would land, lit as VS Code lights a container a tab is over (DOCK1e). */

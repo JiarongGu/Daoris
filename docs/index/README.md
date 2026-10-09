@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (121)
+## Files over 40 KB (123)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -34,18 +34,18 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Web/e2e/platform.spec.ts` | 56 | 965 |
 | `src/Daoris.Web/src/App.test.tsx` | 50 | 966 |
-| `src/Daoris.Web/src/App.tsx` | 68 | 1253 |
+| `src/Daoris.Web/src/App.tsx` | 68 | 1257 |
 | `src/Daoris.Web/src/ProjectsView.test.tsx` | 70 | 1272 |
 | `src/Daoris.Web/src/QuestsView.test.tsx` | 62 | 1200 |
 | `src/Daoris.Web/src/agents/AgentPage.tsx` | 47 | 887 |
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 96 | 1872 |
-| `src/Daoris.Web/src/quests/QuestPage.tsx` | 45 | 844 |
+| `src/Daoris.Web/src/quests/QuestPage.tsx` | 46 | 852 |
 | `src/Daoris.Web/src/ui.test.tsx` | 43 | 872 |
-| `src/Daoris.Web/src/ui.tsx` | 76 | 1632 |
+| `src/Daoris.Web/src/ui.tsx` | 76 | 1634 |
 | `src/Daoris.Web/src/work/ConversationView.test.tsx` | 44 | 841 |
 | `src/Daoris.Web/src/work/SessionHead.test.tsx` | 45 | 860 |
-| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 202 | 3909 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 78 | 1463 |
+| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 202 | 3910 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 80 | 1511 |
 | `src/Daoris.Web/src/work/conversation.test.ts` | 44 | 857 |
 | `src/Daoris.Web/src/work/frame.tsx` | 40 | 877 |
 
@@ -53,10 +53,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs` | 41 | 641 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/AbandonTests.cs` | 43 | 786 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/AcpTests.cs` | 111 | 2065 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/HarnessTests.cs` | 48 | 1089 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 73 | 1192 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 74 | 1215 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/HistoryClearingTests.cs` | 45 | 809 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/IntakeTests.cs` | 46 | 967 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/PlannerTests.cs` | 65 | 1304 |
@@ -73,7 +74,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 82 | 1548 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.Continue.cs` | 42 | 713 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 156 | 2671 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 57 | 1040 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 59 | 1086 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 198 | 3649 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 62 | 1082 |
@@ -141,13 +142,14 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `tools/deployment-rehearsal.mjs` | 98 | 1708 |
+| `tools/deployment-rehearsal.mjs` | 99 | 1736 |
 | `tools/desktop-publish.mjs` | 59 | 1047 |
 | `tools/desktop.mjs` | 50 | 1038 |
-| `tools/family-rehearsal.mjs` | 337 | 5948 |
+| `tools/family-rehearsal.mjs` | 339 | 5982 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 129 | 2368 |
+| `tools/merge-branch.mjs` | 129 | 2372 |
 | `tools/orient-index.mjs` | 66 | 1435 |
+| `tools/rehearsal-kit.mjs` | 42 | 812 |
 | `tools/usage-report.mjs` | 57 | 1254 |
 
 ### No lane
@@ -182,4 +184,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-08-second-agent-design.md` | 56 | 765 |
 | `docs/2026-10-09-workflow-design.md` | 79 | 1034 |
 | `docs/DAORIS_FUTURE_DIRECTIONS.md` | 51 | 3466 |
-| `src/Daoris.Desktop/README.md` | 50 | 297 |
+| `src/Daoris.Desktop/README.md` | 51 | 297 |

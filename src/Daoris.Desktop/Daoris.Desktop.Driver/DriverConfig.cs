@@ -513,8 +513,49 @@ public sealed record DriverConfig(
     public static string HomeOf(string configPath) => Path.GetDirectoryName(Path.GetFullPath(configPath))!;
 
     /// <summary>A missing file is a machine that has opted nothing in — the empty config, not an error.</summary>
-    public static DriverConfig Load(string path) =>
-        File.Exists(path) ? Parse(File.ReadAllText(path)) : Empty;
+    /// <exception cref="DriverConfigUnreadableException">
+    /// The file is there and does not read (CONFIGREAD1): it could not be opened, is not JSON, or is not the choices' shape.
+    /// The sentence names the file, and the line and byte where the parser stopped; every door says it as it says a refusal.
+    /// </exception>
+    public static DriverConfig Load(string path)
+    {
+        if (!File.Exists(path)) return Empty;
+
+        string text;
+        try
+        {
+            text = File.ReadAllText(path);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            throw new DriverConfigUnreadableException(path, $"{path} could not be read ({error.Message.TrimEnd('.')}).");
+        }
+
+        try
+        {
+            return Parse(text);
+        }
+        catch (JsonException error) when (error.LineNumber is { } line && error.BytePositionInLine is { } position)
+        {
+            // The parser counts both from zero and repeats them at the end of its message; a person counts from one.
+            var reason = error.Message;
+            var counts = reason.IndexOf(" LineNumber:", StringComparison.Ordinal);
+            if (counts >= 0) reason = reason[..counts];
+            throw new DriverConfigUnreadableException(
+                path,
+                $"{path} is not readable JSON at line {line + 1}, byte {position + 1} ({reason.TrimEnd('.', ' ')}). "
+                + DriverConfigUnreadableException.Remedy,
+                line + 1,
+                position + 1);
+        }
+        catch (Exception error) when (error is JsonException or FormatException or InvalidOperationException)
+        {
+            // JSON that parsed and is not the choices' shape: Parse's own words, or the runtime's where a reader below it
+            // met a value of a kind it does not take.
+            throw new DriverConfigUnreadableException(
+                path, $"{path} does not read: {error.Message.TrimEnd('.', ' ')}. {DriverConfigUnreadableException.Remedy}");
+        }
+    }
 
     /// <summary>
     /// Write the choices back — atomically, beside-then-rename, like every write in this family: the
@@ -899,6 +940,9 @@ public sealed record DriverConfig(
     {
         using var document = JsonDocument.Parse(json);
         var root = document.RootElement;
+        // Each field below asks the root for a property, which throws a runtime exception naming no file for any other kind
+        // (CONFIGREAD1): said here, so the reader can say it with its file.
+        if (root.ValueKind != JsonValueKind.Object) throw new JsonException("it holds no JSON object");
 
         return new DriverConfig(
             Drivable: Strings(root, "drivable"),
@@ -1032,9 +1076,11 @@ public sealed record DriverConfig(
             ? value.GetBoolean()
             : null;
 
+    // A number that is not a whole one is refused as it always was, now in words that name the field (CONFIGREAD1): the
+    // runtime's own said only that an item was in an invalid format.
     private static int? Int(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number
-            ? value.GetInt32()
+            ? value.TryGetInt32(out var number) ? number : throw new JsonException($"`{name}` is not a whole number")
             : null;
 
     private static IReadOnlyList<string> Strings(JsonElement element, string name)

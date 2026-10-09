@@ -57,6 +57,27 @@ export function attentionGroups(items: readonly Attention[]): { group: Attention
     .filter(({ items: held }) => held.length > 0);
 }
 
+/**
+ * What a row's door into its run names (WORKFLOW1c, the workflow design §7: *What needs you*'s row for a waiting step opens that
+ * step): the session it stands for, or the quest whose newest session here does. A row that is no step of a run (an ask still to
+ * publish, a folder's trust, an account, a rule) has none. The run opens where it stands, which is the step the row waits at.
+ */
+export function rowRun(item: Attention): { session?: string | null; quest?: string | null } | null {
+  switch (item.kind) {
+    // The work's session waits on the person's answer; the landing on their accept, in its review.
+    case 'parked':
+    case 'review': return { session: item.id };
+    // The work's act waits on the person's go-ahead, asked by the session the row names.
+    case 'go-ahead': return item.session ? { session: item.session } : null;
+    // The look waits on the person: the set-up step's session, else the step's newest here.
+    case 'set-up': return { session: item.session ?? null, quest: item.id };
+    // The work's done waits on the person's yes; a quest parked on its failed sessions waits on their *Try again*.
+    case 'departure':
+    case 'parked-quest': return { quest: item.id };
+    default: return null;
+  }
+}
+
 /** An act a row offers (design §6.2–§6.3), named as the row's press. */
 export type AttentionActId =
   | 'publish' | 'choose' | 'retry' | 'approve' | 'refuse' | 'trust' | 'accept-departure' | 'accept-rule' | 'decline-rule'
@@ -302,6 +323,8 @@ export function needsAPerson(
         since: goAhead.asked[0]?.at ?? ask.updated,
         // Why the first session needed it, in its words.
         detail: goAhead.asked[0]?.why ?? null,
+        // The session that asked it first, whose run its door opens (WORKFLOW1c).
+        session: goAhead.asked[0]?.session ?? null,
       })));
 
   // A done its departure holds for the person's yes (DRIFT1d2), until they accept it. A set-up step its review holds waits

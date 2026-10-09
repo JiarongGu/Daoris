@@ -537,8 +537,8 @@ describe('the Work frame', () => {
   });
 
   it('draws an emptied side bar while a view is dragged, so it can be dropped on', async () => {
-    // Everything moved to the panel and the side bar closed: it is not drawn at all.
-    window.localStorage.setItem('daoris.viewPlaces', JSON.stringify({ timeline: 'panel', review: 'panel' }));
+    // Everything moved to the panel, the workflow (WORKFLOW1c) among it, and the side bar closed: it is not drawn at all.
+    window.localStorage.setItem('daoris.viewPlaces', JSON.stringify({ timeline: 'panel', review: 'panel', workflow: 'panel' }));
     window.localStorage.setItem('daoris.dockClosed', '1');
     show('s1a2b3c4');
     const tab = await screen.findByRole('tab', { name: 'Console' });
@@ -554,7 +554,8 @@ describe('the Work frame', () => {
 
     expect(within(screen.getByRole('tablist', { name: 'right side bar' })).getByRole('tab', { name: 'Console', selected: true }))
       .toBeInTheDocument();
-    expect(JSON.parse(window.localStorage.getItem('daoris.viewPlaces')!)).toEqual({ timeline: 'panel', review: 'panel', console: 'right' });
+    expect(JSON.parse(window.localStorage.getItem('daoris.viewPlaces')!))
+      .toEqual({ timeline: 'panel', review: 'panel', workflow: 'panel', console: 'right' });
   });
 
   it('opens the region that holds Ask Daoris when asked for it, wherever it stands', async () => {

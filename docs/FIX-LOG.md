@@ -5,6 +5,105 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-09 — a `driver.json` that does not read ended the headless driver on a stack trace (CONFIGREAD1)
+
+- **Symptom:** `daoris-driver drive --once` over a `driver.json` that does not parse ended on a `JsonException`'s stack
+  trace, with the runtime's exit code, rather than a sentence naming the file and exit 2 (REV3). Found by HOSTSTART2's
+  `DriverStartFailureTests`, which held the stack trace as the start's `error` line.
+- **Root cause:** `DriverConfig.Load`, the one reader every door calls (CONFIGSEAM1), let the parser's exception through,
+  and only the loop's look (`DriverWatch.Load`) turned it into a `DriverException`. The headless host's one catch takes
+  `DriverException` and `HttpRequestException`, so the loop's start, which loads the file before its first look, threw past
+  it. Two shapes threw a runtime exception naming no file at all: a root that is not an object (`InvalidOperationException`)
+  and a number that is not a whole one (`FormatException`). The window's routes met the same: an exception the modules do
+  not map answers `UNKNOWN_ERROR` with its type alone, a bare failure, never a stack trace, while the window's loop said
+  `DriverWatch`'s sentence, naming the file but not where in it.
+- **Fix:** `Load` says each as `DriverConfigUnreadableException`, a `DriverException`: the path; for a parse, the line and
+  byte counted from one and the parser's reason without its own zero-based counts; for a wrong shape, what is wrong
+  (`it holds no JSON object`, `` `cap` is not a whole number ``); then the CLI's remedy, *Fix it, or delete it to start from
+  nothing.* A file that cannot be opened is said too. The host's catch says it and exits 2, the loop's look adds what the
+  loop does about it, every console's catch already took a `DriverException`, and the modules' route now answers the
+  driver's refusal with the sentence, unchanged.
+- **Verify:** `ConfigReadTests` (fast) failed on the old reader, seven rows, and holds the sentence over a broken file, a
+  fault on a later line, the two shapes and a missing file. `OrphanedSessionTests`' torn file holds the loop's sentence.
+  `DriverStartFailureTests` (`Process`, run alone) holds exit 2, the sentence and no stack trace, and the one catch's `error`
+  line. HOSTSTART2's watch on what still leaves the entry point keeps `MachineLogTests`' rows, with no real-process case now.
+
+## 2026-10-09 — a cherry-pick in the driver's fixtures was sometimes the session's own commit (AUTOTIDY1r)
+
+### Driver tests: the cherry-picked offer and landing tests failed whenever the cherry-pick fell in the commit's second
+- **Symptom:** `ContentOfferTests.A_cherry_picked_session_is_offered_its_discard_naming_the_branch_that_holds_it` (`Process`)
+  failed in the full set, a `NullReferenceException` at `row.Discards!.Says`, and blocked the install. Bisected to
+  AUTOTIDY1's merge (`ea1d256b`), passing at `ae9f00cc`. Run alone at main's tip it was not deterministic: 3 of 6 runs
+  failed. `ContentLandingTests.A_cherry_picked_trees_landing_is_refused_naming_the_branch_that_holds_it` failed 1 of 6 the
+  same way (`Refusal` null where `carried` was expected).
+- **Root cause:** the fixture's, not the driver's, and not AUTOTIDY1's. Both tests made `feature/x` from `main` and at once
+  cherry-picked the session's one commit onto it. That commit's parent is `main`'s tip, which is `feature/x`'s HEAD; a
+  cherry-pick keeps the author, its date, the tree and the message, and the fixture's committer is the same, so within the
+  same second git writes the identical commit. `feature/x` then holds the session's own commit by ancestry: D88's proof
+  counts nothing unlanded, the content proof is never asked, and the head rightly offers neither a landing nor a discard.
+  The unmodified test failed 5 of 8 runs at `ae9f00cc` too: the bisect's pass there was a lucky run. Latent since
+  SQUASHTIDY1b added the test (`e1651005`), and in SQUASHTIDY1f's landing test, written in the same shape.
+- **Fix:** `LandedFixture.CherryPickAsync` cherry-picks with `-x`, which names the original in the message so the copy's id
+  always differs, and asserts that the copy is a commit of its own; both tests use it. `ContentHeldTests.CherryPickOntoAsync`
+  was safe already: it commits on the person's branch first, so its cherry-pick has another parent. No driver code changed,
+  and every AUTOTIDY1 guard stands as merged.
+- **Verify:** the precondition, asserted before the fix, failed in exactly the runs that failed (3 of 6), and every run whose
+  ids differed passed. After the fix, the three cherry-pick tests passed 10 runs in a row. The content and clean-up
+  `Process` classes, which AUTOTIDY1 never ran, each alone by filter with `process.runsettings`, all green:
+  `ContentOfferTests` 6, `ContentLandingTests` 5, `ContentProofLossTests` 13, `SweepTests` 11, `LandedKeepTests` 6,
+  `PullRequestStateTests` 7, `BranchTidyingProcessTests` 16, `ProcessJobTests` 1, `ContentHeldTests` 7. **The trap, for
+  any fixture:** a copy of a commit by cherry-pick, rebase or a recreated commit is a new commit only where something in
+  it differs; with the same parent, tree, message and identity, the second of its date is all that does.
+- **Commit:** `d2a54804`.
+## 2026-10-09 — the family rehearsal committed a worktree's work as "Family Rehearsal" (REHEARSEGIT1)
+
+### Tools: a rehearsal's git ran in a folder that was not a repository, and git walked up
+- **Symptom:** found by FLAKE3. An earlier phase of the family rehearsal failed in a subagent's worktree, and the run then
+  committed that agent's uncommitted work in the worktree, authored "Family Rehearsal".
+- **Root cause:** the review phase (§17e) wrote, staged and committed "a change after the look" in `wentOn?.tree ?? scratch`,
+  and later ran `git reset -q --hard` there. With no session tree on the record it fell back to the scratch, which is no
+  repository, so git walked up to the enclosing checkout: `add -A` staged the agent's work, `commit` committed it, and the
+  reset would have discarded whatever was left. Nothing held any git call of either rehearsal, or of their stubs, to the
+  folder it meant: an absent folder (`undefined`) runs in the process's own, the checkout's root.
+- **Fix:** `rehearsalRun({ within })` in `tools/rehearsal-kit.mjs` is both rehearsals' `run`: a git command runs only where
+  `rev-parse --show-toplevel` is the folder itself (as `SessionTrees.OpenAsync` asks), or in a bare repository's own folder,
+  and only inside the run's scratch; `init` and `clone` make one and are not asked; a missing folder, one never named and
+  `-C`, `--git-dir` or `--work-tree` are refused. A refused command never runs: exit 2, the refusal printed, in words inert
+  to a shell, since a phase may put a print into its next command. The fallbacks are gone (`lateTree`). The stubs (the
+  family's pipe stub, the kit's ACP stub, the deployment rehearsal's two) commit through `STUB_COMMIT`'s `commitHere`,
+  which refuses the same way and throws. The release rehearsal runs no git of its own.
+- **Verify:** `tools/rehearsal-kit.test.mjs`, over a checkout the test makes with a scratch folder inside it: `add -A`,
+  `commit` and `reset --hard` there are refused naming the checkout, which keeps `?? scratch/` untracked and its one commit;
+  git runs in a repository of its own, after `init`, in a bare one and after `clone`; no folder, a folder outside the run,
+  `-C` and a missing folder are refused; the words carry no shell character; a stub commits in its own repository and
+  refuses inside one; the ACP stub resumed there fails its turn and commits nothing. The family stub and the deployment
+  stub, built from their templates, were run once each the same two ways against a stand-in service. Kit tests 17 → 28.
+  **Not covered:** the rehearsals themselves, which the brief kept for the merge gate.
+- **Commit:** `94017dc9`, `74afe38a`, `4bc45e8f`, `22d2896a`.
+
+## 2026-10-09 — two family rehearsals shared one host (REHEARSEPORT1)
+
+### Tools: the rehearsals' hosts sat on fixed ports, and a second run read the first run's host
+- **Symptom:** found at the XAGENT1e2 merge. A subagent's family rehearsal in its worktree and the merge gate's on main ran
+  together, and the gate's run read the other worktree's registry (`anvil`, `borealis`, `newcomer`, rooted there) and
+  failed 10 checks.
+- **Root cause:** `tools/family-rehearsal.mjs` started its hosts on `localhost:5199`, `:5198`, `:5197` and `:5200`, pointed
+  machine b at an absent remote on `:5191` and a refused host at `:5195`. A host started on a held port fails to bind and
+  ends; the readiness probe asks the port, not the process, so it read the other run's host as its own. The deployment
+  rehearsal walked `freePort` up from fixed ports (5301, 5311, 9433, 5321), so two runs that looked before either bound
+  took the same one.
+- **Fix:** `takePorts(names)` in the kit takes one free port per name, none twice, walking a band (20000–31999, below
+  Linux's and Windows' default ephemeral ranges) from a random port, so two runs take ports apart; both rehearsals take
+  theirs before anything starts and print them. `portRefusal(port)` asks again before each host starts, waiting ten seconds
+  for one this run stopped, and names the holder (`portHolder`: the listener's pid, name and command line). The family's
+  `startServer` returns no host on a refusal or once its own host ended; the deployment rehearsal ends the run (exit 2),
+  since its shell's host is not its child.
+- **Verify:** `tools/rehearsal-kit.test.mjs`: ports are taken distinct, in the band and free, walking past a held one; the
+  walk wraps, and a band short of ports refuses before any host starts; a port held at a host's start is refused naming
+  its holder, and one let go within the wait is not; on Windows the holder is this process's pid. **Not covered:** the
+  rehearsals themselves, and the window between a port's pick and its bind, which a refusal catches and does not prevent.
+- **Commit:** `94017dc9`, `4bc45e8f`, `22d2896a`.
+
 ## 2026-10-09 — two flakes that repeated under load, fixed by their cause (FLAKE3)
 
 ### Driver: a stop made just before the driver's close was recorded as the close's (FLAKE3 1)

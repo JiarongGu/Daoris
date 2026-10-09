@@ -76,7 +76,8 @@ export type KeyReach = 'everywhere' | 'fields' | 'outside' | 'native';
 export type KeyBinding = { combo: string; reach: KeyReach };
 
 /** What the frame does with the session attended on Sessions, which only the frame can (D118 §5). */
-export type FrameIntent = 'start' | 'review' | 'answer' | 'timeline' | 'console' | 'terminal' | 'newTerminal' | 'archiveEnded';
+export type FrameIntent =
+  | 'start' | 'review' | 'answer' | 'timeline' | 'workflow' | 'console' | 'terminal' | 'newTerminal' | 'archiveEnded';
 
 /** What is true now, which decides what applies. Every field a value, so each world is an argument. */
 export type CommandState = {
@@ -381,6 +382,11 @@ export const COMMANDS: readonly CommandSpec[] = [
   {
     id: 'view.timeline', menu: 'view', group: 'views', label: 'work.review.timelineTab', icon: 'quests', shell: true,
     keywords: 'timeline history chain 时间线', run: (doors) => doors.frame('timeline'),
+  },
+  {
+    // Where the attended session's work stands in its workflow (WORKFLOW1c, the workflow design §7).
+    id: 'view.workflow', menu: 'view', group: 'views', label: 'work.views.workflow', icon: 'workflow', shell: true,
+    keywords: 'workflow run steps where stands pull request 工作流 进展', run: (doors) => doors.frame('workflow'),
   },
   {
     id: 'view.console', menu: 'view', group: 'views', label: 'work.views.console', icon: 'frameWork', keys: ['Ctrl+Shift+U'], shell: true,

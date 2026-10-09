@@ -20,7 +20,9 @@ import { questName } from './work/identity';
  * The repository bars are ONE series in one hue: entries per repository is magnitude, not identity.
  * Values sit beside the marks in ink, never in the mark's color.
  */
-export function OverviewView({ onNavigate, onOpenQuest, doors, notify, onSessions }: {
+export function OverviewView({ onNavigate, onOpenQuest, doors, notify, onSessions, onRun }: {
+  /** The door into a run whose step a row waits at (WORKFLOW1c): a shell's alone. */
+  onRun?: (session: string) => void;
   onNavigate: (tab: 'quests' | 'projects') => void;
   /**
    * Where an outstanding row goes: that quest's page on Quests (§5; FRAME1d). The row went to Quests and opened
@@ -64,7 +66,7 @@ export function OverviewView({ onNavigate, onOpenQuest, doors, notify, onSession
 
       {/* The page's lead, above the tiles, because "what needs me" outranks "how is the family" (UX6c, design §6.1);
           one line when nothing is waiting, since a card that always says all-clear stops being read. */}
-      <AttentionBand doors={doors} notify={notify} onSessions={onSessions} />
+      <AttentionBand doors={doors} notify={notify} onSessions={onSessions} onRun={onRun} />
 
       <div className="mb-5 grid grid-cols-[repeat(auto-fit,minmax(10.5rem,1fr))] gap-3">
         <Tile

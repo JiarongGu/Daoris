@@ -12624,3 +12624,52 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **WORKFLOW1d — named workflows and their versions** (cli, driver; after a). `<home>/workflows/<id>.json`: steps, validation (kinds this build runs, the order before the landing, groups, bounds), versions never edited, presets built in; `workflow new|edit|apply|list|show|export|import`, each printing its diff. Contract: §2.4–§2.6, §3.3, §4.7. Proof: twin tests on one table.
 
 **Outcome** 2026-10-09: named workflows: `<home>/workflows/<id>.json`, each version validated (its shape, at most 24 steps, the runtime's order, the kinds this build runs, `check`/`stage`/`all` designed but never offered) and never edited, only added to, the newest 20 kept; a digest over a hand-built canonical text; a diff by step id saying the person's part first and what leaves the machine without a press; four presets built in; twins `namedworkflows.ts` and `WorkflowNamed.cs` held to `fixtures/workflow-named.json`; `daoris driver workflow list|show|new|edit|apply|export|import`, each saying nothing chooses a named workflow yet (WORKFLOW1e). Detail: D157's WORKFLOW1d note, the twins row; commits 637b2817…95398a84.
+
+
+## WORKFLOW1c — the run, derived (2026-10-09, D157)
+
+> - [ ] **WORKFLOW1c — the run, derived** (driver, modules, web-shell; after a). A chain's work in a repository read as steps from its records (quests, sessions, landing record, review state, opinion, go-aheads, kept pull-request state); the side bar's *Workflow* view; the quest's and ask's line; What needs you's door. Contract: §5.2, §7. Proof: `WorkflowRunTests`' state table, vitest, stories.
+
+**Outcome** 2026-10-09: a chain's run in a repository is derived from its records (quests, sessions, go-aheads, the review's gate, second opinions, the landing record, the acceptance note, the due list, the kept pull-request answer) by a pure `WorkflowRuns.Derive`, read by `WorkflowRunReader` and answered by the modules' `WORKFLOW_RUN`, writing nothing; drawn in the session's side bar *Workflow* view on WORKFLOW1b's chart (a state pill per step, the current step marked, the review's own gate under a waiting look), with *Workflow: …* in a quest's and an ask's head and a *Workflow* door on What needs you's rows. Follow-ups: WORKFLOW1c2–c4. Detail: D157's WORKFLOW1c note; commits d7bb67c9…26008c99.
+
+
+## WORKFLOW1c3 — the run's opinion step reads the gate (2026-10-09, D157)
+
+> - [ ] **WORKFLOW1c3 — the run's opinion step reads the gate** (driver, web-shell; after XAGENT1f). WORKFLOW1c reads the opinion step from the opinion records alone, and skips it while its runtime is declared. With XAGENT1f's gate, the run stands at the opinion while the gate holds, its states are the gate's (not asked, being read, with the working session, read again, disputed, unavailable and required, commits since, settled), and *Go on anyway…* is the person's control under the step. Contract: D155's XAGENT1f note, D157's WORKFLOW1c note. Proof: `WorkflowRunTests`' opinion rows; the `HELD_FOR_OPINION` story.
+
+**Outcome** 2026-10-09: the run's opinion step reads XAGENT1f's gate through `SessionTrees.OpinionAsync`, as every landing door does: its state follows the gate's (working, waiting on an agent, waiting on you, skipped, done, not known), the run stands at the opinion while the gate holds, and where the gate holds the work on the person the step opens its review and names `daoris-driver opinion show|anyway`; a landed run reads the landing record's opinion; `declared` is gone. The *Go on anyway…* press under the step waits for XAGENT1g's hooks. Detail: D157's WORKFLOW1c note; commits 720238cf…f761cdbb.
+
+
+## AUTOTIDY1r — the full set's cherry-pick failure (2026-10-09)
+
+> - [ ] **AUTOTIDY1r — the full set's cherry-pick failure** (driver tests; dispatched from its brief). `ContentOfferTests.A_cherry_picked_session_is_offered_its_discard_naming_the_branch_that_holds_it` failed the full set and again alone; a single pass at SQUASHTIDY1f's merge pointed at AUTOTIDY1. Find the cause and fix it, keeping every AUTOTIDY1 guard; run the content and clean-up Process classes.
+
+**Outcome** 2026-10-09: not AUTOTIDY1's: a fixture race since SQUASHTIDY1b. A cherry-pick in the same second as the session's commit (same author, date, tree, message, parent) wrote the identical commit id, so the target branch held the session's own commit by ancestry and nothing was offered; it failed 5 of 8 runs at SQUASHTIDY1f's merge, where the parent's one pass had read as proof. `LandedFixture.CherryPickAsync` picks with `-x` and asserts a distinct id; both cherry-pick tests use it, 10 runs green; the nine content and clean-up Process classes ran green. Follow-up: SQUASHTIDY1g. Detail: FIX-LOG AUTOTIDY1r, D88's dated line.
+
+
+## REHEARSEPORT1 — two family rehearsals never share a host (2026-10-09)
+
+> - [ ] **REHEARSEPORT1 — two family rehearsals never share a host** (tools; found at the XAGENT1e2 merge). `tools/family-rehearsal.mjs` starts its hosts on fixed ports (`localhost:5199`, `:5198`, `:5197`), so a second run beside the first (a subagent's in its worktree, the merge gate's on main) talks to the first run's host: the merge gate's run read another worktree's registry (`anvil`, `borealis`, `newcomer`) and failed 10 checks. Refuse at the start when a port is held, naming who holds it, or take free ports and pass them through; the deployment rehearsal's ports likewise. Proof: a kit test that a held port is refused before any host starts.
+
+**Outcome** 2026-10-09: the rehearsals take free ports for each run (`takePorts`, from a band of 20000–31999 entered at random, below the machine's outgoing range) and refuse a held one just before a host starts, naming its holder (`portRefusal`, `portHolder`); the family rehearsal takes six and prints them, the deployment rehearsal four, and a host is no longer reported up after its process ended. Follow-ups: WEBPORT1, DEPLOYCOUNT1. Detail: FIX-LOG, two family rehearsals shared one host; commits 94017dc9…9233e387.
+
+
+## REHEARSEGIT1 — the rehearsal never runs git outside its own repository (2026-10-09)
+
+> - [ ] **REHEARSEGIT1 — the rehearsal never runs git outside its own repository** (tools; found by FLAKE3). When an earlier phase fails, the family rehearsal's `?? scratch` fallback (`tools/family-rehearsal.mjs`, near 5643) runs `git add -A` and `git commit` in a folder that is not a repository, so git walks up and commits in the enclosing checkout: in FLAKE3's worktree it committed the agent's uncommitted work as "Family Rehearsal". Refuse to run git where `rev-parse --show-toplevel` is not the folder meant, as the driver does. Proof: a `rehearsal-kit` test over a scratch folder inside a repository.
+
+**Outcome** 2026-10-09: every git call a rehearsal or its stubs make runs only where `rev-parse --show-toplevel` is the folder itself (or a bare repository's own), inside the run's scratch (`gitRefusal`, `rehearsalRun({ within })`), refusing a missing folder, none named, and `-C`/`--git-dir`/`--work-tree`; the `?? scratch` fallbacks are gone, and the four stubs commit through one guarded helper. Detail: FIX-LOG, the family rehearsal committed a worktree's work as Family Rehearsal; commits 94017dc9…22d2896a.
+
+
+## CONFIGREAD1 — a `driver.json` that does not read is said, not thrown (2026-10-09)
+
+> - [ ] **CONFIGREAD1 — a `driver.json` that does not read is said, not thrown** (driver; found by HOSTSTART2). A driver file that does not parse ends the headless driver with a `JsonException`'s stack trace rather than a sentence naming the file and exit 2 (REV3). Catch it in the host's one catch and say which file did not read and where. Contract: REV3, D63. Proof: `DriverStartFailureTests` then expects exit 2 and the sentence.
+
+**Outcome** 2026-10-09: a `driver.json` that does not open, parse or hold its choices' shape is said by `DriverConfig.Load` as a `DriverConfigUnreadableException` (a `DriverException`) naming the file, its line and byte, and the CLI's remedy; the headless host exits 2 on it, the loop's look says what it holds back, and the window's routes refuse with the sentence instead of a bare `UNKNOWN_ERROR`. Detail: FIX-LOG CONFIGREAD1; commits f409932c, 1900a776.
+
+
+## WORKFLOW1c2 — a run in a terminal (2026-10-09, D157)
+
+> - [ ] **WORKFLOW1c2 — a run in a terminal** (driver; after WORKFLOW1c). The screen's run has no terminal twin (D50). `daoris-driver workflow run --session|--quest|--ask <id>` prints it through `WorkflowRunReader`: one line per step, its state and detail, the step it stands at. Contract: design §5.2, §7. Proof: a usage golden and a printed run over stand-in records.
+
+**Outcome** 2026-10-09: `daoris-driver workflow run --session|--quest|--ask <id>` prints a run through `WorkflowRunReader`: a head per run, one line per step with its mark (settled, where it stands, otherwise), title, state and what it says, the person's words, the opinion's terminal presses and a pull request's address; exit 1 where there is no run, 2 for usage or no answer; exempt from Ask Daoris. Follow-up: WORKFLOW1c5. Detail: D157's WORKFLOW1c2 note; commits ccbcabe1…43c5434a.

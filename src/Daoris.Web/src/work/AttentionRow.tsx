@@ -192,9 +192,14 @@ const DOOR_ONLY: Partial<Record<Attention['kind'], (item: Attention) => [string,
  *
  * A molecule: it is handed the item, the acts and the door, and reports each press.
  */
-export function AttentionRow({ item, onOpen, acts = {}, busy = false, opened = null, below = null }: {
+export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, opened = null, below = null }: {
   item: Attention;
   onOpen?: (item: Attention) => void;
+  /**
+   * Its door into the run whose step waits on the person (WORKFLOW1c, the workflow design §7): the session attended, the side
+   * bar on its *Workflow* at the step the row waits at. Absent for a row that is no step of a run, and in a browser.
+   */
+  onRun?: () => void;
   acts?: AttentionActs;
   /** One of its acts is on its way: none is offered again until it answers. */
   busy?: boolean;
@@ -301,7 +306,7 @@ export function AttentionRow({ item, onOpen, acts = {}, busy = false, opened = n
             <p className="m-0 mt-0.5 line-clamp-2 text-small text-ink-soft"><Inline text={item.detail} /></p>
           )}
       </div>
-      {(offered.length > 0 || onOpen) && (
+      {(offered.length > 0 || onOpen || onRun) && (
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 @3xl/main:justify-end">
           {offered.map((offer) => (
             <Button key={`${offer.act}:${offer.account ?? ''}`} disabled={busy || asking !== null} onClick={() => press(offer)}>
@@ -311,6 +316,19 @@ export function AttentionRow({ item, onOpen, acts = {}, busy = false, opened = n
           {/* What the press does, said beside it: a retry starts a session, which spends an account (D126 §3.4). */}
           {offered.some((offer) => offer.act === 'retry') && (
             <span className="text-small text-ink-faint">{t('work.attention.act.retryDoes', { repository: item.where })}</span>
+          )}
+          {/* Where the step it waits at stands in its workflow (WORKFLOW1c): a door of its own, quieter than the row's. */}
+          {onRun && (
+            <button
+              type="button"
+              onClick={onRun}
+              aria-describedby={titleId}
+              title={t('workflow.run.viewNamed')}
+              className="inline-flex min-h-[1.75rem] items-center gap-1 rounded-control px-1.5 text-small text-ink-soft hover:bg-raised hover:text-ink"
+            >
+              <Icon name="workflow" size={13} />
+              {t('workflow.run.door.view')}
+            </button>
           )}
           {onOpen && (doorOnly
             ? <Button onClick={() => onOpen(item)}>{t(...doorOnly(item))}</Button>

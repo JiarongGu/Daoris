@@ -13,6 +13,8 @@ import { Note } from '../work/Note';
 import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing';
 import { PageHead, PageSection, ViewMain } from '../work/ViewMain';
 import { AbandonAsk, AbandonedWork, PauseAsk } from '../work/WorkAsks';
+import type { RunLineDoor } from '../workflow/run';
+import { WorkflowLine } from '../workflow/WorkflowLine';
 import { ASK_TONE, firstLine, tierWords } from './AskRow';
 import { AskReview } from './AskReview';
 import { AskWork } from './AskWork';
@@ -91,8 +93,13 @@ const ASK_ACT: Record<AskAct, { label: string; variant: 'primary' | 'default' | 
  */
 export function AskPage({
   ask, receivers, questTitles, intake = null, onAttend, busy = false, onPublish, onClose, onDelete, onOpenQuest, onAnswerGoAhead,
-  work, history, considered = [], nameOf, environments, onChooseReview,
+  work, history, considered = [], nameOf, environments, onChooseReview, workflow,
 }: {
+  /**
+   * Where its work stands in its workflow (WORKFLOW1c, the workflow design §3.8, §7): each run, one per chain and repository, said
+   * in one line among the head's facts whose door opens it. Absent in a browser, which has no driver to read one.
+   */
+  workflow?: RunLineDoor;
   /** The review environments the ask's circle declares, by name (REVIEWENV1a); none where no shell says. */
   environments?: string[];
   /**
@@ -225,6 +232,7 @@ export function AskPage({
       )}
       id={`#${ask.id}`}
       acts={acts || undefined}
+      fact={workflow && workflow.runs.length > 0 ? <WorkflowLine runs={workflow.runs} onOpen={workflow.onOpen} /> : undefined}
     />
   );
 
