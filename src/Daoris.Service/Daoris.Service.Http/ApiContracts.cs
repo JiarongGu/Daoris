@@ -8,7 +8,9 @@ namespace Daoris.Knowledge.Http;
 // source-generated serializer context (this host publishes AOT-friendly, and reflection-based JSON
 // would be the one thing stopping it). Program.cs keeps the routes; the shapes live here.
 
-public sealed record StatusResponse(bool Semantic, string Tier, string? Note);
+// `Proof` (PERSONDOOR1a, the person-door design §2.3): asked with `prove`, a host holding a person key answers the proof of
+// possession its starter checks before it trusts the host; absent otherwise, so the answer is what it always was.
+public sealed record StatusResponse(bool Semantic, string Tier, string? Note, string? Proof = null);
 // Provenance is SERVED, never implied (D48 §6): the deployment's copy of a repository's knowledge is
 // a claim about a commit, so the answer names the commit, when it was made, which line it came from
 // and which machine fed it. Absent on a deployment that reads its own checkouts — it has no feed, and

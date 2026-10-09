@@ -363,6 +363,53 @@ public sealed class SessionsCommandTests : IDisposable
     }
 
     /// <summary>
+    /// SQUASHTIDY1b: a session whose work the line holds by content is offered no landing at the terminal either: <c>--json</c>
+    /// carries the reader's <c>discards</c> whole, and the listing's line says where its work is, in Discard's own clause, with
+    /// the door that discards its tree and the ref its commits stay at; or, where the tree holds what no commit does, why it stays.
+    /// </summary>
+    [Fact]
+    public void A_session_whose_work_the_line_holds_by_content_names_its_discard_and_never_its_landing()
+    {
+        const string kept = "refs/daoris/discarded/daoris/s-56cb4d29";
+        var squashed = new SessionGrouping("f1n1sh00", SessionGroup.Review, "completed")
+        {
+            Work = new TreeWork(2, 0),
+            Discards = new DiscardOffer("daoris/s-56cb4d29", "s-56cb4d29", new HeldWork(new ContentHold("main", Squash: true), kept, null)),
+        };
+        var dirty = squashed with
+        {
+            Discards = new DiscardOffer(
+                "daoris/s-56cb4d29", "s-56cb4d29",
+                new HeldWork(new ContentHold("main", Squash: true), null, "it has 1 uncommitted path(s), which a discard would destroy")),
+        };
+        var bare = new SessionGrouping("n0th1ng0", SessionGroup.Ended, "failed");
+
+        using var answer = JsonDocument.Parse(SessionsCommand.Json([squashed, dirty, bare]));
+        var rows = answer.RootElement.GetProperty("sessions").EnumerateArray().ToList();
+        var discards = rows[0].GetProperty("discards");
+        Assert.Equal(
+            ("daoris/s-56cb4d29", "s-56cb4d29", "Its work is on `main` by content (a squash merge).", kept, ContentHold.KeptAt("daoris/s-56cb4d29", kept)),
+            (discards.GetProperty("branch").GetString(), discards.GetProperty("tree").GetString(), discards.GetProperty("says").GetString(),
+                discards.GetProperty("keeps").GetString(), discards.GetProperty("keptAt").GetString()));
+        Assert.Equal((JsonValueKind.Null, JsonValueKind.Null),
+            (rows[1].GetProperty("discards").GetProperty("keeps").ValueKind, rows[1].GetProperty("discards").GetProperty("keptAt").ValueKind));
+        Assert.Equal(JsonValueKind.Null, rows[2].GetProperty("discards").ValueKind);
+        Assert.Equal(JsonValueKind.Null, rows[0].GetProperty("lands").ValueKind);
+
+        var record = new SessionRecord("f1n1sh00", "engine", "completed") { Quest = "q1" };
+        Assert.Contains(
+            "its work is on `main` by content (a squash merge), in its tree s-56cb4d29: daoris-driver trees remove f1n1sh00 discards it, "
+            + $"keeping its commits at `{kept}`",
+            SessionsCommand.Facts(squashed, record));
+        Assert.Contains(
+            "its work is on `main` by content (a squash merge), in its tree s-56cb4d29, which stays: it has 1 uncommitted path(s), which "
+            + "a discard would destroy",
+            SessionsCommand.Facts(dirty, record));
+        Assert.DoesNotContain(SessionsCommand.Facts(squashed, record), fact => fact.Contains("trees land", StringComparison.Ordinal));
+        Assert.DoesNotContain(SessionsCommand.Facts(bare, record with { Id = "n0th1ng0" }), fact => fact.Contains("by content", StringComparison.Ordinal));
+    }
+
+    /// <summary>
     /// §7.1 rule 1–3: a session another process on this machine runs is stopped through a request; the loop that runs it
     /// takes it, and the verb says what happened once the record moved.
     /// </summary>

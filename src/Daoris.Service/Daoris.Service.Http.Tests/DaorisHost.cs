@@ -76,9 +76,13 @@ public class DaorisHost : IDisposable
     private readonly Factory _factory;
 
     /// <param name="environment">Variables to set over the host's own, for a test of what the host reads at start.</param>
+    /// <param name="input">
+    /// What the host's starter writes on its standard input, the person key first (PERSONDOOR1a): given, the host is asked
+    /// to read its key there (<see cref="Daoris.Knowledge.Http.PersonKey.InputVariable"/>), as the shell will ask it.
+    /// </param>
     public DaorisHost(
         ServiceMode mode, IReadOnlyDictionary<string, string?>? settings = null, Action<string>? seed = null,
-        IReadOnlyDictionary<string, string?>? environment = null)
+        IReadOnlyDictionary<string, string?>? environment = null, string? input = null)
     {
         Scratch = Path.Combine(Path.GetTempPath(), "daoris-http1-" + Guid.NewGuid().ToString("N")[..8]);
         Home = Path.Combine(Scratch, "home");
@@ -114,11 +118,16 @@ public class DaorisHost : IDisposable
             ["ASPNETCORE_URLS"] = null,
             // An in-process host would watch the test runner's own input (LOG2a).
             [Daoris.Knowledge.Http.InputEndStop.Variable] = null,
+            // Nor read a key from it (PERSONDOOR1a), unless this host's starter writes one.
+            [Daoris.Knowledge.Http.PersonKey.InputVariable] = input is null ? null : "1",
         };
         foreach (var (name, value) in environment ?? new Dictionary<string, string?>()) variables[name] = value;
         _environment = new ScopedEnvironment(variables);
 
         _factory = new Factory(WebRoot, settings ?? new Dictionary<string, string?>());
+        // The entry point reads the key from the console's input on the way up; in this process that is the starter's.
+        var before = Console.In;
+        if (input is not null) Console.SetIn(new StringReader(input));
         try
         {
             // Start it now, while this host owns the environment: the entry point reads it on the way up.
@@ -131,6 +140,10 @@ public class DaorisHost : IDisposable
             _environment.Dispose();
             Sweep();
             throw;
+        }
+        finally
+        {
+            Console.SetIn(before);
         }
     }
 
@@ -162,9 +175,12 @@ public class DaorisHost : IDisposable
             .ThenBy(route => route.method, StringComparer.Ordinal)
             .ToList();
 
-    /// <summary>One request, from <paramref name="from"/>, with a bearer key and a JSON body when given.</summary>
+    /// <summary>
+    /// One request, from <paramref name="from"/>, with a bearer key, the person key (PERSONDOOR1a) and a JSON body when
+    /// given.
+    /// </summary>
     public async Task<Answer> SendAsync(
-        string method, string pathAndQuery, IPAddress from, string? key = null, string? json = null)
+        string method, string pathAndQuery, IPAddress from, string? key = null, string? json = null, string? person = null)
     {
         var query = pathAndQuery.IndexOf('?');
         var context = await Server.SendAsync(http =>
@@ -174,6 +190,7 @@ public class DaorisHost : IDisposable
             http.Request.QueryString = query < 0 ? QueryString.Empty : new QueryString(pathAndQuery[query..]);
             http.Connection.RemoteIpAddress = from;
             if (key is not null) http.Request.Headers.Authorization = "Bearer " + key;
+            if (person is not null) http.Request.Headers[Daoris.Knowledge.Http.PersonKey.Header] = person;
             if (json is not null)
             {
                 var bytes = Encoding.UTF8.GetBytes(json);
@@ -189,14 +206,14 @@ public class DaorisHost : IDisposable
         return new Answer(context.Response.StatusCode, await reader.ReadToEndAsync(), context.Response.ContentType);
     }
 
-    public Task<Answer> GetAsync(string pathAndQuery, IPAddress? from = null, string? key = null) =>
-        SendAsync("GET", pathAndQuery, from ?? Loopback, key);
+    public Task<Answer> GetAsync(string pathAndQuery, IPAddress? from = null, string? key = null, string? person = null) =>
+        SendAsync("GET", pathAndQuery, from ?? Loopback, key, person: person);
 
-    public Task<Answer> PostAsync(string path, object body, IPAddress? from = null, string? key = null) =>
-        SendAsync("POST", path, from ?? Loopback, key, JsonSerializer.Serialize(body));
+    public Task<Answer> PostAsync(string path, object body, IPAddress? from = null, string? key = null, string? person = null) =>
+        SendAsync("POST", path, from ?? Loopback, key, JsonSerializer.Serialize(body), person);
 
-    public Task<Answer> DeleteAsync(string path, IPAddress? from = null, string? key = null) =>
-        SendAsync("DELETE", path, from ?? Loopback, key);
+    public Task<Answer> DeleteAsync(string path, IPAddress? from = null, string? key = null, string? person = null) =>
+        SendAsync("DELETE", path, from ?? Loopback, key, person: person);
 
     /// <summary>Every line this host's machine log holds, across its files.</summary>
     public IReadOnlyList<string> LogLines()
