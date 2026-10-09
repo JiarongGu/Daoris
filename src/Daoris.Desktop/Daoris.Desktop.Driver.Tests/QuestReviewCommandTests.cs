@@ -15,7 +15,8 @@ public sealed class QuestReviewCommandTests
     {
         new[] { "review" },
         new[] { "review", "q2" },
-        new[] { "review", "q2", "approve" },
+        // REVIEWENV1j: a word shaped as an environment's name is a choice of one, so a word no environment can be named stands here.
+        new[] { "review", "q2", "Approve!" },
         new[] { "review", "q2", "not-yet" },
         new[] { "review", "q2", "not-yet", "   " },
         new[] { "review", "--yes", "reviewed" },

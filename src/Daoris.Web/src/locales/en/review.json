@@ -28,6 +28,7 @@
   "review.choice.off": "no review",
   "review.choice.on": "a review in the default environment",
   "review.choice.in": "a review in `{{environment}}`",
+  "review.choiceTwin": "At a terminal, `daoris-driver quest review {{quest}} off \"…\"` skips the review, and `daoris-driver quest review {{quest}} on|<environment>` sets it up.",
   "review.setUp.newest": "What it showed",
   "review.setUp.older": "Shown before",
   "review.setUp.where": "Where",
