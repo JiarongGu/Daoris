@@ -8,6 +8,8 @@ import { SyncSection } from '../settings/Sync';
 import { chinese } from '../storyLanguage';
 import type { HistoryPlan } from '../work/history';
 import { WORKSPACE_EMPTY, WORKSPACE_PLAN } from '../work/historyFixtures';
+import { WORKSPACE } from '../workflow/fixtures';
+import { WorkflowTab } from '../workflow/WorkflowTab';
 import { LANGUAGES } from './fixtures';
 import { KeptHistory } from './KeptHistory';
 import type { WorkspaceTab } from './tabs';
@@ -133,6 +135,20 @@ function Page({ tab: first, setup = DEFAULTS_DAORIS, browser = false, wired = tr
           )}
         />
       )
+      : tab === 'workflow'
+        ? (
+          // Its Current (WORKFLOW1b), two of its repositories setting rules of their own.
+          <WorkflowTab
+            page="workspace"
+            name="work"
+            current={{
+              ...WORKSPACE,
+              workspace: 'work',
+              repositories: REPOSITORIES.map((repository) => ({ repository, own: repository === 'billing' || repository === 'reports' })),
+            }}
+            doors={{ setup: () => setTab('setup'), repository: nothing }}
+          />
+        )
       : <WorkspaceSetup {...setup} />;
   return (
     <WorkspacePage
@@ -191,6 +207,21 @@ export const BranchesAtTheFloor: Story = { args: { tab: 'branches' }, decorators
 
 /** The same, in dark. */
 export const BranchesAtTheFloorDark: Story = { args: { tab: 'branches' }, decorators: [mainAt(400), dark] };
+
+/**
+ * **Workflow** (WORKFLOW1b, the workflow design §6.1): its Current, its second opinion, its look in `dev` and a branch for
+ * the person to push, each step's door opening its own Setup; then its repositories, two with rules of their own.
+ */
+export const Workflow: Story = { args: { tab: 'workflow' } };
+
+/** Workflow in 中文. */
+export const WorkflowChinese: Story = { args: { tab: 'workflow' }, decorators: [chinese] };
+
+/** Workflow at a 680 px window, in dark. */
+export const WorkflowAt680Dark: Story = { args: { tab: 'workflow' }, decorators: [mainAt(600), dark] };
+
+/** Workflow at the main area's 400 px floor. */
+export const WorkflowAtTheFloor: Story = { args: { tab: 'workflow' }, decorators: [mainAt(400)] };
 
 /** Setup at Daoris's defaults: both sections fold, each value marked as Daoris's. */
 export const SetupFolded: Story = { args: { tab: 'setup', wired: false } };
