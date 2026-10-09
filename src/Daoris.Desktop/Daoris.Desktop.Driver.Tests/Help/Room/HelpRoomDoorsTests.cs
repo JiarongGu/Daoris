@@ -49,6 +49,11 @@ public sealed class HelpRoomDoorsTests
             "daoris driver workflow use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>]",
             "daoris driver workflow kind <workspace> <kind>", "daoris-driver ask … --kind <kind> [--workflow <id>|current]",
             "daoris-driver ask --set-workflow <id>",
+            // XAGENT1f4 (D155 point 10, design §9): the person's presses at the second opinion's gate, which Ask Daoris names and
+            // proposes none of.
+            "daoris-driver opinion ask <session> [--reviewer <adapter>] [--same-agent] [\"…\"]",
+            "daoris-driver opinion show <session|opinion>", "daoris-driver opinion stop <opinion>",
+            "daoris-driver opinion anyway <session> [\"…\"]", "daoris-driver opinion myself <session> [\"…\"]",
         })
         {
             Assert.Contains(command, agents);
@@ -162,5 +167,35 @@ public sealed class HelpRoomDoorsTests
         var named = HelpRoomDoors.Doors.Single(door => door.To.StartsWith("name a workflow", StringComparison.Ordinal));
         Assert.Contains("`daoris driver workflow list`, `daoris driver workflow show <id>[@<version>]`", named.Terminal);
         Assert.DoesNotContain("workflow list|show`", named.Terminal);
+    }
+
+    /// <summary>
+    /// XAGENT1f4 (D155 points 9 and 10, design §8.5, §9): the room's second-opinion row says what the gate does, in the sentences
+    /// every other door says (<see cref="OpinionRules.Gate"/>, held to the twins' table), never that nothing reads the rule; and the
+    /// person's presses at the gate are named with what each does, each said to be one Ask Daoris never proposes (D110, D156).
+    /// </summary>
+    [Fact]
+    public void The_second_opinion_s_rows_say_what_the_gate_does_and_name_the_person_s_presses()
+    {
+        var room = HelpRoom.Render(HelpRoomFixture.Machine);
+        var rule = HelpRoomDoors.Doors.Single(door => door.To.StartsWith("declare which other agent reads", StringComparison.Ordinal));
+
+        // Every sentence any door may say after a rule's own: a rule reading at landing and each step, and letting it run.
+        foreach (var sentence in OpinionRules.Gate(new OpinionRule(["codex-acp"], [OpinionRules.Landing, OpinionRules.Steps], Verify: true)))
+        {
+            Assert.Contains(sentence, rule.To);
+        }
+
+        Assert.DoesNotContain("declared only", rule.To, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("nothing reads it yet", room, StringComparison.Ordinal);
+
+        var ask = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris-driver opinion ask", StringComparison.Ordinal));
+        var answer = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris-driver opinion anyway", StringComparison.Ordinal));
+        Assert.Contains("daoris-driver opinion show", ask.Terminal);
+        Assert.Contains("daoris-driver opinion stop", ask.Terminal);
+        Assert.Contains("daoris-driver opinion myself", answer.Terminal);
+        foreach (var door in new[] { ask, answer }) Assert.Contains("Ask Daoris never proposes", door.To);
+        Assert.Contains("*Go on anyway…*", answer.Screen);
+        Assert.Contains("*I looked myself…*", answer.Screen);
     }
 }

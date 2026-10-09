@@ -80,14 +80,29 @@ export function opinionSays(t: TFunction, rule: OpinionRule | null | undefined):
 }
 
 /**
- * What a Setup row says of the rule standing (design §2.5–§2.6): the door's sentences, that nothing reads it yet, and where it
- * was set; nothing set says today's behaviour and nothing more.
+ * What each door says after the rule's own sentences (XAGENT1f4), in the page's language: what the gate does with work that waits
+ * for another agent's reading, at landing and before a chain's next step, as the rule's occasions name them, then that what is
+ * declared safe is not handed to a reviewer yet where the rule lets one run it; nothing after none here, where nothing waits —
+ * the twins' `opinionGate` and `OpinionRules.Gate`, by their table's `gate` rows.
+ */
+export function opinionGate(t: TFunction, rule: OpinionRule | null | undefined): string[] {
+  if (!rule || rule.none) return [];
+  return [
+    ...(rule.on.includes('landing') ? [t('settings.opinion.says.waiting')] : []),
+    ...(rule.on.includes('steps') ? [t('settings.opinion.says.stepWaiting')] : []),
+    ...(rule.verify ? [t('settings.opinion.says.safeNotHanded')] : []),
+  ];
+}
+
+/**
+ * What a Setup row says of the rule standing (design §2.5–§2.6): the door's sentences, what the gate does with it (XAGENT1f4),
+ * and where it was set; nothing set says today's behaviour and nothing more.
  */
 export function opinionRowSays(t: TFunction, rule: OpinionRule | null | undefined, from?: { source?: OpinionSource | null; workspace?: string }): string {
   if (!rule) return t('settings.opinion.says.noneSet');
   return [
     ...opinionSays(t, rule),
-    t('settings.opinion.says.declaredOnly'),
+    ...opinionGate(t, rule),
     ...(from?.source === 'repository' ? [t('settings.opinion.from.repository')] : []),
     ...(from?.source === 'workspace' ? [t('settings.opinion.from.workspace', { workspace: from.workspace })] : []),
   ].join(t('projects.setup.sentenceJoin'));

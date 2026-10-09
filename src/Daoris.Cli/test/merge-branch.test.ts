@@ -465,6 +465,8 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ["the kept names' table", [KEPT_NAMES], [...BASE, 'driver', 'web']],
     // REVIEWENV1c4: the review rules' table sits among the driver's tests, and the service's tool test reads its gate rows.
     ["the review rules' table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/review-rules.json'], [...BASE, 'service', 'driver']],
+    // XAGENT1f4: the second-opinion rules' table, whose gate rows the service's tool test reads too.
+    ["the second-opinion rules' table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/opinion-rules.json'], [...BASE, 'service', 'driver']],
     ["the service's tests", ['src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs'], [...BASE, 'service']],
     // ORIENT2h6: the fence table sits among the CLI's fixtures, and the driver's SelfDescription twin reads it too, and
     // since ORIENT2h6b the service's MarkdownFence twin.

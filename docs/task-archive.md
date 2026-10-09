@@ -12694,3 +12694,17 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **WORKFLOW1e — kinds and the choice** (cli, driver, service; after d). `workflows` and `workspaceWorkflows` in `driver.json`, the workspace's kinds and paths; §4.1's table; the ask's kind and choice, the person's door (D156); the run bound at its first start with what chose it; `workflow use|kind`. Contract: §4.1–§4.3, §4.5. Proof: `WorkflowSelectionTests`, `driverconfig.test.ts`, the service's ask tests.
 
 **Outcome** 2026-10-09: the choice: `workflows` by repository and `workspaceWorkflows` with a workspace's kinds (label, paths) in `driver.json`, twinned on `fixtures/workflow-selection.json` and resolved in §4.1's order (task, repository-kind, repository, workspace-kind, workspace, Current); an ask's kind and workflow on the ask behind a person's door (`POST /api/asks/{id}/workflow`); each run bound once at its first start in `<home>/workflows/runs/` to the version that chose it, with what chose it, never swapped; `daoris driver workflow use|kind`, `show --kind`, `daoris-driver ask --kind|--set-workflow`; no gate reads a choice yet (WORKFLOW1f). Follow-ups: WORKFLOW1e2, WORKFLOW1e3. Detail: D157's WORKFLOW1e note, the twins row; commits c831763e…cb4febe9.
+
+
+## XAGENT1f4 — the doors say what the gate does (2026-10-09, D155)
+
+> - [ ] **XAGENT1f4 — the doors say what the gate does** (driver, cli, web-settings, service; after XAGENT1f). Every door still ends a rule's sentences with *Declared only* (`OpinionRules.DeclaredOnly`, the CLI's `OPINION_DECLARED_ONLY`, Setup's rows, Ask Daoris), which XAGENT1f made untrue. Replace each with the gate's sentence from the shared table, at every door together, as REVIEWENV1c2 did for the review. Contract: D155's XAGENT1f note. Proof: the twins' gate rows, `HelpSettingProposalTests`, the opinion settings' vitest.
+
+**Outcome** 2026-10-09: every door that states a second-opinion rule says what the gate does, from `gate` rows in `opinion-rules.json`: at landing (it lands once the reading is settled, or the person goes on without it, `opinion anyway`, or says they looked, `opinion myself`), at steps, and with `verify` (nothing declared safe is handed to a reviewer yet); held there by the driver, the CLI, Setup's rows and toast, Ask Daoris's card and the service's test; the room names the `opinion` presses as the person's; `twins.md`'s two stale duplicate rows removed. Follow-up: XAGENT1f5. Detail: D155's XAGENT1f4 note; commits 2bd6d404…5a4e15b8.
+
+
+## OPINIONTWIN1 — the opinion row's twin is one command (2026-10-09, D155)
+
+> - [ ] **OPINIONTWIN1 — the opinion row's twin is one command** (web-settings). Setup's *Second opinion* row writes its terminal twin's alternatives as separate code spans joined by 、 in 中文 (`settings.opinion.twin.*`), where the review row is now one span with `|` (REVIEWENV1g, `be797978`). Proof: its settings vitest in both catalogues.
+
+**Outcome** 2026-10-09: Setup's *Second opinion* row's terminal twin is one command with `|` alternatives in both languages, as the review row's is. Detail: D155's XAGENT1f4 note; commit bd1c6d5f.

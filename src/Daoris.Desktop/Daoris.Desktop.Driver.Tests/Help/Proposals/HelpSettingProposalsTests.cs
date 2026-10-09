@@ -202,7 +202,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     /// <summary>
     /// XAGENT1a (D155 point 3, the second-agent design §2.5): a second-opinion rule for a registered repository or a workspace,
     /// in the terminal's words, judged by the twin's table and planned with what it lets a reviewer do, the working agent's
-    /// own family named among its reviewers, and that nothing reads it yet.
+    /// own family named among its reviewers, and what the gate does with it (XAGENT1f4), nothing of it after none.
     /// </summary>
     [Theory]
     [InlineData("engine", null, "--reviewers codex-acp --on landing,steps --verify --minutes 30",
@@ -224,7 +224,13 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         Assert.Null(plan.Refusal);
         Assert.Equal(terminal, plan.Terminal);
         Assert.Contains(says, plan.Describe);
-        if (value != "--clear") Assert.Contains(OpinionRules.DeclaredOnly, plan.Describe);
+        // XAGENT1f4: what the gate does with it, as every door says it; nothing waits where a repository has none, and a clear
+        // says what it hands back to.
+        if (value is not ("--clear" or "none")) Assert.Contains(OpinionRules.Waiting, plan.Describe);
+        else Assert.DoesNotContain(OpinionRules.Waiting, plan.Describe);
+        if (value.Contains("steps", StringComparison.Ordinal)) Assert.Contains(OpinionRules.StepWaiting, plan.Describe);
+        if (value.Contains("--verify", StringComparison.Ordinal)) Assert.Contains(OpinionRules.SafeNotHanded, plan.Describe);
+        Assert.DoesNotContain(OpinionRules.DeclaredOnly, plan.Describe);
         Assert.NotNull(plan.Apply);
     }
 

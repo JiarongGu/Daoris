@@ -382,7 +382,7 @@ describe("a repository's review before landing", () => {
 /**
  * XAGENT1a (D155 point 3, design §2.5–§2.6): *Second opinion before landing*, beside *Review before landing*, as the driver
  * resolves it. Nothing set says today's behaviour; a workspace's rule says so and offers *Set for this repository*; its own
- * carries Clear, which hands it back to its workspace's. Each says it is declared only, until the gate reads it.
+ * carries Clear, which hands it back to its workspace's. Each says what the gate does with it (XAGENT1f4).
  */
 describe("a repository's second opinion before landing", () => {
   const withOpinion = (opinion: NonNullable<RepositorySetupProps['work']>['opinion'], onOpinion = vi.fn()) => ({
@@ -397,11 +397,11 @@ describe("a repository's second opinion before landing", () => {
     await userEvent.click(head('Line and landing'));
     const opinion = row(section('Line and landing'), 'Second opinion before landing');
     expect(opinion).toHaveTextContent('None: no other agent reads work here.');
-    expect(within(opinion).getByText(code('daoris driver opinion engine --reviewers <adapter,adapter>'))).toBeInTheDocument();
+    expect(within(opinion).getByText(code('daoris driver opinion engine --reviewers <adapter,adapter>|none|--clear'))).toBeInTheDocument();
     expect(within(opinion).getByRole('button', { name: 'Set for this repository' })).toBeInTheDocument();
   });
 
-  it("says its workspace's rule, the working agent's own family and that it is declared only, and sets none in place", async () => {
+  it("says its workspace's rule, the working agent's own family and what the gate does with it, and sets none in place", async () => {
     const onOpinion = vi.fn();
     draw(withOpinion({
       repository: 'engine', workspace: 'work', source: 'workspace',
@@ -413,7 +413,10 @@ describe("a repository's second opinion before landing", () => {
     expect(opinion).toHaveTextContent('Before work here lands, codex-acp, else claude-code-acp, reads it, in a copy of its own');
     expect(opinion).toHaveTextContent('If no reviewer can read it, the work waits for you.');
     expect(opinion).toHaveTextContent('claude-code-acp is the same agent as the one that does the work here');
-    expect(opinion).toHaveTextContent('Declared only: nothing reads it yet');
+    // XAGENT1f4: the twins' gate sentence, its terminal doors drawn as code.
+    expect(opinion).toHaveTextContent("Where work here waits for another agent's reading, it lands only once that reading is settled");
+    expect(within(opinion).getByText(code('daoris-driver opinion anyway <session>'))).toBeInTheDocument();
+    expect(opinion).not.toHaveTextContent('Declared only');
     expect(opinion).toHaveTextContent('From the workspace work.');
     await userEvent.click(within(opinion).getByRole('button', { name: 'Set for this repository' }));
     await userEvent.click(within(opinion).getByRole('button', { name: 'None here' }));
@@ -430,6 +433,7 @@ describe("a repository's second opinion before landing", () => {
     expect(head('Line and landing')).toHaveAttribute('aria-expanded', 'true');
     const opinion = row(section('Line and landing'), 'Second opinion before landing');
     expect(opinion).toHaveTextContent("Before a chain's next step starts, dsh reads the work of the step before it here");
+    expect(opinion).toHaveTextContent("Where a chain's next step here waits for another agent's reading of the step before it");
     expect(opinion).toHaveTextContent('Set for this repository.');
     await userEvent.click(within(opinion).getByRole('button', { name: 'Clear' }));
     expect(onOpinion).toHaveBeenLastCalledWith({ clear: true });
