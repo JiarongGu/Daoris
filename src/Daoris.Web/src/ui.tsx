@@ -10,8 +10,9 @@ import * as RadixSelect from '@radix-ui/react-select';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
-  Archive, ArchiveRestore, ArrowDown, ArrowDownToLine, ArrowLeftRight, ArrowUp, BookOpen, Brain, Check, ChevronDown, ChevronRight, ChevronUp, CircleHelp,
-  ClipboardPaste, Cloud, CloudOff, Compass, Copy, Ellipsis, FileDiff, FilePen, FileText, FolderOpen, Gauge, GitMerge, Globe, Inbox, Info,
+  Archive, ArchiveRestore, ArrowDown, ArrowDownToLine, ArrowLeftRight, ArrowUp, BookOpen, Bot, Brain, Check, ChevronDown, ChevronRight, ChevronUp,
+  CircleHelp, ClipboardPaste, Cloud, CloudOff, Compass, Copy, Ellipsis, Eye, FileDiff, FilePen, FileText, Flag, FolderOpen, Gauge, GitBranch,
+  GitMerge, GitPullRequest, Globe, Hand, Inbox, Info, ScanEye,
   Keyboard, KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, Link, ListTodo, LogIn, Maximize2, Menu as MenuGlyph, Minimize2,
   Monitor, Network,
   PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, Paperclip, Pause, Play, Plug, Plus, Redo2, Reply,
@@ -141,6 +142,17 @@ const ICONS = {
   keyboard: Keyboard,
   // The menu bar folded into one on a narrow window (UX7a2): VS Code's own glyph for the same menu.
   menu: MenuGlyph,
+  // A workflow's steps by kind (WORKFLOW1b, the workflow design §6.2): what a step is, beside the rail's mark for who takes
+  // part. The agent's work, another agent reading it, the person looking at it, the two forms of a landing, the pull request a
+  // plugin opens, a plugin that may hold a start, and the end of the line.
+  stepWork: Bot,
+  stepOpinion: ScanEye,
+  stepLook: Eye,
+  stepMerge: GitMerge,
+  stepBranch: GitBranch,
+  stepPullRequest: GitPullRequest,
+  stepHold: Hand,
+  stepFinished: Flag,
 } as const;
 
 export type IconName = keyof typeof ICONS;

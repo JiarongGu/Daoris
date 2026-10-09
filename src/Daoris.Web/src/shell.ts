@@ -29,3 +29,4 @@ export * from './bridge/trees';
 export * from './bridge/update';
 export * from './bridge/windows';
 export * from './bridge/work';
+export * from './bridge/workflow';

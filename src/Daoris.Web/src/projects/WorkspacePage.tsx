@@ -10,9 +10,10 @@ import type { AccountsHere } from './workspace';
 /**
  * **A workspace's page** (UX6g, D150 §4.3): in Repositories' main area, opened from its row at the head of its group. Its
  * header names it, how many repositories it holds and where it syncs, with *Sync now* where it is wired or *Wire to a
- * remote…* where it is not. Beneath, three tabs, the chosen one remembered for the view: **Details** (its repositories,
+ * remote…* where it is not. Beneath, four tabs, the chosen one remembered for the view: **Details** (its repositories,
  * what a start runs on, the accounts its work may run on), **Branches** (the clean-up and bringing up to date across its
- * repositories) and **Setup** (its defaults, its remote and its rules).
+ * repositories), **Workflow** (how work moves in its repositories, drawn from its rules, WORKFLOW1b) and **Setup** (its
+ * defaults, its remote and its rules).
  *
  * @remarks
  * **A molecule**: the chosen tab's content arrives as `children`, drawn by whoever holds the data, and every press goes
@@ -68,6 +69,7 @@ export function WorkspacePage({ workspace, repositories, remote, tab = 'details'
             tabs={[
               { id: 'details', label: t('projects.tab.details') },
               { id: 'branches', label: t('projects.tab.branches') },
+              { id: 'workflow', label: t('projects.tab.workflow') },
               { id: 'setup', label: t('projects.tab.setup') },
             ]}
             chosen={tab}

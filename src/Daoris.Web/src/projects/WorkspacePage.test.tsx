@@ -37,13 +37,15 @@ describe("a workspace's page", () => {
     expect(onWire).toHaveBeenCalled();
   });
 
-  /** §4.3: Details, Branches and Setup, in that order, the chosen one its holder's to remember. */
-  it('holds three tabs, Details, Branches and Setup, and asks for another by its press', async () => {
+  /** §4.3: Details, Branches, Workflow (WORKFLOW1b) and Setup, in that order, the chosen one its holder's to remember. */
+  it('holds four tabs, Details, Branches, Workflow and Setup, and asks for another by its press', async () => {
     const onTab = vi.fn();
     render(<WorkspacePage workspace="aurora" repositories={2} tab="branches" onTab={onTab}>the clean-up</WorkspacePage>);
 
     const tabs = screen.getByRole('tablist', { name: "aurora's pages" });
-    expect(within(tabs).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Details', 'Branches', 'Setup']);
+    expect(within(tabs).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Details', 'Branches', 'Workflow', 'Setup']);
+    await userEvent.click(within(tabs).getByRole('tab', { name: 'Workflow' }));
+    expect(onTab).toHaveBeenCalledWith('workflow');
     expect(within(tabs).getByRole('tab', { name: 'Branches' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tabpanel')).toHaveTextContent('the clean-up');
     await userEvent.click(within(tabs).getByRole('tab', { name: 'Setup' }));
