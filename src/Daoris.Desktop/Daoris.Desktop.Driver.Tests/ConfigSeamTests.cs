@@ -111,10 +111,9 @@ public sealed partial class ConfigSeamTests
         Assert.Single(Regex.Matches(owner!, @"\(PathVariable\)"));
     }
 
+    /// <summary>Every project that can reach the config: the launcher references nothing but the staged build's one file (D93).</summary>
     private static readonly string[] Projects =
-    [
-        "Daoris.Desktop.Driver", "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules", "Daoris.Desktop.App", "Daoris.Desktop.Launcher",
-    ];
+        ["Daoris.Desktop.Driver", "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules", "Daoris.Desktop.App"];
 
     /// <summary>The file's name, the override's variable and the default path, each the start of a resolution of its own.</summary>
     [GeneratedRegex(@"""driver\.json""|""DAORIS_DRIVER_CONFIG""|DriverConfig\.PathVariable\b|DriverConfig\.DefaultPath\b")]
