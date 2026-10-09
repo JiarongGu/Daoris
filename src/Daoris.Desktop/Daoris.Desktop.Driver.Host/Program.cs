@@ -285,6 +285,13 @@ try
         return await Daoris.Driver.Host.RegisterConsole.RunAsync(registerArgs, log);
     }
 
+    // The second opinion's gate (XAGENT1f, D155 point 10, D50): ask, show, stop, go on anyway, or look yourself; the review's and
+    // What needs you's presses are XAGENT1g's doors to the same. Ask Daoris is exempt: each is the person's own (D110, design §9).
+    if (args is ["opinion", .. var opinionArgs])
+    {
+        return await Daoris.Driver.Host.OpinionConsole.RunAsync(opinionArgs);
+    }
+
     // Deleting a quest made by mistake (D95, D50): the quest drawer's Delete is the other door. Accepting a done's
     // departure from what the person required (DRIFT1d, D133 §4): the quest page's yes and Ask Daoris's are owed. Pausing,
     // resuming and abandoning one quest's work (PAUSE1b, PAUSE1d, D132 §7.2): the quest's page is the other door. Clearing a
