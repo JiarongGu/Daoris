@@ -5,6 +5,7 @@ import i18n from '../i18n';
 import type { GoAhead, Quest, Session } from '../api';
 import type { SweepBranch } from '../settings/Sweep';
 import type { Answered } from './InlineConfirm';
+import { DETAIL, GATES } from './opinionFixtures';
 import { SessionHead } from './SessionHead';
 
 // Props-only, like every molecule here: a parked session with its analysis, a record read over a
@@ -462,6 +463,51 @@ describe('the attended session\'s head', () => {
       } finally {
         await i18n.changeLanguage('en');
       }
+    });
+
+    /**
+     * XAGENT1g (the second-agent design §7, §8.2): the second opinion stands before the review's gate, and while it holds the
+     * work no *Accept…* is offered, except where *Accept…* answers it: then its ask says what it answers, and the press sends the
+     * gate's token back.
+     */
+    it('draws the second opinion where a level asks one, and lets Accept… answer a dispute, sending its token', () => {
+      const onLand = vi.fn();
+      render(
+        <SessionHead
+          session={session({ state: 'completed' })}
+          lands={LANDS}
+          landing={{ ...PLAN, opinion: GATES.disputed }}
+          opinion={{ detail: DETAIL }}
+          onLand={onLand}
+        />,
+      );
+
+      const gate = screen.getByRole('region', { name: 'Second opinion' });
+      expect(gate).toHaveTextContent('1 finding by Codex (OpenAI) is disputed');
+      fireEvent.click(screen.getByRole('button', { name: 'Accept…' }));
+      const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
+      expect(ask).toHaveTextContent('Accepting answers what the second opinion left unsettled: 1 disputed finding.');
+      fireEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
+
+      expect(onLand).toHaveBeenCalledWith(expect.objectContaining({ done: expect.any(Function) }), GATES.disputed.answers);
+    });
+
+    it('offers no Accept… while another agent still reads the work, nor while the rule requires one none could be had for', () => {
+      const { rerender } = render(
+        <SessionHead session={session({ state: 'completed' })} lands={LANDS} landing={{ ...PLAN, opinion: GATES.reading }} onLand={vi.fn()} />,
+      );
+      expect(screen.getByRole('region', { name: 'Second opinion' })).toHaveTextContent('being read');
+      expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
+
+      rerender(
+        <SessionHead session={session({ state: 'completed' })} lands={LANDS} landing={{ ...PLAN, opinion: GATES.unavailableRequired }} onLand={vi.fn()} />,
+      );
+      expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
+
+      // Not required: said beside Accept…, which stands.
+      rerender(<SessionHead session={session({ state: 'completed' })} lands={LANDS} landing={{ ...PLAN, opinion: GATES.unavailable }} onLand={vi.fn()} />);
+      expect(screen.getByRole('region', { name: 'Second opinion' })).toHaveTextContent('The rule does not require one, so nothing waits for it.');
+      expect(screen.getByRole('button', { name: 'Accept…' })).toBeInTheDocument();
     });
   });
 

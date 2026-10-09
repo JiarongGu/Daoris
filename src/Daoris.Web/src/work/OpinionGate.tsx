@@ -8,7 +8,7 @@ import {
   findingPlace, findingsOf, type OpinionDetail, type OpinionFinding, type OpinionGate as Gate, type OpinionPress,
   OPINION_ASKS_ONCE, opinionPresses, opinionState, type OpinionState, opinionTone, reviewerName,
 } from './opinion';
-import { FileOpener } from './preview';
+import { type FileOpen, FileOpener } from './preview';
 import { shortCommit } from './review';
 
 /**
@@ -60,9 +60,14 @@ const RAIL: Record<ReturnType<typeof opinionTone>, string> = {
  * A molecule: it is handed the gate, its detail and the presses, and reports each press.
  */
 export function OpinionGate({
-  gate, detail = null, acts = {}, busy = false, pressComing = false, working = null, className,
+  gate, detail = null, acts = {}, busy = false, pressComing = false, working = null, onOpenFile, className,
 }: {
   gate: Gate;
+  /**
+   * Opens a finding's file in the side bar's preview at its line (PREVIEW1), where the frame offers it here; absent, the
+   * frame's own opener is read, and with none a finding's place is plain text.
+   */
+  onOpenFile?: (open: FileOpen) => void;
   /** The findings and their answers (`OPINION_GATE`'s detail), where the frame read them. */
   detail?: OpinionDetail | null;
   acts?: OpinionGateActs;
@@ -144,7 +149,9 @@ export function OpinionGate({
           >
             {shown ? t('opinion.findingsHide') : findings.length > 0 ? t('opinion.findings', { count: findings.length }) : t('opinion.findingsShow')}
           </Button>
-          {shown && <Findings detail={detail!} />}
+          {shown && (onOpenFile
+            ? <FileOpener.Provider value={onOpenFile}><Findings detail={detail!} /></FileOpener.Provider>
+            : <Findings detail={detail!} />)}
         </div>
       )}
 

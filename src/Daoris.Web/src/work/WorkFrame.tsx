@@ -10,11 +10,13 @@ import {
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree,
-  useDiscardSessionTree, useDriver,
+  useDiscardSessionTree, useDriver, useOpinionGate,
 } from '../shell';
+import { opinionAsked } from './opinion';
+import { useOpinionActs } from './opinionActs';
 import { reviewHolds, reviewState } from './review';
 import { useReviewActs } from './reviewActs';
-import type { HeadReview } from './SessionHead';
+import type { HeadOpinion, HeadReview } from './SessionHead';
 import { sayDiscard } from '../settings/Sweep';
 import { doorOf, toolOf } from '../tools';
 import { agentOf, machineScope, workspaceScope } from '../settings/accounts';
@@ -999,6 +1001,17 @@ export function WorkFrame({
       open: gateHolds.quest && onOpenQuest ? () => onOpenQuest(gateHolds.quest!) : undefined,
     }),
   } : null;
+  // The second opinion's gate before it (XAGENT1g, the second-agent design §7, §9): its findings beside their answers, read only
+  // where a level asks one, and its presses by the one owner; a finding's place opens the side bar's preview.
+  const opinionActs = useOpinionActs({ notify });
+  const secondOpinion = opinionAsked(landing.data);
+  const opinionRead = useOpinionGate(secondOpinion && attended ? attended.id : null);
+  const headOpinion: HeadOpinion | null = secondOpinion && attended ? {
+    detail: opinionRead.data?.detail ?? null,
+    busy: opinionActs.busy,
+    acts: opinionActs.actsFor({ session: attended.id, gate: secondOpinion, openSession: attend }),
+    onOpenFile: openPreview,
+  } : null;
   // SQUASHTIDY1b: where the line holds its commits by content, no landing but its discard, the review's own, unforced.
   const discards = attended && here && !lands && grouping?.discards ? grouping.discards : null;
   const discardTree = useDiscardSessionTree();
@@ -1265,8 +1278,10 @@ export function WorkFrame({
             // sentence said once it landed and a refusal said inside the ask (UXFIX2).
             lands={lands}
             review={headReview}
+            opinion={headOpinion}
             landing={landing.data}
-            onLand={lands && attended ? (answered) => land.mutate(attended.id, {
+            // The second opinion's token rides with the press that answers what it showed (XAGENT1g).
+            onLand={lands && attended ? (answered, answers) => land.mutate({ id: attended.id, answers }, {
               onSuccess: (result) => {
                 if (!result.done) {
                   answered.refused(result.message);
