@@ -7,9 +7,9 @@
 // driver share no code, so both hold ONE table, the driver suite's `fixtures/workflow-named.json`, cell for cell, every
 // sentence and every digest included (`.claude/knowledge/twins.md`).
 //
-// A choice names a workflow and a run binds its newest version at its first start (WORKFLOW1e, `workflowchoice.ts`); nothing at a
-// gate reads it yet, which is WORKFLOW1f's. This module stores, validates, versions and compares. Pure: it reads no file, reaches
-// no network and spawns nothing.
+// A choice names a workflow and a run binds its newest version at its first start (WORKFLOW1e, `workflowchoice.ts`); every gate
+// reads that version since WORKFLOW1f, the driver's alone. This module stores, validates, versions and compares. Pure: it reads no
+// file, reaches no network and spawns nothing.
 
 import { createHash } from 'node:crypto';
 import { sameName } from './casefold.ts';

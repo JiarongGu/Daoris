@@ -4,14 +4,14 @@ import { join } from 'node:path';
 import { commandDriver } from '../src/driverconfig.ts';
 import { DaorisError } from '../src/errors.ts';
 import type { CheckoutsReader } from '../src/reviews.ts';
-import { NOT_GATED, WHAT_CHOOSES, commandWorkflow } from '../src/workflowdoor.ts';
+import { GATE_READS, WHAT_CHOOSES, commandWorkflow } from '../src/workflowdoor.ts';
 import { makeFixture, type Fixture } from './_fixture.ts';
 
 /**
  * WORKFLOW1e (D157 point 10, the workflow design §4.1–§4.3, §4.7): `use` and `kind` edit which workflow work follows, through the
  * table both twins hold (`workflowchoice.ts`, held to the driver's by `driverconfig.test.ts`); `show --repository|--workspace
  * [--kind]` draws what a task of that kind would follow. A named workflow is chosen only where its newest version reads here, and
- * every verb says no gate reads the choice yet.
+ * every verb says what the gate reads of it since WORKFLOW1f: the version a run bound at its first start.
  */
 
 const NOW = new Date('2026-10-09T09:12:34.567Z');
@@ -62,7 +62,7 @@ test('use names a workflow saved here for a repository, says what it replaces, a
     '  This replaces the workspace\'s for every kind: `web-app` follows its own kinds and its own default, and Current where it names none.',
     '  Each new piece of work binds what is chosen at its first start; work already started keeps what it bound.',
     '  --plan: nothing was written.',
-    NOT_GATED,
+    GATE_READS,
   ].join('\n'));
   assert.equal(fx.exists('driver.json'), false);
 
@@ -126,7 +126,7 @@ test('kind declares a workspace\'s kind with its paths, use maps it, a repositor
     '  It maps to no workflow there: `daoris driver workflow use <id> --workspace work --kind docs` maps one, and `--repository <name>` '
       + 'maps it for one repository.',
     `  Written to ${join(fx.root, 'driver.json')}.`,
-    NOT_GATED,
+    GATE_READS,
   ].join('\n'));
 
   const undeclared = await refused(fx, ['use', 'docs-to-pr', '--workspace', 'work', '--kind', 'design']);
@@ -214,4 +214,12 @@ test('an edit keeps every version a bound run names beyond the newest twenty', a
   assert.equal(versions.length, 20);
   assert.equal(versions[versions.length - 1], 22);
   fx.cleanup();
+});
+
+test('every verb says the gate reads the version a run bound at its first start, never that no gate reads it (WORKFLOW1f)', () => {
+  for (const said of [WHAT_CHOOSES, GATE_READS]) {
+    assert.doesNotMatch(said, /no gate|nothing at a gate|as Current says|yet/);
+    assert.match(said, /at its first start/);
+  }
+  assert.match(GATE_READS, /how it lands, your look and its second opinion follow that version/);
 });

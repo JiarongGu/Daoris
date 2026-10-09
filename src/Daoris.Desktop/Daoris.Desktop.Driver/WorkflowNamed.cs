@@ -115,8 +115,8 @@ public sealed record NamedWorkflowRead(string? Id, string? Name, IReadOnlyList<N
 
 /// <summary>
 /// Named workflows read (WORKFLOW1d, D157 points 5, 6 and 8, the workflow design §2.5, §2.6, §3.2, §3.3, §3.9): what a workflow
-/// file and each of its versions may say, the first problem in what does not, and a version's digest. Nothing reads a named
-/// workflow at a gate yet: choosing one is WORKFLOW1e's, and the gate's WORKFLOW1f's.
+/// file and each of its versions may say, the first problem in what does not, and a version's digest. Choosing one is WORKFLOW1e's,
+/// and every gate reads the version a run bound (WORKFLOW1f, <see cref="WorkflowProcesses"/>).
 /// </summary>
 /// <remarks>
 /// A TWIN with the CLI's <c>namedworkflows.ts</c>: both hold one table, this suite's tests' <c>fixtures/workflow-named.json</c>,

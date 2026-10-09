@@ -24,7 +24,7 @@ public sealed record WorkflowFileFound(string Id, JsonNode? File, NamedWorkflowR
 /// <remarks>
 /// A TWIN with the CLI's <c>planAddVersion</c> (<c>namedworkflows.ts</c>) and its door (<c>workflowdoor.ts</c>): the plan is held
 /// to this suite's tests' <c>fixtures/workflow-named.json</c> <c>store</c>, cell for cell. A run binds a named workflow's newest
-/// version at its first start (WORKFLOW1e, <see cref="WorkflowRunBindings"/>), and nothing at a gate reads it yet (WORKFLOW1f); the
+/// version at its first start (WORKFLOW1e, <see cref="WorkflowRunBindings"/>), which every gate reads (WORKFLOW1f, <see cref="WorkflowProcesses"/>); the
 /// screen's editor (WORKFLOW1g) and Ask Daoris (WORKFLOW1h) write through here.
 /// </remarks>
 public static class WorkflowStore

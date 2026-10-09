@@ -13,7 +13,8 @@ import { makeFixture, type Fixture } from './_fixture.ts';
  * WORKFLOW1d (D157 points 5 and 6, the workflow design §2.4–§2.7, §4.7): the terminal's door to named workflows. Each writer
  * prints its change as the card draws it (`namedworkflows.ts`, held to the driver's table by `namedworkflows.test.ts`) and saves
  * a new version, never editing one; `--plan` saves nothing; a refusal is 1 where a version would not read, 2 where the verb
- * cannot be done; and every verb that names a workflow says what chooses one, and that no gate reads it yet (WORKFLOW1e).
+ * cannot be done; and every verb that names a workflow says what chooses one (WORKFLOW1e), and that every gate reads the version a
+ * run bound (WORKFLOW1f).
  */
 
 const NOW = new Date('2026-10-09T09:12:34.567Z');
