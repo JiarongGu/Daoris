@@ -31,6 +31,36 @@ public sealed class RealHost(Process process, string url, string scratch) : IDis
     public static async Task<RealHost> StartAsync(
         string scratch, IReadOnlyDictionary<string, string?> environment, Action<StreamWriter>? starter = null)
     {
+        var host = Launch(scratch, environment);
+        if (starter is not null)
+        {
+            starter(host.Process.StandardInput);
+            host.Process.StandardInput.Flush();
+        }
+
+        for (var attempt = 0; attempt < 150; attempt++)
+        {
+            if (await AnswersAsync(host.Url)) return host;
+            if (host.Process.HasExited)
+            {
+                var exit = host.Process.ExitCode;
+                host.Dispose();
+                throw new InvalidOperationException($"the host exited ({exit}) before it answered");
+            }
+
+            await Task.Delay(200);
+        }
+
+        host.Dispose();
+        throw new TimeoutException($"the host never answered at {host.Url}");
+    }
+
+    /// <summary>
+    /// Start the host and return at once, without waiting for it to answer: for a host that is not to answer (HOSTSTART1).
+    /// Its standard error is kept, in <see cref="Said"/>, and its output drained.
+    /// </summary>
+    public static RealHost Launch(string scratch, IReadOnlyDictionary<string, string?> environment)
+    {
         var repositories = Path.Combine(scratch, "repositories");
         Directory.CreateDirectory(HomeOf(scratch));
         Directory.CreateDirectory(repositories);
@@ -78,30 +108,25 @@ public sealed class RealHost(Process process, string url, string scratch) : IDis
         var host = new RealHost(Process.Start(start)!, url, scratch);
         // Drained, so a host that writes more than a pipe holds is never blocked on its own output.
         host.Process.OutputDataReceived += (_, _) => { };
-        host.Process.ErrorDataReceived += (_, _) => { };
+        host.Process.ErrorDataReceived += (_, line) =>
+        {
+            if (line.Data is null) return;
+            lock (host._said) host._said.AppendLine(line.Data);
+        };
         host.Process.BeginOutputReadLine();
         host.Process.BeginErrorReadLine();
-        if (starter is not null)
+        return host;
+    }
+
+    private readonly System.Text.StringBuilder _said = new();
+
+    /// <summary>What the host printed on its standard error so far.</summary>
+    public string Said
+    {
+        get
         {
-            starter(host.Process.StandardInput);
-            host.Process.StandardInput.Flush();
+            lock (_said) return _said.ToString();
         }
-
-        for (var attempt = 0; attempt < 150; attempt++)
-        {
-            if (await AnswersAsync(url)) return host;
-            if (host.Process.HasExited)
-            {
-                var exit = host.Process.ExitCode;
-                host.Dispose();
-                throw new InvalidOperationException($"the host exited ({exit}) before it answered");
-            }
-
-            await Task.Delay(200);
-        }
-
-        host.Dispose();
-        throw new TimeoutException($"the host never answered at {url}");
     }
 
     /// <summary>Every line the host's machine log holds, across its files.</summary>

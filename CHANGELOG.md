@@ -215,6 +215,7 @@ with the version and date at release.
   says so and offers to discard the branch instead.
 - Daoris removes by itself a session branch whose work is already on the line and whose tree holds nothing, and
   says so in the machine log; everything else stays for *Clean up*.
+- A Daoris host that fails to start says why on the window: the last lines it printed, not only that it exited.
 
 The first version: doctrine that installs, is checked, and flows back.
 

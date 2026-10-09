@@ -108,7 +108,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 52 | 913 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 93 | 1657 |
 | `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 44 | 549 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 122 | 2134 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 123 | 2148 |
 | `src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs` | 49 | 861 |
 | `src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs` | 44 | 839 |
 | `src/Daoris.Service/Daoris.Service.Tests/IndexEntriesTests.cs` | 45 | 855 |
@@ -159,7 +159,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-09-21-working-surface-components.md` | 53 | 353 |
 | `docs/2026-09-25-rev3-review.md` | 51 | 407 |
 | `docs/2026-09-26-ux5-screen-audit.md` | 46 | 141 |
-| `docs/2026-09-30-machine-log-design.md` | 47 | 464 |
+| `docs/2026-09-30-machine-log-design.md` | 48 | 475 |
 | `docs/2026-10-01-account-rotation-design.md` | 52 | 613 |
 | `docs/2026-10-01-agent-layout-design.md` | 59 | 790 |
 | `docs/2026-10-01-development-documents-design.md` | 62 | 825 |
@@ -181,4 +181,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-08-second-agent-design.md` | 56 | 765 |
 | `docs/2026-10-09-workflow-design.md` | 79 | 1034 |
 | `docs/DAORIS_FUTURE_DIRECTIONS.md` | 51 | 3466 |
-| `src/Daoris.Desktop/README.md` | 50 | 295 |
+| `src/Daoris.Desktop/README.md` | 50 | 297 |

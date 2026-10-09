@@ -26,8 +26,17 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     private readonly HttpClient _probe = new() { Timeout = TimeSpan.FromSeconds(2) };
     private Process? _owned;
 
+    /// <summary>What the host this supervisor started printed last on its standard error (HOSTSTART1).</summary>
+    private LastLines? _said;
+
     /// <summary>How long a host whose input was closed is given to stop by itself before it is killed.</summary>
     public TimeSpan StopWithin { get; init; } = TimeSpan.FromSeconds(5);
+
+    /// <summary>
+    /// How long, once the host has exited, its standard error is given to reach its end before the trouble is said: a
+    /// child of the host that inherited the stream may hold it open after the host is gone.
+    /// </summary>
+    private static readonly TimeSpan ReadToEndWithin = TimeSpan.FromSeconds(2);
 
     /// <summary>Why the last <see cref="EnsureAsync"/> answered false — a sentence for the person.</summary>
     public string? Trouble { get; private set; }
@@ -89,6 +98,8 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
         try
         {
             _owned = Process.Start(StartInfo(location));
+            // HOSTSTART1: read from the start, so a host that prints more than a pipe holds never waits on it.
+            if (_owned is not null) _said = LastLines.Drain(_owned.StandardError);
         }
         catch (Exception error) when (error is System.ComponentModel.Win32Exception or InvalidOperationException)
         {
@@ -103,15 +114,41 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
             if (await ProbeAsync(ct).ConfigureAwait(false) == Answer.Daoris) return true;
             if (_owned is null || _owned.HasExited)
             {
-                Trouble = $"the service host at {location.Executable} exited before it answered.";
+                Trouble = await WithWhatItSaidAsync(
+                    $"the service host at {location.Executable} exited before it answered.", exited: true, ct).ConfigureAwait(false);
                 return false;
             }
 
             await Task.Delay(300, ct).ConfigureAwait(false);
         }
 
-        Trouble = $"the service host was started from {location.Executable} but never answered at {serviceUrl}.";
+        Trouble = await WithWhatItSaidAsync(
+            $"the service host was started from {location.Executable} but never answered at {serviceUrl}.", exited: false, ct)
+            .ConfigureAwait(false);
         return false;
+    }
+
+    /// <summary>
+    /// The trouble's sentence, followed by the host's last lines on its standard error where it printed any
+    /// (HOSTSTART1): a host that dies at start says why there, and the window showed only that it exited. Bounded and as
+    /// printed (<see cref="LastLines"/>); the window shows them as text, never as markup.
+    /// </summary>
+    private async Task<string> WithWhatItSaidAsync(string sentence, bool exited, CancellationToken ct)
+    {
+        if (_said is null) return sentence;
+        if (exited)
+        {
+            try
+            {
+                await _said.Ended.WaitAsync(ReadToEndWithin, ct).ConfigureAwait(false);
+            }
+            catch (TimeoutException)
+            {
+                // Something else still holds the stream: what was read by now is what is said.
+            }
+        }
+
+        return _said.Said is { } said ? $"{sentence} Its last lines on standard error:\n{said}" : sentence;
     }
 
     /// <summary>
@@ -127,9 +164,10 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
 
     /// <summary>
     /// How a host this supervisor starts is started (LOG2a): its standard input redirected and
-    /// <see cref="StopOnInputEnd"/> set, so closing that input is its stop. The working directory is the
-    /// location's, not the binary's — a dev host must run from its project so the platform bundle in its
-    /// wwwroot is what gets served (see HostLocation).
+    /// <see cref="StopOnInputEnd"/> set, so closing that input is its stop. Its standard error is redirected
+    /// too, and read for as long as it runs, so a host that dies at start says why (HOSTSTART1); its output
+    /// is left alone. The working directory is the location's, not the binary's — a dev host must run from
+    /// its project so the platform bundle in its wwwroot is what gets served (see HostLocation).
     /// </summary>
     public static ProcessStartInfo StartInfo(HostLocation location)
     {
@@ -145,6 +183,10 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
             // Nothing is written on it, only closed, but every redirected stream names UTF-8 (a source
             // scan holds it), and one with no byte-order mark writes nothing ahead of a first byte.
             StandardInputEncoding = new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
+            RedirectStandardError = true,
+            // In the console's code page, an em dash the host printed would reach the window as `鈥?` (the first
+            // deployment's 4c).
+            StandardErrorEncoding = new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
         };
         start.Environment[StopOnInputEnd] = "1";
         return start;

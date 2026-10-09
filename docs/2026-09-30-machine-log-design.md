@@ -53,7 +53,7 @@ nested. A reader skips a line it cannot parse and a field it does not know.
 | Event | Source | Data | Why it is kept |
 |---|---|---|---|
 | `app.started` / `app.stopped` | every | version, installed, uptime on stop | a period of use, and a version to blame |
-| `error` | every | where, type, message, stack; a request's also method, route, inner (host, HOSTLOG1) | an unhandled exception, which left no trace |
+| `error` | every | where, type, message, stack; a request's also method, route, inner (host, HOSTLOG1); terminating, and `where` `start` for an exception that ended the host before it served (host, HOSTSTART1) | an unhandled exception, which left no trace |
 | `log` | every | category, message, exception | the framework's own warnings and errors |
 | `session.started` | desktop | session, kind, adapter, repository, workspace; setup, only for a set-up's session | what the person runs, on what, and where (WSSETUP11) |
 | `session.opened` | desktop | session, adapter, openMs | spawn to ready: what a person waits through |
@@ -303,6 +303,17 @@ found so the client falls back to `initialize`. The SDK gave that answer with tw
 asked nothing of anyone. The connector now answers the probe itself, before the SDK's dispatch (`DiscoverProbe`),
 with the same error, and says it once at debug, below every provider's floor; any other method with no handler
 still warns. Held by `DiscoverProbeTests`; the mechanism is the fix log's.
+
+**As built (HOSTSTART1): a host's start that threw, on the host.** A host whose start threw left no line: its entry
+point is async, so the `using` that closes its log ran as the exception left the entry point, before the runtime raised
+it as unhandled, and the `error` line for it was dropped on a closed log. The host (`Program.cs`, beside the log's
+opening) now writes an exception raised on its entry point's own thread with a writer of its own, since only that
+exception is raised there, once nothing writes through the closed one: the `error` event as §4's row has it, `where`
+`start` until the lifetime's started (the server bound), `unhandled` after, `terminating` the runtime's word.
+`app.started` is written before the server starts, so a start that failed to bind has both lines. Held by
+`StartFailureTests` (the real executable: a store that cannot open, and a port another program holds; both found no line
+before the change). What the window says of the same start is the shell's: `HostSupervisor` reads the host's standard
+error from its start and says its last lines (`LastLines`), the fix log's HOSTSTART1.
 
 ## 5. What is never logged
 
