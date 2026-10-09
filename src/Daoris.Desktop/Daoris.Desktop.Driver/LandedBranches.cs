@@ -68,6 +68,12 @@ public sealed record LandedBranch(
     public LandingOpinion? Opinion { get; init; }
 
     /// <summary>
+    /// The named workflow its first landing went by (WORKFLOW1f, the workflow design §5.5): its id, the version its run kept, the
+    /// level that chose it and the task's kind. Null under Current, and for one recorded before.
+    /// </summary>
+    public LandingWorkflow? Workflow { get; init; }
+
+    /// <summary>
     /// Each time a later done moved it on (LAND2c, D149 point 2), oldest first: a chain's later step, or a session that went on
     /// after its landing. <see cref="Tip"/> is the newest one's <see cref="LandedAdvance.To"/>.
     /// </summary>
@@ -115,6 +121,9 @@ public sealed record LandedAdvance(string From, string To, DateTimeOffset At, st
 
     /// <summary>The second opinion that let this advance go (XAGENT1f, design §8.6); null where none was asked, and in a record from before.</summary>
     public LandingOpinion? Opinion { get; init; }
+
+    /// <summary>The named workflow this advance went by (WORKFLOW1f, design §5.5); null under Current, and in a record from before.</summary>
+    public LandingWorkflow? Workflow { get; init; }
 }
 
 /// <summary>
@@ -377,6 +386,7 @@ public sealed class LandedBranches(string home)
 
                 if (entry.Review is { } review) WriteReview(writer, review);
                 if (entry.Opinion is { } opinion) WriteOpinion(writer, opinion);
+                if (entry.Workflow is { } workflow) WriteWorkflow(writer, workflow);
 
                 if (entry.Advances.Count > 0)
                 {
@@ -391,6 +401,7 @@ public sealed class LandedBranches(string home)
                         if (advance.AcceptedBy is not null) writer.WriteString("acceptedBy", advance.AcceptedBy);
                         if (advance.Review is { } advanced) WriteReview(writer, advanced);
                         if (advance.Opinion is { } read) WriteOpinion(writer, read);
+                        if (advance.Workflow is { } went) WriteWorkflow(writer, went);
                         writer.WriteEndObject();
                     }
 
@@ -527,6 +538,25 @@ public sealed class LandedBranches(string home)
         };
     }
 
+    /// <summary>The named workflow a landing went by (WORKFLOW1f, design §5.5), each field only where it is known.</summary>
+    private static void WriteWorkflow(Utf8JsonWriter writer, LandingWorkflow workflow)
+    {
+        writer.WriteStartObject("workflow");
+        writer.WriteString("workflow", workflow.Workflow);
+        writer.WriteNumber("version", workflow.Version);
+        writer.WriteString("level", workflow.Level);
+        if (workflow.Kind is not null) writer.WriteString("kind", workflow.Kind);
+        writer.WriteEndObject();
+    }
+
+    /// <summary>The named workflow a landing or an advance kept, or null: absent, which is every landing under Current and from before WORKFLOW1f.</summary>
+    private static LandingWorkflow? WorkflowOf(JsonElement element) =>
+        element.TryGetProperty("workflow", out var workflow) && workflow.ValueKind == JsonValueKind.Object
+        && Text(workflow, "workflow") is { } id && Text(workflow, "level") is { } level
+        && workflow.TryGetProperty("version", out var version) && version.ValueKind == JsonValueKind.Number && version.TryGetInt32(out var number)
+            ? new LandingWorkflow(id, number, level) { Kind = Text(workflow, "kind") }
+            : null;
+
     /// <summary>The kept answer, in the answer's own field names, with who answered and when it was asked (PLUGHOOK1a).</summary>
     private static void WriteState(Utf8JsonWriter writer, PullRequestState state)
     {
@@ -627,6 +657,7 @@ public sealed class LandedBranches(string home)
                 : null,
             Review = ReviewOf(element),
             Opinion = OpinionOf(element),
+            Workflow = WorkflowOf(element),
             Advances = AdvancesOf(element),
             PullRequestState = StateOf(element),
             PullRequestAskFailed = AskFailedOf(element),
@@ -653,7 +684,7 @@ public sealed class LandedBranches(string home)
 
             advances.Add(new LandedAdvance(from, to, at, session)
             {
-                AcceptedBy = Text(each, "acceptedBy"), Review = ReviewOf(each), Opinion = OpinionOf(each),
+                AcceptedBy = Text(each, "acceptedBy"), Review = ReviewOf(each), Opinion = OpinionOf(each), Workflow = WorkflowOf(each),
             });
         }
 

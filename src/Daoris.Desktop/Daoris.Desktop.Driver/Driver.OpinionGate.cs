@@ -14,9 +14,14 @@ public static class OpinionLook
     /// its own, under a rule whose occasions read it, is owed one at each occasion the rule names. Never throws: the record has
     /// concluded, and an opinion not owed leaves the person's <i>Ask now</i>.
     /// </summary>
+    /// <param name="process">
+    /// Its run's process (WORKFLOW1f): under a named workflow, its version's opinion step says the occasions, one that cannot start
+    /// among them, so it sits where it is owed. Null reads the rule live, as before.
+    /// </param>
     /// <returns>The occasions it is owed at; empty where none.</returns>
     public static IReadOnlyList<string> Concluded(
-        string home, DriverConfig config, string session, QuestView quest, string? status, string state, string tree, DateTimeOffset? at = null)
+        string home, DriverConfig config, string session, QuestView quest, string? status, string state, string tree, DateTimeOffset? at = null,
+        WorkflowProcess? process = null)
     {
         try
         {
@@ -24,7 +29,9 @@ public static class OpinionLook
             var trees = new SessionTrees(home);
             if (!trees.Holds(tree)) return [];
             var (workspace, repository) = trees.Owner(tree);
-            if (OpinionRules.Resolve(config, repository, workspace) is not { Rule: { IsNone: false } rule }) return [];
+            var resolved = process is null ? OpinionRules.Resolve(config, repository, workspace) : process.Opinion;
+            if (resolved is null || (resolved.Rule.IsNone && process?.OpinionCannot is null)) return [];
+            var rule = resolved.Rule;
 
             var dues = new OpinionDues(home);
             foreach (var occasion in rule.On)
@@ -45,14 +52,19 @@ public static class OpinionLook
     /// its occasion, its tree gone, its work landed (a landing recorded for it, or nothing in its tree that no branch of the
     /// person's holds), or, under <c>steps</c>, no next step of its chain left to hold.
     /// </summary>
+    /// <param name="process">
+    /// Its run's process (WORKFLOW1f): under a named workflow, whether its version still reads at the occasion. One that cannot be
+    /// read here closes nothing, since it may read once it can. Null reads the rule live, as before.
+    /// </param>
     public static async Task<string?> ClosesAsync(
-        OpinionDue due, QuestView? quest, IReadOnlyList<QuestView> chain, DriverConfig config, LandedBranches landed, CancellationToken ct)
+        OpinionDue due, QuestView? quest, IReadOnlyList<QuestView> chain, DriverConfig config, LandedBranches landed, CancellationToken ct,
+        WorkflowProcess? process = null)
     {
         if (quest is not { Status: "Done" }) return OpinionDueClosed.Undone;
-        if (OpinionRules.Resolve(config, due.Repository, due.Workspace) is not { Rule: { IsNone: false } rule } || !rule.On.Contains(due.Occasion))
-        {
-            return OpinionDueClosed.Off;
-        }
+        var reads = process is null
+            ? OpinionRules.Resolve(config, due.Repository, due.Workspace) is { Rule: { IsNone: false } rule } && rule.On.Contains(due.Occasion)
+            : process.Problem is not null || process.Unread is not null || OpinionGate.Reads(process.Opinion, process.OpinionCannot, due.Occasion);
+        if (!reads) return OpinionDueClosed.Off;
 
         if (SessionTrees.TreeGone(due.Tree)) return OpinionDueClosed.Gone;
         if (landed.Landing(due.Session) is { } landing && landing.Names(due.Session)) return OpinionDueClosed.Landed;
@@ -95,7 +107,11 @@ public sealed partial class Driver
                 var now = DateTimeOffset.UtcNow;
                 var chain = ReviewGate.ChainOf(quests, due.Quest);
                 var quest = chain.FirstOrDefault(each => Same(each.Id, due.Quest));
-                if (await OpinionLook.ClosesAsync(due, quest, chain, config, _trees.Recorded, ct).ConfigureAwait(false) is { } closed)
+                // WORKFLOW1f: the run's process, read once for this due and handed to each part below, so a named workflow's opinion
+                // step decides whether it is owed, who reads it and what holds.
+                var process = WorkflowProcesses.Read(home, config, due.Repository, due.Workspace,
+                    WorkflowRunBindings.RunOf(chain, due.Repository) ?? due.Quest);
+                if (await OpinionLook.ClosesAsync(due, quest, chain, config, _trees.Recorded, ct, process).ConfigureAwait(false) is { } closed)
                 {
                     dues.Close(due.Session, due.Occasion, closed, now);
                     continue;
@@ -103,7 +119,7 @@ public sealed partial class Driver
 
                 var key = SessionTrees.OpinionChain(chain, due.Quest);
                 var claim = $"{key}/{due.Repository}/{due.Occasion}";
-                var gate = await _trees.OpinionAsync(due.Tree, due.Repository, due.Workspace, due.Quest, due.Session, world, null, due.Occasion, ct)
+                var gate = await _trees.OpinionAsync(due.Tree, due.Repository, due.Workspace, due.Quest, due.Session, world, null, due.Occasion, ct, process)
                     .ConfigureAwait(false);
 
                 // The person's asks first (§8.5): Ask now, Try again, Ask again, Ask the same agent, fresh. Not capped (§8.3).
@@ -114,7 +130,7 @@ public sealed partial class Driver
                     {
                         var request = gates.Take(key, due.Repository, due.Session)[^1];
                         passes++;
-                        OpinionBeside(claim, token => AskPassAsync(due, key, chain, request.Occasion, request, snapshot, token), ct);
+                        OpinionBeside(claim, token => AskPassAsync(due, key, chain, request.Occasion, request, snapshot, process, token), ct);
                     }
                 }
                 else if (((gate.State == OpinionGateStates.NotAsked && !gate.Held)
@@ -125,12 +141,12 @@ public sealed partial class Driver
                     if (_runs.TryOpinion(claim))
                     {
                         passes++;
-                        OpinionBeside(claim, token => AskPassAsync(due, key, chain, due.Occasion, null, snapshot, token), ct);
+                        OpinionBeside(claim, token => AskPassAsync(due, key, chain, due.Occasion, null, snapshot, process, token), ct);
                     }
                 }
                 else if (gate is { State: OpinionGateStates.WithSession or OpinionGateStates.ReadAgain, Opinion: { } first } && _runs.TryOpinion(claim))
                 {
-                    OpinionBeside(claim, token => DeliverBesideAsync(due, chain, first, token), ct);
+                    OpinionBeside(claim, token => DeliverBesideAsync(due, chain, first, process, token), ct);
                 }
 
                 Sit(sits, due, chain, gate);
@@ -202,14 +218,22 @@ public sealed partial class Driver
     /// session began) to its tree's tip; the chain's quests here and the ask's words. Kept at the gate the moment the host opens it,
     /// or kept as unavailable with its code; logged either way.
     /// </summary>
+    /// <param name="process">The run's process (WORKFLOW1f): a named workflow's opinion step names which declared reviewers read it.</param>
     private async Task<string> AskPassAsync(
-        OpinionDue due, string key, IReadOnlyList<QuestView> chain, string occasion, OpinionRequest? request, Snapshot snapshot, CancellationToken ct)
+        OpinionDue due, string key, IReadOnlyList<QuestView> chain, string occasion, OpinionRequest? request, Snapshot snapshot,
+        WorkflowProcess process, CancellationToken ct)
     {
         var gates = new OpinionGates(home);
         var named = $"`{due.Repository}` for session {due.Session}";
         var at = DateTimeOffset.UtcNow;
         var by = request is null ? OpinionAskers.Look : OpinionAskers.Person;
-        if (OpinionRules.Resolve(config, due.Repository, due.Workspace) is not { Rule: { IsNone: false } rule })
+        // A step that cannot start is never asked: its gate says why, and the person's own answers are the floor (WORKFLOW1f).
+        if ((process.OpinionCannot ?? process.Problem ?? process.Unread) is { } cannot)
+        {
+            return $"opinion  no second opinion on {named}: its workflow cannot start one: {cannot}";
+        }
+
+        if (process.Opinion is not { Rule: { IsNone: false } rule })
         {
             return $"opinion  no second opinion on {named}: no rule here names a reviewer for `{due.Repository}`.";
         }
@@ -272,9 +296,10 @@ public sealed partial class Driver
     /// Deliver an owed opinion as far as the facts let it go (XAGENT1e's <see cref="DeliverAsync"/>): its findings handed to the
     /// working session at its turn's end, its answers read, its one recheck asked; asked with what the first pass read.
     /// </summary>
-    private async Task<string> DeliverBesideAsync(OpinionDue due, IReadOnlyList<QuestView> chain, OpinionView first, CancellationToken ct)
+    private async Task<string> DeliverBesideAsync(
+        OpinionDue due, IReadOnlyList<QuestView> chain, OpinionView first, WorkflowProcess process, CancellationToken ct)
     {
-        if (OpinionRules.Resolve(config, due.Repository, due.Workspace) is not { Rule: { IsNone: false } rule })
+        if (process.Opinion is not { Rule: { IsNone: false } rule })
         {
             return $"opinion  second opinion {first.Id} is not delivered: no rule here names a reviewer for `{due.Repository}` any more.";
         }

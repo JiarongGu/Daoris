@@ -105,9 +105,13 @@ public sealed class AutoLander(
         IReadOnlyList<SessionRecord>? records = null;
         foreach (var entry in open)
         {
-            // The switch is read as it stands now: switched off, the person's press is the way again.
-            var rule = LandingRules.Choose(config, entry.Repository, entry.Workspace).Rule;
-            if (rule is not { Form: LandingForm.Branch, AutoAccept: true })
+            // The switch is read as it stands now: switched off, the person's press is the way again. Under a named workflow it is
+            // its run's bound version's landing step (WORKFLOW1f), read once here and handed to the gate below; a workflow that
+            // cannot be read here holds the entry at the gate, never closes it as off.
+            var process = await WorkflowProcesses.ReadAsync(home, config, world, entry.Quest, entry.Repository, entry.Workspace, ct)
+                .ConfigureAwait(false);
+            var rule = process.Landing.Rule;
+            if (process is { Problem: null, Unread: null } && rule is not { Form: LandingForm.Branch, AutoAccept: true })
             {
                 said.Add(Closed(entry, AutoLandingCode.Off));
                 continue;
@@ -157,10 +161,21 @@ public sealed class AutoLander(
             var (tip, status, uncommitted) = await ReadTreeAsync(entry.Tree, ct).ConfigureAwait(false);
             if (!AutoLandingRules.ShouldTry(entry, tip, status)) continue;
 
-            // The landing gate, read once (XAGENT1f, the second-agent design §7): the second opinion first. Where the level says
-            // one is read before landing, the session stays due as `opinion`, said once and read again at every look, until it is
-            // settled or the person answers it; a chain step whose chain has a later step here waits for that step (§8.1).
-            var gate = await trees.GateAsync(entry.Tree, entry.Quest, world, entry.Session, ct).ConfigureAwait(false);
+            // The landing gate, read once (XAGENT1f, the second-agent design §7), with the process read above (WORKFLOW1f).
+            var gate = await trees.GateAsync(entry.Tree, entry.Quest, world, entry.Session, ct, process).ConfigureAwait(false);
+
+            // The run's own part first (WORKFLOW1f, the workflow design §3.7, §4.4): a workflow that cannot be read here, or a kind's
+            // paths, holds it, said once. Kept with no tip and no status, so the next look reads the gate again, and lands it once
+            // nothing holds it: what moves it is a declaration or the person's say-so, never the tree.
+            if (gate.Workflow is { LetsGo: false } workflow)
+            {
+                if (Workflow(entry, workflow, workflow.Says, step: null) is { } held) said.Add(held);
+                continue;
+            }
+
+            // The second opinion. Where the level says one is read before landing, the session stays due as `opinion`, said once and
+            // read again at every look, until it is settled or the person answers it; a chain step whose chain has a later step here
+            // waits for that step (§8.1).
             if (!gate.Opinion.LetsGo)
             {
                 if (entry.Last?.Code != AutoLandingCode.Opinion)
@@ -185,6 +200,13 @@ public sealed class AutoLander(
                     log?.Invoke(ReviewLines.Held(entry.Session, entry.Repository, entry.Workspace, review, ReviewDoors.Look));
                 }
 
+                continue;
+            }
+
+            // The named workflow's landing step, last before the landing (WORKFLOW1f, design §3.7): one that cannot start sits.
+            if (gate.Process?.LandingCannot is not null && gate.Workflow is { } landingStep)
+            {
+                if (Workflow(entry, landingStep, WorkflowGate.LandingSays(landingStep.Process), WorkflowKinds.Landing) is { } held) said.Add(held);
                 continue;
             }
 
@@ -253,7 +275,7 @@ public sealed class AutoLander(
         var subject = await LandingRules.SubjectAsync(
             entry.Session, entry.Quest, id => world.QuestAsync(id, ct), events.Openings([entry.Session]).GetValueOrDefault(entry.Session))
             .ConfigureAwait(false);
-        var plan = await trees.PlanAsync(entry.Tree, subject, ct).ConfigureAwait(false);
+        var plan = await trees.PlanAsync(entry.Tree, subject, ct, choice.Gate?.Process).ConfigureAwait(false);
         var landed = await trees.LandAsync(entry.Tree, subject, ct, world.InUseAsync, AcceptedBy.Auto, choice.Gate).ConfigureAwait(false);
         var code = AutoLandingRules.CodeOf(landed);
         return Tried(entry, code, choice.Tip, choice.Status, landed, plan.Plugin, plan.Target, unlanded);
@@ -295,6 +317,21 @@ public sealed class AutoLander(
     private string Closed(AutoLanding entry, string code, string? branch = null) =>
         Tried(entry, code, tip: null, status: null, named: branch);
 
+    /// <summary>
+    /// What the run's named workflow holds (WORKFLOW1f): a refusal kept once, with no tip and no status, which a refused landing
+    /// always has, so the next look reads the gate again whatever the tree does, and says nothing more while it still holds.
+    /// </summary>
+    /// <param name="step">The kind of step that cannot start, for the landing's own; null for the run's part.</param>
+    /// <returns>The look's line, or null where it was said already.</returns>
+    private string? Workflow(AutoLanding entry, WorkflowGateState gate, string sentence, string? step)
+    {
+        // Said once: a hold kept as a refusal with no tip and no status is the workflow's (a refused landing is kept with both).
+        if (entry.Last is { Code: AutoLandingCode.Refused, Tip: null, Status: null }) return null;
+        var line = Tried(entry, AutoLandingCode.Refused, tip: null, status: null, new TreeLanding(false, sentence) { Refusal = AutoLandingCode.Refused });
+        log?.Invoke(WorkflowLines.Held(entry.Session, entry.Repository, entry.Workspace, gate, ReviewDoors.Look, step));
+        return line;
+    }
+
     /// <summary>What the look's line says of a code the conversation is not told of.</summary>
     private static string Words(string code, TreeLanding? landed) => code switch
     {
@@ -331,17 +368,22 @@ public sealed class AutoLander(
     /// <param name="state">The state its record concluded in.</param>
     /// <param name="tree">Where it ran: a tree of its own, or the repository's checkout.</param>
     /// <param name="workspace">The workspace its start was planned in, for a session in no tree of its own.</param>
+    /// <param name="process">
+    /// Its run's process (WORKFLOW1f, <see cref="ProcessAsync"/>): under a named workflow, whether it lands with no press is its
+    /// version's landing step. Null reads the rule live, as before.
+    /// </param>
     /// <returns>The verdict acted on (<see cref="AutoConcluded"/>), or null.</returns>
     public static string? Concluded(
         string home, DriverConfig config, SessionEvents events, string session, QuestView quest, string? status, string state,
-        string tree, string? workspace, DateTimeOffset? at = null)
+        string tree, string? workspace, DateTimeOffset? at = null, WorkflowProcess? process = null)
     {
         try
         {
             var trees = new SessionTrees(home);
             var ownTree = trees.Holds(tree);
             var (where, repository) = ownTree ? trees.Owner(tree) : (RemoteTarget.Workspace(workspace), quest.To);
-            var verdict = AutoLandingRules.Concluded(LandingRules.Choose(config, repository, where).Rule, status, ownTree, state);
+            var rule = process is { Named: true } named ? named.Landing.Rule : LandingRules.Choose(config, repository, where).Rule;
+            var verdict = AutoLandingRules.Concluded(rule, status, ownTree, state);
             if (verdict == AutoConcluded.Due)
             {
                 new AutoLandings(home).Due(new AutoLanding(session, quest.Id, repository, where, tree, at ?? DateTimeOffset.UtcNow));
@@ -354,6 +396,26 @@ public sealed class AutoLander(
             return verdict;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// The process a concluded record's run follows (WORKFLOW1f): its repository and workspace read as <see cref="Concluded"/> reads
+    /// them, and its run's binding from the chain the service holds. Read once at the conclusion, for the landing and the second
+    /// opinion owed alike. Never throws: a run that could not be read is read live, as before.
+    /// </summary>
+    public static async Task<WorkflowProcess?> ProcessAsync(
+        string home, DriverConfig config, IReviewWorld world, QuestView quest, string tree, string? workspace, CancellationToken ct = default)
+    {
+        try
+        {
+            var trees = new SessionTrees(home);
+            var (where, repository) = trees.Holds(tree) ? trees.Owner(tree) : (RemoteTarget.Workspace(workspace), quest.To);
+            return await WorkflowProcesses.ReadAsync(home, config, world, quest.Id, repository, where, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or DriverException)
         {
             return null;
         }

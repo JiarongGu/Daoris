@@ -25,8 +25,11 @@ public sealed class OpinionPresses(string home, ServiceClient service)
 {
     private readonly SessionTrees _trees = new(home);
 
-    /// <summary>What a session's work is, for the gate: its tree, its quest, and the chain's key and repository.</summary>
-    private sealed record Work(string Session, string Tree, string Quest, string Chain, string Repository, string Workspace, IOpinionWorld World);
+    /// <summary>What a session's work is, for the gate: its tree, its quest, the chain's key and repository, and its run (WORKFLOW1f).</summary>
+    private sealed record Work(string Session, string Tree, string Quest, string Chain, string Repository, string Workspace, IOpinionWorld World)
+    {
+        public string? Run { get; init; }
+    }
 
     /// <summary>The whole landing gate for a session's work, as every door reads it.</summary>
     public async Task<OpinionPressed> GateAsync(string session, CancellationToken ct = default)
@@ -81,11 +84,20 @@ public sealed class OpinionPresses(string home, ServiceClient service)
         var (work, refused) = await WorkAsync(session, ct).ConfigureAwait(false);
         if (work is null) return new(false, refused!);
 
+        // WORKFLOW1f: the run's named workflow's opinion step, where it has one, names which of the declared reviewers may read it.
         var config = DriverConfig.Load(DriverConfig.ResolvePath(home));
-        if (OpinionRules.Resolve(config, work.Repository, work.Workspace) is not { Rule: { IsNone: false } rule })
+        var process = WorkflowProcesses.Read(home, config, work.Repository, work.Workspace, work.Run);
+        if ((process.OpinionCannot ?? process.Problem ?? process.Unread) is { } cannot)
         {
-            return new(false, $"no second opinion is asked for `{work.Repository}`: no rule here names a reviewer. `daoris driver opinion "
-                + $"{work.Repository} --reviewers <adapter>` names one.");
+            return new(false, $"no second opinion is asked for `{work.Repository}`: its workflow cannot start one: {cannot}");
+        }
+
+        if (process.Opinion is not { Rule: { IsNone: false } rule })
+        {
+            return new(false, $"no second opinion is asked for `{work.Repository}`: "
+                + (process.Named
+                    ? $"its workflow {process.Name} has no second opinion."
+                    : $"no rule here names a reviewer. `daoris driver opinion {work.Repository} --reviewers <adapter>` names one."));
         }
 
         if (reviewer is not null && sameAgent)
@@ -163,7 +175,10 @@ public sealed class OpinionPresses(string home, ServiceClient service)
         var world = new ServiceReviewWorld(service);
         var chain = ReviewGate.ChainOf(await world.QuestsAsync(ct).ConfigureAwait(false), quest);
         var (workspace, repository) = _trees.Owner(tree);
-        return (new Work(session, tree, quest, SessionTrees.OpinionChain(chain, quest), repository, workspace, world), null);
+        return (new Work(session, tree, quest, SessionTrees.OpinionChain(chain, quest), repository, workspace, world)
+        {
+            Run = WorkflowRunBindings.RunOf(chain, repository) ?? quest.TrimStart('#'),
+        }, null);
     }
 
     private static string? Words(string? words) => words?.Trim() is { Length: > 0 } said ? said : null;

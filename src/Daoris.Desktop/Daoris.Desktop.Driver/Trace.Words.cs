@@ -468,8 +468,25 @@ internal static class TraceWords
         // settled, or the person's answer, or why it landed with none. Nothing where none was asked.
         said.Append(OpinionSaid(landing.Opinion));
 
+        // The named workflow that decided (WORKFLOW1f, the workflow design §5.5): its version and the level that chose it. Nothing
+        // under Current, whose rules the line above names.
+        said.Append(WorkflowSaid(landing.Workflow));
+
         return said.ToString();
     }
+
+    /// <summary>A landing's named workflow as the trace says it, with the level of §4.1 that chose it; empty under Current and from before.</summary>
+    internal static string WorkflowSaid(LandingWorkflow? workflow) => workflow is null
+        ? ""
+        : $"; as workflow `{workflow.Workflow}` v{workflow.Version} says, " + (workflow.Level switch
+        {
+            WorkflowLevels.Task => "chosen by its ask",
+            WorkflowLevels.RepositoryKind => $"chosen by its repository for kind `{workflow.Kind}`",
+            WorkflowLevels.Repository => "its repository's default",
+            WorkflowLevels.WorkspaceKind => $"chosen by its workspace for kind `{workflow.Kind}`",
+            WorkflowLevels.Workspace => "its workspace's default",
+            var level => $"chosen at `{level}`",
+        });
 
     /// <summary>A landing's second opinion as the trace says it; empty where none was kept.</summary>
     internal static string OpinionSaid(LandingOpinion? opinion)

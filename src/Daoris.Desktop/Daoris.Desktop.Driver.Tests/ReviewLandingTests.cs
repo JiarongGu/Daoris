@@ -133,6 +133,78 @@ public sealed class ReviewLandingTests : IDisposable
     }
 
     /// <summary>
+    /// WORKFLOW1f (the workflow design §4.6, §5.5): under a named workflow, D154's rows 5 and 6 are its bound version's. A version
+    /// with no look lands where Current, its rule requiring one, would hold the work; the landing record, its sentence and the trace
+    /// say which version decided.
+    /// </summary>
+    [Fact]
+    public async Task A_named_version_with_no_look_lands_where_Current_would_hold_for_one()
+    {
+        var root = await RepositoryAsync("web-app");
+        Configure(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"), required: true);
+        Follow("""[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"branch","accept":"you"}]""");
+        var tree = await DoneSessionAsync(root, "s1", "q1");
+
+        var landed = await PressAsync(tree);
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.True(await BranchAsync(root, "feature/q1-fix-the-gap"));
+        Assert.Contains("It landed as `docs-to-pr` v1 says, `web-app`'s default.", landed.Message);
+        var record = new LandedBranches(_home).Landing("s1")!;
+        Assert.Null(record.Review);
+        Assert.Equal(new LandingWorkflow("docs-to-pr", 1, WorkflowLevels.Repository), record.Workflow);
+        Assert.Equal(new LandedRule(null, AutoAccept: false, LandingSource.Repository), record.Rule);
+    }
+
+    /// <summary>
+    /// WORKFLOW1f (design §3.7): a version's look in an environment the repository does not declare cannot start. The press is
+    /// refused saying why, before anything is made, and the person's skip, row 1, lets it land without one.
+    /// </summary>
+    [Fact]
+    public async Task A_named_versions_look_that_cannot_start_holds_saying_why_and_the_skip_lets_it_land()
+    {
+        var root = await RepositoryAsync("web-app");
+        Configure(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"), required: false);
+        Follow("""[{"id":"work","kind":"work"},{"id":"look","kind":"look","environment":"staging"},{"id":"land","kind":"landing","form":"branch","accept":"you"}]""");
+        var tree = await DoneSessionAsync(root, "s1", "q1");
+
+        var held = await PressAsync(tree);
+        Assert.False(held.Landed);
+        Assert.Equal(AutoLandingCode.Unreviewed, held.Refusal);
+        Assert.StartsWith("Waits for your review, and it cannot start: `docs-to-pr` v1 asks for one, and its look `look` reads the work in "
+            + "`staging`, which `web-app` does not declare (it declares `local`)", held.Message);
+        Assert.False(await BranchAsync(root, "feature/q1-fix-the-gap"), "nothing is made while the look cannot start");
+
+        _world.Quests["q1"] = _world.Quests["q1"] with
+        {
+            Verdicts = [new QuestReviewVerdictView(ReviewVerdicts.Skipped) { Words = "staging is down", At = Verdicted }],
+        };
+        Assert.True((await PressAsync(tree)).Landed);
+    }
+
+    /// <summary>
+    /// WORKFLOW1f (design §4.5): a run bound to a named workflow that cannot be read here any more holds; nothing lands, and no other
+    /// workflow is followed in its place, Current among them.
+    /// </summary>
+    [Fact]
+    public async Task A_run_whose_workflow_is_gone_holds_and_nothing_is_swapped_in()
+    {
+        var root = await RepositoryAsync("web-app");
+        Configure(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"), required: false);
+        Follow("""[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"branch","accept":"you"}]""");
+        File.Delete(WorkflowStore.PathOf(_home, "docs-to-pr"));
+        var tree = await DoneSessionAsync(root, "s1", "q1");
+
+        var held = await PressAsync(tree);
+
+        Assert.False(held.Landed);
+        Assert.Equal(AutoLandingCode.Refused, held.Refusal);
+        Assert.StartsWith("Its run was bound to `docs-to-pr` v1, `web-app`'s default, which cannot start it here: no workflow `docs-to-pr` "
+            + "is saved here any more.", held.Message);
+        Assert.False(await BranchAsync(root, "feature/q1-fix-the-gap"));
+    }
+
+    /// <summary>
     /// <i>Accept automatically</i> (design §3.1): the look keeps a due session due as <c>unreviewed</c>, told once and read again at
     /// every look, and lands it at the first look after the review, as the press would, the review kept on its record.
     /// </summary>
@@ -272,6 +344,18 @@ public sealed class ReviewLandingTests : IDisposable
             WorkspaceReviews = new Dictionary<string, ReviewRule>(StringComparer.OrdinalIgnoreCase) { ["aurora"] = rule },
         };
         (landing is null ? config : config.WithLanding("web-app", landing)).Save(Path.Combine(_home, "driver.json"));
+    }
+
+    /// <summary>
+    /// A named workflow saved here with one version, chosen as `web-app`'s default, and run q1 bound to it as its first start binds
+    /// it (WORKFLOW1e), over the rules <see cref="Configure"/> wrote.
+    /// </summary>
+    private void Follow(string steps)
+    {
+        WorkflowStore.Add(_home, new WorkflowVersionAdded(
+            "docs-to-pr", "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z", System.Text.Json.Nodes.JsonNode.Parse(steps)), kept: []);
+        WorkflowSelection.Apply(Config(), new WorkflowUse("docs-to-pr", "web-app", null, null)).Save(Path.Combine(_home, "driver.json"));
+        Assert.True(WorkflowRunBindings.Bind(_home, WorkflowRunBindings.Plan(Config(), _home, "q1", "web-app", "aurora", null, null, [], DateTimeOffset.UtcNow)));
     }
 
     /// <summary>A session that worked in its own tree and concluded on its quest's done; made due as the conclusion makes it, where asked.</summary>

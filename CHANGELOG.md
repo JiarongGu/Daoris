@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- Named workflows govern landing, review and opinion from their bound version. Damaged run bindings
+  hold the work until they can be read, preserving its required checks.
+
 - Ask Daoris history groups conversations and keeps titles readable in narrow panels. Starting a
   new conversation waits for the current one to finish and preserves the draft if that is refused.
 - Knowledge index results show translated kinds and source lines; entry headers show source ranges.

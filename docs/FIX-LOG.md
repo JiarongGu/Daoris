@@ -7,6 +7,14 @@ repository.
 
 ## 2026-10-10 — review fixes
 
+### Workflows: damaged bindings silently fell back to Current
+
+- **Symptom:** an existing malformed run binding let the landing gate go under Current. When the chain could not be read, a damaged inventory also incorrectly ruled out a named workflow.
+- **Root cause:** binding readers returned null for both absence and corruption, and the process and inventory treated both as no binding.
+- **Fix:** absence retains legacy Current behavior; an existing unreadable binding holds its run. Unreadable inventory entries conservatively hold an unreadable chain.
+- **Verify:** four failing-first cases for invalid JSON and missing fields, across direct and service-unavailable reads; final receipts in the integration review.
+- **Commit:** pending workflow integration.
+
 ### Ask Daoris: a rename's terminal hint interpolated shell syntax
 
 - **Symptom:** names containing quotes or operators produced an unsafe command in the rename form.

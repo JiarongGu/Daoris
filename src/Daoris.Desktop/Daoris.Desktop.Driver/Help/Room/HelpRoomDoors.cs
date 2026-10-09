@@ -88,17 +88,17 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "Repositories → the repository's page → Workflow; a workspace's, Repositories → the workspace's page → Workflow",
             "`daoris driver workflow show --repository <name>|--workspace <name>`"),
         // WORKFLOW1d (D157 points 5 and 6): a named workflow, its versions never edited; Ask Daoris's `workflow` kind is
-        // WORKFLOW1h's and its screen WORKFLOW1g's. WORKFLOW1e chooses one, and the gate that reads it is WORKFLOW1f's.
+        // WORKFLOW1h's and its screen WORKFLOW1g's. WORKFLOW1e chooses one, and every gate reads the version a run bound (WORKFLOW1f).
         ("name a workflow: its steps from a preset, a repository's Current or another workflow, each change saved as its next "
             + "version, never edited, said step by step with your part first",
             "(no screen yet)",
             "`daoris driver workflow new <id> --from <preset>|current:<repository>|<id>[@<version>]`, `daoris driver workflow "
             + "edit|apply|export|import …`, `daoris driver workflow list`, `daoris driver workflow show <id>[@<version>]`"),
         // WORKFLOW1e (D157 point 10): which workflow work follows, by repository, workspace and kind of task, the first level
-        // that names one deciding; a run binds it at its first start.
+        // that names one deciding; a run binds it at its first start, and every gate reads that version (WORKFLOW1f).
         ("choose which workflow a repository's or a workspace's work follows, or a kind of task's, and declare a workspace's kinds "
             + "with the paths their work keeps to (a repository's choice replaces its workspace's whole; each run binds the "
-            + "newest version at its first start; no gate reads the choice yet, so work still lands as Current says)",
+            + "newest version at its first start, and how it lands, your look and its second opinion follow that version)",
             "(no screen yet)",
             "`daoris driver workflow use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>]`, "
             + "`daoris driver workflow kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop`, "
@@ -264,6 +264,14 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "(no screen yet)",
             "`daoris-driver ask … --kind <kind> [--workflow <id>|current]`, `daoris-driver ask --set-workflow <id> [--kind <kind>] "
             + "[--workflow <id>|current]|--clear [\"…\"]`"),
+        // WORKFLOW1f (D157 point 10, the workflow design §4.4): the person's Keep where a kind's paths hold its work. Exempt from Ask
+        // Daoris (HelpCoverageTests): keeping a workflow that asks less of the person is their say-so, as going on without a second
+        // opinion is. The screen's press, and §4.4's other two, are the editor's row (WORKFLOW1g).
+        ("keep the workflow a kind of task chose for a piece of work that changed paths outside the kind's, where that workflow "
+            + "asks less of you than the one it would follow without the kind (yours alone, with your words: Ask Daoris never "
+            + "proposes it, and nothing switches by itself)",
+            "(no screen yet)",
+            "`daoris-driver workflow keep <session> [\"…\"]`"),
         // XAGENT1f4 (D155 point 10, design §8.5, §9): the person's presses at the second opinion's gate, the terminal's
         // `daoris-driver opinion` and the screen's (XAGENT1g). Each is exempt from Ask Daoris (HelpCoverageTests): a pass spends an
         // account at the person's choice and a stop is theirs, and going on, or reading it themselves, is their judgement (D110).

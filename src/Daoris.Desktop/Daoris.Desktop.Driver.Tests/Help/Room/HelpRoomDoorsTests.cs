@@ -170,6 +170,27 @@ public sealed class HelpRoomDoorsTests
     }
 
     /// <summary>
+    /// WORKFLOW1f (D157 points 10 and 11, the workflow design §4.4–§4.5): the choice's row says the gate follows the version each
+    /// run bound, never that no gate reads it; and the person's <i>Keep</i> is named, yours alone, Ask Daoris never proposing it.
+    /// </summary>
+    [Fact]
+    public void The_choice_s_row_says_the_gate_follows_a_runs_version_and_the_keep_is_named()
+    {
+        var room = HelpRoom.Render(HelpRoomFixture.Machine);
+        Assert.DoesNotContain("no gate reads", room, StringComparison.Ordinal);
+        Assert.DoesNotContain("still lands as Current says", room, StringComparison.Ordinal);
+
+        var choose = HelpRoomDoors.Doors.Single(door => door.To.StartsWith("choose which workflow", StringComparison.Ordinal));
+        Assert.Contains("each run binds the newest version at its first start, and how it lands, your look and its second opinion follow that version", choose.To);
+
+        var keep = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris-driver workflow keep", StringComparison.Ordinal));
+        Assert.Equal("`daoris-driver workflow keep <session> [\"…\"]`", keep.Terminal);
+        Assert.Equal("(no screen yet)", keep.Screen);
+        Assert.Contains("Ask Daoris never proposes it", keep.To);
+        Assert.Contains("nothing switches by itself", keep.To);
+    }
+
+    /// <summary>
     /// XAGENT1f4 (D155 points 9 and 10, design §8.5, §9): the room's second-opinion row says what the gate does, in the sentences
     /// every other door says (<see cref="OpinionRules.Gate"/>, held to the twins' table), never that nothing reads the rule; and the
     /// person's presses at the gate are named with what each does, each said to be one Ask Daoris never proposes (D110, D156).

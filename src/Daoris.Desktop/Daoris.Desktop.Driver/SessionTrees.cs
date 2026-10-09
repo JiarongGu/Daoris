@@ -362,11 +362,21 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     /// What a press on this tree would do under its repository's landing rule (WSR1, D87): merge into
     /// the line, or make the branch the pattern names for this session — said before the press.
     /// </summary>
-    public async Task<LandingPlan> PlanAsync(string path, LandingSubject subject, CancellationToken ct = default)
+    /// <param name="process">
+    /// The run's process the door read with its gate (WORKFLOW1f): under a named workflow, its version's landing step over the
+    /// declared rule. Null reads the rule live, as before.
+    /// </param>
+    public async Task<LandingPlan> PlanAsync(string path, LandingSubject subject, CancellationToken ct = default, WorkflowProcess? process = null)
     {
         var full = Path.GetFullPath(path);
         var (workspace, repository) = OwnerOf(full);
-        var landing = LandingRules.Choose(Config(), repository, workspace);
+        var landing = process is { Named: true } named ? named.Landing : LandingRules.Choose(Config(), repository, workspace);
+        // A named workflow's landing that cannot start says so before the press, as the press would be refused (design §3.7).
+        if (process?.LandingCannot is not null)
+        {
+            return new(landing.Rule.Form, "", landing.Source, landing.Rule.Plugin, WorkflowGate.LandingSays(process), landing.Rule.AutoAccept);
+        }
+
         if (landing.Rule.Form == LandingForm.Branch)
         {
             // Who pushes it, said before the press, and what would refuse the press where something would (D100).
@@ -444,13 +454,18 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             return new(false, carried.NotLanded) { Refusal = AutoLandingCode.Carried };
         }
 
-        // One gate, in a fixed order (the second-agent design §7): the second opinion, then the person's review where it runs. A
-        // merge rule waits as a branch rule does, and an advance waits the same way.
+        // One gate, in a fixed order (the second-agent design §7): the run's own part (WORKFLOW1f), the second opinion, then the
+        // person's review where it runs, then the landing step's own. A merge rule waits as a branch rule does, and an advance waits
+        // the same way.
         if (gate?.Refusal is { } refused) return refused;
         var review = gate?.Review;
 
         var (workspace, repository) = OwnerOf(full);
-        var landing = LandingRules.Choose(Config(), repository, workspace);
+        // Under a named workflow the run's bound version decides how it lands, read with the gate (WORKFLOW1f): a version is never
+        // edited, so nothing changes under it. Under Current the rule is read again here, as before.
+        var process = gate?.Process;
+        var named = process is { Named: true } ? process : null;
+        var landing = named?.Landing ?? LandingRules.Choose(Config(), repository, workspace);
         // 🔴 Read again here, not only where the look chose it (LAND2b): a rule changed between the two must never let a landing
         // at done merge into the person's checkout with no press (D145 point 1, D51 rule 6), nor land under a switch now off.
         if (acceptedBy == AcceptedBy.Auto && landing.Rule is not { Form: LandingForm.Branch, AutoAccept: true })
@@ -489,7 +504,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                 landed = Remember(landed, () => Recorded.Advanced(repository, landed.Branch!,
                     new LandedAdvance(advancedFrom, tip, DateTimeOffset.UtcNow, subject.Session)
                     {
-                        AcceptedBy = acceptedBy, Review = review?.Landing, Opinion = gate?.Opinion.Landing,
+                        AcceptedBy = acceptedBy, Review = review?.Landing, Opinion = gate?.Opinion.Landing, Workflow = named?.Record,
                     }));
             }
             else if (landed.Landed && tip is not null)
@@ -508,6 +523,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                     Review = review?.Landing,
                     // The second opinion that let it go (XAGENT1f, design §8.6), or why it landed without one.
                     Opinion = gate?.Opinion.Landing,
+                    // The named version that decided (WORKFLOW1f, the workflow design §5.5); none under Current.
+                    Workflow = named?.Record,
                 }));
             }
 
@@ -541,6 +558,19 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                     landed = Remember(landed, () => Recorded.Pushed(repository, landed.Branch!, said, tip));
                 }
             }
+        }
+
+        // Which named version decided (WORKFLOW1f, the workflow design §5.5), said where the landing is said, before the tree's
+        // sentence a tidy takes out: a merge keeps no landing record, and its conversation's note is its record.
+        if (landed.Landed && named is not null)
+        {
+            var decided = $" It landed as {named.Name} says, {WorkflowRunBindings.Why(named.Binding!)}.";
+            landed = landed with
+            {
+                Message = landed.Message.EndsWith(TreeStays, StringComparison.Ordinal)
+                    ? landed.Message[..^TreeStays.Length] + decided + TreeStays
+                    : landed.Message + decided,
+            };
         }
 
         // The tidy the person's rule asked for (D88): the tree and its branch go once the work lands, behind

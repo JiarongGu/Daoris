@@ -8,7 +8,7 @@ Quests and pushed registrations persist in the same database, so what one sessio
 session — or another machine's `connect` — finds waiting. Its tests are the `service` gate in
 `daoris.gates.json`, which runs the solution: `Daoris.Service.Tests` for Core and the MCP door, and
 `Daoris.Service.Http.Tests` for the HTTP host's own doors, started in-process with no port bound
-(HTTP1). The count lives in `TASKS.md`, where a count is kept current.
+(HTTP1). Gate logs carry the counts; dated integration reviews record the combined verification.
 
 Since **D59** the always-loaded tier is a region of `AGENTS.md` rather than a directory, so the
 scanner reads `DoctrineRegion` for a repository's rules and a gate holds that a canonical rule stays

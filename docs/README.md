@@ -84,7 +84,7 @@ changes no row (D127).
 | `2026-10-07-history-clearing-design.md` | contract | Clearing finished history from this machine: a closed quest's or an ask's work, failed sessions, a workspace at once; a remote's copy forgotten here, never deleted; the store's numbers never go back (HIST1) | Designed (D153); nothing built. Amends D95, D126 §5 and §11, the sync design's §8 |
 | `2026-10-08-review-environment-design.md` | contract | Review environments, setup steps and the person's landing verdict, scoped by workspace/repository/task | D154; implementation notes live there. Amends D87, D145, D65 §4, D133 §4, D137, D68 and D78 |
 | `2026-10-08-second-agent-design.md` | contract | Another maker's agent reads work in its own copy; findings and failure assistance | D155; implementation notes live there. Amends D145 §3, D154, D137 and D72 |
-| `2026-10-09-workflow-design.md` | contract | How work moves, drawn and set: a workflow per repository and kind of task, today's rules drawn first, checks and stages after the landing, and Ask Daoris's change as a diff (WORKFLOW1) | Designed (D157); nothing built. Amends D65 point 4, D87, D145, D148 point 2, D154 and D155 |
+| `2026-10-09-workflow-design.md` | contract | Workflow choices, versions, gates, editor and later services (WORKFLOW1) | Current contract (D157); amendments and implementation status in its dated notes. Open work: TASKS.md |
 | `2026-10-09-person-door-design.md` | contract | Person/driver authorization, a window-held key per host start, terminal confirmation and remaining boundaries | D156; implementation notes live there. Amends D47 §7, D46, D50 and D92 |
 
 ## Studies and evidence

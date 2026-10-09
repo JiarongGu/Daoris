@@ -56,16 +56,20 @@ const meta = {
     rows: ROWS, search: '', shown: 'h2b3c4d5', onSearch: () => {}, onOpen: () => {}, onRename: () => {}, onPin: () => {},
     onStartFrom: () => {}, onDelete: () => {}, onNew: () => {}, onClose: () => {}, onRetry: () => {},
   },
-  decorators: [(Story) => (
+  decorators: [(Story, context) => {
     // The panel's two widths, side by side, each as tall as a panel: only its rows scroll.
-    <div className="flex flex-wrap items-start gap-6 bg-page">
+    const panels = <div className="flex flex-wrap items-start gap-6 bg-page">
       {[DOCK.floor, 430].map((width) => (
         <div key={width} style={{ width }} className="flex h-[36rem] flex-col border-x border-line bg-page">
           <Story />
         </div>
       ))}
-    </div>
-  )],
+    </div>;
+    // One theme owner around both widths, so cleanup restores the preceding story's theme once.
+    return context.parameters.historyTheme === 'dark'
+      ? <InTheme theme="dark" className="p-0">{panels}</InTheme>
+      : panels;
+  }],
 } satisfies Meta<typeof AskHistory>;
 
 export default meta;
@@ -77,11 +81,12 @@ export const Grouped: Story = {};
 export const GroupedChinese: Story = { args: { rows: CHINESE_ROWS, shown: 'z2b3c4d5' }, decorators: [chinese] };
 
 export const GroupedDark: Story = {
-  decorators: [(Story) => <InTheme theme="dark" className="flex min-h-0 min-w-0 flex-1 flex-col p-0"><Story /></InTheme>],
+  parameters: { historyTheme: 'dark' },
 };
 export const GroupedChineseDark: Story = {
   args: { rows: CHINESE_ROWS, shown: 'z2b3c4d5' },
-  decorators: [chinese, (Story) => <InTheme theme="dark" className="flex min-h-0 min-w-0 flex-1 flex-col p-0"><Story /></InTheme>],
+  parameters: { historyTheme: 'dark' },
+  decorators: [chinese],
 };
 
 /** A search's finds, its words marked: in what was said, in place of the line, and in a title it was found in. */

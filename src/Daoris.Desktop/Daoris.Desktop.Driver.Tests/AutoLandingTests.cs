@@ -381,6 +381,120 @@ public sealed class AutoLandingTests : IDisposable
         Assert.Empty((await Lander().ChooseAsync(Config())).Chosen);
     }
 
+    // ——— under a named workflow (WORKFLOW1f)
+
+    /// <summary>
+    /// WORKFLOW1f (the workflow design §2.3, §4.5): whether done work lands with no press is its run's bound version's landing step. A
+    /// version that accepts automatically makes the done due and the look lands it, where Current's rule waits for the person's
+    /// press; the record keeps the version, the rule as the version made it, and who accepted it.
+    /// </summary>
+    [Fact]
+    public async Task A_version_that_accepts_automatically_lands_at_the_look_where_Current_waits_for_your_press()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        Follow("""[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"branch","accept":"automatic"}]""");
+        var tree = await NamedDoneAsync(root, "s1", "q1");
+
+        var said = await LookAsync();
+
+        Assert.True(await BranchAsync(root, "feature/q1-fix-the-gap"), string.Join("\n", said));
+        var record = new LandedBranches(_home).Landing("s1")!;
+        Assert.Equal(AcceptedBy.Auto, record.AcceptedBy);
+        Assert.Equal(new LandedRule(null, AutoAccept: true, LandingSource.Repository), record.Rule);
+        Assert.Equal(new LandingWorkflow("docs-to-pr", 1, WorkflowLevels.Repository), record.Workflow);
+        Assert.Contains("It landed as `docs-to-pr` v1 says, `engine`'s default.", Assert.Single(said));
+        Assert.True(Directory.Exists(tree));
+    }
+
+    /// <summary>
+    /// WORKFLOW1f (design §2.3, §4.6): a version requiring a second opinion holds the look's landing where Current, whose rule reads
+    /// only before each next step, would land it; the session stays due as <c>opinion</c>, said once.
+    /// </summary>
+    [Fact]
+    public async Task A_version_requiring_an_opinion_holds_where_Current_would_land()
+    {
+        var root = await RepositoryAsync("engine");
+        (DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", AutoAccept: true)) with
+        {
+            Opinions = new Dictionary<string, OpinionRule>(StringComparer.OrdinalIgnoreCase) { ["engine"] = new(["codex-acp"], [OpinionRules.Steps]) },
+        }).Save(Path.Combine(_home, "driver.json"));
+        Follow("""[{"id":"work","kind":"work"},{"id":"opinion","kind":"opinion","required":true},{"id":"land","kind":"landing","form":"branch","accept":"automatic"}]""");
+        await NamedDoneAsync(root, "s1", "q1");
+
+        var first = await LookAsync();
+
+        Assert.StartsWith("landing  session s1 (#q1 → engine): not accepted automatically: its work waits for a second opinion", Assert.Single(first));
+        Assert.Equal(AutoLandingCode.Opinion, new AutoLandings(_home).Of("s1")!.Last!.Code);
+        Assert.False(await BranchAsync(root, "feature/q1-fix-the-gap"));
+        Assert.Empty(await LookAsync());
+    }
+
+    /// <summary>
+    /// WORKFLOW1f (design §4.4): a kind's workflow that lands with no press, where the work would otherwise wait for the person's,
+    /// checks the paths the chain changed against the kind's. Outside them the look holds it, said once, until the person keeps the
+    /// workflow for this work (`workflow keep`); then the next look lands it. Nothing switches by itself.
+    /// </summary>
+    [Fact]
+    public async Task A_kinds_paths_hold_the_look_until_you_keep_its_workflow()
+    {
+        var root = await RepositoryAsync("engine");
+        var config = WorkflowSelection.Apply(
+            DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}")),
+            new WorkflowDeclare("docs", "aurora", "Documentation", ["docs/**"]));
+        config.Save(Path.Combine(_home, "driver.json"));
+        Follow("""[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"branch","accept":"automatic"}]""", kind: "docs");
+        var tree = await NamedDoneAsync(root, "s1", "q1");
+
+        var held = Assert.Single(await LookAsync());
+        Assert.StartsWith("landing  session s1 (#q1 → engine): not accepted automatically: the landing was refused, as follows. It waits for "
+            + "your review. Holds: this work changed 1 path outside Documentation's (`docs/**`): `s1.txt`; and `docs-to-pr` v1, chosen for it, "
+            + "asks less of you than Current would without the kind (it lands with no press of yours).", held);
+        Assert.False(await BranchAsync(root, "feature/q1-fix-the-gap"));
+        var logged = Assert.Single(_lines, line => line.Event == "workflow.held");
+        Assert.Equal((WorkflowGateStates.KindPaths, (object?)1), (Value(logged, "code"), Value(logged, "outside")));
+        Assert.Empty(await LookAsync());
+
+        var (done, message) = await WorkflowKeepCommand.KeepAsync(
+            _home, "s1", tree, "q1", _world, "the gap is in the docs build", ReviewDoors.Terminal, DateTimeOffset.UtcNow);
+        Assert.True(done, message);
+        Assert.Contains("you kept it for this work, though it changed paths outside its kind's, saying: \"the gap is in the docs build\"", message);
+
+        Assert.Single(await LookAsync());
+        Assert.True(await BranchAsync(root, "feature/q1-fix-the-gap"));
+        Assert.Equal(new LandingWorkflow("docs-to-pr", 1, WorkflowLevels.WorkspaceKind) { Kind = "docs" }, new LandedBranches(_home).Landing("s1")!.Workflow);
+    }
+
+    /// <summary>
+    /// A named workflow `docs-to-pr` saved here with one version and chosen as `engine`'s default (or, with a kind, the workspace's for
+    /// it), and run q1 bound to it as its first start binds it (WORKFLOW1e), over the rule <see cref="Rule"/> wrote.
+    /// </summary>
+    private void Follow(string steps, string? kind = null)
+    {
+        WorkflowStore.Add(_home, new WorkflowVersionAdded(
+            "docs-to-pr", "Documentation to a pull request", "terminal", "2026-10-09T09:00:00Z", System.Text.Json.Nodes.JsonNode.Parse(steps)), kept: []);
+        var use = kind is null
+            ? new WorkflowUse("docs-to-pr", "engine", null, null)
+            : new WorkflowUse("docs-to-pr", null, "aurora", kind);
+        WorkflowSelection.Apply(Config(), use).Save(Path.Combine(_home, "driver.json"));
+        var task = kind is null ? null : new WorkflowTaskChoice(kind, null);
+        Assert.True(WorkflowRunBindings.Bind(_home, WorkflowRunBindings.Plan(Config(), _home, "q1", "engine", "aurora", null, task, [], DateTimeOffset.UtcNow)));
+    }
+
+    /// <summary>A done session in its own tree, concluded as the driver concludes one: its run's process read, then the switch.</summary>
+    private async Task<string> NamedDoneAsync(string root, string session, string quest)
+    {
+        var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora");
+        await CommitAsync(opened.Path, $"{session}.txt", $"the work of {session}", $"the work of {session}");
+        _world.Quests[quest] = new QuestView(quest, "game", "engine", "Fix the gap", "Fix it.", "Done");
+        _world.Records.Add(new SessionRecord(session, "engine", "completed") { Quest = quest, Tree = opened.Path, Created = DateTimeOffset.UtcNow });
+        var process = await AutoLander.ProcessAsync(_home, Config(), _world, _world.Quests[quest], opened.Path, "aurora");
+        Assert.True(process!.Named);
+        Assert.Equal(AutoConcluded.Due, AutoLander.Concluded(_home, Config(), new SessionEvents(Path.Combine(_home, "sessions")), session,
+            _world.Quests[quest], "Done", "completed", opened.Path, "aurora", process: process));
+        return opened.Path;
+    }
+
     // ——— the world, the plugin and the fixtures
 
     /// <summary>The service's quests and records, standing in.</summary>

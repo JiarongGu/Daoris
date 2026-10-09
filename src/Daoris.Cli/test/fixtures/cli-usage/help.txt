@@ -197,8 +197,8 @@ daoris <command> [options]
                                                    or a kind of task's: a repo's
                                                    replaces its workspace's whole;
                                                    work binds the newest version
-                                                   at its first start, and no gate
-                                                   reads it yet
+                                                   at its first start, and every
+                                                   gate reads that version
                          workflow kind <name> <kind> --label "…" [--paths <p,…>]
                                                    a kind of task a workspace
                                                    declares, with the paths its

@@ -8,8 +8,8 @@
 // cannot read is never written over. `use` and `kind` edit the choice in `driver.json` (WORKFLOW1e, design §4.7), through
 // `workflowchoice.ts`, the driver's twin on one table.
 //
-// 🔴 A choice names a workflow, and work binds its newest version at its first start (the driver's `WorkflowRunBindings`); the gate
-// that reads that version is WORKFLOW1f's, so every verb that names a workflow says work still lands as Current says. What a
+// 🔴 A choice names a workflow, and work binds its newest version at its first start (the driver's `WorkflowRunBindings`); every gate
+// reads that version since WORKFLOW1f (the driver's `WorkflowProcesses`), and every verb that names a workflow says so. What a
 // workflow may say, its digest, its diff and the presets are `namedworkflows.ts`'s; this door adds the terminal's words and the
 // change language.
 //
@@ -49,15 +49,15 @@ const CHANGES = 'a change is add <kind> --after <step> [--id <id>] [<field>=<val
   + 'edit docs --base 1 remove look set landing accept=automatic`.';
 
 /**
- * Said by every verb that names a named workflow (WORKFLOW1e): a choice names one and work binds its newest version, and until the
- * gate reads that version (WORKFLOW1f) work lands as Current says.
+ * Said by every verb that names a named workflow (WORKFLOW1e): a choice names one and work binds its newest version, which every
+ * gate reads from then on (WORKFLOW1f, the driver's `WorkflowProcesses`).
  */
 export const WHAT_CHOOSES = '  A choice names a workflow (`daoris driver workflow use <id> --repository <name>|--workspace <name> '
-  + '[--kind <kind>]`), and work binds its newest version at its first start; nothing at a gate reads it yet, so work still lands '
-  + 'as Current says.';
+  + '[--kind <kind>]`), and work binds its newest version at its first start; every gate then reads that version.';
 
-/** Said by every verb that edits the choice (WORKFLOW1e), until the gate reads what a run bound (WORKFLOW1f). */
-export const NOT_GATED = '  Nothing at a gate reads a chosen workflow yet: work still lands as Current says until it does.';
+/** Said by every verb that edits the choice (WORKFLOW1e): what the gate reads of it (WORKFLOW1f). */
+export const GATE_READS = '  Every gate reads the version a run bound at its first start: how it lands, your look and its second '
+  + 'opinion follow that version.';
 
 /** What the door is handed by `commandDriver`: the file it read, its choices, the registry's reader, and the clock. */
 export interface WorkflowDoorContext {
@@ -423,7 +423,7 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
     return savedChoice({ ...context.choices, ...edited.maps! });
   }
 
-  /** The choices written, or not with `--plan`, and said either way, with what reads them: no gate yet. */
+  /** The choices written, or not with `--plan`, and said either way, with what reads them: every gate, from a run's first start. */
   function savedChoice(choices: DriverChoices): ExitCode {
     if (argv.includes('--plan')) {
       write('  --plan: nothing was written.');
@@ -431,7 +431,7 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
       writeDriverChoices(context.path, choices);
       write(`  Written to ${context.path}.`);
     }
-    write(NOT_GATED);
+    write(GATE_READS);
     return 0;
   }
 

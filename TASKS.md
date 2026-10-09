@@ -20,7 +20,7 @@ Historical installation receipts and adoption mechanics remain in their evidence
 
 ## UI/UX first
 
-Start with UXFIX2b, ASKHIST1d, ACCTUX4 and the remaining place-name inconsistencies.
+Start with UXFIX2b, ASKHIST1d, ACCTUX4, WORKFLOW1c6/1g2 and the remaining place-name inconsistencies.
 Contracts: platform UX §4/§6, `docs/2026-10-05-ux7-design.md` (D152),
 `docs/2026-10-04-ux6-redesign.md` (D150, §12 proofs). UI work needs stories, behavior tests and
 installed-window evidence in both themes/languages; Storybook alone does not close an installed proof.
@@ -90,9 +90,12 @@ Contract: `docs/2026-10-09-workflow-design.md` (D157), §14 order/proofs.
 Foundation precedes editor/proposals/intake; waits/checks/stages follow the gate; installation last.
 
 - [ ] **WORKFLOW1c5 — shared run sentences** (driver/web; after c2). Hold terminal/catalogue words by a fixture or one English source. D157 note/twins; drift test.
+- [ ] **WORKFLOW1c6 — show the bound workflow in a run** (driver/web; after f). `WorkflowRun.Read.cs:120` still derives Current, so the diagram can disagree with named-version gates. Read the bound version and its unreadable state; prove a later Current change cannot redraw a named run. D157 §5/§7.
 - [ ] **WORKFLOW1e2 — quest-specific choice** (service/driver; after e). Field, census, person's door and selection for quests without asks. §4.1/D156.
 - [ ] **WORKFLOW1e3 — clear run bindings with history** (driver; after e). Include binding in clear plan/count. D153/D157; clear test.
 - [ ] **WORKFLOW1f — bound version governs gates** (driver/modules). Recover paused branch and verify combined landing/review/opinion behavior, immutable binding and paths. §2.3/§4.4–§4.6/§5; fast/Process cases.
+- [ ] **WORKFLOW1f2 — Keep must confirm its write** (driver). `WorkflowKeepCommand.cs:59` ignores a null binding update and claims success. Retain the hold if the binding disappears between judging and writing; prove the race and the successful press. D157 §4.4.
+- [ ] **WORKFLOW1g2 — show workflow holds before Accept** (modules/web; after f). `DriverModule.Trees.cs:410` omits the workflow gate from LANDING, and `SessionHead.tsx:460` only considers review/opinion. Carry unreadable/kind-path holds to each landing surface with the person's available actions; prove no misleading Accept offer. D157 §3.7/§4.4/§7.
 - [ ] **WORKFLOW1g — workflow editor** (web/modules; after d/e). Presets, save, insert/failure/move/remove, drawer, selection, terminal twins and keys. §6; 680 px/bilingual proof.
 - [ ] **WORKFLOW1h — workflow proposal** (service/driver/web; after d/e). Judge validation/version/diff/person/outward needs; Apply/editor/Not now. §8; kinds/coverage/goldens/card tests.
 - [ ] **WORKFLOW1i — intake kind proposal** (driver/service; after e). Set only from quoted requirements without lowering involvement. §4.3; prompt/table/refusal proof.
