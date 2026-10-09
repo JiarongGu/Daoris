@@ -287,6 +287,10 @@ public sealed partial class HelpCoverageTests
         ("review", new Door("setting", "review")),
         // XAGENT1a: which other agent reads work before it lands, with the service's writer in the same change.
         ("opinion", new Door("setting", "opinion")),
+        // WORKFLOW1a: Current, drawn from the rules as they stand; a named workflow's Ask Daoris door is WORKFLOW1h's.
+        ("workflow show", new Exempt(
+            "it reads `driver.json` and the plugins beside it and changes nothing; it draws the landing, review and opinion rules "
+            + "the room already carries, from the same file.")),
         ("notify", new Door("setting", "notify")),
         ("intake", new Door("setting", "intake")),
         ("helper", new Door("setting", "helper")),
