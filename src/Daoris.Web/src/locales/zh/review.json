@@ -1,6 +1,7 @@
 {
   "review.title": "在 `{{environment}}` 中审阅",
-  "review.waits": "等你在 `{{environment}}` 中审阅",
+  "review.titleAny": "落地前审阅",
+  "review.waits":"等你在 `{{environment}}` 中审阅",
   "review.pill": "等你审阅",
   "review.pillHint": "它的完成正等你审阅它展示的内容：在你说已审阅或跳过审阅之前，它后面的一切都不会继续。",
   "review.state.not-shown": "还没有展示",

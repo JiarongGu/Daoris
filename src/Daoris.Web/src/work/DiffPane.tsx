@@ -12,6 +12,7 @@ import { Button, EmptyState, Inline, SESSION_ACTIVE } from '../ui';
 import { reviewKnown } from './diff';
 import { LandedNote } from './LandedNote';
 import type { DiffLayout } from './PatchView';
+import { reviewHolds, reviewState } from './review';
 import { ReviewFailed, ReviewFiles, ReviewHead, ReviewReading } from './ReviewFrame';
 
 /** How a reader likes the changes laid out (REVIEW2) — a per-viewer convenience, like the frame's widths. */
@@ -98,11 +99,15 @@ export function DiffPane({ session, record, title = null, hasTree = false, onSen
   const treeGone = diff.data?.source === 'branch'
     || (diff.error as { code?: unknown } | null)?.code === 'SESSION_TREE_GONE';
   const treeHere = hasTree && !reading && !treeGone;
-  const canAccept = treeHere && !asLanded;
+  const plannable = treeHere && !asLanded;
   const sendBack = asLanded ? undefined : onSendBack;
   const land = useLandSessionTree();
   // What a press would do, asked only where there is a tree to land and the review does not read as landed.
-  const landing = useLanding(canAccept ? session : null);
+  const landing = useLanding(plannable ? session : null);
+  // While the review's gate holds the work (REVIEWENV1g, design §3.1), the review says it waits where *Accept* would be, and
+  // offers no *Accept*, which the landing door would refuse; the session's head carries the verdict's presses.
+  const waits = reviewHolds(landing.data);
+  const canAccept = plannable && !waits;
   const discard = useDiscardSessionTree();
   // The branch this session's landing made, handed to a landing plugin afterwards (WSR5b) — asked whether
   // or not a tree is still here, since a tidy removes it and the branch stands.
@@ -231,6 +236,12 @@ export function DiffPane({ session, record, title = null, hasTree = false, onSen
       {!said && canAccept && landing.data?.form === 'merge' && landing.data.target && (
         <p className="m-0 text-small text-ink-faint">
           <Inline text={t('work.review.landsOnLine', { line: landing.data.target })} />
+        </p>
+      )}
+      {!said && plannable && waits && (
+        <p className="m-0 border-l-[3px] border-st-open pl-2 text-small text-ink-soft">
+          <Inline text={waits.environment ? t('review.waits', { environment: waits.environment }) : t('review.titleAny')} />
+          {' · '}{t(`review.state.${reviewState(waits.state)}`)}
         </p>
       )}
       {/* The branch the landing made, and who can push it now (WSR5b) — and what stands in the way. */}

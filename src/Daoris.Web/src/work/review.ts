@@ -35,6 +35,10 @@ export type ReviewWaits = {
   says?: string | null;
 };
 
+/** The gate on a landing's plan where it holds the work; null where nothing waits for a review, as a plan from before says. */
+export const reviewHolds = (landing: { review?: ReviewWaits | null } | null | undefined): ReviewWaits | null =>
+  landing?.review && !LETS_GO.has(reviewState(landing.review.state)) ? landing.review : null;
+
 /** A set-up step's newest set-up: the one a verdict answers, and the one the gate reads (design §3.2). */
 export const newestSetUp = (step: Pick<Quest, 'setUps'>): QuestSetUp | null => step.setUps?.at(-1) ?? null;
 

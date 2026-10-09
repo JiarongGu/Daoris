@@ -1,6 +1,7 @@
 {
   "review.title": "Review in `{{environment}}`",
-  "review.waits": "Waits for your review in `{{environment}}`",
+  "review.titleAny": "Review before it lands",
+  "review.waits":"Waits for your review in `{{environment}}`",
   "review.pill": "awaits review",
   "review.pillHint": "Its done waits for your review of what it showed: nothing after it goes on until you say it is reviewed or skip the review.",
   "review.state.not-shown": "not shown yet",

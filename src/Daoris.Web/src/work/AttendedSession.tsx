@@ -12,7 +12,7 @@ import { HowItCameToBe, type TraceDoor } from './HowItCameToBe';
 import type { Answered } from './InlineConfirm';
 import type { DiscardOffer, LandOffer } from './groups';
 import type { Relations } from './relations';
-import { type LandingPlan, SessionHead } from './SessionHead';
+import { type HeadReview, type LandingPlan, SessionHead } from './SessionHead';
 import { SessionRelations } from './SessionRelations';
 import { SessionTimeline } from './SessionTimeline';
 
@@ -48,10 +48,12 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
 export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, onDiscardBranch, discardingBranch,
-  headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, onLand, discards, onDiscardTree,
+  headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, onLand, discards, onDiscardTree, review,
 }: {
   /** Passed straight through to the head: what its own tree offers to land, as the driver's reader said it (LAND4). */
   lands?: LandOffer | null;
+  /** And the review's gate where it holds that work (REVIEWENV1g): the set-up step, its tab and the verdict's presses. */
+  review?: HeadReview | null;
   /** And what it offers where the line holds its commits by content (SQUASHTIDY1b): no landing, its discard. */
   discards?: DiscardOffer | null;
   /** And that discard's press, the review's Discard unforced, told back to its ask. Absent where nothing can press it. */
@@ -164,6 +166,7 @@ export function AttendedSession({
         lands={lands}
         landing={landing}
         onLand={onLand}
+        review={review}
         discards={discards}
         onDiscardTree={onDiscardTree}
       />

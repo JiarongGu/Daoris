@@ -1,6 +1,11 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { GoAhead, Quest, Session } from '../api';
+import { InTheme } from '../plugins/storyIcons';
+import { chinese } from '../storyLanguage';
+import { STEP_REVIEWED, STEP_SETTING_UP, STEP_SHOWN } from './reviewFixtures';
 import { SessionHead } from './SessionHead';
+
+const dark: Decorator = (Story) => <InTheme theme="dark"><div className="max-w-3xl bg-page p-4"><Story /></div></InTheme>;
 
 // The record in every shape it really arrives in: driven, a conversation, parked with its analysis,
 // ended, and read over a remote where the machine-local half is deliberately absent.
@@ -280,6 +285,57 @@ export const FinishedAtACheckpointToLand: Story = {
       ...SESSION, state: 'completed', created: at(40), updated: at(31), note: 'The person finished this at a checkpoint.',
     },
     lands: { branch: 'daoris/s-56cb4d29', tree: 's-56cb4d29', commits: 2, uncommitted: 0 },
+  },
+};
+
+/** The review's presses on the desktop (REVIEWENV1g). */
+const REVIEW_ACTS = { reviewed: () => {}, notYet: () => {}, skip: () => {}, setUp: () => {}, showAgain: () => {}, open: () => {} };
+
+/**
+ * Finished, its work waiting for the person's review (REVIEWENV1g): *Review in `local`* where *Accept…* would be, the set-up
+ * step's showing, its tab still served, and *Reviewed*, *Not yet…*, *Show it again* and *Skip…*.
+ */
+export const WaitsForReviewShown: Story = {
+  args: {
+    ...FinishedAtACheckpointToLand.args,
+    landing: { form: 'merge', target: 'main', review: { state: 'shown', environment: 'local', level: 'set-up-step', quest: 'q2' } },
+    review: { step: STEP_SHOWN, served: true, acts: REVIEW_ACTS },
+  },
+};
+
+/** The same in 中文. */
+export const WaitsForReviewShownChinese: Story = { ...WaitsForReviewShown, decorators: [chinese] };
+
+/** The same in dark. */
+export const WaitsForReviewShownDark: Story = { ...WaitsForReviewShown, decorators: [dark] };
+
+/** Nothing shows the work yet: *Set it up in `local`* and *Skip…* where *Accept…* would be. */
+export const WaitsForReviewNotShown: Story = {
+  args: {
+    ...FinishedAtACheckpointToLand.args,
+    landing: { form: 'merge', target: 'main', review: { state: 'not-shown', environment: 'local', level: 'repository' } },
+    review: { acts: REVIEW_ACTS },
+  },
+};
+
+/** The same in 中文. */
+export const WaitsForReviewNotShownChinese: Story = { ...WaitsForReviewNotShown, decorators: [chinese] };
+
+/** Its set-up step at work: being set up, the door to the step, and the skip. */
+export const WaitsForReviewBeingSetUp: Story = {
+  args: {
+    ...FinishedAtACheckpointToLand.args,
+    landing: { form: 'merge', target: 'main', review: { state: 'being-set-up', environment: 'local', quest: 'q2' } },
+    review: { step: STEP_SETTING_UP, acts: REVIEW_ACTS },
+  },
+};
+
+/** Reviewed, and work added since: what was reviewed does not hold it. */
+export const WaitsForReviewNotHeld: Story = {
+  args: {
+    ...FinishedAtACheckpointToLand.args,
+    landing: { form: 'merge', target: 'main', review: { state: 'not-held', environment: 'local', quest: 'q2' } },
+    review: { step: STEP_REVIEWED, acts: REVIEW_ACTS },
   },
 };
 

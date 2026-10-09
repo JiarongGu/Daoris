@@ -160,7 +160,8 @@ export function ReviewGate({
         {/* Status leads (D41 §4): the state, then where the work is reviewed. */}
         <Pill tone={TONE[state]}>{t(`review.state.${state}`)}</Pill>
         <h3 id={headingId} className="m-0 min-w-0 text-small font-semibold text-ink">
-          <Inline text={t('review.title', { environment })} />
+          {/* An unread gate names no environment: what it could not read is whether one waits. */}
+          <Inline text={environment ? t('review.title', { environment }) : t('review.titleAny')} />
         </h3>
       </div>
 
