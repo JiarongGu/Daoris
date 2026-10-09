@@ -276,8 +276,9 @@ describe.each(['en', 'zh'])('the history’s keys in %s', (language) => {
     await userEvent.keyboard('{Escape}');
     expect(second.onClose).toHaveBeenCalledOnce();
 
-    // A key composing a word belongs to the input method.
+    // A key composing a word belongs to the input method, the last press of a composition (229) among them (IME1).
     fireEvent.keyDown(searchBox(), { key: 'Escape', isComposing: true });
+    fireEvent.keyDown(door('Landing'), { key: 'Escape', keyCode: 229 });
     expect(second.onClose).toHaveBeenCalledOnce();
 
     await menuOf('Landing');

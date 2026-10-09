@@ -2,6 +2,7 @@ import { Fragment, type KeyboardEvent, type ReactNode, useEffect, useId, useLayo
 import { useTranslation } from 'react-i18next';
 import { ago } from '../format';
 import { cn } from '../lib/cn';
+import { isComposing } from '../lib/composing';
 import { Button, Icon, type IconName, Inline, Menu, type MenuAct, SkeletonRows, Tip } from '../ui';
 import { type Answered, InlineConfirm, Refused } from '../work/InlineConfirm';
 import { useListKeys } from '../work/listKeys';
@@ -107,8 +108,8 @@ export function AskHistory({
   }, []);
 
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-    // A key an input method is composing with is the method's, the search's arrow into the rows among them.
-    if (event.nativeEvent.isComposing) return;
+    // A key an input method is composing with is the method's, the search's arrow into the rows among them (IME1).
+    if (isComposing(event)) return;
     keys(event);
     if (event.key !== 'Escape' || event.defaultPrevented || !onClose) return;
     const target = event.target as HTMLElement;
@@ -150,7 +151,8 @@ export function AskHistory({
             onChange={(event) => onSearch(event.target.value)}
             // Escape clears a search; one with nothing in it goes back to the conversation.
             onKeyDown={(event) => {
-              if (event.key === 'Escape' && search && !event.nativeEvent.isComposing) { event.preventDefault(); onSearch(''); }
+              if (isComposing(event)) return;
+              if (event.key === 'Escape' && search) { event.preventDefault(); onSearch(''); }
             }}
             className="min-w-0 flex-1 bg-transparent py-1 text-small text-ink outline-none placeholder:text-ink-faint"
           />
@@ -427,7 +429,7 @@ function RenameHelp({ row, onSave, onClose }: {
       onKeyDown={(event) => {
         // The field's own keys: the caret's, never the list's rows.
         if (FIELD_KEYS.has(event.key)) { event.stopPropagation(); return; }
-        if (event.key !== 'Escape' || event.nativeEvent.isComposing) return;
+        if (isComposing(event) || event.key !== 'Escape') return;
         event.preventDefault();
         event.stopPropagation();
         // While it saves, Escape changes nothing: the answer is on its way.

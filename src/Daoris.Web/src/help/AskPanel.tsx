@@ -1,6 +1,7 @@
 import { type KeyboardEvent, type ReactNode, type RefObject, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
+import { isComposing } from '../lib/composing';
 import { Button, Icon, Inline, Prose, Tip } from '../ui';
 import { Splitter } from '../work/frame';
 import type { Starter, StarterDoor } from './starters';
@@ -93,7 +94,7 @@ export function AskPanel({
 
   // Escape goes back to the history the conversation was opened from; a field, a menu or an input method takes it first.
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key !== 'Escape' || event.defaultPrevented || event.nativeEvent.isComposing) return;
+    if (isComposing(event) || event.key !== 'Escape' || event.defaultPrevented) return;
     if (browsing || !conversation?.escapeToList || !conversation.onHistory) return;
     const target = event.target as HTMLElement;
     if (!event.currentTarget.contains(target) || target.closest(KEEPS_ESCAPE)) return;

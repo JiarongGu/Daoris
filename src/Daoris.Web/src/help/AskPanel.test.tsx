@@ -196,6 +196,7 @@ describe.each(['en', 'zh'])('Ask Daoris’s open conversation in %s', (language)
 
     fireEvent.keyDown(screen.getByRole('textbox', { name: 'words' }), { key: 'Escape' });
     fireEvent.keyDown(screen.getByRole('heading', { name: TITLE }), { key: 'Escape', isComposing: true });
+    fireEvent.keyDown(screen.getByRole('heading', { name: TITLE }), { key: 'Escape', keyCode: 229 });
     expect(conversation.onHistory).toHaveBeenCalledOnce();
 
     cleanup();
