@@ -68,7 +68,7 @@ export type MentionSource = { files: string[] | null; unlisted: number; refusal:
  * are handed in: this form sends nothing itself.
  */
 export function Composer({
-  live, sending = false, refusal, endings = true, draft, onDraft,
+  live, sending = false, refusal, endings = true, draft, onDraft, carried, onCarry,
   queued = [], queuedLabel, taking = false, opening = false, stoppable = false, stopping = false, mentions, onMentioning, context, placeholder,
   attachments = true, sendLabel, stopTurnLabel, stopTurnTip, offered, optionsBusy = false, onOption, onSend, onFinish, onStop, onStopTurn,
   focus = 0, accepts,
@@ -105,6 +105,12 @@ export function Composer({
   /** The draft, when the frame holds it. Absent, the form holds its own. */
   draft?: string;
   onDraft?: (text: string) => void;
+  /**
+   * The files with the draft, where its holder keeps them (ASKHIST1c: Ask Daoris keeps each conversation's across its
+   * history). Absent, the form holds its own, which go with the form.
+   */
+  carried?: Carry;
+  onCarry?: (next: Carry) => void;
   /** What the person sent that has not reached the harness, in the order sent (CONV4a), with its files' names. */
   queued?: ChatMessage[];
   /** What the waiting words are waiting for, when it is not the turn in hand (HELP4: the conversation opening). */
@@ -143,7 +149,9 @@ export function Composer({
   const [own, setOwn] = useState('');
   const text = draft ?? own;
   const setText = onDraft ?? setOwn;
-  const [carry, setCarry] = useState<Carry>(NO_CARRY);
+  const [ownCarry, setOwnCarry] = useState<Carry>(NO_CARRY);
+  const carry = carried ?? ownCarry;
+  const setCarry = onCarry ?? setOwnCarry;
   const attach = useCarry(carry, setCarry, live);
   const chooser = useFileChooser(attach.attach, t('carry.choose'));
   const files = carry.files;

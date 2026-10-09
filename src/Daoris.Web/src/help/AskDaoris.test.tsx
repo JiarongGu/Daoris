@@ -20,7 +20,7 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => {},
 }));
 
-import '../i18n';
+import i18n from '../i18n';
 import { keys } from '../queries';
 import { code } from '../test/code';
 import { AskDaoris } from './AskDaoris';
@@ -164,7 +164,9 @@ describe('Ask Daoris, with an agent named', () => {
 
     await act(async () => { listed(); });
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE', { payload: { id: HELP.id } }));
-    await waitFor(() => expect(screen.getAllByText(words)).toHaveLength(1));
+    // Once in the conversation, besides its head, which calls it by them (ASKHIST1c).
+    await waitFor(() => expect(screen.getAllByText(words, { ignore: 'script, style, h3' })).toHaveLength(1));
+    expect(screen.getByRole('heading', { name: words })).toBeInTheDocument();
     expect(screen.getByText('opening Ask Daoris…')).toBeInTheDocument();
   });
 
@@ -610,7 +612,7 @@ describe('Ask Daoris’s history', () => {
     withHistory([row({})]);
     show();
 
-    await userEvent.click(await screen.findByRole('button', { name: 'History' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Back to history' }));
     const list = await screen.findByRole('region', { name: 'Conversation history' });
     await userEvent.click(within(list).getAllByRole('button', { name: /^what is a workspace\?/ })[0]);
 
@@ -675,7 +677,7 @@ describe('Ask Daoris’s history', () => {
     withHistory([row({ session: EARLIER.id })]);
     show();
 
-    await userEvent.click(await screen.findByRole('button', { name: 'History' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Back to history' }));
     const user = userEvent.setup();
     const menu = async () => {
       (await screen.findByRole('button', { name: 'More for what is a workspace?' })).focus();
@@ -698,6 +700,180 @@ describe('Ask Daoris’s history', () => {
     await user.click(await screen.findByRole('menuitem', { name: 'Delete…' }));
     await user.click(await screen.findByRole('button', { name: 'Delete conversation' }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DELETE', { payload: { id: EARLIER.id } }));
+  });
+});
+
+/**
+ * ASKHIST1c: the history and the open conversation, made right after the owner looked at the window. Each conversation keeps
+ * its own draft, words and files, and a new one its own; one the person chose that cannot go on takes no words until they
+ * choose a new conversation from it, or a blank one, and one being checked takes none either; the keys go from the list to a
+ * conversation and back to the row it was opened from; and the list says what it is doing.
+ */
+describe.each(['en', 'zh'])('Ask Daoris’s history and open conversation in %s', (language) => {
+  const ANSWERED = { ...HELP, state: 'completed' };
+  const A = { ...ANSWERED, id: 'a1a1a1a1', created: '2026-09-28T00:00:00Z', updated: '2026-09-28T00:10:00Z' };
+  const B = { ...ANSWERED, id: 'b2b2b2b2', created: '2026-09-27T00:00:00Z', updated: '2026-09-27T00:10:00Z' };
+  const row = (session: string, title: string, over: Record<string, unknown> = {}) => ({
+    session, title, name: null, opening: title, about: 'A circle.', created: '2026-09-27T00:00:00Z', last: new Date().toISOString(),
+    pinned: null, live: false, resumable: true, from: null, handed: null, found: null, ...over,
+  });
+  const ROWS = [row(A.id, 'about A?'), row(B.id, 'about B?')];
+
+  /** The bridge as {@link bridge} answers it, with the history's routes answering by the words searched. */
+  function historyBridge(listed: (words: string | undefined) => unknown, started?: { sessionId: string; message: string; from: string }) {
+    bridge({ sessionId: 'n3xt0000', message: 'opened' });
+    const answered = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, body?: { payload?: { q?: string } }, ...rest: unknown[]) => {
+      if (type === 'HELP_CONVERSATIONS') return listed(body?.payload?.q);
+      if (type === 'HELP_START_FROM') return started;
+      if (type === 'SESSION_INPUT') return { sent: true, reaches: 'resume', why: null };
+      return answered(module, type, body, ...rest);
+    });
+  }
+
+  const box = () => screen.queryByLabelText(i18n.t('work.composer.label'));
+  const back = () => screen.findByRole('button', { name: i18n.t('help.history.back') });
+  /** A row's door in the history: the button that leads with its title. */
+  const door = async (title: string) => (await screen.findAllByRole('button', { name: (name) => name.startsWith(title) }))[0]!;
+  /** A conversation opened from the history, as a person opens it. */
+  async function open(title: string) {
+    await userEvent.click(await back());
+    await userEvent.click(await door(title));
+    await screen.findByRole('heading', { name: title });
+  }
+
+  beforeEach(async () => {
+    await i18n.changeLanguage(language);
+    SESSIONS = [A, B];
+    HELPER = 'claude-code-acp';
+    asked.length = 0;
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+  });
+  afterEach(async () => {
+    cleanup();
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    window.localStorage.clear();
+    await i18n.changeLanguage('en');
+  });
+
+  it('keeps each conversation’s words and files, and a new one’s apart, across the history', async () => {
+    historyBridge(() => ({ conversations: ROWS, cut: false }));
+    show();
+
+    await open('about A?');
+    await userEvent.type(box()!, 'more on A');
+    await userEvent.upload(screen.getByLabelText(i18n.t('carry.choose')), new File(['exit 3'], 'run.log'));
+
+    await open('about B?');
+    expect(box()).toHaveValue('');
+    expect(screen.queryByText('run.log')).toBeNull();
+    await userEvent.type(box()!, 'more on B');
+
+    await open('about A?');
+    expect(box()).toHaveValue('more on A');
+    expect(screen.getByText('run.log')).toBeInTheDocument();
+
+    // A blank new conversation's box is its own, and takes the focus.
+    const head = screen.getByRole('heading', { name: 'about A?' }).closest('header')!;
+    await userEvent.click(within(head).getByRole('button', { name: i18n.t('help.new') }));
+    await waitFor(() => expect(box()).toHaveFocus());
+    expect(box()).toHaveValue('');
+    expect(screen.getByRole('heading', { name: i18n.t('help.new') })).toBeInTheDocument();
+
+    await open('about B?');
+    expect(box()).toHaveValue('more on B');
+
+    // A new conversation from an older one is blank too, never the newest that ended in its place.
+    const older = screen.getByRole('heading', { name: 'about B?' }).closest('header')!;
+    await userEvent.click(within(older).getByRole('button', { name: i18n.t('help.new') }));
+    expect(await screen.findByRole('heading', { name: i18n.t('help.new') })).toBeInTheDocument();
+    expect(box()).toHaveValue('');
+  });
+
+  it('takes no words under one it chose that cannot go on, offering a new conversation from it first and a blank one beside', async () => {
+    historyBridge(() => ({ conversations: [row(A.id, 'about A?', { resumable: false }), row(B.id, 'about B?')], cut: false }),
+      { sessionId: 'fr0m0000', message: 'opened', from: A.id });
+    show();
+
+    await open('about A?');
+    expect(box()).toBeNull();
+    expect(screen.getByText(i18n.t('help.endedAnew'))).toBeInTheDocument();
+    const offer = screen.getByRole('button', { name: i18n.t('help.history.startFrom') });
+    expect(offer).toHaveClass('bg-accent');
+    expect(within(offer.parentElement!).getByRole('button', { name: i18n.t('help.new') })).toBeInTheDocument();
+    // No row says it starts anew: opening one only reads it.
+    expect(screen.queryByText(/starts anew|将开始新对话/)).toBeNull();
+
+    SESSIONS = [A, B, { ...HELP, id: 'fr0m0000', created: '2026-09-29T01:00:00Z' }];
+    await userEvent.click(offer);
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_START_FROM', { payload: { id: A.id } }));
+    await waitFor(() => expect(box()).toHaveFocus());
+  });
+
+  it('says it is checking whether a conversation can go on, and takes no words until it knows', async () => {
+    // The whole list has not answered; a search has.
+    historyBridge((words) => (words ? { conversations: [row(A.id, 'about A?', { found: 'about A?' })], cut: false } : new Promise(() => {})));
+    show();
+
+    await userEvent.click(await back());
+    await userEvent.type(screen.getByRole('searchbox', { name: i18n.t('help.history.search.label') }), 'about');
+    await userEvent.click(await door('about A?'));
+
+    expect(await screen.findByRole('status')).toHaveTextContent(i18n.t('help.checking'));
+    expect(box()).toBeNull();
+  });
+
+  it('goes from the list into a conversation and back to the row it was opened from, by the keys alone', async () => {
+    historyBridge(() => ({ conversations: ROWS, cut: false }));
+    show();
+
+    (await back()).focus();
+    await userEvent.keyboard('{Enter}');
+    // The list opens on the conversation shown, the newest.
+    await waitFor(() => expect(screen.getAllByRole('button', { name: (name) => name.startsWith('about A?') })[0]).toHaveFocus());
+
+    await userEvent.keyboard('{End}');
+    expect(await door('about B?')).toHaveFocus();
+    await userEvent.keyboard('{Enter}');
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'about B?' })).toHaveFocus());
+
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.getAllByRole('button', { name: (name) => name.startsWith('about B?') })[0]).toHaveFocus());
+
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'about B?' })).toHaveFocus());
+  });
+
+  it('says a list it could not read and tries again, and keeps the rows while a search answers', async () => {
+    let failing = true;
+    let searched: (answer: unknown) => void = () => {};
+    historyBridge((words) => {
+      if (words) return new Promise((resolve) => { searched = resolve; });
+      if (failing) throw new Error('the driver is not running.');
+      return { conversations: ROWS, cut: false };
+    });
+    show();
+
+    await userEvent.click(await back());
+    expect(await screen.findByText(i18n.t('help.history.failed'))).toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('help.history.emptyHeadline'))).toBeNull();
+    failing = false;
+    await userEvent.click(screen.getByRole('button', { name: i18n.t('help.history.retry') }));
+    expect(await door('about B?')).toBeInTheDocument();
+
+    // One character is too few for the driver: said, and the whole list kept.
+    const search = screen.getByRole('searchbox', { name: i18n.t('help.history.search.label') });
+    await userEvent.type(search, 'a');
+    expect(screen.getByText(i18n.t('help.history.short'))).toBeInTheDocument();
+    expect(await door('about B?')).toBeInTheDocument();
+
+    // A search on its way keeps the last rows, dimmed, never a blank list.
+    await userEvent.type(search, 'b');
+    expect(await door('about B?')).toBeInTheDocument();
+    expect((await door('about B?')).closest('.overflow-y-auto')).toHaveClass('opacity-60');
+    await act(async () => { searched({ conversations: [row(B.id, 'about B?', { found: 'about B?' })], cut: false }); });
+    await waitFor(() => expect(screen.queryByRole('button', { name: (name) => name.startsWith('about A?') })).toBeNull());
   });
 });
 
