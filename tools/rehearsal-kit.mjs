@@ -425,13 +425,16 @@ const commitHere = async (author, message) => {
  *
  * Here rather than inside the family rehearsal since DEPLOY5, whose deployment gate opens a
  * conversation on it in the installed shell: one copy, for the reason this module exists at all.
+ *
+ * Every commit it makes is `STUB_COMMIT`'s (REHEARSEGIT1): in the folder it was started in, and only where that is the top of
+ * a repository of its own. A turn refused that way fails, as any turn whose work throws does.
  */
 export const ACP_STUB_AGENT = `
 import { execSync, spawn } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
-
+${STUB_COMMIT}
 const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\\n');
 const say = (...parts) => console.error('acp-agent:', ...parts);
 
@@ -525,9 +528,8 @@ async function setUp(sessionId) {
     daoris('sync');
     daoris('check');
 
-    const git = 'git -c user.name="Setup Session" -c user.email="setup@example.invalid"';
-    execSync(git + ' add -A', { stdio: 'ignore' });
-    execSync(git + ' commit -q -m "setup: take up the doctrine and initialise the knowledge (quest ' + id + ')"', { stdio: 'ignore' });
+    await commitHere({ name: 'Setup Session', email: 'setup@example.invalid' },
+      'setup: take up the doctrine and initialise the knowledge (quest ' + id + ')');
   } catch (error) {
     say('setup declines: the doctrine command could not run here:', error.message);
     await respond('decline', 'The doctrine command could not run here: ' + error.message);
@@ -557,9 +559,7 @@ async function askFirst(sessionId, said) {
   say('the answer, as the resumed conversation heard it: ' + said);
   update(sessionId, { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'Serving on the port you named: ' + said } });
   writeFileSync('acp-port-' + id + '.md', '# the report\\n\\nIt listens where the person said: ' + said + '\\n');
-  const git = 'git -c user.name="ACP Session" -c user.email="acp@example.invalid"';
-  execSync(git + ' add -A', { stdio: 'ignore' });
-  execSync(git + ' commit -q -m "acp: serve the report where the person said (quest ' + id + ')"', { stdio: 'ignore' });
+  await commitHere({ name: 'ACP Session', email: 'acp@example.invalid' }, 'acp: serve the report where the person said (quest ' + id + ')');
   const done = await respond('done', 'Serving the report on the port the person named.');
   say('done:', done.ok);
   return 'end_turn';
@@ -643,9 +643,7 @@ async function showForReview(sessionId, said) {
   say('the set-up step heard not yet: ' + said);
   update(sessionId, { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'Heard your not yet: ' + said } });
   writeFileSync('review-correction-' + id + '.md', '# corrected under the words the person said\\n\\n' + said + '\\n');
-  const git = 'git -c user.name="ACP Session" -c user.email="acp@example.invalid"';
-  execSync(git + ' add -A', { stdio: 'ignore' });
-  execSync(git + ' commit -q -m "review: correct what the person said not yet to (quest ' + id + ')"', { stdio: 'ignore' });
+  await commitHere({ name: 'ACP Session', email: 'acp@example.invalid' }, 'review: correct what the person said not yet to (quest ' + id + ')');
   const shows = ('Corrected under your words: ' + said.replace(/\\s+/g, ' ')).slice(0, 300);
   say('review_ready answered again: ' + await connector('review_ready', { look, shows, again }));
   return 'end_turn';
@@ -686,9 +684,7 @@ async function work(sessionId, said) {
     content: { type: 'text', text: 'permission answer was ' + outcome + ' — not pushing' },
   });
 
-  const git = 'git -c user.name="ACP Session" -c user.email="acp@example.invalid"';
-  execSync(git + ' add -A', { stdio: 'ignore' });
-  execSync(git + ' commit -q -m "acp: answer quest ' + id + '"', { stdio: 'ignore' });
+  await commitHere({ name: 'ACP Session', email: 'acp@example.invalid' }, 'acp: answer quest ' + id);
 
   const done = await respond('done', 'Landed by the ACP session.');
   say('done:', done.ok);

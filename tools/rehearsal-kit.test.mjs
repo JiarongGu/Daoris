@@ -566,3 +566,29 @@ test("a stub commits in the repository it was started in, and refuses to commit 
   assert.equal(git(outer, 'status', '--porcelain'), '?? scratch/\n?? tree/');
   assert.equal(git(outer, 'rev-list', '--count', 'HEAD'), '1');
 });
+
+test('the ACP stub started in a folder that is not its own repository fails the turn that would commit, and commits nothing',
+  async (t) => {
+    const { outer, inner } = enclosingCheckout('acp-stub-walks-up');
+    const stub = join(scratch, 'acp-agent-walks-up.mjs');
+    writeFileSync(stub, ACP_STUB_AGENT);
+    const service = await standInService();
+    t.after(() => service.close());
+
+    const turn = await stubTurn(stub, {
+      cwd: inner,
+      env: {
+        DAORIS_SERVICE_URL: service.url,
+        DAORIS_QUEST_ID: 'q2',
+        DAORIS_QUEST_TITLE: 'Show #q1 in `dev` for review',
+        DAORIS_QUEST_BODY: "Show the work of #q1 in `dev`, at https://dev.example.test/report, for the person's review.",
+      },
+      words: 'the report still reads the old name',
+      opening: { method: 'session/resume', params: { sessionId: 'acp-session-1', cwd: inner, mcpServers: [] } },
+    });
+
+    assert.match(turn.answer?.error?.message ?? '', /refused to commit in .*scratch: git would commit in the repository at /,
+      turn.said);
+    assert.equal(git(outer, 'status', '--porcelain'), '?? scratch/');
+    assert.equal(git(outer, 'rev-list', '--count', 'HEAD'), '1');
+  });
