@@ -268,10 +268,17 @@ export const useSessions = (repository: string | null, includeClosed: boolean, e
  * Ask Daoris's conversations (HELP1a, D89), across every workspace: it belongs to none, so the scope a
  * person is working in must not hide the conversation beside it.
  */
-export const useHelpSessions = () =>
+export const useHelpSessions = (
+  /**
+   * How often to ask again while a conversation the person wrote to is still to go on (ASKHIST1): its record moves to working
+   * as the driver takes the words up, and no event says so to the list. False asks only when the list is stale.
+   */
+  refetchInterval: number | false = false,
+) =>
   useQuery({
     queryKey: keys.sessions(HELP_REPOSITORY, true, null),
     queryFn: ({ signal }) => api.sessions(HELP_REPOSITORY, true, null, signal),
+    refetchInterval,
   });
 
 /**

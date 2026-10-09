@@ -128,11 +128,8 @@ public sealed partial class ChatRunner
         foreach (var each in records)
         {
             if (_closing || ct.IsCancellationRequested) break;
-            if (each.Kind != "chat" || each.Teammate || !Ended.Contains(each.State)
-                || string.Equals(each.Repository, HelpRoom.Repository, StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
+            // Ask Daoris's conversations among them (ASKHIST1): each goes on in its own conversation as a repository's chat does.
+            if (each.Kind != "chat" || each.Teammate || !Ended.Contains(each.State)) continue;
 
             if (ServiceClient.ReadRecord(json, each.Id) is not { WordsWaiting: true } record) continue;
             if (GoOnMarks.Judged(record, _marks.Read(each.Id))) continue;
@@ -226,11 +223,10 @@ public sealed partial class ChatRunner
     private async Task<ChatStart> GoingOnAsync(
         string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct)
     {
-        // Only an ended chat of this machine's with words waiting: a driven record goes on through the planner (MSG1b), a live
-        // one hears words at its door, and Ask Daoris's conversation opens anew (D137 §2.2), so no word is kept for it.
+        // Only an ended chat of this machine's with words waiting: a driven record goes on through the planner (MSG1b), and a
+        // live one hears words at its door. Ask Daoris's conversation goes on too, in its room (ASKHIST1).
         var record = await _service.RecordAsync(sessionId, ct).ConfigureAwait(false);
         if (record is not { Kind: "chat", WordsWaiting: true } || record.Teammate
-            || string.Equals(record.Repository, HelpRoom.Repository, StringComparison.OrdinalIgnoreCase)
             || !(Ended.Contains(record.State) || string.Equals(record.State, "stood-down", StringComparison.OrdinalIgnoreCase)))
         {
             return new(null, $"session `{sessionId}` is no ended conversation of this machine's with words waiting.");
@@ -260,6 +256,11 @@ public sealed partial class ChatRunner
             ? ContinueWhy.Of(ContinueWhy.Refused)
             : Continuations.Judge(record, adapter.Name, adapter.Resumes, record.Profile, kept);
         if (why is not null || adapter is null || kept is null) return CannotGoOn(record, why ?? ContinueWhy.Of(ContinueWhy.Unkept), ranOn);
+
+        if (string.Equals(record.Repository, HelpRoom.Repository, StringComparison.OrdinalIgnoreCase))
+        {
+            return await HelpGoingOnAsync(record, adapter, kept, config, onEnded, ct).ConfigureAwait(false);
+        }
 
         var registry = await _service.RegistryAsync(ct).ConfigureAwait(false);
         var known = registry

@@ -1,5 +1,5 @@
 {
-  "chars": 6538,
+  "chars": 7013,
   "sections": [
     {
       "name": "quest",
@@ -18,8 +18,8 @@
     {
       "name": "set-up",
       "source": "repository",
-      "said": "the set-up for your review: 1,977 characters, in `local`, local, by `README.md`, as the rule set for its repository here declares it",
-      "chars": 1977,
+      "said": "the set-up for your review: 2,452 characters, in `local`, local, by `README.md`, as the rule set for its repository here declares it",
+      "chars": 2452,
       "from": "local"
     },
     {

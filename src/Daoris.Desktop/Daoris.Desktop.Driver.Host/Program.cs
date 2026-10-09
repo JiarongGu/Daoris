@@ -366,6 +366,13 @@ try
         return await Daoris.Driver.Host.SessionsConsole.RunAsync(sessionsArgs, log);
     }
 
+    // Ask Daoris's history from a terminal (ASKHIST1, D50): the panel's list and search, words to one that go on in it, its name,
+    // its pin and its delete. `help` alone, or a word it does not take, is still the usage below.
+    if (args is ["help", var helpVerb, ..] && HelpCommand.Verbs.Contains(helpVerb))
+    {
+        return await Daoris.Driver.Host.HelpConsole.RunAsync(args[1..], log);
+    }
+
     // Finished history from a terminal (HIST1d, D153, the history-clearing design §6.2, D50): what this machine keeps of it, per
     // workspace, and a workspace's clear, listed first and pressed with --yes. The workspace page's *Kept on this machine* is the
     // other door; a clear's log line says this one.

@@ -243,7 +243,15 @@ public sealed partial class Driver
                 ? null
                 : adapter.PrepareResume(target, config.Commands.GetValueOrDefault(adapter.Name), kept.Conversation, resume.Prompt);
             var (info, harnessNotice) = Prepare(adapter, target, selection, prepared);
+            // A set-up step going on with the person's words shows it again in its own tab (REVIEWENV1d, design §3.4): opened
+            // again where the person closed it, and brought forward. Said, never held, where it will not open: the words go on.
+            var tabNotice = quest.SetUpIn is not null && Reviews is { } desk
+                            && ReviewSetUps.Environment(config, quest, start.Workspace) is { } shownIn
+                            && await desk.OpenForStepAsync(quest, shownIn, ct).ConfigureAwait(false) is { } unopened
+                ? $"— {unopened}"
+                : null;
             var (servers, browserNotice, drivesBrowser) = await InAppBrowserServers.HandAsync(_servers, browser, ct).ConfigureAwait(false);
+            browserNotice = JoinNotices(browserNotice, tabNotice);
             hooks?.Log.Served(_catalog, sessionId, servers);
             var handed = SpawnServers.Hand(adapter, info, home, sessionId, servers);
             var rules = HandRules(
@@ -458,7 +466,8 @@ public sealed partial class Driver
 
         // REVIEWENV1c (design §2.6, §3.4): a set-up step that went on with the person's not yet says a new set-up, posted with
         // the commit its tree holds now, its correction among it.
-        await ReviewSetUps.PostAsync(service, config, _events, after, sessionId, workTree, quest.Workspace, openedAt, ct).ConfigureAwait(false);
+        await ReviewSetUps.PostAsync(service, config, _events, after, sessionId, workTree, quest.Workspace, openedAt, ct, Reviews)
+            .ConfigureAwait(false);
 
         // LAND2b: as a first run's ending, so a resumed session that closes its quest done is due too. One that went on after
         // its landing moves its own branch on at the next look (LAND2c).

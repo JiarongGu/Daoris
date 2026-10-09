@@ -64,6 +64,12 @@ public sealed class DriverWatch(
     public MachineLog? Log { get; init; }
 
     /// <summary>
+    /// Handed to every look's driver (<see cref="Driver.Reviews"/>): the review's showing in Daoris's browser (REVIEWENV1d), one
+    /// for the shell's life, since a served tab outlives the look and the session that started it. Null in the headless host.
+    /// </summary>
+    public ReviewDesk? Reviews { get; init; }
+
+    /// <summary>
     /// Whether an update is draining this loop (UPDATE1, D139 §2), asked at every look: while it answers true, each look
     /// plans with <see cref="InstallUpdate.Drained"/>, so nothing new starts, and says the hold as the update's
     /// (<see cref="InstallUpdate.HeldFor"/>). The look itself goes on — the endings, the plugins' word on them, the sync —
@@ -180,7 +186,7 @@ public sealed class DriverWatch(
                     var report = await new Driver(
                             service, draining ? InstallUpdate.Drained(config) : config, AdapterSet.Built(), home, processes, sync, output,
                             _harnesses, usage, hooks, events, browser, Running)
-                        { Runner = Runner, Stops = Stops, Log = Log }
+                        { Runner = Runner, Stops = Stops, Log = Log, Reviews = Reviews }
                         .TickAsync(sessions.Token, failed: part =>
                         {
                             carried.AddRange(part.Events);

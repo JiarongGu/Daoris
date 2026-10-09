@@ -118,6 +118,13 @@ public static class ResumeWords
         $"To start a conversation with these words now instead, without that one: `daoris-driver sessions start-from {session}`.";
 
     /// <summary>
+    /// The door out of the wait for Ask Daoris's own conversation (ASKHIST1): no repository holds it, so a new conversation starts
+    /// from its words in Ask Daoris's history, handed its transcript.
+    /// </summary>
+    public const string HelpDoor =
+        "To go on now instead, start a new conversation from this one in Ask Daoris's history: it is handed this one's words.";
+
+    /// <summary>
     /// The line a note adds after the reason <c>account</c>: why the record's own account could not carry the words, coded
     /// (LANG1a). Null for a hold that carries nothing on: ready runs there, and a cool-off nobody chose to leave waits.
     /// </summary>

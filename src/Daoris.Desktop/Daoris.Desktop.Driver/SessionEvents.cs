@@ -604,6 +604,29 @@ public sealed class SessionEvents(string directory)
     }
 
     /// <summary>
+    /// What was said in a session, as a reader reads it (ASKHIST1): each thing the person said and each of the agent's messages,
+    /// joined from its chunks, in order, and never a tool's output nor the driver's notes; and when its record was last written.
+    /// Nothing for no record, an unreadable one, or an id that is not one.
+    /// </summary>
+    public (IReadOnlyList<(string Kind, string Text)> Said, DateTimeOffset? Last) Spoken(string sessionId)
+    {
+        if (!IsId(sessionId)) return ([], null);
+        try
+        {
+            var path = PathOf(sessionId);
+            if (!File.Exists(path)) return ([], null);
+            var said = Passages(path).Select(passage => (passage.Kind, passage.Text)).ToList();
+            DateTimeOffset? last = null;
+            foreach (var e in Lines(path)) last = e.At;
+            return (said, last);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return ([], null);
+        }
+    }
+
+    /// <summary>
     /// The agent's plan as the record last kept it (TOOL4f, D125 §3.5): the newest plan event's entries, whole, since a
     /// plan is written whole each time it changes. Empty for no plan, no record, an unreadable one, or an id that is not
     /// one.

@@ -170,6 +170,7 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | start a task | Quests → Ask | `daoris-driver ask --workspace <name> "…"` |
 | answer what waits on the person | Sessions, and what needs you | `daoris-driver answer` |
 | say something to a session of this machine's, running, parked or ended: it reads your words at its next step or when its turn ends, or the same session goes on with them (Ask Daoris never proposes it: the words are yours) | Sessions → the session's page → its box | `daoris-driver sessions say <id> "…" [--file <path>]…` |
+| find an earlier conversation with Ask Daoris and go on in it, start a new one from its words, or name, pin or delete one; they are kept on this machine only (Ask Daoris never proposes it: the conversations are yours) | Ask Daoris → History | `daoris-driver help list [--search "…"]`, `daoris-driver help resume <id> "…"`, `daoris-driver help rename|pin|unpin|delete <id>` |
 | answer a go-ahead a session asked on an ask, for an act outside its repository: yes or no, which every session on the ask is handed | Quests → the ask's page → Go-aheads | `daoris-driver ask --go-ahead <id> <n> approve|refuse ["…"]` |
 
 A landing pattern may say `{quest}`, `{session}`, `{slug}` (the quest's title, as words) and

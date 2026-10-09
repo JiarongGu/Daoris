@@ -23,8 +23,17 @@ public sealed class DriverLoop(
     MachineLog? log = null,
     // The account's own DAORIS_HOME, which a terminal reads (LEFT2); the user environment's by default, and a
     // test's stand-in so a test never reads the machine's.
-    Func<string?>? account = null) : IDisposable
+    Func<string?>? account = null,
+    // Daoris's browser as a set-up step's review uses it (REVIEWENV1d): its tab, and its build served there until the person's
+    // verdict. Null shows nothing, as a loop with no browser does.
+    IReviewTabs? reviews = null) : IDisposable
 {
+    /// <summary>
+    /// The review's showing in Daoris's browser (REVIEWENV1d, D154 point 5): one for the shell's life, handed to every look's
+    /// driver, read by the strip's chip and pressed by its *Show it again*. Null where this loop carries no browser.
+    /// </summary>
+    public ReviewDesk? Reviews { get; } = reviews is null ? null : new ReviewDesk(reviews);
+
     private readonly CancellationTokenSource _stopping = new();
     private readonly TaskCompletionSource<bool> _hostReady = new();
     private DriverWatch? _watch;
@@ -86,6 +95,12 @@ public sealed class DriverLoop(
     /// obscurely: "not yet" is a state a person can wait out.
     /// </summary>
     public ChatRunner? Chat { get; private set; }
+
+    /// <summary>
+    /// The machine as Ask Daoris's room says it (ASKHIST1): handed by the module that writes the room on <c>START_HELP</c>, and
+    /// handed on to the conversations as they come up, so an earlier conversation going on finds the room as an open would.
+    /// </summary>
+    public Func<CancellationToken, Task<HelpMachine?>>? DescribeHelp { get; set; }
 
     /// <summary>
     /// The service this loop drives, once the host answers — null before, like <see cref="Chat"/>
@@ -480,6 +495,8 @@ public sealed class DriverLoop(
             Draining = () => Draining?.Invoke() == true,
             // Where a run's failure nothing else awaits is written with its place, not left to the finalizer (ANSWER2).
             Log = log,
+            // A set-up step's tab and its build kept served until the verdict (REVIEWENV1d), across every look.
+            Reviews = Reviews,
         };
         await _watch.RunAsync(
             async (report, ticked) =>
@@ -679,6 +696,8 @@ public sealed class DriverLoop(
                 if (reach is null) Words.Tell(session);
             };
             chat.TakenUpEnded += (session, state) => _ = Ended(eventBus, session, state);
+            // An Ask Daoris conversation going on writes its room as an open does (ASKHIST1), from the module's reading.
+            chat.DescribeHelp = ct => DescribeHelp is { } describe ? describe(ct) : Task.FromResult<HelpMachine?>(null);
             Chat = chat;
         }
 

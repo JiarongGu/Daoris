@@ -547,6 +547,30 @@ internal sealed class ChatLedger : HttpMessageHandler
                 case ("GET", "/api/quests"):
                     return (HttpStatusCode.OK, new JsonArray([.. _quests.Select(quest => quest.DeepClone())]).ToJsonString());
 
+                // ASKHIST1: Ask Daoris's open, its record in the room's "repository", one running at a time.
+                case ("POST", "/api/sessions/help"):
+                {
+                    var asked = JsonNode.Parse(body!)!;
+                    if (_sessions.FirstOrDefault(s => s["repository"]!.GetValue<string>() == HelpRoom.Repository
+                                                     && Live.Contains(s["state"]!.GetValue<string>())) is { } running)
+                    {
+                        return (HttpStatusCode.Conflict, new JsonObject
+                        {
+                            ["error"] = $"Ask Daoris already has a conversation running — `{running["id"]}`.",
+                        }.ToJsonString());
+                    }
+
+                    var session = new JsonObject
+                    {
+                        ["id"] = $"h{_sessions.Count + 1}", ["repository"] = HelpRoom.Repository, ["state"] = "queued", ["kind"] = "chat",
+                        ["adapter"] = asked["adapter"]!.GetValue<string>(), ["harnessVersion"] = asked["harnessVersion"]?.GetValue<string>(),
+                        ["profile"] = asked["profile"]?.GetValue<string>(), ["tree"] = asked["room"]?.GetValue<string>(),
+                        ["created"] = "2026-10-03T08:00:00Z", ["said"] = new JsonArray(),
+                    };
+                    _sessions.Add(session);
+                    return (HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "opened" }.ToJsonString());
+                }
+
                 case ("POST", "/api/sessions/chat"):
                 {
                     var asked = JsonNode.Parse(body!)!;

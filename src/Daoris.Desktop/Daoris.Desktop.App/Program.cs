@@ -120,7 +120,10 @@ internal static class Program
             // Daoris's own browser (D78), for a plugin server that drives it.
             sp.GetRequiredService<EngineBrowserHost>(),
             // What the person runs, and how long it takes, into the same log (LOG1b).
-            log));
+            log,
+            // A set-up step's tab in that browser, and its build served there until the person's verdict (REVIEWENV1d).
+            reviews: sp.GetRequiredService<ReviewTabs>()));
+        builder.Services.AddSingleton(sp => new ReviewTabs(sp.GetRequiredService<EngineBrowserHost>()));
         // The install's update (UPDATE1, D139): what is staged beside the install drains the loop and, once the work allows,
         // starts the launcher to swap `app/` and closes this application as the person's close does. A workspace build is no
         // install, and never updates this way.
