@@ -74,6 +74,13 @@ public static class DriverCommand
           quest review <id> reviewed|not-yet|skip ["…"]
               say what you saw of a set-up step's showing: reviewed lets the work it holds land; not-yet, with your
               words, sends them to the step's session as its next turn; skip lets this work land without a review.
+          quest review <id> off ["…"]  ·  quest review <id> on|<environment>
+          ask … --review rule|on|<environment>|off [--review-words "…"]
+          ask --set-review <id> on|<environment>|off ["…"]
+              choose whether work is reviewed before it lands, and where: a done quest's at its gate, where off is the
+              skip and on (the repository's default) or an environment it declares publishes a set-up step to show it
+              there; a new ask's, where rule (the default) leaves it to each repository's rule; or an ask's, the latest
+              standing, which applies its intake's proposal too.
           opinion ask <session> [--reviewer <adapter>] [--same-agent] ["…"]  ·  opinion show <session|opinion>
           opinion stop <opinion>  ·  opinion anyway <session> ["…"]  ·  opinion myself <session> ["…"]
               a session's second opinion before its work lands: ask another agent to read it (one of its rule's reviewers by

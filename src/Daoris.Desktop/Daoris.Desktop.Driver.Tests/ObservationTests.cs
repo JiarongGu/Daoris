@@ -10,6 +10,36 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class ObservationTests
 {
     /// <summary>
+    /// 🔴 FLAKE3 with D104: the driver's close records itself, stopped and interrupted, only where no stop came first. A stop made
+    /// before it decided the end, so the record says that stop and is never interrupted: the driver's, stood down for its reason;
+    /// the person's, stopped with what its door said.
+    /// </summary>
+    [Fact]
+    public void A_close_records_the_stop_made_before_it_and_itself_only_where_none_was()
+    {
+        var (closed, interrupted) = Observation.Closed(null);
+        Assert.Equal(("stopped", "ended.driver-closed", true), (closed.State, closed.Parts![0].Code, interrupted));
+
+        (closed, interrupted) = Observation.Closed(new SessionStop(Daoris.Driver.Driver.LostClaimNoted, Note: null));
+        Assert.Equal(("stood-down", "ended.lost-claim", false), (closed.State, closed.Parts![0].Code, interrupted));
+
+        (closed, interrupted) = Observation.Closed(new SessionStop(Reason: null, Note: null));
+        Assert.Equal(("stopped", "ended.stopped", false), (closed.State, closed.Parts![0].Code, interrupted));
+
+        var paused = Noted.Of(NoteCodes.EndedStopped, "stopped for the pause.");
+        (closed, interrupted) = Observation.Closed(new SessionStop(Reason: null, paused));
+        Assert.Equal(("stopped", "stopped for the pause.", false), (closed.State, closed.Note, interrupted));
+    }
+
+    /// <summary>Whose decision a stop was (SURF5b): the person's where the driver gave no reason of its own.</summary>
+    [Fact]
+    public void A_stop_with_the_drivers_reason_is_the_drivers_and_any_other_the_persons()
+    {
+        Assert.False(new SessionStop(Daoris.Driver.Driver.LostClaimNoted, Note: null).ByPerson);
+        Assert.True(new SessionStop(Reason: null, Note: null).ByPerson);
+    }
+
+    /// <summary>
     /// 🔴 A refused credential is OBSERVED in the tool's own words (AGT3b). Measured on Claude Code
     /// 2.1.280 with an invalid key: a text-mode run prints nothing for 189 s while it retries, then
     /// this one line, and exits 1. Read only where the harness itself said the run failed (AGT3c).

@@ -4815,10 +4815,17 @@ check(
 const goingOn = sayFromTerminal(heardId, 'and say where it lives');
 // The verb polls the record: a stub fast enough to take the words, work and end between two polls is read as taken and
 // moved on, which is as true; the next check proves it was the same record that went on (merging LAND2c, 2026-10-04).
+// It follows the words for its ten seconds and no longer (design §5.2), and kept words no look took by then are held for the
+// look it nudged, exit 0 (D137's MSG1e): under load the nudged look reopened the record after that, twice (FLAKE3). That
+// answer is as true, and the next check proves the same record went on with them.
+const goingOnLines = [
+  'sessions: going on: the same session took it.',
+  'sessions: taken: the session took it, and has moved since',
+  "sessions: held: the same session goes on with this at the driver's next look.",
+];
 check(
-  'with the headless loop running, words said to it are taken up by the SAME session, and the verb says so: going on, exit 0',
-  goingOn.code === 0
-    && /sessions: (going on: the same session took it\.|taken: the session took it, and has moved since)/.test(goingOn.out),
+  'with the headless loop running, words said to it are taken up by the SAME session, and the verb says so: going on, or held for its nudged look, exit 0',
+  goingOn.code === 0 && goingOnLines.some((line) => goingOn.out.includes(line)),
   goingOn.out,
 );
 const workedAgain = await heardSettled('and say where it lives');

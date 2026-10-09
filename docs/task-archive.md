@@ -12603,3 +12603,24 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **REVIEWENV1c4 — the service's gate sentence read from the twins' table** (service; after REVIEWENV1c2 and REVIEWENV1c3 merge). `HelpSettingProposalTests` reads the `gate` rows from `review-rules.json` instead of spelling them, so the service's copy cannot drift from the twins. Contract: D154's REVIEWENV1c2 note. Proof: the test failing when the table's sentence changes.
 
 **Outcome** 2026-10-09: `HelpSettingProposalTests` reads the review gate's sentences from `review-rules.json`'s `gate` rows instead of spelling them, so the service's copy cannot drift from the twins; a narrow merge-tool reach row sends the table to the service's suite. Detail: D154's REVIEWENV1c4 note; commits b59854d8, c96581b5.
+
+
+## FLAKE3 — the two flakes that repeated, fixed by their cause (2026-10-09)
+
+> - [ ] **FLAKE3 — the two flakes that repeated, fixed by their cause** (driver, tools; dispatched from its brief, under FLAKE1). `SessionsOutliveTheirLookTests`' stop before a failed look read `stopped` for `stood-down` twice under load; the family rehearsal's say check failed twice at the verb's wait. Fix each at its cause, never with a longer clock. Proof: the loaded loop before and after; a driver test of the verb's wait.
+
+**Outcome** 2026-10-09: a stop made before the driver's close is the record's (one rule, `Observation.Closed`, for the start's close and the carry-on's: a stop made first wins, stood down or the person's, never interrupted); `sessions say` waits on the answer of a loop that took its words (up to 30 s) instead of reading once at its deadline; the family rehearsal's say check accepts the held line D137's contract gives. Under load the watch test went from 6 failures in 60 to 60 of 60. Merged from a clean branch: a failed rehearsal's git fallback had committed in the agent's worktree (REHEARSEGIT1). Detail: FIX-LOG FLAKE3, notes under D104 and D137.
+
+
+## REVIEWENV1j — the review choice's terminal doors (2026-10-09, D154)
+
+> - [ ] **REVIEWENV1j — the review choice's terminal doors** (driver; after REVIEWENV1g). The ask composer's and the ask page's review choice (the rule, on, an environment, off) has no terminal twin (D50), and `quest review` takes only the verdicts. Add `daoris-driver ask --review <rule|on|<environment>|off>` and `daoris-driver quest review <id> off|on|<environment>`, each answering as the page's press does, and name them in the page's twins. Contract: D154 §1.5–§1.6, D50. Proof: the verbs' tests, the usage golden, `HelpCoverageTests`' rows.
+
+**Outcome** 2026-10-09: the review choice has its terminal doors through the routes the page presses: `daoris-driver ask … --review rule|on|<environment>|off [--review-words]`, `ask --set-review <id> on|<environment>|off` (not §1.5's `--review <id>`, since an ask's id is also a valid environment name), and `quest review <id> off|on|<environment>` (the gate's skip and *Set it up*); a named environment judged against the rule first, the service's sentences printed whole, a keyless call on a keyed host refused verbatim; Ask Daoris's room names them. Follow-up: REVIEWENV1j2. Detail: D154's REVIEWENV1j note; commits d2c87ad5…a8401256.
+
+
+## WORKFLOW1d — named workflows and their versions (2026-10-09, D157)
+
+> - [ ] **WORKFLOW1d — named workflows and their versions** (cli, driver; after a). `<home>/workflows/<id>.json`: steps, validation (kinds this build runs, the order before the landing, groups, bounds), versions never edited, presets built in; `workflow new|edit|apply|list|show|export|import`, each printing its diff. Contract: §2.4–§2.6, §3.3, §4.7. Proof: twin tests on one table.
+
+**Outcome** 2026-10-09: named workflows: `<home>/workflows/<id>.json`, each version validated (its shape, at most 24 steps, the runtime's order, the kinds this build runs, `check`/`stage`/`all` designed but never offered) and never edited, only added to, the newest 20 kept; a digest over a hand-built canonical text; a diff by step id saying the person's part first and what leaves the machine without a press; four presets built in; twins `namedworkflows.ts` and `WorkflowNamed.cs` held to `fixtures/workflow-named.json`; `daoris driver workflow list|show|new|edit|apply|export|import`, each saying nothing chooses a named workflow yet (WORKFLOW1e). Detail: D157's WORKFLOW1d note, the twins row; commits 637b2817…95398a84.

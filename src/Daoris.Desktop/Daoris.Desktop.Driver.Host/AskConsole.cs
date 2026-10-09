@@ -10,12 +10,17 @@ namespace Daoris.Driver.Host;
 /// daoris-driver ask --close &lt;id&gt; --reason "…"
 /// daoris-driver ask --delete &lt;id&gt;
 /// daoris-driver ask --go-ahead &lt;id&gt; &lt;n&gt; approve|refuse ["…"]
+/// daoris-driver ask … --review rule|on|&lt;environment&gt;|off [--review-words "…"]
+/// daoris-driver ask --set-review &lt;id&gt; on|&lt;environment&gt;|off ["…"]
 /// </code>
 /// <para><c>--delete</c> removes an ask made by mistake with every quest asked by it, or refuses whole
 /// when one of them must stay (D95) — the ask's record's <i>Delete</i> is the other door.</para>
 /// <para><c>--go-ahead</c> answers a go-ahead a session asked on the ask, with the person's words if any (KNOWUSE1a):
 /// every session on the ask is handed the answer, and a parked session none of whose go-aheads waits any more goes on with
 /// them (GOAHEAD2). The ask's page's <i>Go-aheads</i> is the other door.</para>
+/// <para><c>--review</c> chooses whether a new ask's work is reviewed before it lands, and where, as the composer does, <c>rule</c>
+/// (its default) sending none; <c>--set-review</c> changes an ask's choice, or applies its intake's proposal, as its page's
+/// <i>Set</i> and <i>Apply</i> do (REVIEWENV1j). The judgement is the library's (<see cref="AskReviewCommand"/>).</para>
 /// <para>The service answers with the tier that answered — by declarations only, with no intake
 /// harness, which proposes and publishes nothing; or the receiver named with <c>--to</c>, published
 /// at once. The answer is printed verbatim: it is the contract, and a rewording here would be a second
@@ -29,6 +34,7 @@ internal static class AskConsole
     public static async Task<int> RunAsync(string[] args)
     {
         string? workspace = null, to = null, publish = null, close = null, reason = null, delete = null, goAhead = null;
+        string? review = null, reviewWords = null, setReview = null;
         var files = new List<string>();
         var links = new List<string>();
         var words = new List<string>();
@@ -48,13 +54,31 @@ internal static class AskConsole
                 case "--delete": delete = Value(); break;
                 case "--go-ahead": goAhead = Value(); break;
                 case "--reason": reason = Value(); break;
+                // REVIEWENV1j: the composer's review choice, and the ask page's.
+                case "--review": review = Value(); break;
+                case "--review-words": reviewWords = Value(); break;
+                case "--set-review": setReview = Value(); break;
                 default: words.Add(args[i]); break;
             }
         }
 
         try
         {
+            // A new ask's choice is a new ask's: beside another verb it would be dropped unsaid, so it is a problem instead.
+            if ((review ?? reviewWords) is not null && (publish ?? close ?? delete ?? goAhead ?? setReview) is not null)
+            {
+                return Usage("--review goes with a new ask's words; --set-review <id> changes an ask's review choice");
+            }
+
             using var service = ServiceClient.FromEnvironment();
+            var reviews = new AskReviewWorld(service, () => DriverConfig.Load(DriverConfig.ResolvePath()));
+
+            if (setReview is not null)
+            {
+                if (AskReviewCommand.Read(setReview, words, out var setProblem) is not { } chosen) return Usage(setProblem!);
+                // The ask page's twin (D50): its *Set*, and *Apply* on an intake's proposal.
+                return await AskReviewCommand.RunAsync(chosen, reviews, Console.Out).ConfigureAwait(false);
+            }
 
             if (publish is not null)
             {
@@ -87,6 +111,15 @@ internal static class AskConsole
             var sentence = string.Join(' ', words).Trim();
             if (sentence.Length == 0) return Usage("an ask needs its words");
 
+            // The composer's twin (D50): `rule` sends none, and a named environment is one the workspace declares, as it offers.
+            if (AskReviewCommand.Compose(review, reviewWords, out var reviewProblem) is not { } composed) return Usage(reviewProblem!);
+            if (composed.Choice is { } choice
+                && await AskReviewCommand.UndeclaredAsync(choice, workspace ?? "default", reviews).ConfigureAwait(false) is { } undeclared)
+            {
+                Console.WriteLine(undeclared);
+                return 1;
+            }
+
             // Files are read HERE, on the machine that has them, and travel whole to the local host —
             // which keeps them under this machine's home (D65 §2).
             var read = new List<(string Name, byte[] Content)>();
@@ -97,7 +130,8 @@ internal static class AskConsole
                 read.Add((Path.GetFileName(full), await File.ReadAllBytesAsync(full).ConfigureAwait(false)));
             }
 
-            return Report(await service.AskAsync(workspace ?? "default", sentence, links, read, to).ConfigureAwait(false));
+            return Report(await service.AskAsync(
+                workspace ?? "default", sentence, links, read, to, review: composed.Choice, reviewWords: composed.Words).ConfigureAwait(false));
         }
         catch (DriverException error)
         {
@@ -127,6 +161,8 @@ internal static class AskConsole
         Console.Error.WriteLine("       daoris-driver ask --close <id> --reason \"…\"");
         Console.Error.WriteLine("       daoris-driver ask --delete <id>");
         Console.Error.WriteLine("       daoris-driver ask --go-ahead <id> <n> approve|refuse [\"…\"]");
+        Console.Error.WriteLine("       daoris-driver ask … --review rule|on|<environment>|off [--review-words \"…\"]");
+        Console.Error.WriteLine("       daoris-driver ask --set-review <id> on|<environment>|off [\"…\"]");
         return 2;
     }
 }
