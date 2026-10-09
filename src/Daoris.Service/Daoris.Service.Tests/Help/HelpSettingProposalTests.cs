@@ -188,18 +188,35 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     }
 
     /// <summary>
-    /// What every door says after a review rule's own sentences, in the gate's words: the shared table's <c>gate</c> rows,
-    /// <c>src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/review-rules.json</c>, spelled here from the table and
-    /// never from the tool, so a change to one is seen at the other (REVIEWENV1c3).
+    /// What every door says after a review rule's own sentences, in the gate's words: each sentence of the shared table's
+    /// <c>gate</c> rows, <c>src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/review-rules.json</c>, which the driver's
+    /// <c>ReviewRulesTests</c> and the CLI's <c>driverconfig.test.ts</c> read too. Read from the table, never spelled here, so
+    /// the tool's copy cannot drift from the twins' (REVIEWENV1c4).
     /// </summary>
-    private const string GateSays = "Where work here waits for your review, it lands only once you say it is reviewed, "
-        + "`daoris-driver quest review <quest> reviewed`, or skip the review, `daoris-driver quest review <quest> skip`. "
-        + "No set-up step is composed for you yet.";
+    private static IReadOnlyList<string> GateSays()
+    {
+        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(
+            Root(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "review-rules.json")));
+        return
+        [
+            .. table.RootElement.GetProperty("gate").EnumerateArray()
+                .SelectMany(row => row[2].EnumerateArray()).Select(sentence => sentence.GetString()!).Distinct(),
+        ];
+    }
+
+    /// <summary>The workspace root, found by walking up from the test binaries to <c>daoris.json</c>.</summary>
+    private static string Root()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "daoris.json"))) directory = directory.Parent;
+        return directory?.FullName ?? throw new InvalidOperationException("no workspace root above the test binaries");
+    }
 
     /// <summary>
     /// REVIEWENV1a (D154 points 1–2, design §1.7), as REVIEWENV1c3 words it: the tool tells the helper what a review takes,
     /// that production is never one, that `--required` is the person's say-so, and what the landing's gate then does with
-    /// work that waits, in the sentence every other door says. Never that nothing reads it: the gate does (REVIEWENV1c).
+    /// work that waits, in the sentence every other door says, the twins' table's (REVIEWENV1c4). Never that nothing reads
+    /// it: the gate does (REVIEWENV1c).
     /// </summary>
     [Fact]
     public void The_tool_says_what_a_review_takes_that_production_is_never_one_and_what_the_gate_does()
@@ -216,10 +233,12 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
         Assert.Contains("a review", Described("workspace"));
         Assert.Contains("never production", tool);
         Assert.Contains("propose it only when they ask", tool);
-        Assert.Contains(GateSays, tool);
 
         // The review's clause runs from its door's name to the opinion's, whose rule nothing reads yet.
         var review = tool[tool.IndexOf("`review` declares", StringComparison.Ordinal)..tool.IndexOf("`opinion` declares", StringComparison.Ordinal)];
+        var gate = GateSays();
+        Assert.NotEmpty(gate);
+        foreach (var sentence in gate) Assert.Contains(sentence, review);
         Assert.DoesNotContain("declared only", review, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("nothing reads it", review, StringComparison.OrdinalIgnoreCase);
     }

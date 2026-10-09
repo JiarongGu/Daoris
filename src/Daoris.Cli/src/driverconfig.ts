@@ -35,7 +35,6 @@ import {
   OPINION_DECLARED_ONLY, applyOpinionEdit, opinionListed, opinionSays, opinionsOf, sameAgentOf, type OpinionEdit,
   type OpinionRule, type OpinionSetting,
 } from './opinions.ts';
-import { currentWorkflow, workflowPluginsOf, workflowSaid } from './workflows.ts';
 import type { CommandArgs } from './types.ts';
 import type { ExitCode } from './errors.ts';
 
@@ -504,6 +503,19 @@ const unhanded: RecordsReader = async () => ({ unread: 'this command was handed 
 const uncheckable: CheckoutsReader = async () => ({ unread: 'this command was handed no way to read it' });
 
 /**
+ * The `workflow` verbs' door (WORKFLOW1a, WORKFLOW1d), handed in by the `driver` row: `workflowdoor.ts` reads what a workflow may
+ * say through `namedworkflows.ts`, which asks this module's `landingProblem` of a pattern, so importing the door here would
+ * make the two a cycle.
+ */
+export type WorkflowDoor = (args: CommandArgs, context: { path: string; choices: DriverChoices; checkouts: CheckoutsReader }) =>
+  ExitCode | Promise<ExitCode>;
+
+/** No workflow door was handed in. */
+const unhandedWorkflows: WorkflowDoor = () => {
+  throw new DaorisError('`driver workflow` was handed no door here: `daoris driver workflow` is its terminal\'s.');
+};
+
+/**
  * Read or change what this machine drives. Every verb edits `driver.json` and answers at once, but `retry <quest>` without
  * `--at`, which counts the quest's failures from the records `records` reads (RETRY1b) and answers when they are read.
  *
@@ -517,10 +529,13 @@ const uncheckable: CheckoutsReader = async () => ({ unread: 'this command was ha
  * module reaches no network. Absent, they cannot be read, and such a retry is refused.
  * @param checkouts How the registry's checkouts are read, for `review` to check a procedure in (REVIEWENV1a): handed in the
  * same way. Absent, a rule is written unchecked, and the terminal says so.
+ * @param workflows The `workflow` verbs (`workflowdoor.ts`'s `commandWorkflow`), handed in the same way.
  */
 export function commandDriver(
-  { argv, write }: CommandArgs, records: RecordsReader = unhanded, checkouts: CheckoutsReader = uncheckable,
+  args: CommandArgs, records: RecordsReader = unhanded, checkouts: CheckoutsReader = uncheckable,
+  workflows: WorkflowDoor = unhandedWorkflows,
 ): ExitCode | Promise<ExitCode> {
+  const { argv, write } = args;
   const verb = argv[0] ?? 'list';
   const path = driverConfigPath();
   const choices = readDriverChoices(path);
@@ -1093,11 +1108,10 @@ export function commandDriver(
     case 'opinion':
       return opinion();
 
-    // How work here moves, drawn from the rules as they stand (WORKFLOW1a, D157 point 7, design §2.7, §4.7): `show` for a
-    // repository, its workspace read from the registry as `review` reads it, or for a workspace from this file alone. It writes
-    // nothing: the rules stay the authority, and the repository's and the workspace's pages draw the same (WORKFLOW1b).
+    // How work here moves (D157, design §4.7): Current, drawn from the rules as they stand (WORKFLOW1a), and the workflows the
+    // person names, each a file of versions beside this one (WORKFLOW1d). The door is handed in (`WorkflowDoor` says why).
     case 'workflow':
-      return workflow();
+      return workflows(args, { path, choices, checkouts });
 
     default:
       throw new DaorisError(
@@ -1465,68 +1479,6 @@ export function commandDriver(
 
     write(`  Written to ${path}.`);
     return 0;
-  }
-
-  /**
-   * `workflow show` (WORKFLOW1a): a repository's or a workspace's Current, derived by the twin's function (`workflows.ts`) from
-   * the plugins beside the file and the rules in it. A repository's workspace is the registry's, read as `review` reads it;
-   * unread, it is drawn only where no rule in the file is set for a workspace, since none could then reach it.
-   */
-  function workflow(): ExitCode | Promise<ExitCode> {
-    const usage = '`driver workflow` takes show --repository <name>|--workspace <name>: the workflow its work follows, '
-      + 'Current, read from its rules as they stand — e.g. `daoris driver workflow show --repository web-app`.';
-    if (argv[1] !== 'show') throw new DaorisError(usage);
-    const valued = new Set(['--repository', '--workspace']);
-    for (let at = 2; at < argv.length; at += 1) {
-      const token = argv[at]!;
-      if (valued.has(token)) at += 1;
-      else if (token.startsWith('--')) throw new DaorisError(`\`${token}\` is not a flag \`driver workflow show\` takes — ${usage}`);
-      else throw new DaorisError(usage);
-    }
-
-    const repository = flagValue(argv, '--repository');
-    const workspace = flagValue(argv, '--workspace');
-    if ((repository === undefined) === (workspace === undefined)) throw new DaorisError(usage);
-    // The plugins beside the file, as the driver reads them, the landing's and the opinion's doors with it.
-    const plugins = workflowPluginsOf(readPlugins(dirname(path)));
-
-    if (workspace !== undefined) {
-      const drawn = currentWorkflow(choices, null, workspace, plugins);
-      for (const line of workflowSaid(drawn, `the workspace \`${workspace}\``, 'for each repository there that sets none of its own')) {
-        write(line);
-      }
-      return 0;
-    }
-
-    const name = repository!;
-    return checkouts().then((read) => {
-      const notes: string[] = [];
-      let inWorkspace: string | null = null;
-      let where: string;
-      if ('unread' in read) {
-        const atWorkspace = [choices.workspaceLandings, choices.workspaceReviews, choices.workspaceOpinions]
-          .some((map) => Object.keys(map).length > 0);
-        if (atWorkspace) {
-          throw new DaorisError(`cannot say which workspace's rules reach \`${name}\`: the registry could not be read — `
-            + `${read.unread} — and this file sets rules for a workspace. Nothing was drawn. \`--workspace <name>\` draws a `
-            + 'workspace\'s Current from this file alone.');
-        }
-        where = 'its workspace not read';
-        notes.push(`  The registry was not read (${read.unread}); no rule here is set for a workspace, so none reaches it.`);
-      } else {
-        const checkout = read.checkouts.find((each) => inScope(each, { repository: name }));
-        inWorkspace = checkout?.workspace ?? null;
-        where = `in the workspace \`${normalizeWorkspace(inWorkspace)}\``;
-        if (checkout === undefined) {
-          notes.push(`  \`${name}\` is not in the registry, so it is read as in no workspace: the \`${normalizeWorkspace(null)}\` `
-            + 'workspace\'s rules reach it.');
-        }
-      }
-
-      const [header, ...rest] = workflowSaid(currentWorkflow(choices, name, inWorkspace, plugins), `\`${name}\``, where);
-      for (const line of [header!, ...notes, ...rest]) write(line);
-      return 0 as ExitCode;
-    });
   }
 
   function toggle(field: 'drivable' | 'holds', repository: string, present: boolean): ExitCode {

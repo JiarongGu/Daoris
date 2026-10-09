@@ -12,13 +12,16 @@ namespace Daoris.Driver;
 /// </summary>
 internal static class DriverHttp
 {
+    /// <summary>How long one request is given: what a loop's say may take at most, which <c>sessions say</c> waits out (FLAKE3).</summary>
+    public static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
+
     /// <summary>A client for one host, carrying its key when there is one. The handler parameter is
     /// the test seam — production callers pass none and get the real transport.</summary>
     public static HttpClient Client(string? key, HttpMessageHandler? handler = null)
     {
         var http = handler is null
-            ? new HttpClient { Timeout = TimeSpan.FromSeconds(30) }
-            : new HttpClient(handler, disposeHandler: false) { Timeout = TimeSpan.FromSeconds(30) };
+            ? new HttpClient { Timeout = Timeout }
+            : new HttpClient(handler, disposeHandler: false) { Timeout = Timeout };
         if (!string.IsNullOrWhiteSpace(key))
         {
             http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", key);

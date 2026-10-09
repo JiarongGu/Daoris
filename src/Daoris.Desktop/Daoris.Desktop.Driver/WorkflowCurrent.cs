@@ -5,7 +5,10 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>The kinds of step Current draws (the workflow design §3.2): each at most once, so a step's id is its kind.</summary>
+/// <summary>
+/// The kinds of step (the workflow design §3.2). Current draws the first five, each at most once, so its step's id is its kind;
+/// a named workflow may hold every one, and <see cref="WorkflowKindTable"/> says how much of each this build runs (WORKFLOW1d).
+/// </summary>
 public static class WorkflowKinds
 {
     public const string Work = "work";
@@ -13,6 +16,10 @@ public static class WorkflowKinds
     public const string Look = "look";
     public const string Landing = "landing";
     public const string PullRequest = "pull-request";
+    public const string GoAhead = "go-ahead";
+    public const string Check = "check";
+    public const string Stage = "stage";
+    public const string All = "all";
 }
 
 /// <summary>The person's part in a step (design §3.1), said apart from who acts in it.</summary>
@@ -76,6 +83,9 @@ public static class WorkflowLimits
     public const string PullRequestUnread = "pull-request-unread";
     public const string PullRequestAtCleanUp = "pull-request-at-clean-up";
 
+    /// <summary>A named workflow's go-ahead step (WORKFLOW1d): Current never draws one, and a run raising one is WORKFLOW1l's.</summary>
+    public const string GoAheadPartial = "go-ahead-partial";
+
     public static IReadOnlyList<(string Code, string Says)> Table { get; } =
     [
         // XAGENT1f gates every landing door on it; the screens are XAGENT1g's and the task level's choice XAGENT1h's.
@@ -90,6 +100,8 @@ public static class WorkflowLimits
         (PullRequestUnread, "Its plugin answers no `work/state`, so Daoris never reads whether the pull request was merged or "
             + "abandoned."),
         (PullRequestAtCleanUp, "Its state is asked of its plugin only when branches are cleaned up, never while someone waits on it."),
+        (GoAheadPartial, "Partial: a session asks you for a go-ahead as it needs one; a step that raises one at its place and waits "
+            + "on your answer is not built yet."),
     ];
 
     /// <summary>The sentence a limit is said in.</summary>
@@ -255,7 +267,8 @@ public static class WorkflowCurrent
         _ => throw new ArgumentException($"a setting is text, a switch or a list of names, not {value.GetType().Name}."),
     };
 
-    private static string Quoted(string text)
+    /// <summary>Text quoted for a digest's text, by hand: <c>\</c>, <c>"</c> and each control character escaped (WORKFLOW1d's digest too).</summary>
+    internal static string Quoted(string text)
     {
         var quoted = new StringBuilder("\"");
         foreach (var c in text)

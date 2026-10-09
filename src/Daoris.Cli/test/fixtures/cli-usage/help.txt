@@ -170,6 +170,25 @@ daoris <command> [options]
                                                    step, who takes part, who
                                                    acts, where it was set, and
                                                    what it cannot do yet
+                         workflow list · workflow show <id>[@<version>]
+                                                   the workflows you named, under
+                                                   $DAORIS_HOME/workflows/, each
+                                                   a list of versions never
+                                                   edited; and the presets
+                         workflow new <id> --from <preset>|current:<repo>|<id>[@<v>]
+                                [--with-opinion] [--with-look] [--name "…"]
+                         workflow edit <id> [--base <v>] <change>…
+                                                   add <kind> --after <step>,
+                                                   remove, set <step> <f>=<v>,
+                                                   move <step> --after <step>,
+                                                   on <step> failed=…
+                         workflow apply <id> <file> [--base <v>]
+                         workflow export <id> [--to <file>] · workflow import <file>
+                                                   each change saved as the next
+                                                   version, said step by step and
+                                                   your part first (--plan: say
+                                                   it, save nothing); nothing
+                                                   chooses a named one yet
                          notify on|off           say so when a session parks,
                                                    or ends without you asking
                          intake <adapter>|off      answer an ask the declarations

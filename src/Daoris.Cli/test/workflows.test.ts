@@ -8,6 +8,7 @@ import { OPINION_DECLARED_ONLY } from '../src/opinions.ts';
 import { MANIFEST, pluginsRoot } from '../src/plugins.ts';
 import type { CheckoutsReader } from '../src/reviews.ts';
 import { WORKFLOW_LIMITS, currentWorkflow, workflowCanonical, type WorkflowPlugin, type WorkflowStep } from '../src/workflows.ts';
+import { commandWorkflow } from '../src/workflowdoor.ts';
 import { makeFixture } from './_fixture.ts';
 
 /**
@@ -84,7 +85,7 @@ async function show(argv: string[], path: string, checkouts?: CheckoutsReader): 
   try {
     const code = await commandDriver({
       root: process.cwd(), argv, write: (line) => lines.push(line), packageRoot: process.cwd(),
-    }, undefined, checkouts);
+    }, undefined, checkouts, (each, context) => commandWorkflow(each, context));
     return { code, out: lines.join('\n') };
   } finally {
     if (saved === undefined) delete process.env.DAORIS_DRIVER_CONFIG;
@@ -179,18 +180,16 @@ test('with the registry unread, a repository is drawn only where no workspace-le
   fx.cleanup();
 });
 
-test('workflow says what it takes: only show is built, for one repository or one workspace', async () => {
+test('workflow show says what it takes: Current for one repository or one workspace, or a named workflow', async () => {
   const fx = makeFixture('workflow-show-usage');
-  const usage = '`driver workflow` takes show --repository <name>|--workspace <name>: the workflow its work follows, '
-    + 'Current, read from its rules as they stand — e.g. `daoris driver workflow show --repository web-app`.';
-  for (const argv of [
-    ['workflow'], ['workflow', 'list'], ['workflow', 'show'], ['workflow', 'show', '--repository', 'a', '--workspace', 'b'],
-  ]) {
-    await assert.rejects(show(argv, at(fx), unread), (error: Error) => {
-      assert.equal(error.message, usage, argv.join(' '));
-      return true;
-    });
-  }
+  const usage = '`driver workflow show` takes --repository <name>|--workspace <name>: the workflow its work follows, '
+    + 'Current, read from its rules as they stand — e.g. `daoris driver workflow show --repository web-app`; or a named '
+    + 'workflow\'s <id>[@<version>].';
+  await assert.rejects(show(['workflow', 'show', '--repository', 'a', '--workspace', 'b'], at(fx), unread), (error: Error) => {
+    assert.equal(error.message, usage);
+    return true;
+  });
+  // The kind is WORKFLOW1e's to read.
   await assert.rejects(show(['workflow', 'show', '--repository', 'a', '--kind', 'docs'], at(fx), unread), (error: Error) => {
     assert.equal(error.message, `\`--kind\` is not a flag \`driver workflow show\` takes — ${usage}`);
     return true;

@@ -441,6 +441,12 @@ export const REACH = Object.freeze([
     why: 'every desktop project builds with it: the suites, the headless host the family rehearsal drives, and the deployed shell',
   },
   { paths: ['src/Daoris.Desktop/README.md'], gates: ['modules', 'service'], why: "the modules' route test reads its table, and the service's suite reads this repository's documents" },
+  // Before the driver's tests, which would place it first: the service's tool test reads it too. No Process class reads it.
+  {
+    paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/review-rules.json'],
+    gates: ['driver', 'service'],
+    why: "the driver's ReviewRulesTests and the service's HelpSettingProposalTests read the review rules' table (REVIEWENV1c4); the CLI's twin runs in verify",
+  },
   { paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**'], gates: ['driver', 'driver-process'], why: "the driver's tests, both halves" },
   { paths: ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/**'], gates: ['modules', 'modules-process'], why: "the modules' tests, both halves" },
   // Before the service's tests, which would place it first: the driver's twin reads it too.

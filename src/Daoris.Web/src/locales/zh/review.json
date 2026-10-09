@@ -28,6 +28,7 @@
   "review.choice.off": "不审阅",
   "review.choice.on": "在默认环境中审阅",
   "review.choice.in": "在 `{{environment}}` 中审阅",
+  "review.choiceTwin": "在终端里，`daoris-driver quest review {{quest}} off \"…\"` 跳过审阅，`daoris-driver quest review {{quest}} on|<environment>` 把它搭建起来。",
   "review.setUp.newest": "它展示了什么",
   "review.setUp.older": "之前的展示",
   "review.setUp.where": "在哪里",
