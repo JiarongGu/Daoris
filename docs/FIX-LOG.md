@@ -27,7 +27,8 @@ repository.
 - **Verify:** `A_session_still_ending_from_its_stop_when_the_watch_closes_records_the_stop_not_the_close` holds the order
   the race met, the stopped run still ending as the close comes: `stopped` and interrupted before the fix, `stood-down` with
   `ended.lost-claim` after. `ObservationTests`' close table failed first on the old rule. The sighted test under the same
-  load after the fix: 60 of 60 (20, then 40). **Not run:** the two `Process` rows
+  load after the fix: 60 of 60 (20, then 40). The driver's fast half, merged with main: 5547 green, six of them FLAKE3's
+  (one here, two in the close table, three in part 2); `npm run verify` green. **Not run:** the two `Process` rows
   `SessionsOutliveTheirLookProcessTests.A_close_straight_after_a_stop_records_the_stop_not_the_close` (a real stub stopped,
   by the driver's reason and by the person, then closed at once), written for the full set.
 - **Commit:** `fe994129`.
