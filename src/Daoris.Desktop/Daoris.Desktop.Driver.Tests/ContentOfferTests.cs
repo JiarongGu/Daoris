@@ -54,9 +54,7 @@ public sealed class ContentOfferTests : LandedFixture
         var trees = new SessionTrees(Home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(tree.Path, "work.txt", "the work\n", "the work");
-        await GitAsync(root, "checkout", "--quiet", "-b", "feature/x");
-        await GitAsync(root, "cherry-pick", $"main..{tree.Branch}");
-        await GitAsync(root, "checkout", "--quiet", "main");
+        await CherryPickAsync(root, tree.Branch, "feature/x");
 
         var row = await OfferAsync(trees, tree.Path, state: "failed");
 
