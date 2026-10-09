@@ -79,11 +79,11 @@ public sealed record OpinionEdit
 /// <remarks>
 /// <para>A TWIN with the CLI's <c>opinions.ts</c>: both hold one table, this suite's tests' <c>fixtures/opinion-rules.json</c>,
 /// cell for cell (<c>OpinionRulesTests</c> and <c>driverconfig.test.ts</c>): the reading and its precedence, every refusal in
-/// the same words, each door's sentences, the edits, and which reviewers are the working agent's own family.</para>
+/// the same words, each door's sentences and what each says after them of the gate, the edits, and which reviewers are the
+/// working agent's own family.</para>
 ///
 /// <para>Nothing here chooses a reviewer, starts a pass or holds a landing: the choice (XAGENT1b), the look and the landing gate
-/// (XAGENT1f) read it. <see cref="DeclaredOnly"/> is what its doors still say after a rule's sentences, untrue since XAGENT1f, and
-/// it changes at every door together.</para>
+/// (XAGENT1f) read it, and each door says so after a rule's sentences (<see cref="Gate"/>, XAGENT1f4).</para>
 /// </remarks>
 public static class OpinionRules
 {
@@ -99,8 +99,36 @@ public static class OpinionRules
     /// <summary>One pass's bound where the rule names none (design §2.3): a starting point, not a measurement.</summary>
     public const int DefaultMinutes = 20;
 
-    /// <summary>Said by each door after what the rule lets a reviewer do, until the choice and the gate read it (XAGENT1b, XAGENT1f).</summary>
+    /// <summary>
+    /// What each door said after a rule's sentences until the gate read it (XAGENT1a–XAGENT1f), untrue since XAGENT1f. No door
+    /// says it now (XAGENT1f4, <see cref="Gate"/>); it is kept so the tests that hold its absence name it, the workflow tables'
+    /// among them.
+    /// </summary>
     public const string DeclaredOnly = "Declared only: nothing reads it yet, so no reviewer is chosen and no landing waits for it.";
+
+    /// <summary>
+    /// Said by each door after the sentences of a rule that reads at <see cref="Landing"/> (XAGENT1f4, through <see cref="Gate"/>):
+    /// what the landing's gate does with work that waits for another agent's reading since XAGENT1f, and the person's two
+    /// terminal doors that answer it. The CLI's <c>OPINION_WAITING</c>, the page's <c>settings.opinion.says.waiting</c> and
+    /// <c>setting_propose</c>'s copy, held to the shared table's <c>gate</c> rows: the doors' words change together.
+    /// </summary>
+    public const string Waiting = "Where work here waits for another agent's reading, it lands only once that reading is settled, "
+        + "or once you go on without it, `daoris-driver opinion anyway <session>`, or say you looked yourself, "
+        + "`daoris-driver opinion myself <session>`.";
+
+    /// <summary>
+    /// Said after the sentences of a rule that reads at <see cref="Steps"/> (XAGENT1f4): the look sits the chain's next step while
+    /// the opinion on the step before is unsettled (XAGENT1f). The CLI's <c>OPINION_STEP_WAITING</c>.
+    /// </summary>
+    public const string StepWaiting = "Where a chain's next step here waits for another agent's reading of the step before it, it "
+        + "starts only once that reading is settled.";
+
+    /// <summary>
+    /// Said after the sentences of a rule that lets a reviewer run what is declared safe (XAGENT1f4): nothing hands a reviewer the
+    /// repository's declared safe commands yet (XAGENT1f3), so the rule's own sentence is a promise the gate does not keep yet.
+    /// The CLI's <c>OPINION_SAFE_NOT_HANDED</c>.
+    /// </summary>
+    public const string SafeNotHanded = "What this repository declares safe is not handed to a reviewer yet.";
 
     /// <summary>What stands where nothing is set anywhere (design §2.6): today's behaviour, said as such.</summary>
     public const string NoneSet = "None: no other agent reads work here.";
@@ -316,6 +344,23 @@ public static class OpinionRules
                 + "conversation of the same agent is not an independent reading, and each opinion says so.");
         }
 
+        return said;
+    }
+
+    /// <summary>
+    /// What each door says after the rule's own sentences (XAGENT1f4): what the gate does with work that waits for another agent's
+    /// reading, at landing (<see cref="Waiting"/>) and before a chain's next step (<see cref="StepWaiting"/>), as the rule's
+    /// occasions name them, then that what is declared safe is not handed to a reviewer yet where the rule lets one run it
+    /// (<see cref="SafeNotHanded"/>); nothing after <see cref="OpinionRule.None"/>, where nothing waits. The CLI's
+    /// <c>opinionGate</c>, by the shared table's <c>gate</c> rows.
+    /// </summary>
+    public static IReadOnlyList<string> Gate(OpinionRule rule)
+    {
+        if (rule.IsNone) return [];
+        var said = new List<string>();
+        if (rule.On.Contains(Landing)) said.Add(Waiting);
+        if (rule.On.Contains(Steps)) said.Add(StepWaiting);
+        if (rule.Verify) said.Add(SafeNotHanded);
         return said;
     }
 

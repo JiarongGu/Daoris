@@ -67,11 +67,13 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "[--run \"<command>\"] [--required|--not-required]` (`--workspace <name>` for a whole workspace), "
             + "`daoris driver review <repository> none|--drop <environment>|--clear`"),
         // XAGENT1a (D155 point 3): which other agent reads work before it lands; Ask Daoris proposes it as the `setting` kind's
-        // `opinion` door. Declared only until the choice of a reviewer and the gate read it (XAGENT1b, XAGENT1f).
+        // `opinion` door. The gate reads it since XAGENT1f, and the room says what it does in the sentences every door says after
+        // a rule's own, read from the twin (XAGENT1f4), as the review's row says its gate's.
         ("declare which other agent reads a repository's work before it lands, or a workspace's: reviewers named in the order "
             + "they are tried, another maker's agent by your naming, each reading in a copy of its own that nothing is taken back "
             + "from, at landing or each step, whether work waits for you when none can, whether it may run what is declared safe, "
-            + "and how long a pass may take (declared only: nothing reads it yet; never on unless you name a reviewer)",
+            + "and how long a pass may take (never on unless you name a reviewer). Each door then says what the gate does: "
+            + $"{OpinionRules.Waiting} {OpinionRules.StepWaiting} {OpinionRules.SafeNotHanded}",
             Setup + "Line and landing → Second opinion before landing; a workspace's, Repositories → the workspace's page → Setup → Defaults",
             "`daoris driver opinion <repository> --reviewers <adapter,adapter> [--on landing,steps] [--required|--not-required] "
             + "[--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck]` (`--workspace <name>` for a whole workspace), "
@@ -227,6 +229,20 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "*Set it up in `<environment>`*",
             "`daoris-driver ask … --review rule|on|<environment>|off`, `daoris-driver ask --set-review <id> on|<environment>|off "
             + "[\"…\"]`, `daoris-driver quest review <quest> off [\"…\"]`, `daoris-driver quest review <quest> on|<environment>`"),
+        // XAGENT1f4 (D155 point 10, design §8.5, §9): the person's presses at the second opinion's gate, the terminal's
+        // `daoris-driver opinion` and the screen's (XAGENT1g). Each is exempt from Ask Daoris (HelpCoverageTests): a pass spends an
+        // account at the person's choice and a stop is theirs, and going on, or reading it themselves, is their judgement (D110).
+        ("ask another agent to read a session's work now, again, or after it could not, or the same agent in a fresh "
+            + "conversation, which is never an independent reading; see where its second opinion stands; or stop a reading, which "
+            + "then gives no opinion (Ask Daoris never proposes these: a pass spends an account at your choice, and a stop is yours)",
+            "Sessions → the session's page → Second opinion: *Ask now*, *Ask again*, *Try again*, *Ask the same agent, fresh*, *Stop…*",
+            "`daoris-driver opinion ask <session> [--reviewer <adapter>] [--same-agent] [\"…\"]`, "
+            + "`daoris-driver opinion show <session|opinion>`, `daoris-driver opinion stop <opinion>`"),
+        ("answer a second opinion's gate yourself: go on without a settled one, what is unsettled staying so, or say you looked "
+            + "at the work yourself in place of another agent's reading; each is kept with your words at the commit it was given "
+            + "at, and nothing lands by it (Ask Daoris never proposes these: each is your judgement)",
+            "Sessions → the session's page → Second opinion, and What needs you: *Go on anyway…*, *I looked myself…*",
+            "`daoris-driver opinion anyway <session> [\"…\"]`, `daoris-driver opinion myself <session> [\"…\"]`"),
         ("answer what waits on the person", "Sessions, and what needs you", "`daoris-driver answer`"),
         // MSG1e (D137 §5.4): exempt from Ask Daoris, since the words are the person's (D133 §1); the room names both doors.
         ("say something to a session of this machine's, running, parked or ended: it reads your words at its next step or when "
