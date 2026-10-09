@@ -461,9 +461,11 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 // secret the client made (32 random bytes in base64url, a person key's form), in hex. The secret travels only once the
 // person has confirmed, as `Daoris-Person-Grant` on the same request sent again.
 public sealed record ConfirmationAskRequest(string? Method, string? Path, string? Body, string? SecretSha256);
-// One value the request carries: an address's (a route's parameter, then the query's) or the body's, a nested one named by
-// its path (`setUp.machine`, `units[0].id`), a string as it is and anything else as its JSON.
-public sealed record ConfirmationFieldResponse(string Name, string Value);
+// One value the request carries: an address's (a route's parameter, then the query's, by name) or the body's, by its JSON
+// pointer (`/setUp/machine`, `/units/0/id`; `~0` and `~1` escape a name's `~` and `/`). `Type` is its JSON type (`string`,
+// `number`, `boolean`, `null`, `object`, `array`), so a string "3" and a number 3 read apart; `Value` is a string as it is
+// and anything else as its JSON. Only names the door binds are ever shown: an ask carrying another is refused.
+public sealed record ConfirmationFieldResponse(string Name, string Type, string Value);
 // A confirmation as the window shows it and the terminal polls it: `State` is `waiting`, `confirmed`, `refused`,
 // `expired` or `used`; `Route` the door's pattern and `Act` its own name in the host's table (the form's, where the body
 // makes one); `Values` the address's values and `Fields` every value of the body, so nothing the grant would carry is out

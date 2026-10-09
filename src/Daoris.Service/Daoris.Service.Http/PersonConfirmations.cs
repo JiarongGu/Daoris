@@ -1,8 +1,9 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using Daoris.Knowledge;
-using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Options;
 
 namespace Daoris.Knowledge.Http;
 
@@ -32,7 +33,7 @@ public enum ConfirmationState
 /// </summary>
 public sealed record Confirmation(
     string Id, string Method, string Path, string Pattern, string Act,
-    IReadOnlyList<(string Name, string Value)> Values, IReadOnlyList<(string Name, string Value)> Fields, string? Body,
+    IReadOnlyList<ConfirmationValue> Values, IReadOnlyList<ConfirmationValue> Fields, string? Body,
     DateTimeOffset Asked, DateTimeOffset Expires, ConfirmationState State)
 {
     internal byte[] Hash { get; init; } = [];
@@ -52,6 +53,12 @@ public enum ConfirmationAskRefusal
     Shape,
     Full,
 }
+
+/// <summary>
+/// A grant whose secret and address hold (PERSONDOOR1b, after its review): what the gate reads of the call's body before
+/// it is taken, and no more than <see cref="Length"/> bytes and one.
+/// </summary>
+public sealed record Grantable(string Id, byte[] Hash, int Length);
 
 /// <summary>Why an answer was not taken: none, no such confirmation, or one no longer waiting.</summary>
 public enum ConfirmationAnswerRefusal
@@ -81,6 +88,16 @@ public enum ConfirmationAnswerRefusal
 /// session (§4.1); the answers are the key's. What a session asks is a card the person refuses or lets expire. Only a door
 /// that wants the key can be asked for, in the very form that wants it, and never the confirmations' own doors.</para>
 ///
+/// <para><b>The card shows only what binds</b> (after the review of PERSONDOOR1b). A body is asked for only with names its
+/// door binds, each once, and a query only with names its handler reads (<see cref="DoorContract"/>): a name the binder
+/// ignores would be shown and never kept, and could leave the door's own value unbound, so a card would show one act
+/// while its grant did another. Each value is named by its JSON pointer and keeps its JSON type.</para>
+///
+/// <para><b>Bounded before it is read</b>: an ask is read to <see cref="AskLimit"/> bytes, its body to
+/// <see cref="BodyLimit"/> and <see cref="FieldLimit"/> values, and while five wait a sixth is refused before its body is
+/// parsed. A grant's secret and address are checked before a byte of its call's body is read, and the body is read no
+/// further than the confirmed one and a byte.</para>
+///
 /// <para><b>The secret</b> is made by the client like a key: 32 random bytes in base64url without padding. The host holds
 /// only its SHA-256 (lowercase hex as asked), never answers that, and never logs either: a grant whose secret is not in
 /// that form grants nothing.</para>
@@ -89,7 +106,7 @@ public enum ConfirmationAnswerRefusal
 /// method and pattern. Never the id, the secret, its hash, the path's values or the body. A grant used writes nothing; a
 /// grant refused, and a sixth ask, are the gate's <c>person.refused</c> lines.</para>
 /// </remarks>
-public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool holds)
+public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool holds, Func<string, string, DoorContract?> contracts)
 {
     /// <summary>The header a client presents its secret in, with the request the person confirmed.</summary>
     public const string GrantHeader = "Daoris-Person-Grant";
@@ -105,6 +122,15 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
 
     /// <summary>How long one that ended is still answered to the terminal that polls it.</summary>
     public static readonly TimeSpan Kept = TimeSpan.FromMinutes(2);
+
+    /// <summary>The most bytes an asked request's body may be, in UTF-8.</summary>
+    public const int BodyLimit = 64 * 1024;
+
+    /// <summary>The most values a card may show: an asked body carrying more is refused before it is shown.</summary>
+    public const int FieldLimit = 256;
+
+    /// <summary>The most bytes an ask itself is read to, its asked body escaped inside it.</summary>
+    public const int AskLimit = 512 * 1024;
 
     /// <summary>What a client says while it waits (design §4.2 step 3), answered with an ask so both clients say it alike.</summary>
     public const string WaitingSentence = "Waiting for you to confirm this in Daoris's window…";
@@ -184,12 +210,13 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
         var (address, query) = question < 0 ? (path, "") : (path[..question], path[question..]);
         var unescaped = PathString.FromUriComponent(address).Value ?? "";
         // A shared host's doors are in the table and never mapped here (design §6).
-        if (PersonDoors.Resolve(verb, unescaped) is not { } resolved || resolved.Door.Class == DoorClass.Shared)
+        if (PersonDoors.Resolve(verb, unescaped) is not { } resolved || resolved.Door.Class == DoorClass.Shared
+            || contracts(verb, resolved.Door.Pattern) is not { } contract)
         {
             return Shape($"`{verb} {path}` is no door of this service, so nothing there waits for a confirmation.");
         }
 
-        var (door, values) = resolved;
+        var (door, route) = resolved;
         if (ReferenceEquals(door, PersonDoors.AskConfirmation) || ReferenceEquals(door, PersonDoors.Confirm)
             || ReferenceEquals(door, PersonDoors.Refuse))
         {
@@ -197,6 +224,21 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
         }
 
         var text = string.IsNullOrEmpty(body) ? null : body;
+        if (text is not null && Encoding.UTF8.GetByteCount(text) > BodyLimit)
+        {
+            return Shape($"`body` is over {BodyLimit / 1024} KB, more than a confirmation holds.");
+        }
+
+        var hash = (secretSha256 ?? "").Trim().ToLowerInvariant();
+        if (hash.Length != 64 || !hash.All(Uri.IsHexDigit))
+        {
+            return Shape("`secretSha256` is the SHA-256 of a secret the client made, 64 hexadecimal characters; the secret itself is never sent until it is used.");
+        }
+
+        // The places first, before anything is parsed: while five wait, a sixth costs nothing to refuse.
+        var hashBytes = Encoding.ASCII.GetBytes(hash);
+        if (Admits(hashBytes) is { } closed) return closed;
+
         JsonElement? parsed = null;
         if (text is not null)
         {
@@ -221,35 +263,16 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
             return Shape($"{Capitalized(door.Act ?? "This door")} is answered without the person's key, so it needs no confirmation: send it as it was.");
         }
 
-        var hash = (secretSha256 ?? "").Trim().ToLowerInvariant();
-        if (hash.Length != 64 || !hash.All(Uri.IsHexDigit))
-        {
-            return Shape("`secretSha256` is the SHA-256 of a secret the client made, 64 hexadecimal characters; the secret itself is never sent until it is used.");
-        }
+        var (values, fields, refusal) = contract.Read(route, query, parsed, FieldLimit);
+        if (refusal is not null) return Shape(refusal);
 
-        var hashBytes = Encoding.ASCII.GetBytes(hash);
         var now = clock.GetUtcNow();
         lock (_gate)
         {
-            Sweep(now);
-            if (_kept.Any(c => CryptographicOperations.FixedTimeEquals(c.Hash, hashBytes)))
-            {
-                return Shape("This secret's hash was asked already: a client makes a new secret for each ask.");
-            }
-
-            if (_kept.Count(c => c.State == ConfirmationState.Waiting) >= Most)
-            {
-                return (null, ConfirmationAskRefusal.Full, PersonDoors.FullSentence);
-            }
-
-            var queried = new List<(string Name, string Value)>(values);
-            foreach (var pair in new QueryStringEnumerable(query)) queried.Add((pair.DecodeName().ToString(), pair.DecodeValue().ToString()));
-
-            var fields = new List<(string Name, string Value)>();
-            if (parsed is { } element) Flatten(element, "", fields);
+            if (Admits(hashBytes) is { } taken) return taken;
 
             var confirmation = new Confirmation(
-                Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(8)), verb, path, door.Pattern, act, queried, fields, text,
+                Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(8)), verb, path, door.Pattern, act, values, fields, text,
                 now, now + Lasts, ConfirmationState.Waiting)
             {
                 Hash = hashBytes,
@@ -260,6 +283,24 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
             _kept.Add(confirmation);
             Write("asked", confirmation);
             return (confirmation, ConfirmationAskRefusal.None, WaitingSentence);
+        }
+    }
+
+    // Whether an ask with this hash may wait now: a hash asked already, or five waiting, refuse it. Judged once before the
+    // body is parsed and again as it is kept, since another ask may have taken the place between.
+    private (Confirmation?, ConfirmationAskRefusal, string)? Admits(byte[] hash)
+    {
+        lock (_gate)
+        {
+            Sweep(clock.GetUtcNow());
+            if (_kept.Any(c => CryptographicOperations.FixedTimeEquals(c.Hash, hash)))
+            {
+                return Shape("This secret's hash was asked already: a client makes a new secret for each ask.");
+            }
+
+            return _kept.Count(c => c.State == ConfirmationState.Waiting) >= Most
+                ? (null, ConfirmationAskRefusal.Full, PersonDoors.FullSentence)
+                : null;
         }
     }
 
@@ -291,27 +332,45 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
     }
 
     /// <summary>
-    /// Whether <paramref name="secret"/> grants this call, which uses its grant if it does: one the person confirmed, within
-    /// its two minutes, never used, for this method, this door, this unescaped path, this query and these bytes. A call
-    /// that differs uses nothing up, so the exact request still may.
+    /// The grant <paramref name="secret"/> holds for this call's address, before anything of its body is read: one the
+    /// person confirmed, within its two minutes, never used, for this method, this door, this unescaped path and this
+    /// query; null for none, so the gate refuses the call unread. Uses nothing up.
     /// </summary>
-    public bool Take(string secret, string method, string pattern, string unescaped, string query, byte[] body)
+    public Grantable? Expecting(string secret, string method, string pattern, string unescaped, string query)
     {
         // A secret is made as a key is; one in any other form was never a client's, and grants nothing.
-        if (secret.Length != 43 || PersonKey.Parse(secret) is null) return false;
+        if (secret.Length != 43 || PersonKey.Parse(secret) is null) return null;
         var hash = Encoding.ASCII.GetBytes(Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(secret))));
 
         lock (_gate)
         {
             Sweep(clock.GetUtcNow());
-            var index = _kept.FindIndex(c => c.State == ConfirmationState.Confirmed && CryptographicOperations.FixedTimeEquals(c.Hash, hash));
+            var found = _kept.Find(c => c.State == ConfirmationState.Confirmed && CryptographicOperations.FixedTimeEquals(c.Hash, hash));
+            return found is not null
+                && string.Equals(found.Method, method, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(found.Pattern, pattern, StringComparison.Ordinal)
+                && string.Equals(found.Unescaped, unescaped, StringComparison.Ordinal)
+                && string.Equals(found.Query, query, StringComparison.Ordinal)
+                    ? new Grantable(found.Id, hash, found.Bytes.Length)
+                    : null;
+        }
+    }
+
+    /// <summary>
+    /// Whether <paramref name="grant"/> covers a call whose body is <paramref name="body"/>, which uses it if it does: still
+    /// confirmed, in time and unused as it is taken, and its bytes the confirmed body's to the byte. A call that differs uses
+    /// nothing up, so the exact request still may.
+    /// </summary>
+    public bool Take(Grantable grant, ReadOnlySpan<byte> body)
+    {
+        lock (_gate)
+        {
+            Sweep(clock.GetUtcNow());
+            var index = _kept.FindIndex(c => c.Id == grant.Id);
             if (index < 0) return false;
 
             var found = _kept[index];
-            if (!string.Equals(found.Method, method, StringComparison.OrdinalIgnoreCase)
-                || !string.Equals(found.Pattern, pattern, StringComparison.Ordinal)
-                || !string.Equals(found.Unescaped, unescaped, StringComparison.Ordinal)
-                || !string.Equals(found.Query, query, StringComparison.Ordinal)
+            if (found.State != ConfirmationState.Confirmed || !CryptographicOperations.FixedTimeEquals(found.Hash, grant.Hash)
                 || !found.Bytes.AsSpan().SequenceEqual(body))
             {
                 return false;
@@ -320,6 +379,63 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
             _kept[index] = found with { State = ConfirmationState.Used };
             return true;
         }
+    }
+
+    /// <summary>
+    /// An ask, read here rather than bound so it is read no further than <see cref="AskLimit"/> and a byte: a JSON body,
+    /// which a page on another origin sends only with CORS's leave (design §4.2), parsed by the host's own options. The ask,
+    /// or the refusal to answer instead.
+    /// </summary>
+    public static async Task<(ConfirmationAskRequest? Ask, IResult? Refusal)> ReadAskAsync(HttpContext http, CancellationToken ct)
+    {
+        if (!Microsoft.Net.Http.Headers.MediaTypeHeaderValue.TryParse(http.Request.ContentType, out var type)
+            || !type.MediaType.Equals("application/json", StringComparison.OrdinalIgnoreCase))
+        {
+            return (null, Results.Json(
+                new ErrorResponse("An ask for a confirmation is a JSON body: `method`, `path`, `body` and `secretSha256`. Nothing was asked."),
+                statusCode: StatusCodes.Status415UnsupportedMediaType));
+        }
+
+        if (await ReadAtMostAsync(http.Request.Body, http.Request.ContentLength, AskLimit, ct) is not { } read)
+        {
+            return (null, Results.Json(
+                new ErrorResponse($"An ask for a confirmation is at most {AskLimit / 1024} KB. Nothing was asked."),
+                statusCode: StatusCodes.Status413PayloadTooLarge));
+        }
+
+        var json = http.RequestServices.GetRequiredService<IOptions<Microsoft.AspNetCore.Http.Json.JsonOptions>>().Value.SerializerOptions;
+        ConfirmationAskRequest? ask = null;
+        try
+        {
+            ask = JsonSerializer.Deserialize(read, (JsonTypeInfo<ConfirmationAskRequest>)json.GetTypeInfo(typeof(ConfirmationAskRequest)));
+        }
+        catch (JsonException)
+        {
+        }
+
+        return ask is null
+            ? (null, Results.BadRequest(new ErrorResponse(
+                "An ask for a confirmation is a JSON object: `method`, `path`, `body` and `secretSha256`. Nothing was asked.")))
+            : (ask, null);
+    }
+
+    /// <summary>
+    /// A body read whole when it is at most <paramref name="most"/> bytes, and null when it is longer, read no further than
+    /// one byte past it; a declared length past it is refused unread.
+    /// </summary>
+    public static async Task<byte[]?> ReadAtMostAsync(Stream body, long? declared, int most, CancellationToken ct)
+    {
+        if (declared > most) return null;
+        var buffer = new byte[(declared ?? most) + 1];
+        var filled = 0;
+        while (filled < buffer.Length)
+        {
+            var read = await body.ReadAsync(buffer.AsMemory(filled), ct);
+            if (read == 0) break;
+            filled += read;
+        }
+
+        return filled > most || (declared is { } length && filled != length) ? null : buffer[..filled];
     }
 
     // Expires what its two minutes ended for, once, saying so; forgets what ended two minutes before. Under the lock.
@@ -341,39 +457,6 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
     private void Write(string state, Confirmation confirmation) =>
         log.Info(Event, ("state", state), ("method", confirmation.Method), ("route", confirmation.Pattern));
 
-    /// <summary>
-    /// Every value a body carries, so nothing a grant would carry is out of the person's sight: a nested one named by its
-    /// path (<c>setUp.machine</c>, <c>units[0].id</c>), a string as it is, anything else as its JSON, and an empty object
-    /// or list as itself.
-    /// </summary>
-    private static void Flatten(JsonElement element, string name, List<(string Name, string Value)> into)
-    {
-        switch (element.ValueKind)
-        {
-            case JsonValueKind.Object:
-                var any = false;
-                foreach (var property in element.EnumerateObject())
-                {
-                    any = true;
-                    Flatten(property.Value, name.Length == 0 ? property.Name : $"{name}.{property.Name}", into);
-                }
-
-                if (!any && name.Length > 0) into.Add((name, "{}"));
-                break;
-            case JsonValueKind.Array:
-                var count = 0;
-                foreach (var item in element.EnumerateArray()) Flatten(item, $"{name}[{count++}]", into);
-                if (count == 0) into.Add((name, "[]"));
-                break;
-            case JsonValueKind.String:
-                into.Add((name, element.GetString()!));
-                break;
-            default:
-                into.Add((name, element.GetRawText()));
-                break;
-        }
-    }
-
     private static string Capitalized(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
 
     private static (Confirmation?, ConfirmationAskRefusal, string) Shape(string sentence) =>
@@ -382,7 +465,7 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
     /// <summary>The wire a confirmation is answered in: never its secret's hash.</summary>
     public static ConfirmationResponse Wire(Confirmation c) => new(
         c.Id, c.State.ToString().ToLowerInvariant(), c.Method, c.Path, c.Pattern, c.Act,
-        [.. c.Values.Select(v => new ConfirmationFieldResponse(v.Name, v.Value))],
-        [.. c.Fields.Select(f => new ConfirmationFieldResponse(f.Name, f.Value))],
+        [.. c.Values.Select(v => new ConfirmationFieldResponse(v.Name, v.Type, v.Value))],
+        [.. c.Fields.Select(f => new ConfirmationFieldResponse(f.Name, f.Type, f.Value))],
         c.Body, c.Asked, c.Expires);
 }

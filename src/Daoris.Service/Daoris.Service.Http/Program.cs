@@ -206,7 +206,10 @@ var app = builder.Build();
 
 // PERSONDOOR1b (D156 point 4): what a terminal asks the person to confirm, held in this start's memory only and judged by
 // the clock the services hold (the system's, unless a test moves one), and the gate that takes a confirmed grant once.
-var confirmations = new PersonConfirmations(app.Services.GetService<TimeProvider>() ?? TimeProvider.System, log, holds: personKey is not null);
+// What each door binds is read from its own endpoint when a confirmation is asked, so a card shows only what binds.
+var doorContracts = new DoorContracts(app.Services);
+var confirmations = new PersonConfirmations(
+    app.Services.GetService<TimeProvider>() ?? TimeProvider.System, log, holds: personKey is not null, doorContracts.For);
 var personGate = new PersonGate(personKey, log, confirmations);
 
 // A request that failed or took over two seconds, into the log (LOG1a). By its route's pattern, so an
@@ -756,9 +759,14 @@ if (mode == ServiceMode.Local)
             ? Results.Ok(PersonConfirmations.Wire(found))
             : Results.NotFound(new ErrorResponse(PersonConfirmations.NotFoundSentence(id))));
 
-    app.MapPost("/api/confirmations", (HttpContext http, ConfirmationAskRequest body) =>
+    // The ask is read here rather than bound, so it is read no further than its limit: a JSON body, which a page on
+    // another origin sends only with CORS's leave (design §4.2), parsed by the host's own options.
+    app.MapPost("/api/confirmations", async (HttpContext http, CancellationToken ct) =>
     {
-        var (asked, refusal, message) = confirmations.Ask(body.Method, body.Path, body.Body, body.SecretSha256);
+        var (body, unread) = await PersonConfirmations.ReadAskAsync(http, ct);
+        if (unread is not null) return unread;
+
+        var (asked, refusal, message) = confirmations.Ask(body!.Method, body.Path, body.Body, body.SecretSha256);
         return refusal switch
         {
             ConfirmationAskRefusal.None => Results.Ok(new ConfirmationActionResponse(PersonConfirmations.Wire(asked!), message)),

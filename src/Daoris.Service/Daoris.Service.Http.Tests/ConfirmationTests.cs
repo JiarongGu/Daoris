@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using Daoris.Knowledge;
 using Daoris.Knowledge.Http;
+using Microsoft.AspNetCore.Http;
 
 namespace Daoris.Service.Http.Tests;
 
@@ -72,6 +73,123 @@ public sealed class ConfirmationTests
     private static List<(string Name, string Value)> Pairs(JsonElement list) =>
         [.. list.EnumerateArray().Select(pair => (pair.GetProperty("name").GetString()!, pair.GetProperty("value").GetString()!))];
 
+    /// <summary>Each value a card shows: its JSON pointer, its JSON type and its value.</summary>
+    private static List<(string Name, string Type, string Value)> Typed(JsonElement list) =>
+        [.. list.EnumerateArray().Select(field => (
+            field.GetProperty("name").GetString()!, field.GetProperty("type").GetString()!, field.GetProperty("value").GetString()!))];
+
+    /// <summary>
+    /// One request whose body is <paramref name="body"/>, a stream the test controls: what the gate reads of it, and whether
+    /// it reads it at all.
+    /// </summary>
+    private static async Task<Answer> SendStreamAsync(
+        DaorisHost host, string method, string path, Stream body, string? grant, long? length = null,
+        string contentType = "application/json")
+    {
+        var question = path.IndexOf('?');
+        var context = await host.Server.SendAsync(http =>
+        {
+            http.Request.Method = method;
+            http.Request.Path = question < 0 ? path : path[..question];
+            http.Request.QueryString = question < 0 ? QueryString.Empty : new QueryString(path[question..]);
+            http.Connection.RemoteIpAddress = DaorisHost.Loopback;
+            if (grant is not null) http.Request.Headers[PersonConfirmations.GrantHeader] = grant;
+            http.Request.Body = body;
+            http.Request.ContentType = contentType;
+            http.Request.ContentLength = length;
+            http.Features.Set<Microsoft.AspNetCore.Http.Features.IHttpRequestBodyDetectionFeature>(new HasBody());
+        });
+
+        using var reader = new StreamReader(context.Response.Body);
+        return new Answer(context.Response.StatusCode, await reader.ReadToEndAsync(), context.Response.ContentType);
+    }
+
+    private sealed class HasBody : Microsoft.AspNetCore.Http.Features.IHttpRequestBodyDetectionFeature
+    {
+        public bool CanHaveBody => true;
+    }
+
+    /// <summary>A body that fails the test's request if anything reads it.</summary>
+    private sealed class UnreadStream : Stream
+    {
+        public bool Touched { get; private set; }
+
+        public override bool CanRead => true;
+
+        public override bool CanSeek => false;
+
+        public override bool CanWrite => false;
+
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position { get => 0; set => throw new NotSupportedException(); }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            Touched = true;
+            throw new InvalidOperationException("the body was read");
+        }
+
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            Touched = true;
+            throw new InvalidOperationException("the body was read");
+        }
+
+        public override void Flush()
+        {
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
+    /// <summary>A body that serves <paramref name="prefix"/>, then <paramref name="more"/> bytes of spaces, counting what it served.</summary>
+    private sealed class CountingStream(byte[] prefix, long more) : Stream
+    {
+        public long Served { get; private set; }
+
+        public override bool CanRead => true;
+
+        public override bool CanSeek => false;
+
+        public override bool CanWrite => false;
+
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position { get => Served; set => throw new NotSupportedException(); }
+
+        public override int Read(byte[] buffer, int offset, int count) => Serve(buffer.AsSpan(offset, count));
+
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(Serve(buffer.Span));
+
+        private int Serve(Span<byte> into)
+        {
+            var written = 0;
+            while (written < into.Length && Served < prefix.Length + more)
+            {
+                into[written++] = Served < prefix.Length ? prefix[Served] : (byte)' ';
+                Served++;
+            }
+
+            return written;
+        }
+
+        public override void Flush()
+        {
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
     private static async Task<string> PublishAsync(DaorisHost host, string title)
     {
         var published = await host.PostAsync("/api/quests", new { from = "Asker", to = "Keeper", title, body = "Asked by a session." });
@@ -107,7 +225,8 @@ public sealed class ConfirmationTests
         Assert.Equal("/api/asks", card.GetProperty("route").GetString());
         Assert.Equal("an ask", card.GetProperty("act").GetString());
         Assert.Empty(Pairs(card.GetProperty("values")));
-        Assert.Equal([("workspace", "default"), ("sentence", "Rename the totals column.")], Pairs(card.GetProperty("fields")));
+        Assert.Equal(
+            [("/workspace", "string", "default"), ("/sentence", "string", "Rename the totals column.")], Typed(card.GetProperty("fields")));
         Assert.Equal(Body, card.GetProperty("body").GetString());
         Assert.Equal(
             card.GetProperty("asked").GetDateTimeOffset() + TimeSpan.FromMinutes(2), card.GetProperty("expires").GetDateTimeOffset());
@@ -373,18 +492,27 @@ public sealed class ConfirmationTests
 
     /// <summary>
     /// The window shows the request by the door's name and its own fields, never a sentence the asker wrote (design §4.2):
-    /// every value the body carries, nested ones named by their path, so nothing a grant would carry is out of the
-    /// person's sight; the address's values beside them.
+    /// every value the body carries, each by its JSON pointer and its JSON type, so no two bodies show alike and nothing a
+    /// grant would carry is out of the person's sight; the address's values beside them.
     /// </summary>
     [Fact]
-    public async Task The_card_names_the_door_and_every_field_the_request_carries()
+    public async Task The_card_names_the_door_and_every_value_the_request_carries_by_its_pointer_and_type()
     {
         var (host, _) = Keyed();
         using var _host = host;
 
+        var deleted = await AskAsync(host, "DELETE", "/api/registry/my%20repo", null, NewSecret());
+        var row = deleted.Json.GetProperty("confirmation");
+        Assert.Equal("a repository's retire", row.GetProperty("act").GetString());
+        Assert.Equal("/api/registry/my%20repo", row.GetProperty("path").GetString());
+        Assert.Equal([("repository", "string", "my repo")], Typed(row.GetProperty("values")));
+        Assert.Empty(Typed(row.GetProperty("fields")));
+        // Answered, it waits no more: this test asks six.
+        Assert.Equal(200, (await RefuseAsync(host, row.GetProperty("id").GetString()!)).Status);
+
         var review = await AskAsync(
             host, "POST", "/api/quests/12/review",
-            """{"verdict":"reviewed","words":"Looks right.","setUp":{"machine":"m-1","sequence":3},"extra":[true,null,{"deep":"x"}]}""",
+            """{"verdict":"reviewed","words":"Looks right.","setUp":{"machine":"m-1","sequence":3}}""",
             NewSecret());
         Assert.Equal(200, review.Status);
         var card = review.Json.GetProperty("confirmation");
@@ -393,21 +521,193 @@ public sealed class ConfirmationTests
         Assert.Equal([("id", "12")], Pairs(card.GetProperty("values")));
         Assert.Equal(
             [
-                ("verdict", "reviewed"), ("words", "Looks right."), ("setUp.machine", "m-1"), ("setUp.sequence", "3"),
-                ("extra[0]", "true"), ("extra[1]", "null"), ("extra[2].deep", "x"),
+                ("/verdict", "string", "reviewed"), ("/words", "string", "Looks right."),
+                ("/setUp/machine", "string", "m-1"), ("/setUp/sequence", "number", "3"),
             ],
-            Pairs(card.GetProperty("fields")));
+            Typed(card.GetProperty("fields")));
 
-        var cleared = await AskAsync(host, "POST", "/api/history/clear", """{"units":[{"kind":"quest","id":"3"}],"empty":{},"none":[]}""", NewSecret());
+        // A string and a number read differently, and a null is a null, never the word.
+        var spelled = await AskAsync(
+            host, "POST", "/api/quests/12/review", """{"verdict":"null","setUp":{"machine":null,"sequence":"3"}}""", NewSecret());
         Assert.Equal(
-            [("units[0].kind", "quest"), ("units[0].id", "3"), ("empty", "{}"), ("none", "[]")],
-            Pairs(cleared.Json.GetProperty("confirmation").GetProperty("fields")));
+            [("/verdict", "string", "null"), ("/setUp/machine", "null", "null"), ("/setUp/sequence", "string", "3")],
+            Typed(spelled.Json.GetProperty("confirmation").GetProperty("fields")));
 
-        var deleted = await AskAsync(host, "DELETE", "/api/registry/my%20repo", null, NewSecret());
-        var row = deleted.Json.GetProperty("confirmation");
-        Assert.Equal("a repository's retire", row.GetProperty("act").GetString());
-        Assert.Equal("/api/registry/my%20repo", row.GetProperty("path").GetString());
-        Assert.Equal([("repository", "my repo")], Pairs(row.GetProperty("values")));
+        var cleared = await AskAsync(host, "POST", "/api/history/clear", """{"units":[{"kind":"quest","id":"3"},{}]}""", NewSecret());
+        Assert.Equal(
+            [("/units/0/kind", "string", "quest"), ("/units/0/id", "string", "3"), ("/units/1", "object", "{}")],
+            Typed(cleared.Json.GetProperty("confirmation").GetProperty("fields")));
+        var none = await AskAsync(host, "POST", "/api/history/clear", """{"units":[]}""", NewSecret());
+        Assert.Equal([("/units", "array", "[]")], Typed(none.Json.GetProperty("confirmation").GetProperty("fields")));
+
+        // A value the door takes as any JSON is shown whole, as it binds.
+        var state = await AskAsync(
+            host, "POST", "/api/sessions/s-1/state", """{"state":"finished","noteParts":[{"code":"a/b~c","values":[1]}]}""", NewSecret());
+        Assert.Equal(
+            [("/state", "string", "finished"), ("/noteParts", "array", """[{"code":"a/b~c","values":[1]}]""")],
+            Typed(state.Json.GetProperty("confirmation").GetProperty("fields")));
+    }
+
+    /// <summary>
+    /// 🔴 The review's case (PERSONDOOR1b): a card must never show one act while its grant does another. A body is asked for
+    /// only with the names its door binds, each once, so the card shows only what binds: a property the binder would
+    /// ignore (an empty name above a dismissal's fields, or a near spelling) leaves the door's own fields unbound, and a
+    /// dismissal that names none dismisses every conflict. So is a query, and a body on a door that binds none.
+    /// </summary>
+    [Fact]
+    public async Task A_request_is_asked_for_only_with_the_names_its_door_binds()
+    {
+        var (host, _) = Keyed();
+        using var _host = host;
+        const string Dismiss = "/api/quests/12/conflicts/dismiss";
+
+        var refused = new (string Method, string Path, string? Body, string What)[]
+        {
+            ("POST", Dismiss, """{"":{"machine":"m-1","sequence":3}}""", "an empty name above the dismissal's fields"),
+            ("POST", Dismiss, """{"machin":"m-1","sequenc":3}""", "near spellings the binder ignores"),
+            ("POST", Dismiss, """{"machine":"m-1","Machine":"m-2","sequence":3}""", "a name twice, as the binder reads names"),
+            ("POST", "/api/quests/12/review", """{"verdict":"reviewed","setUp":{"machine":"m-1","sequence":3,"extra":1}}""", "a nested name the door does not bind"),
+            ("POST", "/api/history/clear", """{"units":[{"kind":"quest","id":"3","all":true}]}""", "a name inside a list"),
+            ("POST", "/api/quests/12/accept", "{}", "a body on a door that binds none"),
+            ("POST", "/api/sync?workspac=default", null, "a query name the door does not bind"),
+            ("POST", "/api/sync?workspace=a&Workspace=b", null, "a query name twice"),
+            ("POST", "/api/quests/12/done?note=x", """{"note":"y"}""", "a query on a door that reads none"),
+        };
+        foreach (var (method, path, body, what) in refused)
+        {
+            var answer = await AskAsync(host, method, path, body, NewSecret());
+            Assert.True(answer.Status == 400, $"{what} answered {answer.Status}: {answer.Body}");
+            Assert.EndsWith("Nothing was asked.", answer.Error);
+        }
+
+        Assert.Equal(0, (await host.GetAsync("/api/confirmations")).Json.GetArrayLength());
+
+        // The dismissal of one conflict, as the door binds it; a name in another case binds the same, and is shown as sent.
+        var one = await AskAsync(host, "POST", Dismiss, """{"Machine":"m-1","sequence":3}""", NewSecret());
+        Assert.Equal(200, one.Status);
+        Assert.Equal(
+            [("/Machine", "string", "m-1"), ("/sequence", "number", "3")], Typed(one.Json.GetProperty("confirmation").GetProperty("fields")));
+    }
+
+    /// <summary>
+    /// Bytes are words only in their charset (the review of PERSONDOOR1b): the person confirmed a body as UTF-8 JSON, so a
+    /// grant presented with the same bytes labelled in another charset, which the binder would transcode into other words,
+    /// is refused, and so is a body that is not labelled JSON. The same bytes as UTF-8 keep the words confirmed.
+    /// </summary>
+    [Fact]
+    public async Task A_grant_body_labelled_in_another_charset_is_refused()
+    {
+        var (host, _) = Keyed();
+        using var _host = host;
+        var quest = await PublishAsync(host, "A quest the person closes by hand");
+        const string Body = """{"note":"café"}""";
+        var secret = NewSecret();
+        await ConfirmAsync(host, await AskedAsync(host, "POST", $"/api/quests/{quest}/done", Body, secret));
+        var grant = new Dictionary<string, string> { [PersonConfirmations.GrantHeader] = secret };
+
+        foreach (var contentType in new[] { "application/json; charset=iso-8859-1", "application/json; charset=utf-16", "application/json; charset=\"utf-8\"" })
+        {
+            var answer = await PageRequests.SendAsync(host, "POST", $"/api/quests/{quest}/done", grant, Body, contentType);
+            AssertRefused(answer, PersonDoors.Grant, contentType);
+        }
+
+        // A body not labelled JSON never reaches the gate: the door accepts JSON alone, and the router answers 415 first.
+        Assert.Equal(415, (await PageRequests.SendAsync(host, "POST", $"/api/quests/{quest}/done", grant, Body, "text/plain")).Status);
+        Assert.Equal("Open", (await host.GetAsync("/api/quests")).Json.EnumerateArray()
+            .Single(row => row.GetProperty("id").GetString() == quest).GetProperty("status").GetString());
+
+        var kept = await PageRequests.SendAsync(host, "POST", $"/api/quests/{quest}/done", grant, Body, "application/json; charset=UTF-8");
+        Assert.Equal(200, kept.Status);
+        Assert.Equal("The person marked this done: café", kept.Json.GetProperty("quest").GetProperty("note").GetString());
+    }
+
+    /// <summary>
+    /// Nothing is read for a grant that grants nothing (the review of PERSONDOOR1b): a secret no confirmation holds, a
+    /// confirmed one presented at another address, and a declared length that is not the confirmed body's are each refused
+    /// before a byte of the body is read; and the confirmed request is read no further than its body and one byte.
+    /// </summary>
+    [Fact]
+    public async Task A_grant_reads_no_body_before_its_secret_and_address_hold_and_no_more_than_was_confirmed()
+    {
+        var (host, _) = Keyed();
+        using var _host = host;
+        const string Body = """{"workspace":"default","sentence":"Rename the totals column."}""";
+        var bytes = Encoding.UTF8.GetBytes(Body);
+
+        var unknown = new UnreadStream();
+        AssertRefused(await SendStreamAsync(host, "POST", "/api/asks", unknown, NewSecret()), PersonDoors.Grant, "an unknown secret");
+        Assert.False(unknown.Touched, "the body of an unknown secret's call was read");
+
+        var secret = NewSecret();
+        await ConfirmAsync(host, await AskedAsync(host, "POST", "/api/asks", Body, secret));
+
+        var elsewhere = new UnreadStream();
+        AssertRefused(await SendStreamAsync(host, "POST", "/api/asks?also=1", elsewhere, secret), PersonDoors.Grant, "another address");
+        Assert.False(elsewhere.Touched, "the body of a call to another address was read");
+
+        var declared = new UnreadStream();
+        AssertRefused(await SendStreamAsync(host, "POST", "/api/asks", declared, secret, length: bytes.Length + 1), PersonDoors.Grant, "another length");
+        Assert.False(declared.Touched, "the body of a call declaring another length was read");
+
+        var endless = new CountingStream(bytes, more: 10_000_000);
+        AssertRefused(await SendStreamAsync(host, "POST", "/api/asks", endless, secret), PersonDoors.Grant, "a longer body");
+        Assert.True(endless.Served <= bytes.Length + 1, $"{endless.Served} bytes were read of a body confirmed at {bytes.Length}");
+
+        Assert.Equal(200, (await SendStreamAsync(host, "POST", "/api/asks", new MemoryStream(bytes), secret, length: bytes.Length)).Status);
+    }
+
+    /// <summary>
+    /// An ask is bounded before it is read whole (the review of PERSONDOOR1b): the ask itself is read no further than
+    /// <see cref="PersonConfirmations.AskLimit"/>, a body over <see cref="PersonConfirmations.BodyLimit"/> or carrying over
+    /// <see cref="PersonConfirmations.FieldLimit"/> values is refused, and while five wait a sixth is refused as the sixth
+    /// before its body is parsed.
+    /// </summary>
+    [Fact]
+    public async Task An_ask_is_bounded_before_it_is_read_whole()
+    {
+        var (host, _) = Keyed();
+        using var _host = host;
+
+        var ask = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { method = "POST", path = "/api/asks", body = "{}", secretSha256 = HashOf(NewSecret()) }));
+        var padded = new CountingStream(ask, more: 4L * PersonConfirmations.AskLimit);
+        var tooLong = await SendStreamAsync(host, "POST", "/api/confirmations", padded, grant: null);
+        Assert.True(tooLong.Status == 413, $"an ask past its limit answered {tooLong.Status}: {tooLong.Body}");
+        Assert.True(padded.Served <= PersonConfirmations.AskLimit + 1, $"{padded.Served} bytes of an ask were read");
+
+        var large = JsonSerializer.Serialize(new { workspace = "default", sentence = new string('a', PersonConfirmations.BodyLimit) });
+        Assert.Equal(400, (await AskAsync(host, "POST", "/api/asks", large, NewSecret())).Status);
+
+        var units = string.Join(",", Enumerable.Range(0, PersonConfirmations.FieldLimit / 2 + 1).Select(n => $$"""{"kind":"quest","id":"{{n}}"}"""));
+        Assert.Equal(400, (await AskAsync(host, "POST", "/api/history/clear", $$"""{"units":[{{units}}]}""", NewSecret())).Status);
+        var within = string.Join(",", Enumerable.Range(0, PersonConfirmations.FieldLimit / 2).Select(n => $$"""{"kind":"quest","id":"{{n}}"}"""));
+        Assert.Equal(200, (await AskAsync(host, "POST", "/api/history/clear", $$"""{"units":[{{within}}]}""", NewSecret())).Status);
+
+        for (var n = 1; n < PersonConfirmations.Most; n++) await AskedAsync(host, "POST", "/api/asks", "{}", NewSecret());
+        AssertRefused(await AskAsync(host, "POST", "/api/asks", "not json at all", NewSecret()), PersonDoors.ConfirmationsFull, "a sixth that is no JSON");
+    }
+
+    /// <summary>
+    /// A path with a trailing slash reaches its door, so it can be confirmed (the review of PERSONDOOR1b): asked as sent,
+    /// shown by its door, and granted for that path as sent, not the path without it.
+    /// </summary>
+    [Fact]
+    public async Task A_path_with_a_trailing_slash_is_asked_confirmed_and_granted_as_sent()
+    {
+        var (host, _) = Keyed();
+        using var _host = host;
+        const string Body = """{"workspace":"default","sentence":"Rename the totals column."}""";
+
+        AssertRefused(await host.SendAsync("POST", "/api/asks/", DaorisHost.Loopback, json: Body), PersonDoors.PersonOnly, "a keyless ask at /api/asks/");
+        var secret = NewSecret();
+        var asked = await AskAsync(host, "POST", "/api/asks/", Body, secret);
+        Assert.True(asked.Status == 200, asked.Body);
+        Assert.Equal("/api/asks", asked.Json.GetProperty("confirmation").GetProperty("route").GetString());
+        Assert.Equal("/api/asks/", asked.Json.GetProperty("confirmation").GetProperty("path").GetString());
+        await ConfirmAsync(host, asked.Json.GetProperty("confirmation").GetProperty("id").GetString()!);
+
+        AssertRefused(await host.SendAsync("POST", "/api/asks", DaorisHost.Loopback, json: Body, grant: secret), PersonDoors.Grant, "the path without its slash");
+        Assert.Equal(200, (await host.SendAsync("POST", "/api/asks/", DaorisHost.Loopback, json: Body, grant: secret)).Status);
+        Assert.Equal(400, (await AskAsync(host, "POST", "/api/asks//", Body, NewSecret())).Status);
     }
 
     /// <summary>
@@ -447,15 +747,17 @@ public sealed class ConfirmationTests
         using var _host = host;
         const string Words = "words-only-the-body-holds";
         var body = $$"""{"note":"{{Words}}"}""";
+        var review = $$"""{"verdict":"not-yet","words":"{{Words}}"}""";
+        var ask = $$"""{"workspace":"default","sentence":"{{Words}}"}""";
         var secrets = Enumerable.Range(0, 3).Select(_ => NewSecret()).ToArray();
 
         var used = await AskedAsync(host, "POST", "/api/quests/id-in-the-path/done", body, secrets[0]);
         await ConfirmAsync(host, used);
         Assert.NotEqual(403, (await host.SendAsync("POST", "/api/quests/id-in-the-path/done", DaorisHost.Loopback, json: body, grant: secrets[0])).Status);
         await RefuseAsync(host, await AskedAsync(host, "DELETE", "/api/quests/id-in-the-path", null, secrets[1]));
-        await AskedAsync(host, "POST", "/api/quests/id-in-the-path/review", body, secrets[2]);
-        for (var n = 0; n < PersonConfirmations.Most - 1; n++) await AskedAsync(host, "POST", "/api/asks", body, NewSecret());
-        AssertRefused(await AskAsync(host, "POST", "/api/asks", body, NewSecret()), PersonDoors.ConfirmationsFull, "a sixth");
+        await AskedAsync(host, "POST", "/api/quests/id-in-the-path/review", review, secrets[2]);
+        for (var n = 0; n < PersonConfirmations.Most - 1; n++) await AskedAsync(host, "POST", "/api/asks", ask, NewSecret());
+        AssertRefused(await AskAsync(host, "POST", "/api/asks", ask, NewSecret()), PersonDoors.ConfirmationsFull, "a sixth");
         AssertRefused(await host.SendAsync("POST", "/api/quests/id-in-the-path/done", DaorisHost.Loopback, json: body, grant: secrets[1]), PersonDoors.Grant, "a refused grant");
         clock.Move(TimeSpan.FromMinutes(2));
         Assert.Equal(0, (await host.GetAsync("/api/confirmations")).Json.GetArrayLength());

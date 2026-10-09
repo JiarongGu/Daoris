@@ -231,13 +231,15 @@ public static class PersonDoors
     /// The door a concrete, already unescaped path reaches, and the values its parameters take there, in the pattern's
     /// order; null for a path no door of the table answers (PERSONDOOR1b: a confirmation names its request by its door).
     /// Matched as the router matches: segment by segment, a literal ignoring case, a parameter any segment that is not
-    /// empty, and where two patterns match, the one with more literals. No two routes of the table tie that way, and the
-    /// gate holds a grant to the pattern that actually answered it, so a path read otherwise grants nothing.
+    /// empty, one trailing slash ignored, and where two patterns match, the one with more literals. No two routes of the
+    /// table tie that way, and the gate holds a grant to the pattern that actually answered it and to the path as it was
+    /// sent, so a path read otherwise grants nothing.
     /// </summary>
     public static (Door Door, IReadOnlyList<(string Name, string Value)> Values)? Resolve(string method, string path)
     {
         var segments = path.Split('/');
         if (segments is not ["", .. var asked]) return null;
+        if (asked is [.. var before, ""] && before.Length > 0) asked = before;
 
         (Door Door, IReadOnlyList<(string Name, string Value)> Values)? best = null;
         var bestLiterals = -1;
@@ -432,21 +434,36 @@ public sealed class PersonGate(PersonKey? key, MachineLog log, PersonConfirmatio
     }
 
     /// <summary>
-    /// Whether the grant covers this very call (PERSONDOOR1b): its body read whole and handed to the route from memory, so
-    /// the bytes judged are the bytes the route binds. Held in memory rather than by the framework's buffering, which keeps
-    /// a large body in a temporary file: nothing of a confirmed request is written down.
+    /// Whether the grant covers this very call (PERSONDOOR1b, after its review), judged in the order that reads least:
+    /// the secret and the address first, so a grant that covers nothing is refused before a byte of the body is read; then
+    /// the body's label and declared length; then the body, read no further than the confirmed one and a byte, held in
+    /// memory and handed to the route, so the bytes judged are the bytes it binds and none is written to a file.
     /// </summary>
     private async Task<bool> TakeAsync(HttpContext context, string secret, string pattern)
     {
-        var body = new MemoryStream();
-        await context.Request.Body.CopyToAsync(body, context.RequestAborted);
-        body.Position = 0;
-        context.Request.Body = body;
-        context.Response.RegisterForDispose(body);
-        return confirmations.Take(
-            secret, context.Request.Method, pattern, context.Request.Path.Value ?? "", context.Request.QueryString.Value ?? "",
-            body.ToArray());
+        var request = context.Request;
+        if (confirmations.Expecting(secret, request.Method, pattern, request.Path.Value ?? "", request.QueryString.Value ?? "") is not { } grant)
+        {
+            return false;
+        }
+
+        // Bytes are words only in their charset: the body was confirmed as UTF-8 JSON, and the binder transcodes by the
+        // label, so the same bytes labelled otherwise would keep other words than the person read.
+        if (grant.Length > 0 && !IsUtf8Json(request.ContentType)) return false;
+        if (request.ContentLength is { } declared && declared != grant.Length) return false;
+
+        var body = await PersonConfirmations.ReadAtMostAsync(request.Body, request.ContentLength, grant.Length, context.RequestAborted);
+        if (body is null || !confirmations.Take(grant, body)) return false;
+
+        request.Body = new MemoryStream(body, writable: false);
+        return true;
     }
+
+    /// <summary>A body labelled JSON in UTF-8: <c>application/json</c>, with no charset or with <c>utf-8</c>.</summary>
+    private static bool IsUtf8Json(string? contentType) =>
+        Microsoft.Net.Http.Headers.MediaTypeHeaderValue.TryParse(contentType, out var parsed)
+        && parsed.MediaType.Equals("application/json", StringComparison.OrdinalIgnoreCase)
+        && (!parsed.Charset.HasValue || parsed.Charset.Equals("utf-8", StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// A refusal a route gives on the gate's behalf, in its shape and with its one log line: a sixth ask for the person's
