@@ -130,7 +130,8 @@ using Daoris.Driver;
 //                 which the loop that runs it holds at its door, and any loop keeps on the record of one nothing here
 //                 runs, answering beside it. What never goes on is refused first, exit 1. Where no loop drives the
 //                 home, a driven session's words are kept on its record for the next, and a conversation's refused.
-//                 It waits up to ten seconds and prints where the words stand. The session's box is the other door.
+//                 It waits up to ten seconds, and past them for the answer of a loop that took the words (FLAKE3), and
+//                 prints where the words stand. The session's box is the other door.
 //   sessions go-on-new <id>
 //                 words a resume holds while the account its session ran on cools (MSG1g, D137 §2.2): the person's choice
 //                 to go on now in a new session, kept under the home for the driver's next look, which carries them on
