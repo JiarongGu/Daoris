@@ -297,7 +297,7 @@
         "work.status.sessionsLabel", "work.status.setup", "work.status.setupLabel", "work.status.tierLabel",
         "work.shown.*", "work.status.workspace", "work.sync.label", "work.sync.level", "work.sync.never",
         "work.sync.walled", "work.terminal.default", "work.terminal.endedMark", "work.tool.status.*",
-        "review.state.*", "review.pill"
+        "review.state.*", "review.pill", "work.attention.set-up"
       ]
     },
     "menu": {

@@ -814,6 +814,8 @@ export function App() {
     'go-ahead': (item) => { if (item.ask) openAsk(item.ask); },
     // A departure opens its quest's page, where what was required and how its done answered are quoted (DRIFT1d2).
     departure: (item) => openQuest(item.id),
+    // A set-up shown for review opens its step's page, where every set-up it said and the review's presses are (REVIEWENV1g).
+    'set-up': (item) => openQuest(item.id),
     // A folder waiting on the person's trust (D73) opens what it holds: the quest's page, or the ask whose intake it is.
     // The row asks the trust question itself. Only a shell has one.
     ...(attached ? {

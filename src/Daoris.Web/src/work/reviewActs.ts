@@ -102,5 +102,7 @@ export function useReviewActs({ notify }: { notify: Notify }) {
     actsFor,
     /** A press on its way: the gate's presses wait for it. */
     busy: verdict.isPending || setUpStep.isPending,
+    /** Whether a shell is here: a *not yet*'s words and *Show it again* reach a session and a tab through it alone. */
+    shell: isAvailable,
   };
 }
