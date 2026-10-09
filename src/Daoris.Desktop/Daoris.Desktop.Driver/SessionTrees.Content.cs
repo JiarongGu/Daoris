@@ -31,6 +31,9 @@ public sealed partial class SessionTrees
     /// </summary>
     internal const string DiscardedPrefix = "refs/daoris/discarded/";
 
+    /// <summary>How many names a branch's recovery refs take before a discard gives up (SQUASHTIDY1c), the offer naming them alike (SQUASHTIDY1b).</summary>
+    private const int DiscardedNames = 20;
+
     /// <summary>What a delete that found its branch moved since the judgement says (SQUASHTIDY1c).</summary>
     internal const string MovedSince = "it moved since it was judged";
 
@@ -146,7 +149,7 @@ public sealed partial class SessionTrees
         string root, string branch, string judged, CancellationToken ct)
     {
         string? why = null;
-        for (var n = 1; n <= 20; n++)
+        for (var n = 1; n <= DiscardedNames; n++)
         {
             var reference = DiscardedPrefix + branch + (n == 1 ? "" : $"-{n}");
             // An empty old value: made only where no ref of that name exists, so none is ever moved.

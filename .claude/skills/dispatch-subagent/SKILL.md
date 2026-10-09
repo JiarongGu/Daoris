@@ -141,7 +141,9 @@ Follow the dispatch-subagent skill's subagent half.
      diff of a branch that crossed lanes or touched the steward's records.
    - **The full set is owed before the install is built**, the long halves with it. `publish:desktop`
      refuses a tree no full set passed (`merge-branch --passed`). Run `node tools/merge-branch.mjs --full`
-     on the checkout, or `--full` on the day's last merge. A verdict stands until a path its gate reaches
+     on the checkout, or `--full` on the day's last merge. 🔴 Never `--full` on a `--batch`: it runs every gate,
+     the long halves included, for EVERY merge in the batch (a docs-only design paid forty minutes of the driver's
+     Process half, 2026-10-09). Merge the batch plain, then `--stale` once. A verdict stands until a path its gate reaches
      changes (GATE6), and records written after the gates are forgiven; a refusal names each stale gate and
      the path that made it so. After the full set, on a clean checkout with no merge open, `--rerun <gate>…`
      runs a gate that flaked, with each stale gate, and `--stale` runs only the stale ones after a fix you

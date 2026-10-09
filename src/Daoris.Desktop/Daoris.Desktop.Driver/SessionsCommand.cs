@@ -122,7 +122,7 @@ public static class SessionsCommand
     /// <summary>The fields of a row in <c>--json</c>, in order: <c>SESSION_GROUPS</c>' row, field for field.</summary>
     public static IReadOnlyList<string> JsonFields { get; } =
         ["session", "group", "shown", "archived", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "pausedBy", "holds", "deletable",
-            "lands"];
+            "lands", "discards"];
 
     /// <summary>What the words ask, or null with what is wrong with them.</summary>
     public static SessionsAsk? Read(IReadOnlyList<string> args, out string? problem)
@@ -326,6 +326,22 @@ public static class SessionsCommand
                     writer.WriteNull("lands");
                 }
 
+                // SQUASHTIDY1b: where the line holds its commits by content, its discard instead, with what the page says.
+                if (row.Discards is { } discards)
+                {
+                    writer.WriteStartObject("discards");
+                    writer.WriteString("branch", discards.Branch);
+                    writer.WriteString("tree", discards.Tree);
+                    writer.WriteString("says", discards.Says);
+                    writer.WriteString("keeps", discards.Work.Keeps);
+                    writer.WriteString("keptAt", discards.KeptAt);
+                    writer.WriteEndObject();
+                }
+                else
+                {
+                    writer.WriteNull("discards");
+                }
+
                 writer.WriteEndObject();
             }
 
@@ -461,6 +477,16 @@ public static class SessionsCommand
         {
             yield return $"{lands.Commits} commit{(lands.Commits == 1 ? "" : "s")} on {lands.Branch} in its tree {lands.Tree}, not landed: "
                 + $"daoris-driver trees land {row.Session}";
+        }
+
+        // SQUASHTIDY1b: commits the line holds by content are never offered to land again; the door that discards the tree is,
+        // with the ref its commits stay at, or why the tree stays.
+        if (row.Discards is { Work: var held } discards)
+        {
+            yield return held.Keeps is { } keeps
+                ? $"{held.Held.Said}, in its tree {discards.Tree}: daoris-driver trees remove {row.Session} discards it, keeping its "
+                  + $"commits at `{keeps}`"
+                : $"{held.Held.Said}, in its tree {discards.Tree}, which stays: {held.Stays}";
         }
 
         if (row.HoldsQuest && record.Quest is { } quest) yield return $"held here until you try again: daoris driver retry {quest} --session {row.Session}";

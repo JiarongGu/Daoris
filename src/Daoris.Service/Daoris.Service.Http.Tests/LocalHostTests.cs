@@ -4,13 +4,16 @@ using Daoris.Knowledge;
 namespace Daoris.Service.Http.Tests;
 
 /// <summary>A local host over two adopted repositories, imported from its folder on first run (D48 §3).</summary>
-public sealed class LocalHost() : DaorisHost(ServiceMode.Local, seed: repositories =>
-{
-    Repository(repositories, "Asker", "Asks for things.");
-    Repository(repositories, "Keeper", "Keeps its own area.");
-})
+public sealed class LocalHost() : DaorisHost(ServiceMode.Local, seed: Seed)
 {
     public string RootOf(string repository) => Path.Combine(Repositories, repository);
+
+    /// <summary>The two repositories, Asker and Keeper, which a host imports from its folder on its first run.</summary>
+    internal static void Seed(string repositories)
+    {
+        Repository(repositories, "Asker", "Asks for things.");
+        Repository(repositories, "Keeper", "Keeps its own area.");
+    }
 
     private static void Repository(string folder, string name, string summary)
     {

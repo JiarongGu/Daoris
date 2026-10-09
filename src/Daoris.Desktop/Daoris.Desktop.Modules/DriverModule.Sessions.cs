@@ -363,6 +363,11 @@ public sealed partial class DriverModule
         // LAND4: what its own tree offers to land, whatever group it rests in, which its page offers Accept beside. The tree's
         // name, never its path.
         Lands = row.Lands is { } lands ? new { lands.Branch, lands.Tree, lands.Commits, lands.Uncommitted } : null,
+        // SQUASHTIDY1b: where the line holds its commits by content, its discard instead, with the driver's sentences the page
+        // shows as they are: where its work is, and the ref an unforced discard keeps its commits at.
+        Discards = row.Discards is { } discards
+            ? new { discards.Branch, discards.Tree, discards.Says, discards.Work.Keeps, discards.KeptAt }
+            : null,
     };
 
     private static object Mark(ArchiveMark mark) => new { mark.Session, mark.At };

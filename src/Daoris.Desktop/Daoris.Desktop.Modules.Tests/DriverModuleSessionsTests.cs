@@ -576,6 +576,33 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         Assert.Equal(JsonValueKind.Null, bare.GetProperty("lands").ValueKind);
     }
 
+    /// <summary>
+    /// SQUASHTIDY1b: a row whose tree's commits the line holds by content carries its discard, not its landing: the branch, the
+    /// tree's name, the sentence the page shows where <i>Accept…</i> would be, the ref an unforced discard keeps its commits at
+    /// and the ask's sentence naming it; and null where it offers none. <c>sessions --json</c> prints the same field.
+    /// </summary>
+    [Fact]
+    public void A_groups_row_carries_what_its_held_tree_offers_to_discard()
+    {
+        var camel = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        const string kept = "refs/daoris/discarded/daoris/s-4e6837ed";
+        var held = new SessionGrouping("f41led00", SessionGroup.Ended, "failed")
+        {
+            Discards = new DiscardOffer("daoris/s-4e6837ed", "s-4e6837ed", new HeldWork(new ContentHold("main", Squash: true), kept, null)),
+        };
+
+        var row = JsonSerializer.SerializeToElement(DriverModule.Grouped(held), camel);
+        var bare = JsonSerializer.SerializeToElement(DriverModule.Grouped(held with { Discards = null }), camel);
+
+        var discards = row.GetProperty("discards");
+        Assert.Equal(
+            ("daoris/s-4e6837ed", "s-4e6837ed", "Its work is on `main` by content (a squash merge).", kept, ContentHold.KeptAt("daoris/s-4e6837ed", kept)),
+            (discards.GetProperty("branch").GetString(), discards.GetProperty("tree").GetString(), discards.GetProperty("says").GetString(),
+                discards.GetProperty("keeps").GetString(), discards.GetProperty("keptAt").GetString()));
+        Assert.Equal(JsonValueKind.Null, row.GetProperty("lands").ValueKind);
+        Assert.Equal(JsonValueKind.Null, bare.GetProperty("discards").ValueKind);
+    }
+
     /// <summary>SESSUX1g (D126 §7.4): an archive from the screen is counted in the machine log as the screen's, with no session named.</summary>
     [Fact]
     public async Task An_archive_from_the_screen_is_counted_in_the_log_as_the_screens()
