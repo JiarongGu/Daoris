@@ -182,16 +182,16 @@ test('with the registry unread, a repository is drawn only where no workspace-le
 
 test('workflow show says what it takes: Current for one repository or one workspace, or a named workflow', async () => {
   const fx = makeFixture('workflow-show-usage');
-  const usage = '`driver workflow show` takes --repository <name>|--workspace <name>: the workflow its work follows, '
-    + 'Current, read from its rules as they stand — e.g. `daoris driver workflow show --repository web-app`; or a named '
-    + 'workflow\'s <id>[@<version>].';
+  const usage = '`driver workflow show` takes --repository <name>|--workspace <name>, and --kind <kind> for a kind of task: '
+    + 'the workflow its work follows, Current or the one chosen — e.g. `daoris driver workflow show --repository web-app`; or a '
+    + 'named workflow\'s <id>[@<version>].';
   await assert.rejects(show(['workflow', 'show', '--repository', 'a', '--workspace', 'b'], at(fx), unread), (error: Error) => {
     assert.equal(error.message, usage);
     return true;
   });
-  // The kind is WORKFLOW1e's to read.
-  await assert.rejects(show(['workflow', 'show', '--repository', 'a', '--kind', 'docs'], at(fx), unread), (error: Error) => {
-    assert.equal(error.message, `\`--kind\` is not a flag \`driver workflow show\` takes — ${usage}`);
+  // A kind is read since WORKFLOW1e; a flag `show` has no name for is not.
+  await assert.rejects(show(['workflow', 'show', '--repository', 'a', '--version', '2'], at(fx), unread), (error: Error) => {
+    assert.equal(error.message, `\`--version\` is not a flag \`driver workflow show\` takes — ${usage}`);
     return true;
   });
   fx.cleanup();

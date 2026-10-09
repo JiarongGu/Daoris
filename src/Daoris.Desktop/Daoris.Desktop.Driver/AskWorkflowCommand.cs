@@ -81,11 +81,12 @@ public static class AskWorkflowCommand
     {
         if (kind is not null)
         {
-            var circle = RemoteTarget.Workspace(workspace);
-            world.Config().WorkspaceWorkflows.TryGetValue(circle, out var shared);
+            var named = RemoteTarget.Workspace(workspace);
+            world.Config().WorkspaceWorkflows.TryGetValue(named, out var shared);
             if (shared?.KindOf(kind) is null)
             {
-                return $"{WorkflowSelection.UndeclaredInWorkspace(circle, kind)} `daoris driver workflow kind {ShellWord.Of(circle, "<workspace>")} {kind} "
+                var spelled = ShellWord.Of(named, "<workspace>");
+                return $"{WorkflowSelection.UndeclaredInWorkspace(named, kind)} `daoris driver workflow kind {spelled} {kind} "
                        + "--label \"…\"` declares one. Nothing was kept.";
             }
         }
