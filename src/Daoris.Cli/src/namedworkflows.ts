@@ -668,7 +668,7 @@ function partOf(step: NamedStep | undefined): string | null {
 }
 
 /** A field's value as a diff says it: absence as declared, a switch, text and names in backticks, a group by its size. */
-function rendered(value: StepValue): string {
+export function rendered(value: StepValue): string {
   if (value === null) return 'as declared';
   if (typeof value === 'boolean') return value ? 'true' : 'false';
   if (typeof value === 'string') return `\`${value}\``;
