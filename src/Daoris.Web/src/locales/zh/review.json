@@ -22,7 +22,7 @@
   "review.says.unread": "无法读取这些工作是否在等你审阅，所以在能读取之前，什么都不会落地。",
   "review.says.reviewed": "你在 `{{commit}}` 审阅了它：它拦住的工作继续进行。",
   "review.says.skipped": "你跳过了这些工作的审阅：它不经审阅就落地。",
-  "review.says.none": "这个搭建步骤已被拒绝：它没有要审阅的内容。",
+  "review.says.none": "这个搭建步骤已谢绝：它没有要审阅的内容。",
   "review.driverSaid": "驱动的原话：{{said}}",
   "review.proposal": "受理提议{{choice}}：{{reason}}",
   "review.choice.off": "不审阅",
