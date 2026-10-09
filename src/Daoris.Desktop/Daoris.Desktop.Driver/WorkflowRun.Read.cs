@@ -14,7 +14,14 @@ public sealed record WorkflowRunSources(
     ServiceClient Service, string Home, DriverConfig Config, IReadOnlyList<WorkflowPlugin> Plugins, Func<string, string?> WorkspaceOf);
 
 /// <summary>The runs read, in the chain's order, or the sentence that says why none could be.</summary>
-public sealed record WorkflowRunRead(IReadOnlyList<WorkflowRun> Runs, string? Problem = null);
+public sealed record WorkflowRunRead(IReadOnlyList<WorkflowRun> Runs, string? Problem = null)
+{
+    /// <summary>
+    /// The service did not answer, so nothing could be read: a tool error, where every other <see cref="Problem"/> is an answer
+    /// that names no run (WORKFLOW1c2: the terminal's exit 2, not 1).
+    /// </summary>
+    public bool Unanswered { get; init; }
+}
 
 /// <summary>The runs' reads (WORKFLOW1c): nothing here writes anywhere. Every request to the service is a <c>GET</c>.</summary>
 public static class WorkflowRunReader
@@ -35,7 +42,10 @@ public static class WorkflowRunReader
         }
         catch (Exception error) when (Unanswered(error, ct))
         {
-            return new WorkflowRunRead([], $"the service did not answer, so no run could be read: {error.Message.TrimEnd().TrimEnd('.')}.");
+            return new WorkflowRunRead([], $"the service did not answer, so no run could be read: {error.Message.TrimEnd().TrimEnd('.')}.")
+            {
+                Unanswered = true,
+            };
         }
 
         var (chains, problem) = ChainsOf(asked, quests, sessions);

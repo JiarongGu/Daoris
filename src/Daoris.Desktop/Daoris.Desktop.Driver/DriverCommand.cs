@@ -136,6 +136,9 @@ public static class DriverCommand
           trace <commit|session|quest>  ·  trace commit|session|quest <id>
               one read back to the ask: the person's words and go-aheads, the quest's requirements and answers, each
               session's agent, account, instruction, rules and landing, each from the store that keeps it. Reads only.
+          workflow run --session <id> | --quest <id> | --ask <id>
+              where a piece of work stands in its workflow, as the session's Workflow view draws it: each step with its
+              state and what it says, the step the run stands at marked. A session's run is its quest's. Reads only.
           git branches [--repository <name>] [--all] [--json]
               each repository's line and branches: the sessions', the landed (on origin or not, their pull
               request), yours, and how many only origin holds, each against the line; and the git each read

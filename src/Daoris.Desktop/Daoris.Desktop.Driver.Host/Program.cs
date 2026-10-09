@@ -172,6 +172,11 @@ using Daoris.Driver;
 //                 its landing, and what stood when it started, each from the store that keeps it, and a link nothing keeps
 //                 said missing. It writes nothing; the screen's door to the same read is a row of its own.
 //
+//   workflow run --session <id> | --quest <id> | --ask <id>
+//                 where a piece of work stands in the workflow it follows (WORKFLOW1c2, D157, design §5.2, §7): the session's
+//                 Workflow view's twin, read by the reader its route reads, one line per step with its state and what it says,
+//                 the step it stands at marked. A chat has no run, and says so. It writes nothing.
+//
 //   git branches [--repository <name>] [--all] [--json]
 //                 each repository's line and branches by kind (GIT1c, D147 §2.2, §3.3): the line with how it stands to
 //                 origin's copy and when the checkout last fetched, the sessions' branches named by their sessions, the
@@ -228,6 +233,13 @@ if (args is ["trace", .. var traceArgs])
 if (args is ["git", .. var gitArgs])
 {
     return await Daoris.Driver.Host.GitConsole.RunAsync(gitArgs);
+}
+
+// Where a piece of work stands in its workflow (WORKFLOW1c2, D157, D50): the session's Workflow view's twin, a read, routed before
+// the machine log opens for the trace's reason, with its own catch.
+if (args is ["workflow", .. var workflowArgs])
+{
+    return await Daoris.Driver.Host.WorkflowConsole.RunAsync(workflowArgs);
 }
 
 // The machine log (LOG1, D94): this host's watch and every exception nothing caught, in a file of its

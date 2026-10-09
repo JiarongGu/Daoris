@@ -1,0 +1,4 @@
+usage: daoris-driver workflow run --session <id> | --quest <id> | --ask <id>
+       where a piece of work stands in the workflow it follows, as the session's Workflow view draws it: each step of
+       its repository's workflow with its state and what that state says, the step the run stands at marked ●. A
+       session's run is its quest's; an ask's, each repository its chains reach. Reads only.
