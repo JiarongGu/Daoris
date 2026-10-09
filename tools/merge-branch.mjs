@@ -412,7 +412,11 @@ export const REACH = Object.freeze([
     gates: '*',
     why: 'it changes how every gate runs or reaches a path: the gates, lanes, scripts, line endings, what is tracked, or the file helpers every rehearsal imports',
   },
-  { paths: ['tools/rehearsal-kit.mjs'], gates: ['rehearse', 'rehearse-family', 'deployment'], why: "the rehearsals' kit" },
+  {
+    paths: ['tools/rehearsal-kit.mjs', 'tools/cdp.mjs'],
+    gates: ['rehearse', 'rehearse-family', 'deployment'],
+    why: "the rehearsals' kit, and the port test it takes each run's ports with (REHEARSEPORT1)",
+  },
   { paths: ['tools/release-rehearsal.mjs', 'tools/release-prep.mjs'], gates: ['rehearse'], why: 'release tooling' },
   {
     paths: ['tools/service-publish.mjs'],
@@ -426,7 +430,7 @@ export const REACH = Object.freeze([
     gates: ['deployment', 'rehearse-family'],
     why: 'the publish the deployment rehearsal drives, and what it imports; the family rehearsal runs usage-report, which imports it',
   },
-  { paths: ['tools/deployment-rehearsal.mjs', 'tools/desktop.mjs', 'tools/cdp.mjs'], gates: ['deployment'], why: 'the deployment rehearsal and what it imports' },
+  { paths: ['tools/deployment-rehearsal.mjs', 'tools/desktop.mjs'], gates: ['deployment'], why: 'the deployment rehearsal and what it imports' },
   { paths: ['src/Daoris.Devkit/**'], gates: ['devkit'], why: 'its own suite; it is also the universal gates and the code map, which every merge runs' },
   { paths: ['src/Daoris.Desktop/process.runsettings'], gates: ['driver-process', 'modules-process'], why: "the Process halves' settings (MOD8)" },
   // Before the driver's tests, which would place it first: the page's twin reads it too.

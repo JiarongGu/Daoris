@@ -76,7 +76,7 @@ import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { copyTree, isMain } from './fsx.mjs';
 import {
-  ACP_STUB_AGENT, capture, makeChecker, openTranscript,
+  ACP_STUB_AGENT, STUB_COMMIT, makeChecker, openTranscript, portRefusal, rehearsalRun, takePorts,
 } from './rehearsal-kit.mjs';
 // The install's layout, from the script that makes it (REV3 CLEAN1) — never a second spelling of it.
 import {
@@ -460,7 +460,9 @@ const HERMETIC = {
 let shell = null;
 const children = [];
 
-const run = (command, cwd, env = {}, timeout = 0) => capture(command, cwd, { env, timeout });
+// Every command this run makes, its git held to the repositories it made under its scratch (REHEARSEGIT1): git walks UP from
+// a folder that is not one, and the family rehearsal committed a worktree's uncommitted work that way.
+const run = rehearsalRun({ within: scratch });
 
 const {
   CLEARED, PAGE_IDENTITY, REDIRECTED, debugEnvironment, isShell,
@@ -469,7 +471,7 @@ const {
   applicationsAt, browsersAt, eachApplicationAt, powershell, psQuote, running, stopAll,
 } = await import('./processes.mjs');
 const {
-  Cdp, freePort, pickPageTarget, targetsAt,
+  Cdp, pickPageTarget, targetsAt,
 } = await import('./cdp.mjs');
 
 const API_TIMEOUT = 30_000;
@@ -605,6 +607,18 @@ function stopEverything() {
 }
 
 /**
+ * Before a host of this run starts on `port` (REHEARSEPORT1): a port held since it was taken ends the run here, naming its
+ * holder. This run's readiness asks the port, not the process (`answers`), so a host that could not bind it would be read as
+ * up with the holder's answers, and every check after would be about another run's host.
+ */
+async function startsClear(port) {
+  const refused = await portRefusal(port);
+  if (refused === null) return;
+  console.log(`deployment rehearsal: ${refused}`);
+  process.exit(2);
+}
+
+/**
  * The gate, whole.
  *
  * 🔴 Inside a function, behind the entry guard below, for the reason `tools/desktop.mjs` states at
@@ -621,6 +635,18 @@ async function main() {
 
   openTranscript(repoRoot, 'deployment', { beforeExit: () => stopEverything() });
   const { totals, check, section } = makeChecker();
+
+  // Each port this run starts something on, taken free before anything starts (REHEARSEPORT1): walked from a random port of
+  // the kit's band, so a run beside another takes ports apart, where a walk from a fixed one handed both runs the same port.
+  // The debug port's band is clear of the dev loop's 9333 and the ports after it, which an install the owner looks at holds.
+  let ports;
+  try {
+    ports = await takePorts(['host', 'shell', 'debug', 'reader']);
+  } catch (error) {
+    console.log(`deployment rehearsal: refused before anything started: ${error.message} (REHEARSEPORT1)`);
+    process.exit(2);
+  }
+  console.log(`ports: ${Object.entries(ports).map(([name, port]) => `${name} ${port}`).join(', ')}`);
 
   /** The canon's version, which the install's doctrine tool answers (WSSETUP2): read, never spelled. */
   const canonVersion = JSON.parse(readFileSync(join(repoRoot, 'canon', 'canon.json'), 'utf8')).version;
@@ -838,11 +864,12 @@ async function main() {
   // -------------------------------------------------------------- 3. the install is self-sufficient
 
   section('3. The install carries a host that serves the install’s own page');
-  const hostPort = await freePort(5301);
+  const hostPort = ports.host;
   const hostBase = `http://127.0.0.1:${hostPort}`;
   mkdirSync(home, { recursive: true });
   mkdirSync(join(scratch, 'standalone-family'), { recursive: true });
 
+  await startsClear(hostPort);
   const standalone = spawn(installedHost, {
     cwd: join(install, ...HOST_HOME),
     stdio: 'ignore',
@@ -899,9 +926,8 @@ async function main() {
   // Chinese characters in it, which is the whole of what phase 5 reads back off the disk.
   const stubAgent = join(scratch, 'stub-agent.mjs');
   writeFileSync(stubAgent, `
-import { execSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
-
+${STUB_COMMIT}
 if (process.argv.includes('--version')) { console.log('stub-harness 1.0.0'); process.exit(0); }
 if (process.argv.includes('--login-state')) { console.log('logged-in'); process.exit(0); }
 
@@ -926,9 +952,8 @@ if (!take.ok) { if (take.status === 409) process.exit(0); throw new Error(take.t
 console.log(${JSON.stringify(NON_ASCII)});
 
 writeFileSync('answered-' + id + '.md', 'Answered by the stub session.\\n');
-const git = 'git -c user.name="Deployment Rehearsal" -c user.email="rehearsal@example.invalid"';
-execSync(git + ' add -A', { stdio: 'ignore' });
-execSync(git + ' commit -q -m "stub: answer quest ' + id + '"', { stdio: 'ignore' });
+// Only in the tree it was started in, the top of a repository of its own (REHEARSEGIT1).
+await commitHere({ name: 'Deployment Rehearsal', email: 'rehearsal@example.invalid' }, 'stub: answer quest ' + id);
 const done = await respond('done', 'Landed by the stub session.');
 if (!done.ok) throw new Error(done.text);
 `);
@@ -970,11 +995,11 @@ if (!done.ok) throw new Error(done.text);
     notify: false,
   }, null, 2)}\n`);
 
-  const shellPort = await freePort(5311);
+  const shellPort = ports.shell;
   const base = `http://127.0.0.1:${shellPort}`;
-  // The debug port (DEPLOY5), picked clear of the dev loop's 9333 and the ports after it, which an
+  // The debug port (DEPLOY5), taken with the rest: clear of the dev loop's 9333 and the ports after it, which an
   // install the owner is looking at through `run --install` may hold.
-  const cdpPort = await freePort(9433);
+  const cdpPort = ports.debug;
 
   /**
    * What a deployed shell is given, and — more importantly — what it is not.
@@ -1032,7 +1057,9 @@ if (!done.ok) throw new Error(done.text);
   // locators' order, which phases 4 and 7 assert (`ServiceHostLocator`, `KnowledgeConnector`).
   for (const name of ['DAORIS_HTTP_HOST', 'DAORIS_MCP_HOST']) delete environment[name];
 
-  // Started the way a person starts it: the launcher at the root, which hands over and exits.
+  // Started the way a person starts it: the launcher at the root, which hands over and exits. Only on ports nobody holds.
+  await startsClear(shellPort);
+  await startsClear(cdpPort);
   shell = spawn(launcherExe, { cwd: install, env: environment, detached: true, stdio: 'ignore' });
   shell.unref();
 
@@ -1319,8 +1346,9 @@ if (!done.ok) throw new Error(done.text);
   // install's host started on its own over the store the shell left, as phase 3 started it. A host
   // runs no sweep — that is a driver's, at its first tick — so what it answers is what the close
   // wrote and nothing since.
-  const readerPort = await freePort(5321);
+  const readerPort = ports.reader;
   const readerBase = `http://127.0.0.1:${readerPort}`;
+  await startsClear(readerPort);
   const readerEnvironment = {
     ...process.env,
     ...HERMETIC,
@@ -1453,9 +1481,8 @@ if (!done.ok) throw new Error(done.text);
   const releaseOf = (quest) => join(scratch, `release-${quest}`);
   const slowAgent = join(scratch, 'slow-agent.mjs');
   writeFileSync(slowAgent, `
-import { execSync } from 'node:child_process';
 import { existsSync, writeFileSync } from 'node:fs';
-
+${STUB_COMMIT}
 if (process.argv.includes('--version')) { console.log('stub-harness 1.0.0'); process.exit(0); }
 if (process.argv.includes('--login-state')) { console.log('logged-in'); process.exit(0); }
 
@@ -1472,9 +1499,8 @@ if (!take.ok) { if (take.status === 409) process.exit(0); throw new Error(take.t
 const release = ${JSON.stringify(join(scratch, 'release-'))} + id;
 while (!existsSync(release)) await new Promise((resolve) => setTimeout(resolve, 500));
 writeFileSync('held-' + id + '.md', 'Held the update open, then let it go.\\n');
-const git = 'git -c user.name="Deployment Rehearsal" -c user.email="rehearsal@example.invalid"';
-execSync(git + ' add -A', { stdio: 'ignore' });
-execSync(git + ' commit -q -m "stub: held the update open for ' + id + '"', { stdio: 'ignore' });
+// Only in the tree it was started in, the top of a repository of its own (REHEARSEGIT1).
+await commitHere({ name: 'Deployment Rehearsal', email: 'rehearsal@example.invalid' }, 'stub: held the update open for ' + id);
 const done = await respond('done', 'Landed by the slow stub session.');
 if (!done.ok) throw new Error(done.text);
 `);
@@ -1540,7 +1566,9 @@ if (!done.ok) throw new Error(done.text);
     return Boolean(shown) && !shown.startsWith('0|');
   };
 
-  // Started the way a person starts it, on the same environment as phase 4, its debug port included.
+  // Started the way a person starts it, on the same environment as phase 4, its debug port included, and its ports clear.
+  await startsClear(shellPort);
+  await startsClear(cdpPort);
   shell = spawn(launcherExe, { cwd: install, env: environment, detached: true, stdio: 'ignore' });
   shell.unref();
   check('the install starts again, for its update', await answers(base, 200));
