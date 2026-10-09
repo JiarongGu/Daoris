@@ -135,7 +135,8 @@ function Run({ run, here, doors, controls, named }: {
   const says = runShort(t, run);
 
   return (
-    <section aria-label={t('workflow.chart', { name: run.repository })} className="grid min-w-0 gap-3">
+    // The chart names itself by the repository (`workflow.chart`), so the run's own box needs no second name.
+    <div className="grid min-w-0 gap-3">
       <div className="grid min-w-0 gap-0.5">
         <Prose className="text-ink">
           <Inline text={named ? t('workflow.run.lineIn', { repository: run.repository, says }) : t('workflow.run.line', { says })} />
@@ -149,7 +150,7 @@ function Run({ run, here, doors, controls, named }: {
         run={marks}
         end={at === null ? <Pill tone="done">{stateSaid(t, 'done')}</Pill> : undefined}
       />
-    </section>
+    </div>
   );
 }
 
