@@ -5,6 +5,55 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-09 — the family rehearsal committed a worktree's work as "Family Rehearsal" (REHEARSEGIT1)
+
+### Tools: a rehearsal's git ran in a folder that was not a repository, and git walked up
+- **Symptom:** found by FLAKE3. An earlier phase of the family rehearsal failed in a subagent's worktree, and the run then
+  committed that agent's uncommitted work in the worktree, authored "Family Rehearsal".
+- **Root cause:** the review phase (§17e) wrote, staged and committed "a change after the look" in `wentOn?.tree ?? scratch`,
+  and later ran `git reset -q --hard` there. With no session tree on the record it fell back to the scratch, which is no
+  repository, so git walked up to the enclosing checkout: `add -A` staged the agent's work, `commit` committed it, and the
+  reset would have discarded whatever was left. Nothing held any git call of either rehearsal, or of their stubs, to the
+  folder it meant: an absent folder (`undefined`) runs in the process's own, the checkout's root.
+- **Fix:** `rehearsalRun({ within })` in `tools/rehearsal-kit.mjs` is both rehearsals' `run`: a git command runs only where
+  `rev-parse --show-toplevel` is the folder itself (as `SessionTrees.OpenAsync` asks), or in a bare repository's own folder,
+  and only inside the run's scratch; `init` and `clone` make one and are not asked; a missing folder, one never named and
+  `-C`, `--git-dir` or `--work-tree` are refused. A refused command never runs: exit 2, the refusal printed, in words inert
+  to a shell, since a phase may put a print into its next command. The fallbacks are gone (`lateTree`). The stubs (the
+  family's pipe stub, the kit's ACP stub, the deployment rehearsal's two) commit through `STUB_COMMIT`'s `commitHere`,
+  which refuses the same way and throws. The release rehearsal runs no git of its own.
+- **Verify:** `tools/rehearsal-kit.test.mjs`, over a checkout the test makes with a scratch folder inside it: `add -A`,
+  `commit` and `reset --hard` there are refused naming the checkout, which keeps `?? scratch/` untracked and its one commit;
+  git runs in a repository of its own, after `init`, in a bare one and after `clone`; no folder, a folder outside the run,
+  `-C` and a missing folder are refused; the words carry no shell character; a stub commits in its own repository and
+  refuses inside one; the ACP stub resumed there fails its turn and commits nothing. The family stub and the deployment
+  stub, built from their templates, were run once each the same two ways against a stand-in service. Kit tests 17 → 28.
+  **Not covered:** the rehearsals themselves, which the brief kept for the merge gate.
+- **Commit:** `94017dc9`, `74afe38a`, `4bc45e8f`, `22d2896a`.
+
+## 2026-10-09 — two family rehearsals shared one host (REHEARSEPORT1)
+
+### Tools: the rehearsals' hosts sat on fixed ports, and a second run read the first run's host
+- **Symptom:** found at the XAGENT1e2 merge. A subagent's family rehearsal in its worktree and the merge gate's on main ran
+  together, and the gate's run read the other worktree's registry (`anvil`, `borealis`, `newcomer`, rooted there) and
+  failed 10 checks.
+- **Root cause:** `tools/family-rehearsal.mjs` started its hosts on `localhost:5199`, `:5198`, `:5197` and `:5200`, pointed
+  machine b at an absent remote on `:5191` and a refused host at `:5195`. A host started on a held port fails to bind and
+  ends; the readiness probe asks the port, not the process, so it read the other run's host as its own. The deployment
+  rehearsal walked `freePort` up from fixed ports (5301, 5311, 9433, 5321), so two runs that looked before either bound
+  took the same one.
+- **Fix:** `takePorts(names)` in the kit takes one free port per name, none twice, walking a band (20000–31999, below
+  Linux's and Windows' default ephemeral ranges) from a random port, so two runs take ports apart; both rehearsals take
+  theirs before anything starts and print them. `portRefusal(port)` asks again before each host starts, waiting ten seconds
+  for one this run stopped, and names the holder (`portHolder`: the listener's pid, name and command line). The family's
+  `startServer` returns no host on a refusal or once its own host ended; the deployment rehearsal ends the run (exit 2),
+  since its shell's host is not its child.
+- **Verify:** `tools/rehearsal-kit.test.mjs`: ports are taken distinct, in the band and free, walking past a held one; the
+  walk wraps, and a band short of ports refuses before any host starts; a port held at a host's start is refused naming
+  its holder, and one let go within the wait is not; on Windows the holder is this process's pid. **Not covered:** the
+  rehearsals themselves, and the window between a port's pick and its bind, which a refusal catches and does not prevent.
+- **Commit:** `94017dc9`, `4bc45e8f`, `22d2896a`.
+
 ## 2026-10-09 — a landing read the home's driver.json, not the file the loop read (CONFIGSEAM1)
 
 ### Driver: `trees land`, the review's press and every landing door ignored a per-file override's landing and review rules
@@ -5692,5 +5741,3 @@ did, with the old heuristic as the last resort.
 **Verification.** Launched with no environment at all: right port, right family. The family rehearsal
 re-ran after the change, 22/22. No store pollution had occurred — no request ever reached the
 mis-rooted instance.
-
-2026-10-09 — REHEARSEPORT1 (in progress): the family rehearsal on fixed ports, and git walking up from its scratch.
