@@ -54,18 +54,27 @@ function respond(url: string): Response {
   return Response.json([]);
 }
 
-function machine(links: 'system' | 'daoris' | undefined, drivingBrowser?: string[]) {
+/** A set-up step's set-up waiting for the person here, as the driver's state says it (REVIEWENV1d). */
+const IN_REVIEW = {
+  quest: 'q2', title: 'Show #q1 in `local` for review', environment: 'local', look: 'http://localhost:4200/reports',
+  shows: 'the new column, turned on', served: false,
+};
+
+function machine(links: 'system' | 'daoris' | undefined, drivingBrowser?: string[], inReview?: (typeof IN_REVIEW)[]) {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
   invoke.mockImplementation(async (module: string, type: string) => {
     if (module === 'DAORIS.BROWSER') return { favorites: [], extensions: 'offer', browser: 'daoris', edgeFound: true, ...(links ? { links } : {}) };
     if (module === 'DAORIS.WINDOWS') return { opened: true, windows: [] };
     if (module === 'DAORIS.REMOTES') return { path: 'remotes.json', fromEnvironment: false, remotes: [] };
     if (module !== 'DAORIS.DRIVER') return {};
-    if (type === 'STATE') {
-      return {
-        drivable: ['engine'], holds: [], trees: [], running: [CHAT.id], notify: false, strikes: 3, forgiven: {},
-        ...(drivingBrowser ? { drivingBrowser } : {}),
-      };
+    const state = {
+      drivable: ['engine'], holds: [], trees: [], running: [CHAT.id], notify: false, strikes: 3, forgiven: {},
+      ...(drivingBrowser ? { drivingBrowser } : {}),
+      ...(inReview ? { inReview } : {}),
+    };
+    if (type === 'STATE') return state;
+    if (type === 'SHOW_REVIEW_AGAIN') {
+      return { ...state, inReview: inReview?.map((row) => ({ ...row, served: true })), shownAgain: { quest: 'q2', message: 'Showing it again.' } };
     }
     return {};
   });
@@ -162,6 +171,40 @@ describe("Daoris's browser, from the window", () => {
       await screen.findByRole('button', { name: "Open Daoris's browser" });
 
       expect(screen.queryByText(/driven by/)).toBeNull();
+      cleanup();
+      invoke.mockReset();
+    }
+  });
+
+  /**
+   * REVIEWENV1d: a set-up waiting for the person's review is said on the strip beside the browser's door, never inside the
+   * browser, with whether its tab is still served; *Show it again* asks the shell to serve it again.
+   */
+  it('says a set-up waits for review beside the door, and shows it again on a press', async () => {
+    machine(undefined, undefined, [IN_REVIEW]);
+    const user = userEvent.setup();
+    start();
+
+    const chip = await screen.findByRole('button', { name: 'Set-up step #q2 waits for your review: Show #q1 in `local` for review' });
+    expect(chip.closest('[data-strip-space="end"]')).not.toBeNull();
+    expect(chip).toHaveTextContent('In review: #q2');
+    chip.focus();
+    await user.keyboard('{Enter}');
+    expect(await screen.findByText(/No longer shown: a reload there loads your own server/)).toBeInTheDocument();
+    await user.click(screen.getByRole('menuitem', { name: /Show #q2 again/ }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SHOW_REVIEW_AGAIN', { payload: { quest: 'q2' } }));
+    expect(await screen.findByText("Shown again in Daoris's browser: #q2")).toBeInTheDocument();
+  });
+
+  it('says no review beside the door while none waits, and on a shell too old to say', async () => {
+    for (const inReview of [[], undefined]) {
+      machine(undefined, undefined, inReview);
+      start();
+      await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE', {}));
+      await screen.findByRole('button', { name: "Open Daoris's browser" });
+
+      expect(screen.queryByText(/In review/)).toBeNull();
       cleanup();
       invoke.mockReset();
     }

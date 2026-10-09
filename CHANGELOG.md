@@ -200,6 +200,8 @@ with the version and date at release.
   name.
 - A conversation is handed a plugin's servers even when that plugin also adds an agent.
 - A session whose work a squash-merged pull request already carried offers its discard instead of *Accept…*.
+- Work waiting for your review is shown in Daoris's own browser, served where the app runs, until you give
+  your verdict; *In review* beside the browser's door shows it again.
 
 The first version: doctrine that installs, is checked, and flows back.
 
