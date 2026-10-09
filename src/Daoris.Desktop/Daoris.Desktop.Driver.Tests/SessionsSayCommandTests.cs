@@ -129,7 +129,6 @@ public sealed class SessionsSayCommandTests : IDisposable
     [Theory]
     [InlineData("nobody00", "no session here is nobody00")]
     [InlineData("laptop/s9", "laptop/s9 ran on laptop, where its conversation is")]
-    [InlineData("he1p0000", "Ask Daoris's own conversation")]
     [InlineData("1ntake00", "is an intake; answer its ask #a1 instead")]
     [InlineData("st00d000", "it stood down: #q3 is someone else's, so it has nothing to go on with")]
     [InlineData("e4rl1er0", "#q2 went on in a later session here, l4t3r000; say it to that one: daoris-driver sessions say l4t3r000")]
@@ -145,10 +144,28 @@ public sealed class SessionsSayCommandTests : IDisposable
         Assert.False(AnyRequest());
     }
 
+    /// <summary>
+    /// ASKHIST1: Ask Daoris's own conversation is no never. With no driver on the home nothing could open it again, so the words
+    /// are refused naming the window, where its panel holds it; the say door is never posted to.
+    /// </summary>
+    [Fact]
+    public async Task Ask_daoris_s_conversation_goes_on_in_the_window_and_is_refused_where_none_runs()
+    {
+        var room = Nevers();
+        using var service = room.Client();
+
+        var (exit, said) = await SayAsync(room, ["he1p0000", "and the remote?"], World(service, loop: false));
+
+        Assert.Equal(1, exit);
+        Assert.Contains("he1p0000 is Ask Daoris's conversation, which goes on in the window: start Daoris, then say it again.", said);
+        Assert.Equal(0, room.Says);
+    }
+
     /// <summary>The never table is one: the record's facts in, the code out, in D137 §2.2's order, null where it can go on.</summary>
     [Theory]
     [InlineData("laptop/s1", "working", "q1", "engine", null, null, WordsNever.Teammate)]
-    [InlineData("h1", "stopped", null, HelpRoom.Repository, null, null, WordsNever.Help)]
+    // ASKHIST1: Ask Daoris's own conversation goes on in itself, as a chat does.
+    [InlineData("h1", "stopped", null, HelpRoom.Repository, null, null, null)]
     [InlineData("i1", "awaiting-person", null, "ask #a1", "a1", null, WordsNever.Intake)]
     [InlineData("s1", "stood-down", "q1", "engine", null, null, WordsNever.StoodDown)]
     [InlineData("s1", "completed", "q1", "engine", null, "s2", WordsNever.Superseded)]

@@ -49,7 +49,7 @@ public sealed record DeleteOutcome(string Session, DeleteVerdict Verdict, string
 
     /// <summary>
     /// What went, by name: <c>record</c>, then what <see cref="SessionHomeFiles"/> took (<c>conversation</c>, <c>transcript</c>,
-    /// <c>files</c>, <c>harness</c>, <c>marker</c>, <c>mark</c>, <c>choice</c>, <c>spawn</c>, <c>held</c>, <c>landing</c>,
+    /// <c>files</c>, <c>harness</c>, <c>marker</c>, <c>mark</c>, <c>choice</c>, <c>spawn</c>, <c>help</c>, <c>held</c>, <c>landing</c>,
     /// <c>archived</c>), in that order.
     /// </summary>
     public IReadOnlyList<string> Removed { get; init; } = [];
@@ -173,6 +173,7 @@ public sealed class SessionDeletion(string home, Action<string, bool>? remover =
         SessionHomeFiles.Mark => ("its go-on mark", false),
         SessionHomeFiles.Choice => ("its choice of a new session", false),
         SessionHomeFiles.Spawn => ("its spawn files", true),
+        SessionHomeFiles.Help => ("its name and pin in Ask Daoris's history", false),
         SessionHomeFiles.Held => ("its held words", true),
         SessionHomeFiles.Landing => ("its closed automatic landing", false),
         SessionHomeFiles.Archived => ("its archive mark", false),

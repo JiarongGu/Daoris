@@ -14,8 +14,19 @@ export type AskConversationSlot = {
   composer: ReactNode;
   /** Whether the conversation shown has ended, so a message starts the next. */
   ended: boolean;
+  /**
+   * What the foot of the conversation says, where the organism says more than {@link ended}'s line (ASKHIST1): that an
+   * ended one goes on with the next words, or cannot and starts anew, each with its press.
+   */
+  note?: ReactNode;
   /** Start again: finish the one running and clear the panel. Absent while there is nothing to clear. */
   onNew?: () => void;
+  /** The history (ASKHIST1), drawn in the conversation's place while it is open. */
+  history?: ReactNode;
+  /** Whether the history is open. */
+  historyOpen?: boolean;
+  /** Open or close the history. Absent where there is none to show. */
+  onHistory?: () => void;
 };
 
 /**
@@ -58,8 +69,15 @@ export function AskPanel({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const browsing = Boolean(conversation?.historyOpen && conversation.history);
   const talking = Boolean(conversation?.body);
 
+  // The history's door (ASKHIST1): pressed again, or a row chosen in it, the conversation is back.
+  const past = conversation?.onHistory && (
+    <Button variant="ghost" className="px-2 text-small" aria-pressed={browsing} onClick={conversation.onHistory}>
+      {t('help.history.open')}
+    </Button>
+  );
   const again = conversation?.onNew && (
     <Button variant="ghost" className="px-2 text-small" onClick={conversation.onNew}>
       {t('help.new')}
@@ -69,11 +87,11 @@ export function AskPanel({
   const content = (
     <>
       <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-        {talking ? (
+        {browsing ? conversation!.history : talking ? (
           <>
             {conversation!.body}
             {conversation!.proposals}
-            {conversation!.ended && <Prose className="mt-3 text-small text-ink-faint">{t('help.ended')}</Prose>}
+            {conversation!.note ?? (conversation!.ended && <Prose className="mt-3 text-small text-ink-faint">{t('help.ended')}</Prose>)}
           </>
         ) : (
           <>
@@ -116,14 +134,15 @@ export function AskPanel({
         )}
       </div>
 
-      {conversation?.composer}
+      {/* The box belongs to the conversation: while the history is open, there is none to write in. */}
+      {!browsing && conversation?.composer}
     </>
   );
 
   if (!framed) {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
-        {again && <div className="flex justify-end border-b border-line px-2 py-1">{again}</div>}
+        {(past || again) && <div className="flex justify-end gap-1 border-b border-line px-2 py-1">{past}{again}</div>}
         {content}
       </div>
     );
@@ -150,6 +169,7 @@ export function AskPanel({
         <Icon name="help" size={15} className="text-ink-soft" />
         <h2 className="m-0 text-body font-semibold text-ink">{t('help.title')}</h2>
         <span className="ml-auto flex items-center gap-1">
+          {past}
           {again}
           <Button variant="ghost" aria-label={t('help.close')} onClick={onClose} className="px-1.5">
             <Icon name="x" size={14} />

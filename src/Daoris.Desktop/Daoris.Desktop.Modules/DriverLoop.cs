@@ -97,6 +97,12 @@ public sealed class DriverLoop(
     public ChatRunner? Chat { get; private set; }
 
     /// <summary>
+    /// The machine as Ask Daoris's room says it (ASKHIST1): handed by the module that writes the room on <c>START_HELP</c>, and
+    /// handed on to the conversations as they come up, so an earlier conversation going on finds the room as an open would.
+    /// </summary>
+    public Func<CancellationToken, Task<HelpMachine?>>? DescribeHelp { get; set; }
+
+    /// <summary>
     /// The service this loop drives, once the host answers — null before, like <see cref="Chat"/>
     /// and for the same reason.
     /// </summary>
@@ -690,6 +696,8 @@ public sealed class DriverLoop(
                 if (reach is null) Words.Tell(session);
             };
             chat.TakenUpEnded += (session, state) => _ = Ended(eventBus, session, state);
+            // An Ask Daoris conversation going on writes its room as an open does (ASKHIST1), from the module's reading.
+            chat.DescribeHelp = ct => DescribeHelp is { } describe ? describe(ct) : Task.FromResult<HelpMachine?>(null);
             Chat = chat;
         }
 

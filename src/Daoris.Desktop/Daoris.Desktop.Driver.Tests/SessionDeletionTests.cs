@@ -221,6 +221,29 @@ public sealed class SessionDeletionTests : IDisposable
     }
 
     /// <summary>
+    /// ASKHIST1: an Ask Daoris conversation deleted from its history goes with the name and pin the person gave it, in the
+    /// inventory's order, and another conversation's stay.
+    /// </summary>
+    [Fact]
+    public async Task An_ask_daoris_conversation_goes_with_its_name_and_pin()
+    {
+        Kept("h1");
+        Kept("h2");
+        var kept = new HelpConversations(_home);
+        kept.Rename("h1", "Landing");
+        kept.Pin("h1", true, DateTimeOffset.UtcNow);
+        kept.Rename("h2", "Workspaces");
+        var ledger = new Ledger(Record("h1", repository: "daoris:help"), Record("h2", repository: "daoris:help"));
+        using var service = ledger.Client();
+
+        var outcome = await new SessionDeletion(_home).DeleteAsync(service, "h1", PluginEvents.Screen, log: null);
+
+        Assert.Equal(["record", "conversation", "transcript", "files", "harness", "help"], outcome.Removed);
+        Assert.False(File.Exists(kept.PathOf("h1")));
+        Assert.Equal("Workspaces", kept.Read("h2").Name);
+    }
+
+    /// <summary>
     /// A conversation with a tree of its own still here (§5.4): the tree is discarded or cleaned up first, and the ledger is
     /// never asked to delete, so its record and every file stay.
     /// </summary>

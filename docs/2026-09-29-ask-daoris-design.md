@@ -380,6 +380,43 @@ line git can name. With an agent named, a starter is also a first message.
      says it as the screen does: the lines it could not fetch, by git's reason and since when, and the repositories it
      left apart (D112), collapsed, with how a proposal includes one.
 
+11. **ASKHIST1**: Ask Daoris's conversations are kept, listed and gone on in (2026-10-09). The owner: *"we are also missing a chat
+   history resume and management with Ask Daoris, so that we can reuse a session or continue with more knowledge"*. *Built, with
+   no decision of its own; what it amends is named below for the steward's note:*
+   - **Kept on this machine only.** Each conversation is the help record the host already keeps and its words this machine's
+     record (D76). A help record belongs to no workspace, so no feed pushes it. What the person adds (a name, a pin, the
+     earlier conversation one started from) is `<home>/sessions/<id>.help.json` beside its other files, in the home's one
+     inventory (`SessionHomeFiles`), so a delete or a clear takes it too. Never the record, never a repository.
+   - **The history** (`HelpConversations`): the conversations the person spoke in, pinned first, then the newest by their last
+     word; each with its title (its name, else its first question), when, and the first line of Ask Daoris's last answer as the
+     line of what it was about (Daoris makes no model call, so it writes no summary of its own). A search finds them by words
+     in a name or in what either side said, with where. One opened ahead (HELP5) and never spoken in is not listed.
+   - **It goes on in itself** (D137 §2.2, as a chat does, MSG1c): its harness conversation's id is kept now, and words written
+     to one that ended reopen its record and resume that conversation in its room, with the room's place (its rules, `default`,
+     its tools up front), the room written again from the machine as `START_HELP` writes it. The room holds one conversation at
+     a time, so going back to one first stops the one running here, which keeps its own id; one answering a turn is never
+     stopped, and the words wait, said why. `help` is no longer a never for words; a new session and a conversation started in
+     a repository are still refused it, by the same code.
+   - **A new one from an earlier one's words**: handed its **transcript**, never a summary: Daoris has none of its own (D24), and
+     one asked of the earlier agent would spend a turn and reopen that conversation. The transcript (both sides' words, the
+     newest kept where it is long, saying the start was cut) is a file in the new conversation's own folder, which its rules
+     already read (CONV4c), handed with the person's first message and named in its preface.
+   - **The panel**: *History* beside *New conversation*; the history takes the conversation's place, with no box. A row shows
+     its conversation; one that ended and goes on in itself takes the next words, and one that cannot offers *New conversation
+     from it*. The newest that ended still starts a new one by default, as HELP5 made it; *Go on in it* chooses it. A rename is
+     asked in its row with the terminal's twin; a delete asks once (`InlineConfirm`) through `SESSION_DELETE`.
+   - **Both doors** (D50): `HELP_CONVERSATIONS`, `HELP_RENAME`, `HELP_PIN`, `HELP_START_FROM`, with going on as `SESSION_INPUT`
+     and a delete as `SESSION_DELETE`; and `daoris-driver help list [--search "…"] [--json] | resume <id> "…" | rename <id>
+     "…"|--clear | pin|unpin <id> | delete <id> [--yes]`, its `--json` the panel's row field for field. Exempt from Ask Daoris:
+     the conversations are the person's own (`HelpCoverageTests`).
+   - **It amends** D137's MSG1c note (*Ask Daoris's keeps none, since it never goes on*) and §2.2's `help` never, HELP1a's *a
+     message opens the next* after a restart (it still does, unless the person chooses to go on), and D76's RAIL1 rejection of
+     hand-naming, for Ask Daoris's conversations alone: the name is the person's, kept on this machine, never the record.
+   - **What the gates do not cover:** a real agent resuming a help conversation (`claude --resume`, `session/resume`); the room's
+     set-aside with a real process (no `Process` row was written); a new conversation reading its handed transcript; and the panel
+     on the window in both themes. Not built: a terminal door for a new conversation from an earlier one, since no terminal door
+     opens an Ask Daoris conversation at all.
+
 ## 10. Not chosen
 
 - **Running `daoris` commands in the room.** The installed application does not carry the CLI, and

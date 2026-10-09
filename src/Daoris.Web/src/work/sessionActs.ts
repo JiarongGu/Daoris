@@ -43,7 +43,7 @@ const DOOR_OF: Partial<Record<SessionActId, keyof SessionDoors>> = { pauseQuest:
  * it. A name a later driver adds is said as it is named, rather than as a key the catalogue does not hold.
  */
 const KEPT_NAMES = new Set([
-  'conversation', 'transcript', 'files', 'harness', 'marker', 'mark', 'choice', 'spawn', 'held', 'landing', 'archived',
+  'conversation', 'transcript', 'files', 'harness', 'marker', 'mark', 'choice', 'spawn', 'help', 'held', 'landing', 'archived',
 ]);
 
 const keptSaid = (t: Translate, name: string) =>
