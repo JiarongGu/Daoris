@@ -5,6 +5,36 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-09 — Ask Daoris's history ran past the right dock and scrolled it sideways (ASKHIST1b)
+
+### Page: a grid's `auto` column grew to a one-line title's whole width
+- **Symptom:** on the owner's install, the right dock 436 px wide at 1546×900, Ask Daoris's *History* overflowed sideways:
+  the search field and every row ran past the dock's right edge, titles and lines were cut mid-word at it, and a
+  horizontal scrollbar sat under the list. The rows that did it had long titles holding a pasted URL (`to complete this
+  https://example.atlassian.net/browse/TK-2205 so…`). Measured on the window: the history's `section.grid` 404 wide and
+  869 to scroll, its scroller 436 and 885, the search's `label` 867.
+- **Root cause:** the history's section and its list were `grid` with no column template, so each had one implicit `auto`
+  column, whose base size is its widest item's min-content. A row's title and lines were `truncate` (`nowrap`), whose
+  min-content is the whole line: the column grew to the longest title, every item stretched to it (the search's label
+  too), the cut never had a narrower box to cut at, and the scroller's `overflow-y: auto` made it a sideways scroll. Built
+  so by ASKHIST1 (`069d7aeb`); its story's 24rem frame held only short titles. The same panel had the defect's other form,
+  a word with no break in a box that never breaks inside one: the line naming the conversation one started from, the
+  person's words as asked and as held (an unnamed conversation's title is its first question), the agent's answer saying
+  the URL again, the box's waiting words inside the composer's own `auto` grids, the rename's terminal twin (a flex item as
+  wide as its longest code word) and the delete's sentence.
+- **Fix:** `grid-cols-[minmax(0,1fr)]`, the conversation's idiom since CONV3, on the history's section and list and on the
+  composer's form, its waiting group and list. A title stays one line, whole in its `title` and its row's name; the meta
+  line truncates; what it was about and a search's find are `line-clamp-2 wrap-anywhere`, clamped as the rail's found
+  words are. `wrap-anywhere` on a search that found nothing, the delete's sentence, the started-from line, the person's
+  words and the waiting words; `min-w-0` on the rename's twin; the agent's Markdown `wrap-break-word`, so a table still
+  measures its words. The rule is in the platform language §3, beside U8.
+- **Verify:** `AskHistory.test.tsx`'s dock's-edge tests (every grid between a row's words or the search and the history
+  bounds its column; the title's cut, tip and name; the lines' clamp; the twin and the sentence), and an edge test each in
+  `AskDaoris.test.tsx`, `ConversationView.test.tsx` and `Composer.test.tsx`, all failing on the old markup first. The
+  stories `Help/AskHistory` *PastedUrl*, *PastedUrlRename* and *PastedUrlDelete* draw it at the dock's 300 px floor. Web
+  vitest 4971/4971, `i18n:check`, `names:check --strict` and `verify`. Nobody has looked at the window yet.
+- **Commit:** `173df22a` (history), `fd6f5e4c` (conversation and box), `a8c13e95` (the agent's answer).
+
 ## 2026-10-09 — the review's Accept landed work a squash merge had already put on the line (SQUASHTIDY1f)
 
 ### Driver and page: a tree the line holds by content was still landed, by every door but the head
@@ -5555,5 +5585,3 @@ did, with the old heuristic as the last resort.
 **Verification.** Launched with no environment at all: right port, right family. The family rehearsal
 re-ran after the change, 22/22. No store pollution had occurred — no request ever reached the
 mis-rooted instance.
-
-2026-10-09 ASKHIST1b (in progress): Ask Daoris history overflows the right dock sideways.
