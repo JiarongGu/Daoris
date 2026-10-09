@@ -70,6 +70,7 @@
   "workflow.run.said.pull-request.not-pushed": "`{{plugin}}` 没有推送分支，所以没有开启拉取请求。",
   "workflow.run.said.pull-request.ask-failed": "无法读取 `{{plugin}}`：{{code}}。",
   "workflow.run.said.pull-request.no-branch": "没有开启：工作已落地进主线。",
+  "workflow.run.said.pull-request.nothing": "没有开启：没有可落地的。",
   "workflow.run.try.uncommitted": "它的工作树里有未提交的工作",
   "workflow.run.try.exists": "它要建的分支已经存在",
   "workflow.run.try.completed": "它的分支的拉取请求已合并，请把仓库更新到最新后再采纳",

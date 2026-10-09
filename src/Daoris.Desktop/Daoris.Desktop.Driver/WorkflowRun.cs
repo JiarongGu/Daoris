@@ -611,6 +611,7 @@ public static class WorkflowRuns
     private static WorkflowRunStep PullRequest(WorkflowStep cell, WorkflowRunStep landing, WorkflowRunFacts facts)
     {
         if (landing.State != WorkflowRunStates.Done) return new WorkflowRunStep(cell, WorkflowRunStates.NotReached, "");
+        if (landing.Detail == WorkflowRunDetails.Nothing) return new WorkflowRunStep(cell, WorkflowRunStates.Skipped, WorkflowRunDetails.Nothing);
         if (landing.Detail != WorkflowRunDetails.Branch || landing.Session is not { } session
             || facts.Landings.LastOrDefault(entry => entry.Names(session)) is not { } entry)
         {

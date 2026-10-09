@@ -159,6 +159,10 @@ public sealed class WorkflowRunTests
         }, [("landing", "done", "merge"), ("pull-request", "skipped", "no-branch")], null),
         ["no pull request is reached before the landing"] = new(PullRequestRule, facts => facts with { Quests = [Quest("q1", "Taken")], Sessions = [Session("s1", "q1", "working")] },
             [("landing", "not-reached", ""), ("pull-request", "not-reached", "")], "work"),
+        ["work with nothing to land opens no pull request"] = new(PullRequestRule, facts => facts with
+        {
+            Quests = [Quest("q1", "Done")], Sessions = [Session("s1", "q1", "completed") with { Evidence = "no commits landed" }],
+        }, [("landing", "done", "nothing"), ("pull-request", "skipped", "nothing")], null),
 
         // The look.
         ["a look is not reached while the work runs"] = new(LookRule, facts => facts with

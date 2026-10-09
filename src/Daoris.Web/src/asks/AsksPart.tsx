@@ -294,7 +294,8 @@ export function useAsksPart({
           history={historyDoor(shown)}
           considered={considered}
           nameOf={nameOf}
-          workflow={runs.data && onOpenRun
+          // A shell older than the route answers something else, which is no run.
+          workflow={Array.isArray(runs.data?.runs) && onOpenRun
             ? { runs: runs.data.runs, onOpen: (run) => { if (run.session) onOpenRun(run.session); } }
             : undefined}
         />

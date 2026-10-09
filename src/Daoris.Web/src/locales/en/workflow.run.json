@@ -70,6 +70,7 @@
   "workflow.run.said.pull-request.not-pushed": "`{{plugin}}` did not push the branch, so no pull request opened.",
   "workflow.run.said.pull-request.ask-failed": "Could not read `{{plugin}}`: {{code}}.",
   "workflow.run.said.pull-request.no-branch": "Not opened: the work landed into its line.",
+  "workflow.run.said.pull-request.nothing": "Not opened: there was nothing to land.",
   "workflow.run.try.uncommitted": "its tree holds uncommitted work",
   "workflow.run.try.exists": "the branch it would make already stands",
   "workflow.run.try.completed": "its branch's pull request was merged, so bring the repository up to date and accept it",

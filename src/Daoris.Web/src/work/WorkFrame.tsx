@@ -868,7 +868,8 @@ export function WorkFrame({
         ? withWhose(
           <div className="p-3">
             <WorkflowRunView
-              answer={workflowRun.data ?? null}
+              // A shell older than the route answers something else, which is no run.
+              answer={Array.isArray(workflowRun.data?.runs) ? workflowRun.data : null}
               reading={workflowRun.isPending}
               refusal={workflowRun.error ? sentence(workflowRun.error) : null}
               // The step the followed session is its own: a set-up step's session shows the work for the look.

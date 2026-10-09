@@ -14,7 +14,7 @@ const DETAILS: Record<string, readonly string[]> = {
   opinion: ['declared', 'agent', 'answering', 'given', 'failed', 'unread'],
   look: ['not-shown', 'being-set-up', 'shown', 'not-yet', 'not-held', 'reviewed', 'skip', 'off', 'unread'],
   landing: ['accept', 'automatic', 'branch', 'merge', 'already', 'nothing', 'refused', 'gone', 'elsewhere'],
-  'pull-request': ['merge', 'merged', 'abandoned', 'not-pushed', 'ask-failed', 'no-branch'],
+  'pull-request': ['merge', 'merged', 'abandoned', 'not-pushed', 'ask-failed', 'no-branch', 'nothing'],
 };
 
 /** A hold's codes this page words (D133, D144); another is said as the departure's. */
