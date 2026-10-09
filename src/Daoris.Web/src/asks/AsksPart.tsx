@@ -5,7 +5,9 @@ import { linksOf, toUpload } from '../attachments';
 import { NO_CARRY } from '../compose/carry';
 import { sentence } from '../format';
 import { askItem } from '../opener';
-import { useAnswerGoAhead, useAsk, useAsks, useCloseAsk, useDeleteAsk, usePublishAsk, useRegistry, useSessions } from '../queries';
+import {
+  useAnswerGoAhead, useAsk, useAsks, useChooseAskReview, useCloseAsk, useDeleteAsk, usePublishAsk, useRegistry, useSessions,
+} from '../queries';
 import { useScope } from '../scope';
 import { namer } from '../settings/namer';
 import { useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useWorkPlan } from '../shell';
@@ -25,7 +27,7 @@ import { AskComposer, type AskDraft } from './AskComposer';
 import { AskPage } from './AskPage';
 import { asksInOrder } from './AskRow';
 
-const EMPTY_DRAFT: AskDraft = { circle: '', sentence: '', to: '', ...NO_CARRY };
+const EMPTY_DRAFT: AskDraft = { circle: '', sentence: '', to: '', review: '', reviewWords: '', ...NO_CARRY };
 
 /** What the asks hand Quests' view: their rows, the chosen ask's page, and the composer while it is open. */
 export type AsksPart = {
@@ -90,7 +92,8 @@ export function useAsksPart({
   const every = useAsks(true);
   // Whether this machine sets an intake agent (UX5 U34): "" is off, and a door with no driver, or a
   // shell older than the intake, cannot say, so the composer promises neither.
-  const intakeAdapter = useDriver().data?.intakeAdapter;
+  const driverState = useDriver().data;
+  const intakeAdapter = driverState?.intakeAdapter;
   const intakeSet = intakeAdapter === undefined ? null : intakeAdapter !== '';
   // Scoped like every cross-repository read: scoped, its rows are that circle's and the circle is fixed;
   // unscoped, they are every circle's, which is exactly the list the composer asks the person to pick from.
@@ -106,6 +109,8 @@ export function useAsksPart({
   const close = useCloseAsk();
   const remove = useDeleteAsk();
   const answerGoAhead = useAnswerGoAhead();
+  // The person's review choice for an ask's work (REVIEWENV1g, design §1.5): the service's door, the latest standing.
+  const chooseReview = useChooseAskReview();
   useErrorNotify(active ? asks.error : null, notify);
 
   const [draft, setDraft] = useState<AskDraft>(EMPTY_DRAFT);
@@ -137,9 +142,20 @@ export function useAsksPart({
     .filter((row) => canBeAsked(row) && workspaceOf(row) === circle)
     .map((row) => row.repository)
     .sort();
+  // The review environments a circle's rules declare (REVIEWENV1a), by name: its own rule's and each of its repositories', as
+  // this machine's driver reads them. A browser has no driver, and offers only `on` and `off`.
+  const environmentsIn = (circle: string): string[] => {
+    const repositories = new Set((family.data ?? []).filter((row) => workspaceOf(row) === circle).map((row) => row.repository));
+    const rules = [
+      ...(driverState?.workspaceReviews ?? []).filter((row) => row.workspace === circle).map((row) => row.rule),
+      ...(driverState?.reviews ?? []).filter((row) => repositories.has(row.repository)).map((row) => row.rule),
+    ];
+    return [...new Set(rules.flatMap((rule) => (rule.none ? [] : rule.environments.map((each) => each.name))))].sort();
+  };
   // Each quest the page holds by its name (SESSUX1j): the short title, else the title.
   const questTitles = Object.fromEntries((quests ?? []).map((quest) => [quest.id, questName(quest)]));
-  const busy = ask.isPending || publish.isPending || close.isPending || remove.isPending || answerGoAhead.isPending || reading;
+  const busy = ask.isPending || publish.isPending || close.isPending || remove.isPending || answerGoAhead.isPending
+    || chooseReview.isPending || reading;
   const intakeOf = (item: Ask) => (item.intake ? sessions.data?.find((session) => session.id === item.intake) ?? null : null);
 
   const onAsk = async () => {
@@ -163,6 +179,8 @@ export function useAsksPart({
       attachments,
       // Unnamed, the declarations propose and nothing is published; named, it is published at once.
       ...(draft.to ? { to: draft.to } : {}),
+      // The person's review choice for its work (REVIEWENV1g, design §1.5), with their words; none leaves each rule to decide.
+      ...(draft.review ? { review: draft.review, ...(draft.reviewWords?.trim() ? { reviewWords: draft.reviewWords.trim() } : {}) } : {}),
     }, {
       onSuccess: (result) => {
         notify(result.message);
@@ -257,6 +275,13 @@ export function useAsksPart({
           onDelete={(answered) => onDelete(shown.id, answered)}
           onOpenQuest={(id) => onChoose(id)}
           onAnswerGoAhead={(number, approved, words) => onAnswerGoAhead(shown.id, number, approved, words)}
+          environments={environmentsIn(shown.workspace)}
+          // The record as the door answers it, so the page shows the choice before the list catches up; a refusal (a
+          // repository that declares no environment) is the service's sentence.
+          onChooseReview={(choice, words) => chooseReview.mutate({ id: shown.id, choice, words }, {
+            onSuccess: (result) => { notify(result.message); setHeld(result.ask); },
+            onError: failure(notify),
+          })}
           work={workDoor(shown)}
           history={historyDoor(shown)}
           considered={considered}
@@ -277,6 +302,7 @@ export function useAsksPart({
         fixed={fixed}
         circles={circles}
         receivers={receiversIn(fixed ?? draft.circle)}
+        environments={environmentsIn(fixed ?? draft.circle)}
         busy={busy}
         onSubmit={() => void onAsk()}
         onCancel={() => onComposingChange(false)}

@@ -92,7 +92,7 @@
         "work.rail.ended",
         "work.rail.label", "work.rail.search.byContent", "work.rail.search.byName", "work.relations.title",
         "work.sync.inConflict", "work.trace.title", "work.head.details",
-        "review.title", "review.setUp.newest", "review.setUp.older"
+        "review.title", "review.setUp.newest", "review.setUp.older", "asks.record.review"
       ]
     },
     "field": {
@@ -146,7 +146,7 @@
         "work.intake.ask", "work.intake.room", "work.preview.show", "work.relations.asked",
         "work.relations.askedBy", "work.relations.resumed", "work.review.layout", "work.review.viewed",
         "work.start.harness", "work.start.ownTree", "work.start.profile", "work.start.repository",
-        "work.tool.input", "work.tool.output", "review.setUp.where", "review.setUp.again"
+        "work.tool.input", "work.tool.output", "review.setUp.where", "review.setUp.again", "asks.compose.review"
       ]
     },
     "choice": {
@@ -253,7 +253,8 @@
         "work.rail.open", "work.review.accept", "work.review.accepting", "work.review.discard",
         "work.review.discardMeanIt", "work.review.hand", "work.review.handing", "work.review.pullRequest",
         "work.review.readAgain", "work.review.sendBack", "work.say.goOnNew", "work.say.startChat", "work.start.go", "work.steer.now", "work.terminal.again", "work.terminal.close",
-        "work.terminal.new", "work.terminal.open", "review.act.*", "review.ask.notYetMeanIt", "review.ask.skipMeanIt"
+        "work.terminal.new", "work.terminal.open", "review.act.*", "review.ask.notYetMeanIt", "review.ask.skipMeanIt",
+        "asks.record.reviewApply", "asks.record.reviewSet"
       ]
     },
     "status": {
@@ -364,7 +365,7 @@
         "settings.lines.eachCheckout", "settings.lines.unnamed", "settings.tools.filePlaceholder",
         "settings.tools.locations.placeholder", "projects.list.filter",
         "signin.codePlaceholder", "work.find.placeholder", "work.rail.search.placeholder", "work.say.placeholder",
-        "review.ask.notYetWords", "review.ask.skipWords"
+        "review.ask.notYetWords", "review.ask.skipWords", "asks.compose.reviewWords", "asks.record.reviewChoose"
       ]
     },
     "toast": {
