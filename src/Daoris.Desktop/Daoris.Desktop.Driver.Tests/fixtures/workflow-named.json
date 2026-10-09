@@ -1,0 +1,1064 @@
+{
+  "about": "WORKFLOW1d's shared table: named workflows and their versions (D157 points 5, 6 and 8; the workflow design §2.4–§2.6, §3.2, §3.3, §3.9, §4.7), the table both twins hold, the CLI's namedworkflows.ts and the driver's WorkflowNamed, WorkflowDiff, WorkflowPresets and WorkflowStore. `kinds`: each kind of step, how much of it this build runs (`built`, `partial`, `declared`, or `none`, never offered), the limit it is said with (a code of workflow-current.json's `limits`), and the fields it takes in order, each its type, whether it must be named, and what absence reads as. `files`: a workflow file read whole, its file-level problem, then each version's number, its first problem and its digest (the first 12 hex characters of the SHA-256 of the text both build by hand), null where it cannot be read. `versions`: one version's `steps`, read as v1 of `docs-to-pr` saved at 2026-10-09T09:12:00Z by the terminal, its first problem and its digest. `diffs`: two versions' steps, `before` null for a new workflow, matched by step id: each entry, its change, the fields changed and whether it moved, and the lines it is said in. `presets`: each preset built in, in order, its steps as saved and its line, composed from its steps. `variants`: a preset with a second opinion, your look first, or both. `lines`: the line other steps compose. `store`: a version added to a file (`file` null for a new one), what the file holds after it, compared as JSON, or the problem that wrote nothing. No row has a key twice in one object, a key that reads as a number, or a name whose spaces are anything but plain spaces.",
+  "kinds": [
+    {"kind": "work", "runtime": "built", "limit": null, "fields": []},
+    {"kind": "opinion", "runtime": "declared", "limit": "opinion-declared", "fields": [
+      {"name": "reviewers", "type": "names", "required": false, "default": null},
+      {"name": "required", "type": "flag", "required": false, "default": false},
+      {"name": "steps", "type": "flag", "required": false, "default": false},
+      {"name": "recheck", "type": "flag", "required": false, "default": true}
+    ]},
+    {"kind": "look", "runtime": "partial", "limit": "look-partial", "fields": [
+      {"name": "environment", "type": "environment", "required": false, "default": null}
+    ]},
+    {"kind": "landing", "runtime": "built", "limit": null, "fields": [
+      {"name": "form", "type": "choice", "choices": ["merge", "branch"], "required": true, "default": null},
+      {"name": "accept", "type": "choice", "choices": ["you", "automatic"], "required": true, "default": null},
+      {"name": "pattern", "type": "pattern", "required": false, "default": null},
+      {"name": "plugin", "type": "plugin-or-none", "required": false, "default": null}
+    ]},
+    {"kind": "pull-request", "runtime": "partial", "limit": "pull-request-at-clean-up", "fields": []},
+    {"kind": "go-ahead", "runtime": "partial", "limit": "go-ahead-partial", "fields": [
+      {"name": "act", "type": "text", "required": true, "default": null},
+      {"name": "on", "type": "text", "required": true, "default": null},
+      {"name": "refused", "type": "choice", "choices": ["stop", "wait"], "required": false, "default": "stop"}
+    ]},
+    {"kind": "check", "runtime": "none", "limit": null, "fields": [
+      {"name": "plugin", "type": "plugin", "required": true, "default": null},
+      {"name": "checks", "type": "checks", "required": false, "default": "required"},
+      {"name": "failed", "type": "choice", "choices": ["wait", "send-back", "stop"], "required": false, "default": "wait"}
+    ]},
+    {"kind": "stage", "runtime": "none", "limit": null, "fields": [
+      {"name": "plugin", "type": "plugin", "required": true, "default": null},
+      {"name": "stage", "type": "id", "required": true, "default": null},
+      {"name": "start", "type": "choice", "choices": ["you", "automatic"], "required": false, "default": "you"},
+      {"name": "failed", "type": "choice", "choices": ["wait", "send-back", "stop"], "required": false, "default": "wait"}
+    ]},
+    {"kind": "all", "runtime": "none", "limit": null, "fields": [
+      {"name": "steps", "type": "members", "required": true, "default": null},
+      {"name": "failed", "type": "choice", "choices": ["wait", "send-back", "stop"], "required": false, "default": "wait"}
+    ]}
+  ],
+  "files": [
+    {
+      "name": "a workflow merging what you accept, one version",
+      "file": {"id": "docs-to-pr", "name": "Documentation to a pull request", "versions": [
+        {"version": 1, "at": "2026-10-09T09:12:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]}
+      ]},
+      "problem": null,
+      "versions": [{"version": 1, "problem": null, "digest": "bcf751a72ffe"}]
+    },
+    {
+      "name": "a name in your own language, a door of Ask Daoris's and of the screen, and a field the file has no name for, kept",
+      "file": {"id": "docs-to-pr", "name": "文档直接开拉取请求", "note": "kept as written", "versions": [
+        {"version": 1, "at": "2026-10-09T09:12:00+08:00", "door": "screen", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]},
+        {"version": 3, "at": "2026-10-09T10:00:00.5Z", "door": "ask-daoris:p-3f1a", "kept": true, "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "automatic"}, {"id": "pull-request", "kind": "pull-request"}]}
+      ]},
+      "problem": null,
+      "versions": [{"version": 1, "problem": null, "digest": "bcf751a72ffe"}, {"version": 3, "problem": null, "digest": "19f6127d3c6a"}]
+    },
+    {
+      "name": "not an object",
+      "file": [],
+      "problem": "a workflow is a JSON object: its `id`, its `name` and its `versions`.",
+      "versions": []
+    },
+    {
+      "name": "no id",
+      "file": {"name": "Docs", "versions": []},
+      "problem": "a workflow's `id` is lower-case letters, digits and dashes, at most 40, such as `docs-to-pr`.",
+      "versions": []
+    },
+    {
+      "name": "an id in capitals",
+      "file": {"id": "Docs", "name": "Docs", "versions": []},
+      "problem": "`Docs` is not a workflow's id — lower-case letters, digits and dashes, at most 40, such as `docs-to-pr`.",
+      "versions": []
+    },
+    {
+      "name": "an id of 41 characters",
+      "file": {"id": "a-workflow-whose-id-runs-past-forty-chars", "name": "Docs", "versions": []},
+      "problem": "`a-workflow-whose-id-runs-past-forty-chars` is not a workflow's id — lower-case letters, digits and dashes, at most 40, such as `docs-to-pr`.",
+      "versions": []
+    },
+    {
+      "name": "an id ending in a dash",
+      "file": {"id": "docs-", "name": "Docs", "versions": []},
+      "problem": "`docs-` is not a workflow's id — lower-case letters, digits and dashes, at most 40, such as `docs-to-pr`.",
+      "versions": []
+    },
+    {
+      "name": "current is Current's",
+      "file": {"id": "current", "name": "Current", "versions": []},
+      "problem": "`current` names Current, the workflow drawn from the rules as they stand, so no saved workflow takes it.",
+      "versions": []
+    },
+    {
+      "name": "no name",
+      "file": {"id": "docs-to-pr", "versions": []},
+      "problem": "a workflow's `name` is your words for it, 1 to 60 characters.",
+      "versions": []
+    },
+    {
+      "name": "a blank name",
+      "file": {"id": "docs-to-pr", "name": "   ", "versions": []},
+      "problem": "a workflow's `name` is your words for it, 1 to 60 characters.",
+      "versions": []
+    },
+    {
+      "name": "a name of 61 characters",
+      "file": {"id": "docs-to-pr", "name": "Documentation goes straight to a pull request, with no press!", "versions": []},
+      "problem": "a workflow's `name` is your words for it, 1 to 60 characters.",
+      "versions": []
+    },
+    {
+      "name": "no versions",
+      "file": {"id": "docs-to-pr", "name": "Docs"},
+      "problem": "a workflow's `versions` is a list of at least one.",
+      "versions": []
+    },
+    {
+      "name": "an empty list of versions",
+      "file": {"id": "docs-to-pr", "name": "Docs", "versions": []},
+      "problem": "a workflow's `versions` is a list of at least one.",
+      "versions": []
+    },
+    {
+      "name": "a version that is not an object",
+      "file": {"id": "docs-to-pr", "name": "Docs", "versions": [1]},
+      "problem": "each of its versions is a JSON object with its `version`, `at`, `door` and `steps`.",
+      "versions": []
+    },
+    {
+      "name": "a version numbered 0",
+      "file": {"id": "docs-to-pr", "name": "Docs", "versions": [{"version": 0, "at": "2026-10-09T09:12:00Z", "door": "terminal", "steps": []}]},
+      "problem": "each version's `version` is a whole number from 1, each greater than the one before it.",
+      "versions": []
+    },
+    {
+      "name": "a version numbered in text",
+      "file": {"id": "docs-to-pr", "name": "Docs", "versions": [{"version": "1", "at": "2026-10-09T09:12:00Z", "door": "terminal", "steps": []}]},
+      "problem": "each version's `version` is a whole number from 1, each greater than the one before it.",
+      "versions": []
+    },
+    {
+      "name": "a version numbered by a fraction",
+      "file": {"id": "docs-to-pr", "name": "Docs", "versions": [{"version": 1.5, "at": "2026-10-09T09:12:00Z", "door": "terminal", "steps": []}]},
+      "problem": "each version's `version` is a whole number from 1, each greater than the one before it.",
+      "versions": []
+    },
+    {
+      "name": "versions out of order",
+      "file": {"id": "docs-to-pr", "name": "Docs", "versions": [
+        {"version": 2, "at": "2026-10-09T09:12:00Z", "door": "terminal", "steps": []},
+        {"version": 1, "at": "2026-10-09T09:12:00Z", "door": "terminal", "steps": []}
+      ]},
+      "problem": "each version's `version` is a whole number from 1, each greater than the one before it.",
+      "versions": []
+    },
+    {
+      "name": "one number twice",
+      "file": {"id": "docs-to-pr", "name": "Docs", "versions": [
+        {"version": 1, "at": "2026-10-09T09:12:00Z", "door": "terminal", "steps": []},
+        {"version": 1, "at": "2026-10-09T09:12:00Z", "door": "terminal", "steps": []}
+      ]},
+      "problem": "each version's `version` is a whole number from 1, each greater than the one before it.",
+      "versions": []
+    },
+    {
+      "name": "a version saved at no moment, and one saved at a moment that does not read: each unreadable on its own",
+      "file": {"id": "docs-to-pr", "name": "Docs", "versions": [
+        {"version": 1, "door": "terminal", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]},
+        {"version": 2, "at": "Oct 9", "door": "terminal", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]},
+        {"version": 3, "at": "2026-02-30T09:12:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]},
+        {"version": 4, "at": "2026-10-09T09:12:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]}
+      ]},
+      "problem": null,
+      "versions": [
+        {"version": 1, "problem": "v1: its `at` is a moment as ISO 8601 writes it, such as `2026-10-09T09:12:00Z`.", "digest": null},
+        {"version": 2, "problem": "v2: its `at` is a moment as ISO 8601 writes it, such as `2026-10-09T09:12:00Z`.", "digest": null},
+        {"version": 3, "problem": "v3: its `at` is a moment as ISO 8601 writes it, such as `2026-10-09T09:12:00Z`.", "digest": null},
+        {"version": 4, "problem": null, "digest": "bcf751a72ffe"}
+      ]
+    },
+    {
+      "name": "a door nobody has, and Ask Daoris's door naming no proposal",
+      "file": {"id": "docs-to-pr", "name": "Docs", "versions": [
+        {"version": 1, "at": "2026-10-09T09:12:00Z", "door": "the person", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]},
+        {"version": 2, "at": "2026-10-09T09:12:00Z", "door": "ask-daoris:", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]},
+        {"version": 3, "at": "2026-10-09T09:12:00Z", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]}
+      ]},
+      "problem": null,
+      "versions": [
+        {"version": 1, "problem": "v1: its `door` is `screen`, `terminal` or `ask-daoris:<proposal>`.", "digest": null},
+        {"version": 2, "problem": "v2: its `door` is `screen`, `terminal` or `ask-daoris:<proposal>`.", "digest": null},
+        {"version": 3, "problem": "v3: its `door` is `screen`, `terminal` or `ask-daoris:<proposal>`.", "digest": null}
+      ]
+    },
+    {
+      "name": "a newer build's version, kept and unreadable here, the ones before it read",
+      "file": {"id": "docs-to-pr", "name": "Docs", "versions": [
+        {"version": 1, "at": "2026-10-09T09:12:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you"}, {"id": "pull-request", "kind": "pull-request"}]},
+        {"version": 2, "at": "2026-10-09T09:20:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you"}, {"id": "pull-request", "kind": "pull-request"}, {"id": "checks", "kind": "check", "plugin": "example.pull-request", "failed": "send-back"}]},
+        {"version": 3, "at": "2026-10-09T09:30:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you"}, {"id": "pull-request", "kind": "pull-request"}, {"id": "smoke", "kind": "probe"}]}
+      ]},
+      "problem": null,
+      "versions": [
+        {"version": 1, "problem": null, "digest": "3e9ff5e1fd54"},
+        {"version": 2, "problem": "v2, step `checks`: this build does not run a step of kind `check` yet.", "digest": null},
+        {"version": 3, "problem": "v3, step `smoke`: `probe` is no kind of step — one of `work`, `opinion`, `look`, `landing`, `pull-request`, `go-ahead`, `check`, `stage` or `all`.", "digest": null}
+      ]
+    },
+    {
+      "name": "an id used for another kind in an earlier version",
+      "file": {"id": "docs-to-pr", "name": "Docs", "versions": [
+        {"version": 1, "at": "2026-10-09T09:12:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}, {"id": "look", "kind": "look"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]},
+        {"version": 2, "at": "2026-10-09T09:20:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}, {"id": "look", "kind": "go-ahead", "act": "write the configuration to dev", "on": "dev"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]},
+        {"version": 3, "at": "2026-10-09T09:30:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]},
+        {"version": 4, "at": "2026-10-09T09:40:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}, {"id": "look", "kind": "look", "environment": "local"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]}
+      ]},
+      "problem": null,
+      "versions": [
+        {"version": 1, "problem": null, "digest": "284a1108074e"},
+        {"version": 2, "problem": "v2, step `look`: `look` was a step of kind `look` in v1; an id is never used for another kind.", "digest": null},
+        {"version": 3, "problem": null, "digest": "bcf751a72ffe"},
+        {"version": 4, "problem": null, "digest": "c37ba49377a9"}
+      ]
+    }
+  ],
+  "versions": [
+    {
+      "name": "the work, then a merge you accept",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": null, "digest": "bcf751a72ffe"
+    },
+    {
+      "name": "every kind this build runs, set",
+      "steps": [
+        {"id": "work", "kind": "work"},
+        {"id": "dev-config", "kind": "go-ahead", "act": "write the configuration to dev", "on": "dev", "refused": "wait"},
+        {"id": "opinion", "kind": "opinion", "reviewers": ["codex-acp", "dsh"], "required": true, "steps": true, "recheck": false},
+        {"id": "look", "kind": "look", "environment": "local"},
+        {"id": "land", "kind": "landing", "form": "branch", "accept": "automatic", "pattern": "work/{quest}-{slug}", "plugin": "example.pull-request"},
+        {"id": "pr", "kind": "pull-request"},
+        {"id": "release-note", "kind": "go-ahead", "act": "post the release note", "on": "the team's channel"}
+      ],
+      "problem": null, "digest": "b13eb0494d91"
+    },
+    {
+      "name": "what absence reads as is the digest's: an opinion left to its defaults",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "opinion", "kind": "opinion"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": null, "digest": "8e97ce72e11b"
+    },
+    {
+      "name": "the same opinion with its defaults written: the same digest",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "opinion", "kind": "opinion", "required": false, "steps": false, "recheck": true}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": null, "digest": "8e97ce72e11b"
+    },
+    {
+      "name": "a reviewer read without the spaces around it",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "opinion", "kind": "opinion", "reviewers": [" codex-acp "]}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": null, "digest": "a88bc4a63483"
+    },
+    {
+      "name": "the same reviewer as written: the same digest",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "opinion", "kind": "opinion", "reviewers": ["codex-acp"]}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": null, "digest": "a88bc4a63483"
+    },
+    {
+      "name": "a branch for you to push",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you", "plugin": "none"}],
+      "problem": null, "digest": "f645058f2d90"
+    },
+    {
+      "name": "words with a quote, a backslash and a line in them, escaped by hand",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "ahead", "kind": "go-ahead", "act": "say \"yes\" to C:\\work\nthen go", "on": "dev"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": null, "digest": "1445e753595d"
+    },
+    {
+      "name": "no steps",
+      "steps": [],
+      "problem": "v1: its `steps` is a list of at least one.", "digest": null
+    },
+    {
+      "name": "steps that are not a list",
+      "steps": {"id": "work", "kind": "work"},
+      "problem": "v1: its `steps` is a list of at least one.", "digest": null
+    },
+    {
+      "name": "25 steps",
+      "steps": [
+        {"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"},
+        {"id": "a1", "kind": "go-ahead", "act": "a", "on": "dev"}, {"id": "a2", "kind": "go-ahead", "act": "a", "on": "dev"},
+        {"id": "a3", "kind": "go-ahead", "act": "a", "on": "dev"}, {"id": "a4", "kind": "go-ahead", "act": "a", "on": "dev"},
+        {"id": "a5", "kind": "go-ahead", "act": "a", "on": "dev"}, {"id": "a6", "kind": "go-ahead", "act": "a", "on": "dev"},
+        {"id": "a7", "kind": "go-ahead", "act": "a", "on": "dev"}, {"id": "a8", "kind": "go-ahead", "act": "a", "on": "dev"},
+        {"id": "a9", "kind": "go-ahead", "act": "a", "on": "dev"}, {"id": "a10", "kind": "go-ahead", "act": "a", "on": "dev"},
+        {"id": "a11", "kind": "go-ahead", "act": "a", "on": "dev"}, {"id": "a12", "kind": "go-ahead", "act": "a", "on": "dev"},
+        {"id": "a13", "kind": "go-ahead", "act": "a", "on": "dev"}, {"id": "a14", "kind": "go-ahead", "act": "a", "on": "dev"},
+        {"id": "a15", "kind": "go-ahead", "act": "a", "on": "dev"}, {"id": "a16", "kind": "go-ahead", "act": "a", "on": "dev"},
+        {"id": "a17", "kind": "go-ahead", "act": "a", "on": "dev"}, {"id": "a18", "kind": "go-ahead", "act": "a", "on": "dev"},
+        {"id": "a19", "kind": "go-ahead", "act": "a", "on": "dev"}, {"id": "a20", "kind": "go-ahead", "act": "a", "on": "dev"},
+        {"id": "a21", "kind": "go-ahead", "act": "a", "on": "dev"}, {"id": "a22", "kind": "go-ahead", "act": "a", "on": "dev"},
+        {"id": "a23", "kind": "go-ahead", "act": "a", "on": "dev"}
+      ],
+      "problem": "v1: it has 25 steps, counting each group's; a workflow holds at most 24.", "digest": null
+    },
+    {
+      "name": "23 steps and a group of two: a group's are counted",
+      "steps": [
+        {"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"},
+        {"id": "a1", "kind": "go-ahead", "act": "a", "on": "dev"}, {"id": "a2", "kind": "go-ahead", "act": "a", "on": "dev"},
+        {"id": "a3", "kind": "go-ahead", "act": "a", "on": "dev"}, {"id": "a4", "kind": "go-ahead", "act": "a", "on": "dev"},
+        {"id": "a5", "kind": "go-ahead", "act": "a", "on": "dev"}, {"id": "a6", "kind": "go-ahead", "act": "a", "on": "dev"},
+        {"id": "a7", "kind": "go-ahead", "act": "a", "on": "dev"}, {"id": "a8", "kind": "go-ahead", "act": "a", "on": "dev"},
+        {"id": "a9", "kind": "go-ahead", "act": "a", "on": "dev"}, {"id": "a10", "kind": "go-ahead", "act": "a", "on": "dev"},
+        {"id": "a11", "kind": "go-ahead", "act": "a", "on": "dev"}, {"id": "a12", "kind": "go-ahead", "act": "a", "on": "dev"},
+        {"id": "a13", "kind": "go-ahead", "act": "a", "on": "dev"}, {"id": "a14", "kind": "go-ahead", "act": "a", "on": "dev"},
+        {"id": "a15", "kind": "go-ahead", "act": "a", "on": "dev"}, {"id": "a16", "kind": "go-ahead", "act": "a", "on": "dev"},
+        {"id": "a17", "kind": "go-ahead", "act": "a", "on": "dev"}, {"id": "a18", "kind": "go-ahead", "act": "a", "on": "dev"},
+        {"id": "a19", "kind": "go-ahead", "act": "a", "on": "dev"}, {"id": "a20", "kind": "go-ahead", "act": "a", "on": "dev"},
+        {"id": "group", "kind": "all", "steps": [{"id": "lint", "kind": "check", "plugin": "example.pull-request"}, {"id": "build", "kind": "check", "plugin": "example.pull-request"}]}
+      ],
+      "problem": "v1: it has 25 steps, counting each group's; a workflow holds at most 24.", "digest": null
+    },
+    {
+      "name": "a step that is not an object",
+      "steps": [{"id": "work", "kind": "work"}, "landing"],
+      "problem": "v1, step 2: a step is a JSON object with its `id` and `kind`.", "digest": null
+    },
+    {
+      "name": "a step with no id",
+      "steps": [{"id": "work", "kind": "work"}, {"kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": "v1, step 2: its `id` is lower-case letters, digits and dashes, at most 40, such as `land`.", "digest": null
+    },
+    {
+      "name": "a step's id in capitals",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "Land", "kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": "v1, step 2: its `id` is lower-case letters, digits and dashes, at most 40, such as `land`.", "digest": null
+    },
+    {
+      "name": "one id for two steps",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "work", "kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": "v1, step 2: `work` is an earlier step's id too; each step's id is its own.", "digest": null
+    },
+    {
+      "name": "no kind",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "form": "merge", "accept": "you"}],
+      "problem": "v1, step `landing`: its `kind` is one of `work`, `opinion`, `look`, `landing`, `pull-request`, `go-ahead`, `check`, `stage` or `all`.", "digest": null
+    },
+    {
+      "name": "a kind nobody has",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "deploy"}],
+      "problem": "v1, step `landing`: `deploy` is no kind of step — one of `work`, `opinion`, `look`, `landing`, `pull-request`, `go-ahead`, `check`, `stage` or `all`.", "digest": null
+    },
+    {
+      "name": "a field the work does not take",
+      "steps": [{"id": "work", "kind": "work", "agent": "codex-acp"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": "v1, step `work`: a step of kind `work` takes no `agent` — it takes none.", "digest": null
+    },
+    {
+      "name": "a declaration a landing does not take: its tidy stays on Setup",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you", "tidy": true}],
+      "problem": "v1, step `landing`: a step of kind `landing` takes no `tidy` — it takes `form`, `accept`, `pattern` and `plugin`.", "digest": null
+    },
+    {
+      "name": "a landing with no form",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "accept": "you"}],
+      "problem": "v1, step `landing`: its `form` is `merge` or `branch`.", "digest": null
+    },
+    {
+      "name": "the queue is not a form this build offers",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "queue", "accept": "you"}],
+      "problem": "v1, step `landing`: its `form` is `merge` or `branch`.", "digest": null
+    },
+    {
+      "name": "a landing that says nothing of who accepts",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch"}],
+      "problem": "v1, step `landing`: its `accept` is `you` or `automatic`.", "digest": null
+    },
+    {
+      "name": "a merge with no press",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "automatic"}],
+      "problem": "v1, step `landing`: only a branch lands with no press — a merge writes into your checkout, and with no press nothing would stand between the work and the line.", "digest": null
+    },
+    {
+      "name": "a merge naming a pattern",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you", "pattern": "work/{quest}"}],
+      "problem": "v1, step `landing`: a merge makes no branch, so it names no `pattern` and no `plugin`.", "digest": null
+    },
+    {
+      "name": "a merge naming no plugin, said so: still a branch's field",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you", "plugin": "none"}],
+      "problem": "v1, step `landing`: a merge makes no branch, so it names no `pattern` and no `plugin`.", "digest": null
+    },
+    {
+      "name": "a pattern that puts every session's work on one branch",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you", "pattern": "work/{slug}"}],
+      "problem": "v1, step `landing`: its `pattern` will not do: a pattern needs `{quest}` or `{session}`, or every session's work would be put on one branch.", "digest": null
+    },
+    {
+      "name": "a pattern that is not text",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you", "pattern": 5}],
+      "problem": "v1, step `landing`: its `pattern` is a branch pattern, such as `work/{quest}-{slug}`.", "digest": null
+    },
+    {
+      "name": "a plugin that is no id",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you", "plugin": "My Plugin"}],
+      "problem": "v1, step `landing`: its `plugin` is `none` or a plugin's id: lowercase letters, digits, dots and dashes.", "digest": null
+    },
+    {
+      "name": "an opinion naming no reviewer",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "opinion", "kind": "opinion", "reviewers": []}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": "v1, step `opinion`: its `reviewers` is a list of names, at least one, none twice in any case.", "digest": null
+    },
+    {
+      "name": "one reviewer twice, in two cases",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "opinion", "kind": "opinion", "reviewers": ["codex-acp", "Codex-ACP"]}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": "v1, step `opinion`: its `reviewers` is a list of names, at least one, none twice in any case.", "digest": null
+    },
+    {
+      "name": "a blank reviewer",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "opinion", "kind": "opinion", "reviewers": ["codex-acp", " "]}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": "v1, step `opinion`: its `reviewers` is a list of names, at least one, none twice in any case.", "digest": null
+    },
+    {
+      "name": "a switch said in words",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "opinion", "kind": "opinion", "required": "yes"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": "v1, step `opinion`: its `required` is true or false.", "digest": null
+    },
+    {
+      "name": "an environment in capitals",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "look", "kind": "look", "environment": "Local"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": "v1, step `look`: its `environment` is an environment's name: lower-case letters, digits and dashes, at most 32.", "digest": null
+    },
+    {
+      "name": "a go-ahead naming no act",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "ahead", "kind": "go-ahead", "on": "dev"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": "v1, step `ahead`: its `act` is your words, 1 to 300 characters.", "digest": null
+    },
+    {
+      "name": "a go-ahead whose place is blank",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "ahead", "kind": "go-ahead", "act": "write to dev", "on": "  "}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": "v1, step `ahead`: its `on` is your words, 1 to 300 characters.", "digest": null
+    },
+    {
+      "name": "a go-ahead's act of 301 characters",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "ahead", "kind": "go-ahead", "act": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "on": "dev"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": "v1, step `ahead`: its `act` is your words, 1 to 300 characters.", "digest": null
+    },
+    {
+      "name": "a go-ahead refused in a way it does not know",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "ahead", "kind": "go-ahead", "act": "write to dev", "on": "dev", "refused": "later"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": "v1, step `ahead`: its `refused` is `stop` or `wait`.", "digest": null
+    },
+    {
+      "name": "a check naming no plugin: its shape is read before what this build runs",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}, {"id": "checks", "kind": "check"}],
+      "problem": "v1, step `checks`: its `plugin` is a plugin's id: lowercase letters, digits, dots and dashes.", "digest": null
+    },
+    {
+      "name": "a check naming no checks",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}, {"id": "checks", "kind": "check", "plugin": "example.pull-request", "checks": []}],
+      "problem": "v1, step `checks`: its `checks` is `required` or a list of check names, at least one, none twice in any case.", "digest": null
+    },
+    {
+      "name": "a stage that is no id",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}, {"id": "deploy", "kind": "stage", "plugin": "example.cloud", "stage": "Deploy Staging"}],
+      "problem": "v1, step `deploy`: its `stage` is lower-case letters, digits and dashes, at most 40.", "digest": null
+    },
+    {
+      "name": "a check failing in a way it does not know",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}, {"id": "checks", "kind": "check", "plugin": "example.pull-request", "failed": "retry"}],
+      "problem": "v1, step `checks`: its `failed` is `wait`, `send-back` or `stop`.", "digest": null
+    },
+    {
+      "name": "a group of nothing",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}, {"id": "group", "kind": "all", "steps": []}],
+      "problem": "v1, step `group`: its `steps` is a list of the checks and stages it runs side by side, at least one.", "digest": null
+    },
+    {
+      "name": "a group holding a go-ahead",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}, {"id": "group", "kind": "all", "steps": [{"id": "lint", "kind": "check", "plugin": "example.pull-request"}, {"id": "ahead", "kind": "go-ahead", "act": "a", "on": "dev"}]}],
+      "problem": "v1, step `ahead` in `group`: a group holds checks and stages, side by side; `go-ahead` is neither.", "digest": null
+    },
+    {
+      "name": "a group in a group",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}, {"id": "group", "kind": "all", "steps": [{"id": "inner", "kind": "all", "steps": [{"id": "lint", "kind": "check", "plugin": "example.pull-request"}]}]}],
+      "problem": "v1, step `inner` in `group`: a group holds no group: one level of grouping.", "digest": null
+    },
+    {
+      "name": "a member whose id another step has",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}, {"id": "group", "kind": "all", "steps": [{"id": "landing", "kind": "check", "plugin": "example.pull-request"}]}],
+      "problem": "v1, step 1 in `group`: `landing` is an earlier step's id too; each step's id is its own.", "digest": null
+    },
+    {
+      "name": "a member that is no step",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}, {"id": "group", "kind": "all", "steps": ["lint"]}],
+      "problem": "v1, step 1 in `group`: a step is a JSON object with its `id` and `kind`.", "digest": null
+    },
+    {
+      "name": "the landing first",
+      "steps": [{"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}, {"id": "work", "kind": "work"}],
+      "problem": "v1: the first step is the `work`: the agent's work comes first, once.", "digest": null
+    },
+    {
+      "name": "the work twice",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "work-2", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": "v1, step `work-2`: there is one `work`, the first step.", "digest": null
+    },
+    {
+      "name": "no landing",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "look", "kind": "look"}],
+      "problem": "v1: it has no `landing`; work lands once, after the gates before it.", "digest": null
+    },
+    {
+      "name": "two landings",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you"}, {"id": "landing-2", "kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": "v1, step `landing-2`: there is one `landing` already, `landing`.", "digest": null
+    },
+    {
+      "name": "an opinion after the landing",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}, {"id": "opinion", "kind": "opinion"}],
+      "problem": "v1, step `opinion`: a step of kind `opinion` comes before the landing, in the order the runtime keeps.", "digest": null
+    },
+    {
+      "name": "a look after the landing",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}, {"id": "look", "kind": "look"}],
+      "problem": "v1, step `look`: a step of kind `look` comes before the landing, in the order the runtime keeps.", "digest": null
+    },
+    {
+      "name": "a pull request before the landing",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "pull-request", "kind": "pull-request"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you"}],
+      "problem": "v1, step `pull-request`: a step of kind `pull-request` comes after the landing.", "digest": null
+    },
+    {
+      "name": "a check before the landing",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "checks", "kind": "check", "plugin": "example.pull-request"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you"}],
+      "problem": "v1, step `checks`: a step of kind `check` comes after the landing.", "digest": null
+    },
+    {
+      "name": "your look before the second opinion",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "look", "kind": "look"}, {"id": "opinion", "kind": "opinion"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": "v1, step `opinion`: the second opinion is read before your look, so the `opinion` comes first.", "digest": null
+    },
+    {
+      "name": "two opinions",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "opinion", "kind": "opinion"}, {"id": "opinion-2", "kind": "opinion"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": "v1, step `opinion-2`: there is one `opinion` already, `opinion`.", "digest": null
+    },
+    {
+      "name": "two looks",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "look", "kind": "look"}, {"id": "look-2", "kind": "look"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": "v1, step `look-2`: there is one `look` already, `look`.", "digest": null
+    },
+    {
+      "name": "a go-ahead between the second opinion and the landing",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "opinion", "kind": "opinion"}, {"id": "ahead", "kind": "go-ahead", "act": "write to dev", "on": "dev"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "problem": "v1, step `ahead`: a go-ahead before the landing sits with the work, before the second opinion and your look.", "digest": null
+    },
+    {
+      "name": "a pull request not straight after the landing",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you"}, {"id": "ahead", "kind": "go-ahead", "act": "a", "on": "dev"}, {"id": "pull-request", "kind": "pull-request"}],
+      "problem": "v1, step `pull-request`: the pull request comes straight after the landing.", "digest": null
+    },
+    {
+      "name": "two pull requests",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you"}, {"id": "pull-request", "kind": "pull-request"}, {"id": "pull-request-2", "kind": "pull-request"}],
+      "problem": "v1, step `pull-request-2`: there is one `pull-request` already, `pull-request`.", "digest": null
+    },
+    {
+      "name": "a pull request after a merge",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}, {"id": "pull-request", "kind": "pull-request"}],
+      "problem": "v1, step `pull-request`: a pull request needs a landing on a branch whose plugin opens one; `landing` merges.", "digest": null
+    },
+    {
+      "name": "a pull request after a branch no plugin pushes",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you", "plugin": "none"}, {"id": "pull-request", "kind": "pull-request"}],
+      "problem": "v1, step `pull-request`: a pull request needs a landing on a branch whose plugin opens one; `landing` names no plugin.", "digest": null
+    },
+    {
+      "name": "a go-ahead straight before a stage you start",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you"}, {"id": "pull-request", "kind": "pull-request"}, {"id": "ahead", "kind": "go-ahead", "act": "deploy to staging", "on": "staging"}, {"id": "deploy", "kind": "stage", "plugin": "example.cloud", "stage": "staging"}],
+      "problem": "v1, step `ahead`: a go-ahead straight before a stage you start is not needed: starting it is your go-ahead.", "digest": null
+    },
+    {
+      "name": "a well-formed check: this build does not run it",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you"}, {"id": "pull-request", "kind": "pull-request"}, {"id": "checks", "kind": "check", "plugin": "example.pull-request", "checks": ["build", "test"], "failed": "send-back"}],
+      "problem": "v1, step `checks`: this build does not run a step of kind `check` yet.", "digest": null
+    },
+    {
+      "name": "a well-formed group: this build does not run it",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you"}, {"id": "pull-request", "kind": "pull-request"}, {"id": "group", "kind": "all", "steps": [{"id": "lint", "kind": "check", "plugin": "example.pull-request"}, {"id": "deploy", "kind": "stage", "plugin": "example.cloud", "stage": "staging", "start": "automatic"}]}],
+      "problem": "v1, step `group`: this build does not run a step of kind `all` yet.", "digest": null
+    },
+    {
+      "name": "a well-formed stage after a go-ahead it starts by itself: this build does not run it",
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you"}, {"id": "pull-request", "kind": "pull-request"}, {"id": "ahead", "kind": "go-ahead", "act": "deploy to staging", "on": "staging"}, {"id": "deploy", "kind": "stage", "plugin": "example.cloud", "stage": "staging", "start": "automatic"}],
+      "problem": "v1, step `deploy`: this build does not run a step of kind `stage` yet.", "digest": null
+    }
+  ],
+  "diffs": [
+    {
+      "name": "a new workflow: every step added, with what it sets",
+      "before": null,
+      "after": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "automatic"}, {"id": "pull-request", "kind": "pull-request"}],
+      "entries": [
+        {"id": "work", "kind": "work", "change": "added", "fields": [], "moved": false},
+        {"id": "landing", "kind": "landing", "change": "added", "fields": [], "moved": false},
+        {"id": "pull-request", "kind": "pull-request", "change": "added", "fields": [], "moved": false}
+      ],
+      "said": [
+        "Your part:",
+        "  + pull-request: you merge its pull request on the platform.",
+        "Steps, by id:",
+        "  + work · work",
+        "  + landing · landing: form `branch`; accept `automatic`",
+        "  + pull-request · pull-request",
+        "Without asking you each time:",
+        "  the plugin the landing rule names, if any, pushes each branch with no press of yours."
+      ]
+    },
+    {
+      "name": "documentation's work lands without your look: the card's own change",
+      "before": [{"id": "work", "kind": "work"}, {"id": "opinion", "kind": "opinion"}, {"id": "look", "kind": "look", "environment": "local"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you", "plugin": "example.pull-request"}, {"id": "pull-request", "kind": "pull-request"}],
+      "after": [{"id": "work", "kind": "work"}, {"id": "opinion", "kind": "opinion"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "automatic", "plugin": "example.pull-request"}, {"id": "pull-request", "kind": "pull-request"}],
+      "entries": [
+        {"id": "work", "kind": "work", "change": "kept", "fields": [], "moved": false},
+        {"id": "opinion", "kind": "opinion", "change": "kept", "fields": [], "moved": false},
+        {"id": "look", "kind": "look", "change": "removed", "fields": [], "moved": false},
+        {"id": "landing", "kind": "landing", "change": "kept", "fields": ["accept"], "moved": false},
+        {"id": "pull-request", "kind": "pull-request", "change": "kept", "fields": [], "moved": false}
+      ],
+      "said": [
+        "Your part:",
+        "  − look: you no longer look at it running before it lands.",
+        "  − landing: you no longer accept each piece of work before it lands.",
+        "  = pull-request: you still merge its pull request on the platform.",
+        "Steps, by id:",
+        "    work · work",
+        "    opinion · opinion",
+        "  − look · look",
+        "  ~ landing · landing: accept `you` → `automatic`",
+        "    pull-request · pull-request",
+        "Without asking you each time:",
+        "  `example.pull-request` pushes each branch with no press of yours."
+      ]
+    },
+    {
+      "name": "nothing changed",
+      "before": [{"id": "work", "kind": "work"}, {"id": "look", "kind": "look"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "after": [{"id": "work", "kind": "work"}, {"id": "look", "kind": "look"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "entries": [
+        {"id": "work", "kind": "work", "change": "kept", "fields": [], "moved": false},
+        {"id": "look", "kind": "look", "change": "kept", "fields": [], "moved": false},
+        {"id": "landing", "kind": "landing", "change": "kept", "fields": [], "moved": false}
+      ],
+      "said": [
+        "Your part:",
+        "  = look: you still look at it running before it lands.",
+        "  = landing: you still accept each piece of work before it lands.",
+        "Steps, by id:",
+        "    work · work",
+        "    look · look",
+        "    landing · landing",
+        "Without asking you each time:",
+        "  nothing new leaves this machine without you."
+      ]
+    },
+    {
+      "name": "a default written out is no change",
+      "before": [{"id": "work", "kind": "work"}, {"id": "opinion", "kind": "opinion"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "after": [{"id": "work", "kind": "work"}, {"id": "opinion", "kind": "opinion", "recheck": true}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "entries": [
+        {"id": "work", "kind": "work", "change": "kept", "fields": [], "moved": false},
+        {"id": "opinion", "kind": "opinion", "change": "kept", "fields": [], "moved": false},
+        {"id": "landing", "kind": "landing", "change": "kept", "fields": [], "moved": false}
+      ],
+      "said": [
+        "Your part:",
+        "  = landing: you still accept each piece of work before it lands.",
+        "Steps, by id:",
+        "    work · work",
+        "    opinion · opinion",
+        "    landing · landing",
+        "Without asking you each time:",
+        "  nothing new leaves this machine without you."
+      ]
+    },
+    {
+      "name": "a go-ahead moved after another: the one moved is marked",
+      "before": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you"}, {"id": "pull-request", "kind": "pull-request"}, {"id": "notes", "kind": "go-ahead", "act": "post the release note", "on": "the team's channel"}, {"id": "tag", "kind": "go-ahead", "act": "tag the release", "on": "the line"}],
+      "after": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you"}, {"id": "pull-request", "kind": "pull-request"}, {"id": "tag", "kind": "go-ahead", "act": "tag the release", "on": "the line"}, {"id": "notes", "kind": "go-ahead", "act": "post the release note", "on": "the team's channel"}],
+      "entries": [
+        {"id": "work", "kind": "work", "change": "kept", "fields": [], "moved": false},
+        {"id": "landing", "kind": "landing", "change": "kept", "fields": [], "moved": false},
+        {"id": "pull-request", "kind": "pull-request", "change": "kept", "fields": [], "moved": false},
+        {"id": "tag", "kind": "go-ahead", "change": "kept", "fields": [], "moved": true},
+        {"id": "notes", "kind": "go-ahead", "change": "kept", "fields": [], "moved": false}
+      ],
+      "said": [
+        "Your part:",
+        "  = landing: you still accept each piece of work before it lands.",
+        "  = pull-request: you still merge its pull request on the platform.",
+        "  = tag: you still answer a go-ahead: \"tag the release\".",
+        "  = notes: you still answer a go-ahead: \"post the release note\".",
+        "Steps, by id:",
+        "    work · work",
+        "    landing · landing",
+        "    pull-request · pull-request",
+        "  ↕ tag · go-ahead",
+        "    notes · go-ahead",
+        "Without asking you each time:",
+        "  nothing new leaves this machine without you."
+      ]
+    },
+    {
+      "name": "a go-ahead moved and reworded: changed, moved, and your part said twice",
+      "before": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}, {"id": "notes", "kind": "go-ahead", "act": "post the release note", "on": "the team's channel"}, {"id": "tag", "kind": "go-ahead", "act": "tag the release", "on": "the line"}],
+      "after": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}, {"id": "tag", "kind": "go-ahead", "act": "tag the release candidate", "on": "the line", "refused": "wait"}, {"id": "notes", "kind": "go-ahead", "act": "post the release note", "on": "the team's channel"}],
+      "entries": [
+        {"id": "work", "kind": "work", "change": "kept", "fields": [], "moved": false},
+        {"id": "landing", "kind": "landing", "change": "kept", "fields": [], "moved": false},
+        {"id": "tag", "kind": "go-ahead", "change": "kept", "fields": ["act", "refused"], "moved": true},
+        {"id": "notes", "kind": "go-ahead", "change": "kept", "fields": [], "moved": false}
+      ],
+      "said": [
+        "Your part:",
+        "  = landing: you still accept each piece of work before it lands.",
+        "  − tag: you no longer answer a go-ahead: \"tag the release\".",
+        "  + tag: you answer a go-ahead: \"tag the release candidate\".",
+        "  = notes: you still answer a go-ahead: \"post the release note\".",
+        "Steps, by id:",
+        "    work · work",
+        "    landing · landing",
+        "  ~ tag · go-ahead: act `tag the release` → `tag the release candidate`; refused `stop` → `wait`; moved",
+        "    notes · go-ahead",
+        "Without asking you each time:",
+        "  nothing new leaves this machine without you."
+      ]
+    },
+    {
+      "name": "a step removed from the work's side is said where it was, and one added where it is",
+      "before": [{"id": "work", "kind": "work"}, {"id": "dev-config", "kind": "go-ahead", "act": "write the configuration to dev", "on": "dev"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "after": [{"id": "work", "kind": "work"}, {"id": "opinion", "kind": "opinion", "reviewers": ["codex-acp"], "required": true}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "entries": [
+        {"id": "work", "kind": "work", "change": "kept", "fields": [], "moved": false},
+        {"id": "dev-config", "kind": "go-ahead", "change": "removed", "fields": [], "moved": false},
+        {"id": "opinion", "kind": "opinion", "change": "added", "fields": [], "moved": false},
+        {"id": "landing", "kind": "landing", "change": "kept", "fields": [], "moved": false}
+      ],
+      "said": [
+        "Your part:",
+        "  − dev-config: you no longer answer a go-ahead: \"write the configuration to dev\".",
+        "  = landing: you still accept each piece of work before it lands.",
+        "Steps, by id:",
+        "    work · work",
+        "  − dev-config · go-ahead",
+        "  + opinion · opinion: reviewers `codex-acp`; required true",
+        "    landing · landing",
+        "Without asking you each time:",
+        "  nothing new leaves this machine without you."
+      ]
+    },
+    {
+      "name": "a plugin named and a pattern cleared: as declared is said so",
+      "before": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "automatic", "pattern": "docs/{quest}"}],
+      "after": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "automatic", "plugin": "example.pull-request"}],
+      "entries": [
+        {"id": "work", "kind": "work", "change": "kept", "fields": [], "moved": false},
+        {"id": "landing", "kind": "landing", "change": "kept", "fields": ["pattern", "plugin"], "moved": false}
+      ],
+      "said": [
+        "Your part:",
+        "  nothing in it is yours.",
+        "Steps, by id:",
+        "    work · work",
+        "  ~ landing · landing: pattern `docs/{quest}` → as declared; plugin as declared → `example.pull-request`",
+        "Without asking you each time:",
+        "  `example.pull-request` pushes each branch with no press of yours."
+      ]
+    },
+    {
+      "name": "a push already standing is nothing new",
+      "before": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "automatic", "plugin": "example.pull-request"}],
+      "after": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "automatic", "plugin": "example.pull-request"}, {"id": "pull-request", "kind": "pull-request"}],
+      "entries": [
+        {"id": "work", "kind": "work", "change": "kept", "fields": [], "moved": false},
+        {"id": "landing", "kind": "landing", "change": "kept", "fields": [], "moved": false},
+        {"id": "pull-request", "kind": "pull-request", "change": "added", "fields": [], "moved": false}
+      ],
+      "said": [
+        "Your part:",
+        "  + pull-request: you merge its pull request on the platform.",
+        "Steps, by id:",
+        "    work · work",
+        "    landing · landing",
+        "  + pull-request · pull-request",
+        "Without asking you each time:",
+        "  nothing new leaves this machine without you."
+      ]
+    },
+    {
+      "name": "a branch with no press and no plugin, made from nothing: nothing of yours, nothing outward",
+      "before": null,
+      "after": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "automatic", "plugin": "none"}],
+      "entries": [
+        {"id": "work", "kind": "work", "change": "added", "fields": [], "moved": false},
+        {"id": "landing", "kind": "landing", "change": "added", "fields": [], "moved": false}
+      ],
+      "said": [
+        "Your part:",
+        "  nothing in it is yours.",
+        "Steps, by id:",
+        "  + work · work",
+        "  + landing · landing: form `branch`; accept `automatic`; plugin `none`",
+        "Without asking you each time:",
+        "  nothing new leaves this machine without you."
+      ]
+    }
+  ],
+  "presets": [
+    {"id": "merge-after-accept", "name": "Merge after you accept", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}], "line": "You accept each piece of work, and it merges into the line."},
+    {"id": "branch-to-push", "name": "A branch for you to push", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you", "plugin": "none"}], "line": "You accept each piece of work onto a branch, and push it yourself."},
+    {"id": "pull-request-after-accept", "name": "A pull request after you accept", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you"}, {"id": "pull-request", "kind": "pull-request"}], "line": "You accept; the plugin pushes and opens a pull request; you merge it."},
+    {"id": "pull-request-no-press", "name": "A pull request with no press", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "automatic"}, {"id": "pull-request", "kind": "pull-request"}], "line": "A pull request opens once its quest is done; you merge it."}
+  ],
+  "variants": [
+    {"preset": "merge-after-accept", "opinion": true, "look": false,
+      "steps": [{"id": "work", "kind": "work"}, {"id": "opinion", "kind": "opinion"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "line": "Another agent reads the work first. You accept each piece of work, and it merges into the line."},
+    {"preset": "pull-request-no-press", "opinion": false, "look": true,
+      "steps": [{"id": "work", "kind": "work"}, {"id": "look", "kind": "look"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "automatic"}, {"id": "pull-request", "kind": "pull-request"}],
+      "line": "You look at it running before it lands. A pull request opens once its quest is done; you merge it."},
+    {"preset": "pull-request-after-accept", "opinion": true, "look": true,
+      "steps": [{"id": "work", "kind": "work"}, {"id": "opinion", "kind": "opinion"}, {"id": "look", "kind": "look"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you"}, {"id": "pull-request", "kind": "pull-request"}],
+      "line": "Another agent reads the work first. You look at it running before it lands. You accept; the plugin pushes and opens a pull request; you merge it."},
+    {"preset": "branch-to-push", "opinion": false, "look": false,
+      "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you", "plugin": "none"}],
+      "line": "You accept each piece of work onto a branch, and push it yourself."}
+  ],
+  "lines": [
+    {"name": "a branch with no press and no plugin", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "automatic", "plugin": "none"}],
+      "line": "Each piece of work lands on a branch once its quest is done, and you push it yourself."},
+    {"name": "a branch you accept that its plugin pushes, no pull request drawn", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you", "plugin": "example.pull-request"}],
+      "line": "You accept each piece of work onto a branch, and its plugin pushes it."},
+    {"name": "a branch with no press its declared plugin pushes", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "automatic"}],
+      "line": "Each piece of work lands on a branch once its quest is done, and its plugin pushes it."},
+    {"name": "one go-ahead", "steps": [{"id": "work", "kind": "work"}, {"id": "dev-config", "kind": "go-ahead", "act": "write the configuration to dev", "on": "dev"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}],
+      "line": "You accept each piece of work, and it merges into the line. You answer a go-ahead on the way."},
+    {"name": "two go-aheads", "steps": [{"id": "work", "kind": "work"}, {"id": "dev-config", "kind": "go-ahead", "act": "write the configuration to dev", "on": "dev"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you"}, {"id": "pull-request", "kind": "pull-request"}, {"id": "notes", "kind": "go-ahead", "act": "post the release note", "on": "the team's channel"}],
+      "line": "You accept; the plugin pushes and opens a pull request; you merge it. You answer 2 go-aheads on the way."}
+  ],
+  "store": [
+    {
+      "name": "a new workflow: its first version",
+      "file": null,
+      "add": {"id": "docs-to-pr", "name": "Documentation to a pull request", "door": "terminal", "at": "2026-10-09T09:12:00Z",
+        "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "automatic"}, {"id": "pull-request", "kind": "pull-request"}]},
+      "kept": [],
+      "problem": null,
+      "version": 1,
+      "result": {"id": "docs-to-pr", "name": "Documentation to a pull request", "versions": [
+        {"version": 1, "at": "2026-10-09T09:12:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "automatic"}, {"id": "pull-request", "kind": "pull-request"}]}
+      ]}
+    },
+    {
+      "name": "a version added after the last number, what the file has no field for and a version it cannot read kept",
+      "file": {"id": "docs-to-pr", "name": "Docs", "note": "kept", "versions": [
+        {"version": 1, "at": "2026-10-09T09:12:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]},
+        {"version": 4, "at": "2026-10-09T09:20:00Z", "door": "screen", "steps": [{"id": "work", "kind": "work"}, {"id": "smoke", "kind": "probe"}]}
+      ]},
+      "add": {"id": "docs-to-pr", "name": null, "door": "ask-daoris:p-3f1a", "at": "2026-10-09T10:00:00Z",
+        "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you", "plugin": "none"}]},
+      "kept": [],
+      "problem": null,
+      "version": 5,
+      "result": {"id": "docs-to-pr", "name": "Docs", "note": "kept", "versions": [
+        {"version": 1, "at": "2026-10-09T09:12:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]},
+        {"version": 4, "at": "2026-10-09T09:20:00Z", "door": "screen", "steps": [{"id": "work", "kind": "work"}, {"id": "smoke", "kind": "probe"}]},
+        {"version": 5, "at": "2026-10-09T10:00:00Z", "door": "ask-daoris:p-3f1a", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "branch", "accept": "you", "plugin": "none"}]}
+      ]}
+    },
+    {
+      "name": "a 21st version: the oldest goes, its newest 20 kept",
+      "file": {"id": "docs-to-pr", "name": "Docs", "versions": [
+        {"version": 1, "at": "2026-10-09T09:01:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 2, "at": "2026-10-09T09:02:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 3, "at": "2026-10-09T09:03:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 4, "at": "2026-10-09T09:04:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 5, "at": "2026-10-09T09:05:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 6, "at": "2026-10-09T09:06:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 7, "at": "2026-10-09T09:07:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 8, "at": "2026-10-09T09:08:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 9, "at": "2026-10-09T09:09:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 10, "at": "2026-10-09T09:10:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 11, "at": "2026-10-09T09:11:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 12, "at": "2026-10-09T09:12:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 13, "at": "2026-10-09T09:13:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 14, "at": "2026-10-09T09:14:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 15, "at": "2026-10-09T09:15:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 16, "at": "2026-10-09T09:16:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 17, "at": "2026-10-09T09:17:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 18, "at": "2026-10-09T09:18:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 19, "at": "2026-10-09T09:19:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 20, "at": "2026-10-09T09:20:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]}
+      ]},
+      "add": {"id": "docs-to-pr", "name": null, "door": "terminal", "at": "2026-10-09T09:21:00Z",
+        "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]},
+      "kept": [],
+      "problem": null,
+      "version": 21,
+      "result": {"id": "docs-to-pr", "name": "Docs", "versions": [
+        {"version": 2, "at": "2026-10-09T09:02:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 3, "at": "2026-10-09T09:03:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 4, "at": "2026-10-09T09:04:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 5, "at": "2026-10-09T09:05:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 6, "at": "2026-10-09T09:06:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 7, "at": "2026-10-09T09:07:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 8, "at": "2026-10-09T09:08:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 9, "at": "2026-10-09T09:09:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 10, "at": "2026-10-09T09:10:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 11, "at": "2026-10-09T09:11:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 12, "at": "2026-10-09T09:12:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 13, "at": "2026-10-09T09:13:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 14, "at": "2026-10-09T09:14:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 15, "at": "2026-10-09T09:15:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 16, "at": "2026-10-09T09:16:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 17, "at": "2026-10-09T09:17:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 18, "at": "2026-10-09T09:18:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 19, "at": "2026-10-09T09:19:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 20, "at": "2026-10-09T09:20:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 21, "at": "2026-10-09T09:21:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]}
+      ]}
+    },
+    {
+      "name": "a version a kept run names stays past the newest 20",
+      "file": {"id": "docs-to-pr", "name": "Docs", "versions": [
+        {"version": 1, "at": "2026-10-09T09:01:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 2, "at": "2026-10-09T09:02:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 3, "at": "2026-10-09T09:03:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 4, "at": "2026-10-09T09:04:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 5, "at": "2026-10-09T09:05:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 6, "at": "2026-10-09T09:06:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 7, "at": "2026-10-09T09:07:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 8, "at": "2026-10-09T09:08:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 9, "at": "2026-10-09T09:09:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 10, "at": "2026-10-09T09:10:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 11, "at": "2026-10-09T09:11:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 12, "at": "2026-10-09T09:12:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 13, "at": "2026-10-09T09:13:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 14, "at": "2026-10-09T09:14:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 15, "at": "2026-10-09T09:15:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 16, "at": "2026-10-09T09:16:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 17, "at": "2026-10-09T09:17:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 18, "at": "2026-10-09T09:18:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 19, "at": "2026-10-09T09:19:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 20, "at": "2026-10-09T09:20:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]}
+      ]},
+      "add": {"id": "docs-to-pr", "name": null, "door": "terminal", "at": "2026-10-09T09:21:00Z",
+        "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]},
+      "kept": [1],
+      "problem": null,
+      "version": 21,
+      "result": {"id": "docs-to-pr", "name": "Docs", "versions": [
+        {"version": 1, "at": "2026-10-09T09:01:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 3, "at": "2026-10-09T09:03:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 4, "at": "2026-10-09T09:04:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 5, "at": "2026-10-09T09:05:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 6, "at": "2026-10-09T09:06:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 7, "at": "2026-10-09T09:07:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 8, "at": "2026-10-09T09:08:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 9, "at": "2026-10-09T09:09:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 10, "at": "2026-10-09T09:10:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 11, "at": "2026-10-09T09:11:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 12, "at": "2026-10-09T09:12:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 13, "at": "2026-10-09T09:13:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 14, "at": "2026-10-09T09:14:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 15, "at": "2026-10-09T09:15:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 16, "at": "2026-10-09T09:16:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 17, "at": "2026-10-09T09:17:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 18, "at": "2026-10-09T09:18:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 19, "at": "2026-10-09T09:19:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 20, "at": "2026-10-09T09:20:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}]},
+        {"version": 21, "at": "2026-10-09T09:21:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]}
+      ]}
+    },
+    {
+      "name": "steps that do not read: nothing written, the version they would have been named",
+      "file": {"id": "docs-to-pr", "name": "Docs", "versions": [
+        {"version": 2, "at": "2026-10-09T09:12:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]}
+      ]},
+      "add": {"id": "docs-to-pr", "name": null, "door": "terminal", "at": "2026-10-09T10:00:00Z",
+        "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "automatic"}]},
+      "kept": [],
+      "problem": "v3, step `landing`: only a branch lands with no press — a merge writes into your checkout, and with no press nothing would stand between the work and the line.",
+      "version": null,
+      "result": null
+    },
+    {
+      "name": "an id an earlier version used for another kind",
+      "file": {"id": "docs-to-pr", "name": "Docs", "versions": [
+        {"version": 1, "at": "2026-10-09T09:12:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}, {"id": "look", "kind": "look"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]}
+      ]},
+      "add": {"id": "docs-to-pr", "name": null, "door": "terminal", "at": "2026-10-09T10:00:00Z",
+        "steps": [{"id": "work", "kind": "work"}, {"id": "look", "kind": "go-ahead", "act": "write to dev", "on": "dev"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]},
+      "kept": [],
+      "problem": "v2, step `look`: `look` was a step of kind `look` in v1; an id is never used for another kind.",
+      "version": null,
+      "result": null
+    },
+    {
+      "name": "a door nobody has",
+      "file": null,
+      "add": {"id": "docs-to-pr", "name": "Docs", "door": "the person", "at": "2026-10-09T10:00:00Z",
+        "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]},
+      "kept": [],
+      "problem": "v1: its `door` is `screen`, `terminal` or `ask-daoris:<proposal>`.",
+      "version": null,
+      "result": null
+    },
+    {
+      "name": "a new workflow's id and name are read as a file's are",
+      "file": null,
+      "add": {"id": "Docs", "name": "Docs", "door": "terminal", "at": "2026-10-09T10:00:00Z",
+        "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]},
+      "kept": [],
+      "problem": "`Docs` is not a workflow's id — lower-case letters, digits and dashes, at most 40, such as `docs-to-pr`.",
+      "version": null,
+      "result": null
+    },
+    {
+      "name": "a new workflow with no name",
+      "file": null,
+      "add": {"id": "docs-to-pr", "name": null, "door": "terminal", "at": "2026-10-09T10:00:00Z",
+        "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]},
+      "kept": [],
+      "problem": "a workflow's `name` is your words for it, 1 to 60 characters.",
+      "version": null,
+      "result": null
+    },
+    {
+      "name": "a file that does not read is never written over",
+      "file": {"id": "docs-to-pr", "name": "Docs", "versions": [{"version": "1"}]},
+      "add": {"id": "docs-to-pr", "name": null, "door": "terminal", "at": "2026-10-09T10:00:00Z",
+        "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]},
+      "kept": [],
+      "problem": "nothing was written: the workflow's file cannot be read — each version's `version` is a whole number from 1, each greater than the one before it.",
+      "version": null,
+      "result": null
+    },
+    {
+      "name": "a file holding another workflow",
+      "file": {"id": "release", "name": "Release", "versions": [
+        {"version": 1, "at": "2026-10-09T09:12:00Z", "door": "terminal", "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]}
+      ]},
+      "add": {"id": "docs-to-pr", "name": null, "door": "terminal", "at": "2026-10-09T10:00:00Z",
+        "steps": [{"id": "work", "kind": "work"}, {"id": "landing", "kind": "landing", "form": "merge", "accept": "you"}]},
+      "kept": [],
+      "problem": "nothing was written: the file holds the workflow `release`, not `docs-to-pr`.",
+      "version": null,
+      "result": null
+    }
+  ]
+}

@@ -76,6 +76,9 @@ export const WORKFLOW_LIMITS: Readonly<Record<string, string>> = {
   'pull-request-unread': 'Its plugin answers no `work/state`, so Daoris never reads whether the pull request was merged or '
     + 'abandoned.',
   'pull-request-at-clean-up': 'Its state is asked of its plugin only when branches are cleaned up, never while someone waits on it.',
+  // A named workflow's go-ahead step (WORKFLOW1d): Current never draws one, and a run raising one is WORKFLOW1l's.
+  'go-ahead-partial': 'Partial: a session asks you for a go-ahead as it needs one; a step that raises one at its place and waits '
+    + 'on your answer is not built yet.',
 };
 
 /** The points a plugin speaks on that Current reads — the driver's `HookPoints`. */
