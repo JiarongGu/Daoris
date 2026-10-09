@@ -680,9 +680,35 @@ describe('the groups', () => {
     expect(ATTENTION_GROUP).toEqual({
       parked: 'holding', 'parked-quest': 'holding', 'go-ahead': 'holding', trust: 'holding',
       'account-wait': 'holding', 'signed-out': 'holding',
-      proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', rule: 'word', unanswerable: 'word',
+      proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', unanswerable: 'word',
       review: 'ready',
     });
+  });
+
+  /**
+   * XAGENT1g (the second-agent design §9): a second opinion that waits on the person is a row waiting for their word, saying what
+   * the gate says, named by its quest; *Go on anyway…* only where no press of theirs is coming, and a pass asked again.
+   */
+  it('lists a second opinion that waits on the person, with what its gate says and its presses', () => {
+    const disputed = {
+      session: 's42', quest: 'q1', repository: 'engine', since: '2026-09-21T09:00:00Z', auto: false,
+      opinion: { state: 'disputed', holds: true, product: 'Codex', maker: 'OpenAI', disputes: 2, answers: 'o1:t:disputed:2:0' },
+    };
+    const none = {
+      ...disputed, session: 's43', since: '2026-09-21T08:00:00Z',
+      opinion: { state: 'unavailable', holds: true, required: true, code: 'no-reviewer' },
+    };
+    const rows = needsAPerson(
+      [], [quest({ id: 'q1', to: 'engine', title: 'Cap hydration per frame' })], [registration('engine')], [], [], [], [], [], undefined,
+      [disputed, none, { ...disputed, session: 's44', auto: true }],
+    );
+
+    expect(rows.map((row) => `${row.kind}:${row.id}`)).toEqual(['opinion:s43', 'opinion:s42', 'opinion:s44']);
+    expect(rows[1]).toMatchObject({ title: 'Cap hydration per frame', where: 'engine' });
+    expect(rows[1]!.detail).toBe('2 findings by Codex (OpenAI) are disputed: each a must the working session did not fix and no recheck '
+      + 'withdrew. Your Accept, or your Reviewed where a look is required, answers them.');
+    expect(rows[0]!.detail).toBe('No second opinion: no listed reviewer of another maker is installed. The rule requires one, so the work waits for you.');
+    expect(rows.map(attentionActs)).toEqual([['opinion-anyway', 'opinion-again'], ['opinion-again'], ['opinion-anyway', 'opinion-again']]);
   });
 
   it('splits the rows into the groups that hold any, in order, keeping each group’s order', () => {
@@ -726,7 +752,8 @@ describe('what a row offers', () => {
   });
 
   it('asks once before what widens what Daoris may do, and before a choice', () => {
-    expect([...ASKS_ONCE].sort()).toEqual(['accept-rule', 'approve', 'choose', 'let-run', 'not-yet', 'refuse', 'trust']);
+    expect([...ASKS_ONCE].sort())
+      .toEqual(['accept-rule', 'approve', 'choose', 'let-run', 'not-yet', 'opinion-anyway', 'refuse', 'trust']);
   });
 });
 

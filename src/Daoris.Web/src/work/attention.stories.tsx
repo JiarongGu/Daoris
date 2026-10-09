@@ -26,13 +26,13 @@ const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 const ACTS: Required<AttentionActs> = {
   publish: () => {}, retry: () => {}, answer: () => {}, trust: () => {}, acceptDeparture: () => {}, acceptRule: () => {},
   declineRule: () => {}, signIn: () => {}, read: () => {}, letRun: () => {}, reviewed: () => {}, notYet: () => {},
-  showAgain: () => {},
+  showAgain: () => {}, opinionAgain: () => {}, opinionAnyway: () => {},
 };
 /** Every door, as a shell's Overview hands them. */
 const DOORS: AttentionDoors = {
   parked: () => {}, 'parked-quest': () => {}, 'go-ahead': () => {}, trust: () => {}, proposal: () => {}, intake: () => {},
   departure: () => {}, rule: () => {}, unanswerable: () => {}, review: () => {}, 'account-wait': () => {}, 'signed-out': () => {},
-  'set-up': () => {},
+  'set-up': () => {}, opinion: () => {},
 };
 
 /** A reset tomorrow early, and a reading at this morning's clock: what the account rows say their times from. */
@@ -172,6 +172,24 @@ const SET_UP_ROW: Attention = {
   setUp: { machine: 'desk', sequence: 7 }, local: true, session: 's9',
 };
 
+/**
+ * A second opinion disputed where the work lands by itself (XAGENT1g): what the gate says, *Go on anyway…* and *Ask again*; and
+ * one none could be had for where the rule requires one, *Go on anyway…* and *Try again*.
+ */
+const OPINION_ROW: Attention = {
+  id: 's42', kind: 'opinion', title: 'Fix the page bound in the catalog', where: 'storefront', since: at(40),
+  detail: '1 finding by Codex (OpenAI) is disputed: a must the working session did not fix and no recheck withdrew. No press of yours is coming, since the work lands by itself: go on anyway, send it back or ask again.',
+  opinion: {
+    session: 's42', quest: 'q7', repository: 'storefront', since: at(40), auto: true,
+    opinion: { state: 'disputed', holds: true, opinion: 'o1', reviewer: 'codex-acp', product: 'Codex', maker: 'OpenAI', disputes: 1 },
+  },
+};
+const OPINION_NONE: Attention = {
+  ...OPINION_ROW, id: 's43', title: 'Tidy the release notes', since: at(35),
+  detail: 'No second opinion: every listed reviewer of another maker is cooling. The rule requires one, so the work waits for you.',
+  opinion: { ...OPINION_ROW.opinion!, session: 's43', auto: false, opinion: { state: 'unavailable', holds: true, required: true, code: 'cooling' } },
+};
+
 /** An agent's proposal to widen the rules (PERM2, D74). */
 const RULE: Attention = {
   id: 'p0000002', kind: 'rule', title: 'allow WebFetch for every session on this machine', where: 'session i9n8t7k6 (ask #0fda18)',
@@ -218,7 +236,7 @@ export default meta;
 const BAND: Attention[] = [
   TRUST_ROW, LET_IN, PARKED_QUEST, GO_AHEAD, PARKED, ACCOUNT_WAIT, SIGNED_OUT,
   PROPOSAL, { ...PROPOSAL, id: '1b2c3d4e5f6a', title: 'Fix the pipeline’s knowledge check', since: at(170), publishTo: ['engine'], detail: 'The declarations propose engine. Nothing is published until you choose.' },
-  DEPARTURE, SET_UP_ROW, RULE,
+  DEPARTURE, SET_UP_ROW, OPINION_ROW, OPINION_NONE, RULE,
   ...REVIEWS,
 ];
 
@@ -357,6 +375,8 @@ export const Asking: StoryObj = {
         <AttentionRow item={TRUST_ROW} acts={ACTS} onOpen={() => {}} opened="trust" />
         {/* REVIEWENV1g: a set-up's *not yet*, asking for the person's words, which go to its session as its next turn. */}
         <AttentionRow item={SET_UP_ROW} acts={ACTS} onOpen={() => {}} opened="not-yet" />
+        {/* XAGENT1g: a second opinion's *Go on anyway…*, saying what stays unsettled, with the person's words. */}
+        <AttentionRow item={OPINION_ROW} acts={ACTS} onOpen={() => {}} opened="opinion-anyway" />
         {/* UX6d: an account let into the workspace's list, and into this machine's, each saying what it lets Daoris spend. */}
         <AttentionRow item={LET_IN} acts={ACTS} onOpen={() => {}} opened="let-run" />
         <AttentionRow

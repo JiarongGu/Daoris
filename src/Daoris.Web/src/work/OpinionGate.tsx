@@ -108,7 +108,7 @@ export function OpinionGate({
 
   const who = reviewerName(gate);
   const tone = opinionTone(state, { holds: gate.holds });
-  const sentence = says(t, state, gate, detail, who);
+  const sentence = opinionSays(t, gate, detail);
   const unsettled = unsettledWords(t, state, gate);
   const reviewing = gate.reviewing && (state === 'reading' || state === 'read-again') ? gate.reviewing : null;
   const personWords = detail?.person?.words?.trim();
@@ -232,10 +232,13 @@ export function OpinionGate({
   );
 }
 
-/** What the gate's state says, in order: the state's sentence, then what answers it or whether it holds. */
-function says(
-  t: ReturnType<typeof useTranslation>['t'], state: OpinionState, gate: Gate, detail: OpinionDetail | null, who: string,
-): string[] {
+/**
+ * What the gate's state says, in order, in the reader's language: the state's sentence, then what answers it or whether it
+ * holds. *What needs you*'s row says the same.
+ */
+export function opinionSays(t: ReturnType<typeof useTranslation>['t'], gate: Gate, detail: OpinionDetail | null = null): string[] {
+  const state = opinionState(gate.state);
+  const who = reviewerName(gate);
   const label = gate.label ? t(`opinion.label.${gate.label}`, { defaultValue: gate.label }) : t('opinion.label.another-maker');
   const minutes = detail?.first?.minutes;
   switch (state) {

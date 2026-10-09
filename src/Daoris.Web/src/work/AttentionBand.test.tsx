@@ -35,6 +35,7 @@ import type { AccountWaitTick, Consideration, TrustHold } from '../signals';
 import { AttentionBand, type AttentionDoors } from './AttentionBand';
 import type { SessionGrouping } from './groups';
 import { sessionTitle } from './identity';
+import type { OpinionWait } from './opinion';
 import type { Session } from '../api';
 
 const base = { adapter: 'claude-code', created: '2026-10-01T09:00:00Z', workspace: 'default' };
@@ -103,13 +104,16 @@ function respond(url: string): Response {
   return Response.json([]);
 }
 
-function start({ considered = [], untrusted = [], proposals = [], groups = [], waits = [], roster = {}, accounts = {} }: {
+function start({ considered = [], untrusted = [], proposals = [], groups = [], waits = [], roster = {}, accounts = {}, opinions = [] }: {
   considered?: Consideration[]; untrusted?: TrustHold[]; proposals?: RuleProposal[]; groups?: SessionGrouping[];
-  waits?: AccountWaitTick[]; roster?: HarnessRoster | object; accounts?: AccountsAnswer | object;
+  waits?: AccountWaitTick[]; roster?: HarnessRoster | object; accounts?: AccountsAnswer | object; opinions?: OpinionWait[];
 }, props: { doors?: AttentionDoors; notify?: (text: string, kind?: 'ok' | 'error') => void; onSessions?: () => void } = {}) {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
   invoke.mockImplementation(async (_module: string, type: string, request?: { payload?: Record<string, unknown> }) => {
     if (type === 'RULES') return { proposals };
+    if (type === 'OPINION_WAITS') return { waits: opinions };
+    if (type === 'ASK_OPINION') return { session: request?.payload?.id, done: true, message: 'A second opinion is asked.' };
+    if (type === 'OPINION_ANYWAY') return { session: request?.payload?.id, done: true, message: 'You went on without a settled second opinion.' };
     if (type === 'SESSION_GROUPS') return { sessions: groups };
     if (type === 'HARNESSES') return roster;
     if (type === 'ACCOUNTS') return accounts;
@@ -162,9 +166,45 @@ describe('What needs you on a machine', () => {
     await screen.findByRole('group', { name: 'Ready for you' });
     await screen.findByRole('listitem', { name: 'Intake for ask #a1' });
 
-    expect([...new Set(asked())].sort()).toEqual(['ACCOUNTS', 'HARNESSES', 'RULES', 'SESSION_GROUPS']);
+    // The second opinion's waits (XAGENT1g): the driver's own reading of the work it owes an opinion, asked only while the list
+    // places work To review, the only work one is owed on. It asks no agent.
+    expect([...new Set(asked())].sort()).toEqual(['ACCOUNTS', 'HARNESSES', 'OPINION_WAITS', 'RULES', 'SESSION_GROUPS']);
     const roster = invoke.mock.calls.filter(([, type]) => type === 'HARNESSES');
     expect(roster.every(([, , request]) => !request?.payload?.refresh)).toBe(true);
+  });
+
+  /**
+   * XAGENT1g (the second-agent design §9): a second opinion disputed where the work lands by itself waits for the person's word,
+   * saying what its gate says; *Ask again* is one press, *Go on anyway…* asks once with their words, and its door opens the
+   * session, where every press is.
+   */
+  it('lists a second opinion that waits on the person, asks again in one press and goes on with their words', async () => {
+    const notify = vi.fn();
+    const door = vi.fn();
+    start({
+      groups: [review('s42opin1')],
+      opinions: [{
+        session: 's42opin1', quest: 'q1', repository: 'engine', since: '2026-10-01T09:00:00Z', auto: true,
+        opinion: { state: 'disputed', holds: true, product: 'Codex', maker: 'OpenAI', disputes: 1 },
+      }],
+    }, { notify, doors: { opinion: door } });
+
+    const row = await screen.findByRole('listitem', { name: 'Expose a streaming budget' });
+    expect(row).toHaveTextContent('second opinion');
+    expect(row).toHaveTextContent('1 finding by Codex (OpenAI) is disputed');
+
+    await userEvent.click(within(row).getByRole('button', { name: 'Ask again' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ASK_OPINION', { payload: { id: 's42opin1' } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('A second opinion is asked.'));
+
+    await userEvent.click(within(row).getByRole('button', { name: 'Go on anyway…' }));
+    expect(within(row).getByRole('group', { name: 'Go on anyway…' })).toHaveTextContent('1 disputed finding stays so');
+    await userEvent.type(within(row).getByRole('textbox', { name: 'why, if you want to say' }), 'Read it myself');
+    await userEvent.click(within(row).getByRole('button', { name: 'Go on anyway' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'OPINION_ANYWAY', { payload: { id: 's42opin1', words: 'Read it myself' } });
+
+    await userEvent.click(within(row).getByRole('button', { name: 'Open' }));
+    expect(door).toHaveBeenCalledWith(expect.objectContaining({ id: 's42opin1', kind: 'opinion' }));
   });
 
   /**

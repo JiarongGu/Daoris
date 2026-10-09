@@ -309,9 +309,10 @@ export const useOpinionGate = (id: string | null) => {
 /**
  * What of the second opinion's gates waits on the person on this machine (XAGENT1g, design §9): a dispute, a required opinion
  * none could be had for, and commits nobody read where the work lands by itself, oldest first. *What needs you* lists them.
- * A shell older than the route answers nothing, which reads as none.
+ * A shell older than the route answers nothing, which reads as none. `enabled` lets a caller ask it only while there is work
+ * it could name: an opinion is owed only on work Sessions' list places *To review*.
  */
-export const useOpinionWaits = () => {
+export const useOpinionWaits = (enabled = true) => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: keys.opinionWaits,
@@ -319,7 +320,7 @@ export const useOpinionWaits = () => {
       const answer = await call<{ waits?: OpinionWait[] }>('OPINION_WAITS');
       return Array.isArray(answer?.waits) ? answer.waits : [];
     },
-    enabled: isAvailable,
+    enabled: isAvailable && enabled,
   });
 };
 

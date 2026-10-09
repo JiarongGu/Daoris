@@ -6,8 +6,8 @@ import {
   useAcceptQuest, useAnswerGoAhead, useAsks, usePublishAsk, useQuests, useRegistry, useSessions,
 } from '../queries';
 import {
-  retryNotice, useAccounts, useConsidered, useHarnessAction, useHarnesses, useNudge, useRefreshHarnesses, useRetryQuest,
-  useRuleProposal, useRules, useSessionGroups, useTrustFolder, useUntrusted, useWaits,
+  retryNotice, useAccounts, useConsidered, useHarnessAction, useHarnesses, useNudge, useOpinionWaits, useRefreshHarnesses,
+  useRetryQuest, useRuleProposal, useRules, useSessionGroups, useTrustFolder, useUntrusted, useWaits,
 } from '../shell';
 import { SignIn } from '../SignIn';
 import { byTool } from '../tools';
@@ -16,6 +16,7 @@ import type { AccountsKnown } from './accountAttention';
 import type { Attention, AttentionActs } from './AttentionRow';
 import { attentionKey, AttentionList, type AttentionDoors, AttentionRegion, NothingNeedsYou } from './AttentionList';
 import { needsAPerson } from './attention';
+import { useOpinionActs } from './opinionActs';
 import { useReviewActs } from './reviewActs';
 
 export type { AttentionDoors } from './AttentionList';
@@ -99,6 +100,7 @@ function Band({ doors, notify, onSessions }: { doors: AttentionDoors; notify: No
   // while there is one to name, so a browser, which has no groups, asks nothing more.
   const reviewing = (groups.data ?? []).some((placed) => placed.group === 'review');
   const ended = useSessions(null, true, reviewing);
+  const opinionWaits = useOpinionWaits(reviewing);
   // The accounts as last known and the tick's waits (UX6d): a browser has none.
   const accounts = useAccountsKnown();
 
@@ -114,12 +116,16 @@ function Band({ doors, notify, onSessions }: { doors: AttentionDoors; notify: No
   const harnessRun = useHarnessRun();
   // A set-up's verdict, from its row (REVIEWENV1g): the review's one owner, as the step's page presses it.
   const reviewActs = useReviewActs({ notify });
+  // What of the second opinion's gates waits on the person (XAGENT1g), and its presses' one owner, as the session's page has.
+  // An opinion is owed only on work Sessions' list places To review, so it is asked only while there is one to name.
+  const opinionActs = useOpinionActs({ notify });
   // The row an act is on its way for: its acts are held until it answers.
   const [acting, setActing] = useState<string | null>(null);
 
   const waiting = needsAPerson(
     (reviewing ? ended.data : undefined) ?? sessions.data ?? [], quests.data ?? [], registry.data ?? [], asks.data ?? [],
-    untrusted.data ?? [], Array.isArray(proposals) ? proposals : [], considered.data ?? [], groups.data ?? [], accounts);
+    untrusted.data ?? [], Array.isArray(proposals) ? proposals : [], considered.data ?? [], groups.data ?? [], accounts,
+    opinionWaits.data ?? []);
 
   if (waiting.length === 0) {
     return (
@@ -150,7 +156,21 @@ function Band({ doors, notify, onSessions }: { doors: AttentionDoors; notify: No
       }),
     };
   };
+  // A second opinion's row's presses (XAGENT1g): the gate's one owner, the row released whichever way the driver answered, and
+  // a refusal said in its words.
+  const opinion = (item: Attention) => {
+    setActing(attentionKey(item));
+    return {
+      done: () => setActing(null),
+      refused: (said: string) => { notify(said, 'error'); setActing(null); },
+    };
+  };
   const acts: AttentionActs = {
+    ...(opinionActs.shell ? {
+      opinionAgain: (item: Attention) => opinionActs.actsFor({ session: item.id, gate: item.opinion?.opinion }).ask?.(opinion(item)),
+      opinionAnyway: (item: Attention, words?: string) =>
+        opinionActs.actsFor({ session: item.id, gate: item.opinion?.opinion }).anyway?.(words ?? null, opinion(item)),
+    } : {}),
     reviewed: (item) => {
       const { acts: pressed, answered } = review(item);
       if (item.setUp && pressed.reviewed) pressed.reviewed(item.setUp, answered);
