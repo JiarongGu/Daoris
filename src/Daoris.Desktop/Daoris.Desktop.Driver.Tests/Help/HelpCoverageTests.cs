@@ -243,6 +243,16 @@ public sealed partial class HelpCoverageTests
         + "banner, Settings → Driver or `daoris-driver update --when-idle|--now|--cancel`.");
 
     /// <summary>
+    /// ASKHIST1's history of Ask Daoris's own conversations: the panel's rename, pin and new conversation from an earlier one,
+    /// and the headless host's <c>daoris-driver help</c>. Exempt, since the conversations and what the person keeps of them are
+    /// their own; the room names both doors, so the helper points there.
+    /// </summary>
+    private static readonly Exempt HistoryDoor = new(
+        "Ask Daoris's conversations are the person's own words and knowledge, kept on this machine only (ASKHIST1): going on in "
+        + "one is their words (D133 §1), and naming, pinning, starting from or deleting one is their tidy of their own history, so "
+        + "Ask Daoris proposes none; the room names the panel's History and `daoris-driver help`.");
+
+    /// <summary>
     /// The page's bridge hooks that change something and that no Settings domain presses, answered one by one (UPDATE1f):
     /// only a Settings domain's controls are derived, so a hook pressed elsewhere is read and otherwise answered for nowhere.
     /// Each row is held to a hook the bridge still exports, that still changes something, and that no domain presses, where
@@ -259,6 +269,10 @@ public sealed partial class HelpCoverageTests
         ("useLinkOpener", new Exempt(
             "it opens a link the person pressed in Daoris's browser, their own click, and changes nothing on the machine; "
             + "where links open is Settings → Browser's, which the `browser` kind's `links` door proposes (D110 §4).")),
+        // ASKHIST1: the Ask Daoris panel's history.
+        ("useRenameHelp", HistoryDoor),
+        ("usePinHelp", HistoryDoor),
+        ("useHelpStartFrom", HistoryDoor),
     ];
 
     /// <summary>Each <c>daoris driver</c> verb, and <c>across</c> by its two forms, as the CLI's command table spells them.</summary>
@@ -679,6 +693,24 @@ public sealed partial class HelpCoverageTests
             && door.Screen.Contains("box", StringComparison.Ordinal)
             && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));
         Assert.Contains("D133", SayDoor.Reason);
+    }
+
+    /// <summary>
+    /// ASKHIST1: the headless host's <c>help</c> is exempt from Ask Daoris while its usage spells it, as the panel's history is:
+    /// the room names both doors, marked exempt with the reason, and no kind of that name takes it.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_help_history_is_exempt_and_the_room_says_so()
+    {
+        Assert.Contains("help list [--search \"…\"] [--json]", DriverCommand.Usage);
+        Assert.Contains("help rename <id> \"…\" | --clear", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("help"));
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver help list [--search \"…\"]`", StringComparison.Ordinal)
+            && door.Terminal.Contains("`daoris-driver help rename|pin|unpin|delete <id>`", StringComparison.Ordinal)
+            && door.Screen.Contains("History", StringComparison.Ordinal)
+            && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));
+        Assert.Contains("ASKHIST1", HistoryDoor.Reason);
+        Assert.All(["useRenameHelp", "usePinHelp", "useHelpStartFrom"], hook => Assert.Same(HistoryDoor, Elsewhere.Single(row => row.Hook == hook).Answer));
     }
 
     /// <summary>
