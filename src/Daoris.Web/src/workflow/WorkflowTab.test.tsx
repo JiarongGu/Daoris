@@ -64,7 +64,7 @@ describe("a repository's Workflow tab", () => {
     expect(opinion).toHaveTextContent("Set by the workspace aurora's second-opinion rule.");
     // In part since XAGENT1f's gate: the landing waits for it, and its limit says what is not built.
     expect(opinion).toHaveTextContent('works in part');
-    expect(opinion).toHaveTextContent("Work here lands only once another agent's reading of it is settled");
+    expect(opinion).toHaveTextContent("The work here lands only once another agent's reading of it is settled");
 
     expect(look).toHaveTextContent('agent + you');
     expect(look).toHaveTextContent("Set by this repository's review rule.");
