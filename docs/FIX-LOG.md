@@ -813,6 +813,10 @@ once in ORIENT2h6's merge gate (no web file changed), with three worktrees build
 under the same load in one day: a page test that renders the whole shell is the shape to look at. A third, the same
 evening: `WorkFrame.test.tsx`'s "hands the words back into the box, and names the files, when a send does not arrive"
 timed out (20 s) once in CARRY2d's web run and passed in the next.
+`rememberedChoice.test.tsx`'s "opens Quests by its place with nothing chosen once the quest read there has closed"
+timed out at WORKFLOW1a's merge, 2026-10-09 (no web file changed), with three worktrees building beside it. It timed out
+again alone (20.3 s) under the same load, then passed alone in 9.4 s with the file's other three at 1 to 6 s: it is the
+file's first test, so it pays the shell's first render and imports. That first test is the one to bound or warm.
 The full set on `99b2a858` (2026-10-08) caught `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one`
 (modules, Process half) failing in the full run and passing alone, with one worktree building beside it; the plugin-kit
 repeat FLAKE1's row names.
