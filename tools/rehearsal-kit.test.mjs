@@ -1,7 +1,8 @@
 /**
  * What a rehearsal keeps of a failed check (DEV3b): the print it read and the files it names, under a folder of the run's
  * own named for the check, so a rerun keeps the sighting it is rerun after. And how a phase waits on a session and restarts
- * the host it talks to (DEV3d): by the clock, and only between the session's requests.
+ * the host it talks to (DEV3d): by the clock, and only between the session's requests. And the two things a run never
+ * shares with another or with the checkout it runs in: its hosts' ports (REHEARSEPORT1) and its git (REHEARSEGIT1).
  *
  *   node --test tools/rehearsal-kit.test.mjs
  *
@@ -15,8 +16,11 @@ import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
+import { createServer as createTcpServer } from 'node:net';
+import { portIsFree } from './cdp.mjs';
 import {
-  ACP_STUB_AGENT, checkFolderName, evidenceFolder, keepEvidence, makeChecker, restartBetweenRequests, waitFor,
+  ACP_STUB_AGENT, PORT_BAND, STUB_COMMIT, checkFolderName, evidenceFolder, gitRefusal, keepEvidence, makeChecker, portHolder,
+  portRefusal, rehearsalRun, restartBetweenRequests, takePorts, waitFor,
 } from './rehearsal-kit.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -396,3 +400,216 @@ test("a set-up step's stub says what it showed through its connector and closes 
   assert.equal(readyAgain?.name, 'review_ready');
   assert.ok(readyAgain.arguments.shows.includes(words), readyAgain.arguments.shows);
 });
+
+// ——— REHEARSEPORT1: a run's hosts never answer another run's checks. The family rehearsal's hosts sat on fixed ports, and a
+// second run beside the first, the merge gate's beside a worktree's, read the first run's registry and failed ten checks.
+
+/** A port held as another run's host holds it: listening on the loopback, until `close`. */
+async function holdPort(port) {
+  const server = createTcpServer();
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen({ port, host: '127.0.0.1' }, resolve);
+  });
+  return { close: () => new Promise((resolve) => server.close(resolve)) };
+}
+
+test("a run's ports are taken free, one per name and none twice, inside the band, walking past a port another holds", async (t) => {
+  const { held } = await takePorts(['held']);
+  const holder = await holdPort(held);
+  t.after(() => holder.close());
+
+  const ports = await takePorts(['host', 'remote', 'hostB'], { start: held });
+
+  const taken = Object.values(ports);
+  assert.deepEqual(Object.keys(ports), ['host', 'remote', 'hostB']);
+  assert.ok(!taken.includes(held), `the held port ${held} was taken: ${taken}`);
+  assert.equal(new Set(taken).size, 3, `a port taken twice: ${taken}`);
+  for (const port of taken) {
+    assert.ok(port >= PORT_BAND.from && port < PORT_BAND.to, `${port} is outside the band`);
+    assert.equal(await portIsFree(port), true, `${port} was handed out held`);
+  }
+});
+
+test('the walk wraps at the end of the band, and a band without enough free ports refuses before any host starts', async () => {
+  const band = { from: 100, to: 105 };
+  const isFree = async (port) => port !== 104;
+
+  assert.deepEqual(await takePorts(['a', 'b', 'c'], { band, start: 103, isFree }), { a: 103, b: 100, c: 101 });
+  await assert.rejects(
+    takePorts(['a', 'b', 'c', 'd', 'e'], { band, start: 100, isFree }),
+    /no 5 free ports in 100\.\.104: found 4/,
+  );
+});
+
+test("a port still held when a host is about to start there is refused, naming who holds it", async (t) => {
+  const { port } = await takePorts(['port']);
+  const holder = await holdPort(port);
+  t.after(() => holder.close());
+
+  const refused = await portRefusal(port, { within: 200, every: 20, holder: () => 'pid 4242 (another rehearsal’s host)' });
+
+  assert.match(refused ?? '', new RegExp(`^port ${port} is held by pid 4242 \\(another rehearsal’s host\\)`));
+});
+
+test('a port its own stopped host lets go of within the wait is not refused', async () => {
+  const { port } = await takePorts(['port']);
+  const holder = await holdPort(port);
+  setTimeout(() => holder.close(), 150);
+
+  assert.equal(await portRefusal(port, { within: 5_000, every: 20, holder: () => 'unasked' }), null);
+});
+
+test('the holder of a port is named by its process, as Windows tells it', { skip: process.platform !== 'win32' }, async (t) => {
+  const { port } = await takePorts(['port']);
+  const holder = await holdPort(port);
+  t.after(() => holder.close());
+
+  assert.match(portHolder(port), new RegExp(`^pid ${process.pid} node`));
+});
+
+// ——— REHEARSEGIT1: a rehearsal runs git only in a repository it made. git walks UP from a folder that is not one, and the
+// family rehearsal's fallback to its scratch committed a worktree's uncommitted work as "Family Rehearsal".
+
+const ID = '-c user.name="Kit Test" -c user.email="kit@example.invalid"';
+
+/** A checkout with one commit, and a scratch folder inside it that is not a repository: where a rehearsal runs. */
+function enclosingCheckout(name) {
+  const outer = folder(name);
+  git(outer, 'init', '-q');
+  writeFileSync(join(outer, 'README.md'), '# the enclosing checkout\n');
+  git(outer, 'add', '-A');
+  git(outer, 'commit', '-q', '-m', 'the enclosing checkout');
+  const inner = join(outer, 'scratch');
+  mkdirSync(inner);
+  writeFileSync(join(inner, 'late.md'), 'added after the look\n');
+  return { outer, inner };
+}
+
+test('git in a scratch folder inside a repository is refused, naming the repository, and nothing is staged or committed there', () => {
+  const { outer, inner } = enclosingCheckout('git-walks-up');
+  const run = rehearsalRun({ within: outer });
+
+  let added;
+  let committed;
+  let reset;
+  const said = printed(() => {
+    added = run(`git ${ID} add -A`, inner);
+    committed = run(`git ${ID} commit -q -m "a change after the look"`, inner);
+    reset = run('git reset -q --hard', inner);
+  });
+
+  for (const answer of [added, committed, reset]) {
+    assert.equal(answer.code, 2);
+    assert.match(answer.out, /^refused: git \w+ in .*scratch, which is not a repository of its own: git would answer for the one at /);
+  }
+  assert.equal(said.length, 3, said.join('\n'));
+  assert.ok(said.every((line) => line.startsWith('  refused: git ')), said.join('\n'));
+  assert.equal(git(outer, 'status', '--porcelain'), '?? scratch/');
+  assert.equal(git(outer, 'rev-list', '--count', 'HEAD'), '1');
+  assert.equal(git(outer, 'log', '-1', '--format=%an'), 'Kit Test');
+});
+
+test('git runs where the folder is its own repository, and where a verb makes one', () => {
+  const { outer } = enclosingCheckout('git-in-its-own');
+  const run = rehearsalRun({ within: outer });
+  const own = join(outer, 'newcomer');
+  mkdirSync(own);
+  writeFileSync(join(own, 'README.md'), '# the newcomer\n');
+
+  assert.equal(run('git init -q', own).code, 0);
+  assert.equal(run(`git ${ID} add -A`, own).code, 0);
+  assert.equal(run(`git ${ID} commit -q -m "the newcomer is born"`, own).code, 0);
+  assert.equal(git(own, 'log', '-1', '--format=%s'), 'the newcomer is born');
+  assert.equal(git(outer, 'rev-list', '--count', 'HEAD'), '1');
+
+  const origin = join(outer, 'newcomer-origin.git');
+  assert.equal(run(`git init -q --bare "${origin}"`, outer).code, 0);
+  assert.equal(run('git for-each-ref', origin).code, 0);
+  assert.equal(run(`git clone -q "${origin}" "${join(outer, 'platform')}"`, outer).code, 0);
+  assert.equal(run('node --version', join(outer, 'scratch')).code, 0, 'a command that is not git is not asked');
+});
+
+test('git with no folder named, outside the run, or pointed elsewhere by its own options is refused, and never run', () => {
+  const { outer } = enclosingCheckout('git-elsewhere');
+  const own = folder('git-elsewhere-sibling');
+  git(own, 'init', '-q');
+
+  assert.match(gitRefusal(`git ${ID} add -A`, undefined, { within: outer }) ?? '', /^refused: git add with no folder named/);
+  assert.match(gitRefusal(`git ${ID} add -A`, '', { within: outer }) ?? '', /^refused: git add with no folder named/);
+  assert.match(gitRefusal('git status', own, { within: outer }) ?? '', /^refused: git status in .*git-elsewhere-sibling, which is outside /);
+  assert.match(gitRefusal('git init -q', own, { within: outer }) ?? '', /which is outside /);
+  assert.match(gitRefusal(`git -C "${outer}" status`, own) ?? '', /^refused: git -C names another folder/);
+  assert.match(gitRefusal('git status', join(outer, 'never-made')) ?? '', /^refused: git status in .*never-made, where there is no such folder/);
+  assert.equal(gitRefusal('git status', own), null);
+});
+
+test("a refusal's words are inert to a shell, since a phase may put a print into its next command", () => {
+  const { outer, inner } = enclosingCheckout('git-inert');
+  const refusals = [
+    gitRefusal(`git ${ID} add -A`, inner),
+    gitRefusal('git status', undefined),
+    gitRefusal('git status', inner, { within: join(outer, 'elsewhere') }),
+    gitRefusal(`git -C "${outer}" status`, inner),
+    gitRefusal('git status', join(outer, 'never-made')),
+    gitRefusal('git status', folder('git-inert-plain')),
+  ];
+
+  // The words, the folders named aside: a folder is the run's own, as git or Node spells it.
+  const enclosing = execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: here, encoding: 'utf8' }).trim();
+  const folders = [scratch, scratch.replace(/\\/g, '/'), enclosing];
+  for (const refusal of refusals) {
+    assert.ok(refusal, 'every one is refused');
+    const words = folders.reduce((text, path) => text.split(path).join(''), refusal);
+    assert.doesNotMatch(words, /[`"'()$;&|<>*?[\]{}]/, refusal);
+  }
+});
+
+test("a stub commits in the repository it was started in, and refuses to commit in a folder that is not one", () => {
+  const { outer, inner } = enclosingCheckout('stub-commit');
+  const stub = join(scratch, 'stub-commit.mjs');
+  writeFileSync(stub, `${STUB_COMMIT}\nawait commitHere({ name: 'Stub Session', email: 'stub@example.invalid' }, 'stub: answer quest q1');\n`);
+  const own = join(outer, 'tree');
+  mkdirSync(own);
+  git(own, 'init', '-q');
+  writeFileSync(join(own, 'answered-q1.md'), 'Answered by the stub session.\n');
+
+  execFileSync(process.execPath, [stub], { cwd: own, encoding: 'utf8', stdio: 'pipe' });
+  assert.equal(git(own, 'log', '-1', '--format=%an: %s'), 'Stub Session: stub: answer quest q1');
+
+  let refused = '';
+  try {
+    execFileSync(process.execPath, [stub], { cwd: inner, encoding: 'utf8', stdio: 'pipe' });
+  } catch (error) {
+    refused = String(error.stderr);
+  }
+  assert.match(refused, /refused to commit in .*scratch: git would commit in the repository at /);
+  assert.equal(git(outer, 'status', '--porcelain'), '?? scratch/\n?? tree/');
+  assert.equal(git(outer, 'rev-list', '--count', 'HEAD'), '1');
+});
+
+test('the ACP stub started in a folder that is not its own repository fails the turn that would commit, and commits nothing',
+  async (t) => {
+    const { outer, inner } = enclosingCheckout('acp-stub-walks-up');
+    const stub = join(scratch, 'acp-agent-walks-up.mjs');
+    writeFileSync(stub, ACP_STUB_AGENT);
+    const service = await standInService();
+    t.after(() => service.close());
+
+    const turn = await stubTurn(stub, {
+      cwd: inner,
+      env: {
+        DAORIS_SERVICE_URL: service.url,
+        DAORIS_QUEST_ID: 'q2',
+        DAORIS_QUEST_TITLE: 'Show #q1 in `dev` for review',
+        DAORIS_QUEST_BODY: "Show the work of #q1 in `dev`, at https://dev.example.test/report, for the person's review.",
+      },
+      words: 'the report still reads the old name',
+      opening: { method: 'session/resume', params: { sessionId: 'acp-session-1', cwd: inner, mcpServers: [] } },
+    });
+
+    assert.match(turn.answer?.error?.message ?? '', /refused to commit in .*scratch: git would commit in the repository at /,
+      turn.said);
+    assert.equal(git(outer, 'status', '--porcelain'), '?? scratch/');
+    assert.equal(git(outer, 'rev-list', '--count', 'HEAD'), '1');
+  });
