@@ -11,7 +11,7 @@ import {
   REVIEW_WAITING, applyReviewEdit, holdsProcedure, reviewFor, reviewGate, reviewRuleOf, reviewSays, type CheckoutsReader,
 } from '../src/reviews.ts';
 import {
-  OPINION_DECLARED_ONLY, applyOpinionEdit, oneFamily, opinionFor, opinionRuleOf, opinionSays, sameAgentOf,
+  OPINION_DECLARED_ONLY, applyOpinionEdit, oneFamily, opinionFor, opinionGate, opinionRuleOf, opinionSays, sameAgentOf,
 } from '../src/opinions.ts';
 import { MANIFEST, pluginsRoot, readPlugins } from '../src/plugins.ts';
 import type { RecordsReader } from '../src/strikes.ts';
@@ -1728,6 +1728,7 @@ const OPINION_TABLE = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.
   read: [name: string, file: string, repository: string, workspace: string | null, source: string | null, rule: string | null][];
   problems: [name: string, value: string, problem: string | null][];
   says: [name: string, rule: string, sameAgent: string[], sentences: string[]][];
+  gate: [name: string, rule: string, sentences: string[]][];
   edits: [name: string, file: string, edit: string, after: string | null, refusal: string | null][];
   families: [name: string, working: string, reviewer: string, same: boolean][];
   pluginFamilies: [name: string, plugins: Record<string, string>, working: string, reviewer: string, same: boolean][];
@@ -1766,6 +1767,28 @@ test('each door says what an opinion rule lets a reviewer do, in the driver\'s w
     assert.deepEqual(opinionSays(read.rule!, sameAgent), sentences, name);
   }
 });
+
+/**
+ * XAGENT1f4: what each door says after the rule's sentences, now that the gate reads the rule (XAGENT1f): what work waiting for
+ * another agent's reading at landing, and a chain's next step under `steps`, wait for, with the person's terminal doors, and that
+ * what is declared safe is not handed to a reviewer yet; nothing after none here. Held to the shared table's `gate` rows.
+ */
+test('each door says what the gate does with an opinion rule, in the driver\'s words (the shared table)', () => {
+  assert.ok(OPINION_TABLE.gate.length > 0, 'the table holds gate rows');
+  for (const [name, rule, sentences] of OPINION_TABLE.gate) {
+    const read = opinionRuleOf(JSON.parse(rule));
+    assert.equal(read.problem, null, `${name}: the rule reads`);
+    assert.deepEqual(opinionGate(read.rule!), sentences, name);
+    assert.ok(!opinionGate(read.rule!).includes(OPINION_DECLARED_ONLY), `${name}: never that nothing reads it`);
+  }
+});
+
+/** The table's `gate` sentences for one of its rows, by name: what a door must say after that rule's own. */
+function opinionGateRow(name: string): string[] {
+  const row = OPINION_TABLE.gate.find(([each]) => each === name);
+  assert.ok(row !== undefined, `the table's gate row "${name}"`);
+  return row[2];
+}
 
 test('an opinion edit writes what the driver writes, or refuses in its words (the shared table)', () => {
   const fx = makeFixture('driver-opinion-edits');
@@ -1825,8 +1848,8 @@ test('opinion names a plugin\'s agent of the working agent\'s maker as the same 
 
 /**
  * The terminal's door onto the second-opinion rule (XAGENT1a, D50; design §2.5): `--reviewers` and the switches set over what
- * stands, `none`, `--clear`, and `list`. Each says what it lets a reviewer do, in the driver's sentences, and that nothing
- * reads it yet.
+ * stands, `none`, `--clear`, and `list`. Each says what it lets a reviewer do, in the driver's sentences, and what the gate
+ * does with it, the table's `gate` row (XAGENT1f4).
  */
 test('opinion declares a repository\'s reviewers, says what they do, and lists it', () => {
   const fx = makeFixture('driver-opinion');
@@ -1840,7 +1863,11 @@ test('opinion declares a repository\'s reviewers, says what they do, and lists i
   assert.match(said.out, /second opinions for `web-app`: `codex-acp`\./);
   assert.match(said.out, /Before work here lands, `codex-acp` reads it, in a copy of its own that nothing is taken back from/);
   assert.match(said.out, /It may build and run what this repository declares safe, in that copy\./);
-  assert.match(said.out, new RegExp(OPINION_DECLARED_ONLY.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  // The same rule as the table's row, so the door says that row's sentences after the rule's own, each on its line.
+  for (const sentence of opinionGateRow('the design\'s repository rule says both, then what verify is not handed yet')) {
+    assert.ok(said.out.includes(`  ${sentence}\n`), `what the gate does: ${sentence}`);
+  }
+  assert.doesNotMatch(said.out, /Declared only|nothing reads it yet/);
 
   const listed = run(['list'], at(fx)).out;
   assert.match(listed, /opinion\s+web-app\s+codex-acp; before landing and each next step; may build and run what is declared safe; at most 30 minutes a pass/);
@@ -1876,6 +1903,9 @@ test('opinion switches change only what they name, none and --clear say it, and 
   const none = run(['opinion', 'notes-site', 'none'], at(fx));
   assert.equal(JSON.parse(readFileSync(at(fx), 'utf8')).opinions['notes-site'], false);
   assert.match(none.out, /No second opinion here, whatever its workspace says/);
+  // Nothing waits where a repository has none, so the table says nothing after it, and neither does the door (XAGENT1f4).
+  assert.deepEqual(opinionGateRow('none here says nothing after'), []);
+  assert.doesNotMatch(none.out, /daoris-driver opinion|Declared only/);
   assert.match(run(['list'], at(fx)).out, /opinion\s+notes-site\s+none here, whatever its workspace says/);
 
   const cleared = run(['opinion', 'web-app', '--clear'], at(fx));

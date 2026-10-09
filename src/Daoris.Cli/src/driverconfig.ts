@@ -32,7 +32,7 @@ import {
   type ReviewEdit, type ReviewRule, type ReviewSetting,
 } from './reviews.ts';
 import {
-  OPINION_DECLARED_ONLY, applyOpinionEdit, opinionListed, opinionSays, opinionsOf, sameAgentOf, type OpinionEdit,
+  applyOpinionEdit, opinionGate, opinionListed, opinionSays, opinionsOf, sameAgentOf, type OpinionEdit,
   type OpinionRule, type OpinionSetting,
 } from './opinions.ts';
 import type { CommandArgs } from './types.ts';
@@ -1104,7 +1104,8 @@ export function commandDriver(
     // Which other agent reads work before it lands (XAGENT1a, D155 point 3, design §2.5): for a repository, or with
     // `--workspace` for each repository there that sets none of its own. `--reviewers` and the switches set what they name
     // over the rule set there; `none`; `--clear`. The repository's and the workspace's Setup and Ask Daoris's `setting` kind
-    // are its other doors (D50). Nothing reads it yet: the choice of a reviewer and the gate are XAGENT1b–f.
+    // are its other doors (D50). The driver's gate reads it since XAGENT1f, and each door says what it does after the rule's
+    // sentences (`opinionGate`, XAGENT1f4).
     case 'opinion':
       return opinion();
 
@@ -1396,7 +1397,7 @@ export function commandDriver(
 
   /**
    * `opinion` (XAGENT1a): the person's words made one edit, judged by the twin's table (`opinions.ts`), and said in the
-   * driver's sentences, the working agent's own family named among the reviewers, then that nothing reads it yet.
+   * driver's sentences, the working agent's own family named among the reviewers, then what the gate does with it (XAGENT1f4).
    */
   function opinion(): ExitCode {
     const valued = new Set(['--workspace', '--reviewers', '--on', '--minutes']);
@@ -1470,8 +1471,7 @@ export function commandDriver(
       // The working agent is the one this machine's work runs on: a reviewer of its family is no independent reading. A
       // plugin's agent is judged by what its plugin declares (XAGENT1b2), from the plugins beside the file, as the driver reads them.
       const sameAgent = rule === false ? [] : sameAgentOf(rule, choices.adapter, readPlugins(dirname(path)));
-      for (const sentence of opinionSays(rule, sameAgent)) write(`  ${sentence}`);
-      write(`  ${OPINION_DECLARED_ONLY}`);
+      for (const sentence of [...opinionSays(rule, sameAgent), ...opinionGate(rule)]) write(`  ${sentence}`);
     }
     if (rule !== undefined && rule !== false && workspace) {
       write('  A repository with a rule of its own keeps it — `daoris driver opinion <repository> --clear` hands it back.');

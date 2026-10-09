@@ -4,12 +4,12 @@
 //
 // 🔴 A TWIN with the driver's `OpinionRules.cs`: the CLI and the driver share no code, so both hold ONE table, the driver's
 // `Daoris.Desktop.Driver.Tests/fixtures/opinion-rules.json`, cell for cell — the reading and its precedence, every refusal in
-// the same words, each door's sentences, the edits, and which reviewers are the working agent's own family
-// (`.claude/knowledge/twins.md`).
+// the same words, each door's sentences and what each says after them of the gate, the edits, and which reviewers are the
+// working agent's own family (`.claude/knowledge/twins.md`).
 //
 // Pure: it reads no file, reaches no network and spawns nothing. A family is read from the toolchain table this build
 // declares and the plugin catalogue a caller hands it, as the driver reads the machine's adapters, a plugin's among them
-// (XAGENT1b2). Declared only: nothing reads the rule yet (XAGENT1b–f).
+// (XAGENT1b2). The driver's gate reads the rule since XAGENT1f, and each door says what it does (`opinionGate`, XAGENT1f4).
 
 import { DaorisError } from './errors.ts';
 import { atName, findName, sameName } from './casefold.ts';
@@ -42,8 +42,31 @@ export const OPINION_OCCASIONS = ['landing', 'steps'] as const;
 /** One pass's bound where the rule names none (design §2.3) — the driver's `OpinionRules.DefaultMinutes`. */
 export const OPINION_DEFAULT_MINUTES = 20;
 
-/** Said by each door after what the rule lets a reviewer do, until the choice and the gate read it (XAGENT1b, XAGENT1f). */
+/**
+ * What each door said after a rule's sentences until the gate read it (XAGENT1a–XAGENT1f), untrue since XAGENT1f. No door says
+ * it now (XAGENT1f4, `opinionGate`); it is kept so the tests that hold its absence name it, the workflow table's among them —
+ * the driver's `OpinionRules.DeclaredOnly`.
+ */
 export const OPINION_DECLARED_ONLY = 'Declared only: nothing reads it yet, so no reviewer is chosen and no landing waits for it.';
+
+/**
+ * Said by each door after the sentences of a rule that reads at landing (XAGENT1f4, through `opinionGate`): what the landing's
+ * gate does with work that waits for another agent's reading since XAGENT1f, and the person's two terminal doors that answer it.
+ * The driver's `OpinionRules.Waiting`, held to the shared table's `gate` rows.
+ */
+export const OPINION_WAITING = 'Where work here waits for another agent\'s reading, it lands only once that reading is settled, '
+  + 'or once you go on without it, `daoris-driver opinion anyway <session>`, or say you looked yourself, '
+  + '`daoris-driver opinion myself <session>`.';
+
+/** Said after the sentences of a rule that reads before each next step (XAGENT1f4) — the driver's `OpinionRules.StepWaiting`. */
+export const OPINION_STEP_WAITING = 'Where a chain\'s next step here waits for another agent\'s reading of the step before it, it '
+  + 'starts only once that reading is settled.';
+
+/**
+ * Said after the sentences of a rule that lets a reviewer run what is declared safe (XAGENT1f4): nothing hands a reviewer the
+ * repository's declared safe commands yet (XAGENT1f3) — the driver's `OpinionRules.SafeNotHanded`.
+ */
+export const OPINION_SAFE_NOT_HANDED = 'What this repository declares safe is not handed to a reviewer yet.';
 
 /** What stands where nothing is set anywhere (design §2.6): today's behaviour, said as such. */
 export const OPINION_NONE_SET = 'None: no other agent reads work here.';
@@ -224,6 +247,21 @@ export function opinionSays(rule: OpinionSetting, sameAgent: readonly string[]):
   }
 
   return said;
+}
+
+/**
+ * What each door says after the rule's own sentences (XAGENT1f4): what the gate does with work that waits for another agent's
+ * reading, at landing and before a chain's next step, as the rule's occasions name them, then that what is declared safe is not
+ * handed to a reviewer yet where the rule lets one run it; nothing after none here, where nothing waits. The driver's
+ * `OpinionRules.Gate`, by the shared table's `gate` rows.
+ */
+export function opinionGate(rule: OpinionSetting): string[] {
+  if (rule === false) return [];
+  return [
+    ...(rule.on.includes('landing') ? [OPINION_WAITING] : []),
+    ...(rule.on.includes('steps') ? [OPINION_STEP_WAITING] : []),
+    ...(rule.verify ? [OPINION_SAFE_NOT_HANDED] : []),
+  ];
 }
 
 /** A declaration as the driver's `AgentFamily` keeps it: none where it is absent or blank, else trimmed. */
