@@ -107,6 +107,19 @@ using var log = MachineLog.Open("host");
 log.WatchUnhandled();
 var started = DateTimeOffset.UtcNow;
 
+// HOSTSTART1: an exception that ends this entry point is written as `error`, at `start` until the host serves. The entry
+// point is async, so the `using` above has closed `log` by the time the runtime raises that exception as unhandled, and
+// the line WatchUnhandled writes for it was dropped: a host that died at start left nothing of why. Only that exception
+// is raised on the entry point's own thread, once nothing writes through `log`, so a writer of its own takes the line.
+var entryThread = Environment.CurrentManagedThreadId;
+var serving = false;
+AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+{
+    if (Environment.CurrentManagedThreadId != entryThread) return;
+    using var last = new MachineLog(DaorisHome.Resolve(), "host");
+    last.Failed(Volatile.Read(ref serving) ? "unhandled" : "start", e.ExceptionObject as Exception, e.IsTerminating);
+};
+
 // The bundle travels beside the executable. In development the SDK serves wwwroot from the project
 // directory — the default content root — but a PUBLISHED host is launched from anywhere, so when the
 // working directory has no bundle and the binary's directory does, the binary's wins. Without this
@@ -1779,6 +1792,7 @@ log.Info("app.started",
         .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
         .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion),
     ("mode", mode.ToString().ToLowerInvariant()));
+app.Lifetime.ApplicationStarted.Register(() => Volatile.Write(ref serving, true));
 app.Lifetime.ApplicationStopping.Register(() =>
     log.Info("app.stopped", ("uptimeSeconds", (long)(DateTimeOffset.UtcNow - started).TotalSeconds)));
 // LOG2a: the shell stops a host it started by closing its standard input, so the stop is the lifetime's
