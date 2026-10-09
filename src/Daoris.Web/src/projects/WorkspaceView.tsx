@@ -11,12 +11,13 @@ import { SyncSection } from '../settings/Sync';
 import {
   stoppedWaiting, useAccounts, useAcross, useDriver, useHarnesses, useHistoryPlan, usePlugins, useRemotes, useRuleAction, useRules,
   useDiscardSessionBranch, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useStarts,
-  useSweep, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote,
+  useSweep, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote, useWorkflowCurrent,
 } from '../shell';
 import { byTool } from '../tools';
 import { failure, type Notify, useErrorNotify } from '../ui';
 import type { KeptDoors } from '../work/ClearAsk';
 import { useHistoryActs } from '../work/historyActs';
+import { WorkflowTab } from '../workflow/WorkflowTab';
 import { KeptHistory } from './KeptHistory';
 import type { WorkspaceSection, WorkspaceTab } from './tabs';
 import { accountsHere, hostOf } from './workspace';
@@ -38,7 +39,8 @@ const ruleOf = ({ form, pattern, tidy, plugin, autoAccept }: LandingRule): Landi
  * **A workspace's page, with its data** (UX6g, D150 §4.3): the organism that holds what the page reads and every press it
  * makes, so the page, its Details and its Setup below it hold none (components §2). Each tab is a part of its own, drawn
  * only while it shows, so a tab asks the driver nothing until it is open: the starts and the accounts on Details, the
- * clean-up's list and the look's scope on Branches, reading across, the rules and the plugins on Setup.
+ * clean-up's list and the look's scope on Branches, its Current workflow on Workflow (WORKFLOW1b), reading across, the rules
+ * and the plugins on Setup.
  *
  * @remarks
  * **Every control is the screen's half of a terminal verb** (D50): `daoris driver line|landing|language|across --workspace`,
@@ -54,8 +56,8 @@ const ruleOf = ({ form, pattern, tidy, plugin, autoAccept }: LandingRule): Landi
  * opens its Branches, *Sync now*, or the quest's, the ask's or the session's page where the application hands those doors.
  */
 export function WorkspaceView({
-  workspace, repositories, attached, tab, onTab, asked = null, notify, onOpenRepository, onOpenAgent, onSyncNow, syncing = false,
-  onOpenQuest, onOpenAsk, onAttend,
+  workspace, repositories, attached, tab, onTab, asked = null, notify, onOpenRepository, onOpenRepositoryWorkflow, onOpenAgent,
+  onSyncNow, syncing = false, onOpenQuest, onOpenAsk, onAttend,
 }: {
   workspace: string;
   /** Its repositories in the list's registry, by name. */
@@ -68,6 +70,8 @@ export function WorkspaceView({
   asked?: WorkspaceSection | null;
   notify: Notify;
   onOpenRepository: (repository: string) => void;
+  /** Open a repository's page at its Workflow tab: the door from a repository that sets rules of its own (WORKFLOW1b). */
+  onOpenRepositoryWorkflow?: (repository: string) => void;
   /** Open an agent's page, where a workspace's accounts are set (D130 §3.2, UX6e). */
   onOpenAgent?: (agent: string) => void;
   /** The status bar's *Sync now* (SYNC6b), the application's, which says the pass's own words. */
@@ -83,6 +87,8 @@ export function WorkspaceView({
   const standing = useSyncStanding(attached ? null : workspace);
   // The header's *Wire to a remote…*: Setup at its remote, the form open.
   const [wiring, setWiring] = useState(false);
+  // A Workflow step's door: Setup at its defaults, where the workspace's rules are set (WORKFLOW1b).
+  const [askedHere, setAskedHere] = useState<WorkspaceSection | null>(null);
   const map = remotes.data && Array.isArray(remotes.data.remotes) ? remotes.data : null;
   const wired = map?.remotes.find((row) => same(row.workspace, workspace)) ?? null;
   const remote = attached
@@ -91,6 +97,7 @@ export function WorkspaceView({
 
   const chooseTab = (next: WorkspaceTab) => {
     setWiring(false);
+    setAskedHere(null);
     onTab(next);
   };
   const onSync = attached && wired && onSyncNow ? () => onSyncNow(workspace) : undefined;
@@ -99,8 +106,16 @@ export function WorkspaceView({
     ? <WorkspaceDetails repositories={repositories} onOpen={onOpenRepository} />
     : tab === 'branches'
       ? <BranchesPart workspace={workspace} notify={notify} />
+      : tab === 'workflow'
+        ? (
+          <WorkflowPart
+            workspace={workspace}
+            onSetup={() => { setWiring(false); setAskedHere('defaults'); onTab('setup'); }}
+            onOpenRepository={onOpenRepositoryWorkflow}
+          />
+        )
       : tab === 'setup'
-        ? <SetupPart workspace={workspace} notify={notify} open={wiring ? 'remote' : asked ?? undefined} wiring={wiring} />
+        ? <SetupPart workspace={workspace} notify={notify} open={wiring ? 'remote' : askedHere ?? asked ?? undefined} wiring={wiring} />
         : (
           <DetailsPart
             workspace={workspace}
@@ -251,6 +266,29 @@ function BranchesPart({ workspace, notify }: { workspace: string; notify: Notify
           })}
         />
       )}
+    />
+  );
+}
+
+/**
+ * Workflow (WORKFLOW1b, the workflow design §6.1): the workspace's Current, read only while the tab shows, as
+ * `daoris driver workflow show --workspace` reads it. A refusal is said in its place, since the tab is the answer's whole
+ * page; each step's door opens Setup at its defaults, and a repository that sets rules of its own opens at its own.
+ */
+function WorkflowPart({ workspace, onSetup, onOpenRepository }: {
+  workspace: string;
+  onSetup: () => void;
+  onOpenRepository?: (repository: string) => void;
+}) {
+  const answer = useWorkflowCurrent({ workspace });
+  return (
+    <WorkflowTab
+      page="workspace"
+      name={workspace}
+      current={answer.data}
+      reading={answer.isPending}
+      refusal={answer.error ? sentence(answer.error) : null}
+      doors={{ setup: onSetup, repository: onOpenRepository }}
     />
   );
 }

@@ -105,6 +105,7 @@
   "projects.tab.details": "详情",
   "projects.tab.branches": "分支",
   "projects.tab.setup": "配置",
+  "projects.tab.workflow": "工作流",
   "projects.lineDoor": "在配置中修改",
   "projects.setup.section.driving": "驱动",
   "projects.setup.section.work": "主线与落地",

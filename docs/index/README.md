@@ -41,7 +41,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 96 | 1872 |
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 45 | 844 |
 | `src/Daoris.Web/src/ui.test.tsx` | 43 | 872 |
-| `src/Daoris.Web/src/ui.tsx` | 76 | 1620 |
+| `src/Daoris.Web/src/ui.tsx` | 76 | 1632 |
 | `src/Daoris.Web/src/work/ConversationView.test.tsx` | 43 | 817 |
 | `src/Daoris.Web/src/work/SessionHead.test.tsx` | 45 | 860 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 199 | 3866 |
@@ -155,7 +155,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `.claude/knowledge/twins.md` | 64 | 124 |
 | `docs/2026-09-19-platform-ux.md` | 57 | 612 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
-| `docs/2026-09-21-working-surface-components.md` | 52 | 349 |
+| `docs/2026-09-21-working-surface-components.md` | 53 | 352 |
 | `docs/2026-09-25-rev3-review.md` | 51 | 407 |
 | `docs/2026-09-26-ux5-screen-audit.md` | 46 | 141 |
 | `docs/2026-09-30-machine-log-design.md` | 45 | 460 |
@@ -180,4 +180,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-08-second-agent-design.md` | 56 | 765 |
 | `docs/2026-10-09-workflow-design.md` | 79 | 1034 |
 | `docs/DAORIS_FUTURE_DIRECTIONS.md` | 51 | 3466 |
-| `src/Daoris.Desktop/README.md` | 49 | 294 |
+| `src/Daoris.Desktop/README.md` | 50 | 295 |

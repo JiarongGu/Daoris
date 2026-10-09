@@ -4,6 +4,7 @@ import { canBeAsked, type Registration } from './api';
 import { sentence } from './format';
 import { AddProjectDrawer, ImportFolderDrawer, ManageProjectDrawer } from './ProjectManage';
 import { projectsItem, workspaceItem } from './opener';
+import type { WorkflowTabProps } from './workflow/WorkflowTab';
 import { ProjectList, type RepositoryRowFacts, type WorkspaceGroup } from './projects/ProjectList';
 import { ProjectPage, ProjectsMainNotice } from './projects/ProjectPage';
 import type { Driving, RepositorySetupProps } from './projects/RepositorySetup';
@@ -17,7 +18,7 @@ import { type ReviewEdit, reviewToast } from './settings/Reviews';
 import {
   useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetDrivable, useSetHold, useSetLanding,
   useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetStanding, useSetTrees, useSetWriteAcross,
-  useSweepPlan,
+  useSweepPlan, useWorkflowCurrent,
 } from './shell';
 import { doorOf } from './tools';
 import { failure, type Notify, useErrorNotify } from './ui';
@@ -40,7 +41,7 @@ const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] :
  * while it is in front. Every query it holds the frame already holds, so holding it everywhere asks nothing more.
  *
  * **What it remembers is its list's** (`listPanes.ts`, §3f): the chosen repository, by name, which a door into the view
- * names through the opener (§3i); and its page's tab, Details or Setup, one for the view (UX6f, D150 §4.2), which its
+ * names through the opener (§3i); and its page's tab, Details, Workflow or Setup, one for the view (UX6f, D150 §4.2), which its
  * holder keeps so a door can open a repository at Setup.
  *
  * **A repository's Setup is every setting it holds on this machine** (UX6f), each the screen's half of `daoris driver
@@ -150,6 +151,9 @@ export function useProjectsView({
   const landers = (catalog.data?.plugins ?? [])
     .filter((plugin) => plugin.enabled && !plugin.problem && plugin.points.includes('work/land'))
     .map((plugin) => plugin.id);
+  // How its work moves (WORKFLOW1b): its Current, asked only while its Workflow tab shows, as Setup's own answers are.
+  const workflowShown = active && driver.data !== undefined && tab === 'workflow' && chosenRepository !== null;
+  const current = useWorkflowCurrent(chosenRepository === null ? null : { repository: chosenRepository }, { enabled: workflowShown });
   // Session branches holding work no branch of the person's holds (WSR3, D88) — named on the repository,
   // so work is not lost in a pile nobody reads. A workspace's Branches lists them one by one (UX6g).
   const sweep = useSweepPlan();
@@ -375,6 +379,27 @@ export function useProjectsView({
     };
   };
 
+  /**
+   * **Its Workflow** (WORKFLOW1b, the workflow design §6.1): its Current as the driver answers it, read only while the tab
+   * shows, and a refusal said in its place. A step its workspace set opens the workspace's Setup, whose defaults open by
+   * themselves wherever a rule is set there.
+   */
+  const workflowOf = (registration: Registration): WorkflowTabProps | null => {
+    if (!driver.data) return null;
+    const workspace = current.data?.workspace ?? workspaceOf(registration);
+    return {
+      current: current.data,
+      reading: current.isPending,
+      refusal: current.error ? sentence(current.error) : null,
+      doors: {
+        workspaceSetup: () => {
+          onChoose(workspaceItem(workspace));
+          onWorkspaceTab?.('setup');
+        },
+      },
+    };
+  };
+
   const shown = chosenRepository ? rows.find((row) => row.repository === chosenRepository) : undefined;
   const workspaceHeld = chosenWorkspace !== null && groups.some((group) => group.workspace === chosenWorkspace);
   const add = { label: t('projects.manage.add'), onAct: () => setAdding(true) };
@@ -394,6 +419,8 @@ export function useProjectsView({
           asked={workspaceSection}
           notify={notify}
           onOpenRepository={onChoose}
+          // A repository that sets rules of its own opens at its own workflow (WORKFLOW1b).
+          onOpenRepositoryWorkflow={(repository) => { onChoose(repository); onTab?.('workflow'); }}
           onOpenAgent={onOpenAgent}
           onSyncNow={onSyncNow}
           syncing={syncing}
@@ -416,6 +443,7 @@ export function useProjectsView({
           drivable={driver.data ? named(driver.data.drivable, shown.repository) : undefined}
           held={driver.data ? named(driver.data.holds, shown.repository) : undefined}
           setup={setupOf(shown)}
+          workflow={workflowOf(shown)}
           tab={tab}
           onTab={onTab}
           // Adoption's own acts are an adopter's (INT3c): managing writes its declaration into it.

@@ -38,6 +38,11 @@ export const keys = {
   remotes: ['remotes'] as const,
   browserSettings: ['browser-settings'] as const,
   lines: ['driver', 'lines'] as const,
+  /**
+   * A repository's or a workspace's Current workflow (WORKFLOW1b) — shell-only, like the lines, and under their key, since
+   * Current is drawn from the rules they resolve: every change that asks the lines again asks it again.
+   */
+  workflow: (scope: 'repository' | 'workspace', name: string) => ['driver', 'lines', 'workflow', scope, name] as const,
   /** How each repository's checkout stands for reading and writing across (D107) — shell-only, like the lines. */
   across: ['driver', 'across'] as const,
   allLandings: ['driver', 'landing'] as const,

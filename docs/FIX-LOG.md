@@ -743,6 +743,8 @@ failed`): git's own files held for a moment, most likely by the scanner, the sam
 `speak` waits for the stub's `close` on every path; what still held the folder (a git the stub started, or the
 scanner) was not captured. The same test failed once more in HIST1c's verify another way, "turn failed: fetch failed"
 (the stub's request to its stand-in quest door), passing alone and rerun: the test, not the folder, is the repeat.
+Again at WORKFLOW1b's merge, 2026-10-09 (no CLI file changed), with two worktrees building beside it: *a set-up quest is
+done as its body says* (`setup-kit.test.ts:561`) answered `session/prompt` with `fetch failed`; the file passed 31/31 alone.
 `landing-plugins.test.ts` hung for over 25 minutes in UXFIX4's verify, its `land.mjs` child waiting with no children
 of its own while another worktree ran the same file; stopped, it passed alone (19/19, 91 s) and the next verify was
 green. No child had died, so the wait, not a held file, is the repeat; what the child waited on was not captured.
