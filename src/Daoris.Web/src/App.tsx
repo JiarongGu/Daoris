@@ -48,6 +48,8 @@ import { LinkOpener } from './links';
 import { BrowserDoor } from './work/BrowserDoor';
 import { browserDrivers } from './work/browserDrivers';
 import { ReviewChip } from './work/ReviewChip';
+import { newestSetUp, setUpRef } from './work/review';
+import { useReviewActs } from './work/reviewActs';
 import { menuRows } from './work/appMenus';
 import { KeyboardShortcuts } from './work/KeyboardShortcuts';
 import { offeredActs } from './work/acts';
@@ -287,6 +289,8 @@ export function App() {
   const openBrowser = useOpenBrowser();
   // *Show it again* on the strip's review chip (REVIEWENV1d): a set-up's build served to its tab again, and the tab in front.
   const showReviewAgain = useShowReviewAgain();
+  // The chip's *Reviewed* (REVIEWENV1g): the review's one owner, as the step's page presses it.
+  const reviewActs = useReviewActs({ notify });
   // Where the page's links open (BRW7): Daoris's browser where the person chose it and a shell is here
   // to open one, and otherwise null — a link then opens as a link always has.
   const linkOpener = useLinkOpener(notify);
@@ -969,11 +973,21 @@ export function App() {
             {/* A set-up waiting for the person's review (REVIEWENV1d): said beside the browser, never inside it, which an
                 agent drives. */}
             <ReviewChip
-              reviews={driver.data?.inReview}
+              // Each with the newest set-up its step's record holds, which *Reviewed* names (REVIEWENV1g, REVIEWENV1b3).
+              reviews={driver.data?.inReview?.map((row) => ({
+                ...row,
+                setUp: setUpRef(newestSetUp(outstanding.data?.find((quest) => quest.id === row.quest) ?? {})),
+              }))}
               onShowAgain={(quest) => showReviewAgain.mutate({ quest }, {
                 onSuccess: () => notify(t('browser.review.shownAgain', { quest })),
                 onError: failure(notify),
               })}
+              onReviewed={(quest, setUp) => reviewActs.actsFor({ state: 'shown', step: quest }).reviewed?.(setUp, {
+                done: () => {},
+                refused: (said) => notify(said, 'error'),
+              })}
+              // A not yet needs words, which the step's page asks for: a menu holds no box.
+              onNotYet={(quest) => openQuest(quest)}
             />
             <div className={TOGGLES_ROOM}>
               <LayoutToggles
