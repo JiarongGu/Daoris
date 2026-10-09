@@ -1,4 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
+import { DOCK } from '../work/layout';
 import { AskHistory } from './AskHistory';
 import type { HelpConversationRow } from './history';
 
@@ -53,3 +54,48 @@ export const Cut: Story = { args: { cut: true } };
 
 /** A pin that could not be kept, said where it was pressed. */
 export const Refused: Story = { args: { refusal: 'no conversation here is `h3c4d5e6` any more.' } };
+
+// ASKHIST1b: a conversation whose question was a pasted URL, in the panel's scroller at the dock's floor.
+const URL = 'https://example.atlassian.net/browse/TK-2205?focusedCommentId=1234567&page=com.example.plugin.tabpanels%3Acomments';
+const PASTED = `to complete this ${URL} so the sprint closes`;
+
+/** The panel's scroller (its padding, its scroll) at the dock's floor: anything that widened the history scrolls it sideways. */
+const atTheDocksFloor: Decorator = (Story) => (
+  <div style={{ width: DOCK.floor }} className="h-[32rem] overflow-y-auto border-x border-line bg-page px-4 py-3"><Story /></div>
+);
+
+/** Opens the first row's ⋯ and chooses its `item`th act, as a person would by the keyboard. */
+const choose = (item: number): Story['play'] => async ({ canvasElement }) => {
+  const more = canvasElement.querySelector<HTMLButtonElement>('li button[aria-haspopup="menu"]');
+  more?.focus();
+  more?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  canvasElement.ownerDocument.querySelectorAll<HTMLElement>('[role="menuitem"]')[item]?.click();
+};
+
+/**
+ * A pasted URL as the title (ASKHIST1b): one line, cut, whole in its tip; what it was about and where the search found it in
+ * two lines broken at the edge; and nothing scrolls sideways. The search is the URL's own key.
+ */
+export const PastedUrl: Story = {
+  args: {
+    search: 'TK-2205',
+    rows: [
+      row({ session: 'u1v2w3x4', title: PASTED, opening: PASTED, pinned: ago(30), from: 'h1a2b3c4',
+        about: `Opened ${URL}#comment-1234567 and read the ticket's whole description before answering.`,
+        found: `…the ticket at ${URL}&selectedIssue=TK-2205 asks for…` }),
+      ...ROWS,
+    ],
+  },
+  decorators: [atTheDocksFloor],
+};
+
+/** Its rename, asked in its row: the field and the terminal's twin stay inside it, the twin broken where it must be. */
+export const PastedUrlRename: Story = {
+  args: { search: '', rows: [row({ session: 'u1v2w3x4', title: PASTED, opening: PASTED }), ...ROWS] },
+  decorators: [atTheDocksFloor],
+  play: choose(0),
+};
+
+/** Its delete, asked once in its row: the sentence says the whole title and breaks it at the edge. */
+export const PastedUrlDelete: Story = { ...PastedUrlRename, play: choose(3) };

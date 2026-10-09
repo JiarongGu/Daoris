@@ -656,6 +656,20 @@ describe('Ask Daoris’s history', () => {
     }));
   });
 
+  /** ASKHIST1b: a title too long for the dock, a pasted URL, breaks at the panel's edge where the conversation says it. */
+  it('says which conversation one started from at the dock’s edge, however long its title', async () => {
+    const title = 'to complete this https://example.atlassian.net/browse/TK-2205?focusedCommentId=1234567&page=com.example.plugin.tabpanels';
+    withHistory([row({ resumable: false, title, opening: title })], { sessionId: 'fr0m0000', message: 'opened', from: EARLIER.id });
+    show();
+
+    const press = await screen.findByRole('button', { name: 'New conversation from it' });
+    SESSIONS = [EARLIER, { ...HELP, id: 'fr0m0000', created: '2026-09-29T01:00:00Z' }];
+    await userEvent.click(press);
+
+    expect(await screen.findByText(`This conversation starts from “${title}”: its words go to Ask Daoris as a file with your first message.`))
+      .toHaveClass('wrap-anywhere');
+  });
+
   /** A rename, a pin and a delete go through the driver's routes, the delete through Sessions' own, asked once. */
   it('renames, pins and deletes from the history through the driver', async () => {
     withHistory([row({ session: EARLIER.id })]);
