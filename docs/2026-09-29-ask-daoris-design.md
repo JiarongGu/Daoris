@@ -401,10 +401,18 @@ line git can name. With an agent named, a starter is also a first message.
      one asked of the earlier agent would spend a turn and reopen that conversation. The transcript (both sides' words, the
      newest kept where it is long, saying the start was cut) is a file in the new conversation's own folder, which its rules
      already read (CONV4c), handed with the person's first message and named in its preface.
-   - **The panel**: *History* beside *New conversation*; the history takes the conversation's place, with no box. A row shows
-     its conversation; one that ended and goes on in itself takes the next words, and one that cannot offers *New conversation
-     from it*. The newest that ended still starts a new one by default, as HELP5 made it; *Go on in it* chooses it. A rename is
-     asked in its row with the terminal's twin; a delete asks once (`InlineConfirm`) through `SESSION_DELETE`.
+   - **The panel**: two views, each with its own head (*as ASKHIST1c made it*, after the owner looked at the window). The
+     history's, left-led: *Conversation history*, *Kept on this machine only.* under it, *New conversation* at its right and
+     the search the whole width, its rows alone scrolling, grouped *Pinned*, *Today*, *Yesterday*, *This week* (from its
+     Monday) and *Older* by local days. The open conversation's: *← History*, its title whole, a new one at its end. A row's
+     title wraps; the open one says *current*; its line is the answer's words without their Markdown, or a search's find with
+     its words marked; its ⋯ sits beside it. Opening a row only reads it and focuses its heading; *← History* or Escape goes
+     back to that row. What the next words do is said right above the box: one that ended and goes on in itself takes them;
+     one the person chose that cannot go on, or is still being checked, takes none until they choose *New conversation from
+     it* (first) or a blank one. Each conversation keeps its own draft, words and files, and a new one its own. The newest
+     that ended still starts a new one by default, as HELP5 made it; *Go on in it* chooses it. A rename starts from the title
+     selected, with *Use the original question* for a named one and the terminal's twin; a delete asks once (`InlineConfirm`)
+     through `SESSION_DELETE`.
    - **Both doors** (D50): `HELP_CONVERSATIONS`, `HELP_RENAME`, `HELP_PIN`, `HELP_START_FROM`, with going on as `SESSION_INPUT`
      and a delete as `SESSION_DELETE`; and `daoris-driver help list [--search "…"] [--json] | resume <id> "…" | rename <id>
      "…"|--clear | pin|unpin <id> | delete <id> [--yes]`, its `--json` the panel's row field for field. Exempt from Ask Daoris:

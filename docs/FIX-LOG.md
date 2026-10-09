@@ -5,6 +5,35 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-09 — Ask Daoris lost a draft through its history, and typed words could start a fresh conversation unseen (ASKHIST1c)
+
+- **Symptom:** the owner on the install (中文, dark, 1546×900 with a 430 px dock, and 680 px): *"has some display and UI/UX
+  issues"*. A second agent's read-only review of the code found the defects under the looks. Files attached in the box
+  went when the history opened; one text draft followed the person from conversation A to B and into a new one; words typed
+  under an old conversation that could not go on started a fresh one without its words, the offer of one from its words
+  sitting below the transcript, perhaps out of view; while the history's rows loaded, every ended conversation read as one
+  that could not go on; a search typed blanked the rows until it answered; a list that could not be read said *No
+  conversations yet*; *Back to bottom* floated over the last message's words; and an answer's long fenced lines scrolled
+  sideways in the dock, cut off.
+- **Root cause:** the panel held one draft string and left the files to the composer, which unmounts with the history and
+  is keyed per conversation; eligibility was `shownRow?.resumable === true`, so an unknown row was a *no*, and the composer
+  took words under any shown conversation; the history's rows were `found.data ?? []` while a search's query had no answer
+  and an error fell through the same `[]`; the way to the tail was `sticky` inside the transcript it covers; and a code
+  block's `pre` only ever scrolled, whatever its pane.
+- **Fix:** drafts kept per conversation and apart for a new one, words and files, the files through the composer's new
+  `carried`/`onCarry` beside `draft`/`onDraft`; the eligibility three-valued (being checked, goes on, cannot), and no box
+  under one the person chose until it goes on, with *New conversation from it* first and a blank one beside it in a strip
+  above where the box would be; the last list held, dimmed, while a newer one answers, and loading, failure with *Try
+  again*, empty with *Start a conversation* and no match with *Clear search* each said; `SessionConversation` tells a host
+  that takes `onTail` where the reader is, and Ask Daoris draws `BackToBottom` in its own strip; a code block wraps below
+  48rem of its own width (a container query on the block, then its measure) until *Wrap* says otherwise. The look the
+  owner saw (the heads, the rows, the groups, the ⋯) is D158's ASKHIST1c note.
+- **Verify:** `AskDaoris.test.tsx` (drafts per conversation with a file, read-only and being checked, the keys from the
+  list to a conversation and back, a failed list and a search on its way), `AskHistory.test.tsx`, `AskPanel.test.tsx`,
+  `Composer.test.tsx` (the held files), `SessionConversation.test.tsx` and `CodeBlock.test.tsx`, each failing on the old
+  code first, in both catalogues. **Not covered:** the window; and Sessions' centre, its detached window and the monitor's
+  tile still draw *Back to bottom* inside the transcript, since no host there takes `onTail` yet.
+
 ## 2026-10-09 — a `driver.json` that does not read ended the headless driver on a stack trace (CONFIGREAD1)
 
 - **Symptom:** `daoris-driver drive --once` over a `driver.json` that does not parse ended on a `JsonException`'s stack
