@@ -38,6 +38,7 @@ public sealed class MachineLog : IDisposable
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
+    private readonly string? _home;
     private readonly string? _folder;
     private readonly string _source;
     private readonly Func<DateTimeOffset> _clock;
@@ -54,7 +55,8 @@ public sealed class MachineLog : IDisposable
     /// <param name="cap">Where a file stops growing.</param>
     public MachineLog(string? home, string source, Func<DateTimeOffset>? clock = null, long cap = CapBytes)
     {
-        _folder = string.IsNullOrEmpty(home) ? null : Path.Combine(home, Folder);
+        _home = string.IsNullOrEmpty(home) ? null : home;
+        _folder = _home is null ? null : Path.Combine(_home, Folder);
         _source = source;
         _clock = clock ?? (() => DateTimeOffset.UtcNow);
         _cap = cap;
@@ -147,6 +149,24 @@ public sealed class MachineLog : IDisposable
         TaskScheduler.UnobservedTaskException += (_, e) => Failed("an unobserved task", e.Exception, false);
     }
 
+    /// <summary>
+    /// Write the exception that ends an async entry point holding this log in a <c>using</c> (HOSTSTART1, HOSTSTART2),
+    /// which <see cref="WatchUnhandled"/> cannot: the <c>using</c> closes this log as the exception leaves the entry point,
+    /// before the runtime raises it as unhandled, so that line is dropped and a process that died at start leaves nothing
+    /// of why. The HTTP host and the MCP connector each call it beside their log's opening.
+    /// </summary>
+    /// <returns>The watch, whose <see cref="EntryPointWatch.Running"/> the process calls once its start is over.</returns>
+    /// <remarks>Call it on the entry point's own thread, before its first await: that thread is the one it watches.</remarks>
+    public EntryPointWatch WatchEntryPoint()
+    {
+        var watch = ForEntryPoint();
+        AppDomain.CurrentDomain.UnhandledException += (_, e) => watch.Raised(e.ExceptionObject as Exception, e.IsTerminating);
+        return watch;
+    }
+
+    /// <summary>A watch on the calling thread, with this log's home, source, clock and cap, registered nowhere.</summary>
+    internal EntryPointWatch ForEntryPoint() => new(_home, _source, _clock, _cap);
+
     /// <summary>An exception, written as the <c>error</c> event.</summary>
     public void Failed(string where, Exception? error, bool terminating = false) =>
         Error("error",
@@ -222,5 +242,45 @@ public sealed class MachineLog : IDisposable
 
         buffer.WriteByte((byte)'\n');
         return buffer.ToArray();
+    }
+}
+
+/// <summary>
+/// The exception that ends an async entry point, written once that entry point's own log is closed (HOSTSTART1,
+/// HOSTSTART2): the <c>error</c> event, its <c>where</c> <c>start</c> until <see cref="Running"/> is called and
+/// <c>unhandled</c> after, <c>terminating</c> the runtime's word. Made by <see cref="MachineLog.WatchEntryPoint"/>.
+/// </summary>
+/// <remarks>
+/// Only the exception that leaves the entry point is raised on the entry point's own thread, and only once nothing
+/// writes through its log, so a writer of its own takes the line there; any other thread's is
+/// <see cref="MachineLog.WatchUnhandled"/>'s, through the log still open, and is never written twice.
+/// <b>A twin</b>: the driver's <c>Daoris.Driver.EntryPointWatch</c> is the same with its own code.
+/// </remarks>
+public sealed class EntryPointWatch
+{
+    private readonly string? _home;
+    private readonly string _source;
+    private readonly Func<DateTimeOffset> _clock;
+    private readonly long _cap;
+    private readonly int _thread = Environment.CurrentManagedThreadId;
+    private int _running;
+
+    internal EntryPointWatch(string? home, string source, Func<DateTimeOffset> clock, long cap)
+    {
+        _home = home;
+        _source = source;
+        _clock = clock;
+        _cap = cap;
+    }
+
+    /// <summary>The start is over: the host serves. An exception that ends the process from now on is <c>unhandled</c>.</summary>
+    public void Running() => Volatile.Write(ref _running, 1);
+
+    /// <summary>Write <paramref name="error"/>, when it was raised on the thread this watch was made on.</summary>
+    internal void Raised(Exception? error, bool terminating)
+    {
+        if (Environment.CurrentManagedThreadId != _thread) return;
+        using var last = new MachineLog(_home, _source, _clock, _cap);
+        last.Failed(Volatile.Read(ref _running) == 1 ? "unhandled" : "start", error, terminating);
     }
 }

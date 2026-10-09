@@ -162,7 +162,8 @@ public sealed class DriverHostTests : IDisposable
         return (process.ExitCode, await output + await error);
     }
 
-    private static string HostDll()
+    /// <summary>The host's build beside this test's own; <c>DriverStartFailureTests</c> starts it too.</summary>
+    internal static string HostDll()
     {
         // This test's build is <tests>/bin/<configuration>/<framework>/; the host's sits the same way.
         var build = new DirectoryInfo(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));

@@ -33,6 +33,35 @@ repository.
   739 → 739, `npm run verify` green. **Not covered:** the family rehearsal's phase, which keeps its config as its own
   home's `driver.json` since REVIEWENV1h and so passes either way.
 - **Commit:** `c9474b3c`, `77f3f84c`.
+## 2026-10-09 — the connector and the headless driver dropped a start that threw (HOSTSTART2)
+
+### Service and driver: a connector or a headless driver that died at start left nothing of why in its log
+- **Symptom:** found by HOSTSTART1 in the source: the MCP connector (`Daoris.Service.Mcp/Program.cs`) and the headless
+  driver (`Daoris.Desktop.Driver.Host/Program.cs`) open their machine log as the HTTP host did, and an exception that
+  ended their start left no `error` line. Reproduced before the fix: the real connector over a store that cannot open,
+  and the real driver's `drive --once` over a `driver.json` that does not read, each exited non-zero with the exception
+  on standard error and nothing in its log.
+- **Root cause:** HOSTSTART1's. Each entry point is async and holds its log in `using var log`; the entry point's task
+  catches the exception, the `using` closes the log as it leaves, and only then does the runtime raise it as unhandled,
+  so `WatchUnhandled`'s line met a closed log and was dropped. The driver's one catch takes only `DriverException`,
+  `HttpRequestException` and a cancellation, so a `driver.json` that does not parse went past it.
+- **Fix:** HOSTSTART1's inline handler became a watch on each writer, `MachineLog.WatchEntryPoint()` returning an
+  `EntryPointWatch`: the service's in Core, which the HTTP host now calls in place of its own copy and the connector
+  beside it, and the driver's, its twin, since the artefacts share no code. Made on the entry point's thread, it writes
+  only an exception raised on that thread, with a writer of its own: `error`, `where` `start` until `Running()`,
+  `unhandled` after. The connector's start ends when its host's lifetime started, and the line goes to the log file
+  alone, never to standard output, which is the protocol's. The driver's ends as the loop's first look begins; a verb is
+  `unhandled` from the moment it is chosen. Nothing new is printed: standard error carries the runtime's own report, as
+  before. The machine-log design §4's HOSTSTART2 note.
+- **Verify:** `ConnectorStartFailureTests` (service, 1): the real connector over a store that cannot open exits non-zero
+  with one `error` line at `start`, terminating, with its type, message and stack; nothing on standard output; a remote
+  key in its environment in neither standard error nor the log. `DriverStartFailureTests` (driver, `Process`, 1, run
+  alone): `drive --once` over a `driver.json` that does not read, the same line, a service key in neither. Both watched
+  failing before the change (no line). `MachineLogTests` on each side (3 each): the line written after the log is
+  closed, `unhandled` once running, another thread's left to the open log. HOSTSTART1's `StartFailureTests` (Http, 2)
+  green over the shared watch. Service 1745 → 1749, Http 243 → 243, driver fast half 5484 → 5487. **Not covered:** a
+  verb's `unhandled`, and the connector's after its transport started.
+- **Commit:** `64d1e6ac` (service), `1815b867` (driver).
 
 ## 2026-10-09 — a host that died at start said only that it exited (HOSTSTART1)
 
