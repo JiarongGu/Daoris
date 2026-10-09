@@ -55,7 +55,9 @@ repository.
 - **Verify:** `SessionsSayCommandTests.A_loop_that_took_the_words_and_answers_after_the_wait_is_waited_for`: a stand-in
   loop takes the words in time and answers, keeping them and nudging its look, only after the verb's wait; exit 2 before the
   fix, *going on* after. Two rows bound the new wait: a loop that took the words and went away is said at once, and one that
-  never answers, after its bound. The family rehearsal: FAMILY_RESULT.
+  never answers, after its bound. **Not evidence:** one family rehearsal run on this branch (387/425, the say check among the
+  passes) overlapped a merge gate's run on main on the same fixed ports, so either run's checks may have been answered by the
+  other's host (REHEARSEPORT1); the merge gate's run is the rehearsal this change owes.
 - **Commit:** `fc4804fa` (driver), `da967355` (tools).
 
 ## 2026-10-09 — a host that died at start said only that it exited (HOSTSTART1)
