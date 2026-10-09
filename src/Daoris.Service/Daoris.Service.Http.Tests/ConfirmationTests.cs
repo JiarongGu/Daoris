@@ -316,6 +316,7 @@ public sealed class ConfirmationTests
             ("POST", "/api/confirmations/abc/refuse", null, null, "a confirmation's refusal"),
             ("POST", "/api/confirmations", "{}", null, "an ask"),
             ("POST", "/api/nothing-here", "{}", null, "an address no door answers"),
+            ("POST", "/api/quests/operations", "{}", null, "a shared host's door"),
             ("POST", "/api/quests/7/done/more", "{}", null, "a path longer than any door's"),
             ("POST", "http://localhost:5177/api/asks", "{}", null, "an absolute address"),
             ("POST", "/api/asks", "[1, 2]", null, "a body that is no object"),
@@ -331,7 +332,12 @@ public sealed class ConfirmationTests
             var answer = await host.PostAsync(
                 "/api/confirmations", new { method, path, body, secretSha256 = hash ?? HashOf(NewSecret()) });
             Assert.True(answer.Status == 400, $"{what} answered {answer.Status}: {answer.Body}");
+            Assert.EndsWith("Nothing was asked.", answer.Error);
         }
+
+        Assert.Contains("is no door of this service", (await AskAsync(host, "POST", "/api/quests/operations", "{}", NewSecret())).Error);
+        Assert.Contains("A quest's publish is answered without the person's key", (await AskAsync(
+            host, "POST", "/api/quests", """{"from":"Asker","to":"Keeper","title":"t","body":"b"}""", NewSecret())).Error);
 
         var noHash = await host.PostAsync("/api/confirmations", new { method = "POST", path = "/api/asks", body = "{}" });
         Assert.Equal(400, noHash.Status);

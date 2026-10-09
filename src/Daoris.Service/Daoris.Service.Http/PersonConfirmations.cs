@@ -183,7 +183,8 @@ public sealed class PersonConfirmations(TimeProvider clock, MachineLog log, bool
         var question = path.IndexOf('?');
         var (address, query) = question < 0 ? (path, "") : (path[..question], path[question..]);
         var unescaped = PathString.FromUriComponent(address).Value ?? "";
-        if (PersonDoors.Resolve(verb, unescaped) is not { } resolved)
+        // A shared host's doors are in the table and never mapped here (design §6).
+        if (PersonDoors.Resolve(verb, unescaped) is not { } resolved || resolved.Door.Class == DoorClass.Shared)
         {
             return Shape($"`{verb} {path}` is no door of this service, so nothing there waits for a confirmation.");
         }
