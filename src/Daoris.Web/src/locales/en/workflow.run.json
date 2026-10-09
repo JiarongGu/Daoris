@@ -57,7 +57,7 @@
   "workflow.run.opinionWhy.ended": "its reviewer ended without saying one",
   "workflow.run.opinionWhy.out-of-time": "its reviewer ran out of its minutes before it said one",
   "workflow.run.opinionWhy.other": "no listed reviewer of another maker could read it",
-  "workflow.run.opinionTwin": "Go on anyway is a press of the terminal's until the review draws it: `daoris-driver opinion show {{session}}` lists what is unsettled, and `daoris-driver opinion anyway {{session}} \"…\"` goes on without it.",
+  "workflow.run.opinionTwin": "Go on anyway is on the session's own page, beside its second opinion, and at a terminal: `daoris-driver opinion show {{session}}` lists what is unsettled, and `daoris-driver opinion anyway {{session}} \"…\"` goes on without it.",
   "workflow.run.said.look.not-shown": "Waits for your look in `{{environment}}`: nothing shows it there yet.",
   "workflow.run.said.look.being-set-up": "Being set up in `{{environment}}` by its set-up step, quest #{{quest}}.",
   "workflow.run.said.look.shown": "Waits for your look in `{{environment}}`.",

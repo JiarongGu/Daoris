@@ -13,8 +13,9 @@ import {
   useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun,
 } from '../shell';
 import { WorkflowRunView } from '../workflow/WorkflowRunView';
-import { opinionAsked } from './opinion';
+import { opinionAsked, opinionHolds } from './opinion';
 import { useOpinionActs } from './opinionActs';
+import { OpinionGate } from './OpinionGate';
 import { reviewHolds, reviewState } from './review';
 import { ReviewGate } from './ReviewGate';
 import { useReviewActs } from './reviewActs';
@@ -868,6 +869,21 @@ export function WorkFrame({
           busy={headReview.busy}
         />
       ) : null;
+      // Its second opinion's own gate under its step while the gate holds the work (XAGENT1g, WORKFLOW1c3's remainder): *Go on
+      // anyway…* and every other press through the gate's one owner, never a second implementation. No *Accept…* is drawn beside
+      // it here, so *Go on anyway…* is offered where the session's page lists the dispute inside *Accept…*.
+      const opinionHeld = following && following.id === attended?.id && headOpinion ? opinionHolds(landing.data) : null;
+      const opinionControl = opinionHeld && headOpinion && attended ? (
+        <OpinionGate
+          gate={opinionHeld}
+          detail={headOpinion.detail}
+          acts={headOpinion.acts}
+          busy={headOpinion.busy}
+          working={attended.id}
+          onOpenFile={headOpinion.onOpenFile}
+        />
+      ) : null;
+      const controls = { ...(lookControl ? { look: lookControl } : {}), ...(opinionControl ? { opinion: opinionControl } : {}) };
       return following
         ? withWhose(
           <div className="p-3">
@@ -884,7 +900,7 @@ export function WorkFrame({
                 ...(onAnswerAsk ? { ask: onAnswerAsk } : {}),
                 review: (id) => { doors.review?.(id); if (elsewhere) onOpenSessions?.(); },
               }}
-              controls={lookControl ? { look: lookControl } : undefined}
+              controls={lookControl || opinionControl ? controls : undefined}
             />
           </div>,
         )
