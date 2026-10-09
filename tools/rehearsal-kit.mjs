@@ -5,10 +5,11 @@
  * `exitCode`) — and a harness that diverges between gates makes the same failure read differently
  * depending on which gate caught it.
  */
-import { execSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
-import { basename, dirname, join } from 'node:path';
+import { execSync, spawnSync } from 'node:child_process';
+import { copyFileSync, existsSync, mkdirSync, realpathSync, statSync, writeFileSync } from 'node:fs';
+import { basename, dirname, join, resolve, sep } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { portIsFree } from './cdp.mjs';
 
 /**
  * Every run leaves a transcript under `_fixtures/rehearsal-logs/`, outside anything a passing run
@@ -201,6 +202,203 @@ export async function restartBetweenRequests({ quiet, stop, start, within, every
   const host = await start();
   return { quiet: waited.ended === 'ready', waited: waited.ms, host };
 }
+
+/**
+ * The band a run takes its hosts' ports from (REHEARSEPORT1): below the ephemeral range Linux and Windows hand out by default
+ * (32768–60999, 49152–65535), so a connection this run makes is not given one of its ports between their pick and a host's
+ * start, and clear of the dev loop's fixed ports (5188, 9333) and the web gate's (5196).
+ */
+export const PORT_BAND = { from: 20000, to: 32000 };
+
+/** How many ports a walk asks before it gives up: more than any reservation Windows holds in one piece (a hundred). */
+const PORT_TRIES = 1000;
+
+/**
+ * Free ports for one run, one per name, none twice (REHEARSEPORT1). The family rehearsal's hosts sat on fixed ports, and a
+ * second run beside the first (the merge gate's beside a worktree's) found the first run's host answering there, read its
+ * registry and failed ten checks. Taken by walking the band from a random port, so two runs started together take ports
+ * apart; a port another holds is walked past. A port is free at its pick, not reserved: `portRefusal` asks again before a
+ * host starts on it.
+ *
+ * @param {string[]} names
+ * @param {{ start?: number, band?: { from: number, to: number }, isFree?: (port: number) => Promise<boolean> }} [options]
+ * @returns {Promise<Record<string, number>>} each name's port, in the order named
+ * @throws when the band has too few free ports, before any host has started
+ */
+export async function takePorts(names, { start, band = PORT_BAND, isFree = portIsFree } = {}) {
+  const size = band.to - band.from;
+  const first = start ?? band.from + Math.floor(Math.random() * size);
+  const taken = [];
+  for (let step = 0; step < Math.min(size, PORT_TRIES) && taken.length < names.length; step += 1) {
+    const port = band.from + ((first - band.from + step) % size);
+    if (await isFree(port)) taken.push(port);
+  }
+
+  if (taken.length < names.length) {
+    throw new Error(`no ${names.length} free ports in ${band.from}..${band.to - 1}: found ${taken.length}`);
+  }
+  return Object.fromEntries(names.map((name, index) => [name, taken[index]]));
+}
+
+/**
+ * Who holds `port`, as the system names its listener: `pid <id> <name> <command line>`, or a sentence saying it was not
+ * named. Asked only for a refusal, so its cost (a PowerShell on Windows) is paid when something is already wrong.
+ */
+export function portHolder(port) {
+  const ran = process.platform === 'win32'
+    ? spawnSync('powershell', ['-NoProfile', '-NonInteractive', '-Command',
+      `Get-NetTCPConnection -LocalPort ${port} -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | `
+      + `ForEach-Object { $p = Get-CimInstance Win32_Process -Filter "ProcessId = $_" -ErrorAction SilentlyContinue; "pid $_ $($p.Name) $($p.CommandLine)" }`],
+    { encoding: 'utf8', windowsHide: true, timeout: 30_000 })
+    : spawnSync('lsof', ['-nP', `-iTCP:${port}`, '-sTCP:LISTEN', '-Fpc'], { encoding: 'utf8', timeout: 30_000 });
+  const said = String(ran.stdout ?? '').trim();
+  if (!said) return 'a process the system did not name';
+  if (process.platform === 'win32') return said.split(/\r?\n/).map((line) => line.trim()).join('; ');
+
+  // lsof's fields: `p<pid>` then `c<command>`, a pair per process.
+  const holders = [];
+  for (const line of said.split('\n')) {
+    if (line.startsWith('p')) holders.push(`pid ${line.slice(1)}`);
+    else if (line.startsWith('c') && holders.length > 0) holders[holders.length - 1] += ` ${line.slice(1)}`;
+  }
+  return holders.join('; ') || 'a process the system did not name';
+}
+
+/**
+ * Before a host starts on `port` (REHEARSEPORT1): null once the port is free, waited for up to `within` ms because a host
+ * this run stopped lets its port go a beat after it is told; otherwise the refusal, naming who holds it. A host started on a
+ * held port fails to bind and ends, and the readiness probe reads the holder's answer as its own.
+ *
+ * @returns {Promise<string | null>}
+ */
+export async function portRefusal(port, { within = 10_000, every = 250, isFree = portIsFree, holder = portHolder } = {}) {
+  const waited = await waitFor(() => isFree(port), { within, every });
+  if (waited.ended === 'ready') return null;
+  return `port ${port} is held by ${holder(port)}: no host of this run starts there, where another's would answer for it `
+    + '(REHEARSEPORT1)';
+}
+
+/** A path as the file system has it: real (a junction, a short name and a link resolved), and in one case on Windows. */
+function realFolder(path) {
+  let real = resolve(path);
+  try {
+    real = realpathSync.native(real);
+  } catch {
+    // not there: the resolved path is the best answer
+  }
+  return process.platform === 'win32' ? real.toLowerCase() : real;
+}
+
+/** Whether `path` is `root` or inside it. */
+function isWithin(path, root) {
+  const folder = realFolder(path);
+  const top = realFolder(root);
+  return folder === top || folder.startsWith(top.endsWith(sep) ? top : top + sep);
+}
+
+/** A command's words, a quoted stretch kept inside its word: `-c user.name="Family Rehearsal"` is two. */
+function wordsOf(command) {
+  return (command.match(/(?:"[^"]*"|[^\s"])+/g) ?? []).map((word) => word.replace(/"/g, ''));
+}
+
+/** git's verbs that make a repository rather than answer for the one they run in: they never walk up. */
+const GIT_MAKES = new Set(['init', 'clone']);
+
+/** git's options that name a repository or a folder other than the one it runs in. */
+const GIT_ELSEWHERE = /^(-C|--git-dir|--work-tree)(=|$)/;
+
+/**
+ * Why a rehearsal must not run `command` in `cwd`, or null when it may (REHEARSEGIT1). git walks UP from a folder that is not
+ * a repository and answers for whichever one encloses it: the family rehearsal's fallback to its scratch ran `git add -A` and
+ * `git commit` there, and committed a worktree's uncommitted work as "Family Rehearsal". So a git command runs only in a
+ * folder that is the top of a working tree of its own, as `rev-parse --show-toplevel` says (the driver's trees ask the same,
+ * `SessionTrees.OpenAsync`), or a bare repository's own folder; `init` and `clone` make one and are not asked. With `within`,
+ * the folder must also be inside it: a run makes its repositories in its scratch, and a checkout's own root is the top of
+ * its own working tree too. A command that is not git is not asked.
+ */
+export function gitRefusal(command, cwd, { within } = {}) {
+  const words = wordsOf(command);
+  if (words[0] !== 'git') return null;
+
+  let at = 1;
+  while (at < words.length && words[at].startsWith('-')) {
+    if (GIT_ELSEWHERE.test(words[at])) {
+      return `\`git ${words[at].split('=')[0]}\` refused: it names another folder than the one the command runs in; run it there `
+        + 'instead (REHEARSEGIT1)';
+    }
+    at += words[at] === '-c' ? 2 : 1;
+  }
+  const verb = words[at] ? `\`git ${words[at]}\`` : '`git`';
+
+  if (!cwd) return `${verb} refused: no folder was named, and git would answer for whatever repository this process runs in (REHEARSEGIT1)`;
+  if (within && !isWithin(cwd, within)) {
+    return `${verb} refused in ${cwd}: it is outside ${within}, where this run makes its repositories (REHEARSEGIT1)`;
+  }
+  if (GIT_MAKES.has(words[at])) return null;
+  if (!existsSync(cwd)) return `${verb} refused in ${cwd}: there is no such folder (REHEARSEGIT1)`;
+
+  const asked = (args) => spawnSync('git', args, { cwd, encoding: 'utf8', windowsHide: true });
+  const top = asked(['rev-parse', '--show-toplevel']);
+  const toplevel = top.status === 0 ? top.stdout.trim() : '';
+  if (toplevel && realFolder(toplevel) === realFolder(cwd)) return null;
+  if (!toplevel) {
+    const [bare = '', gitDir = ''] = String(asked(['rev-parse', '--is-bare-repository', '--absolute-git-dir']).stdout ?? '')
+      .split(/\r?\n/).map((line) => line.trim());
+    if (bare === 'true' && gitDir && realFolder(gitDir) === realFolder(cwd)) return null;
+  }
+
+  return toplevel
+    ? `${verb} refused in ${cwd}: it is not a repository of its own, and git would answer for the one at ${toplevel} (REHEARSEGIT1)`
+    : `${verb} refused in ${cwd}: it is not a git repository (REHEARSEGIT1)`;
+}
+
+/**
+ * The rehearsals' command runner: `capture`, with every git command held to the repository it names (`gitRefusal`, inside
+ * `within`). A refused command is never run: its answer is exit 2 and the refusal, which is also printed, so the transcript
+ * says it where a phase ignores the answer.
+ *
+ * @returns {(command: string, cwd: string | undefined, env?: Record<string, string>, timeout?: number) => { code: number, out: string }}
+ */
+export function rehearsalRun({ within }) {
+  return (command, cwd, env = {}, timeout = 0) => {
+    const refused = gitRefusal(command, cwd, { within });
+    if (refused) {
+      console.log(`  refused ${refused}`);
+      return { code: 2, out: refused };
+    }
+    return capture(command, cwd, { env, timeout });
+  };
+}
+
+/**
+ * A stub's commit, as source each stub carries (REHEARSEGIT1): `commitHere(author, message)` stages everything and commits in
+ * the folder the stub was started in, and only where that folder is the top of a repository of its own; anywhere else it
+ * throws, naming the repository git would have committed in. The driver starts a session only in a tree it proved is one, so
+ * this never refuses a session's work: it is there for a stub started anywhere else. Self-contained: it imports what it uses.
+ */
+export const STUB_COMMIT = `
+const commitHere = async (author, message) => {
+  const { execFileSync } = await import('node:child_process');
+  const { realpathSync } = await import('node:fs');
+  const real = (path) => {
+    let found = path;
+    try { found = realpathSync.native(path); } catch { /* not there: as given */ }
+    return process.platform === 'win32' ? found.toLowerCase() : found;
+  };
+  let toplevel = '';
+  try {
+    toplevel = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  } catch { /* not a repository */ }
+  if (!toplevel || real(toplevel) !== real(process.cwd())) {
+    throw new Error('refused to commit in ' + process.cwd() + ': '
+      + (toplevel ? 'git would commit in the repository at ' + toplevel : 'it is not a git repository') + ' (REHEARSEGIT1)');
+  }
+  const git = (...args) => execFileSync('git', ['-c', 'user.name=' + author.name, '-c', 'user.email=' + author.email, ...args],
+    { stdio: 'ignore' });
+  git('add', '-A');
+  git('commit', '-q', '-m', message);
+};
+`;
 
 /**
  * The ACP stub, as source for a rehearsal to write into its scratch and name in `commands['acp-stub']`:
