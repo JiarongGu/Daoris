@@ -60,4 +60,35 @@ public sealed class ContentHoldWordsTests
             offer.Says);
         Assert.Null(offer.KeptAt);
     }
+
+    /// <summary>
+    /// SQUASHTIDY1f: a landing of a held tree, at any door, refuses in the head's own clause, and says why landing it again is
+    /// refused and what to do instead. One sentence for the press's refusal and for the plan before it, so it names no tense.
+    /// </summary>
+    [Fact]
+    public void A_held_trees_landing_says_where_its_work_is_and_offers_its_discard()
+    {
+        var offer = new DiscardOffer(
+            "daoris/s-1a2b3c4d", "s-1a2b3c4d",
+            new HeldWork(new ContentHold("main", Squash: true), "refs/daoris/discarded/daoris/s-1a2b3c4d", null));
+
+        Assert.Equal(
+            "Its work is on `main` by content (a squash merge), so it is not landed again: that would make a second copy of "
+            + "it. Discard its tree instead.",
+            offer.NotLanded);
+    }
+
+    /// <summary>SQUASHTIDY1f: where the discard would not go unforced, the refusal says why the tree stays, as the head does.</summary>
+    [Fact]
+    public void A_held_tree_that_stays_says_why_its_landing_is_refused_and_why_it_stays()
+    {
+        var offer = new DiscardOffer(
+            "daoris/s-1a2b3c4d", "s-1a2b3c4d",
+            new HeldWork(new ContentHold("feature/x", Squash: false), null, "it has 2 uncommitted path(s), which a discard would destroy"));
+
+        Assert.Equal(
+            "Its work is on `feature/x` by content (each file it changed reads the same there), so it is not landed again: that "
+            + "would make a second copy of it. Its tree stays: it has 2 uncommitted path(s), which a discard would destroy.",
+            offer.NotLanded);
+    }
 }

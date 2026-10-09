@@ -350,6 +350,8 @@ internal static class TreesConsole
                 {
                     var plan = await landing.PlanAsync(tree, subject).ConfigureAwait(false);
                     Console.WriteLine(Planned(session, plan));
+                    // SQUASHTIDY1f: work the line holds by content, which the press refuses, said before it in the press's own sentence.
+                    if (await landing.DiscardOfferAsync(tree).ConfigureAwait(false) is { } carried) Console.WriteLine($"trees: {carried.NotLanded}");
                     // What the gate says before the press (the second-agent design §8.6, the review design §3.5): what holds it, or
                     // what let it go, in the gate's order.
                     foreach (var line in LandingGateWords.Plan(gate)) Console.WriteLine(line);

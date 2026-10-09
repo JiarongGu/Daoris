@@ -185,6 +185,42 @@ internal sealed class StandInLedger : HttpMessageHandler
         }
     }
 
+    /// <summary>
+    /// A session of this machine's in <paramref name="tree"/> with no quest (AUTOTIDY1): a conversation, as the ledger keeps one,
+    /// which the active list answers while it is working, and the whole list once it ended.
+    /// </summary>
+    public void Working(string session, string repository, string tree, string state = "working")
+    {
+        lock (_gate)
+        {
+            _clock = _clock.AddSeconds(1);
+            _sessions.Add(new JsonObject
+            {
+                ["id"] = session, ["repository"] = repository, ["state"] = state, ["kind"] = "chat", ["adapter"] = "stub",
+                ["tree"] = tree, ["created"] = _clock.ToString("O"),
+            });
+        }
+    }
+
+    /// <summary>
+    /// <paramref name="quest"/> made a set-up step showing its chain's work in <paramref name="environment"/>, done, with one
+    /// local set-up <paramref name="session"/> said and no verdict on it yet (REVIEWENV1d): a review waiting for the person.
+    /// </summary>
+    public void SetUpShown(string quest, string session, string environment = "local-dev")
+    {
+        lock (_gate)
+        {
+            var shown = _quests.Single(q => q["id"]!.GetValue<string>() == quest);
+            shown["status"] = "Done";
+            shown["setUpIn"] = environment;
+            shown["setUps"] = new JsonArray(new JsonObject
+            {
+                ["commit"] = new string('a', 40), ["session"] = session, ["local"] = true, ["served"] = "dist",
+                ["look"] = "http://localhost:5173/", ["machine"] = "m1", ["sequence"] = 1,
+            });
+        }
+    }
+
     /// <summary>Every state a record was moved to through the state door, in order (ANSWER2).</summary>
     public IReadOnlyList<string> MovesOf(string id)
     {

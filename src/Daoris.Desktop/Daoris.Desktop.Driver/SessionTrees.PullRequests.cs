@@ -147,7 +147,7 @@ public sealed partial class SessionTrees
     /// branch that stands and that D88 does not clear.
     /// </summary>
     private async Task<bool> CouldRemoveAsync(
-        string root, LandedBranch entry, string? line, IReadOnlyList<string> forms, IReadOnlyList<string> unlanded, bool landedMayGo,
+        string root, LandedBranch entry, string? line, IReadOnlyList<LineForm> forms, IReadOnlyList<string> unlanded, bool landedMayGo,
         CancellationToken ct)
     {
         if (entry.GoneAt is null && landedMayGo && await StandingTipAsync(root, entry, ct).ConfigureAwait(false) is { } tip)
@@ -197,7 +197,7 @@ public sealed partial class SessionTrees
     /// </summary>
     /// <param name="standingTip">The landed branch's tip where it stands as the landing's, else null.</param>
     private static async Task<PullRequestVerdict> VerdictAsync(
-        string root, string? line, IReadOnlyList<string> forms, PullRequestState kept, string? standingTip, CancellationToken ct)
+        string root, string? line, IReadOnlyList<LineForm> forms, PullRequestState kept, string? standingTip, CancellationToken ct)
     {
         if (kept.State != PullRequestStates.Completed || kept.MergeCommit is not { } merge || kept.SourceCommit is not { } source)
         {
@@ -207,9 +207,9 @@ public sealed partial class SessionTrees
         string? mergeOn = null;
         foreach (var form in forms)
         {
-            var (on, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", merge, form], ct).ConfigureAwait(false);
+            var (on, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", merge, form.Ref], ct).ConfigureAwait(false);
             if (on != 0) continue;
-            mergeOn = form;
+            mergeOn = form.Name;
             break;
         }
 
@@ -294,7 +294,8 @@ public sealed partial class SessionTrees
 
         if (carried.Count == 0) return [];
         var results = new List<TidiedBranch>();
-        var worktrees = await WorktreesAsync(root, ct).ConfigureAwait(false);
+        // A list git could not give is never "no tree here" (AUTOTIDY1): each branch is kept, saying why.
+        var worktrees = await ReadWorktreesAsync(root, ct).ConfigureAwait(false);
         using var hold = TreeLock.TryReplaying(home, workspace, repository);
         var busy = hold is not null && inUse is not null
             ? new HashSet<string>((await inUse(ct).ConfigureAwait(false)).Select(Normal), StringComparer.OrdinalIgnoreCase)
@@ -304,7 +305,9 @@ public sealed partial class SessionTrees
             : "a session was starting in one of the repository's trees";
         foreach (var (branch, tip, carrier) in carried)
         {
-            var tidied = await TidyOneAsync(root, branch, tip, worktrees.GetValueOrDefault(branch), busy, unasked, ct).ConfigureAwait(false)
+            var tidied = (worktrees is null
+                    ? new TidiedBranch(branch, false, false, ListUnread)
+                    : await TidyOneAsync(root, branch, tip, worktrees.GetValueOrDefault(branch), busy, unasked, ct).ConfigureAwait(false))
                 with { CarriedBy = carrier.Entry.Branch };
             results.Add(tidied);
             if (!tidied.Removed) continue;

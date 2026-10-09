@@ -456,6 +456,27 @@ public sealed record ErrorResponse(string Error, string? Code = null);
 /// </summary>
 public sealed record FeedRefusalResponse(string Error, bool Information);
 
+// PERSONDOOR1b (D156 point 4, design §4.2): a terminal's ask for the person's confirmation. `Path` is the refused request's
+// path and query exactly as sent, `Body` its body exactly as sent (absent for none), and `SecretSha256` the SHA-256 of a
+// secret the client made (32 random bytes in base64url, a person key's form), in hex. The secret travels only once the
+// person has confirmed, as `Daoris-Person-Grant` on the same request sent again.
+public sealed record ConfirmationAskRequest(string? Method, string? Path, string? Body, string? SecretSha256);
+// One value the request carries: an address's (a route's parameter, then the query's, by name) or the body's, by its JSON
+// pointer (`/setUp/machine`, `/units/0/id`; `~0` and `~1` escape a name's `~` and `/`). `Type` is its JSON type (`string`,
+// `number`, `boolean`, `null`, `object`, `array`), so a string "3" and a number 3 read apart; `Value` is a string as it is
+// and anything else as its JSON. Only names the door binds are ever shown: an ask carrying another is refused.
+public sealed record ConfirmationFieldResponse(string Name, string Type, string Value);
+// A confirmation as the window shows it and the terminal polls it: `State` is `waiting`, `confirmed`, `refused`,
+// `expired` or `used`; `Route` the door's pattern and `Act` its own name in the host's table (the form's, where the body
+// makes one); `Values` the address's values and `Fields` every value of the body, so nothing the grant would carry is out
+// of sight. Never the secret's hash. `Expires` is two minutes after `Asked`: the wait and the grant's use, both.
+public sealed record ConfirmationResponse(
+    string Id, string State, string Method, string Path, string Route, string Act,
+    IReadOnlyList<ConfirmationFieldResponse> Values, IReadOnlyList<ConfirmationFieldResponse> Fields, string? Body,
+    DateTimeOffset Asked, DateTimeOffset Expires);
+// An ask's, a confirm's or a refusal's answer: the confirmation as it now stands, and a sentence the caller says.
+public sealed record ConfirmationActionResponse(ConfirmationResponse Confirmation, string Message);
+
 [JsonSerializable(typeof(StatusResponse))]
 [JsonSerializable(typeof(IEnumerable<RepositoryResponse>))]
 [JsonSerializable(typeof(IEnumerable<HitResponse>))]
@@ -511,6 +532,10 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(HistoryPlanResponse))]
 [JsonSerializable(typeof(HistoryClearRequest))]
 [JsonSerializable(typeof(HistoryClearResponse))]
+[JsonSerializable(typeof(ConfirmationAskRequest))]
+[JsonSerializable(typeof(ConfirmationResponse))]
+[JsonSerializable(typeof(IEnumerable<ConfirmationResponse>))]
+[JsonSerializable(typeof(ConfirmationActionResponse))]
 
 [JsonSerializable(typeof(FeedEntriesRequest))]
 [JsonSerializable(typeof(FeedCodeMapRequest))]

@@ -46,6 +46,7 @@ import { SessionRail } from './SessionRail';
 import { type ActFacts, actMenu, headerActs, offeredActs, primaryAct, stopAsk } from './acts';
 import { keptSessionFilters, sessionFilters, shownOf } from './groups';
 import { sessionFacts } from './headFacts';
+import type { Answered } from './InlineConfirm';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import { type SessionDoors, useSessionActs } from './sessionActs';
 import { ListMore } from './ListPane';
@@ -833,6 +834,9 @@ export function WorkFrame({
           hasTree={Boolean(following && ownTree(following, (registry.data ?? []).find((row) => row.repository === following.repository)?.root))}
           onSendBack={following && (takesWords(box) || onSendBack) ? sendBack : undefined}
           onPreview={following && here ? (path) => openPreview({ path }) : undefined}
+          // SQUASHTIDY1f: work the line holds by content offers the head's discard in Accept's place, through the head's press.
+          discards={following && following.id === attended?.id ? discards : null}
+          onDiscardTree={following && following.id === attended?.id ? discardHeld : undefined}
         />,
       );
     }
@@ -998,6 +1002,19 @@ export function WorkFrame({
   // SQUASHTIDY1b: where the line holds its commits by content, no landing but its discard, the review's own, unforced.
   const discards = attended && here && !lands && grouping?.discards ? grouping.discards : null;
   const discardTree = useDiscardSessionTree();
+  // Its one press, for the head and, in Accept's place, the review (SQUASHTIDY1f): never forced from here, a refusal the
+  // driver's sentence inside the ask, and the review's Discard the door that asks twice.
+  const discardHeld = discards && attended ? (answered: Answered) => discardTree.mutate({ id: attended.id }, {
+    onSuccess: (result) => {
+      if (!result.done) {
+        answered.refused(result.message);
+        return;
+      }
+      notify(result.message);
+      answered.done();
+    },
+    onError: (error) => answered.refused(sentence(error)),
+  }) : undefined;
   const attendedFacts: ActFacts | null = attended
     ? { session: attended, quest, grouping, root: rootOf(attended.repository), where: where[attended.id] }
     : null;
@@ -1260,20 +1277,9 @@ export function WorkFrame({
               },
               onError: (error) => answered.refused(sentence(error)),
             }) : undefined}
-            // SQUASHTIDY1b: its discard, never forced from here: a refusal is the driver's sentence inside the ask, and the
-            // review's Discard is the door that asks twice.
+            // SQUASHTIDY1b: its discard, never forced from here (`discardHeld`).
             discards={discards}
-            onDiscardTree={discards && attended ? (answered) => discardTree.mutate({ id: attended.id }, {
-              onSuccess: (result) => {
-                if (!result.done) {
-                  answered.refused(result.message);
-                  return;
-                }
-                notify(result.message);
-                answered.done();
-              },
-              onError: (error) => answered.refused(sentence(error)),
-            }) : undefined}
+            onDiscardTree={discardHeld}
             trace={attended && trace.available ? {
               open: tracing === attended.id,
               onToggle: () => setTracing(tracing === attended.id ? null : attended.id),

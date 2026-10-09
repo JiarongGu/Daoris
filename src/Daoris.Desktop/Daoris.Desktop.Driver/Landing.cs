@@ -282,10 +282,36 @@ public sealed record SweepItem(
     /// found there. Null for a branch landed by ancestry, and for every other kind.
     /// </summary>
     public ContentHold? HeldBy { get; init; }
+
+    /// <summary>
+    /// git could not answer one of the guards (AUTOTIDY1): what its tree holds, or what its commits are. The kind is the safe
+    /// side's (dirty, unlanded), and the look's own tidy says why it stays, once.
+    /// </summary>
+    public bool Unread { get; init; }
+
+    /// <summary>
+    /// How many ignored paths its tree holds that the checkout holds too (AUTOTIDY1): a build's output, which goes with the tree
+    /// at the press (SQUASHTIDY1c) and keeps the tree from the look's own tidy. Zero for a branch with no tree here.
+    /// </summary>
+    public int IgnoredShared { get; init; }
+
+    /// <summary>
+    /// Empty: it made commits, and the line holds every one (AUTOTIDY1). Its tip is not the commit it started at, by the record
+    /// of where it grew from (WSR6); false where the record has no entry for it. A branch that never moved is a conversation's
+    /// place, which words to it go on in (D137), so the look's own tidy leaves its tree for the press.
+    /// </summary>
+    public bool Worked { get; init; }
 }
 
 /// <summary>What the clean-up did with one branch, in the driver's words.</summary>
-public sealed record SweepResult(SweepItem Item, bool Removed, string Message);
+public sealed record SweepResult(SweepItem Item, bool Removed, string Message)
+{
+    /// <summary>Kept by the look's own tidy (AUTOTIDY1): why, as the machine log's code (<see cref="TidyKept"/>); null where the press kept it.</summary>
+    public string? Kept { get; init; }
+
+    /// <summary>Removed by the look's own tidy (AUTOTIDY1): where its tree's folder was moved aside to; null where it had no folder here.</summary>
+    public string? MovedTo { get; init; }
+}
 
 /// <summary>
 /// The landing rules (WSR1, D87): which applies to a repository, whether a pattern can name a branch,

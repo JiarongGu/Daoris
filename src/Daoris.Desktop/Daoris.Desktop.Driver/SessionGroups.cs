@@ -233,6 +233,15 @@ public sealed record DiscardOffer(string Branch, string Tree, HeldWork Work)
     /// </summary>
     public string? KeptAt => Work.Keeps is { } reference ? ContentHold.KeptAt(Branch, reference) : null;
 
+    /// <summary>
+    /// What a landing of this tree says at every door (SQUASHTIDY1f): refused, where its work is in the clause the page says where
+    /// <i>Accept…</i> would be, why landing it again is refused, and its discard, or why its tree stays where the discard would not
+    /// go unforced. The press's refusal and the plan before it say it alike, so it names no tense.
+    /// </summary>
+    public string NotLanded =>
+        $"{char.ToUpperInvariant(Work.Held.Said[0])}{Work.Held.Said[1..]}, so it is not landed again: that would make a second copy of it. "
+        + (Work.Stays is { } why ? $"Its tree stays: {why}." : "Discard its tree instead.");
+
     /// <summary>The offer a judged tree makes, or null: only commits git counted, above zero, that the content proof found held.</summary>
     public static DiscardOffer? Of(string tree, TreeWork work)
     {

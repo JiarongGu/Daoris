@@ -221,11 +221,15 @@ export async function restartBetweenRequests({ quiet, stop, start, within, every
  * ends its turn a few seconds later, touching nothing. The stub keeps no history, so it resumes
  * whichever conversation it is asked, and says which on stderr.
  *
+ * A quest titled as Daoris titles a set-up step (REVIEWENV1h, D154) says what it showed through the
+ * connector the protocol handed it, `review_ready` over MCP on stdio, and closes done with no commit of
+ * its own; resumed with the person's *not yet*, it corrects the work in its tree and says a new set-up.
+ *
  * Here rather than inside the family rehearsal since DEPLOY5, whose deployment gate opens a
  * conversation on it in the installed shell: one copy, for the reason this module exists at all.
  */
 export const ACP_STUB_AGENT = `
-import { execSync } from 'node:child_process';
+import { execSync, spawn } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
@@ -375,9 +379,84 @@ async function hearAfter(sessionId, said) {
   return 'end_turn';
 }
 
+// One tool call on the connector the protocol handed this session (ACP4), as an agent's MCP client makes it: the server spawned as
+// the driver named it, with the environment it named, the handshake, the call, and its text. A connector that is not there, or
+// answers nothing within a minute, fails the turn, and the driver records that.
+function connector(tool, args) {
+  const server = servers.find((each) => each.name === 'daoris-knowledge');
+  if (!server) return Promise.reject(new Error('no daoris-knowledge server was handed to this session'));
+  const env = { ...process.env };
+  for (const pair of server.env ?? []) env[pair.name] = pair.value;
+  return new Promise((resolve, reject) => {
+    const child = spawn(server.command, server.args ?? [], { env, stdio: ['pipe', 'pipe', 'ignore'] });
+    const timer = setTimeout(() => { child.kill(); reject(new Error(tool + ' was answered nothing within a minute')); }, 60000);
+    const write = (frame) => child.stdin.write(JSON.stringify(frame) + '\\n');
+    child.on('error', (error) => { clearTimeout(timer); reject(error); });
+    let buffered = '';
+    child.stdout.on('data', (chunk) => {
+      buffered += chunk;
+      let cut;
+      while ((cut = buffered.indexOf('\\n')) >= 0) {
+        const line = buffered.slice(0, cut);
+        buffered = buffered.slice(cut + 1);
+        let frame;
+        try { frame = JSON.parse(line); } catch { continue; }
+        if (frame.id === 1) {
+          write({ jsonrpc: '2.0', method: 'notifications/initialized' });
+          write({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: tool, arguments: args } });
+        } else if (frame.id === 2) {
+          clearTimeout(timer);
+          child.stdin.end();
+          // A connector that lingers once its input closed is stopped, so it never holds this process's own ending.
+          setTimeout(() => child.kill(), 3000).unref();
+          resolve(frame.error
+            ? 'refused: ' + frame.error.message
+            : (frame.result?.content ?? []).map((part) => part.text).join(' '));
+        }
+      }
+    });
+    write({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {
+      protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'acp-stub', version: '0' },
+    } });
+  });
+}
+
+// A SET-UP STEP (REVIEWENV1h; D154, the review environment design §2.2, §2.6, §3.4): a quest titled as Daoris titles one shows its
+// chain's work for the person's review. The stub drives no browser, so it shows nothing; it says what it showed as a real session
+// does, through its connector's review_ready, makes no commit of its own, and closes done. Its look is the address its quest's
+// body names. Resumed with the person's not yet, it says the words it heard, corrects the work in its tree with a commit, and says
+// a new set-up; its quest stays done, as a closed quest's resumed run leaves it (D137 §5).
+const SHOW_FOR_REVIEW = /^Show #\\S+ in \\x60[^\\x60]+\\x60 for review/;
+
+async function showForReview(sessionId, said) {
+  const look = ((process.env.DAORIS_QUEST_BODY ?? '').match(/https?:\\/\\/[^\\s\\x60,)]+/) ?? ['http://localhost/'])[0];
+  const again = 'Open ' + look + ' and read the report there.';
+  if (!resumed) {
+    const taken = await respond('take', null);
+    if (!taken.ok) { say('take refused:', taken.text); return 'end_turn'; }
+    update(sessionId, { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'showing quest ' + id + ' at ' + look } });
+    const ready = await connector('review_ready', { look, shows: 'The report the work changed, at its new heading.', again });
+    say('review_ready answered: ' + ready);
+    const done = await respond('done', 'Shown for review at ' + look + '; it waits for the person to look.');
+    say('done:', done.ok, done.ok ? '' : done.text);
+    return 'end_turn';
+  }
+
+  say('the set-up step heard not yet: ' + said);
+  update(sessionId, { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'Heard your not yet: ' + said } });
+  writeFileSync('review-correction-' + id + '.md', '# corrected under the words the person said\\n\\n' + said + '\\n');
+  const git = 'git -c user.name="ACP Session" -c user.email="acp@example.invalid"';
+  execSync(git + ' add -A', { stdio: 'ignore' });
+  execSync(git + ' commit -q -m "review: correct what the person said not yet to (quest ' + id + ')"', { stdio: 'ignore' });
+  const shows = ('Corrected under your words: ' + said.replace(/\\s+/g, ' ')).slice(0, 300);
+  say('review_ready answered again: ' + await connector('review_ready', { look, shows, again }));
+  return 'end_turn';
+}
+
 async function work(sessionId, said) {
   if ((process.env.DAORIS_QUEST_TITLE ?? '').startsWith(SET_UP)) return setUp(sessionId);
   if ((process.env.DAORIS_QUEST_TITLE ?? '').startsWith(ASKS_FIRST)) return askFirst(sessionId, said);
+  if (SHOW_FOR_REVIEW.test(process.env.DAORIS_QUEST_TITLE ?? '')) return showForReview(sessionId, said);
   if (resumed) return hearAfter(sessionId, said);
   update(sessionId, { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'taking quest ' + id } });
 
@@ -423,6 +502,8 @@ let session = null;
 let holding = null;
 // Whether this process resumed a conversation rather than opening one: its next prompt is then the person's answer.
 let resumed = false;
+// The servers the protocol handed this session (ACP4), on a new session and on a resumed one alike: its connector is among them.
+let servers = [];
 
 // Frames are handled WITHOUT awaiting inside the reader, and that is not a style choice: the prompt's
 // work asks the client for a permission decision and must keep reading while it waits for the answer.
@@ -449,11 +530,13 @@ const handle = async (line) => {
       // adapter's resume replays nothing, and the transcript keeps which conversation it was.
       session = frame.params?.sessionId ?? session;
       resumed = true;
+      servers = frame.params?.mcpServers ?? [];
       say('resumed conversation', session, 'on', frame.params?.cwd);
       send({ jsonrpc: '2.0', id: frame.id, result: {} });
       break;
     case 'session/new': {
       session = 'acp-session-1';
+      servers = frame.params?.mcpServers ?? [];
       say('session on', frame.params?.cwd);
       // 🔴 ACP4, reported from the agent's own side. The composed target tells this session to take
       // and close its quest over a connector, and the protocol is what hands it one — so the stub

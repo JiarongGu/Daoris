@@ -260,7 +260,7 @@
         "work.review.readAgain", "work.review.sendBack", "work.say.goOnNew", "work.say.startChat", "work.start.go", "work.steer.now", "work.terminal.again", "work.terminal.close",
         "work.terminal.new", "work.terminal.open", "review.act.*", "review.ask.notYetMeanIt", "review.ask.skipMeanIt",
         "asks.record.reviewApply", "asks.record.reviewSet",
-        "work.terminal.new", "work.terminal.open", "workflow.door.setup", "workflow.door.workspaceSetup"
+        "workflow.door.setup", "workflow.door.workspaceSetup"
       ]
     },
     "status": {
