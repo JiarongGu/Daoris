@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-09 — the review's Accept landed work a squash merge had already put on the line (SQUASHTIDY1f)
+
+### Driver and page: a tree the line holds by content was still landed, by every door but the head
+- **Symptom:** a session whose work a squash-merged pull request or a cherry-pick already carried, its tree still standing,
+  was offered *Accept* in the review's side bar, and `trees land` and the look's automatic landing took it too: a merge
+  copied the work onto the line again, or conflicted with it, and a branch carried it to a second pull request. Named by
+  SQUASHTIDY1b's note as left; reproduced as `ContentLandingTests` and an `AutoLandingTests` row, all landing before the fix.
+- **Root cause:** SQUASHTIDY1b moved the offer at the reader (`SessionGroups`, so the head offered the discard), not at the
+  act. `SessionTrees.LandAsync`, the one path every door lands through, never asked the content proof, and `DiffPane`
+  offered *Accept* wherever the review did not read as landed.
+- **Fix:** `LandAsync` asks the head's own judgement first (`DiscardOfferAsync`) and refuses with `AutoLandingCode.Carried`
+  in the head's clause (`DiscardOffer.NotLanded`), writing nothing; a look's entry closes on it; `trees land --plan` says it.
+  The review shows the driver's sentence where *Accept* stood and the head's discard (`HeldDiscard`), through the head's press.
+- **Verify:** `ContentLandingTests` (`Process`: a squash on both forms, a cherry-pick, a tree that stays, the control), the
+  look's row, `ContentHoldWordsTests`, `AutoLandingRulesTests`, and the page's `DiffPane.held` and `WorkFrame` tests.
+- **Commit:** `501dbcc6` (driver), `3483b4da` (page).
+
 ## 2026-10-09 — a website whose name points at the loopback could read the local host (ORIGIN2)
 
 ### Service: a page under a rebound name was its own origin, and its reads were answered
