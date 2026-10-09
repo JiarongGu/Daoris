@@ -14,6 +14,9 @@ import {
   OPINION_DECLARED_ONLY, applyOpinionEdit, oneFamily, opinionFor, opinionRuleOf, opinionSays, sameAgentOf,
 } from '../src/opinions.ts';
 import { MANIFEST, pluginsRoot, readPlugins } from '../src/plugins.ts';
+import {
+  applyWorkflowEdit, keptVersions, resolveWorkflow, workflowChoiceOf, type WorkflowChoiceEdit, type WorkflowTaskChoice,
+} from '../src/workflowchoice.ts';
 import type { RecordsReader } from '../src/strikes.ts';
 import { driverRows as csharpRows } from './_csharp.ts';
 import { makeFixture, captureError } from './_fixture.ts';
@@ -1923,5 +1926,98 @@ test('an opinion rule is written only once set, and a verb that knows nothing of
   const kept = JSON.parse(readFileSync(at(fx), 'utf8'));
   assert.deepEqual(kept.opinions, { 'notes-site': false });
   assert.deepEqual(kept.workspaceOpinions, { work: { on: ['landing'], reviewers: ['codex-acp'] } });
+  fx.cleanup();
+});
+
+/**
+ * Which workflow work follows, `workflows` and `workspaceWorkflows` (WORKFLOW1e, D157 point 10, the workflow design §2.5,
+ * §4.1–§4.3), and the versions a kept run names (§2.6). 🔴 A TWIN with the driver's `WorkflowSelection` and
+ * `WorkflowRunBindings.KeptVersions`: both hold ONE table, the driver suite's `fixtures/workflow-selection.json`, cell for cell — the
+ * reading and its writing, each entry's first problem in the same words, §4.1's order, the edits both doors make, and the versions
+ * kept. The driver's `WorkflowSelectionTests` reads the same file.
+ */
+interface SelectionRow { name: string }
+const SELECTION_TABLE = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
+  'Daoris.Desktop.Driver.Tests', 'fixtures', 'workflow-selection.json'), 'utf8')) as {
+  read: (SelectionRow & { file: unknown; read: unknown })[];
+  problems: (SelectionRow & { scope: 'repository' | 'workspace'; entry: unknown; problem: string | null })[];
+  resolve: (SelectionRow & {
+    file: unknown; repository: string | null; workspace: string | null; task: WorkflowTaskChoice | null; selection: unknown;
+  })[];
+  edits: (SelectionRow & { file: unknown; edit: WorkflowChoiceEdit; read: unknown | null; refusal: string | null })[];
+  kept: (SelectionRow & { runs: unknown[]; workflow: string; versions: number[] })[];
+};
+
+/** Both maps as `writeDriverChoices` writes them back, each `{}` where it writes none. */
+function writtenMaps(path: string): unknown {
+  const back = JSON.parse(readFileSync(path, 'utf8'));
+  return { workflows: back.workflows ?? {}, workspaceWorkflows: back.workspaceWorkflows ?? {} };
+}
+
+test('both workflow maps are read and written as the driver reads and writes them (the shared table)', () => {
+  const fx = makeFixture('driver-workflow-read');
+  for (const row of SELECTION_TABLE.read) {
+    writeFileSync(at(fx), JSON.stringify(row.file), 'utf8');
+    writeDriverChoices(at(fx), readDriverChoices(at(fx)));
+    assert.deepEqual(writtenMaps(at(fx)), row.read, row.name);
+  }
+  fx.cleanup();
+});
+
+test('a workflow choice\'s first problem is the driver\'s, in its words (the shared table)', () => {
+  for (const row of SELECTION_TABLE.problems) {
+    assert.equal(workflowChoiceOf(row.entry, row.scope === 'workspace').problem, row.problem, row.name);
+  }
+});
+
+test('a selection resolves as the driver resolves it, in §4.1\'s order (the shared table)', () => {
+  const fx = makeFixture('driver-workflow-resolve');
+  for (const row of SELECTION_TABLE.resolve) {
+    writeFileSync(at(fx), JSON.stringify(row.file), 'utf8');
+    assert.deepEqual(resolveWorkflow(readDriverChoices(at(fx)), row.repository, row.workspace, row.task), row.selection, row.name);
+  }
+  fx.cleanup();
+});
+
+test('a workflow edit is the driver\'s, or refused in its words (the shared table)', () => {
+  const fx = makeFixture('driver-workflow-edits');
+  for (const row of SELECTION_TABLE.edits) {
+    writeFileSync(at(fx), JSON.stringify(row.file), 'utf8');
+    const choices = readDriverChoices(at(fx));
+    const edited = applyWorkflowEdit(choices, row.edit);
+    assert.equal(edited.refusal, row.refusal, row.name);
+    if (row.refusal !== null) continue;
+    writeDriverChoices(at(fx), { ...choices, ...edited.maps! });
+    assert.deepEqual(writtenMaps(at(fx)), row.read, `${row.name}: the maps after`);
+  }
+  fx.cleanup();
+});
+
+test('the versions a kept run names are the driver\'s (the shared table)', () => {
+  for (const row of SELECTION_TABLE.kept) {
+    assert.deepEqual(keptVersions(row.runs, row.workflow), row.versions, row.name);
+  }
+});
+
+test('a workflow choice keeps its kinds in the order written, and a verb that knows nothing of it preserves it', () => {
+  const fx = makeFixture('driver-workflow-preserve');
+  writeFileSync(at(fx), JSON.stringify({
+    workflows: { 'web-app': { default: 'feature-review' } },
+    workspaceWorkflows: { work: { kinds: { feature: { label: 'Feature' }, docs: { label: 'Documentation', paths: ['docs/**'] } } } },
+  }), 'utf8');
+  run(['hold', 'web-app'], at(fx));
+  run(['language', 'web-app', 'zh'], at(fx));
+
+  const kept = JSON.parse(readFileSync(at(fx), 'utf8'));
+  assert.deepEqual(kept.workflows, { 'web-app': { default: 'feature-review' } });
+  assert.deepEqual(Object.keys(kept.workspaceWorkflows.work.kinds), ['feature', 'docs']);
+
+  run(['drive', 'notes-site'], at(fx));
+  const fresh = makeFixture('driver-workflow-fresh');
+  run(['drive', 'web-app'], at(fresh));
+  const none = JSON.parse(readFileSync(at(fresh), 'utf8'));
+  assert.equal('workflows' in none, false);
+  assert.equal('workspaceWorkflows' in none, false);
+  fresh.cleanup();
   fx.cleanup();
 });

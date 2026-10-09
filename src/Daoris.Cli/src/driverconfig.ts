@@ -35,6 +35,7 @@ import {
   OPINION_DECLARED_ONLY, applyOpinionEdit, opinionListed, opinionSays, opinionsOf, sameAgentOf, type OpinionEdit,
   type OpinionRule, type OpinionSetting,
 } from './opinions.ts';
+import { workflowChoicesOf, writtenChoices, type WorkflowChoice } from './workflowchoice.ts';
 import type { CommandArgs } from './types.ts';
 import type { ExitCode } from './errors.ts';
 
@@ -128,6 +129,14 @@ export interface DriverChoices {
   opinions: Record<string, OpinionSetting>;
   /** A workspace's second-opinion rule, for every repository in it that sets none of its own. */
   workspaceOpinions: Record<string, OpinionRule>;
+  /**
+   * Which workflow each repository's work follows (WORKFLOW1e, D157 point 10): a default and a workflow for each of its
+   * workspace's kinds; it replaces its workspace's whole. The driver's `DriverConfig.Workflows` is the twin, read by one shared
+   * table (`workflowchoice.ts`).
+   */
+  workflows: Record<string, WorkflowChoice>;
+  /** A workspace's choice of workflow, for every repository in it that names none, and the kinds it declares. */
+  workspaceWorkflows: Record<string, WorkflowChoice>;
   rest: Record<string, unknown>;
 }
 
@@ -209,7 +218,8 @@ const EMPTY: DriverChoices = {
   drivable: [], holds: [], trees: [], cap: 2, adapter: 'claude-code', notify: true,
   strikes: 3, forgiven: {}, released: {}, pausedAsks: {}, pausedQuests: {}, intakeAdapter: null, helperAdapter: null, timeoutMinutes: null, cooloff: null, lines: {}, workspaceLines: {},
   landings: {}, workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, standing: {}, languages: {},
-  workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, opinions: {}, workspaceOpinions: {}, rest: {},
+  workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, opinions: {}, workspaceOpinions: {}, workflows: {}, workspaceWorkflows: {},
+  rest: {},
 };
 
 /**
@@ -374,14 +384,15 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     return {
       ...EMPTY, forgiven: {}, released: {}, pausedAsks: {}, pausedQuests: {}, lines: {}, workspaceLines: {}, landings: {},
       workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, standing: {}, languages: {},
-      workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, opinions: {}, workspaceOpinions: {}, rest: {},
+      workspaceLanguages: {}, reviews: {}, workspaceReviews: {}, opinions: {}, workspaceOpinions: {}, workflows: {},
+      workspaceWorkflows: {}, rest: {},
     };
   }
 
   const {
     drivable, holds, trees, cap, adapter, notify, strikes, forgiven, released, intakeAdapter, helperAdapter, timeoutMinutes,
     cooloff, lines, workspaceLines, landings, workspaceLandings, readAcross, workspaceReadAcross, writeAcross, standing,
-    languages, workspaceLanguages, reviews, workspaceReviews, opinions, workspaceOpinions, ...rest
+    languages, workspaceLanguages, reviews, workspaceReviews, opinions, workspaceOpinions, workflows, workspaceWorkflows, ...rest
   } = parsed;
   return {
     drivable: names(drivable),
@@ -439,6 +450,9 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     // As the driver reads them (XAGENT1a): a rule with a problem is not read, and `false` only for a repository.
     opinions: opinionsOf(opinions, true),
     workspaceOpinions: opinionsOf(workspaceOpinions, false),
+    // As the driver reads them (WORKFLOW1e): an entry with a problem, or naming nothing, is not read.
+    workflows: workflowChoicesOf(workflows, false),
+    workspaceWorkflows: workflowChoicesOf(workspaceWorkflows, true),
     rest,
   };
 }
@@ -493,6 +507,10 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
     // Written only when set (XAGENT1a), as the driver writes them: absent is no second opinion, today's behaviour.
     ...(Object.keys(choices.opinions).length > 0 ? { opinions: choices.opinions } : {}),
     ...(Object.keys(choices.workspaceOpinions).length > 0 ? { workspaceOpinions: choices.workspaceOpinions } : {}),
+    // Written only when set (WORKFLOW1e), as the driver writes them: absent is Current, today's behaviour.
+    ...(Object.keys(choices.workflows).length > 0 ? { workflows: writtenChoices(choices.workflows, false) } : {}),
+    ...(Object.keys(choices.workspaceWorkflows).length > 0
+      ? { workspaceWorkflows: writtenChoices(choices.workspaceWorkflows, true) } : {}),
   });
 }
 
