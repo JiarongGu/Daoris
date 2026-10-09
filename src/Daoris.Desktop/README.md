@@ -84,7 +84,9 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
 - **It brings up the local host**, adopting one already running or spawning and owning one, and runs
   the driver's watch loop in-process with `driver.json` re-read every tick. On close it takes the
   loop and its owned host down, with in-flight sessions ended and recorded `stopped` and
-  `interrupted`, so a take one held is carried on at the next start, as a cut-off is (D104).
+  `interrupted`, so a take one held is carried on at the next start, as a cut-off is (D104). A host it
+  started that exits before it answers, or never answers, is said on the window with the newest few lines
+  it printed on its standard error, which the shell reads from the host's start (HOSTSTART1).
 - **One live driver per home** (DRV8a, D104). The loop takes `<home>/driver.lock` (`DriverLock`: its
   kind, process id and start time, and since when) before it ticks, as a terminal's `daoris-driver
   drive` does. Where a headless loop holds it, the window says so once on `DRIVER_ERROR` and its loop

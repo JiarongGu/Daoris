@@ -5,6 +5,45 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-09 — a host that died at start said only that it exited (HOSTSTART1)
+
+### Modules and service: the window said the host exited, never why, and its log kept nothing of the exception
+- **Symptom:** a host that exits before it answers (seen when a stale connector killed one at start, KSCHEMA1) put one
+  sentence on the window, *the service host at … exited before it answered.*, whatever it had printed; and its machine
+  log held no line of the exception that ended it. Reproduced before the fix: `StartFailureTests` found no `error` line
+  for a store that cannot open or a port another program holds, and a stand-in that printed a sentence and exited was
+  said without it.
+- **Root cause:** two. `HostSupervisor` never redirected the host's standard error, so what the host said went to the
+  shell's own (a windowless process: nowhere), and the supervisor had only the exit to say. And the host's entry point
+  is async: its own task catches the exception, so the `using var log` closed the log as the exception left the entry
+  point, and only then did the runtime raise it as unhandled; `WatchUnhandled`'s `error` line met a closed log, which
+  drops a line.
+- **Fix:** the supervisor starts the host with its standard error redirected as UTF-8 and reads it from the start on a
+  thread of its own (`LastLines`), so a chatty host never waits on a full pipe. It keeps the newest 4 lines, each cut
+  at 500 characters as read and said together within 500, as printed with control characters dropped, and leaves out
+  blank lines and an exception's frames (`   at …`, `--- End of …`), which the runtime prints after the reasons and
+  would push them out. A host that exits before it answers, or never answers, is said with *Its last lines on standard
+  error:* and those lines, an exit waiting up to two seconds for the stream's end. The window's trouble label no longer
+  reads `&` as a mnemonic. In the host (`Program.cs`, beside the log's opening, away from the gate), an exception raised
+  on the entry point's own thread is written by a writer of its own, since `log` is closed by then and nothing else
+  writes: `error` at `start` until the lifetime has started, `unhandled` after (the machine-log design §4's row and
+  as-built note). Nothing printed carries a secret: the person key arrives on standard input (PERSONDOOR1a), no start
+  refusal repeats that input (`PersonKeyTests` holds it), and nothing else in the host reads its input but the stop
+  watch, which reads past it.
+- **Verify:** `LastLinesTests` (fast, 10): a sentence; a last line with no line end; nothing printed; only the newest
+  lines; the character bound, newest first; a long line's start kept and marked cut; an exception's frames left out
+  and its reasons kept; markup and an ampersand as printed, control characters dropped; a megabyte on one line read to
+  its end; the start info's UTF-8 standard error. `HostSupervisorTests` (Process, 3 new, run alone): a stand-in that
+  prints a sentence with an em dash and 中文 and exits is said with it whole; one that printed nothing is said as
+  before; one that writes a megabyte synchronously before it listens answers, and stops. `StartFailureTests` (Http, 2):
+  the real executable over a store that cannot open and over a held port each exits with one `error` line at `start`,
+  terminating, with its type, message and stack. Watched failing: the frame filter and the line cut removed (2 red);
+  the stream redirected and never read (the sentence missing, and the megabyte stand-in never answered); the host's
+  tests before its change (no line). Modules fast half 724 → 734, Http 223 → 225, the spawn scan
+  (`NoConsoleWindowTests`) green. **Not covered:** the window's label showing the lines (seen by no gate), and a child
+  of the host holding the stream after it exits (the two-second wait).
+- **Commit:** `6b15ddc0` (modules), `a74974bb` (service).
+
 ## 2026-10-09 — a website whose name points at the loopback could read the local host (ORIGIN2)
 
 ### Service: a page under a rebound name was its own origin, and its reads were answered
@@ -5536,5 +5575,3 @@ did, with the old heuristic as the last resort.
 **Verification.** Launched with no environment at all: right port, right family. The family rehearsal
 re-ran after the change, 22/22. No store pollution had occurred — no request ever reached the
 mis-rooted instance.
-
-2026-10-09 — HOSTSTART1 (in progress): a host that dies at start says why on the window.
