@@ -511,8 +511,120 @@ public sealed partial class DriverModule
         {
             Session = id, Done = pressed.Done, pressed.Message,
             Opinion = pressed.Gate is { } gate ? Opinion(gate.Opinion) : null,
+            // What the review's *Second opinion* draws (XAGENT1g, design §9): the findings with their answers, beside the state.
+            Detail = pressed.Gate is { } read ? OpinionDetail(read.Opinion) : null,
         };
     }
+
+    /// <summary>
+    /// The second opinion as the review draws it (XAGENT1g; the second-agent design §9): the reviewer, the candidate and whether it
+    /// covers what would land, each finding with its weight, place, consequence, reproduction, sureness and proposal beside the
+    /// working session's answer and how the driver read it, the recheck's word on it, what it read and could not, the tier, and
+    /// the person's answer at the gate. Null where the level asks no opinion.
+    /// </summary>
+    /// <remarks>
+    /// Read from the gate the driver judged, never from the host again: the findings are the reviewer's claims (§6.6), and what
+    /// counts of an answer (a fix's commit checked, an unanswered finding) is the driver's reading. The tier is <c>person</c> where
+    /// the person read it themselves, <c>none</c> where no agent could read it, and <c>agent</c> otherwise (§10).
+    /// </remarks>
+    public static object? OpinionDetail(OpinionGateState gate)
+    {
+        if (gate.State == OpinionGateStates.None) return null;
+        var first = gate.Opinion;
+        var disputed = gate.Disputes?.First ?? [];
+        var raised = gate.Disputes?.Raised ?? [];
+        return new
+        {
+            Tier = gate.State == OpinionGateStates.Myself ? "person" : first is null ? "none" : "agent",
+            // Whether what was read covers what would land (§8.2): commits since it was read say it does not.
+            Covers = gate.Since is null ? (bool?)null : gate.Since == 0,
+            gate.Passes,
+            gate.ToPerson,
+            gate.Answered,
+            Person = gate.Person is { } word
+                ? new { word.Said, At = word.At.ToString("O", System.Globalization.CultureInfo.InvariantCulture), word.Words, word.Door }
+                : null,
+            First = first is null ? null : Pass(first, finding => new
+            {
+                Answer = first.AnswerTo(finding.Number) is { } answer
+                    ? new { answer.Said, answer.Commit, answer.Evidence, answer.Why }
+                    : null,
+                // How the driver read the answer as the turn ended (§6.4): what counts, and why it does not count as said.
+                Counts = gate.Answers?.Findings.FirstOrDefault(row => row.Finding == finding.Number) is { } row
+                    ? new { row.Counts, row.Why, row.Fix }
+                    : null,
+                Rechecked = gate.Recheck?.Rechecked.GetValueOrDefault(finding.Number),
+                Disputed = disputed.Contains(finding.Number),
+            }),
+            Recheck = gate.Recheck is { } recheck ? Pass(recheck, finding => new
+            {
+                Answer = (object?)null,
+                Counts = (object?)null,
+                Rechecked = (string?)null,
+                Disputed = raised.Contains(finding.Number),
+            }) : null,
+        };
+
+        static object Pass<T>(OpinionView view, Func<OpinionFindingView, T> beside) => new
+        {
+            view.Id, view.Occasion, view.Pass, view.State, view.Why, view.Base, view.Tip, Commits = view.Commits.Count, view.Minutes,
+            Reviewer = view.Adapter, view.Product, view.Maker, view.Label, Reviewing = view.Session, view.HandedTo, view.Read, view.Limits,
+            Findings = view.Findings?.Select(finding => new
+            {
+                finding.Number, finding.Weight, finding.Where, finding.Claim, finding.Consequence, finding.Reproduce, finding.Sure,
+                finding.Proposal, Beside = beside(finding),
+            }).ToArray(),
+        };
+    }
+
+    /// <summary>
+    /// What waits on the person at the second opinion's gate on this machine (XAGENT1g; the second-agent design §9): each work owed
+    /// an opinion whose gate holds for the person's answer, oldest first, with the gate as <see cref="Opinion"/> says it. *What needs
+    /// you* lists them.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>What waits on the person</b> (<see cref="WaitsOnPerson"/>): a dispute, a required opinion none could be had for, and
+    /// commits nobody read where the work lands by itself (D145), since there no press of theirs is coming to answer them.</para>
+    ///
+    /// <para>Read from the opinions owed (<see cref="OpinionDues"/>), each gate judged as every door judges it: nothing is asked, and
+    /// a work whose gate could not be read is left out rather than said wrongly.</para>
+    /// </remarks>
+    [DriverRoute("OPINION_WAITS")]
+    private async Task<object?> OpinionWaitsAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var service = _loop.Service ?? throw NotReady();
+        var presses = new OpinionPresses(_loop.Home, service);
+        var config = DriverConfig.Load(_loop.ConfigPath);
+        var waits = new List<object>();
+        foreach (var due in new OpinionDues(_loop.Home).Open().OrderBy(due => due.At).DistinctBy(due => due.Session, StringComparer.OrdinalIgnoreCase))
+        {
+            var pressed = await presses.GateAsync(due.Session, cancellationToken).ConfigureAwait(false);
+            if (pressed.Gate?.Opinion is not { } gate) continue;
+            var auto = LandingRules.Choose(config, due.Repository, due.Workspace).Rule.AutoAccept;
+            if (!WaitsOnPerson(gate, auto)) continue;
+            waits.Add(new
+            {
+                due.Session, due.Quest, due.Repository, due.Workspace,
+                Since = due.At.ToString("O", System.Globalization.CultureInfo.InvariantCulture),
+                Auto = auto,
+                Opinion = Opinion(gate),
+            });
+        }
+
+        return new { Waits = waits };
+    }
+
+    /// <summary>
+    /// Whether the second opinion's gate waits on the person's answer (the second-agent design §9's *What needs you*): a dispute, a
+    /// required opinion none could be had for, or commits nobody read where the work lands by itself (<paramref name="auto"/>).
+    /// </summary>
+    public static bool WaitsOnPerson(OpinionGateState gate, bool auto) => gate.State switch
+    {
+        OpinionGateStates.Disputed => true,
+        OpinionGateStates.Unavailable => gate.Required,
+        OpinionGateStates.CommitsSince => auto,
+        _ => false,
+    };
 
     /// <summary>
     /// What the review's gate says beside a landing's plan or press (REVIEWENV1c, design §3.1): its state, the environment and the
