@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ago } from '../format';
 import { cn } from '../lib/cn';
+import { isComposing } from '../lib/composing';
 import { Button, Icon, Inline, Menu, type MenuAct } from '../ui';
 import { type Answered, InlineConfirm, Refused } from '../work/InlineConfirm';
 import { ListRowDoor } from '../work/ListPane';
@@ -68,7 +69,7 @@ export function AskHistory({
           placeholder={t('help.history.search.placeholder')}
           onChange={(event) => onSearch(event.target.value)}
           // Escape clears a search, and one with nothing in it is left to what holds the panel.
-          onKeyDown={(event) => { if (event.key === 'Escape' && search) { event.preventDefault(); onSearch(''); } }}
+          onKeyDown={(event) => { if (!isComposing(event) && event.key === 'Escape' && search) { event.preventDefault(); onSearch(''); } }}
           className="min-w-0 flex-1 bg-transparent text-small text-ink outline-none placeholder:text-ink-faint"
         />
       </label>
@@ -216,7 +217,7 @@ function RenameHelp({ row, onSave, onClose }: {
           refused: (sentence) => { setPending(false); setRefusal(sentence); },
         });
       }}
-      onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); onClose(); } }}
+      onKeyDown={(event) => { if (!isComposing(event) && event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); onClose(); } }}
     >
       <input
         autoFocus
