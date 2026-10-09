@@ -527,6 +527,34 @@ public sealed class TraceTests : IDisposable
     }
 
     /// <summary>
+    /// WORKFLOW1f (the workflow design §5.5): the landing record's named workflow reads back on the landing it decided, its version
+    /// and the level that chose it; a landing under Current, and one from before, says nothing of one.
+    /// </summary>
+    [Fact]
+    public async Task A_landings_named_workflow_reads_back_with_its_version_and_what_chose_it()
+    {
+        new LandedBranches(_home).Record(new LandedBranch(
+            "dashboards", "work", "feature/q1-fix-the-dashboard-figure", "main", "1a2b3c4d5e6f708192a3b4c5d6e7f80910111213", "s2", "q1",
+            "Fix the dashboard figure", At(10, 5))
+        {
+            AcceptedBy = AcceptedBy.Auto,
+            Workflow = new LandingWorkflow("docs-to-pr", 2, WorkflowLevels.WorkspaceKind) { Kind = "docs" },
+        });
+
+        var (_, named, _) = await TraceAsync(new TraceAsk("s2"));
+        Assert.Contains("; accepted automatically when its quest was done; as workflow `docs-to-pr` v2 says, chosen by its workspace for kind `docs`",
+            Block(named, "session s2"));
+        Assert.Equal("; as workflow `docs-to-pr` v1 says, its repository's default",
+            TraceWords.WorkflowSaid(new LandingWorkflow("docs-to-pr", 1, WorkflowLevels.Repository)));
+
+        new LandedBranches(_home).Record(new LandedBranch(
+            "dashboards", "work", "feature/q1-fix-the-dashboard-figure", "main", "1a2b3c4d5e6f708192a3b4c5d6e7f80910111213", "s2", "q1",
+            "Fix the dashboard figure", At(10, 5)) { AcceptedBy = AcceptedBy.Auto });
+        var (_, current, _) = await TraceAsync(new TraceAsk("s2"));
+        Assert.DoesNotContain("as workflow", Block(current, "session s2"));
+    }
+
+    /// <summary>
     /// LAND2b (D145 point 6, design §8): a landing at the quest's done is read back as accepted automatically, with the rule it
     /// was made under; the conversation's acceptance note is read as one; the due list's tries are each read by their code. A
     /// landing from before who accepted it was kept says so, never guessed.
