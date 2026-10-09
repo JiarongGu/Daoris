@@ -1,0 +1,616 @@
+{
+  "about": "Which workflow work follows (WORKFLOW1e, D157 point 10, the workflow design §2.5, §4.1-§4.3, §4.5): `workflows` (by repository) and `workspaceWorkflows` (by workspace, which also declares its kinds) in driver.json, and the versions a kept run names. The table both twins hold, the CLI's workflowchoice.ts (through driverconfig.ts and workflowdoor.ts) and the driver's WorkflowSelection and WorkflowRunBindings. `read`: a file, and both maps as each side reads and writes them. `problems`: an entry, its scope, and the first problem in it, or null. `resolve`: a file, a repository (null for a workspace's own), its workspace (null for none), the task's choice (null for none), and the selection: the workflow, the level that chose it, the kind read, its label and paths, and a kind the workspace does not declare. `edits`: a file, an edit (`use` a workflow id, `current` or null to clear, for a `repository` or a `workspace`, a `kind` where one is named, and for a repository `in` the workspace it is in, absent where that is not known; `declare` a kind with its `label` and `paths`; `drop` one), and the maps after it, or the refusal. `kept`: the run files read, a workflow's id, and the versions they name. No row has a key twice, or a name with spaces other than plain ones, where the two runtimes' JSON and trimming part.",
+  "read": [
+    {
+      "name": "absent is nothing",
+      "file": {},
+      "read": { "workflows": {}, "workspaceWorkflows": {} }
+    },
+    {
+      "name": "a repository's default and its kinds",
+      "file": { "workflows": { "web-app": { "default": "feature-review", "kinds": { "docs": "docs-to-pr" } } } },
+      "read": { "workflows": { "web-app": { "default": "feature-review", "kinds": { "docs": "docs-to-pr" } } }, "workspaceWorkflows": {} }
+    },
+    {
+      "name": "current is a choice like any other",
+      "file": { "workflows": { "notes-site": { "default": "current" } } },
+      "read": { "workflows": { "notes-site": { "default": "current" } }, "workspaceWorkflows": {} }
+    },
+    {
+      "name": "a workspace's kinds, each declared with its label, and its paths and workflow where it has them",
+      "file": {
+        "workspaceWorkflows": {
+          "work": {
+            "default": "feature-local-review",
+            "kinds": {
+              "docs": { "label": "Documentation", "paths": ["docs/**", "**/*.md"], "workflow": "docs-to-pr" },
+              "feature": { "label": "Feature" }
+            }
+          }
+        }
+      },
+      "read": {
+        "workflows": {},
+        "workspaceWorkflows": {
+          "work": {
+            "default": "feature-local-review",
+            "kinds": {
+              "docs": { "label": "Documentation", "paths": ["docs/**", "**/*.md"], "workflow": "docs-to-pr" },
+              "feature": { "label": "Feature" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "a workspace that only declares its kinds is kept",
+      "file": { "workspaceWorkflows": { "work": { "kinds": { "feature": { "label": "Feature" } } } } },
+      "read": { "workflows": {}, "workspaceWorkflows": { "work": { "kinds": { "feature": { "label": "Feature" } } } } }
+    },
+    {
+      "name": "a map that is not one is none",
+      "file": { "workflows": ["web-app"], "workspaceWorkflows": "work" },
+      "read": { "workflows": {}, "workspaceWorkflows": {} }
+    },
+    {
+      "name": "a name is read trimmed, and a name written twice in any case is read where first written",
+      "file": { "workflows": { " web-app ": { "default": "first" }, "WEB-APP": { "default": "second" } } },
+      "read": { "workflows": { "web-app": { "default": "first" } }, "workspaceWorkflows": {} }
+    },
+    {
+      "name": "a name written twice is read where first readable",
+      "file": { "workflows": { "Web-App": { "default": 7 }, "web-app": { "default": "second" } } },
+      "read": { "workflows": { "web-app": { "default": "second" } }, "workspaceWorkflows": {} }
+    },
+    {
+      "name": "a blank name is not read",
+      "file": { "workflows": { "  ": { "default": "first" } } },
+      "read": { "workflows": {}, "workspaceWorkflows": {} }
+    },
+    {
+      "name": "an entry with any problem is not read, and the others are",
+      "file": { "workflows": { "web-app": { "default": "Docs To PR" }, "api": { "default": "api-release" } } },
+      "read": { "workflows": { "api": { "default": "api-release" } }, "workspaceWorkflows": {} }
+    },
+    {
+      "name": "false is no choice: current is how a repository keeps its workspace's away",
+      "file": { "workflows": { "web-app": false } },
+      "read": { "workflows": {}, "workspaceWorkflows": {} }
+    },
+    {
+      "name": "an entry that names nothing is not kept",
+      "file": { "workflows": { "web-app": {}, "api": { "kinds": {} } }, "workspaceWorkflows": { "work": { "default": null } } },
+      "read": { "workflows": {}, "workspaceWorkflows": {} }
+    },
+    {
+      "name": "null is absent",
+      "file": { "workflows": { "web-app": { "default": null, "kinds": { "docs": "docs-to-pr" } } } },
+      "read": { "workflows": { "web-app": { "kinds": { "docs": "docs-to-pr" } } }, "workspaceWorkflows": {} }
+    },
+    {
+      "name": "a kind keeps no field it has no name for, and paths that are none",
+      "file": { "workspaceWorkflows": { "work": { "kinds": { "docs": { "label": "Documentation", "paths": [], "colour": "blue", "workflow": null } } } } },
+      "read": { "workflows": {}, "workspaceWorkflows": { "work": { "kinds": { "docs": { "label": "Documentation" } } } } }
+    },
+    {
+      "name": "a label is kept as written",
+      "file": { "workspaceWorkflows": { "work": { "kinds": { "docs": { "label": " Documentation " } } } } },
+      "read": { "workflows": {}, "workspaceWorkflows": { "work": { "kinds": { "docs": { "label": " Documentation " } } } } }
+    }
+  ],
+  "problems": [
+    { "name": "an entry that names nothing is no problem", "scope": "repository", "entry": {}, "problem": null },
+    { "name": "a repository's default", "scope": "repository", "entry": { "default": "feature-review" }, "problem": null },
+    { "name": "current", "scope": "repository", "entry": { "default": "current" }, "problem": null },
+    {
+      "name": "a choice that is no object", "scope": "repository", "entry": "docs-to-pr",
+      "problem": "a workflow choice is an object: its `default`, its `kinds`, or both."
+    },
+    {
+      "name": "false is no choice", "scope": "repository", "entry": false,
+      "problem": "a workflow choice is an object: its `default`, its `kinds`, or both."
+    },
+    {
+      "name": "a default that is not text", "scope": "repository", "entry": { "default": 7 },
+      "problem": "its `default` names a workflow: its id, lower-case letters, digits and dashes, at most 40, or `current`."
+    },
+    {
+      "name": "a default that is no id", "scope": "workspace", "entry": { "default": "Docs To PR" },
+      "problem": "its `default` names a workflow: its id, lower-case letters, digits and dashes, at most 40, or `current`."
+    },
+    {
+      "name": "a blank default", "scope": "repository", "entry": { "default": "" },
+      "problem": "its `default` names a workflow: its id, lower-case letters, digits and dashes, at most 40, or `current`."
+    },
+    {
+      "name": "a default of 41 characters", "scope": "repository", "entry": { "default": "a1234567890123456789012345678901234567890" },
+      "problem": "its `default` names a workflow: its id, lower-case letters, digits and dashes, at most 40, or `current`."
+    },
+    {
+      "name": "a default of 40 characters", "scope": "repository", "entry": { "default": "a123456789012345678901234567890123456789" },
+      "problem": null
+    },
+    {
+      "name": "kinds that are no object", "scope": "repository", "entry": { "kinds": ["docs"] },
+      "problem": "its `kinds` is an object, each kind by its id."
+    },
+    {
+      "name": "a kind whose id is no id", "scope": "repository", "entry": { "kinds": { "Docs": "docs-to-pr" } },
+      "problem": "`Docs` is not a kind's id: lower-case letters, digits and dashes, at most 24, such as `docs`."
+    },
+    {
+      "name": "a kind's id of 25 characters", "scope": "workspace", "entry": { "kinds": { "a123456789012345678901234": { "label": "Long" } } },
+      "problem": "`a123456789012345678901234` is not a kind's id: lower-case letters, digits and dashes, at most 24, such as `docs`."
+    },
+    {
+      "name": "a kind's id of 24 characters", "scope": "workspace", "entry": { "kinds": { "a12345678901234567890123": { "label": "Long" } } },
+      "problem": null
+    },
+    {
+      "name": "thirteen kinds", "scope": "workspace",
+      "entry": {
+        "kinds": {
+          "k1": { "label": "1" }, "k2": { "label": "2" }, "k3": { "label": "3" }, "k4": { "label": "4" }, "k5": { "label": "5" },
+          "k6": { "label": "6" }, "k7": { "label": "7" }, "k8": { "label": "8" }, "k9": { "label": "9" }, "k10": { "label": "10" },
+          "k11": { "label": "11" }, "k12": { "label": "12" }, "Bad": { "label": "13" }
+        }
+      },
+      "problem": "a choice holds at most 12 kinds."
+    },
+    {
+      "name": "twelve kinds", "scope": "workspace",
+      "entry": {
+        "kinds": {
+          "k1": { "label": "1" }, "k2": { "label": "2" }, "k3": { "label": "3" }, "k4": { "label": "4" }, "k5": { "label": "5" },
+          "k6": { "label": "6" }, "k7": { "label": "7" }, "k8": { "label": "8" }, "k9": { "label": "9" }, "k10": { "label": "10" },
+          "k11": { "label": "11" }, "k12": { "label": "12" }
+        }
+      },
+      "problem": null
+    },
+    {
+      "name": "a repository's kind maps to a workflow's id", "scope": "repository", "entry": { "kinds": { "docs": { "workflow": "docs-to-pr" } } },
+      "problem": "kind `docs` maps to a workflow: its id, or `current`."
+    },
+    {
+      "name": "a repository's kind mapped to no id", "scope": "repository", "entry": { "kinds": { "docs": "Docs" } },
+      "problem": "kind `docs` maps to a workflow: its id, or `current`."
+    },
+    { "name": "a repository's kind mapped to current", "scope": "repository", "entry": { "kinds": { "docs": "current" } }, "problem": null },
+    {
+      "name": "a workspace's kind is an object", "scope": "workspace", "entry": { "kinds": { "docs": "docs-to-pr" } },
+      "problem": "kind `docs` is an object: its `label`, and its `paths` and `workflow` where it has them."
+    },
+    {
+      "name": "a workspace's kind needs its label", "scope": "workspace", "entry": { "kinds": { "docs": {} } },
+      "problem": "kind `docs`'s `label` is your words for it, 1 to 60 characters."
+    },
+    {
+      "name": "a blank label", "scope": "workspace", "entry": { "kinds": { "docs": { "label": "   " } } },
+      "problem": "kind `docs`'s `label` is your words for it, 1 to 60 characters."
+    },
+    {
+      "name": "a label of 61 characters", "scope": "workspace",
+      "entry": { "kinds": { "docs": { "label": "Documentation and everything written about the code, in words" } } },
+      "problem": "kind `docs`'s `label` is your words for it, 1 to 60 characters."
+    },
+    {
+      "name": "a label of 60 characters", "scope": "workspace",
+      "entry": { "kinds": { "docs": { "label": "Documentation and everything written about the code, in word" } } },
+      "problem": null
+    },
+    {
+      "name": "paths that are no list", "scope": "workspace", "entry": { "kinds": { "docs": { "label": "Documentation", "paths": "docs/**" } } },
+      "problem": "kind `docs`'s `paths` is a list of at most 20 paths in a repository, each with `/` between its parts, none absolute, none with `..` or spaces around it, none twice, each at most 200 characters."
+    },
+    {
+      "name": "an absolute path", "scope": "workspace", "entry": { "kinds": { "docs": { "label": "Documentation", "paths": ["/docs/**"] } } },
+      "problem": "kind `docs`'s `paths` is a list of at most 20 paths in a repository, each with `/` between its parts, none absolute, none with `..` or spaces around it, none twice, each at most 200 characters."
+    },
+    {
+      "name": "a path with a backslash", "scope": "workspace", "entry": { "kinds": { "docs": { "label": "Documentation", "paths": ["docs\\guide"] } } },
+      "problem": "kind `docs`'s `paths` is a list of at most 20 paths in a repository, each with `/` between its parts, none absolute, none with `..` or spaces around it, none twice, each at most 200 characters."
+    },
+    {
+      "name": "a path that climbs out", "scope": "workspace", "entry": { "kinds": { "docs": { "label": "Documentation", "paths": ["docs/../src/**"] } } },
+      "problem": "kind `docs`'s `paths` is a list of at most 20 paths in a repository, each with `/` between its parts, none absolute, none with `..` or spaces around it, none twice, each at most 200 characters."
+    },
+    {
+      "name": "a path twice", "scope": "workspace", "entry": { "kinds": { "docs": { "label": "Documentation", "paths": ["docs/**", "docs/**"] } } },
+      "problem": "kind `docs`'s `paths` is a list of at most 20 paths in a repository, each with `/` between its parts, none absolute, none with `..` or spaces around it, none twice, each at most 200 characters."
+    },
+    {
+      "name": "a blank path", "scope": "workspace", "entry": { "kinds": { "docs": { "label": "Documentation", "paths": [""] } } },
+      "problem": "kind `docs`'s `paths` is a list of at most 20 paths in a repository, each with `/` between its parts, none absolute, none with `..` or spaces around it, none twice, each at most 200 characters."
+    },
+    {
+      "name": "a path with spaces around it", "scope": "workspace", "entry": { "kinds": { "docs": { "label": "Documentation", "paths": [" docs/**"] } } },
+      "problem": "kind `docs`'s `paths` is a list of at most 20 paths in a repository, each with `/` between its parts, none absolute, none with `..` or spaces around it, none twice, each at most 200 characters."
+    },
+    {
+      "name": "a path with a tab", "scope": "workspace", "entry": { "kinds": { "docs": { "label": "Documentation", "paths": ["docs/\tguide"] } } },
+      "problem": "kind `docs`'s `paths` is a list of at most 20 paths in a repository, each with `/` between its parts, none absolute, none with `..` or spaces around it, none twice, each at most 200 characters."
+    },
+    {
+      "name": "a path that is not text", "scope": "workspace", "entry": { "kinds": { "docs": { "label": "Documentation", "paths": [7] } } },
+      "problem": "kind `docs`'s `paths` is a list of at most 20 paths in a repository, each with `/` between its parts, none absolute, none with `..` or spaces around it, none twice, each at most 200 characters."
+    },
+    {
+      "name": "twenty-one paths", "scope": "workspace",
+      "entry": {
+        "kinds": {
+          "docs": {
+            "label": "Documentation",
+            "paths": ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10", "p11", "p12", "p13", "p14", "p15", "p16", "p17", "p18", "p19", "p20", "p21"]
+          }
+        }
+      },
+      "problem": "kind `docs`'s `paths` is a list of at most 20 paths in a repository, each with `/` between its parts, none absolute, none with `..` or spaces around it, none twice, each at most 200 characters."
+    },
+    {
+      "name": "twenty paths, with a space inside one and dots in a name", "scope": "workspace",
+      "entry": {
+        "kinds": {
+          "docs": {
+            "label": "Documentation",
+            "paths": ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10", "p11", "p12", "p13", "p14", "p15", "p16", "p17", "p18", "my docs/**", "docs/..notes/*.md"]
+          }
+        }
+      },
+      "problem": null
+    },
+    {
+      "name": "a workspace kind's workflow that is no id", "scope": "workspace", "entry": { "kinds": { "docs": { "label": "Documentation", "workflow": 7 } } },
+      "problem": "kind `docs`'s `workflow` names a workflow: its id, or `current`."
+    },
+    {
+      "name": "the first problem is said: the default's before a kind's", "scope": "workspace",
+      "entry": { "default": "Bad", "kinds": { "Docs": { "label": "" } } },
+      "problem": "its `default` names a workflow: its id, lower-case letters, digits and dashes, at most 40, or `current`."
+    },
+    {
+      "name": "the first problem is said: the count before a kind's", "scope": "repository",
+      "entry": {
+        "kinds": {
+          "Bad": "x", "k2": "x", "k3": "x", "k4": "x", "k5": "x", "k6": "x", "k7": "x", "k8": "x", "k9": "x", "k10": "x", "k11": "x",
+          "k12": "x", "k13": "x"
+        }
+      },
+      "problem": "a choice holds at most 12 kinds."
+    }
+  ],
+  "resolve": [
+    {
+      "name": "nothing set is Current",
+      "file": {}, "repository": "web-app", "workspace": "work", "task": null,
+      "selection": { "workflow": "current", "level": "current", "kind": null, "label": null, "paths": [], "undeclared": null }
+    },
+    {
+      "name": "the task's workflow decides first",
+      "file": { "workflows": { "web-app": { "default": "feature-review" } }, "workspaceWorkflows": { "work": { "default": "feature-local-review" } } },
+      "repository": "web-app", "workspace": "work", "task": { "kind": null, "workflow": "hotfix" },
+      "selection": { "workflow": "hotfix", "level": "task", "kind": null, "label": null, "paths": [], "undeclared": null }
+    },
+    {
+      "name": "the task's current is a choice like any other",
+      "file": { "workflows": { "web-app": { "default": "feature-review" } } },
+      "repository": "web-app", "workspace": "work", "task": { "kind": null, "workflow": "current" },
+      "selection": { "workflow": "current", "level": "task", "kind": null, "label": null, "paths": [], "undeclared": null }
+    },
+    {
+      "name": "the task's workflow keeps its kind and the kind's paths",
+      "file": { "workspaceWorkflows": { "work": { "kinds": { "docs": { "label": "Documentation", "paths": ["docs/**", "**/*.md"] } } } } },
+      "repository": "web-app", "workspace": "work", "task": { "kind": "docs", "workflow": "hotfix" },
+      "selection": { "workflow": "hotfix", "level": "task", "kind": "docs", "label": "Documentation", "paths": ["docs/**", "**/*.md"], "undeclared": null }
+    },
+    {
+      "name": "the repository's choice for the task's kind",
+      "file": {
+        "workflows": { "web-app": { "default": "feature-review", "kinds": { "docs": "docs-to-pr" } } },
+        "workspaceWorkflows": { "work": { "default": "feature-local-review", "kinds": { "docs": { "label": "Documentation", "paths": ["docs/**"], "workflow": "docs-straight" } } } }
+      },
+      "repository": "web-app", "workspace": "work", "task": { "kind": "docs", "workflow": null },
+      "selection": { "workflow": "docs-to-pr", "level": "repository-kind", "kind": "docs", "label": "Documentation", "paths": ["docs/**"], "undeclared": null }
+    },
+    {
+      "name": "the repository's default where it names none for the kind",
+      "file": {
+        "workflows": { "web-app": { "default": "feature-review", "kinds": { "docs": "docs-to-pr" } } },
+        "workspaceWorkflows": { "work": { "kinds": { "docs": { "label": "Documentation" }, "feature": { "label": "Feature", "workflow": "feature-local-review" } } } }
+      },
+      "repository": "web-app", "workspace": "work", "task": { "kind": "feature", "workflow": null },
+      "selection": { "workflow": "feature-review", "level": "repository", "kind": "feature", "label": "Feature", "paths": [], "undeclared": null }
+    },
+    {
+      "name": "a repository that names any workflow replaces its workspace's whole: Current where it names none",
+      "file": {
+        "workflows": { "web-app": { "kinds": { "docs": "docs-to-pr" } } },
+        "workspaceWorkflows": { "work": { "default": "feature-local-review", "kinds": { "docs": { "label": "Documentation" }, "feature": { "label": "Feature", "workflow": "feature-review" } } } }
+      },
+      "repository": "web-app", "workspace": "work", "task": { "kind": "feature", "workflow": null },
+      "selection": { "workflow": "current", "level": "repository", "kind": "feature", "label": "Feature", "paths": [], "undeclared": null }
+    },
+    {
+      "name": "the workspace's choice for the kind",
+      "file": { "workspaceWorkflows": { "work": { "default": "feature-local-review", "kinds": { "docs": { "label": "Documentation", "paths": ["docs/**", "**/*.md"], "workflow": "docs-to-pr" } } } } },
+      "repository": "web-app", "workspace": "work", "task": { "kind": "docs", "workflow": null },
+      "selection": { "workflow": "docs-to-pr", "level": "workspace-kind", "kind": "docs", "label": "Documentation", "paths": ["docs/**", "**/*.md"], "undeclared": null }
+    },
+    {
+      "name": "a kind mapped to nothing takes the workspace's default",
+      "file": { "workspaceWorkflows": { "work": { "default": "feature-local-review", "kinds": { "feature": { "label": "Feature" } } } } },
+      "repository": "web-app", "workspace": "work", "task": { "kind": "feature", "workflow": null },
+      "selection": { "workflow": "feature-local-review", "level": "workspace", "kind": "feature", "label": "Feature", "paths": [], "undeclared": null }
+    },
+    {
+      "name": "no kind reads the defaults",
+      "file": { "workspaceWorkflows": { "work": { "default": "feature-local-review", "kinds": { "docs": { "label": "Documentation", "workflow": "docs-to-pr" } } } } },
+      "repository": "web-app", "workspace": "work", "task": null,
+      "selection": { "workflow": "feature-local-review", "level": "workspace", "kind": null, "label": null, "paths": [], "undeclared": null }
+    },
+    {
+      "name": "the workspace with nothing for the kind and no default is Current",
+      "file": { "workspaceWorkflows": { "work": { "kinds": { "feature": { "label": "Feature" } } } } },
+      "repository": "web-app", "workspace": "work", "task": { "kind": "feature", "workflow": null },
+      "selection": { "workflow": "current", "level": "current", "kind": "feature", "label": "Feature", "paths": [], "undeclared": null }
+    },
+    {
+      "name": "a kind the workspace does not declare is none, and said",
+      "file": { "workspaceWorkflows": { "work": { "default": "feature-local-review", "kinds": { "docs": { "label": "Documentation", "workflow": "docs-to-pr" } } } } },
+      "repository": "web-app", "workspace": "work", "task": { "kind": "design", "workflow": null },
+      "selection": { "workflow": "feature-local-review", "level": "workspace", "kind": null, "label": null, "paths": [], "undeclared": "design" }
+    },
+    {
+      "name": "a repository's mapping of a kind its workspace does not declare is never reached",
+      "file": { "workflows": { "web-app": { "default": "feature-review", "kinds": { "docs": "docs-to-pr" } } } },
+      "repository": "web-app", "workspace": "work", "task": { "kind": "docs", "workflow": null },
+      "selection": { "workflow": "feature-review", "level": "repository", "kind": null, "label": null, "paths": [], "undeclared": "docs" }
+    },
+    {
+      "name": "a repository in no workspace reads the default workspace's",
+      "file": { "workspaceWorkflows": { "default": { "default": "feature-local-review" } } },
+      "repository": "web-app", "workspace": null, "task": null,
+      "selection": { "workflow": "feature-local-review", "level": "workspace", "kind": null, "label": null, "paths": [], "undeclared": null }
+    },
+    {
+      "name": "names match in any case",
+      "file": { "workflows": { "web-app": { "kinds": { "docs": "docs-to-pr" } } }, "workspaceWorkflows": { "work": { "kinds": { "docs": { "label": "Documentation" } } } } },
+      "repository": "WEB-APP", "workspace": "Work", "task": { "kind": "docs", "workflow": null },
+      "selection": { "workflow": "docs-to-pr", "level": "repository-kind", "kind": "docs", "label": "Documentation", "paths": [], "undeclared": null }
+    },
+    {
+      "name": "a repository whose entry does not read leaves its workspace's to reach it",
+      "file": { "workflows": { "web-app": { "default": 7 } }, "workspaceWorkflows": { "work": { "default": "feature-local-review" } } },
+      "repository": "web-app", "workspace": "work", "task": null,
+      "selection": { "workflow": "feature-local-review", "level": "workspace", "kind": null, "label": null, "paths": [], "undeclared": null }
+    },
+    {
+      "name": "a workspace's own: no repository's choice is read",
+      "file": {
+        "workflows": { "web-app": { "default": "feature-review" } },
+        "workspaceWorkflows": { "work": { "default": "feature-local-review", "kinds": { "docs": { "label": "Documentation", "workflow": "docs-to-pr" } } } }
+      },
+      "repository": null, "workspace": "work", "task": { "kind": "docs", "workflow": null },
+      "selection": { "workflow": "docs-to-pr", "level": "workspace-kind", "kind": "docs", "label": "Documentation", "paths": [], "undeclared": null }
+    },
+    {
+      "name": "a repository's current keeps its workspace's away",
+      "file": { "workflows": { "notes-site": { "default": "current" } }, "workspaceWorkflows": { "work": { "default": "feature-local-review" } } },
+      "repository": "notes-site", "workspace": "work", "task": null,
+      "selection": { "workflow": "current", "level": "repository", "kind": null, "label": null, "paths": [], "undeclared": null }
+    }
+  ],
+  "edits": [
+    {
+      "name": "a repository's default",
+      "file": {}, "edit": { "use": "feature-review", "repository": "web-app" },
+      "read": { "workflows": { "web-app": { "default": "feature-review" } }, "workspaceWorkflows": {} }, "refusal": null
+    },
+    {
+      "name": "a repository's kind, which its workspace declares",
+      "file": { "workspaceWorkflows": { "work": { "kinds": { "docs": { "label": "Documentation" } } } } },
+      "edit": { "use": "docs-to-pr", "repository": "web-app", "kind": "docs", "in": "work" },
+      "read": { "workflows": { "web-app": { "kinds": { "docs": "docs-to-pr" } } }, "workspaceWorkflows": { "work": { "kinds": { "docs": { "label": "Documentation" } } } } },
+      "refusal": null
+    },
+    {
+      "name": "a repository's kind its workspace does not declare is refused",
+      "file": { "workspaceWorkflows": { "work": { "kinds": { "docs": { "label": "Documentation" } } } } },
+      "edit": { "use": "design-review", "repository": "web-app", "kind": "design", "in": "work" },
+      "read": null, "refusal": "`web-app`'s workspace, `work`, declares no kind `design`: a kind is declared first, with its label."
+    },
+    {
+      "name": "a repository in no workspace is checked against the default workspace's kinds",
+      "file": { "workspaceWorkflows": { "default": { "kinds": { "docs": { "label": "Documentation" } } } } },
+      "edit": { "use": "docs-to-pr", "repository": "web-app", "kind": "docs", "in": null },
+      "read": { "workflows": { "web-app": { "kinds": { "docs": "docs-to-pr" } } }, "workspaceWorkflows": { "default": { "kinds": { "docs": { "label": "Documentation" } } } } },
+      "refusal": null
+    },
+    {
+      "name": "a repository's kind is written unchecked where its workspace is not known",
+      "file": {}, "edit": { "use": "docs-to-pr", "repository": "web-app", "kind": "docs" },
+      "read": { "workflows": { "web-app": { "kinds": { "docs": "docs-to-pr" } } }, "workspaceWorkflows": {} }, "refusal": null
+    },
+    {
+      "name": "a workspace's default",
+      "file": {}, "edit": { "use": "feature-local-review", "workspace": "work" },
+      "read": { "workflows": {}, "workspaceWorkflows": { "work": { "default": "feature-local-review" } } }, "refusal": null
+    },
+    {
+      "name": "a workspace's kind, mapped where it is declared",
+      "file": { "workspaceWorkflows": { "work": { "kinds": { "docs": { "label": "Documentation", "paths": ["docs/**"] } } } } },
+      "edit": { "use": "docs-to-pr", "workspace": "work", "kind": "docs" },
+      "read": { "workflows": {}, "workspaceWorkflows": { "work": { "kinds": { "docs": { "label": "Documentation", "paths": ["docs/**"], "workflow": "docs-to-pr" } } } } },
+      "refusal": null
+    },
+    {
+      "name": "a workspace's kind it does not declare is refused",
+      "file": {}, "edit": { "use": "docs-to-pr", "workspace": "work", "kind": "docs" },
+      "read": null, "refusal": "workspace `work` declares no kind `docs`: a kind is declared first, with its label."
+    },
+    {
+      "name": "current",
+      "file": {}, "edit": { "use": "current", "repository": "notes-site" },
+      "read": { "workflows": { "notes-site": { "default": "current" } }, "workspaceWorkflows": {} }, "refusal": null
+    },
+    {
+      "name": "an id that is no id",
+      "file": {}, "edit": { "use": "Docs To PR", "repository": "web-app" },
+      "read": null, "refusal": "`Docs To PR` is not a workflow's id: lower-case letters, digits and dashes, at most 40, such as `docs-to-pr`; or `current`."
+    },
+    {
+      "name": "a kind that is no id",
+      "file": {}, "edit": { "use": "docs-to-pr", "workspace": "work", "kind": "Docs" },
+      "read": null, "refusal": "`Docs` is not a kind's id: lower-case letters, digits and dashes, at most 24, such as `docs`."
+    },
+    {
+      "name": "a choice names its repository or its workspace",
+      "file": {}, "edit": { "use": "docs-to-pr", "repository": "  " },
+      "read": null, "refusal": "a choice names the repository or the workspace it is for."
+    },
+    {
+      "name": "a later choice replaces the earlier, under the spelling first written",
+      "file": { "workflows": { "Web-App": { "default": "feature-review" } } },
+      "edit": { "use": "release-train", "repository": "web-app" },
+      "read": { "workflows": { "Web-App": { "default": "release-train" } }, "workspaceWorkflows": {} }, "refusal": null
+    },
+    {
+      "name": "clearing a repository's default keeps its kinds",
+      "file": { "workflows": { "web-app": { "default": "feature-review", "kinds": { "docs": "docs-to-pr" } } } },
+      "edit": { "use": null, "repository": "web-app" },
+      "read": { "workflows": { "web-app": { "kinds": { "docs": "docs-to-pr" } } }, "workspaceWorkflows": {} }, "refusal": null
+    },
+    {
+      "name": "clearing the last of a repository's choice removes it, and its workspace's reaches it again",
+      "file": { "workflows": { "web-app": { "kinds": { "docs": "docs-to-pr" } } } },
+      "edit": { "use": null, "repository": "web-app", "kind": "docs" },
+      "read": { "workflows": {}, "workspaceWorkflows": {} }, "refusal": null
+    },
+    {
+      "name": "clearing a workspace kind's workflow keeps the kind declared",
+      "file": { "workspaceWorkflows": { "work": { "kinds": { "docs": { "label": "Documentation", "workflow": "docs-to-pr" } } } } },
+      "edit": { "use": null, "workspace": "work", "kind": "docs" },
+      "read": { "workflows": {}, "workspaceWorkflows": { "work": { "kinds": { "docs": { "label": "Documentation" } } } } }, "refusal": null
+    },
+    {
+      "name": "clearing what is not set changes nothing",
+      "file": { "workflows": { "api": { "default": "api-release" } } },
+      "edit": { "use": null, "repository": "web-app" },
+      "read": { "workflows": { "api": { "default": "api-release" } }, "workspaceWorkflows": {} }, "refusal": null
+    },
+    {
+      "name": "an edit keeps the other map and the other entries as read",
+      "file": {
+        "workflows": { "api": { "default": "api-release" }, "web-app": { "default": "Bad" } },
+        "workspaceWorkflows": { "work": { "default": "feature-local-review" } }
+      },
+      "edit": { "use": "docs-to-pr", "repository": "notes-site" },
+      "read": {
+        "workflows": { "api": { "default": "api-release" }, "notes-site": { "default": "docs-to-pr" } },
+        "workspaceWorkflows": { "work": { "default": "feature-local-review" } }
+      },
+      "refusal": null
+    },
+    {
+      "name": "declaring a kind",
+      "file": {}, "edit": { "declare": "docs", "workspace": "work", "label": "Documentation", "paths": ["docs/**", "**/*.md"] },
+      "read": { "workflows": {}, "workspaceWorkflows": { "work": { "kinds": { "docs": { "label": "Documentation", "paths": ["docs/**", "**/*.md"] } } } } },
+      "refusal": null
+    },
+    {
+      "name": "declaring a kind again replaces its label and paths, and keeps its workflow and its place",
+      "file": { "workspaceWorkflows": { "work": { "kinds": { "docs": { "label": "Docs", "paths": ["docs/**"], "workflow": "docs-to-pr" }, "feature": { "label": "Feature" } } } } },
+      "edit": { "declare": "docs", "workspace": "work", "label": "Documentation", "paths": [] },
+      "read": { "workflows": {}, "workspaceWorkflows": { "work": { "kinds": { "docs": { "label": "Documentation", "workflow": "docs-to-pr" }, "feature": { "label": "Feature" } } } } },
+      "refusal": null
+    },
+    {
+      "name": "a thirteenth kind is refused",
+      "file": {
+        "workspaceWorkflows": {
+          "work": {
+            "kinds": {
+              "k1": { "label": "1" }, "k2": { "label": "2" }, "k3": { "label": "3" }, "k4": { "label": "4" }, "k5": { "label": "5" },
+              "k6": { "label": "6" }, "k7": { "label": "7" }, "k8": { "label": "8" }, "k9": { "label": "9" }, "k10": { "label": "10" },
+              "k11": { "label": "11" }, "k12": { "label": "12" }
+            }
+          }
+        }
+      },
+      "edit": { "declare": "docs", "workspace": "work", "label": "Documentation", "paths": [] },
+      "read": null, "refusal": "a choice holds at most 12 kinds."
+    },
+    {
+      "name": "declaring with a label that is none",
+      "file": {}, "edit": { "declare": "docs", "workspace": "work", "label": " ", "paths": [] },
+      "read": null, "refusal": "kind `docs`'s `label` is your words for it, 1 to 60 characters."
+    },
+    {
+      "name": "declaring with paths that are none",
+      "file": {}, "edit": { "declare": "docs", "workspace": "work", "label": "Documentation", "paths": ["../docs"] },
+      "read": null,
+      "refusal": "kind `docs`'s `paths` is a list of at most 20 paths in a repository, each with `/` between its parts, none absolute, none with `..` or spaces around it, none twice, each at most 200 characters."
+    },
+    {
+      "name": "declaring a kind whose id is no id",
+      "file": {}, "edit": { "declare": "Docs", "workspace": "work", "label": "Documentation", "paths": [] },
+      "read": null, "refusal": "`Docs` is not a kind's id: lower-case letters, digits and dashes, at most 24, such as `docs`."
+    },
+    {
+      "name": "declaring names the workspace",
+      "file": {}, "edit": { "declare": "docs", "workspace": "", "label": "Documentation", "paths": [] },
+      "read": null, "refusal": "a choice names the repository or the workspace it is for."
+    },
+    {
+      "name": "dropping a kind",
+      "file": { "workspaceWorkflows": { "work": { "default": "feature-local-review", "kinds": { "docs": { "label": "Documentation", "workflow": "docs-to-pr" }, "feature": { "label": "Feature" } } } } },
+      "edit": { "drop": "docs", "workspace": "work" },
+      "read": { "workflows": {}, "workspaceWorkflows": { "work": { "default": "feature-local-review", "kinds": { "feature": { "label": "Feature" } } } } },
+      "refusal": null
+    },
+    {
+      "name": "dropping the last of a workspace's choice removes it",
+      "file": { "workspaceWorkflows": { "work": { "kinds": { "docs": { "label": "Documentation" } } } } },
+      "edit": { "drop": "docs", "workspace": "Work" },
+      "read": { "workflows": {}, "workspaceWorkflows": {} }, "refusal": null
+    },
+    {
+      "name": "dropping a kind it does not declare is refused",
+      "file": {}, "edit": { "drop": "docs", "workspace": "work" },
+      "read": null, "refusal": "workspace `work` declares no kind `docs`, so there is none to drop."
+    }
+  ],
+  "kept": [
+    { "name": "no run keeps none", "runs": [], "workflow": "docs-to-pr", "versions": [] },
+    {
+      "name": "each run's version of that workflow, in order, once",
+      "runs": [
+        { "run": "a1", "workflow": "docs-to-pr", "version": 5 },
+        { "run": "a2", "workflow": "docs-to-pr", "version": 2 },
+        { "run": "a3", "workflow": "docs-to-pr", "version": 5 },
+        { "run": "a4", "workflow": "feature-review", "version": 3 },
+        { "run": "a5", "workflow": "current", "digest": "0123456789ab" }
+      ],
+      "workflow": "docs-to-pr", "versions": [2, 5]
+    },
+    {
+      "name": "a run that does not say a whole version keeps nothing",
+      "runs": [
+        "docs-to-pr",
+        ["docs-to-pr", 2],
+        { "workflow": "docs-to-pr", "version": "2" },
+        { "workflow": "docs-to-pr", "version": 0 },
+        { "workflow": "docs-to-pr", "version": 1.5 },
+        { "workflow": "docs-to-pr", "version": 2147483648 },
+        { "workflow": "DOCS-TO-PR", "version": 4 },
+        { "version": 6 }
+      ],
+      "workflow": "docs-to-pr", "versions": []
+    },
+    {
+      "name": "a run whose version did not read still keeps it",
+      "runs": [{ "workflow": "docs-to-pr", "version": 3, "problem": "`docs-to-pr` v3 cannot be read here." }],
+      "workflow": "docs-to-pr", "versions": [3]
+    }
+  ]
+}

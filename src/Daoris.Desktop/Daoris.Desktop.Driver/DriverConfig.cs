@@ -275,6 +275,20 @@ public sealed record DriverConfig(
     public IReadOnlyDictionary<string, OpinionRule> WorkspaceOpinions { get; init; } =
         new Dictionary<string, OpinionRule>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Which workflow each repository's work follows (WORKFLOW1e, D157 point 10, the workflow design §2.5, §4.1), by repository: a
+    /// default and a workflow for each of its workspace's kinds. A repository that names any replaces its workspace's whole
+    /// (<see cref="WorkflowSelection.Resolve"/>); absent is its workspace's, then Current, which is today's behaviour. Edited only
+    /// through <see cref="WorkflowSelection.Apply"/>. The CLI's <c>driverconfig.ts</c> reads it the same way, by one shared table
+    /// (<c>WorkflowSelectionTests</c>).
+    /// </summary>
+    public IReadOnlyDictionary<string, WorkflowChoice> Workflows { get; init; } =
+        new Dictionary<string, WorkflowChoice>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A workspace's choice of workflow, for every repository in it that names none, and the kinds it declares.</summary>
+    public IReadOnlyDictionary<string, WorkflowChoice> WorkspaceWorkflows { get; init; } =
+        new Dictionary<string, WorkflowChoice>(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>A moment as the file keeps it: in UTC, to the second.</summary>
     private static DateTimeOffset ToTheSecond(DateTimeOffset at)
     {
@@ -569,6 +583,9 @@ public sealed record DriverConfig(
             // Written only when set (XAGENT1a), as the CLI writes them: absent is no second opinion, today's behaviour.
             OpinionRules.WriteMap(writer, "opinions", Opinions);
             OpinionRules.WriteMap(writer, "workspaceOpinions", WorkspaceOpinions);
+            // Written only when set (WORKFLOW1e), as the CLI writes them: absent is Current, today's behaviour.
+            WorkflowSelection.WriteMap(writer, "workflows", Workflows, workspace: false);
+            WorkflowSelection.WriteMap(writer, "workspaceWorkflows", WorkspaceWorkflows, workspace: true);
             // Written only when set (D107), for the same reason: absent is reading on and no relationship.
             WriteFlags(writer, "readAcross", ReadAcross);
             WriteFlags(writer, "workspaceReadAcross", WorkspaceReadAcross);
@@ -926,6 +943,9 @@ public sealed record DriverConfig(
             // A rule with a problem is not read, and `false` only for a repository (XAGENT1a).
             Opinions = OpinionRules.Map(root, "opinions", allowNone: true),
             WorkspaceOpinions = OpinionRules.Map(root, "workspaceOpinions", allowNone: false),
+            // An entry with a problem, or naming nothing, is not read (WORKFLOW1e).
+            Workflows = WorkflowSelection.Map(root, "workflows", workspace: false),
+            WorkspaceWorkflows = WorkflowSelection.Map(root, "workspaceWorkflows", workspace: true),
             ReadAcross = FlagMap(root, "readAcross"),
             WorkspaceReadAcross = FlagMap(root, "workspaceReadAcross"),
             WriteAcross = TargetMap(root, "writeAcross"),

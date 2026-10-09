@@ -450,6 +450,12 @@ public sealed partial class Driver(
 
         var waits = Waits(begun);
 
+        // WORKFLOW1e (design §4.5): each run whose session opened in this look is bound, at its first start, to the workflow that
+        // chooses it now. A start that held or was refused opened nothing, and binds nothing.
+        var openedQuests = begun.Where(each => each.Started.Quest is not null && (each.Came is null || each.Came.Opened))
+            .Select(each => each.Started.Quest!).ToHashSet(StringComparer.Ordinal);
+        await BindRunsAsync([.. claimed.Where(start => openedQuests.Contains(start.Quest.Id))], events, ct).ConfigureAwait(false);
+
         await EndingsAsync(events, concluded, ct).ConfigureAwait(false);
 
         // Done work lands itself (LAND2b, D145 point 2): after the endings and their sync, so a done that just closed is read
