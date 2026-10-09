@@ -13,8 +13,8 @@ namespace Daoris.Driver;
 /// thing a pass takes is the opinion the reviewer said through its tool, which the local host keeps. The record moves on the
 /// exit code, never on what the reviewer said of itself (D46 §4): whether it gave its opinion is the host's to derive.</para>
 ///
-/// <para><b>Nothing calls it yet but its tests.</b> The gate (XAGENT1f) and the person's ask start a pass, take its slot under
-/// the cap, and deliver its findings (XAGENT1e).</para>
+/// <para><b>The look asks it</b> (XAGENT1f, <see cref="OpinionsAsync"/>): for an opinion owed by itself and for the person's ask,
+/// beside the look, its slot taken before any quest's first start, and its findings delivered after (XAGENT1e).</para>
 /// </remarks>
 public sealed partial class Driver
 {

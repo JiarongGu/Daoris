@@ -128,8 +128,8 @@ public sealed record ReviewerTried(string Reviewer, string Label, string Held, s
 /// counted as chosen; nothing is counted for an entry that was refused.</para>
 /// <para><b>Never downgraded silently</b> (§3.3): wherever another maker's agent did not read the work, the choice carries a
 /// code (<see cref="ReviewerUnavailable"/>) and says why, each entry passed with its own sentence.</para>
-/// <para>Nothing asks for one yet: the pass (XAGENT1d) and the gate (XAGENT1f) do, and they read the work's adapters from the
-/// session records whose work is on the candidate.</para>
+/// <para>The look asks for one (XAGENT1f), with the agents of this machine's last run on each of the chain's quests in the
+/// repository as the work's, and the recheck asks for its first pass's reviewer again (XAGENT1e).</para>
 /// </remarks>
 /// <param name="Reviewer">The adapter that reads the work, or null when none can.</param>
 /// <param name="Label">How it stands to the work's families (<see cref="ReviewerLabels"/>), or null when none can.</param>

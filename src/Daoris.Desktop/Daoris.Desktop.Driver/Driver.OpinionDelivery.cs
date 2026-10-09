@@ -35,7 +35,7 @@ public sealed record OpinionDelivery(string Opinion, string State, string Line)
 /// own, its quest is unmoved. They are never handed to a new session as the person's words (design §6.7).</para>
 ///
 /// <para><b>Idempotent, and read from facts.</b> <see cref="DeliverAsync"/> reads the host's opinion, the working session's
-/// record and what it kept (<see cref="OpinionDeliveries"/>), and does the next thing owed, once: the gate (XAGENT1f) calls it at
+/// record and what it kept (<see cref="OpinionDeliveries"/>), and does the next thing owed, once: the look (XAGENT1f) calls it at
 /// each look for the opinion on a landing until it says the opinion is answered, or with the person.</para>
 /// </remarks>
 public sealed partial class Driver

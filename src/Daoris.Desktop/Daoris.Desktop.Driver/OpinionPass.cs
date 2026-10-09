@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// What a pass reads, and for whom (XAGENT1d, D155; the second-agent design §4): the occasion, the working session whose work it
 /// is, the repository and its checkout, the candidate's base and tip as git can name them, the rule that asked for it, and the
-/// quests and words the work was asked by. Nothing asks for one yet but its tests: the gate (XAGENT1f) and the person's ask do.
+/// quests and words the work was asked by. The look asks one for an opinion owed and for the person's ask (XAGENT1f).
 /// </summary>
 /// <param name="Occasion">One of <c>landing</c>, <c>steps</c>, <c>failure</c> or <c>asked</c> (design §2.1).</param>
 /// <param name="Working">The working session's record: the one whose work is read.</param>
