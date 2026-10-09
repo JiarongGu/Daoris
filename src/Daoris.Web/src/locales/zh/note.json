@@ -86,5 +86,7 @@
   "note.landing.not-done": "它的委托没有完成，所以不会自动落地任何东西：它的工作等待你的审阅。",
   "note.ledger.answered": "已答复：",
   "note.ledger.parked": "它停下来问人；问题在它的记录中。",
-  "note.ledger.went-on": "于 {{at}} 带着你的话继续。"
+  "note.ledger.went-on": "于 {{at}} 带着你的话继续。",
+  "note.ledger.went-on-findings": "于 {{at}} 带着另一个智能体的发现继续。",
+  "note.ledger.went-on-both": "于 {{at}} 带着你的话和另一个智能体的发现继续。"
 }

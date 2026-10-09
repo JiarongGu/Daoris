@@ -86,5 +86,7 @@
   "note.landing.not-done": "It did not end on a done, so nothing lands automatically: its work waits for your review.",
   "note.ledger.answered": "Answered:",
   "note.ledger.parked": "It stopped to ask the person; its question is in its transcript.",
-  "note.ledger.went-on": "Went on with your words at {{at}}."
+  "note.ledger.went-on": "Went on with your words at {{at}}.",
+  "note.ledger.went-on-findings": "Went on with another agent's findings at {{at}}.",
+  "note.ledger.went-on-both": "Went on with your words and another agent's findings at {{at}}."
 }

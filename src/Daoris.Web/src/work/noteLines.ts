@@ -122,6 +122,9 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'ledger.answered': { values: [] },
   'ledger.parked': { values: [] },
   'ledger.went-on': { values: ['at'] },
+  // Another agent's findings alone, or beside the person's words (XAGENT1e2), worded since XAGENT1g.
+  'ledger.went-on-findings': { values: ['at'] },
+  'ledger.went-on-both': { values: ['at'] },
 };
 
 /**
