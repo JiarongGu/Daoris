@@ -113,6 +113,8 @@ public sealed partial class Driver
         }
 
         var (opinion, sessionId) = (asked.Opinion!, asked.Session!);
+        // The gate keeps the ask now (XAGENT1f), so every door reads the pass as being read while it runs.
+        ask.Opened?.Invoke(opinion, sessionId);
         OpinionPassRun Ended(string state, string note) =>
             new($"{state}  second opinion {opinion} (session {sessionId}, {named}): {note}", true)
             {

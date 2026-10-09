@@ -27,6 +27,12 @@ public sealed record OpinionPassAsk(
     /// answers as the driver read them; null for a first pass. Its base is that pass's tip, and its tip the working tree's.
     /// </summary>
     public OpinionRecheckOf? Rechecks { get; init; }
+
+    /// <summary>
+    /// Told the opinion's id and its reviewer's session the moment the host opens them (XAGENT1f): the gate keeps the ask then, so
+    /// a door reads the pass as being read while it runs, never as not asked. Null tells nobody, as a recheck's run does.
+    /// </summary>
+    public Action<string, string>? Opened { get; init; }
 }
 
 /// <summary>
