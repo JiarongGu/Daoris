@@ -9,13 +9,15 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>The press's path, not a second one.</b> Each repository is tidied by <see cref="SessionTrees.TidyEmptyAsync"/>,
-/// which runs the clean-up's own press over the few branches the line holds, taking only the empty kind
+/// which runs the clean-up's own path over the few branches the line holds, taking only the empty kind
 /// (<see cref="SessionTrees.GoesByItself"/>). Every guard is the press's: judged again right before it goes, deleted only
-/// while it is the commit judged, never forced.</para>
+/// while it is the commit judged, never forced. The look adds its last guards, and never deletes a tree's folder: it moves it
+/// aside, and a later look deletes it only once it has waited <see cref="SetAsideFor"/> with nothing written in it since.</para>
 ///
-/// <para><b>Said once.</b> A branch kept because git could not read a guard, or because git refused its removal, is said in
-/// the report and written to the log the first look it is met, and not again while it lasts: a branch that stays for weeks is
-/// one line. What holds a repository (a start in one of its trees, a service that did not answer) is said the same way.</para>
+/// <para><b>Said once.</b> A branch kept by a last guard, because git could not read one, or because the removal did not
+/// happen, is said in the report and written to the log the first look it is met, and not again while it lasts: a branch that
+/// stays for weeks is one line. What holds a repository (a start in one of its trees, a service that did not answer), and a
+/// folder moved aside that outlived its wait, are said the same way.</para>
 ///
 /// <para><b>Once each pace</b>, from the first look: a pass reads every checkout's branches with git, which the loop's own pace
 /// would repeat every few seconds for nothing.</para>
