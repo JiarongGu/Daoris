@@ -49,6 +49,11 @@ export type SessionEvent = {
   /** For `user`: `person`, or `target` for the prompt the driver composed. */
   origin?: string | null;
   /**
+   * For the turn Daoris handed a session with another agent's findings (XAGENT1e, D155 point 7): the second opinion they are
+   * from. Its origin is `target`, so a page that does not read this shows them as what Daoris handed, never as the person's.
+   */
+  opinion?: string | null;
+  /**
    * For the person's words to a working driven session (STEER1, D136): when they reach it, `next-step` or `turn-end`, on
    * the event that shows them the moment they are said. The same words come again, under the same `id` and without
    * this, where the session took them. `resume` (MSG1d, D137 §3.1) is words to a session that parked or ended, which
@@ -247,6 +252,8 @@ export type Block = {
  */
 export type Ask = {
   key: string; text: string; origin: string; at: string; files?: string[]; account?: InstructionAccount | null;
+  /** Another agent's findings, handed as the session's next turn (XAGENT1e): the second opinion they are from. */
+  opinion?: string;
 };
 
 /**
@@ -339,8 +346,10 @@ export function toTurns(
   const asked = (event: SessionEvent, key: string): Ask => ({
     key, text: event.text ?? '', origin: event.origin ?? 'person', at: event.at,
     ...(event.files?.length ? { files: event.files } : {}),
-    // What a target was composed of (CONTEXT1), or null where its record keeps none: said missing, never left out.
-    ...(event.origin === 'target' ? { account: event.account ?? null } : {}),
+    // What a target was composed of (CONTEXT1), or null where its record keeps none: said missing, never left out. Another
+    // agent's findings are no composed target (XAGENT1g): they name the opinion they are from instead.
+    ...(event.origin === 'target' && event.opinion ? { opinion: event.opinion }
+      : event.origin === 'target' ? { account: event.account ?? null } : {}),
   });
 
   // What was asked first, where the page began past it (SESS1 S1): the run reads from its ask, and the

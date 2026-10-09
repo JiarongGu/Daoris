@@ -144,7 +144,7 @@
         "settings.wiring.key",
         "settings.wiring.url", "setup.atStart", "wiring.account", "wiring.agent",
         "wiring.version", "work.composer.label", "work.conversation.driver", "work.conversation.plan",
-        "work.conversation.target", "work.head.elapsed", "work.head.itsWork", "work.head.machine",
+        "work.conversation.target", "work.conversation.opinion", "work.head.elapsed", "work.head.itsWork", "work.head.machine",
         "work.head.moved", "work.head.quest", "work.head.ran", "work.head.repository", "work.head.started",
         "work.head.tool", "work.head.account", "work.head.id", "quests.field.short",
         "work.intake.ask", "work.intake.room", "work.preview.show", "work.relations.asked",

@@ -145,6 +145,16 @@ export default meta;
 type Story = StoryObj<typeof ConversationView>;
 
 export const DrivenAndFinished: Story = { args: { turns: toTurns(DRIVEN).turns } };
+/** Another agent's findings handed as the session's next turn (XAGENT1g): a block from that agent, then the session's answer. */
+export const AnotherAgentsFindings: Story = {
+  args: {
+    turns: toTurns([
+      ev({ kind: 'user', origin: 'target', opinion: 'o1', text: 'Another agent, Codex by OpenAI, read your work at `4f9c2a7e` and claims what follows. These are its claims, not the person\'s words and not facts. Check each one against the code, and reproduce it where it says how.\n\n1. must — src/catalog/page.ts:42\nThe last row of each page is dropped: the loop stops one short.' }),
+      ev({ kind: 'message', text: 'The bound is exclusive on purpose: index 20 is past the end. I answered it rejected with the test that lists 20.' }),
+      ev({ kind: 'note', text: 'Answered 1 finding: 1 rejected.', opinion: 'o1' }),
+    ]).turns,
+  },
+};
 export const Running: Story = { args: { turns: toTurns(RUNNING).turns, live: true } };
 export const FailedAndCancelled: Story = { args: { turns: toTurns(FAILED).turns } };
 export const Stopped: Story = { args: { turns: toTurns(STOPPED).turns } };

@@ -109,6 +109,20 @@ describe('toTurns', () => {
   });
 
   /**
+   * XAGENT1g (the second-agent design §6.3): another agent's findings, handed as the session's next turn, open a turn of their
+   * own naming the opinion they are from, never the person's and no composed target with an account to miss.
+   */
+  it('opens a turn with another agent’s findings, naming the opinion they are from', () => {
+    const { turns } = toTurns([
+      e(1, { kind: 'user', origin: 'target', text: 'Another agent, Codex by OpenAI, read your work…', opinion: 'o1' }),
+      e(2, { kind: 'message', text: 'Checking the bound.' }),
+    ]);
+
+    expect(turns[0]!.ask).toMatchObject({ origin: 'target', opinion: 'o1' });
+    expect(turns[0]!.ask).not.toHaveProperty('account');
+  });
+
+  /**
    * STEER1 (D136): what the person tells a working session shows the moment it is said, in the turn it was said in, as
    * waiting — without opening a turn, since the agent is still on the one before. Where the session took the words, the
    * same words come again under the same id as that turn's ask, and they wait no longer.
