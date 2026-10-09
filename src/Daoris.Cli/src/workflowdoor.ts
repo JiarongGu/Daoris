@@ -546,6 +546,9 @@ export function applyChanges(base: readonly SavedStep[], tokens: readonly string
     const operands: string[] = [];
     while (i < tokens.length && !KEYWORDS.has(tokens[i]!)) {
       const token = next()!;
+      if (token.startsWith('--') && token !== '--after' && token !== '--id') {
+        throw new DaorisError(`\`${token}\` is not a flag a change takes — ${CHANGES}`);
+      }
       operands.push(token);
       if ((token === '--after' || token === '--id') && i < tokens.length) operands.push(next()!);
     }

@@ -196,6 +196,9 @@ test('edit saves the next version from the change language, said step by step; a
   const word = await refused(fx, ['edit', 'docs', 'rename', 'look']);
   assert.equal(word.exitCode, 2);
   assert.match(word.message, /^`rename` is not a change — a change is add <kind> --after <step>/);
+  const flag = await refused(fx, ['edit', 'docs', 'add', 'go-ahead', '--after', 'tag', '--before', 'go-ahead', 'act=a', 'on=dev']);
+  assert.equal(flag.exitCode, 2);
+  assert.match(flag.message, /^`--before` is not a flag a change takes — a change is add <kind> --after <step>/);
   fx.cleanup();
 });
 
