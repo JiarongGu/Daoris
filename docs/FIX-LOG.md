@@ -5,6 +5,29 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-09 — a `driver.json` that does not read ended the headless driver on a stack trace (CONFIGREAD1)
+
+- **Symptom:** `daoris-driver drive --once` over a `driver.json` that does not parse ended on a `JsonException`'s stack
+  trace, with the runtime's exit code, rather than a sentence naming the file and exit 2 (REV3). Found by HOSTSTART2's
+  `DriverStartFailureTests`, which held the stack trace as the start's `error` line.
+- **Root cause:** `DriverConfig.Load`, the one reader every door calls (CONFIGSEAM1), let the parser's exception through,
+  and only the loop's look (`DriverWatch.Load`) turned it into a `DriverException`. The headless host's one catch takes
+  `DriverException` and `HttpRequestException`, so the loop's start, which loads the file before its first look, threw past
+  it. Two shapes threw a runtime exception naming no file at all: a root that is not an object (`InvalidOperationException`)
+  and a number that is not a whole one (`FormatException`). The window's routes met the same: an exception the modules do
+  not map answers `UNKNOWN_ERROR` with its type alone, a bare failure, never a stack trace, while the window's loop said
+  `DriverWatch`'s sentence, naming the file but not where in it.
+- **Fix:** `Load` says each as `DriverConfigUnreadableException`, a `DriverException`: the path; for a parse, the line and
+  byte counted from one and the parser's reason without its own zero-based counts; for a wrong shape, what is wrong
+  (`it holds no JSON object`, `` `cap` is not a whole number ``); then the CLI's remedy, *Fix it, or delete it to start from
+  nothing.* A file that cannot be opened is said too. The host's catch says it and exits 2, the loop's look adds what the
+  loop does about it, every console's catch already took a `DriverException`, and the modules' route now answers the
+  driver's refusal with the sentence, unchanged.
+- **Verify:** `ConfigReadTests` (fast) failed on the old reader, seven rows, and holds the sentence over a broken file, a
+  fault on a later line, the two shapes and a missing file. `OrphanedSessionTests`' torn file holds the loop's sentence.
+  `DriverStartFailureTests` (`Process`, run alone) holds exit 2, the sentence and no stack trace, and the one catch's `error`
+  line. HOSTSTART2's watch on what still leaves the entry point keeps `MachineLogTests`' rows, with no real-process case now.
+
 ## 2026-10-09 — two flakes that repeated under load, fixed by their cause (FLAKE3)
 
 ### Driver: a stop made just before the driver's close was recorded as the close's (FLAKE3 1)
@@ -5750,5 +5773,3 @@ did, with the old heuristic as the last resort.
 **Verification.** Launched with no environment at all: right port, right family. The family rehearsal
 re-ran after the change, 22/22. No store pollution had occurred — no request ever reached the
 mis-rooted instance.
-
-2026-10-09 — CONFIGREAD1 (in progress)
