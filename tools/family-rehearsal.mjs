@@ -5430,7 +5430,11 @@ section('17e. Work is reviewed where it runs before it lands: a set-up said, the
 // terminal show (design §2.1). The stub chain is set up in the deployed one, whose step a headless loop starts.
 const REVIEW_LOCAL = 'http://localhost:4210';
 const REVIEW_DEV = 'https://dev.example.test';
-const reviewConfig = join(scratch, 'driver-review.json');
+// A home of its own, whose `driver.json` is this phase's config, as an install's is: a landing reads its rules from its home's
+// `driver.json` (`SessionTrees`), whatever other file the per-file override names, which the loop and the CLI read instead.
+const reviewHome = join(scratch, 'review-home');
+mkdirSync(reviewHome, { recursive: true });
+const reviewConfig = join(reviewHome, 'driver.json');
 writeFileSync(reviewConfig, `${JSON.stringify({ ...JSON.parse(readFileSync(acpConfig, 'utf8')), trees: ['newcomer'] }, null, 2)}\n`);
 // The connector a session is handed opens the store this rehearsal's host keeps, so what the stub says through it is what the host
 // reads: the driver passes these two through to it, as an install's environment does (KnowledgeConnector).
@@ -5447,7 +5451,7 @@ const headOf = (tree) => (tree && existsSync(tree) ? run('git rev-parse HEAD', t
 const landedBranches = () => run('git branch --list "review/*"', newcomer).out.trim();
 const landingOf = (session) => {
   try {
-    return (JSON.parse(readFileSync(join(scratch, 'landings.json'), 'utf8')).branches ?? []).find((entry) => entry.session === session) ?? null;
+    return (JSON.parse(readFileSync(join(reviewHome, 'landings.json'), 'utf8')).branches ?? []).find((entry) => entry.session === session) ?? null;
   } catch {
     return null;
   }
