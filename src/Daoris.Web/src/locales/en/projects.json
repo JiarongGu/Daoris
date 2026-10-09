@@ -105,6 +105,7 @@
   "projects.tab.details": "Details",
   "projects.tab.branches": "Branches",
   "projects.tab.setup": "Setup",
+  "projects.tab.workflow": "Workflow",
   "projects.lineDoor": "Change in Setup",
   "projects.setup.section.driving": "Driving",
   "projects.setup.section.work": "Line and landing",
