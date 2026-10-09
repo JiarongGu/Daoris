@@ -137,6 +137,19 @@ public sealed class NoteCodesTests
         Assert.DoesNotContain(NoteCodes.AccountCoolingNoWindow, NoteCodes.AccountsOwn);
     }
 
+    /// <summary>
+    /// XAGENT1g: the look held for a second opinion says so under a code of its own, never a refused landing's, now that the page
+    /// words it; a note written before it keeps <c>landing.refused</c>.
+    /// </summary>
+    [Fact]
+    public void A_look_held_for_a_second_opinion_is_noted_under_its_own_code()
+    {
+        var note = AutoLandingNotes.Of(AutoLandingCode.Opinion, new TreeLanding(false, "Waits for a second opinion.") { Refusal = AutoLandingCode.Opinion });
+
+        Assert.Equal(["landing.opinion", null], NoteAssert.Codes(note.Parts));
+        Assert.Contains(NoteCodes.LandingRefused, NoteCodes.All);
+    }
+
     [Fact]
     public void A_part_carries_only_the_values_its_code_declares()
     {

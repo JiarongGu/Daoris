@@ -114,12 +114,17 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'landing.refused': { values: [] },
   // Held by the review's gate (REVIEWENV1c), the gate's sentence beneath it; a note from before it says `landing.refused`.
   'landing.unreviewed': { values: [] },
+  // Held by the second opinion's gate (XAGENT1g), the gate's sentence beneath it; a note from before it says `landing.refused`.
+  'landing.opinion': { values: [] },
   'landing.no-tree': { values: [] },
   'landing.not-done': { values: [] },
   // The service's own lines.
   'ledger.answered': { values: [] },
   'ledger.parked': { values: [] },
   'ledger.went-on': { values: ['at'] },
+  // Another agent's findings alone, or beside the person's words (XAGENT1e2), worded since XAGENT1g.
+  'ledger.went-on-findings': { values: ['at'] },
+  'ledger.went-on-both': { values: ['at'] },
 };
 
 /**

@@ -10,6 +10,7 @@
   "work.attention.departure": "awaits your yes",
   "work.attention.review": "to review",
   "work.attention.set-up": "shown for review",
+  "work.attention.opinion": "second opinion",
   "work.attention.setUpShows": "Shown in `{{environment}}`: {{shows}}",
   "work.attention.setUpShown": "Shown in `{{environment}}`; it said nothing of what it showed.",
   "work.attention.door.answer": "Answer…",

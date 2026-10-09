@@ -12659,3 +12659,24 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **REHEARSEGIT1 — the rehearsal never runs git outside its own repository** (tools; found by FLAKE3). When an earlier phase fails, the family rehearsal's `?? scratch` fallback (`tools/family-rehearsal.mjs`, near 5643) runs `git add -A` and `git commit` in a folder that is not a repository, so git walks up and commits in the enclosing checkout: in FLAKE3's worktree it committed the agent's uncommitted work as "Family Rehearsal". Refuse to run git where `rev-parse --show-toplevel` is not the folder meant, as the driver does. Proof: a `rehearsal-kit` test over a scratch folder inside a repository.
 
 **Outcome** 2026-10-09: every git call a rehearsal or its stubs make runs only where `rev-parse --show-toplevel` is the folder itself (or a bare repository's own), inside the run's scratch (`gitRefusal`, `rehearsalRun({ within })`), refusing a missing folder, none named, and `-C`/`--git-dir`/`--work-tree`; the `?? scratch` fallbacks are gone, and the four stubs commit through one guarded helper. Detail: FIX-LOG, the family rehearsal committed a worktree's work as Family Rehearsal; commits 94017dc9…22d2896a.
+
+
+## CONFIGREAD1 — a `driver.json` that does not read is said, not thrown (2026-10-09)
+
+> - [ ] **CONFIGREAD1 — a `driver.json` that does not read is said, not thrown** (driver; found by HOSTSTART2). A driver file that does not parse ends the headless driver with a `JsonException`'s stack trace rather than a sentence naming the file and exit 2 (REV3). Catch it in the host's one catch and say which file did not read and where. Contract: REV3, D63. Proof: `DriverStartFailureTests` then expects exit 2 and the sentence.
+
+**Outcome** 2026-10-09: a `driver.json` that does not open, parse or hold its choices' shape is said by `DriverConfig.Load` as a `DriverConfigUnreadableException` (a `DriverException`) naming the file, its line and byte, and the CLI's remedy; the headless host exits 2 on it, the loop's look says what it holds back, and the window's routes refuse with the sentence instead of a bare `UNKNOWN_ERROR`. Detail: FIX-LOG CONFIGREAD1; commits f409932c, 1900a776.
+
+
+## WORKFLOW1c2 — a run in a terminal (2026-10-09, D157)
+
+> - [ ] **WORKFLOW1c2 — a run in a terminal** (driver; after WORKFLOW1c). The screen's run has no terminal twin (D50). `daoris-driver workflow run --session|--quest|--ask <id>` prints it through `WorkflowRunReader`: one line per step, its state and detail, the step it stands at. Contract: design §5.2, §7. Proof: a usage golden and a printed run over stand-in records.
+
+**Outcome** 2026-10-09: `daoris-driver workflow run --session|--quest|--ask <id>` prints a run through `WorkflowRunReader`: a head per run, one line per step with its mark (settled, where it stands, otherwise), title, state and what it says, the person's words, the opinion's terminal presses and a pull request's address; exit 1 where there is no run, 2 for usage or no answer; exempt from Ask Daoris. Follow-up: WORKFLOW1c5. Detail: D157's WORKFLOW1c2 note; commits ccbcabe1…43c5434a.
+
+
+## XAGENT1g — the screens (2026-10-09, D155)
+
+> - [ ] **XAGENT1g — the screens** (web-shell, web-settings, modules; after f). The review's *Second opinion* beside D154's states, findings with answers, §8.5's presses, What needs you, the conversation's block, the reviewer's session row, the task level's choice, the glossary. Contract: §1, §8.5, §9. Proof: vitest, stories, `i18n:check`, `names:check --strict`, `HelpCoverageTests`, the look in both themes and 中文.
+
+**Outcome** 2026-10-09: the second opinion is drawn: `OpinionGate` (after `ReviewGate`'s pattern) words every §8.5 state and each finding beside the working session's answer, before the review's gate on the session head, *Accept…* sending back the gate's `answers` token where it answers a dispute; the review pane waits for it; What needs you lists one waiting on the person (`OPINION_WAITS`); the conversation shows another agent's findings as a block of their own; the reviewer's session is named and marked, with no box; the run's opinion step draws *Go on anyway…*; one owner, `useOpinionActs`, for every press; `landing.opinion` and the two ledger codes worded; the glossary's *second opinion*, *reviewer*, *finding*, *disputed*. Follow-ups: XAGENT1g2–g4. Detail: D155's XAGENT1g note; commits e477390a…db448094.

@@ -42,6 +42,13 @@ describe('boxOf', () => {
       .toEqual({ kind: 'line', why: 'intake' });
   });
 
+  /** XAGENT1g: a second opinion's reviewer takes no words, live or ended, and its line says why. */
+  it('offers a second opinion’s reviewer no box, and says why once it ended', () => {
+    const reviewer = { kind: 'chat' as const, quest: null, opinion: 'o1a2b3c4' };
+    expect(boxOf(facts({ session: session({ ...reviewer, state: 'working' }) }))).toEqual({ kind: 'none' });
+    expect(boxOf(facts({ session: session({ ...reviewer, state: 'completed' }) }))).toEqual({ kind: 'line', why: 'opinion' });
+  });
+
   /** §5.3: where nothing takes words the module says why by a code, and the page draws the line instead of the box. */
   it('draws the line for the code the module answered', () => {
     expect(boxOf(facts({ session: session({ state: 'completed' }), reach: { reaches: null, why: 'superseded' } })))

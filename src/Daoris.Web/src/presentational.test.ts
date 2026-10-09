@@ -59,6 +59,9 @@ const ORGANISMS = new Set<string>([
   // The one owner of a review's presses (REVIEWENV1g, D154 point 8): it holds the service's and the bridge's hooks, so the
   // gate, the quest's page and What needs you, which each press them, hold none.
   './work/reviewActs.ts',
+  // The one owner of the second opinion's presses (XAGENT1g, D155 point 10): it holds the bridge's hooks, so the gate and What
+  // needs you, which each press them, hold none.
+  './work/opinionActs.ts',
   './work/WorkFrame.tsx',
   // Ask Daoris's organism (HELP1): it reads the machine, so the panel and the starters do not.
   './help/AskDaoris.tsx',

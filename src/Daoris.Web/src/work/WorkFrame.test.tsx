@@ -3084,6 +3084,55 @@ describe('acting on what a session landed', () => {
   });
 
   /**
+   * XAGENT1g (the second-agent design §7–§9): where a level asks a second opinion, the session's page draws it before *Accept…*
+   * from the landing's plan, its findings read from the gate, and *Accept…*, which answers a dispute, sends the gate's token back.
+   * *Ask again* is the driver's own press.
+   */
+  it('draws the second opinion on a session’s page, and Accept… answers its dispute with the gate’s token', async () => {
+    SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
+    const token = 'o1:4f9c2a7e:disputed:1:0';
+    const disputed = {
+      state: 'disputed', holds: true, required: false, opinion: 'o1', reviewer: 'codex-acp', product: 'Codex', maker: 'OpenAI',
+      label: 'another-maker', reviewing: 'r7c1', findings: 1, disputes: 1, since: 0, answers: token,
+    };
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_GROUPS') {
+        return { sessions: [{ session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false,
+          lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] };
+      }
+      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'merge', target: 'main', source: 'workspace', opinion: disputed };
+      if (type === 'OPINION_GATE') {
+        return { session: 's1a2b3c4', done: true, message: '', opinion: disputed, detail: { tier: 'agent', first: {
+          id: 'o1', reviewer: 'codex-acp', product: 'Codex', maker: 'OpenAI', label: 'another-maker', read: 'src/',
+          findings: [{ number: 1, weight: 'must', where: 'src/a.ts:3', claim: 'Drops the last row.',
+            beside: { answer: { said: 'rejected', evidence: 'The bound is exclusive.' }, disputed: true } }] } } };
+      }
+      if (type === 'ASK_OPINION') return { session: 's1a2b3c4', done: true, message: 'A second opinion on session s1a2b3c4\'s work is asked.' };
+      if (type === 'LAND_SESSION_TREE') return { session: 's1a2b3c4', done: true, message: 'merged into `main`.' };
+      if (type === 'SESSION_DIFF') return DIFF;
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+
+    show('s1a2b3c4', notify);
+    const gate = await screen.findByRole('region', { name: 'Second opinion' });
+    expect(gate).toHaveTextContent('1 finding by Codex (OpenAI) is disputed');
+    await within(gate).findByText('Drops the last row.');
+    expect(gate).toHaveTextContent('Rejected by the working session: The bound is exclusive.');
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'OPINION_GATE', { payload: { id: 's1a2b3c4' } });
+
+    await userEvent.click(within(gate).getByRole('button', { name: 'Ask again' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ASK_OPINION', { payload: { id: 's1a2b3c4' } });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('A second opinion on session s1a2b3c4\'s work is asked.'));
+
+    await userEvent.click(screen.getByRole('button', { name: 'Accept…' }));
+    const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
+    expect(ask).toHaveTextContent('Accepting answers what the second opinion left unsettled: 1 disputed finding.');
+    await userEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', { payload: { id: 's1a2b3c4', answers: token }, timeoutMs: 6 * 60_000 });
+  });
+
+  /**
    * SQUASHTIDY1b (D102's SQUASHTIDY1b note, the owner's case): a session whose work a squash-merged pull request carried, its
    * tree still standing, was offered *Accept…* again. Where the driver's reader says the line holds its commits by content,
    * its page offers no *Accept…*: the driver's sentence says where the work is, and *Discard branch…* asks once with the

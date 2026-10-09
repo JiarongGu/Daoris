@@ -12,7 +12,7 @@ import { HowItCameToBe, type TraceDoor } from './HowItCameToBe';
 import type { Answered } from './InlineConfirm';
 import type { DiscardOffer, LandOffer } from './groups';
 import type { Relations } from './relations';
-import { type HeadReview, type LandingPlan, SessionHead } from './SessionHead';
+import { type HeadOpinion, type HeadReview, type LandingPlan, SessionHead } from './SessionHead';
 import { SessionRelations } from './SessionRelations';
 import { SessionTimeline } from './SessionTimeline';
 
@@ -49,19 +49,22 @@ export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, onDiscardBranch, discardingBranch,
   headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, onLand, discards, onDiscardTree, review,
+  opinion,
 }: {
   /** Passed straight through to the head: what its own tree offers to land, as the driver's reader said it (LAND4). */
   lands?: LandOffer | null;
   /** And the review's gate where it holds that work (REVIEWENV1g): the set-up step, its tab and the verdict's presses. */
   review?: HeadReview | null;
+  /** And the second opinion's gate before it (XAGENT1g): its findings beside their answers, and its presses. */
+  opinion?: HeadOpinion | null;
   /** And what it offers where the line holds its commits by content (SQUASHTIDY1b): no landing, its discard. */
   discards?: DiscardOffer | null;
   /** And that discard's press, the review's Discard unforced, told back to its ask. Absent where nothing can press it. */
   onDiscardTree?: (answered: Answered) => void;
   /** And where accepting would put it, the review's own plan (D87). */
   landing?: LandingPlan | null;
-  /** And its press, the review's Accept, told back to its ask. Absent where nothing can press it. */
-  onLand?: (answered: Answered) => void;
+  /** And its press, the review's Accept, told back to its ask, with the second opinion's token where it answers it (XAGENT1g). */
+  onLand?: (answered: Answered, answers?: string | null) => void;
   /** Its agent has accounts, so a record naming none ran on the tool's own sign-in (D125 §3.7), said in its head. */
   ownSignIn?: boolean;
   /**
@@ -167,6 +170,7 @@ export function AttendedSession({
         landing={landing}
         onLand={onLand}
         review={review}
+        opinion={opinion}
         discards={discards}
         onDiscardTree={onDiscardTree}
       />

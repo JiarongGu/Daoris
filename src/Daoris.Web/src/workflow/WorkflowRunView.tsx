@@ -51,9 +51,12 @@ function StepMark({ run, step, here, doors, control }: {
   const kind = step.step.kind;
   const quoted = QUOTES.has(`${kind}.${step.detail}`) && step.words ? step.words : null;
   const door = doorOf(t, run, step, doors);
-  // The second opinion's gate holding the work on the person (XAGENT1f): *Go on anyway…* has no page's press yet (XAGENT1g), so
-  // its terminal twin is said where the page's would be, and the door opens the review, where the gate's presses will stand.
-  const twin = kind === 'opinion' && step.state === 'waiting-on-you' && step.session ? t('workflow.run.opinionTwin', { session: step.session }) : null;
+  // The second opinion's gate holding the work on the person (XAGENT1f): its owner's control draws *Go on anyway…* under the step
+  // (XAGENT1g), where the frame hands it, the attended session's own run; elsewhere its twins are said, the session's own page
+  // and the terminal's, and the door opens the review, where the gate's presses stand.
+  const twin = !control && kind === 'opinion' && step.state === 'waiting-on-you' && step.session
+    ? t('workflow.run.opinionTwin', { session: step.session })
+    : null;
 
   return (
     <div className="mt-1 grid min-w-0 gap-1">

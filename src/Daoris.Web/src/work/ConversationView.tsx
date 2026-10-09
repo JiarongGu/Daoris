@@ -270,18 +270,25 @@ function TurnMeter({ turn }: { turn: Turn }) {
 
 /**
  * What the person asked, or the target the driver composed — the latter folded, since it is long, with what it was composed
- * of beneath it (CONTEXT1).
+ * of beneath it (CONTEXT1). Another agent's findings handed as the session's next turn (XAGENT1g, the second-agent design §6.3)
+ * are a block from that agent, open, under Daoris's fixed words that name it and its maker, never the person's.
  */
 function AskView({ ask }: { ask: Ask }) {
   const { t } = useTranslation();
+  const findings = Boolean(ask.opinion);
   const target = ask.origin === 'target';
-  const [open, setOpen] = useState(!target);
+  const [open, setOpen] = useState(!target || findings);
 
   return (
-    <div className="rounded-card border border-line border-l-[3px] border-l-accent bg-raised px-3 py-2">
+    <div
+      className={cn(
+        'rounded-card border border-line border-l-[3px] bg-raised px-3 py-2',
+        findings ? 'border-l-line-strong' : 'border-l-accent',
+      )}
+    >
       <div className="flex items-center justify-between gap-2">
         <span className="text-meta text-ink-faint">
-          {target ? t('work.conversation.target') : t('work.conversation.you')}
+          {findings ? t('work.conversation.opinion') : target ? t('work.conversation.target') : t('work.conversation.you')}
         </span>
         {target && (
           <button
@@ -300,7 +307,7 @@ function AskView({ ask }: { ask: Ask }) {
       )}
       <Attached files={ask.files} />
       {/* What the target was composed of, section by section (CONTEXT1), beside the words it composed. */}
-      {target && <HandedAccount account={ask.account} />}
+      {target && !findings && <HandedAccount account={ask.account} />}
     </div>
   );
 }

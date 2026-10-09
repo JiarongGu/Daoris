@@ -212,6 +212,15 @@ public sealed partial class HelpCoverageTests
         + "`driver list` is exempt (D110 §4); a screen's door to the same read is a row of its own (D143).");
 
     /// <summary>
+    /// WORKFLOW1c2's <c>daoris-driver workflow run</c> (D157, the workflow design §5.2, §7), a verb of the headless host: exempt,
+    /// since it reads where a piece of work stands in its workflow and changes nothing, as <c>trace</c> is. The session's
+    /// <i>Workflow</i> view is the screen's door to the same read, and its presses are their owners'.
+    /// </summary>
+    private static readonly Exempt WorkflowRunDoor = new(
+        "it reads where a piece of work stands in its workflow and changes nothing, so there is nothing to propose, as `trace` "
+        + "is exempt (D157, D110 §4); each press a waiting step needs is its owner's door, never this read's.");
+
+    /// <summary>
     /// EVID1b's <c>daoris-driver quest check</c> (D144 §5), a verb of the headless host: a door Ask Daoris owes, until EVID1c
     /// builds the check card beside the quest page's <i>Check again</i>.
     /// </summary>
@@ -304,6 +313,11 @@ public sealed partial class HelpCoverageTests
         ("useRenameHelp", HistoryDoor),
         ("usePinHelp", HistoryDoor),
         ("useHelpStartFrom", HistoryDoor),
+        // XAGENT1g: the second opinion's presses on a session's page and What needs you, the terminal's `opinion` verbs' twins.
+        ("useAskOpinion", OpinionAskDoor),
+        ("useStopOpinion", OpinionAskDoor),
+        ("useOpinionAnyway", OpinionJudgementDoor),
+        ("useOpinionMyself", OpinionJudgementDoor),
     ];
 
     /// <summary>Each <c>daoris driver</c> verb, and <c>across</c> by its two forms, as the CLI's command table spells them.</summary>
@@ -600,6 +614,7 @@ public sealed partial class HelpCoverageTests
             .Append(GoOnNewDoor)
             .Append(StartFromDoor)
             .Append(TraceDoor)
+            .Append(WorkflowRunDoor)
             .Append(CheckDoor)
             .Append(GitBranchesDoor)
             .Append(TreesStateDoor)
@@ -848,6 +863,19 @@ public sealed partial class HelpCoverageTests
         Assert.Null(HelpProposalKinds.Find("trace"));
         Assert.Contains("changes nothing", TraceDoor.Reason);
         Assert.Contains("D143", TraceDoor.Reason);
+    }
+
+    /// <summary>
+    /// WORKFLOW1c2: the headless host's <c>workflow run</c> is exempt from Ask Daoris (D157, D110 §4) while its usage spells it: a
+    /// read that changes nothing. The <c>workflow</c> kind WORKFLOW1h builds takes a named workflow's saves, and never this read.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_workflow_run_is_exempt_since_it_changes_nothing()
+    {
+        Assert.Contains("workflow run --session <id> | --quest <id> | --ask <id>", DriverCommand.Usage);
+        Assert.DoesNotContain("run", HelpProposalKinds.Find("workflow")?.Doors ?? []);
+        Assert.Contains("changes nothing", WorkflowRunDoor.Reason);
+        Assert.Contains("D157", WorkflowRunDoor.Reason);
     }
 
     /// <summary>

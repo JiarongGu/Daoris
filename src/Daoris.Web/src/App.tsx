@@ -836,6 +836,9 @@ export function App() {
     ...(attached ? { rule: () => open('agents', null, { agentPart: 'rules' }) } : {}),
     // Work to review opens in Sessions with its review open (D126, D113): accepting needs looking. A shell's alone.
     ...(attached ? { review: (item: Attention) => { open('sessions', item.id); setWorkIntent('review'); } } : {}),
+    // A second opinion waiting on the person opens the session whose work it read, where its gate and every press are
+    // (XAGENT1g, the second-agent design §9). A shell's alone: the opinion is this machine's.
+    ...(attached ? { opinion: (item: Attention) => open('sessions', item.id) } : {}),
     // An account's row opens its agent's page at its accounts (UX6d, D150 §6.2), where every account's act is. A shell's alone.
     ...(attached ? {
       'account-wait': (item: Attention) => open('agents', item.account?.agent ?? null, { agentPart: 'accounts' }),

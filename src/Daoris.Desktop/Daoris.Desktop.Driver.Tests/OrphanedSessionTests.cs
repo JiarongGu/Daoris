@@ -221,7 +221,12 @@ public sealed class OrphanedSessionTests : IDisposable
 
         var said = Assert.Single(errors);
         Assert.IsType<DriverException>(said);
-        Assert.Contains("driver.json", said.Message);
+        // The reader's sentence, with the file and where in it (CONFIGREAD1), then what the loop does about it.
+        Assert.StartsWith($"{config} is not readable JSON at line 1, byte 37 (", said.Message);
+        Assert.EndsWith(
+            "Fix it, or delete it to start from nothing. Nothing is driven until it reads; the loop keeps watching it, "
+            + "and takes the fix at its next look.",
+            said.Message);
         Assert.Single(reports);
     }
 

@@ -748,16 +748,16 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     /// <summary>
     /// XAGENT1e2 (D155's XAGENT1e note, D137 §2.4): what an ended record went on with is read from its waiting words' <c>by</c>.
     /// The person's words alone keep the ledger's coded line as it was; another agent's findings alone are never "your words",
-    /// since the person said nothing; both say both, as the driver's opening line does. A line the page does not word yet is
-    /// carried as its English, with no code, as the driver carries its own findings note (XAGENT1g words them).
+    /// since the person said nothing; both say both, as the driver's opening line does. Each is a coded line with its moment
+    /// since the page words them (XAGENT1g), so a reader in either language reads it in theirs.
     /// </summary>
     [Theory]
     [InlineData(true, false, "Went on with your words at 2026-09-19 10:30 UTC.", "ledger.went-on", "the person's words")]
-    [InlineData(false, true, "Went on with another agent's findings at 2026-09-19 10:30 UTC.", null, "another agent's findings")]
-    [InlineData(true, true, "Went on with your words and another agent's findings at 2026-09-19 10:30 UTC.", null,
+    [InlineData(false, true, "Went on with another agent's findings at 2026-09-19 10:30 UTC.", "ledger.went-on-findings", "another agent's findings")]
+    [InlineData(true, true, "Went on with your words and another agent's findings at 2026-09-19 10:30 UTC.", "ledger.went-on-both",
         "the person's words and another agent's findings")]
     public async Task An_ended_session_says_whose_words_it_went_on_with(
-        bool persons, bool findings, string line, string? code, string with)
+        bool persons, bool findings, string line, string code, string with)
     {
         var ended = await Ended("completed", note: "landed.");
         if (persons) await _ledger.SayAsync(ended.Id, "Also add the changelog line.", null, Now.AddMinutes(20));
@@ -776,16 +776,8 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         using var parts = System.Text.Json.JsonDocument.Parse(record.NoteParts!);
         var went = parts.RootElement[1];
         Assert.Equal(2, parts.RootElement.GetArrayLength());
-        if (code is null)
-        {
-            Assert.False(went.TryGetProperty("code", out _));
-            Assert.Equal((line, "before"), (went.GetProperty("words").GetString(), went.GetProperty("by").GetString()));
-        }
-        else
-        {
-            Assert.Equal((code, line), (went.GetProperty("code").GetString(), went.GetProperty("text").GetString()));
-            Assert.Equal("2026-09-19T10:30:00Z", went.GetProperty("values").GetProperty("at").GetString());
-        }
+        Assert.Equal((code, line), (went.GetProperty("code").GetString(), went.GetProperty("text").GetString()));
+        Assert.Equal("2026-09-19T10:30:00Z", went.GetProperty("values").GetProperty("at").GetString());
     }
 
     /// <summary>MSG1a: a note the driver passes with the reopen follows the line that says it went on, so nothing is lost.</summary>

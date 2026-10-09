@@ -10,7 +10,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the HTTP host did before HOSTSTART1. Its entry point is async and holds its log in a <c>using</c>, so the log was closed
 /// as the exception left the entry point, before the runtime raised it as unhandled, and the <c>error</c> line written for
 /// an unhandled exception was dropped on a closed log. The host as built in a process of its own, since only a real
-/// process raises an exception as unhandled, with nothing of this machine's Daoris in its environment.
+/// process raises an exception as unhandled, with nothing of this machine's Daoris in its environment. CONFIGREAD1 then
+/// brought the start this found inside the one catch, so it is a sentence and exit 2; the watch on what still leaves the
+/// entry point is held by <c>MachineLogTests</c>' rows.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class DriverStartFailureTests : IDisposable
@@ -39,30 +41,34 @@ public sealed class DriverStartFailureTests : IDisposable
     }
 
     /// <summary>
-    /// A <c>driver.json</c> that does not read ends the loop's start before its first look: the parse throws past the
-    /// host's catch, which takes the driver's own refusals and the service's. The service's key in its environment is
-    /// said nowhere.
+    /// A <c>driver.json</c> that does not read ends the loop's start before its first look, as a sentence naming the file
+    /// and where in it, and exit 2 (CONFIGREAD1, REV3): the parse threw past the host's catch, and the person read the
+    /// parser's stack trace. The host's one catch writes it to its log, and the service's key in its environment is said
+    /// nowhere.
     /// </summary>
     [Fact]
-    public async Task A_loop_whose_choices_do_not_read_writes_why_to_its_log_before_it_exits()
+    public async Task A_loop_whose_choices_do_not_read_says_which_file_and_where_and_writes_it_to_its_log()
     {
-        File.WriteAllText(Path.Combine(_home, "driver.json"), """{ "drivable": [""");
+        var path = Path.Combine(_home, "driver.json");
+        File.WriteAllText(path, """{ "drivable": [""");
 
         var (code, said) = await RunAsync("drive", "--once");
 
-        Assert.NotEqual(0, code);
+        Assert.Equal(2, code);
+        Assert.StartsWith($"driver: {path} is not readable JSON at line 1, byte 16 (", said);
+        Assert.EndsWith("). Fix it, or delete it to start from nothing.", said.TrimEnd());
+        Assert.DoesNotContain("System.Text.Json", said, StringComparison.Ordinal);
+        Assert.DoesNotContain("   at ", said, StringComparison.Ordinal);
+
         var logged = LogLines();
         var error = Assert.Single(logged, line => line.GetProperty("event").GetString() == "error");
         Assert.Equal("error", error.GetProperty("level").GetString());
         Assert.Equal("driver", error.GetProperty("source").GetString());
         var data = error.GetProperty("data");
-        Assert.Equal("start", data.GetProperty("where").GetString());
-        var type = data.GetProperty("type").GetString();
-        Assert.StartsWith("System.Text.Json.", type);
-        Assert.Contains(type!, said);
-        Assert.True(data.GetProperty("terminating").GetBoolean());
-        Assert.False(string.IsNullOrEmpty(data.GetProperty("message").GetString()));
-        Assert.Contains(type!, data.GetProperty("stack").GetString());
+        Assert.Equal("the headless driver", data.GetProperty("where").GetString());
+        Assert.Equal(typeof(DriverConfigUnreadableException).FullName, data.GetProperty("type").GetString());
+        Assert.False(data.GetProperty("terminating").GetBoolean());
+        Assert.Equal(said.TrimEnd()["driver: ".Length..], data.GetProperty("message").GetString());
 
         Assert.DoesNotContain(Key, said, StringComparison.Ordinal);
         Assert.All(logged, line => Assert.DoesNotContain(Key, line.GetRawText(), StringComparison.Ordinal));

@@ -10,6 +10,8 @@ import { accountAttention, type AccountsKnown } from './accountAttention';
 import type { SessionGrouping } from './groups';
 import { questName, sessionOrigin, sessionTitle } from './identity';
 import type { Attention, AttentionKind } from './AttentionRow';
+import { type OpinionWait, opinionState } from './opinion';
+import { opinionSays } from './OpinionGate';
 import { newestSetUp, setUpRef, waitsForLook } from './review';
 import { placedFact } from './SessionRow';
 
@@ -42,6 +44,9 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   // A set-up waiting for the person's look (REVIEWENV1g): its chain's landing waits on their verdict, as a departure's next
   // step waits on their yes, and nothing already running is held by it.
   'set-up': 'word',
+  // A second opinion that waits on the person (XAGENT1g, the second-agent design §9): its landing waits on their answer, and
+  // nothing already running is held by it.
+  opinion: 'word',
   rule: 'word',
   unanswerable: 'word',
   review: 'ready',
@@ -81,7 +86,7 @@ export function rowRun(item: Attention): { session?: string | null; quest?: stri
 /** An act a row offers (design §6.2–§6.3), named as the row's press. */
 export type AttentionActId =
   | 'publish' | 'choose' | 'retry' | 'approve' | 'refuse' | 'trust' | 'accept-departure' | 'accept-rule' | 'decline-rule'
-  | 'sign-in' | 'read' | 'let-run' | 'reviewed' | 'not-yet' | 'show-again';
+  | 'sign-in' | 'read' | 'let-run' | 'reviewed' | 'not-yet' | 'show-again' | 'opinion-again' | 'opinion-anyway';
 
 /** An act a row offers, and for an account's act which account it is for (UX6d): a row may sign two in. */
 export type AttentionOffer = { act: AttentionActId; account?: string };
@@ -95,6 +100,8 @@ export const ASKS_ONCE: ReadonlySet<AttentionActId> = new Set([
   'choose', 'approve', 'refuse', 'trust', 'accept-rule', 'let-run',
   // A *not yet* asks for the person's words, which are what the set-up step's session acts on (REVIEWENV1g).
   'not-yet',
+  // *Go on anyway…* says what stays unsettled and takes the person's words (XAGENT1g, the second-agent design §8.5).
+  'opinion-anyway',
 ]);
 
 /** How many acts an account's row offers beside its door: three controls a row at most (design §9.3). */
@@ -145,10 +152,26 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     // again* only for a local set-up, which Daoris serves; *Skip…* is the step's page's, where the work is read.
     case 'set-up': return item.setUp ? plain('reviewed', 'not-yet', ...(item.local ? ['show-again' as const] : [])) : [];
     case 'rule': return plain('accept-rule', 'decline-rule');
+    // A second opinion that waits on the person (XAGENT1g, §8.5): *Go on anyway…* only where no press of theirs is coming (the
+    // work lands by itself, or none could be had and the rule requires one), and a pass asked again; the rest are its session's.
+    case 'opinion': return opinionOffers(item);
     case 'account-wait':
     case 'signed-out': return accountOffers(item);
     default: return [];
   }
+}
+
+/**
+ * What a second opinion's row offers (XAGENT1g; the second-agent design §8.2, §8.5): a dispute where a press of the person's is
+ * coming (*Accept…* on its session's page) asks again only, since that press answers it; where none is (the work lands by
+ * itself), *Go on anyway…* too. None to be had where the rule requires one, *Try again* and *Go on anyway…*; commits nobody read
+ * where the work lands by itself, the same. The same agent fresh, *I looked myself…* and *Send back…* are on its session's page.
+ */
+function opinionOffers(item: Attention): AttentionOffer[] {
+  const wait = item.opinion;
+  if (!wait) return [];
+  const anyway = wait.auto || opinionState(wait.opinion.state) === 'unavailable';
+  return [...(anyway ? [{ act: 'opinion-anyway' as const }] : []), { act: 'opinion-again' as const }];
 }
 
 /** The acts a row offers, without the accounts they are for: what each kind's rule says, read by the tests. */
@@ -255,6 +278,10 @@ export function waitingInSessions(
  * from the quests list's own record, with *Reviewed*, *Not yet…* and *Show it again* on its row, the set-up named as the row
  * drew it. A step held for its review is never a departure's row, since no yes lifts a review's hold.
  *
+ * **A second opinion that waits on the person waits for their word** (XAGENT1g, the second-agent design §9): a dispute, a
+ * required one none could be had for, and commits nobody read where the work lands by itself, oldest first, from the driver's
+ * own list (`OPINION_WAITS`), which a browser has none of. Its row says what the gate says, and its door is its session's page.
+ *
  * **Work to review is ready for the person** (D126): each session Sessions' list places *To review*, named from its
  * record where the page holds it and by its id where it does not, so nothing waiting is dropped.
  *
@@ -275,6 +302,7 @@ export function needsAPerson(
   considered: readonly Consideration[] = [],
   groups: readonly SessionGrouping[] = [],
   accounts: AccountsKnown = { tools: [] },
+  opinions: readonly OpinionWait[] = [],
 ): Attention[] {
   const live = asks.filter((ask) => ask.state === 'Open' || ask.state === 'Proposed');
   const intakeOf = (ask: Ask) =>
@@ -360,6 +388,22 @@ export function needsAPerson(
         session: newest.session ?? null,
       };
     });
+
+  // A second opinion that waits on the person (XAGENT1g, design §9), from the driver's own list: a dispute, a required one none
+  // could be had for, and commits nobody read where the work lands by itself. Its row says what the gate says.
+  const secondOpinions = opinions.map((wait): Attention => {
+    const quest = quests.find((one) => one.id === wait.quest);
+    const record = sessions.find((one) => one.id === wait.session);
+    return {
+      id: wait.session,
+      kind: 'opinion',
+      title: quest ? questName(quest) : record ? sessionTitle(record) : `#${wait.quest}`,
+      where: wait.repository,
+      since: wait.since,
+      detail: opinionSays(i18n.t, wait.opinion).join(' '),
+      opinion: wait,
+    };
+  });
 
   // What Sessions' list places To review (D126), from the one reader the frame holds: never a reader of its own.
   const reviews = groups
@@ -472,7 +516,7 @@ export function needsAPerson(
     (a.since === null || b.since === null ? Number(a.since === null) - Number(b.since === null) : a.since.localeCompare(b.since));
   return [
     [...accountRows, ...parked, ...parkedQuests, ...goAheads, ...folders.values()],
-    [...waitingAsks, ...departures, ...setUps, ...widenings, ...unanswerable],
+    [...waitingAsks, ...departures, ...setUps, ...secondOpinions, ...widenings, ...unanswerable],
     reviews,
   ].flatMap((group) => group.sort(oldestFirst));
 }
