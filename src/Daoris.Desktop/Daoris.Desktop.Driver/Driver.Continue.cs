@@ -235,6 +235,8 @@ public sealed partial class Driver
             files: word => ChatFiles.Kept(home, sessionId, word.Files));
         var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
 
+        // The stop made of it before a close cut its conclusion off, told as its run lets go (FLAKE3).
+        SessionStop? stoppedFirst = null;
         try
         {
             // The protocol door resumes on its wire, from the same spawn a start has; the native door is run on the
@@ -281,6 +283,7 @@ public sealed partial class Driver
                     : Continuations.GoingOnNoted,
                 goOn: GoOnWith(adapter, target, selection, rules.File, handed),
                 working: () => starting?.Dispose(),
+                stopMade: stop => stoppedFirst = stop,
                 conclude: (exitCode, used, turnFailed, ended) =>
                     ConcludeResumedAsync(quest, park, adapter, selection, resume, workTree, transcript, before, exitCode, used, turnFailed, ended,
                         openedAt, ct))
@@ -289,15 +292,26 @@ public sealed partial class Driver
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
-            // The driver is closing under it (D104): an interrupted take, carried on at the next start.
+            // The driver is closing under it (D104): an interrupted take, carried on at the next start. Unless a stop came first,
+            // whose record it is, never interrupted, as a first run's close reads it (FLAKE3).
+            var (closed, interrupted) = Observation.Closed(stoppedFirst);
             try
             {
                 await service.AdvanceAsync(
-                    sessionId, "stopped", Observation.DriverClosed, ct: CancellationToken.None, interrupted: true).ConfigureAwait(false);
+                    sessionId, closed.State, closed.AsNoted(), ct: CancellationToken.None, interrupted: interrupted).ConfigureAwait(false);
             }
             catch
             {
                 // Best-effort by construction: the host may already be gone on the same shutdown.
+            }
+
+            if (stoppedFirst is { } first)
+            {
+                return (new StartRun(
+                    $"{closed.State}  session {sessionId} (#{quest.Id} → {quest.To}) [resumed its conversation]: {closed.Note}",
+                    true,
+                    new SessionEnded(sessionId, quest.To, closed.State, ByPerson: first.ByPerson, closed.Note, Quest: quest.Id, Adapter: config.Adapter)),
+                    null, resume.Spoken);
             }
 
             return (new StartRun(
@@ -438,12 +452,10 @@ public sealed partial class Driver
         // with each fix's commit read from its tree as it stands now; one it left unanswered is unresolved.
         await OpinionsAnsweredAsync(resume, sessionId, workTree, ct).ConfigureAwait(false);
 
-        var stoppedFor = _processes.StopReason(sessionId);
-        var conclusion = stoppedFor is not null
-            ? SessionConclusion.Of("stood-down", stoppedFor)
-            : _processes.WasStopRequested(sessionId)
-            // A pause's stop names the pause (PAUSE1b, design §4.1), as a first run's does.
-            ? SessionConclusion.Of("stopped", _processes.StopNote(sessionId) ?? Observation.Stopped)
+        // A stop made of it is its end, a pause's naming the pause (PAUSE1b, design §4.1), as a first run's is (FLAKE3: one reading).
+        var stop = _processes.StopMade(sessionId);
+        var conclusion = stop is not null
+            ? stop.Conclusion
             : exitCode is int code
                 // As any start's where its quest was open or taken as the look planned it, so a park whose run closes its
                 // quest ends completed; a closed quest's session ends as its process does (MSG1b). It carried on a take this
@@ -480,7 +492,7 @@ public sealed partial class Driver
                 ? null
                 : new SessionEnded(
                     sessionId, quest.To, conclusion.State,
-                    ByPerson: stoppedFor is null && _processes.WasStopRequested(sessionId), conclusion.Note,
+                    ByPerson: stop is { ByPerson: true }, conclusion.Note,
                     Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile)), null);
     }
 

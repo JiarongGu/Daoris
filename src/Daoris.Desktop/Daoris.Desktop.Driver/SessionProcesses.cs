@@ -225,6 +225,18 @@ public sealed class SessionProcesses(string? markers = null)
     }
 
     /// <summary>
+    /// The stop made of this session, read whole (FLAKE3): the driver's reason or the person's note, as the first stop set them;
+    /// null where nobody stopped it, or nothing here runs it.
+    /// </summary>
+    public SessionStop? StopMade(string sessionId)
+    {
+        lock (_gate)
+        {
+            return _running.TryGetValue(sessionId, out var entry) && entry.StopRequested ? new SessionStop(entry.Reason, entry.Note) : null;
+        }
+    }
+
+    /// <summary>
     /// Why a person's line is refused for this session, in the driver's own words — null when it takes
     /// input, or is not running here at all.
     /// </summary>
