@@ -277,7 +277,7 @@ describe("a workspace's second opinion before landing", () => {
       "each checkout's own line (Daoris's default) · no second opinion (Daoris's default)");
     await userEvent.click(section('Defaults'));
     expect(screen.getByText('None: no other agent reads work here.')).toBeInTheDocument();
-    expect(screen.getByText(code('daoris driver opinion --workspace aurora --reviewers <adapter,adapter>'))).toBeInTheDocument();
+    expect(screen.getByText(code('daoris driver opinion --workspace aurora --reviewers <adapter,adapter>|--clear'))).toBeInTheDocument();
     const row = screen.getByText('Second opinion before landing', { selector: 'span' }).closest('.\\@container') as HTMLElement;
     await userEvent.click(within(row).getByRole('button', { name: 'Set for this workspace' }));
     expect(screen.queryByRole('button', { name: 'None here' })).toBeNull();

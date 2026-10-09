@@ -158,6 +158,27 @@ describe('what a second-opinion rule says', () => {
       .toBe('web-app 有了来自 codex-acp 的第二意见。那里等它阅读的工作，要等阅读有了定论或你不等它继续，才会往下走。');
   });
 
+  /**
+   * OPINIONTWIN1: the Setup row's terminal twin joins its alternatives with `|` inside its one command, as the review row's
+   * does (REVIEWENV1g) and its neighbours' (`daoris driver line … <branch>|--clear`), in both languages; a command is code,
+   * never translated, so 中文 says it as English does, never with 、 between spans.
+   */
+  it('says its terminal twin as its neighbours do, one command with its alternatives joined by |, in both languages', () => {
+    for (const key of ['settings.opinion.twin.repository', 'settings.opinion.twin.workspace']) {
+      const english = i18n.getFixedT('en')(key, { repository: 'engine', workspace: 'aurora' });
+      const chinese = i18n.getFixedT('zh')(key, { repository: 'engine', workspace: 'aurora' });
+
+      expect(chinese).toBe(english);
+      expect(english.match(/`/g)).toHaveLength(2);
+      expect(chinese).not.toMatch(/、/);
+      expect(english).toMatch(/--reviewers <adapter,adapter>\|(none\|)?--clear`$/);
+    }
+    expect(i18n.getFixedT('en')('settings.opinion.twin.repository', { repository: 'engine' }))
+      .toBe('`daoris driver opinion engine --reviewers <adapter,adapter>|none|--clear`');
+    expect(i18n.getFixedT('en')('settings.opinion.twin.workspace', { workspace: 'aurora' }))
+      .toBe('`daoris driver opinion --workspace aurora --reviewers <adapter,adapter>|--clear`');
+  });
+
   it('toasts what a change did', () => {
     expect(opinionToast(t, 'web-app', { set: { reviewers: ['codex-acp', 'dsh'] } })).toBe(
       'web-app has a second opinion from codex-acp, dsh. Work there that waits for its reading goes on only once that reading '

@@ -397,7 +397,7 @@ describe("a repository's second opinion before landing", () => {
     await userEvent.click(head('Line and landing'));
     const opinion = row(section('Line and landing'), 'Second opinion before landing');
     expect(opinion).toHaveTextContent('None: no other agent reads work here.');
-    expect(within(opinion).getByText(code('daoris driver opinion engine --reviewers <adapter,adapter>'))).toBeInTheDocument();
+    expect(within(opinion).getByText(code('daoris driver opinion engine --reviewers <adapter,adapter>|none|--clear'))).toBeInTheDocument();
     expect(within(opinion).getByRole('button', { name: 'Set for this repository' })).toBeInTheDocument();
   });
 

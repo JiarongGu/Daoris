@@ -1,8 +1,8 @@
 {
   "settings.opinion.label": "Second opinion before landing",
   "settings.opinion.body": "Another agent, one you name and best another maker's, reads work here before it lands, in a copy of its own that nothing is taken back from; its findings go to the session that did the work, and to you. A repository's rule replaces its workspace's whole, and none set anywhere is how work lands today.",
-  "settings.opinion.twin.repository": "`daoris driver opinion {{repository}} --reviewers <adapter,adapter>`, `none`, `--clear`",
-  "settings.opinion.twin.workspace": "`daoris driver opinion --workspace {{workspace}} --reviewers <adapter,adapter>`, `--clear`",
+  "settings.opinion.twin.repository": "`daoris driver opinion {{repository}} --reviewers <adapter,adapter>|none|--clear`",
+  "settings.opinion.twin.workspace": "`daoris driver opinion --workspace {{workspace}} --reviewers <adapter,adapter>|--clear`",
   "settings.opinion.from.repository": "Set for this repository.",
   "settings.opinion.from.workspace": "From the workspace {{workspace}}.",
   "settings.opinion.elseJoin": ", else ",

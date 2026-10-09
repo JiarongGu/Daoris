@@ -1,8 +1,8 @@
 {
   "settings.opinion.label": "落地前的第二意见",
   "settings.opinion.body": "另一个智能体（由你指定，最好来自另一家厂商）在这里的工作落地之前阅读它，用它自己的一份副本，副本里的任何东西都不会被取回；它的发现交给做这项工作的会话，也交给你。仓库自己的规则整体取代工作区的；哪里都没有设定时，工作就像今天这样落地。",
-  "settings.opinion.twin.repository": "`daoris driver opinion {{repository}} --reviewers <adapter,adapter>`、`none`、`--clear`",
-  "settings.opinion.twin.workspace": "`daoris driver opinion --workspace {{workspace}} --reviewers <adapter,adapter>`、`--clear`",
+  "settings.opinion.twin.repository": "`daoris driver opinion {{repository}} --reviewers <adapter,adapter>|none|--clear`",
+  "settings.opinion.twin.workspace": "`daoris driver opinion --workspace {{workspace}} --reviewers <adapter,adapter>|--clear`",
   "settings.opinion.from.repository": "为这个仓库设定。",
   "settings.opinion.from.workspace": "沿用工作区 {{workspace}}。",
   "settings.opinion.elseJoin": "，其次 ",
