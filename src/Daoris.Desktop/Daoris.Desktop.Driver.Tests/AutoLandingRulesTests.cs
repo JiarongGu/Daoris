@@ -163,6 +163,8 @@ public sealed class AutoLandingRulesTests : IDisposable
         Assert.Equal(AutoLandingCode.Exists, AutoLandingRules.CodeOf(new TreeLanding(false, "already a branch") { Refusal = AutoLandingCode.Exists }));
         Assert.Equal(AutoLandingCode.Uncommitted, AutoLandingRules.CodeOf(new TreeLanding(false, "") { Refusal = AutoLandingCode.Uncommitted }));
         Assert.Equal(AutoLandingCode.Nothing, AutoLandingRules.CodeOf(new TreeLanding(false, "") { Refusal = AutoLandingCode.Nothing }));
+        // SQUASHTIDY1f: work the line holds by content is refused at every door, the look's among them, by its own code.
+        Assert.Equal(AutoLandingCode.Carried, AutoLandingRules.CodeOf(new TreeLanding(false, "") { Refusal = AutoLandingCode.Carried }));
         Assert.Equal(AutoLandingCode.Refused, AutoLandingRules.CodeOf(new TreeLanding(false, "git would not make it")));
     }
 
@@ -177,6 +179,8 @@ public sealed class AutoLandingRulesTests : IDisposable
     [InlineData(AutoLandingCode.Gone, true)]
     [InlineData(AutoLandingCode.Undone, true)]
     [InlineData(AutoLandingCode.Off, true)]
+    // SQUASHTIDY1f: its work is on the line or a branch of the person's already, so no later look lands it; its discard is the way.
+    [InlineData(AutoLandingCode.Carried, true)]
     [InlineData(AutoLandingCode.Held, false)]
     [InlineData(AutoLandingCode.Uncommitted, false)]
     [InlineData(AutoLandingCode.Exists, false)]

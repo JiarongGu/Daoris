@@ -53,6 +53,14 @@ public sealed partial class SessionTrees
     }
 
     /// <summary>
+    /// What a tree offers where the line, or a branch of the person's, holds its commits by content (SQUASHTIDY1b): the session's
+    /// head's own judgement (<see cref="WorkAsync"/>, then <see cref="DiscardOffer.Of"/>), which every landing asks before anything
+    /// is made (SQUASHTIDY1f) and the terminal's plan says. Null where nothing holds them, or there is no tree of this home's to ask.
+    /// </summary>
+    public async Task<DiscardOffer?> DiscardOfferAsync(string tree, CancellationToken ct = default) =>
+        await WorkAsync(tree, ct).ConfigureAwait(false) is { } work ? DiscardOffer.Of(tree, work) : null;
+
+    /// <summary>
     /// Where a tree's commits are held by content, by the review's Discard's own proof (SQUASHTIDY1's
     /// <see cref="HeldByContentAsync"/>, with SQUASHTIDY1c's guarantees), and what an unforced discard of it would do now; null
     /// where nothing holds them, or git could not say.
