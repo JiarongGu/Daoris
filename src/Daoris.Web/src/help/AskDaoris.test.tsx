@@ -611,7 +611,7 @@ describe('Ask Daoris’s history', () => {
     show();
 
     await userEvent.click(await screen.findByRole('button', { name: 'History' }));
-    const list = await screen.findByRole('list', { name: 'Ask Daoris’s conversations' });
+    const list = await screen.findByRole('region', { name: 'Conversation history' });
     await userEvent.click(within(list).getAllByRole('button', { name: /^what is a workspace\?/ })[0]);
 
     expect(await screen.findByText('This conversation has ended. Write to go on in it: it remembers what was said.')).toBeInTheDocument();
@@ -688,6 +688,8 @@ describe('Ask Daoris’s history', () => {
 
     await menu();
     await user.click(await screen.findByRole('menuitem', { name: 'Rename…' }));
+    // It starts from the title shown (ASKHIST1c).
+    await user.clear(screen.getByRole('textbox', { name: 'Name' }));
     await user.type(screen.getByRole('textbox', { name: 'Name' }), 'Workspaces');
     await user.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_RENAME', { payload: { id: EARLIER.id, name: 'Workspaces' } }));

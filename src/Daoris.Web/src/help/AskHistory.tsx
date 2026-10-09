@@ -1,16 +1,21 @@
-import { useState } from 'react';
+import { Fragment, type KeyboardEvent, type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ago } from '../format';
 import { cn } from '../lib/cn';
-import { Button, Icon, Inline, Menu, type MenuAct } from '../ui';
+import { Button, Icon, type IconName, Inline, Menu, type MenuAct, SkeletonRows, Tip } from '../ui';
 import { type Answered, InlineConfirm, Refused } from '../work/InlineConfirm';
-import { ListRowDoor } from '../work/ListPane';
-import { HELP_NAME_LIMIT, type HelpConversationRow } from './history';
+import { useListKeys } from '../work/listKeys';
+import { marked } from '../work/railSearch';
+import { HELP_NAME_LIMIT, type HelpConversationRow, historyGroups } from './history';
+import { previewText } from './preview';
+
+/** The fewest characters a search finds by: the driver finds nothing under two (`HelpConversations.List`). */
+export const SEARCH_FROM = 2;
 
 /** What a row of the history may do, each pressed through the organism that holds the bridge. */
 export type AskHistoryActs = {
-  /** Show it in the panel: one that ended goes on in itself with the next words, where it can. */
-  onOpen: (id: string) => void;
+  /** Show it in the panel, telling where the list was scrolled so going back puts it there again (ASKHIST1c). */
+  onOpen: (id: string, scroll: number) => void;
   /** Name it, or give it its first question back with null; told how it ended. */
   onRename: (id: string, name: string | null, answered: Answered) => void;
   onPin: (id: string, pinned: boolean) => void;
@@ -20,105 +25,260 @@ export type AskHistoryActs = {
   onDelete: (id: string, answered: Answered) => void;
 };
 
+/** Escape is a field's, a menu's or an input method's before it is the list's. */
+const KEEPS_ESCAPE = 'form, [role="menu"], [role="dialog"]';
+
 /**
- * Ask Daoris's history (ASKHIST1): its conversations, kept on this machine only, pinned first and then the newest, each with
- * its title (its name, or its first question), when it was last spoken in and a line of what it was about; a search by words
- * across them; and each one's acts, a rename and a delete asked where they were pressed.
+ * Ask Daoris's history (ASKHIST1, as ASKHIST1c made it): its conversations, kept on this machine only, grouped as a person
+ * reads time; a search by words across them; and each one's acts, a rename and a delete asked where they were pressed.
  *
  * @remarks
- * A molecule: the rows arrive made, the search's words go out, and each act goes to the organism (`AskConversation`). A row is
- * a door to its conversation, which the panel then shows; its ⋯ holds what has no other home (D76's RAIL1 rule). A live one is
- * offered no delete, since only an ended conversation's record goes.
+ * A molecule: the rows arrive made, the search's words go out, and each act goes to the organism (`AskConversation`).
+ *
+ * - **Its head is fixed and left-led** (UX §2): what it is and that it stays on this machine, *New conversation* at its
+ *   right, the search the whole width under them. Only the rows scroll.
+ * - **A row reads its title whole**, wrapped where it must be, so two pasted URLs can be told apart without a tip (UX §4);
+ *   then *current* on the one the panel shows, whose selection is the accent (UX §3); a conversation's line as plain words
+ *   (`previewText`), or where a search found its words, those words marked; and a pin mark, when and what it was. Opening a
+ *   row only reads it: what the next words do is said where they are written.
+ * - **Its ⋯ is a 28 px control beside the row**, there at rest (UX §6), holding what has no other home (D76's RAIL1 rule). A
+ *   live one is offered no delete, since only an ended conversation's record goes.
+ * - **Its keys are a list's** (`useListKeys`): ↓ from the search into the rows, ↑ ↓ Home End along them across the groups.
+ *   Escape goes back to the conversation once the search is empty; a menu, a form or an input method takes it first.
+ * - **Coming back puts the person where they left** (`restore`): the row they opened, and the list's scroll; the search where
+ *   that row went.
+ * - **Every state says itself** (UX §4): a first load as skeleton rows with its words, a newer answer over the rows held
+ *   dimmed, a list it could not read with why and a retry, an empty one with a way to start, a search that found nothing with
+ *   a way to clear it and whether older ones were searched, and a search too short to look with how long one must be.
  */
 export function AskHistory({
-  rows, cut = false, loading = false, search, shown = null, busy = false, refusal = null, onSearch, ...acts
+  rows, cut = false, loading = false, refreshing = false, error = null, search, shown = null, busy = false, refusal = null,
+  restore = null, now, onSearch, onNew, onClose, onRetry, ...acts
 }: {
   rows: HelpConversationRow[];
   /** Why the last act pressed from a row's menu (a pin, a new conversation from it) did not happen; null when it did. */
   refusal?: string | null;
-  /** Whether older conversations were left out of the list. */
+  /** Whether older conversations were left out of the list, or out of a search. */
   cut?: boolean;
   /** Its first answer is on its way. */
   loading?: boolean;
+  /** A newer answer is on its way: the rows shown are the last one's. */
+  refreshing?: boolean;
+  /** Why the list could not be read, in the sentence the person reads; null when it was. */
+  error?: string | null;
   /** The search's words, as typed. */
   search: string;
   /** The conversation the panel shows, which its row says. */
   shown?: string | null;
   /** An act on one is on its way: the others wait for it. */
   busy?: boolean;
+  /** Where the person left the list from, put back as it opens again: the row they opened and its scroll. */
+  restore?: { row: string | null; scroll: number } | null;
+  /** The clock the groups read; the window's own, unless a story holds it still. */
+  now?: Date;
   onSearch: (words: string) => void;
+  /** A blank new conversation: the head's and an empty list's. Absent, none is offered. */
+  onNew?: () => void;
+  /** Back to the conversation the list was opened over. */
+  onClose?: () => void;
+  /** Ask for the list again, after it could not be read. */
+  onRetry?: () => void;
 } & AskHistoryActs) {
   const { t } = useTranslation();
+  const headingId = useId();
+  const keys = useListKeys();
+  const scroller = useRef<HTMLDivElement>(null);
+  const field = useRef<HTMLInputElement>(null);
   // The one row whose question is open: its rename, or its delete.
   const [asking, setAsking] = useState<{ id: string; what: 'rename' | 'delete' } | null>(null);
-  const searching = search.trim().length > 0;
+  const words = search.trim();
+  const searching = words.length >= SEARCH_FROM;
+  const short = words.length > 0 && !searching;
+  const groups = historyGroups(rows, now);
+
+  // Coming back to the list: the row it was left from, where the list was scrolled; the search where that row went.
+  useLayoutEffect(() => {
+    if (!restore) return;
+    if (scroller.current) scroller.current.scrollTop = restore.scroll;
+    const row = [...(scroller.current?.querySelectorAll<HTMLElement>('[data-session]') ?? [])]
+      .find((door) => door.dataset.session === restore.row);
+    (row ?? field.current)?.focus({ preventScroll: true });
+    // Once, as the list opens: a later answer moves nothing the person is doing.
+  }, []);
+
+  const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    // A key an input method is composing with is the method's, the search's arrow into the rows among them.
+    if (event.nativeEvent.isComposing) return;
+    keys(event);
+    if (event.key !== 'Escape' || event.defaultPrevented || !onClose) return;
+    const target = event.target as HTMLElement;
+    if (!event.currentTarget.contains(target) || target.closest(KEEPS_ESCAPE)) return;
+    event.preventDefault();
+    onClose();
+  };
+
+  const clear = () => {
+    onSearch('');
+    field.current?.focus();
+  };
 
   return (
-    // `minmax(0,1fr)`, here and on the list (ASKHIST1b): a grid's implicit column is `auto`, which grows to its widest
-    // child's min-content, and a one-line title's is the whole line. A pasted URL ran the search and every row past the dock.
-    <section aria-label={t('help.history.title')} className="grid grid-cols-[minmax(0,1fr)] gap-2">
-      <p className="m-0 text-meta text-ink-faint">{t('help.history.kept')}</p>
-      {refusal && <Refused sentence={refusal} />}
-      <label className="flex items-center gap-1.5 rounded-control border border-line-strong bg-raised px-2 py-1 text-ink-faint focus-within:border-accent">
-        <Icon name="search" size={12} className="shrink-0" />
-        <input
-          type="search"
-          value={search}
-          aria-label={t('help.history.search.label')}
-          placeholder={t('help.history.search.placeholder')}
-          onChange={(event) => onSearch(event.target.value)}
-          // Escape clears a search, and one with nothing in it is left to what holds the panel.
-          onKeyDown={(event) => { if (event.key === 'Escape' && search) { event.preventDefault(); onSearch(''); } }}
-          className="min-w-0 flex-1 bg-transparent text-small text-ink outline-none placeholder:text-ink-faint"
-        />
-      </label>
+    // `minmax(0,1fr)` on every grid between a row's words and the panel (ASKHIST1b): a grid's implicit column is `auto`, which
+    // grows to its widest child's min-content, and a pasted URL ran the search and every row past the dock.
+    <section aria-labelledby={headingId} className="flex min-h-0 flex-1 flex-col" onKeyDown={onKeyDown}>
+      <header className="grid grid-cols-[minmax(0,1fr)] gap-2 border-b border-line px-4 pb-2.5 pt-2.5">
+        <div className="flex flex-wrap items-start gap-x-2 gap-y-1.5">
+          <div className="min-w-0 flex-1 basis-40">
+            <h3 id={headingId} className="m-0 text-body font-semibold text-ink">{t('help.history.title')}</h3>
+            <p className="m-0 text-small text-ink-soft">{t('help.history.kept')}</p>
+          </div>
+          {onNew && (
+            <Button className="shrink-0 px-2.5 text-small" onClick={onNew}>
+              <Icon name="plus" size={13} />
+              {t('help.new')}
+            </Button>
+          )}
+        </div>
+        <label className="flex min-h-7 items-center gap-1.5 rounded-control border border-line-strong bg-raised px-2 text-ink-faint focus-within:border-accent">
+          <Icon name="search" size={12} className="shrink-0" />
+          <input
+            ref={field}
+            type="search"
+            value={search}
+            aria-label={t('help.history.search.label')}
+            placeholder={t('help.history.search.placeholder')}
+            onChange={(event) => onSearch(event.target.value)}
+            // Escape clears a search; one with nothing in it goes back to the conversation.
+            onKeyDown={(event) => {
+              if (event.key === 'Escape' && search && !event.nativeEvent.isComposing) { event.preventDefault(); onSearch(''); }
+            }}
+            className="min-w-0 flex-1 bg-transparent py-1 text-small text-ink outline-none placeholder:text-ink-faint"
+          />
+        </label>
+        {short && <p role="status" className="m-0 text-small text-ink-faint">{t('help.history.short')}</p>}
+        {refusal && <Refused sentence={refusal} />}
+      </header>
 
-      {rows.length === 0 && !loading && (
-        <p className="m-0 text-small text-ink-faint wrap-anywhere">
-          {searching ? t('help.history.none', { words: search.trim() }) : t('help.history.empty')}
-        </p>
-      )}
+      <div ref={scroller} className={cn('min-h-0 flex-1 overflow-y-auto px-2 pb-3 pt-1.5', refreshing && 'opacity-60')}>
+        {error && rows.length > 0 && (
+          <div className="mx-2 mb-2 grid grid-cols-[minmax(0,1fr)] justify-items-start gap-1">
+            <Refused sentence={error} />
+            {onRetry && <Button variant="ghost" className="px-0 text-small text-accent" onClick={onRetry}>{t('help.history.retry')}</Button>}
+          </div>
+        )}
 
-      {rows.length > 0 && (
-        <ul aria-label={t('help.history.title')} className="m-0 grid list-none grid-cols-[minmax(0,1fr)] gap-0.5 p-0">
-          {rows.map((row) => (
-            <HistoryRow
-              key={row.session}
-              row={row}
-              shown={row.session === shown}
-              busy={busy}
-              asking={asking?.id === row.session ? asking.what : null}
-              onAsk={(what) => setAsking(what ? { id: row.session, what } : null)}
-              {...acts}
-            />
-          ))}
-        </ul>
-      )}
+        {rows.length === 0 && (loading ? (
+          <div className="px-2.5 pt-1.5">
+            <p role="status" className="m-0 text-small text-ink-faint">{t('help.history.loading')}</p>
+            <SkeletonRows rows={4} />
+          </div>
+        ) : error ? (
+          <Notice icon="failure" headline={t('help.history.failed')} body={error}>
+            {onRetry && <Button onClick={onRetry}>{t('help.history.retry')}</Button>}
+          </Notice>
+        ) : searching ? (
+          !refreshing && (
+            <Notice
+              icon="search"
+              headline={t('help.history.none', { words })}
+              // Whether older ones were searched at all, since a search reads only the newest the driver lists.
+              body={t(cut ? 'help.history.noneHintOlder' : 'help.history.noneHint')}
+            >
+              <Button onClick={clear}>{t('help.history.clearSearch')}</Button>
+            </Notice>
+          )
+        ) : (
+          <Notice icon="history" headline={t('help.history.emptyHeadline')} body={t('help.history.empty')}>
+            {onNew && <Button onClick={onNew}>{t('help.history.start')}</Button>}
+          </Notice>
+        ))}
 
-      {cut && <p className="m-0 text-meta text-ink-faint">{t('help.history.cut', { count: rows.length })}</p>}
+        {groups.map((group) => (
+          <div key={group.id} role="group" aria-labelledby={`${headingId}-${group.id}`} className="mt-1.5 first:mt-0">
+            <h4 id={`${headingId}-${group.id}`} className="m-0 truncate px-2.5 pb-1 pt-1.5 text-meta font-semibold text-ink-soft">
+              {t(`help.history.group.${group.id}`)}
+            </h4>
+            <ul aria-labelledby={`${headingId}-${group.id}`} className="m-0 grid list-none grid-cols-[minmax(0,1fr)] gap-0.5 p-0">
+              {group.rows.map((row) => (
+                <HistoryRow
+                  key={row.session}
+                  row={row}
+                  current={row.session === shown}
+                  busy={busy}
+                  words={searching ? words : ''}
+                  asking={asking?.id === row.session ? asking.what : null}
+                  onAsk={(what) => setAsking(what ? { id: row.session, what } : null)}
+                  onOpen={(id) => acts.onOpen(id, scroller.current?.scrollTop ?? 0)}
+                  onRename={acts.onRename}
+                  onPin={acts.onPin}
+                  onStartFrom={acts.onStartFrom}
+                  onDelete={acts.onDelete}
+                />
+              ))}
+            </ul>
+          </div>
+        ))}
+
+        {cut && rows.length > 0 && (
+          <p className="m-0 px-2.5 pt-2 text-meta text-ink-faint">
+            {searching ? t('help.history.noneOlder') : t('help.history.cut', { count: rows.length })}
+          </p>
+        )}
+      </div>
     </section>
   );
 }
 
-function HistoryRow({ row, shown, busy, asking, onAsk, onOpen, onRename, onPin, onStartFrom, onDelete }: {
+/** A state the list is in, said as an empty state is (UX §4): its glyph, one line, one more, and what changes it. */
+function Notice({ icon, headline, body, children }: { icon: IconName; headline: string; body: string; children?: ReactNode }) {
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)] justify-items-center gap-1.5 px-3 py-6 text-center text-ink-faint">
+      <Icon name={icon} size={24} />
+      <p className="m-0 mt-1 text-body font-semibold text-ink wrap-anywhere">{headline}</p>
+      <p className="m-0 text-small text-ink-soft wrap-anywhere"><Inline text={body} /></p>
+      {children && <div className="mt-2">{children}</div>}
+    </div>
+  );
+}
+
+/** Words with what a search found in them marked, as the rail marks its found words. */
+function Marked({ text, words }: { text: string; words: string }) {
+  if (!words) return <>{text}</>;
+  return (
+    <>
+      {marked(text, words).map((part, index) => (part.match
+        ? <mark key={index} className="-mx-0.5 rounded-sm bg-accent-soft px-0.5 text-ink">{part.text}</mark>
+        : <Fragment key={index}>{part.text}</Fragment>))}
+    </>
+  );
+}
+
+function HistoryRow({ row, current, busy, words, asking, onAsk, onOpen, onRename, onPin, onStartFrom, onDelete }: {
   row: HelpConversationRow;
-  shown: boolean;
+  current: boolean;
   busy: boolean;
+  /** What a search found it by, to mark; empty when nothing is searched. */
+  words: string;
   asking: 'rename' | 'delete' | null;
   onAsk: (what: 'rename' | 'delete' | null) => void;
-} & AskHistoryActs) {
+  onOpen: (id: string) => void;
+} & Omit<AskHistoryActs, 'onOpen'>) {
   const { t } = useTranslation();
+  const trigger = useRef<HTMLButtonElement>(null);
+  // Where a search found its words: in the title, which is then marked, or in what was said, which takes the line's place.
+  const inTitle = words !== '' && row.found === row.title;
+  const find = words !== '' && row.found && !inTitle ? previewText(row.found) : null;
+  const about = row.about ? previewText(row.about) : null;
   const marks = [
     ago(row.last),
-    row.pinned ? t('help.history.pinned') : null,
-    row.live ? t('help.history.running') : row.resumable ? null : t('help.history.startsAnew'),
+    row.live ? t('help.history.running') : null,
     row.from ? t('help.history.fromEarlier') : null,
   ].filter((mark): mark is string => mark !== null);
 
   const acts: MenuAct[] = [
     { id: 'rename', label: t('help.history.rename'), icon: 'edit', disabled: busy, onSelect: () => onAsk('rename') },
     {
-      id: 'pin', label: t(row.pinned ? 'help.history.unpin' : 'help.history.pin'), disabled: busy,
+      id: 'pin', label: t(row.pinned ? 'help.history.unpin' : 'help.history.pin'), icon: 'pin', disabled: busy,
       onSelect: () => onPin(row.session, !row.pinned),
     },
     { id: 'startFrom', label: t('help.history.startFrom'), icon: 'plus', disabled: busy, onSelect: () => onStartFrom(row.session) },
@@ -128,34 +288,65 @@ function HistoryRow({ row, shown, busy, asking, onAsk, onOpen, onRename, onPin, 
     }]),
   ];
 
+  // A rename put down gives the focus back to the ⋯ it was opened from.
+  const putDown = () => {
+    trigger.current?.focus();
+    onAsk(null);
+  };
+
   return (
-    <li className="group relative">
-      <ListRowDoor chosen={shown} onPress={() => onOpen(row.session)}>
-        {/* The title is one line, whole in its tip and in the row's name; what it was about and where a search found it
-            take two lines, broken inside a word only where one will not fit, as the rail's found words do (ASKHIST1b). */}
-        <span title={row.title} className="block truncate pr-6 text-body text-ink">{row.title}</span>
-        <span className="block truncate text-meta text-ink-faint">{marks.join(' · ')}</span>
-        {row.about && <span className="line-clamp-2 wrap-anywhere text-small text-ink-soft">{row.about}</span>}
-        {row.found && row.found !== row.title && (
-          <span className="line-clamp-2 wrap-anywhere text-small text-ink-faint">
-            <Inline text={row.found} />
+    <li
+      data-list-row=""
+      className={cn(
+        'grid grid-cols-[minmax(0,1fr)_auto] items-start rounded-control border-l-[3px] transition-colors duration-(--speed)',
+        current ? 'border-l-accent bg-accent-soft' : 'border-l-transparent hover:bg-accent-soft/50',
+      )}
+    >
+      <button
+        type="button"
+        data-session={row.session}
+        aria-current={current || undefined}
+        onClick={() => onOpen(row.session)}
+        className="block min-w-0 px-2.5 py-1.5 text-left"
+      >
+        {/* The title whole, broken inside a word only where one will not fit, so two pasted URLs read apart (UX §4). */}
+        <span className="block text-body text-ink wrap-anywhere">
+          {inTitle ? <Marked text={row.title} words={words} /> : row.title}
+          {current && (
+            <span className="ml-1.5 inline-block rounded-[3px] border border-line-strong px-1 align-[1px] text-meta leading-normal text-ink-soft">
+              {t('help.history.current')}
+            </span>
+          )}
+        </span>
+        {(find ?? about) && (
+          <span className="mt-0.5 line-clamp-2 wrap-anywhere text-small text-ink-soft">
+            {find ? <Marked text={find} words={words} /> : about}
           </span>
         )}
-      </ListRowDoor>
+        <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-meta text-ink-faint">
+          {row.pinned && (
+            <span className="inline-flex items-center text-ink-soft">
+              <Icon name="pin" size={11} />
+              <span className="sr-only">{t('help.history.pinned')}</span>
+            </span>
+          )}
+          <span className="min-w-0 wrap-anywhere">{marks.join(' · ')}</span>
+        </span>
+      </button>
 
       {/* Beside the row, never inside it: a button inside a button is not a thing a page may hold. */}
       <Menu.Root>
         <Menu.Trigger asChild>
           <button
+            ref={trigger}
             type="button"
             aria-label={t('help.history.menu', { title: row.title })}
             className={cn(
-              'absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-control text-ink-faint',
-              'bg-raised opacity-0 transition-opacity duration-(--speed) hover:text-ink',
-              'focus-visible:opacity-100 group-hover:opacity-100 data-[state=open]:opacity-100',
+              'mr-1 mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-control text-ink-faint',
+              'hover:bg-raised hover:text-ink data-[state=open]:bg-raised data-[state=open]:text-ink',
             )}
           >
-            <Icon name="more" size={13} />
+            <Icon name="more" size={14} />
           </button>
         </Menu.Trigger>
         <Menu.Content side="bottom" align="end" highlight="accent" className="min-w-44">
@@ -164,16 +355,14 @@ function HistoryRow({ row, shown, busy, asking, onAsk, onOpen, onRename, onPin, 
       </Menu.Root>
 
       {asking === 'rename' && (
-        <RenameHelp
-          row={row}
-          onSave={(name, answered) => onRename(row.session, name, answered)}
-          onClose={() => onAsk(null)}
-        />
+        <div className="col-span-2">
+          <RenameHelp row={row} onSave={(name, answered) => onRename(row.session, name, answered)} onClose={putDown} />
+        </div>
       )}
 
       {asking === 'delete' && (
         <InlineConfirm
-          className="mx-2.5 my-1"
+          className="col-span-2 mx-2.5 my-1"
           label={t('help.history.deleteLabel', { title: row.title })}
           // The title is said whole, so a word too long for the row breaks inside it rather than running past the dock.
           says={<span className="wrap-anywhere">{t('help.history.deleteSays', { title: row.title })}</span>}
@@ -187,9 +376,14 @@ function HistoryRow({ row, shown, busy, asking, onAsk, onOpen, onRename, onPin, 
   );
 }
 
+/** The keys a field moves its caret by, which the list would otherwise take for its rows. */
+const FIELD_KEYS = new Set(['ArrowDown', 'ArrowUp', 'Home', 'End']);
+
 /**
- * A conversation's name, set where its row is (ASKHIST1): one line, a title's length, with the terminal's twin beside it
- * (D50). Saved empty, the conversation is called by its first question again.
+ * A conversation's name, set where its row is (ASKHIST1, as ASKHIST1c made it): it starts from the title shown, selected, so
+ * typing replaces it; the field the row's whole width above presses that wrap; *Use the original question* for a named one,
+ * since a name cleared to nothing was a press nobody could read; its wait said aloud, and no Escape while it waits; and the
+ * terminal's twin under it (D50).
  */
 function RenameHelp({ row, onSave, onClose }: {
   row: HelpConversationRow;
@@ -197,45 +391,78 @@ function RenameHelp({ row, onSave, onClose }: {
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const [name, setName] = useState(row.name ?? '');
+  // A title longer than a name may be (a first question) starts cut to the longest name.
+  const start = row.title.slice(0, HELP_NAME_LIMIT);
+  const [name, setName] = useState(start);
   const [pending, setPending] = useState(false);
   const [refusal, setRefusal] = useState<string | null>(null);
+  const field = useRef<HTMLInputElement>(null);
   const kept = name.trim();
-  const unchanged = kept === (row.name ?? '');
+  const unchanged = kept === start.trim();
+  // Named, it can be called by its first question again; unnamed, it already is.
+  const original = row.name !== null && row.opening !== null;
+
+  useEffect(() => {
+    field.current?.focus();
+    field.current?.select();
+  }, []);
+
+  const save = (value: string | null) => {
+    setRefusal(null);
+    setPending(true);
+    onSave(value, {
+      done: () => { setPending(false); onClose(); },
+      refused: (sentence) => { setPending(false); setRefusal(sentence); },
+    });
+  };
 
   return (
     <form
       aria-label={t('help.history.renameTitle', { title: row.title })}
-      className="mx-2.5 my-1 flex flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2"
+      className="mx-2.5 mb-1.5 mt-0.5 grid grid-cols-[minmax(0,1fr)] gap-2 rounded-control border border-line bg-sunken px-2.5 py-2"
       onSubmit={(event) => {
         event.preventDefault();
-        setRefusal(null);
-        setPending(true);
-        onSave(kept || null, {
-          done: () => { setPending(false); onClose(); },
-          refused: (sentence) => { setPending(false); setRefusal(sentence); },
-        });
+        if (!pending && kept && !unchanged) save(kept);
       }}
-      onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); onClose(); } }}
+      onKeyDown={(event) => {
+        // The field's own keys: the caret's, never the list's rows.
+        if (FIELD_KEYS.has(event.key)) { event.stopPropagation(); return; }
+        if (event.key !== 'Escape' || event.nativeEvent.isComposing) return;
+        event.preventDefault();
+        event.stopPropagation();
+        // While it saves, Escape changes nothing: the answer is on its way.
+        if (!pending) onClose();
+      }}
     >
       <input
-        autoFocus
+        ref={field}
         value={name}
+        readOnly={pending}
         maxLength={HELP_NAME_LIMIT}
         aria-label={t('help.history.name')}
-        placeholder={row.opening ?? row.title}
         onChange={(event) => setName(event.target.value.replace(/[\r\n]+/g, ' '))}
         spellCheck={false}
         autoComplete="off"
-        className="min-w-0 flex-1 basis-40 rounded-control border border-line-strong bg-raised px-2 py-1 text-small text-ink outline-none focus:border-accent"
+        className="w-full min-w-0 rounded-control border border-line-strong bg-raised px-2 py-1 text-small text-ink outline-none focus:border-accent read-only:text-ink-soft"
       />
-      <Button type="submit" variant="primary" disabled={pending || unchanged}>{t('help.history.save')}</Button>
-      <Button variant="ghost" disabled={pending} onClick={onClose}>{t('common.cancel')}</Button>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button type="submit" variant="primary" disabled={pending || unchanged || !kept}>{t('help.history.save')}</Button>
+        {original && (
+          <Tip content={t('help.command', { command: `daoris-driver help rename ${row.session} --clear` })}>
+            <Button disabled={pending} onClick={() => save(null)}>{t('help.history.useOriginal')}</Button>
+          </Tip>
+        )}
+        <Button variant="ghost" disabled={pending} onClick={onClose}>{t('common.cancel')}</Button>
+        {/* There from the first, so a reader hears it speak when the wait begins. */}
+        <span role="status" className="text-small text-ink-soft">{pending ? t('help.history.saving') : ''}</span>
+      </div>
       {refusal && <Refused sentence={refusal} />}
-      {/* `min-w-0`: a flex item is otherwise as wide as its longest word, and a code word breaks only inside its line. */}
-      <span className="min-w-0 basis-full text-meta text-ink-faint wrap-anywhere">
-        <Inline text={t('help.command', { command: kept ? `daoris-driver help rename ${row.session} "${kept}"` : `daoris-driver help rename ${row.session} --clear` })} />
-      </span>
+      {kept && (
+        // `min-w-0`: a grid item is otherwise as wide as its longest word, and a code word breaks only inside its line.
+        <span className="min-w-0 text-meta text-ink-faint wrap-anywhere">
+          <Inline text={t('help.command', { command: `daoris-driver help rename ${row.session} "${kept}"` })} />
+        </span>
+      )}
     </form>
   );
 }
