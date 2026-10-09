@@ -47,6 +47,7 @@
   "work.delete.kept.mark": "它的继续标记",
   "work.delete.kept.choice": "它对新会话的选择",
   "work.delete.kept.spawn": "它的启动文件",
+  "work.delete.kept.help": "它在问道衍历史中的名称和置顶",
   "work.delete.kept.held": "为它留着的你的话",
   "work.delete.kept.landing": "它已结束的自动落地",
   "work.delete.kept.archived": "它的归档标记",

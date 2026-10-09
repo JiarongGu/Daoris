@@ -329,14 +329,25 @@ public sealed partial class ChatRunner : IDisposable
         // Ask Daoris's opening rotates like a start, on the machine's order (TOOL4f, D125 §3.2), and says so first.
         RotatedOpening.Say(_service, _events, sessionId, resolved.Name, selection, carried: null);
 
-        return await RunAsync(
-            sessionId, message, resolved, selection, config,
-            new ChatPlace(
-                HelpRoom.Repository, room,
-                (file, id) => HelpRoom.Rules(file, ChatFiles.Folder(_home, id), machine.Reads),
-                Plugins: false, ConnectorOnPipe: true, Posture: HelpRoom.Posture, ToolsUpFront: true),
-            onEnded, ct).ConfigureAwait(false);
+        return await RunAsync(sessionId, message, resolved, selection, config, HelpPlace(room, machine.Reads), onEnded, ct)
+            .ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Where Ask Daoris's conversation runs (HELP1a): its room, the room's allows and a read of its own files folder, and the
+    /// checkouts reading across lets it read (D107); no plugin's server; the agent's own asking mode; its tools up front.
+    /// </summary>
+    /// <remarks>
+    /// <b>Its conversation is kept</b> (ASKHIST1): the person goes back to an earlier one from its history, and words written to
+    /// one that ended go on in its own harness conversation by the id kept for it (D137 §2.2), as a repository's chat does.
+    /// </remarks>
+    private ChatPlace HelpPlace(string room, IReadOnlyList<HelpRead> reads) =>
+        new(
+            HelpRoom.Repository, room, (file, id) => HelpRoom.Rules(file, ChatFiles.Folder(_home, id), reads),
+            Plugins: false, ConnectorOnPipe: true, Posture: HelpRoom.Posture, ToolsUpFront: true)
+        {
+            Keeps = true,
+        };
 
     /// <summary>What differs between a conversation in a repository and Ask Daoris's in its room (HELP1a).</summary>
     /// <param name="Name">What the conversation is for: the repository, or <see cref="HelpRoom.Repository"/>.</param>
@@ -361,7 +372,7 @@ public sealed partial class ChatRunner : IDisposable
 
         /// <summary>
         /// Whether its harness conversation's id is kept for it (MSG1c, D137 §4.2), so the conversation goes on when the
-        /// person writes to it after it ended: a repository's conversation. Ask Daoris's never goes on (§2.2), and keeps none.
+        /// person writes to it after it ended: a repository's conversation, and since ASKHIST1 Ask Daoris's too.
         /// </summary>
         public bool Keeps { get; init; }
     }
@@ -495,6 +506,8 @@ public sealed partial class ChatRunner : IDisposable
         // moves when the process does. Watched on an unbound token deliberately — a chat is not ended
         // by the request that started it.
         _talking[sessionId] = resolved;
+        // The room holds one at a time (ASKHIST1): going back to an earlier conversation sets this one aside first.
+        if (string.Equals(place.Name, HelpRoom.Repository, StringComparison.Ordinal)) _rooms[sessionId] = 0;
 
         // 🔴 On the protocol door a conversation is ONE session held over the wire (CONV3b): opened
         // once, each message a turn on it. It used to be spawned as a pipe, and a person's words went
@@ -664,7 +677,15 @@ public sealed partial class ChatRunner : IDisposable
     {
         reaches = null;
         var held = _turned.ContainsKey(sessionId) || _talking.ContainsKey(sessionId);
-        var kept = held && files is { Count: > 0 } ? ChatFiles.Keep(_home, sessionId, files) : [];
+        IReadOnlyList<KeptFile> kept = held && files is { Count: > 0 } ? ChatFiles.Keep(_home, sessionId, files) : [];
+        // A conversation started from an earlier one is handed that one's words with the person's first message (ASKHIST1), its
+        // line first, so where the person is never crowds it out of the preface's bound.
+        if (held && _handing.TryRemove(sessionId, out var handed))
+        {
+            kept = [.. handed.Files, .. kept];
+            preface = preface?.Trim() is { Length: > 0 } where ? $"{handed.Preface}\n\n{where}" : handed.Preface;
+        }
+
         var said = new ChatMessage(message, kept) { Preface = ChatMessage.Bound(preface) };
 
         if (_turned.TryGetValue(sessionId, out var chat))
@@ -904,6 +925,8 @@ public sealed partial class ChatRunner : IDisposable
         {
             _talking.TryRemove(sessionId, out _);
             _turned.TryRemove(sessionId, out _);
+            _rooms.TryRemove(sessionId, out _);
+            _handing.TryRemove(sessionId, out _);
             // Nothing waiting will be sent now, and the page is told its queue emptied.
             chat?.Turns.Gone();
             native?.Gone();

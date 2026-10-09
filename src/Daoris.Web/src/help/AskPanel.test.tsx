@@ -80,6 +80,43 @@ describe('Ask Daoris', () => {
     expect(screen.queryByRole('button', { name: /set up Daoris/ })).toBeNull();
   });
 
+  /** ASKHIST1: the history's door beside *New conversation*; open, it takes the conversation's place and the box goes. */
+  it('draws the history in the conversation’s place while it is open, with no box to write in', async () => {
+    const onHistory = vi.fn();
+    const slot = {
+      body: <p>the conversation</p>, composer: <p>the box</p>, ended: false, onNew: vi.fn(),
+      history: <p>the history</p>, onHistory,
+    };
+    const { rerender } = render(<AskPanel starters={[]} helper="claude-code-acp" conversation={slot} onGo={vi.fn()} onClose={vi.fn()} />);
+
+    const door = screen.getByRole('button', { name: 'History' });
+    expect(door).toHaveAttribute('aria-pressed', 'false');
+    await userEvent.click(door);
+    expect(onHistory).toHaveBeenCalledOnce();
+
+    rerender(<AskPanel starters={[]} helper="claude-code-acp" conversation={{ ...slot, historyOpen: true }} onGo={vi.fn()} onClose={vi.fn()} />);
+    expect(screen.getByRole('button', { name: 'History' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('the history')).toBeInTheDocument();
+    expect(screen.queryByText('the conversation')).toBeNull();
+    expect(screen.queryByText('the box')).toBeNull();
+  });
+
+  /** ASKHIST1: what the organism says at an ended conversation's foot replaces the panel's own line. */
+  it('says the organism’s line at an ended conversation’s foot, in place of its own', () => {
+    render(
+      <AskPanel
+        starters={[]}
+        helper="claude-code-acp"
+        conversation={{ body: <p>the conversation</p>, composer: null, ended: true, note: <p>it goes on</p> }}
+        onGo={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('it goes on')).toBeInTheDocument();
+    expect(screen.queryByText(/A message starts a new one/)).toBeNull();
+  });
+
   it('says so when the machine lacks nothing, and names the agent it runs on', () => {
     render(<AskPanel starters={[]} helper="claude-code-acp" onGo={vi.fn()} onClose={vi.fn()} />);
 

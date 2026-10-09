@@ -9,8 +9,10 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// The first three are <see cref="ContinueWhy"/>'s nevers, the codes the driver's judgement says them by; the rest are the
-/// screen's: Ask Daoris's own conversation (its panel opens a new one, and the design leaves it out), a session whose quest went
-/// on in a later session here (MSG1b plans a quest's last session only, so no look would take its words up), and no record.
+/// screen's: a session whose quest went on in a later session here (MSG1b plans a quest's last session only, so no look would
+/// take its words up), and no record. <see cref="Help"/> is no never since ASKHIST1: Ask Daoris's own conversation goes on in
+/// itself as a chat does, and the code stays the word for what only a repository's session has (a new session, a conversation
+/// started in its repository), which <see cref="IsHelp"/> says.
 /// </remarks>
 public static class WordsNever
 {
@@ -30,11 +32,17 @@ public static class WordsNever
     /// <param name="last">The session its quest last ran in here (D79's reading, <see cref="LastHere"/>), or null.</param>
     public static string? Judge(SessionRecord record, string? last) =>
         record.Teammate ? Teammate
-        : record.Repository == HelpRoom.Repository ? Help
         : record.Ask is not null ? Intake
         : record.State == "stood-down" ? StoodDown
         : record.Quest is not null && last is not null && !string.Equals(last, record.Id, StringComparison.Ordinal) ? Superseded
         : null;
+
+    /// <summary>
+    /// Whether a record is Ask Daoris's own conversation (HELP1a), which belongs to no repository: its words go on in itself
+    /// (ASKHIST1), and what only a repository's session has, a new session or a conversation started in its repository, is
+    /// refused it as <see cref="Help"/>.
+    /// </summary>
+    public static bool IsHelp(SessionRecord record) => record.Repository == HelpRoom.Repository;
 
     /// <summary>The session a quest last ran in here, read from the records as the planner reads them (D79); null for none.</summary>
     public static string? LastHere(string recordsJson, string? quest) =>

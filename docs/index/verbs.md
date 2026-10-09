@@ -41,14 +41,15 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `quest` | `Program.cs:293` | `Daoris.Desktop.Driver.Host/WorkConsole.cs:10` WorkConsole | pause `WorkCommand.cs:39` · resume `WorkCommand.cs:39` · abandon `WorkCommand.cs:39` · delete `Program.cs:333` · accept `Program.cs:333` · done · check · review · clear |
 | `answer` | `Program.cs:353` | `Program.cs:353` (inline) | — |
 | `sessions` | `Program.cs:364` | `Daoris.Desktop.Driver.Host/SessionsConsole.cs:8` SessionsConsole | stop `SessionsCommand.cs:133` · finish `SessionsCommand.cs:138` · decline `SessionsCommand.cs:145` · archive `SessionsCommand.cs:150` · unarchive `SessionsCommand.cs:159` · delete `SessionsCommand.cs:164` · say `SessionsCommand.cs:169` · go-on-new `SessionsCommand.cs:171` · start-from `SessionsCommand.cs:176` |
-| `history` | `Program.cs:372` | `Daoris.Desktop.Driver.Host/HistoryConsole.cs:11` HistoryConsole | clear `HistoryCommand.cs:54` |
-| `trees` | `Program.cs:379` | `Daoris.Desktop.Driver.Host/TreesConsole.cs:15` TreesConsole | list `TreesConsole.cs:116` · remove `TreesConsole.cs:140` · clean `TreesConsole.cs:154` · land `TreesConsole.cs:300` · hand `TreesConsole.cs:381` · state `TreesConsole.cs:437` · sync `TreesConsole.cs:229` |
-| `sync` | `Program.cs:385` | `Daoris.Desktop.Driver.Host/SyncConsole.cs:20` SyncConsole | status `SyncConsole.cs:30` · dismiss `SyncConsole.cs:31` |
-| `plugins install` | `Program.cs:392` | `Daoris.Desktop.Driver/PluginPackage.cs:395` PluginPackageCommand | — |
-| `update` | `Program.cs:399` | `Daoris.Desktop.Driver/UpdateCommand.cs:19` UpdateCommand | — |
-| `logs` | `Program.cs:409` | `Daoris.Desktop.Driver.Host/LogsConsole.cs:18` LogsConsole | — |
-| `plugins` | `Program.cs:416` | `Daoris.Desktop.Driver/PluginsCommand.cs:25` PluginsCommand | install `Program.cs:392` · new `PluginsCommand.cs:47` · try `PluginsCommand.cs:47` · show `PluginsCommand.cs:49` · activity `PluginsCommand.cs:51` |
-| `drive` | `Program.cs:423` | `Daoris.Desktop.Driver/DriverCommand.cs:156` DriverCommand.Read | — |
+| `help` | `Program.cs:371` | `Daoris.Desktop.Driver.Host/HelpConsole.cs:8` HelpConsole | list `HelpCommand.cs:59` · resume `HelpCommand.cs:59` · rename `HelpCommand.cs:59` · pin `HelpCommand.cs:59` · unpin `HelpCommand.cs:59` · delete `HelpCommand.cs:59` |
+| `history` | `Program.cs:379` | `Daoris.Desktop.Driver.Host/HistoryConsole.cs:11` HistoryConsole | clear `HistoryCommand.cs:54` |
+| `trees` | `Program.cs:386` | `Daoris.Desktop.Driver.Host/TreesConsole.cs:15` TreesConsole | list `TreesConsole.cs:116` · remove `TreesConsole.cs:140` · clean `TreesConsole.cs:154` · land `TreesConsole.cs:300` · hand `TreesConsole.cs:381` · state `TreesConsole.cs:437` · sync `TreesConsole.cs:229` |
+| `sync` | `Program.cs:392` | `Daoris.Desktop.Driver.Host/SyncConsole.cs:20` SyncConsole | status `SyncConsole.cs:30` · dismiss `SyncConsole.cs:31` |
+| `plugins install` | `Program.cs:399` | `Daoris.Desktop.Driver/PluginPackage.cs:395` PluginPackageCommand | — |
+| `update` | `Program.cs:406` | `Daoris.Desktop.Driver/UpdateCommand.cs:19` UpdateCommand | — |
+| `logs` | `Program.cs:416` | `Daoris.Desktop.Driver.Host/LogsConsole.cs:18` LogsConsole | — |
+| `plugins` | `Program.cs:423` | `Daoris.Desktop.Driver/PluginsCommand.cs:25` PluginsCommand | install `Program.cs:399` · new `PluginsCommand.cs:47` · try `PluginsCommand.cs:47` · show `PluginsCommand.cs:49` · activity `PluginsCommand.cs:51` |
+| `drive` | `Program.cs:430` | `Daoris.Desktop.Driver/DriverCommand.cs:161` DriverCommand.Read | — |
 
 ## `daoris-devkit`
 

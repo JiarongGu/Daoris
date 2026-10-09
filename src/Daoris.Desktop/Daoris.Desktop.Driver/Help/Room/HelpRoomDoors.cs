@@ -216,6 +216,13 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("say something to a session of this machine's, running, parked or ended: it reads your words at its next step or when "
             + "its turn ends, or the same session goes on with them (Ask Daoris never proposes it: the words are yours)",
             "Sessions → the session's page → its box", "`daoris-driver sessions say <id> \"…\" [--file <path>]…`"),
+        // ASKHIST1: exempt from Ask Daoris, since its conversations and what the person keeps of them are the person's own; the
+        // room names both doors, so the helper points there when asked about an earlier conversation.
+        ("find an earlier conversation with Ask Daoris and go on in it, start a new one from its words, or name, pin or delete "
+            + "one; they are kept on this machine only (Ask Daoris never proposes it: the conversations are yours)",
+            "Ask Daoris → History",
+            "`daoris-driver help list [--search \"…\"]`, `daoris-driver help resume <id> \"…\"`, "
+            + "`daoris-driver help rename|pin|unpin|delete <id>`"),
         // KNOWUSE1a: a go-ahead is the person's yes or no to an act outside a repository, asked once on the ask. Ask Daoris
         // never answers one: the production acts stay the person's (D135 §2).
         ("answer a go-ahead a session asked on an ask, for an act outside its repository: yes or no, which every session on "

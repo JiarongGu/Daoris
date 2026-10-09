@@ -1,23 +1,29 @@
 import { type RefObject, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
 import { HELP_REPOSITORY } from '../api';
 import { sentence } from '../format';
 import { useHelpSessions } from '../queries';
 import {
-  type HelpSettled, NO_TURNS, useCancelTurn, useChatTurns, useEndChat, useHarnesses, useHelpProposals, useHelpReadied,
-  useSendMessage, useSettleHelp, useStartHelp, useStopSession,
+  HELP_HISTORY, type HelpSettled, NO_TURNS, useCancelTurn, useChatTurns, useDeleteSession, useEndChat, useHarnesses,
+  useHelpConversations, useHelpProposals, useHelpReadied, useHelpStartFrom, usePinHelp, useRenameHelp, useSendMessage,
+  useSettleHelp, useStartHelp, useStopSession,
 } from '../shell';
 import { useHeldHarnessRun } from '../harnessRuns';
-import { SESSION_ACTIVE } from '../ui';
+import { Button, Prose, SESSION_ACTIVE } from '../ui';
 import type { ChatMessage } from '../work/conversation';
 import { Composer } from '../work/Composer';
 import { SessionConversation } from '../work/SessionConversation';
+import { AskHistory } from './AskHistory';
 import type { AskConversationSlot } from './AskPanel';
 import { placeDoor } from './places';
 import { ProposalCard } from './ProposalCard';
 import type { StarterDoor } from './starters';
 import { type HelpWhere, prefaceOf } from './where';
 import { logEvent } from '../shell';
+
+/** How often the list is asked again while words to an ended conversation wait for it to go on (ASKHIST1). */
+const GOING_ON_POLL = 1500;
 
 /**
  * Words handed to Ask Daoris from another door, once per `id`: a question, sent as a typed one is (the palette's, the
@@ -48,6 +54,11 @@ export type AskOpening = { text: string; id: number; draft?: boolean };
  * **A question can arrive already asked** (DOCK1d): the palette's *Ask Daoris: "…"* row hands its words
  * in as `opening`, sent once per `id` exactly as a typed message is, so Quick Ask opens on the question
  * rather than on a box the person must type it into again.
+ *
+ * **Its conversations are kept** (ASKHIST1): the history lists them, kept on this machine only, and the one the person
+ * picks is shown in the newest's place. One that ended goes on in itself with the person's next words where its own
+ * conversation was kept (D137 §2.2), so its knowledge carries; one that cannot is offered a new conversation from its words.
+ * The newest that ended still starts a new one by default, as it did; *Go on in it* chooses it.
  */
 export function useAskConversation(
   scroller: RefObject<HTMLElement | null>,
@@ -64,7 +75,12 @@ export function useAskConversation(
   onGo?: (door: StarterDoor) => void,
 ) {
   const { t } = useTranslation();
-  const sessions = useHelpSessions();
+  const client = useQueryClient();
+  // The conversation the person chose from the history, or went on in (ASKHIST1): shown in the newest's place.
+  const [chosen, setChosen] = useState<string | null>(null);
+  // Words said to an ended conversation, waiting for its record to go on: the list is asked again until it has.
+  const [goingOn, setGoingOn] = useState<string | null>(null);
+  const sessions = useHelpSessions(goingOn ? GOING_ON_POLL : false);
   // The session the person started again from: shown no longer, whatever the list still says.
   const [cleared, setCleared] = useState<string | null>(null);
   // The conversation opened as the panel showed (HELP5), which nobody has spoken in: not shown, so the
@@ -75,8 +91,29 @@ export function useAskConversation(
   const newest = helpSessions
     .filter((session) => session.id !== readied)
     .sort((a, b) => b.created.localeCompare(a.created))[0] ?? null;
-  const shown = newest && newest.id !== cleared ? newest : null;
+  const picked = chosen ? helpSessions.find((session) => session.id === chosen) ?? null : null;
+  const shown = picked ?? (newest && newest.id !== cleared ? newest : null);
   const live = shown ? SESSION_ACTIVE.has(shown.state) : false;
+  useEffect(() => {
+    if (goingOn && shown?.id === goingOn && live) setGoingOn(null);
+  }, [goingOn, shown?.id, live]);
+
+  // The history (ASKHIST1): open or not, its search, and each conversation's row, which says whether one that ended goes on
+  // in itself. The panel's own rows are asked whenever an agent is named, so the conversation shown knows its own.
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [historyRefusal, setHistoryRefusal] = useState<string | null>(null);
+  const rows = useHelpConversations('', helper !== null);
+  const found = useHelpConversations(search, helper !== null && historyOpen && search.trim().length >= 2);
+  const shownRow = shown ? rows.data?.conversations.find((row) => row.session === shown.id) ?? null : null;
+  // An ended one the person chose goes on in itself with their words, where its own conversation was kept.
+  const goesOn = shown !== null && !live && picked !== null && shownRow?.resumable === true;
+  // A conversation started from an earlier one, which says so until the person has spoken in it.
+  const [startedFrom, setStartedFrom] = useState<{ session: string; title: string } | null>(null);
+  const rename = useRenameHelp();
+  const pin = usePinHelp();
+  const startFrom = useHelpStartFrom();
+  const remove = useDeleteSession();
   // Not in the list yet is still opening, which is alive; one the list says ended can take no words.
   const readiedRow = helpSessions.find((session) => session.id === readied);
   const readiedLive = readied !== null && (readiedRow === undefined || SESSION_ACTIVE.has(readiedRow.state));
@@ -125,7 +162,15 @@ export function useAskConversation(
         if (!answer.sent) {
           lost?.();
           giveBack(text, t('help.notSent'));
-        } else if (preface) told.current.set(id, preface);
+          return;
+        }
+        if (preface) told.current.set(id, preface);
+        // Kept on an ended record (ASKHIST1): the same conversation goes on with them once the driver takes them up, which
+        // the list is asked again for until it says so.
+        if (answer.reaches === 'resume') {
+          setGoingOn(id);
+          void client.invalidateQueries({ queryKey: HELP_HISTORY });
+        }
       },
       onError: (error) => {
         lost?.();
@@ -140,9 +185,11 @@ export function useAskConversation(
   const [joining, setJoining] = useState(false);
 
   const onSend = (text: string, files: File[]) => {
-    logEvent('message.sent', { kind: 'help', length: text.length, files: files.length, ...(shown && live ? { session: shown.id } : {}) });
+    logEvent('message.sent', { kind: 'help', length: text.length, files: files.length, ...(shown && (live || goesOn) ? { session: shown.id } : {}) });
     setRefusal(null);
-    if (shown && live) {
+    // The one running, or one that ended the person chose and that goes on in itself (ASKHIST1).
+    if (shown && (live || goesOn)) {
+      if (startedFrom?.session === shown.id) setStartedFrom(null);
       deliver(shown.id, text, files);
       return;
     }
@@ -153,6 +200,8 @@ export function useAskConversation(
       // Seen from now on, in both hosts, however late an opening's answer arrives.
       help.spoke(id);
       setCleared(null);
+      // A new conversation is the one shown now, whichever the person had chosen (ASKHIST1).
+      setChosen(null);
       setFirstWords({ words, session: id });
       deliver(id, text, files, () => setFirstWords(null));
     };
@@ -236,10 +285,72 @@ export function useAskConversation(
     if (!shown) return;
     if (live) end.mutate(shown.id);
     setCleared(shown.id);
+    setChosen(null);
+    setStartedFrom(null);
+    setHistoryOpen(false);
     setRefusal(null);
     // The next opens ahead too (HELP5), once the one finished here has gone.
     setRound((was) => was + 1);
   };
+
+  // The history's acts (ASKHIST1), each through the bridge's one owner of it.
+  const choose = (id: string) => {
+    setChosen(id);
+    setCleared(null);
+    setHistoryOpen(false);
+    setRefusal(null);
+  };
+  const beginFrom = (id: string) => {
+    setHistoryRefusal(null);
+    const title = rows.data?.conversations.find((row) => row.session === id)?.title ?? id;
+    startFrom.mutate(id, {
+      onSuccess: (answer) => {
+        if (!answer.sessionId) {
+          setHistoryRefusal(answer.message);
+          setRefusal(answer.message);
+          return;
+        }
+        // Spoken in by the person's choice: never readied ahead, and shown from now on.
+        help.spoke(answer.sessionId);
+        setStartedFrom({ session: answer.sessionId, title });
+        choose(answer.sessionId);
+      },
+      onError: (error) => {
+        setHistoryRefusal(sentence(error));
+        setRefusal(sentence(error));
+      },
+    });
+  };
+  const history = (
+    <AskHistory
+      rows={(search.trim().length >= 2 ? found.data?.conversations : rows.data?.conversations) ?? []}
+      cut={(search.trim().length >= 2 ? found.data?.cut : rows.data?.cut) ?? false}
+      loading={rows.isLoading || found.isFetching}
+      search={search}
+      shown={shown?.id ?? null}
+      busy={startFrom.isPending || pin.isPending}
+      refusal={historyRefusal}
+      onSearch={setSearch}
+      onOpen={choose}
+      onRename={(id, name, answered) => rename.mutate({ id, name }, {
+        onSuccess: () => answered.done(),
+        onError: (error) => answered.refused(sentence(error)),
+      })}
+      onPin={(id, pinned) => {
+        setHistoryRefusal(null);
+        pin.mutate({ id, pinned }, { onError: (error) => setHistoryRefusal(sentence(error)) });
+      }}
+      onStartFrom={beginFrom}
+      onDelete={(id, answered) => remove.mutate(id, {
+        onSuccess: () => {
+          answered.done();
+          if (chosen === id) setChosen(null);
+          void client.invalidateQueries({ queryKey: HELP_HISTORY });
+        },
+        onError: (error) => answered.refused(sentence(error)),
+      })}
+    />
+  );
 
   const conversation = shown ? (
     <SessionConversation
@@ -258,7 +369,7 @@ export function useAskConversation(
       key={shown?.id ?? 'none'}
       // A message always reaches something: the one running, or the one it starts.
       live
-      placeholder={t('help.placeholder')}
+      placeholder={t(goesOn ? 'help.placeholderGoOn' : 'help.placeholder')}
       sending={send.isPending || start.isPending || joining}
       refusal={refusal}
       // Only a conversation that runs has an ending to choose.
@@ -306,8 +417,37 @@ export function useAskConversation(
     </ul>
   ) : null;
 
+  // What the foot of the conversation says (ASKHIST1): where one started from, and whether one that ended goes on in itself,
+  // each with its press. Nothing where the history has not answered for it yet: the panel's own line stands.
+  const line = (key: string, values?: Record<string, string>) => (
+    <Prose className="m-0 text-small text-ink-faint">{t(key, values)}</Prose>
+  );
+  const press = (key: string, onClick: () => void) => (
+    <Button variant="ghost" className="px-0 text-small text-accent" disabled={startFrom.isPending} onClick={onClick}>{t(key)}</Button>
+  );
+  const ended = shown !== null && !live;
+  const note = shown && startedFrom?.session === shown.id
+    ? <div className="mt-3">{line('help.startedFrom', { title: startedFrom.title })}</div>
+    : !ended || !shownRow
+      ? undefined
+      : goesOn
+        ? <div className="mt-3">{line('help.endedGoesOn')}</div>
+        : shownRow.resumable
+          ? <div className="mt-3 grid justify-items-start gap-1">{line('help.ended')}{press('help.goOn', () => choose(shown!.id))}</div>
+          : (
+            <div className="mt-3 grid justify-items-start gap-1">
+              {line(picked ? 'help.endedAnew' : 'help.ended')}
+              {press('help.history.startFrom', () => beginFrom(shown!.id))}
+            </div>
+          );
+
   const slot: AskConversationSlot = {
-    body: conversation, proposals: proposed, composer, ended: shown !== null && !live, onNew: shown ? onNew : undefined,
+    body: conversation, proposals: proposed, composer, ended, note, onNew: shown ? onNew : undefined,
+    history, historyOpen,
+    onHistory: () => {
+      setHistoryRefusal(null);
+      setHistoryOpen((open) => !open);
+    },
   };
   return slot;
 }

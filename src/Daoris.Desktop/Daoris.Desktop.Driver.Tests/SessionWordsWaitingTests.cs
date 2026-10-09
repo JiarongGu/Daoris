@@ -116,16 +116,24 @@ public sealed class SessionWordsWaitingTests : IDisposable
         Assert.Equal((WordsHold.Cooling, (DateTimeOffset?)Reset, "work is cooling until 11:00."), (held.Why, held.Until, held.Reason));
     }
 
+    /// <summary>ASKHIST1: Ask Daoris's own conversation goes on with the words waiting on it, as a chat does, so it is listed so.</summary>
+    [Fact]
+    public void Ask_daoris_s_conversation_whose_words_wait_is_waiting()
+    {
+        var json = Json(Record("he1p0000", "stopped", kind: "chat", repository: HelpRoom.Repository, said: ["w2"], profile: null));
+
+        Assert.Equal(["he1p0000"], Waiting(json).ChatsWaiting);
+    }
+
     /// <summary>
-    /// Not waiting: words every one of which its runner could not go on with (its marks), Ask Daoris's own conversation, a
-    /// teammate's, one still live, and one with no words.
+    /// Not waiting: words every one of which its runner could not go on with (its marks), a teammate's, one still live, and one
+    /// with no words.
     /// </summary>
     [Fact]
     public void Chats_whose_words_nothing_takes_up_are_not_waiting()
     {
         var json = Json(
             Record("c1", "completed", kind: "chat", said: ["w1"]),
-            Record("he1p0000", "stopped", kind: "chat", repository: HelpRoom.Repository, said: ["w2"]),
             Record("laptop/c3", "completed", kind: "chat", said: ["w3"]),
             Record("c4", "working", kind: "chat", said: ["w4"]),
             Record("c5", "completed", kind: "chat"));

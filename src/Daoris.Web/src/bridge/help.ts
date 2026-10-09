@@ -1,6 +1,7 @@
 import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../queries';
+import type { HelpConversationRow } from '../help/history';
 import type { HelpProposal } from '../help/ProposalCard';
 import type { HelpPlace } from '../help/places';
 import { call, pressBound } from './call';
@@ -101,6 +102,68 @@ export const settleBound = (client: QueryClient, id: string): number | undefined
   return proposal.sync?.looked
     ? pressBound(proposal.sync.rows.filter((row) => row.moves).length)
     : syncLookBound(client);
+};
+
+/** The history's key: every listing under it, so a change asks each again, a delete through Sessions' own hook among them. */
+export const HELP_HISTORY = ['help-conversations'] as const;
+const HISTORY = HELP_HISTORY;
+
+/**
+ * Ask Daoris's conversations (ASKHIST1), pinned first and then the newest, or those whose name or words hold `search`.
+ * Asked only while `enabled`, and again whenever a change to one is made here.
+ */
+export const useHelpConversations = (search: string, enabled = true) => {
+  const { isAvailable } = useShenora();
+  const words = search.trim();
+  return useQuery({
+    queryKey: [...HISTORY, words],
+    queryFn: async () => {
+      const answer = await call<{ conversations?: unknown; cut?: boolean }>('HELP_CONVERSATIONS', words ? { q: words } : {});
+      return {
+        conversations: Array.isArray(answer?.conversations) ? answer.conversations as HelpConversationRow[] : [],
+        cut: answer?.cut === true,
+      };
+    },
+    enabled: isAvailable && enabled,
+    staleTime: 5_000,
+  });
+};
+
+/** What a history act changed: the history, and the conversations the panel shows. */
+const historyChanged = (client: QueryClient) => {
+  void client.invalidateQueries({ queryKey: HISTORY });
+  void client.invalidateQueries({ queryKey: keys.allSessions });
+};
+
+/** Name an Ask Daoris conversation (ASKHIST1), or give it its first question back with no name. */
+export const useRenameHelp = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (rename: { id: string; name: string | null }) =>
+      call<{ session: string; name: string | null }>('HELP_RENAME', rename.name ? { id: rename.id, name: rename.name } : { id: rename.id }),
+    onSuccess: () => historyChanged(client),
+  });
+};
+
+/** Pin an Ask Daoris conversation to the top of its history, or unpin it (ASKHIST1). */
+export const usePinHelp = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (pin: { id: string; pinned: boolean }) => call<{ session: string; pinned: string | null }>('HELP_PIN', pin),
+    onSuccess: () => historyChanged(client),
+  });
+};
+
+/**
+ * A new Ask Daoris conversation from an earlier one's words (ASKHIST1): the driver opens it as it opens any, setting aside the
+ * one running, and hands it the earlier one's transcript with the person's first message.
+ */
+export const useHelpStartFrom = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => call<{ sessionId: string | null; message: string; from: string }>('HELP_START_FROM', { id }),
+    onSuccess: () => historyChanged(client),
+  });
 };
 
 /** The person's Apply and Not now on a proposal: the result goes back into the conversation (D89). */
