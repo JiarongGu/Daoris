@@ -12589,3 +12589,17 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ASKHIST1b — Ask Daoris's history fits its dock** (web-shell; found by looking at the install, dispatched from its brief). In the right dock, the history scrolled sideways when a title was a long unbroken URL: its `section.grid` measured 404 px wide and laid out at 869. Bound the grids' columns, truncate titles, wrap snippets, down to the dock's floor. Proof: vitest of the bounding classes, a long-URL story, a shot.
 
 **Outcome** 2026-10-09: found by looking at the install: Ask Daoris's history scrolled sideways in the dock when a title was a pasted URL, its grids' implicit `auto` column growing to the longest title. The history's grids bound their column (`minmax(0,1fr)`), titles truncate with the whole in their tip, snippets wrap in two lines, down to the dock's 300 px floor; the panel's conversation, the box and an answer's Markdown break a long word at the edge. Detail: FIX-LOG ASKHIST1b, the rule beside platform-ux U8; commits 173df22a…4c529a28.
+
+
+## XAGENT1e2 — the service says a record went on with findings, not with the person's words (2026-10-09, D155)
+
+> - [ ] **XAGENT1e2 — the service says a record went on with findings, not with the person's words** (service; after XAGENT1e). The state door notes *Went on with your words* when a record goes on with another agent's findings alone; say it went on with findings, from the `by` it read. Contract: D155's XAGENT1e note, D137. Proof: a `SessionLedger` row for a findings-only carry-on.
+
+**Outcome** 2026-10-09: an ended record going on with another agent's findings notes so, alone or beside the person's words, read from each waiting word's `by`; the person's words alone keep `ledger.went-on`. The two new lines are uncoded English until the page words them (XAGENT1g carries the codes and catalogue lines). Detail: D155's XAGENT1e2 note; commit 8a4f7445.
+
+
+## REVIEWENV1c4 — the service's gate sentence read from the twins' table (2026-10-09, D154)
+
+> - [ ] **REVIEWENV1c4 — the service's gate sentence read from the twins' table** (service; after REVIEWENV1c2 and REVIEWENV1c3 merge). `HelpSettingProposalTests` reads the `gate` rows from `review-rules.json` instead of spelling them, so the service's copy cannot drift from the twins. Contract: D154's REVIEWENV1c2 note. Proof: the test failing when the table's sentence changes.
+
+**Outcome** 2026-10-09: `HelpSettingProposalTests` reads the review gate's sentences from `review-rules.json`'s `gate` rows instead of spelling them, so the service's copy cannot drift from the twins; a narrow merge-tool reach row sends the table to the service's suite. Detail: D154's REVIEWENV1c4 note; commits b59854d8, c96581b5.
