@@ -126,7 +126,7 @@ describe("the session's Workflow view", () => {
     settled.unmount();
   });
 
-  it("opens the review where the gate holds the work on you, and says Go on anyway's terminal twin until the review draws it", async () => {
+  it("opens the review where the gate holds the work on you, and says Go on anyway's twins where no control is handed", async () => {
     const review = vi.fn();
     render(<WorkflowRunView answer={answerOf(OPINION_DISPUTED)} doors={{ review, session: vi.fn() }} />);
     const opinion = row('opinion');
@@ -134,12 +134,22 @@ describe("the session's Workflow view", () => {
     expect(opinion).toHaveTextContent('waiting on you');
     expect(within(opinion).getByText('waiting on you')).toHaveClass('text-ink-open');
     expect(opinion).toHaveTextContent('1 finding is disputed: a must the working session did not fix and no recheck withdrew.');
+    expect(opinion).toHaveTextContent("Go on anyway is on the session's own page, beside its second opinion, and at a terminal");
     expect(opinion).toHaveTextContent('daoris-driver opinion anyway s1 "…" goes on without it');
-    // No page's press for it yet (XAGENT1g): the door is the review, beside its Accept.
-    expect(within(opinion).queryByRole('button', { name: /Go on anyway/ })).toBeNull();
     await userEvent.click(within(opinion).getByRole('button', { name: 'Open its review' }));
     expect(review).toHaveBeenCalledWith('s1');
     expect(screen.getByText('Workflow: a second opinion waits for you')).toBeInTheDocument();
+  });
+
+  /** XAGENT1g (WORKFLOW1c3's remainder): the gate's own control draws *Go on anyway…* under the step, in the twin's place. */
+  it("draws the second opinion's own control under its step where the frame hands it, in place of the terminal's twin", () => {
+    render(
+      <WorkflowRunView answer={answerOf(OPINION_DISPUTED)} controls={{ opinion: <button type="button">Go on anyway…</button> }} />,
+    );
+    const opinion = row('opinion');
+
+    expect(within(opinion).getByRole('button', { name: 'Go on anyway…' })).toBeInTheDocument();
+    expect(opinion).not.toHaveTextContent('daoris-driver opinion anyway');
   });
 
   it("words each of the gate's states", () => {

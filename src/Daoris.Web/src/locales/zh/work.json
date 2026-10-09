@@ -175,6 +175,7 @@
   "work.say.teammate": "这个会话在另一台机器上运行，它的对话在那里。",
   "work.say.stoodDown": "它已让位：#{{quest}} 归别人处理，它没有可继续的工作。",
   "work.say.intake": "受理会话不接收消息：它通过需求来答复。",
+  "work.say.opinion": "第二意见的阅读者不接收消息：它把工作读一遍并给出意见，意见交给做这项工作的会话，也交给你。",
   "work.say.help": "问道衍的对话在它自己的面板里接收消息，那里会开始一个新的对话。",
   "work.say.superseded": "#{{quest}} 已在这里的后续会话中继续，请写给那个会话。",
   "work.say.notFound": "Daoris 已没有这个会话的记录，没有地方能接收写给它的话。",

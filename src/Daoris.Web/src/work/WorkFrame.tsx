@@ -10,13 +10,16 @@ import {
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree,
-  useDiscardSessionTree, useDriver, useWorkflowRun,
+  useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun,
 } from '../shell';
 import { WorkflowRunView } from '../workflow/WorkflowRunView';
+import { opinionAsked, opinionHolds } from './opinion';
+import { useOpinionActs } from './opinionActs';
+import { OpinionGate } from './OpinionGate';
 import { reviewHolds, reviewState } from './review';
 import { ReviewGate } from './ReviewGate';
 import { useReviewActs } from './reviewActs';
-import type { HeadReview } from './SessionHead';
+import type { HeadOpinion, HeadReview } from './SessionHead';
 import { sayDiscard } from '../settings/Sweep';
 import { doorOf, toolOf } from '../tools';
 import { agentOf, machineScope, workspaceScope } from '../settings/accounts';
@@ -36,7 +39,7 @@ import type { FrameIntent } from '../commands';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { SessionConversation } from './SessionConversation';
 import type { Usage } from './conversation';
-import { isIntake, ownTree, sessionOrigin, sessionTitle } from './identity';
+import { isIntake, isOpinion, ownTree, sessionOrigin, sessionTitle } from './identity';
 import { doorLabel } from '../tools';
 import type { QuestClose, Resolution } from './AwaitingPerson';
 import { Composer } from './Composer';
@@ -340,6 +343,8 @@ export function WorkFrame({
   // there sent a person's words into nothing, or into the middle of the JSON-RPC stream. The driver
   // refuses such a line too; the frame offers no box, and the page header carries the stop (D126 §3.3).
   const intake = attended ? isIntake(attended) : false;
+  // So does a second opinion's reviewer (XAGENT1g): one turn and no words, which its record's host refuses besides.
+  const oneTurn = intake || (attended ? isOpinion(attended) : false);
   // The go-aheads a park asked on its quest's ask (KNOWUSE1a2, D135 §2), read only for a driven park whose quest an ask
   // asked: shown in its head, where answering the last one open sends it on (GOAHEAD2b). The asks are asked for nowhere
   // else here.
@@ -347,15 +352,15 @@ export function WorkFrame({
   const asks = useAsks(false, parkAsk !== null);
   const goAheads = attended && parkAsk ? goAheadsAsked(asks.data, parkAsk, attended.id) : [];
   const parkGoAhead = useParkGoAhead();
-  const talking = Boolean(attended && conversation && here && !intake);
+  const talking = Boolean(attended && conversation && here && !oneTurn);
   // A driven session still working may be told something (SESS3): its words are held and are its next prompt. Offered only
   // where the driver says it listens, which is the protocol door; the pipe door has nothing to hear it.
-  const steerable = Boolean(attended && here && !intake && !conversation && attended.quest
+  const steerable = Boolean(attended && here && !oneTurn && !conversation && attended.quest
     && SESSION_ACTIVE.has(attended.state) && attended.state !== 'awaiting-person');
 
   // What the person was typing to this session, kept per session and across a reload (CONV4b): one draft for whichever
   // box its page offers, so words typed as it ends are still there in the box that goes on with them (MSG1f).
-  const [draft, setDraft] = useDraft(attended && here && !intake ? attended.id : null);
+  const [draft, setDraft] = useDraft(attended && here && !oneTurn ? attended.id : null);
   // Where each live conversation's turns stand, as the driver holds them: the attended one's stop and
   // queue follow it, not the record, which learns a turn began only when its first event lands
   // (CONV4a); and the rail and the head read a chat between turns as idle (UX5 U17).
@@ -372,7 +377,7 @@ export function WorkFrame({
   // door was a button at the top of a record of 1,800 events, and the question is read at its foot. The card above keeps
   // the endings and says the box carries it on: one owner for the answer (D56). Answered, a second word joins the first
   // (D137 §2.4), so the box stays.
-  const reach = useSessionReach(attended && here && !intake ? attended : null, steering);
+  const reach = useSessionReach(attended && here && !oneTurn ? attended : null, steering);
   const box = boxOf({ session: attended, here, intake, listening: steering, reach });
   const answering = box.kind === 'say' && box.mode === 'answer';
   // Words said as the attended session winds up, held for its record to end (D137 §2.1), shown above its box until then.
@@ -864,6 +869,21 @@ export function WorkFrame({
           busy={headReview.busy}
         />
       ) : null;
+      // Its second opinion's own gate under its step while the gate holds the work (XAGENT1g, WORKFLOW1c3's remainder): *Go on
+      // anyway…* and every other press through the gate's one owner, never a second implementation. No *Accept…* is drawn beside
+      // it here, so *Go on anyway…* is offered where the session's page lists the dispute inside *Accept…*.
+      const opinionHeld = following && following.id === attended?.id && headOpinion ? opinionHolds(landing.data) : null;
+      const opinionControl = opinionHeld && headOpinion && attended ? (
+        <OpinionGate
+          gate={opinionHeld}
+          detail={headOpinion.detail}
+          acts={headOpinion.acts}
+          busy={headOpinion.busy}
+          working={attended.id}
+          onOpenFile={headOpinion.onOpenFile}
+        />
+      ) : null;
+      const controls = { ...(lookControl ? { look: lookControl } : {}), ...(opinionControl ? { opinion: opinionControl } : {}) };
       return following
         ? withWhose(
           <div className="p-3">
@@ -880,7 +900,7 @@ export function WorkFrame({
                 ...(onAnswerAsk ? { ask: onAnswerAsk } : {}),
                 review: (id) => { doors.review?.(id); if (elsewhere) onOpenSessions?.(); },
               }}
-              controls={lookControl ? { look: lookControl } : undefined}
+              controls={lookControl || opinionControl ? controls : undefined}
             />
           </div>,
         )
@@ -1046,6 +1066,17 @@ export function WorkFrame({
       work: attended.quest ?? null,
       open: gateHolds.quest && onOpenQuest ? () => onOpenQuest(gateHolds.quest!) : undefined,
     }),
+  } : null;
+  // The second opinion's gate before it (XAGENT1g, the second-agent design §7, §9): its findings beside their answers, read only
+  // where a level asks one, and its presses by the one owner; a finding's place opens the side bar's preview.
+  const opinionActs = useOpinionActs({ notify });
+  const secondOpinion = opinionAsked(landing.data);
+  const opinionRead = useOpinionGate(secondOpinion && attended ? attended.id : null);
+  const headOpinion: HeadOpinion | null = secondOpinion && attended ? {
+    detail: opinionRead.data?.detail ?? null,
+    busy: opinionActs.busy,
+    acts: opinionActs.actsFor({ session: attended.id, gate: secondOpinion, openSession: attend }),
+    onOpenFile: openPreview,
   } : null;
   // SQUASHTIDY1b: where the line holds its commits by content, no landing but its discard, the review's own, unforced.
   const discards = attended && here && !lands && grouping?.discards ? grouping.discards : null;
@@ -1313,8 +1344,10 @@ export function WorkFrame({
             // sentence said once it landed and a refusal said inside the ask (UXFIX2).
             lands={lands}
             review={headReview}
+            opinion={headOpinion}
             landing={landing.data}
-            onLand={lands && attended ? (answered) => land.mutate(attended.id, {
+            // The second opinion's token rides with the press that answers what it showed (XAGENT1g).
+            onLand={lands && attended ? (answered, answers) => land.mutate({ id: attended.id, answers }, {
               onSuccess: (result) => {
                 if (!result.done) {
                   answered.refused(result.message);

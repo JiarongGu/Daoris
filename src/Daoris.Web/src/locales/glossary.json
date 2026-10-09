@@ -40,7 +40,7 @@
         "overview.title", "plugin.kit.title", "plugin.kit.tryFolder", "projects.manage.addTitle",
         "projects.manage.importTitle", "projects.manage.title",
         "quests.compose.title", "settings.title",
-        "trust.title", "work.identity.*", "work.intake.title", "work.monitor.title", "work.start.title"
+        "trust.title", "work.identity.*", "work.intake.title", "work.monitor.title", "work.start.title", "opinion.session.title"
       ]
     },
     "tab": {
@@ -93,7 +93,7 @@
         "work.rail.ended",
         "work.rail.label", "work.rail.search.byContent", "work.rail.search.byName", "work.relations.title",
         "work.sync.inConflict", "work.trace.title", "work.head.details",
-        "review.title", "review.setUp.newest", "review.setUp.older", "asks.record.review",
+        "review.title", "review.setUp.newest", "review.setUp.older", "asks.record.review", "opinion.title", "opinion.recheckTitle",
         "workflow.head.title", "workflow.section.*", "workflow.finished", "workflow.step.work", "workflow.step.opinion",
         "workflow.step.look", "workflow.step.lookAnywhere", "workflow.step.landingMerge", "workflow.step.landingBranch",
         "workflow.step.pullRequest", "workflow.repositories.title"
@@ -144,13 +144,14 @@
         "settings.wiring.key",
         "settings.wiring.url", "setup.atStart", "wiring.account", "wiring.agent",
         "wiring.version", "work.composer.label", "work.conversation.driver", "work.conversation.plan",
-        "work.conversation.target", "work.head.elapsed", "work.head.itsWork", "work.head.machine",
+        "work.conversation.target", "work.conversation.opinion", "work.head.elapsed", "work.head.itsWork", "work.head.machine",
         "work.head.moved", "work.head.quest", "work.head.ran", "work.head.repository", "work.head.started",
         "work.head.tool", "work.head.account", "work.head.id", "quests.field.short",
         "work.intake.ask", "work.intake.room", "work.preview.show", "work.relations.asked",
         "work.relations.askedBy", "work.relations.resumed", "work.review.layout", "work.review.viewed",
         "work.start.harness", "work.start.ownTree", "work.start.profile", "work.start.repository",
-        "work.tool.input", "work.tool.output", "review.setUp.where", "review.setUp.again", "asks.compose.review"
+        "work.tool.input", "work.tool.output", "review.setUp.where", "review.setUp.again", "asks.compose.review",
+        "opinion.read", "opinion.limits", "opinion.finding.consequence", "opinion.finding.reproduce", "opinion.finding.proposal"
       ]
     },
     "choice": {
@@ -259,6 +260,8 @@
         "work.review.discardMeanIt", "work.review.hand", "work.review.handing", "work.review.pullRequest",
         "work.review.readAgain", "work.review.sendBack", "work.say.goOnNew", "work.say.startChat", "work.start.go", "work.steer.now", "work.terminal.again", "work.terminal.close",
         "work.terminal.new", "work.terminal.open", "review.act.*", "review.ask.notYetMeanIt", "review.ask.skipMeanIt",
+        "opinion.act.*", "opinion.ask.anywayMeanIt", "opinion.ask.myselfMeanIt", "opinion.ask.sendBackMeanIt", "opinion.ask.stopMeanIt",
+        "opinion.findingsShow", "opinion.findingsHide",
         "asks.record.reviewApply", "asks.record.reviewSet",
         "workflow.door.setup", "workflow.door.workspaceSetup", "workflow.run.door.*"
       ]
@@ -305,6 +308,7 @@
         "work.shown.*", "work.status.workspace", "work.sync.label", "work.sync.level", "work.sync.never",
         "work.sync.walled", "work.terminal.default", "work.terminal.endedMark", "work.tool.status.*",
         "review.state.*", "review.pill", "work.attention.set-up",
+        "opinion.state.*", "opinion.weight.*", "opinion.sure.*", "opinion.disputed", "opinion.session.kind", "work.attention.opinion",
         "workflow.participation.*", "workflow.runtime.*", "workflow.repositories.follows", "workflow.repositories.own",
         "workflow.run.state.*", "workflow.run.thisSession"
       ]
@@ -375,6 +379,7 @@
         "settings.tools.locations.placeholder", "projects.list.filter",
         "signin.codePlaceholder", "work.find.placeholder", "work.rail.search.placeholder", "work.say.placeholder",
         "review.ask.notYetWords", "review.ask.skipWords", "asks.compose.reviewWords", "asks.record.reviewChoose",
+        "opinion.ask.words", "opinion.ask.sendBackWords",
         "help.history.search.placeholder"
       ]
     },
@@ -484,6 +489,10 @@
     { "term": "not yet", "en": "not yet", "zh": "还不行", "means": "The person's verdict that a set-up is not right yet, with their words, which go to the set-up step's session as its next turn (D154 point 8).", "why": "What a person says looking at work that is not right: it is neither a denial (拒绝) nor a decline (谢绝), and the work goes on.", "match": "^not yet(…)?$", "avoid": { "en": [], "zh": ["拒绝", "谢绝", "驳回"] } },
     { "term": "skip the review", "en": "skip the review", "zh": "跳过审阅", "means": "The person lets a chain's work in a repository land without being shown to them, with their words where they give any (D154 point 3, the table's first row).", "why": "跳过 is passing over a step; 忽略 would say it was never seen.", "match": "\\bskip(s|ped|ping)? (the )?review\\b|\\breview skipped\\b", "avoid": { "en": [], "zh": ["忽略审阅"] } },
     { "term": "show it again", "en": "show it again", "zh": "再展示一次", "means": "Serve a set-up's build to its tab of Daoris's browser again and bring the tab forward, with no session and no model (D154 point 8).", "why": "展示 is the set-up's own act, shown to the person; a reload (刷新) is another act, which loads the person's own server once Daoris no longer serves the tab, and a sentence saying so names it rightly.", "match": "\\bshow (it )?again\\b", "avoid": { "en": [], "zh": [] } },
+    { "term": "second opinion", "en": "second opinion", "zh": "第二意见", "means": "One agent's reading of another session's work before it lands: what it read, its findings and its limits, bound to the commits it read (D155 point 1).", "why": "意见 is a view someone gives, as this is; review's word 审阅 stays the person's (D154 point 8), and 审查 or 评审 would be an inspection that settles something.", "match": "\\bsecond opinions?\\b", "avoid": { "en": [], "zh": ["第二审阅", "复审", "评审"] } },
+    { "term": "reviewer", "en": "reviewer", "zh": "阅读者", "means": "The agent that gives a second opinion, from another maker where one can (D155 point 4).", "why": "阅读 is what it does; 审阅者 would give it the person's word for a review, which no agent gives.", "match": "\\breviewers?\\b(?!\\}\\})", "avoid": { "en": [], "zh": ["审阅者", "审查者"] } },
+    { "term": "finding", "en": "finding", "zh": "发现", "means": "One claim in a second opinion, with where it is and why it matters: a claim, never a fact (D155 point 8); and a place where two repositories reached one conclusion (convergence).", "why": "发现 is something found, as both are; 问题 would call a claim a defect before any check established one.", "match": "\\bfindings?\\b", "avoid": { "en": [], "zh": ["问题"] } },
+    { "term": "disputed", "en": "disputed", "zh": "有争议", "means": "A must finding the working session did not fix and no recheck withdrew, which waits for the person's answer (D155 point 8).", "why": "争议 is two sides disagreeing, which a dispute is; 冲突 is a merge's word.", "match": "^disputed$|\\bdisputed\\b", "avoid": { "en": [], "zh": ["冲突"] } },
     { "term": "send back", "en": "send back", "zh": "退回", "means": "Return a session's work to it with a note, so it carries on.", "match": "\\bsends? (it )?back\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "discard", "en": "discard", "zh": "丢弃", "means": "Throw away a session's tree and the work in it.", "match": "\\bdiscard(s|ed|ing)?\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "hand off", "en": "hand off", "zh": "交接", "zhForms": ["交给"], "means": "Give a landed branch to a plugin, which pushes it and opens the pull request.", "match": "\\bhand(s|ed|ing)?[ -]off\\b|\\bhand(s|ed|ing)? (it )?(on|to)\\b", "avoid": { "en": [], "zh": [] } },
@@ -595,6 +604,7 @@
   "accepted": {
     "_why": "Budget judgements looked at and kept (NAME2; docs/2026-10-01-naming-design.md §6): the length is the name, and the element it renders in gives it more room than its kind's budget assumes, or a placeholder's typical value overstates it. Each holds the name it accepted in each language it accepts, and why, naming the room the code gives the element; the window confirms the room. scripts/names-check.mjs stops reporting a name while it is the one accepted, and reports it again once it is renamed, or once it fits and the acceptance can go.",
     "names": [
+      { "key": "opinion.act.sameAgent", "en": "Ask the same agent, fresh", "why": "A press in the second opinion's gate, on a wrapping row of its own beside at most three others in a main area at least 400px wide (XAGENT1g); the design names it whole (D155 §8.4–§8.5), since what it asks is the working agent's own in a fresh conversation, which is never an independent reading." },
       { "key": "workflow.run.state.waiting-on-agent", "en": "waiting on an agent", "why": "A run step's state on its pill, on a wrapping line of its own beside at most *this session* and a time, in a side bar at least 300px wide (WORKFLOW1c); the design names the state whole (D157 §5.2), and a shorter word would not say whom the work waits on." },
       { "key": "review.act.skip", "en": "Skip the review for this work…", "zh": "为这些工作跳过审阅…", "why": "A press in a review's gate, on a wrapping row of its own beside at most three others in a main area at least 400px wide (REVIEWENV1g); the design names it whole (D154 §3.6), since what is skipped is this work's review and no other's." },
       { "key": "review.act.setUp", "en": "Set it up in `{{environment}}`", "zh": "在 `{{environment}}` 中搭建", "why": "A press in a review's gate, on a wrapping row of its own in a main area at least 400px wide (REVIEWENV1g); the environment is the person's own name for it, which `dev` or `local` is, so the typical value's ten overstates it." },

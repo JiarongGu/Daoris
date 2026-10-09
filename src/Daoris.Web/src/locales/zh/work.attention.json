@@ -10,6 +10,7 @@
   "work.attention.departure": "待你采纳",
   "work.attention.review": "待审阅",
   "work.attention.set-up": "展示待审阅",
+  "work.attention.opinion": "第二意见",
   "work.attention.setUpShows": "已在 `{{environment}}` 中展示：{{shows}}",
   "work.attention.setUpShown": "已在 `{{environment}}` 中展示；它没有说展示了什么。",
   "work.attention.door.answer": "答复…",

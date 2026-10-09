@@ -6,7 +6,7 @@ import { cn } from '../lib/cn';
 import { contextOffer } from '../menus/press';
 import { actMenu, type SessionActId } from './acts';
 import { type SessionGrouping, shownOf } from './groups';
-import { isIntake, ownTree, sessionOrigin, sessionTitle } from './identity';
+import { isIntake, isOpinion, ownTree, sessionOrigin, sessionTitle } from './identity';
 import { ListRowDoor } from './ListPane';
 import { movedAt } from './rail';
 
@@ -138,8 +138,10 @@ export function SessionRow({
     place ?? null,
     archived ? t('work.rail.archived') : null,
     placed ? t(placed.line, placed.values) : null,
-    // An intake is a chat only by the way it was opened (INT4b); it says what it is (INT4g).
-    t(isIntake(session) ? 'work.intake.kind' : session.kind === 'chat' ? 'work.kind.chat' : 'work.kind.driven'),
+    // An intake is a chat only by the way it was opened (INT4b); it says what it is (INT4g). So is a second opinion's reviewer,
+    // marked as one (XAGENT1g, the second-agent design §9).
+    t(isIntake(session) ? 'work.intake.kind' : isOpinion(session) ? 'opinion.session.kind'
+      : session.kind === 'chat' ? 'work.kind.chat' : 'work.kind.driven'),
     landed ? t(landed.state === 'gone' ? 'work.rail.landedGone' : 'work.rail.landedOn', { branch: landed.branch }) : null,
     tree ? t('work.rail.inTree', { tree }) : null,
     origin ? t('work.rail.on', { origin }) : null,

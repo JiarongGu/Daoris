@@ -10,13 +10,15 @@ import type { AccountRowFacts } from './accountAttention';
 import { ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers } from './attention';
 import { Note } from './Note';
 import { hasNote, type NoteRecord } from './noteLines';
+import { type OpinionWait, opinionState } from './opinion';
+import { unsettledWords } from './OpinionGate';
 import { TrustAsk } from './TrustAsk';
 
 /** The kinds of thing *What needs you* lists (design §6.2), each in one of its three groups (`ATTENTION_GROUP`). */
 export type AttentionKind =
   | 'parked' | 'parked-quest' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
-  | 'review';
+  | 'review' | 'opinion';
 
 /**
  * One thing that is waiting on a person, as Overview's band shows it.
@@ -63,6 +65,8 @@ export type Attention = {
   local?: boolean;
   /** The session that said a `set-up` row's set-up, which a *not yet*'s words go to; null for the person's own. */
   session?: string | null;
+  /** An `opinion` row's work and its gate (XAGENT1g): what its presses act on, and whether a press of the person's is coming. */
+  opinion?: OpinionWait;
   /** A `proposal`'s receivers, as its declarations named them: what *Publish to …* publishes to, in one press. */
   publishTo?: string[];
   /** A `proposal`'s other receivers: every repository its workspace can ask, which *Choose…* offers. */
@@ -128,6 +132,10 @@ export type AttentionActs = {
   notYet?: (item: Attention, words: string) => void;
   /** A set-up's build served to its tab again, the tab brought forward (REVIEWENV1d). */
   showAgain?: (item: Attention) => void;
+  /** A second opinion asked again, or tried again where none could be had (XAGENT1g): a pass the driver's next look starts. */
+  opinionAgain?: (item: Attention) => void;
+  /** *Go on anyway…* at a second opinion's gate, with the person's words where they gave any (XAGENT1g). */
+  opinionAnyway?: (item: Attention, words?: string) => void;
 };
 
 /** Which handler each act needs. */
@@ -147,6 +155,8 @@ const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   reviewed: 'reviewed',
   'not-yet': 'notYet',
   'show-again': 'showAgain',
+  'opinion-again': 'opinionAgain',
+  'opinion-anyway': 'opinionAnyway',
 };
 
 /** The kinds that wait in a circle rather than in a repository. */
@@ -237,6 +247,7 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
     else if (act === 'read' && account) acts.read?.(item, account);
     else if (act === 'reviewed') acts.reviewed?.(item);
     else if (act === 'show-again') acts.showAgain?.(item);
+    else if (act === 'opinion-again') acts.opinionAgain?.(item);
   };
   const label = (act: AttentionActId, account?: string): string => {
     switch (act) {
@@ -261,6 +272,9 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
       case 'reviewed': return t('review.act.reviewed');
       case 'not-yet': return t('review.act.notYet');
       case 'show-again': return t('review.act.showAgain');
+      // The second opinion's own words, as its gate says them (XAGENT1g).
+      case 'opinion-again': return t(item.opinion?.opinion.state === 'unavailable' ? 'opinion.act.tryAgain' : 'opinion.act.askAgain');
+      case 'opinion-anyway': return t('opinion.act.anyway');
     }
   };
 
@@ -366,6 +380,7 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
               else if (asking === 'accept-rule') acts.acceptRule?.(item);
               else if (asking === 'let-run' && item.account?.outside) acts.letRun?.(item, item.account.outside.id);
               else if (asking === 'not-yet') acts.notYet?.(item, words.trim());
+              else if (asking === 'opinion-anyway') acts.opinionAnyway?.(item, words.trim() || undefined);
               done();
             }}
           />
@@ -424,8 +439,12 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
   const answering = act === 'approve' || act === 'refuse';
   // A *not yet* needs words: they are what the set-up step's session acts on (REVIEWENV1g, design §3.3).
   const notYet = act === 'not-yet';
+  // *Go on anyway…* says what stays unsettled, and takes words the person may give (XAGENT1g, the second-agent design §8.5).
+  const anyway = act === 'opinion-anyway' && item.opinion ? item.opinion.opinion : null;
   const outside = act === 'let-run' ? item.account?.outside ?? null : null;
-  const sentence = notYet
+  const sentence = anyway
+    ? t('opinion.ask.anyway', { unsettled: unsettledWords(t, opinionState(anyway.state), anyway) })
+    : notYet
     ? t(item.session ? 'review.ask.notYet' : 'review.ask.notYetOwn', { quest: item.id })
     : outside
     ? letRunSentence(t, item.account!.agent, outside)
@@ -436,7 +455,9 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
         : act === 'accept-rule'
           ? t('work.attention.ask.acceptRule', { change: item.title })
           : t('work.attention.ask.choose', { workspace: item.where });
-  const move = notYet
+  const move = anyway
+    ? t('opinion.ask.anywayMeanIt')
+    : notYet
     ? t('review.ask.notYetMeanIt')
     : outside
     ? (outside.list ? t('agents.account.addTo', { workspace: outside.list }) : t('agents.account.addToMachine'))
@@ -458,6 +479,15 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
         <input
           aria-label={t('asks.goAhead.words')}
           placeholder={t('asks.goAhead.words')}
+          value={words}
+          onChange={(event) => onWords(event.target.value)}
+          className="min-h-[1.9rem] min-w-0 flex-1 basis-48 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
+        />
+      )}
+      {anyway && (
+        <input
+          aria-label={t('opinion.ask.words')}
+          placeholder={t('opinion.ask.words')}
           value={words}
           onChange={(event) => onWords(event.target.value)}
           className="min-h-[1.9rem] min-w-0 flex-1 basis-48 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"

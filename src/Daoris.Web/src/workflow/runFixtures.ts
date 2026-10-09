@@ -64,7 +64,8 @@ export const HELD_FOR_OPINION = run([
 
 /**
  * A dispute the gate holds on the person (*a dispute waits on you*): a `must` the working session did not fix. Its door opens the
- * review, where the gate's presses stand beside *Accept…*, and *Go on anyway…* is the terminal's until the review draws it.
+ * review, where the gate's presses stand beside *Accept…*; the attended session's own run draws the gate under the step, *Go on
+ * anyway…* among its presses (XAGENT1g).
  */
 export const OPINION_DISPUTED = run([
   at(WORK(), 'done', 'finished', { session: 's1', quest: 'q1', agent: 'claude-code', at: AT, count: 1, of: 1 }),

@@ -369,6 +369,25 @@ describe('ConversationView', () => {
     expect(asked).toBe(1);
   });
 
+  /**
+   * XAGENT1g (the second-agent design §6.3): another agent's findings are a block from that agent, open, never the person's
+   * words and never a composed target with what it was composed of.
+   */
+  it('shows another agent’s findings as their own block, open, never as the person’s', () => {
+    const words = 'Another agent, Codex by OpenAI, read your work at 4f9c2a7e and claims what follows.';
+    render(
+      <Tooltip.Provider>
+        <ConversationView turns={toTurns([ev({ kind: 'user', origin: 'target', opinion: 'o1', text: words })]).turns} />
+      </Tooltip.Provider>,
+    );
+
+    expect(screen.getByText('Another agent\'s findings')).toBeTruthy();
+    expect(screen.getByText(words)).toBeTruthy();
+    expect(screen.queryByText('you')).toBeNull();
+    expect(screen.queryByText('The target Daoris composed')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Fold' })).toHaveAttribute('aria-expanded', 'true');
+  });
+
   /** SESS1 S4: the session ended inside the turn, so its open call never finished — never *running* for good. */
   it('says a session ended inside the turn it cut, and the call it left open stopped', () => {
     const events = [

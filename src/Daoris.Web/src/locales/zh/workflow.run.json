@@ -57,7 +57,7 @@
   "workflow.run.opinionWhy.ended": "它的阅读者没给出意见就停了",
   "workflow.run.opinionWhy.out-of-time": "它的阅读者在给出意见之前用完了时间",
   "workflow.run.opinionWhy.other": "其他厂商的已列阅读者都无法阅读它",
-  "workflow.run.opinionTwin": "在审阅画出它之前，「仍然继续」是终端里的按键：`daoris-driver opinion show {{session}}` 列出尚未了结的，`daoris-driver opinion anyway {{session}} \"…\"` 不等它继续。",
+  "workflow.run.opinionTwin": "「仍然继续」在会话自己的页面上、它的第二意见旁边，也可在终端：`daoris-driver opinion show {{session}}` 列出尚未了结的，`daoris-driver opinion anyway {{session}} \"…\"` 不等它继续。",
   "workflow.run.said.look.not-shown": "等你在 `{{environment}}` 中审阅：那里还没有展示它。",
   "workflow.run.said.look.being-set-up": "它的搭建步骤，委托 #{{quest}}，正在 `{{environment}}` 中搭建它。",
   "workflow.run.said.look.shown": "等你在 `{{environment}}` 中审阅。",

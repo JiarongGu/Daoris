@@ -313,6 +313,11 @@ public sealed partial class HelpCoverageTests
         ("useRenameHelp", HistoryDoor),
         ("usePinHelp", HistoryDoor),
         ("useHelpStartFrom", HistoryDoor),
+        // XAGENT1g: the second opinion's presses on a session's page and What needs you, the terminal's `opinion` verbs' twins.
+        ("useAskOpinion", OpinionAskDoor),
+        ("useStopOpinion", OpinionAskDoor),
+        ("useOpinionAnyway", OpinionJudgementDoor),
+        ("useOpinionMyself", OpinionJudgementDoor),
     ];
 
     /// <summary>Each <c>daoris driver</c> verb, and <c>across</c> by its two forms, as the CLI's command table spells them.</summary>

@@ -5,6 +5,7 @@ import { keys } from '../queries';
 // The shape lives beside the components that render it, so a molecule can name it without
 // importing this module (SURF6).
 import { REVIEW_BOUND_MINUTES, type SessionDiff } from '../work/diff';
+import type { OpinionDetail, OpinionGate, OpinionWait } from '../work/opinion';
 import type { TreeFile } from '../work/preview';
 import type { ReviewWaits } from '../work/review';
 import { call, pluginBound } from './call';
@@ -269,7 +270,8 @@ export type TreeAct = { session: string; done: boolean; message: string };
  * the line, or the branch it would make — said before the press. Only for a session with a tree here.
  * Where the rule names a plugin (D100), which one pushes it, and the sentence a press would be refused
  * with where that plugin cannot land work now. And the review's gate while it holds the work (REVIEWENV1c), which the page
- * draws where *Accept…* would be (REVIEWENV1g); absent where nothing waits for a review, and from a shell older than it.
+ * draws where *Accept…* would be (REVIEWENV1g); absent where nothing waits for a review, and from a shell older than it. And the
+ * second opinion's gate before it (XAGENT1f), wherever a level asks one, which the page draws beside the review's (XAGENT1g).
  */
 export const useLanding = (id: string | null) => {
   const { isAvailable } = useShenora();
@@ -277,10 +279,93 @@ export const useLanding = (id: string | null) => {
     queryKey: keys.landing(id ?? ''),
     queryFn: () => call<{
       session: string; form?: string; target?: string; source?: string; plugin?: string; problem?: string; review?: ReviewWaits | null;
+      opinion?: OpinionGate | null;
     }>('LANDING', { id }),
     enabled: isAvailable && id !== null,
   });
 };
+
+/**
+ * What a press at the second opinion's gate came to (XAGENT1f's `OpinionPresses`): whether it was taken, the driver's sentence
+ * (a refusal is an answer, as a landing's is), and the gate after it with the findings beside their answers (XAGENT1g).
+ */
+export type OpinionPressed = {
+  session?: string; done: boolean; message: string; opinion?: OpinionGate | string | null; detail?: OpinionDetail | null;
+};
+
+/**
+ * A session's second opinion at its gate, with each finding beside the working session's answer (XAGENT1g; the second-agent
+ * design §9): what the review's *Second opinion* draws. Shell-only: the opinion is this machine's (D47 §4).
+ */
+export const useOpinionGate = (id: string | null) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.opinion(id ?? ''),
+    queryFn: () => call<OpinionPressed & { opinion?: OpinionGate | null }>('OPINION_GATE', { id }),
+    enabled: isAvailable && id !== null,
+  });
+};
+
+/**
+ * What of the second opinion's gates waits on the person on this machine (XAGENT1g, design §9): a dispute, a required opinion
+ * none could be had for, and commits nobody read where the work lands by itself, oldest first. *What needs you* lists them.
+ * A shell older than the route answers nothing, which reads as none. `enabled` lets a caller ask it only while there is work
+ * it could name: an opinion is owed only on work Sessions' list places *To review*.
+ */
+export const useOpinionWaits = (enabled = true) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.opinionWaits,
+    queryFn: async () => {
+      const answer = await call<{ waits?: OpinionWait[] }>('OPINION_WAITS');
+      return Array.isArray(answer?.waits) ? answer.waits : [];
+    },
+    enabled: isAvailable && enabled,
+  });
+};
+
+/**
+ * A press at the gate (XAGENT1f): the gate moved, so every landing's plan and gate is asked again, and the sessions, whose
+ * reviewer a press may have started or stopped. Asked again whatever the driver said: a refusal reads the gate as it stands.
+ */
+function useOpinionChange<TVariables>(fn: (variables: TVariables) => Promise<OpinionPressed>) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: fn,
+    onSettled: () => {
+      void client.invalidateQueries({ queryKey: keys.allLandings });
+      void client.invalidateQueries({ queryKey: keys.allSessions });
+    },
+  });
+}
+
+/**
+ * *Ask now*, *Try again*, *Ask again* and *Ask the same agent, fresh* (the second-agent design §8.5): a pass on the session's work
+ * the driver's next look starts, among the rule's reviewers only, or the working agent in a fresh conversation (`sameAgent`).
+ * It spends an account at the person's choice, so no door but theirs presses it (§9).
+ */
+export const useAskOpinion = () => useOpinionChange(
+  ({ id, reviewer, sameAgent, words, occasion }: {
+    id: string; reviewer?: string | null; sameAgent?: boolean; words?: string | null; occasion?: 'asked' | 'failure';
+  }) => call<OpinionPressed>('ASK_OPINION', {
+    id, ...(reviewer ? { reviewer } : {}), ...(sameAgent ? { sameAgent: true } : {}), ...(words ? { words } : {}),
+    ...(occasion ? { occasion } : {}),
+  }));
+
+/**
+ * *Go on anyway…* (§8.5): what is unsettled stays so, the person's answer kept with their words at the commit that would land,
+ * and the gate's next item follows. Nothing lands here.
+ */
+export const useOpinionAnyway = () => useOpinionChange(
+  ({ id, words }: { id: string; words?: string | null }) => call<OpinionPressed>('OPINION_ANYWAY', { id, ...(words ? { words } : {}) }));
+
+/** *I looked myself…* (§8.5): the person's own reading kept in place of another agent's, with their words. */
+export const useOpinionMyself = () => useOpinionChange(
+  ({ id, words }: { id: string; words?: string | null }) => call<OpinionPressed>('OPINION_MYSELF', { id, ...(words ? { words } : {}) }));
+
+/** *Stop* (§8.5): the reviewer reading the opinion stopped, as the person's stop; that pass then says it gave none. */
+export const useStopOpinion = () => useOpinionChange(
+  ({ opinion }: { opinion: string }) => call<OpinionPressed>('STOP_OPINION', { opinion }));
 
 /** What the rule's plugin answered once the branch was made (D100): whether it pushed, the pull request, its words. */
 export type PluginLanding = { id: string; pushed: boolean; pullRequest?: string; message: string; failed?: boolean };
@@ -288,12 +373,22 @@ export type PluginLanding = { id: string; pushed: boolean; pullRequest?: string;
 /**
  * Accept a session: its work lands as its repository's rule says — merged, or put on a branch to push. A rule naming a
  * plugin hands the branch to it inside the press, so the page waits as long as that plugin may (`pluginBound`, LEFT3).
+ *
+ * Where *Accept…* was drawn with what the second opinion left unsettled, it sends back the gate's token (`answers`, XAGENT1f),
+ * so the press answers what it showed; a gate that moved since answers nothing, and the door refuses in its sentence.
  */
 export const useLandSessionTree = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) =>
-      call<TreeAct & { branch?: string; plugin?: PluginLanding }>('LAND_SESSION_TREE', { id }, { timeoutMs: pluginBound }),
+    mutationFn: (land: string | { id: string; answers?: string | null }) => {
+      const { id, answers } = typeof land === 'string' ? { id: land, answers: null } : land;
+      return call<TreeAct & { branch?: string; plugin?: PluginLanding }>(
+        'LAND_SESSION_TREE', { id, ...(answers ? { answers } : {}) }, { timeoutMs: pluginBound });
+    },
+    onSettled: (_result, _error, land) => {
+      // A press that answered the second opinion's gate, or was refused because it moved: every gate is read again (XAGENT1g).
+      if (typeof land !== 'string' && land.answers) void client.invalidateQueries({ queryKey: keys.allLandings });
+    },
     onSuccess: (result) => {
       // Only a merge that happened changes what a diff or a removal would say.
       if (result.done) {

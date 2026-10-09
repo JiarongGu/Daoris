@@ -20,6 +20,11 @@ import { HeldDiscardAsk, HeldDiscardButton, heldDiscardable } from './HeldDiscar
 import { isIntake, sessionOrigin, sessionTitle, shortened } from './identity';
 import { Note } from './Note';
 import { hasNote, noteBlocks, noteLines } from './noteLines';
+import {
+  acceptAnswers, type OpinionDetail, type OpinionGate as OpinionGateState, opinionAsked, opinionHolds, opinionState,
+} from './opinion';
+import { OpinionGate, type OpinionGateActs, unsettledWords } from './OpinionGate';
+import type { FileOpen } from './preview';
 import { movedAt } from './rail';
 import { reviewHolds, reviewState, type ReviewWaits } from './review';
 import { ReviewGate, type ReviewGateActs } from './ReviewGate';
@@ -73,6 +78,11 @@ import { RunningIntake } from './RunningIntake';
  * design §3.1): *Review in `<environment>`* in the gate's state, as the landing's plan says it, with the set-up step's showing
  * and the verdict's presses, and no *Accept…*, which the landing door would refuse.
  *
+ * **The second opinion stands before it** (XAGENT1g, D155 point 9; the second-agent design §7, §9): wherever a level asks one,
+ * *Second opinion* in its state, its findings beside their answers and its presses, before the review's gate as the gate's order
+ * has it. While it holds the work *Accept…* is not offered, except where *Accept…* is the press that answers it (a dispute, or
+ * commits nobody read): then its ask says what it answers, and the press sends the gate's token back (§8.2–§8.3).
+ *
  * **An absence is never a dash.** No tree is the registered root, no profile is the harness's own
  * configuration home, no machine is this deployment's own — and a browser over a keyed remote is
  * told none of them (D47 §4). `MetaLine` drops a pair it has no value for, which is why all four
@@ -81,8 +91,13 @@ import { RunningIntake } from './RunningIntake';
 export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
   onAnswerSession, branch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
-  ownSignIn = false, nameOf, lands, landing, onLand, discards, onDiscardTree, review,
+  ownSignIn = false, nameOf, lands, landing, onLand, discards, onDiscardTree, review, opinion,
 }: {
+  /**
+   * The second opinion's gate where a level asks one (XAGENT1g): its findings beside their answers, where the frame read them,
+   * and its presses. Drawn from the landing's plan's own `opinion`.
+   */
+  opinion?: HeadOpinion | null;
   /**
    * What its own tree offers to land (LAND4), as the driver's reader said it: commits no branch of the person's holds, on its
    * branch in its tree, whatever its ending. Absent where it offers none, or nothing has answered.
@@ -105,8 +120,11 @@ export function SessionHead({
    * press. Absent while it is read.
    */
   landing?: LandingPlan | null;
-  /** Land it: the review's Accept, told back to its ask. Absent where nothing can press it (a browser, a story). */
-  onLand?: (answered: Answered) => void;
+  /**
+   * Land it: the review's Accept, told back to its ask, with the second opinion's token where the press answers what it showed
+   * (XAGENT1g). Absent where nothing can press it (a browser, a story).
+   */
+  onLand?: (answered: Answered, answers?: string | null) => void;
   /**
    * Its agent has accounts, so a record naming none ran on the tool's own sign-in, and the head says so where it shows an
    * account (D125 §3.7, TOOL4m's rest with UX6e).
@@ -247,7 +265,10 @@ export function SessionHead({
       {/* Keyed by the branch: an ask to discard one session's branch never carries to another's (REV3's lesson). Commits
           its tree offers to land are the reader's to say (LAND4), keyed by the session for the same reason. */}
       {lands ? (
-        <Lands key={session.id} session={session} lands={lands} landing={landing} onReview={onReview} onLand={onLand} review={review} />
+        <Lands
+          key={session.id} session={session} lands={lands} landing={landing} onReview={onReview} onLand={onLand} review={review}
+          opinion={opinion}
+        />
       ) : discards ? (
         <Discards key={session.id} discards={discards} onReview={onReview} onDiscard={onDiscardTree} />
       ) : branch && (
@@ -395,10 +416,20 @@ function Left({ branch, onReview, onDiscard, discarding = false }: {
 export type LandingPlan = {
   session?: string; form?: string; target?: string; source?: string; plugin?: string; problem?: string;
   review?: ReviewWaits | null;
+  /** The second opinion's gate where a level asks one (XAGENT1f), which the head draws before the review's (XAGENT1g). */
+  opinion?: OpinionGateState | null;
 };
 
 /** The review's gate as the head draws it (REVIEWENV1g): the set-up step's record where the frame holds it, and the presses. */
 export type HeadReview = { step?: Quest | null; served?: boolean | null; acts?: ReviewGateActs; busy?: boolean };
+
+/**
+ * The second opinion as the head draws it (XAGENT1g): its findings beside their answers where the frame read them, the presses,
+ * and the side bar's preview a finding's place opens.
+ */
+export type HeadOpinion = {
+  detail?: OpinionDetail | null; acts?: OpinionGateActs; busy?: boolean; onOpenFile?: (open: FileOpen) => void;
+};
 
 /**
  * What its own tree offers to land, and its press (LAND4, D102's LAND4 note): the commits no branch of the person's holds,
@@ -407,19 +438,26 @@ export type HeadReview = { step?: Quest | null; served?: boolean | null; acts?: 
  * refuses, and for a session that did not finish that only what it committed lands. The move is the review's Accept, in
  * the primary's hue: a landing destroys nothing. Open until the landing answers, a refusal said inside it (UXFIX2).
  */
-function Lands({ session, lands, landing, onReview, onLand, review }: {
+function Lands({ session, lands, landing, onReview, onLand, review, opinion }: {
   session: Session;
   lands: LandOffer;
   landing?: LandingPlan | null;
   onReview?: () => void;
-  onLand?: (answered: Answered) => void;
+  onLand?: (answered: Answered, answers?: string | null) => void;
   review?: HeadReview | null;
+  opinion?: HeadOpinion | null;
 }) {
   const { t } = useTranslation();
   const [asking, setAsking] = useState(false);
   // While the review's gate holds the work (REVIEWENV1g, design §3.1), *Review in `<environment>`* stands where *Accept…*
   // would, in the gate's state, and no *Accept…* is offered: the landing door would refuse it.
   const waits = reviewHolds(landing);
+  // The second opinion's gate comes first (XAGENT1g, the second-agent design §7): while it holds, no *Accept…*, unless *Accept…*
+  // is the press that answers it, drawn with the token it sends back (§8.2–§8.3).
+  const second = opinionAsked(landing);
+  const opinionWaits = opinionHolds(landing);
+  const answers = opinionWaits && acceptAnswers(opinionWaits) ? opinionWaits.answers ?? null : null;
+  const acceptable = !waits && (!opinionWaits || answers !== null);
   // A session that did not finish lands what it committed before it ended (LAND4); one finished, at a checkpoint or by
   // itself, lands its work.
   const unfinished = session.state !== 'completed';
@@ -434,11 +472,23 @@ function Lands({ session, lands, landing, onReview, onLand, review }: {
         <span className="text-ink-open">{t('work.head.landed.not', { count: lands.commits })}</span>
         <PathText path={lands.branch} className="min-w-0 text-meta text-ink-faint" />
         <span className="text-ink-faint">{t('work.head.inTree', { tree: lands.tree })}</span>
-        {onLand && !asking && !waits && (
+        {onLand && !asking && acceptable && (
           <Button variant="primary" className="px-2 py-0.5 text-small" onClick={() => setAsking(true)}>{t('work.head.accept')}</Button>
         )}
         {onReview && <Button className="px-2 py-0.5 text-small" onClick={onReview}>{t('work.head.review')}</Button>}
       </p>
+      {second && (
+        <OpinionGate
+          gate={second}
+          detail={opinion?.detail ?? null}
+          acts={opinion?.acts}
+          busy={opinion?.busy}
+          // A press of the person's answers a dispute here: *Accept…*, or D154's *Reviewed* while its look holds the work.
+          pressComing={Boolean((onLand && acceptable) || waits)}
+          working={session.id}
+          onOpenFile={opinion?.onOpenFile}
+        />
+      )}
       {waits && (
         <ReviewGate
           environment={waits.environment ?? ''}
@@ -451,7 +501,7 @@ function Lands({ session, lands, landing, onReview, onLand, review }: {
           busy={review?.busy}
         />
       )}
-      {onLand && asking && !waits && (
+      {onLand && asking && acceptable && (
         <InlineConfirm
           tone="primary"
           block
@@ -459,6 +509,12 @@ function Lands({ session, lands, landing, onReview, onLand, review }: {
           says={(
             <>
               <p className="m-0 text-small text-ink-soft"><Inline text={where ?? t('work.head.landReading')} /></p>
+              {/* What the press answers, shown in it (the second-agent design §8.2–§8.3): making it is the person's answer. */}
+              {answers && opinionWaits && (
+                <p className="m-0 border-l-[3px] border-st-open pl-2 text-small text-ink-soft">
+                  {t('opinion.accept.answers', { unsettled: unsettledWords(t, opinionState(opinionWaits.state), opinionWaits) })}
+                </p>
+              )}
               {landing?.problem && (
                 <p className="m-0 border-l-[3px] border-warn pl-2 text-small text-ink-soft">
                   <Inline text={t('work.review.landingProblem', { problem: landing.problem })} />
@@ -473,7 +529,7 @@ function Lands({ session, lands, landing, onReview, onLand, review }: {
             </>
           )}
           meanIt={t('work.head.landMeanIt')}
-          onConfirm={onLand}
+          onConfirm={(answered) => onLand?.(answered, answers)}
           onClose={() => setAsking(false)}
         />
       )}

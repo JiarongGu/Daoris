@@ -34,7 +34,7 @@ export type Box =
 
 /** What decides a session's box: its record, whether it is this machine's, and what the module answered. */
 export type BoxFacts = {
-  session: Pick<Session, 'kind' | 'state' | 'answer'> | null;
+  session: Pick<Session, 'kind' | 'state' | 'answer' | 'opinion'> | null;
   /** The record is this machine's: a teammate's runs on their machine and account (D47 §6). */
   here: boolean;
   /** An intake, answered through its ask (INT4h). */
@@ -50,7 +50,8 @@ export type BoxFacts = {
  *
  * @remarks
  * - **What the page knows first.** A teammate's record never takes words here, and a live intake's head already says why
- *   it takes none, so neither waits for the module.
+ *   it takes none, so neither waits for the module. Nor does a second opinion's reviewer (XAGENT1g): one turn, no words, and
+ *   the host refuses words to its record; ended, its line says why.
  * - **The module's code draws the line**, whatever the record says: it judges what the page cannot (a quest that went on
  *   in a later session, a record gone).
  * - **A park is the answer before the module answers**, as it was: its record says it waits on the person. Every other
@@ -61,6 +62,7 @@ export function boxOf({ session, here, intake, listening, reach }: BoxFacts): Bo
   if (!session) return { kind: 'none' };
   if (!here) return { kind: 'line', why: 'teammate' };
   const live = SESSION_ACTIVE.has(session.state);
+  if (session.opinion) return live ? { kind: 'none' } : { kind: 'line', why: 'opinion' };
   if (intake) return live ? { kind: 'none' } : { kind: 'line', why: 'intake' };
   if (reach?.why) return { kind: 'line', why: reach.why };
   const resumes = reach?.reaches === 'resume';
@@ -86,6 +88,7 @@ const NEVER: Record<string, string> = {
   'teammate': 'work.say.teammate',
   'stood-down': 'work.say.stoodDown',
   'intake': 'work.say.intake',
+  'opinion': 'work.say.opinion',
   'help': 'work.say.help',
   'superseded': 'work.say.superseded',
   'not-found': 'work.say.notFound',

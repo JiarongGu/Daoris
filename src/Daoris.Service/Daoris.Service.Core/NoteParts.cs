@@ -25,6 +25,9 @@ public static class LedgerNoteCodes
     public static readonly LedgerNoteCode Answered = new("ledger.answered", []);
     public static readonly LedgerNoteCode Parked = new("ledger.parked", []);
     public static readonly LedgerNoteCode WentOn = new("ledger.went-on", ["at"]);
+    // Another agent's findings alone, or beside the person's words (XAGENT1e2), coded once the page words them (XAGENT1g).
+    public static readonly LedgerNoteCode WentOnFindings = new("ledger.went-on-findings", ["at"]);
+    public static readonly LedgerNoteCode WentOnBoth = new("ledger.went-on-both", ["at"]);
 
     /// <summary>Every code above, read off the declarations so none escapes the catalogue test.</summary>
     public static IReadOnlyList<LedgerNoteCode> All { get; } =

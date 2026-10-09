@@ -52,7 +52,9 @@ describe('a session note’s codes, held to both catalogues', () => {
   it('reads both writers’ declarations', () => {
     // A scan that matched nothing would pass on a moved or renamed file: it has to see them.
     expect(driver.length).toBeGreaterThan(60);
-    expect(ledger.map((code) => code.code)).toEqual(['ledger.answered', 'ledger.parked', 'ledger.went-on']);
+    expect(ledger.map((code) => code.code)).toEqual([
+      'ledger.answered', 'ledger.parked', 'ledger.went-on', 'ledger.went-on-findings', 'ledger.went-on-both',
+    ]);
     expect(new Set(codes.map((code) => code.code)).size).toBe(codes.length);
   });
 

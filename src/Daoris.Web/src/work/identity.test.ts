@@ -102,6 +102,16 @@ describe('a session title', () => {
     await i18n.changeLanguage('en');
   });
 
+  /** XAGENT1g: a second opinion's reviewer is a chat on no quest only by the way it was opened; it says what it is. */
+  it('names a second opinion’s reviewer as one, never as a conversation', async () => {
+    const reviewer = session({ kind: 'chat', repository: 'engine', opinion: 'o1a2b3c4' });
+    expect(sessionTitle(reviewer, null, 'You are reading another session\'s work.')).toBe('Second opinion');
+
+    await i18n.changeLanguage('zh');
+    expect(sessionTitle(reviewer)).toBe('第二意见');
+    await i18n.changeLanguage('en');
+  });
+
   it('prefers the quest over the kind — a chat that took one is still about that quest', () => {
     expect(sessionTitle(session({ kind: 'chat', quest: '7a82cc' }), quest()))
       .toBe('Expose a streaming budget on the chunk API');
