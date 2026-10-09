@@ -245,7 +245,7 @@
         "work.attention.act.publish", "work.attention.act.refuse", "work.attention.act.retry", "work.attention.act.trust",
         "work.attention.act.letRun",
         "work.attention.door.*", "work.attention.more", "work.awaiting.answerConfirm", "work.awaiting.carryOn", "work.awaiting.decline",
-        "work.awaiting.declineConfirm", "work.awaiting.finish", "work.code.copy",
+        "work.awaiting.declineConfirm", "work.awaiting.finish", "work.code.copy", "work.code.wrap",
         "work.composer.attach", "work.composer.finish", "work.composer.queue", "work.composer.send",
         "work.composer.stop", "work.composer.stopTurn", "work.conversation.bottom", "work.conversation.earlier",
         "work.conversation.hide", "work.conversation.show", "work.dock.close", "work.dock.full",

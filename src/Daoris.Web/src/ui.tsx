@@ -10,14 +10,14 @@ import * as RadixSelect from '@radix-ui/react-select';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
-  Archive, ArchiveRestore, ArrowDown, ArrowDownToLine, ArrowLeftRight, ArrowUp, BookOpen, Bot, Brain, Check, ChevronDown, ChevronRight, ChevronUp,
+  Archive, ArchiveRestore, ArrowDown, ArrowDownToLine, ArrowLeft, ArrowLeftRight, ArrowUp, BookOpen, Bot, Brain, Check, ChevronDown, ChevronRight, ChevronUp,
   CircleHelp, ClipboardPaste, Cloud, CloudOff, Compass, Copy, Ellipsis, Eye, FileDiff, FilePen, FileText, Flag, FolderOpen, Gauge, GitBranch,
-  GitMerge, GitPullRequest, Globe, Hand, Inbox, Info, ScanEye,
+  GitMerge, GitPullRequest, Globe, Hand, History, Inbox, Info, Pin, ScanEye,
   Keyboard, KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, Link, ListTodo, LogIn, Maximize2, Menu as MenuGlyph, Minimize2,
   Monitor, Network,
   PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, Paperclip, Pause, Play, Plug, Plus, Redo2, Reply,
   RotateCw, Scissors, Search, Settings, Shield, Square, SquareArrowOutUpRight, SquareTerminal, Terminal, TextSelect, Trash2, TriangleAlert,
-  Undo2, Workflow, Wrench, X,
+  Undo2, Workflow, Wrench, WrapText, X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, SessionState } from './api';
@@ -155,6 +155,12 @@ const ICONS = {
   stepFinished: Flag,
   // Where a piece of work stands in its workflow (WORKFLOW1c, design §7): the session's side bar view and the doors into it.
   workflow: Workflow,
+  // Ask Daoris's history (ASKHIST1c): its list, the way back to it from a conversation, a pinned conversation's mark, and a
+  // code block's long lines wrapped at its pane.
+  history: History,
+  back: ArrowLeft,
+  pin: Pin,
+  wrap: WrapText,
 } as const;
 
 export type IconName = keyof typeof ICONS;
