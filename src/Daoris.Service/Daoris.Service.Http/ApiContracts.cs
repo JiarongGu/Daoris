@@ -142,9 +142,11 @@ public sealed record DismissConflictRequest(string? Machine, long? Sequence);
 // An ask (D65 §1a): a sentence at a workspace. Files arrive whole — the ask door is a local host's —
 // and `To` is the asker naming the receiver, which publishes at once.
 // `Review` and `ReviewWords` (REVIEWENV1b, design §1.5): the person's review choice from the composer, and their words with it.
+// `Kind`, `Workflow` and `WorkflowWords` (WORKFLOW1e, the workflow design §4.3): the person's kind and workflow for its work.
 public sealed record AskRequestBody(
     string? Workspace, string? Sentence, IReadOnlyList<string>? Links,
-    IReadOnlyList<QuestAttachmentRequest>? Attachments, string? To, string? Review = null, string? ReviewWords = null);
+    IReadOnlyList<QuestAttachmentRequest>? Attachments, string? To, string? Review = null, string? ReviewWords = null,
+    string? Kind = null, string? Workflow = null, string? WorkflowWords = null);
 // A publish is a person's `To` alone; an intake (D65 §1b) adds its own words, carry and chain, and
 // names its `Session` — which moves the ask's tier to `intake` only when it is the ask's own. Its
 // `Requirements` quote the person (DRIFT1c), judged against the ask's words. `Review` is the chain's choice, an intake's only on
@@ -158,6 +160,8 @@ public sealed record AskPublishRequest(
 public sealed record ReviewProposalWire(string? Choice, string? Reason);
 // The person's review choice on an ask's page (REVIEWENV1b, design §1.5), and their words with it.
 public sealed record AskReviewRequest(string? Choice, string? Words = null);
+// The person's kind and workflow on an ask (WORKFLOW1e, the workflow design §4.3): either, both, or neither to clear them.
+public sealed record AskWorkflowRequest(string? Kind = null, string? Workflow = null, string? Words = null);
 public sealed record AskCloseRequest(string? Reason);
 public sealed record DeclarationMatchResponse(string Repository, int Score, IReadOnlyList<string> Matched);
 // `Tier` is said on every record (model-decoupling): which tier answered, never implied. `Intake` is
@@ -170,6 +174,8 @@ public sealed record DeclarationMatchResponse(string Repository, int Score, IRea
 // `GoAheads` (KNOWUSE1a, D135 §2) is every go-ahead its sessions asked the person for, oldest first, one per act.
 // `ReviewChoices` (REVIEWENV1b, design §1.5) is the person's review choices on it, oldest first, the latest standing;
 // `ReviewProposals` its intake's proposals, each with its reason and the quest it came with. Each absent where there is none.
+// `WorkflowChoices` (WORKFLOW1e, the workflow design §4.3) is the person's kind and workflow choices on it, oldest first, the
+// latest standing, one naming neither a choice cleared; absent where there is none.
 public sealed record AskResponse(
     string Id, string Workspace, string Sentence, string State, string Tier, DateTimeOffset Asked,
     DateTimeOffset Updated, string? Asker, string? Note, IReadOnlyList<string> Links,
@@ -177,8 +183,10 @@ public sealed record AskResponse(
     IReadOnlyList<string> Quests, string? Intake = null, bool Deletable = false,
     IReadOnlyList<AskWordResponse>? Words = null, DateTimeOffset? WordsKeptFrom = null,
     IReadOnlyList<GoAheadResponse>? GoAheads = null,
-    IReadOnlyList<AskReviewChoiceResponse>? ReviewChoices = null, IReadOnlyList<AskReviewProposalResponse>? ReviewProposals = null);
+    IReadOnlyList<AskReviewChoiceResponse>? ReviewChoices = null, IReadOnlyList<AskReviewProposalResponse>? ReviewProposals = null,
+    IReadOnlyList<AskWorkflowChoiceResponse>? WorkflowChoices = null);
 public sealed record AskReviewChoiceResponse(string Choice, DateTimeOffset At, string? Words);
+public sealed record AskWorkflowChoiceResponse(string? Kind, string? Workflow, DateTimeOffset At, string? Words);
 public sealed record AskReviewProposalResponse(string Choice, string Reason, DateTimeOffset At, string? Session, string? Quest);
 // One word (DRIFT1a): `kind` is `asked`, `answered`, `added` or `reopened` (MSG1a: said after its session ended, which
 // went on with it), or a review's `reviewed`, `not-yet` or `skipped` (REVIEWENV1b); the ask's own sentence names no session.
@@ -493,6 +501,7 @@ public sealed record ConfirmationActionResponse(ConfirmationResponse Confirmatio
 [JsonSerializable(typeof(QuestReviewRequest))]
 [JsonSerializable(typeof(SetUpStepRequest))]
 [JsonSerializable(typeof(AskReviewRequest))]
+[JsonSerializable(typeof(AskWorkflowRequest))]
 [JsonSerializable(typeof(AskRequestBody))]
 [JsonSerializable(typeof(AskPublishRequest))]
 [JsonSerializable(typeof(AskCloseRequest))]

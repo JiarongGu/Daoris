@@ -806,6 +806,35 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// WORKFLOW1e (the workflow design §4.3): the ask's workflow door keeps the person's kind and workflow, the latest standing, and
+    /// answers them on the ask; an ask that chose none answers without the field, as it always did. A shape that is not one is
+    /// 400, a closed ask 409, an unknown one 404.
+    /// </summary>
+    [Fact]
+    public async Task The_asks_workflow_door_keeps_its_kind_and_workflow_and_the_latest_stands()
+    {
+        Assert.Contains(("POST", "/api/asks/{id}/workflow"), host.Routes());
+        var asked = await host.PostAsync("/api/asks", new { workspace = "default", sentence = "Write the guide for the totals column." });
+        Assert.Equal(200, asked.Status);
+        var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
+        Assert.False(asked.Json.GetProperty("ask").TryGetProperty("workflowChoices", out _));
+
+        var chosen = await host.PostAsync($"/api/asks/{ask}/workflow", new { kind = "docs", workflow = "docs-to-pr", words = "docs only" });
+        Assert.Equal(200, chosen.Status);
+        Assert.Contains("are of kind `docs`, and follow `docs-to-pr`", chosen.Json.GetProperty("message").GetString());
+        Assert.Equal(200, (await host.PostAsync($"/api/asks/{ask}/workflow", new { })).Status);
+        var choices = (await host.GetAsync($"/api/asks/{ask}")).Json.GetProperty("workflowChoices");
+        Assert.Equal(2, choices.GetArrayLength());
+        Assert.Equal(("docs", "docs-to-pr", "docs only"),
+            (choices[0].GetProperty("kind").GetString(), choices[0].GetProperty("workflow").GetString(), choices[0].GetProperty("words").GetString()));
+
+        Assert.Equal(400, (await host.PostAsync($"/api/asks/{ask}/workflow", new { kind = "Docs" })).Status);
+        Assert.Equal(404, (await host.PostAsync("/api/asks/ffffff/workflow", new { kind = "docs" })).Status);
+        Assert.Equal(200, (await host.PostAsync($"/api/asks/{ask}/close", new { reason = "Written by hand." })).Status);
+        Assert.Equal(409, (await host.PostAsync($"/api/asks/{ask}/workflow", new { kind = "docs" })).Status);
+    }
+
+    /// <summary>
     /// DRIFT1a: the added door keeps nothing for a session on no ask, and says so with a 200 — its own record
     /// holds what was said, which is no error; it refuses a session it does not hold, 404, and no words, 400.
     /// </summary>
