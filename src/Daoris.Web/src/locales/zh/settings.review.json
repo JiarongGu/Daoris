@@ -1,8 +1,8 @@
 {
   "settings.review.label": "落地前审阅",
   "settings.review.body": "这里的工作在被提议落地之前展示给你的地方：在 Daoris 的浏览器中、应用平常运行的地址上（本地），或者在 dev 这样的共享环境中，按仓库自己写明的步骤到达（已部署）。生产环境永远不是。仓库自己的规则整体取代工作区的；哪里都没有设定时，工作就像今天这样落地。",
-  "settings.review.twin.repository": "`daoris driver review {{repository}} <environment> --kind local|deployed --procedure <path>`、`none`、`--drop <environment>`、`--clear`",
-  "settings.review.twin.workspace": "`daoris driver review --workspace {{workspace}} <environment> --kind local|deployed --procedure <path>`、`--drop <environment>`、`--clear`",
+  "settings.review.twin.repository": "`daoris driver review {{repository}} <environment> --kind local|deployed --procedure <path>|none|--drop <environment>|--clear`",
+  "settings.review.twin.workspace": "`daoris driver review --workspace {{workspace}} <environment> --kind local|deployed --procedure <path>|--drop <environment>|--clear`",
   "settings.review.from.repository": "为这个仓库设定。",
   "settings.review.from.workspace": "沿用工作区 {{workspace}}。",
   "settings.review.either": "{{rest}} 或 {{last}}",

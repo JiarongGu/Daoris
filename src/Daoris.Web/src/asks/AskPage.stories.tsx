@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { chinese } from '../storyLanguage';
 import { ASK_PLAN } from '../work/historyFixtures';
 import type { WorkDoor } from '../work/pausing';
 import {
@@ -38,6 +39,25 @@ type Story = StoryObj<typeof AskPage>;
 
 /** Proposed by the declarations: each repository it proposed is a publish, and any other in its circle can be named. */
 export const Proposed: Story = {};
+
+/**
+ * REVIEWENV1g: the review of its work, the person's choice standing with their words, an intake's proposal beside it with
+ * *Apply*, and the choice to change.
+ */
+export const ReviewChosen: Story = {
+  args: {
+    ask: {
+      ...PROPOSED,
+      reviewChoices: [{ choice: 'local', at: '2026-10-09T09:00:00Z', words: 'run it locally against dev data' }],
+      reviewProposals: [{ choice: 'off', reason: 'Only the README changes, which has nothing to show.', at: '2026-10-09T08:55:00Z' }],
+    },
+    environments: ['dev', 'local'],
+    onChooseReview: nothing,
+  },
+};
+
+/** The same in 中文. */
+export const ReviewChosenChinese: Story = { ...ReviewChosen, decorators: [chinese] };
 /** Its sentence names a repository (ASKNAME1b): that one first, *named in the ask*, then a word match with its words. */
 export const NamesItsRepository: Story = { args: { ask: NAMES_ITS_REPOSITORY } };
 /** Nothing in the circle's declarations shares its words, and the page says so. */

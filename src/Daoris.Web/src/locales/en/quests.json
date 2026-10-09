@@ -116,7 +116,7 @@
   "quests.detail.openAsk": "Open ask #{{id}}",
   "quests.detail.openPausing": "Open quest #{{id}}",
   "quests.detail.noDriver": "Pausing and abandoning are a machine's driver's, so a browser offers neither: on the desktop, or at a terminal, `daoris-driver quest pause {{id}}` and `daoris-driver quest abandon {{id}}`.",
-  "quests.groups.held": "Awaiting your yes ({{count}})",
+  "quests.groups.held": "Waiting on you ({{count}})",
   "quests.card.held": "awaits your yes",
   "quests.card.heldHint": "Its done departed from what you required, so what follows it waits until you accept the departure on its page.",
   "quests.requirements.title": "What you required",

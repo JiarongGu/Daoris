@@ -6,6 +6,7 @@ import type { HistoryDoor } from '../work/history';
 import { FAILED_PLAN, QUEST_ASKED, QUEST_PLAN } from '../work/historyFixtures';
 import type { WorkDoor } from '../work/pausing';
 import { ABANDONED_ENTRY, PAUSABLE_QUEST, PAUSED_QUEST } from '../work/pausingFixtures';
+import { STEP_REVIEWED, STEP_SETTING_UP, STEP_SHOWN, STEP_SHOWN_AGAIN } from '../work/reviewFixtures';
 import { answer, QUEST_CHAIN } from '../work/traceFixtures';
 import {
   ACCEPTED, CHAINED, CJK, CONFLICTED, DECLINED, DELETABLE, DONE, EXHAUSTED, FAILED, FINISHED_HERE, HELD, HELD_BY_PERSON, HELD_CJK,
@@ -259,3 +260,34 @@ export const HowItCameToBeDark: Story = { ...HowItCameToBeOpen, decorators: [dar
 
 /** Open, in 中文 and dark. */
 export const HowItCameToBeChineseDark: Story = { ...HowItCameToBeOpen, decorators: [chinese, dark] };
+
+/** The presses a set-up step's review is handed on the desktop (REVIEWENV1g). */
+const REVIEW_ACTS = { reviewed: nothing, notYet: nothing, skip: nothing, showAgain: nothing };
+
+/**
+ * A set-up step shown and waiting for the person's look (REVIEWENV1g): *awaits review* in its header, *Review in `local`*
+ * above its body with what it showed, where, that its tab is still served, and how to show it again by hand, then *Reviewed*,
+ * *Not yet…*, *Show it again* and *Skip…*.
+ */
+export const SetUpShown: Story = { args: { quest: STEP_SHOWN, review: { acts: REVIEW_ACTS, served: true } } };
+
+/** The same in 中文. */
+export const SetUpShownChinese: Story = { ...SetUpShown, decorators: [chinese] };
+
+/** The same in dark. */
+export const SetUpShownDark: Story = { ...SetUpShown, decorators: [dark] };
+
+/** The same in 中文 and dark. */
+export const SetUpShownChineseDark: Story = { ...SetUpShown, decorators: [chinese, dark] };
+
+/** Shown again after the person's not yet: the newest waits, and the first is listed under it with their words. */
+export const SetUpShownAgain: Story = { args: { quest: STEP_SHOWN_AGAIN, review: { acts: REVIEW_ACTS, served: false } } };
+
+/** Its session still works: being set up, and only the skip. */
+export const SetUpBeingSetUp: Story = { args: { quest: STEP_SETTING_UP, review: { acts: REVIEW_ACTS } } };
+
+/** Reviewed: every set-up and its verdict, nothing left to press. */
+export const SetUpReviewed: Story = { args: { quest: STEP_REVIEWED, review: { acts: REVIEW_ACTS } } };
+
+/** In a browser: no shell to reach a session or a tab, so *Reviewed* and *Skip…* alone. */
+export const SetUpInABrowser: Story = { args: { quest: STEP_SHOWN, review: { acts: { reviewed: nothing, skip: nothing } } } };

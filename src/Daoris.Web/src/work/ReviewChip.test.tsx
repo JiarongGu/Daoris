@@ -57,6 +57,44 @@ describe('the review chip', () => {
     expect(await screen.findByText(/No longer shown: a reload there loads your own server/)).toBeInTheDocument();
   });
 
+  /**
+   * REVIEWENV1g (D154 point 8, design §3.3): the verdict on the strip beside the browser, never inside it. *Reviewed* names the
+   * set-up the step's record holds; *Not yet…* opens the step's page, where the words are asked; with no whole set-up, no
+   * verdict is offered.
+   */
+  it('says reviewed on the set-up its record holds, and opens the step for a not yet', async () => {
+    const onReviewed = vi.fn();
+    const onNotYet = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <ReviewChip
+        reviews={[{ ...SHOWN, setUp: { machine: 'desk', sequence: 7 } }]}
+        onShowAgain={() => {}} onReviewed={onReviewed} onNotYet={onNotYet}
+      />,
+    );
+
+    screen.getByRole('button', { name: /waits for your review/ }).focus();
+    await user.keyboard('{Enter}');
+    await user.click(await screen.findByRole('menuitem', { name: 'Reviewed #q2' }));
+    expect(onReviewed).toHaveBeenCalledWith('q2', { machine: 'desk', sequence: 7 });
+
+    screen.getByRole('button', { name: /waits for your review/ }).focus();
+    await user.keyboard('{Enter}');
+    await user.click(await screen.findByRole('menuitem', { name: "Not yet… on #q2's page" }));
+    expect(onNotYet).toHaveBeenCalledWith('q2');
+  });
+
+  it('offers no verdict where the page holds no whole set-up of the step', async () => {
+    const user = userEvent.setup();
+    render(<ReviewChip reviews={[SHOWN]} onShowAgain={() => {}} onReviewed={vi.fn()} />);
+
+    screen.getByRole('button', { name: /waits for your review/ }).focus();
+    await user.keyboard('{Enter}');
+
+    expect(await screen.findByRole('menuitem', { name: /Show #q2 again/ })).toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'Reviewed #q2' })).toBeNull();
+  });
+
   it('counts two, and offers each to show again', async () => {
     const onShowAgain = vi.fn();
     const user = userEvent.setup();

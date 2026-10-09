@@ -18,6 +18,8 @@ import { HowItCameToBe, type TraceDoor } from '../work/HowItCameToBe';
 import { questName, sessionOrigin } from '../work/identity';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import { Note } from '../work/Note';
+import { stepState } from '../work/review';
+import { ReviewGate, type ReviewGateActs } from '../work/ReviewGate';
 import { QuestRequirements } from './Requirements';
 import { TrustAsk } from '../work/TrustAsk';
 import { type MainNotice, PageHead, PageSection, ViewMain } from '../work/ViewMain';
@@ -117,13 +119,22 @@ function Fact({ name, children }: { name: string; children: ReactNode }) {
  *   ask says so where it carries some. A taken quest whose last session here ended in a way nothing carries on (finished or
  *   declined at a checkpoint) says so under *Sitting*, with *Mark done…* there: on the install such a quest sat taken with
  *   nothing on its page that said why or closed it.
+ * - **A set-up step's page is where its review is answered** (REVIEWENV1g, D154 point 8; the review environment design §3.3):
+ *   *Review in `<environment>`* above the body, every set-up it said newest first, and under the newest *Reviewed*, *Not
+ *   yet…*, *Show it again* and *Skip…*. A done its review holds waits for that, not for a yes: its header says *awaits
+ *   review* and no *Accept the departure* is offered for it, which the accept door would refuse.
  */
 export function QuestPage({
   quest, lanes, question, sitting, hold, chain = [], session,
   busy = false, retrying = false, trusting = false, granting = false, dismissing = false, accepting = false,
   onRespond, onDelete, onDismiss, onRetry, onTrusting, onGrant, onOpenQuest, onAttend, onOpenAsk, onAccept, work, history, trace,
-  nameOf,
+  nameOf, review,
 }: {
+  /**
+   * A set-up step's review (REVIEWENV1g): its presses, whether one is on its way, and whether Daoris still serves its newest
+   * set-up's tab here (null where no shell says). Absent, its review is shown with no press.
+   */
+  review?: { acts: ReviewGateActs; busy?: boolean; served?: boolean | null };
   /**
    * What a person calls an account (ACCTNAME1, D152 §4.2), from the roster its organism holds: its session line, its chain
    * and its trace say each account by it. Absent, as in a browser, each record's id is said.
@@ -259,8 +270,10 @@ export function QuestPage({
   const ownResume = (ownPause || pausedUnseen) && work !== undefined;
   const retryable = (because?.verdict === 'Exhausted' || because?.verdict === 'Stopped') && onRetry !== undefined;
   const trustable = Boolean(hold && onGrant && onTrusting && !trusting);
-  // A departure that holds it for the person's yes (DRIFT1d2): what it waits on, so the yes leads its body's acts.
-  const held = quest.held === true;
+  // A departure that holds it for the person's yes (DRIFT1d2): what it waits on, so the yes leads its body's acts. A set-up
+  // step its review holds waits for the review's verdict instead (REVIEWENV1g), which no yes lifts (D154 point 9).
+  const unreviewed = quest.held === true && quest.hold === 'unreviewed';
+  const held = quest.held === true && !unreviewed;
   const requirements = quest.requirements ?? [];
   const acceptable = held && onAccept !== undefined;
   const bodyActs: QuestAct[] = [
@@ -349,6 +362,7 @@ export function QuestPage({
           <Pill tone={QUEST_TONE[quest.status]} title={t(`statusHint.${quest.status}`)}>{t(`status.${quest.status}`)}</Pill>
           {/* Open's hue is the person's (D126 §2.3): a departure waits on their yes (DRIFT1d2). */}
           {held && <Pill tone="open" title={t('quests.card.heldHint')}>{t('quests.card.held')}</Pill>}
+          {unreviewed && <Pill tone="open" title={t('review.pillHint')}>{t('review.pill')}</Pill>}
         </>
       )}
       clamp={2}
@@ -610,6 +624,21 @@ export function QuestPage({
           next={quest.then?.[0]}
           accepting={accepting}
           onAccept={acceptable ? () => press('accept') : undefined}
+        />
+      )}
+
+      {quest.setUpIn && (
+        /* A set-up step's review (REVIEWENV1g): what it waits on, so above the body, as a held departure sits; every set-up
+           it said, newest first, and the verdict's presses under the newest. */
+        <ReviewGate
+          className="mb-4"
+          environment={quest.setUpIn}
+          state={stepState(quest)}
+          step={quest}
+          served={review?.served ?? null}
+          acts={review?.acts}
+          busy={review?.busy}
+          whole
         />
       )}
 

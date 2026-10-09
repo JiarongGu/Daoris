@@ -124,6 +124,23 @@ describe('what a review rule says', () => {
       'work 声明了审阅环境 dev。那里等你审阅的工作，要等你审阅或跳过审阅之后才会落地。');
   });
 
+  /**
+   * REVIEWENV1g: the Setup row's terminal twin joins its alternatives with `|` inside its one command, as its neighbours'
+   * twins do (`daoris driver line … <branch>|--clear`), in both languages; a command is code, never translated, so 中文 says
+   * it as English does, never with 、 between spans.
+   */
+  it("says its terminal twin as its neighbours do, one command with its alternatives joined by |, in both languages", () => {
+    for (const key of ['settings.review.twin.repository', 'settings.review.twin.workspace']) {
+      const english = i18n.getFixedT('en')(key, { repository: 'engine', workspace: 'aurora' });
+      const chinese = i18n.getFixedT('zh')(key, { repository: 'engine', workspace: 'aurora' });
+
+      expect(chinese).toBe(english);
+      expect(english.match(/`/g)).toHaveLength(2);
+      expect(chinese).not.toMatch(/、/);
+      expect(english).toMatch(/\|--drop <environment>\|--clear`$/);
+    }
+  });
+
   it('toasts what a change did, and for a put what its procedure look found', () => {
     const put = { put: { name: 'dev', kind: 'deployed', procedure: 'README.md' } };
     expect(reviewToast(t, 'work', put, { lacking: ['media-api', 'storefront'], unchecked: false })).toBe(

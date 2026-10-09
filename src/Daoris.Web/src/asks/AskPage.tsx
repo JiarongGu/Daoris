@@ -14,6 +14,7 @@ import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type W
 import { PageHead, PageSection, ViewMain } from '../work/ViewMain';
 import { AbandonAsk, AbandonedWork, PauseAsk } from '../work/WorkAsks';
 import { ASK_TONE, firstLine, tierWords } from './AskRow';
+import { AskReview } from './AskReview';
 import { AskWork } from './AskWork';
 import { workTree } from './workTree';
 import { GoAheadList } from './GoAheadList';
@@ -90,8 +91,15 @@ const ASK_ACT: Record<AskAct, { label: string; variant: 'primary' | 'default' | 
  */
 export function AskPage({
   ask, receivers, questTitles, intake = null, onAttend, busy = false, onPublish, onClose, onDelete, onOpenQuest, onAnswerGoAhead,
-  work, history, considered = [], nameOf,
+  work, history, considered = [], nameOf, environments, onChooseReview,
 }: {
+  /** The review environments the ask's circle declares, by name (REVIEWENV1a); none where no shell says. */
+  environments?: string[];
+  /**
+   * The person's review choice for the ask's work, or its intake's proposal applied (REVIEWENV1g, design §1.5), with their words.
+   * Absent where there is no door to set it through.
+   */
+  onChooseReview?: (choice: string, words?: string) => void;
   /** What a person calls an account (ACCTNAME1, D152 §4.2), from the roster; absent, the intake's record's id is said. */
   nameOf?: AccountNamer;
   ask: Ask;
@@ -346,6 +354,14 @@ export function AskPage({
            holds a session until the person answers it. */
         <PageSection title={t('asks.record.goAheads')}>
           <GoAheadList goAheads={ask.goAheads} busy={busy} onAnswer={onAnswerGoAhead} />
+        </PageSection>
+      )}
+
+      {(live || (ask.reviewChoices?.length ?? 0) > 0) && (
+        /* What the person chose for the review of its work, and what its intake proposed (REVIEWENV1g, design §1.5): the
+           choice is theirs alone, and a proposal applies only on their press. */
+        <PageSection title={t('asks.record.review')}>
+          <AskReview ask={ask} environments={environments} busy={busy} onChoose={onChooseReview} />
         </PageSection>
       )}
 

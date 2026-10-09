@@ -12512,3 +12512,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **WORKFLOW1a — Current, derived and said** (driver, cli). One pure function per twin derives a repository's workflow from its rules, each step with its source and limit, held to a shared fixture table; `daoris driver workflow show --repository|--workspace` prints it. Contract: §2.7, §3.2, §4.7. Proof: `WorkflowCurrentTests` and `workflows.test.ts`, cell for cell.
 
 **Outcome** 2026-10-07: a repository's or a workspace's Current is derived from the landing, review and opinion rules and the standing answer by twin functions, `workflows.ts` and `WorkflowCurrent.cs`, held cell for cell to `fixtures/workflow-current.json` (22 rows and the limits' sentences, version included); `daoris driver workflow show --repository|--workspace` prints it. Detail: D157's WORKFLOW1a note and the twins row; commits b9ba3e38…1730eedc.
+
+
+## REVIEWENV1g — the screens (2026-10-09, D154)
+
+> - [ ] **REVIEWENV1g — the screens** (web-shell, web-settings, modules; after c, d). *Review in `<environment>`*, the gate's states in place of *Accept…*, the strip's chip, What needs you, the composer's and the ask's choice, the glossary's terms; and REVIEWENV1a's Setup row, whose command in 中文 joins its alternatives with 、 where its neighbours use `|` (seen on the install). Contract: §1.5, §3.1–§3.3, §3.6. Proof: vitest, stories, `i18n:check`, `names:check --strict`, `HelpCoverageTests`, the look in both themes and 中文.
+
+**Outcome** 2026-10-07: the review is answered in the window: *Review in `<environment>`* stands where *Accept…* was, in the gate's states (not shown, being set up, shown, not yet, newer work, unread), on the session head and the review pane's foot, a set-up step's page, *What needs you* and the strip's chip; the person's review choice is in the ask composer and on the ask's page; one owner (`useReviewActs`) for every press, through the person-key seam `asThePerson`. Follow-ups: REVIEWENV1j, REVIEWENV1g2, OPINIONTWIN1. Detail: D154's REVIEWENV1g note; commits ae2ec26f…07570704.

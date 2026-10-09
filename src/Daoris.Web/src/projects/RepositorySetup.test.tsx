@@ -334,7 +334,7 @@ describe("a repository's review before landing", () => {
     await userEvent.click(head('Line and landing'));
     const review = row(section('Line and landing'), 'Review before landing');
     expect(review).toHaveTextContent('None: work is offered to land once its quest is done.');
-    expect(within(review).getByText(code('daoris driver review engine <environment> --kind local|deployed --procedure <path>')))
+    expect(within(review).getByText(code('daoris driver review engine <environment> --kind local|deployed --procedure <path>|none|--drop <environment>|--clear')))
       .toBeInTheDocument();
     expect(within(review).getByRole('button', { name: 'Set for this repository' })).toBeInTheDocument();
   });

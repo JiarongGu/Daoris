@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import type { SetUpRef } from '../api';
 import { cn } from '../lib/cn';
 import { Icon, Menu, Tip } from '../ui';
 
@@ -13,6 +14,11 @@ export type ReviewShown = {
   look?: string | null;
   shows?: string | null;
   served: boolean;
+  /**
+   * The newest set-up of the step as its record says it, named whole (REVIEWENV1g): what *Reviewed* answers. The page adds it
+   * from the quests it holds; absent where it holds no whole one, and then no verdict is offered here.
+   */
+  setUp?: SetUpRef | null;
 };
 
 /** A chip's frame, the driving chip's beside it: a bordered token a size down from the strip's text. */
@@ -30,19 +36,24 @@ const CHIP = cn(
  *
  * @remarks
  * **Beside the browser, never inside it.** Every page in Daoris's browser is one an agent can drive, so nothing the person
- * presses about a review is drawn there; the strip of the window beside it is where they answer. The verdict presses join this
- * menu with REVIEWENV1g.
+ * presses about a review is drawn there; the strip of the window beside it is where they answer (REVIEWENV1g): *Reviewed*,
+ * naming the newest set-up its step's record holds, and *Not yet…*, which opens the step's page, where the words a not yet
+ * needs are asked, since a menu holds no box.
  *
  * **Whether it is still served is said**, since a tab Daoris no longer serves loads the person's own server at the next reload,
  * with nothing on the page to say so.
  *
  * **A molecule**: the presses go out, and the shell serves the build again and brings its tab forward.
  */
-export function ReviewChip({ reviews = [], onShowAgain }: {
+export function ReviewChip({ reviews = [], onShowAgain, onReviewed, onNotYet }: {
   /** The set-ups waiting here; none says nothing. */
   reviews?: readonly ReviewShown[];
   /** *Show it again* for one set-up step. */
   onShowAgain: (quest: string) => void;
+  /** *Reviewed* for one set-up step, naming the set-up its record holds (REVIEWENV1g); absent, none is offered. */
+  onReviewed?: (quest: string, setUp: SetUpRef) => void;
+  /** *Not yet…*: the step's page, where the person's words are asked (REVIEWENV1g); absent, none is offered. */
+  onNotYet?: (quest: string) => void;
 }) {
   const { t } = useTranslation();
   if (reviews.length === 0) return null;
@@ -79,6 +90,18 @@ export function ReviewChip({ reviews = [], onShowAgain }: {
                   : t('browser.review.unserved')}
               </span>
             </div>
+            {onReviewed && review.setUp && (
+              <Menu.Item onSelect={() => onReviewed(review.quest, review.setUp!)}>
+                <Icon name="check" size={12} className="shrink-0" />
+                <span className="min-w-0 truncate">{t('browser.review.reviewed', { quest: review.quest })}</span>
+              </Menu.Item>
+            )}
+            {onNotYet && (
+              <Menu.Item onSelect={() => onNotYet(review.quest)}>
+                <Icon name="quests" size={12} className="shrink-0" />
+                <span className="min-w-0 truncate">{t('browser.review.notYet', { quest: review.quest })}</span>
+              </Menu.Item>
+            )}
             <Menu.Item onSelect={() => onShowAgain(review.quest)}>
               <Icon name="refresh" size={12} className="shrink-0" />
               <span className="min-w-0 truncate">{t('browser.review.again', { quest: review.quest })}</span>

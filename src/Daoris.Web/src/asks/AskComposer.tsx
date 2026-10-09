@@ -9,10 +9,19 @@ export type AskDraft = Carry & {
   sentence: string;
   /** The receiver the person named, or empty: the declarations propose, and nothing is published. */
   to: string;
+  /**
+   * The person's review choice for the ask's work (REVIEWENV1g, design §1.5): `off`, `on` or an environment's name; empty
+   * leaves each repository's rule to decide, which is what an ask carried before.
+   */
+  review?: string;
+  /** Their words with the choice, kept with it. */
+  reviewWords?: string;
 };
 
 /** Radix Select cannot carry an empty value, so "let the declarations propose" travels as a sentinel. */
 const NOBODY = '*';
+/** And "each repository's rule decides" the same way. */
+const BY_RULE = '*';
 
 /**
  * The ask composer (INT4c) — the screen twin of `daoris-driver ask --workspace … [--to …] [--file …]
@@ -32,8 +41,17 @@ const NOBODY = '*';
  *
  * It carries what the quest composer carries, through the same fields and the same drop, paste and
  * chooser (`compose/carry`), so the two cannot drift. Props only (components §2).
+ *
+ * **The person may choose the review of its work** (REVIEWENV1g, D154 point 3; the review environment design §1.5): each
+ * repository's rule by default, which sends nothing; a review in the default environment, in an environment the circle's
+ * rules declare, or none, with their words, which the host judges and refuses in its sentence for a repository that declares
+ * none. Only where a shell says which environments are declared is a named one offered; `on` and `off` need no rule read.
  */
-export function AskComposer({ draft, onChange, fixed, circles, receivers, busy = false, onSubmit, onCancel, intake }: {
+export function AskComposer({
+  draft, onChange, fixed, circles, receivers, busy = false, onSubmit, onCancel, intake, environments = [],
+}: {
+  /** The review environments the circle's rules declare, by name (REVIEWENV1a); none where no shell says. */
+  environments?: string[];
   draft: AskDraft;
   onChange: (draft: AskDraft) => void;
   /** The circle the ask is made in when the page decides it; null asks the person. */
@@ -123,6 +141,29 @@ export function AskComposer({ draft, onChange, fixed, circles, receivers, busy =
             ]}
           />
         </label>
+        <label className="grid gap-1 text-small text-ink-soft">
+          {t('asks.compose.review')}
+          <SelectField
+            value={draft.review || BY_RULE}
+            onChange={(review) => onChange({ ...draft, review: review === BY_RULE ? '' : review })}
+            ariaLabel={t('asks.compose.review')}
+            options={[
+              { value: BY_RULE, label: t('asks.compose.reviewRule') },
+              { value: 'on', label: t('asks.compose.reviewOn') },
+              ...environments.map((name) => ({ value: name, label: t('asks.compose.reviewIn', { environment: name }) })),
+              { value: 'off', label: t('asks.compose.reviewOff') },
+            ]}
+          />
+        </label>
+        {draft.review && (
+          <input
+            aria-label={t('asks.compose.reviewWords')}
+            placeholder={t('asks.compose.reviewWords')}
+            value={draft.reviewWords ?? ''}
+            onChange={(e) => onChange({ ...draft, reviewWords: e.target.value })}
+            className="min-h-[1.9rem] rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
+          />
+        )}
         <CarryFields
           carry={draft}
           filesLabel={t('asks.compose.filesLabel')}

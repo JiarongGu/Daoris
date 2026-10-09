@@ -206,6 +206,9 @@ with the version and date at release.
   an ended one goes on in its own conversation, and a new one can start from an earlier one's transcript.
 - `daoris driver workflow show --repository <name>` says how work moves in a repository: each step, who does it,
   which rule sets it, and what is not built yet.
+- Work waiting on your review says so where *Accept* was: *Review in <environment>*, with *Reviewed*, *Not yet…*,
+  *Show it again* and *Skip…*, on the session, the set-up step's page, What needs you and the strip; an ask can
+  choose its review when it is written.
 
 The first version: doctrine that installs, is checked, and flows back.
 
