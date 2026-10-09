@@ -38,6 +38,9 @@ Follow the dispatch-subagent skill's subagent half.
   uncommitted lost its worktree and all of its work (2026-10-09). The first commit comes before any
   reading: a stopped agent's worktree is no longer locked, and a clean tree at main's tip counts as
   merged, so the next merge's prune took one that had only read, and its resume found nothing (2026-10-09).
+- **Run no rehearsal unless the brief says to.** The family rehearsal's hosts sit on fixed ports, so a run in a worktree
+  and the merge gate's run on main answer each other's checks (REHEARSEPORT1), and a failed phase's git fallback once
+  committed a subagent's uncommitted work in its worktree (REHEARSEGIT1). The parent runs the rehearsals in the gate.
 - **Stay in your lane.** Change the files your lane owns (`daoris.lanes.json` lists each lane's paths
   under its id) and the tests beside them. If you need a change in another lane, say so in the
   hand-back and leave it to the parent to schedule. Never make it yourself.

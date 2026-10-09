@@ -1177,6 +1177,8 @@ public sealed partial class Driver(
                     prior.Limit ? TurnsEnded(_events, prior.Session) + 1 : null,
                     prior.Limit ? RotatedOpening.ContextOf(usage, _events, prior.Session) : null));
 
+        // The stop made of it before a close cut its conclusion off, told as its run lets go (FLAKE3).
+        SessionStop? stoppedFirst = null;
         try
         {
             // The words a session could not go on with went to this one (MSG1b, D137 §2.2): off that record by their ids, kept
@@ -1278,6 +1280,7 @@ public sealed partial class Driver(
                 said: Said(adapter, selection, sessionId),
                 // A native run holds what the person says while it works, and goes on with it in its own conversation (MSG1b).
                 goOn: GoOnWith(adapter, target, selection, rules.File, handed),
+                stopMade: stop => stoppedFirst = stop,
                 // BGWAIT1: a turn that ends on the session's own background work, holding its quest as a park would, is not
                 // a question. Read from the quest as the conclusion reads it, by the conclusion's own rule.
                 waitsOnBackground: async token =>
@@ -1301,14 +1304,12 @@ public sealed partial class Driver(
                     // signals as a crashed one, and only this flag knows whose decision the end was.
                     var after = await service.FindQuestAsync(quest.Id, ct).ConfigureAwait(false);
                     var status = after?.Status ?? "Open";
-                    var stoppedFor = _processes.StopReason(sessionId);
-                    var conclusion = stoppedFor is not null
-                        // The driver's own stop, for a take that lost (D68 §5): the quest was someone
-                        // else's, which is what standing down has always meant — and the reason says who.
-                        ? SessionConclusion.Of("stood-down", stoppedFor)
-                        : _processes.WasStopRequested(sessionId)
-                        // A pause's stop names the pause (PAUSE1b, design §4.1); still the person's, never interrupted.
-                        ? SessionConclusion.Of("stopped", _processes.StopNote(sessionId) ?? Observation.Stopped)
+                    var stop = _processes.StopMade(sessionId);
+                    var conclusion = stop is not null
+                        // The driver's own stop, for a take that lost (D68 §5), stands it down: the quest was someone
+                        // else's, and the reason says who. The person's, a pause's naming the pause (PAUSE1b, design
+                        // §4.1), is theirs, never interrupted. One reading, which a close cutting this off records too (FLAKE3).
+                        ? stop.Conclusion
                         : exitCode is int code
                             // What it waited on before and after (D79): a NEW question is this session
                             // asking and waiting, which is a good ending, not a stand-down.
@@ -1360,7 +1361,7 @@ public sealed partial class Driver(
                             ? null
                             : new SessionEnded(
                                 sessionId, quest.To, conclusion.State,
-                                ByPerson: stoppedFor is null && _processes.WasStopRequested(sessionId), conclusion.Note,
+                                ByPerson: stop is { ByPerson: true }, conclusion.Note,
                                 Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile));
                 }).ConfigureAwait(false);
         }
@@ -1371,14 +1372,26 @@ public sealed partial class Driver(
             // rides an unbound token: the cancelled one would refuse the very report it caused.
             // Interrupted (D104): closing the driver is not a decision about this quest, so a take this
             // session held is carried on at the next start, as a cut-off is.
+            // 🔴 Unless a stop came first (FLAKE3): the driver's for a take that lost, or the person's, whose process was still
+            // ending, or its conclusion still asking the service, when the close came. That stop decided the end, so the record
+            // says it, as its conclusion would have, and is never interrupted.
+            var (closed, interrupted) = Observation.Closed(stoppedFirst);
             try
             {
                 await service.AdvanceAsync(
-                    sessionId, "stopped", Observation.DriverClosed, ct: CancellationToken.None, interrupted: true).ConfigureAwait(false);
+                    sessionId, closed.State, closed.AsNoted(), ct: CancellationToken.None, interrupted: interrupted).ConfigureAwait(false);
             }
             catch
             {
                 // Best-effort by construction: the host may already be gone on the same shutdown.
+            }
+
+            if (stoppedFirst is { } first)
+            {
+                return new StartRun(
+                    $"{closed.State}  session {sessionId} (#{quest.Id} → {quest.To}): {closed.Note}",
+                    true,
+                    new SessionEnded(sessionId, quest.To, closed.State, ByPerson: first.ByPerson, closed.Note, Quest: quest.Id, Adapter: config.Adapter));
             }
 
             // The person is closing the driver, so this ending is theirs — no interruption is owed
@@ -1896,6 +1909,10 @@ public sealed partial class Driver(
     /// What the protocol door's transcript says where this machine has no connector, when it is not a quest's or an intake's
     /// sentence: a reviewer's (XAGENT1d).
     /// </param>
+    /// <param name="stopMade">
+    /// Told, as the run lets go of its process, the stop made of it, or null for none (FLAKE3): what a driver's close that cuts
+    /// the conclusion off records in place of itself (<see cref="Observation.Closed"/>).
+    /// </param>
     private async Task<T> HoldAsync<T>(
         ISessionAdapter adapter, ProcessStartInfo info, SessionTarget target, string sessionId, string transcript,
         string cwd, string? harnessNotice, (string? File, object? Meta, HandedSection? Handed) rules, string? handed, string? refusesInput,
@@ -1904,7 +1921,7 @@ public sealed partial class Driver(
         IReadOnlyList<AcpMcpServer>? handedServers = null, bool drivesBrowser = false, Action<JsonElement>? said = null,
         ResumeAsk? resume = null, Noted? workingNote = null, Func<string, string, ProcessStartInfo?>? goOn = null,
         Action? working = null, Func<CancellationToken, Task<bool>>? waitsOnBackground = null, int? minutes = null,
-        string? noConnector = null)
+        string? noConnector = null, Action<SessionStop?>? stopMade = null)
     {
         using var process = Process.Start(info)
             ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
@@ -1920,6 +1937,9 @@ public sealed partial class Driver(
         {
             for (var at = wentOn.Count - 1; at >= 0; at--) wentOn[at].Dispose();
         });
+        // 🔴 The stop made of it, told as the run lets go, whatever ends it (FLAKE3): disposed before the runs above are
+        // untracked, so it is read while they still are, for a close that cuts the conclusion off to record that stop.
+        using var letGo = new Disposer(() => stopMade?.Invoke(_processes.StopMade(sessionId)));
 
         // Which door this harness is held over (D53). The protocol door drives an ACP session on the
         // same process; the pipe door reads its text, or its structure where its own wire carries one

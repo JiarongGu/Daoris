@@ -11,7 +11,8 @@ public sealed partial class KnowledgeTools
     /// review rule's own (REVIEWENV1c3): the shared table's <c>gate</c> rows,
     /// <c>src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/review-rules.json</c>, which the driver's
     /// <c>ReviewRules.Waiting</c> and the CLI's <c>REVIEW_WAITING</c> are held to. Copied, since the service references
-    /// neither: the doors' words change together, this one with them.
+    /// neither, and held to the table by <c>HelpSettingProposalTests</c>, which reads its <c>gate</c> rows (REVIEWENV1c4): the
+    /// doors' words change together, this one with them.
     /// </summary>
     private const string ReviewWaiting = "Where work here waits for your review, it lands only once you say it is reviewed, "
         + "`daoris-driver quest review <quest> reviewed`, or skip the review, `daoris-driver quest review <quest> skip`. "

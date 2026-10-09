@@ -111,6 +111,37 @@ public sealed class SessionsOutliveTheirLookProcessTests : IDisposable
         });
     }
 
+    /// <summary>
+    /// 🔴 FLAKE3 over a real process: a stop made of a working session, then the driver's close at once, while the killed
+    /// process is still exiting or its conclusion still asking the service. The stop decided the end, so the record says it and
+    /// is never interrupted: the driver's own, stood down for its lost take; the person's, stopped as theirs.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_close_straight_after_a_stop_records_the_stop_not_the_close(bool drivers)
+    {
+        var processes = new SessionProcesses();
+        var driver = Driver(processes);
+        _ledger.Publish("q1", "engine");
+        using var closing = new CancellationTokenSource(TimeSpan.FromSeconds(120));
+
+        await driver.TickAsync(closing.Token).WaitAsync(TimeSpan.FromSeconds(60));
+        await Poll.Until(
+            () => processes.Running.Contains("s1") && _ledger.Session("s1")["state"]!.GetValue<string>() == "working",
+            () => "the session never started working", TimeSpan.FromSeconds(60));
+
+        Assert.True(processes.Stop("s1", drivers ? Daoris.Driver.Driver.LostClaimNoted : null));
+        await closing.CancelAsync();
+        await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(90));
+
+        var record = _ledger.Session("s1");
+        Assert.Equal(
+            (drivers ? "stood-down" : "stopped", false),
+            (record["state"]!.GetValue<string>(), record["interrupted"]?.GetValue<bool>() == true));
+        Assert.Equal(drivers ? "ended.lost-claim" : "ended.stopped", record["noteParts"]![0]!["code"]!.GetValue<string>());
+    }
+
     private Daoris.Driver.Driver Driver(SessionProcesses processes)
     {
         var config = DriverConfig.Empty with

@@ -32,6 +32,61 @@ repository.
   any fixture:** a copy of a commit by cherry-pick, rebase or a recreated commit is a new commit only where something in
   it differs; with the same parent, tree, message and identity, the second of its date is all that does.
 - **Commit:** `d2a54804`.
+## 2026-10-09 — two flakes that repeated under load, fixed by their cause (FLAKE3)
+
+### Driver: a stop made just before the driver's close was recorded as the close's (FLAKE3 1)
+- **Symptom:** `SessionsOutliveTheirLookTests.The_watch_says_a_stop_its_look_made_before_that_look_failed` (fast half)
+  expected its session `stood-down` and read `stopped`, twice on 2026-10-09 under load, passing alone each time. Reproduced
+  alone with three no-incremental builds of the service beside it: 6 failures in 60 runs (1 in 20, then 5 in 40), each
+  `stood-down` expected and `stopped` read.
+- **Root cause:** two paths wrote the record, and which came first decided it. The look stops the session for its lost take
+  and says so, then fails at the quest list, and the watch's failure cancels its sessions' token at once (D104's shutdown).
+  The stand-in run the stop ended had still to see its ending and write it; when the cancellation reached it first, it wrote
+  the close's own `stopped`, interrupted. The driver has the same race, wider: a process killed for its lost take is still
+  exiting, or its conclusion still asking the service on the cancelled token, when the close comes, and the record read
+  `stopped` and interrupted. That lost the reason, and marked a lost take, or the person's own stop, to be carried on, where
+  D104 says a person's stop never is.
+- **Fix:** a stop made before the close decides the end. The run tells the stop made of it as it lets go of its process
+  (`HoldAsync`'s `stopMade`, read by `SessionProcesses.StopMade` while still tracked), and both closes (`Driver.cs`'s start
+  and `Driver.Continue.cs`'s carry-on) record it by one rule, `Observation.Closed`: stood down for the driver's reason,
+  stopped as the person's with its door's note, never interrupted; only a session no stop reached is the close's, stopped and
+  interrupted. The conclusion reads the same `SessionStop`. The stand-in run mirrors the rule. Note under D104.
+- **Verify:** `A_session_still_ending_from_its_stop_when_the_watch_closes_records_the_stop_not_the_close` holds the order
+  the race met, the stopped run still ending as the close comes: `stopped` and interrupted before the fix, `stood-down` with
+  `ended.lost-claim` after. `ObservationTests`' close table failed first on the old rule. The sighted test under the same
+  load after the fix: 60 of 60 (20, then 40). The driver's fast half, merged with main: 5547 green, six of them FLAKE3's
+  (one here, two in the close table, three in part 2); `npm run verify` green. **Not run:** the two `Process` rows
+  `SessionsOutliveTheirLookProcessTests.A_close_straight_after_a_stop_records_the_stop_not_the_close` (a real stub stopped,
+  by the driver's reason and by the person, then closed at once), written for the full set.
+- **Commit:** `fe994129`.
+
+### Driver and tools: `sessions say` read a clock where its loop writes an answer, and the rehearsal refused a held answer the contract gives (FLAKE3 2)
+- **Symptom:** the family rehearsal's check *with the headless loop running, words said to it are taken up by the SAME
+  session … going on* failed at HOSTLOG1's and HOSTSTART1's merges, each under load (12 to 14 minutes against 8): the verb
+  said `held: the same session goes on with this at the driver's next look`, and the next check found the record had gone on
+  with the words in its own conversation. Beside it, FLAKE1's `SessionsSayCommandTests.Held_words_say_the_drivers_next_look_where_nothing_holds_them`
+  once exited 2 under its 600 ms wait.
+- **Root cause:** two waits. (a) The verb follows kept words for its ten seconds and then says where they stand; kept words
+  no look took by then are *held*, exit 0 (design §5.2; D137's MSG1e). Under load the nudged look reopened the record after
+  that, so the verb's held line was the contract's and true, and the check demanded *going on*, which no ten-second bound can
+  promise of a look that spawns a harness. (b) A say a loop had taken but not yet answered when the wait ended was read once
+  and given up, exit 2, *took your words, and had not said where they stand*, while the loop was writing its answer: a clock
+  read where the loop writes an event, since a loop that takes a say always answers it (`SessionRequestWatch`, a failure
+  included). That is the held row's exit 2.
+- **Fix:** (b) in the driver: the verb waits for that answer while a loop holds the home, within the loop's own bound on a
+  say (`SessionsWorld.Answer`, its client's timeout, `DriverHttp.Timeout`), then follows the words as before; a loop that
+  went away, or never answers within the bound, is said as giving no answer, exit 2. (a) In the check, decided by the
+  contract: the verb is bounded at ten seconds and its held line is the `resume` reach's own sentence (design §2's table), so
+  waiting on the look would break the bound and need an event that a look holding words silently does not write. The check
+  takes the held line beside *going on* and *taken*; the checks after it still prove the same record went on, once, its
+  conversation resumed a second time and `session.reopened` said twice from the terminal. Note under D137.
+- **Verify:** `SessionsSayCommandTests.A_loop_that_took_the_words_and_answers_after_the_wait_is_waited_for`: a stand-in
+  loop takes the words in time and answers, keeping them and nudging its look, only after the verb's wait; exit 2 before the
+  fix, *going on* after. Two rows bound the new wait: a loop that took the words and went away is said at once, and one that
+  never answers, after its bound. **Not evidence:** one family rehearsal run on this branch (387/425, the say check among the
+  passes) overlapped a merge gate's run on main on the same fixed ports, so either run's checks may have been answered by the
+  other's host (REHEARSEPORT1); the merge gate's run is the rehearsal this change owes.
+- **Commit:** `fc4804fa` (driver), `da967355` (tools).
 ## 2026-10-09 — a landing read the home's driver.json, not the file the loop read (CONFIGSEAM1)
 
 ### Driver: `trees land`, the review's press and every landing door ignored a per-file override's landing and review rules
@@ -929,6 +984,9 @@ ended first; the change merged (the host's error answer) touches neither the say
 The same check failed again at HOSTSTART1's merge, 2026-10-09 (424/425, 12 m 48 s against its usual 8, three worktrees
 building beside it); the change merged (the host's stderr on the window, its start failure logged) touches neither.
 Twice under load at the same check: the verb's wait for the loop is the one to bound by the loop's own pass, not a clock.
+*Fixed 2026-10-09 (FLAKE3 above):* the held line after the verb's ten seconds is the contract's answer, so the check takes
+it, and the checks after it prove the same record went on; the held row's exit 2 was the verb reading a taken say's answer
+on the clock, and it now waits on that answer, which its loop always writes.
 `DriverModuleStartFromTests.The_press_starts_a_conversation_whose_end_reaches_the_page` (modules, fast half) failed once
 at XAGENT1c's merge, 2026-10-09, a service-only change, with three worktrees building beside it: the press answered
 *conversation `c1` is going on with its words already* (`ChatRunner.StartFrom.cs:199`), so the loop's own first look
