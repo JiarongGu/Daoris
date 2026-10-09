@@ -25,12 +25,14 @@ const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 /** Every act handed, as a shell's band hands them; a story reports nothing. */
 const ACTS: Required<AttentionActs> = {
   publish: () => {}, retry: () => {}, answer: () => {}, trust: () => {}, acceptDeparture: () => {}, acceptRule: () => {},
-  declineRule: () => {}, signIn: () => {}, read: () => {}, letRun: () => {},
+  declineRule: () => {}, signIn: () => {}, read: () => {}, letRun: () => {}, reviewed: () => {}, notYet: () => {},
+  showAgain: () => {},
 };
 /** Every door, as a shell's Overview hands them. */
 const DOORS: AttentionDoors = {
   parked: () => {}, 'parked-quest': () => {}, 'go-ahead': () => {}, trust: () => {}, proposal: () => {}, intake: () => {},
   departure: () => {}, rule: () => {}, unanswerable: () => {}, review: () => {}, 'account-wait': () => {}, 'signed-out': () => {},
+  'set-up': () => {},
 };
 
 /** A reset tomorrow early, and a reading at this morning's clock: what the account rows say their times from. */
@@ -160,6 +162,16 @@ const DEPARTURE: Attention = {
   detail: 'Requirement 2 departed: the names stay in code until the config loader lands next week',
 };
 
+/**
+ * A set-up shown and waiting for the person's look (REVIEWENV1g): what it showed, and *Reviewed*, *Not yet…* and *Show it
+ * again*, its set-up named as the row drew it.
+ */
+const SET_UP_ROW: Attention = {
+  id: 'q2', kind: 'set-up', title: 'Show #q1 in `local` for review', where: 'reports', since: at(25),
+  detail: 'Shown in `local`: The report with the compare setting turned on, showing last month beside this one.',
+  setUp: { machine: 'desk', sequence: 7 }, local: true, session: 's9',
+};
+
 /** An agent's proposal to widen the rules (PERM2, D74). */
 const RULE: Attention = {
   id: 'p0000002', kind: 'rule', title: 'allow WebFetch for every session on this machine', where: 'session i9n8t7k6 (ask #0fda18)',
@@ -206,7 +218,7 @@ export default meta;
 const BAND: Attention[] = [
   TRUST_ROW, LET_IN, PARKED_QUEST, GO_AHEAD, PARKED, ACCOUNT_WAIT, SIGNED_OUT,
   PROPOSAL, { ...PROPOSAL, id: '1b2c3d4e5f6a', title: 'Fix the pipeline’s knowledge check', since: at(170), publishTo: ['engine'], detail: 'The declarations propose engine. Nothing is published until you choose.' },
-  DEPARTURE, RULE,
+  DEPARTURE, SET_UP_ROW, RULE,
   ...REVIEWS,
 ];
 
@@ -343,6 +355,8 @@ export const Asking: StoryObj = {
         <AttentionRow item={RULE} acts={ACTS} onOpen={() => {}} opened="accept-rule" />
         <AttentionRow item={{ ...PROPOSAL, publishTo: [] }} acts={ACTS} onOpen={() => {}} opened="choose" />
         <AttentionRow item={TRUST_ROW} acts={ACTS} onOpen={() => {}} opened="trust" />
+        {/* REVIEWENV1g: a set-up's *not yet*, asking for the person's words, which go to its session as its next turn. */}
+        <AttentionRow item={SET_UP_ROW} acts={ACTS} onOpen={() => {}} opened="not-yet" />
         {/* UX6d: an account let into the workspace's list, and into this machine's, each saying what it lets Daoris spend. */}
         <AttentionRow item={LET_IN} acts={ACTS} onOpen={() => {}} opened="let-run" />
         <AttentionRow

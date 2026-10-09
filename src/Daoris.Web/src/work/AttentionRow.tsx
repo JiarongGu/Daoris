@@ -1,5 +1,6 @@
 import { type ReactNode, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { SetUpRef } from '../api';
 import { clockOf, elapsed } from '../format';
 import { cn } from '../lib/cn';
 import { shellWord } from '../shellWord';
@@ -14,7 +15,7 @@ import { TrustAsk } from './TrustAsk';
 /** The kinds of thing *What needs you* lists (design §6.2), each in one of its three groups (`ATTENTION_GROUP`). */
 export type AttentionKind =
   | 'parked' | 'parked-quest' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
-  | 'proposal' | 'intake' | 'departure' | 'rule' | 'unanswerable'
+  | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
   | 'review';
 
 /**
@@ -56,6 +57,12 @@ export type Attention = {
   quest?: string;
   /** A `go-ahead`'s number on its ask, which the answer names. */
   number?: number;
+  /** A `set-up` row's set-up, named whole as the row drew it: what its verdict answers (REVIEWENV1g, REVIEWENV1b3). */
+  setUp?: SetUpRef;
+  /** A `set-up` row's set-up is local, so Daoris serves it and *Show it again* can. */
+  local?: boolean;
+  /** The session that said a `set-up` row's set-up, which a *not yet*'s words go to; null for the person's own. */
+  session?: string | null;
   /** A `proposal`'s receivers, as its declarations named them: what *Publish to …* publishes to, in one press. */
   publishTo?: string[];
   /** A `proposal`'s other receivers: every repository its workspace can ask, which *Choose…* offers. */
@@ -115,6 +122,12 @@ export type AttentionActs = {
   read?: (item: Attention, account: string) => void;
   /** A ready account let into the list the waiting start reads (D130 §3.3), after its question. */
   letRun?: (item: Attention, account: string) => void;
+  /** A set-up the person looked at said reviewed (REVIEWENV1g): one press, naming the set-up the row drew. */
+  reviewed?: (item: Attention) => void;
+  /** A set-up said not yet, with the person's words, which go to its session as its next turn (REVIEWENV1g). */
+  notYet?: (item: Attention, words: string) => void;
+  /** A set-up's build served to its tab again, the tab brought forward (REVIEWENV1d). */
+  showAgain?: (item: Attention) => void;
 };
 
 /** Which handler each act needs. */
@@ -131,6 +144,9 @@ const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'sign-in': 'signIn',
   read: 'read',
   'let-run': 'letRun',
+  reviewed: 'reviewed',
+  'not-yet': 'notYet',
+  'show-again': 'showAgain',
 };
 
 /** The kinds that wait in a circle rather than in a repository. */
@@ -214,6 +230,8 @@ export function AttentionRow({ item, onOpen, acts = {}, busy = false, opened = n
     else if (act === 'decline-rule') acts.declineRule?.(item);
     else if (act === 'sign-in' && account) acts.signIn?.(item, account);
     else if (act === 'read' && account) acts.read?.(item, account);
+    else if (act === 'reviewed') acts.reviewed?.(item);
+    else if (act === 'show-again') acts.showAgain?.(item);
   };
   const label = (act: AttentionActId, account?: string): string => {
     switch (act) {
@@ -234,6 +252,10 @@ export function AttentionRow({ item, onOpen, acts = {}, busy = false, opened = n
       case 'let-run': return t('work.attention.act.letRun', {
         account: item.account?.outside?.label ?? '', workspace: item.account?.outside?.workspace ?? '',
       });
+      // The review's own words, as the step's page and the strip's chip say them (REVIEWENV1g).
+      case 'reviewed': return t('review.act.reviewed');
+      case 'not-yet': return t('review.act.notYet');
+      case 'show-again': return t('review.act.showAgain');
     }
   };
 
@@ -325,6 +347,7 @@ export function AttentionRow({ item, onOpen, acts = {}, busy = false, opened = n
               else if (asking === 'trust') acts.trust?.(item);
               else if (asking === 'accept-rule') acts.acceptRule?.(item);
               else if (asking === 'let-run' && item.account?.outside) acts.letRun?.(item, item.account.outside.id);
+              else if (asking === 'not-yet') acts.notYet?.(item, words.trim());
               done();
             }}
           />
@@ -381,8 +404,12 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
     );
   }
   const answering = act === 'approve' || act === 'refuse';
+  // A *not yet* needs words: they are what the set-up step's session acts on (REVIEWENV1g, design §3.3).
+  const notYet = act === 'not-yet';
   const outside = act === 'let-run' ? item.account?.outside ?? null : null;
-  const sentence = outside
+  const sentence = notYet
+    ? t(item.session ? 'review.ask.notYet' : 'review.ask.notYetOwn', { quest: item.id })
+    : outside
     ? letRunSentence(t, item.account!.agent, outside)
     : act === 'approve'
       ? t('work.attention.ask.approve', { id: item.ask ?? '' })
@@ -391,7 +418,9 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
         : act === 'accept-rule'
           ? t('work.attention.ask.acceptRule', { change: item.title })
           : t('work.attention.ask.choose', { workspace: item.where });
-  const move = outside
+  const move = notYet
+    ? t('review.ask.notYetMeanIt')
+    : outside
     ? (outside.list ? t('agents.account.addTo', { workspace: outside.list }) : t('agents.account.addToMachine'))
     : act === 'approve'
       ? t('asks.goAhead.approve')
@@ -416,6 +445,15 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
           className="min-h-[1.9rem] min-w-0 flex-1 basis-48 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
         />
       )}
+      {notYet && (
+        <input
+          aria-label={t('review.ask.notYetWords')}
+          placeholder={t('review.ask.notYetWords')}
+          value={words}
+          onChange={(event) => onWords(event.target.value)}
+          className="min-h-[1.9rem] min-w-0 flex-1 basis-48 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
+        />
+      )}
       {act === 'choose' && (
         <SelectField
           value={choice}
@@ -427,7 +465,7 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
       )}
       <Button
         variant={act === 'refuse' ? 'danger' : 'default'}
-        disabled={busy || (act === 'choose' && !choice)}
+        disabled={busy || (act === 'choose' && !choice) || (notYet && !words.trim())}
         onClick={onConfirm}
       >
         {move}

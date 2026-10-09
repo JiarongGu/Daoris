@@ -45,17 +45,29 @@ export const RowsWithTheirIntake: StoryObj = {
   ),
 };
 
-function Composing({ fixed, circles, start }: { fixed: string | null; circles: string[]; start?: Partial<AskDraft> }) {
+function Composing({ fixed, circles, start, environments }: {
+  fixed: string | null; circles: string[]; start?: Partial<AskDraft>; environments?: string[];
+}) {
   const [draft, setDraft] = useState<AskDraft>({ circle: '', sentence: '', to: '', ...NO_CARRY, ...start });
   return (
     <Provided>
       <AskComposer
         draft={draft} onChange={setDraft} fixed={fixed} circles={circles} receivers={RECEIVERS}
-        onSubmit={noop} onCancel={noop}
+        environments={environments} onSubmit={noop} onCancel={noop}
       />
     </Provided>
   );
 }
+
+/** REVIEWENV1g: the review of its work chosen in the composer, `local`, with the person's words beside it. */
+export const ComposeChoosingAReview: StoryObj = {
+  render: () => (
+    <Composing
+      fixed="aurora" circles={['aurora']} environments={['dev', 'local']}
+      start={{ sentence: PROPOSED.sentence, review: 'local', reviewWords: 'run it locally against dev data' }}
+    />
+  ),
+};
 
 /** The page is scoped to one circle — or the machine holds only one — so the ask is made there. */
 export const ComposeInTheScopedCircle: StoryObj = { render: () => <Composing fixed="aurora" circles={['aurora']} /> };

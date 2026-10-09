@@ -107,7 +107,46 @@ export type Quest = {
    * words. Absent from a host older than the field, and then its title names it (`questName`).
    */
   short?: string | null;
+  /**
+   * Why it is held (EVID1a, D144 §6): `departed`, `evidence-unread`, `evidence-missing`, or `unreviewed`, a set-up step's done
+   * waiting for the person's review (REVIEWENV1b). Absent where it is not held, and from a host older than the field.
+   */
+  hold?: QuestHold | null;
+  /** Its chain's review choice (REVIEWENV1b, D154 point 3): `off`, `on` or an environment's name, with the words it was set on. */
+  review?: { choice: string; words?: string | null } | null;
+  /** The environment a set-up step shows its chain's work in (REVIEWENV1b); absent on every other quest. */
+  setUpIn?: string | null;
+  /** What a set-up step showed, oldest first (REVIEWENV1b, design §2.6); absent where nothing was. */
+  setUps?: QuestSetUp[];
+  /** The person's verdicts on it, oldest first (REVIEWENV1b, design §3.5); absent where they gave none. */
+  verdicts?: QuestVerdict[];
 };
+/** Why a done is held (EVID1a, REVIEWENV1b), as the service spells it; a newer host may name another. */
+export type QuestHold = 'departed' | 'evidence-unread' | 'evidence-missing' | 'unreviewed' | (string & {});
+/**
+ * One set-up a set-up step said (REVIEWENV1b, D154 point 9): the commit Daoris read from its tree, where to look (absent on
+ * another machine for a local one, whose tab is on the machine that showed it), what it shows, how to show it again, the folder
+ * served or a review run's command, the session that said it (absent for the person's own), whether it was local, and when.
+ * `machine` and `sequence` are what a verdict names it by (REVIEWENV1b3).
+ */
+export type QuestSetUp = {
+  commit: string; look?: string | null; shows?: string | null; again?: string | null; served?: string | null;
+  run?: string | null; session?: string | null; local?: boolean; at?: string | null; machine?: string | null;
+  sequence?: number | null;
+};
+/** Which set-up a verdict answers, whole: the machine that kept it and its sequence there (REVIEWENV1b3). */
+export type SetUpRef = { machine: string; sequence: number };
+/**
+ * The person's verdict (REVIEWENV1b, D154 point 8): `reviewed`, `not-yet` or `skipped`, the set-up it answers and that set-up's
+ * commit (none on a skip), their words, and when.
+ */
+export type QuestVerdict = {
+  said: 'reviewed' | 'not-yet' | 'skipped' | (string & {});
+  setUp?: { machine?: string | null; sequence?: number | null } | null;
+  commit?: string | null; words?: string | null; at?: string | null; machine?: string | null;
+};
+/** A review's verdict as the person gives it at the quest's door (REVIEWENV1b), in the service's words. */
+export type Verdict = 'reviewed' | 'not-yet' | 'skipped';
 /** One thing the person requires (DRIFT1c): their words, quoted as they said them, and the check that proves them. */
 export type QuestRequirement = { quote: string; check: string };
 /**
@@ -193,6 +232,16 @@ export type Ask = {
    * older than them.
    */
   goAheads?: GoAhead[];
+  /**
+   * The person's review choices on it (REVIEWENV1b, design §1.5), oldest first, the latest standing: `off`, `on` or an
+   * environment's name, with their words. Absent where they made none, and from a host older than the field.
+   */
+  reviewChoices?: { choice: string; at: string; words?: string | null }[];
+  /**
+   * Its intake's review proposals (REVIEWENV1b, design §1.5–§1.6), each with its reason and the quest it came with: only the
+   * person's press applies one. Absent where there is none.
+   */
+  reviewProposals?: { choice: string; reason: string; at: string; session?: string | null; quest?: string | null }[];
 };
 /** One session's request for a go-ahead: who asked, on which quest, when, and why, in its words. */
 export type GoAheadRequest = { session: string; quest?: string | null; at: string; why: string };
@@ -407,6 +456,19 @@ async function post<T>(path: string, body: unknown, method: 'POST' | 'DELETE' = 
   return response.json() as Promise<T>;
 }
 
+/**
+ * A write only the person may make (D156 §3.2's person-only doors, PERSONDOOR1), as REVIEWENV1g presses them: a review's
+ * verdict, their own set-up step, an ask, and what a review is set to.
+ *
+ * @remarks
+ * **The seam where the person's key goes.** Today it is a plain write: a local host enforces its doors only once its starter
+ * hands it a key (PERSONDOOR1a), and nothing hands the page one yet. PERSONDOOR1f gives `post` the key the bridge answers,
+ * held in memory and sent as `Daoris-Person` on every write; these doors refuse without it, so they come through here, and a
+ * refusal for want of it is the host's sentence, said as every refusal is. The other person-only doors (the yes, the done,
+ * a go-ahead's answer, a delete) still call `post` and take the key there with every write.
+ */
+const asThePerson = <T>(path: string, body: unknown): Promise<T> => post<T>(path, body);
+
 export const api = {
   status: (signal?: AbortSignal) => get<Status>('/api/status', signal),
   // Every cross-repository read below takes the scope (WSP5; D48 §4): null asks for every circle the
@@ -439,7 +501,12 @@ export const api = {
   ask: (body: {
     workspace: string; sentence: string; links?: string[]; attachments?: { name: string; content: string }[];
     to?: string;
-  }) => post<AskAction>('/api/asks', body),
+    /** The person's review choice for its work (REVIEWENV1b, design §1.5): `off`, `on` or an environment's name, and their words. */
+    review?: string; reviewWords?: string;
+  }) => asThePerson<AskAction>('/api/asks', body),
+  // The person's review choice on an ask's page, or its intake's proposal applied (REVIEWENV1b, design §1.5): the latest stands.
+  chooseAskReview: (id: string, choice: string, words?: string) =>
+    asThePerson<AskAction>(`/api/asks/${encodeURIComponent(id)}/review`, { choice, ...(words ? { words } : {}) }),
   publishAsk: (id: string, to: string) =>
     post<AskAction>(`/api/asks/${encodeURIComponent(id)}/publish`, { to }),
   closeAsk: (id: string, reason: string) =>
@@ -505,6 +572,16 @@ export const api = {
   // done` is the terminal's twin. Never respond's door, which is an agent's done.
   personDone: (id: string, note: string | null) =>
     post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/done`, note ? { note } : {}),
+  // The person's verdict on a review (REVIEWENV1g, D154 point 8; design §3.3, §3.6): `reviewed` or `not-yet` on the set-up their
+  // view drew, named whole, which the host refuses as stale where a newer one was shown since (REVIEWENV1b3); a skip names
+  // none. `daoris-driver quest review` is the terminal's twin.
+  reviewQuest: (id: string, verdict: Verdict, words?: string | null, setUp?: SetUpRef | null) =>
+    asThePerson<QuestAction>(`/api/quests/${encodeURIComponent(id)}/review`, {
+      verdict, ...(words ? { words } : {}), ...(setUp && verdict !== 'skipped' ? { setUp } : {}),
+    }),
+  // The person's *Set it up in `<environment>`* (REVIEWENV1b, design §2.1, §3.6): a set-up step published following a done quest.
+  setUpStep: (id: string, environment: string) =>
+    asThePerson<QuestAction>(`/api/quests/${encodeURIComponent(id)}/set-up-step`, { environment }),
   // A person dismissing one conflict (SYNC6c), by the name every machine knows it by.
   dismissConflict: (id: string, machine: string, sequence: number) =>
     post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/conflicts/dismiss`, { machine, sequence }),

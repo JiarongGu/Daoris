@@ -20,6 +20,8 @@ import { isIntake, sessionOrigin, sessionTitle, shortened } from './identity';
 import { Note } from './Note';
 import { hasNote, noteBlocks, noteLines } from './noteLines';
 import { movedAt } from './rail';
+import { reviewHolds, reviewState, type ReviewWaits } from './review';
+import { ReviewGate, type ReviewGateActs } from './ReviewGate';
 import { RunningIntake } from './RunningIntake';
 
 /**
@@ -66,6 +68,10 @@ import { RunningIntake } from './RunningIntake';
  * stands. The driver's sentence says where the work is, in Discard's own clause, and *Discard branch…* asks once with the
  * driver's sentence naming the ref its commits stay at; the press is the review's Discard, unforced.
  *
+ * **Where a review's gate holds the work, it stands where *Accept…* would** (REVIEWENV1g, D154 point 7; the review environment
+ * design §3.1): *Review in `<environment>`* in the gate's state, as the landing's plan says it, with the set-up step's showing
+ * and the verdict's presses, and no *Accept…*, which the landing door would refuse.
+ *
  * **An absence is never a dash.** No tree is the registered root, no profile is the harness's own
  * configuration home, no machine is this deployment's own — and a browser over a keyed remote is
  * told none of them (D47 §4). `MetaLine` drops a pair it has no value for, which is why all four
@@ -74,13 +80,18 @@ import { RunningIntake } from './RunningIntake';
 export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
   onAnswerSession, branch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
-  ownSignIn = false, nameOf, lands, landing, onLand, discards, onDiscardTree,
+  ownSignIn = false, nameOf, lands, landing, onLand, discards, onDiscardTree, review,
 }: {
   /**
    * What its own tree offers to land (LAND4), as the driver's reader said it: commits no branch of the person's holds, on its
    * branch in its tree, whatever its ending. Absent where it offers none, or nothing has answered.
    */
   lands?: LandOffer | null;
+  /**
+   * The review's gate where it holds that work (REVIEWENV1g): the set-up step's record, whether its tab is still served, and
+   * the verdict's presses. Read only where the landing's plan says the gate holds.
+   */
+  review?: HeadReview | null;
   /**
    * What its own tree offers where the line holds its commits by content (SQUASHTIDY1b), as the driver's reader said it: its
    * sentences, shown as they are, and whether an unforced discard would go. Absent where it offers none.
@@ -235,7 +246,7 @@ export function SessionHead({
       {/* Keyed by the branch: an ask to discard one session's branch never carries to another's (REV3's lesson). Commits
           its tree offers to land are the reader's to say (LAND4), keyed by the session for the same reason. */}
       {lands ? (
-        <Lands key={session.id} session={session} lands={lands} landing={landing} onReview={onReview} onLand={onLand} />
+        <Lands key={session.id} session={session} lands={lands} landing={landing} onReview={onReview} onLand={onLand} review={review} />
       ) : discards ? (
         <Discards key={session.id} discards={discards} onReview={onReview} onDiscard={onDiscardTree} />
       ) : branch && (
@@ -376,8 +387,17 @@ function Left({ branch, onReview, onDiscard, discarding = false }: {
   );
 }
 
-/** Where accepting a session's work would put it (D87, D100): the driver's `LANDING` answer, which the review reads too. */
-export type LandingPlan = { session?: string; form?: string; target?: string; source?: string; plugin?: string; problem?: string };
+/**
+ * Where accepting a session's work would put it (D87, D100): the driver's `LANDING` answer, which the review reads too; and the
+ * review's gate while it holds the work (REVIEWENV1c), absent where nothing waits for a review.
+ */
+export type LandingPlan = {
+  session?: string; form?: string; target?: string; source?: string; plugin?: string; problem?: string;
+  review?: ReviewWaits | null;
+};
+
+/** The review's gate as the head draws it (REVIEWENV1g): the set-up step's record where the frame holds it, and the presses. */
+export type HeadReview = { step?: Quest | null; served?: boolean | null; acts?: ReviewGateActs; busy?: boolean };
 
 /**
  * What its own tree offers to land, and its press (LAND4, D102's LAND4 note): the commits no branch of the person's holds,
@@ -386,15 +406,19 @@ export type LandingPlan = { session?: string; form?: string; target?: string; so
  * refuses, and for a session that did not finish that only what it committed lands. The move is the review's Accept, in
  * the primary's hue: a landing destroys nothing. Open until the landing answers, a refusal said inside it (UXFIX2).
  */
-function Lands({ session, lands, landing, onReview, onLand }: {
+function Lands({ session, lands, landing, onReview, onLand, review }: {
   session: Session;
   lands: LandOffer;
   landing?: LandingPlan | null;
   onReview?: () => void;
   onLand?: (answered: Answered) => void;
+  review?: HeadReview | null;
 }) {
   const { t } = useTranslation();
   const [asking, setAsking] = useState(false);
+  // While the review's gate holds the work (REVIEWENV1g, design §3.1), *Review in `<environment>`* stands where *Accept…*
+  // would, in the gate's state, and no *Accept…* is offered: the landing door would refuse it.
+  const waits = reviewHolds(landing);
   // A session that did not finish lands what it committed before it ended (LAND4); one finished, at a checkpoint or by
   // itself, lands its work.
   const unfinished = session.state !== 'completed';
@@ -409,12 +433,24 @@ function Lands({ session, lands, landing, onReview, onLand }: {
         <span className="text-ink-open">{t('work.head.landed.not', { count: lands.commits })}</span>
         <PathText path={lands.branch} className="min-w-0 text-meta text-ink-faint" />
         <span className="text-ink-faint">{t('work.head.inTree', { tree: lands.tree })}</span>
-        {onLand && !asking && (
+        {onLand && !asking && !waits && (
           <Button variant="primary" className="px-2 py-0.5 text-small" onClick={() => setAsking(true)}>{t('work.head.accept')}</Button>
         )}
         {onReview && <Button className="px-2 py-0.5 text-small" onClick={onReview}>{t('work.head.review')}</Button>}
       </p>
-      {onLand && asking && (
+      {waits && (
+        <ReviewGate
+          environment={waits.environment ?? ''}
+          state={reviewState(waits.state)}
+          step={review?.step ?? null}
+          stepId={waits.quest ?? null}
+          served={review?.served ?? null}
+          said={waits.says ?? null}
+          acts={review?.acts}
+          busy={review?.busy}
+        />
+      )}
+      {onLand && asking && !waits && (
         <InlineConfirm
           tone="primary"
           block

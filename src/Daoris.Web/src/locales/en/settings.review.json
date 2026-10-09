@@ -1,8 +1,8 @@
 {
   "settings.review.label": "Review before landing",
   "settings.review.body": "Where work here is shown to you before it is offered to land: in Daoris's browser at the address where the app normally runs (local), or in a shared environment such as dev, reached by the repository's own documented procedure (deployed). Production is never one. A repository's rule replaces its workspace's whole, and none set anywhere is how work lands today.",
-  "settings.review.twin.repository": "`daoris driver review {{repository}} <environment> --kind local|deployed --procedure <path>`, `none`, `--drop <environment>`, `--clear`",
-  "settings.review.twin.workspace": "`daoris driver review --workspace {{workspace}} <environment> --kind local|deployed --procedure <path>`, `--drop <environment>`, `--clear`",
+  "settings.review.twin.repository": "`daoris driver review {{repository}} <environment> --kind local|deployed --procedure <path>|none|--drop <environment>|--clear`",
+  "settings.review.twin.workspace": "`daoris driver review --workspace {{workspace}} <environment> --kind local|deployed --procedure <path>|--drop <environment>|--clear`",
   "settings.review.from.repository": "Set for this repository.",
   "settings.review.from.workspace": "From the workspace {{workspace}}.",
   "settings.review.either": "{{rest}} or {{last}}",

@@ -6,6 +6,7 @@ import { keys } from '../queries';
 // importing this module (SURF6).
 import { REVIEW_BOUND_MINUTES, type SessionDiff } from '../work/diff';
 import type { TreeFile } from '../work/preview';
+import type { ReviewWaits } from '../work/review';
 import { call, pluginBound } from './call';
 
 export type { DiffFile, SessionDiff } from '../work/diff';
@@ -267,14 +268,16 @@ export type TreeAct = { session: string; done: boolean; message: string };
  * What accepting this session would do under its repository's landing rule (WSR1, D87): merge into
  * the line, or the branch it would make — said before the press. Only for a session with a tree here.
  * Where the rule names a plugin (D100), which one pushes it, and the sentence a press would be refused
- * with where that plugin cannot land work now.
+ * with where that plugin cannot land work now. And the review's gate while it holds the work (REVIEWENV1c), which the page
+ * draws where *Accept…* would be (REVIEWENV1g); absent where nothing waits for a review, and from a shell older than it.
  */
 export const useLanding = (id: string | null) => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: keys.landing(id ?? ''),
-    queryFn: () => call<{ session: string; form?: string; target?: string; source?: string; plugin?: string; problem?: string }>(
-      'LANDING', { id }),
+    queryFn: () => call<{
+      session: string; form?: string; target?: string; source?: string; plugin?: string; problem?: string; review?: ReviewWaits | null;
+    }>('LANDING', { id }),
     enabled: isAvailable && id !== null,
   });
 };

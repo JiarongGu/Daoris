@@ -16,5 +16,7 @@
   "browser.review.served": "已在 Daoris 浏览器中为 {{environment}} 展示",
   "browser.review.unserved": "已不再展示：在那里刷新会加载你自己的服务器。再展示一次即可重新提供它的构建。",
   "browser.review.again": "再展示一次 #{{quest}}",
+  "browser.review.reviewed": "已审阅 #{{quest}}",
+  "browser.review.notYet": "还不行…（在 #{{quest}} 的页面上说）",
   "browser.review.shownAgain": "已在 Daoris 浏览器中再次展示：#{{quest}}"
 }

@@ -16,6 +16,7 @@ import type { AccountsKnown } from './accountAttention';
 import type { Attention, AttentionActs } from './AttentionRow';
 import { attentionKey, AttentionList, type AttentionDoors, AttentionRegion, NothingNeedsYou } from './AttentionList';
 import { needsAPerson } from './attention';
+import { useReviewActs } from './reviewActs';
 
 export type { AttentionDoors } from './AttentionList';
 
@@ -111,6 +112,8 @@ function Band({ doors, notify, onSessions }: { doors: AttentionDoors; notify: No
   const readOne = useRefreshHarnesses();
   const harnessAct = useHarnessAction();
   const harnessRun = useHarnessRun();
+  // A set-up's verdict, from its row (REVIEWENV1g): the review's one owner, as the step's page presses it.
+  const reviewActs = useReviewActs({ notify });
   // The row an act is on its way for: its acts are held until it answers.
   const [acting, setActing] = useState<string | null>(null);
 
@@ -132,7 +135,36 @@ function Band({ doors, notify, onSessions }: { doors: AttentionDoors; notify: No
     setActing(attentionKey(item));
     act().then(said, failure(notify)).finally(() => setActing(null));
   };
+  // A set-up row's presses (REVIEWENV1g): the set-up the row drew, its step's record for the session a *not yet* goes to; the
+  // row is released whichever way the host answered, and a refusal is said in its words, a stale one's above all.
+  const review = (item: Attention) => {
+    setActing(attentionKey(item));
+    const answered = {
+      done: () => setActing(null),
+      refused: (said: string) => { notify(said, 'error'); setActing(null); },
+    };
+    return {
+      answered,
+      acts: reviewActs.actsFor({
+        state: 'shown', step: item.id, record: (quests.data ?? []).find((quest) => quest.id === item.id) ?? null,
+      }),
+    };
+  };
   const acts: AttentionActs = {
+    reviewed: (item) => {
+      const { acts: pressed, answered } = review(item);
+      if (item.setUp && pressed.reviewed) pressed.reviewed(item.setUp, answered);
+      else setActing(null);
+    },
+    // A shell's alone: the words reach the step's session, and the build its tab, through it.
+    ...(reviewActs.shell ? {
+      notYet: (item: Attention, words: string) => {
+        const { acts: pressed, answered } = review(item);
+        if (item.setUp && pressed.notYet) pressed.notYet(item.setUp, words, answered);
+        else setActing(null);
+      },
+      showAgain: (item: Attention) => reviewActs.actsFor({ state: 'shown', step: item.id }).showAgain?.(),
+    } : {}),
     // Each receiver is its own publish, the ask page's route: said one by one, and stopped at a refusal.
     publish: (item, to) => run(item, async () => {
       for (const receiver of to) {

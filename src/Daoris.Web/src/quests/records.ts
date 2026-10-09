@@ -24,7 +24,10 @@ export function keptFilters(filters: QuestFilters): Record<string, unknown> | nu
   return { ...(filters.to ? { to: filters.to } : {}), ...(filters.closed ? { closed: true } : {}) };
 }
 
-/** A group of the list's quests: where each is in its life (D41 §5), and what awaits the person's yes (DRIFT1d2). */
+/**
+ * A group of the list's quests: where each is in its life (D41 §5), and what a hold keeps waiting on the person, their yes to a
+ * departure (DRIFT1d2) or their review of a set-up step (REVIEWENV1g).
+ */
 export type QuestGroup = { group: 'held' | 'open' | 'progress' | 'closed'; quests: Quest[] };
 
 /**
