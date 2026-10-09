@@ -4,6 +4,7 @@ import { MAX_FILE_BYTES, MAX_FILES } from '../attachments';
 import { type Carry, NO_CARRY, useCarry, useFileChooser } from '../compose/carry';
 import { size } from '../format';
 import { cn } from '../lib/cn';
+import { isComposing } from '../lib/composing';
 import { Button, Icon, Tip } from '../ui';
 import { ContextRing } from './ContextRing';
 import type { ChatMessage, Usage } from './conversation';
@@ -207,8 +208,10 @@ export function Composer({
     setActive(0);
   };
 
-  // The list's keys first, while it offers something; then the form's own.
+  // The list's keys first, while it offers something; then the form's own. An input method's first of all (IME1): the
+  // Enter that accepts a candidate sent half a message, and its arrows, Tab and Escape are its own too.
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (isComposing(event)) return;
     if (offering && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
       event.preventDefault();
       const by = event.key === 'ArrowDown' ? 1 : -1;
