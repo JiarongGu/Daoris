@@ -567,6 +567,124 @@ describe('Ask Daoris, with an agent named', () => {
   });
 });
 
+/**
+ * ASKHIST1: Ask Daoris's conversations, kept on this machine only. The history lists them; one the person chooses is shown in
+ * the newest's place and goes on in itself with their next words where its own conversation was kept, so its knowledge
+ * carries; one that cannot is offered a new conversation from its words.
+ */
+describe('Ask Daoris’s history', () => {
+  const EARLIER = { ...HELP, id: 'e4rl1er0', state: 'completed', created: '2026-09-28T00:00:00Z', updated: '2026-09-28T00:10:00Z' };
+  const row = (over: Record<string, unknown>) => ({
+    session: EARLIER.id, title: 'what is a workspace?', name: null, opening: 'what is a workspace?', about: 'A circle.',
+    created: EARLIER.created, last: EARLIER.updated, pinned: null, live: false, resumable: true, from: null, handed: null, found: null,
+    ...over,
+  });
+
+  /** The bridge as {@link bridge} answers it, with the history's routes beside it. */
+  function withHistory(rows: unknown[], started?: { sessionId: string | null; message: string; from: string }) {
+    bridge({ sessionId: 'n3xt0000', message: 'opened' });
+    const answered = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
+      if (type === 'HELP_CONVERSATIONS') return { conversations: rows, cut: false };
+      if (type === 'HELP_START_FROM') return started;
+      // Words to an ended record are kept on it, to go on in it.
+      if (type === 'SESSION_INPUT') return { sent: true, reaches: 'resume', why: null };
+      return answered(module, type, ...rest);
+    });
+  }
+
+  beforeEach(() => {
+    SESSIONS = [EARLIER];
+    HELPER = 'claude-code-acp';
+    asked.length = 0;
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+  });
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    window.localStorage.clear();
+  });
+
+  it('goes on in an earlier conversation the person chose from the history, with their words', async () => {
+    withHistory([row({})]);
+    show();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'History' }));
+    const list = await screen.findByRole('list', { name: 'Ask Daoris’s conversations' });
+    await userEvent.click(within(list).getAllByRole('button', { name: /^what is a workspace\?/ })[0]);
+
+    expect(await screen.findByText('This conversation has ended. Write to go on in it: it remembers what was said.')).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText('Message'), 'and a remote?');
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: EARLIER.id, text: 'and a remote?' },
+    }));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: expect.objectContaining({ id: 'n3xt0000' }) });
+  });
+
+  /** The newest that ended still starts a new conversation by default, as before; *Go on in it* chooses it. */
+  it('offers to go on in the newest that ended, and starts a new one unless the person chooses it', async () => {
+    withHistory([row({})]);
+    show();
+
+    const press = await screen.findByRole('button', { name: 'Go on in it' });
+    expect(screen.getByText('This conversation has ended. A message starts a new one.')).toBeInTheDocument();
+    await userEvent.click(press);
+
+    expect(await screen.findByText(/Write to go on in it/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Message')).toHaveAttribute('placeholder', expect.stringMatching(/^write to go on in this conversation/));
+  });
+
+  /** One whose own conversation was not kept cannot go on in itself: a new one starts from its words, handed as a file. */
+  it('starts a new conversation from the words of one that cannot go on in itself', async () => {
+    withHistory([row({ resumable: false })], { sessionId: 'fr0m0000', message: 'opened', from: EARLIER.id });
+    show();
+
+    const press = await screen.findByRole('button', { name: 'New conversation from it' });
+    SESSIONS = [EARLIER, { ...HELP, id: 'fr0m0000', created: '2026-09-29T01:00:00Z' }];
+    await userEvent.click(press);
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_START_FROM', { payload: { id: EARLIER.id } }));
+    expect(await screen.findByText('This conversation starts from “what is a workspace?”: its words go to Ask Daoris as a file with your first message.'))
+      .toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText('Message'), 'and a remote?');
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: 'fr0m0000', text: 'and a remote?' },
+    }));
+  });
+
+  /** A rename, a pin and a delete go through the driver's routes, the delete through Sessions' own, asked once. */
+  it('renames, pins and deletes from the history through the driver', async () => {
+    withHistory([row({ session: EARLIER.id })]);
+    show();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'History' }));
+    const user = userEvent.setup();
+    const menu = async () => {
+      (await screen.findByRole('button', { name: 'More for what is a workspace?' })).focus();
+      await user.keyboard('{Enter}');
+    };
+
+    await menu();
+    await user.click(await screen.findByRole('menuitem', { name: 'Pin' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_PIN', { payload: { id: EARLIER.id, pinned: true } }));
+
+    await menu();
+    await user.click(await screen.findByRole('menuitem', { name: 'Rename…' }));
+    await user.type(screen.getByRole('textbox', { name: 'Name' }), 'Workspaces');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_RENAME', { payload: { id: EARLIER.id, name: 'Workspaces' } }));
+
+    await menu();
+    await user.click(await screen.findByRole('menuitem', { name: 'Delete…' }));
+    await user.click(await screen.findByRole('button', { name: 'Delete conversation' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DELETE', { payload: { id: EARLIER.id } }));
+  });
+});
+
 describe('Ask Daoris, with no agent named', () => {
   beforeEach(() => {
     SESSIONS = [];
