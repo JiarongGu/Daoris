@@ -55,8 +55,8 @@ public sealed partial class HelpCoverageTests
     private const string WorkflowOwed =
         "a named workflow's version, a choice of one and a kind of task are changes to how work moves that the person applies, so "
         + "Ask Daoris should propose them as the `workflow` kind's card, its part said first (D157 point 13, the workflow design §8), "
-        + "which WORKFLOW1h builds; until then `daoris driver workflow` is its terminal's door, and no gate reads a choice yet "
-        + "(WORKFLOW1f).";
+        + "which WORKFLOW1h builds; until then `daoris driver workflow` is its terminal's door, and every gate reads the version "
+        + "each run bound (WORKFLOW1f).";
 
     /// <summary>
     /// How an agent's accounts are used, the agent's page's controls (TOOL4g, UX6e; D125 §6, D130 §9): each a door of the `agent`
@@ -223,6 +223,16 @@ public sealed partial class HelpCoverageTests
     private static readonly Exempt WorkflowRunDoor = new(
         "it reads where a piece of work stands in its workflow and changes nothing, so there is nothing to propose, as `trace` "
         + "is exempt (D157, D110 §4); each press a waiting step needs is its owner's door, never this read's.");
+
+    /// <summary>
+    /// WORKFLOW1f's <c>daoris-driver workflow keep</c> (D157 point 10, the workflow design §4.4), a verb of the headless host:
+    /// exempt, since keeping a workflow that asks less of the person for work outside its kind's paths is their say-so, as going
+    /// on without a second opinion is. The screen's press is the editor's row (WORKFLOW1g).
+    /// </summary>
+    private static readonly Exempt WorkflowKeepDoor = new(
+        "keeping a workflow that asks less of you for work that changed paths outside its kind's is your say-so on that work, a "
+        + "judgement Ask Daoris cannot have made (D157 point 10, D110), as going on without a second opinion is; it can name "
+        + "`daoris-driver workflow keep`.");
 
     /// <summary>
     /// EVID1b's <c>daoris-driver quest check</c> (D144 §5), a verb of the headless host: a door Ask Daoris owes, until EVID1c
@@ -623,6 +633,7 @@ public sealed partial class HelpCoverageTests
             .Append(StartFromDoor)
             .Append(TraceDoor)
             .Append(WorkflowRunDoor)
+            .Append(WorkflowKeepDoor)
             .Append(CheckDoor)
             .Append(GitBranchesDoor)
             .Append(TreesStateDoor)
@@ -884,6 +895,19 @@ public sealed partial class HelpCoverageTests
         Assert.DoesNotContain("run", HelpProposalKinds.Find("workflow")?.Doors ?? []);
         Assert.Contains("changes nothing", WorkflowRunDoor.Reason);
         Assert.Contains("D157", WorkflowRunDoor.Reason);
+    }
+
+    /// <summary>
+    /// WORKFLOW1f: the headless host's <c>workflow keep</c> is exempt from Ask Daoris (D157 point 10, D110) while its usage spells
+    /// it and the room names it: the person's say-so, never a card's.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_workflow_keep_is_exempt_since_it_is_the_persons_say_so()
+    {
+        Assert.Contains("workflow keep <session> [\"…\"]", DriverCommand.Usage);
+        Assert.DoesNotContain("keep", HelpProposalKinds.Find("workflow")?.Doors ?? []);
+        Assert.Contains("say-so", WorkflowKeepDoor.Reason);
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver workflow keep <session> [\"…\"]`", StringComparison.Ordinal));
     }
 
     /// <summary>

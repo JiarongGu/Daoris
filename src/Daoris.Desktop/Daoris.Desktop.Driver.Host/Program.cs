@@ -177,6 +177,10 @@ using Daoris.Driver;
 //                 Workflow view's twin, read by the reader its route reads, one line per step with its state and what it says,
 //                 the step it stands at marked. A chat has no run, and says so. It writes nothing.
 //
+//   workflow keep <session> ["…"]
+//                 the person's Keep (WORKFLOW1f, design §4.4): where a kind's paths hold a session's work, keep the workflow
+//                 the kind chose for it, with their words, on its run, and print what the landing gate says after.
+//
 //   git branches [--repository <name>] [--all] [--json]
 //                 each repository's line and branches by kind (GIT1c, D147 §2.2, §3.3): the line with how it stands to
 //                 origin's copy and when the checkout last fetched, the sessions' branches named by their sessions, the
@@ -236,7 +240,7 @@ if (args is ["git", .. var gitArgs])
 }
 
 // Where a piece of work stands in its workflow (WORKFLOW1c2, D157, D50): the session's Workflow view's twin, a read, routed before
-// the machine log opens for the trace's reason, with its own catch.
+// the machine log opens for the trace's reason, with its own catch; and the person's Keep (WORKFLOW1f), which writes only its run.
 if (args is ["workflow", .. var workflowArgs])
 {
     return await Daoris.Driver.Host.WorkflowConsole.RunAsync(workflowArgs);
