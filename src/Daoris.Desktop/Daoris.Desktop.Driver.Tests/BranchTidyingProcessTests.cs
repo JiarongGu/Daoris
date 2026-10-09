@@ -34,12 +34,18 @@ public sealed class BranchTidyingProcessTests : IDisposable
         _closing.Cancel();
         _closing.Dispose();
         _ledger.Dispose();
+        // Git leaves read-only objects and tree links on Windows, as GitTree's cleanup says; a failed cleanup is not a failed test.
         try
         {
+            foreach (var file in Directory.EnumerateFiles(_scratch, "*", SearchOption.AllDirectories))
+            {
+                File.SetAttributes(file, FileAttributes.Normal);
+            }
+
             Directory.Delete(_scratch, recursive: true);
         }
         catch (IOException) { /* a straggling git handle */ }
-        catch (UnauthorizedAccessException) { /* read-only pack files under .git */ }
+        catch (UnauthorizedAccessException) { /* a file something still holds */ }
     }
 
     /// <summary>
