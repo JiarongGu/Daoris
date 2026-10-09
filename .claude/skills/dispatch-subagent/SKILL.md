@@ -161,6 +161,8 @@ Follow the dispatch-subagent skill's subagent half.
      `--continue` to gate the merge again whole, or run `git merge --abort`.
    - For several branches, run `<first> --batch <second> …`. Each merge gets the checks and suites its
      paths reach. Commit it, then `--continue` merges the next. The rehearsals run once, after the last.
+   - Bisecting a failure, run the test five times at each commit: one pass proves nothing of a test that fails some of
+     the time. A single pass at an earlier merge once blamed the wrong change; the test failed 5 of 8 there (AUTOTIDY1r).
    - A FLAKE line is a real-process test that failed in the suite and passed alone, or a rehearsal that
      died (its process ended, or it printed nothing) and passed when run again. Record it under FLAKE1;
      never let it through unrecorded.
