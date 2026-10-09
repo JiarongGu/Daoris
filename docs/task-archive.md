@@ -5,6 +5,22 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## UXFIX1c — the tick and target leftovers (2026-10-10)
+
+> - [ ] **UXFIX1c — the tick and target leftovers** (web-shell). After UXFIX1 and UXFIX1b no product code passes `tick` to a plain `Menu.Item`, so `MenuRow`'s doc example ("the size a map is at") describes nothing; reword or drop the plain tick. The views menu's ⋯ trigger is `h-6 w-6` (24 px), under the 28 px floor. Contract: platform-ux §6, the second-opinion review. Proof: vitest on the trigger's minimum size; `ui.test.tsx`'s tick case updated.
+
+**Outcome.** Plain-item ticks now reserve alignment only; selected state stays on semantic checkbox
+and radio rows. Views-menu triggers use the 28 px floor. Existing menu tests cover both contracts;
+final web receipts are in `docs/2026-10-10-integration-review.md`.
+
+## ORIENT2i — the platform names an index entry (2026-10-10)
+
+> - [ ] **ORIENT2i — the platform names an index entry** (web-shell). ORIENT2e gave the service's entries a kind `Index`, and the page's `kind` catalogue (`locales/*/kind.json`) has no row for it, so a knowledge search that lands on an index row shows the raw key. Add `kind.Index` in both languages and let a result name its line. Contract: D151's ORIENT2e note. Proof: a unit test rendering an index result; the catalogue parity test.
+
+**Outcome.** Both catalogues name index entries. Hits show the excerpt's source line and entry
+headers show their source range; older host answers remain accepted. Eighteen targeted knowledge
+tests pass, including bilingual entry cases; index stories cover both languages and themes.
+
 ## INTEGRATE1 — consolidate branches and review the product (2026-10-07)
 
 > - [x] **INTEGRATE1 — consolidate branches and review the product** (2026-10-05, in progress).

@@ -27,6 +27,11 @@ function list(over: Partial<Parameters<typeof HitList>[0]> = {}) {
 }
 
 describe("Search's list", () => {
+  it('names an index result and the line its excerpt starts on', () => {
+    list({ answer: answered({ hits: [{ ...HITS[0]!, kind: 'Index', path: 'docs/index/routes.md', firstLine: 7, lastLine: 12, excerptLine: 9 } as typeof HITS[number]] }) });
+    expect(screen.getByText('game · index')).toBeInTheDocument();
+    expect(screen.getByText('docs/index/routes.md:9')).toBeInTheDocument();
+  });
   it('is the box, local only, then the hits, each a row of its list', () => {
     list();
 

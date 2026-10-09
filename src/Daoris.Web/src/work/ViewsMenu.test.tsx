@@ -42,6 +42,7 @@ describe('the views menu', () => {
    */
   it('names every view the region holds by its whole name, the shown one ticked and said', async () => {
     await open();
+    expect(screen.getByRole('button', { name: 'views in the right side bar' })).toHaveClass('h-7', 'w-7');
     const group = screen.getByRole('group', { name: 'views in the right side bar' });
     const views = within(group).getAllByRole('menuitemradio');
     expect(views.map((view) => view.textContent)).toEqual(['Timeline', 'Review', 'Ask Daoris']);

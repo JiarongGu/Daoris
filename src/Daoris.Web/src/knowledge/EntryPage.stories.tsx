@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { EntryMainNotice, EntryPage } from './EntryPage';
-import { CJK_ENTRY, ENTRY, LONG_LINES, RULE } from './fixtures';
+import { CJK_ENTRY, ENTRY, INDEX_ENTRY, LONG_LINES, RULE } from './fixtures';
+import { chinese } from '../storyLanguage';
+import { InTheme } from '../plugins/storyIcons';
 
 // An entry's page (FRAME1f, D118 §2) in Search's main area, where it was the reader drawer: a knowledge document with
 // its frontmatter, a canonical rule, a source whose lines run long, a 中文 entry; and the main area with no entry:
@@ -23,6 +25,17 @@ type Story = StoryObj<typeof EntryPage>;
 
 /** A knowledge document, as it is written: its frontmatter and its Markdown's markers, unrendered. */
 export const Knowledge: Story = {};
+
+export const Index: Story = { args: { entry: INDEX_ENTRY } };
+export const IndexChinese: Story = { args: { entry: INDEX_ENTRY }, decorators: [chinese] };
+export const IndexDark: Story = {
+  args: { entry: INDEX_ENTRY },
+  decorators: [(Story) => <InTheme theme="dark" className="flex min-h-0 min-w-0 flex-1 p-0"><Story /></InTheme>],
+};
+export const IndexChineseDark: Story = {
+  args: { entry: INDEX_ENTRY },
+  decorators: [chinese, (Story) => <InTheme theme="dark" className="flex min-h-0 min-w-0 flex-1 p-0"><Story /></InTheme>],
+};
 
 /** A canonical rule, as every adopter holds it: *canonical* beside its kind. */
 export const CanonicalRule: Story = { args: { entry: RULE } };

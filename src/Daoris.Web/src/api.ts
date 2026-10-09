@@ -25,6 +25,7 @@ export type Repository = {
 export type Hit = {
   id: string; repository: string; kind: string; title: string;
   path: string; excerpt?: string; score: number; workspace?: string;
+  firstLine?: number | null; lastLine?: number | null; excerptLine?: number | null;
 };
 /**
  * A search's hits, and which tier answered them (TIER1): `lexical`, `semantic`, `lexical+semantic`,
@@ -35,6 +36,7 @@ export type SearchAnswer = { hits: Hit[]; tier: string | null };
 export type Entry = {
   id: string; repository: string; kind: string; provenance: string;
   title: string; path: string; body: string; workspace?: string;
+  firstLine?: number | null; lastLine?: number | null;
 };
 export type ConvergenceEntry = {
   id: string; repository: string; kind: string; title: string; path: string;

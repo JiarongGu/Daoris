@@ -36,7 +36,7 @@
       "budget": { "en": 40, "zh": 16 },
       "case": "sentence",
       "keys": [
-        "asks.compose.title", "code.title", "help.quick.title", "map.title",
+        "asks.compose.title", "code.title", "help.head.untitled", "help.quick.title", "map.title",
         "overview.title", "plugin.kit.title", "plugin.kit.tryFolder", "projects.manage.addTitle",
         "projects.manage.importTitle", "projects.manage.title",
         "quests.compose.title", "settings.title",
@@ -71,7 +71,7 @@
         "harness.doors", "harness.use.machine", "harness.use.title", "harness.use.workspace",
         "help.proposal.title", "help.proposal.titleDelete",
         "help.proposal.titleGo", "help.proposal.titleHand", "help.proposal.titlePlugin",
-        "help.proposal.titleSync", "help.proposal.titleAccept", "help.history.title", "quests.requirements.title",
+        "help.proposal.titleSync", "help.proposal.titleAccept", "help.history.title", "help.history.group.*", "quests.requirements.title",
         "map.asks", "map.when.title", "overview.outstanding.title",
         "overview.repositories.title", "menu.run.quest", "menu.run.session", "palette.title", "plugin.group.*",
         "plugin.section.*", "plugin.tests.trial", "plugin.update.title", "projects.group.*",
@@ -202,7 +202,8 @@
         "harness.profile.keySave", "harness.profile.removeMeanIt",
         "harness.profile.signInNew", "harness.settings.open",
         "harness.settings.save", "harness.update", "help.close", "help.door.*", "help.new", "help.goOn", "help.history.open",
-        "help.history.save", "help.history.deleteMeanIt",
+        "help.history.save", "help.history.deleteMeanIt", "help.history.back", "help.history.retry", "help.history.start",
+        "help.history.clearSearch", "help.history.useOriginal",
         "help.proposal.apply", "help.proposal.delete", "help.proposal.dismiss", "help.proposal.go",
         "help.proposal.look", "help.proposal.accept", "quests.requirements.accept",
         "help.quick.close", "help.quick.expand", "help.setup", "map.detail.openCode",
@@ -245,7 +246,7 @@
         "work.attention.act.publish", "work.attention.act.refuse", "work.attention.act.retry", "work.attention.act.trust",
         "work.attention.act.letRun",
         "work.attention.door.*", "work.attention.more", "work.awaiting.answerConfirm", "work.awaiting.carryOn", "work.awaiting.decline",
-        "work.awaiting.declineConfirm", "work.awaiting.finish", "work.code.copy",
+        "work.awaiting.declineConfirm", "work.awaiting.finish", "work.code.copy", "work.code.wrap",
         "work.composer.attach", "work.composer.finish", "work.composer.queue", "work.composer.send",
         "work.composer.stop", "work.composer.stopTurn", "work.conversation.bottom", "work.conversation.earlier",
         "work.conversation.hide", "work.conversation.show", "work.dock.close", "work.dock.full",
@@ -272,7 +273,7 @@
       "budget": { "en": 16, "zh": 5 },
       "case": "lower",
       "keys": [
-        "agents.read.at", "agents.read.never", "agents.state.*", "agents.runs.machine", "agents.runs.first", "agents.runs.none",
+        "agents.read.at", "agents.read.never", "help.history.current", "help.history.saving", "agents.state.*", "agents.runs.machine", "agents.runs.first", "agents.runs.none",
         "agents.now.sessions",
         "asks.goAhead.state.*", "asks.record.paused", "asks.state.*", "chain.ask", "chain.attempt", "chain.current", "chain.thisSession",
         "work.head.copied",
@@ -348,7 +349,7 @@
       "budget": { "en": 40, "zh": 16 },
       "case": "sentence",
       "keys": [
-        "agents.empty.headline", "agents.gone.headline", "agents.none.headline",
+        "agents.empty.headline", "agents.gone.headline", "agents.none.headline", "help.history.failed", "help.history.emptyHeadline",
         "asks.compose.nowhere.headline", "asks.gone.headline", "code.none.headline", "convergence.empty",
         "convergence.gone.headline", "convergence.none.headline", "map.empty.headline",
         "map.empty.headlineAll", "overview.outstanding.emptyHeadline", "overview.repositories.emptyHeadline",
@@ -604,6 +605,7 @@
   "accepted": {
     "_why": "Budget judgements looked at and kept (NAME2; docs/2026-10-01-naming-design.md §6): the length is the name, and the element it renders in gives it more room than its kind's budget assumes, or a placeholder's typical value overstates it. Each holds the name it accepted in each language it accepts, and why, naming the room the code gives the element; the window confirms the room. scripts/names-check.mjs stops reporting a name while it is the one accepted, and reports it again once it is renamed, or once it fits and the acceptance can go.",
     "names": [
+      { "key": "help.history.useOriginal", "en": "Use the original question", "why": "A press in a conversation's rename, on a wrapping row of its own under the field in a side bar at least 300px wide (ASKHIST1c); it says what the conversation is called by once the name goes, where *Clear* left a reader to guess." },
       { "key": "opinion.act.sameAgent", "en": "Ask the same agent, fresh", "why": "A press in the second opinion's gate, on a wrapping row of its own beside at most three others in a main area at least 400px wide (XAGENT1g); the design names it whole (D155 §8.4–§8.5), since what it asks is the working agent's own in a fresh conversation, which is never an independent reading." },
       { "key": "workflow.run.state.waiting-on-agent", "en": "waiting on an agent", "why": "A run step's state on its pill, on a wrapping line of its own beside at most *this session* and a time, in a side bar at least 300px wide (WORKFLOW1c); the design names the state whole (D157 §5.2), and a shorter word would not say whom the work waits on." },
       { "key": "review.act.skip", "en": "Skip the review for this work…", "zh": "为这些工作跳过审阅…", "why": "A press in a review's gate, on a wrapping row of its own beside at most three others in a main area at least 400px wide (REVIEWENV1g); the design names it whole (D154 §3.6), since what is skipped is this work's review and no other's." },

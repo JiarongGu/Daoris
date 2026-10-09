@@ -34,7 +34,11 @@ export function EntryPills({ kind, provenance }: { kind: string; provenance?: st
 }
 
 /** Where an entry lives: its repository and its path in it, which is the entry's id said for a person. */
-export const entryPlace = (entry: Pick<Entry, 'repository' | 'path'>) => `${entry.repository} · ${entry.path}`;
+export const entryPlace = (entry: Pick<Entry, 'repository' | 'path' | 'firstLine' | 'lastLine'>) => {
+  const { firstLine, lastLine } = entry;
+  const lines = firstLine ? `:${firstLine}${lastLine && lastLine > firstLine ? `-${lastLine}` : ''}` : '';
+  return `${entry.repository} · ${entry.path}${lines}`;
+};
 
 /**
  * **An entry's page** (FRAME1f, D118 §2): Search's main area, the entry a result names read whole. Its header is its

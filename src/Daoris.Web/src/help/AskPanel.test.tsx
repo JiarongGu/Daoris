@@ -1,12 +1,17 @@
-import { describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { createRef } from 'react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import '../i18n';
+import * as Tooltip from '@radix-ui/react-tooltip';
+import i18n from '../i18n';
 import { code } from '../test/code';
-import { AskPanel } from './AskPanel';
+import { type AskConversationSlot, AskPanel as Panel } from './AskPanel';
 import { starters } from './starters';
 
 // HELP1d (D89): Ask Daoris's panel — what the machine lacks, each with its door and its command.
+
+/** The panel as the application holds it, under the one tooltip provider the page mounts. */
+const AskPanel = (props: Parameters<typeof Panel>[0]) => <Tooltip.Provider><Panel {...props} /></Tooltip.Provider>;
 
 const LACKING = starters({
   repositories: ['engine'], drivable: [], tools: [], waiting: 1, unnamedLines: [], helper: null,
@@ -80,41 +85,18 @@ describe('Ask Daoris', () => {
     expect(screen.queryByRole('button', { name: /set up Daoris/ })).toBeNull();
   });
 
-  /** ASKHIST1: the history's door beside *New conversation*; open, it takes the conversation's place and the box goes. */
-  it('draws the history in the conversation’s place while it is open, with no box to write in', async () => {
-    const onHistory = vi.fn();
+  /** ASKHIST1: open, the history takes the conversation's place, its head, its words and its box together. */
+  it('draws the history in the conversation’s place while it is open, with no box to write in', () => {
     const slot = {
-      body: <p>the conversation</p>, composer: <p>the box</p>, ended: false, onNew: vi.fn(),
-      history: <p>the history</p>, onHistory,
+      body: <p>the conversation</p>, composer: <p>the box</p>, ended: false, onNew: vi.fn(), title: 'what is a workspace?',
+      history: <p>the history</p>, onHistory: vi.fn(), historyOpen: true,
     };
-    const { rerender } = render(<AskPanel starters={[]} helper="claude-code-acp" conversation={slot} onGo={vi.fn()} onClose={vi.fn()} />);
+    render(<AskPanel starters={[]} helper="claude-code-acp" conversation={slot} onGo={vi.fn()} onClose={vi.fn()} />);
 
-    const door = screen.getByRole('button', { name: 'History' });
-    expect(door).toHaveAttribute('aria-pressed', 'false');
-    await userEvent.click(door);
-    expect(onHistory).toHaveBeenCalledOnce();
-
-    rerender(<AskPanel starters={[]} helper="claude-code-acp" conversation={{ ...slot, historyOpen: true }} onGo={vi.fn()} onClose={vi.fn()} />);
-    expect(screen.getByRole('button', { name: 'History' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText('the history')).toBeInTheDocument();
     expect(screen.queryByText('the conversation')).toBeNull();
     expect(screen.queryByText('the box')).toBeNull();
-  });
-
-  /** ASKHIST1: what the organism says at an ended conversation's foot replaces the panel's own line. */
-  it('says the organism’s line at an ended conversation’s foot, in place of its own', () => {
-    render(
-      <AskPanel
-        starters={[]}
-        helper="claude-code-acp"
-        conversation={{ body: <p>the conversation</p>, composer: null, ended: true, note: <p>it goes on</p> }}
-        onGo={vi.fn()}
-        onClose={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByText('it goes on')).toBeInTheDocument();
-    expect(screen.queryByText(/A message starts a new one/)).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'what is a workspace?' })).toBeNull();
   });
 
   it('says so when the machine lacks nothing, and names the agent it runs on', () => {
@@ -122,5 +104,106 @@ describe('Ask Daoris', () => {
 
     expect(screen.getByText(/lacks nothing Ask Daoris knows to look for/)).toBeInTheDocument();
     expect(screen.getByText(/runs on claude-code-acp/)).toBeInTheDocument();
+  });
+});
+
+/**
+ * ASKHIST1c: the open conversation's head (the way back to the history, the conversation's title, a new one), the strips
+ * between its words and its box (the way back to the tail, then what the next words do), and its Escape back to the list.
+ */
+describe.each(['en', 'zh'])('Ask Daoris’s open conversation in %s', (language) => {
+  afterEach(async () => {
+    cleanup();
+    await i18n.changeLanguage('en');
+  });
+
+  const TITLE = 'to complete this https://example.atlassian.net/browse/TK-2205?focusedCommentId=1234567 so the sprint closes';
+  const slot = (over: Partial<AskConversationSlot> = {}): AskConversationSlot => ({
+    body: <p>the conversation</p>, composer: <form aria-label="the box"><textarea aria-label="words" /></form>, ended: false,
+    title: TITLE, onNew: vi.fn(), onHistory: vi.fn(), history: <p>the history</p>, ...over,
+  });
+  const draw = (conversation: AskConversationSlot, framed = true) =>
+    render(<AskPanel framed={framed} starters={[]} helper="claude-code-acp" conversation={conversation} onGo={vi.fn()} onClose={vi.fn()} />);
+
+  it('heads it with the way back to the history, its whole title and a new conversation, docked or framed', async () => {
+    await i18n.changeLanguage(language);
+    for (const framed of [true, false]) {
+      const conversation = slot();
+      draw(conversation, framed);
+
+      const back = screen.getByRole('button', { name: i18n.t('help.history.back') });
+      expect(back).toHaveTextContent(i18n.t('help.history.open'));
+      expect(back).toHaveClass('h-7');
+      const title = screen.getByRole('heading', { name: TITLE });
+      expect(title).toHaveClass('wrap-anywhere');
+      expect(title).not.toHaveClass('truncate');
+      // Left-led: the way back, the title, then the new conversation at its end.
+      const head = title.closest('header')!;
+      expect(within(head).getAllByRole('button').map((each) => each.getAttribute('aria-label'))).toEqual([
+        i18n.t('help.history.back'), i18n.t('help.new'),
+      ]);
+      await userEvent.click(back);
+      expect(conversation.onHistory).toHaveBeenCalledOnce();
+      await userEvent.click(within(head).getByRole('button', { name: i18n.t('help.new') }));
+      expect(conversation.onNew).toHaveBeenCalledOnce();
+      cleanup();
+    }
+  });
+
+  it('calls a conversation with nothing said yet a new one, and offers no new one over it', async () => {
+    await i18n.changeLanguage(language);
+    draw(slot({ body: null, title: null, onNew: undefined }));
+    expect(screen.getByRole('heading', { name: i18n.t('help.new') })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: i18n.t('help.new') })).toBeNull();
+  });
+
+  it('puts the focus on the conversation’s heading when it is opened from the history', async () => {
+    await i18n.changeLanguage(language);
+    const { rerender } = draw(slot());
+    expect(screen.getByRole('heading', { name: TITLE })).not.toHaveFocus();
+    rerender(<AskPanel starters={[]} helper="claude-code-acp" conversation={slot({ focusHead: 1 })} onGo={vi.fn()} onClose={vi.fn()} />);
+    expect(screen.getByRole('heading', { name: TITLE })).toHaveFocus();
+  });
+
+  it('draws the way back to the tail and what the next words do between the words and the box, outside the scroll', async () => {
+    await i18n.changeLanguage(language);
+    const scroller = createRef<HTMLDivElement>();
+    render(
+      <AskPanel
+        starters={[]} helper="claude-code-acp" scroller={scroller} onGo={vi.fn()} onClose={vi.fn()}
+        conversation={slot({ ended: true, tail: <button type="button">to the tail</button>, note: <p>what the next words do</p> })}
+      />,
+    );
+
+    const tail = screen.getByRole('button', { name: 'to the tail' });
+    const note = screen.getByText('what the next words do');
+    const box = screen.getByRole('form', { name: 'the box' });
+    for (const strip of [tail, note]) expect(scroller.current!.contains(strip)).toBe(false);
+    // In the order a reader meets them: the words, the way back to the tail, the line, the box.
+    expect(scroller.current!.compareDocumentPosition(tail) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(tail.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(note.compareDocumentPosition(box) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('goes back to the history on Escape where it was opened from it, never from a field, a form or a word being composed', async () => {
+    await i18n.changeLanguage(language);
+    const conversation = slot({ escapeToList: true });
+    draw(conversation);
+
+    screen.getByRole('heading', { name: TITLE }).focus();
+    await userEvent.keyboard('{Escape}');
+    expect(conversation.onHistory).toHaveBeenCalledOnce();
+
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'words' }), { key: 'Escape' });
+    fireEvent.keyDown(screen.getByRole('heading', { name: TITLE }), { key: 'Escape', isComposing: true });
+    fireEvent.keyDown(screen.getByRole('heading', { name: TITLE }), { key: 'Escape', keyCode: 229 });
+    expect(conversation.onHistory).toHaveBeenCalledOnce();
+
+    cleanup();
+    const elsewhere = slot({ escapeToList: false });
+    draw(elsewhere);
+    screen.getByRole('heading', { name: TITLE }).focus();
+    await userEvent.keyboard('{Escape}');
+    expect(elsewhere.onHistory).not.toHaveBeenCalled();
   });
 });

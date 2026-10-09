@@ -111,13 +111,12 @@ describe('a menu', () => {
     expect(document.body.style.pointerEvents).not.toBe('none');
   });
 
-  it('reserves the tick column where asked, ticks the current item, and leaves it out where not', async () => {
+  it('reserves selected state for checkbox and radio rows, leaving acts without a tick', async () => {
     render(
       <Menu.Root>
         <Menu.Trigger>Size</Menu.Trigger>
         <Menu.Content>
-          <Menu.Item tick>100%</Menu.Item>
-          <Menu.Item tick={false}>50%</Menu.Item>
+          <Menu.Item tick={false}>Zoom in</Menu.Item>
           <Menu.Item>Fit</Menu.Item>
           <Menu.Separator />
           <Menu.CheckboxItem checked>Quests</Menu.CheckboxItem>
@@ -129,10 +128,8 @@ describe('a menu', () => {
     );
     await open('Size');
     const item = (name: string) => screen.getByText(name).closest('[role^="menuitem"]') as HTMLElement;
-    expect(item('100%').querySelector('svg')).not.toBeNull();
-    expect(item('100%').className).toContain('text-ink');
-    expect(item('50%').firstElementChild?.className).toContain('w-3.5');
-    expect(item('50%').querySelector('svg')).toBeNull();
+    expect(item('Zoom in').firstElementChild?.className).toContain('w-3.5');
+    expect(item('Zoom in').querySelector('svg')).toBeNull();
     expect(item('Fit').firstElementChild).toBeNull();
     // A checkbox and a radio item reserve the column always, and tick it while chosen.
     expect(item('Quests').getAttribute('role')).toBe('menuitemcheckbox');

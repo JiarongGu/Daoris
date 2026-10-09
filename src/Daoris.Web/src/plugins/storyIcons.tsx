@@ -1,4 +1,5 @@
 import { type ReactNode, useLayoutEffect } from 'react';
+import { cn } from '../lib/cn';
 
 // What the Plugins view's stories share (PLUGUI2, D140): declared icons as the driver hands them, and a theme to look at
 // each state in. Stories only: nothing in the product imports this.
@@ -18,7 +19,7 @@ export const PNG_ICON = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgC
  * A story drawn in a chosen theme, the way a person chooses one (D66): `data-theme` on the document, put back when the
  * story goes. Without it a story follows the OS, so both themes are reviewed by a pair of stories.
  */
-export function InTheme({ theme, children }: { theme: 'light' | 'dark'; children: ReactNode }) {
+export function InTheme({ theme, children, className }: { theme: 'light' | 'dark'; children: ReactNode; className?: string }) {
   useLayoutEffect(() => {
     const root = document.documentElement;
     const was = root.dataset.theme;
@@ -28,5 +29,5 @@ export function InTheme({ theme, children }: { theme: 'light' | 'dark'; children
       else root.dataset.theme = was;
     };
   }, [theme]);
-  return <div className="bg-page p-2 text-ink">{children}</div>;
+  return <div className={cn('bg-page p-2 text-ink', className)}>{children}</div>;
 }

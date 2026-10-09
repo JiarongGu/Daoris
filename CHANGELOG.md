@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- Ask Daoris history groups conversations and keeps titles readable in narrow panels. Starting a
+  new conversation waits for the current one to finish and preserves the draft if that is refused.
+- Knowledge index results show translated kinds and source lines; entry headers show source ranges.
 - Account pages present compact rows, named accounts, per-account actions and a three-step add flow.
   Chosen names also appear in session facts, held-start messages and completion notices.
 - Help → Update brings the update card into view. Development gate reuse now rejects stale verdicts

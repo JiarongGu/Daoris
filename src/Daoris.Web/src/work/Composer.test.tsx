@@ -325,6 +325,26 @@ describe('the composer', () => {
     expect(draft).toHaveBeenLastCalledWith('');
   });
 
+  /**
+   * ASKHIST1c: the files can be held above the composer too, so Ask Daoris keeps each conversation's attachments across its
+   * history: shown as handed, every change told, and let go through the same door once sent.
+   */
+  it('shows the files it is given, and tells every change of them', async () => {
+    const held = new File(['exit 3'], 'run.log', { type: 'text/plain' });
+    const shot = new File(['png'], 'shot.png', { type: 'image/png' });
+    const carry = vi.fn();
+    const send = vi.fn();
+    show({ carried: { links: '', files: [held] }, onCarry: carry, onSend: send });
+
+    expect(within(screen.getByRole('list', { name: 'attached' })).getByText('run.log')).toBeInTheDocument();
+    await userEvent.upload(screen.getByLabelText('Choose files…'), shot);
+    expect(carry).toHaveBeenLastCalledWith({ links: '', files: [held, shot] });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(send).toHaveBeenCalledWith('', [held]);
+    expect(carry).toHaveBeenLastCalledWith({ links: '', files: [] });
+  });
+
   it('shows a refusal word for word', () => {
     show({ refusal: '`engine` already has an active session — `s1a2b3c4`.' });
     expect(screen.getByText('`engine` already has an active session — `s1a2b3c4`.')).toBeInTheDocument();

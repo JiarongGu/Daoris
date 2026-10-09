@@ -1,338 +1,317 @@
-# Daoris (道衍) — active task backlog
+# Daoris (道衍) — open work
 
-Open work only. Finished rows move to `docs/task-archive.md`; `CHANGELOG.md` describes release changes. This backlog was condensed on 2026-10-06; the exact supporting detail and owner quotations remain in Git at `a3b20973:TASKS.md`, as recorded in `docs/2026-10-05-integration-review.md`.
+Open work only; move finished rows to `docs/task-archive.md`. Release changes belong in `CHANGELOG.md`.
+This handover keeps every outstanding identifier. Detailed acceptance criteria, owner quotations and
+earlier evidence remain at `38065d97:TASKS.md` in Git and in each section's contract; read the matching
+row before implementation. The earlier condensation's supporting record is `a3b20973:TASKS.md`.
 
-## State
+Start with `AGENTS.md`, `CLAUDE.md`, `.claude/INDEX.md`, `docs/README.md` and `docs/index/README.md`.
+Use discovery skills, then read the contract. Integrate through `tools/merge-branch.mjs`; run rehearsals
+serially. Owner-only work, downloads, account spending, installation, publication and decisions retain
+their existing grants and holds. A dependency named below must be complete before its dependent starts.
 
-Development remains at `0.0.x`; nothing is published. Verified 2026-10-10: 1,480 CLI, 1,758 service, 245 HTTP host, 6,758 driver (5,957 fast, 801 Process), 885 modules (763 fast, 122 Process), 85 devkit, 5,097 web unit and 24 Playwright; rehearsals: release 114, family 425, deployment 114. The full set (14 gates) passed the XAGENT1f4 merge; the install carries the WORKFLOW1a merge's tree, which the full set passed on 2026-10-09; earlier receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,887 bytes, advisory budget 26,000.
+Development remains at `0.0.x`, unpublished, with no live consumers. Adoption is the owner's call.
+Current recovery, review coverage and verification: `docs/2026-10-10-integration-review.md`.
+Historical installation receipts and adoption mechanics remain in their evidence records.
 
-Live consumer count is zero. Adoption is the owner's call. The existing desktop-runtime rehearsal remains evidence: 6 collisions, 2 twins to retire, budget 40,000, check at 38,782 bytes; supporting mechanics are in `docs/adoption/shenora-repo-mechanics.md`.
+## Current integration
 
-A section's contract supplies detailed acceptance criteria. Owner-marked rows retain their grants, downloads, runs or decisions; a row lacking proof in the source needs proof agreed before implementation.
-
-## Start here
-
-Prioritize UI/UX: retain refused account edits, quote terminal hints, finish the compact menu, verify recovered accounts and heads on the installed application, then complete the remaining screen consolidation. Review evidence and coverage: `docs/2026-10-05-integration-review.md`.
-
-Read `AGENTS.md`, `CLAUDE.md`, `.claude/INDEX.md`, `docs/README.md`, then the row's contract. Use `doc-loader` and `dispatch-subagent`; integrate through `tools/merge-branch.mjs`. Rehearsals run serially without competing builds. Owner-marked rows retain their grants, downloads, runs or decisions; held rows wait for their triggers.
+- [ ] **INTEGRATE2 — recover paused work and review UI/UX** (parent). Finish recovery, checks, documentation and branch cleanup. Contract/proof: `docs/2026-10-10-integration-review.md`.
 
 ## UI/UX first
 
-Contracts: `docs/2026-10-05-ux7-design.md` (D152) and `docs/2026-10-04-ux6-redesign.md` (D150, §12 has full rows and proofs). UI changes require stories and installed-window evidence in both themes and languages. Remaining UX6 order: baseline; attention; Git after GIT1d; Knowledge and Settings. Plugin tools follow PLUGUI1c.
-
-- [ ] **UX7b — verify recovered account UI on the install** (web-shell). Account rows, add/name/join flow and shared naming are integrated; unit tests and English stories at 1546/680 px pass. Remaining proof: installed look in both themes/languages, including the add flow. Contract: D150 §5, D152 §4; review evidence: `docs/2026-10-05-integration-review.md`.
-- [ ] **ACCTEDIT1b — verify refused account edits on the install** (parent; after republish). Rename…, Use in a workspace… and the add flow's last step, each refused: the draft kept and the sentence inside it, at 1546/680 px, both themes and languages; the refusal line's warn border in dark is the likeliest flaw. Contract: D152 §4. Proof: dated shots.
-- [ ] **UXFIX1c — the tick and target leftovers** (web-shell). After UXFIX1 and UXFIX1b no product code passes `tick` to a plain `Menu.Item`, so `MenuRow`'s doc example ("the size a map is at") describes nothing; reword or drop the plain tick. The views menu's ⋯ trigger is `h-6 w-6` (24 px), under the 28 px floor. Contract: platform-ux §6, the second-opinion review. Proof: vitest on the trigger's minimum size; `ui.test.tsx`'s tick case updated.
-- [ ] **UXFIX2b — the remaining asks on the one inline confirmation** (web-shell, web-settings). After UXFIX2, `PauseAsk` and `AbandonAsk` (`work/WorkAsks.tsx`), the quest's *Decline…* and the ask's *Close ask…*, `ArchiveEndedAsk`, `TrustAsk`, a plugin's *Remove…*, Tools' *Delete*, `AccountUse`'s confirm and the review's *Discard* (`DiffPane`) still close on the press or toast their refusal. Move each onto `work/InlineConfirm.tsx` (its `children` and `ready` exist for a reason field). Contract: platform-ux §4 as UXFIX2 amended it, the second-opinion review. Proof: a vitest per ask for focus on open, describedby, pending kept open, refusal inside, closing and focus returned.
-- [ ] **BRSCOPE1b — the checkout scope's twin and Ask Daoris's sync card** (modules, service, driver; after BRSCOPE1a). BRSCOPE1a's `TreesCommand.Checkouts` is held by `checkout-scope.json`, while the modules' `DriverModule.Checkouts` holds its rows inline: have `DriverModuleLinesTests` read the same table (with its REACH row). Ask Daoris's sync card names no workspace; adding one needs the service's proposal writer, the driver's `HelpSyncProposals` and the modules' door together. Contract: D150's BRSCOPE1 and BRSCOPE1a notes, `twins.md`, D50. Proof: the modules test reading the shared table; a sync proposal naming a workspace through all three.
-- [ ] **UX7d — remaining visual findings** (web-shell, driver). List absent agents with Install; two-letter strip marks; version without repeated product name; compact Chinese summaries; coded, properly formatted record-opening notes. Contract: D152, UX7 §1, §4.6. Proof: stories, note-code twins and installed look.
-- [ ] **UX7e — verify menus and heads on the install** (parent; after republish carrying UX7a–c). Exercise Alt/F10, Alt+letter, table shortcuts, terminal Ctrl+N and composer editing; inspect 1546/680 px, themes/languages, 200 px head target, clipped quest title, Short title and landing branch. Contract: D152 §6 and UX7a/UX7c notes. Proof: dated shots and measurements under D152.
-- [ ] **UX6g2 — guidance follows workspace pages** (driver, cli). Repoint help, registration, plugin, tree and setup wording and the driver's places table from old Workspace/Permissions settings. Contract: D150 §3.1. Proof: twin tables and room goldens; original row lists every producer.
-- [ ] **UX6h — Git inside Repositories** (web-shell; after GIT1d; absorbs GIT1e). Branches tab gets kinds and a pure `graphLanes.ts` graph; remove the Git place. Contract/proof: UX6 §4.4 and D147.
-- [ ] **UX6i2 — every door names the new places** (driver, service, cli, tools). After UX6i and UX6j, Ask Daoris's room and tables still say the bar holds Convergence and Search (`HelpRoomWindow.cs:20`, `HelpPlaces.Views` with its page twin `help/places.ts`), name *Settings → Setup* and *Settings → Plugins* (`HelpRoomDoors.cs`, its goldens, `HelpRoomLanding.cs:43`, `HelpPluginProposals.cs`, `HelpGoProposals.cs:100`, `PluginKitCommand.cs`, the plugin kit's README template, `Driver.Host/Program.cs:186`), as do the service's plugin and go proposals, `plugins.ts:1332`, and `desktop-publish.mjs`'s install README. Say Knowledge, Get started and the Plugins place. Contract: D150's UX6i and UX6j notes. Proof: each table's twin tests and the room goldens.
-- [ ] **PLUGTOOL1c — tools live on their plugin** (web-shell, web-settings, modules, driver; after PLUGUI1c). Tools retains Daoris's own. Contract/proof: UX6 §7.5.
-- [ ] **COWORK1 — agents working together** (design; held for owner's direction). Define progress sharing, mid-work questions and hand-offs beyond quests/intake and LAND2c's shared branch. Contract: D32, D65, D145, D149. Proof: design and decision.
-
-## Reliability visible to the person
-
-- [ ] **QUESTBACK1 — hand back a taken quest without a session** (service, driver, web-shell). Offer Hand back at both doors when no live session holds it, preserve its note and show who took it when. Contract: D32, D46 §3, D132. Proof: store transition, route and mocked-bridge press tests.
-- [ ] **LANDNAME1 — person names the landing branch** (driver, web-shell). Review Accept and `trees land --branch` take an entered name; the existing default derives from the short title. Contract: D145, D149, D126 SESSUX1j note. Proof: `LandingTests` and mocked-bridge field tests.
-
-## Clearing finished history
-
-Today only an untaken open quest (D95) and a chat that served no quest (D126 §5.4) can be deleted; archive only hides. Nothing clears a done or declined quest, its ask, the sessions that served it (failed attempts included) or what the home kept of them. On 2026-10-07 the owner's install held 35 closed quests, 76 such sessions and 24 MB of transcripts; it was purged by hand, with a backup under `local/backups/`.
-
-Contract: `docs/2026-10-07-history-clearing-design.md` (D153), §9 rows/proofs. Order: a → b (service); c (driver, modules) after b; d and e after c; f after e and SESSUX1h; g after d; h last. HIST1a alone closes H1–H2, which D95's and D126's deletes reach today, so it goes first.
-
-- [ ] **HIST1f — Ask Daoris proposes a clear** (driver, service, web-shell; after e and SESSUX1h). A `clear` kind whose card is the first press and whose Apply sends what it listed; the room's doors and *The machine now*. Contract: §6.4. Proof: clear-proposal, kinds and coverage tests, the room's golden files, `ProposalCard.test.tsx`.
-- [ ] **HIST1h — installed clear** (parent; after a republish carrying a–f). Clear a workspace's finished history on the install. Contract: §12. Proof: a dated ledger of counts and bytes before and after, `history` matching the page, both themes and languages at 1280, 888 and 680 px.
-
-## Consistent product screens
-
-Contracts: `docs/2026-10-01-plugins-screen-design.md` (D119) and `docs/2026-10-01-frame-model-design.md` (D118). Order: PLUGUI1c → f → g; FRAME1i → PLUGUI1h. Look on the install in both themes/languages.
-
-- [ ] **NAME2b — verify four labels**. At 888 px check `help.setup` at the 300 px Ask Daoris floor, `scope.every`, `signin.titleNew` on Agents and `work.group.noCheckout`; rename or accept each in both languages. Contract/proof: NAME2 hand-back and installed look.
-- [ ] **PLUGUI1c2 — the plugin page's remainder** (web-shell, web-settings). After UX6j retired Settings → Plugins: move `PluginKit`/`PluginUpdate`/the offer type into `plugins/`, make Agents' chip and a landing rule's plugin doors to the plugin's page, put *Update now* first, and drop the kit drawer's doubled heading. Contract: plugin-screen design (D119). Proof: stories, vitest and bilingual look.
-- [ ] **PLUGUI1f — complete plugin page** (after c/e). Health, Points, Agents, Servers, live Activity, Data folder, Source and Install from a folder. Contract/proof: plugin-screen design.
-- [ ] **PLUGUI1g — plugin checks** (after f). Keep the last trial and run its own tests in a copy under the home. Contract/proof: plugin-screen design.
-- [ ] **PLUGUI1h — Ask Daoris opens Plugins** (after c/FRAME1i). Contract/proof: plugin-screen design.
-- [ ] **FRAME1i — Ask Daoris understands lists and items**. Update `where.ts`, item-aware `go` and the room. Contract/proof: frame-model design.
-- [ ] **FRAME2b — restore maximized window under pointer** (owner sends request). The window kit lacks a position parameter; request support from its owner, then update the handler. Contract: D56 FRAME2 note, D32. Proof: kit's answer and handler using it.
-
-## Faster development
-
-- [ ] **AGENTS2a — measure DeepSeek API-key support** (driver, cli). Probe `dsh --profile acp` with invalid/no key before declaring `DEEPSEEK_API_KEY` in both twins. Contract: D57 AGENTS2, AGT3, D67 §1. Proof: evidence beside ACP3 and twin tables.
-- [ ] **PROC1 — Process suite under ten minutes** (driver tests, tools). Measure classes, reuse/copy expensive git fixtures, isolate homes/ports for parallel workers and replace unnecessary processes with fakes. Contract: MOD8, FLAKE1. Proof: three serial-equivalent green runs with timings; retain original measured class durations in supporting evidence.
-- [ ] **TESTGIT1b — finish shared GitFixture adoption** (driver tests). Move `LandingPluginTests`, `LandingTidyTests`, `LandedFixture`, `LandingTests`, `AutoLandingTests` off separate git runners. Proof: serial Process classes green; no `FileName = "git"` remains there.
-- [ ] **TRYTOOLS1 — folder trials use machine tools** (driver). `TryFolderAsync`'s scratch home makes hook startup use PATH instead of the managed tool. Contract: D101, D121 §3. Proof: Process case with Node configured as a named file.
-
-## Knowledge and orientation
-
-Contracts: `docs/2026-10-04-orientation-everywhere-design.md` (D151) and D135. ORIENT2 has local tooling as its floor; owner runs remain owner runs.
-
-- [ ] **ORIENT2c — repository index quest** (driver). Inventory, generator, two granted commands, check and declaration; change nothing else. Contract: §2, D151 §5. Proof: `SetupBriefTests` and family rehearsal.
-- [ ] **ORIENT2d — prompts start at index ranges** (driver). Prefer declared `documents.index`; keep current fallback when absent. Contract: §3.3, D151 §6. Proof: failing-first `AskAndWaitPromptTests` goldens.
-- [ ] **ORIENT2h7 — an index id does not move with a heading's count** (service, cli; after ORIENT2h5). ORIENT2h5 keeps a numbered item's id across moves, but a heading that counts what it holds (`Files over 40 KB (103)`, `Notes (359)`) still moves every id under it (457 of 1,259 moved items across two commits), and numbers after a label (`GitAsync 25`) still move an item's id in a deployment's index; and `fence-cases.json`'s `_why` still says the service is held only through the digest's table. Anchor past a heading's trailing count and a label's trailing numbers, measured as ORIENT2h5 was, and correct the table's note. Contract: D151's ORIENT2h5 and ORIENT2h6b notes. Proof: an id stable across a count's change; the measure over two commits.
-- [ ] **ORIENT2f — clone works without Daoris** (examples, tools). Example owns its generator/check; move a line, fail, regenerate and pass without CLI/service. Contract: §4, D151 §2. Proof: family rehearsal phase.
-- [ ] **ORIENT2i — the platform names an index entry** (web-shell). ORIENT2e gave the service's entries a kind `Index`, and the page's `kind` catalogue (`locales/*/kind.json`) has no row for it, so a knowledge search that lands on an index row shows the raw key. Add `kind.Index` in both languages and let a result name its line. Contract: D151's ORIENT2e note. Proof: a unit test rendering an index result; the catalogue parity test.
-- [ ] **ORIENT2g — measure after adoption** (owner's install, read-only). Repeat ORIENT1e: halve pre-edit calls/characters/searches/dumps, quarter whole outlined-file reads, 80% index uptake, no extra parks. Contract: §5.3–§5.4, D151 §7. Proof: evidence note.
-- [ ] **KNOWUSE2b — bench all 46 questions** (owner). Use repository knowledge and install harness/account chosen by owner. Contract: D135 §6/KNOWUSE2 command lines. Proof: report under D135; zero answers substituted for owner before KNOWUSE3.
-- [ ] **KNOWUSE3 — review beside each item** (web, driver; held on KNOWUSE2b). Name hint tier and never answer for the owner. Contract: D135. Proof: stories and installed look.
-- [ ] **KNOWUSE4 — correction request to repository owner** (owner may publish). Correct the comparison's misread calculation answer and reconcile the config-only rule with the requested shared-component change. Contract: knowledge-use evidence §4; no edit across repositories.
-
-## Trace and Git
-
-Contracts: `docs/2026-10-03-future-directions-review.md`, `docs/2026-10-04-built-in-git-design.md` (D147 amended by D150).
-
-- [ ] **TRACE1c — missing trace links and doors** (driver, service, web-shell). Capture late rules, local quest operations, merge commits, carry-on links and LAND2c advances; finish detached-window section and page commit kind. Contract: D143 TRACE1b note. Proof: chain/route/service/vitest tests, stories and look.
-- [ ] **GIT1d — bridge routes** (modules, web-shell; after b). Branches, log, commit, history, blame and compare stay shell-only; refusals have bilingual codes. Contract: §4, §6. Proof: `DriverModuleGitTests`, parity.
-- [ ] **GIT1f — commit/history/blame/compare tabs** (web-shell; after UX6h). Reuse diff/patch views, trace chain, blame gutter and two compare sides. Contract: §2.4–§2.6. Proof: stories, vitest and look.
-- [ ] **GIT1g — fetch/create/delete** (driver, modules, web-shell; after UX6h). Both doors share plan/apply judge at the judged commit, console and machine log. Contract: §3.1, §3.3–§3.4. Proof: parent-run bare-origin `GitActsTests`, vitest.
-- [ ] **GIT1h — push and pull-request press** (same lanes; after g). Push explicit commit/ref only on press; refuse line/session/held branches and non-fast-forwards; keep landing entry and D102 hand-off. Contract: §3.1–§3.2, D147 amendments. Proof: bare-origin/pre-push fixtures, vitest, look.
-- [ ] **GIT1i — Git from sessions** (web-shell; after UX6h). Review identifies comparison/landing/push/PR; Show in Git and preview History and blame. Contract: §2.7, §6. Proof: vitest, stories, look.
-- [ ] **GIT1j — offer managed Git** (web-settings, web-shell, driver; after TOOLS6/10). Setup Git step, repository tool identity and explicit switch press. Contract: §5. Proof: setup facts, vitest, `HelpCoverageTests`.
-- [ ] **GIT1k — Ask Daoris git proposals** (service, driver, web-shell; after h). Person confirms fetch/branch/push/delete. Contract: §3.3, D110. Proof: both kinds tables and no owed coverage row.
-
-## Only the person acts as the person
-
-Contract: D156, `docs/2026-10-09-person-door-design.md` (merge order §10: a → b, c → d, e → f → g → h → i).
-
-- [ ] **PERSONDOOR1c — a publish says who asked** (service; after a). `byAgent` on a quest an agent published naming no session, in every place `quest-operations.md` lists, census first; a record from before reads as it did. Contract: §5.1. Proof: the census (`QuestOperationKindsTests`), `QuestSyncTests` across the wire, both hosts' answers.
-- [ ] **PERSONDOOR1d — the driver** (driver; after b). Every start removes `DAORIS_PERSON_KEY` (`Tools.Hand` before its home check, the terminal's block, exempt starts); `ServiceClient` sends it to loopback only, and on `person-only` or `driver-only` asks the window and waits, saying so. Contract: §2.2, §4. Proof: a source scan beside `EveryChildIsHandedTheToolsTests`; client tests on a stub host.
-- [ ] **PERSONDOOR1e — the CLI's management verbs** (cli; after b). `service.ts` sends `DAORIS_PERSON_KEY` to loopback only, and on `person-only` or `driver-only` asks the window and waits, for `connect`, `retire` and `import`: d's twin, on one fixture of codes and sentences. Contract: §2.2, §4. Proof: `service.ts`'s tests on a stub host; the fixture held by both suites.
-- [ ] **PERSONDOOR1f — the page** (web-shell; after b, c). The bridge's key in memory, sent on writes, none before the route exists; `stale` asks again; a refused press asks the window; the window's card; the adoption notice; *Asked by an agent*. Contract: §2.2–§2.3, §4.2, §5.1. Proof: vitest, stories, `i18n:check`, `names:check --strict`, the look in both themes and 中文.
-- [ ] **PERSONDOOR1g — the shell** (modules; after d, f). A key per host start, handed on input, proved before use, presented by the modules; a bridge route answers it to the page, none for an adopted host; the route and the card named to `HelpCoverageTests` as exempt. Contract: §2.2–§2.3. Proof: `HostSupervisorTests` (a squatter, adoption), the modules' tests.
-- [ ] **PERSONDOOR1h — the gates hand it** (tools, web-shell; after d, e). Rehearsals and `test:web` hand their hosts a key, presented as the person and the driver. A family phase: a stub's `/review`, `/accept`, go-ahead answer and keyless `quest accept` refused; its own doors answered. Contract: §3, §4. Proof: `rehearse:family`'s phase, `test:web`, `rehearse:deploy`.
-- [ ] **PERSONDOOR1i — every host enforces** (service; after h). A host handed no key mints one, prints it once with what it lasts for, and enforces it; `Program.cs`'s *no third gate* says where the key stands. Contract: §2.1, §4.3, §9. Proof: the host tests on a bare host: keyless refused, the printed key answered.
-- [ ] **PERSONDOOR2 — beyond the doors** (design; after PERSONDOOR1). No door holds the store's file (a session can open `knowledge.db` directly), the home's files (the file verbs, `driver.json`, `agent rules accept`) or the remote key (`DAORIS_REMOTE_KEY` is handed to every connector). Design the connector as the host's client on a session's token, the claim by push through the host, the file verbs' door, and a boundary between person and agents. Contract: D156 §7. Proof: its decision.
-- [ ] **PERSONDOOR1j — the five confirmation slots cannot be held by an agent** (service; decide; found by a second agent's review of PERSONDOOR1b). Any keyless caller may ask, so an agent can fill all five slots with distinct hashes and refill them as they expire or are refused, shutting the person's own terminal out. Per-address limits cannot tell the two apart. Decide the admission policy (a key-authorised reservation the window hands a terminal the person chooses, or the window refusing a whole caller's asks at once) and build it. Contract: design §4.2. Proof: a test where six agent asks never stop a reserved terminal's.
-
-## Workflows: how work moves, drawn and set
-
-Contract: D157, `docs/2026-10-09-workflow-design.md` (§14 order: a–c, then d–i, then j–m, then n; Codex's UI/UX proposal weighed in §11).
-
-- [ ] **WORKFLOW1c5 — the run's words, held as one** (driver, web-shell; after WORKFLOW1c2). The run's sentences live twice, in the page's `runSaid.ts` catalogue lines and the driver's `WorkflowRunWords` for the terminal, and no test holds them together, so one can change alone. Hold them by a shared table, or have the terminal read the catalogue's English. Contract: D157's WORKFLOW1c2 note, `.claude/knowledge/twins.md`. Proof: a test that fails when one side's sentence changes.
-- [ ] **WORKFLOW1e2 — a quest's own choice** (service, driver; after WORKFLOW1e). §4.1's first row reads a task's own kind and workflow; an ask carries one, but a quest published with no ask has nowhere to keep it. A quest field, its census row, its person's door, and the selection reading it. Contract: design §4.1, D156. Proof: the census, `WorkflowSelectionTests`' task row over a quest.
-- [ ] **WORKFLOW1e3 — a run's binding goes with its work** (driver; after WORKFLOW1e). `<home>/workflows/runs/<run>.json` stays when the quest's history is cleared (D153), so a cleared run's binding outlives it. Clear it with the work, in the clear's plan and its count. Contract: D153, D157's WORKFLOW1e note. Proof: a history-clear test that lists and removes the binding.
-- [ ] **WORKFLOW1f — the gate reads the run's version** (driver, modules; after e, XAGENT1f). Landing, look, opinion and automatic acceptance read their process from a named version, Current unchanged; a step that cannot start sits, saying why; a kind's paths hold; the landing record, trace and log. Contract: §2.3, §4.4–§4.6, §5. Proof: `WorkflowGateTests`; `ReviewLandingTests`, `AutoLandingTests` rows (`Process`).
-- [ ] **WORKFLOW1g — the editor** (web-shell, web-settings, modules; after d, e). Presets, *Save as a workflow…*, *Add after*, *On failure…*, moves, *Remove…* asked once with its loss, the step's drawer and terminal twin, the choice's rows, keys, 680 px. Contract: §6. Proof: stories, vitest, `i18n:check`, `names:check --strict`, `HelpCoverageTests` rows, the look in both themes and 中文.
-- [ ] **WORKFLOW1h — Ask Daoris proposes a workflow** (service, driver, web-shell; after d, e). `workflow_propose`; the driver's judge (validation, base version, diff by step id, the person's part, outward acts, needs first); the card's *Apply*, *Open in the editor*, *Not now*; the room's column. Contract: §8. Proof: kinds and coverage tests, the room's goldens, `ProposalCard.test.tsx`.
-- [ ] **WORKFLOW1i — the intake proposes a kind** (driver, service; after e). The room names the workspace's kinds and each repository's workflow; a kind is set on the person's quoted words only where `Involvement.Lowers` says nothing is lowered, else proposed with its reason. Contract: §4.3. Proof: `IntakePrompt`'s golden, `InvolvementTests`' table, the service's quote refusal.
-- [ ] **WORKFLOW1j — a pull request waited on** (driver, examples; after f, PLUGHOOK1b). A run waiting on its pull request asks its plugin's `work/state` at the look, backing off, and moves to merged or abandoned; nothing asked for a run nobody waits on. Contract: §3.2, §5.4. Proof: `PullRequestWaitTests`; `PullRequestOccasionTests` amended; `landing-plugins.test.ts`.
-- [ ] **WORKFLOW1k — outside checks** (driver, examples; after j). `work/checks`, a query: checks at a commit, stale on a newer one, unknown never failed; `failed` waits, sends back once or stops; groups join on all; the kit's entry; both example plugins answer, fields measured first. Contract: §3.3, §3.5, §3.7. Proof: `HookChecksTests`, kit tests, fake `gh`/`az` rows.
-- [ ] **WORKFLOW1l — service stages and go-aheads** (driver, examples, service; after k). `work/stage`, an act on a stage the plugin's manifest declares; production only by the person's press; *Check outcome* before *Run again*; a go-ahead a run raises on its ask or itself. Contract: §3.6–§3.7. Proof: `HookStageTests`, `GoAheadTests`' raised row, kit tests.
-- [ ] **WORKFLOW1m — the family rehearsal phase** (tools, examples; after k). A named workflow chosen by kind; a documentation kind's path mismatch holds; a stub plugin's check fails, the stub session is sent back once, then passes; a stage waits for the person's press. Contract: §4.4, §5. Proof: `rehearse:family`'s new phase.
-- [ ] **WORKFLOW1n — on the install** (parent; after a republish carrying a–h). Current drawn for the work workspace's repositories; a named workflow saved through Ask Daoris and a run followed to its pull request; both themes and languages at 1546, 888 and 680 px. Contract: §6–§8. Proof: dated shots and a ledger under D157.
-
-
-## Ask Daoris keeps its conversations
-
-- [ ] **AUTOTIDY1a — the Branches tab shows what the look tidied** (modules, web-shell; after AUTOTIDY1). A branch that went by itself is said only in the machine log. The workspace's Branches tab lists the recent `branch.tidied` lines (repository, branch, where the tree was moved) and `branch.kept` reasons, so nothing vanishes unexplained. Contract: D88's AUTOTIDY1 note, the machine-log design §4. Proof: a module test of the route reading the log; vitest in both catalogues.
-- [ ] **ASKHIST1d — the history keeps every conversation reachable** (driver, web-shell; after ASKHIST1c; found by a second agent's review). `HelpConversations` (`Help/HelpConversations.cs`, near 163) takes the newest 200 records by creation before it reads pins, last activity or a search, so an old pinned or recently resumed conversation can vanish and cannot be searched, and the footer calls the filtered count the newest. Order and filter before the bound; page older ones (*Load older* near the list's controls); say what a search did not reach; cut the preview after the Markdown is read, not before. Contract: D158 point 2. Proof: `HelpConversationsTests` rows past 200 (a pinned old one, a resumed old one, a search past the bound); the list's vitest.
-- [ ] **AUTOTIDY1b — measured on the install: what the strict guards keep** (the parent's; after AUTOTIDY1 is on the install). AUTOTIDY1 keeps any tree with an ignored path (a build's output included, which the press lets go) and any tree whose branch never moved. Count, on the owner's repositories after a week, how many empty branches the look kept for each reason, and decide from that whether either guard should follow the press. Proof: the count, written into D88's note.
-- [ ] **AUTOTIDY1c — a squash-merged branch goes by itself when its proof holds** (driver; after AUTOTIDY1b). A branch whose pull request was squash-merged is `carried` or content-held and stays a press, so the owner's most common case (a pull request squash-merged on the line) is still left behind. Decide whether the content proof plus the plugin's merged state is enough to move it aside as AUTOTIDY1 moves an empty one, keeping its recovery ref. Contract: D102's SQUASHTIDY1c note, D88's AUTOTIDY1 note. Proof: Process tests over a squash-merged line, each guard kept.
-
-## A second agent assists before work lands
-
-Contract: D155, `docs/2026-10-08-second-agent-design.md` (the owner's direction, 2026-10-08: a second agent from another maker assists, as Codex does beside Claude Code in this repository's own development).
-
-- [ ] **XAGENT1f2 — the person's presses, kept on the opinion** (service; with PERSONDOOR1's class). *Go on anyway…* (with words) and *I looked myself…* (a tier-`person` opinion in the same shape) as local doors only the person uses (D156's class), never a tool; clearing a quest's history clears its opinions (D153). Contract: design §8.5. Proof: `OpinionStoreTests` rows and both hosts' route tests.
-- [ ] **XAGENT1f5 — the person's answer under a steps rule** (driver, modules; after XAGENT1f4). `opinion anyway` and `opinion myself`, and their presses, read the landing gate (`SessionTrees.GateAsync` passes `landing`), so under a rule that reads only at `steps` they answer that nothing waits, and a sat next step goes on only once the reading settles. Design §8.1 gives `steps` the same doors as a landing. Also: comments still saying *declared only* (`DriverModule.Lines.cs`, `DriverModuleOpinionTests.cs`, `bridge/lines.ts`). Contract: design §8.1, §8.5. Proof: `OpinionGateTests` and `OpinionLookTests` (`Process`) rows under a steps-only rule.
-- [ ] **XAGENT1f3 — what the gate left out** (driver; after XAGENT1f). A failed pass does not carry on to a new session; `verify`'s declared safe commands are not offered to the reviewer; an ask on unfinished work is refused, since the press needs the session's quest done; and the chain's and the ask's opinion choice (design §2.4 rows 2–3) is stored nowhere, so the gate reads only the repository and workspace rules. Contract: design §8.4, §8.5, D155's XAGENT1f note. Proof: rows in `OpinionGateTests` and `OpinionLookTests` (`Process`).
-- [ ] **XAGENT1g2 — the quest's, the ask's and a struck quest's doors** (web-shell; after XAGENT1f3). Each chain's second-opinion state on the quest's and the ask's pages, and *Ask another agent for help* on a struck quest's hold through `useOpinionActs` (`ASK_OPINION` with occasion `failure`). Contract: design §9 rows 5–6. Proof: vitest in both catalogues.
-- [ ] **XAGENT1g3 — What needs you reads kept facts** (driver, modules; after XAGENT1g). `OPINION_WAITS` runs git (`merge-base` per owed gate) each time the band asks, held down only by asking while Sessions has work to review. The look keeps the gates it judged, so the route reads them and runs nothing. Contract: design §9, UX6c §6.3. Proof: `OpinionLookTests` rows; `AttentionBand.test.tsx`'s list of what it asks.
-- [ ] **XAGENT1g4 — the answers note coded, and the reviewer beside its work** (driver, web-shell; after XAGENT1g). `OpinionAnswers.Line` has no code and is shown as recorded English; the reviewer's session row is reached only by the gate's *Open its session*. Code the note, place the reviewer's row beside the work it read, and show its measured use. Contract: design §6.4, §9. Proof: `NoteCodesTests`, the row's vitest.
-- [ ] **XAGENT1h — the intake** (driver, service; after c). The room's table names each repository's reviewers; the choice set only on a quote, a proposal otherwise. Contract: §2.4. Proof: `IntakePrompt`'s golden, the service's quote refusal, a stub intake in the driver's tests.
-- [ ] **XAGENT1i — the family rehearsal phase** (tools, examples; after f, and b's plugin `maker`). A plugin's ACP stub declared with another maker reads a stub chain's work; its finding reaches the stub session's next turn; the landing waits for the answer; a dispute holds until `opinion anyway`; a required opinion with no reviewer holds. Contract: §6, §8. Proof: `rehearse:family`'s new phase.
-- [ ] **XAGENT1j — each reviewer's posture, measured** (driver; the owner's run where an account is spent). Claude Code under the `opinion` rules, dsh's `read-only`, `codex-acp`'s modes, each asked to write in its tree; a posture is declared only where it refused. Contract: §5.2, D53. Proof: an evidence note beside ACP3's, and the twin tables.
-- [ ] **XAGENT1k — a second reader, in the canon** (canon, examples; the parent's call). §10's words in `autonomous-development`, re-synced here and into `examples/`, with the canon changelog's reason. Contract: §10's last part. Proof: `verify`'s `check`, and `rehearse:family`'s example sync.
-
-## Reviewed where it runs before it lands
-
-Contract: D154, `docs/2026-10-08-review-environment-design.md` (the owner's direction, 2026-10-08: work is reviewed where it runs before it is offered to land; configurable by workspace, repository and task; local review shown in Daoris's own browser first-class).
-
-- [ ] **CANNOTSHOW1 — the set-up step's sit said from facts** (modules, web-shell). Carry `{ environment, address?, why: undeclared|no-address|no-window }` on the tick so 中文 words `CannotShow` whole rather than leading the driver's English. Contract: D154's REVIEWENV1c2 note. Proof: `TickConsiderationTests` and a vitest per language.
-- [ ] **REVIEWENV1d2 — `review_serve` reaches the shell while the session runs** (service, driver; after REVIEWENV1d). Daoris serves a set-up step's build only from the session's end, because the folder `review_serve` keeps is read by no driver door while the session runs, and the tool says nothing is served. The session wire (loopback only) carries the serving, the driver hands it to `ReviewDesk` as it is said, and `review_serve` answers once the shell serves. Contract: design §2.3 step 3, §2.6. Proof: `ReviewStepTests`, `ReviewShowingTests`, a host test.
-- [ ] **REVIEWENV1e — a process of its own** (driver, modules; after d). The review run on the rule's `run` or the person's press, the procedure-quote check, *Keep it*, a held port refused, readiness, output, its own tree stopped. Contract: §2.3's last part. Proof: `ReviewRunTests` with a stub server, a held port, and a stop taking nothing else.
-- [ ] **REVIEWENV1f — the intake** (driver, service; after b). The room's table, a set-up step composed where the level says review, the choice set only on a quote, a proposal otherwise, and no step for a proposed `off`. Contract: §1.5–§1.6, §2.1. Proof: `IntakePrompt`'s golden, the service's quote refusal, a stub intake in the driver's tests.
-- [ ] **REVIEWENV1i — see it run, in the canon** (canon, examples; the parent's call). §7's words in `autonomous-development`, re-synced here and into `examples/`, with the canon changelog's reason. Contract: §7. Proof: `verify`'s `check`, and `rehearse:family`'s example sync.
-- [ ] **REVIEWENV1j2 — the review choice's twins shown** (web-shell, driver; after REVIEWENV1j). REVIEWENV1j wrote the terminal twins' catalogue lines (`asks.compose.reviewTwin`, `asks.record.reviewTwin`, `review.choiceTwin`), but no component shows them: draw each beside its choice in `AskComposer`, `AskReview` and `ReviewGate`; and the driver host's fallback `quest` usage line in `Program.cs` still names only the verdicts. Contract: D50, D154's REVIEWENV1j note. Proof: vitest of each twin in both catalogues; the usage line.
-- [ ] **REVIEWENV1g2 — *Stop showing*** (modules, web-shell; after REVIEWENV1d2). A set-up's build stays served in its tab until the verdict, and the gate offers no way to stop it, since no route does. A route that ends the serving for that tab, and the gate's press beside *Show it again*. Contract: D154 point 8, its REVIEWENV1g note. Proof: a module test that the tab is no longer served; the gate's vitest.
-
-## Landing and pull requests
-
-Contracts: D145, D148, D149; `docs/2026-10-04-plugin-hooks-design.md` for plugin-hook sections.
-
-
-- [ ] **LAND2e — accept post-landing advances** (driver, modules, web-shell). Manual acceptance must allow new commits after landing; gone trees show only each chain session's part; review/Ask Daoris explain advances. Contract: D149 point 2, D113 §3. Proof: review/terminal advances, vitest, proposal tables.
-- [ ] **PLUGHOOK1b — GitHub work/state** (examples; after a). Query `gh pr view`/`list --head` so squash-merged branches can clear. Contract: hooks §2.7, D148 point 7. Proof: fake-gh `landing-plugins.test.ts`.
-- [ ] **PLUGHOOK1d — page reads/refreshes PR state** (modules, web-shell, web-settings; after c). Review Ask again, bilingual branch/sync codes, sweep kinds, query wording and failing-query cost. Contract: hooks §2.4–§2.5. Proof: route/vitest/stories/parity/names checks and look.
-- [ ] **LAND2d — show automatic acceptance and rehearse it** (web-shell, tools). Render `acceptedBy` and event parts; drive auto-accept with stub plugin/bare origin, leaving uncommitted work for review. Contract: D145 LAND2b note. Proof: vitest/stories and family phase covering branch, trace and review state.
-
-## Evidence and captured proof
-
-Contracts: `docs/2026-10-03-evidence-design.md` (EVID1, D144) and `docs/2026-10-04-landing-and-proof-design.md` (EVID2, D146). Order EVID1a → b → c; each EVID2 follows corresponding EVID1; EVID1d also needs DEV5/7.
-
-- [ ] **EVID1c — quest evidence and hold reason** (web-shell, driver; after b/DRIFT1d2). Show result/commit versus session assertion, Check again and Ask Daoris check card. Contract: §5–§6. Proof: stories/vitest/catalogues/coverage and bilingual look.
-- [ ] **EVID1d — queue gate evidence** (driver, service; after DEV5/7/b). Add required gates to queue; read landing verdict and landed path evidence; report `no-queue` elsewhere. Contract: §4. Proof: stand-in gate tests and queue rehearsal.
-- [ ] **EVID2a — captured proof requirement** (service; after EVID1a). Screenshot/answer kinds, done proof and capture verdicts; no bytes/address/path travel across machines. Contract: §9–§10, §12. Proof: evidence/sync/MCP/local/shared tests.
-- [ ] **EVID2b — keep captured proof** (driver, examples; after EVID1b/EVID2a). Hand `${proof}` to browser plugins, check/redact/copy named captures and manifest, post verdict; prompts/intake request captures. Contract: §9–§11. Proof: proof/requirements/goldens/browser tests and family rehearsal.
-- [ ] **EVID2c — proof pages and terminal** (web-shell, modules, driver; after EVID1c/EVID2b). Session/review/quest Proof sections, Capture through reopen, Remove, terminal save/remove. Contract: §11–§12. Proof: stories/vitest/catalogues/coverage/command tests and bilingual look.
-
-## Session management
-
-Contracts: `docs/2026-10-02-session-management-design.md` (D126, §9 rows/proofs), `docs/2026-10-03-session-messages-design.md` (D137), answer-continues (D131), pause-and-clean-up (D132), D136. Installed canaries follow their completed build rows.
-
-- [ ] **QUESTREBASE1 — the rebase planned before it is applied** (service; consider). `RebaseAsync` (`Quests.cs:1395`) now replays, judges claims, classifies losses, deletes and rewrites operations, cleans follow-ups, amends conflict notes and replaces the cache in one method. A pure planner returning the final quest and the mutations, applied in the same transaction, would make WAITCLAIM1's and WAITCLAIM2's ordering testable without storage. Highest risk of the review's refactors: keep operation identity, accepted-before-pending order and the transaction. Contract: D69, D79, CLAUDE.md's plan/apply rule. Proof: the sync suite unchanged; planner tests for each loss.
-- [ ] **SESSUX1h — Ask Daoris reaches sessions** (driver, service, web-shell; after d–g/FRAME1i). Contract/proof: session-management §7.3/§9.
-- [ ] **MSG1d2 — queued chat words survive restart** (driver, web-shell; with MSG1c). Record ids/reach, take by id and record withdrawals. Contract: messages §3.1, D137 MSG1d. Proof: `ChatTurns`, conversation tests.
-- [ ] **MSG1g3 — coded cooling notes and twin test** (driver, web-shell). Code the untranslated held line; test `newSessionSaid` against `GoOnNew.cs`/`WordsNever`. Contract: D137 MSG1g/g2, D142 point 1. Proof: note-code twins and parsed declarations.
-- [ ] **MSG1h — Codex next-step messages** (driver; after STEER3 Codex turn). Contract/proof: messages §8.
-- [ ] **MSG1i — native next-step messages** (driver; after STEER3 native turn). Contract/proof: messages §8.
-- [ ] **MSG1j — installed canary** (parent). Contract/proof: messages §8–§9; a–f already installed per original record.
-- [ ] **STEER2 — Send now matches the door** (driver, modules, web; after STEER1). Use `_session/steering` for the draft and explain queue arrival. Contract: D136 §4. Proof: driver/module/page tests and measured steer.
-- [ ] **STEER3 — measure other steering doors** (driver; after STEER1). Probe native stream-json input and codex-acp turn/steer before implementation. Contract: D136 §5. Proof: one-turn measurements.
-- [ ] **ANSWER1d — installed answer resumes one record** (parent; a–c installed). Answer a park; one row continues and `session.answered` has `resumed: true`. Contract: answer-continues §6. Proof: real run.
-- [ ] **DRIFT1e — follow-ups retain the ask** (design first). Closing notes are not requirements; corrections reopen parent work instead of being implemented as Verify. Contract: D133 §5. Proof: design and resulting rows.
-- [ ] **PAUSE1f — Ask Daoris pause proposal** (driver, service, web-shell; after b/SESSUX1h). Abandon remains person's act. Contract: D132 §7.4. Proof: proposals/coverage and room goldens.
-- [ ] **PAUSE1g — installed pause/abandon** (parent; after a–f). Pause mid-session, resume in tree, abandon while keeping landed work. Contract: D132 §12. Proof: width/theme/language ledger.
-- [ ] **SESSUX1k — limit-ended sessions in list** (driver, web-shell; after UX6e). Show waiting carry-ons and account menu link; held-word Resumes later already exists. Contract/proof: session-management §2.2/§9.
-- [ ] **SESSUX1l — installed session management** (parent; after republish a–i). States, carried-on parked quest, stopped hold/Try again, Archive ended. Contract/proof: session-management §9; all widths/themes/languages, SESS1-style ledger.
-
-## Session economy and documentation
-
-Contract: `docs/2026-10-02-session-economy-design.md` (D127).
-
-- [ ] **COST1 — measure long-turn cost** (owner's call). Measure context high-water/cache reads per turn for a week, then consider per-agent ceiling/window/compaction on both doors. Contract: METER1, D127. Retain original thousand-call/context-growth evidence.
-- [ ] **SESSOPT1d — trim backlog by doctrine** (steward; after b/c). Move excess to §4.3 homes; FLAKE1/TEST1/REH1 get open fix-log entries. Proof: `doc-budgets` ≤5,300 words and every row ≤60. This draft's 6,600 ceiling alone does not complete it.
-- [ ] **DOC7 — measure reading** (D127 §6.1). Log `session.read`/`session.skill`; report reads by role and whether whole. Contract/proof: session-economy design.
-
-## Workspace setup and knowledge recall
-
-Contracts: `docs/2026-10-01-workspace-setup-design.md` §8 (D124), `docs/2026-10-02-setup-pilot-lessons-design.md` (WSSETUP14, D128), `docs/2026-10-02-knowledge-design-review.md` (KNOW2, D129). WSSETUP14b–e precede owner runs f/13; WSSETUP7 follows LAYOUT8.
-
-- [ ] **WSSETUP7 — workspace setup screen/Ask Daoris** (modules, web-shell, service, driver; after LAYOUT8). Workspace page, both languages. Contract/proof: D124 design §4.4–§4.5.
-- [ ] **WSSETUP14b — knowledge stays in place** (after a). Declare `documents.knowledge`; index/service read it and sync never writes it. Contract: pilot §1.2–§1.3. Proof: twin tables.
-- [ ] **WSSETUP14d — setup keeps checks green** (after b; absorbs SETUP2). Check before/after; preserve knowledge, repoint moved paths/readers, never finish red; list hand indexes without deletion and use subject names. Contract: pilot §1.1, §1.4–§1.6, §3.3; D129 §4.5. Proof: brief/playbook twins and moved-path family phase.
-- [ ] **WSSETUP14e — finish setup branch** (after d). Exact merge rule in follow-up quest. Contract: pilot §4.2. Proof: composer/press tests and family setup phase.
-- [ ] **WSSETUP14f — finish pilot** (owner; after republish). Both repositories: checks green, knowledge declared, root under 32,768 bytes, default budget restored. Contract: pilot §4. Proof: real pilot.
-- [ ] **KNOW3a — 169-document opaque-name bench**. Measure index whole-reading and skill truncation at scale. Contract: bench results §5/§6.1. Proof: `knowledge-bench.mjs` rerun, tests in verify.
-- [ ] **KNOW2a — probe service recall** (meaning half owner, D24). Paraphrases through index/search; recall at 3/5. Contract: review §2.G/§4.6. Proof: evidence and script tests.
-- [ ] **KNOW2b — prompt headlines** (after KNOW2a/DOC7). At most five, reserve each tier, omit if service silent. Contract: review §4.6 items 1–3/5. Proof: driver tests and before/after knowledge reads.
-- [ ] **KNOW2c — chat prompt hook** (after KNOW2b/probe). Failing-open `UserPromptSubmit` headlines in composed settings. Contract: review §4.6 item 4. Proof: both-door probe and settings tests.
-- [ ] **WSSETUP13 — remaining repositories** (owner; absorbs LAYOUT10 remainder). Resume paced plan using pilot numbers, include existing instruction files and compare weekly parks. Contract/proof: workspace-setup design.
-
-## Plugin distribution
-
-Contract: `docs/2026-10-01-plugin-distribution-design.md` (D120); §7 carries full rows/proofs. Work belonging to the plugin repository is a request to its owner, never an edit from here.
-
-- [ ] **PLUGREPO2e — remove migrated examples** (after PLUGDIST1g). Retire three plugin examples and `landing-plugins.test.ts`; lay out package offers. Contract/proof: §7.
-- [ ] **WORKSHOP1a — workshop setting**. Home default and both doors. Contract/proof: §2.1/§7.
-- [ ] **WORKSHOP1b — workshop sessions**. Contract/proof: §2.2/§7.
-- [ ] **WORKSHOP1c — workshop view/Ask Daoris**. Plugin creation uses workshop. Contract/proof: §2.3/§2.5/§7.
-- [ ] **WORKSHOP1d — hand-over and named source**. Contract/proof: §2.4/§7.
-- [ ] **PLUGDIST1b — pack/release workflow** (request to plugin repository). Contract/proof: §7.
-- [ ] **PLUGDIST1c — HTTP package source**. Bound extraction before accepting network packages. Contract/proof: §5.3–§5.8/§7.
-- [ ] **PLUGDIST1d — host answers**. Package records say `package`, not `folder`. Contract/proof: §7.
-- [ ] **PLUGDIST1e — Available catalogue** (after PLUGUI1f). Contract/proof: §6/§7 as D140 amends.
-- [ ] **PLUGDIST1a leftovers — finish routing and package safety**. Move install from host Program into `PluginsCommand`; fix package kind through d and extraction bound through c. Contract: 2026-10-01 hand-back.
-- [ ] **PLUGDIST1f — first publish** (owner). Account, trusted publishing and prefix. Contract/proof: §7.
-- [ ] **PLUGDIST1g — offers from packages** (after f). Contract/proof: §7.
-- [ ] **PLUGDIST1h — verify repository signature** (held). Contract/proof: §7; retain its trigger.
-
-## Safe-work declarations
-
-Contract: `docs/2026-10-01-development-documents-design.md` (D122), §6 rows/proofs. Order UNBLOCK2 after DEV5 → UNBLOCK3 → UNBLOCK6–8.
-
-- [ ] **UNBLOCK4c — push canary** (owner grants runs). Both doors, local bare remote: `git -C . push`, `-c`, `--no-pager`, quoted subcommand and alias. Contract: UNBLOCK4 archive procedure. Proof: tip unchanged and each refusal recorded.
-- [ ] **UNBLOCK2 — declaration/judge** (after DEV5). `safe` beside gates, read from line. Contract/proof: §3.1–§3.3/§6.
-- [ ] **UNBLOCK3 — person's one acceptance** (after UNBLOCK2 and week of UNBLOCK5). Declare proposal, exact Claude Code rules on both doors. Contract/proof: §3.4–§3.5/§6.
-- [ ] **DOC6 — examples keep document standard**. Contract/proof: §6; DOC7 belongs to D127.
-- [ ] **UNBLOCK6 — declaration UI/Ask Daoris**. Both languages. Contract/proof: §6.
-- [ ] **UNBLOCK7 — measure Codex/dsh first**. No grant handed before measurement. Contract/proof: §6.
-- [ ] **UNBLOCK8 — first declaration** (owner). Measure asks for a week before/after. Contract/proof: §6.
-
-## Managed tools
-
-Contract: `docs/2026-10-01-tools-design.md` (D121), §7 rows/proofs. TOOLS6 and 8 may run together; then 9; 10 precedes any managed-Git agent session; 11 last.
-
-- [ ] **TOOLS6 — Git carries intended configuration**. Allow-listed ssh command/global includes/version floors; tree-sync guidance names Settings → Tools. Contract/proof: §2.5/§7, TOOLS7 hand-back.
-- [ ] **TOOLS8 — Ask Daoris tool kind**. Contract/proof: §4.3/§7.
-- [ ] **TOOLS9 — managed-tool rehearsals**. Loopback list, stubs and tamper refusal. Contract/proof: §6/§7.
-- [ ] **TOOLS10 — managed-Git probe** (owner allows one start per agent). Contract/proof: §7.
-- [ ] **TOOLS11 — real downloads/install** (owner). Managed Git over SSH, plugin Node, terminal PowerShell and gh/az landing. Contract/proof: §7.
-
-## Daoris develops Daoris
-
-Contract: `docs/2026-10-01-self-development-design.md` (D115); sections carry proofs. Order DEV5 → 6 → 7; 8 and 9; then 10/11.
-
-- [ ] **DEV5 — external landing queue**. Detached home tree, gate kinds/quiet rerun, locked fast-forward, terminal queue and commit check. Contract/proof: §4.2–§4.8.
-- [ ] **DEV6 — concurrent lanes**. Locks, oldest-first reservation, default cap 3 on both doors, lanes in record/prompt. Contract/proof: §3.2–§3.4.
-- [ ] **DEV7 — ready and verdict**. `session_ready`, answer door, three failures reach person; done means landed. Contract/proof: §4.1/§4.5–§4.6, D83.
-- [ ] **DEV8 — queue screen and Ask Daoris**. Every new verb gets a door. Contract/proof: §4.9, D110.
-- [ ] **DEV9 — steward**. Lane quests, decisions/records and rewritten dispatch; settle router ownership and new-path lane-map edits. Contract/proof: §5, DEV2.
-- [ ] **DEV10 — first real user** (owner present). Single and cross-lane rows through steward/queue/records; revisit caps/strikes from evidence. Contract/proof: design.
-- [ ] **DEV11 — second user and tool retirement**. Canon lane knowledge, example, then retire merge tool and change dev loop to queue. Contract/proof: design.
-
-## Every agent reads the same repository
-
-Contract: `docs/2026-10-01-agent-layout-design.md` (D117), §7 rows/proofs. Entry-point predictions remain unmeasured until LAYOUT2's canary.
-
-- [ ] **LAYOUT2 — canary turns** (owner grant). One per harness confirms predicted cells and account flag using evidence §6 fixtures/prompt; keyless half archived. Contract: `docs/2026-10-01-entry-point-evidence.md`. Proof: turns.
-- [ ] **LAYOUT5 — move doctrine** (alone; touches steward lane map). Move manifest/sync, union attributes and engine example together. Contract/proof: §4.1/§4.3–§4.4/§7, DEV2.
-- [ ] **LAYOUT6 — move brief and create rooms**. About 1,300 words in AGENTS under 32 KiB; eight rooms; CLAUDE keeps import. Contract/proof: §4.2/§7.
-- [ ] **LAYOUT8 — setup UI/Ask Daoris**. Repository Setup tab, Set up for agents, setup kind; bilingual installed look. Contract/proof: §6.1/§6.5/§7, UX6f.
-- [ ] **LAYOUT9 — lanes name rooms** (after DEV6). Contract/proof: §2.5/§7.
-- [ ] **BUDGET1 — decide what budget caps** (owner; REV3 CLI F10). Region-only inspect differs from README/design claim and analyze's pre-D59 quantity. Decide, then align all three. Contract: D59, `docs/2026-09-25-rev3-review.md`.
-- [ ] **TRUST2 — measure trust behavior** (owner grant). Probe whether harness honours written key and parent trust covers child. Contract/proof: D73 and deployment trust evidence; exact-folder hold today.
+Start with UXFIX2b, ASKHIST1d, ACCTUX4 and the remaining place-name inconsistencies.
+Contracts: platform UX §4/§6, `docs/2026-10-05-ux7-design.md` (D152),
+`docs/2026-10-04-ux6-redesign.md` (D150, §12 proofs). UI work needs stories, behavior tests and
+installed-window evidence in both themes/languages; Storybook alone does not close an installed proof.
+
+- [ ] **UXFIX2b — remaining inline confirmations** (web). Migrate WorkAsks, decline/close/archive/trust, plugin/tool removal, AccountUse and DiffPane. Proof: focus, pending, refusal, cancellation and returned focus.
+- [ ] **UX7b — installed account UI** (web). Verify recovered account rows and add/name/join flow at 1546/680 px, both themes/languages. D152 §4.
+- [ ] **ACCTEDIT1b — installed refused edits** (parent; after republish). Verify rename, workspace use and add refusals retain drafts, including dark borders. D152 §4; dated shots.
+- [ ] **BRSCOPE1b — checkout scope and sync workspace** (modules/service/driver; after BRSCOPE1a). Share checkout-scope fixtures; carry workspace through sync proposals. D150 notes; three-door proof.
+- [ ] **UX7d — remaining visual findings** (web/driver). Absent-agent Install, strip marks, version, compact Chinese summaries and coded opening notes. D152 §4.6.
+- [ ] **UX7e — installed menus and heads** (parent; after republish). Verify keyboard menus, shortcuts, composer editing, head geometry and titles at 1546/680 px. D152 §6.
+- [ ] **UX6g2 — workspace-page guidance** (driver/CLI). Repoint help, registration, plugins, trees and setup wording. D150 §3.1; twins and room goldens.
+- [ ] **UX6h — Git inside Repositories** (web; after GIT1d; absorbs GIT1e). Branch kinds and graph; retire Git place. UX6 §4.4/D147.
+- [ ] **UX6i2 — doors name current places** (driver/service/CLI/tools). Replace old Search/Convergence, Settings Setup/Plugins destinations in rooms, proposals, kit and install guidance. D150 notes; twins/goldens.
+- [ ] **PLUGTOOL1c — tools on their plugin** (web/modules/driver; after PLUGUI1c). Tools retains Daoris's own. UX6 §7.5.
+- [ ] **COWORK1 — agents working together** (design; owner's direction required). Define progress sharing, questions and handoffs. D32/D65/D145/D149; decision before implementation.
 
 ## Accounts and browser
 
-Contracts: toolchain design (D57, §3 resolution), account-rotation (D125), account-use (D130), in-app-browser (D78/D84).
+Contracts: toolchain (D57 §3), account rotation (D125), account use (D130), browser (D78/D84).
+Original row proofs remain in the frozen backlog; measurements precede declarations.
 
-- [ ] **CODEXUSE2 — Codex is present in the install** (parent; owner's install). Pinned 2026-10-08 on the owner's say-so: `codex` 0.160.0 from OpenAI's channel (SHA-256 checked) and `codex-acp` 2.1.1, both under the install's data folder. Left: an account Daoris owns (`agent login codex --new --join <workspace>`), which the owner cannot sign in to for now; CODEXUSE3 reads the own sign-in meanwhile. Contract: D57, D63, D125. Proof: `agent list` shows both pinned (done); a Codex reading on the install after CODEXUSE3 or a login.
-- [ ] **CODEXKEY1 — a Codex account that is an API key** (driver, modules, cli; measure first). CODEXACCT1 left *Add an API key* off for Codex: `codex login --with-api-key` stores the key in Codex's own home, the shape AGT3 rejected, while D67 §1 keeps a key in `keys.json` and hands it at spawn through a variable the tool reads, and none is measured for `codex` or `codex-acp`. Measure which variable each reads (e.g. `OPENAI_API_KEY`, `CODEX_API_KEY`) on a throwaway key the owner provides, then declare it as Claude Code's `KeyVariable` is declared. Contract: D67 §1, D125's AGT3 and CODEXACCT1 notes. Proof: a recorded measurement; a key account starting a Codex session through the variable; the page's *Add an API key* for Codex.
-- [ ] **ACCTNAME1 — an account named for its email reads once, and the roster's columns hold** (cli, driver, web-shell). Seen on the install (2026-10-07) after the owner named each Claude Code account by its sign-in email: `daoris agent list` prints `someone@example.com in        someone@example.com (id Mail)` — the name and the signed-in email are the same words twice, and a name wider than the column pushes the state and the email out of line. Say the signed-in email only where it differs from the name, size the name column to the longest name, and check the page's account rows the same way (both catalogues). Contract: D125's UX7 and ACCTEDIT1 notes, platform-ux §4. Proof: a roster test with a name equal to its email and one longer than the column; a vitest for the page's row.
-- [ ] **ACCTUX1b — Settings and the start form say a refused key as a key** (web-settings, web-shell; after ACCTUX1). ACCTUX1 made a key read signed out *key refused* on its row and in What needs you; Settings' next start (`nextLine`/`heldLine`) still tells the person to sign in to it, since the driver's walk calls it `signedOut` after a restart (`AccountUse.tsx` would pass which accounts are keys), and the start form (`work/StartSession.tsx`) labels it *(signed out)*. Contract: D125's ACCTUX1 note. Proof: rows in `accounts.test.ts`; a vitest for the start form's label.
-- [ ] **KEYREPLACE1 — a refused key is replaced in place** (driver, modules, cli, web-shell; after ACCTUX1). No door puts a new key into an existing account, so repairing a refused key makes a new account that holds none of the old one's lists and leaves the refused one behind. `key-add` takes the account, and `daoris agent key <agent> --profile <account>` replaces that account's key, ending its refusal and cool-off; the row's act becomes *Replace the key…*. Contract: D125 (AGT3, AGT3b, the ACCTUX1 note), D67 §1. Proof: twin tests on `keys.json`; a modules route test; a vitest for the row's act.
-- [ ] **ACCTUX4 — each account shows its windows, for both makers** (web-shell, modules; after CODEXUSE1 and ACCTUX1). The review's proposal (recorded in `docs/2026-10-07-second-opinion-review.md`'s account section): one row per account with the chosen name, sign-in state and read time apart from allowance; each window in a stable cell (short window first, weekly second) with its exact percent, a thin bar of that window's own allowance, its reset and its reading's age (`WindowSaid.seen` kept per window); one *Next start* sentence for the chosen workspace above the accounts from `scope.next`; unknown, never read, read failed, reset passed and not reported (API key, older tool) said in words with no bar and never 0%; plan, ordinary-usage, spend control and reset credits in details, credits shown and never redeemed until supported. Revise the row-height budget explicitly and measure it in both languages at 1000, 680 and 400 px. Contract: D125, UX6 §9, UX7, the review. Proof: stories and vitest per state; the install's shot with a Codex and a Claude Code account.
-- [ ] **AGENTMARK1 — each agent declares its strip mark** (driver, modules; after ACCTUX2). ACCTUX2's strip reads a door's `mark` first, but no roster carries one, so Codex shows `Co` where UX7 §4.6 specifies `Cx`. Declare `mark` beside each agent's product (Claude Code `CC`, Codex `Cx`) and forward it. Contract: UX7 §4.6, D125's ACCTUX2 note. Proof: a roster test carrying `mark`; the strip at 680 px.
-- [ ] **SETTINGSWAIT1 — the model form's *Never mind* waits while it saves** (web-settings; after ACCTUX3). `AccountSettingsForm` leaves Cancel enabled during a save and the page ignores the press, a dead click; disable it as the key field's is. Contract: D125's ACCTUX3 note, platform-ux §4. Proof: a vitest in `AccountSettings.test.tsx`.
-- [ ] **TOOL6d — continue chat on another account** (driver, modules, web-shell; after b). Refused turn offers last plan/words to selected account. Contract: D130 §8–§9. Proof: driver/route/vitest and bilingual look.
-- [ ] **TOOL4l — account proposal service doors** (service, driver). Support use/keep/early/near, order, ready and cooloff. Contract: D125 §6, D130 §9/§16.6. Proof: proposal kinds and no owed coverage rows.
-- [ ] **TOOL4h — account rehearsal/report** (tools; after j). Two stub accounts, per-account/window limits labelled Daoris-only, parallel N-account run. Contract/proof: rotation §8/§2.2, D130 §5.4.
-- [ ] **TOOL4i — installed rotation** (owner). Parallel every-account run and what one limit interrupts remain; sequential run recorded already. Contract: D130 §11. Proof: run; preserve earlier evidence in FIX-LOG.
-- [ ] **AGT2c — real vendor pins** (owner; two downloads). Verify Claude Code honours `DISABLE_UPDATES` and pinned Codex does not update outside native layout. Contract: D67/channel evidence. Proof: observed pins.
-- [ ] **BRW14 — downloads become quest attachments** (design first). Intake currently cannot save a mock-up attachment; define session download destination and transfer to quest. Contract: D78, CHR3 §3.2. Proof: design before build.
+- [ ] **ACCTUX4 — account windows for both makers** (web/modules). Stable window cells with allowance, reset and per-window age; explicit unknown states. D125/UX7; revise geometry, tests/stories/installed proof.
+- [ ] **ACCTNAME1 — email names read once** (CLI/driver/web). Avoid duplicate email/name; size roster columns. D125 notes; long-name and equal-email cases.
+- [ ] **ACCTUX1b — refused keys read as keys** (web). Correct Settings next-start and start-form labels. D125 note; account and start-form tests.
+- [ ] **KEYREPLACE1 — replace refused keys in place** (all doors; after ACCTUX1). Preserve account lists; clear refusal/cooling. D67/D125; key-file twins, route and row tests.
+- [ ] **AGENTMARK1 — declared strip marks** (driver/modules; after ACCTUX2). Forward CC/Cx with each product. UX7 §4.6; roster/680 px proof.
+- [ ] **SETTINGSWAIT1 — Never mind waits during save** (web-settings). Disable the ignored cancel press in AccountSettingsForm. D125 note; form regression.
+- [ ] **CODEXUSE2 — installed Codex reading** (parent/owner). Pins are verified; account sign-in remains unavailable. Use CODEXUSE3's own-sign-in reading meanwhile. D57/D63/D125.
+- [ ] **CODEXKEY1 — Codex API-key account** (measure first; owner supplies throwaway key). Determine spawn variable for both tools before declaring support. D67/D125; real variable-start proof.
+- [ ] **TOOL6d — continue on another account** (driver/modules/web; after TOOL6b). Offer last plan/words to selected account. D130 §8–§9; both-door tests/look.
+- [ ] **TOOL4l — account proposal doors** (service/driver). Use/keep/early/near, order, ready/cooloff. D125 §6/D130 §9/§16.6; kinds/coverage.
+- [ ] **TOOL4h — account rehearsal/report** (tools; after TOOL4j). Stub window limits labelled Daoris-only; parallel account run. Rotation §8/D130 §5.4.
+- [ ] **TOOL4i — installed rotation** (owner). Parallel every-account run and interruption proof remain. D130 §11; preserve sequential evidence.
+- [ ] **AGT2c — vendor pins** (owner; two downloads). Verify update controls and native layout. D67/channel evidence; observed pins.
+- [ ] **BRW14 — downloads as attachments** (design first). Define session download destination and quest transfer. D78/CHR3 §3.2.
 
-## Flakes and held work
+## History and reliability visible to the person
 
-- [ ] **REALCASE1 — the owner's real case, walked end to end on the install** (parent; owner asked 2026-10-08: *fix all the issues and go through them with local daoris so we have a proper e2e working*). After the republish carrying ANSWER2, BGWAIT1, LAND4, QUESTCLOSE1 and FREEZE1, on the owner's install and in their work workspace: (1) answer the reporting ticket's parked session and see it go on once, its background build and tests waited for, not asked about; (2) publish the release ask (one release branch in the release-environment repository merging two customers' branches, the first customer's two docs folded) and follow it from intake to a driven session to its result; (3) land or accept that work through *Accept…* and see the branches the Branches tab leaves; (4) close the two customers' release-environment quests finished at a checkpoint; (5) watch the window's main process with the in-app browser open (FREEZE1); (6) the owner signs in a Codex account by its device code; and (7) record each step's outcome, and turn each failure into a row and a fix, then walk it again. Contract: the rows named, D62 (the install is where it is judged). Proof: each step's outcome recorded here or in the archive, nothing failing silently. **Walked so far (2026-10-08, on `a3466062`):** (1) held: the parked session answered, went on once, and its quest's browser check was released and taken; that check found the chart click dead in a real browser (a pixel conversion the charting library answers with null), fixed it with a failing test first, checked every acceptance line and is Done — its work and its parent's wait on the person's *Accept…*. (2) held: the ask went to intake, which published to the named repository despite a word-match proposal of another (→ ASKNAME1); its session merged the three branches cleanly, folded the documents, pushed nothing and asked for the push in its last message; the quest is Done, its list name *Create…* (→ SHORTFIT1). (5) before FREEZE1 reached the install, with a session driving the in-app browser and two sessions live: the application's own GPU process burned 8.2 s of CPU in 20 s (532 s in all) while its main process idled and the browser's GPU process used none — the pulse FREEZE1 settles; measure again after the republish. **After the republish (2026-10-08, the SHORTFIT1 merge, the full set passed):** the index came back at schema 5 (9,088 entries) and the knowledge routes answer (KNOW500's cause was CONNECTOR1's); an intake on the install's own connector gave a short title and checked requirements, and a driven session asked its go-aheads as go-aheads (answering them did not wake it → GOAHEAD2); (3) the ticket's chain was accepted onto a feature branch through the window's bridge, its trees tidied; (4) the two release-environment quests closed (one by the person's done, one by its session after the owner's go-ahead created its five release definitions and ran their Plans); (5) the GPU process quiet (2 s of CPU at start, none after) and no `ui.stalled`; and the owner's review, which no step had given them, was shown in Daoris's own browser — the branch's build served over the running app by a browser rule, the popup left open — and the owner turned it into REVIEWENV1. Open: (6) the Codex device sign-in, the owner's. The release branch that seemed to vanish was the owner's own pull request, squash-merged into the line and deleted on completion; the two session branches it came from then stood with no other ref holding their commits (a squash leaves none), so neither Daoris's door nor git would delete them unforced — one's work wholly on the line, the other holding a later commit — an ask carries the later commit to a branch from the line, and the owner discards both trees (a forced discard is theirs).
-- [ ] **ANSWER2b — a real resumed run meets a second look** (driver, Process; after ANSWER2). ANSWER2's proof is on the stand-in; add a `SessionMessagesTickTests` row whose stub holds its resumed turn open while a second look runs, so one record moves `working, completed` with one `session/resume`. Contract: D131's ANSWER2 note. Proof: that row in the Process half.
-- [ ] **BGWAIT1b — an answered park's resumed run waits on its own background work** (driver; after BGWAIT1 and ANSWER2). BGWAIT1 judges only a quest's start; a run resumed by an answer (`Driver.Continue.cs`) still parks when its turn ends on background work. Pass the same judgement there. Contract: D83's BGWAIT1 note. Proof: a resumed-run case beside `AcpBackgroundTests`.
-- [ ] **BGWAIT1c — a native-door hand-off reads as a cut-off, not a park** (driver, web-shell). On the native door the harness kills its own background work at a turn's end (CONSOLE3c), so a hand-off to background work still parks as a question; say it as a cut-off, under a new note code in both catalogues, or go on with Daoris's words. Contract: D83's BGWAIT1 note, D137/D142 coded notes. Proof: a `ClaudeStreams` fixture where the task is killed after the `result`.
-- [ ] **LAND4b — auto-landing and a failed session's commits** (driver; decide). LAND4 offers a failed session's commits to land only on the person's press, but LAND2b's automatic acceptance still makes a *failed* record due when its quest is Done (`AutoLandingRulesTests`'s `Done, failed → Due`, D145). Decide whether a failed session's work may land unpressed when its quest is Done, record it under D145, and make the rule one. Contract: D145, D102's LAND4 note. Proof: the rule's row either way.
-- [ ] **QUESTCLOSE1b — the person's done reads in Chinese, and Ask Daoris knows it** (service, web-shell, driver; after QUESTCLOSE1). A quest's note has no codes, so *The person marked this done: …* reads in English for a Chinese reader; and Ask Daoris's room does not mention `daoris-driver quest done`. Code the person's-done note (both catalogues) and name the door in the room (or exempt it with its reason). Contract: D126's QUESTCLOSE1 note, D137/D142 coded notes, D110. Proof: a vitest rendering the note in 中文; the room's line or exemption.
-- [ ] **FREEZE1b — the frozen bar's cause, read from `ui.stalled`** (modules, driver; after FREEZE1). FREEZE1 settled the endless pulse (the GPU burn) and added `UiStallWatch`, which logs `ui.stalled` with the route held on the window's thread, the slowest synchronous route, bridge requests, bus events and full collections; it proved the in-app browser only marks a session's start. At the next frozen bar, read those lines (Settings → Logs) and move what they name off the window's thread (a route's synchronous part; the kit's flush of large `SESSION_EVENTS` payloads, Shenora's, by a request to its owner or by Daoris carrying less; ACP's undisposed `JsonDocument`s). Contract: D56's FREEZE1 note, the machine-log design §4. Proof: the named cause off the thread; `ui.stalled` quiet through a session.
-- [ ] **ASKNAME1c — the named-proposal rule is a twin held by one table** (service, driver, web-shell; after ASKNAME1b). The tier writes a named match as `matched` equal to exactly the repository, and the driver (`Asks.IsNamed`) and the page (`namedInAsk`) each read it back with their own code; per `twins`, a shared fixture table (named and not-named proposals, case included) is read by `DeclarationsTierTests`, the driver's `IntakeNamedProposalTests` and `asks.test.tsx`, and `twins.md` gains its row. Contract: `twins`, D77's ASKNAME1b note. Proof: the three suites reading the one table.
-- [ ] **GOAHEAD2c — the family rehearsal parks on go-aheads** (tools; after GOAHEAD2). The protocol stub never calls its connector, so no rehearsed session asks a go-ahead. Teach the stub a quest that calls `go_ahead_ask` twice and parks; answering the first at `ask --go-ahead` keeps it parked, the second resumes it once, the resumed prompt naming both. Contract: D135's GOAHEAD2 note, phase 17a. Proof: the phase's new checks.
-- [ ] **SQUASHTIDY1d — the recovery refs listed and cleared from both doors** (driver, web-shell; after SQUASHTIDY1c). Content-held removals leave `refs/daoris/discarded/*`, which only git lists. A `daoris-driver trees` verb lists them (repository, branch, commit, date) and deletes one on the person's word, and the Branches tab shows them as a group. Contract: D102's SQUASHTIDY1c note, D50. Proof: a Process test of the list and the clear; the page's group in both languages.
-- [ ] **SQUASHTIDY1g — a session a branch of the person's holds by ancestry** (driver; decide; found by AUTOTIDY1r). Where a branch of the person's other than the line already holds a session's commit itself (not a copy by content), `LandAsync` gives no refusal and the head offers neither landing nor discard: D88's proof finds nothing unlanded. Decide whether that work counts as carried (offer the discard, refuse the landing as SQUASHTIDY1f does), or as landed elsewhere, and say it on the head. Contract: D88, D102's SQUASHTIDY1b and SQUASHTIDY1f notes. Proof: a Process row in `ContentOfferTests` and `ContentLandingTests` over a branch holding the session's own commit.
-- [ ] **SQUASHTIDY1e — a landed branch removed on content keeps a recovery ref** (driver; after SQUASHTIDY1c). D102's `on-line` proof compares the aggregate the same way, so an unpushed landing branch's commit messages go with it. Contract: D102's WSR5 and SQUASHTIDY1c notes. Proof: a `CleanLandedAsync` Process test.
-- [ ] **SWEEPCARRIED1b — the session head and the terminal word a carried branch** (web-shell, driver; after SWEEPCARRIED1). `SessionHead.tsx`'s `landed()` says a carried session branch is held by a running session (`carried` falls to `work.head.landed.inUse`); give it `work.head.landed.carried` in both catalogues and make the switch exhaustive. `trees clean`'s help (`TreesConsole.cs:481`) names only D88's reasons; add a carried and a content-held one. Add the `SweepKind` page–driver pairing to `twins.md`. Contract: D148 point 4, D41, D102's SQUASHTIDY1 note. Proof: a `SessionHead` vitest per language; the help's golden.
-- [ ] **MCPSDK2 — decide the connector's protocol revision before taking SDK 2.x** (service; decide). The 2.x MCP SDK answers `server/discover` and offers the 2026-07-28 revision (no `initialize`, per-request metadata); taking it changes how every session's connector talks to its harness, and MCPDISCOVER1's `DiscoverProbe` would otherwise keep refusing that revision. Contract: the machine-log design §4's MCPDISCOVER1 note, FIX-LOG MCPDISCOVER1. Proof: `DiscoverProbeTests`' third test replaced by one showing the chosen revision negotiated end to end.
-- [ ] **SWAP2b — the deployment rehearsal keeps what a swap met** (tools; after SWAP2). A passing run removes its scratch, so a swap's holds are lost: `swapOutcome` returns the journal's `detail` and `holds`, and the update phase's checks print the longest hold pass or fail. 9d's check that `app/` is the staged build by its manifest's hash cannot tell two builds of one commit apart: write a marker into the live `app/` before staging and check after the swap that it went to `update/previous/`. Then five runs beside a build, their longest holds recorded under D139's SWAP2 note. Contract: D139, D60. Proof: the marker check failing against a swap that did not happen; five runs' holds recorded.
-- [ ] **SWAP2d — the roll-back sentence says what happened for each reason, and the codes are one table** (web-shell, driver; after SWAP2c). The roll-back sentence (*Daoris {{version}} could not start, so Daoris went back …*) is wrong for `busy` and `move`, whose builds never started; and nothing ties the codes the launcher writes (`StagedBuild.cs`, `SwapRecord.Reason`) to the catalogue, so a new code falls through to English. A sentence per phase, and a shared code table per `twins`. Contract: D139 §6, D41. Proof: a test per phase in both languages; both suites reading the table.
-- [ ] **FLAKE1 — bounded diagnostic waits** (driver/modules tests). Instrument repeating plugin-kit, input and ProcessJob failures instead of rerunning blindly. Contract: MOD8, PROC1; sightings in FIX-LOG FLAKE1. Proof: named slow step and three loaded serial green runs.
-- [ ] **WEBPORT1 — two web gates never share a host** (web-shell; found by REHEARSEPORT1). The Playwright gate's host (`src/Daoris.Web/scripts/e2e-host.mjs`) still binds a fixed port, 5196, so two web gates side by side answer each other's checks as the family rehearsals did; its comment still names the family rehearsal's old 5197–5200. Take a free port per run, as the rehearsal kit's `takePorts` does, and pass it to Playwright's base URL. Proof: a test that two hosts started together get different ports.
-- [ ] **DEPLOYCOUNT1 — the deployment rehearsal counts its own hosts** (tools; found by REHEARSEPORT1). `hostProcesses()` counts every `daoris-knowledge-http` on the machine, so another run's host, or the owner's install's, reads as started or orphaned. Count only processes whose path is under this run's scratch. Proof: a kit test with a stand-in process outside the scratch.
-- [ ] **TEST1 — capture Windows Node abort** (web e2e, tools). Preserve JSON reporter/rehearsal exit for `0xC0000409`; no timeout tuning from three sightings. Contract: FIX-LOG TEST1. Proof: next failure captured.
-- [ ] **REH1 — canon-upgrade rehearsal failure** (held). Keep transcripts; no tag until captured failure resolved or owner closes after clean post-canon runs. Contract/evidence: FIX-LOG REH1, `_fixtures/rehearsal-logs/`.
-- [ ] **CANON9 — desktop-winforms pack** (held). Keep local until a second repository needs it; two-repository bar remains. Contract: original pack candidate.
-- [ ] **TOOL5 — native adapters** (held until a repository names its tool). Contract: toolchain §5, D23/D24/D57 TOOL5 note; measure each claimed field.
-- [ ] **SEM2 — persistent vectors** (held; after SEM1). Trigger: noticeable first-search embedding cost. Persist in `knowledge.db` through existing SQLite stack and migrations; re-embed on model changes. Contract: original SEM2 row; no embedding need on lexical-only install.
-- [ ] **PLUG7 — service plugin points** (held until plugin asks). Contract: D64; reuse wire at service.
-- [ ] **A file tree in the dock** (held until browsing requested). Contract: D76; existing preview/terminal are PREVIEW1/D111 and CONSOLE4/D96.
-- [ ] **AFTER1 — step after several quests** (held until an ask needs it). Store dependencies; planner names unfinished ones. Contract: future-directions review §3, amending intake §1g. Proof: trigger, service/planner tests.
-- [ ] **MSG1k — fork terminal conversation into Daoris** (held until real use). Contract: messages §4.3. Proof: protocol stub with session/list and session/fork.
-- [ ] **PLUGHOOK2 — PR review threads back to work** (driver, examples, web-shell; held until first manually carried request). Explicit work/review press sends person's words or new ask. Contract: plugin-hooks §3.1.
+Contracts: `docs/2026-10-07-history-clearing-design.md` (D153), D158,
+D88/D102 cleanup notes, machine log §4. Installed clears require the owner's existing authorization.
+
+- [ ] **ASKHIST1d — every conversation remains reachable** (driver/web). Order/filter before 200-row bound; paginate; search older records; parse Markdown before preview truncation. D158; old pinned/resumed/search cases.
+- [ ] **AUTOTIDY1a — show automatic cleanup** (modules/web). Branches lists recent tidied/kept log facts. D88; route and bilingual list tests.
+- [ ] **AUTOTIDY1b — measure strict cleanup guards** (parent; installed AUTOTIDY1, after one week). Count ignored-file/unmoved-branch holds before deciding relaxations. D88 evidence.
+- [ ] **AUTOTIDY1c — automatic squash cleanup** (driver; after AUTOTIDY1b; decide first). Consider content proof plus merged PR state, preserving recovery refs. D88/D102; Process guards.
+- [ ] **QUESTBACK1 — hand back without a session** (service/driver/web). Both doors preserve note and taker facts. D32/D46/D132; transition/route/press tests.
+- [ ] **LANDNAME1 — entered landing branch** (driver/web). Accept and terminal take an entered name. D145/D149/D126; landing and field tests.
+- [ ] **HIST1f — Ask Daoris clear proposal** (driver/service/web; after HIST1e/SESSUX1h). Listed plan is confirmed on Apply. D153 §6.4; kinds, coverage, room/card tests.
+- [ ] **HIST1h — installed clear** (parent; republish a–f first). Verify counts/bytes, terminal/page agreement at 1280/888/680 px, themes/languages. D153 §12.
+
+## Consistent screens
+
+Contracts: plugin-screen design (D119), frame model (D118). Order: PLUGUI1c → f → g;
+FRAME1i precedes PLUGUI1h. Installed looks cover both themes/languages.
+
+- [ ] **NAME2b — verify four labels**. Inspect help.setup, scope.every, signin.titleNew and work.group.noCheckout at 888 px; rename or accept. NAME2 handback.
+- [ ] **PLUGUI1c2 — plugin-page remainder** (web). Move kit/update types, fix agent/landing doors, put Update now first, remove doubled heading. D119; stories/tests/look.
+- [ ] **PLUGUI1f — complete plugin page** (after c/e). Health, Points, Agents, Servers, Activity, Data, Source and folder install. D119.
+- [ ] **PLUGUI1g — plugin checks** (after f). Keep trial and run tests in a home copy. D119.
+- [ ] **PLUGUI1h — Ask Daoris opens Plugins** (after c/FRAME1i). D119; matching coverage and screen proof.
+- [ ] **FRAME1i — item-aware Ask Daoris**. Update where.ts, go and room for lists/items. D118.
+- [ ] **FRAME2b — maximized restore under pointer** (owner sends request). Wait for runtime position support, then update handler. D56/D32; owner response and handler proof.
+
+## Workflows
+
+Contract: `docs/2026-10-09-workflow-design.md` (D157), §14 order/proofs.
+Foundation precedes editor/proposals/intake; waits/checks/stages follow the gate; installation last.
+
+- [ ] **WORKFLOW1c5 — shared run sentences** (driver/web; after c2). Hold terminal/catalogue words by a fixture or one English source. D157 note/twins; drift test.
+- [ ] **WORKFLOW1e2 — quest-specific choice** (service/driver; after e). Field, census, person's door and selection for quests without asks. §4.1/D156.
+- [ ] **WORKFLOW1e3 — clear run bindings with history** (driver; after e). Include binding in clear plan/count. D153/D157; clear test.
+- [ ] **WORKFLOW1f — bound version governs gates** (driver/modules). Recover paused branch and verify combined landing/review/opinion behavior, immutable binding and paths. §2.3/§4.4–§4.6/§5; fast/Process cases.
+- [ ] **WORKFLOW1g — workflow editor** (web/modules; after d/e). Presets, save, insert/failure/move/remove, drawer, selection, terminal twins and keys. §6; 680 px/bilingual proof.
+- [ ] **WORKFLOW1h — workflow proposal** (service/driver/web; after d/e). Judge validation/version/diff/person/outward needs; Apply/editor/Not now. §8; kinds/coverage/goldens/card tests.
+- [ ] **WORKFLOW1i — intake kind proposal** (driver/service; after e). Set only from quoted requirements without lowering involvement. §4.3; prompt/table/refusal proof.
+- [ ] **WORKFLOW1j — wait on pull request** (driver/examples; after f/PLUGHOOK1b). Backoff work/state only for awaited runs. §3.2/§5.4; wait/occasion/plugin tests.
+- [ ] **WORKFLOW1k — outside checks** (driver/examples; after j). Commit-specific checks, unknown/stale distinctions, failure policy and all-member joins. §3.3/§3.5/§3.7; fake-tool tests.
+- [ ] **WORKFLOW1l — stages and go-aheads** (driver/examples/service; after k). Declared stages; production by person's press; check outcome before retry. §3.6–§3.7.
+- [ ] **WORKFLOW1m — workflow rehearsal** (tools/examples; after k). Kind selection, path hold, failed check/send-back, staged person's press. §4.4/§5.
+- [ ] **WORKFLOW1n — installed workflows** (parent; republish a–h). Current, save named workflow and follow run to PR at 1546/888/680 px, themes/languages. §6–§8.
+
+## Person-only doors
+
+Contract: `docs/2026-10-09-person-door-design.md` (D156), §10 sequencing/proofs:
+a → b, c → d, e → f → g → h → i. Keep person and driver authorization distinct.
+
+- [ ] **PERSONDOOR1c — publish attribution** (service; after a). byAgent everywhere the operation census requires; old records preserved. §5.1; sync/host/census tests.
+- [ ] **PERSONDOOR1d — driver authorization** (driver; after b). Strip person key from every child; loopback-only client; confirm refused doors in window. §2.2/§4.
+- [ ] **PERSONDOOR1e — CLI authorization** (CLI; after b). Loopback-only key and confirmation for connect/retire/import. §2.2/§4; shared-code fixture.
+- [ ] **PERSONDOOR1f — page authorization** (web; after b/c). In-memory key, stale refresh, confirmation card, adoption notice and agent attribution. §2.2–§2.3/§4.2/§5.1.
+- [ ] **PERSONDOOR1g — shell authorization** (modules; after d/f). Per-start key, input proof, bridge route; none for adopted host. §2.2–§2.3; squatter/adoption tests.
+- [ ] **PERSONDOOR1h — gates carry authorization** (tools/web; after d/e). Stub unauthorized person acts refused; own doors accepted. §3/§4; family/web/deploy.
+- [ ] **PERSONDOOR1i — every host enforces** (service; after h). Mint and report missing key once, enforce on bare hosts. §2.1/§4.3/§9.
+- [ ] **PERSONDOOR1j — protect confirmation slots** (service; decide). Reserve person's terminal admission against five-slot agent exhaustion. §4.2; six agent asks cannot block reserved terminal.
+- [ ] **PERSONDOOR2 — beyond HTTP doors** (design; after PERSONDOOR1). Store/home files, connector token and remote key boundaries. D156 §7; decision before build.
+
+## Second opinions
+
+Contract: `docs/2026-10-08-second-agent-design.md` (D155), section proofs.
+
+- [ ] **XAGENT1f2 — person's opinion presses** (service; with PERSONDOOR1). Anyway/myself local-only; clear opinions with history. §8.5; store/host tests.
+- [ ] **XAGENT1f5 — answers under steps rules** (driver/modules; after f4). Judge correct occasion; refresh stale declared-only comments. §8.1/§8.5; Process gate/look cases.
+- [ ] **XAGENT1f3 — omitted gate behavior** (driver). Failure carry-on, safe verify commands, unfinished-work help and chain/ask choices. §8.4–§8.5; gate/look tests.
+- [ ] **XAGENT1g2 — quest/ask/struck doors** (web; after f3). Chain opinions and failure help through useOpinionActs. §9; bilingual tests.
+- [ ] **XAGENT1g3 — attention reads kept facts** (driver/modules). Cache look judgments; OPINION_WAITS runs no git. §9/UX6c; query tests.
+- [ ] **XAGENT1g4 — coded answers and reviewer row** (driver/web). Reviewer beside work with measured usage; bilingual note parts. §6.4/§9.
+- [ ] **XAGENT1h — intake reviewer choice** (driver/service; after c). Quoted choice or proposal only. §2.4; golden/refusal/stub proof.
+- [ ] **XAGENT1i — second-opinion rehearsal** (tools/examples; after f/plugin maker). Findings reach work; disputes/missing reviewer hold. §6/§8.
+- [ ] **XAGENT1j — measured reviewer posture** (driver; owner authorizes account spending). Try writing through each door; declare only observed refusal. §5.2/D53.
+- [ ] **XAGENT1k — canon second reader** (canon/examples; parent's decision). §10 doctrine, resync and canon changelog. Verify/example rehearsal.
+
+## Review environments
+
+Contract: `docs/2026-10-08-review-environment-design.md` (D154), section proofs.
+
+- [ ] **CANNOTSHOW1 — factual cannot-show state** (modules/web). Carry environment/address/reason instead of mixed-language sentence. D154 c2 note; bilingual tests.
+- [ ] **REVIEWENV1d2 — live review_serve** (service/driver). Loopback serving wire reaches shell before session ends; tool waits for served answer. §2.3/§2.6.
+- [ ] **REVIEWENV1e — separate review process** (driver/modules; after d). Procedure quote, Keep it, port/readiness/output and owned-tree stop. §2.3; stub/port/stop tests.
+- [ ] **REVIEWENV1f — intake review choice** (driver/service; after b). Level-driven step; quoted choice or proposal; proposed off creates none. §1.5–§1.6/§2.1.
+- [ ] **REVIEWENV1i — canon see-it-run** (canon/examples; parent's decision). §7 doctrine, resync and changelog. Verify/example rehearsal.
+- [ ] **REVIEWENV1j2 — visible terminal twins** (web/driver). Draw existing choice twins in AskComposer/AskReview/ReviewGate; fix usage fallback. D50/D154; bilingual tests.
+- [ ] **REVIEWENV1g2 — Stop showing** (modules/web; after d2). Route ends tab serving; press beside Show again. D154 point 8; route/gate tests.
+
+## Landing, trace and Git
+
+Contracts: D143/D145/D148/D149; plugin-hooks design;
+`docs/2026-10-04-built-in-git-design.md` (D147 amended by D150).
+
+- [ ] **LAND2e — post-landing advances** (driver/modules/web). Accept later commits; gone-tree chain parts; review/proposal explanations. D149/D113; both-door tests.
+- [ ] **PLUGHOOK1b — GitHub work/state** (examples). Query head/PR status for squash cleanup. Hooks §2.7; fake-gh tests.
+- [ ] **PLUGHOOK1d — refresh PR state** (modules/web; after c). Ask again, branch/sync codes, sweep/query words and failure cost. Hooks §2.4–§2.5.
+- [ ] **LAND2d — automatic acceptance UI/rehearsal** (web/tools). Show acceptedBy/events; stub plugin and bare-origin proof. D145 note.
+- [ ] **TRACE1c — missing trace links** (driver/service/web). Late rules, local operations, merges, carry-ons, advances, detached section and commit kinds. D143 note.
+- [ ] **GIT1d — bridge Git routes** (modules/web; after b). Branch/log/commit/history/blame/compare, shell-only with coded refusals. Git design §4/§6.
+- [ ] **GIT1f — commit/history/blame/compare tabs** (web; after UX6h). Existing patch/trace views, blame gutter, compare sides. §2.4–§2.6.
+- [ ] **GIT1g — fetch/create/delete** (driver/modules/web; after UX6h). One plan/apply judge at commit, console and log. §3.1/§3.3–§3.4; bare-origin tests.
+- [ ] **GIT1h — explicit push/PR** (after g). Person's commit/ref press, guarded branches and fast-forward; preserve handoff. §3.1–§3.2; pre-push tests.
+- [ ] **GIT1i — session Git doors** (web; after UX6h). Review comparison/landing/push/PR; Show in Git/history/blame. §2.7/§6.
+- [ ] **GIT1j — offer managed Git** (web/driver; after TOOLS6/10). Setup step, identity and explicit switch. §5; setup/coverage tests.
+- [ ] **GIT1k — Git proposals** (service/driver/web; after h). Confirm fetch/branch/push/delete. §3.3/D110; kinds/coverage.
+
+## Evidence
+
+Contracts: evidence design (EVID1/D144), landing-and-proof design (EVID2/D146).
+EVID1a → b → c; corresponding EVID1 precedes EVID2; EVID1d also needs DEV5/7.
+
+- [ ] **EVID1c — quest proof and holds** (web/driver; after b/DRIFT1d2). Results versus assertions, Check again and check proposal. §5–§6.
+- [ ] **EVID1d — queue proof** (driver/service; after DEV5/7/b). Required gates, landing/path verdicts and no-queue state. §4; queue rehearsal.
+- [ ] **EVID2a — capture requirement** (service; after EVID1a). Screenshot/answer kinds and verdicts; machine-private bytes/paths never sync. §9–§10/§12.
+- [ ] **EVID2b — keep captures** (driver/examples; after EVID1b/EVID2a). Proof variable, validation/redaction/copy, manifest, prompts/intake. §9–§11.
+- [ ] **EVID2c — capture pages/terminal** (web/modules/driver; after EVID1c/EVID2b). Proof sections, reopen capture/remove and save/remove verbs. §11–§12.
+
+## Sessions
+
+Contracts: session-management (D126 §9), session-messages (D137), answer-continues (D131),
+pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build rows.
+
+- [ ] **QUESTREBASE1 — pure rebase planner** (service; consider). Preserve operation identity, accepted-before-pending order and transaction. D69/D79; unchanged sync suite and loss tests.
+- [ ] **SESSUX1h — session proposals** (driver/service/web; after d–g/FRAME1i). Management §7.3/§9.
+- [ ] **MSG1d2 — queued chat survives restart** (driver/web; with MSG1c). Record ids/reach/withdrawals; take by id. Messages §3.1.
+- [ ] **MSG1g3 — cooling note and twins** (driver/web). Code held line; compare newSessionSaid with GoOnNew/WordsNever. D137/D142.
+- [ ] **MSG1h — Codex next-step words** (driver; after measured STEER3). Messages §8.
+- [ ] **MSG1i — native next-step words** (driver; after measured STEER3). Messages §8.
+- [ ] **MSG1j — installed message canary** (parent). Messages §8–§9; a–f installed per original record.
+- [ ] **STEER2 — Send now matches door** (all doors; after STEER1). Steering draft and queue-arrival explanation. D136 §4; measured proof.
+- [ ] **STEER3 — measure other steering** (driver). Native stream-json and Codex turn/steer before implementation. D136 §5; one-turn evidence.
+- [ ] **ANSWER1d — installed same-record resume** (parent). One row and session.answered resumed=true. D131 §6; real run.
+- [ ] **DRIFT1e — follow-ups preserve requirements** (design first). Reopen parent corrections; closing notes are not requirements. D133 §5.
+- [ ] **PAUSE1f — pause proposal** (driver/service/web; after b/SESSUX1h). Abandon remains person's act. D132 §7.4.
+- [ ] **PAUSE1g — installed pause/abandon** (parent; after a–f). Pause/resume same tree; abandon preserves landed work. D132 §12.
+- [ ] **SESSUX1k — limit-ended list state** (driver/web; after UX6e). Waiting carry-ons and account door. D126 §2.2/§9.
+- [ ] **SESSUX1l — installed management** (parent; republish a–i). States, carry-on, stop/try-again/archive across widths/themes/languages. D126 §9.
+
+## Economy, setup and recall
+
+Contracts: session-economy (D127), workspace-setup (D124), setup-pilot lessons (D128),
+knowledge review (D129). WSSETUP14b–e precede owner f/13; WSSETUP7 needs LAYOUT8.
+
+- [ ] **COST1 — measure long-turn cost** (owner's decision). Week of context/cache evidence before ceiling/window/compaction proposals. METER1/D127.
+- [ ] **SESSOPT1d — complete documentation relocation** (steward). Maintain ≤5300 words and ≤60 per row; finish §4.3 diagnostic evidence homes for FLAKE1/TEST1/REH1.
+- [ ] **DOC7 — reading measurements**. session.read/session.skill by role and whole/partial. D127 §6.1.
+- [ ] **WSSETUP7 — workspace setup UI/proposal** (all doors; after LAYOUT8). Workspace page and bilingual coverage. D124 §4.4–§4.5.
+- [ ] **WSSETUP14b — knowledge stays put**. Declare documents.knowledge; index reads, sync never writes. Pilot §1.2–§1.3; twins.
+- [ ] **WSSETUP14d — setup stays green** (after b; absorbs SETUP2). Before/after checks, preserved knowledge, moved readers and hand-index inventory. Pilot/D129; family proof.
+- [ ] **WSSETUP14e — finish setup branch** (after d). Exact follow-up merge rule. Pilot §4.2; composer/rehearsal tests.
+- [ ] **WSSETUP14f — complete pilot** (owner; after republish). Two repositories, green checks, knowledge declaration, 32768-byte root and restored budget. Pilot §4.
+- [ ] **KNOW3a — 169-document bench**. Opaque-name scale, whole index reads and skill truncation. Bench §5/§6.1; repeatable evidence.
+- [ ] **KNOW2a — recall probe** (meaning judged by owner). Paraphrases at recall 3/5. Review §2.G/§4.6; script/evidence.
+- [ ] **KNOW2b — prompt headlines** (after KNOW2a/DOC7). Five maximum, tier reservation, silent-service omission. Review §4.6.
+- [ ] **KNOW2c — chat prompt hook** (after b/probe). Failing-open UserPromptSubmit headlines. Review §4.6; both-door probe/settings tests.
+- [ ] **WSSETUP13 — remaining repositories** (owner). Pilot-paced rollout, existing instructions and weekly parks. D124; original LAYOUT10 remainder.
+- [ ] **ORIENT2c — repository index quest** (driver). Inventory/generator/granted commands/check/declaration only. D151 §2/§5; brief/family tests.
+- [ ] **ORIENT2d — prompts use index ranges** (driver). Declared index preferred, fallback retained. D151 §3.3/§6; goldens.
+- [ ] **ORIENT2h7 — stable count-independent ids** (service/CLI). Ignore heading/label trailing counts; correct fence fixture note. D151 notes; two-commit measurement.
+- [ ] **ORIENT2f — standalone clone index** (examples/tools). Move/fail/regenerate/pass without Daoris. D151 §4; family proof.
+- [ ] **ORIENT2g — post-adoption measurement** (owner install; read-only). ORIENT1e targets unchanged: halve calls/characters/searches, quarter whole reads, 80% uptake, no extra parks. D151 §5.3–§5.4.
+- [ ] **KNOWUSE2b — all 46 questions** (owner chooses harness/account). Repository knowledge, no substituted owner answers. D135 §6; report before KNOWUSE3.
+- [ ] **KNOWUSE3 — item-local review** (after KNOWUSE2b). Hint tier, never answer for owner. D135; stories/installed proof.
+- [ ] **KNOWUSE4 — correction request** (owner may publish). Correct comparison and config-only contradiction; no cross-repository edit. Knowledge-use evidence §4.
+
+## Plugin distribution
+
+Contract: plugin-distribution design (D120), §7 proofs. Plugin-repository work is a request to its owner.
+
+- [ ] **PLUGREPO2e — retire migrated examples** (after PLUGDIST1g). Three examples/tests replaced by package offers. §7.
+- [ ] **WORKSHOP1a — workshop setting**. Home default and both doors. §2.1/§7.
+- [ ] **WORKSHOP1b — workshop sessions**. §2.2/§7.
+- [ ] **WORKSHOP1c — workshop view/proposal**. Creation uses workshop. §2.3/§2.5/§7.
+- [ ] **WORKSHOP1d — handover/source**. §2.4/§7.
+- [ ] **PLUGDIST1b — pack/release workflow** (request to plugin owner). §7.
+- [ ] **PLUGDIST1c — HTTP packages**. Bound extraction before acceptance. §5.3–§5.8/§7.
+- [ ] **PLUGDIST1d — package host answers**. Records say package, not folder. §7.
+- [ ] **PLUGDIST1e — Available catalogue** (after PLUGUI1f). §6/§7, amended by D140.
+- [ ] **PLUGDIST1a leftovers — routing/package safety**. Move host installation to PluginsCommand; package kind through d, bounds through c. Original handback.
+- [ ] **PLUGDIST1f — first publish** (owner). Account, trusted publishing and prefix. §7.
+- [ ] **PLUGDIST1g — package offers** (after f). §7.
+- [ ] **PLUGDIST1h — repository signature** (held). Original §7 trigger retained.
+
+## Declarations and managed tools
+
+Contracts: development-documents (D122 §6), tools (D121 §7). DEV5 → UNBLOCK2 → UNBLOCK3 →
+UNBLOCK6–8; TOOLS6/8 precede 9, TOOLS10 precedes managed-Git sessions, 11 last.
+
+- [ ] **UNBLOCK4c — push canary** (owner grants runs). Both doors/local bare remote, aliases/flags/quotes. Archived procedure; unchanged tip and refusals.
+- [ ] **UNBLOCK2 — declaration judge** (after DEV5). Safe commands beside gates, read from line. §3.1–§3.3/§6.
+- [ ] **UNBLOCK3 — person's acceptance** (after UNBLOCK2/week of UNBLOCK5). Exact rules on both doors. §3.4–§3.5/§6.
+- [ ] **DOC6 — example document standard**. D122 §6; DOC7 is D127.
+- [ ] **UNBLOCK6 — declaration UI/proposal**. Bilingual. D122 §6.
+- [ ] **UNBLOCK7 — measure Codex/dsh**. No grant before measurement. D122 §6.
+- [ ] **UNBLOCK8 — first declaration** (owner). Week before/after asks. D122 §6.
+- [ ] **TOOLS6 — intended Git configuration**. Allow-listed ssh/includes/version floors and guidance. D121 §2.5; TOOLS7 handback.
+- [ ] **TOOLS8 — tool proposals**. D121 §4.3/§7.
+- [ ] **TOOLS9 — managed-tool rehearsals**. Loopback lists, stubs and tamper refusals. D121 §6/§7.
+- [ ] **TOOLS10 — managed-Git probe** (owner permits one start per agent). D121 §7.
+- [ ] **TOOLS11 — real installs** (owner). Managed SSH Git, plugin Node, terminal PowerShell, gh/az landing. D121 §7.
+
+## Development and agent layout
+
+Contracts: self-development (D115), agent-layout (D117 §7), entry-point evidence.
+DEV5 → 6 → 7, then 8/9, then 10/11. Predictions wait for LAYOUT2 measurement.
+
+- [ ] **DEV5 — landing queue**. Detached tree, safe gates/quiet rerun, locked advance and commit check. §4.2–§4.8.
+- [ ] **DEV6 — concurrent lanes**. Reservation/locks, default cap three, recorded/prompt lanes. §3.2–§3.4.
+- [ ] **DEV7 — ready/verdict**. Three failures reach person; done means landed. §4.1/§4.5–§4.6/D83.
+- [ ] **DEV8 — queue UI/proposal**. Every verb has a door. §4.9/D110.
+- [ ] **DEV9 — steward**. Records, dispatch, router ownership and lane-map edits. §5/DEV2.
+- [ ] **DEV10 — first real user** (owner present). Queue/steward/records, revisit measured caps/strikes. D115.
+- [ ] **DEV11 — second user/retirement**. Canon lanes/example, then replace merge tool with queue. D115.
+- [ ] **LAYOUT2 — canary turns** (owner grant). Harness predictions/account flag from evidence §6; keyless half archived. D117.
+- [ ] **LAYOUT5 — move doctrine** (alone; steward lane map). Manifest/sync/attributes/example together. §4.1/§4.3–§4.4/DEV2.
+- [ ] **LAYOUT6 — brief and rooms**. Eight rooms, approximately 1300-word AGENTS under 32 KiB; CLAUDE import. §4.2/§7.
+- [ ] **LAYOUT8 — setup UI/proposals**. Repository Setup and setup kind. §6.1/§6.5/UX6f; installed bilingual proof.
+- [ ] **LAYOUT9 — lane rooms** (after DEV6). §2.5/§7.
+- [ ] **BUDGET1 — budget scope** (owner decides). Align region-only behavior, README/design and analyze after decision. D59/REV3 F10.
+- [ ] **TRUST2 — measured trust** (owner grant). Written-key honoring and parent/child trust. D73/evidence; exact-folder hold remains.
+- [ ] **AGENTS2a — DeepSeek key probe** (driver/CLI). No-key/invalid-key dsh measurement before twin declaration. D57/D67; ACP3 evidence.
+- [ ] **PROC1 — Process suite below ten minutes** (tests/tools). Measure/isolate/reuse fixtures; three serial-equivalent green timings. MOD8/FLAKE1; preserve measurements.
+- [ ] **TESTGIT1b — shared GitFixture** (driver tests). Landing plugin/tidy/fixture/landing/auto classes; eliminate independent git runners. Serial Process proof.
+- [ ] **TRYTOOLS1 — trial tools** (driver). Folder trial uses configured machine tools. D101/D121 §3; named-Node Process case.
+
+## Remaining regressions, evidence and held work
+
+Contracts and complete reproductions: original backlog, FIX-LOG entries, named decisions.
+Decision/trigger rows stay held; diagnostic captures are not permission to change timeout policy.
+
+- [ ] **REALCASE1 — complete installed real case** (parent/owner). Remaining Codex device sign-in belongs to owner; preserve prior seven-step outcomes in frozen row. D62.
+- [ ] **ANSWER2b — resumed run through second look** (driver Process). One resume/record while next look runs. D131 note.
+- [ ] **BGWAIT1b — resumed background wait** (driver). Apply start judgment to Driver.Continue. D83; AcpBackgroundTests case.
+- [ ] **BGWAIT1c — native background cutoff** (driver/web). Coded cutoff instead of park after harness-killed work. D83/D137/D142; stream fixture.
+- [ ] **LAND4b — failed automatic landing** (driver; decide). Unify Done+failed rule with person's press. D145/D102; rule case.
+- [ ] **QUESTCLOSE1b — bilingual person's done** (service/web/driver). Coded note and room door/exemption. D126/D142/D110; Chinese test.
+- [ ] **FREEZE1b — capture next stalled bar** (modules/driver; trigger: ui.stalled). Move measured cause off UI thread; request runtime-owned changes. D56/log §4.
+- [ ] **ASKNAME1c — named-proposal twin** (service/driver/web). One case-sensitive fixture across tier/intake/page; register twin. D77; three-suite proof.
+- [ ] **GOAHEAD2c — rehearsal go-aheads** (tools). Stub asks twice; first answer stays parked, second resumes once naming both. D135/phase 17a.
+- [ ] **SQUASHTIDY1d — recovery refs** (driver/web). List/clear at both doors by person's word. D102/D50; Process/bilingual group tests.
+- [ ] **SQUASHTIDY1g — ancestry on another branch** (driver; decide). Carried versus landed-elsewhere; offer/refuse consistently. D88/D102; content-offer/landing Process rows.
+- [ ] **SQUASHTIDY1e — landed content recovery** (driver). Preserve aggregate commit messages in recovery ref. D102; CleanLandedAsync test.
+- [ ] **SWEEPCARRIED1b — carried branch wording** (web/driver). Exhaustive session head, terminal reasons and registered twin. D148/D102; bilingual/golden tests.
+- [ ] **MCPSDK2 — protocol revision** (service; decide before SDK upgrade). Choose negotiation semantics before taking 2.x. MCPDISCOVER1; end-to-end probe.
+- [ ] **SWAP2b — swap evidence** (tools). Marker distinguishes same-commit builds; retain longest holds from five loaded runs. D139/D60; failing marker proof.
+- [ ] **SWAP2d — rollback by phase** (web/driver). Busy/move/start sentences and shared code table. D139/D41; bilingual twin cases.
+- [ ] **FLAKE1 — diagnostic waits** (driver/modules tests). Instrument repeating failures; three loaded serial greens, named slow step. MOD8/PROC1/FIX-LOG.
+- [ ] **WEBPORT1 — independent web hosts** (web). Allocate per-run port and pass base URL. REHEARSEPORT1; simultaneous-host test.
+- [ ] **DEPLOYCOUNT1 — rehearsal-owned hosts** (tools). Count processes under this run's scratch only. Outside-process stand-in test.
+- [ ] **TEST1 — capture Windows Node abort** (web/tools). Preserve reporter/exit at next 0xC0000409. FIX-LOG; no unsupported timeout tuning.
+- [ ] **REH1 — captured canon-upgrade failure** (held). No tag until resolved or owner closes after clean runs. FIX-LOG/rehearsal transcripts.
+- [ ] **CANON9 — WinForms pack** (held until second repository). Preserve two-repository bar. Original candidate.
+- [ ] **TOOL5 — native adapters** (held until named tool). Measure each field. Toolchain §5/D23/D24/D57.
+- [ ] **SEM2 — persistent vectors** (held until noticeable embedding latency). Existing SQLite/migrations; re-embed on model change. No lexical-only need.
+- [ ] **PLUG7 — service plugin points** (held until requested). Reuse wire. D64.
+- [ ] **A file tree in the dock** (held until browsing requested). D76; existing preview/terminal remain.
+- [ ] **AFTER1 — multi-quest dependency** (held until real ask). Store dependencies and show unfinished predecessors. Future-directions §3/D65; planner/service tests.
+- [ ] **MSG1k — fork terminal conversation** (held until real use). Messages §4.3; list/fork protocol stub.
+- [ ] **PLUGHOOK2 — PR threads to work** (held until first manually carried request). Explicit review press carries person's words/new ask. Hooks §3.1.

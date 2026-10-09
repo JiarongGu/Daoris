@@ -70,7 +70,7 @@ export function ViewsMenu({
             type="button"
             aria-label={label}
             className={cn(
-              'flex h-6 w-6 shrink-0 items-center justify-center rounded-control text-ink-faint',
+              'flex h-7 w-7 shrink-0 items-center justify-center rounded-control text-ink-faint',
               'transition-colors duration-(--speed) hover:bg-raised hover:text-ink data-[state=open]:bg-raised data-[state=open]:text-ink',
               'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent',
             )}

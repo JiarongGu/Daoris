@@ -65,6 +65,13 @@ export const CJK_ENTRY: Entry = {
   body: '## 场景加载的顺序\n\n场景加载先读邻近区块，再读远处区块，玩家转动视角时不会看到空缺。',
 };
 
+/** A generated index row with the source span the service answers (ORIENT2i). */
+export const INDEX_ENTRY: Entry = {
+  ...ENTRY, id: 'engine:docs/index/routes.md#HELP_CONVERSATIONS', repository: 'engine', kind: 'Index',
+  title: 'HELP_CONVERSATIONS', path: 'docs/index/routes.md', firstLine: 7, lastLine: 7,
+  body: '| `HELP_CONVERSATIONS` | `DriverModule.Help.cs:506` | `bridge/help.ts:121` |',
+};
+
 const entryOf = (entry: Entry) => ({ id: entry.id, repository: entry.repository, kind: entry.kind, path: entry.path, title: entry.title });
 
 export const RESTATEMENT: Convergence = {

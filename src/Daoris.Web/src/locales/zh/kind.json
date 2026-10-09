@@ -4,5 +4,6 @@
   "kind.Skill": "技能",
   "kind.Decision": "决策",
   "kind.Fix": "修复",
-  "kind.TaskOutcome": "任务结果"
+  "kind.TaskOutcome": "任务结果",
+  "kind.Index": "索引"
 }

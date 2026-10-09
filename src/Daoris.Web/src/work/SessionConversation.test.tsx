@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -18,7 +18,7 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => {},
 }));
 
-import { SessionConversation } from './SessionConversation';
+import { BackToBottom, SessionConversation, type TailState } from './SessionConversation';
 
 const at = '2026-09-28T00:00:00Z';
 const target = { seq: 1, at, kind: 'user', origin: 'target', text: 'Your target is the quest…' };
@@ -65,5 +65,75 @@ describe('SessionConversation', () => {
     await waitFor(() => expect(screen.getByText('npm test')).toBeInTheDocument());
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HISTORY', { payload: { id: 's1', before: 300 } });
     expect(screen.getByText('npm test').closest('[data-block]')!.className).toContain('outline-accent');
+  });
+});
+
+/**
+ * ASKHIST1c: *Back to bottom* floated over the last message's words (`sticky` inside the transcript). A host that names where
+ * it goes is told whether the reader is at the tail and how to go there, and draws the press in a strip of its own outside
+ * the transcript, which takes its own room and covers nothing.
+ */
+describe('the way back to the tail', () => {
+  const LIVE = [said(1, 'm1', 'Reading the loader.'), said(2, 'm2', 'Running the gates now.')];
+
+  function draw(onTail?: (tail: TailState) => void) {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_HISTORY') return { session: 's1', events: LIVE, earlier: false, latest: 2 };
+      if (type === 'HARNESSES') return { harnesses: [] };
+      return {};
+    });
+    const scroller = createRef<HTMLDivElement>();
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <Tooltip.Provider>
+          <div ref={scroller} data-testid="transcript">
+            <SessionConversation session="s1" live scroller={scroller} onTail={onTail} />
+          </div>
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+    return scroller;
+  }
+
+  /** The reader scrolls up, as the page measures it: far from the bottom of a long transcript. */
+  function scrollUp(element: HTMLElement) {
+    Object.defineProperty(element, 'scrollHeight', { value: 2000, configurable: true });
+    Object.defineProperty(element, 'clientHeight', { value: 400, configurable: true });
+    element.scrollTop = 200;
+    fireEvent.scroll(element);
+  }
+
+  it('tells its host the reader left the tail, and draws nothing over the words itself', async () => {
+    const onTail = vi.fn();
+    const scroller = draw(onTail);
+    await screen.findByText('Running the gates now.');
+
+    act(() => scrollUp(scroller.current!));
+    await waitFor(() => expect(onTail).toHaveBeenLastCalledWith(expect.objectContaining({ atTail: false })));
+    expect(within(screen.getByTestId('transcript')).queryByRole('button', { name: 'Back to bottom' })).toBeNull();
+
+    // The host's press goes back to the tail, and the reader is at it again.
+    act(() => (onTail.mock.lastCall![0] as TailState).toTail());
+    await waitFor(() => expect(onTail).toHaveBeenLastCalledWith(expect.objectContaining({ atTail: true })));
+    expect(scroller.current!.scrollTop).toBe(2000);
+  });
+
+  it('draws its own press where no host takes it, a 28 px target', async () => {
+    const scroller = draw();
+    await screen.findByText('Running the gates now.');
+    act(() => scrollUp(scroller.current!));
+
+    const press = await screen.findByRole('button', { name: 'Back to bottom' });
+    expect(press).toHaveClass('h-7');
+  });
+
+  it('draws the host’s strip as a 28 px press that takes its own room', () => {
+    const toTail = vi.fn();
+    render(<BackToBottom onPress={toTail} />);
+    const press = screen.getByRole('button', { name: 'Back to bottom' });
+    expect(press).toHaveClass('h-7');
+    expect(press.className).not.toMatch(/sticky|absolute|fixed/);
+    fireEvent.click(press);
+    expect(toTail).toHaveBeenCalledOnce();
   });
 });

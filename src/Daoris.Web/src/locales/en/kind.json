@@ -4,5 +4,6 @@
   "kind.Skill": "skill",
   "kind.Decision": "decision",
   "kind.Fix": "fix",
-  "kind.TaskOutcome": "task outcome"
+  "kind.TaskOutcome": "task outcome",
+  "kind.Index": "index"
 }

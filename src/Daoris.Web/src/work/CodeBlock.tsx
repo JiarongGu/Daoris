@@ -1,6 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import hljs from 'highlight.js/lib/common';
+import { cn } from '../lib/cn';
+import { useWidth } from '../map/useWidth';
 import { Icon } from '../ui';
 import './code.css';
 
@@ -24,6 +26,19 @@ export function highlighted(code: string, language?: string | null): string {
 }
 
 /**
+ * Below this width of its own pane a block's long lines wrap until the person says otherwise (ASKHIST1c): the container
+ * query's number, written whole in each class that reads it. 48rem holds a hundred characters of the code face, so a
+ * conversation in Ask Daoris's dock (300 px to about 700) wraps, and one in Sessions' centre at a wide window scrolls as
+ * before; Sessions' centre narrowed by an open side bar wraps by the same rule.
+ */
+export const WRAP_BELOW = '48rem';
+const WRAP_BELOW_REM = 48;
+
+/** The page's rem in pixels, which a container query's `rem` reads. */
+const remPx = () =>
+  (typeof document === 'undefined' ? 16 : parseFloat(getComputedStyle(document.documentElement).fontSize)) || 16;
+
+/**
  * One code block in a conversation (D76, CONV2): its language named, highlighted in the paper's own
  * inks (`code.css`), and a copy button — the reference console's shape.
  *
@@ -32,12 +47,24 @@ export function highlighted(code: string, language?: string | null): string {
  * number the two cool status hues, a comment the faint ink. So it follows the chosen theme with no
  * second palette to keep in step.
  *
- * A molecule: props in, and the one piece of state it owns is whether it was just copied.
+ * **Its long lines wrap where its pane is narrow** (ASKHIST1c): in Ask Daoris's dock a line of a hundred characters scrolled
+ * sideways, cut off at the edge. *Wrap* beside *Copy* says which it is and switches it; until pressed, the block's own width
+ * decides (`WRAP_BELOW`), by a container query on the block before it is measured and by its measure after, so the press
+ * and the lines agree. Never the window's width: the dock is narrow on a wide window. A table is not code and keeps its own
+ * scrolling box (`Markdown`). Copy takes the original text, whatever is shown.
+ *
+ * A molecule: props in; its state is whether it was just copied and whether the person chose to wrap.
  */
 export function CodeBlock({ code, language }: { code: string; language?: string | null }) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
+  // The person's choice, or null to leave it to the pane.
+  const [chosen, setChosen] = useState<boolean | null>(null);
+  const figure = useRef<HTMLElement>(null);
+  const width = useWidth(figure);
   const html = useMemo(() => highlighted(code, language), [code, language]);
+  const narrow = width === undefined ? undefined : width < WRAP_BELOW_REM * remPx();
+  const wrapped = chosen ?? narrow;
 
   const copy = async () => {
     try {
@@ -49,20 +76,36 @@ export function CodeBlock({ code, language }: { code: string; language?: string 
     }
   };
 
+  const control = 'inline-flex min-h-7 cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-meta text-ink-faint hover:text-ink';
   return (
-    <figure className="my-2.5 overflow-hidden rounded-control border border-line bg-raised">
-      <figcaption className="flex items-center justify-between gap-2 border-b border-line px-3 py-1 font-mono text-meta text-ink-faint">
-        <span>{language || t('work.code.plain')}</span>
-        <button
-          type="button"
-          onClick={() => void copy()}
-          className="inline-flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-meta text-ink-faint hover:text-ink"
-        >
-          <Icon name={copied ? 'check' : 'copy'} size={12} />
-          {copied ? t('work.code.copied') : t('work.code.copy')}
-        </button>
+    <figure ref={figure} className="@container/code my-2.5 overflow-hidden rounded-control border border-line bg-raised">
+      <figcaption className="flex items-center justify-between gap-2 border-b border-line px-3 font-mono text-meta text-ink-faint">
+        <span className="min-w-0 truncate">{language || t('work.code.plain')}</span>
+        <span className="flex shrink-0 items-center gap-3">
+          <button
+            type="button"
+            aria-pressed={wrapped ?? false}
+            onClick={() => setChosen(!(wrapped ?? false))}
+            className={cn(control, wrapped && 'text-ink-soft')}
+          >
+            <Icon name="wrap" size={12} />
+            {t('work.code.wrap')}
+          </button>
+          <button type="button" onClick={() => void copy()} className={control}>
+            <Icon name={copied ? 'check' : 'copy'} size={12} />
+            {copied ? t('work.code.copied') : t('work.code.copy')}
+          </button>
+        </span>
       </figcaption>
-      <pre className="m-0 overflow-x-auto px-3 py-2.5 font-mono text-small leading-relaxed">
+      <pre
+        className={cn(
+          'm-0 px-3 py-2.5 font-mono text-small leading-relaxed',
+          wrapped === undefined
+            // Not measured yet: the block's own width decides, written whole for the stylesheet to find (`WRAP_BELOW`).
+            ? 'overflow-x-auto @max-[48rem]/code:whitespace-pre-wrap @max-[48rem]/code:wrap-anywhere'
+            : wrapped ? 'whitespace-pre-wrap wrap-anywhere' : 'overflow-x-auto',
+        )}
+      >
         {/* The highlighter's own escaped output, or the escaped text: never the agent's markup. */}
         <code className="hljs" dangerouslySetInnerHTML={{ __html: html }} />
       </pre>

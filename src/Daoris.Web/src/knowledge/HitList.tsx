@@ -2,7 +2,7 @@ import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Hit } from '../api';
 import { mark } from '../highlight';
-import { Button, CheckField, EmptyState, Icon, Inline, SkeletonRows } from '../ui';
+import { Button, CheckField, EmptyState, Icon, Inline, PathText, SkeletonRows } from '../ui';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import { contextOffer } from '../menus/press';
@@ -158,6 +158,11 @@ export function HitList({
                   <span title={hit.path} className="block truncate font-mono text-meta text-ink-faint">
                     {hit.repository} · {t(`kind.${hit.kind}`)}
                   </span>
+                  {hit.firstLine && (
+                    <span className="block min-w-0 font-mono text-meta text-ink-soft">
+                      <PathText path={`${hit.path}:${hit.excerptLine ?? hit.firstLine}`} />
+                    </span>
+                  )}
                   {/* The matched terms, MARKED: the service centres the excerpt on the first match, since a result
                       that cannot show its reasoning gets treated as an oracle. Plain text around each mark, never a
                       span, whose edge dropped a space from the row's accessible name (RAIL1). */}

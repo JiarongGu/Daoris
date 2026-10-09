@@ -297,8 +297,8 @@ A canon file installs into repositories you have never seen, so it must be **pro
 product names, no build commands, no directory layouts specific to one repository. State the principle
 and the reason; leave the mechanism to the adopting repository's own local documents.
 
-Every canon file carries frontmatter — `name` (matching the filename), `applies_when`, `enforces` — which
-generates its row in the index. Tests enforce all of it. See `.claude/knowledge/canon-authoring.md`.
+Canon frontmatter — `name` (matching the filename), `applies_when`, `enforces` — generates its index
+row and is tested. See `.claude/knowledge/canon-authoring.md`.
 
 <!-- daoris:import — generated; edit the canon, not this -->
 @AGENTS.md

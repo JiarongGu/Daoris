@@ -1,6 +1,14 @@
+import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { chinese } from '../storyLanguage';
+import { Button } from '../ui';
+import { Composer } from '../work/Composer';
+import { DOCK } from '../work/layout';
+import { Markdown } from '../work/Markdown';
+import { BackToBottom } from '../work/SessionConversation';
 import { AskHistory } from './AskHistory';
-import { AskPanel } from './AskPanel';
+import { type AskConversationSlot, AskPanel } from './AskPanel';
+import type { HelpConversationRow } from './history';
 import { ProposalCard } from './ProposalCard';
 import { starters } from './starters';
 
@@ -200,54 +208,190 @@ export const Ended: Story = {
   args: { ...Talking.args, conversation: { ...Talking.args!.conversation!, ended: true } },
 };
 
-/** ASKHIST1: the history open in the conversation's place, its door pressed, and no box while it is. */
-export const History: Story = {
-  args: {
-    ...Talking.args,
-    conversation: {
-      ...Talking.args!.conversation!,
-      historyOpen: true,
-      onHistory: () => {},
-      history: (
-        <AskHistory
-          rows={[
-            {
-              session: 'h1a2b3c4', title: 'Landing on feature branches', name: 'Landing on feature branches',
-              opening: 'how do I make engine land on a feature branch?', about: 'Repositories → engine → Setup → Line and landing.',
-              created: new Date(Date.now() - 86_400_000).toISOString(), last: new Date(Date.now() - 3_600_000).toISOString(),
-              pinned: new Date().toISOString(), live: false, resumable: true, from: null, handed: null, found: null,
-            },
-            {
-              session: 'h2b3c4d5', title: 'why is engine held?', name: null, opening: 'why is engine held?',
-              about: 'It is held by your press on Repositories → engine.', created: new Date(Date.now() - 600_000).toISOString(),
-              last: new Date(Date.now() - 60_000).toISOString(), pinned: null, live: true, resumable: true, from: null, handed: null,
-              found: null,
-            },
-          ]}
-          search=""
-          onSearch={() => {}}
-          onOpen={() => {}}
-          onRename={() => {}}
-          onPin={() => {}}
-          onStartFrom={() => {}}
-          onDelete={() => {}}
-        />
-      ),
-    },
+// ASKHIST1c: the open conversation as the dock holds it, at its 300 px floor and at the 430 px the owner's window gave it,
+// side by side in a panel's height; and the whole frame at 680 px, where the dock is the frame.
+
+const PASTED = 'to complete this https://example.atlassian.net/browse/TK-2205?focusedCommentId=1234567&page=com.example.plugin.tabpanels%3Acomments so the sprint closes';
+
+const ANSWER = [
+  'The accent is set in both themes. Run this from the repository, then reload the window:',
+  '',
+  '```bash',
+  'curl -sS "https://example.atlassian.net/rest/api/2/issue/TK-2205?fields=summary,status,assignee,comment&expand=renderedFields" | jq ".fields.summary"',
+  'daoris-driver help rename h1a2b3c4 "Landing on feature branches, and what the line keeps when a squash merge lands"',
+  '```',
+  '',
+  '| key | what it holds |',
+  '| --- | --- |',
+  '| `--accent` | **#d208d4**, the interactive identity in both themes, never a status |',
+].join('\n');
+
+/** A conversation as its record draws it: the person's words, then the agent's answer, its code and its table. */
+const record = (question: string, answer = ANSWER) => (
+  <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
+    <p className="m-0 justify-self-end rounded-control bg-raised px-3 py-2 text-body text-ink wrap-anywhere">{question}</p>
+    <Markdown text={answer} />
+  </div>
+);
+
+const box = (over: Partial<Parameters<typeof Composer>[0]> = {}) => (
+  <Composer live placeholder="ask about Daoris on this machine. Enter sends, Shift+Enter makes a newline." onSend={() => {}}
+    onFinish={() => {}} onStop={() => {}} {...over} />
+);
+
+const said = (words: string) => <p className="m-0 text-small text-ink-soft wrap-anywhere">{words}</p>;
+
+/** The panel in the dock, at its floor and at 430 px, each as tall as a panel. */
+const inTheDock = (Story: () => ReactNode) => (
+  <div className="flex flex-wrap items-start gap-6 bg-page">
+    {[DOCK.floor, 430].map((width) => (
+      <div key={width} style={{ width }} className="flex h-[40rem] flex-col border-x border-line bg-page"><Story /></div>
+    ))}
+  </div>
+);
+
+const conversation = (over: Partial<AskConversationSlot> = {}): AskConversationSlot => ({
+  body: record('how do I set the accent, and the ticket’s summary?'), composer: box(), ended: false,
+  title: 'how do I set the accent, and the ticket’s summary?', onNew: () => {}, onHistory: () => {}, history: null, ...over,
+});
+
+const docked = { args: { helper: 'claude-code-acp', framed: false }, decorators: [inTheDock] } satisfies Story;
+
+/** A conversation running: its head, its words, a long fenced block wrapped at the pane, a table in its own scroll. */
+export const Open: Story = { ...docked, args: { ...docked.args, conversation: conversation() } };
+
+/** Its long title, a pasted URL, read whole in the head. */
+export const OpenPastedTitle: Story = {
+  ...docked, args: { ...docked.args, conversation: conversation({ title: PASTED, body: record(PASTED) }) },
+};
+
+/** The long fenced block unwrapped by its press, scrolling in its own box. */
+export const OpenUnwrapped: Story = {
+  ...Open,
+  play: async ({ canvasElement }) => {
+    canvasElement.querySelectorAll<HTMLButtonElement>('figcaption button[aria-pressed]').forEach((wrap) => wrap.click());
   },
 };
 
-/** ASKHIST1: an earlier conversation chosen from the history, which goes on in itself with the next words. */
+/** The reader scrolled up: the way back to the tail in its own strip, above the box, covering nothing. */
+export const OpenAwayFromTail: Story = {
+  ...docked, args: { ...docked.args, conversation: conversation({ tail: <BackToBottom onPress={() => {}} /> }) },
+};
+
+/** One the person chose that ended and goes on in itself: what the next words do, right above the box. */
 export const GoesOn: Story = {
+  ...docked,
   args: {
-    ...Talking.args,
+    ...docked.args,
+    conversation: conversation({
+      ended: true, escapeToList: true, note: said('This conversation has ended. Write to go on in it: it remembers what was said.'),
+      composer: box({ placeholder: 'write to go on in this conversation. Enter sends, Shift+Enter makes a newline.' }),
+    }),
+  },
+};
+
+/** One that ended and cannot go on: no box until the person chooses a new conversation from it, or a blank one. */
+const readOnly = (words: { ended: string; from: string; blank: string }) => conversation({
+  ended: true, escapeToList: true, composer: null,
+  note: (
+    <>
+      {said(words.ended)}
+      <div className="flex flex-wrap gap-2">
+        <Button variant="primary">{words.from}</Button>
+        <Button>{words.blank}</Button>
+      </div>
+    </>
+  ),
+});
+
+export const ReadOnly: Story = {
+  ...docked,
+  args: {
+    ...docked.args,
+    conversation: readOnly({
+      ended: 'This conversation has ended, and it cannot go on in itself. Start a new conversation from its words, or a blank one.',
+      from: 'New conversation from it', blank: 'New conversation',
+    }),
+  },
+};
+
+export const ReadOnlyChinese: Story = {
+  ...docked,
+  args: {
+    ...docked.args,
     conversation: {
-      ...Talking.args!.conversation!,
-      ended: true,
-      onHistory: () => {},
-      note: (
-        <p className="m-0 mt-3 text-small text-ink-faint">This conversation has ended. Write to go on in it: it remembers what was said.</p>
-      ),
+      ...readOnly({
+        ended: '这段对话已结束，无法在其中继续。可以由它的内容开始新对话，或开始一个空白的新对话。', from: '由此开始新对话', blank: '新对话',
+      }),
+      title: '怎样设置强调色，以及工单的摘要？', body: record('怎样设置强调色，以及工单的摘要？'),
     },
   },
+  decorators: [inTheDock, chinese],
+};
+
+/** Whether it can go on is not known yet: said, and no box until it is. */
+export const Checking: Story = {
+  ...docked,
+  args: {
+    ...docked.args,
+    conversation: conversation({
+      ended: true, composer: null,
+      note: <p role="status" className="m-0 text-small text-ink-soft">Checking whether this conversation can go on…</p>,
+    }),
+  },
+};
+
+/** A new conversation with nothing said yet: its head says so, and offers no new one over it. */
+export const Blank: Story = {
+  ...docked, args: { ...docked.args, conversation: conversation({ body: null, title: null, onNew: undefined }) },
+};
+
+const ROWS: HelpConversationRow[] = [
+  {
+    session: 'h1a2b3c4', title: 'Landing on feature branches', name: 'Landing on feature branches',
+    opening: 'how do I make engine land on a feature branch?', about: 'Repositories → engine → Setup → **Line and landing**.',
+    created: new Date(Date.now() - 86_400_000 * 9).toISOString(), last: new Date(Date.now() - 86_400_000 * 9).toISOString(),
+    pinned: new Date().toISOString(), live: false, resumable: true, from: null, handed: null, found: null,
+  },
+  {
+    session: 'h2b3c4d5', title: 'how do I set the accent, and the ticket’s summary?', name: null,
+    opening: 'how do I set the accent, and the ticket’s summary?', about: 'The accent is set in both themes. Run `curl` from the repository.',
+    created: new Date(Date.now() - 600_000).toISOString(), last: new Date(Date.now() - 60_000).toISOString(), pinned: null, live: true,
+    resumable: true, from: null, handed: null, found: null,
+  },
+  {
+    session: 'u1v2w3x4', title: PASTED, name: null, opening: PASTED, about: 'Opened the ticket and read its whole description.',
+    created: new Date(Date.now() - 86_400_000).toISOString(), last: new Date(Date.now() - 86_400_000).toISOString(), pinned: null,
+    live: false, resumable: false, from: null, handed: null, found: null,
+  },
+];
+
+const history = (
+  <AskHistory
+    rows={ROWS} search="" shown="h2b3c4d5" onSearch={() => {}} onNew={() => {}} onClose={() => {}} onOpen={() => {}}
+    onRename={() => {}} onPin={() => {}} onStartFrom={() => {}} onDelete={() => {}}
+  />
+);
+
+/** ASKHIST1: the history open in the conversation's place, with its own head, and no box while it is. */
+export const History: Story = {
+  ...docked, args: { ...docked.args, conversation: conversation({ historyOpen: true, history }) },
+};
+
+/** At 680 px the dock is the whole frame (below 768): the same heads, laid out by the pane's own width. */
+const atTheFrame = (Story: () => ReactNode) => <div className="flex h-[40rem] bg-page" style={{ width: 680 }}><Story /></div>;
+
+export const Frame680: Story = {
+  args: { helper: 'claude-code-acp', width: 680, conversation: conversation({ escapeToList: true }) },
+  decorators: [atTheFrame],
+};
+
+export const Frame680History: Story = {
+  args: { helper: 'claude-code-acp', width: 680, conversation: conversation({ historyOpen: true, history }) },
+  decorators: [atTheFrame],
+};
+
+export const Frame680ReadOnlyChinese: Story = {
+  args: { ...ReadOnlyChinese.args, framed: true, width: 680 },
+  decorators: [atTheFrame, chinese],
 };

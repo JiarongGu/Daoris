@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import '../i18n';
+import i18n from '../i18n';
 import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
 import type { Entry } from '../api';
@@ -20,6 +20,19 @@ const ENTRY = {
 const show = (entry: Entry = ENTRY) => render(<Tooltip.Provider><EntryPage entry={entry} /></Tooltip.Provider>);
 
 describe("an entry's page", () => {
+  it.each([['en', 'index'], ['zh', '索引']])('names an index entry and its source lines in %s', async (language, label) => {
+    await i18n.changeLanguage(language);
+    try {
+      const { unmount } = show({ ...ENTRY, kind: 'Index', path: 'docs/index/routes.md', firstLine: 7, lastLine: 9 });
+      const head = screen.getByRole('heading', { level: 1 }).closest('header')!;
+      expect(within(head).getByText(label)).toBeInTheDocument();
+      expect(within(head).getByText('game · docs/index/routes.md:7-9')).toBeInTheDocument();
+      expect(within(head).queryByText('kind.Index')).toBeNull();
+      unmount();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
   /**
    * Doctrine is read as it is written: the body is the source, unrendered, so the page gives no
    * second opinion about what the file says.

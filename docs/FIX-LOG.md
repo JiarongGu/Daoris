@@ -5,6 +5,34 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-10 — review fixes
+
+### Ask Daoris: a rename's terminal hint interpolated shell syntax
+
+- **Symptom:** names containing quotes or operators produced an unsafe command in the rename form.
+- **Root cause:** the hint surrounded arbitrary names with double quotes instead of using the shared formatter.
+- **Fix:** `shellWord` spells portable names and substitutes `<name>` for unsafe shell words; the saved name remains unchanged.
+- **Verify:** failing-first quote and ampersand cases in both languages, plus a spaced-name case; final receipts in the integration review.
+- **Commit:** pending integration.
+
+### Knowledge: index kinds and source lines disappeared at the page (ORIENT2i)
+
+- **Symptom:** index entries showed `kind.Index`; source ranges supplied by the service were absent.
+- **Root cause:** the page's catalogues omitted the new kind and its API types and components omitted
+  the optional line fields. The HTTP contract already supplied them.
+- **Fix:** bilingual kind labels, visible excerpt lines in hits and source ranges in entry headers.
+- **Verify:** failing-first bilingual entry and hit cases; 18 knowledge tests and production typecheck pass.
+- **Commit:** pending integration.
+
+### Ask Daoris: New conversation lost the visible draft before the host answered
+
+- **Symptom:** a delayed or refused ending switched to an empty composer immediately.
+- **Root cause:** `onNew` cleared the selected conversation independently of END_CHAT's outcome.
+- **Fix:** clear only after `ended: true`; retain the draft on error or `ended: false`, show a pending
+  status and block competing presses. Composer refusals are announced as alerts.
+- **Verify:** failing-first deferred/refused ending and false-answer cases; final receipts in the integration review.
+- **Commit:** pending integration.
+
 ## 2026-10-09 — Enter and Escape acted while an input method was composing (IME1)
 
 - **Symptom:** writing 中文 through an input method, the Enter that accepts a candidate sent the half-composed message,
@@ -30,6 +58,34 @@ repository.
   All ten failed with the helper made to answer no. `composingKeys.test.ts` reads every shipped source with the
   TypeScript parser and fails on a check of Enter or Escape whose own function does not ask first; it named 22 on the
   tree before. Not looked at on the window: a real input method in the shell, nor a form's submit under one.
+## 2026-10-09 — Ask Daoris lost a draft through its history, and typed words could start a fresh conversation unseen (ASKHIST1c)
+
+- **Symptom:** the owner on the install (中文, dark, 1546×900 with a 430 px dock, and 680 px): *"has some display and UI/UX
+  issues"*. A second agent's read-only review of the code found the defects under the looks. Files attached in the box
+  went when the history opened; one text draft followed the person from conversation A to B and into a new one; words typed
+  under an old conversation that could not go on started a fresh one without its words, the offer of one from its words
+  sitting below the transcript, perhaps out of view; while the history's rows loaded, every ended conversation read as one
+  that could not go on; a search typed blanked the rows until it answered; a list that could not be read said *No
+  conversations yet*; *Back to bottom* floated over the last message's words; and an answer's long fenced lines scrolled
+  sideways in the dock, cut off.
+- **Root cause:** the panel held one draft string and left the files to the composer, which unmounts with the history and
+  is keyed per conversation; eligibility was `shownRow?.resumable === true`, so an unknown row was a *no*, and the composer
+  took words under any shown conversation; the history's rows were `found.data ?? []` while a search's query had no answer
+  and an error fell through the same `[]`; the way to the tail was `sticky` inside the transcript it covers; and a code
+  block's `pre` only ever scrolled, whatever its pane.
+- **Fix:** drafts kept per conversation and apart for a new one, words and files, the files through the composer's new
+  `carried`/`onCarry` beside `draft`/`onDraft`; the eligibility three-valued (being checked, goes on, cannot), and no box
+  under one the person chose until it goes on, with *New conversation from it* first and a blank one beside it in a strip
+  above where the box would be; the last list held, dimmed, while a newer one answers, and loading, failure with *Try
+  again*, empty with *Start a conversation* and no match with *Clear search* each said; `SessionConversation` tells a host
+  that takes `onTail` where the reader is, and Ask Daoris draws `BackToBottom` in its own strip; a code block wraps below
+  48rem of its own width (a container query on the block, then its measure) until *Wrap* says otherwise. The look the
+  owner saw (the heads, the rows, the groups, the ⋯) is D158's ASKHIST1c note.
+- **Verify:** `AskDaoris.test.tsx` (drafts per conversation with a file, read-only and being checked, the keys from the
+  list to a conversation and back, a failed list and a search on its way), `AskHistory.test.tsx`, `AskPanel.test.tsx`,
+  `Composer.test.tsx` (the held files), `SessionConversation.test.tsx` and `CodeBlock.test.tsx`, each failing on the old
+  code first, in both catalogues. **Not covered:** the window; and Sessions' centre, its detached window and the monitor's
+  tile still draw *Back to bottom* inside the transcript, since no host there takes `onTail` yet.
 
 ## 2026-10-09 — a `driver.json` that does not read ended the headless driver on a stack trace (CONFIGREAD1)
 
