@@ -5849,3 +5849,5 @@ did, with the old heuristic as the last resort.
 **Verification.** Launched with no environment at all: right port, right family. The family rehearsal
 re-ran after the change, 22/22. No store pollution had occurred — no request ever reached the
 mis-rooted instance.
+
+2026-10-09 IME1 (in progress): Enter and Escape act while an input method is composing.
