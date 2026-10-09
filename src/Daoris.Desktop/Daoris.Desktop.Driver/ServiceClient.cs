@@ -472,10 +472,14 @@ public sealed partial class ServiceClient : IDisposable
     /// <c>on</c> or an environment's name; null sends none, and each repository's rule decides.
     /// </param>
     /// <param name="reviewWords">Their words with the choice, sent only with one.</param>
+    /// <param name="workflow">
+    /// The person's kind and workflow for its work (WORKFLOW1e; the workflow design §4.3), as the composer sends them; null sends
+    /// none, and each repository's choice decides.
+    /// </param>
     public Task<AskAnswer> AskAsync(
         string workspace, string sentence, IReadOnlyList<string> links,
         IReadOnlyList<(string Name, byte[] Content)> files, string? to, CancellationToken ct = default,
-        string? review = null, string? reviewWords = null) =>
+        string? review = null, string? reviewWords = null, AskWorkflowComposed? workflow = null) =>
         PostAskAsync("/api/asks", writer =>
         {
             writer.WriteString("workspace", workspace);
@@ -498,6 +502,14 @@ public sealed partial class ServiceClient : IDisposable
             {
                 writer.WriteString("review", review);
                 if (!string.IsNullOrWhiteSpace(reviewWords)) writer.WriteString("reviewWords", reviewWords.Trim());
+            }
+
+            // Written only when chosen (WORKFLOW1e), so an ask that chooses none reads as it always did.
+            if (workflow is { } chosen && (chosen.Kind ?? chosen.Workflow) is not null)
+            {
+                if (chosen.Kind is { } kind) writer.WriteString("kind", kind);
+                if (chosen.Workflow is { } named) writer.WriteString("workflow", named);
+                if (!string.IsNullOrWhiteSpace(chosen.Words)) writer.WriteString("workflowWords", chosen.Words.Trim());
             }
         }, ct);
 
@@ -682,6 +694,8 @@ public sealed partial class ServiceClient : IDisposable
             // The person's review choices and its intake's proposals (REVIEWENV1b). Absent is none, and a host before them.
             ReviewChoices = ReadReviewChoices(ask),
             ReviewProposals = ReadReviewProposals(ask),
+            // The person's kind and workflow for its work (WORKFLOW1e). Absent is none, and a host before them.
+            WorkflowChoices = ReadWorkflowChoices(ask),
         };
     }
 

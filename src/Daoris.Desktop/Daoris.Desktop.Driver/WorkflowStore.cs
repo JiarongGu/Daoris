@@ -23,8 +23,9 @@ public sealed record WorkflowFileFound(string Id, JsonNode? File, NamedWorkflowR
 /// </summary>
 /// <remarks>
 /// A TWIN with the CLI's <c>planAddVersion</c> (<c>namedworkflows.ts</c>) and its door (<c>workflowdoor.ts</c>): the plan is held
-/// to this suite's tests' <c>fixtures/workflow-named.json</c> <c>store</c>, cell for cell. Nothing reads a named workflow at a
-/// gate yet (WORKFLOW1e chooses, WORKFLOW1f gates); the screen's editor (WORKFLOW1g) and Ask Daoris (WORKFLOW1h) write through here.
+/// to this suite's tests' <c>fixtures/workflow-named.json</c> <c>store</c>, cell for cell. A run binds a named workflow's newest
+/// version at its first start (WORKFLOW1e, <see cref="WorkflowRunBindings"/>), and nothing at a gate reads it yet (WORKFLOW1f); the
+/// screen's editor (WORKFLOW1g) and Ask Daoris (WORKFLOW1h) write through here.
 /// </remarks>
 public static class WorkflowStore
 {
@@ -131,13 +132,14 @@ public static class WorkflowStore
     /// <summary>
     /// A version added and written, atomically: the plan, then the file whole. Refused, naming why, where the plan writes nothing.
     /// </summary>
+    /// <param name="kept">The versions a kept run names; absent, those this home's runs name (WORKFLOW1e, <see cref="WorkflowRunBindings.KeptVersions(string, string)"/>).</param>
     /// <returns>The version's number.</returns>
     public static int Add(string home, WorkflowVersionAdded add, IReadOnlyCollection<int>? kept = null)
     {
         if (WorkflowNamed.IdProblem(add.Id) is { } idProblem) throw new DriverException(idProblem);
         var found = Load(home, add.Id);
         if (found is { File: null }) throw new DriverException($"nothing was written: the workflow's file cannot be read — {found.Read.Problem}");
-        var plan = PlanAdd(found?.File, add, kept ?? []);
+        var plan = PlanAdd(found?.File, add, kept ?? WorkflowRunBindings.KeptVersions(home, add.Id));
         if (plan.Problem is not null) throw new DriverException(plan.Problem);
         Directory.CreateDirectory(FolderOf(home));
         AtomicFile.WriteText(PathOf(home, add.Id), Text(plan.Result!));

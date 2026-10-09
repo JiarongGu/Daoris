@@ -12687,3 +12687,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **WORKFLOW1c4 — Ask Daoris names the workflow** (driver Help; after WORKFLOW1c). Ask Daoris's room (`Help/Room/HelpRoomWindow.cs` and its goldens) names neither the repository's *Workflow* tab nor the session's *Workflow* view, so it cannot send the person there. Contract: D157 §6, HELP rules on the room's table. Proof: `HelpRoomWindowTests` and its goldens.
 
 **Outcome** 2026-10-09: Ask Daoris's room names Current's *Workflow* tab with `daoris driver workflow show`, and the run's view, its line on a quest's and an ask's head and What needs you's door with `daoris-driver workflow run`, both as reads it never proposes; WORKFLOW1d's verbs are spelled apart from `show`'s; six views move between the regions. Detail: D157's WORKFLOW1c4 note; commits 1cc3e84e, e771575b.
+
+
+## WORKFLOW1e — kinds and the choice (2026-10-09, D157)
+
+> - [ ] **WORKFLOW1e — kinds and the choice** (cli, driver, service; after d). `workflows` and `workspaceWorkflows` in `driver.json`, the workspace's kinds and paths; §4.1's table; the ask's kind and choice, the person's door (D156); the run bound at its first start with what chose it; `workflow use|kind`. Contract: §4.1–§4.3, §4.5. Proof: `WorkflowSelectionTests`, `driverconfig.test.ts`, the service's ask tests.
+
+**Outcome** 2026-10-09: the choice: `workflows` by repository and `workspaceWorkflows` with a workspace's kinds (label, paths) in `driver.json`, twinned on `fixtures/workflow-selection.json` and resolved in §4.1's order (task, repository-kind, repository, workspace-kind, workspace, Current); an ask's kind and workflow on the ask behind a person's door (`POST /api/asks/{id}/workflow`); each run bound once at its first start in `<home>/workflows/runs/` to the version that chose it, with what chose it, never swapped; `daoris driver workflow use|kind`, `show --kind`, `daoris-driver ask --kind|--set-workflow`; no gate reads a choice yet (WORKFLOW1f). Follow-ups: WORKFLOW1e2, WORKFLOW1e3. Detail: D157's WORKFLOW1e note, the twins row; commits c831763e…cb4febe9.

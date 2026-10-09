@@ -21,7 +21,7 @@ Each verb is a module of `src/Daoris.Cli/src/cli/`, its row in `COMMANDS` (`src/
 | `import` | management | `cli/import.ts:5` | `manage.ts:57` commandImport | [folder] register a folder's subdirectories in one go; safe to |
 | `remote` | management | `cli/remote.ts:5` | `remotes.ts:90` commandRemote | [verb] this machine's remotes, one per workspace: |
 | `agent` | management | `cli/agent.ts:6` | `toolchain.ts:1432` commandHarness | [verb] this machine's agents — Claude Code, Codex, dsh — and the |
-| `driver` | management | `cli/driver.ts:7` | `driverconfig.ts:534` commandDriver | [verb] what this machine drives ($DAORIS_HOME/driver.json): |
+| `driver` | management | `cli/driver.ts:7` | `driverconfig.ts:552` commandDriver | [verb] what this machine drives ($DAORIS_HOME/driver.json): |
 | `plugin` | management | `cli/plugin.ts:5` | `plugins.ts:1144` commandPlugin | [verb] this machine's plugins ($DAORIS_HOME/plugins/<id>/plugin.json): |
 | `browser` | management | `cli/browser.ts:5` | `browser.ts:316` commandBrowser | [verb] Daoris's browser: its favorites and its settings… |
 | `tool` | management | `cli/tool.ts:7` | `toolinstall.ts:429` commandTool | [verb] the programs Daoris runs beside its agents — Git, Node.js, |
@@ -36,7 +36,7 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `git` | `Program.cs:233` | `Daoris.Desktop.Driver.Host/GitConsole.cs:9` GitConsole | branches |
 | `workflow` | `Program.cs:240` | `Daoris.Desktop.Driver.Host/WorkflowConsole.cs:9` WorkflowConsole | run |
 | `chat` | `Program.cs:267` | `Daoris.Desktop.Driver.Host/ChatConsole.cs:28` ChatConsole | — |
-| `ask` | `Program.cs:274` | `Daoris.Desktop.Driver.Host/WorkConsole.cs:10` WorkConsole; `Daoris.Desktop.Driver.Host/HistoryConsole.cs:11` HistoryConsole; `Daoris.Desktop.Driver.Host/AskConsole.cs:32` AskConsole | — |
+| `ask` | `Program.cs:274` | `Daoris.Desktop.Driver.Host/WorkConsole.cs:10` WorkConsole; `Daoris.Desktop.Driver.Host/HistoryConsole.cs:11` HistoryConsole; `Daoris.Desktop.Driver.Host/AskConsole.cs:37` AskConsole | — |
 | `setup` | `Program.cs:296` | `Daoris.Desktop.Driver.Host/SetupConsole.cs:9` SetupConsole | — |
 | `register` | `Program.cs:303` | `Daoris.Desktop.Driver.Host/RegisterConsole.cs:8` RegisterConsole | — |
 | `opinion` | `Program.cs:310` | `Daoris.Desktop.Driver.Host/OpinionConsole.cs:8` OpinionConsole | ask `OpinionCommand.cs:68` · show `OpinionCommand.cs:61` · stop `OpinionCommand.cs:61` · anyway `OpinionCommand.cs:66` · myself `OpinionCommand.cs:66` |
@@ -51,7 +51,7 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `update` | `Program.cs:433` | `Daoris.Desktop.Driver/UpdateCommand.cs:19` UpdateCommand | — |
 | `logs` | `Program.cs:443` | `Daoris.Desktop.Driver.Host/LogsConsole.cs:18` LogsConsole | — |
 | `plugins` | `Program.cs:450` | `Daoris.Desktop.Driver/PluginsCommand.cs:25` PluginsCommand | install `Program.cs:426` · new `PluginsCommand.cs:47` · try `PluginsCommand.cs:47` · show `PluginsCommand.cs:49` · activity `PluginsCommand.cs:51` |
-| `drive` | `Program.cs:255` | `Daoris.Desktop.Driver/DriverCommand.cs:176` DriverCommand.Read | — |
+| `drive` | `Program.cs:255` | `Daoris.Desktop.Driver/DriverCommand.cs:181` DriverCommand.Read | — |
 
 ## `daoris-devkit`
 

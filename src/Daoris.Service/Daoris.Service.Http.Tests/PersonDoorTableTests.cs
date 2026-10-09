@@ -71,6 +71,7 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/quests/{id}/set-up-step", Person),
         ("POST", "/api/asks", Person),
         ("POST", "/api/asks/{id}/review", Person),
+        ("POST", "/api/asks/{id}/workflow", Person),
         ("POST", "/api/quests/{id}/accept", Person),
         ("POST", "/api/quests/{id}/done", Person),
         ("POST", "/api/asks/{id}/go-aheads/{number}", Person),
@@ -109,11 +110,11 @@ public sealed class PersonDoorTableTests
 
         // The design's counts (§3.2), with XAGENT1c's two reads and two driver's posts, the set-up door, which is the
         // driver's naming a session and the person's own with where to look, and the confirmation's two reads, its ask and
-        // the person's two answers (PERSONDOOR1b).
+        // the person's two answers (PERSONDOOR1b), and an ask's kind and workflow, the person's (WORKFLOW1e).
         Assert.Equal(22, Routes.Count(route => route.Class == Open));
         Assert.Equal(4, Routes.Count(route => route.Class == Agent));
         Assert.Equal(14, Routes.Count(route => route.Class == Driver));
-        Assert.Equal(21, Routes.Count(route => route.Class == Person));
+        Assert.Equal(22, Routes.Count(route => route.Class == Person));
         Assert.Equal(7, Routes.Count(route => route.Class == Shared));
     }
 

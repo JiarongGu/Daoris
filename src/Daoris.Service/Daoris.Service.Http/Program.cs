@@ -908,6 +908,10 @@ if (mode == ServiceMode.Local)
                 // The person's review choice from the composer (REVIEWENV1b), judged by the desk.
                 Review = body.Review,
                 ReviewWords = body.ReviewWords,
+                // The person's kind and workflow from the composer (WORKFLOW1e), judged by the desk.
+                Kind = body.Kind,
+                Workflow = body.Workflow,
+                WorkflowWords = body.WorkflowWords,
             },
             DateTimeOffset.UtcNow, ct);
         return AskAnswer(outcome, s, http);
@@ -918,6 +922,12 @@ if (mode == ServiceMode.Local)
     app.MapPost("/api/asks/{id}/review", async (
         ComposedService s, HttpContext http, string id, AskReviewRequest body, CancellationToken ct) =>
         AskAnswer(await s.Asks.ChooseReviewAsync(id, body.Choice, body.Words, DateTimeOffset.UtcNow, ct), s, http));
+
+    // The person sets the ask's kind and workflow (WORKFLOW1e, the workflow design §4.3), or clears them naming neither: the latest
+    // stands. A person's door (D156 §3.2): an agent proposes a kind, the intake's, and never sets one. Local like every ask route.
+    app.MapPost("/api/asks/{id}/workflow", async (
+        ComposedService s, HttpContext http, string id, AskWorkflowRequest body, CancellationToken ct) =>
+        AskAnswer(await s.Asks.ChooseWorkflowAsync(id, body.Kind, body.Workflow, body.Words, DateTimeOffset.UtcNow, ct), s, http));
 
     // One ask, whole — how the driver observes what its intake made of it (D65 §1b).
     app.MapGet("/api/asks/{id}", async (ComposedService s, HttpContext http, string id, CancellationToken ct) =>
@@ -2007,7 +2017,11 @@ static AskResponse ToAsk(Ask a, QuestFiles? files, bool machineLocal)
             : a.ReviewChoices.Select(c => new AskReviewChoiceResponse(c.Choice, c.At, c.Words)).ToList(),
         ReviewProposals: a.ReviewProposals.Count == 0
             ? null
-            : a.ReviewProposals.Select(p => new AskReviewProposalResponse(p.Choice, p.Reason, p.At, p.Session, p.Quest)).ToList());
+            : a.ReviewProposals.Select(p => new AskReviewProposalResponse(p.Choice, p.Reason, p.At, p.Session, p.Quest)).ToList(),
+        // The person's kind and workflow choices (WORKFLOW1e), absent where there is none.
+        WorkflowChoices: a.WorkflowChoices.Count == 0
+            ? null
+            : a.WorkflowChoices.Select(c => new AskWorkflowChoiceResponse(c.Kind, c.Workflow, c.At, c.Words)).ToList());
 }
 
 // A chain's steps as a door hands them to the exchange (D65 §4, REVIEWENV1b): a set-up step's environment rides with its words.

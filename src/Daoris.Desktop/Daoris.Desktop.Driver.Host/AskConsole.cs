@@ -12,6 +12,8 @@ namespace Daoris.Driver.Host;
 /// daoris-driver ask --go-ahead &lt;id&gt; &lt;n&gt; approve|refuse ["…"]
 /// daoris-driver ask … --review rule|on|&lt;environment&gt;|off [--review-words "…"]
 /// daoris-driver ask --set-review &lt;id&gt; on|&lt;environment&gt;|off ["…"]
+/// daoris-driver ask … --kind &lt;kind&gt; [--workflow &lt;id&gt;|current] [--workflow-words "…"]
+/// daoris-driver ask --set-workflow &lt;id&gt; [--kind &lt;kind&gt;] [--workflow &lt;id&gt;|current]|--clear ["…"]
 /// </code>
 /// <para><c>--delete</c> removes an ask made by mistake with every quest asked by it, or refuses whole
 /// when one of them must stay (D95) — the ask's record's <i>Delete</i> is the other door.</para>
@@ -21,6 +23,9 @@ namespace Daoris.Driver.Host;
 /// <para><c>--review</c> chooses whether a new ask's work is reviewed before it lands, and where, as the composer does, <c>rule</c>
 /// (its default) sending none; <c>--set-review</c> changes an ask's choice, or applies its intake's proposal, as its page's
 /// <i>Set</i> and <i>Apply</i> do (REVIEWENV1j). The judgement is the library's (<see cref="AskReviewCommand"/>).</para>
+/// <para><c>--kind</c> and <c>--workflow</c> say what kind of task a new ask is and which workflow its work follows, as the composer
+/// will; <c>--set-workflow</c> changes an ask's, or clears it with <c>--clear</c> (WORKFLOW1e). The person's door: the window confirms a
+/// keyless call. The judgement is the library's (<see cref="AskWorkflowCommand"/>).</para>
 /// <para>The service answers with the tier that answered — by declarations only, with no intake
 /// harness, which proposes and publishes nothing; or the receiver named with <c>--to</c>, published
 /// at once. The answer is printed verbatim: it is the contract, and a rewording here would be a second
@@ -35,6 +40,8 @@ internal static class AskConsole
     {
         string? workspace = null, to = null, publish = null, close = null, reason = null, delete = null, goAhead = null;
         string? review = null, reviewWords = null, setReview = null;
+        string? kind = null, workflow = null, workflowWords = null, setWorkflow = null;
+        var clearWorkflow = false;
         var files = new List<string>();
         var links = new List<string>();
         var words = new List<string>();
@@ -58,6 +65,12 @@ internal static class AskConsole
                 case "--review": review = Value(); break;
                 case "--review-words": reviewWords = Value(); break;
                 case "--set-review": setReview = Value(); break;
+                // WORKFLOW1e: the composer's kind and workflow, and the ask's.
+                case "--kind": kind = Value(); break;
+                case "--workflow": workflow = Value(); break;
+                case "--workflow-words": workflowWords = Value(); break;
+                case "--set-workflow": setWorkflow = Value(); break;
+                case "--clear": clearWorkflow = true; break;
                 default: words.Add(args[i]); break;
             }
         }
@@ -70,8 +83,34 @@ internal static class AskConsole
                 return Usage("--review goes with a new ask's words; --set-review <id> changes an ask's review choice");
             }
 
+            // A kind and a workflow go with a new ask's words or --set-workflow; --clear only with --set-workflow, since `ask --clear <id>`
+            // clears an ask's work from this machine.
+            if ((kind ?? workflow ?? workflowWords) is not null && (publish ?? close ?? delete ?? goAhead ?? setReview) is not null)
+            {
+                return Usage("--kind and --workflow go with a new ask's words; --set-workflow <id> changes an ask's");
+            }
+
+            if (clearWorkflow && setWorkflow is null)
+            {
+                return Usage("--clear goes with --set-workflow <id> here; `ask --clear <id>` clears an ask's work from this machine");
+            }
+
             using var service = ServiceClient.FromEnvironment();
             var reviews = new AskReviewWorld(service, () => DriverConfig.Load(DriverConfig.ResolvePath()));
+            var workflows = new AskWorkflowWorld(
+                service, () => DriverConfig.Load(DriverConfig.ResolvePath()), DriverConfig.HomeOf(DriverConfig.ResolvePath()));
+
+            if (setWorkflow is not null)
+            {
+                if (workflowWords is not null) return Usage("--set-workflow takes your words after it, not --workflow-words");
+                if (AskWorkflowCommand.Read(setWorkflow, kind, workflow, clearWorkflow, words, out var workflowProblem) is not { } set)
+                {
+                    return Usage(workflowProblem!);
+                }
+
+                // The ask page's twin (D50), once WORKFLOW1g gives the page its choice.
+                return await AskWorkflowCommand.RunAsync(set, workflows, Console.Out).ConfigureAwait(false);
+            }
 
             if (setReview is not null)
             {
@@ -120,6 +159,18 @@ internal static class AskConsole
                 return 1;
             }
 
+            // The composer's kind and workflow (WORKFLOW1e): a kind the workspace declares, a workflow saved here that reads.
+            if (AskWorkflowCommand.Compose(kind, workflow, workflowWords, out var workflowComposeProblem) is not { } chosenWorkflow)
+            {
+                return Usage(workflowComposeProblem!);
+            }
+
+            if (AskWorkflowCommand.Unchoosable(chosenWorkflow.Kind, chosenWorkflow.Workflow, workspace ?? "default", workflows) is { } unchoosable)
+            {
+                Console.WriteLine(unchoosable);
+                return 1;
+            }
+
             // Files are read HERE, on the machine that has them, and travel whole to the local host —
             // which keeps them under this machine's home (D65 §2).
             var read = new List<(string Name, byte[] Content)>();
@@ -131,7 +182,8 @@ internal static class AskConsole
             }
 
             return Report(await service.AskAsync(
-                workspace ?? "default", sentence, links, read, to, review: composed.Choice, reviewWords: composed.Words).ConfigureAwait(false));
+                workspace ?? "default", sentence, links, read, to, review: composed.Choice, reviewWords: composed.Words, workflow: chosenWorkflow)
+                .ConfigureAwait(false));
         }
         catch (DriverException error)
         {
@@ -163,6 +215,8 @@ internal static class AskConsole
         Console.Error.WriteLine("       daoris-driver ask --go-ahead <id> <n> approve|refuse [\"…\"]");
         Console.Error.WriteLine("       daoris-driver ask … --review rule|on|<environment>|off [--review-words \"…\"]");
         Console.Error.WriteLine("       daoris-driver ask --set-review <id> on|<environment>|off [\"…\"]");
+        Console.Error.WriteLine("       daoris-driver ask … --kind <kind> [--workflow <id>|current] [--workflow-words \"…\"]");
+        Console.Error.WriteLine("       daoris-driver ask --set-workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear [\"…\"]");
         return 2;
     }
 }

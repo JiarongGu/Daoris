@@ -100,15 +100,18 @@ internal sealed class StandInLedger : HttpMessageHandler
     /// An open quest to <paramref name="to"/>, the newest: the service answers oldest first. <paramref name="from"/> is its
     /// sender, <c>ask #id</c> for a quest an ask asked (GOAHEAD2).
     /// </summary>
-    public void Publish(string id, string to, string? title = null, string from = "game")
+    /// <param name="parent">The chain's step before it (D65 §4), whose run a step in the same repository shares (WORKFLOW1e).</param>
+    public void Publish(string id, string to, string? title = null, string from = "game", string? parent = null)
     {
         lock (_gate)
         {
-            _quests.Add(new JsonObject
+            var quest = new JsonObject
             {
                 ["id"] = id, ["from"] = from, ["to"] = to, ["title"] = title ?? $"The work of #{id}",
                 ["body"] = "Stand-in work.", ["status"] = "Open",
-            });
+            };
+            if (parent is not null) quest["parent"] = parent;
+            _quests.Add(quest);
         }
     }
 
@@ -140,6 +143,32 @@ internal sealed class StandInLedger : HttpMessageHandler
                 ["number"] = goAheads.Count + 1, ["kind"] = kind, ["on"] = on, ["act"] = act, ["state"] = "asked",
                 ["asked"] = new JsonArray(new JsonObject { ["session"] = session, ["at"] = _clock.ToString("O"), ["why"] = "The work needs it." }),
             });
+        }
+    }
+
+    /// <summary>
+    /// The person's kind and workflow on ask <paramref name="ask"/> (WORKFLOW1e), kept as its latest choice, as <c>/api/asks/{id}</c>
+    /// answers it: what a run of the ask's work binds by at its first start.
+    /// </summary>
+    public void WorkflowChosen(string ask, string? kind, string? workflow, string workspace = "default")
+    {
+        lock (_gate)
+        {
+            if (!_askedBy.TryGetValue(ask, out var held))
+            {
+                _askedBy[ask] = held = new JsonObject
+                {
+                    ["id"] = ask, ["workspace"] = workspace, ["sentence"] = $"The words of ask #{ask}.", ["state"] = "Published",
+                    ["tier"] = "named",
+                };
+            }
+
+            held["workflowChoices"] ??= new JsonArray();
+            _clock = _clock.AddSeconds(1);
+            var choice = new JsonObject { ["at"] = _clock.ToString("O") };
+            if (kind is not null) choice["kind"] = kind;
+            if (workflow is not null) choice["workflow"] = workflow;
+            held["workflowChoices"]!.AsArray().Add(choice);
         }
     }
 

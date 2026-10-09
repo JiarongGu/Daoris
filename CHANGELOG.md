@@ -229,6 +229,8 @@ with the version and date at release.
 - `daoris-driver workflow run` prints where a piece of work stands in its workflow, step by step.
 - Where a second opinion holds work, the session shows it before the review: what the other agent found, the working
   session's answers, and the presses to ask again, go on anyway or say you looked yourself.
+- A repository or a workspace can choose its workflow, per kind of task (`daoris driver workflow use|kind`), and an
+  ask can name its kind; work started then is bound to the version chosen, though no gate reads it yet.
 
 The first version: doctrine that installs, is checked, and flows back.
 

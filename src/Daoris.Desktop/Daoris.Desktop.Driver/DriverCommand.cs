@@ -81,6 +81,11 @@ public static class DriverCommand
               skip and on (the repository's default) or an environment it declares publishes a set-up step to show it
               there; a new ask's, where rule (the default) leaves it to each repository's rule; or an ask's, the latest
               standing, which applies its intake's proposal too.
+          ask … --kind <kind> [--workflow <id>|current] [--workflow-words "…"]
+          ask --set-workflow <id> [--kind <kind>] [--workflow <id>|current]|--clear ["…"]
+              say what kind of task an ask is and which workflow its work follows: a kind its workspace declares, a
+              workflow saved here or current; the latest stands, and each run binds what is chosen at its first start.
+              Yours alone: an agent proposes a kind, never sets one.
           opinion ask <session> [--reviewer <adapter>] [--same-agent] ["…"]  ·  opinion show <session|opinion>
           opinion stop <opinion>  ·  opinion anyway <session> ["…"]  ·  opinion myself <session> ["…"]
               a session's second opinion before its work lands: ask another agent to read it (one of its rule's reviewers by

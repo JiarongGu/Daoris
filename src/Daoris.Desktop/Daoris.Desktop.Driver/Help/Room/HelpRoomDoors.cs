@@ -86,13 +86,21 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "Repositories → the repository's page → Workflow; a workspace's, Repositories → the workspace's page → Workflow",
             "`daoris driver workflow show --repository <name>|--workspace <name>`"),
         // WORKFLOW1d (D157 points 5 and 6): a named workflow, its versions never edited; Ask Daoris's `workflow` kind is
-        // WORKFLOW1h's and its screen WORKFLOW1g's, and nothing chooses one until WORKFLOW1e.
+        // WORKFLOW1h's and its screen WORKFLOW1g's. WORKFLOW1e chooses one, and the gate that reads it is WORKFLOW1f's.
         ("name a workflow: its steps from a preset, a repository's Current or another workflow, each change saved as its next "
-            + "version, never edited, said step by step with your part first (nothing chooses a named workflow yet: every "
-            + "repository's work follows Current)",
+            + "version, never edited, said step by step with your part first",
             "(no screen yet)",
             "`daoris driver workflow new <id> --from <preset>|current:<repository>|<id>[@<version>]`, `daoris driver workflow "
             + "edit|apply|export|import …`, `daoris driver workflow list`, `daoris driver workflow show <id>[@<version>]`"),
+        // WORKFLOW1e (D157 point 10): which workflow work follows, by repository, workspace and kind of task, the first level
+        // that names one deciding; a run binds it at its first start.
+        ("choose which workflow a repository's or a workspace's work follows, or a kind of task's, and declare a workspace's kinds "
+            + "with the paths their work keeps to (a repository's choice replaces its workspace's whole; each run binds the "
+            + "newest version at its first start; no gate reads the choice yet, so work still lands as Current says)",
+            "(no screen yet)",
+            "`daoris driver workflow use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>]`, "
+            + "`daoris driver workflow kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop`, "
+            + "`daoris driver workflow show --repository <name>|--workspace <name> [--kind <kind>]`"),
         // WSR6: after a pull request merges — the line pulled, what merged deleted, what still works replayed onto it. It
         // takes the repositories holding Daoris's branches, and the others where included (WSR7, D112); one workspace's
         // alone with `--workspace`, as its Branches tab does (BRSCOPE1a).
@@ -247,6 +255,13 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "*Workflow:* in a quest's page's head and an ask's, and *Workflow* on a row of What needs you, each attending its "
             + "session in Sessions with the view open",
             "`daoris-driver workflow run --session|--quest|--ask <id>`"),
+        // WORKFLOW1e (D157 point 10, D156): an ask's kind and workflow, the person's door; the composer's and the ask page's are
+        // WORKFLOW1g's, and the intake's proposal of a kind WORKFLOW1i's.
+        ("say what kind of task an ask is and which workflow its work follows (yours alone: an agent proposes a kind and never sets "
+            + "one; each run binds what is chosen at its first start)",
+            "(no screen yet)",
+            "`daoris-driver ask … --kind <kind> [--workflow <id>|current]`, `daoris-driver ask --set-workflow <id> [--kind <kind>] "
+            + "[--workflow <id>|current]|--clear [\"…\"]`"),
         ("answer what waits on the person", "Sessions, and what needs you", "`daoris-driver answer`"),
         // MSG1e (D137 §5.4): exempt from Ask Daoris, since the words are the person's (D133 §1); the room names both doors.
         ("say something to a session of this machine's, running, parked or ended: it reads your words at its next step or when "

@@ -48,11 +48,15 @@ public sealed partial class HelpCoverageTests
         + "the `setting` kind's `cooloff` door (D125 §6), which waits on the service's setting writer listing it beside this "
         + "side's doors, and until then `daoris driver cooloff` and Settings → Driver are its doors.";
 
-    /// <summary>A named workflow saved from the terminal (WORKFLOW1d, D157 point 13): Ask Daoris's `workflow` kind is WORKFLOW1h's.</summary>
+    /// <summary>
+    /// A named workflow saved, or chosen, from the terminal (WORKFLOW1d, WORKFLOW1e; D157 point 13): Ask Daoris's `workflow` kind is
+    /// WORKFLOW1h's, its card a version and optionally a choice (the workflow design §8.1).
+    /// </summary>
     private const string WorkflowOwed =
-        "a named workflow's version is a change to how work moves that the person applies, so Ask Daoris should propose it as "
-        + "the `workflow` kind's card, its part said first (D157 point 13, the workflow design §8), which WORKFLOW1h builds; "
-        + "until then `daoris driver workflow` is its terminal's door, and nothing chooses a named workflow yet (WORKFLOW1e).";
+        "a named workflow's version, a choice of one and a kind of task are changes to how work moves that the person applies, so "
+        + "Ask Daoris should propose them as the `workflow` kind's card, its part said first (D157 point 13, the workflow design §8), "
+        + "which WORKFLOW1h builds; until then `daoris driver workflow` is its terminal's door, and no gate reads a choice yet "
+        + "(WORKFLOW1f).";
 
     /// <summary>
     /// How an agent's accounts are used, the agent's page's controls (TOOL4g, UX6e; D125 §6, D130 §9): each a door of the `agent`
@@ -353,6 +357,10 @@ public sealed partial class HelpCoverageTests
         ("workflow export", new Exempt(
             "it copies a workflow's file out, whole, to a new file or the terminal, for the person to carry, and changes nothing here.")),
         ("workflow import", new Owed(WorkflowOwed)),
+        // WORKFLOW1e: which workflow work follows, and a workspace's kinds of task; Ask Daoris proposes a choice and a kind with
+        // the `workflow` kind (the workflow design §8.1, §8.3), WORKFLOW1h's.
+        ("workflow use", new Owed(WorkflowOwed)),
+        ("workflow kind", new Owed(WorkflowOwed)),
         ("notify", new Door("setting", "notify")),
         ("intake", new Door("setting", "intake")),
         ("helper", new Door("setting", "helper")),

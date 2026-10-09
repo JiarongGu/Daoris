@@ -191,6 +191,9 @@ public static class PersonDoors
         new("POST", "/api/quests/{id}/set-up-step", DoorClass.Person, "a set-up step"),
         new("POST", "/api/asks", DoorClass.Person, "an ask"),
         new("POST", "/api/asks/{id}/review", DoorClass.Person, "an ask's review choice"),
+        // WORKFLOW1e (the workflow design §4.3): what kind of task an ask is and which workflow it follows is the person's, as what
+        // a review is set to is; an agent proposes a kind (WORKFLOW1i) and never sets one.
+        new("POST", "/api/asks/{id}/workflow", DoorClass.Person, "an ask's kind and workflow"),
         new("POST", "/api/quests/{id}/accept", DoorClass.Person, "the yes to a departure"),
         new("POST", "/api/quests/{id}/done", DoorClass.Person, "a quest's done of their own"),
         new("POST", "/api/asks/{id}/go-aheads/{number}", DoorClass.Person, "a go-ahead's answer"),

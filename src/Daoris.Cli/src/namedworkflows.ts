@@ -7,14 +7,19 @@
 // driver share no code, so both hold ONE table, the driver suite's `fixtures/workflow-named.json`, cell for cell, every
 // sentence and every digest included (`.claude/knowledge/twins.md`).
 //
-// Nothing reads a named workflow at a gate yet: choosing one is WORKFLOW1e's, and the gate's WORKFLOW1f's. This module stores,
-// validates, versions and compares. Pure: it reads no file, reaches no network and spawns nothing.
+// A choice names a workflow and a run binds its newest version at its first start (WORKFLOW1e, `workflowchoice.ts`); nothing at a
+// gate reads it yet, which is WORKFLOW1f's. This module stores, validates, versions and compares. Pure: it reads no file, reaches
+// no network and spawns nothing.
 
 import { createHash } from 'node:crypto';
 import { sameName } from './casefold.ts';
 import { isoMoment } from './cooling.ts';
 import { landingProblem } from './driverconfig.ts';
 import { isPluginId } from './plugins.ts';
+import { ID_SHAPE, isWorkflowId } from './workflowid.ts';
+
+// The id is `workflowid.ts`'s, which `workflowchoice.ts` reads too; read here as it always was.
+export { isWorkflowId };
 
 /** How much of a kind this build runs (design §3.2, §3.9): `none` is never offered, and a version naming it does not read. */
 export type KindRuntime = 'built' | 'partial' | 'declared' | 'none';
@@ -127,7 +132,6 @@ export interface WorkflowRead {
   problem: string | null;
 }
 
-const ID_SHAPE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const ID_RULE = 'lower-case letters, digits and dashes, at most 40';
 const ENVIRONMENT_SHAPE = ID_SHAPE;
 const DOOR_SHAPE = /^ask-daoris:[A-Za-z0-9_-]{1,64}$/;
@@ -140,11 +144,6 @@ const NAME_PROBLEM = 'a workflow\'s `name` is your words for it, 1 to 60 charact
 const VERSIONS_PROBLEM = 'a workflow\'s `versions` is a list of at least one.';
 const VERSION_SHAPE = 'each of its versions is a JSON object with its `version`, `at`, `door` and `steps`.';
 const VERSION_NUMBER = 'each version\'s `version` is a whole number from 1, each greater than the one before it.';
-
-/** A workflow's or a step's id: lower-case letters, digits and dashes, at most 40. */
-export function isWorkflowId(value: unknown): value is string {
-  return typeof value === 'string' && value.length <= 40 && ID_SHAPE.test(value);
-}
 
 /** What is wrong with a workflow's id, or null. `current` is Current's (design §2.5). */
 export function workflowIdProblem(value: unknown): string | null {

@@ -1,14 +1,17 @@
 // `daoris driver workflow` — the terminal's door to workflows (D50; D157, the workflow design §4.7).
 //
-// `show --repository|--workspace` draws Current, read from the rules as they stand (WORKFLOW1a). The rest are named workflows
-// (WORKFLOW1d), one file each under the home's `workflows/` (D63), beside `driver.json` as every door derives the home:
-// `list`, `show <id>[@<version>]`, `new`, `edit`, `apply`, `export` and `import`. A writer prints the change as Ask Daoris's card
-// draws it (design §8.2) and saves a new version, never editing one; `--plan` prints it and saves nothing. Every write is
-// atomic, BOM-less and LF, and a file this door cannot read is never written over.
+// `show --repository|--workspace [--kind]` draws the workflow work there follows: Current, read from the rules as they stand
+// (WORKFLOW1a), or the named workflow a choice gives (WORKFLOW1e). The rest are named workflows (WORKFLOW1d), one file each under
+// the home's `workflows/` (D63), beside `driver.json` as every door derives the home: `list`, `show <id>[@<version>]`, `new`,
+// `edit`, `apply`, `export` and `import`. A writer prints the change as Ask Daoris's card draws it (design §8.2) and saves a new
+// version, never editing one; `--plan` prints it and saves nothing. Every write is atomic, BOM-less and LF, and a file this door
+// cannot read is never written over. `use` and `kind` edit the choice in `driver.json` (WORKFLOW1e, design §4.7), through
+// `workflowchoice.ts`, the driver's twin on one table.
 //
-// 🔴 Nothing reads a named workflow yet: choosing one for a repository or a kind is WORKFLOW1e's, and the gate that reads it
-// WORKFLOW1f's, so every verb that names one says so. What a workflow may say, its digest, its diff and the presets are
-// `namedworkflows.ts`'s, the driver's twin on one table; this door adds the terminal's words and the change language.
+// 🔴 A choice names a workflow, and work binds its newest version at its first start (the driver's `WorkflowRunBindings`); the gate
+// that reads that version is WORKFLOW1f's, so every verb that names a workflow says work still lands as Current says. What a
+// workflow may say, its digest, its diff and the presets are `namedworkflows.ts`'s; this door adds the terminal's words and the
+// change language.
 //
 // A MANAGEMENT verb, offline: it reads and writes files under the home, and reads the registry only through the reader it is
 // handed, as `review` does.
@@ -16,12 +19,16 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { flagValue } from './args.ts';
+import { atName } from './casefold.ts';
 import { DaorisError, type ExitCode } from './errors.ts';
 import { readText, writeTextAtomic } from './fsx.ts';
 import { readPlugins } from './plugins.ts';
 import { normalizeWorkspace } from './remotemap.ts';
 import { inScope, type CheckoutsReader } from './reviews.ts';
-import type { DriverChoices } from './driverconfig.ts';
+import { writeDriverChoices, type DriverChoices } from './driverconfig.ts';
+import {
+  CURRENT, applyWorkflowEdit, readKeptVersions, resolveWorkflow, type WorkflowChoiceEdit, type WorkflowSelected,
+} from './workflowchoice.ts';
 import type { CommandArgs } from './types.ts';
 import { WORKFLOW_LIMITS, currentWorkflow, workflowPluginsOf, workflowSaid, type CurrentWorkflow } from './workflows.ts';
 import {
@@ -29,19 +36,28 @@ import {
   withGates, workflowDiff, workflowIdProblem, workflowLine, type NamedStep, type NamedVersion, type SavedStep, type WorkflowRead,
 } from './namedworkflows.ts';
 
-const USAGE = '`driver workflow` takes list; show <id>[@<version>]; show --repository <name>|--workspace <name>; '
+const USAGE = '`driver workflow` takes list; show <id>[@<version>]; show --repository <name>|--workspace <name> [--kind <kind>]; '
   + 'new <id> --from <preset>|current:<repository>|<id>[@<version>] [--with-opinion] [--with-look] [--name "…"]; '
-  + 'edit <id> [--base <version>] <change>…; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>. '
-  + 'new, edit, apply and import print their change, and with --plan save nothing — e.g. '
+  + 'edit <id> [--base <version>] <change>…; apply <id> <file> [--base <version>]; export <id> [--to <file>]; import <file>; '
+  + 'use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>]; '
+  + 'kind <workspace> <kind> --label "…" [--paths <path,…>]|--drop. '
+  + 'new, edit, apply, import, use and kind print their change, and with --plan save nothing — e.g. '
   + '`daoris driver workflow new docs --from pull-request-no-press --plan`.';
 
 const CHANGES = 'a change is add <kind> --after <step> [--id <id>] [<field>=<value>…], remove <step>, set <step> '
   + '<field>=<value>…, move <step> --after <step>, or on <step> failed=wait|send-back|stop — e.g. `daoris driver workflow '
   + 'edit docs --base 1 remove look set landing accept=automatic`.';
 
-/** Said by every verb that names a named workflow, until a choice can (WORKFLOW1e) and the gate reads it (WORKFLOW1f). */
-export const NOT_CHOSEN = '  Nothing chooses a named workflow yet: every repository\'s work follows Current, as `daoris driver '
-  + 'workflow show --repository <name>` draws it, until a choice can name one.';
+/**
+ * Said by every verb that names a named workflow (WORKFLOW1e): a choice names one and work binds its newest version, and until the
+ * gate reads that version (WORKFLOW1f) work lands as Current says.
+ */
+export const WHAT_CHOOSES = '  A choice names a workflow (`daoris driver workflow use <id> --repository <name>|--workspace <name> '
+  + '[--kind <kind>]`), and work binds its newest version at its first start; nothing at a gate reads it yet, so work still lands '
+  + 'as Current says.';
+
+/** Said by every verb that edits the choice (WORKFLOW1e), until the gate reads what a run bound (WORKFLOW1f). */
+export const NOT_GATED = '  Nothing at a gate reads a chosen workflow yet: work still lands as Current says until it does.';
 
 /** What the door is handed by `commandDriver`: the file it read, its choices, the registry's reader, and the clock. */
 export interface WorkflowDoorContext {
@@ -70,7 +86,11 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
       flags('list', 2, new Set(), new Set());
       return list();
     case 'show':
-      return argv.includes('--repository') || argv.includes('--workspace') ? showCurrent() : show();
+      return argv.includes('--repository') || argv.includes('--workspace') ? showChosen() : show();
+    case 'use':
+      return use();
+    case 'kind':
+      return kind();
     case 'new':
       return create();
     case 'edit':
@@ -157,7 +177,7 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
     for (const preset of WORKFLOW_PRESETS) {
       write(`  \`${preset.id}\` — ${preset.name}. ${workflowLine(readSteps(preset.steps, 1).steps!)}`);
     }
-    write(NOT_CHOSEN);
+    write(WHAT_CHOOSES);
     return 0;
   }
 
@@ -180,16 +200,20 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
     write(`  ${workflowLine(shown.steps)}`);
     for (const step of shown.steps) for (const line of stepSaid(step)) write(line);
     write(`  Versions kept: ${read.versions.map((each) => `v${each.version}${each.steps === null ? ' (cannot be read here)' : ''}`).join(', ')}.`);
-    write(NOT_CHOSEN);
+    write(WHAT_CHOOSES);
     return 0;
   }
 
-  /** Current, for a repository or a workspace (WORKFLOW1a): from the file alone for a workspace; a repository's workspace from the registry. */
-  function showCurrent(): ExitCode | Promise<ExitCode> {
-    const usage = '`driver workflow show` takes --repository <name>|--workspace <name>: the workflow its work follows, '
-      + 'Current, read from its rules as they stand — e.g. `daoris driver workflow show --repository web-app`; or a named '
-      + 'workflow\'s <id>[@<version>].';
-    const valued = new Set(['--repository', '--workspace']);
+  /**
+   * The workflow a repository's or a workspace's work follows (WORKFLOW1a, WORKFLOW1e; design §4.1, §4.7): §4.1 resolved for the
+   * kind named, as a task of that kind would be. Current is drawn from the rules as they stand; a named workflow, its newest
+   * version, which new work binds. A workspace's is read from the file alone; a repository's workspace from the registry.
+   */
+  function showChosen(): ExitCode | Promise<ExitCode> {
+    const usage = '`driver workflow show` takes --repository <name>|--workspace <name>, and --kind <kind> for a kind of task: '
+      + 'the workflow its work follows, Current or the one chosen — e.g. `daoris driver workflow show --repository web-app`; or a '
+      + 'named workflow\'s <id>[@<version>].';
+    const valued = new Set(['--repository', '--workspace', '--kind']);
     for (let at = 2; at < argv.length; at += 1) {
       const token = argv[at]!;
       if (valued.has(token)) at += 1;
@@ -199,20 +223,216 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
 
     const repository = flagValue(argv, '--repository');
     const workspace = flagValue(argv, '--workspace');
+    const kind = flagValue(argv, '--kind');
     if ((repository === undefined) === (workspace === undefined)) throw new DaorisError(usage);
+    const task = kind === undefined ? null : { kind, workflow: null };
     if (workspace !== undefined) {
-      const drawn = currentWorkflow(context.choices, null, workspace, plugins());
-      for (const line of workflowSaid(drawn, `the workspace \`${workspace}\``, 'for each repository there that sets none of its own')) {
-        write(line);
-      }
+      const selected = resolveWorkflow(context.choices, null, workspace, task);
+      const whose = `the workspace \`${workspace}\`${kindSaid(selected)}`;
+      if (selected.workflow !== CURRENT) return named(selected, whose, workspace, null, []);
+      const said = workflowSaid(currentWorkflow(context.choices, null, workspace, plugins()), whose, 'for each repository there that sets none of its own');
+      for (const line of withChoice(said, selected, workspace, null, [])) write(line);
       return 0;
     }
 
-    return currentOf(repository!).then(({ drawn, where, notes }) => {
-      const [header, ...rest] = workflowSaid(drawn, `\`${repository}\``, where);
-      for (const line of [header!, ...notes, ...rest]) write(line);
+    return currentOf(repository!).then(({ drawn, where, notes, inWorkspace }) => {
+      const selected = resolveWorkflow(context.choices, repository!, inWorkspace, task);
+      const whose = `\`${repository}\`${kindSaid(selected)}`;
+      if (selected.workflow !== CURRENT) return named(selected, whose, normalizeWorkspace(inWorkspace), repository!, notes);
+      for (const line of withChoice(workflowSaid(drawn, whose, where), selected, normalizeWorkspace(inWorkspace), repository!, notes)) write(line);
       return 0 as ExitCode;
     });
+
+    /** Current's lines, with the registry's notes and, where a choice or a kind is read, what chose it under the header. */
+    function withChoice(said: string[], selected: WorkflowSelected, circle: string, owner: string | null, notes: string[]): string[] {
+      const [header, ...rest] = said;
+      const chosen = selected.level === 'current' && kind === undefined ? [] : [`  Chosen: ${whyChosen(selected, owner, circle)}.`];
+      return [header!, ...notes, ...chosen, ...undeclaredSaid(selected, circle), ...rest];
+    }
+
+    /** A named workflow chosen: its newest version, which new work binds, or why it cannot be read here. */
+    function named(selected: WorkflowSelected, whose: string, circle: string, owner: string | null, notes: string[]): ExitCode {
+      const why = whyChosen(selected, owner, circle);
+      const found = load(selected.workflow);
+      const newest = found?.read.problem === null ? found.read.versions[found.read.versions.length - 1]! : null;
+      if (newest?.steps == null) {
+        const problem = found === null ? 'no workflow by that id is saved here'
+          : found.read.problem ?? `v${newest!.version} cannot be read here: ${newest!.problem}`;
+        write(`daoris: ${whose} chooses \`${selected.workflow}\`, ${why}, which cannot be read here: ${problem.replace(/\.$/, '')}.`);
+        for (const line of [...notes, ...undeclaredSaid(selected, circle)]) write(line);
+        write(WHAT_CHOOSES);
+        return 1;
+      }
+      write(`daoris: ${whose} follows \`${selected.workflow}\` — ${found!.read.name}, v${newest.version} (digest ${newest.digest}), ${why}.`);
+      for (const line of [...notes, ...undeclaredSaid(selected, circle)]) write(line);
+      write(`  ${workflowLine(newest.steps)}`);
+      for (const step of newest.steps) for (const line of stepSaid(step)) write(line);
+      write(WHAT_CHOOSES);
+      return 0;
+    }
+  }
+
+  /** ` for kind `docs` (Documentation)`, where a kind is read; nothing where none is. */
+  function kindSaid(selected: WorkflowSelected): string {
+    return selected.kind === null ? '' : `, for kind \`${selected.kind}\`${selected.label === null ? '' : ` (${selected.label})`},`;
+  }
+
+  /** A kind named that the workspace does not declare, read as none. */
+  function undeclaredSaid(selected: WorkflowSelected, circle: string): string[] {
+    return selected.undeclared === null ? []
+      : [`  \`${selected.undeclared}\` is not a kind the workspace \`${circle}\` declares, so it is read as none.`];
+  }
+
+  /** The workspace a repository is in, as the registry says, and whether it was read. */
+  async function workspaceOf(name: string): Promise<{ read: true; workspace: string | null } | { read: false; unread: string }> {
+    const read = await context.checkouts();
+    if ('unread' in read) return { read: false, unread: read.unread };
+    return { read: true, workspace: read.checkouts.find((each) => inScope(each, { repository: name }))?.workspace ?? null };
+  }
+
+  /**
+   * `use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>]` (design §4.7): which workflow a repository's
+   * or a workspace's work follows, or a kind's. A named workflow is one saved here whose newest version reads (§3.9); a
+   * repository's kind is one its workspace declares, where the registry says which that is.
+   */
+  function use(): ExitCode | Promise<ExitCode> {
+    const usage = '`driver workflow use` takes <id>|current|--clear, then --repository <name>|--workspace <name>, and --kind <kind> '
+      + 'for a kind of task — e.g. `daoris driver workflow use docs-to-pr --workspace work --kind docs`.';
+    const valued = new Set(['--repository', '--workspace', '--kind']);
+    const operands: string[] = [];
+    for (let at = 2; at < argv.length; at += 1) {
+      const token = argv[at]!;
+      if (valued.has(token)) at += 1;
+      else if (token === '--clear' || token === '--plan') continue;
+      else if (token.startsWith('--')) throw new DaorisError(`\`${token}\` is not a flag \`driver workflow use\` takes — ${usage}`);
+      else operands.push(token);
+    }
+    const repository = flagValue(argv, '--repository');
+    const workspace = flagValue(argv, '--workspace');
+    const kind = flagValue(argv, '--kind');
+    const clear = argv.includes('--clear');
+    if ((repository === undefined) === (workspace === undefined) || operands.length !== (clear ? 0 : 1)) throw new DaorisError(usage);
+    const chosen = clear ? null : operands[0]!;
+
+    // A named workflow is chosen only where it reads here (design §3.9): refused where it would be chosen, naming why.
+    if (chosen !== null && chosen !== CURRENT && isWorkflowId(chosen)) {
+      const found = load(chosen);
+      if (found === null) {
+        throw new DaorisError(`no workflow \`${chosen}\` is saved here — \`daoris driver workflow list\` names them, and \`new\` names one.`);
+      }
+      if (found.read.problem !== null) throw new DaorisError(`\`${chosen}\` cannot be read: ${found.read.problem}`, 1);
+      const newest = found.read.versions[found.read.versions.length - 1]!;
+      if (newest.steps === null) {
+        throw new DaorisError(`\`${chosen}\` v${newest.version} cannot be read here: ${newest.problem} It can be chosen once a `
+          + 'version that reads is saved after it.', 1);
+      }
+    }
+
+    const apply = (edit: WorkflowChoiceEdit, unchecked: string | null): ExitCode => {
+      const edited = applyWorkflowEdit(context.choices, edit);
+      if (edited.refusal !== null) {
+        const declare = kind !== undefined && edited.refusal.includes('declares no kind')
+          ? ` \`daoris driver workflow kind <workspace> ${kind} --label "…"\` declares one.` : '';
+        throw new DaorisError(`${edited.refusal}${declare} Nothing was written.`, 1);
+      }
+      const owner = repository ?? null;
+      const name = (repository ?? workspace)!;
+      const whose = repository !== undefined ? `\`${repository}\`` : `the workspace \`${workspace}\``;
+      const scope = repository !== undefined ? edited.maps!.workflows : edited.maps!.workspaceWorkflows;
+      const before = repository !== undefined ? context.choices.workflows : context.choices.workspaceWorkflows;
+      const after = atName(scope, name.trim());
+      const was = atName(before, name.trim());
+      if (JSON.stringify(after) === JSON.stringify(was)) {
+        write(`daoris: ${whose} ${chosen === null ? 'chose no workflow' : `chooses \`${chosen}\` already`}`
+          + `${kind === undefined ? ' as its default' : ` for kind \`${kind}\``}: nothing was written.`);
+        return 0;
+      }
+
+      const forWhat = kind === undefined ? ' as its default' : ` for kind \`${kind}\``;
+      if (chosen === null) write(`daoris: ${whose} no longer chooses a workflow${forWhat}.`);
+      else if (chosen === CURRENT) write(`daoris: ${whose} now chooses Current${forWhat}: its rules as they stand, read at each gate.`);
+      else {
+        const found = load(chosen)!;
+        const newest = found.read.versions[found.read.versions.length - 1]!;
+        write(`daoris: ${whose} now chooses \`${chosen}\`${forWhat} — ${found.read.name}, v${newest.version} now: ${workflowLine(newest.steps!)}`);
+      }
+      if (owner !== null) {
+        write(after === undefined
+          ? `  \`${owner}\` names no workflow now, so its workspace's choice reaches it again.`
+          : `  This replaces the workspace's for every kind: \`${owner}\` follows its own kinds and its own default, and Current `
+            + 'where it names none.');
+      }
+      if (unchecked !== null) {
+        write(`  The registry was not read (${unchecked}), so kind \`${kind}\` was not checked against the kinds \`${owner}\`'s `
+          + 'workspace declares.');
+      }
+      if (chosen !== null) write('  Each new piece of work binds what is chosen at its first start; work already started keeps what it bound.');
+      return savedChoice({ ...context.choices, ...edited.maps! });
+    };
+
+    const base = { use: chosen, ...(kind !== undefined ? { kind } : {}) };
+    if (workspace !== undefined) return apply({ ...base, workspace }, null);
+    if (kind === undefined || chosen === null) return apply({ ...base, repository: repository! }, null);
+    return workspaceOf(repository!).then((found) => found.read
+      ? apply({ ...base, repository: repository!, in: found.workspace }, null)
+      : apply({ ...base, repository: repository! }, found.unread));
+  }
+
+  /**
+   * `kind <workspace> <kind> --label "…" [--paths <path,…>]` and `kind <workspace> <kind> --drop` (design §4.2, §4.7): a kind of
+   * task a workspace declares, with its label and the paths work of that kind keeps to; declared again, both are replaced.
+   */
+  function kind(): ExitCode {
+    const usage = '`driver workflow kind` takes <workspace> <kind> --label "…" [--paths <path,…>], or <workspace> <kind> --drop — '
+      + 'e.g. `daoris driver workflow kind work docs --label "Documentation" --paths "docs/**,**/*.md"`.';
+    const valued = new Set(['--label', '--paths']);
+    const operands: string[] = [];
+    for (let at = 2; at < argv.length; at += 1) {
+      const token = argv[at]!;
+      if (valued.has(token)) at += 1;
+      else if (token === '--drop' || token === '--plan') continue;
+      else if (token.startsWith('--')) throw new DaorisError(`\`${token}\` is not a flag \`driver workflow kind\` takes — ${usage}`);
+      else operands.push(token);
+    }
+    const label = flagValue(argv, '--label');
+    const drop = argv.includes('--drop');
+    if (operands.length !== 2 || drop === (label !== undefined) || (drop && argv.includes('--paths'))) throw new DaorisError(usage);
+    const [workspace, id] = operands as [string, string];
+    const paths = (flagValue(argv, '--paths') ?? '').split(',').map((each) => each.trim()).filter((each) => each.length > 0);
+
+    const edited = applyWorkflowEdit(context.choices, drop ? { drop: id, workspace } : { declare: id, workspace, label: label!, paths });
+    if (edited.refusal !== null) throw new DaorisError(`${edited.refusal} Nothing was written.`, 1);
+    if (drop) {
+      write(`daoris: the workspace \`${workspace}\` no longer declares kind \`${id}\`.`);
+      const mapping = Object.entries(context.choices.workflows)
+        .filter(([, choice]) => choice.kinds.some(([each]) => each === id)).map(([name]) => `\`${name}\``);
+      if (mapping.length > 0) {
+        write(`  ${mapping.join(', ')} still map${mapping.length === 1 ? 's' : ''} it; no task of that kind reaches `
+          + `${mapping.length === 1 ? 'that mapping' : 'those mappings'} until \`${id}\` is declared again.`);
+      }
+    } else {
+      const shared = atName(edited.maps!.workspaceWorkflows, workspace.trim());
+      const declared = shared?.kinds.find(([each]) => each === id)?.[1];
+      write(`daoris: the workspace \`${workspace}\` declares kind \`${id}\` — ${label}, `
+        + `${paths.length === 0 ? 'with no paths' : `its paths ${paths.map((each) => `\`${each}\``).join(', ')}`}.`);
+      write(declared?.workflow
+        ? `  It maps to \`${declared.workflow}\` there.`
+        : `  It maps to no workflow there: \`daoris driver workflow use <id> --workspace ${workspace} --kind ${id}\` maps one, and `
+          + '`--repository <name>` maps it for one repository.');
+    }
+    return savedChoice({ ...context.choices, ...edited.maps! });
+  }
+
+  /** The choices written, or not with `--plan`, and said either way, with what reads them: no gate yet. */
+  function savedChoice(choices: DriverChoices): ExitCode {
+    if (argv.includes('--plan')) {
+      write('  --plan: nothing was written.');
+    } else {
+      writeDriverChoices(context.path, choices);
+      write(`  Written to ${context.path}.`);
+    }
+    write(NOT_GATED);
+    return 0;
   }
 
   /** The plugins beside the file, as the driver reads them, the landing's and the opinion's doors with it. */
@@ -224,14 +444,15 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
    * A repository's Current: its workspace is the registry's, read as `review` reads it; unread, it is drawn only where no rule
    * in the file is set for a workspace, since none could then reach it.
    */
-  async function currentOf(name: string): Promise<{ drawn: CurrentWorkflow; where: string; notes: string[] }> {
+  async function currentOf(name: string): Promise<{ drawn: CurrentWorkflow; where: string; notes: string[]; inWorkspace: string | null }> {
     const read = await context.checkouts();
     const notes: string[] = [];
     let inWorkspace: string | null = null;
     let where: string;
     if ('unread' in read) {
       const { choices } = context;
-      if ([choices.workspaceLandings, choices.workspaceReviews, choices.workspaceOpinions].some((map) => Object.keys(map).length > 0)) {
+      const shared = [choices.workspaceLandings, choices.workspaceReviews, choices.workspaceOpinions, choices.workspaceWorkflows];
+      if (shared.some((map) => Object.keys(map).length > 0)) {
         throw new DaorisError(`cannot say which workspace's rules reach \`${name}\`: the registry could not be read — `
           + `${read.unread} — and this file sets rules for a workspace. Nothing was drawn. \`--workspace <name>\` draws a `
           + 'workspace\'s Current from this file alone.');
@@ -247,7 +468,7 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
           + 'workspace\'s rules reach it.');
       }
     }
-    return { drawn: currentWorkflow(context.choices, name, inWorkspace, plugins()), where, notes };
+    return { drawn: currentWorkflow(context.choices, name, inWorkspace, plugins()), where, notes, inWorkspace };
   }
 
   function create(): ExitCode | Promise<ExitCode> {
@@ -362,7 +583,8 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
 
   /** A new version made from steps, against the base: validated, compared, said, and saved unless `--plan`. */
   function change(found: Found, base: NamedVersion, steps: SavedStep[]): ExitCode {
-    const plan = planAddVersion(found.file, { id: found.id, name: null, door: 'terminal', at: moment(now()), steps });
+    // Every version a bound run names is kept beyond the newest (design §2.6): the driver binds them (WORKFLOW1e).
+    const plan = planAddVersion(found.file, { id: found.id, name: null, door: 'terminal', at: moment(now()), steps }, readKeptVersions(folder, found.id));
     if (plan.problem !== null) throw new DaorisError(plan.problem, 1);
     const next = readSteps(steps, plan.version!, found.read.versions.filter((each) => each.steps !== null)).steps!;
     if (base.steps !== null && base.digest === versionDigest(next)) {
@@ -437,7 +659,7 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
       writeTextAtomic(path, `${JSON.stringify(file, null, 2)}\n`);
       write(`  Written to ${path}.`);
     }
-    write(NOT_CHOSEN);
+    write(WHAT_CHOOSES);
     return 0;
   }
 
@@ -459,6 +681,22 @@ export function commandWorkflow({ root, argv, write }: CommandArgs, context: Wor
 /** A moment as a version keeps it: UTC, to the second. */
 export function moment(at: Date): string {
   return `${new Date(Math.floor(at.getTime() / 1000) * 1000).toISOString().slice(0, 19)}Z`;
+}
+
+/**
+ * Which level chose a workflow, in words (design §4.1, *the run says why*): *chosen by `web-app` for Documentation* — the words the
+ * driver's look says a binding in (`WorkflowRunBindings.Why`).
+ */
+export function whyChosen(selected: WorkflowSelected, repository: string | null, workspace: string): string {
+  const kind = selected.label ?? selected.kind;
+  switch (selected.level) {
+    case 'task': return 'chosen by its ask';
+    case 'repository-kind': return `chosen by \`${repository}\` for ${kind}`;
+    case 'repository': return `\`${repository}\`'s default`;
+    case 'workspace-kind': return `chosen by the workspace \`${workspace}\` for ${kind}`;
+    case 'workspace': return `the workspace \`${workspace}\`'s default`;
+    default: return 'since nothing names a workflow';
+  }
 }
 
 /** Which door saved a version, as `show` says it (design §2.5): never *the person*, since a terminal's edit cannot be told from an agent's. */

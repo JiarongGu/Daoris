@@ -225,6 +225,35 @@ public sealed class PersonDoorHostTests(KeyedHost host) : IClassFixture<KeyedHos
     }
 
     /// <summary>
+    /// WORKFLOW1e (D157 point 10; the workflow design §4.3): an ask's kind and workflow are the person's, as what a review is set to
+    /// is. A session's keyless set is refused and nothing is kept; with the key the person's choice stands, and the composer's
+    /// kind and workflow ride the person's own ask.
+    /// </summary>
+    [Fact]
+    public async Task A_sessions_set_of_an_asks_kind_and_workflow_is_refused_and_the_persons_is_kept()
+    {
+        var asked = await host.PostAsync("/api/asks", new
+        {
+            workspace = "default", sentence = "Write the guide for the export button.", kind = "docs", workflow = "docs-to-pr",
+        }, person: Key);
+        Assert.Equal(200, asked.Status);
+        var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
+        Assert.Equal("docs", asked.Json.GetProperty("ask").GetProperty("workflowChoices")[0].GetProperty("kind").GetString());
+
+        AssertRefused(
+            await host.PostAsync($"/api/asks/{ask}/workflow", new { workflow = "current" }),
+            PersonDoors.PersonOnly, PersonDoors.PersonSentence("an ask's kind and workflow"), "a keyless set");
+        var kept = (await host.GetAsync($"/api/asks/{ask}")).Json.GetProperty("workflowChoices");
+        Assert.Equal(1, kept.GetArrayLength());
+
+        var persons = await host.PostAsync($"/api/asks/{ask}/workflow", new { workflow = "current", words = "no pull request for this one" }, person: Key);
+        Assert.Equal(200, persons.Status);
+        var latest = persons.Json.GetProperty("ask").GetProperty("workflowChoices")[1];
+        Assert.Equal(("current", "no pull request for this one"), (latest.GetProperty("workflow").GetString(), latest.GetProperty("words").GetString()));
+        Assert.False(latest.TryGetProperty("kind", out var kind) && kind.ValueKind != JsonValueKind.Null);
+    }
+
+    /// <summary>
     /// The respond door is an agent's (the stubs take and close there), and its abandon's decline is the person's
     /// (PAUSE1c): <c>whileOpen</c> without the key is refused, and the quest stays open.
     /// </summary>

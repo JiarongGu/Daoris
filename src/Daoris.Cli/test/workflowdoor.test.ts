@@ -6,14 +6,14 @@ import { commandDriver } from '../src/driverconfig.ts';
 import { DaorisError } from '../src/errors.ts';
 import { HOME_SENTENCE } from '../src/home.ts';
 import type { CheckoutsReader } from '../src/reviews.ts';
-import { NOT_CHOSEN, commandWorkflow } from '../src/workflowdoor.ts';
+import { WHAT_CHOOSES, commandWorkflow } from '../src/workflowdoor.ts';
 import { makeFixture, type Fixture } from './_fixture.ts';
 
 /**
  * WORKFLOW1d (D157 points 5 and 6, the workflow design §2.4–§2.7, §4.7): the terminal's door to named workflows. Each writer
  * prints its change as the card draws it (`namedworkflows.ts`, held to the driver's table by `namedworkflows.test.ts`) and saves
  * a new version, never editing one; `--plan` saves nothing; a refusal is 1 where a version would not read, 2 where the verb
- * cannot be done; and every verb that names a workflow says nothing chooses one yet.
+ * cannot be done; and every verb that names a workflow says what chooses one, and that no gate reads it yet (WORKFLOW1e).
  */
 
 const NOW = new Date('2026-10-09T09:12:34.567Z');
@@ -68,7 +68,7 @@ test('new from a preset: --plan says the change and writes nothing, then v1 is w
     '  Without asking you each time:',
     '    the plugin the landing rule names, if any, pushes each branch with no press of yours.',
     '  --plan: nothing was written.',
-    NOT_CHOSEN,
+    WHAT_CHOOSES,
   ].join('\n'));
   assert.equal(fx.exists('workflows/docs-to-pr.json'), false);
 
@@ -155,7 +155,7 @@ test('edit saves the next version from the change language, said step by step; a
     '  Without asking you each time:',
     '    `example.pull-request` pushes each branch with no press of yours.',
     '  --plan: nothing was written.',
-    NOT_CHOSEN,
+    WHAT_CHOOSES,
   ].join('\n'));
   assert.equal(saved(fx, 'docs').versions.length, 1);
 
@@ -223,7 +223,7 @@ test('apply saves a file\'s steps as the next version; show draws a version, its
       + '`daoris-driver opinion`; the review does not draw it yet, and no task chooses its own reviewer yet.',
     '  landing · landing — You · your press: Accept. form `merge`; accept `you`; pattern as declared; plugin as declared.',
     '  Versions kept: v1, v2.',
-    NOT_CHOSEN,
+    WHAT_CHOOSES,
   ].join('\n'));
   assert.match((await run(fx, ['show', 'docs@1'])).out, /^daoris: `docs` — Docs: v1, saved /);
   const gone = await refused(fx, ['show', 'docs@7']);
@@ -300,7 +300,7 @@ test('import refuses a file a version of which does not read here, and list says
   ]);
   assert.match(out, /Presets built in, for `daoris driver workflow new <id> --from <preset>`/);
   assert.match(out, / {2}`pull-request-no-press` — A pull request with no press\. A pull request opens once its quest is done; you merge it\./);
-  assert.ok(out.endsWith(NOT_CHOSEN));
+  assert.ok(out.endsWith(WHAT_CHOOSES));
 
   const unreadable = await refused(fx, ['show', 'release']);
   assert.equal(unreadable.exitCode, 1);
@@ -328,7 +328,7 @@ test('an id that is no id names no path, an unknown one is said, and the verbs s
   for (const argv of [[], ['frobnicate'], ['list', 'extra'], ['show']]) {
     const usage = await refused(fx, argv);
     assert.equal(usage.exitCode, 2);
-    assert.match(usage.message, /^`driver workflow` takes list; show <id>\[@<version>\]; show --repository <name>\|--workspace <name>; new <id>/, argv.join(' '));
+    assert.match(usage.message, /^`driver workflow` takes list; show <id>\[@<version>\]; show --repository <name>\|--workspace <name> \[--kind <kind>\]; new <id>/, argv.join(' '));
   }
   assert.match((await refused(fx, ['new', 'docs', '--from', 'merge-after-accept', '--kind', 'docs'])).message,
     /^`--kind` is not a flag `driver workflow new` takes — /);

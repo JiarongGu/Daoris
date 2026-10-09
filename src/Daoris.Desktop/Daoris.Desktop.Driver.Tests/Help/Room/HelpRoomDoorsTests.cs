@@ -45,6 +45,10 @@ public sealed class HelpRoomDoorsTests
             // REVIEWENV1j (D154 point 3, D50): the person's review choice, the composer's, the ask page's and the gate's.
             "daoris-driver ask … --review rule|on|<environment>|off", "daoris-driver ask --set-review <id> on|<environment>|off",
             "daoris-driver quest review <quest> off [\"…\"]", "daoris-driver quest review <quest> on|<environment>",
+            // WORKFLOW1e (D157 point 10): which workflow work follows and a workspace's kinds, and an ask's kind and workflow.
+            "daoris driver workflow use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>]",
+            "daoris driver workflow kind <workspace> <kind>", "daoris-driver ask … --kind <kind> [--workflow <id>|current]",
+            "daoris-driver ask --set-workflow <id>",
         })
         {
             Assert.Contains(command, agents);
@@ -116,7 +120,7 @@ public sealed class HelpRoomDoorsTests
     [Fact]
     public void The_room_names_where_how_work_moves_is_drawn_and_where_a_run_stands_with_their_terminal_twins()
     {
-        var current = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("`daoris driver workflow show --repository", StringComparison.Ordinal));
+        var current = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris driver workflow show --repository", StringComparison.Ordinal));
         Assert.Equal("`daoris driver workflow show --repository <name>|--workspace <name>`", current.Terminal);
         Assert.Equal("Repositories → the repository's page → Workflow; a workspace's, Repositories → the workspace's page → Workflow",
             current.Screen);

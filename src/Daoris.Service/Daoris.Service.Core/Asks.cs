@@ -114,6 +114,12 @@ public sealed record Ask(
     /// beside the person's choice and applied only by their press.
     /// </summary>
     public IReadOnlyList<AskReviewProposal> ReviewProposals { get; init; } = [];
+
+    /// <summary>
+    /// The person's kind and workflow for every chain it publishes (WORKFLOW1e, D157 point 10; the workflow design §4.1 row 1, §4.3),
+    /// oldest first, each with when and any words they gave. The latest stands; one naming neither clears it.
+    /// </summary>
+    public IReadOnlyList<AskWorkflowChoice> WorkflowChoices { get; init; } = [];
 }
 
 /// <summary>A review choice the person set on an ask (REVIEWENV1b, design §1.5): <c>off</c>, <c>on</c> or an environment's name.</summary>
@@ -242,6 +248,11 @@ public sealed class AskStore
         await SchemaColumns.EnsureAsync(_db, "asks", "review_proposals", "review_proposals TEXT NOT NULL DEFAULT '[]'", ct)
             .ConfigureAwait(false);
 
+        // WORKFLOW1e (D157 point 10): the person's kind and workflow choices, appended where they are kept. A store from before keeps
+        // every ask it had, each holding none: nothing was chosen on it, so each repository's choice decides, as it did.
+        await SchemaColumns.EnsureAsync(_db, "asks", "workflow_choices", "workflow_choices TEXT NOT NULL DEFAULT '[]'", ct)
+            .ConfigureAwait(false);
+
         return this;
     }
 
@@ -258,6 +269,24 @@ public sealed class AskStore
             if (choice.Words is { } words) writer.WriteString("words", words);
             writer.WriteEndObject();
         }), now, ct);
+
+    /// <summary>
+    /// Keep a kind and workflow the person set on the ask (WORKFLOW1e), appended in one statement, for the reason a word is (REV3).
+    /// The latest stands. False when no ask has that id.
+    /// </summary>
+    public Task<bool> RecordWorkflowChoiceAsync(string id, AskWorkflowChoice choice, DateTimeOffset now, CancellationToken ct = default) =>
+        AppendAsync(id, "workflow_choices", JsonFields.Written(writer => WriteWorkflowChoice(writer, choice)), now, ct);
+
+    /// <summary>One kind and workflow choice as the store keeps it: each field only where it names one, then when and the words.</summary>
+    private static void WriteWorkflowChoice(Utf8JsonWriter writer, AskWorkflowChoice choice)
+    {
+        writer.WriteStartObject();
+        if (choice.Kind is { } kind) writer.WriteString("kind", kind);
+        if (choice.Workflow is { } workflow) writer.WriteString("workflow", workflow);
+        writer.WriteString("at", choice.At.ToString("O"));
+        if (choice.Words is { } words) writer.WriteString("words", words);
+        writer.WriteEndObject();
+    }
 
     /// <summary>Keep an intake's review proposal on the ask (REVIEWENV1b), appended as a choice is. False when no ask has that id.</summary>
     public Task<bool> RecordReviewProposalAsync(string id, AskReviewProposal proposal, DateTimeOffset now, CancellationToken ct = default) =>
@@ -300,10 +329,10 @@ public sealed class AskStore
     {
         await using var command = _db.Command();
         // The review choices are written with a new ask, from its composer (REVIEWENV1b), and only appended after: a later save
-        // of the whole record never drops one a door appended meanwhile (REV3).
+        // of the whole record never drops one a door appended meanwhile (REV3). The kind and workflow choices likewise (WORKFLOW1e).
         command.CommandText = """
-            INSERT INTO asks (id, workspace, sentence, state, tier, asked, updated, asker, note, links, attachments, proposal, quests, intake, review_choices)
-            VALUES ($id, $workspace, $sentence, $state, $tier, $asked, $updated, $asker, $note, $links, $attachments, $proposal, $quests, $intake, $reviewChoices)
+            INSERT INTO asks (id, workspace, sentence, state, tier, asked, updated, asker, note, links, attachments, proposal, quests, intake, review_choices, workflow_choices)
+            VALUES ($id, $workspace, $sentence, $state, $tier, $asked, $updated, $asker, $note, $links, $attachments, $proposal, $quests, $intake, $reviewChoices, $workflowChoices)
             ON CONFLICT (id) DO UPDATE SET
               state = $state, tier = $tier, updated = $updated, note = $note,
               links = $links, attachments = $attachments, proposal = $proposal, quests = $quests, intake = $intake
@@ -316,6 +345,7 @@ public sealed class AskStore
             if (choice.Words is { } words) w.WriteString("words", words);
             w.WriteEndObject();
         }));
+        command.Parameters.AddWithValue("$workflowChoices", Json(ask.WorkflowChoices, WriteWorkflowChoice));
         command.Parameters.AddWithValue("$intake", (object?)ask.Intake ?? DBNull.Value);
         command.Parameters.AddWithValue("$id", ask.Id);
         command.Parameters.AddWithValue("$workspace", ask.Workspace);
@@ -523,7 +553,28 @@ public sealed class AskStore
             GoAheads = GoAheads.Read(Text("go_aheads")),
             ReviewChoices = ReviewChoicesOf(Text("review_choices")),
             ReviewProposals = ReviewProposalsOf(Text("review_proposals")),
+            WorkflowChoices = WorkflowChoicesOf(Text("workflow_choices")),
         };
+    }
+
+    /// <summary>
+    /// The kind and workflow choices kept, oldest first (WORKFLOW1e). One this build cannot read (a field of the wrong shape, or
+    /// missing its moment) is passed over, never a failed read of the ask.
+    /// </summary>
+    private static IReadOnlyList<AskWorkflowChoice> WorkflowChoicesOf(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var choices = new List<AskWorkflowChoice>();
+        foreach (var element in document.RootElement.EnumerateArray())
+        {
+            if (element.ValueKind != JsonValueKind.Object || Moment(element, "at") is not { } at) continue;
+            var kind = JsonFields.Text(element, "kind");
+            var workflow = JsonFields.Text(element, "workflow");
+            if (WorkflowChoices.Judge(kind, workflow) is not null) continue;
+            choices.Add(new AskWorkflowChoice(kind, workflow, at, JsonFields.Text(element, "words")));
+        }
+
+        return choices;
     }
 
     /// <summary>
@@ -630,6 +681,18 @@ public sealed record AskRequest(string Workspace, string Sentence)
 
     /// <summary>The person's words with their review choice, where they give any.</summary>
     public string? ReviewWords { get; init; }
+
+    /// <summary>
+    /// The person's kind for the ask's work, from the composer (WORKFLOW1e, design §4.3): a kind's id its workspace declares. Null for
+    /// none.
+    /// </summary>
+    public string? Kind { get; init; }
+
+    /// <summary>The person's workflow for the ask's work, from the composer (WORKFLOW1e): a workflow's id, or <c>current</c>. Null for none.</summary>
+    public string? Workflow { get; init; }
+
+    /// <summary>The person's words with their kind and workflow, where they give any.</summary>
+    public string? WorkflowWords { get; init; }
 }
 
 /// <summary>An intake's review proposal for the chain it publishes (REVIEWENV1b, design §1.5): a choice and its reason.</summary>
@@ -713,6 +776,9 @@ public enum AskRefusal
     /// or a reason past its bound, a proposal with no reason or from no intake, or a choice and a proposal at once.
     /// </summary>
     BadReview,
+
+    /// <summary>A kind or a workflow that is not one by its shape, or words past their bound (WORKFLOW1e).</summary>
+    BadWorkflow,
 }
 
 /// <param name="Refusal"><see cref="AskRefusal.None"/> when it did what was asked.</param>
@@ -907,6 +973,15 @@ public sealed partial class AskDesk(KnowledgeService service, AskStore asks, Que
             chosen = choice;
         }
 
+        // The person's kind and workflow from the composer (WORKFLOW1e), judged as the ask's own door judges them; none kept for none.
+        AskWorkflowChoice? workflowChosen = null;
+        if (!string.IsNullOrWhiteSpace(request.Kind) || !string.IsNullOrWhiteSpace(request.Workflow))
+        {
+            var (choice, unfitChoice) = JudgeWorkflowChoice(request.Kind, request.Workflow, request.WorkflowWords, now);
+            if (unfitChoice is not null) return new(AskRefusal.BadWorkflow, unfitChoice, Ask: null);
+            workflowChosen = choice;
+        }
+
         // The same words in the same circle are the same ask — a retry, or a person repeating
         // themselves, is answered with what became of the first, never a second copy. 🔴 Unless the
         // person CLOSED it (ASKAGAIN1): they ended that one, so the same words afterwards ask anew,
@@ -935,6 +1010,7 @@ public sealed partial class AskDesk(KnowledgeService service, AskStore asks, Que
             Attachments = attachments.DistinctBy(a => a.Sha256).ToList(),
             Proposal = DeclarationsTier.Rank(sentence, registered, workspace),
             ReviewChoices = chosen is null ? [] : [chosen],
+            WorkflowChoices = workflowChosen is null ? [] : [workflowChosen],
         };
 
         if (request.To is { Length: > 0 } to)
