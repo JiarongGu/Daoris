@@ -70,6 +70,9 @@ export interface WorkflowRunAnswer {
 /** Whose runs are read: a session's, a quest's or an ask's. */
 export type RunScope = { session: string } | { quest: string } | { ask: string };
 
+/** What a quest's or an ask's page is handed of its runs (design §7): the runs, and the door that opens one. */
+export type RunLineDoor = { runs: readonly WorkflowRun[]; onOpen?: (run: WorkflowRun) => void };
+
 /** A state as the page words it: one it does not know stays as the driver spelled it. */
 export const knownState = (state: string): state is RunState => (KNOWN_STATES as readonly string[]).includes(state);
 

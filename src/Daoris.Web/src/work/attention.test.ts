@@ -558,6 +558,8 @@ describe('a go-ahead asked on an ask', () => {
       where: 'ask #7c1e9a04b2d5',
       since: '2026-09-21T09:10:00Z',
       detail: 'The menu ships with the release.',
+      // The session that asked it first, whose run its door opens (WORKFLOW1c).
+      session: 's1a2b3c4',
     }]);
   });
 
