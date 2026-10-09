@@ -123,6 +123,27 @@ describe.each(['en', 'zh'])('the review of a session whose work the line holds b
     expect(screen.getByRole('button', { name: i18n.t('work.review.discard') })).toBeInTheDocument();
   });
 
+  /**
+   * Both: the landing door asks the content proof before the review's gate, since a review of work already on the line lands
+   * nothing, so where a review's gate (REVIEWENV1g) would also hold the work the discard stands, and the plan is never asked.
+   */
+  it('offers the discard, not the review’s gate, where the review would also hold the work', async () => {
+    await i18n.changeLanguage(language);
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_DIFF') return DIFF;
+      if (type === 'HANDOFF_PLAN') return { session: 's1a2b3c4', branch: null };
+      if (type === 'LANDING') return { ...PLAN, review: { state: 'shown', environment: 'staging-preview', level: 'set-up-step', quest: 'q2' } };
+      return {};
+    });
+    const { container } = pane(HELD, vi.fn());
+
+    expect(await screen.findByRole('button', { name: i18n.t('settings.sweep.discard') })).toBeInTheDocument();
+    expect(container).toHaveTextContent('Its work is on main by content (a squash merge).');
+    expect(container).not.toHaveTextContent('staging-preview');
+    expect(screen.queryByRole('button', { name: i18n.t('work.review.accept') })).toBeNull();
+    expect(asked('LANDING')).toHaveLength(0);
+  });
+
   it('offers Accept as before where nothing holds the work by content', async () => {
     await i18n.changeLanguage(language);
     answer();
