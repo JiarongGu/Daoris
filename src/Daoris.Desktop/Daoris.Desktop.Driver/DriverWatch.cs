@@ -71,6 +71,13 @@ public sealed class DriverWatch(
     /// </summary>
     public Func<bool>? Draining { get; init; }
 
+    /// <summary>
+    /// The look's own tidy of empty session branches (AUTOTIDY1, D88's note), run beside the looks once each pace, as the start's
+    /// line-following runs beside them; what it says joins the report of the look that finds it done. Null keeps the watch's
+    /// own, at <see cref="BranchTidying.DefaultPace"/>.
+    /// </summary>
+    public BranchTidying? Tidying { get; init; }
+
     /// <summary>Look now rather than at the next poll — a control that just changed something should
     /// not leave the person watching a countdown.</summary>
     public void Nudge()
@@ -135,6 +142,11 @@ public sealed class DriverWatch(
         Task<IReadOnlyList<string>?>? following = null;
         var followed = false;
 
+        // The empty session branches tidied beside the looks (AUTOTIDY1): a pass once each pace, its lines joining the report
+        // of the look that finds it done, as the following's do.
+        var tidy = Tidying ?? new BranchTidying(home);
+        Task<IReadOnlyList<string>>? tidying = null;
+
         // What the sessions run on: the loop's own token, and cancelled by the loop itself when a failure
         // ends it, so no session outlives the loop that watches it (DEV3).
         using var sessions = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -193,6 +205,17 @@ public sealed class DriverWatch(
                         }
                     }
 
+                    if (tidying is { IsCompleted: true } tidied)
+                    {
+                        tidying = null;
+                        if (tidied.IsCompletedSuccessfully && tidied.Result.Count > 0)
+                        {
+                            report = report with { Events = [.. report.Events, .. tidied.Result] };
+                        }
+                    }
+
+                    if (tidying is null && tidy.Due) tidying = TidyAsync(tidy, ct);
+
                     await onReport(report, config).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -242,7 +265,34 @@ public sealed class DriverWatch(
             await Running.SettledAsync().ConfigureAwait(false);
             // The start's pass ends on the loop's own token; waited for, so nothing it writes outlives the loop.
             if (following is not null) await following.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
+            // The tidy's too: a removal half done when the loop closed is git's to finish, never left running unwatched.
+            if (tidying is not null) await tidying.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    /// One tidy pass (AUTOTIDY1), started on the pool so the look beside it does not wait on its git. A closing loop ends it
+    /// with nothing said; what else stops it is said once, in a later look's report.
+    /// </summary>
+    private Task<IReadOnlyList<string>> TidyAsync(BranchTidying tidy, CancellationToken ct)
+    {
+        tidy.Began();
+        return Task.Run<IReadOnlyList<string>>(async () =>
+        {
+            try
+            {
+                return await tidy.LookAsync(service, Log, ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                return [];
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
+                                              or IOException or UnauthorizedAccessException)
+            {
+                return [$"tidy  the empty session branches could not be looked at this time, and are looked at again later: {error.Message}"];
+            }
+        }, CancellationToken.None);
     }
 
     /// <summary>

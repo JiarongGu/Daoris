@@ -185,6 +185,23 @@ internal sealed class StandInLedger : HttpMessageHandler
         }
     }
 
+    /// <summary>
+    /// A session of this machine's working in <paramref name="tree"/> with no quest (AUTOTIDY1): a conversation, as the ledger
+    /// keeps one, which the active list answers.
+    /// </summary>
+    public void Working(string session, string repository, string tree)
+    {
+        lock (_gate)
+        {
+            _clock = _clock.AddSeconds(1);
+            _sessions.Add(new JsonObject
+            {
+                ["id"] = session, ["repository"] = repository, ["state"] = "working", ["kind"] = "chat", ["adapter"] = "stub",
+                ["tree"] = tree, ["created"] = _clock.ToString("O"),
+            });
+        }
+    }
+
     /// <summary>Every state a record was moved to through the state door, in order (ANSWER2).</summary>
     public IReadOnlyList<string> MovesOf(string id)
     {
