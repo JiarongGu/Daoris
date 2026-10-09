@@ -204,6 +204,52 @@ public sealed class BranchTidyingTests : IDisposable
         Assert.True(tidying.Due);
     }
 
+    /// <summary>
+    /// A review step in progress (REVIEWENV1d) keeps the tree it shows from: a build's folder served in it, or the tree a set-up
+    /// waiting for the person was said from, counts as a session in use, whichever of its folders is named.
+    /// </summary>
+    [Fact]
+    public void A_tree_a_review_shows_from_is_in_use_whatever_folder_of_it_is_named()
+    {
+        var trees = Path.Combine(_home, "trees");
+        var served = Path.Combine(trees, "default", "engine", "s-1a2b3c4d", "app", "dist");
+        var waiting = Path.Combine(trees, "tools", "studio", "s-5e6f7a8b");
+        var checkout = Path.Combine(Path.GetTempPath(), "a-checkout", "engine");
+
+        var inUse = BranchTidying.TreesOf(trees, [served, waiting, checkout]);
+
+        Assert.Equal(
+            [Path.Combine(trees, "default", "engine", "s-1a2b3c4d"), waiting, checkout],
+            inUse);
+    }
+
+    /// <summary>The shell's review desk names what it serves now; a shell with none, the headless host's, names nothing.</summary>
+    [Fact]
+    public async Task The_review_desk_names_each_folder_it_serves()
+    {
+        var folder = Path.Combine(HomeTree, "dist");
+        var desk = new ReviewDesk(new ServingTabs(
+            new ReviewServe("q1", ReviewDesk.TabTitle("q1"), folder, "http://localhost:5173", "/", "http://localhost:5173/")));
+        using var ledger = new StandInLedger();
+
+        Assert.Equal([folder], await BranchTidying.ReviewingAsync(desk, ledger.Client(), CancellationToken.None));
+        Assert.Empty(await BranchTidying.ReviewingAsync(null, ledger.Client(), CancellationToken.None));
+    }
+
+    /// <summary>A browser's half that serves what it was handed, and opens nothing.</summary>
+    private sealed class ServingTabs(params ReviewServe[] serving) : IReviewTabs
+    {
+        public IReadOnlyList<ReviewServe> Serving => serving;
+
+        public Task OpenAsync(string quest, string title, CancellationToken ct = default) => Task.CompletedTask;
+
+        public Task ServeAsync(ReviewServe serve, CancellationToken ct = default) => Task.CompletedTask;
+
+        public void Stop(string quest)
+        {
+        }
+    }
+
     private static SweepItem Item(string branch, string? tree = null) =>
         new("engine", "default", branch, tree, SweepKind.Empty, 0, "main", null);
 

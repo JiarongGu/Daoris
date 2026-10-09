@@ -287,7 +287,9 @@ public sealed class DriverWatch(
         {
             try
             {
-                return await tidy.LookAsync(service, Log, ct).ConfigureAwait(false);
+                // A review step in progress keeps the tree it shows from (REVIEWENV1d), as a session in use keeps its own.
+                return await tidy.LookAsync(service, Log, ct, token => BranchTidying.ReviewingAsync(Reviews, service, token))
+                    .ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {

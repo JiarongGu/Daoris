@@ -57,7 +57,13 @@ public sealed class BranchTidying(string home)
     /// One pass over every repository with a checkout here: what it removed and what it says once, as the report's lines, and
     /// the same written to <paramref name="log"/>. Never throws for a service or git that does not answer: it says so, once.
     /// </summary>
-    public async Task<IReadOnlyList<string>> LookAsync(ServiceClient service, MachineLog? log, CancellationToken ct)
+    /// <param name="reviewing">
+    /// The folders a review step in progress shows from (<see cref="ReviewingAsync"/>), asked with the sessions once a
+    /// repository is held: the tree each lies in is kept as a session's in use is. Null where nothing is reviewed here.
+    /// </param>
+    public async Task<IReadOnlyList<string>> LookAsync(
+        ServiceClient service, MachineLog? log, CancellationToken ct,
+        Func<CancellationToken, Task<IReadOnlyCollection<string>>>? reviewing = null)
     {
         Began();
         IReadOnlyList<RepoView> registry;
@@ -89,10 +95,55 @@ public sealed class BranchTidying(string home)
 
         return Said(passes, log);
 
-        async Task<IReadOnlySet<string>> InUseAsync(CancellationToken token) =>
-            (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
+        // A session running or waiting holds its tree; so does a review step in progress, by the folder it shows from.
+        async Task<IReadOnlySet<string>> InUseAsync(CancellationToken token)
+        {
+            var held = (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
                 .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            if (reviewing is not null) held.UnionWith(TreesOf(trees.TreesRoot, await reviewing(token).ConfigureAwait(false)));
+            return held;
+        }
+    }
+
+    /// <summary>
+    /// The folders a review step in progress shows from (REVIEWENV1d): each build the shell's desk serves to a tab now, and the
+    /// tree of the session that said each set-up waiting for the person here, which <i>Show it again</i> serves from. None where
+    /// the shell has no desk (the headless host, which sits a local set-up step).
+    /// </summary>
+    public static async Task<IReadOnlyCollection<string>> ReviewingAsync(ReviewDesk? desk, ServiceClient service, CancellationToken ct)
+    {
+        if (desk is null) return [];
+        var paths = desk.Tabs.Serving.Select(serve => serve.Folder).ToList();
+        foreach (var waiting in desk.Waiting)
+        {
+            if (await service.FindQuestAsync(waiting.Quest, ct).ConfigureAwait(false) is not { } quest) continue;
+            if (ReviewServed.Newest(quest)?.Session is not { Length: > 0 } session) continue;
+            if (await service.SessionTreeAsync(session, ct).ConfigureAwait(false) is { Length: > 0 } tree) paths.Add(tree);
+        }
+
+        return paths;
+    }
+
+    /// <summary>
+    /// The tree each path lies in, by the layout this home chose (<c>trees/&lt;workspace&gt;/&lt;repository&gt;/&lt;name&gt;</c>): a
+    /// folder deep in a tree names the tree. A path outside the trees home is kept as it is, and holds no tree of Daoris's.
+    /// </summary>
+    internal static IReadOnlyList<string> TreesOf(string treesRoot, IEnumerable<string> paths)
+    {
+        var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(treesRoot));
+        var named = new List<string>();
+        foreach (var path in paths)
+        {
+            var full = Path.GetFullPath(path);
+            var under = Path.GetRelativePath(root, full);
+            var parts = under.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            named.Add(Path.IsPathRooted(under) || parts[0] == ".." || parts.Length < 3
+                ? full
+                : Path.Combine(root, parts[0], parts[1], parts[2]));
+        }
+
+        return named;
     }
 
     /// <summary>

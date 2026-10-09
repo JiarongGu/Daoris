@@ -12,12 +12,14 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 public sealed class BranchTidyingProcessTests : IDisposable
 {
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(60);
+    // A look judges each branch the line holds with several git calls, twice: a dozen took over a minute while other worktrees
+    // built (FLAKE1), and 22 seconds alone.
+    private static readonly TimeSpan Bound = TimeSpan.FromMinutes(4);
 
     private readonly string _scratch;
     private readonly string _home;
     private readonly StandInLedger _ledger = new();
-    private readonly CancellationTokenSource _closing = new(TimeSpan.FromMinutes(3));
+    private readonly CancellationTokenSource _closing = new(TimeSpan.FromMinutes(10));
     private DateTimeOffset _now = new(2026, 10, 9, 9, 0, 0, TimeSpan.Zero);
 
     public BranchTidyingProcessTests()
@@ -169,6 +171,31 @@ public sealed class BranchTidyingProcessTests : IDisposable
 
         Assert.Equal([$"tidy  engine: removed `{landed.Branch}` with its tree, which held nothing beyond `main`."], next);
         Assert.False(Directory.Exists(landed.Path));
+    }
+
+    /// <summary>
+    /// A review step in progress (REVIEWENV1d) keeps the tree it shows from, as a session in use keeps its own: a tree the line
+    /// took whose build is shown stays, and goes at the look after nothing shows from it.
+    /// </summary>
+    [Fact]
+    public async Task A_tree_a_review_shows_from_stays_while_it_is_shown()
+    {
+        var root = await RepositoryAsync("engine");
+        var landed = await LandedTreeAsync(new SessionTrees(_home), root);
+        _ledger.Register("engine", root);
+        var tidying = new BranchTidying(_home) { Pace = TimeSpan.Zero };
+        IReadOnlyCollection<string> shown = [Path.Combine(landed.Path, "app", "dist")];
+
+        var held = await tidying.LookAsync(_ledger.Client(), null, _closing.Token, _ => Task.FromResult(shown)).WaitAsync(Bound);
+
+        Assert.Empty(held);
+        Assert.Contains(landed.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
+        Assert.True(Directory.Exists(landed.Path));
+
+        shown = [];
+        var next = await tidying.LookAsync(_ledger.Client(), null, _closing.Token, _ => Task.FromResult(shown)).WaitAsync(Bound);
+
+        Assert.Equal([$"tidy  engine: removed `{landed.Branch}` with its tree, which held nothing beyond `main`."], next);
     }
 
     /// <summary>
