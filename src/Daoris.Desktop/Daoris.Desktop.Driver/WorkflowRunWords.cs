@@ -28,7 +28,7 @@ public static class WorkflowRunWords
             OpinionGateStates.None, OpinionGateStates.WaitsChain, OpinionGateStates.NotAsked, OpinionGateStates.Reading,
             OpinionGateStates.ReadAgain, OpinionGateStates.WithSession, OpinionGateStates.Disputed, OpinionGateStates.CommitsSince,
             OpinionGateStates.Unavailable, OpinionGateStates.Settled, OpinionGateStates.Anyway, OpinionGateStates.Myself,
-            OpinionGateStates.Answered, WorkflowRunDetails.Landed, OpinionGateStates.Unread,
+            OpinionGateStates.Answered, WorkflowRunDetails.Landed, OpinionGateStates.Unread, OpinionGateStates.CannotStart,
         ],
         [WorkflowKinds.Look] =
         [
@@ -156,6 +156,10 @@ public static class WorkflowRunWords
             (WorkflowKinds.Opinion, OpinionGateStates.Unread) => step.Words is { } why
                 ? $"Whether a second opinion holds it could not be read: {why}"
                 : "Whether a second opinion holds it could not be read.",
+            // WORKFLOW1f (the workflow design §3.7): a named workflow's opinion step naming reviewers its repository does not declare.
+            (WorkflowKinds.Opinion, OpinionGateStates.CannotStart) => step.Words is { } cannot
+                ? $"It cannot start: {cannot}"
+                : "It cannot start: its workflow names reviewers its repository does not declare.",
 
             (WorkflowKinds.Look, WorkflowRunDetails.NotShown) => $"Waits for your look in `{environment}`: nothing shows it there yet.",
             (WorkflowKinds.Look, WorkflowRunDetails.BeingSetUp) => $"Being set up in `{environment}` by its set-up step, quest #{quest}.",

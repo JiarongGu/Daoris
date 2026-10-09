@@ -592,11 +592,16 @@ public sealed partial class Driver(
     /// A driven record that just concluded, read against its repository's rule (LAND2b): a done under the switch joins the due
     /// list, and the rest under it is said in its conversation. Never a reason to fail the run: the record has concluded.
     /// </summary>
-    private void ConcludedForLanding(string sessionId, QuestView quest, string? status, string state, string workTree, string? workspace)
+    private async Task ConcludedForLandingAsync(
+        string sessionId, QuestView quest, string? status, string state, string workTree, string? workspace, CancellationToken ct)
     {
-        AutoLander.Concluded(home, config, _events, sessionId, quest, status, state, workTree, workspace);
+        // WORKFLOW1f: its run's process, read once for both, so a named workflow's landing step and opinion step decide what is owed.
+        var process = status == "Done"
+            ? await AutoLander.ProcessAsync(home, config, new ServiceReviewWorld(service), quest, workTree, workspace, ct).ConfigureAwait(false)
+            : null;
+        AutoLander.Concluded(home, config, _events, sessionId, quest, status, state, workTree, workspace, process: process);
         // XAGENT1f: a done whose rule reads it is owed a second opinion, which a later look asks (the second-agent design §2.1).
-        OpinionLook.Concluded(home, config, sessionId, quest, status, state, workTree);
+        OpinionLook.Concluded(home, config, sessionId, quest, status, state, workTree, process: process);
     }
 
     /// <summary>
@@ -1220,10 +1225,14 @@ public sealed partial class Driver(
                 InFlight = carryingOn ? await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) : [],
                 GrewFrom = opened?.GrewFrom,
                 // How its work will land (WSR1, D87), for a session in a tree of its own — the only kind
-                // the review's press reaches. A chain's step is told its chain's branch, which its done moves on (LAND2c).
+                // the review's press reaches. A chain's step is told its chain's branch, which its done moves on (LAND2c). Under a
+                // named workflow its run's bound version's landing step says it (WORKFLOW1f); a run's first start is bound after it
+                // opens, so its first session is told the rule.
                 LandsOn = _trees.Holds(workTree)
                     ? await _trees.PlanAsync(
-                        workTree, await LandsAsAsync(sessionId, quest, id => service.FindQuestAsync(id, ct), ct).ConfigureAwait(false), ct)
+                        workTree, await LandsAsAsync(sessionId, quest, id => service.FindQuestAsync(id, ct), ct).ConfigureAwait(false), ct,
+                        await WorkflowProcesses.ReadAsync(home, config, new ServiceReviewWorld(service), quest.Id, quest.To, start.Workspace, ct)
+                            .ConfigureAwait(false))
                         .ConfigureAwait(false)
                     : null,
                 // The person's answer, when the session before parked to ask them (STANDDOWN2).
@@ -1348,7 +1357,7 @@ public sealed partial class Driver(
                         .ConfigureAwait(false);
 
                     // LAND2b: a done under a rule that accepts automatically is due, and a later look lands it beside itself.
-                    ConcludedForLanding(sessionId, quest, after?.Status, conclusion.State, workTree, start.Workspace);
+                    await ConcludedForLandingAsync(sessionId, quest, after?.Status, conclusion.State, workTree, start.Workspace, ct).ConfigureAwait(false);
 
                     // The tree stays, whole — nothing merges itself and nothing deletes itself (D51
                     // rules 6–7): the person merges from the root and discards from a surface that

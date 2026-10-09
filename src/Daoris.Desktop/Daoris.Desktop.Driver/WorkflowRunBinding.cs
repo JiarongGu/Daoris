@@ -42,8 +42,21 @@ public sealed record WorkflowRunBinding(string Run, string Repository, string Wo
     /// <summary>Under Current, its steps as <see cref="WorkflowCurrent.ToJson"/> wrote them at the start, for the trace (design §2.6).</summary>
     public IReadOnlyList<string> CurrentSteps { get; init; } = [];
 
+    /// <summary>
+    /// The person's <i>Keep</i> (WORKFLOW1f, design §4.4): they kept the kind's workflow for this work though it changed paths outside
+    /// the kind's, with when, their words and the door. Null where none was given, which every binding from before reads as.
+    /// </summary>
+    public WorkflowKept? Kept { get; init; }
+
     /// <summary>Whether the run follows Current, which every gate reads live, as today (design §2.6).</summary>
     public bool IsCurrent => Workflow == WorkflowSelection.Current;
+}
+
+/// <summary>The person's say-so that a run keeps its workflow (WORKFLOW1f, design §4.4): when, at which door, and their words.</summary>
+/// <param name="Door"><c>terminal</c> or <c>screen</c> (<see cref="ReviewDoors"/>).</param>
+public sealed record WorkflowKept(DateTimeOffset At, string Door)
+{
+    public string? Words { get; init; }
 }
 
 /// <summary>
@@ -57,10 +70,11 @@ public sealed record WorkflowRunBinding(string Run, string Repository, string Wo
 /// choice, later changes new work only. A run already bound is never bound again. A run that first started before this build
 /// is bound at its next start here.</para>
 ///
-/// <para><b>What reads it</b>: the gate is WORKFLOW1f's, which reads a named run's version from the store
-/// (<see cref="WorkflowStore.Load"/>) by <see cref="WorkflowRunBinding.Version"/>, holds a run whose <see cref="WorkflowRunBinding.Problem"/>
-/// is set, checks the changed paths against <see cref="WorkflowRunBinding.Paths"/> where the kind's workflow lowers the person's part
-/// (§4.4), and reads a run under Current, or one with no binding, live from the rules, as every gate does today.</para>
+/// <para><b>What reads it</b>: the gate (WORKFLOW1f, <see cref="WorkflowProcesses.Read"/>), which reads a named run's version from the
+/// store (<see cref="WorkflowStore.Load"/>) by <see cref="WorkflowRunBinding.Version"/>, holds a run whose
+/// <see cref="WorkflowRunBinding.Problem"/> is set, checks the changed paths against <see cref="WorkflowRunBinding.Paths"/> where the
+/// kind's workflow lowers the person's part (§4.4) until the person's <see cref="WorkflowRunBinding.Kept"/>, and reads a run under
+/// Current, or one with no binding, live from the rules, as every gate does today.</para>
 ///
 /// <para>A TWIN, in part, with the CLI's <c>workflowchoice.ts</c>: the versions a kept run names (<see cref="KeptVersions(IEnumerable{JsonElement}, string)"/>)
 /// are held to the shared table's <c>kept</c> rows, since <c>daoris driver workflow edit</c> keeps them too. The file is the driver's
@@ -158,8 +172,48 @@ public static partial class WorkflowRunBindings
         return true;
     }
 
+    /// <summary>
+    /// The person's <i>Keep</i> kept on a run's binding (WORKFLOW1f, design §4.4), atomically, every other field as it was read: the
+    /// binding itself is never bound again. A run with no binding here keeps nothing.
+    /// </summary>
+    /// <returns>The binding with it, or null where the run has none here.</returns>
+    public static WorkflowRunBinding? Keep(string home, string run, WorkflowKept kept)
+    {
+        if (Read(home, run) is not { } binding) return null;
+        var with = binding with { Kept = kept with { At = ToTheSecond(kept.At) } };
+        AtomicFile.WriteText(PathOf(home, run), ToJson(with));
+        return with;
+    }
+
     /// <summary>Whether a run is bound here.</summary>
     public static bool Bound(string home, string run) => IsRunId(run) && File.Exists(PathOf(home, run));
+
+    /// <summary>
+    /// Whether any run here is bound to a named workflow in <paramref name="repository"/> (WORKFLOW1f): where a gate cannot read
+    /// which run a piece of work is, it holds only where one might govern it. A run's file that does not read binds nothing.
+    /// </summary>
+    public static bool AnyNamed(string home, string repository)
+    {
+        var folder = FolderOf(home);
+        if (!Directory.Exists(folder)) return false;
+        foreach (var path in Directory.GetFiles(folder, "*.json"))
+        {
+            try
+            {
+                if (Parse(File.ReadAllText(path)) is { IsCurrent: false } binding
+                    && string.Equals(binding.Repository, repository, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                // A run's file that does not read binds nothing.
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>A run's binding, or null where it has none here, or its file does not read as one.</summary>
     public static WorkflowRunBinding? Read(string home, string run)
@@ -206,6 +260,11 @@ public static partial class WorkflowRunBindings
                 CurrentSteps = root.TryGetProperty("current", out var steps) && steps.ValueKind == JsonValueKind.Array
                     ? [.. steps.EnumerateArray().Select(step => step.GetRawText())]
                     : [],
+                // WORKFLOW1f: the person's Keep, whole or none; a binding from before has none.
+                Kept = root.TryGetProperty("kept", out var kept) && kept.ValueKind == JsonValueKind.Object && Text(kept, "door") is { } door
+                       && DateTimeOffset.TryParse(Text(kept, "at"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var keptAt)
+                    ? new WorkflowKept(keptAt, door) { Words = Text(kept, "words") }
+                    : null,
             };
         }
         catch (JsonException)
@@ -246,6 +305,15 @@ public static partial class WorkflowRunBindings
                 writer.WriteStartArray("current");
                 foreach (var step in binding.CurrentSteps) writer.WriteRawValue(step);
                 writer.WriteEndArray();
+            }
+
+            if (binding.Kept is { } kept)
+            {
+                writer.WriteStartObject("kept");
+                writer.WriteString("at", kept.At.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture));
+                writer.WriteString("door", kept.Door);
+                if (kept.Words is { } words) writer.WriteString("words", words);
+                writer.WriteEndObject();
             }
 
             writer.WriteEndObject();

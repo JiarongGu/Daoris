@@ -483,7 +483,7 @@ public sealed partial class Driver
 
         // LAND2b: as a first run's ending, so a resumed session that closes its quest done is due too. One that went on after
         // its landing moves its own branch on at the next look (LAND2c).
-        ConcludedForLanding(sessionId, quest, status, conclusion.State, workTree, quest.Workspace);
+        await ConcludedForLandingAsync(sessionId, quest, status, conclusion.State, workTree, quest.Workspace, ct).ConfigureAwait(false);
 
         return (new StartRun(
             $"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}) [resumed its conversation]: {conclusion.Note}",

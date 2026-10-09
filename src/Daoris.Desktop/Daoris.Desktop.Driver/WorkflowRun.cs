@@ -475,6 +475,8 @@ public static class WorkflowRuns
             {
                 State = WorkflowRunStates.Done, At = gate.Person?.At, Words = gate.Person?.Words, Code = gate.Person?.Said,
             },
+            // A named workflow's opinion step that cannot start (WORKFLOW1f): it sits, saying why.
+            OpinionGateStates.CannotStart => on with { State = WorkflowRunStates.CannotStart, Session = gate.Session, Words = gate.Problem },
             _ => on with { State = WorkflowRunStates.NotKnown, Detail = OpinionGateStates.Unread, Words = gate.Problem },
         };
     }

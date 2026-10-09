@@ -348,7 +348,8 @@ internal static class TreesConsole
 
                 if (args.Contains("--plan"))
                 {
-                    var plan = await landing.PlanAsync(tree, subject).ConfigureAwait(false);
+                    // How it lands, by the process the gate read (WORKFLOW1f): a named workflow's landing step, or the rule.
+                    var plan = await landing.PlanAsync(tree, subject, process: gate.Process).ConfigureAwait(false);
                     Console.WriteLine(Planned(session, plan));
                     // SQUASHTIDY1f: work the line holds by content, which the press refuses, said before it in the press's own sentence.
                     if (await landing.DiscardOfferAsync(tree).ConfigureAwait(false) is { } carried) Console.WriteLine($"trees: {carried.NotLanded}");

@@ -657,6 +657,12 @@ public sealed record TraceBranch(string Branch, string Tip, DateTimeOffset At)
     /// landed with none; null where none was asked, and for a landing recorded before it was kept.
     /// </summary>
     public LandingOpinion? Opinion { get; init; }
+
+    /// <summary>
+    /// The named workflow it landed by (WORKFLOW1f, the workflow design §5.5): its id, the version its run kept and the level that
+    /// chose it; null under Current, and for a landing recorded before it was kept.
+    /// </summary>
+    public LandingWorkflow? Workflow { get; init; }
 }
 
 /// <summary>What stood when a driven session on a quest started, by the moments the stores keep (D143 point 3).</summary>
@@ -1165,6 +1171,7 @@ internal static partial class TraceChains
         Rule = landing.Rule is { } rule ? new TraceRule(rule.Plugin, rule.AutoAccept, rule.Source) : null,
         Review = landing.Review,
         Opinion = landing.Opinion,
+        Workflow = landing.Workflow,
     };
 
     /// <summary>

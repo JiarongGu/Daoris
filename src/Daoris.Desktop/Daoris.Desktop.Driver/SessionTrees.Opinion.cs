@@ -21,13 +21,61 @@ public sealed partial class SessionTrees
     /// to <see cref="LandAsync"/>, which refuses the first part that holds.
     /// </summary>
     /// <param name="session">The working session the door lands, which the terminal's doors the gate names say.</param>
-    public async Task<LandingGate> GateAsync(string path, string? quest, IOpinionWorld world, string? session = null, CancellationToken ct = default)
+    /// <param name="process">
+    /// The run's process, where the door read it already (WORKFLOW1f: the look's automatic landing reads it for the switch first);
+    /// otherwise it is read here, once, for every part.
+    /// </param>
+    public async Task<LandingGate> GateAsync(
+        string path, string? quest, IOpinionWorld world, string? session = null, CancellationToken ct = default, WorkflowProcess? process = null)
     {
         var full = Path.GetFullPath(path);
         var (workspace, repository) = OwnerOf(full);
-        var review = await ReviewGate.ReadAsync(world, Config(), full, repository, workspace, quest, ct).ConfigureAwait(false);
-        var opinion = await OpinionAsync(full, repository, workspace, quest, session, world, review, OpinionRules.Landing, ct).ConfigureAwait(false);
-        return new LandingGate(opinion, review);
+        // WORKFLOW1f (the workflow design §2.3, §4.6): the run's bound version where it names one, the rules live where it does not,
+        // read once and handed to every part, so the look, the opinion and the landing decide by one process.
+        var config = Config();
+        process ??= await ProcessAsync(config, repository, workspace, quest, world, ct).ConfigureAwait(false);
+        var workflow = await WorkflowAsync(full, process, session, ct).ConfigureAwait(false);
+        var review = await ReviewGate.ReadAsync(world, config, full, repository, workspace, quest, ct, process).ConfigureAwait(false);
+        var opinion = await OpinionAsync(full, repository, workspace, quest, session, world, review, OpinionRules.Landing, ct, process).ConfigureAwait(false);
+        return new LandingGate(opinion, review) { Workflow = workflow };
+    }
+
+    /// <summary>
+    /// The process a quest's work here follows (WORKFLOW1f, <see cref="WorkflowProcesses.ReadAsync"/>): its run's bound version, or the
+    /// rules live; a conversation's work, which serves no quest, reads the rules live.
+    /// </summary>
+    public async Task<WorkflowProcess> ProcessAsync(
+        DriverConfig config, string repository, string? workspace, string? quest, IReviewWorld world, CancellationToken ct = default) =>
+        quest is null
+            ? WorkflowProcesses.Current(config, repository, workspace)
+            : await WorkflowProcesses.ReadAsync(home, config, world, quest, repository, workspace, ct).ConfigureAwait(false);
+
+    /// <summary>
+    /// The run's own part of the gate for a tree (WORKFLOW1f, the workflow design §4.4): the process judged, and where its kind chose
+    /// a workflow that asks less of the person, the paths the chain changed read from git, from where its work leaves the line to its
+    /// tip. Git is asked only there.
+    /// </summary>
+    public async Task<WorkflowGateState> WorkflowAsync(string tree, WorkflowProcess process, string? session, CancellationToken ct = default)
+    {
+        KindPathsRead? paths = null;
+        if (WorkflowGate.ChecksPaths(process))
+        {
+            var (otherwise, steps) = WorkflowProcesses.Otherwise(home, Config(), process.Repository, process.Binding!.Workspace);
+            var lowered = steps is null
+                ? [$"what {otherwise} asks of you could not be read here, so it is taken as more"]
+                : Involvement.Lowers(process.Steps, steps);
+            paths = new KindPathsRead(lowered, otherwise, lowered.Count == 0 || process.Binding.Kept is not null ? [] : await ChangedAsync(tree, ct).ConfigureAwait(false));
+        }
+
+        return WorkflowGate.Judge(process, paths) with { Session = session };
+    }
+
+    /// <summary>The paths the work changed, from where it leaves its line to its tree's tip (§4.4); null where git cannot say.</summary>
+    internal async Task<IReadOnlyList<string>?> ChangedAsync(string tree, CancellationToken ct)
+    {
+        if (await ForkPointAsync(tree, ct).ConfigureAwait(false) is not { } fork) return null;
+        var (code, names, _) = await WorkingTree.GitAsync(tree, ["diff", "--name-only", "--no-renames", "-z", fork, "HEAD"], ct).ConfigureAwait(false);
+        return code == 0 ? [.. names.Split('\0', StringSplitOptions.RemoveEmptyEntries)] : null;
     }
 
     /// <summary>
@@ -36,13 +84,18 @@ public sealed partial class SessionTrees
     /// service are asked only where a rule reads at the occasion. A service or git that does not answer holds the work, and says so.
     /// </summary>
     /// <param name="occasion"><c>landing</c> for a landing door; <c>steps</c> where the chain's next step waits on this work (§8.1).</param>
+    /// <param name="process">
+    /// The run's process (WORKFLOW1f), read once by the door or the look: under a named workflow, its version's opinion step over the
+    /// declared reviewers. Null reads the rule live, as before.
+    /// </param>
     public async Task<OpinionGateState> OpinionAsync(
         string tree, string repository, string workspace, string? quest, string? session, IOpinionWorld world, ReviewGateState? review,
-        string occasion, CancellationToken ct = default)
+        string occasion, CancellationToken ct = default, WorkflowProcess? process = null)
     {
-        var rule = OpinionRules.Resolve(Config(), repository, workspace);
-        var facts = new OpinionGateFacts(repository, rule) { Session = session, Occasion = occasion, Review = review };
-        if (quest is null || rule is not { Rule: { IsNone: false } standing } || !standing.On.Contains(occasion))
+        var rule = process is null ? OpinionRules.Resolve(Config(), repository, workspace) : process.Opinion;
+        var cannot = process?.OpinionCannot;
+        var facts = new OpinionGateFacts(repository, rule) { Session = session, Occasion = occasion, Review = review, Cannot = cannot };
+        if (quest is null || !OpinionGate.Reads(rule, cannot, occasion))
         {
             return new OpinionGateState(OpinionGateStates.None, repository) { Rule = rule, Session = session };
         }

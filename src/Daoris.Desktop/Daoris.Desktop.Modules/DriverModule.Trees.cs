@@ -403,7 +403,8 @@ public sealed partial class DriverModule
 
         if (request.Type == "LANDING")
         {
-            var plan = await trees.PlanAsync(tree, subject, cancellationToken);
+            // How it lands, by the process the gate read (WORKFLOW1f): a named workflow's landing step, or the rule.
+            var plan = await trees.PlanAsync(tree, subject, cancellationToken, gate.Process);
             return new
             {
                 Session = id, plan.Form, plan.Target, plan.Source, plan.Plugin, plan.Problem, Review = Waits(gate.Review), Opinion = Opinion(gate.Opinion),
@@ -600,7 +601,8 @@ public sealed partial class DriverModule
         {
             var pressed = await presses.GateAsync(due.Session, cancellationToken).ConfigureAwait(false);
             if (pressed.Gate?.Opinion is not { } gate) continue;
-            var auto = LandingRules.Choose(config, due.Repository, due.Workspace).Rule.AutoAccept;
+            // Whether it lands by itself, by the process the gate read (WORKFLOW1f): a named workflow's landing step, or the rule.
+            var auto = (pressed.Gate.Process?.Landing ?? LandingRules.Choose(config, due.Repository, due.Workspace)).Rule.AutoAccept;
             if (!WaitsOnPerson(gate, auto)) continue;
             waits.Add(new
             {

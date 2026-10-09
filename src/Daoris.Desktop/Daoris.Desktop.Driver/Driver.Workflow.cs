@@ -33,9 +33,11 @@ public sealed partial class Driver
                 var binding = WorkflowRunBindings.Plan(
                     config, home, run, quest.To, start.Workspace, askId, WorkflowRunBindings.TaskOf(ask),
                     WorkflowCurrent.PluginsOf(_catalog), DateTimeOffset.UtcNow);
-                if (WorkflowRunBindings.Bind(home, binding) && (!binding.IsCurrent || binding.Problem is not null))
+                if (WorkflowRunBindings.Bind(home, binding))
                 {
-                    events.Add(WorkflowRunBindings.Said(binding, quest.Id));
+                    // The machine log keeps which level chose and whether a named version or Current (WORKFLOW1f, design §5.5).
+                    service.LandingSaid(WorkflowLines.Chosen(binding));
+                    if (!binding.IsCurrent || binding.Problem is not null) events.Add(WorkflowRunBindings.Said(binding, quest.Id));
                 }
             }
             catch (Exception error) when (error is HttpRequestException or System.Text.Json.JsonException or DriverException or IOException

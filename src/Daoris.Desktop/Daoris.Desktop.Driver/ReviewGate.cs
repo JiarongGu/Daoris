@@ -27,6 +27,12 @@ public static class ReviewLevels
     /// <summary>Row 6: the workspace's rule.</summary>
     public const string Workspace = "workspace";
 
+    /// <summary>
+    /// Rows 5 and 6 under a named workflow (WORKFLOW1f, the workflow design §4.6): the run's bound version's look step, in an
+    /// environment the rule declares, or none where the version has no look.
+    /// </summary>
+    public const string Workflow = "workflow";
+
     /// <summary>Row 7: nothing set anywhere, which is today's behaviour.</summary>
     public const string Nothing = "nothing";
 }
@@ -63,6 +69,12 @@ public static class ReviewStates
 
     /// <summary>Whether it waits could not be read: the service did not answer.</summary>
     public const string Unread = "unread";
+
+    /// <summary>
+    /// The run's named workflow asks for a look its repository does not declare the environment of (WORKFLOW1f, the workflow design
+    /// §3.7): it sits saying why, until the environment is declared or the person skips the review.
+    /// </summary>
+    public const string CannotStart = "cannot-start";
 }
 
 /// <summary>
@@ -73,8 +85,17 @@ public static class ReviewStates
 /// <param name="Environment">The environment the work is reviewed in; null where it is not reviewed.</param>
 public sealed record ReviewDecision(string Level, string? Environment)
 {
-    /// <summary>Whether the work waits for the person's review.</summary>
-    public bool Reviews => Environment is not null;
+    /// <summary>Whether the work waits for the person's review: in an environment, or for a look that cannot start.</summary>
+    public bool Reviews => Environment is not null || Cannot is not null;
+
+    /// <summary>
+    /// Why the run's named workflow's look cannot start (WORKFLOW1f, the workflow design §3.7), at <see cref="ReviewLevels.Workflow"/>:
+    /// a sentence naming the Setup row that declares what it needs. Null everywhere else.
+    /// </summary>
+    public string? Cannot { get; init; }
+
+    /// <summary>The named workflow rows 5 and 6 were read from, as said (<c>`docs-to-pr` v2</c>), at <see cref="ReviewLevels.Workflow"/>.</summary>
+    public string? Workflow { get; init; }
 
     /// <summary>The repository whose part of the chain this is.</summary>
     public string Repository { get; init; } = "";
@@ -250,7 +271,14 @@ public static class ReviewGate
     /// <param name="chain">The chain's quests (<see cref="ChainOf"/>); empty where none could be read.</param>
     /// <param name="ask">The ask the chain was asked by, or null.</param>
     /// <param name="rule">The review rule standing for the repository (<see cref="ReviewRules.Resolve"/>), or null for none set.</param>
-    public static ReviewDecision Decide(IReadOnlyList<QuestView> chain, string repository, AskView? ask, ResolvedReview? rule)
+    /// <param name="look">
+    /// Rows 5 and 6 as the run's named workflow says them (WORKFLOW1f, the workflow design §4.6), read from its bound version's look
+    /// step; null under Current, where the rule says them, as today. Rows 1 to 4 decide first either way, and <c>on</c> still names
+    /// the rule's default environment, since environments stay declared (§2.3).
+    /// </param>
+    /// <param name="workflow">The named workflow <paramref name="look"/> was read from, as said.</param>
+    public static ReviewDecision Decide(
+        IReadOnlyList<QuestView> chain, string repository, AskView? ask, ResolvedReview? rule, WorkflowLook? look = null, string? workflow = null)
     {
         var part = chain.Where(quest => Same(quest.To, repository)).ToList();
         var work = part.LastOrDefault(quest => quest.SetUpIn is null)?.Id;
@@ -289,6 +317,9 @@ public static class ReviewGate
         // Row 4: the ask's choice, the latest standing, for every chain it publishes that sets none.
         if (ask?.ReviewChoices.LastOrDefault() is { } asked) return Chosen(ReviewLevels.Ask, asked.Choice, asked.Words);
 
+        // Rows 5 and 6 under a named workflow (WORKFLOW1f): its version's look step, or none where it has no look.
+        if (look is not null) return Of(ReviewLevels.Workflow, look.Cannot is null ? look.Environment : null) with { Cannot = look.Cannot, Workflow = workflow };
+
         // Rows 5 and 6: the rule, a repository's replacing its workspace's whole; only a required one says review.
         if (rule is null) return Of(ReviewLevels.Nothing, null);
         var level = rule.Source == ReviewSource.Repository ? ReviewLevels.Repository : ReviewLevels.Workspace;
@@ -321,6 +352,9 @@ public static class ReviewGate
             };
         }
 
+        // A named workflow's look that cannot start sits, saying why (WORKFLOW1f, the workflow design §3.7): the person's skip, row 1,
+        // is the floor, as it is for a review set up nowhere.
+        if (decision.Cannot is not null) return new(ReviewStates.CannotStart, decision) { Tip = tip };
         if (decision.SetUpStep is not { } step) return new(ReviewStates.NotShown, decision) { Tip = tip };
         if (step.Status is "Open" or "Taken" || step.SetUps.Count == 0) return new(ReviewStates.BeingSetUp, decision) { Tip = tip };
 
@@ -347,10 +381,16 @@ public static class ReviewGate
     /// the tree's repository, the tree's <c>HEAD</c> and git's ancestry. A conversation, which serves no quest, has nothing to wait
     /// for. A service that does not answer holds the work only where a rule stands that could ask for a review, and says so.
     /// </summary>
+    /// <param name="process">
+    /// The run's process (WORKFLOW1f, <see cref="WorkflowProcesses"/>), read once by the door for every part of the gate: under a
+    /// named workflow, rows 5 and 6 are its version's look. Null reads the rule live, as every gate did before.
+    /// </param>
     public static async Task<ReviewGateState> ReadAsync(
-        IReviewWorld world, DriverConfig config, string tree, string repository, string workspace, string? quest, CancellationToken ct = default)
+        IReviewWorld world, DriverConfig config, string tree, string repository, string workspace, string? quest, CancellationToken ct = default,
+        WorkflowProcess? process = null)
     {
-        var rule = ReviewRules.Resolve(config, repository, workspace);
+        var rule = process is null ? ReviewRules.Resolve(config, repository, workspace) : process.Review;
+        var look = process?.Look;
         if (quest is null) return new(ReviewStates.None, new ReviewDecision(ReviewLevels.Nothing, null) { Repository = repository });
 
         ReviewDecision decision;
@@ -359,13 +399,14 @@ public static class ReviewGate
             var chain = ChainOf(await world.QuestsAsync(ct).ConfigureAwait(false), quest);
             var asked = chain.Select(each => AskWords.AskOf(each.From)).FirstOrDefault(id => id is not null);
             var ask = asked is null ? null : await world.AskAsync(asked, ct).ConfigureAwait(false);
-            decision = Decide(chain, repository, ask, rule);
+            decision = Decide(chain, repository, ask, rule, look, process?.Name);
         }
         catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or InvalidOperationException
                                           || (error is OperationCanceledException && !ct.IsCancellationRequested))
         {
+            // Unread where a review could be asked: by a rule standing, or by the named version's look.
             var none = new ReviewDecision(ReviewLevels.Nothing, null) { Repository = repository };
-            return rule is { Rule.IsNone: false }
+            return rule is { Rule.IsNone: false } || look is { Environment: not null } or { Cannot: not null }
                 ? new(ReviewStates.Unread, none) { Problem = error.Message.TrimEnd().TrimEnd('.') }
                 : new(ReviewStates.None, none);
         }
@@ -423,6 +464,9 @@ public static class ReviewGate
                 + $"what you reviewed does not hold these commits: set-up step `#{step}` was reviewed at `{Short(gate.SetUp!.Commit)}`, and "
                 + $"{(gate.Tip is { } tip ? $"`{Short(tip)}`" : "the work's tip")} is not that commit or one before it. It waits for the "
                 + "set-up step to show it again." + skip,
+            // WORKFLOW1f (design §3.7): the named workflow's look sits, saying what declares it; the skip lets it land without one.
+            ReviewStates.CannotStart => $"Waits for your review, and it cannot start: {decision.Workflow ?? "its workflow"} asks for one, and "
+                + $"{decision.Cannot}" + skip,
             _ => $"Whether this work waits for your review could not be read: {gate.Problem}. Nothing lands until it can be.",
         };
     }
@@ -435,6 +479,7 @@ public static class ReviewGate
         ReviewLevels.Chain or ReviewLevels.Ask =>
             $"{(decision.Level == ReviewLevels.Chain ? "its chain" : "its ask")} says `{decision.Choice}`, and `{decision.Repository}` declares no review environment",
         ReviewLevels.Repository => $"`{decision.Repository}`'s rule does not require one",
+        ReviewLevels.Workflow => $"{decision.Workflow ?? "its workflow"} has no look",
         _ => $"the workspace's rule does not require one for `{decision.Repository}`",
     };
 

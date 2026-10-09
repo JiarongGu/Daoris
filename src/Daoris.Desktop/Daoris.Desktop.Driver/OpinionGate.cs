@@ -51,6 +51,12 @@ public static class OpinionGateStates
     /// <summary>Whether it waits could not be read: the service or git did not answer, where a rule says one is asked.</summary>
     public const string Unread = "unread";
 
+    /// <summary>
+    /// The run's named workflow asks for a second opinion by reviewers its repository does not declare (WORKFLOW1f, the workflow
+    /// design §2.3, §3.7): it sits saying why, until they are declared or the person goes on, or looks, themselves.
+    /// </summary>
+    public const string CannotStart = "cannot-start";
+
     /// <summary>The states in which another agent, or the working session, is still at work on the opinion: what sits a set-up step (§7).</summary>
     public static bool AtWork(string state) => state is NotAsked or Reading or WithSession or ReadAgain;
 }
@@ -160,6 +166,9 @@ public sealed record OpinionGateFacts(string Repository, ResolvedOpinion? Rule)
 
     /// <summary>D154's gate for the same work, whose <i>Reviewed</i> after the opinion stood answers its disputes (§7).</summary>
     public ReviewGateState? Review { get; init; }
+
+    /// <summary>Why the run's named workflow's opinion step cannot start (WORKFLOW1f, <see cref="WorkflowProcess.OpinionCannot"/>); else null.</summary>
+    public string? Cannot { get; init; }
 }
 
 /// <summary>What the judgement reads beyond the facts: the host's opinions, what the driver did with each, and git's ancestry.</summary>
@@ -326,7 +335,7 @@ public static class OpinionGate
         };
 
         // A conversation's work lands nothing by the driver's gate (§12.2), and a level that names no occasion here asks nothing.
-        if (facts.Quest is null || facts.Rule is not { Rule: { IsNone: false } rule } || !rule.On.Contains(facts.Occasion)) return Of(OpinionGateStates.None);
+        if (facts.Quest is null || !Reads(facts.Rule, facts.Cannot, facts.Occasion)) return Of(OpinionGateStates.None);
 
         // The person's own answer, while what would land is the commit they answered at or one before it (§8.5).
         foreach (var word in facts.Person.OrderByDescending(word => word.At))
@@ -358,9 +367,18 @@ public static class OpinionGate
         return judged;
     }
 
+    /// <summary>
+    /// Whether a rule reads at an occasion (§2.1): one that names a reviewer and the occasion. A named workflow's opinion step that
+    /// cannot start reads at its occasions too, so it holds there saying why (WORKFLOW1f), whoever it names.
+    /// </summary>
+    public static bool Reads(ResolvedOpinion? rule, string? cannot, string occasion) =>
+        rule is not null && (cannot is not null || !rule.Rule.IsNone) && rule.Rule.On.Contains(occasion);
+
     /// <summary>Where the opinion stands before any answer of the person's: the chain, the newest pass, its delivery, its coverage.</summary>
     private static async Task<OpinionGateState> StandingAsync(OpinionGateFacts facts, OpinionReads reads, Func<string, OpinionGateState> of)
     {
+        // A named workflow's opinion step that cannot start sits, saying why, before anything is asked (WORKFLOW1f, design §3.7).
+        if (facts.Cannot is { } cannot) return of(OpinionGateStates.CannotStart) with { Problem = cannot };
         if (facts.Later is not null) return of(OpinionGateStates.WaitsChain);
 
         // The newest ask decides: an opinion the host opened, or why none could be read.
@@ -486,6 +504,10 @@ public static class OpinionGate
             OpinionGateStates.Answered => gate.Person?.Said == ReviewVerdicts.Reviewed
                 ? $"Your Reviewed answered the second opinion{Answering(gate)}{WordsSaid(gate.Person)}."
                 : $"Your Accept answered the second opinion{Answering(gate)}{WordsSaid(gate.Person)}.",
+            // WORKFLOW1f (the workflow design §3.7): the named workflow's step sits, saying what declares it; the person's own answers
+            // are the floor, as they are where no opinion can be had.
+            OpinionGateStates.CannotStart => $"Waits for a second opinion, and it cannot start: {gate.Problem} {anyway} lets it land "
+                + $"without one, or {Verb(gate, "myself", "\"…\"")} records your own reading.",
             _ => $"Whether this work waits for a second opinion could not be read: {gate.Problem}. Nothing lands until it can be.",
         };
     }
@@ -497,6 +519,7 @@ public static class OpinionGate
         OpinionGateStates.CommitsSince => $" with {Plural(gate.Since ?? 0, "commit")} no other agent read",
         OpinionGateStates.Unavailable => " when none could be had",
         OpinionGateStates.WaitsChain or OpinionGateStates.NotAsked => " before one was asked",
+        OpinionGateStates.CannotStart => " when its workflow's step could not start",
         OpinionGateStates.Reading or OpinionGateStates.WithSession or OpinionGateStates.ReadAgain => " while it was still being read",
         _ => "",
     };
@@ -612,18 +635,37 @@ public static class OpinionGate
 /// <summary>
 /// The whole landing gate a door hands <see cref="SessionTrees.LandAsync"/> (XAGENT1f; the second-agent design §7): the second
 /// opinion and D154's look, read together, refused in that order. The quest's own holds come first, as they hold the opinion's
-/// ask; the landing comes last.
+/// ask; the landing comes last. Since WORKFLOW1f the run's own part comes before the opinion (the workflow design §4.4), and the
+/// landing step's own declarations after the look, all read from one process.
 /// </summary>
 public sealed record LandingGate(OpinionGateState Opinion, ReviewGateState Review)
 {
-    /// <summary>Whether the work may land: both parts let it go.</summary>
-    public bool LetsGo => Opinion.LetsGo && Review.LetsGo;
+    /// <summary>
+    /// The run's own part (WORKFLOW1f): the process every part was read with, and what of the run's own holds the work. Null for a
+    /// gate no door read one for, which is today's.
+    /// </summary>
+    public WorkflowGateState? Workflow { get; init; }
 
-    /// <summary>The first part that holds, in §7's order, as a landing's refusal: its sentence and its code; null where both let go.</summary>
+    /// <summary>The process the gate was read with, which the landing lands by; null where none was read.</summary>
+    public WorkflowProcess? Process => Workflow?.Process;
+
+    /// <summary>Whether the work may land: every part lets it go.</summary>
+    public bool LetsGo => Refusal is null;
+
+    /// <summary>
+    /// The first part that holds, in §7's order, as a landing's refusal: its sentence and its code; null where all let go. The run's
+    /// own part and the landing step's are refused as <see cref="AutoLandingCode.Refused"/>: their sentence says what holds them.
+    /// </summary>
     public TreeLanding? Refusal =>
-        !Opinion.LetsGo ? new(false, Opinion.Says) { Refusal = AutoLandingCode.Opinion }
+        Workflow is { LetsGo: false } workflow ? new(false, workflow.Says) { Refusal = AutoLandingCode.Refused }
+        : !Opinion.LetsGo ? new(false, Opinion.Says) { Refusal = AutoLandingCode.Opinion }
         : !Review.LetsGo ? new(false, Review.Says) { Refusal = AutoLandingCode.Unreviewed }
+        : Process?.LandingCannot is not null ? new(false, WorkflowGate.LandingSays(Process)) { Refusal = AutoLandingCode.Refused }
         : null;
+
+    /// <summary>Whether what holds the work is the run's own part or its landing step's (WORKFLOW1f), where it holds.</summary>
+    public bool WorkflowHolds => Workflow is { LetsGo: false }
+        || (Opinion.LetsGo && Review.LetsGo && Process?.LandingCannot is not null);
 
     /// <summary>
     /// The gate with the person's press counted (§8.2–§8.3): where the press was made with what was unsettled shown, and the gate
@@ -646,16 +688,21 @@ public static class LandingGateWords
     public static IReadOnlyList<string> Plan(LandingGate gate)
     {
         var lines = new List<string>();
+        // The run's own part first (WORKFLOW1f): which workflow decides, where a named one does, and what of its own holds it.
+        if (gate.Workflow is { State: not WorkflowGateStates.None } workflow) lines.Add($"trees: {workflow.Says}");
         if (gate.Opinion.State != OpinionGateStates.None) lines.Add($"trees: {gate.Opinion.Says}");
         if (gate.Review.State != ReviewStates.None) lines.Add($"trees: {gate.Review.Says}");
+        if (gate.Process is { LandingCannot: not null } process) lines.Add($"trees: {WorkflowGate.LandingSays(process)}");
         return lines;
     }
 
-    /// <summary>The machine log's line for a landing the gate held, by the part that held it; null where neither did.</summary>
+    /// <summary>The machine log's line for a landing the gate held, by the part that held it; null where none did.</summary>
     /// <param name="owner">The tree's workspace and repository.</param>
     public static LandingLine? Held(string session, (string Workspace, string Repository) owner, LandingGate gate, TreeLanding landed, string door) =>
         landed.Refusal switch
         {
+            AutoLandingCode.Refused when gate.WorkflowHolds && gate.Workflow is { } workflow =>
+                WorkflowLines.Held(session, owner.Repository, owner.Workspace, workflow, door, workflow.LetsGo ? WorkflowKinds.Landing : null),
             AutoLandingCode.Opinion => OpinionLines.Held(session, owner.Repository, owner.Workspace, gate.Opinion, door),
             AutoLandingCode.Unreviewed => ReviewLines.Held(session, owner.Repository, owner.Workspace, gate.Review, door),
             _ => null,
