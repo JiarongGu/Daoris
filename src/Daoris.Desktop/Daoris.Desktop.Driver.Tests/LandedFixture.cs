@@ -89,6 +89,21 @@ public abstract class LandedFixture : IDisposable
         return squash;
     }
 
+    /// <summary>
+    /// A person's branch <paramref name="onto"/>, made from the line, that takes <paramref name="branch"/>'s commits by cherry-pick,
+    /// then the checkout back on the line. 🔴 Each copy is a commit of its own (AUTOTIDY1r): a cherry-pick whose parent is the
+    /// original's, by the same committer in the same second, writes the very same commit, and the person's branch then holds the
+    /// session's work by ancestry, never by content. <c>-x</c> names the original in the message, so the copy's id always differs.
+    /// </summary>
+    protected static async Task CherryPickAsync(string root, string branch, string onto)
+    {
+        await GitAsync(root, "checkout", "--quiet", "-b", onto);
+        await GitAsync(root, "cherry-pick", "-x", $"main..{branch}");
+        await GitAsync(root, "checkout", "--quiet", "main");
+        var (original, copy) = ((await GitAsync(root, "rev-parse", branch)).Trim(), (await GitAsync(root, "rev-parse", onto)).Trim());
+        Assert.True(original != copy, $"the cherry-pick onto {onto} made a commit of its own, not {branch}'s own {original}");
+    }
+
     /// <summary>A commit on a branch nobody has checked out, through a worktree made and removed for it.</summary>
     protected async Task CommitOnAsync(string root, string branch, string file, string content, string message)
     {

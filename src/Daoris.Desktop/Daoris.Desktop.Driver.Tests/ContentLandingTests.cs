@@ -74,9 +74,7 @@ public sealed class ContentLandingTests : LandedFixture
         var trees = new SessionTrees(Home);
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await CommitAsync(tree.Path, "work.txt", "the work\n", "the work");
-        await GitAsync(root, "checkout", "--quiet", "-b", "feature/x");
-        await GitAsync(root, "cherry-pick", $"main..{tree.Branch}");
-        await GitAsync(root, "checkout", "--quiet", "main");
+        await CherryPickAsync(root, tree.Branch, "feature/x");
         var before = await StateAsync(root, tree);
 
         var landed = await trees.LandAsync(tree.Path, Subject);
