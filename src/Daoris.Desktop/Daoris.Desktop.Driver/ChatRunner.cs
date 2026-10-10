@@ -387,11 +387,11 @@ public sealed partial class ChatRunner : IDisposable
     /// set: that holds the plugins' own agents, so a plugin declaring an agent and a server was refused as one this build
     /// carries, and its servers were withheld from every conversation.
     /// </remarks>
-    internal static async Task<(IReadOnlyList<AcpMcpServer> Handed, string? Notice, bool Drives)> HandServersAsync(
+    internal static async Task<(IReadOnlyList<AcpMcpServer> Handed, Noted? Notice, bool Drives)> HandServersAsync(
         string home, IInAppBrowser? browser, PluginLog plugins, string sessionId, CancellationToken ct)
     {
         var catalog = PluginCatalog.Load(home, AdapterSet.Built().Names);
-        var handed = await InAppBrowserServers.HandAsync(catalog.Servers, browser, ct).ConfigureAwait(false);
+        var handed = await InAppBrowserServers.HandNotedAsync(catalog.Servers, browser, ct).ConfigureAwait(false);
         plugins.Served(catalog, sessionId, handed.Handed);
         return handed;
     }
@@ -418,7 +418,7 @@ public sealed partial class ChatRunner : IDisposable
         string? servers = null;
         object? meta = null;
         IReadOnlyList<AcpMcpServer> pluginServers = [];
-        string? browserNotice = null;
+        Noted? browserNotice = null;
         var drivesBrowser = false;
         try
         {
@@ -467,7 +467,10 @@ public sealed partial class ChatRunner : IDisposable
             {
                 (pluginServers, browserNotice, drivesBrowser) = await HandServersAsync(
                     _home, _browser, _plugins, sessionId, ct).ConfigureAwait(false);
-                if (browserNotice is not null) Record(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = browserNotice });
+                if (browserNotice is not null)
+                {
+                    Record(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = browserNotice.Note, Parts = browserNotice.Parts });
+                }
             }
 
             // 🔴 The servers the plugins hand every session (D64, D65 §1f), on this door too (REV3). The
@@ -794,10 +797,11 @@ public sealed partial class ChatRunner : IDisposable
         var after = await session.SetConfigOptionAsync(configId, value, ct).ConfigureAwait(false);
         // Said as the agent names them, so a reader later knows what ran the turns after this one.
         var chosen = option.Choices.FirstOrDefault(choice => choice.Value == value)?.Name ?? value;
-        Record(sessionId, new SessionEvent
-        {
-            Kind = SessionEventKind.Note, Text = $"the person set {option.Name} to {chosen} for this conversation.",
-        });
+        // CONVNOTE2c: the option and its value are the agent's own names, facts the page words the sentence around.
+        var set = Noted.Of(
+            NoteCodes.ChatOptionSet, $"the person set {option.Name} to {chosen} for this conversation.",
+            ("option", option.Name), ("chosen", chosen));
+        Record(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = set.Note, Parts = set.Parts });
         return ThePersons(after);
     }
 
@@ -821,9 +825,13 @@ public sealed partial class ChatRunner : IDisposable
     /// What the agent was told beside the person's words (HELP1b), as the record keeps it: a note, never
     /// the person's, so a reader later sees what the agent knew and who said what.
     /// </summary>
-    private static SessionEvent? Told(ChatMessage message) => message.Preface is { Length: > 0 } preface
-        ? new SessionEvent { Kind = SessionEventKind.Note, Text = $"told where the person is: {preface}" }
-        : null;
+    internal static SessionEvent? Told(ChatMessage message)
+    {
+        if (message.Preface is not { Length: > 0 } preface) return null;
+        // CONVNOTE2c: the lead by its code; the preface is Daoris's one-copy English to the agent (D142 point 6), shown as written.
+        var told = Noted.Of(NoteCodes.ChatToldWhere, "told where the person is:").Then(" ", Noted.Said(preface, NoteBy.Program));
+        return new SessionEvent { Kind = SessionEventKind.Note, Text = told.Note, Parts = told.Parts };
+    }
 
     /// <summary>
     /// A conversation's turn the door refused, read for an account's limit (TOOL4d, D125 §2.3): where the adapter's table

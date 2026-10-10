@@ -439,8 +439,13 @@ public sealed class ProtocolChatTests : IDisposable
         Assert.Equal("haiku", after[0].Current);
         Assert.Equal("haiku", runner.Options(id)[0].Current);
         Assert.Contains(told, entry => entry.Session == id && entry.Options.Count == 1);
-        Assert.Contains(events.Page(id).Events,
+        var set = Assert.Single(events.Page(id).Events,
             e => e.Kind == SessionEventKind.Note && e.Text == "the person set Model to Haiku for this conversation.");
+        // CONVNOTE2c: the option and its value are the agent's names, facts the page words the sentence around.
+        var part = Assert.Single(set.Parts!);
+        Assert.Equal("chat.option-set", part.Code);
+        Assert.Equal(("Model", "Haiku"), (part.Value("option"), part.Value("chosen")));
+        NoteAssert.Holds(set.Text, set.Parts);
         Assert.True(runner.Finish(id));
     }
 

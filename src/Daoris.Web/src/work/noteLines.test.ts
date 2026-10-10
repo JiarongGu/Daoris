@@ -232,6 +232,42 @@ describe('noteLines', () => {
     });
   });
 
+  /** CONVNOTE2c: a press's note, a chat's setting and where the person is, and a browser withheld, worded; others' words as written. */
+  describe('a press, a chat’s settings and a browser withheld', () => {
+    it('words a press by its lead and leaves the landing’s sentence as written', () => {
+      const parts = [coded('landing.person-accepted', 'the person accepted this work:'), words('merged `daoris/s4` into `main`.', 'program')];
+      expect(noteLines(t, { parts }, 'en')).toEqual([
+        { kind: 'said', text: 'You accepted this work:' },
+        { kind: 'words', text: 'merged `daoris/s4` into `main`.', by: 'program' },
+      ]);
+      expect(noteLines(zh, { parts: [coded('landing.person-handed', 'the person handed this work on:')] }, 'zh'))
+        .toEqual([{ kind: 'said', text: '你已将这项工作移交出去：' }]);
+    });
+
+    it('words an option the person set and where they were told they are', () => {
+      const set = coded('chat.option-set', 'the person set Model to Haiku for this conversation.', { option: 'Model', chosen: 'Haiku' });
+      expect(noteLines(t, { parts: [set] }, 'en')[0].text).toBe('You set Model to Haiku for this conversation.');
+      expect(noteLines(zh, { parts: [set] }, 'zh')[0].text).toBe('你已将这次对话的 Model 设为 Haiku。');
+      expect(noteLines(zh, { parts: [coded('chat.option-set', 'the person set …', { option: 'Model' })] }, 'zh')[0].kind).toBe('recorded');
+      expect(noteLines(zh, { parts: [coded('chat.told-where', 'told where the person is:'), words('Sessions', 'program')] }, 'zh')).toEqual([
+        { kind: 'said', text: '已告知智能体你所在的位置：' },
+        { kind: 'words', text: 'Sessions', by: 'program' },
+      ]);
+    });
+
+    it('words a withheld server by name and why, an exception’s words as written', () => {
+      const lead = coded('browser.withheld', '— `browser` drives Daoris’s own browser, and was not handed:', { servers: ['browser'] });
+      expect(noteLines(t, { parts: [lead, coded('browser.no-host', '…')] }, 'en').map((line) => line.text)).toEqual([
+        "— `browser` drives Daoris's own browser, and was not handed:",
+        'This host carries no in-app browser — only the desktop shell does.',
+      ]);
+      expect(noteLines(zh, { parts: [lead, words('the in-app browser was closed.', 'program')] }, 'zh')).toEqual([
+        { kind: 'said', text: '—— `browser` 要使用 Daoris 自己的浏览器，但没有交给它：' },
+        { kind: 'words', text: 'the in-app browser was closed.', by: 'program' },
+      ]);
+    });
+  });
+
   /**
    * AGT3d (D125's AGT3c note): a limit's line says the kind of limit, its window worded as the agents' screens word it
    * (`harness.window.*`), and whose accounts, in either language; a window this build does not know is said as named.

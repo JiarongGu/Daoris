@@ -223,6 +223,10 @@ public sealed class LandingPluginTests : IDisposable
         Assert.Equal(SessionEventKind.Note, note.Kind);
         Assert.StartsWith("the person accepted this work:", note.Text);
         Assert.Contains("Plugin `example.lands`: pushed it.", note.Text);
+        // CONVNOTE2c: the lead is a code the page words; the landing's sentence, with git's and the plugin's words, rides as a program's.
+        Assert.Equal(["landing.person-accepted", null], note.Parts!.Select(part => part.Code).ToArray());
+        Assert.Equal(("put the work on `feature/x`. Plugin `example.lands`: pushed it.", NoteBy.Program), (note.Parts![1].Words, note.Parts![1].By));
+        NoteAssert.Holds(note.Text, note.Parts);
     }
 
     // ——— a plugin, faked

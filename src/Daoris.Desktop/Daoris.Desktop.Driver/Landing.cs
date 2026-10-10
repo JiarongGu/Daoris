@@ -396,8 +396,17 @@ public static class LandingRules
     /// plugin's part in it. Machine-local, like every note there — a plugin's word never rides the
     /// session record, which travels (D64 §4).
     /// </summary>
-    public static SessionEvent Note(TreeLanding landed) =>
-        new() { Kind = SessionEventKind.Note, Text = $"{PersonAccepted} {landed.Message}" };
+    public static SessionEvent Note(TreeLanding landed) => Press(NoteCodes.LandingPersonAccepted, PersonAccepted, landed.Message);
+
+    /// <summary>
+    /// A press's note by its code (CONVNOTE2c): the lead is Daoris's, its sentence the program's words beneath, as written, for
+    /// they carry git's and the plugin's words beside Daoris's. The English is the lead, a space and the sentence, as before.
+    /// </summary>
+    private static SessionEvent Press(NoteCode code, string lead, string message)
+    {
+        var said = Noted.Of(code, lead).Then(" ", Noted.Said(message, NoteBy.Program));
+        return new SessionEvent { Kind = SessionEventKind.Note, Text = said.Note, Parts = said.Parts };
+    }
 
     /// <summary>How the conversation's note of a press opens: what the trace knows an acceptance by (TRACE1).</summary>
     public const string PersonAccepted = "the person accepted this work:";
@@ -417,7 +426,7 @@ public static class LandingRules
     /// plugin's part in it — kept where the landing's own note is, and for the same reason (D100).
     /// </summary>
     public static SessionEvent HandNote(TreeHand handed) =>
-        new() { Kind = SessionEventKind.Note, Text = $"the person handed this work on: {handed.Message}" };
+        Press(NoteCodes.LandingPersonHanded, "the person handed this work on:", handed.Message);
 
     /// <summary>What is wrong with a branch pattern, in a sentence, or null when it names one branch per session.</summary>
     public static string? Problem(string pattern)
