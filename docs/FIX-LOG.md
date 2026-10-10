@@ -18,7 +18,7 @@ repository.
 - **Verify:** four failing-first defect cases; backtick, tilde and unclosed longer fences, repeated
   live entries and nested example cost. Focused tests pass; final baseline receipt:
   `docs/2026-10-10-code-and-docs-review.md`.
-- **Commit:** pending.
+- **Commit:** `c0527f64`.
 
 ### Documentation: a freshness declaration passed after its source disappeared (DOCSYS2)
 
