@@ -14,7 +14,7 @@ repository.
 - **Fix:** require a saved binding; a refused save retains the original hold explanation.
 - **Verify:** both real-Git race regressions and the normal Keep/automatic-landing acceptance case;
   final reached-gate receipt in `docs/2026-10-10-code-and-docs-review.md`.
-- **Commit:** pending.
+- **Commit:** `423cc132`.
 
 ### Workflows: a named run was drawn from Current (WORKFLOW1c6)
 
@@ -26,7 +26,7 @@ repository.
   for task-added looks. Unreadable bindings/versions show a problem with no graph.
 - **Verify:** saved-v1 versus newer-version/Current regression, damaged binding/version cases and
   terminal/bridge/bilingual UI checks; final receipt in the maintenance review.
-- **Commit:** pending.
+- **Commit:** `423cc132`.
 
 ### Workflows: landing previews hid workflow holds (WORKFLOW1g2)
 
@@ -36,7 +36,7 @@ repository.
   suppress Accept and an open confirmation while held. Preserve the driver's available terminal doors.
 - **Verify:** real-Git bridge preview/press parity for all three holds, no branch/record writes, both
   UI doors, confirmation changes, passing workflows and Chinese chrome; final receipt in the review.
-- **Commit:** pending.
+- **Commit:** `423cc132`.
 
 ### Documentation tooling: fenced examples were treated as live records (MAINT1)
 

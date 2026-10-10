@@ -173,3 +173,6 @@ checks, 60 tooling tests, release consistency and five universal gates. Existing
 historical archive overruns remain advisory. DOCSCRATCH1 and CLEANUP1 remain open because native
 removal was rejected with “blocked by policy”; no alternate deletion was attempted. Workflow editor
 and installed-window proof remain their existing tasks, and no live installation or push occurred.
+
+Local implementation commit: `423cc132`. The documentation follow-up fills its fix-log provenance;
+it changes no runtime behavior and is checked by the documentation and universal gates.
