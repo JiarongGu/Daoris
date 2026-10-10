@@ -13040,3 +13040,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ENTRY1h — go_propose names what waits on the person** (service; proposed by ENTRY1b's hand-back). The part description did not name ENTRY1b's four parts, so the helper was not told it could take a person to what waits on them.
 
 **Outcome** 2026-10-11: `go_propose`'s part description names `waiting` and `review` under sessions and `asks` and `held` under quests, and says a part brings its group into view naming no item; the text test holds them. Detail: the merge commit.
+
+
+## ENTRY1f1 — a go names one quest or ask (2026-10-11, D161)
+
+> - [ ] **ENTRY1f1 — a go names one quest or ask** (service/driver/modules/web; in flight). An `item` on the go, judged by the driver against the quests and asks it reads for `delete`; the page opens it. D161's ENTRY1f note.
+
+**Outcome** 2026-10-11: a go on Quests may name one quest, or an ask as `ask:<id>`; the driver judges it against the records `delete` reads (closed ones named closed) and refuses one the machine lacks, or an ask's id without its prefix; the page opens it through `placeDoor`. Detail: D161's ENTRY1f1 note.

@@ -6,8 +6,8 @@ namespace Daoris.Driver.Tests;
 /// <summary>Ask Daoris's <c>go</c> proposal (HELP6): a place the window has, which changes nothing.</summary>
 public sealed class HelpGoProposalsTests : HelpProposalsFixture
 {
-    private static HelpProposal Go(string view, string? domain = null, string? part = null) =>
-        Of("go", "go", view) with { Domain = domain, Part = part };
+    private static HelpProposal Go(string view, string? domain = null, string? part = null, string? item = null) =>
+        Of("go", "go", view) with { Domain = domain, Part = part, Item = item };
 
     [Theory]
     [InlineData("quests", null, null, "Open Quests.")]
@@ -84,6 +84,62 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
+    /// ENTRY1f1 (D161's ENTRY1f note): a go on Quests may name the one quest, by its id, or the one ask, as
+    /// <c>ask:&lt;id&gt;</c>, that waits on the person, judged against the records the <c>delete</c> kind reads: every quest
+    /// and ask, closed ones included, so a person asking where one went is taken to it and told it closed. A <c>#</c> before
+    /// the id is the room's spelling and stripped, the id matched without case, and the page handed the record's own.
+    /// </summary>
+    [Theory]
+    [InlineData("q1a2b3c4", "q1a2b3c4", "Open Quests → quest `#q1a2b3c4` “Cap the chunk budget”.")]
+    [InlineData(" #Q1A2B3C4 ", "q1a2b3c4", "Open Quests → quest `#q1a2b3c4` “Cap the chunk budget”.")]
+    [InlineData("ask:a2none00", "ask:a2none00", "Open Quests → ask `#a2none00` “a test ask”.")]
+    [InlineData("ask:#A2NONE00", "ask:a2none00", "Open Quests → ask `#a2none00` “a test ask”.")]
+    [InlineData("q3done00", "q3done00", "Open Quests → quest `#q3done00` “Fix the stall”, done.")]
+    [InlineData("q4declin", "q4declin", "Open Quests → quest `#q4declin` “Rewrite it all”, declined.")]
+    public void A_go_may_name_one_quest_or_ask_the_machine_holds(string item, string handed, string says)
+    {
+        var plan = HelpProposals.Plan(Go("quests", item: item), DriverConfig.Empty, Machine);
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal(says, plan.Describe);
+        Assert.Equal(new HelpPlace("quests", null, null) { Item = handed }, plan.Go);
+    }
+
+    /// <summary>ENTRY1f1: a closed ask is the person's to find as a closed quest is, and the card says it closed.</summary>
+    [Fact]
+    public void A_go_to_a_closed_ask_says_it_closed()
+    {
+        var facts = Machine with { Asks = [new HelpAskFacts("a4shut00", "an ask set aside", "work", "Closed", [], Deletable: true)] };
+
+        var plan = HelpProposals.Plan(Go("quests", item: "ask:a4shut00"), DriverConfig.Empty, facts);
+
+        Assert.Equal("Open Quests → ask `#a4shut00` “an ask set aside”, closed.", plan.Describe);
+    }
+
+    /// <summary>
+    /// ENTRY1f1: an item the machine's records do not hold is refused on the card, in the <c>delete</c> kind's words, never
+    /// handed to the page as a dead place; an ask's id named as a quest's is told its spelling. An item is a quest or an ask
+    /// on Quests alone, with no part beside it, and one of another shape is said so.
+    /// </summary>
+    [Theory]
+    [InlineData("quests", null, "q9", "there is no quest `#q9` on this machine.")]
+    [InlineData("quests", null, "ask:a9", "there is no ask `#a9` on this machine.")]
+    [InlineData("quests", null, "#a2none00", "there is no quest `#a2none00` on this machine — `#a2none00` is an ask: name it as `ask:a2none00`.")]
+    [InlineData("quests", null, "#", "`#` is no item of `quests` — a quest by its id, or an ask as `ask:<id>`.")]
+    [InlineData("quests", null, "ask:", "`ask:` is no item of `quests` — a quest by its id, or an ask as `ask:<id>`.")]
+    [InlineData("quests", null, "session:s1", "`session:s1` is no item of `quests` — a quest by its id, or an ask as `ask:<id>`.")]
+    [InlineData("quests", "held", "q1a2b3c4", "a go names a part of `quests` or an item in it, not both")]
+    [InlineData("sessions", null, "q1a2b3c4", "a go names an item only on `quests`")]
+    [InlineData("overview", null, "ask:a2none00", "a go names an item only on `quests`")]
+    public void An_item_the_machine_does_not_hold_or_cannot_be_is_refused(string view, string? part, string item, string says)
+    {
+        var plan = HelpProposals.Plan(Go(view, part: part, item: item), DriverConfig.Empty, Machine);
+
+        Assert.Contains(says, plan.Refusal);
+        Assert.Null(plan.Go);
+    }
+
+    /// <summary>
     /// UX6i2a (D150 §2): a go spelled as a place was before it moved, kept in an earlier conversation or sent by a service
     /// that still lists it, lands where the place went, said and handed to the page by its name now. UX6g2b: Settings →
     /// Workspace and Permissions are kept with each part they had, each its own row, on the workspace's page where the part
@@ -141,6 +197,9 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
                 "settings/permissions/across → projects/workspace-defaults",
             ],
             HelpPlaces.Kept.Select(kept => $"{Spelled(kept.Was)} → {Spelled(kept.Now)}"));
+        // ENTRY1f1: the views a go may name an item in, and how an ask's item is told from a quest's.
+        Assert.Equal(["quests"], HelpPlaces.ItemViews);
+        Assert.Equal("ask:", HelpPlaces.AskItem);
     }
 
     [Fact]
@@ -152,6 +211,17 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
         Assert.Empty(doors.Calls);
         Assert.Equal(new HelpPlace("settings", "start", "helper"), go.Go);
         Assert.Equal("applied", HelpProposals.Find(_home, "p6")!.State);
+    }
+
+    /// <summary>ENTRY1f1: a go naming an ask hands the page the place with the ask's item, as the page's list names one.</summary>
+    [Fact]
+    public async Task A_go_naming_an_ask_hands_the_page_its_item()
+    {
+        var (go, doors, _) = await ApplyAsync(Go("quests", item: "ask:#a2none00"));
+
+        Assert.True(go.Applied);
+        Assert.Empty(doors.Calls);
+        Assert.Equal(new HelpPlace("quests", null, null) { Item = "ask:a2none00" }, go.Go);
     }
 
     /// <summary>A go's fields, read from the file the service's box writes — and an account's, which it lacks, read as not named.</summary>
@@ -170,6 +240,25 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
         var go = Assert.Single(HelpProposals.Pending(_home, "h1"), proposal => proposal.Kind == "go");
 
         Assert.Equal(("start", "helper"), (go.Domain, go.Part));
+        Assert.Null(go.Item);
         Assert.Null(go.Account);
+    }
+
+    /// <summary>ENTRY1f1: a go's item, read from the file as the service's box writes it, spelled as named.</summary>
+    [Fact]
+    public void A_gos_item_is_read_from_the_file()
+    {
+        var node = new JsonObject
+        {
+            ["id"] = "k3", ["proposed"] = "2026-10-11T10:00:00.0000000+00:00", ["by"] = new JsonObject { ["session"] = "h1" },
+            ["kind"] = "go", ["door"] = "go", ["target"] = "quests", ["workspace"] = null, ["value"] = null,
+            ["sentence"] = null, ["domain"] = null, ["part"] = null, ["item"] = "ask:#a2none00",
+            ["why"] = "the person asked where their ask went", ["state"] = "proposed", ["note"] = null,
+        };
+        System.IO.File.WriteAllText(Path.Combine(HelpProposals.FolderOf(_home), "k3.json"), node.ToJsonString());
+
+        var go = Assert.Single(HelpProposals.Pending(_home, "h1"), proposal => proposal.Kind == "go");
+
+        Assert.Equal("ask:#a2none00", go.Item);
     }
 }

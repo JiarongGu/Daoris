@@ -544,6 +544,32 @@ describe('Ask Daoris, with an agent named', () => {
     APPLIED = APPLIED_SETTING;
   });
 
+  /**
+   * ENTRY1f1 (D161's ENTRY1f note): a go may name the one ask that waits, judged by the driver against the machine's
+   * records; the page opens Quests with it chosen, named as Quests' list names an ask.
+   */
+  it('takes the person to the one ask a go names', async () => {
+    SESSIONS = [HELP];
+    PROPOSALS = [{
+      id: 'g2o3t4o5', kind: 'go', describe: 'Open Quests → ask `#a2none00` “a test ask”.', terminal: '',
+      why: 'the person asked where their ask went',
+    }];
+    APPLIED = {
+      message: 'Applied: `#g2o3t4o5` — Open Quests → ask `#a2none00` “a test ask”. Nothing else changed.',
+      applied: true, go: { view: 'quests', domain: null, part: null, item: 'ask:a2none00' },
+    };
+    bridge();
+    const onGo = vi.fn();
+    show(undefined, null, onGo);
+
+    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
+    await userEvent.click(within(cards).getByRole('button', { name: 'Go there' }));
+
+    await waitFor(() => expect(onGo).toHaveBeenCalledWith({ view: 'quests', item: 'ask:a2none00' }));
+    PROPOSALS = [];
+    APPLIED = APPLIED_SETTING;
+  });
+
   /** HELP6: a delete is applied through the driver's Apply, like every card, and opens nothing. */
   it('deletes a record made by mistake on the person\'s press, and goes nowhere', async () => {
     SESSIONS = [HELP];

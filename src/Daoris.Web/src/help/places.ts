@@ -1,12 +1,15 @@
 import type { AgentPart } from '../agents/agents';
 import type { View } from '../commands';
 import type { KnowledgeMode } from '../knowledge/modes';
-import type { OpenGroup } from '../opener';
+import { askItem, questsItem, type OpenGroup } from '../opener';
 import type { SettingsAnchor, SettingsSection } from '../SettingsView';
 import type { StarterDoor } from './starters';
 
-/** A place on the window a go names (HELP6), as the driver judged it: a view, a Settings domain, a part. */
-export type HelpPlace = { view: string; domain?: string | null; part?: string | null };
+/**
+ * A place on the window a go names (HELP6), as the driver judged it: a view, a Settings domain, a part — or, since
+ * ENTRY1f1, the one record of the view's list it opens, a quest's id or an ask's `ask:<id>` as the machine's record spells it.
+ */
+export type HelpPlace = { view: string; domain?: string | null; part?: string | null; item?: string | null };
 
 /**
  * The places Ask Daoris's go may name (HELP6): the views, Settings' domains, and the parts of them a door
@@ -30,6 +33,12 @@ export const PLACE_VIEWS: readonly View[] = [
 // UX6i2a: the guide is Get started since UX6j, and Plugins left Settings for its place. UX6g2b: Workspace and Permissions
 // left it for a workspace's page with UX6g, and are kept below.
 export const PLACE_DOMAINS: readonly SettingsSection[] = ['start', 'appearance', 'ai', 'driver', 'browser', 'logs'];
+
+/**
+ * The views a go may name one item in (ENTRY1f1, D161's ENTRY1f note): Quests, whose list holds quests and asks, an ask
+ * named as `askItem` names it. The driver's `HelpPlaces.ItemViews`.
+ */
+export const PLACE_ITEM_VIEWS: readonly View[] = ['quests'];
 
 /**
  * The places a go named before they moved, each with the place it is now (UX6i2a, D150 §2): Search and Convergence
@@ -105,9 +114,10 @@ export const PLACE_PARTS: readonly { within: string; part: string }[] = [
  * null for a place this window does not have, which is never guessed at. Pure, so every place is an argument.
  *
  * @remarks
- * A go names no item: Repositories' Setup opens on the repository its list has chosen, an agent's part on the agent
- * that has it (UX6e), a workspace's part on the workspace in view's page (UX6g2b), and a group of Sessions or Quests with
- * no session or quest in it chosen (ENTRY1b), as the room tells the helper.
+ * A go names no repository, agent or workspace: Repositories' Setup opens on the repository its list has chosen, an
+ * agent's part on the agent that has it (UX6e), a workspace's part on the workspace in view's page (UX6g2b), and a group
+ * of Sessions or Quests with no session or quest in it chosen (ENTRY1b), as the room tells the helper. On Quests it may
+ * name the one quest or ask instead of a part (ENTRY1f1), which the list chooses as any door's item.
  * Knowledge with no part opens in the mode it was left in (UX6i). A go spelled as a place was before it moved opens where
  * it went (`PLACE_KEPT`).
  */
@@ -118,6 +128,16 @@ export function placeDoor(asked: HelpPlace): StarterDoor | null {
   if (!view) return null;
   const domain = place.domain ?? null;
   const part = place.part ?? null;
+
+  // ENTRY1f1: the one quest or ask, alone in its view, named as Quests' list names it.
+  const item = asked.item?.trim() || null;
+  if (item !== null) {
+    if (!PLACE_ITEM_VIEWS.includes(view) || domain !== null || part !== null) return null;
+    const named = questsItem(item);
+    const id = 'ask' in named ? named.ask : named.quest;
+    if (!id) return null;
+    return { view, item: 'ask' in named ? askItem(id) : id };
+  }
 
   if (domain !== null) {
     const section = view === 'settings' ? PLACE_DOMAINS.find((known) => known === domain) : undefined;

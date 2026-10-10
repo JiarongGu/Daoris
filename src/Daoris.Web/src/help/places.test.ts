@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { VIEWS } from '../commands';
+import { askItem } from '../opener';
 import { SETTINGS_SECTIONS } from '../SettingsView';
-import { PLACE_DOMAINS, PLACE_KEPT, PLACE_PARTS, PLACE_VIEWS, placeDoor, type HelpPlace } from './places';
+import { PLACE_DOMAINS, PLACE_ITEM_VIEWS, PLACE_KEPT, PLACE_PARTS, PLACE_VIEWS, placeDoor, type HelpPlace } from './places';
 
 // HELP6: the places Ask Daoris's go may name. A twin (`.claude/knowledge/twins.md`) of the driver's
 // `HelpPlaces`, which judges a go before the person sees it: the tables below are the driver test's
@@ -29,6 +30,9 @@ describe('the places a go may name', () => {
       'settings/workspace/sweep → projects/workspace-branches', 'settings/permissions → agents/rules',
       'settings/permissions/across → projects/workspace-defaults',
     ]);
+    // ENTRY1f1: the views a go may name an item in, and how an ask's item is told from a quest's (the driver's `AskItem`).
+    expect(PLACE_ITEM_VIEWS).toEqual(['quests']);
+    expect(askItem('')).toBe('ask:');
   });
 
   /**
@@ -91,6 +95,21 @@ describe('the places a go may name', () => {
     expect(placeDoor({ view: 'sessions', part: 'working' })).toBeNull();
     expect(placeDoor({ view: 'quests', part: 'open' })).toBeNull();
     expect(placeDoor({ view: 'overview', part: 'waiting' })).toBeNull();
+  });
+
+  /**
+   * ENTRY1f1 (D161's ENTRY1f note): a go on Quests may name the one quest or ask that waits, as the driver judged it against
+   * the machine's records; the door names it as Quests' list does, a quest by its id and an ask as `askItem`'s, and the
+   * application's one opener chooses it there. An item is Quests' alone, with no part beside it, as the driver holds.
+   */
+  it('open the one quest or ask a go names on Quests, as its list names it', () => {
+    expect(placeDoor({ view: 'quests', item: 'q1a2b3c4' })).toEqual({ view: 'quests', item: 'q1a2b3c4' });
+    expect(placeDoor({ view: 'quests', domain: null, part: null, item: 'ask:a1b2c3d4' })).toEqual({ view: 'quests', item: askItem('a1b2c3d4') });
+    expect(placeDoor({ view: 'quests', item: null })).toEqual({ view: 'quests' });
+    expect(placeDoor({ view: 'quests', part: 'held', item: 'q1a2b3c4' })).toBeNull();
+    expect(placeDoor({ view: 'sessions', item: 'q1a2b3c4' })).toBeNull();
+    expect(placeDoor({ view: 'settings', domain: 'start', item: 'q1a2b3c4' })).toBeNull();
+    expect(placeDoor({ view: 'quests', item: 'ask:' })).toBeNull();
   });
 
   /**

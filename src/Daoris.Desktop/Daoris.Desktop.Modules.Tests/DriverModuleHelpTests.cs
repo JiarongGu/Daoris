@@ -128,6 +128,45 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// ENTRY1f1 (D161's ENTRY1f note): a go's answer names the one quest or ask it opens beside its place, the page's
+    /// <c>HelpSettled.go.item</c>, and a go to a place alone answers no item.
+    /// </summary>
+    [Theory]
+    [InlineData("ask:a2none00")]
+    [InlineData(null)]
+    public void A_gos_answer_names_its_item(string? item)
+    {
+        var proposal = new HelpProposal("g1", "go", "go", "quests", null, null, null, "why", "h1", "proposed") { Item = item };
+
+        var answer = JsonSerializer.SerializeToElement(
+            DriverModule.ApplyAnswer(proposal, new HelpApplied(true, "told") { Go = new HelpPlace("quests", null, null) { Item = item } }),
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+        var go = answer.GetProperty("go");
+        Assert.Equal("quests", go.GetProperty("view").GetString());
+        Assert.Equal(JsonValueKind.Null, go.GetProperty("part").ValueKind);
+        Assert.Equal(item, go.GetProperty("item").ValueKind == JsonValueKind.Null ? null : go.GetProperty("item").GetString());
+    }
+
+    /// <summary>
+    /// ENTRY1f1: the quests and asks are read from the service only while a proposal is judged against them, a delete as
+    /// before or a go naming an item; a go to a place alone, or any other kind, asks the service for none.
+    /// </summary>
+    [Theory]
+    [InlineData("delete", null, true)]
+    [InlineData("go", "q1a2b3c4", true)]
+    [InlineData("go", " ", false)]
+    [InlineData("go", null, false)]
+    [InlineData("ask", null, false)]
+    public void The_records_are_read_only_for_a_proposal_judged_against_them(string kind, string? item, bool read)
+    {
+        var proposal = new HelpProposal("p1", kind, kind, "quests", null, null, null, "why", "h1", "proposed") { Item = item };
+
+        Assert.Equal(read, DriverModule.JudgedAgainstRecords([proposal]));
+        Assert.False(DriverModule.JudgedAgainstRecords([]));
+    }
+
+    /// <summary>
     /// LEFT3 c: a sync card's look leaves the card standing for its press, and the answer says so, so the page writes no
     /// <c>proposal.settled</c> for it; a look that found nothing to do settled the card, and says that.
     /// </summary>
