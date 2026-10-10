@@ -1279,6 +1279,11 @@ A page test, at UXTOAST1's merge, 2026-10-11 (a `ui.tsx` change), with a branch-
 gate's `PluginsView.test.tsx` *keeps a trial's report on the page across a change of view* timed out at its 20 s, the
 file taking 58 s; alone the file passed 22/22 in 9 s. The first jsdom sighting: the page's suites are not real-process,
 so load alone stretched a long test past its limit.
+The second, at ACCTUX4b's merge the same day, with a branch-worker building beside it: `storyLanguage.test.tsx`'s
+*remembers no language for any story module imported* timed out at 20 s; alone the file passed 5/5 in 7.5 s. Unlike the
+first, its cause is in its shape: one test imports every story module (93), so its time grows with each story, and
+ACCTUX4b added some. *Fixed:* that test carries its own 60 s limit, with the reason beside it; the suite's 20 s stays the
+hang detector for everything else (vite.config.ts).
 `setup-kit.test.ts:531` (*a set-up quest is done as its body says*) failed once at SWEEPCARRIED1's merge, 2026-10-08, a
 web-only change: *the stub never answered 3 (session/prompt) within 30000 ms* after it had run all four commands, with
 a Codex review and two subagents building beside the gate. The same file's stub bound as STUB3's, after its command

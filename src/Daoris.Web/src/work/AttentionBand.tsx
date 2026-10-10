@@ -253,9 +253,10 @@ function Band({ doors, notify, onSessions, onRun }: {
       run(
         item,
         () => harnessAct.mutateAsync({ harness, action: 'profile-join', profile: account, join: [outside.list] }),
+        // ACCTUX4b: no place marked first, since *first* is the scope whose next start takes it, which the join's answer never names.
         (answer) => notify(t('agents.joined', {
           account: outside.label,
-          places: runsForLine((answer.places ?? []).map((place) => ({ workspace: place.workspace ?? null, first: place.default }))),
+          places: runsForLine((answer.places ?? []).map((place) => ({ workspace: place.workspace ?? null, first: false }))),
         })),
         answered,
       );

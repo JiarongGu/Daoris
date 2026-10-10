@@ -47,7 +47,10 @@ describe('a story in another language (STORY2)', () => {
     expect(localStorage.getItem(KEY)).toBe('zh');
   });
 
-  it('remembers no language for any story module imported, as a fresh profile finds it', async () => {
+  // 🔴 Its own hang detector: this one test imports every story module (93 on 2026-10-11), so its time grows with the
+  // stories. Alone it took 7.5 s; in a full run beside a building worktree it passed the suite's 20 s, at ACCTUX4b's merge,
+  // which added stories (FIX-LOG's FLAKE1). A hang still fails; a slow import of one more story does not.
+  it('remembers no language for any story module imported, as a fresh profile finds it', { timeout: 60_000 }, async () => {
     localStorage.removeItem(KEY);
     for (const load of Object.values(import.meta.glob<StoriesModule>('./**/*.stories.tsx'))) await load();
     expect(localStorage.getItem(KEY)).toBeNull();

@@ -119,7 +119,8 @@ function start({ considered = [], untrusted = [], proposals = [], groups = [], w
     if (type === 'ACCOUNTS') return accounts;
     if (type === 'HARNESS_ACTION' && request?.payload?.action === 'login') return { harness: 'claude-code', action: 'login', started: true };
     if (type === 'HARNESS_ACTION' && request?.payload?.action === 'profile-join') {
-      return { harness: 'claude-code', action: 'profile-join', profile: 'account-4', places: [{ workspace: 'default', list: true, default: false }] };
+      // Its default there, and still no place marked first: *first* is a next start the join's answer never names (ACCTUX4b).
+      return { harness: 'claude-code', action: 'profile-join', profile: 'account-4', places: [{ workspace: 'default', list: true, default: true }] };
     }
     if (type === 'RETRY_QUEST') return { drivable: [], holds: [], trees: [], running: [], notify: false, strikes: 3, forgiven: {}, retried: { quest: 'q1', did: 'marked' } };
     if (type === 'TRUST_FOLDER') return { folder: HOLD.folder, key: 'k', changed: true, verified: true, message: 'Trusted `C:/somewhere/engine` for the agent.' };

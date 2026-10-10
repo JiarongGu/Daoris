@@ -13096,3 +13096,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ENTRY1d2a — a go to Add or Import carries a workspace** (service/driver/modules; after ENTRY1f2, which holds the same files). The go box and tool take `workspace`, the driver judges it on `add`/`import` only, the room's sentence and the register/import owed rows change. D161's ENTRY1d note; the go's `item` (ENTRY1f1) is the exemplar.
 
 **Outcome** 2026-10-11: `go_propose` takes a `workspace`, refused as a folder; the driver accepts it on `projects/add` and `projects/import` only (never beside an item), normalized and in the registry's spelling, a new name said as starting one; the modules hand it in the go; the room teaches it, and register and import are answered by the go in the coverage table. Detail: D161's ENTRY1d2a note.
+
+
+## ACCTUX4b — Next start above the accounts (2026-10-11, D125)
+
+> - [ ] **ACCTUX4b — Next start above the accounts** (web). One sentence naming the next account and why, with *first* marking `scope.next`. Second-opinion review lines 125, 128-133; D152 §4.2; `agents.test.ts`, `AgentsView.test.tsx`, stories at 52rem/37rem.
+
+**Outcome** 2026-10-11: an agent's page says this machine's next start above its accounts in the fold's words, with the list head's hold where the start passes it; nothing for the own sign-in or an older shell. *(first)* marks `scope.next`, on a single place too; the join toasts mark none. The 中文 stories drew it in English (ACCTUX4j); the window's look is ACCTUX4i's. Detail: D125's ACCTUX4b note; the UX7 design §4.2.

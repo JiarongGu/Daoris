@@ -15,7 +15,9 @@ import {
 // Codex's accounts read, in the same window cells as Claude Code's (ACCTUX4), at each width and in 中文; one not installed; an API key; what each row knows (ACCTUX1), in both themes; the same read without a pointer (ACCTUX2), each
 // row's explanation opened, at 680 px and the main area's 400 px floor in both themes; a key added asking its name and lists,
 // and a key refused in its field (ACCTUX3), at the same widths; and the main area with no page. Each at
-// the main area's two widths: the frame's 52rem, and the 680 px window's main area, where rows stack.
+// the main area's two widths: the frame's 52rem, and the 680 px window's main area, where rows stack. Above the accounts,
+// this machine's next start (ACCTUX4b): a wait in `ThreeAccounts`, the list's first taken in `Readings`, and the list's
+// first passed over in `CodexWindows`, its row marked first.
 
 const nothing = () => {};
 const ACTS: AgentActs = {
@@ -44,8 +46,16 @@ export default meta;
 
 type Story = StoryObj<typeof AgentPage>;
 
-/** The design's page: two accounts signed out that hold work, one cooling, the own sign-in never read, sections folded. */
+/**
+ * The design's page: two accounts signed out that hold work, one cooling, the own sign-in never read, sections folded. Above
+ * the accounts, the next start waits for the cooling one's reset, sooner for a sign-in (ACCTUX4b).
+ */
 export const ThreeAccounts: Story = {};
+
+/** The same at the 680 px window's main area, where the wait's two sentences wrap. */
+export const ThreeAccountsNarrow: Story = {
+  decorators: [(Story) => <div className="w-[37rem] max-w-full"><Story /></div>],
+};
 
 /**
  * The install's shape (the UX7 design §4.7): a row per state with its one act, *Read* on the account a list holds that reads

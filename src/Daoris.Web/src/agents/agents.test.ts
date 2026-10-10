@@ -5,9 +5,9 @@ import { byTool, type ToolDoor } from '../tools';
 import { scopeOf, THREE } from '../settings/accountsFixtures';
 import type { AgentAccounts } from '../settings/accounts';
 import {
-  accountAct, accountName, accountState, accountWho, agentRows, doorsSummary, heldBy, joinChoices, ownRunsFor, ownSaid, ownState,
-  readLine, rulesSummary, runsFor, runsForLine, settingsSummary, signedOutHeld, stateWhen, stateWord, usageCells, usageSummary,
-  useSummary, versionOnly, workspacesSummary,
+  accountAct, accountName, accountState, accountWho, agentRows, doorsSummary, heldBy, joinChoices, nextStartSaid, ownRunsFor,
+  ownSaid, ownState, readLine, rulesSummary, runsFor, runsForLine, settingsSummary, signedOutHeld, stateWhen, stateWord,
+  usageCells, usageSummary, useSummary, versionOnly, workspacesSummary,
 } from './agents';
 
 // The Agents place's words and facts (UX6e, D150 §5), pure: an account's last known state with when it was read, the list's
@@ -251,12 +251,40 @@ describe('where an account runs (ACCT1)', () => {
     expect(runsForLine(runs)).toBe('this machine · work (first)');
   });
 
-  it('works it out from the lists and defaults where the shell is older, the scope that begins on it first', () => {
+  /**
+   * ACCTUX4b (the second opinion's line 125): *first* is the account the scope's next start takes (`scope.next`), not its
+   * default or its list's head. THREE's machine begins on account-1, which cools, so its next start takes account-3.
+   */
+  it('marks first the scope whose next start takes it, not the one whose list begins on it', () => {
+    const [tool] = byTool([claude({
+      profiles: [
+        { name: 'account-1', home: 'h/1', login: 'out', places: [{ workspace: null, list: true, default: true }] },
+        { name: 'account-3', home: 'h/3', login: 'out', places: [{ workspace: null, list: true, default: false }] },
+      ],
+    })]);
+    expect(runsFor(tool!, THREE, 'account-1')).toEqual([{ workspace: null, first: false }]);
+    const runs = runsFor(tool!, THREE, 'account-3');
+    expect(runs).toEqual([{ workspace: null, first: true }]);
+    // Said where it runs in one place too: the mark says a fact of that scope, not which of its places comes first.
+    expect(runsForLine(runs)).toBe('this machine (first)');
+  });
+
+  it('works it out from the lists and defaults where the shell is older, the scope whose next start takes it first', () => {
     const [tool] = byTool([claude()]);
+    // forge names account-2 its default and has no scope, so no next start of its is known, and it is not marked.
     expect(runsFor(tool!, THREE, 'account-2')).toEqual([
-      { workspace: null, first: false }, { workspace: 'forge', first: true }, { workspace: 'work', first: true },
+      { workspace: null, first: false }, { workspace: 'forge', first: false }, { workspace: 'work', first: true },
     ]);
-    expect(runsFor(tool!, THREE, 'account-1')[0]).toEqual({ workspace: null, first: true });
+    expect(runsFor(tool!, THREE, 'account-1')[0]).toEqual({ workspace: null, first: false });
+    expect(runsFor(tool!, THREE, 'account-3')).toEqual([{ workspace: null, first: true }]);
+  });
+
+  it('marks no scope first where the shell names no next start', () => {
+    const [tool] = byTool([claude()]);
+    const older = { ...THREE, scopes: THREE.scopes.map((scope) => ({ ...scope, next: undefined })) };
+    const runs = runsFor(tool!, older, 'account-2');
+    expect(runs.some((place) => place.first)).toBe(false);
+    expect(runsForLine(runs)).toBe('this machine · forge · work');
   });
 
   it('says no workspace where nothing holds it, as the roster’s nowhere says', () => {
@@ -272,6 +300,63 @@ describe('where an account runs (ACCT1)', () => {
     expect(ownRunsFor(tool!, use, ['forge', 'work'])).toEqual([{ workspace: 'forge', first: false }]);
     expect(ownRunsFor(tool!, use, ['work'])).toEqual([{ workspace: null, first: false }]);
     expect(ownRunsFor(byTool([claude()])[0]!, THREE, ['forge', 'work'])).toEqual([]);
+  });
+});
+
+/** ACCTUX4b (the second opinion's lines 128-133): this machine's next start, said above the accounts in the fold's words. */
+describe('the next start, above the accounts', () => {
+  beforeEach(() => i18n.changeLanguage('en'));
+  const labelOf = (name: string) => name;
+
+  it('says which account it takes and why, then what holds the account the list begins on', () => {
+    const machine = THREE.scopes[0]!;
+    expect(nextStartSaid(machine, labelOf)).toEqual({
+      takes: "The next start takes account-3: it runs fewer of Daoris's sessions than account-2.",
+      held: `account-1 is cooling until ${moment(machine.next!.others[0]!.until!)}.`,
+    });
+  });
+
+  it('says only what holds the account the list begins on, the one a person expects it to take; the fold says the rest', () => {
+    const until = '2026-10-04T14:20:00.000Z';
+    const list = ['account-1', 'account-2', 'account-3'];
+    const others = [
+      { account: 'account-1', hold: 'cooling' as const, until }, { account: 'account-2', hold: 'signedOut' as const },
+      { account: 'account-4', hold: 'outside' as const },
+    ];
+    const passed = scopeOf({ list, begins: 'account-1', next: { account: 'account-3', reason: 'onlyReady', others } });
+    expect(nextStartSaid(passed, labelOf)?.held).toBe(`account-1 is cooling until ${moment(until)}.`);
+    // It takes the list's first: nothing passed over to explain, whatever holds the rest.
+    const head = scopeOf({ list, begins: 'account-3', next: { account: 'account-3', reason: 'onlyReady', others } });
+    expect(nextStartSaid(head, labelOf)?.held).toBeNull();
+    // The reason names the list's first already: said once, not again as its hold.
+    const near = scopeOf({
+      list, begins: 'account-1',
+      next: { account: 'account-3', reason: 'near', over: 'account-1', others: [{ account: 'account-1', hold: 'near' }] },
+    });
+    expect(nextStartSaid(near, labelOf)).toEqual({
+      takes: 'The next start takes account-3: account-1 is near its limit, so it goes last.', held: null,
+    });
+  });
+
+  it('says a wait and what frees it, and not again account by account, which the wait’s sentence already names', () => {
+    const until = '2026-10-04T14:20:00.000Z';
+    const scope = scopeOf({
+      list: ['account-1', 'account-2'], begins: 'account-1',
+      next: {
+        account: null, reason: 'waits', when: until,
+        others: [{ account: 'account-1', hold: 'cooling', until }, { account: 'account-2', hold: 'signedOut' }],
+      },
+    });
+    expect(nextStartSaid(scope, labelOf)).toEqual({
+      takes: `No account here is ready, so the next start waits until ${moment(until)}. Signing in to account-2 starts it sooner.`,
+      held: null,
+    });
+  });
+
+  it('says nothing where it runs on your own sign-in, or where the shell is older than the next start', () => {
+    expect(nextStartSaid(scopeOf({ next: { account: null, reason: 'own', others: [] } }), labelOf)).toBeNull();
+    expect(nextStartSaid(scopeOf({ list: ['account-1'] }), labelOf)).toBeNull();
+    expect(nextStartSaid(null, labelOf)).toBeNull();
   });
 });
 

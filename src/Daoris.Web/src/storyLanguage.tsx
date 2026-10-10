@@ -22,5 +22,9 @@ export function readerIn(language: 'en' | 'zh'): I18n {
 
 const ZH = readerIn('zh');
 
-/** The story in 中文, whatever the window's language. */
+/**
+ * The story in 中文, whatever the window's language. Only what reads the provider's reader (`useTranslation`) changes: a
+ * pure helper that calls the page's `i18n.t`, such as `runsForLine` or `nextStartSaid`, still speaks the page's language
+ * (seen measuring ACCTUX4b's stories), so a 中文 story is not proof of those words.
+ */
 export const chinese: Decorator = (Story) => <I18nextProvider i18n={ZH}><Story /></I18nextProvider>;
