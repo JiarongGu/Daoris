@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Registration } from './api';
+import { sentence } from './format';
+import { InlineConfirm } from './work/InlineConfirm';
 import { workspaceOf } from './workspaces';
 import { useImportFolder, useRegisterRepository, useRetireRepository, useWireRepository } from './queries';
 import { type FolderInspection, usePickFolder, useWriteDeclaration } from './shell';
@@ -346,20 +348,20 @@ export function ManageProjectDrawer({ project, onClose, onRetired, notify }: {
           {t('projects.manage.retireNotDelete')}
         </p>
         {confirming ? (
-          <div className="mt-2.5 flex items-center gap-2">
-            <Button
-              variant="danger"
-              disabled={retire.isPending}
-              onClick={() => retire.mutate(project.repository, {
-                // The service's own sentence, verbatim — it is the part that says what did not happen.
-                onSuccess: (answer) => { notify(answer.message); onRetired?.(); onClose(); },
-                onError: fail,
-              })}
-            >
-              {t('projects.manage.retireConfirm')}
-            </Button>
-            <Button variant="ghost" onClick={() => setConfirming(false)}>{t('common.cancel')}</Button>
-          </div>
+          <InlineConfirm
+            className="mt-2.5"
+            label={t('projects.manage.retire')}
+            says={t('projects.manage.retireBody')}
+            meanIt={t('projects.manage.retireConfirm')}
+            busy={retire.isPending}
+            onConfirm={(answered) => retire.mutate(project.repository, {
+              // The service's own sentence, verbatim — it is the part that says what did not happen.
+              onSuccess: (answer) => { notify(answer.message); onRetired?.(); answered.done(); onClose(); },
+              // A refusal is said inside the ask, where it was pressed (UXFIX2b1).
+              onError: (error) => answered.refused(sentence(error)),
+            })}
+            onClose={() => setConfirming(false)}
+          />
         ) : (
           <Button className="mt-2.5" variant="danger" onClick={() => setConfirming(true)}>
             {t('projects.manage.retire')}
