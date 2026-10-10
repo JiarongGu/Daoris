@@ -42,11 +42,12 @@ const SEARCH = /^\s*(cd\s+\S+\s*(&&|;)\s*)?(grep|rg|git\s+grep|Select-String)\b/
 const context = u => (u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0);
 
 const isEdit = block => (block.name === 'Edit' || block.name === 'Write') && !SCRATCH.test(String(block.input?.file_path ?? ''));
-const isShellEdit = block => {
-  if (block.name !== 'Bash' && block.name !== 'PowerShell') return false;
-  const command = String(block.input?.command ?? '');
-  return SHELL_EDIT.test(command) && !NOT_WORK.test(command) && !SEARCH.test(command);
-};
+/** Whether a shell command writes a file of the work: what this tool counts and `shell-edit-guard.mjs` refuses (D161). */
+export const editsThroughShell = command =>
+  SHELL_EDIT.test(command) && !NOT_WORK.test(command) && !SEARCH.test(command);
+
+const isShellEdit = block =>
+  (block.name === 'Bash' || block.name === 'PowerShell') && editsThroughShell(String(block.input?.command ?? ''));
 
 /** One transcript's text (JSON lines) to its turns, its contexts and its token totals. */
 export function readTranscript(text) {

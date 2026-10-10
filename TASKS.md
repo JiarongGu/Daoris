@@ -33,7 +33,8 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 - [ ] **BRSCOPE1b — checkout scope and sync workspace** (modules/service/driver; after BRSCOPE1a). Share checkout-scope fixtures; carry workspace through sync proposals. D150 notes; three-door proof.
 - [ ] **UX7d — remaining visual findings** (web/driver). Absent-agent Install, strip marks, version, compact Chinese summaries and coded opening notes. D152 §4.6.
 - [ ] **UX7e — installed menus and heads** (parent; after republish). Verify keyboard menus, shortcuts, composer editing, head geometry and titles at 1546/680 px. D152 §6.
-- [ ] **UX6g2b — the go twin reaches the workspace's page** (design first; driver + web twin). Retire the `workspace`/`permissions` domains into `Kept`; decide whether the page's tabs and sections become go parts. D150 §3.1/§4.3, UX6i2a note; twins.
+- [ ] **UX6g2b — the go twin reaches the workspace's page** (driver + web twin). Retire the `workspace`/`permissions` domains into `Kept`; the page's tabs and sections become go parts, since every place is one Ask Daoris can name (D161 §3). D150 §3.1/§4.3, UX6i2a note; twins.
+- [ ] **ENTRY1 — Ask Daoris starts any task** (audit first; driver/web). Reread `HelpCoverageTests`' exemptions and the starts a person makes against "start any task"; propose a door for each gap, measured before built. D161 §3; the coverage table, D65.
 - [ ] **UX6h — Git inside Repositories** (web; after GIT1d; absorbs GIT1e). Branch kinds and graph; retire Git place. UX6 §4.4/D147.
 - [ ] **UX6i2i — installed go cards** (parent; after republish). Ask Daoris answering "where do I turn a plugin on?" and "where is Convergence?": a go card reading *Open Plugins.* or *Open Knowledge → Convergence.* that opens the right place and mode.
 - [ ] **PLUGTOOL1c — tools on their plugin** (web/modules/driver; after PLUGUI1c). Tools retains Daoris's own. UX6 §7.5.
@@ -202,7 +203,7 @@ Contracts: session-economy (D127), workspace-setup (D124), setup-pilot lessons (
 knowledge review (D129). WSSETUP14b–e precede owner f/13; WSSETUP7 needs LAYOUT8.
 
 - [ ] **COST1 — measure long-turn cost** (owner's decision). Week of context/cache evidence before ceiling/window/compaction proposals. METER1/D127.
-- [ ] **SUBLOAD1c — the model trial** (parent; after SUBLOAD1b). A batch built by scout and worker, Sonnet workers on narrow rows. Proof: first-run gates, review findings and columns against evidence §2. D160; `docs/2026-10-10-subagent-load-evidence.md` §4.
+- [ ] **SUBLOAD1c — the model trial** (parent). Twenty rows built by scout and worker; the gates and columns are in D160's notes. Proof still owed: the installed window's shots (D161 §2), and the first live refusal by the shell-edit guard. D160; `docs/2026-10-10-subagent-load-evidence.md` §4.
 - [ ] **MODELROLE1 — a model per session role** (design; after SUBLOAD1c). If the split holds, managed sessions orient, build and review with a model configured per role, on every door. D160; decision before build.
 - [ ] **SESSOPT1d — complete documentation relocation** (steward). Maintain ≤5300 words and ≤60 per row; finish §4.3 diagnostic evidence homes for FLAKE1/TEST1/REH1.
 - [ ] **DOC7 — reading measurements**. session.read/session.skill by role and whole/partial. D127 §6.1.
