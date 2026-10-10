@@ -12844,3 +12844,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ASKHIST1d1 — every conversation remains reachable: driver** (driver/modules; in flight). Order/filter before 200-row bound; paginate; search older records; Markdown left parseable. D158 note; old pinned/resumed/search cases.
 
 **Outcome** 2026-10-10: the list orders and searches every help record before taking a page; `HELP_CONVERSATIONS` and `help list` take offset/limit and answer total/next beside `cut`; `about` is whole up to 1000 characters, a find carries `foundLine`, one Han character searches. 1000 conversations list in 120–150 ms. Detail: D158's ASKHIST1d1 note; the merge commit.
+
+
+## UX6i2c — kit, CLI and tools name current places (2026-10-10, D150)
+
+> - [ ] **UX6i2c — kit, CLI and tools name current places** (cli/driver/tools; merging). "Settings → Plugins" becomes the Plugins place in the CLI refusal, kit README and publish text.
+
+**Outcome** 2026-10-10: the CLI's `plugin new`/`try` refusal, the kit README template, the published install's README row and four comments name the Plugins place (D150's UX6j note). The refusal's test asserts the old words are gone. Built by a Sonnet worker in 9 turns. Detail: the merge commit.

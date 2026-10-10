@@ -147,7 +147,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `tools/deployment-rehearsal.mjs` | 99 | 1736 |
-| `tools/desktop-publish.mjs` | 59 | 1047 |
+| `tools/desktop-publish.mjs` | 58 | 1047 |
 | `tools/desktop.mjs` | 50 | 1038 |
 | `tools/family-rehearsal.mjs` | 339 | 5982 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |

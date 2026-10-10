@@ -696,7 +696,7 @@ async function start(command, args) {
       console.log(`copied examples/{engine,game} -> ${family}`);
     }
     // The install's offers (PLUG9 d, D103), laid out beside this run's home as a publish lays them beside
-    // an install's `data/`, so Settings → Plugins shows them here too. None is installed by this.
+    // an install's `data/`, so the Plugins place shows them here too. None is installed by this.
     layOffers(join(repoRoot, 'examples', 'plugins'), scratchRoot);
 
     const httpHost = assemblyExe(HTTP_PROJECT);

@@ -209,7 +209,7 @@ using Daoris.Driver;
 //                 new or empty folder, and installs nothing. `try` starts a plugin as the driver would,
 //                 speaks the handshake, one frame at each point and the shutdown, and checks every answer
 //                 by the driver's own reader: 0 when all are ones it reads, 1 when the plugin failed a check.
-//                 Settings → Plugins is the other door.
+//                 The Plugins place is the other door.
 //   plugins show <id> [--json]
 //   plugins activity <id> [--since <30m|2h|3d>] [--json]
 //                 a plugin's page and what it did (PLUGUI1d, D119 §4.4): what it declares as written, a

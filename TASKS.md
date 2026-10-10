@@ -39,7 +39,6 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 - [ ] **UX6h — Git inside Repositories** (web; after GIT1d; absorbs GIT1e). Branch kinds and graph; retire Git place. UX6 §4.4/D147.
 - [ ] **UX6i2a — the room and its twin name current places** (driver + web twin). Help room text, `HelpPlaces`/`places.ts` and goldens: Knowledge, Plugins, Get started; add new ids, keep old ones accepted (D150's UX6i note). D150 notes; twins/goldens.
 - [ ] **UX6i2b — the service's go and plugin text** (service; after a). `go_propose`'s view and domain lists and refusals name the current places. D150 notes; the box's text.
-- [ ] **UX6i2c — kit, CLI and tools name current places** (cli/driver/tools; merging). "Settings → Plugins" becomes the Plugins place in the CLI refusal, kit README and publish text.
 - [ ] **UX6i3 — "Settings → Agents" leftovers** (driver/modules/service). UX6e retired it; `DriverModule.Accounts.cs:11`, its tests, room tests and the `agents` domain word in the service still name it. D150's UX6e notes.
 - [ ] **PLUGTOOL1c — tools on their plugin** (web/modules/driver; after PLUGUI1c). Tools retains Daoris's own. UX6 §7.5.
 - [ ] **COWORK1 — agents working together** (design; owner's direction required). Define progress sharing, questions and handoffs. D32/D65/D145/D149; decision before implementation.
