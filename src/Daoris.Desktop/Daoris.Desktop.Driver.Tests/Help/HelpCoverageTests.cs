@@ -11,13 +11,15 @@ namespace Daoris.Driver.Tests;
 /// <remarks>
 /// <para><b>Read as text, the way a reviewer would</b> (<c>.claude/knowledge/twins.md</c>): the CLI, the page and the
 /// driver share no code. The verbs are the CLI's command table (<c>src/Daoris.Cli/src/cli/driver.ts</c>). The
-/// controls are each Settings domain's component and every file it imports, the page's bridge hooks among them that
-/// change something, and each action such a hook's payload names.</para>
+/// controls are each Settings domain's component and every file it imports, the page's bridge hooks and its own service
+/// calls (<c>queries.ts</c>) among them that change something, and each action such a hook's payload names. Since ENTRY1a
+/// every other start the page offers is read too, from each of its source files (<see cref="Starts"/>).</para>
 ///
-/// <para><b>Three answers.</b> A door names the kind and its door, held against <see cref="IHelpProposalKind.Doors"/>.
+/// <para><b>Four answers.</b> A door names the kind and its door, held against <see cref="IHelpProposalKind.Doors"/>.
 /// An exemption is a principle: one of D89's own presses (a sign-in, a key, a discard), something that changes
 /// nothing, a viewer's own look, what an agent may do, or the person's act on the application itself (D139). A door owed is a door Ask Daoris should have, and says
-/// what it waits on.</para>
+/// what it waits on. A quest's or a session's own act is its own conversation, which Ask Daoris reaches by a go to the
+/// view it names (D161's ENTRY1 note).</para>
 /// </remarks>
 public sealed partial class HelpCoverageTests
 {
@@ -31,6 +33,12 @@ public sealed partial class HelpCoverageTests
 
     /// <summary>A door Ask Daoris should have, not built yet, and what it waits on.</summary>
     private sealed record Owed(string Reason) : Answer;
+
+    /// <summary>
+    /// A quest's or a session's own act, done in its own place and conversation, which Ask Daoris reaches by a go to the view
+    /// named and does not take over (D161's ENTRY1 note, ENTRY1a): the view is one of <see cref="HelpPlaces.Views"/>.
+    /// </summary>
+    private sealed record Conversation(string Place, string Reason) : Answer;
 
     private const string SignIn = "a sign-in is the person's own press, where it already is (D89).";
 
@@ -143,13 +151,14 @@ public sealed partial class HelpCoverageTests
         + "and `stop` doors of LAYOUT8's `setup` kind, judged against the same plan (D124 §4.5).");
 
     /// <summary>
-    /// SESSUX1a's <c>useArchiveSessions</c> (D126 §7.3), a bridge hook no Settings domain presses and no screen yet: a door
-    /// Ask Daoris owes, until SESSUX1h builds the <c>session</c> kind's <c>archive</c> and <c>unarchive</c> doors.
+    /// SESSUX1a's <c>useArchiveSessions</c> (D126 §7.3), a bridge hook no Settings domain presses and Sessions does (a
+    /// <see cref="Starts"/> row since ENTRY1a): a door Ask Daoris owes, until SESSUX1h builds the <c>session</c> kind's
+    /// <c>archive</c> and <c>unarchive</c> doors.
     /// </summary>
     private static readonly Owed SessionArchiveDoor = new(
         "archiving takes ended sessions out of this machine's list and unarchiving brings them back, a tidy that undoes "
         + "itself, so Ask Daoris should propose it; that is the `session` kind's `archive` and `unarchive` doors, which "
-        + "SESSUX1h builds once Sessions' screen presses them (D126 §7.3).");
+        + "SESSUX1h builds beside Sessions' own press (D126 §7.3).");
 
     /// <summary>
     /// SESSUX1f's <c>useDeleteSession</c> (D126 §7.3), the bridge hook Sessions' *Delete…* presses: a door Ask Daoris owes,
@@ -302,9 +311,9 @@ public sealed partial class HelpCoverageTests
         + "Ask Daoris proposes none; the room names the panel's History and `daoris-driver help`.");
 
     /// <summary>
-    /// The page's bridge hooks that change something and that no Settings domain presses, answered one by one (UPDATE1f):
-    /// only a Settings domain's controls are derived, so a hook pressed elsewhere is read and otherwise answered for nowhere.
-    /// Each row is held to a hook the bridge still exports, that still changes something, and that no domain presses, where
+    /// The page's bridge hooks that change something and that no Settings domain presses, answered one by one wherever they
+    /// are pressed (UPDATE1f), where <see cref="Starts"/> answers a press by its place (ENTRY1a). Each row is held to a hook
+    /// the bridge still exports, that still changes something, that the page still presses, and that no domain presses, where
     /// it would be one of <see cref="Controls"/> instead.
     /// </summary>
     private static readonly (string Hook, Answer Answer)[] Elsewhere =
@@ -332,6 +341,171 @@ public sealed partial class HelpCoverageTests
         ("useStopOpinion", OpinionAskDoor),
         ("useOpinionAnyway", OpinionJudgementDoor),
         ("useOpinionMyself", OpinionJudgementDoor),
+    ];
+
+    /// <summary>
+    /// ENTRY1a: a quest's or a session's own act (D161's ENTRY1 note), said as what it is, done in that place and its
+    /// conversation: Ask Daoris takes the person there with a go to the view and never proposes the act.
+    /// </summary>
+    private static Conversation Own(string place, string what) => new(
+        place, $"{what}, so it is done in its own place and conversation, where Ask Daoris takes the person with a go and does "
+        + "not take over (D161's ENTRY1 note).");
+
+    /// <summary>ENTRY1d's: a repository added or a folder imported, today a go to Repositories' Add and Import (audit §4.4).</summary>
+    private static readonly Owed RepositoryAddOwed = new(
+        "adding a repository or importing a folder's registers what the person picked, a widening they apply as a card, so Ask "
+        + "Daoris should propose it while the folder stays their pick (D48 §3/§7); that is ENTRY1d's design, mirroring the "
+        + "`plugin` kind's `add`, and until then a go reaches Repositories' Add repository and Import a folder.");
+
+    /// <summary>
+    /// ENTRY1a: Ask Daoris's own conversation, pressed in its panel: the words and the turns are the person's with it, so a
+    /// card would be Ask Daoris proposing its own conversation. Its history (rename, pin, delete) is <see cref="HistoryDoor"/>.
+    /// </summary>
+    private static readonly Exempt HelpConversation = new(
+        "it is Ask Daoris's own conversation with the person, opened, said to, stopped or ended where they are talking to it "
+        + "(HELP1a): the words are theirs (D133 §1), and a card for them would be Ask Daoris proposing its own conversation, so "
+        + "there is nothing to propose.");
+
+    private static readonly Exempt OpensAWindow = new(
+        "it opens another of Daoris's windows, a session's or a monitor, and changes nothing of the work or the machine, so "
+        + "there is nothing to propose; a go takes the person to the place instead.");
+
+    private static readonly Exempt OpensTheBrowser = new(
+        "it opens Daoris's browser for the person to look, and changes nothing of the work or the machine's settings; which "
+        + "browser and where links open are the `browser` kind's doors (D110 §4).");
+
+    private static readonly Conversation PersonDone = Own("quests",
+        "the person's done is their word on a quest's work, given on the quest's page or at a finish from a checkpoint (QUESTCLOSE1)");
+
+    private static readonly Conversation TrustFolder = Own("quests",
+        "trusting a folder lets the agent start a quest's work in it, the person's grant where the start is held (D73)");
+
+    private static readonly Conversation PublishAsk = Own("quests",
+        "publishing an ask to a receiver hands its intake's proposal on as quests, the person's press on the ask's page or What "
+        + "needs you (INT4a)");
+
+    private static readonly Conversation AnswerGoAhead = Own("quests",
+        "a go-ahead an ask's work asked is answered on the ask's page or What needs you, and every session on the ask is handed "
+        + "it at its next start (KNOWUSE1a)");
+
+    /// <summary>
+    /// Each start the page offers outside a Settings domain (ENTRY1a, D161's ENTRY1 note): a hook that changes something,
+    /// pressed where it is (<see cref="Presses"/>), with the action where the hook carries several. A hook a domain's control
+    /// or <see cref="Elsewhere"/> already answers is answered here too, since the answer is the act's, not the place's.
+    /// </summary>
+    /// <remarks>
+    /// Each answer follows the rule D161's ENTRY1a note gives. A press that is not a mutation is no start and no row: *Look
+    /// now* (`useNudge`) is a callback that asks the loop to look sooner and changes nothing.
+    /// </remarks>
+    private static readonly (string Where, string Hook, string? Action, Answer Answer)[] Starts =
+    [
+        // The application's frame: the strip's opens, the index's refresh and Sync now.
+        ("App", "useOpenBrowser", null, OpensTheBrowser),
+        ("App", "useOpenWindow", null, OpensAWindow),
+        ("App", "useRefreshIndex", null, new Exempt(
+            "it reads the repositories again into the index and changes nothing of the work or the machine's settings, as reading "
+            + "the roster again is exempt, so there is nothing to propose.")),
+        ("App", "useSyncNow", null, new Exempt(
+            "it runs now the pass with the workspace's remote that the loop's next tick runs anyway (SYNC6b), and changes nothing "
+            + "the person has not set; whether a workspace syncs is its remote's wiring, the person's own (D89). It is not the "
+            + "`sync` kind's door, which brings branches up to date (D109).")),
+        ("SecondaryWindowRoot", "useOpenBrowser", null, OpensTheBrowser),
+
+        // Quests: a quest's own page, and the list's presses.
+        ("QuestsView", "usePublishQuest", null, Own("quests",
+            "publishing a quest by hand is the person's own request to a repository, made on Quests beside the intake that "
+            + "publishes from an ask (D65)")),
+        ("QuestsView", "useRespondQuest", "take", Own("quests",
+            "taking a quest is its receiver's answer to it, given on the quest's own page")),
+        ("QuestsView", "useRespondQuest", "done", Own("quests",
+            "saying a quest is done answers it with its work, on the quest's own page where that work is read")),
+        ("QuestsView", "useRespondQuest", "decline", new Exempt(
+            "declining a quest is the person's answer with their reason (D37), as *Decline…* is exempt (D126 §7.3); Ask Daoris "
+            + "takes the person to the quest and never writes the reason.")),
+        ("QuestsView", "useAcceptQuest", null, new Door("accept", "accept")),
+        ("QuestsView", "useDeleteQuest", null, new Door("delete", "quest")),
+        ("QuestsView", "useRetryQuest", null, new Door("setting", "retry")),
+        ("QuestsView", "usePersonDone", null, PersonDone),
+        ("QuestsView", "useTrustFolder", null, TrustFolder),
+        ("QuestsView", "useDismissConflict", null, new Exempt(
+            "it puts away a conflict the person has read, an operation that travels and changes no status of the quest or its "
+            + "work (SYNC6c), as the banner's *Dismiss* is exempt, so there is nothing to propose.")),
+
+        // Asks, on Quests: the composer and an ask's page.
+        ("asks", "useAsk", null, new Door("ask", "ask")),
+        ("asks", "useDeleteAsk", null, new Door("delete", "ask")),
+        ("asks", "usePublishAsk", null, PublishAsk),
+        ("asks", "useAnswerGoAhead", null, AnswerGoAhead),
+        ("asks", "useCloseAsk", null, new Exempt(
+            "closing an ask ends it with the person's reason, which is their answer (D37), as abandoning one is exempt (D132 §7.4) "
+            + "and *Decline…* is (D126 §7.3); Ask Daoris names the ask's page and never writes the reason.")),
+        ("asks", "useChooseAskReview", null, new Owed(
+            "an ask's review choice says how its work is shown to the person before it lands, a choice the person applies, so "
+            + "Ask Daoris should carry it when it proposes the ask; the `ask` door takes the sentence, workspace and why only, "
+            + "which ENTRY1c widens with the review and the kind, and until then the ask's page is its door (REVIEWENV1b).")),
+
+        // Ask Daoris's own panel.
+        ("help", "useStartHelp", null, HelpConversation),
+        ("help", "useSendMessage", null, HelpConversation),
+        ("help", "useCancelTurn", null, HelpConversation),
+        ("help", "useStopSession", null, HelpConversation),
+        ("help", "useEndChat", null, HelpConversation),
+        ("help", "useDeleteSession", null, HistoryDoor),
+        ("help", "useSettleHelp", null, new Exempt(
+            "Apply and Not now on a card are the person's own press, the one every proposal waits on (D89): a card that settled "
+            + "itself would apply with nobody's press, so Ask Daoris proposes none.")),
+
+        // Sessions, What needs you and the work's own acts (`work/`): a session's page, its review and its trees.
+        ("work", "useStartChat", null, Own("sessions",
+            "starting a conversation with an agent in a repository opens a session of its own (D49 §3)")),
+        ("work", "useSendMessage", null, Own("sessions",
+            "the words said in a conversation are the person's own (D133 §1), said in its box")),
+        ("work", "useSay", null, Own("sessions",
+            "the words said to a session are the person's own (D133 §1), said in its box (D137 §5.4)")),
+        ("work", "useCancelTurn", null, Own("sessions",
+            "stopping a conversation's turn keeps the conversation and hands back what was waiting (CONV4a)")),
+        ("work", "useEndChat", null, Own("sessions",
+            "ending a conversation is the person's, from the conversation itself")),
+        ("work", "useSetSessionOption", null, Own("sessions",
+            "a conversation's model and effort are its agent's options, set from its composer (AGT6b, D98)")),
+        ("work", "useStopTask", null, Own("sessions",
+            "stopping a task a session runs is that session's own stop, from its tab (CONSOLE3a)")),
+        ("work", "useStopSession", null, Own("sessions",
+            "stopping a session ends its process and holds its quest until the person tries again (D126 §7.3)")),
+        ("work", "useResolveSession", null, Own("sessions",
+            "finishing, declining or stopping a session parked at a checkpoint is the person's answer to it (D126 §7.3)")),
+        ("work", "useAnswerSession", null, Own("sessions",
+            "answering a session parked to ask the person sends its own conversation on with their words (STANDDOWN2, D131)")),
+        ("work", "useParkGoAhead", null, Own("sessions",
+            "a go-ahead a parked session asked is answered on the session's own page (KNOWUSE1a2, D135 §2)")),
+        ("work", "useLandSessionTree", null, Own("sessions",
+            "landing a session's work is the person's verdict on it (D154 point 8), pressed at its review")),
+        ("work", "useReviewVerdict", null, Own("quests",
+            "a review's verdict is the person's on the work they were shown (D154 point 8), given at the quest's review "
+            + "(REVIEWENV1g)")),
+        ("work", "usePublishSetUpStep", null, Own("quests",
+            "a set-up step following a done quest is the person's *Set it up in*, pressed at its review (REVIEWENV1b)")),
+        ("work", "usePersonDone", null, PersonDone),
+        ("work", "useTrustFolder", null, TrustFolder),
+        ("work", "usePublishAsk", null, PublishAsk),
+        ("work", "useAnswerGoAhead", null, AnswerGoAhead),
+        ("work", "useAcceptQuest", null, new Door("accept", "accept")),
+        ("work", "useRetryQuest", null, new Door("setting", "retry")),
+        ("work", "useHandOffPress", null, new Door("hand", "hand")),
+        ("work", "usePauseWork", null, PauseDoor),
+        ("work", "useResumeWork", null, PauseDoor),
+        ("work", "useAbandonWork", null, AbandonDoor),
+        ("work", "useArchiveSessions", null, SessionArchiveDoor),
+        ("work", "useDeleteSession", null, SessionDeleteDoor),
+        ("work", "useGoOnNew", null, GoOnNewDoor),
+        ("work", "useStartFrom", null, StartFromDoor),
+        ("work", "useDiscardSessionTree", null, new Exempt(
+            "it discards a session's tree and its work for good, a discard, which stays the person's own press (D89), as the "
+            + "clean-up and a failed attempt's branch do.")),
+        ("work", "useOpenWindow", null, OpensAWindow),
+        ("work", "useOpenSessionFolder", null, new Exempt(
+            "it opens a session's folder in the system's file browser and changes nothing, as the log's folder is exempt; a go "
+            + "reaches the session.")),
     ];
 
     /// <summary>Each <c>daoris driver</c> verb, and <c>across</c> by its two forms, as the CLI's command table spells them.</summary>
@@ -500,6 +674,16 @@ public sealed partial class HelpCoverageTests
         ("projects", "useDiscardSessionBranch", null, new Exempt(
             "it discards a failed attempt's branch and its commits for good, a discard, which stays the person's own press "
             + "(D89), as the clean-up beside it does.")),
+        // ENTRY1a: the registration lifecycle (D48 §3/§7), the page's own service calls, read since `queries.ts` is.
+        ("projects", "useRegisterRepository", null, RepositoryAddOwed),
+        ("projects", "useImportFolder", null, RepositoryAddOwed),
+        ("projects", "useWireRepository", null, new Owed(
+            "which workspace a repository is in is its registration, set as it is added and changed by the same kind of press, "
+            + "a move that undoes itself, so Ask Daoris should propose it; ENTRY1d's design takes a repository's registration "
+            + "through Ask Daoris (D48 §3/§7), and until then the repository's Manage drawer is its door.")),
+        ("projects", "useRetireRepository", null, new Exempt(
+            "retiring takes a repository off this machine's registry and its entries out of the index, a removal, which stays "
+            + "the person's own press (D89), as a plugin's removal does; registering it again is the add, owed to ENTRY1d.")),
         ("projects", "useWireRemote", null, new Exempt("wiring a workspace to a remote takes that remote's key; " + Key)),
         ("projects", "useUnwireRemote", null, new Exempt(
             "unwiring drops the remote's key from this machine, which only the person can give back (D89).")),
@@ -572,7 +756,7 @@ public sealed partial class HelpCoverageTests
         var found = new List<string>();
         foreach (var (domain, files) in Domains())
         {
-            var used = files.SelectMany(file => HookUse().Matches(File.ReadAllText(file)).Select(match => match.Groups[1].Value)).ToHashSet();
+            var used = files.SelectMany(Pressed).ToHashSet();
             foreach (var hook in used.Where(hooks.ContainsKey).Where(hook => hooks[hook].Changes))
             {
                 found.AddRange(hooks[hook].Actions.Count == 0
@@ -603,7 +787,7 @@ public sealed partial class HelpCoverageTests
     public void Every_door_named_is_one_its_kind_takes()
     {
         var doors = Verbs.Select(row => row.Answer).Concat(Controls.Select(row => row.Answer)).Concat(Local.Select(row => row.Answer))
-            .Concat(Elsewhere.Select(row => row.Answer)).OfType<Door>();
+            .Concat(Elsewhere.Select(row => row.Answer)).Concat(Starts.Select(row => row.Answer)).OfType<Door>();
 
         foreach (var door in doors.Distinct())
         {
@@ -619,6 +803,7 @@ public sealed partial class HelpCoverageTests
         var reasons = Verbs.Select(row => row.Answer).Concat(Controls.Select(row => row.Answer)).Concat(Local.Select(row => row.Answer))
             .Concat(Forms.Select(row => row.Answer))
             .Concat(Elsewhere.Select(row => row.Answer))
+            .Concat(Starts.Select(row => row.Answer))
             .Append(Share)
             .Append(SetupDoor)
             .Append(RegisterDoor)
@@ -642,7 +827,13 @@ public sealed partial class HelpCoverageTests
             .Append(UpdateDoor)
             .Append(RenameDoor)
             .Append(JoinDoor)
-            .Select(answer => answer switch { Exempt exempt => exempt.Reason, Owed owed => owed.Reason, _ => null })
+            .Select(answer => answer switch
+            {
+                Exempt exempt => exempt.Reason,
+                Owed owed => owed.Reason,
+                Conversation conversation => conversation.Reason,
+                _ => null,
+            })
             .OfType<string>();
 
         foreach (var reason in reasons)
@@ -859,16 +1050,91 @@ public sealed partial class HelpCoverageTests
         var hooks = BridgeHooks();
         var pressed = Domains().Values
             .SelectMany(files => files)
-            .SelectMany(file => HookUse().Matches(File.ReadAllText(file)).Select(match => match.Groups[1].Value))
+            .SelectMany(Pressed)
             .ToHashSet(StringComparer.Ordinal);
 
+        var page = Presses().Select(press => press.Hook).ToHashSet(StringComparer.Ordinal);
         foreach (var (hook, _) in Elsewhere)
         {
             Assert.True(hooks.TryGetValue(hook, out var read) && read.Changes, $"`{hook}` is answered for as a hook that changes something, and the bridge exports none.");
             Assert.False(pressed.Contains(hook), $"`{hook}` is pressed by a Settings domain now, so it is a control there, not answered here.");
+            // ENTRY1a: the page is read whole now, so a row whose press left it is said too.
+            Assert.True(page.Contains(hook), $"`{hook}` is answered for as a press, and nothing on the page presses it.");
         }
 
         Assert.Equal(Elsewhere.Length, Elsewhere.Select(row => row.Hook).Distinct(StringComparer.Ordinal).Count());
+    }
+
+    /// <summary>
+    /// ENTRY1a (D161's ENTRY1 note, the ENTRY1 audit §1): every start the page offers is answered for, not only a Settings
+    /// domain's. Each hook that changes something, pressed anywhere on the page outside the files that define the hooks, is a
+    /// door, an exemption, a door owed or the quest's or session's own conversation, by where it is pressed, unless a domain's
+    /// control or <see cref="Elsewhere"/> answers the same act already.
+    /// </summary>
+    [Fact]
+    public void Every_start_on_the_page_is_a_door_owed_exempt_or_its_own_conversation()
+    {
+        var hooks = BridgeHooks();
+        var found = new List<string>();
+        foreach (var (where, hook) in Presses().Where(press => hooks.TryGetValue(press.Hook, out var read) && read.Changes))
+        {
+            IReadOnlyList<string?> actions = hooks[hook].Actions.Count == 0 ? [null] : [.. hooks[hook].Actions];
+            found.AddRange(actions
+                .Where(action => !Elsewhere.Any(row => row.Hook == hook) && !Controls.Any(row => row.Hook == hook && row.Action == action))
+                .Select(action => Control(where, hook, action)));
+        }
+
+        Same("Starts on the page", found, Starts.Select(row => Control(row.Where, row.Hook, row.Action)));
+    }
+
+    /// <summary>
+    /// ENTRY1a: the page's own service calls (`queries.ts`) are read as the bridge's hooks are, a hook that calls its own
+    /// file's helper that changes something included (`useDeleteQuest` calls `useDelete`), so a quest's, an ask's and a
+    /// repository's starts are answered for rather than unseen; a read changes nothing.
+    /// </summary>
+    [Fact]
+    public void The_pages_own_service_calls_are_read_as_the_bridges_hooks_are()
+    {
+        var hooks = BridgeHooks();
+
+        Assert.True(hooks.TryGetValue("useDeleteQuest", out var delete) && delete.Changes);
+        Assert.True(hooks.TryGetValue("useAnswerGoAhead", out var goAhead) && goAhead.Changes);
+        Assert.True(hooks.TryGetValue("useRespondQuest", out var respond) && respond.Changes);
+        Assert.Equal(new[] { "take", "done", "decline" }, respond.Actions);
+        Assert.True(hooks.TryGetValue("useQuests", out var quests) && !quests.Changes);
+        Assert.DoesNotContain("useDelete", hooks.Keys);
+    }
+
+    /// <summary>
+    /// ENTRY1a: a file that defines the hooks (the bridge, `queries.ts`, `shell.ts`) presses none of them, though its text
+    /// names them all; read as a press, every domain importing `queries.ts` would press every service call there.
+    /// </summary>
+    [Fact]
+    public void A_file_that_defines_the_hooks_presses_none_of_them()
+    {
+        var ai = Domains()["ai"];
+
+        Assert.Contains(ai, file => Path.GetFileName(file) == "queries.ts");
+        Assert.DoesNotContain("useDeleteQuest", ai.SelectMany(Pressed));
+        Assert.Empty(Pressed(Path.Combine(Page, "queries.ts")));
+        Assert.Contains(Presses(), press => press.Hook == "useRespondQuest");
+    }
+
+    /// <summary>
+    /// ENTRY1a: a quest's or a session's own conversation names the view a go reaches it by (D161's ENTRY1 note), so Ask
+    /// Daoris can take the person there; a go below the view is ENTRY1b's.
+    /// </summary>
+    [Fact]
+    public void Every_own_conversation_names_a_view_a_go_reaches()
+    {
+        var conversations = Starts.Select(row => row.Answer).OfType<Conversation>().ToList();
+
+        Assert.NotEmpty(conversations);
+        foreach (var conversation in conversations)
+        {
+            Assert.True(HelpPlaces.Views.Any(view => view.Id == conversation.Place),
+                $"`{conversation.Place}` is not a view a go reaches: one of {string.Join(", ", HelpPlaces.Views.Select(view => view.Id))}.");
+        }
     }
 
     /// <summary>
@@ -941,9 +1207,9 @@ public sealed partial class HelpCoverageTests
     }
 
     /// <summary>
-    /// SESSUX1a: the archive's bridge hook changes something and no screen presses it yet, so it is a door owed to
-    /// SESSUX1h's <c>session</c> kind (D126 §7.3) while no kind of that name is built. When the kind lands, this owed door
-    /// becomes its door, and Sessions' acts are read as Settings' domains are.
+    /// SESSUX1a: the archive's bridge hook changes something, so it is a door owed to SESSUX1h's <c>session</c> kind (D126
+    /// §7.3) while no kind of that name is built. When the kind lands, this owed door becomes its door; Sessions' press of it
+    /// is read with every other start since ENTRY1a.
     /// </summary>
     [Fact]
     public void The_session_archive_is_a_door_owed_to_the_session_kind()
@@ -1120,25 +1386,80 @@ public sealed partial class HelpCoverageTests
         return verbs;
     }
 
-    /// <summary>Each exported hook of the page's bridge: whether it changes something, and the actions its payload names.</summary>
+    /// <summary>
+    /// Each exported hook of the page's bridge and of its own service calls (`queries.ts`, ENTRY1a): whether it changes
+    /// something, and the actions its payload names.
+    /// </summary>
     private static Dictionary<string, (bool Changes, IReadOnlyList<string> Actions)> BridgeHooks()
     {
         var hooks = new Dictionary<string, (bool, IReadOnlyList<string>)>(StringComparer.Ordinal);
-        foreach (var file in Directory.GetFiles(Path.Combine(Page, "bridge"), "*.ts").Where(file => !file.Contains(".test.", StringComparison.Ordinal)))
+        foreach (var file in Directory.GetFiles(Path.Combine(Page, "bridge"), "*.ts").Where(file => !file.Contains(".test.", StringComparison.Ordinal))
+            .Append(Path.Combine(Page, "queries.ts")))
         {
-            foreach (var part in TopLevel().Split(File.ReadAllText(file).Replace("\r\n", "\n")))
+            var parts = TopLevel().Split(File.ReadAllText(file).Replace("\r\n", "\n"));
+            // ENTRY1a: a hook that calls a helper of its own file that changes something changes something too: `useDeleteQuest`
+            // is `() => useDelete(…)`, which neither `useMutation(` nor a `…Change` helper's name says.
+            var helpers = parts
+                .Where(part => Changes().IsMatch(part))
+                .Select(part => LocalHook().Match(part))
+                .Where(local => local.Success)
+                .Select(local => local.Groups["hook"].Value)
+                .ToList();
+            foreach (var part in parts)
             {
                 if (ExportedHook().Match(part) is not { Success: true } exported) continue;
                 var actions = ActionUnion().Matches(part)
                     .SelectMany(union => Quoted().Matches(union.Groups[1].Value).Select(action => action.Groups[1].Value))
                     .Distinct(StringComparer.Ordinal)
                     .ToList();
-                hooks[exported.Groups["hook"].Value] = (Changes().IsMatch(part), actions);
+                var changes = Changes().IsMatch(part)
+                    || helpers.Any(helper => Regex.IsMatch(part, $@"\b{helper}\s*[(<]", RegexOptions.None, TimeSpan.FromSeconds(1)));
+                hooks[exported.Groups["hook"].Value] = (changes, actions);
             }
         }
 
         Assert.Contains("useSetReadAcross", hooks.Keys);
+        Assert.Contains("usePublishQuest", hooks.Keys);
         return hooks;
+    }
+
+    /// <summary>
+    /// ENTRY1a: the hooks a file presses, by name, and none for a file that defines them: the bridge, the page's own service
+    /// calls (`queries.ts`) and the shell's names (`shell.ts`). Their text names every hook they hold, so read as presses,
+    /// each domain that imports `queries.ts` (<see cref="Domains"/> keeps it among its files) would press every service call.
+    /// </summary>
+    private static IEnumerable<string> Pressed(string file) =>
+        Defines(file) ? [] : HookUse().Matches(File.ReadAllText(file)).Select(match => match.Groups[1].Value);
+
+    private static bool Defines(string file) =>
+        file.Contains($"{Path.DirectorySeparatorChar}bridge{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+        || Path.GetFileName(file) is "shell.ts" or "queries.ts";
+
+    /// <summary>
+    /// ENTRY1a: every hook pressed on the page, by where: each source file but the tests, the stories, the test set-up and the
+    /// files that define the hooks (<see cref="Pressed"/>), named by its folder under the page's source, or by its own name
+    /// at the root (`App`, `QuestsView`), so a start added anywhere is read, a Settings domain's files among them.
+    /// </summary>
+    private static IReadOnlyList<(string Where, string Hook)> Presses()
+    {
+        var presses = new HashSet<(string, string)>();
+        foreach (var file in Directory.GetFiles(Page, "*.ts*", SearchOption.AllDirectories))
+        {
+            var relative = Path.GetRelativePath(Page, file);
+            var name = Path.GetFileName(file);
+            if (name.Contains(".test.", StringComparison.Ordinal) || name.Contains(".stories.", StringComparison.Ordinal)
+                || name.EndsWith(".d.ts", StringComparison.Ordinal) || !(name.EndsWith(".ts", StringComparison.Ordinal) || name.EndsWith(".tsx", StringComparison.Ordinal))
+                || relative.StartsWith("test" + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var segments = relative.Split(Path.DirectorySeparatorChar);
+            var where = segments.Length == 1 ? Path.GetFileNameWithoutExtension(name) : segments[0];
+            foreach (var hook in Pressed(file)) presses.Add((where, hook));
+        }
+
+        return [.. presses.Order()];
     }
 
     /// <summary>
@@ -1231,6 +1552,10 @@ public sealed partial class HelpCoverageTests
 
     [GeneratedRegex(@"useMutation\(|\buse[A-Z]\w*Change\b")]
     private static partial Regex Changes();
+
+    // ENTRY1a: a hook a file keeps to itself, read only for whether an exported hook calling it changes something.
+    [GeneratedRegex(@"^(?:function (?<hook>use[A-Z]\w*)\s*[(<]|const (?<hook>use[A-Z]\w*)\s*=)")]
+    private static partial Regex LocalHook();
 
     [GeneratedRegex(@"\baction\s*:\s*('[a-z-]+'(?:\s*\|\s*'[a-z-]+')*)")]
     private static partial Regex ActionUnion();

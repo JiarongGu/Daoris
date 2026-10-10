@@ -12991,3 +12991,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6g2c — the service's go text names the workspace's page** (service; proposed by UX6g2b's hand-back). `go_propose`'s domain and part descriptions still offered `workspace`, `permissions` and "lines under workspace".
 
 **Outcome** 2026-10-11: `go_propose` lists Settings' six domains and the six `workspace-*` parts under `projects`; its text test pins both. The merge brought the service README's `go_propose` line up to places and parts. Detail: the merge commit.
+
+
+## ENTRY1a — the coverage table reads every start (2026-10-11, D161)
+
+> - [ ] **ENTRY1a — the coverage table reads every start** (driver tests). `HelpCoverageTests` reads Settings and three places only; add `queries.ts` and the Quests, Sessions, Overview, `work/`, `asks/`, `help/` presses, each a door, an exemption, an owed row, or *its own conversation* (a quest's or session's, reached by a go). D161's ENTRY1 note; audit §1.
+
+**Outcome** 2026-10-11: the table reads `queries.ts` and every press on the page, so a start added anywhere fails until answered; a fourth answer, *its own conversation*, held to the go's views. 59 starts answered (25 own conversation, 8 doors, 5 owed, 21 exempt), 4 Repositories controls owed to ENTRY1d. Detail: D161's ENTRY1a note.
