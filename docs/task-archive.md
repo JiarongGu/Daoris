@@ -12998,3 +12998,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ENTRY1a — the coverage table reads every start** (driver tests). `HelpCoverageTests` reads Settings and three places only; add `queries.ts` and the Quests, Sessions, Overview, `work/`, `asks/`, `help/` presses, each a door, an exemption, an owed row, or *its own conversation* (a quest's or session's, reached by a go). D161's ENTRY1 note; audit §1.
 
 **Outcome** 2026-10-11: the table reads `queries.ts` and every press on the page, so a start added anywhere fails until answered; a fourth answer, *its own conversation*, held to the go's views. 59 starts answered (25 own conversation, 8 doors, 5 owed, 21 exempt), 4 Repositories controls owed to ENTRY1d. Detail: D161's ENTRY1a note.
+
+
+## ENTRY1c — an ask proposed with its review choice (2026-10-11, D161)
+
+> - [ ] **ENTRY1c — an ask proposed with its review choice** (service/driver/modules; in flight). `ask_propose` carries the sentence, workspace and why only, though the composer takes a review choice; the kind stays the person's (WORKFLOW1i, D157 point 10). Audit §4.3; the kind's twins.
+
+**Outcome** 2026-10-11: `ask_propose` carries the person's review choice and words; the box checks the shape, the driver judges with `AskReviewCommand.Compose`, and the ask door refuses an environment the workspace does not declare (`POST /api/asks` holds no rule). The kind stays off. Detail: D161's ENTRY1c note.

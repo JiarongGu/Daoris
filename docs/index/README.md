@@ -121,7 +121,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 82 | 1691 |
 | `src/Daoris.Service/Daoris.Service.Tests/ReviewStepTests.cs` | 41 | 734 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 70 | 1420 |
-| `src/Daoris.Service/README.md` | 76 | 728 |
+| `src/Daoris.Service/README.md` | 76 | 729 |
 
 ### CLI (`cli`)
 

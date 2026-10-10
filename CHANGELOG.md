@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- An ask Ask Daoris proposes keeps the review choice you gave it, and your words with it: its card says
+  whether the work is reviewed in the default environment, in a named one or not at all, and Apply sends
+  the choice as the ask composer does. A named environment the workspace does not declare is refused at
+  Apply, as at a terminal. The kind and workflow stay yours to choose on the ask.
 - Ask Daoris history orders and searches every conversation before it shows a page, so a pinned or
   recently resumed old conversation stays listed and search reaches older ones; one Chinese character is
   enough to search. `daoris-driver help list` takes `--offset` and `--limit`. *Show more* lists the next
