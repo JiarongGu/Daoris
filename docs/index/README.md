@@ -45,7 +45,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/ui.tsx` | 79 | 1683 |
 | `src/Daoris.Web/src/work/ConversationView.test.tsx` | 47 | 897 |
 | `src/Daoris.Web/src/work/SessionHead.test.tsx` | 48 | 907 |
-| `src/Daoris.Web/src/work/SessionRail.test.tsx` | 42 | 831 |
+| `src/Daoris.Web/src/work/SessionRail.test.tsx` | 45 | 897 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 211 | 4070 |
 | `src/Daoris.Web/src/work/WorkFrame.tsx` | 85 | 1581 |
 | `src/Daoris.Web/src/work/attention.test.ts` | 42 | 857 |
