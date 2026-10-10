@@ -24,19 +24,46 @@ public sealed class HelpRoomPlacesTests
     /// <summary>
     /// UX6e2 and HELPSETUP1: a go names no repository and no agent, so the room says where each part lands — Repositories'
     /// Setup on the repository its list has chosen, an agent's part on the agent that has it — and the helper says which
-    /// one the person means rather than promising it.
+    /// one the person means rather than promising it. UX6g2b: nor a workspace, whose parts open the page of the one in view.
     /// </summary>
     [Fact]
-    public void The_room_says_a_go_names_no_repository_and_no_agent()
+    public void The_room_says_a_go_names_no_repository_agent_or_workspace()
     {
         var places = new HelpRoomPlaces().Render(HelpRoomFixture.Machine);
 
         Assert.Contains("- Views: `overview` (Overview)", places);
         Assert.Contains("`agents` (Agents), `plugins` (Plugins), `settings` (Settings).", places);
         Assert.DoesNotContain("`agents` (Agents), `permissions`", places);
-        Assert.Contains("A go names no repository and no agent", places);
+        Assert.Contains("A go names no repository, agent or workspace", places);
         Assert.Contains("`setup` opens the Setup of the repository Repositories has chosen", places);
         Assert.Contains("a part of `agents` opens the agent that has it", places);
+        Assert.Contains("A `workspace-` part opens that tab or section on the page of the workspace in view", places);
+    }
+
+    /// <summary>
+    /// UX6g2b (D161 §3, D150 §4.3): every place the window has is one a go can name, so a workspace's page's four tabs and
+    /// its Setup's two sections are parts of Repositories, prefixed where a repository's page shares their names. Settings →
+    /// Workspace and Permissions left Settings with UX6g, and the room offers neither: a go still spelled so is kept.
+    /// </summary>
+    [Fact]
+    public void The_room_names_the_workspace_pages_parts_and_neither_retired_domain()
+    {
+        var places = new HelpRoomPlaces().Render(HelpRoomFixture.Machine);
+
+        Assert.Contains(
+            "- Parts of `projects`: `add` (Add repository), `import` (Import a folder), `setup` (a repository's Setup), "
+            + "`workspace-details` (a workspace's Details), `workspace-branches` (a workspace's Branches), "
+            + "`workspace-workflow` (a workspace's Workflow), `workspace-setup` (a workspace's Setup), "
+            + "`workspace-defaults` (a workspace's Defaults), `workspace-remote` (a workspace's Remote and reach).",
+            places);
+        Assert.Contains(
+            "- Settings domains: `start` (Get started), `appearance` (Appearance), `ai` (AI features), `driver` (Driver), "
+            + "`browser` (Browser), `logs` (Machine log).",
+            places);
+        Assert.DoesNotContain("Parts of `workspace`", places);
+        Assert.DoesNotContain("Parts of `permissions`", places);
+        Assert.DoesNotContain("`workspace` (Workspace)", places);
+        Assert.DoesNotContain("`permissions` (Permissions)", places);
     }
 
     /// <summary>

@@ -27,9 +27,12 @@ internal sealed class HelpRoomPlaces : IHelpRoomSection
                 : $"- Parts of `{within}`: {Listed(parts)}.\n");
         }
 
-        // UX6e2, HELPSETUP1: a go carries no item, so the helper is told where the two parts that need one land.
-        text.Append("\nA go names no repository and no agent: `setup` opens the Setup of the repository Repositories has chosen,\n");
+        // UX6e2, HELPSETUP1, UX6g2b: a go carries no item, so the helper is told where the parts that need one land; a
+        // workspace's part opens the workspace in view, as a door naming its tab or section does (D150 §4.3).
+        text.Append("\nA go names no repository, agent or workspace: `setup` opens the Setup of the repository Repositories has chosen,\n");
         text.Append("where the person picks the one they mean, and a part of `agents` opens the agent that has it.\n");
+        text.Append("A `workspace-` part opens that tab or section on the page of the workspace in view, the scope or the only one;\n");
+        text.Append("with none in view it opens Repositories, where the person picks the workspace they mean.\n");
         // UX6i2a: Knowledge opens in the mode it was left in (UX6i), so a go meaning one names it.
         text.Append("`knowledge` alone opens Knowledge as the person left it; name its part for Search or Convergence.\n");
         text.Append('\n');
