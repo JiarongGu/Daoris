@@ -13,7 +13,9 @@ import { SignIn } from '../SignIn';
 import { byTool } from '../tools';
 import { failure, type Notify } from '../ui';
 import type { AccountsKnown } from './accountAttention';
+import { sentence } from '../format';
 import type { Attention, AttentionActs } from './AttentionRow';
+import type { Answered } from './InlineConfirm';
 import { attentionKey, AttentionList, type AttentionDoors, AttentionRegion, NothingNeedsYou } from './AttentionList';
 import { needsAPerson, rowRun } from './attention';
 import { useOpinionActs } from './opinionActs';
@@ -147,15 +149,26 @@ function Band({ doors, notify, onSessions, onRun }: {
 
   // One owner for each act's press: what it is on its way for, its sentence said, a refusal in its own words, and the row
   // released either way.
-  const run = <T,>(item: Attention, act: () => Promise<T>, said: (answer: T) => void) => {
+  // An ask under the row hands its own `answered` (UXFIX2b3a): it stays open while the act runs, and a refusal is said inside it
+  // rather than toasted. The row is released first, so the press that opened the ask is enabled again when its focus returns.
+  const run = <T,>(item: Attention, act: () => Promise<T>, said: (answer: T) => void, answered?: Answered) => {
     setActing(attentionKey(item));
-    act().then(said, failure(notify)).finally(() => setActing(null));
+    act().then(
+      (answer) => { said(answer); setActing(null); answered?.done(); },
+      (error) => { setActing(null); if (answered) answered.refused(sentence(error)); else failure(notify)(error); },
+    );
   };
+  // What an ask under a row is told: the row released whichever way the host answered, then the ask answered in its place.
+  const releasing = (answered: Answered): Answered => ({
+    done: () => { setActing(null); answered.done(); },
+    refused: (said) => { setActing(null); answered.refused(said); },
+  });
   // A set-up row's presses (REVIEWENV1g): the set-up the row drew, its step's record for the session a *not yet* goes to; the
-  // row is released whichever way the host answered, and a refusal is said in its words, a stale one's above all.
-  const review = (item: Attention) => {
+  // row is released whichever way the host answered. A single press toasts a refusal in its words, a stale one's above all;
+  // an ask says it inside itself, where it was pressed.
+  const review = (item: Attention, ask?: Answered) => {
     setActing(attentionKey(item));
-    const answered = {
+    const answered = ask ? releasing(ask) : {
       done: () => setActing(null),
       refused: (said: string) => { notify(said, 'error'); setActing(null); },
     };
@@ -168,9 +181,9 @@ function Band({ doors, notify, onSessions, onRun }: {
   };
   // A second opinion's row's presses (XAGENT1g): the gate's one owner, the row released whichever way the driver answered, and
   // a refusal said in its words.
-  const opinion = (item: Attention) => {
+  const opinion = (item: Attention, ask?: Answered): Answered => {
     setActing(attentionKey(item));
-    return {
+    return ask ? releasing(ask) : {
       done: () => setActing(null),
       refused: (said: string) => { notify(said, 'error'); setActing(null); },
     };
@@ -178,8 +191,8 @@ function Band({ doors, notify, onSessions, onRun }: {
   const acts: AttentionActs = {
     ...(opinionActs.shell ? {
       opinionAgain: (item: Attention) => opinionActs.actsFor({ session: item.id, gate: item.opinion?.opinion }).ask?.(opinion(item)),
-      opinionAnyway: (item: Attention, words?: string) =>
-        opinionActs.actsFor({ session: item.id, gate: item.opinion?.opinion }).anyway?.(words ?? null, opinion(item)),
+      opinionAnyway: (item: Attention, words: string | undefined, answered: Answered) =>
+        opinionActs.actsFor({ session: item.id, gate: item.opinion?.opinion }).anyway?.(words ?? null, opinion(item, answered)),
     } : {}),
     reviewed: (item) => {
       const { acts: pressed, answered } = review(item);
@@ -188,24 +201,25 @@ function Band({ doors, notify, onSessions, onRun }: {
     },
     // A shell's alone: the words reach the step's session, and the build its tab, through it.
     ...(reviewActs.shell ? {
-      notYet: (item: Attention, words: string) => {
-        const { acts: pressed, answered } = review(item);
+      notYet: (item: Attention, words: string, ask: Answered) => {
+        const { acts: pressed, answered } = review(item, ask);
         if (item.setUp && pressed.notYet) pressed.notYet(item.setUp, words, answered);
-        else setActing(null);
+        else answered.done();
       },
       showAgain: (item: Attention) => reviewActs.actsFor({ state: 'shown', step: item.id }).showAgain?.(),
     } : {}),
     // Each receiver is its own publish, the ask page's route: said one by one, and stopped at a refusal.
-    publish: (item, to) => run(item, async () => {
+    publish: (item, to, answered) => run(item, async () => {
       for (const receiver of to) {
         const answer = await publish.mutateAsync({ id: item.id, to: receiver });
         notify(answer.message);
       }
-    }, () => nudge()),
-    answer: (item, approved, words) => run(
+    }, () => nudge(), answered),
+    answer: (item, approved, words, answered) => run(
       item,
       () => answerGoAhead.mutateAsync({ id: item.ask ?? '', number: item.number ?? 0, approved, words }),
       (answer) => { notify(answer.message); nudge(); },
+      answered,
     ),
     acceptDeparture: (item) => run(item, () => accept.mutateAsync(item.id), (answer) => notify(answer.message)),
     // A driver's verdicts, holds and rules reach only a shell, so in a browser these rows, and these acts, never appear.
@@ -214,8 +228,8 @@ function Band({ doors, notify, onSessions, onRun }: {
       const hold = item.trust;
       if (hold) run(item, () => trust.mutateAsync(hold), (granted) => notify(granted.message, granted.verified ? 'ok' : 'error'));
     },
-    acceptRule: (item) => run(item, () => settle.mutateAsync({ id: item.id, accept: true }),
-      () => notify(t('settings.rules.proposals.accepted', { change: item.title }))),
+    acceptRule: (item, answered) => run(item, () => settle.mutateAsync({ id: item.id, accept: true }),
+      () => notify(t('settings.rules.proposals.accepted', { change: item.title })), answered),
     declineRule: (item) => run(item, () => settle.mutateAsync({ id: item.id, accept: false }),
       () => notify(t('settings.rules.proposals.declined', { change: item.title }))),
     // The agent's own sign-in through its account-owning door, as its page starts it (SIGNIN1): its end is said wherever the
@@ -230,10 +244,10 @@ function Band({ doors, notify, onSessions, onRun }: {
       if (agent) run(item, () => readOne.mutateAsync({ agent, profile: account }), () => {});
     },
     // Into the list the waiting start reads (D130 §3.3), as the agent page's *Add to …'s list* (ACCT1): said where it runs now.
-    letRun: (item, account) => {
+    letRun: (item, account, answered) => {
       const facts = item.account;
       const outside = facts?.outside;
-      if (!facts?.harness || !outside || outside.id !== account) return;
+      if (!facts?.harness || !outside || outside.id !== account) { answered.done(); return; }
       const harness = facts.harness;
       run(
         item,
@@ -242,6 +256,7 @@ function Band({ doors, notify, onSessions, onRun }: {
           account: outside.label,
           places: runsForLine((answer.places ?? []).map((place) => ({ workspace: place.workspace ?? null, first: place.default }))),
         })),
+        answered,
       );
     },
   };

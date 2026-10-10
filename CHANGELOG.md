@@ -23,7 +23,8 @@ with the version and date at release.
 - Deleting a tool version, removing a plugin, retiring a repository, pausing or abandoning work,
   declining a quest, closing an ask, finishing or declining a session that waits on you, archiving
   ended sessions and discarding a tree anyway all confirm in place: the ask stays open while the act
-  runs, says a refusal inside it, and returns focus to the press.
+  runs, says a refusal inside it, and returns focus to the press. So do the asks on a *What needs you*
+  row: approve, refuse, choose, accept a rule, let it run, not yet, and go on anyway.
 
 - Contributor guidance is shared across agents; development verification checks documentation routing
   and guide freshness declarations, including missing described source paths. Document checks ignore

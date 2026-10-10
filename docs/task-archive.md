@@ -12900,3 +12900,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ASKHIST1d2 — every conversation remains reachable: page** (web). Page through the list with `next`, say what search covered, parse `about`/`foundLine` as Markdown before cutting. D158's ASKHIST1d1 note is the contract; history tests and stories.
 
 **Outcome** 2026-10-10: History pages with *Show more*, says what a search found and that it searched every conversation, searches by one Han character, and parses then cuts each row's line around the words. The audit fixed a conversation found past the first page opening as one that cannot go on (FIX-LOG). Installed look: ASKHIST1di. Detail: D158's ASKHIST1d2 note.
+
+
+## UXFIX2b3a — confirmations: the attention row (2026-10-10)
+
+> - [ ] **UXFIX2b3 — confirmations: attention, trust, account use** (web). AttentionRow's asks, TrustAsk, GoAheadList, AccountUse inherit and AgentPage's key ask; settle which are `tone="primary"`; drop AgentPage's settings guard SETTINGSWAIT1 made redundant. Same proof.
+
+**Outcome** 2026-10-10 (its first slice): the row's seven asks (approve, refuse, choose, accept-rule, let-run, not-yet, opinion-anyway) confirm through `InlineConfirm` with `Answered`, threaded through `AttentionActs` and the band's `run`; refuse is danger, the rest primary (platform UX §4). Trust is UXFIX2b3b, the inherit ask UXFIX2b3c. Detail: the merge commit.
