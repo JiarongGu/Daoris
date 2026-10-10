@@ -15,7 +15,8 @@ import { Button, Prose, SESSION_ACTIVE } from '../ui';
 import type { ChatMessage } from '../work/conversation';
 import { Composer } from '../work/Composer';
 import { BackToBottom, SessionConversation, type TailState } from '../work/SessionConversation';
-import { AskHistory, SEARCH_FROM } from './AskHistory';
+import { AskHistory } from './AskHistory';
+import { type HelpConversationRow, searchable } from './history';
 import type { AskConversationSlot } from './AskPanel';
 import { placeDoor } from './places';
 import { ProposalCard } from './ProposalCard';
@@ -111,7 +112,8 @@ export function useAskConversation(
   const [search, setSearch] = useState('');
   const [historyRefusal, setHistoryRefusal] = useState<string | null>(null);
   const words = search.trim();
-  const searching = words.length >= SEARCH_FROM;
+  const searching = searchable(words);
+  // Each a page at a time, every page read joined (ASKHIST1d2).
   const rows = useHelpConversations('', helper !== null);
   const found = useHelpConversations(words, helper !== null && historyOpen && searching);
   const listing = searching ? found : rows;
@@ -121,10 +123,17 @@ export function useAskConversation(
     if (listing.data) setLastListing(listing.data);
   }, [listing.data]);
   const shownListing = listing.data ?? lastListing;
-  const shownRow = shown ? rows.data?.conversations.find((row) => row.session === shown.id) ?? null : null;
+  // A conversation's row (ASKHIST1d2): from the whole list's pages read, else the search's, which reaches every conversation
+  // past them (ASKHIST1d1); else the row the person opened it from, once no list being asked can name it.
+  const [openedRow, setOpenedRow] = useState<HelpConversationRow | null>(null);
+  const listed = (id: string) => rows.data?.conversations.find((row) => row.session === id)
+    ?? found.data?.conversations.find((row) => row.session === id) ?? null;
+  const rowOf = (id: string) => listed(id) ?? (openedRow?.session === id ? openedRow : null);
   // Whether an ended one shown can go on in itself is the history's answer, so until it answers it is being checked
   // (ASKHIST1c): read as "cannot", words typed under one that could would have started a fresh conversation without its own.
-  const checking = shownRow === null && (rows.isPending || rows.isFetching);
+  const checking = shown !== null && listed(shown.id) === null && (rows.isPending || rows.isFetching);
+  const known = shown ? rowOf(shown.id) : null;
+  const shownRow = checking ? null : known;
   // An ended one the person chose goes on in itself with their words, where its own conversation was kept.
   const goesOn = shown !== null && !live && picked !== null && shownRow?.resumable === true;
   // One the person chose that has ended and does not go on, or is still being checked: read, and written in only once they
@@ -380,6 +389,7 @@ export function useAskConversation(
   const openRow = (id: string, scroll: number) => {
     if (end.isPending) return;
     setLeft({ row: id, scroll });
+    setOpenedRow(shownListing?.conversations.find((row) => row.session === id) ?? null);
     choose(id);
     setFocusHead((was) => was + 1);
   };
@@ -396,7 +406,7 @@ export function useAskConversation(
   };
   const beginFrom = (id: string) => {
     setHistoryRefusal(null);
-    const title = rows.data?.conversations.find((row) => row.session === id)?.title ?? id;
+    const title = rowOf(id)?.title ?? id;
     startFrom.mutate(id, {
       onSuccess: (answer) => {
         if (!answer.sessionId) {
@@ -419,12 +429,17 @@ export function useAskConversation(
   const history = (
     <AskHistory
       rows={shownListing?.conversations ?? []}
-      cut={shownListing?.cut ?? false}
+      total={shownListing?.total}
       // A first answer on its way; a newer one over the last rows; a list that could not be read, with why (UX §4).
       loading={!shownListing && (listing.isPending || listing.isFetching) && !listing.isError}
       refreshing={listing.isFetching && listing.data === undefined && shownListing !== undefined}
-      error={listing.isError && !listing.isFetching ? sentence(listing.error) : null}
+      error={listing.isError && !listing.isFetching && !listing.isFetchNextPageError ? sentence(listing.error) : null}
       onRetry={() => void listing.refetch()}
+      // The next page at the driver's `next` (ASKHIST1d2), offered only under the rows it follows; a page that could not be
+      // read is said beside its press, which asks for it again.
+      onMore={listing.data && listing.hasNextPage ? () => void listing.fetchNextPage() : undefined}
+      loadingMore={listing.isFetchingNextPage}
+      moreError={listing.isFetchNextPageError && !listing.isFetching ? sentence(listing.error) : null}
       search={search}
       shown={shown?.id ?? null}
       busy={startFrom.isPending || pin.isPending || end.isPending}
@@ -567,7 +582,7 @@ export function useAskConversation(
 
   // What the open conversation's head calls it: the history's title, else the person's first words, else a conversation.
   const title = !shown ? null
-    : shownRow?.title || (spoken?.session === shown.id ? spoken.title : t('help.head.untitled'));
+    : known?.title || (spoken?.session === shown.id ? spoken.title : t('help.head.untitled'));
 
   const slot: AskConversationSlot = {
     body: conversation, proposals: proposed, composer, ended,

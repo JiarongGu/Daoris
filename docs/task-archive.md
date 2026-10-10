@@ -12893,3 +12893,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6i2a — the room and its twin name current places** (driver + web twin). Help room text, `HelpPlaces`/`places.ts` and goldens: Knowledge, Plugins, Get started; add new ids, keep old ones accepted (D150's UX6i note). D150 notes; twins/goldens.
 
 **Outcome** 2026-10-10: the room and its go twin name Knowledge (parts `search`/`convergence`), the Plugins place and Get started; old ids land through `HelpPlaces.Kept`/`PLACE_KEPT`. The merge fixed `where.test.ts`, whose loop the change left running over nothing, and narrowed `PLACE_VIEWS` back to views. Installed look: UX6i2i. Detail: D150's UX6i2a note.
+
+
+## ASKHIST1d2 — every conversation remains reachable: page (2026-10-10, D158)
+
+> - [ ] **ASKHIST1d2 — every conversation remains reachable: page** (web). Page through the list with `next`, say what search covered, parse `about`/`foundLine` as Markdown before cutting. D158's ASKHIST1d1 note is the contract; history tests and stories.
+
+**Outcome** 2026-10-10: History pages with *Show more*, says what a search found and that it searched every conversation, searches by one Han character, and parses then cuts each row's line around the words. The audit fixed a conversation found past the first page opening as one that cannot go on (FIX-LOG). Installed look: ASKHIST1di. Detail: D158's ASKHIST1d2 note.

@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-10 — Ask Daoris's history read a page at a time (ASKHIST1d2)
+
+### Ask Daoris: a conversation a search found past the list's first page read as one that cannot go on
+
+- **Symptom:** a search in *History* found an ended conversation older than the 200 the whole list's first answer holds;
+  opened, its head read *Conversation* and its note said it cannot go on in itself, offering a new conversation from it,
+  though the driver's own row for it said it could.
+- **Root cause:** `AskConversation` read the shown conversation's row (its title, and whether it goes on) from the whole
+  list's answer alone. While that list and every search read the same newest 200, any row a person could open was in it.
+  ASKHIST1d1 (`cafbcb85`) made the driver search every record, so a search's rows reached past that page and the panel
+  found none, which `goesOn` reads as cannot.
+- **Fix:** `rowOf` reads the row from the whole list's pages read, else the search's, else the row it was opened from
+  (`openedRow`, kept by `openRow`); *checking* still holds while a list being asked could name it
+  (`src/Daoris.Web/src/help/AskConversation.tsx`).
+- **Verify:** `AskDaoris.test.tsx`'s three history cases (knows from the search, keeps knowing once the search is cleared,
+  says it is checking), in both languages, fail on the old page and pass.
+- **Commit:** `c61ef2e3`.
+
 ## 2026-10-10 — review fixes
 
 ### Workflows: Keep claimed success without saving the binding (WORKFLOW1f2)

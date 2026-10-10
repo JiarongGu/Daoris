@@ -7,6 +7,8 @@ with the version and date at release.
 
 - Ask Daoris history orders and searches every conversation before it shows a page, so a pinned or
   recently resumed old conversation stays listed and search reaches older ones; one Chinese character is
+  enough to search. `daoris-driver help list` takes `--offset` and `--limit`. *Show more* lists the next
+  page, a search says how many conversations it found, and a row shows where in a long line the words were.
   enough to search. `daoris-driver help list` takes `--offset` and `--limit`.
 - `daoris plugin new` and `try`, a new plugin's README and the install's README send people to the
   Plugins place, which replaced Settings → Plugins.

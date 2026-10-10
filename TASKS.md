@@ -34,7 +34,9 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 - [ ] **BRSCOPE1b — checkout scope and sync workspace** (modules/service/driver; after BRSCOPE1a). Share checkout-scope fixtures; carry workspace through sync proposals. D150 notes; three-door proof.
 - [ ] **UX7d — remaining visual findings** (web/driver). Absent-agent Install, strip marks, version, compact Chinese summaries and coded opening notes. D152 §4.6.
 - [ ] **UX7e — installed menus and heads** (parent; after republish). Verify keyboard menus, shortcuts, composer editing, head geometry and titles at 1546/680 px. D152 §6.
-- [ ] **UX6g2 — workspace-page guidance** (driver/CLI). Repoint help, registration, plugins, trees and setup wording. D150 §3.1; twins and room goldens.
+- [ ] **UX6g2a — workspace-page guidance: sentences** (driver/CLI). Room, session-tree, plugin-kit and set-up sentences say the workspace's page (Setup → Defaults, Branches, Setup → Remote and reach) for Settings → Workspace/Permissions. D150 §3.1, UX6g note; room goldens; the CLI/driver set-up sentence twin.
+- [ ] **UX6g2b — the go twin reaches the workspace's page** (design first; driver + web twin). Retire the `workspace`/`permissions` domains into `Kept`; decide whether the page's tabs and sections become go parts. D150 §3.1/§4.3, UX6i2a note; twins.
+- [ ] **UX6g3 — the page's own words name the workspace's page** (web). `projects.json:41-42` ("Settings → Workspace lists it", en/zh) and comments in `opener.ts`, `SettingsView.tsx`, `bridge/driver.ts`, `help/starters.ts`. D150 §3.1.
 - [ ] **UX6h — Git inside Repositories** (web; after GIT1d; absorbs GIT1e). Branch kinds and graph; retire Git place. UX6 §4.4/D147.
 - [ ] **UX6i2b — the service's go and plugin text** (service). `go_propose`'s view and domain lists and refusals name the current places (`knowledge`, `plugins`, Get started), as D150's UX6i2a note settled them. D150 notes; the box's text.
 - [ ] **UX6i2i — installed go cards** (parent; after republish). Ask Daoris answering "where do I turn a plugin on?" and "where is Convergence?": a go card reading *Open Plugins.* or *Open Knowledge → Convergence.* that opens the right place and mode.
@@ -68,8 +70,9 @@ Original row proofs remain in the frozen backlog; measurements precede declarati
 Contracts: `docs/2026-10-07-history-clearing-design.md` (D153), D158,
 D88/D102 cleanup notes, machine log §4. Installed clears require the owner's existing authorization.
 
-- [ ] **ASKHIST1d2 — every conversation remains reachable: page** (web). Page through the list with `next`, say what search covered, parse `about`/`foundLine` as Markdown before cutting. D158's ASKHIST1d1 note is the contract; history tests and stories.
-- [ ] **RAILSRCH1b — the page's search gates take one Han character** (web; after ASKHIST1d2). Move ASKHIST1d2's `searchable` to a neutral module both pages import; use it in `bridge/sessions.ts`, `SessionRail.tsx`, `SessionConversation.tsx`, `ConversationFind.tsx`. Proof: a 区 query reaches `SESSION_SEARCH`; one Latin letter does not.
+- [ ] **ASKHIST1di — installed history paging** (parent; after republish). Over 200 conversations: *Show more* and its focus; a search's count and coverage; no match; a hit deep in a long line; one Han character; a found old conversation that goes on. Both languages, dock at 300 and 430 px. D158's ASKHIST1d2 note.
+- [ ] **UXLOADMORE1 — the load-more convention** (contract). A list read a page at a time says "{shown} of {total}" with *Show more* under its rows, and the press moves focus to the first row it brought; Ask Daoris's history is the first. Platform UX §4; RAILSRCH1b follows it.
+- [ ] **RAILSRCH1b — the page's search gates take one Han character** (web). Move ASKHIST1d2's `searchable` to a neutral module both pages import; use it in `bridge/sessions.ts`, `SessionRail.tsx`, `SessionConversation.tsx`, `ConversationFind.tsx`. Proof: a 区 query reaches `SESSION_SEARCH`; one Latin letter does not.
 - [ ] **AUTOTIDY1a — show automatic cleanup** (modules/web). Branches lists recent tidied/kept log facts. D88; route and bilingual list tests.
 - [ ] **AUTOTIDY1b — measure strict cleanup guards** (parent; installed AUTOTIDY1, after one week). Count ignored-file/unmoved-branch holds before deciding relaxations. D88 evidence.
 - [ ] **AUTOTIDY1c — automatic squash cleanup** (driver; after AUTOTIDY1b; decide first). Consider content proof plus merged PR state, preserving recovery refs. D88/D102; Process guards.
