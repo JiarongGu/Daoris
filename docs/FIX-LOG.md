@@ -12,7 +12,7 @@ repository.
 - **Symptom:** an existing malformed run binding let the landing gate go under Current. When the chain could not be read, a damaged inventory also incorrectly ruled out a named workflow.
 - **Root cause:** binding readers returned null for both absence and corruption, and the process and inventory treated both as no binding.
 - **Fix:** absence retains legacy Current behavior; an existing unreadable binding holds its run. Unreadable inventory entries conservatively hold an unreadable chain.
-- **Verify:** four failing-first cases for invalid JSON and missing fields, across direct and service-unavailable reads; final receipts in the integration review.
+- **Verify:** four failing-first cases for invalid JSON and missing fields, across direct and service-unavailable reads; all 48 gate tests pass. The full fourteen-gate receipt is in `docs/task-archive.md` (INTEGRATE2).
 - **Commit:** `0c79095e`.
 
 ### Ask Daoris: a rename's terminal hint interpolated shell syntax

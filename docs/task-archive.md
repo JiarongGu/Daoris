@@ -5,6 +5,32 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## INTEGRATE2 — recover paused work and review UI/UX (2026-10-10)
+
+> - [ ] **INTEGRATE2 — recover paused work and review UI/UX** (parent). Finish recovery, checks, documentation and branch cleanup. Contract/proof: `docs/2026-10-10-integration-review.md`.
+
+**Outcome.** Recovered three outstanding tips; all saved heads and the detached tip are reachable
+from `main`. Removed twelve additional branches and thirteen extra Git worktrees after preservation.
+History/draft, rename-hint, index-source and menu defects were fixed; damaged workflow bindings hold.
+Documentation and the open backlog were condensed. Review scope and remaining findings:
+`docs/2026-10-10-integration-review.md`. One empty harness-held directory remains as CLEANUP1.
+
+**Verification.** All fourteen gates pass on the recovered code: nine ran on `16e1872b` and five
+valid verdicts were retained. Driver Process: 807 tests, gate 42 m 41 s; modules Process: 122 tests,
+gate 46 s; deployment rehearsal: 6 m 41 s. No flake or automatic rerun was reported. Final logs and
+timing reports: `local/scratch/full-16e1872/`; retained web/rehearsal receipts:
+`local/scratch/merge-worktree-agent-a69113e55f82af261/`. No installation or push was performed.
+
+## WORKFLOW1f — the gate reads the run's version (2026-10-10)
+
+> - [ ] **WORKFLOW1f — the gate reads the run's version** (driver, modules; after e, XAGENT1f). Landing, look, opinion and automatic acceptance read their process from a named version, Current unchanged; a step that cannot start sits, saying why; a kind's paths hold; the landing record, trace and log. Contract: §2.3, §4.4–§4.6, §5. Proof: `WorkflowGateTests`; `ReviewLandingTests`, `AutoLandingTests` rows (`Process`).
+
+**Outcome.** Integrated `0c79095e`; bound versions govern gates, kind paths hold, and the person's
+terminal Keep is recorded. Damaged bindings hold instead of falling back to Current. Forty-eight
+targeted gate tests and the real-git landing/Keep cases pass; full receipt: INTEGRATE2 above.
+Implementation notes: D157. Diagram, landing-screen and Keep-race follow-ups remain open as
+WORKFLOW1c6, WORKFLOW1g2 and WORKFLOW1f2.
+
 ## UXFIX1c — the tick and target leftovers (2026-10-10)
 
 > - [ ] **UXFIX1c — the tick and target leftovers** (web-shell). After UXFIX1 and UXFIX1b no product code passes `tick` to a plain `Menu.Item`, so `MenuRow`'s doc example ("the size a map is at") describes nothing; reword or drop the plain tick. The views menu's ⋯ trigger is `h-6 w-6` (24 px), under the 28 px floor. Contract: platform-ux §6, the second-opinion review. Proof: vitest on the trigger's minimum size; `ui.test.tsx`'s tick case updated.
