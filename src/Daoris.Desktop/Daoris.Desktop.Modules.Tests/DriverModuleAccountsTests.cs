@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <summary>
 /// How an agent's accounts are used, over the bridge (`DriverModule.Accounts.cs`, TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2,
 /// §9, §16.6): each scope's list and settings, each account's cool-off, what its agent last said and its learned week, and
-/// the edits Settings → Agents makes — the list, how it is used, *Try now*, and a workspace back on this machine's accounts.
+/// the edits the Agents place makes — the list, how it is used, *Try now*, and a workspace back on this machine's accounts.
 /// </summary>
 /// <remarks>
 /// The fast half (MOD8): every answer here is a file read under the test's home, and every edit a write to

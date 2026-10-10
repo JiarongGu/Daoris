@@ -36,7 +36,6 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 - [ ] **UX6g2b — the go twin reaches the workspace's page** (design first; driver + web twin). Retire the `workspace`/`permissions` domains into `Kept`; decide whether the page's tabs and sections become go parts. D150 §3.1/§4.3, UX6i2a note; twins.
 - [ ] **UX6h — Git inside Repositories** (web; after GIT1d; absorbs GIT1e). Branch kinds and graph; retire Git place. UX6 §4.4/D147.
 - [ ] **UX6i2i — installed go cards** (parent; after republish). Ask Daoris answering "where do I turn a plugin on?" and "where is Convergence?": a go card reading *Open Plugins.* or *Open Knowledge → Convergence.* that opens the right place and mode.
-- [ ] **UX6i3 — "Settings → Agents" leftovers** (driver/modules/service). UX6e retired it; `DriverModule.Accounts.cs:11`, its tests, room tests and the `agents` domain word in the service still name it. D150's UX6e notes.
 - [ ] **PLUGTOOL1c — tools on their plugin** (web/modules/driver; after PLUGUI1c). Tools retains Daoris's own. UX6 §7.5.
 - [ ] **COWORK1 — agents working together** (design; owner's direction required). Define progress sharing, questions and handoffs. D32/D65/D145/D149; decision before implementation.
 

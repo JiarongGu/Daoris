@@ -8,7 +8,7 @@ namespace Daoris.Desktop;
 /// How each agent's accounts are used, the page's `bridge/accounts.ts` (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9,
 /// §16.6): each scope's list and how it is used, which account its next start would take and why (TOOL6e), each account's
 /// cool-off or when it was offered again, what its agent last said and its learned week, and Daoris's sessions running on
-/// it (<c>ACCOUNTS</c>); and the edits Settings → Agents makes (<c>ACCOUNT_USE</c>) —
+/// it (<c>ACCOUNTS</c>); and the edits the Agents place makes (<c>ACCOUNT_USE</c>), an account's row being on its agent's page (Agents → agent) —
 /// a list written whole, how it is used, <i>Try now</i>, and a workspace returned to this machine's accounts.
 /// </summary>
 /// <remarks>

@@ -1143,7 +1143,7 @@ public sealed partial class HelpCoverageTests
 
     /// <summary>
     /// The places whose controls left a Settings domain for a place of their own, read as that domain was, under its id
-    /// (UX6e, D150 §5): the Agents place, from its view's file and everything it imports, so Settings → Agents' controls
+    /// (UX6e, D150 §5): the Agents place, from its view's file and everything it imports, so the controls the Settings Agents domain held
     /// stay answered for where they are pressed now. And Repositories (HELPSETUP1), whose view presses a repository's Setup
     /// (UX6f, D150 §4.2): its line, landing, language and reach left Settings → Workspace and Permissions for it, beside its
     /// driving and standing answer, and its drawers' controls come with the view. Since UX6g it holds a workspace's page

@@ -12956,3 +12956,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **WINDOWNAME1 — `<n>-minute` windows in the reader's language** (web-settings). Codex's other windows show *90-minute* in 中文 too. D125's CODEXUSE1 note; a 中文 case in `accounts.test.ts`.
 
 **Outcome** 2026-10-11: `windowName` parses `<n>-minute` once and says `harness.window.minutes` (en "{{n}}-minute", zh "{{n}} 分钟"); the cooling note's formatter shares it, so the account cells, Settings' usage sentence and a cooling note all name it in the reader's language. Detail: the merge commit.
+
+
+## UX6i3 — "Settings → Agents" leftovers (2026-10-11, D150)
+
+> - [ ] **UX6i3 — "Settings → Agents" leftovers** (driver/modules/service). UX6e retired it; `DriverModule.Accounts.cs:11`, its tests, room tests and the `agents` domain word in the service still name it. D150's UX6e notes.
+
+**Outcome** 2026-10-11: the four places left were comments, now naming the Agents place; the room tests' `DoesNotContain` guards stay, and the service's `agents` domain went with UX6i2b. The merge brought the desktop README's help and session-search routes up to ASKHIST1d1's paging and RAILSRCH1's reach. Detail: the merge commit.
