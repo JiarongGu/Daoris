@@ -8,13 +8,28 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
     [Fact]
     public void A_go_is_written_with_the_place()
     {
-        var (id, _) = Box().ProposeGo("Settings", "start", "helper", "the person asked where to name its agent", "h1", Now);
-        var (view, _) = Box().ProposeGo("quests", null, null, "the person asked where asks are", "h1", Now);
+        var (id, _) = Box().ProposeGo("Settings", "start", "helper", null, "the person asked where to name its agent", "h1", Now);
+        var (view, _) = Box().ProposeGo("quests", null, null, null, "the person asked where asks are", "h1", Now);
 
         var file = Written(id!);
         Assert.Equal(("go", "go", "settings"), (file.GetProperty("kind").GetString(), file.GetProperty("door").GetString(), file.GetProperty("target").GetString()));
         Assert.Equal(("start", "helper"), (file.GetProperty("domain").GetString(), file.GetProperty("part").GetString()));
         Assert.Equal(JsonValueKind.Null, Written(view!).GetProperty("domain").ValueKind);
+        Assert.Equal(JsonValueKind.Null, Written(view!).GetProperty("item").ValueKind);
+    }
+
+    /// <summary>
+    /// ENTRY1f1 (D161's ENTRY1f note): a go may name one quest, by its id, or one ask, as <c>ask:&lt;id&gt;</c>. The box
+    /// writes it as named, its spelling kept; whether the machine holds it, and where it may be named, is the driver's to judge.
+    /// </summary>
+    [Fact]
+    public void A_go_naming_one_quest_or_ask_is_written_with_its_item()
+    {
+        var (quest, _) = Box().ProposeGo("quests", null, null, " #q1a2b3c4 ", "the person asked where their quest is", "h1", Now);
+        var (ask, _) = Box().ProposeGo("Quests", null, null, "ask:A1b2c3d4", "the person asked what became of their ask", "h1", Now);
+
+        Assert.Equal("#q1a2b3c4", Written(quest!).GetProperty("item").GetString());
+        Assert.Equal(("quests", "ask:A1b2c3d4"), (Written(ask!).GetProperty("target").GetString(), Written(ask!).GetProperty("item").GetString()));
     }
 
     /// <summary>UX6i2b: the texts list the places the frame has (D150's UX6i2a note), never the ones it retired.</summary>
@@ -25,7 +40,7 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
         string Of(string name) => method.GetParameters().Single(parameter => parameter.Name == name)
             .GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
             .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
-        var (_, refusal) = Box().ProposeGo("", null, null, "a reason", "h1", Now);
+        var (_, refusal) = Box().ProposeGo("", null, null, null, "a reason", "h1", Now);
 
         foreach (var text in new[] { Of("view"), refusal })
         {
@@ -51,18 +66,26 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
         foreach (var name in new[] { "waiting", "review", "asks", "held" })
             Assert.Contains(name, part);
         Assert.Contains("names no session or quest", part);
+        // ENTRY1f1: the item names one quest or ask, under quests, and the part says where the one is named instead.
+        var item = Of("item");
+        Assert.Contains("quests", item);
+        Assert.Contains("ask:<id>", item);
+        Assert.Contains("no part", item);
+        Assert.Contains("item", part);
     }
 
     /// <summary>The shape, checked here and nothing more; which places exist is the driver's to judge.</summary>
     [Theory]
     [InlineData("||", "names the view")]
     [InlineData("quests|agents|", "domain is a part of Settings")]
-    [InlineData("settings|work space|", "one word")]
+    [InlineData("settings|work space||", "one word")]
+    // ENTRY1f1: an item is one word, as an id is; which item is the driver's to judge.
+    [InlineData("quests|||q1 a2", "item is one word")]
     public void A_malformed_go_proposal_is_refused_with_nothing_written(string fields, string says)
     {
         var part = fields.Split('|').Select(field => field.Length == 0 ? null : field).ToArray();
 
-        var (id, message) = Box().ProposeGo(part[0] ?? "", part[1], part[2], "a reason", "h1", Now);
+        var (id, message) = Box().ProposeGo(part[0] ?? "", part[1], part[2], part.ElementAtOrDefault(3), "a reason", "h1", Now);
 
         Assert.Null(id);
         Assert.Contains(says, message);

@@ -692,12 +692,14 @@ public sealed partial class McpToolsTests : IAsyncLifetime
         Assert.Contains("Proposed", tools.ProposeDelete("made by mistake", quest: "q1a2b3c4"));
         Assert.Contains("Proposed", tools.ProposeAgentSettings("claude-code", "work", "the person asked", effort: "high"));
         Assert.Contains("Proposed", tools.ProposeGo("settings", "the person asked where accounts are", domain: "agents"));
+        // ENTRY1f1: the tool hands the box the item it names.
+        Assert.Contains("Proposed", tools.ProposeGo("quests", "the person asked where their ask went", item: "ask:a1b2c3d4"));
         Assert.Contains("Nothing was proposed", tools.ProposeDelete("no id at all"));
 
         var written = Directory.GetFiles(HelpProposalBox.FolderOf(home))
             .Select(path => JsonDocument.Parse(File.ReadAllText(path)).RootElement)
             .ToList();
-        Assert.Equal(["account", "agent", "delete", "go"], written.Select(file => file.GetProperty("kind").GetString()).Order());
+        Assert.Equal(["account", "agent", "delete", "go", "go"], written.Select(file => file.GetProperty("kind").GetString()).Order());
         Assert.All(written, file => Assert.Equal("h1e1p000", file.GetProperty("by").GetProperty("session").GetString()));
     }
 
