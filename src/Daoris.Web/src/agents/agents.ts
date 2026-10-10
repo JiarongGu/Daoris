@@ -348,17 +348,22 @@ export type NextStartSaid = { takes: string; held: string | null };
  * Which account this machine's next start takes and why, above the account list (ACCTUX4b; the second opinion's lines
  * 128-133, D152 §4.2): the fold's words (`nextLine`, `heldLine`, TOOL6e), so the two never say it differently. Nothing where
  * the scope runs on the tool's own sign-in, which the list's own row and the fold say already (as `NextStartRow` does), nor
- * where the answer names no next start, a shell older than TOOL6e, rather than a guess from the list's head. A wait says
- * no held sentence here: its own names until when and the sign-in or key that frees it, which every hold would say again
- * account by account on a dense page; the fold keeps the whole walk.
+ * where the answer names no next start, a shell older than TOOL6e, rather than a guess from the list's head.
+ *
+ * Of the holds, only the one on the account the list begins on: it is the account a person expects the start to take, and
+ * the second opinion's line 125 is that the row said it did. Every other hold is on its own row, and the fold keeps the
+ * whole walk. None where it takes that account, or where the reason names it already (`over`), and none for a wait, whose
+ * own sentence names until when and the sign-in or key that frees it.
  */
 export function nextStartSaid(
   scope: AccountScope | null | undefined, labelOf: (name: string) => string, isKey: (name: string) => boolean = () => false,
 ): NextStartSaid | null {
   const next = scope?.next;
   if (!scope || !next || next.reason === 'own') return null;
-  const taken = next.reason !== 'waits' && Boolean(next.account);
-  return { takes: nextLine(next, scope, labelOf, isKey), held: taken ? heldLine(next, labelOf, isKey) : null };
+  const passed = next.reason !== 'waits' && next.account && scope.begins && next.account !== scope.begins
+    && next.over !== scope.begins;
+  const head = { ...next, others: next.others.filter((held) => held.account === scope.begins) };
+  return { takes: nextLine(next, scope, labelOf, isKey), held: passed ? heldLine(head, labelOf, isKey) : null };
 }
 
 /** The one act a row's state asks for (D152 §4.2): its name, and whether it is loud, which is where it holds work. */

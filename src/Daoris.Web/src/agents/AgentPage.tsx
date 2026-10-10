@@ -581,8 +581,8 @@ export function AgentPage({
             </span>
           </div>
           {/* Which account the next start takes and why, above the rows that answer it in parts (ACCTUX4b; the second opinion's
-              lines 128-133): a light line, not a setting's row, in the words of the fold's *Next start*; what holds the others
-              follows in the soft ink, since the account the list begins on is the one a person expects it to take. */}
+              lines 128-133): a light line, not a setting's row, in the words of the fold's *Next start*; what holds the account
+              the list begins on follows in the soft ink, since that is the one a person expects it to take. */}
           {nextSaid && (
             <p className="m-0 mb-2 text-small text-ink [overflow-wrap:anywhere]">
               <span>{nextSaid.takes}</span>

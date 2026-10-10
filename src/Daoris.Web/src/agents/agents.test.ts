@@ -316,6 +316,28 @@ describe('the next start, above the accounts', () => {
     });
   });
 
+  it('says only what holds the account the list begins on, the one a person expects it to take; the fold says the rest', () => {
+    const until = '2026-10-04T14:20:00.000Z';
+    const list = ['account-1', 'account-2', 'account-3'];
+    const others = [
+      { account: 'account-1', hold: 'cooling' as const, until }, { account: 'account-2', hold: 'signedOut' as const },
+      { account: 'account-4', hold: 'outside' as const },
+    ];
+    const passed = scopeOf({ list, begins: 'account-1', next: { account: 'account-3', reason: 'onlyReady', others } });
+    expect(nextStartSaid(passed, labelOf)?.held).toBe(`account-1 is cooling until ${moment(until)}.`);
+    // It takes the list's first: nothing passed over to explain, whatever holds the rest.
+    const head = scopeOf({ list, begins: 'account-3', next: { account: 'account-3', reason: 'onlyReady', others } });
+    expect(nextStartSaid(head, labelOf)?.held).toBeNull();
+    // The reason names the list's first already: said once, not again as its hold.
+    const near = scopeOf({
+      list, begins: 'account-1',
+      next: { account: 'account-3', reason: 'near', over: 'account-1', others: [{ account: 'account-1', hold: 'near' }] },
+    });
+    expect(nextStartSaid(near, labelOf)).toEqual({
+      takes: 'The next start takes account-3: account-1 is near its limit, so it goes last.', held: null,
+    });
+  });
+
   it('says a wait and what frees it, and not again account by account, which the wait’s sentence already names', () => {
     const until = '2026-10-04T14:20:00.000Z';
     const scope = scopeOf({
