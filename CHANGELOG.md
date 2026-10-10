@@ -43,8 +43,9 @@ with the version and date at release.
   asks and the quests waiting on you. The list opens with that group at its top and its heading focused;
   you open the session or quest you mean. The start that counts sessions waiting on you opens them the
   same way. A list you closed, or one the window draws narrow, lies over the page for the go; Sessions
-  kept by repository is shown by state, and a search typed in its list is cleared. What you chose for
-  the list stays as you left it.
+  kept by repository is shown by state, and a search typed in its list is cleared. Quests filtered to one
+  repository show everyone's for a go to the quests waiting on you, until you choose in the list's ⋯ or
+  leave Quests. What you chose for the list stays as you left it.
 - Ask Daoris can take you to one quest or ask: its *Go there* opens Quests with that quest or ask
   chosen. One this machine does not hold is refused on the card; a closed one is found, and the card
   says it closed.

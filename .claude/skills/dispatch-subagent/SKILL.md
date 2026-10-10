@@ -70,7 +70,9 @@ sessions take the same roles once the trial says which split works (MODELROLE1).
 3. **Size the branch to about a hundred turns.** Cost grows with the square of a branch's turns: in the
    evidence, branches of 100 to 200 turns cost three times those under 100, and branches of 200 to 300 cost
    seven times. A row that changes more than one surface, or more than one lane, is split into rows that
-   each fit, and each gets its own pack.
+   each fit, and each gets its own pack. A pack's *one sitting* does not override this: ENTRY1f2, sized so
+   across driver, modules, service and page with the room's goldens, ran 129 turns and cost what a branch
+   did before the split (D160's third batch). A lane that only takes a sentence or a parameter may ride along.
 4. **Name the lanes by id** (`daoris.lanes.json`, design §5) and the files the branch must not touch,
    which is anything a branch in flight holds. When two branches need the same lane, one waits for the
    other or the work is split.
