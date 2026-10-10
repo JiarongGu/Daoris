@@ -181,8 +181,7 @@ Contracts: session-management (D126 §9), session-messages (D137), answer-contin
 pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build rows.
 
 - [ ] **QUESTREBASE1 — pure rebase planner** (service; consider). Preserve operation identity, accepted-before-pending order and transaction. D69/D79; unchanged sync suite and loss tests.
-- [ ] **SESSUX1h1 — a session's stop is its own, at both doors** (driver tests + notes). The page's stop is already *its own conversation* (HelpCoverageTests ~:474); `SessionsVerbDoor` (~:172-180) still owes the terminal's `sessions stop` a door. Give the verb the same answer (D161's ENTRY1/ENTRY1e: a session keeps its own conversation, Ask Daoris goes there), narrow the owed row to archive, unarchive and delete, and append notes to D161 and the management design §7.3. No kind.
-- [ ] **SESSUX1h2 — the `session` kind: archive, unarchive, delete** (driver/service/web; split by lane; after SESSUX1h1). `session_propose` for the tidy acts and the delete kind's `session` door (§5.4), the facts' sessions, the room's doors table; the coverage rows `SessionArchiveDoor`/`SessionDeleteDoor` become doors. Management §7.3/§9 (~:532-554, ~:743-753).
+- [ ] **SESSUX1h2 — the `session` kind: archive, unarchive, delete** (driver/service/web; split by lane). `session_propose` for the tidy acts and the delete kind's `session` door (§5.4), the facts' sessions, the room's doors table; the coverage rows `SessionArchiveDoor`/`SessionDeleteDoor` become doors. Management §7.3/§9 (~:532-554, ~:743-753).
 - [ ] **MSG1d2 — queued chat survives restart** (driver/web; with MSG1c). Record ids/reach/withdrawals; take by id. Messages §3.1.
 - [ ] **MSG1g3 — cooling note and twins** (driver/web). Code held line; compare newSessionSaid with GoOnNew/WordsNever. D137/D142.
 - [ ] **MSG1h — Codex next-step words** (driver; after measured STEER3). Messages §8.

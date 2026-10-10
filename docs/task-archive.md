@@ -13166,3 +13166,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UXLOADMORE1 — the load-more convention** (contract). A list read a page at a time says "{shown} of {total}" with *Show more* under its rows, and the press moves focus to the first row it brought; Ask Daoris's history is the first. Platform UX §4; RAILSRCH1b follows it.
 
 **Outcome** 2026-10-11: platform UX §4 holds the rule as Ask Daoris's history built it: the foot under the rows (count line, *Show more*, a status), shown while a next page exists; focus to the first row brought; a search's count and coverage; the terminal's `help list --offset --limit` twin. The rail's search is not paged (RAILSRCH1b was its Han-character gate), so it is RAILPAGE1. Detail: D158's UXLOADMORE1 note.
+
+
+## SESSUX1h1 — a session's stop is its own, at both doors (2026-10-11, D161)
+
+> - [ ] **SESSUX1h1 — a session's stop is its own, at both doors** (driver tests + notes). The page's stop is already *its own conversation* (HelpCoverageTests ~:474); `SessionsVerbDoor` (~:172-180) still owes the terminal's `sessions stop` a door. Give the verb the same answer (D161's ENTRY1/ENTRY1e: a session keeps its own conversation, Ask Daoris goes there), narrow the owed row to archive, unarchive and delete, and append notes to D161 and the management design §7.3. No kind.
+
+**Outcome** 2026-10-11: `daoris-driver sessions stop` is answered *its own conversation* (`SessionsStopVerb`, Own("sessions")), as the page's stop is; `SessionsVerbDoor` owes only archive, unarchive and delete to SESSUX1h2's `session` kind; the design's *Stop* row and `stop` door are superseded by its 2026-10-11 amendment. Detail: D161's SESSUX1h1 note.

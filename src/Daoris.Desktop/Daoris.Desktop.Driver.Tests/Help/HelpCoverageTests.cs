@@ -170,14 +170,24 @@ public sealed partial class HelpCoverageTests
         + "the same two halves, which SESSUX1h builds (D126 §7.3).");
 
     /// <summary>
-    /// SESSUX1g's <c>daoris-driver sessions</c> (D126 §7.1), a verb of the headless host: its stop, archive, unarchive and
-    /// delete are doors Ask Daoris owes until SESSUX1h builds the <c>session</c> kind and the <c>delete</c> kind's
-    /// <c>session</c> door; its finish and decline are the person's answer, exempt as the screen's are (§7.3).
+    /// SESSUX1g's <c>daoris-driver sessions</c> (D126 §7.1), a verb of the headless host: its archive, unarchive and delete
+    /// are doors Ask Daoris owes until SESSUX1h2 builds the <c>session</c> kind and the <c>delete</c> kind's <c>session</c>
+    /// door; its stop is its own conversation (<see cref="SessionsStopVerb"/>), its finish and decline the person's answer,
+    /// exempt as the screen's are (§7.3).
     /// </summary>
     private static readonly Owed SessionsVerbDoor = new(
-        "stopping a session holds its quest until the person tries again, and archiving and deleting tidy this machine's "
-        + "list, each a change the person applies as a card, so Ask Daoris should propose them; that is SESSUX1h's `session` "
-        + "kind and the `delete` kind's `session` door, while finishing and declining stay the person's answer (D126 §7.3).");
+        "archiving, unarchiving and deleting tidy this machine's list, each a change the person applies as a card, so Ask "
+        + "Daoris should propose them; that is SESSUX1h2's `session` kind and the `delete` kind's `session` door, while "
+        + "finishing and declining stay the person's answer and a stop its own conversation (D126 §7.3).");
+
+    /// <summary>
+    /// SESSUX1h1: the terminal's <c>daoris-driver sessions stop</c> answers as the page's <c>useStopSession</c> does (D161's
+    /// ENTRY1 note): a session keeps its own conversation, so Ask Daoris takes the person to Sessions with a go and names
+    /// the line, and builds no <c>stop</c> door.
+    /// </summary>
+    private static readonly Conversation SessionsStopVerb = Own("sessions",
+        "stopping a session, which the terminal's `daoris-driver sessions stop` does as the page does, ends its process and "
+        + "holds its quest until the person tries again");
 
     /// <summary>
     /// HIST1d's <c>daoris-driver history clear --workspace</c>, <c>quest clear [--failed]</c> and <c>ask --clear</c> (D153 point 7,
@@ -812,6 +822,7 @@ public sealed partial class HelpCoverageTests
             .Append(SessionArchiveDoor)
             .Append(SessionDeleteDoor)
             .Append(SessionsVerbDoor)
+            .Append(SessionsStopVerb)
             .Append(ClearDoor)
             .Append(AbandonDoor)
             .Append(SayDoor)
@@ -1260,7 +1271,22 @@ public sealed partial class HelpCoverageTests
         Assert.Contains("sessions stop <id>", DriverCommand.Usage);
         Assert.Contains("sessions archive <id>… | --ended [--yes]", DriverCommand.Usage);
         Assert.Null(HelpProposalKinds.Find("session"));
-        Assert.Contains("SESSUX1h", SessionsVerbDoor.Reason);
+        Assert.Contains("SESSUX1h2", SessionsVerbDoor.Reason);
+        Assert.DoesNotContain("stopping", SessionsVerbDoor.Reason);
+    }
+
+    /// <summary>
+    /// SESSUX1h1: the terminal's <c>sessions stop</c> is its own conversation, as the page's stop is (D161's ENTRY1 note): Ask
+    /// Daoris takes the person to Sessions with a go and names the terminal line, and no <c>stop</c> door is built.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_sessions_stop_is_its_own_conversation_as_the_pages_is()
+    {
+        Assert.Contains("sessions stop <id>", DriverCommand.Usage);
+        Assert.Equal("sessions", SessionsStopVerb.Place);
+        Assert.True(HelpPlaces.Views.Any(view => view.Id == SessionsStopVerb.Place));
+        Assert.Contains("daoris-driver sessions stop", SessionsStopVerb.Reason);
+        Assert.Null(HelpProposalKinds.Find("session"));
     }
 
     /// <summary>
