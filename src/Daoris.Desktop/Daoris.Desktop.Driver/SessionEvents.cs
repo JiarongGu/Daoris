@@ -437,9 +437,6 @@ public sealed class SessionEvents(string directory)
     /// <summary>A search's hits in all, unless the caller asks for fewer.</summary>
     public const int SearchLimit = 50;
 
-    /// <summary>How many records a search reads, newest first — a person typing is not waiting on a crawl.</summary>
-    public const int SearchScan = 200;
-
     /// <summary>How much text a snippet keeps either side of the match.</summary>
     private const int SnippetRadius = 60;
 
@@ -507,20 +504,21 @@ public sealed class SessionEvents(string directory)
     /// command's noise, and would bury the conversation that mentioned it.</para>
     ///
     /// <para><b>Bounded, and it says so</b> (<see cref="SessionSearch.Cut"/>): a few hits per session, a
-    /// limit in all, and the newest <see cref="SearchScan"/> records read. Machine-local, like the record.</para>
+    /// limit in all. Every record is read, newest first, and the query is two characters or one Han
+    /// character (<see cref="Searchable"/>, RAILSRCH1). Machine-local, like the record.</para>
     /// </remarks>
     public SessionSearch Search(string query, int limit = SearchLimit)
     {
         var wanted = query.Trim();
-        if (wanted.Length < 2 || !Directory.Exists(directory)) return new([], false);
+        if (!Searchable(wanted) || !Directory.Exists(directory)) return new([], false);
 
         var records = new DirectoryInfo(directory).EnumerateFiles("*.events.jsonl")
             .OrderByDescending(file => file.LastWriteTimeUtc)
             .ToList();
-        var cut = records.Count > SearchScan;
+        var cut = false;
         var hits = new List<SessionHit>();
 
-        foreach (var record in records.Take(SearchScan))
+        foreach (var record in records)
         {
             var session = record.Name[..^".events.jsonl".Length];
             var found = 0;

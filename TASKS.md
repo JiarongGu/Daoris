@@ -69,8 +69,7 @@ Contracts: `docs/2026-10-07-history-clearing-design.md` (D153), D158,
 D88/D102 cleanup notes, machine log §4. Installed clears require the owner's existing authorization.
 
 - [ ] **ASKHIST1d2 — every conversation remains reachable: page** (web). Page through the list with `next`, say what search covered, parse `about`/`foundLine` as Markdown before cutting. D158's ASKHIST1d1 note is the contract; history tests and stories.
-- [ ] **RAILSRCH1 — the rail's search reaches every record** (driver). The session rail's search refuses one Han character and never reads past the newest 200 records. D158's ASKHIST1d1 note (`Searchable`), RAIL1; a single-character hit and a hit past 200 in `SessionEventsTests`.
-- [ ] **RAILSRCH1b — the page's search gates take one Han character** (web; after ASKHIST1d2 and RAILSRCH1). Move ASKHIST1d2's `searchable` to a neutral module both pages import; use it in `bridge/sessions.ts`, `SessionRail.tsx`, `SessionConversation.tsx`, `ConversationFind.tsx`. Proof: a 区 query reaches `SESSION_SEARCH`; one Latin letter does not.
+- [ ] **RAILSRCH1b — the page's search gates take one Han character** (web; after ASKHIST1d2). Move ASKHIST1d2's `searchable` to a neutral module both pages import; use it in `bridge/sessions.ts`, `SessionRail.tsx`, `SessionConversation.tsx`, `ConversationFind.tsx`. Proof: a 区 query reaches `SESSION_SEARCH`; one Latin letter does not.
 - [ ] **AUTOTIDY1a — show automatic cleanup** (modules/web). Branches lists recent tidied/kept log facts. D88; route and bilingual list tests.
 - [ ] **AUTOTIDY1b — measure strict cleanup guards** (parent; installed AUTOTIDY1, after one week). Count ignored-file/unmoved-branch holds before deciding relaxations. D88 evidence.
 - [ ] **AUTOTIDY1c — automatic squash cleanup** (driver; after AUTOTIDY1b; decide first). Consider content proof plus merged PR state, preserving recovery refs. D88/D102; Process guards.

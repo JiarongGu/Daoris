@@ -12879,3 +12879,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ACCTUX1b — refused keys read as keys** (web). Correct Settings next-start and start-form labels. D125 note; account and start-form tests.
 
 **Outcome** 2026-10-10: a key read signed out reads *key refused* on the start form, and Settings' next-start sentences say a new API key repairs it, never a sign-in; `nextLine`/`heldLine` take an `isKey` from `AccountUse`, branching on the account, not the hold. Closes the gap D125's ACCTUX1 note named (lines 933-937). Detail: the merge commit.
+
+
+## RAILSRCH1 — the rail's search reaches every record (2026-10-10, D158)
+
+> - [ ] **RAILSRCH1 — the rail's search reaches every record** (driver). The session rail's search refuses one Han character and never reads past the newest 200 records. D158's ASKHIST1d1 note (`Searchable`), RAIL1; a single-character hit and a hit past 200 in `SessionEventsTests`.
+
+**Outcome** 2026-10-10: `SessionEvents.Search` takes `Searchable`'s rule and reads every record; `Cut` now says only that the hit caps left hits out. 1000 records search in 290–400 ms warm. The page's own gate is RAILSRCH1b. Built by a Sonnet worker in 10 turns. Detail: D158's RAILSRCH1 note.
