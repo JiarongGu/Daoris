@@ -88,13 +88,18 @@ public sealed class HelpRoomPlacesTests
     /// item, with no part: a quest by its id and an ask as <c>ask:&lt;id&gt;</c>, each as the room lists it, so the helper
     /// names only what it was shown.
     /// </summary>
+    /// <remarks>
+    /// ENTRY1f2: and the one session, on <c>sessions</c> by its id: one the room lists as waiting on the person, or another
+    /// the person names, never Ask Daoris's own conversation.
+    /// </remarks>
     [Fact]
-    public void The_room_says_a_go_on_quests_may_name_one_quest_or_ask_as_its_item()
+    public void The_room_says_a_go_may_name_one_session_quest_or_ask_as_its_item()
     {
         var places = new HelpRoomPlaces().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("To open one quest or ask, name it as the go's item on `quests`, with no part:", places);
-        Assert.Contains("a quest by its id, an ask as `ask:<id>`, each one this room lists.", places);
+        Assert.Contains("To open one session, quest or ask, name it as the go's item on its view, with no part:", places);
+        Assert.Contains("on `sessions` a session by its id, one this room lists as waiting on the person or another the person names,", places);
+        Assert.Contains("never Ask Daoris's own conversation; on `quests` a quest by its id, an ask as `ask:<id>`, each one this room lists.", places);
     }
 
     /// <summary>

@@ -198,8 +198,10 @@ where the person picks the one they mean, and a part of `agents` opens the agent
 A `workspace-` part opens that tab or section on the page of the workspace in view, the scope or the only one;
 with none in view it opens Repositories, where the person picks the workspace they mean.
 A part of `sessions` or `quests` brings that group of its list into view and names no session or quest in it:
-the person opens the one they mean there. To open one quest or ask, name it as the go's item on `quests`, with no part:
-a quest by its id, an ask as `ask:<id>`, each one this room lists. `overview` has no part: what waits on the person leads it.
+the person opens the one they mean there. To open one session, quest or ask, name it as the go's item on its view, with no part:
+on `sessions` a session by its id, one this room lists as waiting on the person or another the person names,
+never Ask Daoris's own conversation; on `quests` a quest by its id, an ask as `ask:<id>`, each one this room lists.
+`overview` has no part: what waits on the person leads it.
 `knowledge` alone opens Knowledge as the person left it; name its part for Search or Convergence.
 
 ## The window
@@ -236,6 +238,7 @@ message when it changed; for anything else on the screen, ask them rather than g
 - The driver: no agent is set for quests.
 - The intake: no agent answers asks, so an ask the declarations do not settle waits for the person.
 - 0 sessions wait on the person; 1 ask waits for an answer.
+- Sessions waiting on the person: none.
 - Quests parked by their failed sessions, at the driver's last look: none.
 - Quests held by the person's stop, at the driver's last look: none.
 - Plugins: none installed.

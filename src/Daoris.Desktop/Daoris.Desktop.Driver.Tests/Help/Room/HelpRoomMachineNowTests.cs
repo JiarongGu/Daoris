@@ -133,6 +133,48 @@ public sealed class HelpRoomMachineNowTests
         Assert.Contains("- Quests held by the person's stop, at the driver's last look: none.", HelpRoom.Render(HelpRoomFixture.Machine));
     }
 
+    /// <summary>
+    /// ENTRY1f2 (D161's ENTRY1f note): the sessions waiting on the person, by id and where each runs, so a go names one it
+    /// was shown; an intake by the ask it answers. The count is the list's, and none is said as none.
+    /// </summary>
+    [Fact]
+    public void The_room_lists_the_sessions_waiting_on_the_person()
+    {
+        var some = HelpRoom.Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("- 2 sessions wait on the person; 1 ask waits for an answer.", some);
+        Assert.Contains("- Sessions waiting on the person: `s1a2b3c4` (in `console-ui`), `s7a8b9c0` (answering ask `#a1`).", some);
+        var none = HelpRoom.Render(HelpRoomFixture.Machine with { Waiting = [] });
+        Assert.Contains("- 0 sessions wait on the person;", none);
+        Assert.Contains("- Sessions waiting on the person: none.", none);
+    }
+
+    /// <summary>
+    /// ENTRY1f2: the room's waiting sessions are the Sessions list's *Waiting on you* (SessionGroups): a park not answered,
+    /// since an answered one goes on at the driver's next look (ANSWER1c), and less Ask Daoris's own conversation. Read from
+    /// the records as the service answers them, the answer with them.
+    /// </summary>
+    [Fact]
+    public void The_waiting_sessions_are_the_ones_the_sessions_list_says_wait_on_the_person()
+    {
+        var active = ServiceClient.ReadSessions("""
+            [{ "id": "s1", "repository": "console-ui", "state": "awaiting-person", "quest": "q1" },
+             { "id": "s2", "repository": "reports-db", "state": "working", "quest": "q2" },
+             { "id": "s3", "repository": "engine", "state": "awaiting-person", "quest": "q3", "answer": "Port 8080." },
+             { "id": "s4", "repository": "engine", "state": "awaiting-person", "quest": "q4", "answer": "" },
+             { "id": "s5", "repository": "daoris:help", "state": "awaiting-person" },
+             { "id": "s6", "repository": "ask #a1", "state": "awaiting-person", "ask": "a1" },
+             { "id": "laptop/s7", "repository": "engine", "state": "awaiting-person" }]
+            """);
+        Assert.Equal("Port 8080.", active.Single(session => session.Id == "s3").Answer);
+
+        var machine = HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], active), [], [], _ => null, asks: 0);
+
+        Assert.Equal(
+            [new HelpWaitingSession("s1", "console-ui"), new HelpWaitingSession("s4", "engine"), new HelpWaitingSession("s6", "ask #a1") { Ask = "a1" }],
+            machine.Waiting);
+    }
+
     [Fact]
     public void The_held_quests_are_described_from_the_loops_last_look()
     {

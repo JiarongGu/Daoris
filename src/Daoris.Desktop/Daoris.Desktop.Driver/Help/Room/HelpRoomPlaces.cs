@@ -35,10 +35,13 @@ internal sealed class HelpRoomPlaces : IHelpRoomSection
         text.Append("with none in view it opens Repositories, where the person picks the workspace they mean.\n");
         // ENTRY1b (D161's ENTRY1 note): a quest or a session keeps its own conversation, so a go takes the person to the
         // group that waits on them there and leaves the one to open to them. ENTRY1f1 (its ENTRY1f note): a go on Quests may
-        // name the one, as the room lists it, and the driver judges it against the machine's records.
+        // name the one, as the room lists it, and the driver judges it against the machine's records. ENTRY1f2: on Sessions
+        // too, a session the room lists as waiting or another the person names; Ask Daoris's own conversation is refused.
         text.Append("A part of `sessions` or `quests` brings that group of its list into view and names no session or quest in it:\n");
-        text.Append("the person opens the one they mean there. To open one quest or ask, name it as the go's item on `quests`, with no part:\n");
-        text.Append($"a quest by its id, an ask as `{HelpPlaces.AskItem}<id>`, each one this room lists. `overview` has no part: what waits on the person leads it.\n");
+        text.Append("the person opens the one they mean there. To open one session, quest or ask, name it as the go's item on its view, with no part:\n");
+        text.Append("on `sessions` a session by its id, one this room lists as waiting on the person or another the person names,\n");
+        text.Append($"never Ask Daoris's own conversation; on `quests` a quest by its id, an ask as `{HelpPlaces.AskItem}<id>`, each one this room lists.\n");
+        text.Append("`overview` has no part: what waits on the person leads it.\n");
         // UX6i2a: Knowledge opens in the mode it was left in (UX6i), so a go meaning one names it.
         text.Append("`knowledge` alone opens Knowledge as the person left it; name its part for Search or Convergence.\n");
         text.Append('\n');

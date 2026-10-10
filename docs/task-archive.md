@@ -13075,3 +13075,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UXTOAST1 — a toast covers an ask at the drawer's foot** (web). On the window a toast (fixed bottom-right, `ui.tsx` ~:1599) lay over the retire ask's Confirm and Never mind in the Manage drawer. Keep an open ask clear of toasts. Seen 2026-10-11; a test with a toast and a drawer's ask, then the window.
 
 **Outcome** 2026-10-11: while a drawer is open the toasts stand at its left edge over the inert scrim, the drawer's width in from the right; under 56rem (below the main window's floor) they keep the corner. A press on a toast no longer passes through to the scrim or a covered press under a modal drawer. The window's look is the next installed pass's. Detail: D41's UXTOAST1 amendment.
+
+
+## ENTRY1f2 — a go names one waiting session (2026-10-11, D161)
+
+> - [ ] **ENTRY1f2 — a go names one waiting session** (driver/modules/web; after f1 and ENTRY1g). The room lists waiting sessions by id; the driver judges a session item on the machine and refuses Ask Daoris's own. D161's ENTRY1f note.
+
+**Outcome** 2026-10-11: the room lists the sessions waiting on the person by id under the Sessions list's own rule (`SessionGroups.WaitsOnYou`), and its count is now that list's (it had counted answered parks); a go on `sessions` names one by id, judged against the machine's session records, refusing an unknown id, a teammate's and Ask Daoris's own; the page opens it. Detail: D161's ENTRY1f2 note; FIX-LOG 2026-10-11.

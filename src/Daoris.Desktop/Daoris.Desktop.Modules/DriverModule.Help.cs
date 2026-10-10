@@ -418,17 +418,31 @@ public sealed partial class DriverModule
 
     /// <summary>
     /// Whether a pending proposal is judged against every quest and ask (HELP6): a delete, and since ENTRY1f1 a go naming
-    /// one, so the service is asked for the records only then. Public so the fast half holds the gate without a service.
+    /// one on Quests, so the service is asked for the records only then. Public so the fast half holds the gate without a service.
     /// </summary>
     public static bool JudgedAgainstRecords(IEnumerable<HelpProposal> proposals) =>
-        proposals.Any(proposal => proposal.Kind == "delete" || proposal.Kind == "go" && !string.IsNullOrWhiteSpace(proposal.Item));
+        proposals.Any(proposal => proposal.Kind == "delete" || ItemOn(proposal, "quests"));
+
+    /// <summary>
+    /// Whether a pending proposal is judged against this machine's session records, closed ones included: a go naming a
+    /// session on Sessions (ENTRY1f2), so the service is asked for them only then.
+    /// </summary>
+    public static bool JudgedAgainstSessions(IEnumerable<HelpProposal> proposals) =>
+        proposals.Any(proposal => ItemOn(proposal, "sessions"));
+
+    // A go naming an item on the view, read as the judge reads its view (`HelpGoProposals.Plan`); an item on any other view
+    // is refused unread.
+    private static bool ItemOn(HelpProposal proposal, string view) =>
+        proposal.Kind == "go" && !string.IsNullOrWhiteSpace(proposal.Item)
+        && string.Equals(proposal.Target?.Trim(), view, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// What a proposal of Ask Daoris's is judged against (HELP1c): the driver's file, and the names the
     /// machine holds — its registered repositories and their circles, the agents it has, and the quests the
     /// last tick parked (HELP10). For the
     /// kinds that need them (HELP6), each door as the Agents screen's roster reads it, and every quest
-    /// and ask with the service's own reading of whether it may be deleted — asked only then.
+    /// and ask with the service's own reading of whether it may be deleted, or this machine's sessions for a go naming one
+    /// (ENTRY1f2) — asked only then.
     /// </summary>
     private async Task<(DriverConfig Config, HelpMachineFacts Facts)> HelpFactsAsync(
         ServiceClient service, IReadOnlyCollection<HelpProposal> proposals, CancellationToken ct)
@@ -496,6 +510,12 @@ public sealed partial class DriverModule
         {
             var (quests, asks) = await HelpProposals.RecordsAsync(service, ct).ConfigureAwait(false);
             facts = facts with { Quests = quests, Asks = asks };
+        }
+
+        // This machine's own sessions as the Sessions list reads them (ENTRY1f2), read only when a go names one.
+        if (JudgedAgainstSessions(proposals))
+        {
+            facts = facts with { Sessions = await service.SessionRecordsAsync(ct).ConfigureAwait(false) };
         }
 
         // Every quest as the service answers it, its requirements, answers and hold with it (DRIFT1d2), read only when an

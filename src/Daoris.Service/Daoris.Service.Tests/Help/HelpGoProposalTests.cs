@@ -72,6 +72,13 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
         Assert.Contains("ask:<id>", item);
         Assert.Contains("no part", item);
         Assert.Contains("item", part);
+        // ENTRY1f2: and one session under sessions, by its id, never Ask Daoris's own conversation.
+        Assert.Contains("For sessions", item);
+        Assert.Contains("a session by its id", item);
+        Assert.Contains("Ask Daoris's own", item);
+        var tool = method.GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
+            .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
+        Assert.Contains("one session on Sessions", tool);
     }
 
     /// <summary>The shape, checked here and nothing more; which places exist is the driver's to judge.</summary>
