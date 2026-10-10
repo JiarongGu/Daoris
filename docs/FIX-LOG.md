@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-11 — Ask Daoris's waiting count (ENTRY1f2)
+
+### Driver: the room counted an answered park as a session waiting on the person
+
+- **Symptom:** Ask Daoris's room said *N sessions wait on the person* where the Sessions list's *Waiting on you* held
+  fewer: a park the person had answered was counted, and an Ask Daoris conversation in `awaiting-person` would have been.
+- **Root cause:** `HelpRoomMachineNow` counted every active record in `awaiting-person`, a rule of its own beside the
+  list's (`SessionGroups`: an answered park is working, ANSWER1c). The snapshot's sessions did not carry the answer, so
+  the room could not apply the list's rule.
+- **Fix:** one rule, `SessionGroups.WaitsOnYou`, which the list's grouping calls and the room lists its waiting sessions
+  by, less Ask Daoris's own; the count is that list's. `ServiceClient.ReadSessions` reads `answer` into `SessionView`.
+- **Verify:** `HelpRoomMachineNowTests.The_waiting_sessions_are_the_ones_the_sessions_list_says_wait_on_the_person`
+  (records as the service answers them, an answered and a blank answer among them) failed first and passes;
+  `SessionGroupsTests` pass unchanged.
+- **Commit:** `34999c29`.
+
 ## 2026-10-11 — the shared ask's focus (UXFIX2d)
 
 ### Web: Never mind on an ask inside a drawer gave the focus to the drawer's Close

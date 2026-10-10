@@ -38,6 +38,10 @@ with the version and date at release.
   same way. A list you closed, or one the window draws narrow, lies over the page for the go; Sessions
   kept by repository is shown by state, and a search typed in its list is cleared. What you chose for
   the list stays as you left it.
+- Ask Daoris can take you to one session: its *Go there* opens Sessions with that session chosen. It is
+  told the sessions waiting on you by id, and you may ask for another; one this machine does not hold,
+  a teammate's, or an Ask Daoris conversation is refused on the card. Its count of sessions waiting on
+  you no longer counts a park you have already answered.
 - Account rows show each usage window as its own cell, in the same place on every row: the share used,
   a bar of that window's allowance, its reset and how old its reading is. A window the agent has not
   reported says *unknown*, never 0%. A Codex window that is neither five hours nor a week is named in
