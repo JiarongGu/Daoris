@@ -84,6 +84,20 @@ public sealed class HelpRoomPlacesTests
     }
 
     /// <summary>
+    /// ENTRY1f1 (D161's ENTRY1f note): to take the person to the one quest or ask that waits, a go on Quests names it as its
+    /// item, with no part: a quest by its id and an ask as <c>ask:&lt;id&gt;</c>, each as the room lists it, so the helper
+    /// names only what it was shown. A session is named by no item yet (ENTRY1f2).
+    /// </summary>
+    [Fact]
+    public void The_room_says_a_go_on_quests_may_name_one_quest_or_ask_as_its_item()
+    {
+        var places = new HelpRoomPlaces().Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("To open one quest or ask, name it as the go's item on `quests`, with no part:", places);
+        Assert.Contains("a quest by its id, an ask as `ask:<id>`, each one this room lists.", places);
+    }
+
+    /// <summary>
     /// UX6i2a (D150 §2): the room names the places as the window has them, Knowledge with its two modes as its parts and
     /// Plugins as a view, and lists no place that moved: a go still spelled so lands, but the helper is never offered it.
     /// </summary>

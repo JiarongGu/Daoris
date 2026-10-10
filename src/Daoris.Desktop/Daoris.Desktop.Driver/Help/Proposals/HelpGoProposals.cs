@@ -5,8 +5,9 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// Ask Daoris's <c>go</c> proposal (HELP6): a place the window has — its target the view, and its own
-/// <c>domain</c> and <c>part</c> — judged by <see cref="HelpPlaces"/>. It changes nothing: its Apply hands the
-/// page the place, which navigates as the starters' doors do.
+/// <c>domain</c>, <c>part</c> and, since ENTRY1f1, <c>item</c> — judged by <see cref="HelpPlaces"/> and, for an item,
+/// against the machine's quests and asks. It changes nothing: its Apply hands the page the place, which navigates as the
+/// starters' doors do.
 /// </summary>
 internal sealed class HelpGoProposals : IHelpProposalKind
 {
@@ -20,6 +21,7 @@ internal sealed class HelpGoProposals : IHelpProposalKind
     {
         Domain = Text(file, "domain"),
         Part = Text(file, "part"),
+        Item = Text(file, "item"),
     };
 
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
@@ -72,7 +74,57 @@ internal sealed class HelpGoProposals : IHelpProposalKind
             describe += within == "start" ? $" at {found.Name}" : $" → {found.Name}";
         }
 
-        return new HelpPlan(null, describe + ".", "", null) { Go = new HelpPlace(view, domain, part) };
+        var item = proposal.Item?.Trim() is { Length: > 0 } i ? i : null;
+        if (item is not null)
+        {
+            // ENTRY1f1 (D161's ENTRY1f note): the one that waits is a record of the view's list, judged as the delete kind
+            // judges an id, so a card never hands the page a place that is not there.
+            if (!HelpPlaces.ItemViews.Contains(view)) return Refused(
+                $"a go names an item only on {Names(HelpPlaces.ItemViews)} — a quest by its id, or an ask as `{HelpPlaces.AskItem}<id>`.");
+            if (domain is not null || part is not null) return Refused(
+                $"a go names a part of `{view}` or an item in it, not both — the item opens on its own.");
+            var (named, refusal) = Item(item, facts);
+            if (refusal is not null) return Refused(refusal);
+            describe += named!.Value.Said;
+            item = named.Value.Item;
+        }
+
+        return new HelpPlan(null, describe + ".", "", null) { Go = new HelpPlace(view, domain, part) { Item = item } };
+    }
+
+    /// <summary>
+    /// ENTRY1f1: an item on Quests as the machine's records hold it — a quest by its id, an ask as <c>ask:&lt;id&gt;</c>, a
+    /// <c>#</c> before the id stripped and the id matched without case, as the delete kind's — with the words the card says.
+    /// The records are every quest and ask, closed ones included, so a closed one is found and said closed.
+    /// </summary>
+    private static ((string Item, string Said)? Named, string? Refusal) Item(string item, HelpMachineFacts facts)
+    {
+        var spelled = item.TrimStart('#');
+        var asked = spelled.StartsWith(HelpPlaces.AskItem, StringComparison.OrdinalIgnoreCase);
+        var id = (asked ? spelled[HelpPlaces.AskItem.Length..] : spelled).Trim().TrimStart('#');
+        if (id.Length == 0 || id.Contains(':'))
+        {
+            return (null, $"`{item}` is no item of `quests` — a quest by its id, or an ask as `{HelpPlaces.AskItem}<id>`.");
+        }
+
+        static string Closed(string status) =>
+            status.ToLowerInvariant() is var word && word is "done" or "declined" or "closed" ? $", {word}" : "";
+        if (asked)
+        {
+            return facts.Asks.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase)) is { } ask
+                ? (($"{HelpPlaces.AskItem}{ask.Id}", $" → ask `#{ask.Id}` “{ask.Sentence}”{Closed(ask.State)}"), null)
+                : (null, $"there is no ask `#{id}` on this machine.");
+        }
+
+        if (facts.Quests.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase)) is { } quest)
+        {
+            return ((quest.Id, $" → quest `#{quest.Id}` “{quest.Title}”{Closed(quest.Status)}"), null);
+        }
+
+        // The room lists an ask as `#id` too: one named without its prefix is told how to name it.
+        return (null, facts.Asks.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase)) is { } meant
+            ? $"there is no quest `#{id}` on this machine — `#{meant.Id}` is an ask: name it as `{HelpPlaces.AskItem}{meant.Id}`."
+            : $"there is no quest `#{id}` on this machine.");
     }
 
     public Task<HelpApplied> ApplyAsync(HelpApplying applying, CancellationToken ct) =>
@@ -81,7 +133,14 @@ internal sealed class HelpGoProposals : IHelpProposalKind
 }
 
 /// <summary>A place on the window a go takes the person to (HELP6): a view, a Settings domain, a part of it.</summary>
-public sealed record HelpPlace(string View, string? Domain, string? Part);
+public sealed record HelpPlace(string View, string? Domain, string? Part)
+{
+    /// <summary>
+    /// The one record of the view's list a go opens (ENTRY1f1), as the page's list names it: a quest's id, or an ask's as
+    /// <c>ask:&lt;id&gt;</c>, spelled as the machine's record is; null for a go to the place alone.
+    /// </summary>
+    public string? Item { get; init; }
+}
 
 /// <summary>
 /// The places on the window a go may name (HELP6): the views, Settings' domains, and the parts of them a
@@ -117,8 +176,8 @@ public static class HelpPlaces
     [
         // ENTRY1b (D161's ENTRY1 note): what waits on the person below Sessions and Quests, a group of the view's list the
         // page brings into view, named by its heading: Sessions' parked and to-review groups (the reader's `you` and
-        // `review`), Quests' asks and the quests held for the person's yes or review. A go names no session or quest in it;
-        // Overview has no part, since what waits on the person leads it.
+        // `review`), Quests' asks and the quests held for the person's yes or review. A part names no session or quest in it
+        // (a go's item names one on Quests, ENTRY1f1); Overview has no part, since what waits on the person leads it.
         ("sessions", "waiting", "Waiting on you"), ("sessions", "review", "To review"),
         ("quests", "asks", "Asks"), ("quests", "held", "Waiting on you"),
         // HELPSETUP1: a repository's Setup (UX6f, D150 §4.2), where its own values are set; a go names no repository.
@@ -157,6 +216,18 @@ public static class HelpPlaces
         (new("settings", "permissions", null), new("agents", null, "rules")),
         (new("settings", "permissions", "across"), new("projects", null, "workspace-defaults")),
     ];
+
+    /// <summary>
+    /// The views a go may name one item in (ENTRY1f1, D161's ENTRY1f note): Quests, whose list holds quests and asks. A
+    /// session is named by none yet (ENTRY1f2).
+    /// </summary>
+    public static readonly IReadOnlyList<string> ItemViews = ["quests"];
+
+    /// <summary>
+    /// How an ask's item is told from a quest's on Quests, the page's <c>askItem</c> (<c>opener.ts</c>): duplicated
+    /// deliberately, as a twin's constant is, never imported across.
+    /// </summary>
+    public const string AskItem = "ask:";
 }
 
 public sealed partial record HelpProposal
@@ -166,6 +237,9 @@ public sealed partial record HelpProposal
 
     /// <summary>A go's part of its domain or view — a card, a setup step, a drawer — or null.</summary>
     public string? Part { get; init; }
+
+    /// <summary>A go's one quest or ask (ENTRY1f1), as the service's box wrote it, or null.</summary>
+    public string? Item { get; init; }
 }
 
 public sealed partial record HelpPlan
