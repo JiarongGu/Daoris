@@ -55,7 +55,10 @@ export const CLAUDE_TOOL = TOOLS.find((tool) => tool.name === 'claude-code')!;
 export const CODEX_TOOL = TOOLS.find((tool) => tool.name === 'codex')!;
 export const DSH_TOOL = TOOLS.find((tool) => tool.name === 'dsh')!;
 
-/** How Claude Code's accounts are used: this machine's list of three, `work` on its own two, account-2 cooling. */
+/**
+ * How Claude Code's accounts are used: this machine's list of three, `work` on its own two, account-2 cooling. No account is
+ * ready, so each next start waits for account-2's reset, sooner for a sign-in (TOOL6e), and no row is marked first (ACCTUX4b).
+ */
 export const CLAUDE_USE: AgentAccounts = {
   agent: 'claude-code',
   speaks: true,
@@ -73,8 +76,26 @@ export const CLAUDE_USE: AgentAccounts = {
     { name: 'account-3', running: 0 },
   ],
   scopes: [
-    scopeOf({ default: 'account-1', list: ['account-1', 'account-2', 'account-3'], begins: 'account-1', use: USE_DEFAULTS }),
-    scopeOf({ workspace: 'work', list: ['account-2', 'account-1'], begins: 'account-2', use: USE_DEFAULTS }),
+    scopeOf({
+      default: 'account-1', list: ['account-1', 'account-2', 'account-3'], begins: 'account-1', use: USE_DEFAULTS,
+      next: {
+        account: null, reason: 'waits', when: minutesFrom(60 * 40),
+        others: [
+          { account: 'account-1', hold: 'signedOut' }, { account: 'account-2', hold: 'cooling', until: minutesFrom(60 * 40) },
+          { account: 'account-3', hold: 'signedOut' },
+        ],
+      },
+    }),
+    scopeOf({
+      workspace: 'work', list: ['account-2', 'account-1'], begins: 'account-2', use: USE_DEFAULTS,
+      next: {
+        account: null, reason: 'waits', when: minutesFrom(60 * 40),
+        others: [
+          { account: 'account-2', hold: 'cooling', until: minutesFrom(60 * 40) }, { account: 'account-1', hold: 'signedOut' },
+          { account: 'account-3', hold: 'outside' },
+        ],
+      },
+    }),
   ],
 };
 
@@ -104,6 +125,7 @@ export const CODEX_OWN_USE: AgentAccounts = { agent: 'codex', speaks: true, own:
  * Codex's accounts read as Claude Code's are (ACCTUX4, CODEXUSE1), so the two makers' rows show the same cells: *team* with
  * both windows read, a minute apart, its week nearly gone; *reserve* with its week alone read, its five hours unknown, and a
  * window of another length the app server named; *spare* never read, each window unknown; and your own sign-in, read at a press.
+ * The next start passes *team*, the list's first, as near its limit, and takes *reserve*, its row marked first (ACCTUX4b).
  */
 const CODEX_READ_DOOR: ToolDoor = {
   ...CODEX,
@@ -143,7 +165,10 @@ export const CODEX_READ_USE: AgentAccounts = {
     },
     { name: 'spare', running: 0 },
   ],
-  scopes: [scopeOf({ list: ['team', 'reserve', 'spare'], begins: 'team', use: USE_DEFAULTS })],
+  scopes: [scopeOf({
+    list: ['team', 'reserve', 'spare'], begins: 'team', use: USE_DEFAULTS, near: [{ account: 'team', window: 'weekly', by: 'word' }],
+    next: { account: 'reserve', reason: 'near', over: 'team', others: [{ account: 'team', hold: 'near' }, { account: 'spare', hold: 'ready' }] },
+  })],
 };
 
 /**
@@ -195,7 +220,8 @@ export const INSTALL_WORKSPACES = ['forge', 'work'];
 /**
  * What an account's row knows (ACCTUX1), each in this machine's list so each holds work: a key its provider refused; *reserve*
  * cooling for Daoris's default hour, since its agent named no reset; *team* cooling until the reset its agent named, its two
- * windows read; and an account the owner named for the email it signs in as, its windows read, said once.
+ * windows read; and an account the owner named for the email it signs in as, its windows read, said once. The next start
+ * takes that one, the list's first and the only one ready (ACCTUX4b).
  */
 const READINGS_DOOR: ToolDoor = {
   ...CLAUDE, machineDefault: null, workspaceDefaults: [], version: '2.1.288 (Claude Code)',
@@ -244,7 +270,16 @@ export const READINGS_USE: AgentAccounts = {
       },
     },
   ],
-  scopes: [scopeOf({ list: ['Gmail', 'account-2', 'acct-1b2c3d4e', 'acct-0a1b2c3d'], begins: 'Gmail', use: USE_DEFAULTS })],
+  scopes: [scopeOf({
+    list: ['Gmail', 'account-2', 'acct-1b2c3d4e', 'acct-0a1b2c3d'], begins: 'Gmail', use: USE_DEFAULTS,
+    next: {
+      account: 'Gmail', reason: 'onlyReady',
+      others: [
+        { account: 'account-2', hold: 'cooling', until: minutesFrom(4 * 60 + 2) },
+        { account: 'acct-1b2c3d4e', hold: 'cooling', until: minutesFrom(48) }, { account: 'acct-0a1b2c3d', hold: 'refused' },
+      ],
+    },
+  })],
 };
 
 /** Daoris's four defaults on, one rule of the person's for every session, one proposal waiting. */
