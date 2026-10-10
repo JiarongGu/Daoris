@@ -107,6 +107,29 @@ export const CLEARED = [
  * writing into their tree), so a scratch run on :5177 would quietly adopt the person's real host and
  * show their real store while claiming to be a scratch machine.
  */
+/* The script `click` sends. A script's element.click() moves no focus, while a pointer's click in
+ * Chromium focuses the element or its nearest focusable ancestor first — so a focus judged after a
+ * bare click is not a person's (DESKCLICK1; D161's corrected §2 note). Focus first, click, then say
+ * where the focus is. `eval` stays raw: it runs any script, and a click inside it moves no focus. */
+export function clickScript(selector) {
+  return `(() => {
+    const found = [...document.querySelectorAll(${JSON.stringify(selector)})];
+    if (found.length !== 1) return { matched: found.length };
+    const element = found[0];
+    const label = (node) => (node.innerText || node.value || '').trim().slice(0, 80);
+    element.scrollIntoView({ block: 'center' });
+    const focusable = element.closest('a[href],button,input,select,textarea,summary,[tabindex],[contenteditable="true"]');
+    if (focusable) focusable.focus();
+    element.click();
+    const active = document.activeElement;
+    return {
+      matched: 1,
+      clicked: (label(element) || element.tagName).trim(),
+      focus: active ? (active.tagName + (label(active) ? ' "' + label(active) + '"' : '')) : 'none',
+    };
+  })()`;
+}
+
 export function debugEnvironment(cdpPort) {
   if (!cdpPort) return {};
   return {
@@ -1002,17 +1025,7 @@ async function main(command, args) {
        * reports success for an interaction that never happened — so the COUNT is the answer, and a
        * miss is a refusal rather than a silent first-match. The click is the page's own, dispatched
        * where the page's handlers are; nothing here simulates a cursor. */
-      const outcome = await cdp.evaluate(`(() => {
-        const found = [...document.querySelectorAll(${JSON.stringify(selector)})];
-        if (found.length !== 1) return { matched: found.length };
-        const element = found[0];
-        element.scrollIntoView({ block: 'center' });
-        element.click();
-        return {
-          matched: 1,
-          clicked: (element.innerText || element.value || element.tagName).trim().slice(0, 80),
-        };
-      })()`);
+      const outcome = await cdp.evaluate(clickScript(selector));
       cdp.close();
 
       if (outcome.matched !== 1) {
@@ -1020,6 +1033,7 @@ async function main(command, args) {
       }
 
       console.log(`clicked: ${outcome.clicked}`);
+      console.log(`focus after: ${outcome.focus}`);
       break;
     }
 

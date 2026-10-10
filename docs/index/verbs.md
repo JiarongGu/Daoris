@@ -69,7 +69,7 @@ Routed in `src/Daoris.Devkit/Daoris.Devkit.Cli/Program.cs`.
 
 ## `npm run desktop -- <verb>`
 
-Each a `case` in `tools/desktop.mjs`: `build` 826 · `run` 830 · `restart` 831 · `kill` 835 · `shot` 847 · `eval` 973 · `click` 995 · `doctor` 1026.
+Each a `case` in `tools/desktop.mjs`: `build` 849 · `run` 853 · `restart` 854 · `kill` 858 · `shot` 870 · `eval` 996 · `click` 1018 · `doctor` 1040.
 
 ## npm scripts in `package.json`
 

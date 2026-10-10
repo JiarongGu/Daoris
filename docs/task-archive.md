@@ -13026,3 +13026,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ENTRY1b — a go reaches what needs the person** (driver + web twin). Below Quests, Sessions and Overview, to what is waiting on them, since a quest or session keeps its own conversation and Ask Daoris takes the person there. D161's ENTRY1 note; audit §4.2; the go twin's tables and goldens.
 
 **Outcome** 2026-10-11: `sessions/waiting`, `sessions/review`, `quests/asks` and `quests/held` open their view with that group's heading at the top of the list and focused, naming no item; Overview stays the view. Where a list cannot show the group it opens as it was (ENTRY1g); the service's text is ENTRY1h. Detail: D161's ENTRY1b note.
+
+
+## DESKCLICK1 — the window's click moves the focus as a pointer does (2026-10-11)
+
+> - [ ] **DESKCLICK1 — the window's click moves the focus as a pointer does** (tools). `desktop click` and `eval` press with `element.click()`, so a focus judged on the window is not a person's; focus the press first, or say it did not. `tools/desktop.mjs:995-1024`; a tools test that reports where focus moved.
+
+**Outcome** 2026-10-11: `desktop click` focuses the element or its nearest focusable ancestor before it clicks and prints `focus after:`; `eval`'s own `.click()` still moves no focus, as the usage line now says. Detail: the merge commit.

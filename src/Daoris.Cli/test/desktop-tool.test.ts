@@ -12,7 +12,7 @@ import { readText, listFiles } from '../src/fsx.ts';
 // be a second description of the tool to keep in step with it — and the thing this suite asserts is
 // the tool's BEHAVIOUR, which a stale declaration would not protect.
 import {
-  CLEARED, PAGE_THEME, REDIRECTED, SHELL_ORIGIN, THEME_KEY, assemblyExe, awaitDebugPort, closedPortReport, engineLogOf,
+  CLEARED, PAGE_THEME, clickScript, REDIRECTED, SHELL_ORIGIN, THEME_KEY, assemblyExe, awaitDebugPort, closedPortReport, engineLogOf,
   installEnvironment, installedExe, isShell, prune, scratchEnvironment, shotTarget, startedHere, withPageTheme,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop.mjs';
@@ -783,4 +783,44 @@ test('a run of the install keeps the port’s development switch and its host in
   assert.equal(environment.DOTNET_ENVIRONMENT, 'Development', 'the port opens only in development');
   assert.equal(environment.DAORIS_DEVTOOLS_PORT, '9444');
   assert.equal(environment.ASPNETCORE_ENVIRONMENT, 'Production', 'the installed host would serve its exception page');
+});
+
+test('click moves the focus as a pointer does before it clicks, and says where the focus is after (DESKCLICK1)', () => {
+  const events: string[] = [];
+  const document: any = { activeElement: { tagName: 'BODY' } };
+  const make = (tagName: string, label: string, focusable: boolean, parent?: any) => {
+    const element: any = {
+      tagName, innerText: label, scrollIntoView() {},
+      matches: () => focusable,
+      closest: () => (focusable ? element : parent && parent.matches() ? parent : null),
+      focus() { document.activeElement = element; events.push(`focus ${tagName}`); },
+      click() { events.push(`click ${tagName}`); },
+    };
+    return element;
+  };
+  const button = make('BUTTON', 'Retire', true);
+  const span = make('SPAN', 'inner', false, button);
+  const inert = make('DIV', 'plain', false);
+  const run = (found: any[]) => {
+    document.querySelectorAll = () => found;
+    events.length = 0;
+    return vm.runInNewContext(clickScript('.x'), { document });
+  };
+
+  const onFocusable = run([button]);
+  assert.deepEqual(events, ['focus BUTTON', 'click BUTTON']);
+  assert.equal(onFocusable.focus, 'BUTTON "Retire"');
+
+  const inside = run([span]);
+  assert.deepEqual(events, ['focus BUTTON', 'click SPAN'], 'a child inside a button focuses the button, as a pointer does');
+  assert.equal(inside.focus, 'BUTTON "Retire"');
+
+  document.activeElement = { tagName: 'BODY', innerText: '' };
+  const none = run([inert]);
+  assert.deepEqual(events, ['click DIV'], 'nothing focusable: no focus move, the click still happens');
+  assert.match(none.focus, /^BODY/);
+
+  assert.equal(run([]).matched, 0);
+  assert.equal(run([button, span]).matched, 2);
+  assert.deepEqual(events, [], 'a refused selector clicks nothing');
 });
