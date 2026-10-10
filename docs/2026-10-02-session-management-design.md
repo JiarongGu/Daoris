@@ -847,3 +847,10 @@ This change is documents only, and nothing is built.
   (`HelpRoomDoors.cs:52`), which FRAME1d made a page (SESSUX1b).
 - **`verify` checks** this document's links, the decision log's shape, the budgets and the duplicates, and none of
   these words.
+
+## Amendment, 2026-10-11 (SESSUX1h1)
+
+§7.3's *Stop…* row and the `session` kind's `stop` door are superseded: a session's stop, on the page and in the
+terminal's `sessions stop`, is its own conversation, which Ask Daoris reaches with a go and does not propose
+([D161](decisions/D161.md), its SESSUX1h1 note). The kind's `archive` and `unarchive` doors and the `delete` kind's
+`session` door stand, owed to SESSUX1h2.
