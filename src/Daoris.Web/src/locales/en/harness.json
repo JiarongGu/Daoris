@@ -54,6 +54,7 @@
   "harness.login.refused": "key refused",
   "harness.login.refusedTip": "Its provider refused this key when a session ran on it, so no start runs on it. Nothing puts a new key into this account yet: add a new API key in its place, put it in this account's lists, then remove this one.",
   "harness.profileOut": "{{name}} (signed out)",
+  "harness.profileRefused": "{{name}} (key refused)",
   "harness.done": "{{harness}}: {{action}} finished.",
   "harness.default.machine": "This machine runs {{harness}} as {{account}} by default.",
   "harness.default.machineOwn": "This machine runs {{harness}} in its own configuration home again, by default.",

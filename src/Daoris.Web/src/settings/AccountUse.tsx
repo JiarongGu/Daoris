@@ -117,11 +117,13 @@ export function TermsLine() {
  * carries none of these starts, which is the switch a person makes at their terminal and expects Daoris to follow. Drawn
  * only where the answer carries it, so a shell older than TOOL6e shows nothing rather than a guess.
  */
-export function NextStartRow({ agent, product, scope, labelOf, workspace }: {
+export function NextStartRow({ agent, product, scope, labelOf, isKey, workspace }: {
   agent: AgentAccounts;
   product: string;
   scope: AccountScope;
   labelOf: (name: string) => string;
+  /** Whether an account is an API key: a key held signed out is refused, repaired by a new key (ACCTUX1b). */
+  isKey?: (name: string) => boolean;
   workspace?: string;
 }) {
   const { t } = useTranslation();
@@ -132,7 +134,7 @@ export function NextStartRow({ agent, product, scope, labelOf, workspace }: {
   const listed = scope.list.length > 0;
   const facts = next.account ? agent.accounts.find((account) => account.name === next.account) : null;
   const offered = facts?.offered && !facts.cooling ? t('harness.next.offeredSentence', { when: moment(facts.offered) }) : null;
-  const held = heldLine(next, labelOf);
+  const held = heldLine(next, labelOf, isKey);
   return (
     <SettingRow
       label={t('harness.next.label')}
@@ -140,7 +142,7 @@ export function NextStartRow({ agent, product, scope, labelOf, workspace }: {
       why={listed ? t(scope.use.use === 'order' ? 'harness.next.whyOrder' : 'harness.next.whyGoal') : undefined}
     >
       <p className="m-0 text-small text-ink">
-        {[nextLine(next, scope, labelOf), offered].filter(Boolean).join(t('harness.said.sentences'))}
+        {[nextLine(next, scope, labelOf, isKey), offered].filter(Boolean).join(t('harness.said.sentences'))}
       </p>
       {held && <p className="m-0 mt-0.5 text-small text-ink-soft">{held}</p>}
       {/* Wherever the scope names an account, waiting included: a person who switched the tool's own sign-in expects the
@@ -181,6 +183,7 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
   const where = workspace ?? null;
   const scopeName = workspace ? t('harness.use.workspace', { workspace }) : t('harness.use.machine');
   const labelOf = (name: string) => accounts.find((account) => account.name === name)?.label ?? name;
+  const isKey = (name: string) => accounts.find((account) => account.name === name)?.keyed === true;
   // The list in its order, then every account it does not use, as the agent has them.
   const rows = [
     ...scope.list.map((name) => ({ name, used: true })),
@@ -195,7 +198,7 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
   return (
     <div className="flex min-w-0 flex-col gap-1">
       {/* First: the question a person comes with is where the next start goes, and why (TOOL6e). */}
-      <NextStartRow agent={agent} product={product} scope={scope} labelOf={labelOf} workspace={workspace} />
+      <NextStartRow agent={agent} product={product} scope={scope} labelOf={labelOf} isKey={isKey} workspace={workspace} />
       <SettingRow
         label={t('harness.use.list')}
         hint={t('harness.use.orderHint', hinted)}
