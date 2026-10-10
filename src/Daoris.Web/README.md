@@ -34,7 +34,7 @@ Each Settings domain is `src/settings/<Name>Domain.tsx`, with its tests beside i
 
 **The design language is written down** — `docs/2026-09-19-platform-ux.md` (D41): the console shell
 (an activity bar, page headers, one primary action per view), the token system, the drawer as the single
-detail-and-form surface alongside the frame's list and main panes (D118), toasts carrying the service's sentences verbatim, and a status palette that
+detail-and-form surface alongside the frame's list and main panes (D118), toasts carrying the service's sentences verbatim (an act pressed inside a question says its refusal there instead: the trust question and the go-ahead list too, UXFIX2b3b), and a status palette that
 was **computed, not tasted** — both themes pass all six checks of the visualization validator, and a
 status pill never appears without its text label.
 
