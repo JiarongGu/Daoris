@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-11 — a private workspace name committed to TASKS.md (the parent's window look)
+
+- **Symptom:** AGENTMARK1's merge failed the universal gate: *sensitive TASKS.md: private pattern*. The ACCTUX4c row,
+  written by the parent from the installed window's Agents page, named the owner's work workspace in backticks.
+- **Root cause:** the parent committed the row straight after the look (`4c880197`), without the devkit's `scan` it runs
+  before a merge's commit; nothing scans a commit itself, since no pre-commit hook is installed (DEVKIT3 left that to the
+  owner: it changes how the owner's own commits behave). A name read off the window is the owner's, and the window shows
+  them.
+- **Fix:** the row no longer names it (in `f7f2d28a`, AGENTMARK1's merge). The parent runs the scan before every commit,
+  not only a merge's.
+- **History:** `4c880197` holds the name and is not pushed (origin/main was `18de0f84`). `git log -S` shows the same name
+  added to TASKS.md by two pushed commits of 2026-10-07 and 2026-10-08 (`9f43f3c2`, `b6e279f1`), before the sensitive
+  pattern for it existed or was run. Removing it from history is a rewrite, and for the pushed two a force-push: the
+  owner's call, with a backup first.
+- **Verify:** the universal gate's rerun passed on the open merge; `scan` reports nothing on `f7f2d28a`.
+
 ## 2026-10-11 — Ask Daoris's waiting count (ENTRY1f2)
 
 ### Driver: the room counted an answered park as a session waiting on the person
