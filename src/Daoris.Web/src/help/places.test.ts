@@ -31,7 +31,8 @@ describe('the places a go may name', () => {
       'settings/permissions/across → projects/workspace-defaults',
     ]);
     // ENTRY1f1: the views a go may name an item in, and how an ask's item is told from a quest's (the driver's `AskItem`).
-    expect(PLACE_ITEM_VIEWS).toEqual(['quests']);
+    // ENTRY1f2: Sessions too.
+    expect(PLACE_ITEM_VIEWS).toEqual(['sessions', 'quests']);
     expect(askItem('')).toBe('ask:');
   });
 
@@ -107,9 +108,22 @@ describe('the places a go may name', () => {
     expect(placeDoor({ view: 'quests', domain: null, part: null, item: 'ask:a1b2c3d4' })).toEqual({ view: 'quests', item: askItem('a1b2c3d4') });
     expect(placeDoor({ view: 'quests', item: null })).toEqual({ view: 'quests' });
     expect(placeDoor({ view: 'quests', part: 'held', item: 'q1a2b3c4' })).toBeNull();
-    expect(placeDoor({ view: 'sessions', item: 'q1a2b3c4' })).toBeNull();
     expect(placeDoor({ view: 'settings', domain: 'start', item: 'q1a2b3c4' })).toBeNull();
+    expect(placeDoor({ view: 'overview', item: 'q1a2b3c4' })).toBeNull();
     expect(placeDoor({ view: 'quests', item: 'ask:' })).toBeNull();
+  });
+
+  /**
+   * ENTRY1f2 (D161's ENTRY1f note): a go on Sessions may name one session, by the id the driver judged against the machine's
+   * own records and handed on as the record spells it; the door names it as Sessions' list does, and the application's one
+   * opener chooses it there. An item alone in its view, as on Quests; Quests' prefixes are no session's.
+   */
+  it('open the one session a go names on Sessions, as its list names it', () => {
+    expect(placeDoor({ view: 'sessions', item: 's1a2b3c4' })).toEqual({ view: 'sessions', item: 's1a2b3c4' });
+    expect(placeDoor({ view: 'sessions', domain: null, part: null, item: ' s1a2b3c4 ' })).toEqual({ view: 'sessions', item: 's1a2b3c4' });
+    expect(placeDoor({ view: 'sessions', part: 'waiting', item: 's1a2b3c4' })).toBeNull();
+    expect(placeDoor({ view: 'sessions', item: 'ask:a1b2c3d4' })).toBeNull();
+    expect(placeDoor({ view: 'sessions', item: 'session:s1a2b3c4' })).toBeNull();
   });
 
   /**
