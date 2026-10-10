@@ -13,7 +13,7 @@ repository.
 - **Root cause:** binding readers returned null for both absence and corruption, and the process and inventory treated both as no binding.
 - **Fix:** absence retains legacy Current behavior; an existing unreadable binding holds its run. Unreadable inventory entries conservatively hold an unreadable chain.
 - **Verify:** four failing-first cases for invalid JSON and missing fields, across direct and service-unavailable reads; final receipts in the integration review.
-- **Commit:** pending workflow integration.
+- **Commit:** `0c79095e`.
 
 ### Ask Daoris: a rename's terminal hint interpolated shell syntax
 
@@ -21,7 +21,7 @@ repository.
 - **Root cause:** the hint surrounded arbitrary names with double quotes instead of using the shared formatter.
 - **Fix:** `shellWord` spells portable names and substitutes `<name>` for unsafe shell words; the saved name remains unchanged.
 - **Verify:** failing-first quote and ampersand cases in both languages, plus a spaced-name case; final receipts in the integration review.
-- **Commit:** pending integration.
+- **Commit:** `58feba8f`.
 
 ### Knowledge: index kinds and source lines disappeared at the page (ORIENT2i)
 
@@ -30,7 +30,7 @@ repository.
   the optional line fields. The HTTP contract already supplied them.
 - **Fix:** bilingual kind labels, visible excerpt lines in hits and source ranges in entry headers.
 - **Verify:** failing-first bilingual entry and hit cases; 18 knowledge tests and production typecheck pass.
-- **Commit:** pending integration.
+- **Commit:** `58feba8f`.
 
 ### Ask Daoris: New conversation lost the visible draft before the host answered
 
@@ -39,7 +39,7 @@ repository.
 - **Fix:** clear only after `ended: true`; retain the draft on error or `ended: false`, show a pending
   status and block competing presses. Composer refusals are announced as alerts.
 - **Verify:** failing-first deferred/refused ending and false-answer cases; final receipts in the integration review.
-- **Commit:** pending integration.
+- **Commit:** `58feba8f`.
 
 ## 2026-10-09 — Enter and Escape acted while an input method was composing (IME1)
 

@@ -17,6 +17,7 @@ Historical installation receipts and adoption mechanics remain in their evidence
 ## Current integration
 
 - [ ] **INTEGRATE2 — recover paused work and review UI/UX** (parent). Finish recovery, checks, documentation and branch cleanup. Contract/proof: `docs/2026-10-10-integration-review.md`.
+- [ ] **CLEANUP1 — remove the empty harness-held directory** (after the paused harness releases it). `.claude/worktrees/agent-a3b92da3b8bb159c9` is empty; its branch and Git registration are gone, and backups are preserved. Proof: inspect emptiness again, then normal directory removal; integration review.
 
 ## UI/UX first
 
