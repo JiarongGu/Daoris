@@ -213,6 +213,8 @@ describe('starting a session', () => {
               { name: 'acct-3f9c1a2b', displayName: 'work', login: 'in', account: 'you@work.example' },
               { name: 'acct-77aa00ff', displayName: null, login: 'out', account: 'spare@example.invalid' },
               { name: 'acct-0badc0de', login: 'in', key: 'sk-…a1b2' },
+              // ACCTUX1b: a key read signed out is a key refused, never an account to sign in.
+              { name: 'acct-5e5e5e5e', login: 'out', key: 'sk-…c3d4' },
             ],
           }}
           onStart={onStart}
@@ -222,6 +224,7 @@ describe('starting a session', () => {
 
     expect((await open('Account')).map((option) => option.textContent)).toEqual([
       'As already set', 'work · you@work.example', 'spare@example.invalid (signed out)', 'API key sk-…a1b2',
+      'API key sk-…c3d4 (key refused)',
     ]);
     await userEvent.click(screen.getByRole('option', { name: 'work · you@work.example' }));
     await userEvent.click(screen.getByRole('button', { name: /start/i }));

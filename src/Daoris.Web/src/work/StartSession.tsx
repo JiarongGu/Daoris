@@ -178,7 +178,8 @@ export function StartSession({
                 const name = who ? `${accountName(choice)} · ${who}` : accountName(choice);
                 return {
                   value: choice.name,
-                  label: choice.login === 'out' ? t('harness.profileOut', { name }) : name,
+                  // ACCTUX1b: a key read signed out is a key refused, repaired by a new key and never by a sign-in.
+                  label: choice.login === 'out' ? t(choice.key ? 'harness.profileRefused' : 'harness.profileOut', { name }) : name,
                   ...(listed && !listed.includes(choice.name) ? { group: outside } : {}),
                 };
               }),

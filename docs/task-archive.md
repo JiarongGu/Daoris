@@ -12872,3 +12872,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UXFIX2b2b — confirmations: decline, close, awaiting, archive, discard** (web). Quest decline, ask close, awaiting-person finish/decline, archive ended (`tone="primary"`), DiffPane force-discard. Proof: focus, pending, refusal, cancellation and returned focus.
 
 **Outcome** 2026-10-10: the five asks confirm through `InlineConfirm` with `Answered`, `onResolve` threaded through the awaiting band's four places; archive ended is primary-toned, and a refused forced discard is said inside its ask. Seven new catalogue keys (en/zh); the forced discard had no tests and gained four. Installed look: UXFIX2bi. Detail: the merge commit.
+
+
+## ACCTUX1b — refused keys read as keys (2026-10-10, D125)
+
+> - [ ] **ACCTUX1b — refused keys read as keys** (web). Correct Settings next-start and start-form labels. D125 note; account and start-form tests.
+
+**Outcome** 2026-10-10: a key read signed out reads *key refused* on the start form, and Settings' next-start sentences say a new API key repairs it, never a sign-in; `nextLine`/`heldLine` take an `isKey` from `AccountUse`, branching on the account, not the hold. Closes the gap D125's ACCTUX1 note named (lines 933-937). Detail: the merge commit.

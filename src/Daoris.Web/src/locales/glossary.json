@@ -160,7 +160,7 @@
       "budget": { "en": 16, "zh": 6 },
       "case": "sentence",
       "keys": [
-        "asks.compose.toNobody", "harness.profileOut", "harness.settings.notSet", "harness.settings.otherModel",
+        "asks.compose.toNobody", "harness.profileOut", "harness.profileRefused", "harness.settings.notSet", "harness.settings.otherModel",
         "harness.settings.toolDefault", "harness.use.keep.none", "harness.use.mode.goal", "harness.use.mode.order",
         "harness.use.scope.machine", "harness.use.scope.own", "language.*", "plugin.kit.kind.*", "quests.everyone",
         "scope.every",
@@ -638,6 +638,7 @@
       { "key": "carry.linksLabel", "en": "Links — a ticket, a page, a document; one per line", "zh": "链接——工单、页面、文档；每行一个", "why": "A form's label above its box, where it wraps; the qualifier after the dash is the field's instruction (NAME1a's audit kept it)." },
       { "key": "asks.compose.toNobody", "en": "Nobody yet — let the declarations propose", "zh": "暂不指定——由声明来提议", "why": "A select's option in the ask composer: the field grows to it, so its room is the field's, not a segment's 90px." },
       { "key": "harness.profileOut", "en": "{{name}} (signed out)", "zh": "{{name}}（已退出登录）", "why": "A select's option in the start form carrying the account's name; its room is the field's. *Signed out* is the state's one word on the Agents place too (UX6e, D150 §5.3)." },
+      { "key": "harness.profileRefused", "en": "{{name}} (key refused)", "zh": "{{name}}（密钥被拒绝）", "why": "The same option for an API key read signed out: a key is refused, never signed out, and a new key repairs it (ACCTUX1b, D125); the word is `harness.login.refused`'s." },
       { "key": "harness.settings.toolDefault", "en": "The agent's own default", "zh": "智能体自己的默认值", "why": "A select's option for an account's model and effort; its room is the field's, and own says the agent chooses, not Daoris." },
       { "key": "plugin.kit.kind.act", "en": "An act, once a landing has made its branch", "zh": "一个动作，在落地已建好它的分支之后", "why": "A point's gloss: a checkbox's label after the point's name in the kit, which wraps, and the point's line on a plugin's page; it says when the point speaks (NAME1a's audit kept it)." },
       { "key": "plugin.kit.kind.decision", "en": "A decision, before a planned start spends anything", "zh": "一个决定，在计划的启动花费任何东西之前", "why": "A point's gloss: a checkbox's label after the point's name in the kit, which wraps, and the point's line on a plugin's page; it says when the point speaks (NAME1a's audit kept it)." },

@@ -13,6 +13,8 @@ with the version and date at release.
 - Account rows show each usage window as its own cell, in the same place on every row: the share used,
   a bar of that window's allowance, its reset and how old its reading is. A window the agent has not
   reported says *unknown*, never 0%.
+- An API key its provider refused says *key refused* on the start form, and Settings' next start says a
+  new key repairs it, where both told you to sign in.
 - Deleting a tool version, removing a plugin, retiring a repository, pausing or abandoning work,
   declining a quest, closing an ask, finishing or declining a session that waits on you, archiving
   ended sessions and discarding a tree anyway all confirm in place: the ask stays open while the act

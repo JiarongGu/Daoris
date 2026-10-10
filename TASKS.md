@@ -52,7 +52,6 @@ Original row proofs remain in the frozen backlog; measurements precede declarati
 - [ ] **ACCTPLAN1 — plan, spend and reset credits** (driver/modules/web; design first). Nothing reads them yet (D125:898-899); show them in a fold, and never redeem a credit without `InlineConfirm`. Second-opinion review lines 132-133.
 - [ ] **WINDOWNAME1 — `<n>-minute` windows in the reader's language** (web-settings). Codex's other windows show *90-minute* in 中文 too. D125's CODEXUSE1 note; a 中文 case in `accounts.test.ts`.
 - [ ] **ACCTNAME1 — email names read once** (CLI/driver/web). Avoid duplicate email/name; size roster columns. D125 notes; long-name and equal-email cases.
-- [ ] **ACCTUX1b — refused keys read as keys** (web). Correct Settings next-start and start-form labels. D125 note; account and start-form tests.
 - [ ] **KEYREPLACE1 — replace refused keys in place** (all doors; after ACCTUX1). Preserve account lists; clear refusal/cooling. D67/D125; key-file twins, route and row tests.
 - [ ] **AGENTMARK1 — declared strip marks** (driver/modules; after ACCTUX2). Forward CC/Cx with each product. UX7 §4.6; roster/680 px proof.
 - [ ] **CODEXUSE2 — installed Codex reading** (parent/owner). Pins are verified; account sign-in remains unavailable. Use CODEXUSE3's own-sign-in reading meanwhile. D57/D63/D125.

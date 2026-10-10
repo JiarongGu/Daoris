@@ -182,6 +182,29 @@ describe('what is said', () => {
     expect(nextLine(waits(null, passed.slice(1)), list, labelOf)).not.toMatch(/下方|对应的行/);
   });
 
+  /** ACCTUX1b: a key is repaired by a new key, never a sign-in, so a wait names the key's repair apart from a login's. */
+  it('says a waiting start needs a new API key for a key, and a sign-in for an account', async () => {
+    const labelOf = (name: string) => name;
+    const isKey = (name: string) => name === 'key-1';
+    const list = scope({ list: ['key-1', 'account-2'], begins: 'key-1' });
+    const others: NextStart['others'] = [{ account: 'key-1', hold: 'signedOut' }, { account: 'account-2', hold: 'signedOut' }];
+    const waits = (when: string | null, held: NextStart['others']): NextStart => ({ account: null, reason: 'waits', over: null, when, others: held });
+
+    expect(nextLine(waits(null, others), list, labelOf, isKey)).toBe(
+      'No account here is ready, and none comes ready by itself: the next start waits for you. '
+      + 'Signing in to account-2 starts it. A new API key in place of key-1 starts it.');
+    expect(nextLine(waits(null, others.slice(0, 1)), list, labelOf, isKey)).not.toMatch(/Signing in/);
+    expect(nextLine(waits('2026-10-06T09:00:00Z', others.slice(0, 1)), list, labelOf, isKey)).toMatch(
+      /A new API key in place of key-1 starts it sooner\.$/);
+    expect(heldLine({ account: 'account-3', reason: 'fewest', over: null, others }, labelOf, isKey))
+      .toBe('key-1 was refused, so only a new API key repairs it; account-2 is not signed in.');
+
+    await i18n.changeLanguage('zh');
+    expect(nextLine(waits(null, others.slice(0, 1)), list, labelOf, isKey)).toContain('用新的 API 密钥替换 key-1');
+    expect(heldLine({ account: 'account-3', reason: 'fewest', over: null, others: others.slice(0, 1) }, labelOf, isKey))
+      .toBe('key-1 的密钥被拒绝，只有新的 API 密钥能修复它。');
+  });
+
   /** TOOL6e: what holds every other account, cooling with until when, and the accounts a scope does not use, together. */
   it('says what holds the other accounts, and nothing for an account merely ranked after', async () => {
     const labelOf = (name: string) => name;

@@ -279,15 +279,24 @@ function nextWhy(next: NextStart, scope: AccountScope, labelOf: (name: string) =
  * The next start, as a sentence (TOOL6e, D130 §3–§4): which account it takes and the walk's step that chose it; the tool's
  * own sign-in where nothing names an account (D125 §3.7); or that it waits, until when where an account is cooling.
  */
-export function nextLine(next: NextStart, scope: AccountScope, labelOf: (name: string) => string): string {
+export function nextLine(
+  next: NextStart, scope: AccountScope, labelOf: (name: string) => string, isKey: (name: string) => boolean = () => false,
+): string {
   if (next.reason === 'own') return i18n.t('harness.next.own');
   if (next.reason === 'waits' || !next.account) {
     const waits = next.when ? i18n.t('harness.next.waitsUntil', { when: moment(next.when) }) : i18n.t('harness.next.waits');
     // TOOL6g: an account not signed in waits for a person, never for the reset, so a wait says a sign-in frees it.
-    const signedOut = next.others.filter((held) => held.hold === 'signedOut' && held.account).map((held) => labelOf(held.account!));
-    if (signedOut.length === 0) return waits;
-    const accounts = signedOut.join(i18n.t('harness.next.comma'));
-    return `${waits}${i18n.t('harness.said.sentences')}${i18n.t(next.when ? 'harness.next.signInSooner' : 'harness.next.signIn', { accounts })}`;
+    // ACCTUX1b: a key read signed out is a key refused; only a new key repairs it, so it is never said as a sign-in.
+    const out = next.others.filter((held) => (held.hold === 'signedOut' || held.hold === 'refused') && held.account);
+    const join = (names: string[]) => names.join(i18n.t('harness.next.comma'));
+    const signIn = out.filter((held) => !isKey(held.account!) && held.hold === 'signedOut').map((held) => labelOf(held.account!));
+    const keys = out.filter((held) => isKey(held.account!)).map((held) => labelOf(held.account!));
+    const sooner = next.when ? 'Sooner' : '';
+    const sentences = [
+      signIn.length > 0 ? i18n.t(`harness.next.signIn${sooner}`, { accounts: join(signIn) }) : null,
+      keys.length > 0 ? i18n.t(`harness.next.newKey${sooner}`, { accounts: join(keys) }) : null,
+    ].filter((sentence): sentence is string => sentence !== null);
+    return [waits, ...sentences].join(i18n.t('harness.said.sentences'));
   }
   return i18n.t('harness.next.takes', { account: labelOf(next.account), why: nextWhy(next, scope, labelOf) });
 }
@@ -296,10 +305,14 @@ export function nextLine(next: NextStart, scope: AccountScope, labelOf: (name: s
  * What holds the accounts the next start does not take, as one or two sentences (TOOL6e): each held account and why, then
  * the accounts the scope does not use together; an account merely ranked after is not said. Null where nothing holds any.
  */
-export function heldLine(next: NextStart, labelOf: (name: string) => string): string | null {
+export function heldLine(next: NextStart, labelOf: (name: string) => string, isKey: (name: string) => boolean = () => false): string | null {
   const name = (held: AccountHeld) => (held.account ? labelOf(held.account) : i18n.t('harness.use.emptyOwn'));
   const clauses = next.others.flatMap((held) => {
     if (held.hold === 'ready' || held.hold === 'outside') return [];
+    // ACCTUX1b: a key held signed out or refused is one refused key, repaired by a new key (the walk says `signedOut` after a restart).
+    if (held.account && isKey(held.account) && (held.hold === 'signedOut' || held.hold === 'refused')) {
+      return [i18n.t('harness.next.held.keyRefused', { account: name(held) })];
+    }
     if (held.hold === 'cooling') return held.until ? [i18n.t('harness.next.held.cooling', { account: name(held), when: moment(held.until) })] : [];
     return [i18n.t(`harness.next.held.${held.hold}`, { account: name(held) })];
   });
