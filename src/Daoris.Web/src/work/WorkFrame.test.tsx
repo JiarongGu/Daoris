@@ -44,6 +44,7 @@ vi.mock('@shenora/react', () => ({
 
 import i18n from '../i18n';
 import { ContextMenus } from '../menus/ContextMenu';
+import type { OpenGroup } from '../opener';
 import { menuActs, rightClick } from '../test/contextMenu';
 import { WorkFrame } from './WorkFrame';
 import { DiffPane } from './DiffPane';
@@ -147,6 +148,28 @@ function show(selected: string | null = null, notify: (text: string) => void = (
   return { ...view, onSelect, client };
 }
 
+/** The frame on a go's group (ENTRY1g), held as `App` holds it: let go once brought, which `brought` is told. */
+function going(group: OpenGroup) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const brought = vi.fn();
+  function Going() {
+    const [held, setHeld] = useState<OpenGroup | null>(group);
+    const letGo = () => {
+      brought();
+      setHeld(null);
+    };
+    return <WorkFrame selected={null} onSelect={vi.fn()} notify={() => {}} group={held} onGroupBrought={letGo} />;
+  }
+  render(
+    <QueryClientProvider client={client}>
+      <Tooltip.Provider>
+        <Going />
+      </Tooltip.Provider>
+    </QueryClientProvider>,
+  );
+  return brought;
+}
+
 // 🔴 Every test starts from a viewer with nothing remembered. The frame keeps its layout per viewer,
 // and a test that hid the console left it hidden for whichever console test ran next: four failed
 // in a shuffled order (UX5, 2026-09-26), and passed in file order only by luck of the order.
@@ -220,6 +243,31 @@ describe('the Work frame', () => {
     const heading = await within(list).findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
     await waitFor(() => expect(brought).toHaveBeenCalled());
     expect(heading).toHaveFocus();
+  });
+
+  /**
+   * ENTRY1g (D161's ENTRY1b note): where the person keeps the list by repository, a go shows it by state for the go, as the
+   * ⋯ says, and remembers nothing: their arrangement is back once they choose it, or leave Sessions.
+   */
+  it('shows the list by state for a go where the person keeps it by repository, and remembers nothing', async () => {
+    SESSIONS = [DRIVEN, PARKED];
+    window.localStorage.setItem('daoris.list.sessions.filters', JSON.stringify({ group: 'repository' }));
+    const brought = going('you');
+
+    const list = await screen.findByRole('complementary', { name: 'Sessions' });
+    const heading = await within(list).findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+    await waitFor(() => expect(brought).toHaveBeenCalledTimes(1));
+    // Still by state once the go is let go, so the heading it focused stays.
+    expect(heading).toHaveFocus();
+    expect(JSON.parse(window.localStorage.getItem('daoris.list.sessions.filters')!)).toEqual({ group: 'repository' });
+
+    const user = userEvent.setup();
+    within(list).getByRole('button', { name: 'More actions' }).focus();
+    await user.keyboard('{Enter}');
+    expect(screen.getByRole('menuitemradio', { name: 'State' })).toHaveAttribute('aria-checked', 'true');
+    await user.click(screen.getByRole('menuitemradio', { name: 'Repository' }));
+    expect(await within(list).findByRole('heading', { level: 3, name: 'engine' })).toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem('daoris.list.sessions.filters')!)).toEqual({ group: 'repository' });
   });
 
   /**
@@ -3562,6 +3610,43 @@ describe('the frame\'s geometry (FRAME6)', () => {
     widen(900);
     await waitFor(() => expect(screen.queryByRole('separator', { name: 'session list width' })).toBeNull());
     expect(screen.queryByRole('region', { name: 'Sessions' })).toBeNull();
+  });
+
+  /**
+   * ENTRY1g (D161's ENTRY1b note): a go to a group of the rail lays its strip over the conversation, whoever drew the strip,
+   * and the rail laid over brings the group into view there; the strip beside it lets nothing go. Laid over, it stays until
+   * the person lets it go, and nothing is remembered.
+   */
+  it('lays the strip the window drew over the conversation for a go, and brings its group into view there', async () => {
+    SESSIONS = [DRIVEN, PARKED];
+    widen(900);
+    const brought = going('you');
+
+    const over = await screen.findByRole('region', { name: 'Sessions' });
+    const heading = await within(over).findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+    await waitFor(() => expect(brought).toHaveBeenCalledTimes(1));
+    expect(heading).toHaveFocus();
+    expect(screen.getByRole('region', { name: 'Sessions' })).toBeInTheDocument();
+
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('region', { name: 'Sessions' })).toBeNull();
+    expect(window.localStorage.getItem('daoris.railClosed')).toBeNull();
+  });
+
+  it('lays the strip the person closed over the conversation for a go, and their closing stands once it goes', async () => {
+    SESSIONS = [DRIVEN, PARKED];
+    window.localStorage.setItem('daoris.railClosed', '1');
+    const brought = going('you');
+
+    const over = await screen.findByRole('region', { name: 'Sessions' });
+    const heading = await within(over).findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+    await waitFor(() => expect(brought).toHaveBeenCalledTimes(1));
+    expect(heading).toHaveFocus();
+
+    fireEvent.pointerDown(document.body);
+    expect(screen.queryByRole('region', { name: 'Sessions' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Show the session list' })).toBeInTheDocument();
+    expect(window.localStorage.getItem('daoris.railClosed')).toBe('1');
   });
 
   /** FRAME6's keys are still read, so nothing a person closed or widened changes on the upgrade (D118 §3f). */

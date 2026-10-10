@@ -63,7 +63,7 @@ import { panelTabs } from './streams';
 import { DOCK, dockRange, frameLayout, type ListMode } from './layout';
 import { type FrameClosings, useFrameClosings } from './closings';
 import { type ListPanes, useListPanes } from './listPanes';
-import { listChoice, type ListSpec, useFrameWidth, useListMode, type ViewLayout, ViewListPane } from './ViewFrame';
+import { listChoice, type ListSpec, useFrameWidth, useGoOver, useListMode, type ViewLayout, ViewListPane } from './ViewFrame';
 import { ViewMain } from './ViewMain';
 import { type Place, type Placements, usePlacements, type ViewId, viewsIn } from './placements';
 import { relationsOf } from './relations';
@@ -258,19 +258,21 @@ export function WorkFrame({
   // Another view in the frame (DOCK1a): its own list or none, and its main area. Absent, it is Sessions.
   const elsewhere = viewLayout !== undefined;
   const listView = elsewhere ? viewLayout.list?.view ?? null : 'sessions';
+  // A go's group lays the view's strip over the main area while it is brought into view (ENTRY1g).
+  const { listOver, setListOver } = closed;
+  const go = useGoOver(group, listOver, setListOver, onGroupBrought);
   const layout = frameLayout(width.viewport, width.frame, {
-    list: listView ? listChoice(listView, listed, closed.listOver) : null,
+    list: listView ? listChoice(listView, listed, go.over) : null,
     dockShare, dockClosed, dockFull,
   });
   const list = layout.list;
 
   // What the list is now, told to the application, whose doors toggle it and say whether it is shown; and
   // a list laid over the main area let go once the room makes it anything else (D118 §3f).
-  const { listOver, setListOver } = closed;
-  useListMode(list?.mode ?? null, onListMode, listOver, setListOver);
+  useListMode(list?.mode ?? null, onListMode, listOver, setListOver, go.bringing);
 
-  /** A choice in a list laid over closes it (D118 §3a). */
-  const chosen = () => { if (listOver) setListOver(false); };
+  /** A choice in a list laid over closes it (D118 §3a), and lets a go still on its way go (ENTRY1g). */
+  const chosen = () => { if (list?.mode === 'over') go.setOver(false); };
   /** A drag lands as the dock's share of the window it was dragged in; null is the default again. */
   const resizeDock = (next: number | null) => {
     const share = next === null || width.viewport <= 0 ? null : next / width.viewport;
@@ -1196,6 +1198,15 @@ export function WorkFrame({
   // something a person does occasionally, and every reference in the study puts new behind a single affordance.
   // The list's own choices (D126 §4.1): by state, the default, or by repository; and whether archived is shown.
   const sessionsFilters = sessionFilters(listed.pane('sessions').filters);
+  // A go to a group of the list where the person keeps it by repository shows it by state (ENTRY1g, D161's ENTRY1b note):
+  // for the go only and never remembered, it lasts until the person chooses an arrangement in the ⋯, which says what is
+  // shown, or leaves Sessions. Set as the go arrives, not after, so the rail draws the group the render it looks for it.
+  const [goByState, setGoByState] = useState(false);
+  if (!elsewhere && (group === 'you' || group === 'review') && sessionsFilters.group === 'repository' && !goByState) {
+    setGoByState(true);
+  }
+  if (elsewhere && goByState) setGoByState(false);
+  const arrangement = goByState ? 'state' : sessionsFilters.group;
   const sessionsList = (): ListSpec => ({
     view: 'sessions',
     name: t('work.rail.label'),
@@ -1208,14 +1219,17 @@ export function WorkFrame({
         label={t('work.list.more')}
         choice={{
           label: t('work.list.groupBy'),
-          value: sessionsFilters.group,
+          value: arrangement,
           options: [
             { value: 'state', label: t('work.list.byState') },
             { value: 'repository', label: t('work.list.byRepository') },
           ],
-          onChoose: (value) => listed.setFilters('sessions', keptSessionFilters({
-            ...sessionsFilters, group: value === 'repository' ? 'repository' : 'state',
-          })),
+          onChoose: (value) => {
+            setGoByState(false);
+            listed.setFilters('sessions', keptSessionFilters({
+              ...sessionsFilters, group: value === 'repository' ? 'repository' : 'state',
+            }));
+          },
         }}
         items={[
           { id: 'archived', label: t('work.list.showArchived'), checked: sessionsFilters.archived },
@@ -1239,11 +1253,10 @@ export function WorkFrame({
         notify={notify}
         compact
         taking={taking}
-        arrangement={sessionsFilters.group}
+        arrangement={arrangement}
         archived={sessionsFilters.archived}
-        // The strip draws no group, so it lets a door's go; laid over, the open list beside it brings it (ENTRY1b).
-        group={group}
-        onGroupBrought={onGroupBrought}
+        // The strip draws no group and is handed none: a go lays the list over beside it, and the list there brings the
+        // group (ENTRY1g). Handed one, it answered first and let the go go before the list laid over had looked.
       />
     ),
     body: (
@@ -1253,7 +1266,7 @@ export function WorkFrame({
         notify={notify}
         taking={taking}
         lastTurns={lastTurns}
-        arrangement={sessionsFilters.group}
+        arrangement={arrangement}
         archived={sessionsFilters.archived}
         archiveEnded={archivingEnded}
         onArchiveEnded={() => setArchivingEnded(false)}
@@ -1274,7 +1287,7 @@ export function WorkFrame({
     // `isolate` (D118 §3d, audit F10): its layers stay its own — a full side bar's `z-20`, a list laid
     // over — so every overlay drawn at the page's root, a drawer among them, lies above all of it.
     <div ref={root} className="relative isolate flex min-h-0 min-w-0 flex-1">
-      {spec && list && <ViewListPane spec={spec} layout={list} lists={listed} onOver={setListOver} />}
+      {spec && list && <ViewListPane spec={spec} layout={list} lists={listed} onOver={go.setOver} />}
 
       {/* D41's single detail-and-form surface (§4), rather than a popover built for one form. */}
       {starting && (
