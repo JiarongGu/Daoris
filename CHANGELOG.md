@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris wire <repository> --workspace <name>` moves a registered repository to another workspace from a
+  terminal, as the page's Manage → *Move to workspace* does, and changes nothing else about it. An unknown
+  repository, or a workspace a shared host does not serve, is refused in the service's own words.
 - Ask Daoris can propose moving a repository to another workspace on this machine, as its page's Manage →
   *Move to workspace* does: the card names the repository and both workspaces, and Apply changes that one
   row of the registry and no file. A workspace no repository is in yet is allowed, and the card says the
@@ -296,7 +299,7 @@ The first version: doctrine that installs, is checked, and flows back.
 
 ### The tool
 
-- **Seventeen commands.** `analyze` reports what adopting would do before it does it; `init` writes a
+- **Eighteen commands.** `analyze` reports what adopting would do before it does it; `init` writes a
   manifest and reports what is available without guessing;
   `sync` materializes the selected packs and writes the lock; `check` gates on drift, staleness and
   index freshness, and **reports** the always-loaded budget rather than failing on it (a fact gates, a
@@ -308,7 +311,8 @@ The first version: doctrine that installs, is checked, and flows back.
   restate a canonical one under a different name; and the **management** commands (D35, D50) are
   opt-in and never run by a gate — `connect` registers the repository with a knowledge service,
   carrying its declaration and, to a local service only, its root; `retire` takes it off the machine's
-  registry without touching a file; `import` registers a folder's subdirectories at once; `remote`
+  registry without touching a file; `wire` moves a registered repository to another workspace and
+  changes nothing else about it; `import` registers a folder's subdirectories at once; `remote`
   edits the machine's map of one deployment per workspace, talking to nothing and never printing a key
   back; `agent` manages the agent tools sessions run on and the named accounts they run as, spawning
   each tool's own installer and sign-in — and keeps an API key only for an account that is one
@@ -318,7 +322,7 @@ The first version: doctrine that installs, is checked, and flows back.
   whether it is Daoris's own or the person's Edge and whether the page's links open there; and `tool`
   says which file each program Daoris runs beside its agents is — Git, Node.js, PowerShell, GitHub CLI
   and Azure CLI — the system's from `PATH` unless the person names a file (D121). `agent`
-  **spawns**; `connect`, `retire` and `import` talk to a service; `remote`, `driver`, `plugin`,
+  **spawns**; `connect`, `retire`, `wire` and `import` talk to a service; `remote`, `driver`, `plugin`,
   `browser` and `tool` only edit files under the Daoris home.
 - **A pack may switch a core row off, and the repository confirms it** (D71). A pack's `pack.json`
   offers `switchesOff`: a core rule, knowledge document or skill, with the reason its own document

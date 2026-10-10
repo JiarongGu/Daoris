@@ -18,7 +18,8 @@ Each verb is a module of `src/Daoris.Cli/src/cli/`, its row in `COMMANDS` (`src/
 | `doctor` | doctrine | `cli/doctor.ts:5` | `twins.ts:142` commandDoctor | report local documents that look like canonical ones |
 | `connect` | management | `cli/connect.ts:5` | `connect.ts:154` commandConnect | register this repo with a knowledge service: what it owns |
 | `retire` | management | `cli/retire.ts:5` | `manage.ts:31` commandRetire | [name] take a repository off this machine's registry. Ends the |
-| `import` | management | `cli/import.ts:5` | `manage.ts:57` commandImport | [folder] register a folder's subdirectories in one go; safe to |
+| `wire` | management | `cli/wire.ts:5` | `manage.ts:58` commandWire | <repo> --workspace W |
+| `import` | management | `cli/import.ts:5` | `manage.ts:87` commandImport | [folder] register a folder's subdirectories in one go; safe to |
 | `remote` | management | `cli/remote.ts:5` | `remotes.ts:90` commandRemote | [verb] this machine's remotes, one per workspace: |
 | `agent` | management | `cli/agent.ts:6` | `toolchain.ts:1432` commandHarness | [verb] this machine's agents — Claude Code, Codex, dsh — and the |
 | `driver` | management | `cli/driver.ts:7` | `driverconfig.ts:552` commandDriver | [verb] what this machine drives ($DAORIS_HOME/driver.json): |

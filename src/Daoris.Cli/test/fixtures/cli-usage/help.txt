@@ -18,6 +18,9 @@ daoris <command> [options]
                        and what it accepts, so siblings know what to ask of it
   retire [name]        take a repository off this machine's registry. Ends the
                        registration ONLY — no file, history or doctrine is touched
+  wire <repo> --workspace W
+                       move a registered repository to workspace W; only its
+                       workspace changes, and no file is touched
   import [folder]      register a folder's subdirectories in one go; safe to
                        re-run, and it never re-points anyone's workspace —
                        unless --workspace W names the workspace they land in
@@ -271,7 +274,7 @@ daoris <command> [options]
                                                    order, then the one built in
                          look                      fetch every location; say what is newer
 
-  connect, retire and import are the MANAGEMENT commands: opt-in, they talk to a
+  connect, retire, wire and import are the MANAGEMENT commands: opt-in, they talk to a
   service, and no gate ever runs them. remote, agent, driver, plugin, browser and
   tool are management too — they edit files under the Daoris home ($DAORIS_HOME,
   the installed application's own data folder; nothing lives under your profile),

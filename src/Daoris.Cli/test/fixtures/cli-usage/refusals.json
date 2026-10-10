@@ -9,6 +9,7 @@
   {"argv":["doctor"],"code":2,"out":["daoris: no daoris.json in '<cwd>' — run 'daoris init' first"]},
   {"argv":["upstream"],"code":2,"out":["daoris: usage: daoris upstream <file> | daoris upstream --all"]},
   {"argv":["retire","aurora","--dry-run"],"code":0,"out":["daoris: would retire aurora — the registration only; no file is ever touched"]},
+  {"argv":["wire","aurora"],"code":2,"out":["daoris: usage: daoris wire <repository> --workspace <name> — e.g. `daoris wire aurora-engine --workspace work`."]},
   {"argv":["import","--dry-run"],"code":0,"out":["daoris: would import the service's own knowledge root"]},
   {"argv":["remote","frobnicate"],"code":2,"out":["daoris: unknown remote verb 'frobnicate' — one of: list, add, remove"]},
   {"argv":["remote","add"],"code":2,"out":["daoris: `remote add` needs a workspace name — e.g. `daoris remote add aurora`. The name is the workspace, and it is what a shared deployment declares itself to be."]},
