@@ -56,7 +56,7 @@ const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] :
 export function useProjectsView({
   active, chosen, onChoose, tab = 'details', onTab, workspaceTab = 'details', onWorkspaceTab, workspaceSection = null, notify,
   onOpenCode, onOpenAgent, onSyncNow, syncing = false, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
-  onOpenQuest, onOpenAsk, onAttend,
+  drawerWorkspace = null, onOpenQuest, onOpenAsk, onAttend,
 }: {
   /** The view is in front: only then are its errors said. */
   active: boolean;
@@ -92,6 +92,11 @@ export function useProjectsView({
   /** And its *Import a folder…* (D77): the same kind of event, for the import drawer. */
   importRequested?: boolean;
   onImportOpened?: () => void;
+  /**
+   * The workspace the drawer an event asks for opens filled with (ENTRY1d2b): Ask Daoris's go's, cleared with the event.
+   * The folder is never asked for; it stays the person's pick (D161's ENTRY1d note).
+   */
+  drawerWorkspace?: string | null;
   /**
    * A quest's page, an ask's, or a session in Sessions: the doors a workspace's clear offers beside a unit it keeps, where
    * the page that frees it is (HIST1e, D153 §5). Absent where there is no such page to open.
@@ -172,18 +177,19 @@ export function useProjectsView({
   useErrorNotify(setupShown ? across.error : null, notify);
 
   const attached = driver.data !== undefined;
-  const [adding, setAdding] = useState(false);
+  // An open drawer, and the workspace a go filled it with (ENTRY1d2b); the list's own doors fill none.
+  const [adding, setAdding] = useState<{ workspace?: string } | null>(null);
   useEffect(() => {
     if (!addRequested || !attached) return;
-    setAdding(true);
+    setAdding(drawerWorkspace ? { workspace: drawerWorkspace } : {});
     onAddOpened?.();
-  }, [addRequested, attached, onAddOpened]);
-  const [importing, setImporting] = useState(false);
+  }, [addRequested, attached, onAddOpened, drawerWorkspace]);
+  const [importing, setImporting] = useState<{ workspace?: string } | null>(null);
   useEffect(() => {
     if (!importRequested || !attached) return;
-    setImporting(true);
+    setImporting(drawerWorkspace ? { workspace: drawerWorkspace } : {});
     onImportOpened?.();
-  }, [importRequested, attached, onImportOpened]);
+  }, [importRequested, attached, onImportOpened, drawerWorkspace]);
   const [managing, setManaging] = useState<Registration | null>(null);
 
   const rows = registry.data ?? [];
@@ -402,7 +408,7 @@ export function useProjectsView({
 
   const shown = chosenRepository ? rows.find((row) => row.repository === chosenRepository) : undefined;
   const workspaceHeld = chosenWorkspace !== null && groups.some((group) => group.workspace === chosenWorkspace);
-  const add = { label: t('projects.manage.add'), onAct: () => setAdding(true) };
+  const add = { label: t('projects.manage.add'), onAct: () => setAdding({}) };
   const goneOrLoading = (of: 'repository' | 'workspace') => (registry.data === undefined && registry.error
     ? <ProjectsMainNotice state="unanswered" sentence={sentence(registry.error)} />
     : <ProjectsMainNotice state={registry.data === undefined ? 'loading' : 'gone'} of={of} />);
@@ -462,7 +468,7 @@ export function useProjectsView({
       // Adding and importing touch machine paths, so they are a shell's (D48 §7): a browser's list makes nothing.
       make: attached ? { label: add.label, onMake: add.onAct } : undefined,
       more: attached
-        ? <ListMore label={t('projects.list.more')} items={[{ id: 'import', label: t('projects.list.import') }]} onChoose={() => setImporting(true)} />
+        ? <ListMore label={t('projects.list.more')} items={[{ id: 'import', label: t('projects.list.import') }]} onChoose={() => setImporting({})} />
         : undefined,
       loading: registry.isPending,
       // 🔴 The first thing a new installation shows, and it was a header over a blank page: the fixture always holds
@@ -494,9 +500,11 @@ export function useProjectsView({
         {main}
         {adding && (
           // Once registered, the list has it chosen, as an installed plugin is (D119 §3.1).
-          <AddProjectDrawer onClose={() => setAdding(false)} onAdded={onChoose} notify={notify} />
+          <AddProjectDrawer onClose={() => setAdding(null)} onAdded={onChoose} notify={notify} initialWorkspace={adding.workspace} />
         )}
-        {importing && <ImportFolderDrawer onClose={() => setImporting(false)} notify={notify} />}
+        {importing && (
+          <ImportFolderDrawer onClose={() => setImporting(null)} notify={notify} initialWorkspace={importing.workspace} />
+        )}
         {managing && (
           <ManageProjectDrawer
             project={managing}

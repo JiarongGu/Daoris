@@ -169,6 +169,8 @@ export function App() {
   const [addRequested, setAddRequested] = useState(false);
   // And its *Import a folder…* (D77): the import drawer, which names the workspace it lands in.
   const [importRequested, setImportRequested] = useState(false);
+  // And the workspace either opens filled with, where Ask Daoris's go named one (ENTRY1d2b): consumed with the event.
+  const [drawerWorkspace, setDrawerWorkspace] = useState<string | null>(null);
   // A repository's page's tab (UX6f, D150 §4.2), remembered for the view: a door into a repository's own value names
   // Setup, so it is held here, where every door is applied.
   const [projectTab, setProjectTab] = useState<ProjectTab>(readProjectTab);
@@ -484,6 +486,7 @@ export function App() {
     if (plan.anchor !== undefined) setSettingsAnchor(plan.anchor);
     setAgentPart(plan.agentPart ?? null);
     setListGroup(plan.group ?? null);
+    if (plan.drawer) setDrawerWorkspace(plan.drawerWorkspace ?? null);
     if (plan.drawer === 'add') setAddRequested(true);
     if (plan.drawer === 'import') setImportRequested(true);
     if (plan.tab) chooseProjectTab(plan.tab);
@@ -778,9 +781,10 @@ export function App() {
     onSyncNow,
     syncing: syncNow.isPending,
     addRequested,
-    onAddOpened: () => setAddRequested(false),
+    onAddOpened: () => { setAddRequested(false); setDrawerWorkspace(null); },
     importRequested,
-    onImportOpened: () => setImportRequested(false),
+    onImportOpened: () => { setImportRequested(false); setDrawerWorkspace(null); },
+    drawerWorkspace,
     // A workspace's clear names what it keeps, each with the page that frees it (HIST1e, D153 §5).
     onOpenQuest: openQuest,
     onOpenAsk: openAsk,

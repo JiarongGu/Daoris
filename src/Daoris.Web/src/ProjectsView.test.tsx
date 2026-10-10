@@ -966,6 +966,79 @@ describe('the shell-attached registry management', () => {
     expect(JSON.parse(String(posted![1]!.body))).toEqual({ folder: 'D:/repos/borealis' });
   });
 
+  /** With no go, neither drawer asks a workspace before its folder is chosen, as before ENTRY1d2b. */
+  it('a plain Add or Import asks no workspace before the folder', async () => {
+    show(<ProjectsView notify={() => {}} addRequested onAddOpened={() => {}} />);
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Workspace')).toBeNull();
+    cleanup();
+
+    show(<ProjectsView notify={() => {}} importRequested onImportOpened={() => {}} />);
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Workspace')).toBeNull();
+  });
+
+  /**
+   * ENTRY1d2b (D161's ENTRY1d note): Ask Daoris's go opens Add with the workspace it names filled, shown before the folder
+   * is chosen, so the person sees where it lands before they pick. The folder stays theirs (D48 §3/§7).
+   */
+  it("a go's Add opens with its workspace filled before the folder, and registers into it", async () => {
+    show(<ProjectsView notify={() => {}} addRequested onAddOpened={() => {}} drawerWorkspace="work" />);
+
+    const drawer = await screen.findByRole('dialog');
+    expect(within(drawer).getByLabelText('Workspace')).toHaveValue('work');
+    expect(within(drawer).getByRole('button', { name: 'Register' })).toBeDisabled();
+    await userEvent.click(within(drawer).getByRole('button', { name: 'Choose a folder…' }));
+    expect(await within(drawer).findByText('D:/repos/borealis')).toBeInTheDocument();
+    expect(within(drawer).getByLabelText('Workspace')).toHaveValue('work');
+    await userEvent.click(within(drawer).getByRole('button', { name: 'Register' }));
+
+    const posted = vi.mocked(fetch).mock.calls
+      .find(([url, init]) => String(url) === '/api/registry' && init?.method === 'POST');
+    expect(JSON.parse(String(posted![1]!.body))).toMatchObject({ repository: 'borealis', root: 'D:/repos/borealis', workspace: 'work' });
+  });
+
+  /** ENTRY1d2b: Import opens filled the same way, and the folder chosen keeps the go's workspace over its own name (D77). */
+  it("a go's Import opens with its workspace filled, and the folder chosen keeps it", async () => {
+    show(<ProjectsView notify={() => {}} importRequested onImportOpened={() => {}} drawerWorkspace="work" />);
+
+    const drawer = await screen.findByRole('dialog');
+    expect(within(drawer).getByLabelText('Workspace')).toHaveValue('work');
+    await userEvent.click(within(drawer).getByRole('button', { name: 'Choose a folder…' }));
+    expect(await within(drawer).findByText('D:/repos/borealis')).toBeInTheDocument();
+    expect(within(drawer).getByLabelText('Workspace')).toHaveValue('work');
+    await userEvent.click(within(drawer).getByRole('button', { name: 'Import' }));
+
+    const posted = vi.mocked(fetch).mock.calls
+      .find(([url, init]) => String(url) === '/api/registry/import' && init?.method === 'POST');
+    expect(JSON.parse(String(posted![1]!.body))).toEqual({ folder: 'D:/repos/borealis', workspace: 'work' });
+  });
+
+  /**
+   * ENTRY1d2b: the folder's name is offered over an empty field or over the name it offered last (D77), and never over a
+   * name the person typed or a go filled.
+   */
+  it("import offers each folder's name over its own last offer, never over a name typed", async () => {
+    const picks = [PICKED, { ...PICKED, path: 'D:/repos/aurora', name: 'aurora' }, PICKED];
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      type === 'PICK_FOLDER' ? picks.shift() : DRIVER_STATE);
+    show(<ProjectsView notify={() => {}} importRequested onImportOpened={() => {}} />);
+
+    const drawer = await screen.findByRole('dialog');
+    const choose = within(drawer).getByRole('button', { name: 'Choose a folder…' });
+    await userEvent.click(choose);
+    expect(await within(drawer).findByLabelText('Workspace')).toHaveValue('borealis');
+    await userEvent.click(choose);
+    expect(await within(drawer).findByText('D:/repos/aurora')).toBeInTheDocument();
+    expect(within(drawer).getByLabelText('Workspace')).toHaveValue('aurora');
+
+    await userEvent.clear(within(drawer).getByLabelText('Workspace'));
+    await userEvent.type(within(drawer).getByLabelText('Workspace'), 'mine');
+    await userEvent.click(choose);
+    expect(await within(drawer).findByText('D:/repos/borealis')).toBeInTheDocument();
+    expect(within(drawer).getByLabelText('Workspace')).toHaveValue('mine');
+  });
+
   /**
    * The one thing a person must be able to trust about a remove button. The service composes the
    * sentence; the panel says it before the click, and the answer repeats it after.
