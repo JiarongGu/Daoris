@@ -24,20 +24,26 @@ public sealed class HelpRoomPlacesTests
     /// <summary>
     /// UX6e2 and HELPSETUP1: a go names no repository and no agent, so the room says where each part lands — Repositories'
     /// Setup on the repository its list has chosen, an agent's part on the agent that has it — and the helper says which
-    /// one the person means rather than promising it. UX6g2b: nor a workspace, whose parts open the page of the one in view.
+    /// one the person means rather than promising it. UX6g2b: a workspace's parts open the page of the one in view. ENTRY1d2a
+    /// (D161's ENTRY1d note): Add repository and Import a folder may name the workspace the drawer opens with, a name and
+    /// never a folder, which stays the person's pick there.
     /// </summary>
     [Fact]
-    public void The_room_says_a_go_names_no_repository_agent_or_workspace()
+    public void The_room_says_a_go_names_no_repository_or_agent_and_a_workspace_only_to_add_or_import()
     {
         var places = new HelpRoomPlaces().Render(HelpRoomFixture.Machine);
 
         Assert.Contains("- Views: `overview` (Overview)", places);
         Assert.Contains("`agents` (Agents), `plugins` (Plugins), `settings` (Settings).", places);
         Assert.DoesNotContain("`agents` (Agents), `permissions`", places);
-        Assert.Contains("A go names no repository, agent or workspace", places);
+        Assert.Contains("A go names no repository or agent:", places);
+        Assert.DoesNotContain("A go names no repository, agent or workspace", places);
         Assert.Contains("`setup` opens the Setup of the repository Repositories has chosen", places);
         Assert.Contains("a part of `agents` opens the agent that has it", places);
         Assert.Contains("A `workspace-` part opens that tab or section on the page of the workspace in view", places);
+        Assert.Contains("`add` and `import` may name the go's `workspace`, one this room lists or a new name:", places);
+        Assert.Contains("the drawer opens with it filled, and the person picks the folder there and registers it.", places);
+        Assert.Contains("Never name a folder.", places);
     }
 
     /// <summary>

@@ -6,8 +6,9 @@ namespace Daoris.Driver;
 /// <summary>
 /// Ask Daoris's <c>go</c> proposal (HELP6): a place the window has — its target the view, and its own
 /// <c>domain</c>, <c>part</c> and, since ENTRY1f1, <c>item</c> — judged by <see cref="HelpPlaces"/> and, for an item,
-/// against the machine's quests and asks or, since ENTRY1f2, its own sessions. It changes nothing: its Apply hands the page
-/// the place, which navigates as the starters' doors do.
+/// against the machine's quests and asks or, since ENTRY1f2, its own sessions. Since ENTRY1d2a a go to Repositories' Add
+/// repository or Import a folder may carry the common <c>workspace</c> the drawer opens with. It changes nothing: its Apply
+/// hands the page the place, which navigates as the starters' doors do.
 /// </summary>
 internal sealed class HelpGoProposals : IHelpProposalKind
 {
@@ -75,6 +76,27 @@ internal sealed class HelpGoProposals : IHelpProposalKind
         }
 
         var item = proposal.Item?.Trim() is { Length: > 0 } i ? i : null;
+        var workspace = proposal.Workspace?.Trim() is { Length: > 0 } w ? w : null;
+        if (workspace is not null)
+        {
+            // ENTRY1d2a (D161's ENTRY1d note): adding or importing a repository needs a folder, which stays the person's pick
+            // (D48 §3/§7), so a go opens the drawer with what Ask Daoris knows filled, the workspace, and never a path.
+            if (item is not null) return Refused(
+                "a go names a workspace or an item, not both — a workspace fills Repositories' Add or Import, and an item opens on its own.");
+            if (view != "projects" || part is not ("add" or "import")) return Refused(
+                "a go names a workspace only with `projects` and its part `add` or `import`, whose drawer opens with it filled.");
+            if (Folder(workspace)) return Refused(
+                $"`{workspace}` is a folder, never a workspace's name — the person picks the folder in the drawer.");
+
+            // As the route stores a name (`RemoteTarget.Workspace`, the twin of `Workspaces.Normalize`), handed in the registry's
+            // spelling where a repository is in it; a name none is in yet is allowed, as the drawer's free text allows it.
+            var named = RemoteTarget.Workspace(workspace);
+            var held = facts.Registered.Select(each => RemoteTarget.Workspace(each.Workspace))
+                .FirstOrDefault(each => string.Equals(each, named, StringComparison.OrdinalIgnoreCase));
+            workspace = held ?? named;
+            describe += $", in workspace `{workspace}`" + (held is null ? ", which no repository is in yet" : "");
+        }
+
         if (item is not null)
         {
             // ENTRY1f1 (D161's ENTRY1f note): the one that waits is a record of the view's list, judged as the delete kind
@@ -91,8 +113,13 @@ internal sealed class HelpGoProposals : IHelpProposalKind
             item = named.Value.Item;
         }
 
-        return new HelpPlan(null, describe + ".", "", null) { Go = new HelpPlace(view, domain, part) { Item = item } };
+        return new HelpPlan(null, describe + ".", "", null) { Go = new HelpPlace(view, domain, part) { Item = item, Workspace = workspace } };
     }
+
+    // ENTRY1d2a: a separator, a rooted path, or a drive (`D:`, rooted on Windows alone) is a folder, never a workspace's name;
+    // the service's box refuses the same, duplicated as a twin's rule is.
+    private static bool Folder(string name) =>
+        name.IndexOfAny(['/', '\\']) >= 0 || Path.IsPathRooted(name) || (name.Length >= 2 && name[1] == ':' && char.IsAsciiLetter(name[0]));
 
     /// <summary>
     /// ENTRY1f1: an item on Quests as the machine's records hold it — a quest by its id, an ask as <c>ask:&lt;id&gt;</c>, a
@@ -168,6 +195,12 @@ public sealed record HelpPlace(string View, string? Domain, string? Part)
     /// <c>ask:&lt;id&gt;</c>, or since ENTRY1f2 a session's id, spelled as the machine's record is; null for a go to the place alone.
     /// </summary>
     public string? Item { get; init; }
+
+    /// <summary>
+    /// The workspace Repositories' Add repository or Import a folder opens with (ENTRY1d2a, D161's ENTRY1d note): one the
+    /// registry holds, in its spelling, or a new name as the route stores one; null for any other go, and for those with none.
+    /// </summary>
+    public string? Workspace { get; init; }
 }
 
 /// <summary>
@@ -212,7 +245,7 @@ public static class HelpPlaces
         // HELPSETUP1: a repository's Setup (UX6f, D150 §4.2), where its own values are set; a go names no repository.
         ("projects", "add", "Add repository"), ("projects", "import", "Import a folder"), ("projects", "setup", "a repository's Setup"),
         // UX6g2b (D161 §3, D150 §4.3): a workspace's page's four tabs and its Setup's two sections, prefixed since a
-        // repository's page has three of the tabs' names; a go names no workspace, so the one in view opens.
+        // repository's page has three of the tabs' names; a go to one names no workspace, so the one in view opens.
         ("projects", "workspace-details", "a workspace's Details"), ("projects", "workspace-branches", "a workspace's Branches"),
         ("projects", "workspace-workflow", "a workspace's Workflow"), ("projects", "workspace-setup", "a workspace's Setup"),
         ("projects", "workspace-defaults", "a workspace's Defaults"), ("projects", "workspace-remote", "a workspace's Remote and reach"),

@@ -204,8 +204,9 @@ public sealed partial class DriverModule
         Message = applied.Told,
         applied.Applied,
         // Where a go takes the person: the page navigates, as its starters' doors do (HELP6), to the one quest or ask a go
-        // names in it, the driver's judged spelling (ENTRY1f1).
-        Go = applied.Go is { } place ? new { place.View, place.Domain, place.Part, place.Item } : null,
+        // names in it, the driver's judged spelling (ENTRY1f1), and opens Add repository or Import a folder with the workspace
+        // the driver judged filled (ENTRY1d2a); each null on any other go.
+        Go = applied.Go is { } place ? new { place.View, place.Domain, place.Part, place.Item, place.Workspace } : null,
         // The action an update or a pin started, so the Agents screen follows its console and its end. A default
         // (HELP10) is a file edit that starts nothing, so there is nothing to follow.
         HarnessAction = applied.Applied && proposal.Kind == "agent" && proposal.Door is "update" or "pin"
