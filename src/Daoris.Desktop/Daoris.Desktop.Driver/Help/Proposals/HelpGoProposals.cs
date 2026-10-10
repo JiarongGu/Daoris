@@ -29,6 +29,13 @@ internal sealed class HelpGoProposals : IHelpProposalKind
         var part = proposal.Part?.Trim().ToLowerInvariant() is { Length: > 0 } p ? p : null;
         HelpPlan Refused(string why) => new(why, "", "", null);
 
+        // UX6i2a: a go spelled as its place was before it moved is judged, said and handed on as the place it is now.
+        var asked = new HelpPlace(view, domain, part);
+        if (HelpPlaces.Kept.FirstOrDefault(each => each.Was == asked) is { Now: { } now })
+        {
+            (view, domain, part) = (now.View, now.Domain, now.Part);
+        }
+
         // A tuple not found is its default, whose names are null.
         var shown = HelpPlaces.Views.FirstOrDefault(each => each.Id == view);
         if (shown.Id is null)
@@ -79,7 +86,7 @@ public sealed record HelpPlace(string View, string? Domain, string? Part);
 /// <summary>
 /// The places on the window a go may name (HELP6): the views, Settings' domains, and the parts of them a
 /// door already opens — the setup guide's steps, a domain's cards, Repositories' drawers and a repository's Setup,
-/// an agent's page's sections.
+/// Knowledge's two modes, an agent's page's sections — and the places a go named before they moved.
 /// </summary>
 /// <remarks>
 /// A twin (`.claude/knowledge/twins.md`) of the page's <c>help/places.ts</c>, which navigates to them:
@@ -88,25 +95,29 @@ public sealed record HelpPlace(string View, string? Domain, string? Part);
 /// </remarks>
 public static class HelpPlaces
 {
-    // UX6e2: Agents is a place since UX6e (D150 §5), after Search on the bar.
+    // UX6i2a (D150 §2): the bar's eight places and Settings, in the bar's order: Knowledge where Convergence and Search were
+    // (UX6i), Plugins after Agents (PLUGUI1b).
     public static readonly IReadOnlyList<(string Id, string Name)> Views =
     [
         ("overview", "Overview"), ("sessions", "Sessions"), ("quests", "Quests"), ("projects", "Repositories"),
-        ("map", "Map"), ("convergence", "Convergence"), ("search", "Search"), ("agents", "Agents"), ("settings", "Settings"),
+        ("map", "Map"), ("knowledge", "Knowledge"), ("agents", "Agents"), ("plugins", "Plugins"), ("settings", "Settings"),
     ];
 
+    // UX6i2a: the guide is Get started since UX6j, and Plugins left Settings for its place.
     public static readonly IReadOnlyList<(string Id, string Name)> Domains =
     [
-        ("start", "Setup"), ("appearance", "Appearance"), ("ai", "AI features"), ("workspace", "Workspace"),
-        ("driver", "Driver"), ("permissions", "Permissions"), ("plugins", "Plugins"),
+        ("start", "Get started"), ("appearance", "Appearance"), ("ai", "AI features"), ("workspace", "Workspace"),
+        ("driver", "Driver"), ("permissions", "Permissions"),
         ("browser", "Browser"), ("logs", "Machine log"),
     ];
 
-    /// <summary>The parts, each within a view (Repositories, Agents) or a Settings domain.</summary>
+    /// <summary>The parts, each within a view (Repositories, Knowledge, Agents) or a Settings domain.</summary>
     public static readonly IReadOnlyList<(string Within, string Id, string Name)> Parts =
     [
         // HELPSETUP1: a repository's Setup (UX6f, D150 §4.2), where its own values are set; a go names no repository.
         ("projects", "add", "Add repository"), ("projects", "import", "Import a folder"), ("projects", "setup", "a repository's Setup"),
+        // UX6i2a: Knowledge's two modes (UX6i), by the names its list's choice shows.
+        ("knowledge", "search", "Search"), ("knowledge", "convergence", "Convergence"),
         ("start", "agent", "step 1, an agent"), ("start", "helper", "step 2, Ask Daoris's agent"),
         ("start", "repositories", "step 3, a workspace and its repositories"), ("start", "driven", "step 4, what is driven"),
         ("start", "landing", "step 5, how work lands"), ("start", "rules", "step 6, what agents may do"),
@@ -116,6 +127,18 @@ public static class HelpPlaces
         ("agents", "accounts", "Accounts"), ("agents", "rules", "What it may do"), ("agents", "usage", "Usage"),
         // HELP10: the card READ1 built (D107), which the page finds by its own `settings-across`.
         ("permissions", "across", "Across repositories"),
+    ];
+
+    /// <summary>
+    /// The places a go named before they moved, each with the place it is now (UX6i2a, D150 §2): Search and Convergence
+    /// became Knowledge's modes with UX6i, and Settings → Plugins the Plugins place with UX6j. The room lists none of them,
+    /// and a go still spelled so, kept in an earlier conversation or sent by a service that lists it, lands where it went.
+    /// </summary>
+    public static readonly IReadOnlyList<(HelpPlace Was, HelpPlace Now)> Kept =
+    [
+        (new("search", null, null), new("knowledge", null, "search")),
+        (new("convergence", null, null), new("knowledge", null, "convergence")),
+        (new("settings", "plugins", null), new("plugins", null, null)),
     ];
 }
 

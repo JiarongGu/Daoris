@@ -31,8 +31,11 @@ public sealed class HelpRoomWindowTests
 
         // It cannot see the window: what it is told of it comes with the message, and otherwise it asks.
         Assert.Contains("You cannot see the window", agents);
-        // UX6e2: the activity bar holds Agents since UX6e (D150 §2.1).
-        Assert.Contains("Sessions, Quests, Repositories, Map, Convergence, Search and Agents, with Settings at its foot", agents);
+        // UX6i2a (D150 §2): the activity bar holds the eight places Go opens, Knowledge where Convergence and Search were
+        // (UX6i) and Plugins after Agents, with Settings at its foot.
+        Assert.Contains("Sessions, Quests, Repositories, Map, Knowledge, Agents and Plugins, with Settings at its foot", agents);
+        Assert.Contains("Knowledge's list switches between Search and Convergence", agents);
+        Assert.DoesNotContain("Convergence, Search", agents);
     }
 
     /// <summary>

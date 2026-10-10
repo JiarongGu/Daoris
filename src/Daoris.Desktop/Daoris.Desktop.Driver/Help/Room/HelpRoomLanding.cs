@@ -39,8 +39,9 @@ internal sealed class HelpRoomLanding : IHelpRoomSection
         var offeredLanders = machine.Offers.Where(offer => offer.Points.Contains(HookPoints.Land, StringComparer.Ordinal)).Select(offer => $"`{offer.Id}`").ToList();
         text.Append(machine.LandingPlugins.Count > 0
             ? $"Plugins that can land work here: {string.Join(", ", machine.LandingPlugins.Select(id => $"`{id}`"))}.\n\n"
+            // UX6i2a: Settings → Plugins retired into the Plugins place with UX6j (D150 §2).
             : "No plugin that lands work is installed here: the person installs one (`daoris plugin add <folder>`,\n"
-              + "Settings → Plugins), so never propose a rule naming one"
+              + "or the Plugins place), so never propose a rule naming one"
               + (offeredLanders.Count > 0
                   ? $" until it is installed; this install offers {string.Join(" and ", offeredLanders)}, which you may propose installing first.\n\n"
                   : ".\n\n"));

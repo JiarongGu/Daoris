@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// Ask Daoris's <c>plugin</c> proposal (PLUG9): a plugin that has landed, added from its folder in the
 /// checkout of the repository that holds it, or one installed here switched on or off — judged with the
-/// catalogue's own reader, as <c>daoris plugin add</c> and Settings → Plugins' switch judge them. Its door is
+/// catalogue's own reader, as <c>daoris plugin add</c> and the Plugins place's switch judge them. Its door is
 /// <c>add</c>, <c>enable</c>, <c>disable</c> or <c>update</c>; its target the id of a plugin switched or
 /// updated; and its own <c>folder</c> and <c>offer</c>, beside the proposal's <c>repository</c>, name what an
 /// add copies.
@@ -337,7 +337,7 @@ public sealed partial record HelpMachineFacts
     /// <summary>The install's offers folder (PLUG9 d), where an offer is found and an offer's update reads; null is none.</summary>
     public string? OffersFolder { get; init; }
 
-    /// <summary>The install's offers, as Settings → Plugins lists them (PLUG9 d).</summary>
+    /// <summary>The install's offers, as the Plugins place lists them under Daoris's own plugins (PLUG9 d).</summary>
     public IReadOnlyList<PluginOffer> Offers { get; init; } = [];
 }
 

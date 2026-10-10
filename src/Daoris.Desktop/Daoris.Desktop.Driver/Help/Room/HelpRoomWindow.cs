@@ -15,9 +15,11 @@ internal sealed class HelpRoomWindow : IHelpRoomSection
         // How the window is laid out (HELP2): asked what the panel held, the helper guessed at a menu that
         // does not exist. Said by the names the window's own labels use (DOCK1b), keys as its menus show them.
         text.Append("## The window\n\n");
-        // UX6e2: Agents joined the bar after Search with UX6e (D150 §2.1).
-        text.Append("The desktop is laid out as VS Code is. The activity bar at the left holds the views: Overview,\n");
-        text.Append("Sessions, Quests, Repositories, Map, Convergence, Search and Agents, with Settings at its foot; `Ctrl+K` opens\n");
+        // UX6i2a (D150 §2): the bar holds the eight places Go opens, Knowledge where Convergence and Search were (UX6i) and
+        // Plugins after Agents, and Settings at its foot (UX6j).
+        text.Append("The desktop is laid out as VS Code is. The activity bar at the left holds the places: Overview,\n");
+        text.Append("Sessions, Quests, Repositories, Map, Knowledge, Agents and Plugins, with Settings at its foot;\n");
+        text.Append("Knowledge's list switches between Search and Convergence. `Ctrl+K` opens\n");
         // UX7a (D152 §1): the menu bar holds the verbs and places, and Help lists every key.
         text.Append("the command palette. The menu bar across the top holds Workspace, Edit, View, Go, Run, Terminal and Help, as\n");
         text.Append("VS Code's does: Go opens the places (`Ctrl+1` to `Ctrl+8`), Run acts on the session or the quest in front, and\n");
