@@ -4,6 +4,9 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
+import { useQuestsView } from './QuestsView';
+import { useListPanes } from './work/listPanes';
+import { ViewFrame } from './work/ViewFrame';
 import {
   chooseRow, makeFromList, moreAct, openFilters, QuestsView, questList, questMain, questPage,
 } from './test/questsView';
@@ -1285,5 +1288,88 @@ describe('a group a door brings into view', () => {
     await within(questList()).findByText('Expose a streaming budget');
     await waitFor(() => expect(brought).toHaveBeenCalledTimes(1));
     expect(document.activeElement).toBe(document.body);
+  });
+
+  /**
+   * ENTRY1g2 (D161's ENTRY1g2 note): a person's receiver filter drops a held quest addressed elsewhere from the query, so
+   * the go found no group. The go shows everyone's for itself alone; the stored filter is never written by it.
+   */
+  describe('past a receiver filter', () => {
+    const FILTERS = 'daoris.list.quests.filters';
+    const ELSEWHERE = { ...HELD, to: 'game' };
+    let asked: string[] = [];
+
+    beforeEach(() => {
+      asked = [];
+      quests = [...QUESTS, ELSEWHERE];
+      window.localStorage.setItem(FILTERS, JSON.stringify({ to: 'engine' }));
+      // The service answers a receiver's own: a stub that ignores `repository` would hide the bug.
+      vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (!url.startsWith('/api/quests')) return respond(url);
+        asked.push(url);
+        const repository = new URL(url, 'http://x').searchParams.get('repository');
+        return Response.json((quests as { to: string }[]).filter((q) => repository === null || q.to === repository));
+      }));
+    });
+
+    it('brings the held group for the go alone, tells the door, and never writes the filter', async () => {
+      const brought = vi.fn();
+      shown('held', brought);
+
+      const heading = await within(questList()).findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+      await waitFor(() => expect(brought).toHaveBeenCalledTimes(1));
+      expect(heading).toHaveFocus();
+      expect(within(questList()).queryByText('Showing quests to engine')).toBeNull();
+      expect(JSON.parse(window.localStorage.getItem(FILTERS)!)).toEqual({ to: 'engine' });
+    });
+
+    it('ends the set-aside when the person chooses a receiver in the ⋯, and writes that choice', async () => {
+      shown('held', vi.fn());
+      await within(questList()).findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+
+      const user = await openFilters();
+      expect(screen.getByRole('menuitemradio', { name: 'Everyone' })).toHaveAttribute('aria-checked', 'true');
+      await user.click(screen.getByRole('menuitemradio', { name: 'game' }));
+
+      expect(await within(questList()).findByText('Showing quests to game')).toBeInTheDocument();
+      expect(JSON.parse(window.localStorage.getItem(FILTERS)!)).toEqual({ to: 'game' });
+    });
+
+    it('changes nothing for the asks, which no receiver hides', async () => {
+      const brought = vi.fn();
+      shown('asks', brought);
+
+      await within(questList()).findByRole('heading', { level: 3, name: 'Asks (1)' });
+      await waitFor(() => expect(brought).toHaveBeenCalledTimes(1));
+      expect(await within(questList()).findByText('Showing quests to engine')).toBeInTheDocument();
+      expect(asked).toContain('/api/quests?includeClosed=false&repository=engine');
+    });
+
+    it('restores the person\'s filter when Quests is left and come back to', async () => {
+      function Away({ active, group }: { active: boolean; group: 'held' | null }) {
+        const lists = useListPanes();
+        const [over, setOver] = useState(false);
+        const pane = lists.pane('quests');
+        const layout = useQuestsView({
+          active, chosen: pane.chosen, onChoose: (item) => lists.choose('quests', item),
+          filters: pane.filters, onFilters: (filters) => lists.setFilters('quests', filters),
+          notify: vi.fn(), group, onGroupBrought: vi.fn(),
+        });
+        return <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} group={group} onGroupBrought={vi.fn()} />;
+      }
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      const tree = (active: boolean, group: 'held' | null) => (
+        <QueryClientProvider client={client}><Tooltip.Provider><Away active={active} group={group} /></Tooltip.Provider></QueryClientProvider>
+      );
+      const { rerender } = render(tree(true, 'held'));
+      await within(questList()).findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+
+      rerender(tree(false, null));
+      rerender(tree(true, null));
+
+      expect(await within(questList()).findByText('Showing quests to engine')).toBeInTheDocument();
+      expect(JSON.parse(window.localStorage.getItem(FILTERS)!)).toEqual({ to: 'engine' });
+    });
   });
 });
