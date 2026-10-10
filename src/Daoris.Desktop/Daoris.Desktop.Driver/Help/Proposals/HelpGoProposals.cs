@@ -85,8 +85,9 @@ public sealed record HelpPlace(string View, string? Domain, string? Part);
 
 /// <summary>
 /// The places on the window a go may name (HELP6): the views, Settings' domains, and the parts of them a
-/// door already opens — the setup guide's steps, a domain's cards, Repositories' drawers and a repository's Setup,
-/// Knowledge's two modes, an agent's page's sections — and the places a go named before they moved.
+/// door already opens — the setup guide's steps, a domain's cards, Repositories' drawers, a repository's Setup and a
+/// workspace's page's tabs and sections, Knowledge's two modes, an agent's page's sections — and the places a go named
+/// before they moved.
 /// </summary>
 /// <remarks>
 /// A twin (`.claude/knowledge/twins.md`) of the page's <c>help/places.ts</c>, which navigates to them:
@@ -103,11 +104,11 @@ public static class HelpPlaces
         ("map", "Map"), ("knowledge", "Knowledge"), ("agents", "Agents"), ("plugins", "Plugins"), ("settings", "Settings"),
     ];
 
-    // UX6i2a: the guide is Get started since UX6j, and Plugins left Settings for its place.
+    // UX6i2a: the guide is Get started since UX6j, and Plugins left Settings for its place. UX6g2b: Workspace and
+    // Permissions left it for a workspace's page with UX6g, and are kept below.
     public static readonly IReadOnlyList<(string Id, string Name)> Domains =
     [
-        ("start", "Get started"), ("appearance", "Appearance"), ("ai", "AI features"), ("workspace", "Workspace"),
-        ("driver", "Driver"), ("permissions", "Permissions"),
+        ("start", "Get started"), ("appearance", "Appearance"), ("ai", "AI features"), ("driver", "Driver"),
         ("browser", "Browser"), ("logs", "Machine log"),
     ];
 
@@ -116,29 +117,39 @@ public static class HelpPlaces
     [
         // HELPSETUP1: a repository's Setup (UX6f, D150 §4.2), where its own values are set; a go names no repository.
         ("projects", "add", "Add repository"), ("projects", "import", "Import a folder"), ("projects", "setup", "a repository's Setup"),
+        // UX6g2b (D161 §3, D150 §4.3): a workspace's page's four tabs and its Setup's two sections, prefixed since a
+        // repository's page has three of the tabs' names; a go names no workspace, so the one in view opens.
+        ("projects", "workspace-details", "a workspace's Details"), ("projects", "workspace-branches", "a workspace's Branches"),
+        ("projects", "workspace-workflow", "a workspace's Workflow"), ("projects", "workspace-setup", "a workspace's Setup"),
+        ("projects", "workspace-defaults", "a workspace's Defaults"), ("projects", "workspace-remote", "a workspace's Remote and reach"),
         // UX6i2a: Knowledge's two modes (UX6i), by the names its list's choice shows.
         ("knowledge", "search", "Search"), ("knowledge", "convergence", "Convergence"),
         ("start", "agent", "step 1, an agent"), ("start", "helper", "step 2, Ask Daoris's agent"),
         ("start", "repositories", "step 3, a workspace and its repositories"), ("start", "driven", "step 4, what is driven"),
         ("start", "landing", "step 5, how work lands"), ("start", "rules", "step 6, what agents may do"),
-        ("workspace", "wiring", "Wiring"), ("workspace", "lines", "Lines"), ("workspace", "landing", "How work lands"),
-        ("workspace", "sweep", "Session branches"),
         // UX6e2: the agent's page's sections a door opens (D150 §5.2); Permissions' Proposals are its What it may do.
         ("agents", "accounts", "Accounts"), ("agents", "rules", "What it may do"), ("agents", "usage", "Usage"),
-        // HELP10: the card READ1 built (D107), which the page finds by its own `settings-across`.
-        ("permissions", "across", "Across repositories"),
     ];
 
     /// <summary>
     /// The places a go named before they moved, each with the place it is now (UX6i2a, D150 §2): Search and Convergence
-    /// became Knowledge's modes with UX6i, and Settings → Plugins the Plugins place with UX6j. The room lists none of them,
-    /// and a go still spelled so, kept in an earlier conversation or sent by a service that lists it, lands where it went.
+    /// became Knowledge's modes with UX6i, and Settings → Plugins the Plugins place with UX6j. UX6g2b: Settings → Workspace
+    /// and Permissions retired into a workspace's page with UX6g (D150 §3.1), each old spelling with its part a row of its
+    /// own, and Permissions alone what agents may do; a part no row names is refused. The room lists none of them, and a go
+    /// still spelled so, kept in an earlier conversation or sent by a service that lists it, lands where it went.
     /// </summary>
     public static readonly IReadOnlyList<(HelpPlace Was, HelpPlace Now)> Kept =
     [
         (new("search", null, null), new("knowledge", null, "search")),
         (new("convergence", null, null), new("knowledge", null, "convergence")),
         (new("settings", "plugins", null), new("plugins", null, null)),
+        (new("settings", "workspace", null), new("projects", null, "workspace-details")),
+        (new("settings", "workspace", "wiring"), new("projects", null, "workspace-remote")),
+        (new("settings", "workspace", "lines"), new("projects", null, "workspace-defaults")),
+        (new("settings", "workspace", "landing"), new("projects", null, "workspace-defaults")),
+        (new("settings", "workspace", "sweep"), new("projects", null, "workspace-branches")),
+        (new("settings", "permissions", null), new("agents", null, "rules")),
+        (new("settings", "permissions", "across"), new("projects", null, "workspace-defaults")),
     ];
 }
 
