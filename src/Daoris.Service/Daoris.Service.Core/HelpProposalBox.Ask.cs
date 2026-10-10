@@ -18,7 +18,7 @@ public sealed partial class HelpProposalBox
     /// <remarks>
     /// ENTRY1c: the shape only, as the setting kind's <c>review</c> door judges its words: words go with a choice, and a choice is
     /// one word. Whether a name is an environment's, and one the ask's workspace declares, is the driver's, with the rule's own
-    /// judgement. An ask's kind and workflow are the person's (D157 point 10), so no proposal carries them.
+    /// judgement. No kind or workflow is carried (D161's ENTRY1c note).
     /// </remarks>
     public (string? Id, string Message) ProposeAsk(
         string sentence, string workspace, string why, string? session, DateTimeOffset at,

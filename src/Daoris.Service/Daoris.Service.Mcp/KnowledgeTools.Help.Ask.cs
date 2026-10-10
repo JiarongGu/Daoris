@@ -6,7 +6,6 @@ namespace Daoris.Knowledge.Mcp;
 /// <summary>
 /// Ask Daoris's <c>ask_propose</c> (HELP1c): the <c>ask</c> kind's tool, written by <see cref="HelpProposalBox.ProposeAsk"/>, with
 /// the review choice the person said and their words (ENTRY1c), as the composer and <c>daoris-driver ask --review</c> send them.
-/// An ask's kind and workflow are the person's (D157 point 10), so the tool takes neither.
 /// </summary>
 public sealed partial class KnowledgeTools
 {
