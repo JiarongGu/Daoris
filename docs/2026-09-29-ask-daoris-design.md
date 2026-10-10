@@ -91,7 +91,9 @@ every `daoris driver` verb and every Settings control is a door, a door owed, or
 by a test (§9.9).
 
 **Starting something.** `ask_propose {sentence, workspace}`: an ask, which the ordinary loop takes
-(D65). The helper never runs a session's work, and never publishes a quest itself.
+(D65). The helper never runs a session's work, and never publishes a quest itself. Since ENTRY1c it
+also carries the review choice the person said and their words (`review`, `reviewWords`), never a kind
+or a workflow (D161's ENTRY1c note).
 
 **Every door built since** (HELP6, §9.6): an agent's update or pin (`agent_propose`), an account's
 model and effort (`agent_settings_propose`), the delete of a quest or an ask made by mistake
