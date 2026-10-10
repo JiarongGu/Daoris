@@ -605,11 +605,14 @@ export function WorkFrame({
   // a decline with nothing in it — is the host's own sentence and reaches them word for word.
   // A finish that closes its quest (QUESTCLOSE1) sends the person's done once the finish stood: the session first, as the
   // driver moves the process before the record, then the quest, whose refusal is the service's sentence, the finish kept.
-  const onResolve = (state: Resolution, note: string | null, close?: QuestClose) => {
+  // The ask the finish or decline was pressed in hears how the session's move ended (UXFIX2b2b): the refusal is said inside
+  // it, and it closes once the session landed, the quest's done being its own notice.
+  const onResolve = (state: Resolution, note: string | null, close?: QuestClose, answered?: Answered) => {
     if (!attended) return;
     const closing = state === 'completed' && close?.as === 'done' ? attended.quest ?? null : null;
     resolve.mutate({ id: attended.id, state, note: note ?? undefined }, {
       onSuccess: () => {
+        answered?.done();
         notify(t('work.awaiting.resolved', { id: attended.id, state: t(`sessionState.${state}`) }));
         if (closing) {
           personDone.mutate({ id: closing, note: close!.note }, {
@@ -618,7 +621,7 @@ export function WorkFrame({
           });
         }
       },
-      onError: failure(notify),
+      onError: answered ? (error) => answered.refused(sentence(error)) : failure(notify),
     });
   };
 

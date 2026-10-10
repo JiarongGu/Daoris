@@ -88,7 +88,8 @@ describe('the person’s done on a quest’s page (QUESTCLOSE1)', () => {
   });
 
   it('asks a decline in place with its reason: a refusal is said inside it, and it closes once it landed (UXFIX2b2b)', async () => {
-    const { onRespond } = page();
+    const onRespond = vi.fn();
+    page({ onRespond });
 
     await userEvent.click(header().getByRole('button', { name: 'Decline…' }));
     const ask = screen.getByRole('group', { name: 'decline this quest' });
