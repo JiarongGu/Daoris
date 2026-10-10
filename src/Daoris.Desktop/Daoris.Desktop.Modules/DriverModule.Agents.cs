@@ -95,6 +95,13 @@ public sealed partial class DriverModule
                     // release, "tool" runs the tool's own updater, and null offers none — the
                     // same rule again, after Update on a pinned door answered only a refusal.
                     Updates = toolchain is null ? null : HarnessActions.UpdateOf(toolchain, pinned),
+                    // Whether Daoris has an installer for this door (AGENTMARK1) — the test `InstallAsync` makes, so a
+                    // surface offering Install anyway is a button whose only outcome is a refusal; the page says
+                    // How to install where this is false.
+                    Installs = toolchain?.Install is { Count: > 0 },
+                    // The mark this tool wears on the page's strip (AGENTMARK1), declared by the harness; null leaves the
+                    // page to derive one.
+                    Mark = toolchain?.Mark,
                     // 🔴 Which TOOL's account this entry runs as, and which door it holds a
                     // session over. Both were already declared and neither reached the page,
                     // which is why the surface listed `claude-code` and `claude-code-acp` as two
