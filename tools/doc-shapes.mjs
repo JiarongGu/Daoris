@@ -32,7 +32,8 @@
  *
  * Every entry's words are counted as written, the list marker, the box and a table's pipes included,
  * because a reader pays for them, as `doc-budgets` says of a whole document. The canon's backlog-row
- * template is 44 words counted this way.
+ * template is 44 words counted this way. Fenced examples do not introduce entries; indented examples
+ * belonging to a real backlog row still contribute to its word count.
  *
  * - **A backlog row** is a checklist item at the start of a line and every indented line after it, blank
  *   lines between them included, until a line that is neither. A paragraph indented under an item after
@@ -126,8 +127,10 @@ const ROW = /^[-*] \[[ xX]\]\s*/;
 export function backlogRows(text) {
   const rows = [];
   let current = null;
-  for (const line of lines(text)) {
-    if (ROW.test(line)) {
+  const read = lines(text);
+  const inFence = fenced(read);
+  for (const [i, line] of read.entries()) {
+    if (!inFence[i] && ROW.test(line)) {
       current = [line];
       rows.push(current);
     } else if (current && (line.trim() === '' || /^\s/.test(line))) {
@@ -145,7 +148,10 @@ export function backlogRows(text) {
 /** Each router row whose first cell is a code span. */
 export function routerRows(text) {
   const rows = [];
-  for (const line of lines(text)) {
+  const read = lines(text);
+  const inFence = fenced(read);
+  for (const [i, line] of read.entries()) {
+    if (inFence[i]) continue;
     const first = /^\|\s*(`[^`]+`)\s*(?<!\\)\|/.exec(line);
     if (first) rows.push({ id: first[1], words: words(line) });
   }

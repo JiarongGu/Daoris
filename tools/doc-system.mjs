@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 // DOCSYS1: structural documentation drift. Semantic claims still require a source review.
 // Mirrors doc-duplicates.mjs: pure audit, an import-safe runner, no dependency and no file writes.
-import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isMain } from './fsx.mjs';
+import { fenced } from './doc-duplicates.mjs';
+import { isMain, repositoryFiles } from './fsx.mjs';
 
 function role(file) {
   if (file.startsWith('docs/index/')) return 'generated';
@@ -22,7 +22,10 @@ function role(file) {
 /** First cells of router tables, including the inline-code paths the link gate cannot check. */
 function routedPaths(file, text) {
   const paths = [];
-  for (const line of text.split(/\r?\n/)) {
+  const lines = text.split(/\r?\n/);
+  const inFence = fenced(lines);
+  for (const [i, line] of lines.entries()) {
+    if (inFence[i]) continue;
     const match = /^\|\s*(?:`([^`]+)`|\[[^\]]+\]\(([^)]+)\))\s*\|/.exec(line);
     // A Markdown section link still routes to its file; inline-code cells are literal paths.
     const value = match?.[1] ?? match?.[2]?.split(/[?#]/, 1)[0];
@@ -119,9 +122,7 @@ if (isMain(import.meta.url)) {
     }
     const root = dirname(dirname(fileURLToPath(import.meta.url)));
     // Include new documentation before staging; exclude ignored package copies and private scratch.
-    const listed = execFileSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'],
-      { cwd: root, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 }).split('\0').filter(Boolean);
-    const files = [...new Set(listed)].filter((file) => existsSync(join(root, file))).sort();
+    const files = repositoryFiles(root);
     const result = auditDocuments(files, (file) => readFileSync(join(root, file), 'utf8'));
     if (args[0] === '--json') console.log(JSON.stringify(result, null, 2));
     else {

@@ -72,6 +72,21 @@ test('a router row is a table row whose first cell is a code span, counted as wr
   ]);
 });
 
+test('fenced checklist and router examples are not live entries', () => {
+  for (const [open, close] of [['```markdown', '```'], ['~~~~', '~~~~'], ['````markdown', '```']] as const) {
+    const real = '- [ ] **REAL1 — live**: work';
+    const row = '| `real.md` | guide |';
+    const text = [real, row, open, '- [ ] **QUOTED1 — example**: work', '| `quoted.md` | example |', close].join('\n');
+    assert.deepEqual(shapes.backlogRows(text), [{ id: 'REAL1', words: shapes.words(real) }]);
+    assert.deepEqual(shapes.routerRows(text), [{ id: '`real.md`', words: shapes.words(row) }]);
+  }
+});
+
+test('an indented fenced example inside a real backlog entry still contributes to its reading cost', () => {
+  const text = ['- [ ] **REAL1 — live**: work', '  ```markdown', '  - [ ] quoted checklist', '  ```'].join('\n');
+  assert.deepEqual(shapes.backlogRows(text), [{ id: 'REAL1', words: shapes.words(text) }]);
+});
+
 test('an archive entry is a second-level heading, dated by the last date it names, and its outcome carries the label', () => {
   const text = [
     '# Archive', '',

@@ -81,6 +81,20 @@ A non-trivial defect needs the `fix-log` entry. Run `post-feature` over the actu
 completed task wording and a short dated outcome to `docs/task-archive.md`. The changelog describes
 release-facing behavior; it does not retell a documentation audit.
 
+## Review and refactor
+
+Use the generated orientation index to find existing helpers before adding another implementation.
+Within repository tooling, `tools/fsx.mjs:repositoryFiles` supplies a deterministic inventory of
+tracked and non-ignored new regular files, with an explicit repository root. The orientation
+generator and document audit share it. `tools/doc-duplicates.mjs:fenced` supplies the existing fence
+mask: quoted examples must not become live router, checklist or record entries.
+
+Keep a refactor's public exports and observable behavior unless the task changes their contract.
+Use behavior regressions for a reported defect and test the consumers reached by shared helpers.
+An indented example in a real backlog row still counts toward its reading cost. Deliberate runtime
+twins follow the [twins contract](../.claude/knowledge/twins.md); sharing a tooling helper does not
+replace their independent implementations and parity fixtures.
+
 ## Maintain the documentation
 
 Each fact has one home. User instructions belong in the root/component guides; current development

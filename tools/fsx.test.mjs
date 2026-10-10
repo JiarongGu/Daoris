@@ -1,6 +1,5 @@
 /**
- * The tooling's one atomic write and its one staged-tree snapshot (REFAC2, the 2026-10-07 second-opinion review's
- * refactors 4 and 5):
+ * Shared atomic writes, repository inventory and staged-tree snapshots:
  *
  *   node --test tools/fsx.test.mjs
  *
@@ -14,7 +13,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, s
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { stagedTree, writeAtomic } from './fsx.mjs';
+import { repositoryFiles, stagedTree, writeAtomic } from './fsx.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const scratch = join(here, '..', 'local', 'scratch', 'fsx-test');
@@ -147,6 +146,36 @@ function state(repo) {
     gitDir: readdirSync(gitDir).sort(),
   };
 }
+
+test('repositoryFiles reads tracked and new regular files, once, without changing Git state', () => {
+  const { repo, write } = repository('inventory');
+  write('.gitignore', 'ignored/\n');
+  write('tracked.md', 'tracked\n');
+  write('gone.md', 'deleted after staging\n');
+  write('directory.md', 'replaced by a directory after staging\n');
+  git(repo, ['add', '-A']);
+  rmSync(join(repo, 'gone.md'));
+  rmSync(join(repo, 'directory.md'));
+  write('directory.md/child.txt', 'regular child\n');
+  write('ignored/hidden.md', 'ignored\n');
+  write('ignored/tracked.md', 'tracked even though its directory is now ignored\n');
+  git(repo, ['add', '-f', 'ignored/tracked.md']);
+  write('new file.md', 'new\n');
+  write('Z.md', 'sort before lowercase\n');
+  write('é.md', 'sort after ASCII\n');
+  const before = state(repo);
+
+  assert.deepEqual(repositoryFiles(repo, { env: inherited }), [
+    '.gitignore', 'Z.md', 'directory.md/child.txt', 'ignored/tracked.md', 'new file.md', 'tracked.md', 'é.md',
+  ]);
+  assert.deepEqual(state(repo), before, 'inventory must leave the index, refs and working tree alone');
+});
+
+test('repositoryFiles refuses a nested directory instead of inventorying its parent repository', () => {
+  const { repo, write } = repository('inventory-root');
+  write('nested/file.md', 'nested\n');
+  assert.throws(() => repositoryFiles(join(repo, 'nested'), { env: inherited }), /not the top of a git work tree/);
+});
 
 /** The oracle, taken after the snapshot has been judged: the tree `git add -A` then `git write-tree` write. */
 function addedTree(repo) {

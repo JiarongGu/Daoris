@@ -5,6 +5,14 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## MAINT1 — review code and docs for future generation (2026-10-10)
+
+> - [ ] **MAINT1 — review code and docs for future generation** (tools/documentation). Consolidate duplicated generator inputs and keep quoted Markdown examples out of structural checks. Contract: D159 and the maintenance review; proof: failing-first regressions, inventory compatibility and baseline verification; record: `docs/2026-10-10-code-and-docs-review.md`.
+
+**Outcome.** Shared the tooling inventory reader, fixed fenced-example checks, preserved the generator
+API, refreshed contributor guidance and regenerated indexes. All 1,484 CLI tests, 60 tooling tests and
+five universal gates pass. Scope, findings and final review: `docs/2026-10-10-code-and-docs-review.md`.
+
 ## INTEGRATE2 — recover paused work and review UI/UX (2026-10-10)
 
 > - [ ] **INTEGRATE2 — recover paused work and review UI/UX** (parent). Finish recovery, checks, documentation and branch cleanup. Contract/proof: `docs/2026-10-10-integration-review.md`.

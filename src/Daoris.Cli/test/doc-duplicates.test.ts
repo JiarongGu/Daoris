@@ -39,6 +39,19 @@ test('a changelog line twice is a duplicate; a short or blank line is not', () =
   assert.deepEqual(duplicates(text, 'line'), ['- **A plugin remembers where it came from** (PLUG9 c).']);
 });
 
+test('quoted examples do not duplicate live records, while repeated live records still fail', () => {
+  for (const [kind, row] of [
+    ['decision', '## D104 — one'], ['heading', '## TASK1 — closed'],
+    ['row', '| `a.md` | contract |'], ['line', '- **A user-visible change** with a useful description.'],
+  ] as const) {
+    for (const [open, close] of [['```markdown', '```'], ['~~~~', '~~~~'], ['````markdown', '```']] as const) {
+      const example = [row, '', open, row, row, close].join('\n');
+      assert.deepEqual(duplicates(example, kind), [], `${kind}: ${open}`);
+      assert.equal(duplicates([row, row, '', open, row, close].join('\n'), kind).length, 1);
+    }
+  }
+});
+
 test('the records the attributes mark union are exactly the ones checked', async () => {
   const { readFileSync } = await import('node:fs');
   const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');

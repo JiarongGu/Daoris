@@ -1,11 +1,10 @@
 /**
- * The one filesystem helper the tooling shares. It existed five times — both rehearsals, the package
- * stager, and the web e2e host — each copy carrying the same one-line justification.
+ * Import-safe filesystem and Git operations shared within repository tooling.
  */
 import { spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import {
-  copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, writeFileSync,
+  copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, statSync, writeFileSync,
 } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,6 +25,35 @@ export function isMain(url) {
   } catch {
     return false;
   }
+}
+
+/**
+ * The work tree's regular files, tracked and non-ignored untracked, once each as Git's slash-separated
+ * paths sorted by code unit. Deleted files and directories are excluded. No Git state
+ * is written. `root` must be the tree's top so Git cannot silently answer for a parent repository.
+ * `env` defaults to the caller's environment; isolated fixtures can supply their own Git locations.
+ */
+export function repositoryFiles(root, { env = process.env } = {}) {
+  const options = { cwd: root, encoding: 'utf8', windowsHide: true, env, maxBuffer: 256 * 1024 * 1024 };
+  const top = spawnSync('git', ['rev-parse', '--show-toplevel'], options);
+  const real = (path) => {
+    const value = realpathSync(path).replace(/\\/g, '/').replace(/\/+$/, '');
+    return process.platform === 'win32' ? value.toLowerCase() : value;
+  };
+  if (top.status !== 0 || real(top.stdout.trim()) !== real(root)) {
+    throw new Error(`${root} is not the top of a git work tree`);
+  }
+  const listed = spawnSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], options);
+  if (listed.status !== 0) throw new Error(`git ls-files failed: ${listed.stderr?.trim() ?? listed.error?.message}`);
+  return [...new Set(listed.stdout.split('\0').filter(Boolean))]
+    .filter((path) => {
+      try {
+        return statSync(join(root, path)).isFile();
+      } catch {
+        return false;
+      }
+    })
+    .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 }
 
 /** The refusals that mean something still holds a file in the way, and give way once it lets go. */

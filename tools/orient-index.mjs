@@ -41,12 +41,11 @@
  *
  * Exit codes: 0 written or fresh · 1 stale · 2 a tool error (usage, not a work tree's top).
  */
-import { spawnSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, realpathSync, rmdirSync, rmSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, rmdirSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { byNumber, declaredDecisions, fenced, isNoteLabel } from './doc-duplicates.mjs';
-import { isMain, writeAtomic } from './fsx.mjs';
+import { isMain, repositoryFiles as listFiles, writeAtomic } from './fsx.mjs';
 import { LANES_FILE, laneMatcher, readLanes } from './merge-branch.mjs';
 
 export const INDEX = 'docs/index';
@@ -104,33 +103,8 @@ const isComment = (trimmed) => trimmed.startsWith('//') || trimmed.startsWith('/
 // ---------------------------------------------------------------------------------------------------
 // The files: what `git add -A` would stage, read with LF endings
 
-const samePath = (a, b) => {
-  const real = (path) => realpathSync(path).replace(/\\/g, '/').replace(/\/+$/, '');
-  return process.platform === 'win32' ? real(a).toLowerCase() === real(b).toLowerCase() : real(a) === real(b);
-};
-
-/**
- * The files of the work tree at `root`, as `/`-separated paths sorted by code unit: tracked and untracked, without
- * the ignored, the way `git add -A` would stage them. `root` must be the tree's top: git walks up from a folder that
- * is not a repository and would answer for the one above it.
- */
-export function listFiles(root) {
-  const top = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: root, encoding: 'utf8' });
-  if (top.status !== 0 || !samePath(top.stdout.trim(), root)) throw new Error(`${root} is not the top of a git work tree`);
-  const listed = spawnSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], {
-    cwd: root, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024,
-  });
-  if (listed.status !== 0) throw new Error(`git ls-files failed: ${listed.stderr.trim()}`);
-  return [...new Set(listed.stdout.split('\0').filter(Boolean))]
-    .filter((path) => {
-      try {
-        return statSync(join(root, path)).isFile();
-      } catch {
-        return false;
-      }
-    })
-    .sort(compare);
-}
+// Preserve the generator's public helper name; inventory semantics live in fsx.
+export { listFiles };
 
 /** One read of each file, BOM-less and with LF endings, for every section that needs it. */
 function reader(root, files) {

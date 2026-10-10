@@ -57,12 +57,14 @@ const SEPARATOR = /^\|(\s*:?-+:?\s*\|)+\s*$/;
 /**
  * What appears twice in a record's text, by its kind: a decision's number (`## D106`), a second-level
  * heading, a table row's first cell (header rows skipped: several tables share one header), or a whole
- * list line in the changelog. Each duplicate once, in the order first seen twice.
+ * list line in the changelog. Fenced examples are excluded. Each duplicate once, in the order first seen twice.
  */
 export function duplicates(text, kind) {
   const lines = text.replace(/\r\n/g, '\n').split('\n');
+  const inFence = fenced(lines);
   const keys = [];
   lines.forEach((line, i) => {
+    if (inFence[i]) return;
     if (kind === 'decision') {
       const m = /^## (D\d+)\b/.exec(line);
       if (m) keys.push(m[1]);

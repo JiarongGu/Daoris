@@ -7,6 +7,19 @@ repository.
 
 ## 2026-10-10 — review fixes
 
+### Documentation tooling: fenced examples were treated as live records (MAINT1)
+
+- **Symptom:** quoted router rows reported nonexistent documents or hid missing coverage; quoted
+  checklists and record examples inflated shape reports or triggered duplicate failures.
+- **Root cause:** router, backlog and generic duplicate readers matched each raw line without the
+  fence mask already used by archive and decision readers.
+- **Fix:** reuse `doc-duplicates.mjs:fenced` across those readers. An indented example belonging to
+  a real backlog row still contributes to its word count.
+- **Verify:** four failing-first defect cases; backtick, tilde and unclosed longer fences, repeated
+  live entries and nested example cost. Focused tests pass; final baseline receipt:
+  `docs/2026-10-10-code-and-docs-review.md`.
+- **Commit:** pending.
+
 ### Documentation: a freshness declaration passed after its source disappeared (DOCSYS2)
 
 - **Symptom:** the structural audit accepted a guide mapped to a nonexistent source file or directory;

@@ -27,6 +27,22 @@ test('a stale router row fails even when the row is an inline code path', () => 
   assert.ok(audit({}, ['docs/development.md']).findings.some((x) => x.includes('docs/development.md')));
 });
 
+test('quoted router examples do not report nonexistent documents', () => {
+  for (const fence of ['```markdown', '~~~~']) {
+    assert.deepEqual(audit({
+      'docs/README.md': `${base['docs/README.md']}\n${fence}\n| \`missing.md\` | example |\n${fence.startsWith('~') ? '~~~~' : '```'}\n`,
+    }).findings, []);
+  }
+});
+
+test('a router example cannot supply coverage for a real document, even in an unclosed fence', () => {
+  const result = audit({
+    'docs/README.md': `${base['docs/README.md']}\n\`\`\`\`markdown\n| \`unrouted.md\` | example |\n\`\`\`\n`,
+    'docs/unrouted.md': '# Real document',
+  });
+  assert.ok(result.findings.some((x) => x.includes('docs/unrouted.md') && x.includes('no row')));
+});
+
 test('a nested guide must be routed; the archive routes its own files', () => {
   assert.ok(audit({ 'examples/plugins/new/README.md': '# New plugin' }).findings.some((x) => x.includes('examples/plugins/new/README.md')));
   assert.ok(audit({ 'docs/archive/forgotten.md': '# Forgotten' }).findings.some((x) => x.includes('docs/archive/forgotten.md')));

@@ -6,7 +6,8 @@ with the version and date at release.
 ## Unreleased
 
 - Contributor guidance is shared across agents; development verification checks documentation routing
-  and guide freshness declarations, including missing described source paths.
+  and guide freshness declarations, including missing described source paths. Document checks ignore
+  fenced examples when finding live entries, and share the orientation generator's file inventory.
 
 - Named workflows govern landing, review and opinion from their bound version. Damaged run bindings
   hold the work until they can be read, preserving its required checks.
