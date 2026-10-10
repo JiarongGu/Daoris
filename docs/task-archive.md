@@ -12984,3 +12984,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6g2b — the go twin reaches the workspace's page** (driver + web twin). Retire the `workspace`/`permissions` domains into `Kept`; the page's tabs and sections become go parts, since every place is one Ask Daoris can name (D161 §3). D150 §3.1/§4.3, UX6i2a note; twins.
 
 **Outcome** 2026-10-11: six `workspace-*` parts under `projects` (Details, Branches, Workflow, Setup, Defaults, Remote and reach) open the workspace in view; the two Settings domains are gone and seven `Kept` rows land old spellings, parts included (amending UX6i2a's "refused"). Detail: D150's UX6g2b note.
+
+
+## UX6g2c — the service's go text names the workspace's page (2026-10-11, D150)
+
+> - [ ] **UX6g2c — the service's go text names the workspace's page** (service; proposed by UX6g2b's hand-back). `go_propose`'s domain and part descriptions still offered `workspace`, `permissions` and "lines under workspace".
+
+**Outcome** 2026-10-11: `go_propose` lists Settings' six domains and the six `workspace-*` parts under `projects`; its text test pins both. The merge brought the service README's `go_propose` line up to places and parts. Detail: the merge commit.
