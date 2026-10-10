@@ -568,6 +568,13 @@ describe('each folded section’s line', () => {
     expect(doorsSummary(tool!, 'claude-code')).toBe('direct 2.1.4, for driven work · protocol 0.9.1');
   });
 
+  it('keeps a Chinese word tight to the Chinese word beside it, and a number apart (UX7d-2)', () => {
+    i18n.changeLanguage('zh');
+    const [tool] = byTool([claude({ present: false }), { ...claude(), harness: 'claude-code-acp', wire: 'acp', accountOf: 'claude-code', version: '0.9.1' }]);
+    expect(doorsSummary(tool!, 'claude-code')).toBe('直连未安装 · 协议 0.9.1');
+    expect(usageSummary(3)).toBe('已测量 3 个会话');
+  });
+
   it('says what it may do: the defaults on, the person’s rules and the proposals waiting', () => {
     const rules = {
       path: 'p', defaults: [
