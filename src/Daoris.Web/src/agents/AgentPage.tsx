@@ -785,8 +785,8 @@ export function AgentPage({
                   </Button>
                 )}
                 {/* ACCTUX3: open until the save lands, never closed on the press, so a refused one keeps the choice made and
-                    says why under it (ACCTEDIT1's contract). Its way out waits with the save, so a refusal is never said to
-                    nobody; the form does not hold its own *Never mind* while it saves, so the page does. */}
+                    says why under it (ACCTEDIT1's contract). The form holds its own *Never mind* while it saves
+                    (SETTINGSWAIT1), so a refusal is never said to nobody. */}
                 {tuning === account.name && (
                   <AccountSettingsForm
                     harness={door.harness}
@@ -798,7 +798,7 @@ export function AgentPage({
                     onSave={(change) => acts.onSaveSettings(account.name, labelOf(account.name), change, answered('settings', account.name, () => {
                       setTuning((was) => (was === account.name ? null : was));
                     }))}
-                    onCancel={() => { if (!settingsBusy) askSettings(null); }}
+                    onCancel={() => askSettings(null)}
                   />
                 )}
                 {tuning === account.name && refusalOf('settings', account.name) && (

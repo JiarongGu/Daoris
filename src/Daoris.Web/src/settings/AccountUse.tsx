@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { moment } from '../format';
 import { shellWord } from '../shellWord';
+import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import { Button, CheckField, Icon, Inline, Pill, Prose, Segmented, SelectField, SettingRow, Tip } from '../ui';
 import {
   type AccountCooling, type AccountFacts, type AccountScope, type AccountUseChange, type AgentAccounts, cannotLeave,
@@ -159,7 +160,8 @@ export type ScopeActs = {
   /** How the list is used: one setting at a time, a field left out unchanged. */
   onUse: (workspace: string | null, change: AccountUseChange) => void;
   /** A workspace returned to this machine's accounts: its default, list and settings cleared at once. */
-  onInherit: (workspace: string) => void;
+  /** Told how it ended, so the ask stays open while it runs and says a refusal inside it (UXFIX2b3c). */
+  onInherit: (workspace: string, answered: Answered) => void;
 };
 
 /**
@@ -445,27 +447,19 @@ export function WorkspaceScope({ agent, product, workspace, scope, machine, acco
       >
         {!own && <p className="m-0 text-small text-ink-soft">{inherits}</p>}
         {confirming && scope !== null && (
-          <div
-            role="group"
-            aria-label={t('harness.use.scope.confirmMove')}
-            className="mt-1 flex flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2"
-          >
-            <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft">
-              <Inline text={t('harness.use.scope.confirm', { workspace, agent: agent.agent })} />
-            </span>
-            <Button
-              variant="danger"
-              disabled={busy}
-              onClick={() => {
-                setConfirming(false);
-                setOpening(false);
-                acts.onInherit(workspace);
-              }}
-            >
-              {t('harness.use.scope.confirmMove')}
-            </Button>
-            <Button variant="ghost" onClick={() => setConfirming(false)}>{t('common.cancel')}</Button>
-          </div>
+          // UXFIX2b3c: the shared ask stays open while the act runs and says a refusal inside it (ACCTEDIT1's contract).
+          <InlineConfirm
+            label={t('harness.use.scope.confirmMove')}
+            says={<Inline text={t('harness.use.scope.confirm', { workspace, agent: agent.agent })} />}
+            meanIt={t('harness.use.scope.confirmMove')}
+            busy={busy}
+            className="mt-1"
+            onConfirm={(answered) => acts.onInherit(workspace, {
+              done: () => { setOpening(false); answered.done(); },
+              refused: answered.refused,
+            })}
+            onClose={() => setConfirming(false)}
+          />
         )}
       </SettingRow>
       {own && (
