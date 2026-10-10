@@ -133,6 +133,8 @@ describe('noteLines', () => {
     expect(chinese.text).toMatch(/^它运行时用的 claude-code 账户达到了每周上限，冷却至 .+（智能体如此说明），在此之前不会在它上面启动任何会话。$/);
     expect(noteLines(zh, { parts: [limit('session')] }, 'zh')[0].text).toContain('达到了5 小时上限');
     expect(noteLines(t, { parts: [limit('monthly')] }, 'en')[0].text).toContain('hit its monthly limit');
+    expect(noteLines(t, { parts: [limit('90-minute')] }, 'en')[0].text).toContain('hit its 90-minute limit');
+    expect(noteLines(zh, { parts: [limit('90-minute')] }, 'zh')[0].text).toContain('达到了90 分钟上限');
 
     const none = coded('account.cooling-no-window', 'The `codex` account it ran on is cooling until …', {
       until: '2026-10-03T16:00:00Z', why: 'default', owner: 'codex',

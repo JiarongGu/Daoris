@@ -18,7 +18,8 @@ with the version and date at release.
   Plugins from an earlier conversation opens where that place went.
 - Account rows show each usage window as its own cell, in the same place on every row: the share used,
   a bar of that window's allowance, its reset and how old its reading is. A window the agent has not
-  reported says *unknown*, never 0%.
+  reported says *unknown*, never 0%. A Codex window that is neither five hours nor a week is named in
+  the reader's language (*90 分钟*).
 - An API key its provider refused says *key refused* on the start form, and Settings' next start says a
   new key repairs it, where both told you to sign in.
 - Deleting a tool version, removing a plugin, retiring a repository, pausing or abandoning work,

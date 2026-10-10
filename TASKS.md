@@ -48,7 +48,6 @@ Original row proofs remain in the frozen backlog; measurements precede declarati
 - [ ] **ACCTUX4i — installed account cells, and the row budget** (parent; after republish). Shots at 1546/680, English light and 中文 dark: read, never-read, key and own sign-in, cool-off, Codex. Settle D152's row budget against D125's ACCTUX4 measures.
 - [ ] **ACCTUX4b — Next start above the accounts** (web). One sentence naming the next account and why, with *first* marking `scope.next`. Second-opinion review lines 125, 128-133; D152 §4.2; `agents.test.ts`, `AgentsView.test.tsx`, stories at 52rem/37rem.
 - [ ] **ACCTPLAN1 — plan, spend and reset credits** (driver/modules/web; design first). Nothing reads them yet (D125:898-899); show them in a fold, and never redeem a credit without `InlineConfirm`. Second-opinion review lines 132-133.
-- [ ] **WINDOWNAME1 — `<n>-minute` windows in the reader's language** (web-settings). Codex's other windows show *90-minute* in 中文 too. D125's CODEXUSE1 note; a 中文 case in `accounts.test.ts`.
 - [ ] **ACCTNAME1 — email names read once** (CLI/driver/web). Avoid duplicate email/name; size roster columns. D125 notes; long-name and equal-email cases.
 - [ ] **KEYREPLACE1 — replace refused keys in place** (all doors; after ACCTUX1). Preserve account lists; clear refusal/cooling. D67/D125; key-file twins, route and row tests.
 - [ ] **AGENTMARK1 — declared strip marks** (driver/modules; after ACCTUX2). Forward CC/Cx with each product. UX7 §4.6; roster/680 px proof.

@@ -12949,3 +12949,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6g3 — the page's own words name the workspace's page** (web). `projects.json:41-42` ("Settings → Workspace lists it", en/zh) and comments in `opener.ts`, `SettingsView.tsx`, `bridge/driver.ts`, `help/starters.ts`. D150 §3.1.
 
 **Outcome** 2026-10-11: the unlanded-branches sentence (en/zh) says the workspace's page lists it under Branches, and four comments point at Repositories → the workspace's page. Detail: the merge commit.
+
+
+## WINDOWNAME1 — `<n>-minute` windows in the reader's language (2026-10-11, D125)
+
+> - [ ] **WINDOWNAME1 — `<n>-minute` windows in the reader's language** (web-settings). Codex's other windows show *90-minute* in 中文 too. D125's CODEXUSE1 note; a 中文 case in `accounts.test.ts`.
+
+**Outcome** 2026-10-11: `windowName` parses `<n>-minute` once and says `harness.window.minutes` (en "{{n}}-minute", zh "{{n}} 分钟"); the cooling note's formatter shares it, so the account cells, Settings' usage sentence and a cooling note all name it in the reader's language. Detail: the merge commit.

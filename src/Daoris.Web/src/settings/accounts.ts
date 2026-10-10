@@ -217,9 +217,18 @@ export function coolingLine(cooling: AccountCooling, now: Date = new Date()): st
   });
 }
 
-/** A window by its name, in the reader's language; a name this build does not know is said as it is. */
-export function windowName(window: string): string {
-  return i18n.t(`harness.window.${window}`, { defaultValue: window });
+/**
+ * A window by its name, in the reader's language; a name this build does not know is said as it is. The driver names a Codex
+ * window of any other length `<n>-minute` (D125's CODEXUSE1 note), worded here with its digits (WINDOWNAME1). The cooling note's
+ * lines hand in their own `t`.
+ */
+export function windowName(
+  window: string,
+  t: (key: string, options?: Record<string, unknown>) => string = (key, options) => i18n.t(key, options),
+): string {
+  const minutes = /^(\d+)-minute$/.exec(window);
+  if (minutes) return t('harness.window.minutes', { n: minutes[1], defaultValue: window });
+  return t(`harness.window.${window}`, { defaultValue: window });
 }
 
 /** A share as a whole percent, in the reader's own figures. */

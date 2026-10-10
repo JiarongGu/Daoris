@@ -1,5 +1,6 @@
 import type { NotePart } from '../api';
 import { list, moment } from '../format';
+import { windowName } from '../settings/accounts';
 import { reasonOf } from './say';
 
 // A session's note as the page words it (LANG1b, D142; the language design §2, §5, §6): each coded part from its code and
@@ -190,7 +191,7 @@ function said(t: Translate, name: string, values: Record<string, unknown>, code:
     }
     case 'window': {
       const window = typeof value === 'string' && value.length > 0 ? value : null;
-      return window === null ? null : t(`harness.window.${window}`, { defaultValue: window });
+      return window === null ? null : windowName(window, t);
     }
     default:
       return text(value);
