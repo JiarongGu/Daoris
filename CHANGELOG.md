@@ -296,8 +296,9 @@ The first version: doctrine that installs, is checked, and flows back.
 
 ### The tool
 
-- **Seventeen commands.** `analyze` reports what adopting would do before it does it; `init` writes a
-  manifest and reports what is available without guessing;
+- **Eighteen commands.** `analyze` reports what adopting would do before it does it; `init` writes a
+  manifest and reports what is available without guessing; `wire` moves a registered
+  repository to a workspace (`--workspace W`), and changes nothing else about it;
   `sync` materializes the selected packs and writes the lock; `check` gates on drift, staleness and
   index freshness, and **reports** the always-loaded budget rather than failing on it (a fact gates, a
   judgement reports — D54); `upstream` promotes a locally-improved file back into the

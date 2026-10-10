@@ -57,6 +57,7 @@ below can contact services or download tools when invoked.
 | `doctor` | Reports local documents that look like canonical ones under a different name. **Advisory — never fails** |
 | `connect` | Registers this repo with a knowledge service: what it owns and accepts, and (`--workspace`) its circle |
 | `retire` | Takes a repository off this machine's registry; **no file, history or doctrine is touched** |
+| `wire` | Moves a registered repository to a workspace (`wire <repo> --workspace W`); only its workspace changes |
 | `import` | Registers a folder's subdirectories in one go, safe to re-run; `--workspace` names their circle |
 | `remote` | This machine's remotes, one per workspace: `list`, `add <workspace> --url … [--key …]`, `remove <workspace>`. **Edits one file under the home; talks to nothing** |
 | `agent` | Agents (Claude Code, Codex, DeepSeek Harness as `dsh`) and the accounts they run as: `list`, `install`/`update`/`login <agent>`, `profile list\|add\|remove\|default\|rename\|join …`. **Spawns each agent's own tooling; keeps no sign-in** |

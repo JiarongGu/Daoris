@@ -46,6 +46,36 @@ export async function commandRetire({ root, argv, write }: CommandArgs): Promise
 }
 
 /**
+ * Move a registered repository to a workspace by name — the terminal door of the drawer's Move to
+ * workspace and Ask Daoris's `repository_propose` (WIRE1, D50, D161's ENTRY1d1 note).
+ *
+ * @remarks
+ * Re-wiring only: the route changes the workspace and nothing else about the row, unlike
+ * `connect --workspace`, which registers the whole row again from inside the checkout. A repository the
+ * registry does not hold (404) and a workspace outside a shared host's circle (409) are the service's own
+ * sentences, relayed as refusals.
+ */
+export async function commandWire({ argv, write }: CommandArgs): Promise<ExitCode> {
+  const workspace = flagValue(argv, '--workspace');
+  const repository = operands(argv, new Set(['--workspace']))[0];
+  if (repository === undefined || workspace === undefined) {
+    throw new DaorisError('usage: daoris wire <repository> --workspace <name> — e.g. `daoris wire aurora-engine --workspace work`.');
+  }
+
+  if (argv.includes('--dry-run')) {
+    write(`daoris: would move \`${repository}\` to workspace \`${workspace}\``);
+    return 0;
+  }
+
+  const { status, json } = await request(
+    'POST', `/api/registry/${encodeURIComponent(repository)}/workspace`, { workspace });
+  if (status < 200 || status >= 300) throw new DaorisError(refusal(status, json), 1);
+
+  write(`daoris: \`${repository}\` is now in workspace \`${workspace}\`.`);
+  return 0;
+}
+
+/**
  * Register everything a folder's subdirectories propose — the bootstrap, run deliberately (D48 §3).
  *
  * @remarks
