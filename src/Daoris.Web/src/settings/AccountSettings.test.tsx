@@ -171,5 +171,7 @@ describe("an account's own settings", () => {
       </Tooltip.Provider>,
     );
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    // SETTINGSWAIT1: Never mind waits with Save, so a press is not ignored by the page.
+    expect(screen.getByRole('button', { name: 'Never mind' })).toBeDisabled();
   });
 });
