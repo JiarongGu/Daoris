@@ -42,7 +42,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     [InlineData("settings", "workspace", "colours", "no part `colours`")]
     [InlineData("quests", null, "drawer", "no part `drawer`")]
     [InlineData("quests", "agents", null, "a domain is a part of Settings")]
-    // UX6e2: Settings → Agents and Permissions' Proposals left Settings for the Agents place.
+    // UX6e2: the Settings Agents domain and Permissions' Proposals left Settings for the Agents place.
     [InlineData("settings", "agents", null, "no Settings domain `agents`")]
     [InlineData("settings", "permissions", "proposals", "no part `proposals` of `permissions`")]
     [InlineData("agents", null, "workspaces", "no part `workspaces` of `agents`")]
