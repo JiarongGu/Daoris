@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- A set-up step Daoris cannot show here is worded in full in English and in Chinese, naming its environment and why,
+  where a Chinese window mixed in the driver's English sentence.
 - An agent Daoris has no installer for offers *How to install* in the Agents list, where it offered Install: it
   opens the agent's page and installs nothing. Its page shows no Install and says the agent is installed with its
   maker's own tooling.

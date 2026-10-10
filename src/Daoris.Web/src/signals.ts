@@ -90,6 +90,12 @@ export interface Consideration {
    * every other verdict, and on an older shell.
    */
   takenBy?: { machine?: string | null; session?: string | null; here?: boolean; last: string } | null;
+  /**
+   * For a set-up step the planner cannot show (verdict `CannotShow`, CANNOTSHOW1a): why, as a code (`unnamed`: no review rule
+   * here names the environment; `no-address`: a local environment declares no address; `no-window`: a local environment and no
+   * window to show it in), the environment's name and its address where it has one. Null or absent otherwise, and on an older shell.
+   */
+  cannotShow?: { code: string; environment: string; address: string | null } | null;
 }
 
 /**
@@ -175,8 +181,7 @@ export function sittingBecause(considered: readonly Consideration[], quest: stri
  * SESSUX1d), `Exhausted`, whose number of failed sessions it names (`strikes`, SESSUX1i), `Paused`, whose ask or
  * quest it names (`pausedBy`, PAUSE1e), a `Blocked` hold that is an update's drain (`forUpdate`, UPDATE1),
  * `TakenElsewhere`, whose take it names (`takenBy`, CARRY2c), and `CannotShow` (REVIEWENV1c2), a set-up step with nowhere to
- * show its work here, said in the reader's language with the driver's sentence beneath as written, since it names an
- * environment, an address and the door that declares one, which the tick does not carry. The rest
+ * show its work here, said from the environment and the reason the tick names (`cannotShow`, CANNOTSHOW1b). The rest
  * keep the driver's words, since their sentences name a session or a cap the tick does not carry, and
  * so does a verdict the page has not heard of, and a stop, a park or a take on a shell that names no session,
  * number or machine. English passes the driver's sentence through as its only copy, as the rules' defaults do
@@ -194,6 +199,16 @@ export function sittingSentence(sitting: Consideration): string {
     return i18n.t('work.sitting.TakenElsewhere', {
       why: sitting.reason, quest: sitting.quest, machine: taken.machine, session: taken.session, last: taken.last,
       context: taken.here ? 'here' : named ? undefined : 'another', defaultValue: sitting.reason,
+    });
+  }
+  // A set-up step with nowhere to show its work (CANNOTSHOW1b, D154) is said from the fact the tick carries: which of the three
+  // reasons, the environment and its address; with no fact, or a code the page has not heard of, the driver's words.
+  if (sitting.verdict === 'CannotShow') {
+    const fact = sitting.cannotShow;
+    const context = fact && ({ unnamed: 'unnamed', 'no-address': 'noAddress', 'no-window': 'noWindow' } as Record<string, string>)[fact.code];
+    if (!fact || !context) return sitting.reason;
+    return i18n.t('work.sitting.CannotShow', {
+      why: sitting.reason, environment: fact.environment, address: fact.address ?? '', context, defaultValue: sitting.reason,
     });
   }
   // A pause (PAUSE1e, D132 §2.3) is said from whose it is, an ask's or a quest's own; with none named, the driver's words.
