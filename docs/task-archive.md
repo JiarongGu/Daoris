@@ -21,6 +21,10 @@ gate 46 s; deployment rehearsal: 6 m 41 s. No flake or automatic rerun was repor
 timing reports: `local/scratch/full-16e1872/`; retained web/rehearsal receipts:
 `local/scratch/merge-worktree-agent-a69113e55f82af261/`. No installation or push was performed.
 
+**Final records.** Archiving shifted D157's generated source range by one line. Four baseline
+checks passed on `b97fdf95`; the other ten verdicts remain valid: fourteen of fourteen. Logs:
+`local/scratch/full-b97fdf9/`.
+
 ## WORKFLOW1f — the gate reads the run's version (2026-10-10)
 
 > - [ ] **WORKFLOW1f — the gate reads the run's version** (driver, modules; after e, XAGENT1f). Landing, look, opinion and automatic acceptance read their process from a named version, Current unchanged; a step that cannot start sits, saying why; a kind's paths hold; the landing record, trace and log. Contract: §2.3, §4.4–§4.6, §5. Proof: `WorkflowGateTests`; `ReviewLandingTests`, `AutoLandingTests` rows (`Process`).
