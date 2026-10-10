@@ -1,4 +1,4 @@
-import { Children, type ReactNode, useId, useState } from 'react';
+import { Children, Fragment, type ReactNode, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Icon, Menu, type MenuAct, Pill, Tip, WhyGlyph } from '../ui';
 import { type AccountState, type AccountUsage, readLine, stateWhen, stateWord, type WindowCell } from './agents';
@@ -18,20 +18,30 @@ function Allowance({ used, warned }: { used: number; warned: boolean }) {
 }
 
 /**
- * One window's cell (ACCTUX4): its name, its bar, what a person acts on in the ink (ACCTUX1: at 11 px in the faint ink the
- * line read 3.38:1 in light, as metadata, which it is not), then its reset and its reading's age in the soft ink. Each part
- * keeps its words together and the cell wraps between them, so a narrow row stacks a cell's times under its share. An
- * unknown window says so in the soft ink, with no bar.
+ * One window's cell (ACCTUX4): its name, its bar and what a person acts on in the ink (ACCTUX1: at 11 px in the faint ink
+ * the line read 3.38:1 in light, as metadata, which it is not); then its reset and its reading's age together in the soft
+ * ink, on the same line where the cell is wide enough and whole on the next where it is not, the mock-ups' two lines, never
+ * a time stranded on a line of its own. An unknown window says so in the soft ink, with no bar.
  */
 function WindowCellView({ cell }: { cell: WindowCell }) {
   return (
-    <span data-window={cell.window} className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
-      <span className="whitespace-nowrap text-ink-soft">{cell.name}</span>
-      {cell.used !== null && <Allowance used={cell.used} warned={cell.warned} />}
-      <span className={cell.known ? 'text-ink' : 'text-ink-soft'}>{cell.reading}</span>
-      {cell.times.map((time) => (
-        <span key={time} className="whitespace-nowrap text-ink-soft before:mr-1.5 before:text-ink-faint before:content-['·']">{time}</span>
-      ))}
+    <span data-window={cell.window} className="flex min-w-0 flex-wrap items-baseline gap-x-3">
+      <span className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
+        <span className="whitespace-nowrap text-ink-soft">{cell.name}</span>
+        {cell.used !== null && <Allowance used={cell.used} warned={cell.warned} />}
+        <span className={cell.known ? 'text-ink' : 'text-ink-soft'}>{cell.reading}</span>
+      </span>
+      {cell.times.length > 0 && (
+        <span className="min-w-0 text-ink-soft">
+          {/* Each time whole; the floor's narrow cell breaks between them. */}
+          {cell.times.map((time, at) => (
+            <Fragment key={time}>
+              {at > 0 && <span className="text-ink-faint"> · </span>}
+              <span className="whitespace-nowrap text-ink-soft">{time}</span>
+            </Fragment>
+          ))}
+        </span>
+      )}
     </span>
   );
 }
