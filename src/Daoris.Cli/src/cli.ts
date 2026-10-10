@@ -13,6 +13,7 @@ import { command as status } from './cli/status.ts';
 import { command as doctor } from './cli/doctor.ts';
 import { command as connect } from './cli/connect.ts';
 import { command as retire } from './cli/retire.ts';
+import { command as wire } from './cli/wire.ts';
 import { command as importFolders } from './cli/import.ts';
 import { command as remote } from './cli/remote.ts';
 import { command as agent } from './cli/agent.ts';
@@ -44,6 +45,7 @@ export const COMMANDS: readonly CliCommand[] = [
   doctor,
   connect,
   retire,
+  wire,
   importFolders,
   remote,
   agent,
@@ -58,7 +60,7 @@ const USAGE = [
   '',
   ...COMMANDS.flatMap((command) => command.usage),
   '',
-  '  connect, retire and import are the MANAGEMENT commands: opt-in, they talk to a',
+  '  connect, retire, wire and import are the MANAGEMENT commands: opt-in, they talk to a',
   '  service, and no gate ever runs them. remote, agent, driver, plugin, browser and',
   '  tool are management too — they edit files under the Daoris home ($DAORIS_HOME,',
   "  the installed application's own data folder; nothing lives under your profile),",

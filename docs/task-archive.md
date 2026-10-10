@@ -13061,3 +13061,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ENTRY1d1 — Ask Daoris moves a repository to a workspace** (driver/service/modules/web; in flight). A `repository` kind names a registered repository and a workspace; the driver judges, the person applies through the drawer's route. D161's ENTRY1d note; the coverage table's wire row becomes its door.
 
 **Outcome** 2026-10-11: a `repository` kind (`repository_propose`, door `wire`) proposes moving a registered repository, adopted or not, to a named workspace, a new one allowed; the driver refuses an unknown repository or a move to where it is; Apply posts the drawer's route and the page re-reads the registry. No terminal verb exists for the act (WIRE1). Detail: D161's ENTRY1d1 note.
+
+
+## WIRE1 — a terminal door for moving a repository (2026-10-11, D50)
+
+> - [ ] **WIRE1 — a terminal door for moving a repository** (cli; D50). The page and Ask Daoris move a repository's workspace; no terminal verb edits that one field (`connect --workspace` re-registers the row). D161's ENTRY1d1 note; D50's twin rule.
+
+**Outcome** 2026-10-11: `daoris wire <repository> --workspace <name>` posts the drawer's route and changes that field only; an unknown repository (404) or a shared host's boundary (409) is refused in the service's words, exit 1; `--dry-run` asks nothing. The README table and the changelog's command count name it. Detail: D161's WIRE1 note.

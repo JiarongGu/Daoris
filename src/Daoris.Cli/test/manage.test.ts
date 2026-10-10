@@ -1,6 +1,6 @@
 import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { commandRetire, commandImport } from '../src/manage.ts';
+import { commandRetire, commandImport, commandWire } from '../src/manage.ts';
 import { DaorisError } from '../src/errors.ts';
 import { makeFixture } from './_fixture.ts';
 
@@ -195,6 +195,65 @@ test('a refusal reaches the person verbatim, as a policy failure', async () => {
     assert.match(error.message, /fed, not scanned/);
   }
 
+  fx.cleanup();
+});
+
+/** WIRE1: the terminal door of the drawer's Move to workspace (D50, D161's ENTRY1d1 note). */
+test('wire moves a named repository by the re-wiring route, and says so', async () => {
+  const fx = makeFixture('wire-ok');
+  process.env.DAORIS_SERVICE_URL = 'http://localhost:5177';
+  stubService(200, { repository: 'aurora-engine', inWorkspace: 'work' });
+
+  const { out, result } = run(commandWire, fx.root, ['--workspace', 'work', 'aurora-engine']);
+  assert.equal(await result, 0);
+
+  assert.equal(calls[0]!.method, 'POST');
+  assert.match(calls[0]!.url, /\/api\/registry\/aurora-engine\/workspace$/);
+  assert.deepEqual(calls[0]!.body, { workspace: 'work' });
+  assert.deepEqual(out, ['daoris: `aurora-engine` is now in workspace `work`.']);
+  fx.cleanup();
+});
+
+test('wire needs a repository and a workspace, and sends nothing without them', async () => {
+  const fx = makeFixture('wire-usage');
+  process.env.DAORIS_SERVICE_URL = 'http://localhost:5177';
+  stubService(200, {});
+
+  for (const argv of [[], ['aurora-engine'], ['--workspace', 'work']]) {
+    await assert.rejects(async () => run(commandWire, fx.root, argv).result, (error: unknown) =>
+      error instanceof DaorisError && error.exitCode === 2 && /daoris wire <repository> --workspace <name>/.test(error.message));
+  }
+  assert.equal(calls.length, 0);
+  fx.cleanup();
+});
+
+test('wire --dry-run asks nothing of the service', async () => {
+  const fx = makeFixture('wire-dry');
+  process.env.DAORIS_SERVICE_URL = 'http://localhost:5177';
+  stubService(200, {});
+
+  const { out, result } = run(commandWire, fx.root, ['aurora-engine', '--workspace', 'work', '--dry-run']);
+  assert.equal(await result, 0);
+  assert.equal(calls.length, 0);
+  assert.match(out[0]!, /would move `aurora-engine` to workspace `work`/);
+  fx.cleanup();
+});
+
+test('wire relays the unknown repository and the shared host boundary in the service\'s words, as refusals', async () => {
+  const fx = makeFixture('wire-refused');
+  process.env.DAORIS_SERVICE_URL = 'http://localhost:5177';
+
+  for (const [status, said] of [[404, '`nope` is not registered here'], [409, 'this host serves one circle']] as const) {
+    stubService(status, { error: said });
+    await assert.rejects(async () => run(commandWire, fx.root, ['nope', '--workspace', 'work']).result, (error: unknown) =>
+      error instanceof DaorisError && error.exitCode === 1 && error.message === said);
+  }
+  fx.cleanup();
+});
+
+test('wire without a service url names the variable', async () => {
+  const fx = makeFixture('wire-no-url');
+  await assert.rejects(async () => run(commandWire, fx.root, ['a', '--workspace', 'w']).result, /DAORIS_SERVICE_URL/);
   fx.cleanup();
 });
 
