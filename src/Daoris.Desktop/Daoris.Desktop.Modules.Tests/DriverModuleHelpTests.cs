@@ -146,6 +146,29 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
         Assert.Equal("quests", go.GetProperty("view").GetString());
         Assert.Equal(JsonValueKind.Null, go.GetProperty("part").ValueKind);
         Assert.Equal(item, go.GetProperty("item").ValueKind == JsonValueKind.Null ? null : go.GetProperty("item").GetString());
+        Assert.Equal(JsonValueKind.Null, go.GetProperty("workspace").ValueKind);
+    }
+
+    /// <summary>
+    /// ENTRY1d2a (D161's ENTRY1d note): a go to Add repository or Import a folder answers the workspace the drawer opens with,
+    /// the page's <c>HelpSettled.go.workspace</c>, the driver's judged spelling; one with none answers none, as an item.
+    /// </summary>
+    [Theory]
+    [InlineData("add", "work")]
+    [InlineData("import", "Team Alpha")]
+    [InlineData("add", null)]
+    public void A_gos_answer_names_its_workspace(string part, string? workspace)
+    {
+        var proposal = new HelpProposal("g2", "go", "go", "projects", workspace, null, null, "why", "h1", "proposed") { Part = part };
+
+        var answer = JsonSerializer.SerializeToElement(
+            DriverModule.ApplyAnswer(proposal, new HelpApplied(true, "told") { Go = new HelpPlace("projects", null, part) { Workspace = workspace } }),
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+        var go = answer.GetProperty("go");
+        Assert.Equal(("projects", part), (go.GetProperty("view").GetString(), go.GetProperty("part").GetString()));
+        Assert.Equal(workspace, go.GetProperty("workspace").ValueKind == JsonValueKind.Null ? null : go.GetProperty("workspace").GetString());
+        Assert.Equal(JsonValueKind.Null, go.GetProperty("item").ValueKind);
     }
 
     /// <summary>
@@ -164,10 +187,12 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
     [InlineData("go", "quests", " ", false, false)]
     [InlineData("go", "sessions", null, false, false)]
     [InlineData("ask", "sessions", "s1a2b3c4", false, false)]
+    // ENTRY1d2a: a go's workspace is judged against the registry the snapshot already holds, so it asks for neither.
+    [InlineData("go", "projects", null, false, false, "work")]
     public void The_records_are_read_only_for_a_proposal_judged_against_them(
-        string kind, string view, string? item, bool records, bool sessions)
+        string kind, string view, string? item, bool records, bool sessions, string? workspace = null)
     {
-        var proposal = new HelpProposal("p1", kind, kind, view, null, null, null, "why", "h1", "proposed") { Item = item };
+        var proposal = new HelpProposal("p1", kind, kind, view, workspace, null, null, "why", "h1", "proposed") { Item = item };
 
         Assert.Equal(records, DriverModule.JudgedAgainstRecords([proposal]));
         Assert.Equal(sessions, DriverModule.JudgedAgainstSessions([proposal]));
