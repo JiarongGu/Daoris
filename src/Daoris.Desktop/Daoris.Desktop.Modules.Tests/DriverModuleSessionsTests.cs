@@ -32,8 +32,31 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         Assert.Equal("message", hit.GetProperty("kind").GetString());
         Assert.Contains("streamer", hit.GetProperty("snippet").GetString());
         Assert.False(search.GetProperty("cut").GetBoolean());
+        Assert.Equal(1, search.GetProperty("total").GetInt32());
+        Assert.Equal(JsonValueKind.Null, search.GetProperty("next").ValueKind);
 
         await Assert.ThrowsAnyAsync<Exception>(() => AnswerAsync(module, "SESSION_SEARCH", new { }));
+    }
+
+    /// <summary>RAILPAGE1a: the rail's search takes <c>offset</c> and <c>limit</c> in sessions and answers the total and the next.</summary>
+    [Fact]
+    public async Task A_search_is_read_a_page_of_sessions_at_a_time()
+    {
+        var loop = Loop();
+        for (var i = 0; i < 5; i++) loop.Events.Append($"chat{i}", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "the budget" });
+        var module = new DriverModule(Bus, loop);
+
+        var first = await AnswerAsync(module, "SESSION_SEARCH", new { q = "budget", offset = 0, limit = 2 });
+        Assert.Equal(2, first.GetProperty("hits").GetArrayLength());
+        Assert.Equal(5, first.GetProperty("total").GetInt32());
+        Assert.Equal(2, first.GetProperty("next").GetInt32());
+
+        var last = await AnswerAsync(module, "SESSION_SEARCH", new { q = "budget", offset = 4, limit = 2 });
+        Assert.Single(last.GetProperty("hits").EnumerateArray());
+        Assert.Equal(JsonValueKind.Null, last.GetProperty("next").ValueKind);
+
+        var past = await AnswerAsync(module, "SESSION_SEARCH", new { q = "budget", offset = 4 });
+        Assert.Equal(5, past.GetProperty("total").GetInt32());
     }
 
     /// <summary>

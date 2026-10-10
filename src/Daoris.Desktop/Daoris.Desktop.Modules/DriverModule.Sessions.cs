@@ -487,12 +487,21 @@ public sealed partial class DriverModule
         var query = PayloadHelper.GetRequiredValue<string>(request.Payload, "q");
         await Task.CompletedTask;
         // Within one session, where the page names it (SESS1 S9): its words and its calls' titles.
-        var found = Optional(request, "session") is { } one ? _loop.Events.Within(one, query) : _loop.Events.Search(query);
+        // A page of sessions, as the help list's is (RAILPAGE1a, ASKHIST1d1): `offset` counts sessions, `total` is every session
+        // with a hit, and `next` is null on the last page. A caller naming no page reads the first, at the rail's old size.
+        var found = Optional(request, "session") is { } one
+            ? _loop.Events.Within(one, query)
+            : _loop.Events.Search(
+                query,
+                (int)Math.Clamp(Number(request, "offset") ?? 0, 0, int.MaxValue),
+                (int)Math.Clamp(Number(request, "limit") ?? SessionEvents.SearchSessions, 0, SessionEvents.SearchPageLimit));
         return new
         {
             Query = query,
             Hits = found.Hits.Select(hit => new { hit.Session, hit.Seq, hit.Kind, hit.Snippet }).ToArray(),
             found.Cut,
+            found.Total,
+            found.Next,
         };
     }
 }
