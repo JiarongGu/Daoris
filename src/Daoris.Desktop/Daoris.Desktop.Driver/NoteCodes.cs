@@ -524,6 +524,20 @@ public static class NoteCodes
     public static readonly NoteCode RefusedLead = new("refused.lead", []);
     public static readonly NoteCode RefusedGoverns = new("refused.governs", []);
 
+    // ——— A press's note and a chat's settings (CONVNOTE2c): the lead is Daoris's, what follows a landing's or a preface's lead
+    // is a program's words (git's, a plugin's, Daoris's one-copy English to the agent, D142 point 6). The option and its value are
+    // the agent's own names for them, never a path.
+    public static readonly NoteCode LandingPersonAccepted = new("landing.person-accepted", []);
+    public static readonly NoteCode LandingPersonHanded = new("landing.person-handed", []);
+    public static readonly NoteCode ChatOptionSet = new("chat.option-set", ["option", "chosen"]);
+    public static readonly NoteCode ChatToldWhere = new("chat.told-where", []);
+
+    // ——— A server that drives Daoris's own browser, withheld (CONVNOTE2c, InAppBrowserServers.HandNotedAsync): the servers are
+    // plugin-declared names; why it was not handed is a fact of the host's, or an exception's words riding after the lead.
+    public static readonly NoteCode BrowserWithheld = new("browser.withheld", ["servers"]);
+    public static readonly NoteCode BrowserNoHost = new("browser.no-host", []);
+    public static readonly NoteCode BrowserNoneUp = new("browser.none-up", []);
+
     /// <summary>Every code above, read off the declarations so none escapes the catalogue test.</summary>
     public static IReadOnlyList<NoteCode> All { get; } =
         [.. typeof(NoteCodes).GetFields().Where(field => field.FieldType == typeof(NoteCode)).Select(field => (NoteCode)field.GetValue(null)!)];

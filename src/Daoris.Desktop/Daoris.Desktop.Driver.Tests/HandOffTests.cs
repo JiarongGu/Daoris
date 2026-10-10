@@ -211,6 +211,10 @@ public sealed class HandOffTests : LandedFixture
         Assert.Equal(SessionEventKind.Note, note.Kind);
         Assert.StartsWith("the person handed this work on:", note.Text);
         Assert.Contains("Plugin `example.lands`: pushed it.", note.Text);
+        // CONVNOTE2c: the lead by its code, the hand-off's sentence as a program's words.
+        Assert.Equal(["landing.person-handed", null], note.Parts!.Select(part => part.Code).ToArray());
+        Assert.Equal(NoteBy.Program, note.Parts![1].By);
+        NoteAssert.Holds(note.Text, note.Parts);
     }
 
     // ——— a plugin, faked

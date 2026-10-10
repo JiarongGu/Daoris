@@ -13215,3 +13215,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ACCTUX4j — 中文 stories reach the helpers' words** (web). The story decorator reaches `useTranslation` only, so pure helpers calling the global `i18n.t` (*Runs for*, the next-start sentence) drew English in ACCTUX4b's 中文 stories. STORY2's `readerIn`; proof: CodexWindowsChinese shows zh `harness.next.takes` and `agents.runs.first`.
 
 **Outcome** 2026-10-11: the `chinese` decorator also points the page's global `i18n` at zh for the story's life, the language detector set aside so nothing is remembered, and gives the language back on unmount; CodexWindowsChinese shows （优先） and 下一次启动使用, and `daoris.language` stays as found. Detail: D125's ACCTUX4j note.
+
+
+## CONVNOTE2c — a press's note and a chat's settings, by code (2026-10-11, D152)
+
+> - [ ] **CONVNOTE2a–h — the conversation's other driver notes, by code** … (Group c: a press and a chat's settings: Landing.cs ~:399-420, ChatRunner.cs ~:470, ~:799, ~:825.)
+
+**Outcome** 2026-10-11: the person's acceptance and hand-on (`landing.person-accepted`/`-handed` with the message as program words, the English prefixes the trace reads kept), an option set (`chat.option-set` [option, chosen]), *told where the person is* (`chat.told-where` with the preface as program words) and the browser-withheld notice (`browser.withheld` [servers], with `browser.no-host`/`none-up`) are worded in en and zh; each English byte for byte. zh says 采纳 for accept (the glossary avoids 接受). Detail: D152's CONVNOTE2c note.

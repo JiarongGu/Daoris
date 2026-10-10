@@ -152,6 +152,15 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // A permission the rules refused (CONVNOTE2b): the call's title rides between the two as the agent's words.
   'refused.lead': { values: [] },
   'refused.governs': { values: [] },
+  // A press's note and a chat's settings (CONVNOTE2c): a landing's and a preface's sentence follow their lead as a program's words.
+  'landing.person-accepted': { values: [] },
+  'landing.person-handed': { values: [] },
+  'chat.option-set': { values: ['option', 'chosen'] },
+  'chat.told-where': { values: [] },
+  // A server that drives Daoris's own browser, withheld: why follows as a code of the host's or an exception's words.
+  'browser.withheld': { values: ['servers'] },
+  'browser.no-host': { values: [] },
+  'browser.none-up': { values: [] },
 };
 
 /**
@@ -203,10 +212,12 @@ export const OPENING_REASONS: Readonly<Record<string, { key: string; values: rea
  * cool-off's reason as a value of its own. `locales/note.test.ts` holds that every value a writer declares has a way here.
  */
 export const NOTE_VALUES: Readonly<
-  Record<string, 'id' | 'ids' | 'moment' | 'number' | 'count' | 'percent' | 'text' | 'why' | 'cooling' | 'window'>
+  Record<string, 'id' | 'ids' | 'names' | 'moment' | 'number' | 'count' | 'percent' | 'text' | 'why' | 'cooling' | 'window'>
 > = {
   awaits: 'id', answered: 'id', ask: 'id', quest: 'id', session: 'id',
   quests: 'ids',
+  servers: 'names',
+  option: 'text', chosen: 'text',
   until: 'moment', at: 'moment', seen: 'moment',
   exit: 'number', minutes: 'number', paths: 'number', turn: 'number',
   tokens: 'count',
@@ -247,6 +258,12 @@ function said(t: Translate, name: string, values: Record<string, unknown>, code:
       if (!Array.isArray(value) || value.length === 0) return null;
       const ids = value.map(text);
       return ids.every((id): id is string => id !== null) ? list(ids.map((id) => `#${id}`), language) : null;
+    }
+    case 'names': {
+      // Plugin-declared server names, each as code, joined the reader's way (CONVNOTE2c).
+      if (!Array.isArray(value) || value.length === 0) return null;
+      const names = value.map(text);
+      return names.every((name): name is string => name !== null) ? list(names.map((name) => `\`${name}\``), language) : null;
     }
     case 'moment': {
       const at = typeof value === 'string' ? Date.parse(value) : Number.NaN;

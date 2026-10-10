@@ -71,20 +71,31 @@ public static class InAppBrowserServers
     public static async Task<(IReadOnlyList<AcpMcpServer> Handed, string? Notice, bool Drives)> HandAsync(
         IReadOnlyList<AcpMcpServer> servers, IInAppBrowser? browser, CancellationToken ct)
     {
+        var (handed, notice, drives) = await HandNotedAsync(servers, browser, ct).ConfigureAwait(false);
+        return (handed, notice?.Note, drives);
+    }
+
+    /// <summary>
+    /// <see cref="HandAsync"/> with its sentence as a note (CONVNOTE2c): the lead, the servers withheld a fact of it, and why as
+    /// a code where the host knows it, or the exception's words as written; the English is what it always was.
+    /// </summary>
+    public static async Task<(IReadOnlyList<AcpMcpServer> Handed, Noted? Notice, bool Drives)> HandNotedAsync(
+        IReadOnlyList<AcpMcpServer> servers, IInAppBrowser? browser, CancellationToken ct)
+    {
         if (!servers.Any(Needs)) return (servers, null, false);
 
         string? endpoint = null;
-        string? why = null;
+        Noted? why = null;
         if (browser is null)
         {
-            why = "this host carries no in-app browser — only the desktop shell does";
+            why = Noted.Of(NoteCodes.BrowserNoHost, "this host carries no in-app browser — only the desktop shell does");
         }
         else
         {
             try
             {
                 endpoint = await browser.EnsureAsync(ct).ConfigureAwait(false);
-                if (endpoint is null) why = "the shell answered that it has no browser to bring up";
+                if (endpoint is null) why = Noted.Of(NoteCodes.BrowserNoneUp, "the shell answered that it has no browser to bring up");
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
@@ -92,16 +103,21 @@ public static class InAppBrowserServers
             }
             catch (Exception error)
             {
-                why = error.Message;
+                // An exception's message may hold a path: the program's words, never a value.
+                why = Noted.Said(error.Message, NoteBy.Program);
             }
         }
 
         var (handed, withheld) = Resolve(servers, endpoint);
-        return (handed, withheld.Count == 0
+        Noted? notice = withheld.Count == 0
             ? null
-            : $"— {string.Join(", ", withheld.Select(name => $"`{name}`"))} drives Daoris's own browser, and was "
-              + $"not handed: {why} (D78).",
-            // With an endpoint every server that needs it is handed; without one, none is.
-            endpoint is not null);
+            : Noted.Of(
+                    NoteCodes.BrowserWithheld,
+                    $"— {string.Join(", ", withheld.Select(name => $"`{name}`"))} drives Daoris's own browser, and was not handed:",
+                    ("servers", (IReadOnlyList<string>)[.. withheld]))
+                .Then(" ", why ?? new Noted("", []))
+                .Then(" (D78).");
+        // With an endpoint every server that needs it is handed; without one, none is.
+        return (handed, notice, endpoint is not null);
     }
 }

@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A conversation's notes of your acceptance of its work, of handing it on, of an option you set for it, of where you were
+  told you are, and of a browser server held back now read in your language, in English and 中文. The agent's and a plugin's
+  own words in them stay as written.
 - The line above an agent's accounts saying which account the next start takes now speaks for the workspace the
   window shows, named (*In work: …*), where that workspace has its own scope. It showed nothing where this machine
   runs on the tool's own sign-in.
