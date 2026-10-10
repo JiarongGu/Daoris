@@ -9,6 +9,11 @@ with the version and date at release.
   words of *How accounts are used*, and what holds the account its list begins on where the start passes
   that one. An account's *Runs for* marks *(first)* where the next start takes it, no longer where its list
   begins.
+- The line a conversation opens with, naming the account it started on and why, reads in the window's
+  language: *Opened on `account-1`: Daoris started on it least recently* says itself in 中文 under 驱动,
+  with each account drawn as code. What each account last said about its limits, a refused turn and the
+  step among the rest are worded too. A driver's line with nothing to word it by, as older conversations
+  hold, draws its backticks as code rather than as backticks.
 - `daoris wire <repository> --workspace <name>` moves a registered repository to another workspace from a
   terminal, as the page's Manage → *Move to workspace* does, and changes nothing else about it. An unknown
   repository, or a workspace a shared host does not serve, is refused in the service's own words.

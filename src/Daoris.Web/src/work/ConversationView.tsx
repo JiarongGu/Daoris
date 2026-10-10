@@ -2,7 +2,7 @@ import { createContext, type ReactNode, useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { compact, moment, span } from '../format';
 import { cn } from '../lib/cn';
-import { Button, Dot, Icon, Tip } from '../ui';
+import { Button, Dot, Icon, Inline, Tip } from '../ui';
 import type { NotePart } from '../api';
 import { type Ask, type Block, CONVERSATION_CODES, type PlanEntry, runCount, segments, type Turn } from './conversation';
 import { HandedAccount } from './HandedAccount';
@@ -607,9 +607,10 @@ const LONG_NOTE = 240;
  * lines and the rest on a press (SESS1 S6): records written before the refusal named its call carry the
  * request's JSON, four lines each, and nothing reads that JSON to shorten it.
  *
- * A note with parts (CONVNOTE1: a refused sign-in since SIGNIN1b, a landing's line since LAND2b) is worded from them as a
- * session record's note is (`Note`, LANG1b): each coded line in the reader's language, and a line the page cannot word as
- * its record keeps it, marked. Its English is shown only where it has none.
+ * A note with parts (CONVNOTE1: a refused sign-in since SIGNIN1b, a landing's line since LAND2b, the opening line since
+ * UX7d-1) is worded from them as a session record's note is (`Note`, LANG1b): each coded line in the reader's language, and a
+ * line the page cannot word as its record keeps it, marked. Its English is shown only where it has none, its backticks
+ * drawn as code as a worded line's are (UX7d-1), never as backticks.
  */
 function NoteLine({ text, parts }: { text: string; parts?: readonly NotePart[] }) {
   const { t, i18n } = useTranslation();
@@ -620,7 +621,7 @@ function NoteLine({ text, parts }: { text: string; parts?: readonly NotePart[] }
     <div className="text-small text-ink-soft">
       <p className={cn('m-0 wrap-anywhere', !open && 'line-clamp-2')}>
         <span className="mr-1.5 text-meta uppercase tracking-[0.06em] text-ink-faint">{t('work.conversation.driver')}</span>
-        {parts?.length ? <Note note={text} parts={parts} compact /> : text}
+        {parts?.length ? <Note note={text} parts={parts} compact /> : <Inline text={text} />}
       </p>
       {long && (
         <button

@@ -585,6 +585,37 @@ public sealed class AccountRotationGoalTests : IDisposable
         Assert.Equal("What each account said: `account-1` 20 min ago, 95% of its session limit used, near at 90%; `account-2` nothing yet.", selection.SaidLine);
     }
 
+    /// <summary>
+    /// UX7d-1 (D152's UX7d-1 note): the walk hands the line's steps by code, so the record's first line carries its parts
+    /// beside the same English: the account it opened on with the step's reason and values, then what each account said.
+    /// </summary>
+    [Fact]
+    public async Task A_start_s_first_line_carries_the_walk_s_steps_by_code()
+    {
+        Accounts("account-1", "account-2");
+        Wire(s => s.WithDefault("fake", "account-1").WithRotation("fake", ["account-1", "account-2"]).WithUse("fake", new UseChange(Use: "order")));
+        Said("account-1", 0.95);
+        using var ledger = new StandInLedger();
+        using var service = ledger.Client();
+        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+
+        RotatedOpening.Say(service, events, "s1", "fake", await Present().SelectAsync("fake", Config, null, null), carried: null);
+
+        var opened = Assert.Single(events.After("s1", 0).Events);
+        Assert.Equal(
+            "opened on `account-2`: `account-1` has used 95% of its session limit, at or over the 90% that counts as near. What each "
+            + "account said: `account-1` 20 min ago, 95% of its session limit used, near at 90%; `account-2` nothing yet.",
+            opened.Text);
+        Assert.Equal(
+            ["opening.opened", "opening.said-at", "opening.said-used", "opening.said-near-at", "opening.said-nothing"],
+            NoteAssert.Codes(opened.Parts));
+        NoteAssert.Holds(opened.Text, opened.Parts);
+        Assert.Equal(
+            // Read back from the record, a number is a whole number as JSON keeps it.
+            new object?[] { "account-2", OpeningWhy.NearUsed, "account-1", 95L, "session", 90L },
+            new[] { "account", "why", "over", "used", "window", "near" }.Select(name => opened.Parts![0].Value(name)));
+    }
+
     [Fact]
     public async Task The_account_furthest_behind_its_week_s_pace_goes_first_and_one_that_said_nothing_sits_between()
     {

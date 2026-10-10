@@ -1588,10 +1588,22 @@ public sealed record HarnessSelection(
     public AccountChoice? Choice { get; init; }
 
     /// <summary>
-    /// What each account of the scope's list last said about its windows, as the start's first line says it (TOOL6c, D130
-    /// §16.4); null where none has said anything, and for a pick or a scope with no list. Machine-local: it names accounts.
+    /// The steps of the walk that chose the account, by code (UX7d-1, D152's UX7d-1 note): the first, and the rest's where the
+    /// first account was passed for itself, each its English and its reason with its own values. <see cref="Choice"/>'s
+    /// clause is all of them joined and <see cref="Rotated"/>'s the first. Null for a pick and a scope with no list.
+    /// Machine-local: it names accounts.
     /// </summary>
-    public string? SaidLine { get; init; }
+    public IReadOnlyList<StepSaid>? Steps { get; init; }
+
+    /// <summary>
+    /// What each account of the scope's list last said about its windows, as the start's first line says it (TOOL6c, D130
+    /// §16.4), with its lines by code (UX7d-1); null where none has said anything, and for a pick or a scope with no list.
+    /// Machine-local: it names accounts.
+    /// </summary>
+    public Noted? AccountsSaid { get; init; }
+
+    /// <summary><see cref="AccountsSaid"/>'s English: the sentence the start's first line ends with.</summary>
+    public string? SaidLine => AccountsSaid?.Note;
 
     /// <summary>
     /// Why the one account a refused start asked for was not ready (MSG1g): cooling, refused, or signed out as the agent said;
@@ -2725,17 +2737,18 @@ public sealed partial class HarnessRoster(AdapterSet adapters, string? settingsP
         // account of the list last said about its windows (TOOL6c).
         var choice = AccountRotation.Chose(scope, kind, states, at, facts, now);
         var passed = states.FirstOrDefault(state => string.Equals(state.Account, begins, StringComparison.OrdinalIgnoreCase));
-        string Said(WalkChoice said) =>
-            RotationWords.Clause(said, owner, runs, scope, scope.From == ChoiceFrom.Workspace ? circle : null, passed, facts, kind, now, Zone);
+        // Each step by code beside its English (UX7d-1): the choice's clause joins them, and a rotation's is the first alone.
+        var steps = RotationWords.Steps(choice, owner, runs, scope, scope.From == ChoiceFrom.Workspace ? circle : null, passed, facts, kind, now, Zone);
         string? Standing(string account) => AccountReadings.Standing(facts.GetValueOrDefault(account)?.Said, scope.Use.Near);
         var walked = scope.List.Where(account => order.Contains(account, StringComparer.OrdinalIgnoreCase)).ToList();
         return selection with
         {
-            Choice = scope.Use.Use == "goal" && order.Count > 1 ? new AccountChoice(choice.Step, Said(choice)) : null,
-            SaidLine = RotationWords.Said(walked, facts, scope.Use, now),
+            Choice = scope.Use.Use == "goal" && order.Count > 1 ? new AccountChoice(choice.Step, RotationWords.Text(steps)) : null,
+            Steps = steps,
+            AccountsSaid = RotationWords.AccountsSaid(walked, facts, scope.Use, now),
             Rotated = string.Equals(runs, begins, StringComparison.OrdinalIgnoreCase)
                 ? null
-                : new RotatedStart(begins, passed?.Cooling, Said(choice with { Rest = null }))
+                : new RotatedStart(begins, passed?.Cooling, steps[0].Text)
                 {
                     Step = choice.Step,
                     Scope = scope.From == ChoiceFrom.Workspace ? circle : null,

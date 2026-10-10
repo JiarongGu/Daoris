@@ -23,10 +23,11 @@ export function compact(value: number): string {
 
 /**
  * A count, grouped as the reader's language groups it. Never `toLocaleString()` with no locale,
- * which takes the machine's rather than the page's (UX5 U28; `tokens.test.ts` holds it).
+ * which takes the machine's rather than the page's (UX5 U28; `tokens.test.ts` holds it). `language` is the page's unless
+ * a caller words in another, as {@link list}'s is.
  */
-export function figure(value: number): string {
-  return value.toLocaleString(locale());
+export function figure(value: number, language?: string): string {
+  return value.toLocaleString(locale(language));
 }
 
 /**

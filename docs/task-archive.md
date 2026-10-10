@@ -13110,3 +13110,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ENTRY1d2b — Add and Import open prefilled** (web; after ENTRY1f2). `placeDoor` carries the go's workspace to the drawer; Import keeps a prefill over the folder's name. The folder stays the person's pick. D161's ENTRY1d note; ProjectsView's `addRequested` one-shot.
 
 **Outcome** 2026-10-11: a go to `projects/add` or `projects/import` with a workspace opens that drawer with the field filled and shown before the folder (`drawerWorkspace` through the door, the opener and App); Import offers the folder's name only over an empty field or its own last offer. No new words, no story (the drawers reach the shell). Detail: D161's ENTRY1d2b note.
+
+
+## UX7d-1 — coded opening notes (2026-10-11, D152)
+
+> - [ ] **UX7d-1 — coded opening notes** (driver + web twin). The *opened on* note (`AccountRotation.cs` `RotatedOpening.Say` ~:528-554, `RotationWords`) is one English sentence: give it note codes with parts (`AutoLanding.cs` ~:470 is the exemplar), en/zh `note.json`, `noteLines.ts`; a note without parts draws backticks as code. English `Text` stays byte-identical. D152 §4.6, UX7 design ~:85, :108; D142.
+
+**Outcome** 2026-10-11: the conversation's opening line is worded by code (`opening.*`, the `NoteCodes.Opening` reasons, one per step clause), its English byte for byte; a line the codes cannot compose keeps no parts. Account ids are part values here, since conversation events never leave the machine (D142 point 2's one exception). A driver note with no parts draws backticks as code. The other notes are CONVNOTE2. Detail: D152's UX7d-1 note.

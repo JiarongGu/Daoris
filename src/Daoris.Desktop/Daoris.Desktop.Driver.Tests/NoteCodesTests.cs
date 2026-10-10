@@ -68,7 +68,7 @@ public sealed class NoteCodesTests
     public void Every_reason_a_why_may_name_has_an_entry_that_says_its_own_values(string language)
     {
         var catalogue = Catalogue(language);
-        foreach (var reasons in new[] { NoteCodes.Continue, NoteCodes.Cooling })
+        foreach (var reasons in new[] { NoteCodes.Continue, NoteCodes.Cooling, NoteCodes.Opening })
         {
             foreach (var reason in reasons.All)
             {
@@ -89,6 +89,25 @@ public sealed class NoteCodesTests
 
         Assert.Equal(reasons, NoteCodes.Continue.All.Select(reason => reason.Code).Order(StringComparer.Ordinal));
         Assert.Equal(NoteCodes.Cooling.All.Count, NoteCodes.Cooling.All.DistinctBy(reason => reason.Code).Count());
+    }
+
+    /// <summary>
+    /// UX7d-1: every step the walk can name (<see cref="OpeningWhy"/>) is a reason the opening's <c>why</c> declares, once, and
+    /// the codes that name it carry no value a reason does, so a reason's values never shadow the line's.
+    /// </summary>
+    [Fact]
+    public void Every_opening_reason_is_declared_once_and_none_shadows_its_line_s_values()
+    {
+        var reasons = typeof(OpeningWhy).GetFields()
+            .Where(field => field.IsLiteral && field.FieldType == typeof(string))
+            .Select(field => (string)field.GetRawConstantValue()!)
+            .Order(StringComparer.Ordinal);
+
+        Assert.Equal(reasons, NoteCodes.Opening.All.Select(reason => reason.Code).Order(StringComparer.Ordinal));
+        foreach (var code in NoteCodes.All.Where(code => code.Why == NoteCodes.Opening))
+        {
+            Assert.All(code.Values.Where(value => value != "why"), value => Assert.False(NoteCodes.Opening.Carries(value), $"`{code.Code}`'s `{value}` is a reason's too"));
+        }
     }
 
     [Fact]

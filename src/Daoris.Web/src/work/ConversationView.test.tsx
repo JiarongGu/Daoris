@@ -488,12 +488,14 @@ describe('ConversationView', () => {
       && element.textContent === 'Your words went to session n3wn3w00, because its tree is gone.')).toBeTruthy();
     unmount();
 
-    // A reason that names an agent the page was not told, or a code it does not know: the driver's words stand.
-    view([
+    // A reason that names an agent the page was not told, or a code it does not know: the driver's words stand, their
+    // backticks drawn as code (UX7d-1).
+    const { container } = view([
       ev({ kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'also cap it' }),
       ev({ kind: 'note', text: '— your words went to session `n3wn3w00`, because it ran on `a`, and starts here now run on `b`.', words: ['w1'], to: 'n3wn3w00', why: 'adapter' }),
     ]);
-    expect(screen.getByText(/because it ran on `a`/)).toBeTruthy();
+    expect(container.textContent).toContain('— your words went to session n3wn3w00, because it ran on a, and starts here now run on b.');
+    expect(within(container).getByText('n3wn3w00').tagName).toBe('CODE');
   });
 
   /**
@@ -607,6 +609,41 @@ describe('ConversationView', () => {
     view([ev({ kind: 'note', text: 'a newer line.', parts: [{ code: 'account.newer', text: 'A newer line.' }] })]);
     expect(screen.getByText('A newer line.')).toBeTruthy();
     expect(screen.getByText('shown as recorded')).toBeTruthy();
+  });
+
+  /**
+   * UX7d-1 (D152's UX7d-1 note; the UX7 design §1.3): the line a conversation opens with, naming the account it opened on and
+   * why, is worded from its codes under 驱动 in 中文, its account drawn as code; and a driver's note with no parts, the English
+   * an older driver wrote, draws its backticks as code too, never as backticks.
+   */
+  it('words the opening line by its codes in the reader’s language, and draws a part-less note’s backticks as code', async () => {
+    const english = 'opened on `account-1`: Daoris started on it least recently. No account has said what it has left yet.';
+    const opening = () => [
+      ev({
+        kind: 'note', text: english, parts: [
+          { code: 'opening.opened', values: { account: 'account-1', why: 'least-recent' }, text: 'opened on `account-1`: Daoris started on it least recently.' },
+          { code: 'opening.unsaid', values: {}, text: 'No account has said what it has left yet.' },
+        ],
+      }),
+      ev({ kind: 'user', origin: 'person', text: 'hello' }),
+    ];
+    await i18n.changeLanguage('zh');
+    try {
+      const { container, unmount } = view(opening());
+      expect(screen.getByText('驱动')).toBeTruthy();
+      expect(container.textContent).toContain('在账户 account-1 上开始：Daoris 最久没有在它上面启动。尚无账户说明它还剩多少用量。');
+      expect(within(container).getByText('account-1').tagName).toBe('CODE');
+      expect(container.textContent).not.toMatch(/opened on|`/);
+      expect(screen.queryByText('按原文显示')).toBeNull();
+      unmount();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+
+    const { container } = view([ev({ kind: 'note', text: "opened on `account-2`: it comes first in `work`'s list." })]);
+    expect(container.textContent).toContain("opened on account-2: it comes first in work's list.");
+    expect(container.textContent).not.toContain('`');
+    expect(within(container).getByText('work').tagName).toBe('CODE');
   });
 
   /**
