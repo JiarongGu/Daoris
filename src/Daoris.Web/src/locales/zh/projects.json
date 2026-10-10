@@ -81,6 +81,7 @@
   "projects.manage.noCheckout": "本机没有它的检出——这条注册来自队友的机器。它的清单归他们编辑，从这里伸手进去正是 Daoris 从不做的那件事。",
   "projects.manage.retire": "注销",
   "projects.manage.retireBody": "把它从本机的注册表中移除。它将不再可被寻址、不再被索引，它的条目也随即离开索引。",
+  "projects.manage.retireAsk": "从本机注销 {{name}}？",
   "projects.manage.retireNotDelete": "不会删除任何东西。没有文件、没有历史、没有规范——仓库原封不动，重新添加即可完全恢复。",
   "projects.manage.retireConfirm": "确认注销仓库",
   "projects.manage.doctrine": "规范无法在此编辑。",

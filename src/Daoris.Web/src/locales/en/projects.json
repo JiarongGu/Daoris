@@ -81,6 +81,7 @@
   "projects.manage.noCheckout": "No checkout on this machine — this registration came from a teammate's. Its manifest is theirs to edit, and reaching into it from here is the one thing Daoris never does.",
   "projects.manage.retire": "Retire",
   "projects.manage.retireBody": "Take it off this machine's registry. It stops being addressable and stops being indexed here, and its entries leave the index.",
+  "projects.manage.retireAsk": "Retire {{name}} from this machine?",
   "projects.manage.retireNotDelete": "Nothing is deleted. No file, no history, no doctrine — the repository is untouched, and adding it again restores it exactly.",
   "projects.manage.retireConfirm": "Retire repository",
   "projects.manage.doctrine": "Doctrine is not editable from here.",

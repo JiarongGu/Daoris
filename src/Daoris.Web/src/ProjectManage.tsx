@@ -351,7 +351,7 @@ export function ManageProjectDrawer({ project, onClose, onRetired, notify }: {
           <InlineConfirm
             className="mt-2.5"
             label={t('projects.manage.retire')}
-            says={t('projects.manage.retireBody')}
+            says={t('projects.manage.retireAsk', { name: project.repository })}
             meanIt={t('projects.manage.retireConfirm')}
             busy={retire.isPending}
             onConfirm={(answered) => retire.mutate(project.repository, {
