@@ -391,6 +391,7 @@ public sealed class WorkPausingTests : IDisposable
         Assert.All(holds.Values.Where(hold => hold.Verdict != StartVerdict.Paused), hold => Assert.Null(hold.PausedBy));
         Assert.All(holds.Values.Where(hold => hold.Verdict != StartVerdict.Exhausted), hold => Assert.Null(hold.Strikes));
         Assert.All(holds.Values.Where(hold => hold.Verdict != StartVerdict.TakenElsewhere), hold => Assert.Null(hold.TakenBy));
+        Assert.All(holds.Values.Where(hold => hold.Verdict != StartVerdict.CannotShow), hold => Assert.Null(hold.CannotShow));
     }
 
     /// <summary>A resume of what is not paused changes nothing and says so: information, never a refusal (D48 §6).</summary>

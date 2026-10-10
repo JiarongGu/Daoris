@@ -154,6 +154,15 @@ public sealed class DriverModuleWorkTests : DriverModuleBridge
         });
         var here = Shown(new WorkHold("q11", StartVerdict.TakenElsewhere, "Quest `#q11` was taken here.") { TakenBy = new TakenBy("cut0ff00", Here: true) });
         var held = Shown(new WorkHold("q1", StartVerdict.Held, "`game` is held by the person."));
+        var sat = Shown(new WorkHold("q12", StartVerdict.CannotShow, "set-up step `#q12` ... no window to show it in.")
+        {
+            CannotShow = new CannotShowFact(CannotShowFact.NoWindow, "local", "http://localhost:4200"),
+        });
+        var shown = sat.GetProperty("cannotShow");
+        Assert.Equal(("no-window", "local", "http://localhost:4200"),
+            (shown.GetProperty("code").GetString(), shown.GetProperty("environment").GetString(), shown.GetProperty("address").GetString()));
+        Assert.Equal(Null, held.GetProperty("cannotShow").ValueKind.ToString());
+        Assert.Equal(Null, taken.GetProperty("cannotShow").ValueKind.ToString());
 
         Assert.Equal(("q8", "Stopped", StopSaid),
             (stopped.GetProperty("quest").GetString(), stopped.GetProperty("verdict").GetString(), stopped.GetProperty("reason").GetString()));

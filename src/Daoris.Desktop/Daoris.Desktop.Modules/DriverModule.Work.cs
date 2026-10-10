@@ -254,6 +254,7 @@ public sealed partial class DriverModule
         hold.Strikes,
         // A take that is not this machine's (CARRY2c): the machine and its session, a take made here, the session not carried on.
         TakenBy = hold.TakenBy is { } taken ? new { taken.Machine, taken.Session, taken.Here, taken.Last } : null,
+        CannotShow = hold.CannotShow is { } sat ? new { sat.Code, sat.Environment, sat.Address } : null,
     };
 
     /// <summary>The ask or the quest a work route names: exactly one of <c>ask</c> and <c>quest</c>.</summary>

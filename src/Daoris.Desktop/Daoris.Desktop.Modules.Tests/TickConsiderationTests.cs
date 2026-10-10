@@ -254,6 +254,32 @@ public sealed class TickConsiderationTests
         Assert.Equal(JsonValueKind.Null, other.GetProperty("takenBy").ValueKind);
     }
 
+    /// <summary>
+    /// CANNOTSHOW1a: a set-up step the planner sits carries its code, environment and address beside the unchanged sentence, so
+    /// the page words it; every other verdict carries none.
+    /// </summary>
+    [Fact]
+    public void A_set_up_step_the_planner_sits_carries_the_code_and_facts_of_its_sentence()
+    {
+        var sat = new Consideration(Quest, StartVerdict.CannotShow, "set-up step `#q1` ... no window to show it in.")
+        {
+            CannotShow = new CannotShowFact(CannotShowFact.NoWindow, "local", "http://localhost:4200"),
+        };
+        var unnamed = sat with { CannotShow = new CannotShowFact(CannotShowFact.Unnamed, "local") };
+
+        var shape = JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(sat), Wire);
+        var fact = shape.GetProperty("cannotShow");
+        var bare = JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(unnamed), Wire).GetProperty("cannotShow");
+        var other = JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(new Consideration(Quest, StartVerdict.Start, "starting.")), Wire);
+
+        Assert.Equal(sat.Reason, shape.GetProperty("reason").GetString());
+        Assert.Equal(("no-window", "local", "http://localhost:4200"),
+            (fact.GetProperty("code").GetString(), fact.GetProperty("environment").GetString(), fact.GetProperty("address").GetString()));
+        Assert.Equal("unnamed", bare.GetProperty("code").GetString());
+        Assert.Equal(JsonValueKind.Null, bare.GetProperty("address").ValueKind);
+        Assert.Equal(JsonValueKind.Null, other.GetProperty("cannotShow").ValueKind);
+    }
+
     /// <summary>Every other verdict holds by no session, and says none.</summary>
     [Fact]
     public void A_quest_no_stop_holds_names_no_session()

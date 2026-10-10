@@ -271,6 +271,29 @@ public sealed record QuestTake(string Claim, bool Took = false, string? Teammate
 public sealed record TakenBy(string Last, string? Machine = null, string? Session = null, bool Here = false);
 
 /// <summary>
+/// Why the planner sits a review set-up step it cannot show (<see cref="StartVerdict.CannotShow"/>), as a fact the page words
+/// (CANNOTSHOW1a, D142): a code, the environment the step names, and the address where it is known. The sentence beside it
+/// (<see cref="Consideration.Reason"/>) is unchanged.
+/// </summary>
+/// <param name="Code"><see cref="Unnamed"/>, <see cref="NoAddress"/> or <see cref="NoWindow"/>.</param>
+/// <param name="Environment">The environment's name the step shows its work in.</param>
+/// <param name="Address">Where a local environment shows, for <see cref="NoWindow"/>; null otherwise.</param>
+public sealed record CannotShowFact(string Code, string Environment, string? Address = null)
+{
+    /// <summary>No review rule here names the environment.</summary>
+    public const string Unnamed = "unnamed";
+
+    /// <summary>A local environment that declares no address.</summary>
+    public const string NoAddress = "no-address";
+
+    /// <summary>A local environment and no window in this loop to show it in.</summary>
+    public const string NoWindow = "no-window";
+}
+
+/// <summary>A sit: the fact and the sentence, both from the same branch of <see cref="ReviewSetUps.Sits"/>.</summary>
+public sealed record CannotShowSit(CannotShowFact Fact, string Reason);
+
+/// <summary>
 /// One of the person's words waiting on a record (MSG1a, D137 §2.4), as the service answers it to this machine: its id,
 /// which the record's events say again where the session took it, the words, when, its files' names, and whether it was
 /// said after the record ended.
@@ -582,6 +605,12 @@ public sealed record Consideration(
     /// from facts. Null for every other verdict.
     /// </summary>
     public TakenBy? TakenBy { get; init; }
+
+    /// <summary>
+    /// For a set-up step the planner sits (<see cref="StartVerdict.CannotShow"/>): the code and the environment and address its
+    /// sentence is said from (CANNOTSHOW1a), so the page words it. Null for every other verdict.
+    /// </summary>
+    public CannotShowFact? CannotShow { get; init; }
 
     /// <summary>
     /// For a start the person's words make (MSG1b, D137 §2.2): <see cref="Resumes"/> is the record they wait on, parked or
@@ -977,7 +1006,7 @@ public static class Planner
             // has nowhere to show it. It sits saying why, and no session starts with nothing to show the work in.
             if (ReviewSetUps.Sits(config, quest, repo.Workspace, window) is { } sits)
             {
-                return new(quest, StartVerdict.CannotShow, sits);
+                return new(quest, StartVerdict.CannotShow, sits.Reason) { CannotShow = sits.Fact };
             }
 
             // The second opinion (XAGENT1f, the second-agent design §7, §8.1): a set-up step sits while an agent is still at work on

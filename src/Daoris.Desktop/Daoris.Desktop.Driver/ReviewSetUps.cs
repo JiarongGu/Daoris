@@ -25,26 +25,29 @@ public static class ReviewSetUps
     /// (<see cref="ProcedureMissing"/>).
     /// </summary>
     /// <param name="window">Whether this loop carries Daoris's browser: the desktop's does, a headless one does not.</param>
-    public static string? Sits(DriverConfig config, QuestView quest, string? workspace, bool window)
+    public static CannotShowSit? Sits(DriverConfig config, QuestView quest, string? workspace, bool window)
     {
         if (quest.SetUpIn is not { } named) return null;
         if (Environment(config, quest, workspace) is not { } environment)
         {
-            return $"set-up step `#{quest.Id}` shows its chain's work in `{named}`, and no review rule here names `{named}` for "
-                + $"`{quest.To}`: `daoris driver review {quest.To} {named} --kind local|deployed --procedure <path>` declares it.";
+            return new(new CannotShowFact(CannotShowFact.Unnamed, named),
+                $"set-up step `#{quest.Id}` shows its chain's work in `{named}`, and no review rule here names `{named}` for "
+                + $"`{quest.To}`: `daoris driver review {quest.To} {named} --kind local|deployed --procedure <path>` declares it.");
         }
 
         if (environment.Kind != "local") return null;
         if (environment.Address is null)
         {
-            return $"set-up step `#{quest.Id}` shows its chain's work in `{named}`, which declares no address to show it at: "
-                + $"`daoris driver review {quest.To} {named} --address <url>` declares where the app normally runs.";
+            return new(new CannotShowFact(CannotShowFact.NoAddress, named),
+                $"set-up step `#{quest.Id}` shows its chain's work in `{named}`, which declares no address to show it at: "
+                + $"`daoris driver review {quest.To} {named} --address <url>` declares where the app normally runs.");
         }
 
         return window
             ? null
-            : $"set-up step `#{quest.Id}` shows its chain's work in Daoris's browser at `{environment.Address}`, and this loop has no "
-              + "window to show it in: the desktop's loop starts it.";
+            : new(new CannotShowFact(CannotShowFact.NoWindow, named, environment.Address),
+                $"set-up step `#{quest.Id}` shows its chain's work in Daoris's browser at `{environment.Address}`, and this loop has no "
+                + "window to show it in: the desktop's loop starts it.");
     }
 
     /// <summary>

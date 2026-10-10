@@ -13187,3 +13187,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CONVNOTE2a–h — the conversation's other driver notes, by code** … (Group b: a refused permission, Acp.cs ~:1258-1264.)
 
 **Outcome** 2026-10-11: a refused permission's note is `refused.lead`, the call's title as the agent's words, and `refused.governs`, worded in en and zh; its English byte for byte, its `Id` kept, the console line unchanged. Detail: D152's CONVNOTE2b note.
+
+
+## CANNOTSHOW1a — the cannot-show fact on the tick (2026-10-11, D154)
+
+> - [ ] **CANNOTSHOW1a — the cannot-show fact on the tick** (driver/modules). `ReviewSetUps.Sits` (~:28-48) composes one English sentence in three cases (no rule names the environment, a local one with no address, no window); carry a `CannotShow` fact (code, environment, address) on the consideration, the tick (DriverLoop.cs ~:265-286) and a resume's hold (WorkPausing.cs ~:556-565, DriverModule.Work.cs ~:244-257), as `TakenBy` is (CARRY2c/2d); `Reason` unchanged. D154 ~:305-319.
+
+**Outcome** 2026-10-11: `Sits` answers the fact and the sentence from one branch; the consideration, the tick and a resume's hold carry `cannotShow` `{ code: unnamed | no-address | no-window, environment, address }` or null; `Reason` byte for byte. No positive resume-hold test (it needs a headless resume with a set-up step). Detail: D154's CANNOTSHOW1a note.
