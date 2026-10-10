@@ -14,6 +14,7 @@ import { MainOffer, offerStore, useMainOffer } from './menus/mainOffer';
 import { fieldTracker, findTarget, runEdit } from './menus/editing';
 import { opensAtStart, setupProgress, setupSteps } from './help/setup';
 import { useMachine } from './help/useMachine';
+import { itemOf } from './help/where';
 import { useSetupAtStart } from './setupGuide';
 import { useFrameClosings } from './work/closings';
 import { type ListMode, type ListView, listToggled } from './work/layout';
@@ -805,9 +806,12 @@ export function App() {
   });
   // What Ask Daoris is handed wherever it stands: what is on the screen (HELP1b) — the view, the scope,
   // the settings domain on Settings, and the attended session on Sessions — and its two ways out.
+  const itemList = { quests, projects, plugins, agents }[view as 'quests' | 'projects' | 'plugins' | 'agents']?.list;
   const askProps = {
     where: {
       view, workspace: scope.workspace ?? null, settings: settingsSection, knowledge: knowledgeMode,
+      // The item the view in front has chosen (FRAME1i-a), while its list says it is still there.
+      item: itemOf(view, itemList?.chosen, itemList?.standing),
       // Where Sessions' views stand (HELP2): the helper cannot see the window, and guessed without it.
       layout: {
         right: viewsIn(placements.places, 'right'),

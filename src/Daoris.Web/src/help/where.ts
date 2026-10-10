@@ -2,7 +2,10 @@ import type { Session } from '../api';
 import type { View } from '../commands';
 import type { KnowledgeMode } from '../knowledge/modes';
 import type { SettingsSection } from '../SettingsView';
+import { projectsItem, questsItem } from '../opener';
+import { offerItem } from '../plugins/catalog';
 import { answeredPark } from '../ui';
+import type { ChoiceStanding } from '../work/listPanes';
 import type { ViewId } from '../work/placements';
 
 /**
@@ -23,7 +26,39 @@ export type HelpWhere = {
   session?: { id: string; repository: string; state: string; note?: string | null; answered?: boolean } | null;
   /** Where Sessions' views stand and which region is showing (HELP2): the helper cannot see the window. */
   layout?: { right: readonly ViewId[]; panel: readonly ViewId[]; rightShown: boolean; panelShown: boolean } | null;
+  /**
+   * The item the view has chosen, by the id a go names (FRAME1i-a, D118): a quest's bare id, an ask as `ask:<id>`, a
+   * repository's or a workspace's or an agent's name, a plugin's id. `closed` is a choice that is done, still shown.
+   */
+  item?: { kind: ItemKind; id: string; closed?: boolean } | null;
 };
+
+/** The kinds an item may be, one row each; a view that gains items (PLUGUI1h's offers) adds a row, not a shape. */
+const ITEM_KINDS = ['quest', 'ask', 'repository', 'workspace', 'agent', 'plugin'] as const;
+export type ItemKind = (typeof ITEM_KINDS)[number];
+
+/**
+ * The item a view has chosen, as the preface names it: only while the screen shows it — a choice `live` is said, one
+ * `closed` is said as closed, and a `gone`, `unread` or missing standing, or no choice, is unsaid. Knowledge and Settings
+ * keep what they say today, and a plugin's offer is unsaid (PLUGUI1h).
+ */
+export function itemOf(view: View, chosen: string | null | undefined, standing: ChoiceStanding | undefined): HelpWhere['item'] {
+  if (!chosen || (standing !== 'live' && standing !== 'closed')) return null;
+  const closed = standing === 'closed' ? { closed: true } : {};
+  switch (view) {
+    case 'quests': {
+      const named = questsItem(chosen);
+      return 'ask' in named ? { kind: 'ask', id: chosen, ...closed } : { kind: 'quest', id: named.quest, ...closed };
+    }
+    case 'projects': {
+      const named = projectsItem(chosen);
+      return 'workspace' in named ? { kind: 'workspace', id: named.workspace, ...closed } : { kind: 'repository', id: named.repository, ...closed };
+    }
+    case 'agents': return { kind: 'agent', id: chosen, ...closed };
+    case 'plugins': return chosen.startsWith(offerItem('')) ? null : { kind: 'plugin', id: chosen, ...closed };
+    default: return null;
+  }
+}
 
 const VIEW_NAMES: Record<ViewId, string> = {
   timeline: 'the timeline', review: 'the review', workflow: 'the workflow', ask: 'Ask Daoris', console: 'the console',
@@ -78,6 +113,10 @@ export function prefaceOf(where: HelpWhere): string {
       ? `the ${VIEWS.knowledge} view, showing ${MODES[where.knowledge]}`
       : `the ${VIEWS[where.view]} view`;
   const parts = [place, where.workspace ? `workspace \`${where.workspace}\`` : 'every workspace'];
+
+  if (where.item) {
+    parts.push(`looking at ${where.item.kind} \`${where.item.id}\`${where.item.closed ? ', which is closed' : ''}`);
+  }
 
   const session = where.view === 'sessions' ? where.session : null;
   if (session) {
