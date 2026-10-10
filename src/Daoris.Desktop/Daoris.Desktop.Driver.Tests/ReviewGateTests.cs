@@ -292,6 +292,22 @@ public sealed class ReviewGateTests
         var headless = Assert.Single(Planner.Plan(snapshot, declared));
         Assert.Equal(StartVerdict.CannotShow, headless.Verdict);
         Assert.Contains("this loop has no window to show it in", headless.Reason);
+        Assert.Equal(new CannotShowFact("unnamed", "local"), unnamed.CannotShow);
+        Assert.Equal(new CannotShowFact("no-window", "local", "http://localhost:4200"), headless.CannotShow);
+
+        // A local environment that declares no address says so by its code (CANNOTSHOW1a).
+        var addressless = driven with
+        {
+            WorkspaceReviews = new Dictionary<string, ReviewRule>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["work"] = new ReviewRule([new ReviewEnvironment("local", "local", "README.md")], true),
+            },
+        };
+        var noAddress = Assert.Single(Planner.Plan(snapshot, addressless, window: true));
+        Assert.Equal(StartVerdict.CannotShow, noAddress.Verdict);
+        Assert.Contains("declares no address", noAddress.Reason);
+        Assert.Equal(new CannotShowFact("no-address", "local"), noAddress.CannotShow);
+        Assert.Null(Assert.Single(Planner.Plan(snapshot, declared, window: true)).CannotShow);
 
         Assert.Equal(StartVerdict.Start, Assert.Single(Planner.Plan(snapshot, declared, window: true)).Verdict);
         // A deployed environment is shown where it runs: a headless loop may start it.

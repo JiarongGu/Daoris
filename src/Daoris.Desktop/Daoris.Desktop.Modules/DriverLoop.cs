@@ -283,6 +283,7 @@ public sealed class DriverLoop(
             // Whose take holds it, where it is not this machine's (CARRY2c): the machine and its session where a record named
             // them, a take made here, and the session here not carried on, so the page says it from facts. Null otherwise.
             TakenBy = consideration.TakenBy is { } taken ? new { taken.Machine, taken.Session, taken.Here, taken.Last } : null,
+            CannotShow = consideration.CannotShow is { } sat ? new { sat.Code, sat.Environment, sat.Address } : null,
         };
     }
 

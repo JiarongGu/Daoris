@@ -171,6 +171,9 @@ public sealed record WorkHold(string Quest, StartVerdict Verdict, string Reason)
 
     /// <summary>For a take that is not this machine's (<see cref="StartVerdict.TakenElsewhere"/>): whose it is (CARRY2c).</summary>
     public TakenBy? TakenBy { get; init; }
+
+    /// <summary>For a set-up step the planner sits (<see cref="StartVerdict.CannotShow"/>): the code and facts of its sentence (CANNOTSHOW1a).</summary>
+    public CannotShowFact? CannotShow { get; init; }
 }
 
 /// <summary>What a resume did.</summary>
@@ -562,5 +565,6 @@ public static class WorkPausing
                 ? failures - config.ForgivenAt(consideration.Quest.Id)
                 : null,
             TakenBy = consideration.Verdict == StartVerdict.TakenElsewhere ? consideration.TakenBy : null,
+            CannotShow = consideration.Verdict == StartVerdict.CannotShow ? consideration.CannotShow : null,
         };
 }
