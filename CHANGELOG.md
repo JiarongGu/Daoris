@@ -8,6 +8,10 @@ with the version and date at release.
 - `daoris wire <repository> --workspace <name>` moves a registered repository to another workspace from a
   terminal, as the page's Manage → *Move to workspace* does, and changes nothing else about it. An unknown
   repository, or a workspace a shared host does not serve, is refused in the service's own words.
+- A toast no longer covers an open drawer: while one is open, toasts stand at its left edge, so an ask at
+  the drawer's foot, such as a repository's Manage → Retire, keeps its Confirm and Never mind in view. A
+  press on a toast while a drawer is open stays on the toast, rather than closing the drawer or pressing
+  what it covered.
 - Ask Daoris can propose moving a repository to another workspace on this machine, as its page's Manage →
   *Move to workspace* does: the card names the repository and both workspaces, and Apply changes that one
   row of the registry and no file. A workspace no repository is in yet is allowed, and the card says the

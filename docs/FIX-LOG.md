@@ -1259,6 +1259,10 @@ building beside it: four of `setup-kit.test.ts`'s stub cases (the set-up quest a
 ANSWER1b) answered `session/prompt` with `fetch failed`, the stub's request to its stand-in quest door. The file passed
 31/31 alone, and `--rerun cli` on the open merge passed. Four cases of one file at once point at the stand-in door
 itself, not at each stub.
+A page test, at UXTOAST1's merge, 2026-10-11 (a `ui.tsx` change), with a branch-worker building beside it: the web
+gate's `PluginsView.test.tsx` *keeps a trial's report on the page across a change of view* timed out at its 20 s, the
+file taking 58 s; alone the file passed 22/22 in 9 s. The first jsdom sighting: the page's suites are not real-process,
+so load alone stretched a long test past its limit.
 `setup-kit.test.ts:531` (*a set-up quest is done as its body says*) failed once at SWEEPCARRIED1's merge, 2026-10-08, a
 web-only change: *the stub never answered 3 (session/prompt) within 30000 ms* after it had run all four commands, with
 a Codex review and two subagents building beside the gate. The same file's stub bound as STUB3's, after its command

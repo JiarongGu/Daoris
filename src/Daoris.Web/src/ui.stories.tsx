@@ -4,6 +4,7 @@ import {
   SkeletonRows, Tile, Toasts,
 } from './ui';
 import { InTheme } from './plugins/storyIcons';
+import { InlineConfirm } from './work/InlineConfirm';
 
 // Every state of every primitive, on the shipped components — including the states real data rarely
 // shows. This is where the design is reviewed and kept (D42); the product cannot drift from it,
@@ -288,6 +289,30 @@ export const DrawerDetail: StoryObj = {
         Evidence: the seam appears whenever more than three chunks hydrate in one frame.
       </p>
     </Drawer>
+  ),
+};
+
+/**
+ * A toast while a drawer is open (UXTOAST1): it stands at the drawer's left edge, over the scrim, so the ask open at the
+ * drawer's foot keeps its presses in view. In the corner it lay over them, since the drawer holds that corner whole.
+ */
+export const ToastBesideDrawer: StoryObj = {
+  render: () => (
+    <>
+      <Drawer title="Manage engine" onClose={() => {}}>
+        <p className="m-0 text-body text-ink-soft">
+          Retiring takes engine off the family's list. Its checkout, its files and its history stay where they are.
+        </p>
+        <InlineConfirm
+          className="mt-2.5"
+          label="Retire"
+          says="Retire engine? It leaves the family's list; nothing on disk is deleted."
+          meanIt="Retire"
+          onClose={() => {}}
+        />
+      </Drawer>
+      <Toasts onClose={() => {}} items={[{ id: 1, kind: 'ok', text: 'Wrote the declaration for `engine`.' }]} />
+    </>
   ),
 };
 

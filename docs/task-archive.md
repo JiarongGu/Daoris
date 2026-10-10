@@ -13068,3 +13068,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **WIRE1 — a terminal door for moving a repository** (cli; D50). The page and Ask Daoris move a repository's workspace; no terminal verb edits that one field (`connect --workspace` re-registers the row). D161's ENTRY1d1 note; D50's twin rule.
 
 **Outcome** 2026-10-11: `daoris wire <repository> --workspace <name>` posts the drawer's route and changes that field only; an unknown repository (404) or a shared host's boundary (409) is refused in the service's words, exit 1; `--dry-run` asks nothing. The README table and the changelog's command count name it. Detail: D161's WIRE1 note.
+
+
+## UXTOAST1 — a toast covers an ask at the drawer's foot (2026-10-11, D41)
+
+> - [ ] **UXTOAST1 — a toast covers an ask at the drawer's foot** (web). On the window a toast (fixed bottom-right, `ui.tsx` ~:1599) lay over the retire ask's Confirm and Never mind in the Manage drawer. Keep an open ask clear of toasts. Seen 2026-10-11; a test with a toast and a drawer's ask, then the window.
+
+**Outcome** 2026-10-11: while a drawer is open the toasts stand at its left edge over the inert scrim, the drawer's width in from the right; under 56rem (below the main window's floor) they keep the corner. A press on a toast no longer passes through to the scrim or a covered press under a modal drawer. The window's look is the next installed pass's. Detail: D41's UXTOAST1 amendment.
