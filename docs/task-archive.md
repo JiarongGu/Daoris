@@ -13152,3 +13152,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **FRAME1i-a — the preface names the chosen item** (web; after ENTRY1d2b, which holds App.tsx). `help/where.ts` names the item each view has chosen (quest, ask, repository, workspace, plugin, agent), only what the screen shows; App passes it from the list panes, a gone choice unsaid; the room's window section gains the one sentence saying so (the driver line rides along). The go's item is ENTRY1f1/f2's. Frame-model design ~:375-388; D118.
 
 **Outcome** 2026-10-11: the preface says *looking at* the front view's chosen quest, ask, repository, workspace, agent or plugin by the id a go names (`itemOf`), a closed one as closed; a gone, unread or missing choice, a plugin offer, Knowledge and Settings say nothing new. The room says so. With FRAME1i-b, FRAME1i is closed. Detail: D118's FRAME1i-a note.
+
+
+## CONVNOTE2a — a resumed conversation's opening, by code (2026-10-11, D152)
+
+> - [ ] **CONVNOTE2a–h — the conversation's other driver notes, by code** (driver + web twin; one group per branch, in order). About 33 English-only note sites in eight groups: a resumed opening, … Each a branch; the table, the sites and the tests that read their English are the language design §9's CONVNOTE2. (Group a.)
+
+**Outcome** 2026-10-11: a resumed conversation's opening (an answer, the person's words, another agent's findings, and the native door's line) carries `resumed.opening`, `resumed.moved` and `resumed.native` with the `NoteCodes.Resumed` reasons, worded in en and zh; its English byte for byte, the `ResumeAsk` string form unchanged for other sites. Detail: D152's CONVNOTE2a note.

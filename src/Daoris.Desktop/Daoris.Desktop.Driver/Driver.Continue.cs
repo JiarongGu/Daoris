@@ -18,6 +18,15 @@ internal sealed class ResumeAsk(
     string conversation, IReadOnlyList<SaidWordView> words, string firstLine, string? appendix = null,
     Func<SaidWordView, IReadOnlyList<KeptFile>>? files = null)
 {
+    /// <summary>The first line with its lines by code (CONVNOTE2a): its English is the line the ask keeps.</summary>
+    public ResumeAsk(
+        string conversation, IReadOnlyList<SaidWordView> words, Noted firstLine, string? appendix = null,
+        Func<SaidWordView, IReadOnlyList<KeptFile>>? files = null)
+        : this(conversation, words, firstLine.Note, appendix, files) => FirstParts = firstLine.Parts;
+
+    /// <summary>The first line's parts, where it was handed with them; null for English alone.</summary>
+    private IReadOnlyList<NotePart>? FirstParts { get; }
+
     // Each word's files, by its place in the words; read once, so both doors are handed the same.
     private readonly IReadOnlyList<IReadOnlyList<KeptFile>> _files =
         [.. words.Select(word => files is null || word.Files.Count == 0 ? Array.Empty<KeptFile>() : files(word))];
@@ -81,7 +90,7 @@ internal sealed class ResumeAsk(
         Spoken = true;
         return
         [
-            new SessionEvent { Kind = SessionEventKind.Note, Text = firstLine },
+            new SessionEvent { Kind = SessionEventKind.Note, Text = firstLine, Parts = FirstParts is { Count: > 0 } ? FirstParts : null },
             .. words.Select(word => new SessionEvent
             {
                 Kind = SessionEventKind.User,
@@ -230,7 +239,7 @@ public sealed partial class Driver
         // Each word's files where they were kept as it was said (MSG1d3, D137 §2.4), handed with the words.
         var resume = new ResumeAsk(
             kept.Conversation, park.Waiting,
-            Continuations.Opening(adapter.Name, selection.Version, park.HarnessVersion, answer: park.Parked, findings, persons),
+            Continuations.OpeningNoted(adapter.Name, selection.Version, park.HarnessVersion, answer: park.Parked, findings, persons),
             await ResumedAfterAsync(service, quest, sessionId, target.Language, ct).ConfigureAwait(false),
             files: word => ChatFiles.Kept(home, sessionId, word.Files));
         var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
@@ -707,6 +716,8 @@ internal static class NativeWords
         {
             Kind = SessionEventKind.Note,
             Text = $"— what you said while it worked is the next turn of its own conversation, resumed on `{adapter}`.",
+            Parts = [NoteCodes.ResumedNative.Part(
+                $"— what you said while it worked is the next turn of its own conversation, resumed on `{adapter}`.", ("adapter", adapter))],
         },
         .. words.Select(Driver.Words),
     ];

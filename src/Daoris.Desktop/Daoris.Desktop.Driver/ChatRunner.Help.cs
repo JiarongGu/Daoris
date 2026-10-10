@@ -80,7 +80,7 @@ public sealed partial class ChatRunner
         var words = now is { Waiting.Count: > 0 } ? now.Waiting : record.Waiting;
         var ask = new ResumeAsk(
             kept.Conversation, words,
-            Continuations.Opening(adapter.Name, selection.Version, record.HarnessVersion, answer: false),
+            Continuations.OpeningNoted(adapter.Name, selection.Version, record.HarnessVersion, answer: false),
             files: word => ChatFiles.Kept(_home, sessionId, word.Files));
 
         var (room, reads) = await HelpRoomNowAsync(ct).ConfigureAwait(false);

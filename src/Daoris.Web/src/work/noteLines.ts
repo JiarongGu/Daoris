@@ -11,9 +11,10 @@ type Translate = (key: string, options?: Record<string, unknown>) => string;
 
 /**
  * A family of reasons a `why` names: MSG1f's (`work.say.why.*`, by `reasonOf`), a cool-off's (`harness.cooling.why.*`), or
- * the step that chose a conversation's account (`note.opening.why.*`, UX7d-1).
+ * the step that chose a conversation's account (`note.opening.why.*`, UX7d-1), or whose words a resumed conversation goes on
+ * with (`note.resumed.why.*`, CONVNOTE2a).
  */
-type Why = 'continue' | 'cooling' | 'opening';
+type Why = 'continue' | 'cooling' | 'opening' | 'resumed';
 
 /** A code the page words: the values its sentence says, its key where it is not `note.<code>`, and the reasons a `why` names. */
 export type NoteCode = { values: readonly string[]; key?: string; why?: Why };
@@ -144,6 +145,22 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'opening.said-used': { values: ['used', 'window'] },
   'opening.said-near-at': { values: ['near'] },
   'opening.said-clear': { values: [] },
+  // A resumed conversation's first line (CONVNOTE2a): the adapter and whose words, a version that moved riding inside it.
+  'resumed.opening': { values: ['adapter', 'why'], why: 'resumed' },
+  'resumed.moved': { values: ['now', 'then'] },
+  'resumed.native': { values: ['adapter'] },
+};
+
+/**
+ * Whose words a resumed conversation goes on with (CONVNOTE2a; the driver's `NoteCodes.Resumed`), each its entry; none carries
+ * a value of its own. `locales/note.test.ts` holds this map to the driver's declaration key for key.
+ */
+export const RESUMED_REASONS: Readonly<Record<string, { key: string; values: readonly string[] }>> = {
+  answer: { key: 'note.resumed.why.answer', values: [] },
+  words: { key: 'note.resumed.why.words', values: [] },
+  findings: { key: 'note.resumed.why.findings', values: [] },
+  'answer-and-findings': { key: 'note.resumed.why.answer-and-findings', values: [] },
+  'words-and-findings': { key: 'note.resumed.why.words-and-findings', values: [] },
 };
 
 /**
@@ -191,6 +208,7 @@ export const NOTE_VALUES: Readonly<
   exit: 'number', minutes: 'number', paths: 'number', turn: 'number',
   tokens: 'count',
   used: 'percent', near: 'percent', gone: 'percent',
+  adapter: 'text', now: 'text', then: 'text',
   owner: 'text', branch: 'text', basedOn: 'text', plugin: 'text', account: 'text', over: 'text', agent: 'text', workspace: 'text',
   why: 'why',
   cooling: 'cooling',
@@ -247,6 +265,7 @@ function said(t: Translate, name: string, values: Record<string, unknown>, code:
       if (!why) return null;
       if (code.why === 'cooling') return COOLING.has(why) ? t(`harness.cooling.why.${why}`) : null;
       if (code.why === 'opening') return opening(t, why, values, code, language);
+      if (code.why === 'resumed') return RESUMED_REASONS[why] ? t(RESUMED_REASONS[why].key) : null;
       return reasonOf(t, why, {
         from: text(values.from), to: text(values.to), adapter: text(values.adapter), agent: text(values.agent),
       });

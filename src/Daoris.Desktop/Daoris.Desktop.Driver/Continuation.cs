@@ -232,17 +232,35 @@ public static class Continuations
     /// Whether another agent's findings are among them (XAGENT1e, D155 point 7): said as that agent's, never as the person's.
     /// </param>
     /// <param name="persons">Whether any of them are the person's words; with no findings among them, they all are.</param>
-    public static string Opening(string adapter, string? now, string? then, bool answer = true, bool findings = false, bool persons = true)
+    public static string Opening(string adapter, string? now, string? then, bool answer = true, bool findings = false, bool persons = true) =>
+        OpeningNoted(adapter, now, then, answer, findings, persons).Note;
+
+    /// <summary>
+    /// <see cref="Opening"/> with its lines by code (CONVNOTE2a, D152's CONVNOTE2a note): the adapter and who spoke as the
+    /// lead's facts, and a version that moved as a part riding inside it, both versions facts. The English is byte for byte
+    /// what <see cref="Opening"/> always was.
+    /// </summary>
+    public static Noted OpeningNoted(string adapter, string? now, string? then, bool answer = true, bool findings = false, bool persons = true)
     {
-        var said = (findings, persons) switch
+        var (said, why) = (findings, persons) switch
         {
-            (true, false) => "another agent's findings are",
-            (true, true) => answer ? "your answer and another agent's findings are" : "your words and another agent's findings are",
-            _ => answer ? "your answer is" : "your words are",
+            (true, false) => ("another agent's findings are", ResumedWhy.Findings),
+            (true, true) => answer
+                ? ("your answer and another agent's findings are", ResumedWhy.AnswerAndFindings)
+                : ("your words and another agent's findings are", ResumedWhy.WordsAndFindings),
+            _ => answer ? ("your answer is", ResumedWhy.Answer) : ("your words are", ResumedWhy.Words),
         };
-        return now is { Length: > 0 } && then is { Length: > 0 } && !string.Equals(now, then, StringComparison.Ordinal)
-            ? $"— {said} the next turn of its own conversation, resumed on `{adapter}` {now}; it opened on {then}."
-            : $"— {said} the next turn of its own conversation, resumed on `{adapter}`.";
+        var lead = $"— {said} the next turn of its own conversation, resumed on `{adapter}`";
+        if (now is not { Length: > 0 } || then is not { Length: > 0 } || string.Equals(now, then, StringComparison.Ordinal))
+        {
+            return Noted.Of(NoteCodes.ResumedOpening, lead + ".", ("adapter", adapter), ("why", why));
+        }
+
+        // The lead's text stops where the English goes on, so each part's text is inside the note.
+        var moved = $"{now}; it opened on {then}";
+        return new Noted(
+            $"{lead} {moved}.",
+            [NoteCodes.ResumedOpening.Part(lead, ("adapter", adapter), ("why", why)), NoteCodes.ResumedMoved.Part(moved, ("now", now), ("then", then))]);
     }
 
     /// <summary>

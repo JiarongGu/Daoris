@@ -185,6 +185,31 @@ describe('noteLines', () => {
     });
   });
 
+  /** CONVNOTE2a: a resumed conversation's first line is worded in either language, a version that moved a line beside it. */
+  describe('a resumed conversation’s first line', () => {
+    const lead = (why: string) => coded('resumed.opening', '— … resumed on `claude-code`', { adapter: 'claude-code', why });
+    const moved = coded('resumed.moved', '2.1.300; it opened on 2.1.281', { now: '2.1.300', then: '2.1.281' });
+
+    it('is the English it has always been, and the Chinese beside it', () => {
+      expect(noteLines(t, { parts: [lead('answer')] }, 'en')[0].text)
+        .toBe('— your answer is the next turn of its own conversation, resumed on `claude-code`.');
+      expect(noteLines(t, { parts: [lead('words-and-findings'), moved] }, 'en').map((line) => line.text)).toEqual([
+        "— your words and another agent's findings are the next turn of its own conversation, resumed on `claude-code`.",
+        'It is on version 2.1.300 now; it opened on 2.1.281.',
+      ]);
+      expect(noteLines(zh, { parts: [lead('findings'), moved] }, 'zh').map((line) => line.text)).toEqual([
+        '—— 另一个智能体的发现是其自身对话的下一轮，已在 `claude-code` 上恢复。',
+        '现为版本 2.1.300；开始时为 2.1.281。',
+      ]);
+      expect(noteLines(zh, { parts: [coded('resumed.native', '…', { adapter: 'claude-code' })] }, 'zh')[0].text)
+        .toBe('—— 你在它工作时说的话是其自身对话的下一轮，已在 `claude-code` 上恢复。');
+    });
+
+    it('shows a way of saying it does not know as recorded', () => {
+      expect(noteLines(zh, { parts: [lead('newer')] }, 'zh')).toEqual([{ kind: 'recorded', text: '— … resumed on `claude-code`' }]);
+    });
+  });
+
   /**
    * AGT3d (D125's AGT3c note): a limit's line says the kind of limit, its window worded as the agents' screens word it
    * (`harness.window.*`), and whose accounts, in either language; a window this build does not know is said as named.

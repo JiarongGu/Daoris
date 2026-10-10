@@ -364,6 +364,19 @@ public static class NoteCodes
         new(OpeningWhy.FirstHere, [], "note.opening.why.first-here"),
     ]);
 
+    /// <summary>
+    /// Who spoke the words a resumed conversation goes on with, as the page says it (CONVNOTE2a; <see cref="Continuations.Opening"/>):
+    /// a reason per way the English says it, with no value of its own.
+    /// </summary>
+    public static readonly NoteReasons Resumed = new(
+    [
+        new(ResumedWhy.Answer, [], "note.resumed.why.answer"),
+        new(ResumedWhy.Words, [], "note.resumed.why.words"),
+        new(ResumedWhy.Findings, [], "note.resumed.why.findings"),
+        new(ResumedWhy.AnswerAndFindings, [], "note.resumed.why.answer-and-findings"),
+        new(ResumedWhy.WordsAndFindings, [], "note.resumed.why.words-and-findings"),
+    ]);
+
     // ——— A session's end (Observation, the driver's own ends).
     public static readonly NoteCode EndedAwaits = new("ended.awaits", ["awaits"]);
     public static readonly NoteCode EndedExit = new("ended.exit", ["exit"]);
@@ -500,6 +513,12 @@ public static class NoteCodes
     public static readonly NoteCode OpeningSaidNearAt = new("opening.said-near-at", ["near"]);
     public static readonly NoteCode OpeningSaidClear = new("opening.said-clear", []);
 
+    // ——— A resumed conversation's first line (CONVNOTE2a, Continuations.Opening): the adapter it resumed on is a fact, and
+    // a version that moved is a part riding inside it. The conversation's record never leaves the machine (D76 §2).
+    public static readonly NoteCode ResumedOpening = new("resumed.opening", ["adapter", "why"]) { Why = Resumed };
+    public static readonly NoteCode ResumedMoved = new("resumed.moved", ["now", "then"]);
+    public static readonly NoteCode ResumedNative = new("resumed.native", ["adapter"]);
+
     /// <summary>Every code above, read off the declarations so none escapes the catalogue test.</summary>
     public static IReadOnlyList<NoteCode> All { get; } =
         [.. typeof(NoteCodes).GetFields().Where(field => field.FieldType == typeof(NoteCode)).Select(field => (NoteCode)field.GetValue(null)!)];
@@ -520,6 +539,27 @@ public static class NoteCodes
     /// <summary>A moment as a value: ISO 8601 in UTC, to the second, which the page formats in the reader's language and zone.</summary>
     public static string Moment(DateTimeOffset at) =>
         at.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
+}
+
+/// <summary>
+/// Whose words a resumed conversation goes on with, by code (CONVNOTE2a): the page's <c>note.resumed.why.*</c>.
+/// </summary>
+public static class ResumedWhy
+{
+    /// <summary>The person's answer to a park.</summary>
+    public const string Answer = "answer";
+
+    /// <summary>The person's words to a conversation that had ended.</summary>
+    public const string Words = "words";
+
+    /// <summary>Another agent's findings alone.</summary>
+    public const string Findings = "findings";
+
+    /// <summary>The person's answer and another agent's findings.</summary>
+    public const string AnswerAndFindings = "answer-and-findings";
+
+    /// <summary>The person's words and another agent's findings.</summary>
+    public const string WordsAndFindings = "words-and-findings";
 }
 
 /// <summary>

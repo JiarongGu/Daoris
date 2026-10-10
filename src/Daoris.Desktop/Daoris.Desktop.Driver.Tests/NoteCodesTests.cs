@@ -68,7 +68,7 @@ public sealed class NoteCodesTests
     public void Every_reason_a_why_may_name_has_an_entry_that_says_its_own_values(string language)
     {
         var catalogue = Catalogue(language);
-        foreach (var reasons in new[] { NoteCodes.Continue, NoteCodes.Cooling, NoteCodes.Opening })
+        foreach (var reasons in new[] { NoteCodes.Continue, NoteCodes.Cooling, NoteCodes.Opening, NoteCodes.Resumed })
         {
             foreach (var reason in reasons.All)
             {
@@ -107,6 +107,22 @@ public sealed class NoteCodesTests
         foreach (var code in NoteCodes.All.Where(code => code.Why == NoteCodes.Opening))
         {
             Assert.All(code.Values.Where(value => value != "why"), value => Assert.False(NoteCodes.Opening.Carries(value), $"`{code.Code}`'s `{value}` is a reason's too"));
+        }
+    }
+
+    /// <summary>CONVNOTE2a: every way a resumed line says whose words (<see cref="ResumedWhy"/>) is a reason, once, and none shadows the line's values.</summary>
+    [Fact]
+    public void Every_resumed_reason_is_declared_once_and_none_shadows_its_line_s_values()
+    {
+        var reasons = typeof(ResumedWhy).GetFields()
+            .Where(field => field.IsLiteral && field.FieldType == typeof(string))
+            .Select(field => (string)field.GetRawConstantValue()!)
+            .Order(StringComparer.Ordinal);
+
+        Assert.Equal(reasons, NoteCodes.Resumed.All.Select(reason => reason.Code).Order(StringComparer.Ordinal));
+        foreach (var code in NoteCodes.All.Where(code => code.Why == NoteCodes.Resumed))
+        {
+            Assert.All(code.Values.Where(value => value != "why"), value => Assert.False(NoteCodes.Resumed.Carries(value), $"`{code.Code}`'s `{value}` is a reason's too"));
         }
     }
 

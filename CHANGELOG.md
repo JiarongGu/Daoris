@@ -17,6 +17,9 @@ with the version and date at release.
   with each account drawn as code. What each account last said about its limits, a refused turn and the
   step among the rest are worded too. A driver's line with nothing to word it by, as older conversations
   hold, draws its backticks as code rather than as backticks.
+- The line a conversation goes on with after it was parked or ended, saying whose words are its next turn and
+  which agent it resumed on, reads in the window's language too, and a harness version that moved since it
+  opened is a line beside it.
 - `daoris wire <repository> --workspace <name>` moves a registered repository to another workspace from a
   terminal, as the page's Manage → *Move to workspace* does, and changes nothing else about it. An unknown
   repository, or a workspace a shared host does not serve, is refused in the service's own words.
