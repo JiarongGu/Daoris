@@ -35,7 +35,11 @@ internal sealed class HelpRoomWindow : IHelpRoomSection
         text.Append("A view moves from its region's tab list (the button at the end of the tab row), by a right-click on\n");
         text.Append("its tab, or by dragging its tab to the other region; View → Reset view locations puts every view\n");
         text.Append("back. The toggles beside the window controls, and the View menu, show or hide the panel (`Ctrl+J`)\n");
-        text.Append("and the right side bar (`Ctrl+Alt+B`) on every view, and the session list (`Ctrl+B`) on Sessions.\n");
+        text.Append("and the right side bar (`Ctrl+Alt+B`) on every view.\n");
+        // FRAME1i-b (D118 point 4): the list is every view's but Overview's and Map's, with four doors.
+        text.Append("Every view but Overview and Map has a list beside its centre: Sessions, Quests, Repositories, Knowledge,\n");
+        text.Append("Agents, Plugins and Settings. The list shows or hides by four doors: its strip, the View menu, `Ctrl+B`,\n");
+        text.Append("and a press on the current place in the activity bar. Hidden, it leaves a narrow strip.\n");
         text.Append("You open on `F1` or `Ctrl+Alt+I`, and Quick Ask, a box where the palette opens, on\n");
         text.Append("`Ctrl+Shift+Alt+L`.\n\n");
         // HELP10: PREVIEW1's file preview (D111), so asked how to read a file an agent touched, the helper points

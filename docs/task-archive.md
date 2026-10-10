@@ -13117,3 +13117,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX7d-1 — coded opening notes** (driver + web twin). The *opened on* note (`AccountRotation.cs` `RotatedOpening.Say` ~:528-554, `RotationWords`) is one English sentence: give it note codes with parts (`AutoLanding.cs` ~:470 is the exemplar), en/zh `note.json`, `noteLines.ts`; a note without parts draws backticks as code. English `Text` stays byte-identical. D152 §4.6, UX7 design ~:85, :108; D142.
 
 **Outcome** 2026-10-11: the conversation's opening line is worded by code (`opening.*`, the `NoteCodes.Opening` reasons, one per step clause), its English byte for byte; a line the codes cannot compose keeps no parts. Account ids are part values here, since conversation events never leave the machine (D142 point 2's one exception). A driver note with no parts draws backticks as code. The other notes are CONVNOTE2. Detail: D152's UX7d-1 note.
+
+
+## FRAME1i-b — the room says every view's list (2026-10-11, D118)
+
+> - [ ] **FRAME1i-b — the room says every view's list** (driver; after ENTRY1d2a, which holds the goldens). `HelpRoomWindow.cs` says each view but Overview and Map has a list, its four doors (D118 point 4), and that where the person is names the chosen item. Frame-model design ~:375-388; goldens.
+
+**Outcome** 2026-10-11: the room's window section says every view but Overview and Map has a list beside its centre and the four doors that show or hide it (its strip, the View menu, `Ctrl+B`, a press on the current place); the Sessions line keeps only what is Sessions' own. That where the person is names the chosen item is FRAME1i-a's, with its sentence. Detail: D118's FRAME1i-b note.
