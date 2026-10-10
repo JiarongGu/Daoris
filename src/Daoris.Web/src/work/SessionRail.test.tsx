@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -21,6 +22,7 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => {},
 }));
 
+import type { OpenGroup } from '../opener';
 import { SessionRail } from './SessionRail';
 
 const at = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString();
@@ -777,6 +779,33 @@ describe('a group a door brings into view', () => {
     const heading = await screen.findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
     await waitFor(() => expect(brought).toHaveBeenCalledTimes(1));
     expect(heading).toHaveFocus();
+  });
+
+  /** ENTRY1g (D161's ENTRY1b note): a search typed in the rail hides its groups, so a go clears it; it is the rail's alone. */
+  it('clears a search typed in the rail for a go, and brings the group into view', async () => {
+    const brought = vi.fn();
+    function Searched() {
+      const [group, setGroup] = useState<OpenGroup | null>(null);
+      const letGo = () => {
+        brought();
+        setGroup(null);
+      };
+      return (
+        <>
+          <button type="button" onClick={() => setGroup('you')}>go</button>
+          <SessionRail notify={() => {}} group={group} onGroupBrought={letGo} />
+        </>
+      );
+    }
+    show(<Searched />);
+    await userEvent.type(await screen.findByRole('searchbox', { name: 'search sessions' }), 'zzz');
+    expect(screen.queryByRole('heading', { level: 3, name: 'Waiting on you (1)' })).toBeNull();
+
+    await userEvent.click(screen.getByRole('button', { name: 'go' }));
+    const heading = await screen.findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+    await waitFor(() => expect(brought).toHaveBeenCalledTimes(1));
+    expect(heading).toHaveFocus();
+    expect(screen.getByRole('searchbox', { name: 'search sessions' })).toHaveValue('');
   });
 
   it('lets the door go where the list draws no such group: nothing to review, by repository, the strip', async () => {
