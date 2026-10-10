@@ -319,7 +319,7 @@ export function SessionRail({
  * By name answers as the person types; by content answers once the typing settles, for the words it
  * was asked about — never a stale answer beside a newer query. The host's bounds are said, not hidden.
  */
-function SearchResults({
+export function SearchResults({
   query, settled, named, hits, cut, total, covered, asking, onMore, loadingMore, moreError, sessionOf, titleOf, row, selected, onSelect,
 }: {
   query: string;

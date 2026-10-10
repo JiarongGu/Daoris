@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- The Sessions rail's search of what was said reads a page of sessions at a time: under the results it says how many
+  sessions matched and how many it lists, and *Show more* reads the next page, where it said more matched than it showed.
 - The line above an agent's accounts saying which account the next start takes now speaks for the workspace the
   window shows, named (*In work: …*), where that workspace has its own scope. It showed nothing where this machine
   runs on the tool's own sign-in.
