@@ -218,8 +218,7 @@ public static class HelpPlaces
     ];
 
     /// <summary>
-    /// The views a go may name one item in (ENTRY1f1, D161's ENTRY1f note): Quests, whose list holds quests and asks. A
-    /// session is named by none yet (ENTRY1f2).
+    /// The views a go may name one item in (ENTRY1f1, D161's ENTRY1f note): Quests, whose list holds quests and asks.
     /// </summary>
     public static readonly IReadOnlyList<string> ItemViews = ["quests"];
 

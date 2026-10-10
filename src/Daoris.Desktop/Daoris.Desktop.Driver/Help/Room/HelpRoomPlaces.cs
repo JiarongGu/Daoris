@@ -35,8 +35,7 @@ internal sealed class HelpRoomPlaces : IHelpRoomSection
         text.Append("with none in view it opens Repositories, where the person picks the workspace they mean.\n");
         // ENTRY1b (D161's ENTRY1 note): a quest or a session keeps its own conversation, so a go takes the person to the
         // group that waits on them there and leaves the one to open to them. ENTRY1f1 (its ENTRY1f note): a go on Quests may
-        // name the one, as the room lists it, and the driver judges it against the machine's records; a session waits on
-        // ENTRY1f2.
+        // name the one, as the room lists it, and the driver judges it against the machine's records.
         text.Append("A part of `sessions` or `quests` brings that group of its list into view and names no session or quest in it:\n");
         text.Append("the person opens the one they mean there. To open one quest or ask, name it as the go's item on `quests`, with no part:\n");
         text.Append($"a quest by its id, an ask as `{HelpPlaces.AskItem}<id>`, each one this room lists. `overview` has no part: what waits on the person leads it.\n");

@@ -86,7 +86,7 @@ public sealed class HelpRoomPlacesTests
     /// <summary>
     /// ENTRY1f1 (D161's ENTRY1f note): to take the person to the one quest or ask that waits, a go on Quests names it as its
     /// item, with no part: a quest by its id and an ask as <c>ask:&lt;id&gt;</c>, each as the room lists it, so the helper
-    /// names only what it was shown. A session is named by no item yet (ENTRY1f2).
+    /// names only what it was shown.
     /// </summary>
     [Fact]
     public void The_room_says_a_go_on_quests_may_name_one_quest_or_ask_as_its_item()

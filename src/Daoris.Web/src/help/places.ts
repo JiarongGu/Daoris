@@ -36,7 +36,7 @@ export const PLACE_DOMAINS: readonly SettingsSection[] = ['start', 'appearance',
 
 /**
  * The views a go may name one item in (ENTRY1f1, D161's ENTRY1f note): Quests, whose list holds quests and asks, an ask
- * named as `askItem` names it. A session is named by none yet (ENTRY1f2). The driver's `HelpPlaces.ItemViews`.
+ * named as `askItem` names it. The driver's `HelpPlaces.ItemViews`.
  */
 export const PLACE_ITEM_VIEWS: readonly View[] = ['quests'];
 
