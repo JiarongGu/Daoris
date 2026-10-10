@@ -227,7 +227,7 @@ export function SessionRail({
         <ArchiveEndedAsk
           {...endedToArchive(listed, groupings)}
           busy={actions.archiving}
-          onArchive={(ids) => actions.archiveListed(ids, onArchiveEnded)}
+          onArchive={(ids, answered) => actions.archiveListed(ids, answered)}
           onCancel={() => onArchiveEnded?.()}
         />
       )}

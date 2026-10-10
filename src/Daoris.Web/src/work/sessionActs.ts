@@ -194,15 +194,15 @@ export function useSessionActs({ notify, doors = {} }: { notify: Notify; doors?:
    * *Archive what ended…*'s second press (§5.3): what its first listed, each judged again by the host as it goes. What
    * changed since the list is kept and counted, never refused as a whole.
    */
-  const archiveListed = (ids: readonly string[], done?: () => void) => archive.mutate({ ids, archived: true }, {
+  const archiveListed = (ids: readonly string[], answered?: Answered) => archive.mutate({ ids, archived: true }, {
     onSuccess: (answer) => {
       const kept = answer?.kept?.length ?? 0;
       notify(kept > 0
         ? t('work.archive.endedKept', { archived: ids.length - kept, count: ids.length })
         : t('work.archive.ended', { count: ids.length }));
-      done?.();
+      answered?.done();
     },
-    onError: failure(notify),
+    onError: refusedIn(answered),
   });
 
   return {
