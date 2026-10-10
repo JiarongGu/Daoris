@@ -1,7 +1,9 @@
 # Pausing and abandoning an ask (PAUSE1)
 
-**Carried by:** PAUSE1. **Status:** design, written before the build; **D132** records what it settles. Nothing is
-built. §0 is what is true today, read from the code at `32cbf03`; §1 onward is the design. Read with **D126**
+**Standing:** contract under D132. Its dated notes record implementation and amendments; remaining
+PAUSE1 work is in `TASKS.md`. §0 is the design-time baseline at `32cbf03`, not today's implementation.
+
+**Original status:** design, written before the build; **D132** records what it settles. §1 onward is the design. Read with **D126**
 (`docs/2026-10-02-session-management-design.md`) and its notes, **D65** with USE1c, **D79**, **D80**, **D88**, **D95**,
 **D102**, **D104**, **D51**, **D46 §3–§4**, **D47 §4**, **D68**, **D69**, **D50**, **D110** and **D116**.
 

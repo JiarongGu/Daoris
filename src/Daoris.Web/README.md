@@ -1,9 +1,8 @@
 # Daoris.Web — the platform: the person's window over the family
 
-React application over `Daoris.Service`, served by `Daoris.Service.Http`. Both open
-questions in the original brief are settled — as `docs/decisions/D30.md` and `D31.md` — and it has since
-grown into the platform (D38, `docs/2026-09-19-platform-design.md`): knowledge, tasks and setup in one
-place.
+React application over `Daoris.Service`, served by `Daoris.Service.Http`. It is the shared UI for
+the browser and desktop. [The contributor guide](../../docs/development.md) gives dependency setup;
+[the router](../../docs/README.md) locates the frontend, frame and UI contracts.
 
 ## What it is
 
@@ -14,8 +13,7 @@ One activity bar (D66), landing on management (D40). The views that read the fam
 | **Overview** | the landing: is anything sitting and for how long, the family's health as tiles, the repositories by what the index holds |
 | **Quests** | what has been asked of whom, grouped by where it is in its life; publish, take, done, decline — and, beside a driven quest, its session **record** (D46): state, adapter, note and evidence, read-only in a browser, with stop offered only where a shell's driver actually holds the process |
 | **Repositories** | repositories and workspaces, their ownership, setup and driver controls; workspace pages carry wiring, lines, landing and permissions (D150) |
-| **Convergence** | where two repositories reached the same conclusion independently — the knowledge half's lead view |
-| **Search** | what the family has already learned about X |
+| **Knowledge** | Search and Convergence are two modes of one view: find entries or compare independently learned lessons |
 | **Agents** | installed agents and accounts: names, sign-in state, known reading time, workspace lists and actions; desktop only |
 | **Plugins** | this machine's plugins and offers; desktop only |
 
@@ -23,7 +21,7 @@ One activity bar (D66), landing on management (D40). The views that read the fam
 time (D55, `docs/2026-09-21-working-surface-design.md`) — and exists only in the desktop, because a
 stream never leaves its machine. **Map** is how a workspace's repositories are wired (MAP2).
 **Settings** is everywhere: Get started, Appearance and AI in a browser; the desktop also offers
-Driver, Tools, Plugins, Browser and Logs. Agent accounts live in Agents; workspace controls live in
+Driver, Tools, Browser and Logs. Plugins has its own view. Agent accounts live in Agents; workspace controls live in
 Repositories. The desktop's seven menus share one command table, with shortcuts and a command palette
 (D152). Help → Update opens the update card in Driver.
 
@@ -33,7 +31,7 @@ Each Settings domain is `src/settings/<Name>Domain.tsx`, with its tests beside i
 
 **The design language is written down** — `docs/2026-09-19-platform-ux.md` (D41): the console shell
 (an activity bar, page headers, one primary action per view), the token system, the drawer as the single
-detail-and-form surface, toasts carrying the service's sentences verbatim, and a status palette that
+detail-and-form surface alongside the frame's list and main panes (D118), toasts carrying the service's sentences verbatim, and a status palette that
 was **computed, not tasted** — both themes pass all six checks of the visualization validator, and a
 status pill never appears without its text label.
 
@@ -83,14 +81,14 @@ judgement as every other door, with refusals shown verbatim. A shared deployment
 at all — the remote is an API until person-auth exists, and the person's window stays the desktop over
 its local host; locally — the default — the full surface works.
 
-**The active tier is stated on every screen**, never implied — a reader looking at results has no way to
+**Knowledge results identify the active tier** — a reader looking at results has no way to
 know the semantic half was absent, and would read them as complete rather than as
 complete-for-word-overlap (D24).
 
 ## One UI, two shells
 
 This app is the **only** UI. It is served over HTTP for the browser, and `Daoris.Desktop` carries the
-same build in its WebView — the same bytes a browser gets, plus the shell's capabilities (the driver
+same build in its embedded Chromium — the same bytes a browser gets, plus the shell's capabilities (the driver
 controls) that only exist where a driver does. Two shells, one codebase; a second hand-written desktop
 UI would be the same divergence problem in a new place.
 
@@ -99,6 +97,10 @@ origin. That is what makes CORS unnecessary in a real deployment — the `DAORIS
 exists only for the development server on another port, and it names an origin rather than wildcarding.
 
 ## Running it
+
+The HTTP host requires `DAORIS_HOME` or an explicit `DAORIS_KNOWLEDGE_DB`. Use a development
+store under `_fixtures/`; an installed application's home is live state. The
+[service guide](../Daoris.Service/README.md) explains these environment variables and local mode.
 
 ```
 # the service, with the UI it will serve

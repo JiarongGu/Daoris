@@ -1,6 +1,10 @@
 # Work is reviewed where it runs before it is offered to land
 
-> REVIEWENV1, decided as D154 (2026-10-08). Nothing is built. `Dnn` is `docs/decisions/Dnn.md`. The owner, of a ticket
+**Standing:** contract under D154, extended by D155–D157. D154's dated notes record implementation
+and serving corrections; remaining proposals and installed proofs are in `TASKS.md`. §0 is the
+design-time case, not a current code inventory.
+
+> REVIEWENV1, decided as D154 (2026-10-08), before implementation. `Dnn` is `docs/decisions/Dnn.md`. The owner, of a ticket
 > in their work workspace that Daoris had carried to *Accept…*: *"I never saw this set up in dev for me to review"*, and
 > *"a development without any verification and want to merge to prod is not a good sign; this should also be some
 > process rule set up in Daoris's development cycle"*. The same day: *"this should be configurable: some repos need it

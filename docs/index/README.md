@@ -121,7 +121,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 82 | 1691 |
 | `src/Daoris.Service/Daoris.Service.Tests/ReviewStepTests.cs` | 41 | 734 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 70 | 1420 |
-| `src/Daoris.Service/README.md` | 75 | 720 |
+| `src/Daoris.Service/README.md` | 76 | 726 |
 
 ### CLI (`cli`)
 
@@ -172,20 +172,20 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-01-development-documents-design.md` | 62 | 825 |
 | `docs/2026-10-01-naming-audit.md` | 95 | 1004 |
 | `docs/2026-10-01-plugin-distribution-design.md` | 64 | 910 |
-| `docs/2026-10-01-plugins-screen-design.md` | 66 | 922 |
+| `docs/2026-10-01-plugins-screen-design.md` | 66 | 925 |
 | `docs/2026-10-01-self-development-design.md` | 50 | 651 |
 | `docs/2026-10-01-tools-design.md` | 60 | 856 |
 | `docs/2026-10-01-workspace-setup-design.md` | 58 | 744 |
 | `docs/2026-10-02-account-use-design.md` | 86 | 981 |
-| `docs/2026-10-02-knowledge-design-review.md` | 43 | 538 |
-| `docs/2026-10-02-pause-and-clean-up-design.md` | 49 | 668 |
+| `docs/2026-10-02-knowledge-design-review.md` | 43 | 542 |
+| `docs/2026-10-02-pause-and-clean-up-design.md` | 49 | 670 |
 | `docs/2026-10-02-session-management-design.md` | 69 | 849 |
-| `docs/2026-10-03-session-messages-design.md` | 40 | 481 |
-| `docs/2026-10-04-ux6-redesign.md` | 72 | 892 |
-| `docs/2026-10-05-ux7-design.md` | 66 | 784 |
-| `docs/2026-10-07-history-clearing-design.md` | 51 | 615 |
-| `docs/2026-10-08-review-environment-design.md` | 55 | 688 |
-| `docs/2026-10-08-second-agent-design.md` | 56 | 765 |
-| `docs/2026-10-09-workflow-design.md` | 79 | 1034 |
+| `docs/2026-10-03-session-messages-design.md` | 41 | 485 |
+| `docs/2026-10-04-ux6-redesign.md` | 72 | 895 |
+| `docs/2026-10-05-ux7-design.md` | 66 | 787 |
+| `docs/2026-10-07-history-clearing-design.md` | 51 | 618 |
+| `docs/2026-10-08-review-environment-design.md` | 56 | 692 |
+| `docs/2026-10-08-second-agent-design.md` | 57 | 769 |
+| `docs/2026-10-09-workflow-design.md` | 79 | 1038 |
 | `docs/DAORIS_FUTURE_DIRECTIONS.md` | 51 | 3466 |
-| `src/Daoris.Desktop/README.md` | 51 | 297 |
+| `src/Daoris.Desktop/README.md` | 51 | 302 |

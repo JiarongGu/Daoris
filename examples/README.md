@@ -43,7 +43,7 @@ it, because that door hands the session its connector (D70).
 ## How knowledge crosses
 
 Each project's rules, knowledge, decisions and task outcomes are indexed per repository. What `game`
-learned about world streaming is answerable from `engine` — or from the platform's Search view —
+learned about world streaming is answerable from `engine` — or from Knowledge → Search —
 without opening `game` at all. Convergence detection then finds where two projects learned the same
 lesson independently, which is how doctrine gets promoted rather than duplicated.
 
@@ -92,7 +92,7 @@ branch, [`plugins/github-pull-request`](plugins/github-pull-request/README.md) p
 pull request with `gh`, and [`plugins/azure-devops-pull-request`](plugins/azure-devops-pull-request/README.md)
 with `az repos`. Neither runs until it is installed and a workspace's landing rule names it. The
 published desktop carries those two and `in-app-browser` as **Daoris's own plugins**, offered in
-Settings → Plugins and by `daoris plugin list` and never installed until a press (D103);
+Plugins and by `daoris plugin list` and never installed until a press (D103);
 `hold-by-title` is the rehearsals' fixture, and `browser` is for a machine without the shell.
 
 The examples are tracked in full — manifests, locks, synced doctrine — so they are readable as

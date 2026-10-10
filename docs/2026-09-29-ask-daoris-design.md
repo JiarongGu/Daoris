@@ -1,6 +1,9 @@
 # Ask Daoris — a conversation about Daoris itself (HELP1)
 
-**Carried by:** HELP1 in `TASKS.md`. **Status:** design, written before the build, with the owner's
+**Standing:** D89/D110; implementation notes live in those decisions. D158 governs conversation
+history, and its remaining reachability work is in `TASKS.md`. HELP1's completion is in the archive.
+
+**Original status:** design, written before the build, with the owner's
 two calls made (§8, D89). The requirement is `docs/2026-09-28-after-the-first-workspace.md` §4. The owner,
 setting the first real workspace's landing rule (2026-09-28): *"I think we will need some chat agent to
 support configure for workspace"*.

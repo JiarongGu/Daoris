@@ -1,7 +1,10 @@
 # Clearing finished history from this machine (HIST1)
 
-**Carried by:** HIST1 in `TASKS.md`. **Status:** design, written before the build, and **D153** records what it settles.
-Nothing is built. §0 is what is true today, read from the code at `121503bf`; §1 onward is the design. Every name in it
+**Standing:** contract under D153. Its dated notes record the service, driver, terminal and screen
+implementation; `TASKS.md` holds remaining work and installed proof. §0 is the baseline at `121503bf`.
+
+**Original status:** design, written before the build, and **D153** records what it settles.
+§1 onward is the design. Every name in it
 follows `docs/2026-10-01-naming-design.md` (D116) and its glossary.
 
 **Read with** D95 (a quest or an ask deleted while nobody started on it), D126

@@ -2,7 +2,7 @@
 
 **Status: the contract for TOOLS1, recorded as D121 before any code. TOOLS2 is built:** `tools.json`, its rules
 and its resolution (§2.1–§2.3), twins in `tools.ts` and `Tools.cs`, and `daoris tool list|path|use <tool>
-system|file <path>`. Nothing starts a tool through them yet (TOOLS5). TOOLS3 is built: `resources.json` schema 1, the
+system|file <path>`. Child-process resolution is described in TOOLS5 below. TOOLS3 is built: `resources.json` schema 1, the
 platform table and the merge (§3.1–§3.5), twins in `resources.ts` and `ToolResources.cs`, and the list built in at
 `app/resources.json`, whose first entries `2026-10-01-tools-resources-evidence.md` records. TOOLS4 is built: a
 version planned, downloaded, verified, unpacked and laid out (§3.6, §3.7), twins in `toolinstall.ts` with `zipfile.ts`

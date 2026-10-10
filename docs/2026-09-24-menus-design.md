@@ -1,5 +1,9 @@
 # The menus are the setup domains — the design
 
+**Standing:** D75's original menu contract. D152 replaces §2's domain menus with a shared verb/place
+menu bar; D150 moves settings onto their repository, workspace, agent or plugin. The workspace
+naming and single-owner rules still apply. Read current menu behavior in the web guide.
+
 **Status: the contract for FRAME1–FRAME5, the owner's choices of 2026-09-24 recorded as D75 before
 any code.** The ask, made while looking at the installed application: *"I think we can use the topbar
 menu to have more different domain of setup, this is closer to ide logic, and I dont see workspace

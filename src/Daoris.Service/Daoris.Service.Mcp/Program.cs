@@ -9,7 +9,7 @@ using ModelContextProtocol.Server;
 // The knowledge index as an MCP server over stdio.
 //
 // Local-first, and local means local: it reads repositories on this machine and writes one SQLite
-// file under the user's profile. Nothing here needs a URL, a key or an account — that is the shared
+// file under the explicit Daoris home or database path (D63). A URL, key or account belongs to shared
 // mode, and it is the HTTP host's job, not this one's. A quest shared with a team is committed here
 // like any other (D68). The one socket this host opens is a take's claim by push (D69): where the
 // person has wired the quest's workspace to a remote, a take waits for that remote's answer before

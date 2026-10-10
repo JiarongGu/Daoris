@@ -1,6 +1,10 @@
 # How work moves: a workflow per repository and kind of task, drawn as a flowchart
 
-> WORKFLOW1, decided as D157 (2026-10-09). Nothing is built. `Dnn` is `docs/decisions/Dnn.md`. The owner, 2026-10-09:
+**Standing:** contract under D157. Its dated notes record Current, named workflows, selections
+and bound-version gates; `TASKS.md` holds the editor, proposals, outside services and known display/
+landing gaps. The opening baseline and proof limitations are from design time, not a live status.
+
+> WORKFLOW1, decided as D157 (2026-10-09), before implementation. `Dnn` is `docs/decisions/Dnn.md`. The owner, 2026-10-09:
 > *"when doing work with Daoris we should be able to set up a workflow for each repo or for a task type… presented as a
 > flowchart, so we can define what work is highly co-worked with a human and what can be fully automated; this includes
 > how to raise changes, merge, even CI/CD (which includes multiple different services and steps); this is more like

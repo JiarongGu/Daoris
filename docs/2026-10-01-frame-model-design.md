@@ -1,8 +1,11 @@
 # One frame for every view — the layout model (FRAME1)
 
-**Carried by:** FRAME1 in `TASKS.md`. **Status:** design (FRAME1a), written before the build, and **D118**
+**Standing:** D118's frame contract, amended by D150/D152. Implementation notes are in D118;
+the remaining item-aware Ask Daoris work is FRAME1i in `TASKS.md`. The frame audit is dated evidence.
+
+**Original status:** design (FRAME1a), written before the build, and **D118**
 records what it settles. The audit it answers is `docs/2026-10-01-frame-audit.md`, where every row cites
-the file and line that decides it today.
+the file and line that decided it at that baseline.
 
 **What it amends**, each marked where it is amended:
 - the desktop frame design's §3 (D56);

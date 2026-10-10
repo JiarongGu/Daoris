@@ -43,8 +43,10 @@
     "changelog": "CHANGELOG.md",
     "tracked": [
       { "document": "README.md", "describes": ["src/Daoris.Cli/src", "src/Daoris.Cli/bin"] },
-      { "document": "src/Daoris.Service/README.md", "describes": ["src/Daoris.Service/Daoris.Service.Core"] },
-      { "document": "src/Daoris.Devkit/README.md", "describes": ["src/Daoris.Devkit/Daoris.Devkit.Core"] }
+      { "document": "src/Daoris.Service/README.md", "describes": ["src/Daoris.Service/Daoris.Service.Core", "src/Daoris.Service/Daoris.Service.Http", "src/Daoris.Service/Daoris.Service.Mcp"] },
+      { "document": "src/Daoris.Devkit/README.md", "describes": ["src/Daoris.Devkit/Daoris.Devkit.Core", "src/Daoris.Devkit/Daoris.Devkit.Cli"] },
+      { "document": "src/Daoris.Desktop/README.md", "describes": ["src/Daoris.Desktop/Daoris.Desktop.Driver", "src/Daoris.Desktop/Daoris.Desktop.Driver.Host", "src/Daoris.Desktop/Daoris.Desktop.Modules", "src/Daoris.Desktop/Daoris.Desktop.App", "src/Daoris.Desktop/Daoris.Desktop.Launcher", "tools/desktop.mjs", "tools/desktop-publish.mjs"] },
+      { "document": "src/Daoris.Web/README.md", "describes": ["src/Daoris.Web/src", "src/Daoris.Web/package.json", "src/Daoris.Web/vite.config.ts"] }
     ]
   }
 }

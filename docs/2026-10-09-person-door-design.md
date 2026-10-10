@@ -1,6 +1,10 @@
 # A door only the person may use
 
-> PERSONDOOR1, decided as D156 (2026-10-09). Nothing is built. `Dnn` is `docs/decisions/Dnn.md`. A second agent's
+**Standing:** contract under D156. Its dated notes record host-side key and confirmation handling;
+`TASKS.md` holds remaining client/startup integration and proofs. A host's ability to gate a key
+does not prove every starter hands it one. §0 describes the original gap.
+
+> PERSONDOOR1, decided as D156 (2026-10-09), before implementation. `Dnn` is `docs/decisions/Dnn.md`. A second agent's
 > (Codex's) read-only review of D154's record claimed seven defects. REVIEWENV1b3 reproduced and fixed six, and left the
 > seventh to this design: the local host trusts the loopback, so any process on the machine, a driven session's shell
 > among them, can call the doors that are the person's alone, and the record cannot tell an agent from the person.

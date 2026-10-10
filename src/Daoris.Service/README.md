@@ -1,6 +1,6 @@
 # Daoris.Service — the cross-repository knowledge service
 
-**Status: deployable.** An MCP server over stdio exposes the index to any agent session, and an HTTP
+An MCP server over stdio exposes the index to any agent session, and an HTTP
 host carries the same service for a browser or a remote deployment. The core reads a repository's
 knowledge into addressable entries, classifies each as canonical or local, stores them in SQLite,
 answers ranked queries over FTS5, and finds where repositories learned the same lesson independently.
@@ -9,6 +9,11 @@ session — or another machine's `connect` — finds waiting. Its tests are the 
 `daoris.gates.json`, which runs the solution: `Daoris.Service.Tests` for Core and the MCP door, and
 `Daoris.Service.Http.Tests` for the HTTP host's own doors, started in-process with no port bound
 (HTTP1). Gate logs carry the counts; dated integration reviews record the combined verification.
+
+Start with [the contributor guide](../../docs/development.md) for checkout setup and
+[the document router](../../docs/README.md) for the current contracts. This is a component reference:
+read the registry, quest or host section needed. `docs/index/routes.md` locates route handlers;
+the route table below explains their semantics rather than serving as the exhaustive route roster.
 
 Since **D59** the always-loaded tier is a region of `AGENTS.md` rather than a directory, so the
 scanner reads `DoctrineRegion` for a repository's rules and a gate holds that a canonical rule stays
@@ -497,8 +502,9 @@ dotnet run --project src/Daoris.Service/Daoris.Service.Http     # http://localho
 | `GET /api/sync?workspace=` | local mode only: where a workspace stands — operations not yet pushed, the quests the last pass left behind, the quests carrying a conflict, when a pass last reached the remote and last tried, and the wall it hit. Read from the store, reaching no remote; a workspace with no remote here answers `wired: false` and nothing else (SYNC6a) |
 | `GET /api/sessions/since?since=N` | shared mode only: the team's session records held after revision N, in order — every origin but the caller's own (SYNC4) |
 
-There are exactly two trust shapes (D47 §7, as amended). **Local** — the default — trusts the
-loopback: the OS account is the boundary (D21), and the host refuses to start bound anywhere else.
+There are two host modes (D47 §7, as amended). **Local** — the default — binds to loopback: the OS
+account is the base boundary (D21), and the host refuses to start bound anywhere else. A local host
+started with a person key additionally gates person/driver writes as described below (D156).
 **Shared** (`DAORIS_MODE=shared`) is the team deployment: every route under `/api` needs a minted
 per-person per-machine key as a bearer token, no page is served, no machine path is ever answered, and
 keys are administered on the binary itself — `keys mint --name <person@machine> [--days N]`,

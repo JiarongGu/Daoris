@@ -1,6 +1,9 @@
 # Daoris gets simpler as it grows: a setting on its thing, agents as products, and one place for what needs you
 
-> UX6 and PLUGTOOL1, decided as **D150** (2026-10-04). Nothing here is built. `Dnn` is `docs/decisions/Dnn.md`. The owner,
+**Standing:** contract under D150, amended by D152. D150's dated notes record implementation;
+`TASKS.md` holds the remaining surface, naming and installed proofs. §0 is the original review.
+
+> UX6 and PLUGTOOL1, decided as **D150** (2026-10-04), before implementation. `Dnn` is `docs/decisions/Dnn.md`. The owner,
 > in five messages the same day: *"this is confusing right now since I have logged 3 accounts in before and also there
 > should be just one account management for Claude Code"* · *"you kind of need to improve the UI/UX since this is getting
 > more and more complex, and we do need to add features later for coworking between agents"* · *"there probably will be

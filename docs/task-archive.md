@@ -12761,3 +12761,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **IME1 — Enter never sends mid-composition** (web-shell; found by a second agent's review of the history panel, dispatched from its brief). The composer sent on Enter without asking whether an input method was composing, so accepting a Chinese candidate sent half a message; the same in every handler of Enter or Escape. One helper every handler asks first, and a scan that holds it. Proof: vitest per handler, the scan.
 
 **Outcome** 2026-10-09: Enter, Escape, Tab and the arrows no longer act while an input method composes: one helper (`lib/composing.ts`, the native flag or keyCode 229) asked first by all 22 handlers (the composer and its mention list, the palette, find, the inline ask, the list pane, history's rename and search, the search boxes, the maps, the menu bar), and the `Drawer`'s and `QuickPanel`'s Radix Escape kept from closing on a composition's Escape; `composingKeys.test.ts` parses every shipped file and fails a handler that checks Enter or Escape before it. Not tried with a real input method yet. Detail: FIX-LOG IME1, platform-ux §6; commits 3f00b2fd…4a64d54e.
+
+
+## DOCSYS1 — review and refresh the documentation system (2026-10-10, D159)
+
+> - [ ] **DOCSYS1 — review and refresh the documentation system** (documentation/tools). Inventory every documentation tier, compare current guidance with code and decisions, repair drift and keep historical evidence intact. Plan, findings and verification: `docs/2026-10-10-documentation-review.md`; proof: doctrine, document checks, generated indexes and reached gates.
+
+**Outcome** 2026-10-10: shared brief, contributor guide, roadmap and router refreshed; stale current claims corrected and previous guides preserved. Structural routing/freshness checks join verify. D159 records placement; `docs/2026-10-10-documentation-review.md` records source coverage, passed checks and the corrected verification incident. Historical paragraphs and owner-only product proofs retain their stated limits.

@@ -1,9 +1,12 @@
 # Orientation everywhere — every repository Daoris drives starts from an index, and needs nothing of Daoris to read it
 
+**Standing:** contract under D151. Its dated notes record canon, manifest, scanner and source-range
+implementation; `TASKS.md` holds remaining setup, prompt and measurement work. §0 is dated evidence.
+
 > The owner, 2026-10-04, after ORIENT1: *"so this should also apply to the repositories Daoris drives too, and an even
 > better knowledge system since Daoris is there"*, and *"it should not break the general workflow if the system running
 > the code does not have Daoris (this is for sharing repositories)"*. This is ORIENT2's design; its decision is
-> **D151**. Status: **designed; nothing built.** Read with **D24**, **D32**, **D48** §2a, **D54**, **D122**, **D124**,
+> **D151**. Original status: **design before implementation.** Read with **D24**, **D32**, **D48** §2a, **D54**, **D122**, **D124**,
 > **D128**, **D129**, **D134**'s ORIENT1b note, **D135**, and the map design's ORIENT1a note.
 
 - §0 is what ORIENT1 measured and built, and what the repositories Daoris drives keep today. §1 is the floor: the

@@ -1,5 +1,10 @@
 # Daoris.Desktop — the local driver
 
+Start with [the contributor guide](../../docs/development.md) for checkout dependencies and gates.
+This reference covers the machine bridge, window constraints, installation and instruments. The
+generated `docs/index/routes.md` locates bridge handlers; its roster is generated from code, while
+the table below explains the contracts. [The router](../../docs/README.md) names later amendments.
+
 **Status: built — the driver, its headless host and the shell all exist, and the family rehearsal
 drives them end to end.** `docs/2026-09-19-driver-design.md` (D46) is the contract; how each part
 got its shape is in `docs/decisions/` and `docs/task-archive.md`, not here.

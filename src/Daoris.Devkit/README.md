@@ -1,8 +1,9 @@
 # Daoris.Devkit — the shared developer toolkit, shipped as a binary
 
-**Status: built and run over this repository.** One self-contained 2.7 MB binary, with its tests (the count is kept in
-`TASKS.md`). The two
-questions this document was written to settle are settled — as `docs/decisions/D26.md` and `D27.md`.
+The devkit runs universal checks and a repository's declared gates. It also produces the code map
+from project files. [The contributor guide](../../docs/development.md) covers workspace setup;
+D26 and D27 record its configuration and distribution contracts. Build logs carry current size
+and test counts; the backlog holds open work.
 
 **The universal gates run here** (DEVKIT3, 2026-09-22): `universal` in `daoris.gates.json` and a step
 in the release workflow both run `verify --universal-only`. For a year of this file's life they did
@@ -51,8 +52,8 @@ stack-specific and is *declared* by the repository rather than built in.
 |---|---|---|
 | `sensitive` | Would this commit leak a machine path, a private name, or a credential? | never — it is the one that has to run |
 | `version` | Does one file own the version, does everything agree, and was it stamped rather than typed? | no `version.source` declared |
-| `docs` | Has a document fallen behind the code it claims to describe? | no `docs.tracked` declared |
-| `links` | Does every relative link between documents resolve? | no tracked markdown |
+| `docs` | Is a declared document's last commit older than its code's, beyond the grace period? A freshness signal, not a semantic comparison | no `docs.tracked` declared |
+| `links` | Does each relative Markdown link target resolve? Inline-code paths need a separate check | no tracked markdown |
 | `doctrine` | Has this repository's doctrine drifted? — **delegated to `daoris check`** | no `daoris.json` |
 
 `doctrine` is four lines of real work on purpose. `daoris check` already answers that question against a

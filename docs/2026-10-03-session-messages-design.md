@@ -1,9 +1,13 @@
 # Session messages: one model for every door (MSG1)
 
+**Standing:** contract under D137. Its dated notes record implementation and door-specific limits;
+remaining steering and installed proofs are in `TASKS.md`. Harness observations below retain their
+named baseline and measurement status.
+
 > The owner, 2026-10-03: *"we do need a way to send messages between runs so it does the resume, so that closes the gap
 > for codex and it does look like the same session, and this should be properly designed: native/Daoris-managed
 > session messages"*. This is the contract for what a person's words to a session do, whatever its door and its state.
-> Its decision is **D137**. Status: **designed; nothing built.** Read with **D46 §4**, **D52**, **D76**, **D80**,
+> Its decision is **D137**. Original status: **design before implementation.** Read with **D46 §4**, **D52**, **D76**, **D80**,
 > **D83**, **D90**, **D126**, **D131**, **D132**, **D133** and **D136**.
 
 Statements about today were read from the code at `14338bff` (main at `2de3bee2` with STEER1 merged). Statements about

@@ -5,9 +5,10 @@ desktop is the working surface: sessions, quests, repository setup and agent acc
 keeps canonical rules in each repository; the service indexes knowledge and exchanges work.
 
 Start with the [desktop guide](src/Daoris.Desktop/README.md) to run the application, or the CLI below
-to manage doctrine. Contributors should read [AGENTS.md](AGENTS.md), [the document router](docs/README.md)
-and [open tasks](TASKS.md). [ROADMAP.md](ROADMAP.md) explains direction; [decisions](docs/decisions/)
-hold the contracts and reasons.
+to manage doctrine. Development is unpublished `0.0.x`; the pinned npm examples below describe the
+release interface. To work from this checkout, follow [the contributor guide](docs/development.md).
+[AGENTS.md](AGENTS.md) is the shared project brief, [the document router](docs/README.md) locates
+contracts, and [open tasks](TASKS.md) hold remaining work. [ROADMAP.md](ROADMAP.md) gives sequence.
 
 道衍 means *propagation and unfolding*: doctrine flows into repositories; their refinements evolve the canon.
 
@@ -38,8 +39,9 @@ npx daoris@0.0.1 sync     # materialize the doctrine, write daoris.lock
 npx daoris@0.0.1 check    # the gate — offline, exit 1 on drift
 ```
 
-The canon ships **inside the package**, so pinning the package pins the doctrine: once `npx` has it,
-no command fetches anything, and `check` works offline.
+The canon ships **inside the package**, so pinning the package pins the doctrine. Once the package
+is present, doctrine commands use that local canon and `check` works offline. Management commands
+below can contact services or download tools when invoked.
 
 ## Commands
 
@@ -110,8 +112,8 @@ preserved. A never-managed store imports its
 configured root **once**, and says so. A registered checkout that is no longer
 where the registry says it is gets **named** by the next refresh rather than silently skipped.
 
-**`--force` is the only way to lose work here**, so it names every file it overwrites or discards.
-Daoris otherwise refuses in all three destructive cases — a file you edited, a file you wrote before
+**Doctrine `sync --force` can overwrite or discard owned material**, so it names those files.
+Without it, sync refuses in all three destructive cases — a file you edited, a file you wrote before
 adopting, and a file being retired upstream that you had improved. An older daoris's `sync` and `upstream`
 refuse a repository a newer one synced, `--force` or not, naming `npx daoris@<that version>`.
 
@@ -169,9 +171,10 @@ without `join` is refused. `daoris status` reports the declaration.
   are indexed as `(local)`. A knowledge document with no frontmatter is listed by its first heading, and
   `check` says how many there are without failing on them (D128 §3).
 
-The rule that makes this safe: **anything not in the lock is invisible to the tool.** Daoris only ever
-writes files it put there. A repository that already owns a file at a canonical path gets a refusal, not
-a silent overwrite.
+The lock identifies **materialized doctrine Daoris owns**. Local knowledge and skills can be read
+and indexed, but sync does not replace them as canonical copies. Adoption also writes generated
+indexes and instruction regions; `init` writes the manifest and may create `.gitattributes`. A
+repository-owned file colliding with a canonical path is refused unless force is explicitly chosen.
 
 ## Two things worth knowing
 
@@ -230,19 +233,10 @@ registration, a quest's full life, a driven session, a two-machine remote — wi
 
 ## Developing Daoris
 
-```sh
-npm run verify          # tests, then daoris check against its own doctrine
-npm run rehearse        # pack, install into a clean repo, drive the full lifecycle
-npm run rehearse:family # the router: two example projects, quests, the service, a restart
-node --test             # tests only
-```
-
-`rehearse` is the release gate. The test suite exercises the source tree; the rehearsal exercises the
-**artefact** — the tarball npm would publish, resolved through the `bin` entry the way a consumer runs
-it. That is where install stories break: a file missing from `files`, a path that only resolves in a
-source checkout, a skill directory that does not survive packing.
-
-`DAORIS_CANON` overrides the canon root, which is how the tests drive a fixture canon.
+Use Node 24 and the .NET 10 SDK for development. [docs/development.md](docs/development.md) gives
+lockfile setup, focused tests, rehearsals and integration. `npm run verify` checks the CLI, doctrine
+and documentation; `daoris.gates.json` declares the component checks. The packed-consumer rehearsal
+is distinct from the source tests. The desktop deployment rehearsal also needs Windows.
 
 Daoris carries its own `daoris.json` and syncs core into its own `.claude/`. A tool that cannot hold its
 own doctrine cannot hold anyone else's.

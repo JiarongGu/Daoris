@@ -1,6 +1,9 @@
 # Panels that dock — the layout as the person's (DOCK1)
 
-**Carried by:** DOCK1 in `TASKS.md` (SURF11 is archived). **Status:** design, written before the
+**Standing:** the dock contract, read with D118's frame model and D152's menus. DOCK1's completion
+is in the archive; §4 and the matching decisions record the build.
+
+**Original status:** design, written before the
 build; all five built, DOCK1a last and widened by the owner; §4 says how. The
 owner, 2026-09-29: *"we should be able to dock panels like vscode did"*, said beside *"there is no easy
 way to open the daoris chat"* and followed by *"the ask daoris need to be a better location please

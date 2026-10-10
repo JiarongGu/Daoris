@@ -1,9 +1,13 @@
 # The knowledge design, reviewed — how a session finds what a repository knows
 
+**Standing:** D129 incorporates KNOW3's measurements in `2026-10-02-knowledge-bench-results.md`.
+The review's predictions below are the original proposal; remaining scale and recall probes are
+in `TASKS.md`. The bench does not prove the larger corpus or unmeasured harness behavior.
+
 > The owner, 2026-10-02, on D128's index: *"i don't know if this index is a good design or not check if we can use any
 > better way for this entire knowledge design"*, and later the same day: *"since lyntai has filesystem mode check if
-> this is a better solution"*. This is the review (KNOW2), and its decision is **D129**, pending KNOW3's measurement.
-> Status: **reviewed; nothing built.** It keeps D128's split and amends its §2.5, the canon words it drafts, and the
+> this is a better solution"*. This is the review (KNOW2), and its decision is **D129**.
+> Original status: **review before KNOW3's measurement.** It keeps D128's split and amends its §2.5, the canon words it drafts, and the
 > rows WSSETUP14a and WSSETUP14d. WSSETUP14a was paused for this answer. Read with **D7** as amended by **D59**,
 > **D14**, **D24**, **D48** §2a, **D54**, **D117**, **D122**, **D127** and **D128**.
 

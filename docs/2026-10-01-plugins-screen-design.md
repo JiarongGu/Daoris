@@ -1,6 +1,9 @@
 # Plugins — a view of their own (PLUGUI1)
 
-**Carried by:** PLUGUI1 in `TASKS.md`. **Status:** design (PLUGUI1a), written before the build, and **D119**
+**Standing:** D119's screen contract, amended by D140's catalogue. D119's dated notes record
+implementation; `TASKS.md` holds the remaining page sections, checks and Ask Daoris doors.
+
+**Original status:** design (PLUGUI1a), written before the build, and **D119**
 records what it settles. It extends `docs/2026-09-23-plugin-design.md` (D64, D100, D101, D103). It is built on
 the frame of `docs/2026-10-01-frame-model-design.md` (D118), whose §7 said what this view takes from the frame.
 Every name in it follows `docs/2026-10-01-naming-design.md` (D116) and its glossary.

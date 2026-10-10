@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- Contributor guidance is shared across agents; development verification checks documentation routing
+  and component guide freshness declarations.
+
 - Named workflows govern landing, review and opinion from their bound version. Damaged run bindings
   hold the work until they can be read, preserving its required checks.
 

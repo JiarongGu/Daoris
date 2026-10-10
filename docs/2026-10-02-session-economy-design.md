@@ -1,8 +1,12 @@
 # Session economy — what a session reads and writes, as doctrine
 
+**Standing:** contract under D127. Its notes record the canon and shape-report implementation;
+remaining measurement and relocation work is in `TASKS.md`. The counts below describe the named
+baseline, not the current repository.
+
 > The owner, asked on 2026-10-02 whether the task archive should be split (SESSOPT1): *"this is not about how we
 > split its about how we optimize the session and this should also belong to doctrine too"*. This is the study
-> and the contract, and its decision is **D127**. Status: **designed; nothing built.** It folds in DOC7 (*what
+> and the contract, and its decision is **D127**. Original status: **design before implementation.** It folds in DOC7 (*what
 > sessions read, measured*, `docs/2026-10-01-development-documents-design.md` §1.5). It builds on the standard of
 > D122 and amends it where §9 says. Read with **D54**, **D106**, **D115** §5, **D117** §4.2, **D122** and
 > **D124**.

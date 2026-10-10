@@ -1,5 +1,9 @@
 # The Daoris platform — design
 
+**Standing:** D38's platform contract, read with D150/D152 for current places, settings and menus.
+`src/Daoris.Web/README.md` describes the implemented surface. The view names and baseline below
+are the original design; later decision notes govern where they differ.
+
 **Status: approved direction from the owner, 2026-09-19; written before the code.** The ask, verbatim
 in spirit: a task / knowledge / setup platform for Daoris — the *application* over the substrate —
 web or desktop based. This document argues its shape; `docs/decisions/D38.md` records the decisions.

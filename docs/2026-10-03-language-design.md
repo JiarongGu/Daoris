@@ -1,10 +1,14 @@
 # Languages — design
 
+**Standing:** contract under D142. Its LANG1 notes record coded notes, page rendering and session
+language configuration. The source observations below are dated; current UI wording is in the
+catalogues and glossary, located through `docs/index/catalogues.md`.
+
 > LANG1, from the owner, 2026-10-03, seeing a page-built preface in English: *"we should be building a multi language
 > support"*; then, on where a session's language is set: *"so the UI language and session language should be able to
 > set differently this is more like system level or usage level"* and *"because session itself is bind to the work and
-> the ui is bind to the user I think you got this in reverse?"*. The decision is **D142**. Status: **designed; nothing
-> built.** Read with `.claude/knowledge/translation-parity.md`, `.claude/knowledge/twins.md`, D116 (a name is designed in
+> the ui is bind to the user I think you got this in reverse?"*. The decision is **D142**. Original status: **design before
+> implementation.** Read with `.claude/knowledge/translation-parity.md`, `.claude/knowledge/twins.md`, D116 (a name is designed in
 > each language), the platform language §4 (*Language*), the frontend architecture §3 and §4a, D126's verdicts by code and
 > D137's reasons by code (MSG1f).
 

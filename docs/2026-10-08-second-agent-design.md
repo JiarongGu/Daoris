@@ -1,6 +1,10 @@
 # A second agent reads the work before it lands
 
-> XAGENT1, decided as D155 (2026-10-08). Nothing is built. `Dnn` is `docs/decisions/Dnn.md`. The owner, 2026-10-08:
+**Standing:** contract under D155, integrated with D157's workflow gates. D155's dated notes
+record selection, passes, delivery and landing gates; remaining proposals, rehearsal and installed
+proofs are in `TASKS.md`. The opening case and external review retain their original dates.
+
+> XAGENT1, decided as D155 (2026-10-08), before implementation. `Dnn` is `docs/decisions/Dnn.md`. The owner, 2026-10-08:
 > *"you can always use Codex to assist the development"*, and *"this is also the logic that applies to Daoris, since we
 > have a multi-agent system in Daoris"*. A read-only second opinion from Codex was taken on this question before it was
 > written; §11 weighs it point by point, as `2026-10-07-second-opinion-review.md` weighed the last one.

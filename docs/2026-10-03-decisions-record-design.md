@@ -1,8 +1,11 @@
 # The decisions record under parallel merges — one file per decision
 
+**Standing:** contract under D134. The record is `docs/decisions/`; DOC8's migration and checks
+are in D134's dated notes. `docs/DECISIONS.md` is a pointer, not a place to append decisions.
+
 > DOC8, from the parent's account of 2026-10-02 and 03: four integrations in a row came out of their union
 > merges with the decision log torn, and D130–D133 were rebuilt by script three times. This is the study and the
-> contract, and its decision is **D134**. Status: **designed; nothing built.** Read with **D106** (the union
+> contract, and its decision is **D134**. Original status: **design before migration.** Read with **D106** (the union
 > merge), **D117** §2.4 (which kept the one log and named the condition for reopening it), **D122** §2.1 (a
 > folder of records as a decisions role) and **D127** (what a session pays for a read).
 
