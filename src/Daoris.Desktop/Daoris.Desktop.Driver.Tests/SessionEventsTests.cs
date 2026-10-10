@@ -317,7 +317,7 @@ public sealed class SessionEventsTests : IDisposable
         var answer = events.Search("budget");
 
         Assert.Equal(SessionEvents.SearchSessions, answer.Hits.Count);
-        Assert.False(answer.Cut);
+        Assert.True(answer.Cut); // more sessions matched than the page shows, which is what the page reads cut as
         Assert.Equal(SessionEvents.SearchSessions + 3, answer.Total);
         Assert.Equal(SessionEvents.SearchSessions, answer.Next);
     }

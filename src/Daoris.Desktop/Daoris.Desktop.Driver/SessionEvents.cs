@@ -269,7 +269,7 @@ public sealed record SessionEvent
 public sealed record SessionHit(string Session, long Seq, string Kind, string Snippet);
 
 /// <summary>What a search found, and whether its bounds left anything out.</summary>
-/// <param name="Cut">Whether a session on this page held more hits than the page shows of it.</param>
+/// <param name="Cut">Whether anything was left out: a session on this page held more hits than it shows, or more sessions follow.</param>
 /// <param name="Total">The sessions with a hit, all pages (RAILPAGE1a); a search within one session counts it as one.</param>
 /// <param name="Next">Where the next page starts, in sessions; null on the last.</param>
 public sealed record SessionSearch(IReadOnlyList<SessionHit> Hits, bool Cut, int Total = 0, int? Next = null);
@@ -560,7 +560,9 @@ public sealed class SessionEvents(string directory)
             if (found > 0) total++;
         }
 
-        return new SessionSearch(hits, cut, total, offset + limit < total ? offset + limit : null);
+        int? next = offset + limit < total ? offset + limit : null;
+        // Cut is anything left out: a session's fourth hit, or sessions past this page (the page reads it so until RAILPAGE1b).
+        return new SessionSearch(hits, cut || next is not null, total, next);
     }
 
     /// <summary>A search within one session's record, at most — a long run's every mention of a word.</summary>
