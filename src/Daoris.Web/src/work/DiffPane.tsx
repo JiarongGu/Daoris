@@ -14,7 +14,7 @@ import { Button, EmptyState, Inline, SESSION_ACTIVE } from '../ui';
 import { reviewKnown } from './diff';
 import type { DiscardOffer } from './groups';
 import { HeldDiscardAsk, HeldDiscardButton, heldDiscardable } from './HeldDiscard';
-import type { Answered } from './InlineConfirm';
+import { type Answered, InlineConfirm } from './InlineConfirm';
 import { LandedNote } from './LandedNote';
 import type { DiffLayout } from './PatchView';
 import { opinionHolds, opinionState } from './opinion';
@@ -206,6 +206,29 @@ export function DiffPane({
     );
   };
 
+  // The forced discard's second press, told back to its ask (UXFIX2b2b): the driver's refusal and a thrown one are said inside
+  // the ask, which stays; once the tree went, the foot says so and the ask closes. An answer for a session no longer
+  // attended says nothing, as `act` does (REV3).
+  const forceDiscard = (answered: Answered) => {
+    const askedFor = session;
+    if (!askedFor) return;
+    discard.mutateAsync({ id: askedFor, force: true }).then(
+      (result) => {
+        if (attended.current !== askedFor) return;
+        if (!result.done) {
+          answered.refused(result.message);
+          return;
+        }
+        setSaid(result.message);
+        setOpened(null);
+        answered.done();
+      },
+      (error: unknown) => {
+        if (attended.current === askedFor) answered.refused(sentence(error));
+      },
+    );
+  };
+
   if (!session) {
     return (
       <EmptyState
@@ -242,7 +265,7 @@ export function DiffPane({
   // work that already landed (REVIEW2), whose next move is its branch's, not the session's.
   const acts = !treeHere && !sendBack && !handable ? null : (
     <footer className="grid shrink-0 gap-2 border-t border-line px-3 py-2">
-      {said && <p className="m-0 text-small text-ink-soft">{said}</p>}
+      {said && !confirmingDiscard && <p className="m-0 text-small text-ink-soft">{said}</p>}
       {said && opened && (
         <p className="m-0 text-small">
           <ExternalLink href={opened} className="text-accent underline underline-offset-2">
@@ -323,24 +346,8 @@ export function DiffPane({
         {sendBack && <Button onClick={sendBack}>{t('work.review.sendBack')}</Button>}
 
         {/* One discard where the held one is offered: unforced, the review's own would do the same without naming the ref. */}
-        {!treeHere || heldPress ? null : confirmingDiscard
-          ? (
-            <>
-              <Button
-                variant="danger"
-                disabled={discard.isPending}
-                onClick={() => act(
-                  discard.mutateAsync({ id: session, force: true }),
-                  () => setConfirmingDiscard(false),
-                )}
-              >
-                {t('work.review.discardMeanIt')}
-              </Button>
-              <Button variant="ghost" onClick={() => setConfirmingDiscard(false)}>
-                {t('common.cancel')}
-              </Button>
-            </>
-          )
+        {!treeHere || heldPress || confirmingDiscard
+          ? null
           : (
             <Button
               variant="ghost"
@@ -358,6 +365,19 @@ export function DiffPane({
             </Button>
           )}
       </div>
+      {treeHere && !heldPress && confirmingDiscard && (
+        /* The unforced press's refusal named what would go and armed this (above): it is the ask's own sentence, so the foot
+           does not say it twice. The forced press stays open until the driver answers, and a refusal is said inside the ask
+           (UXFIX2b2b), never in the foot. */
+        <InlineConfirm
+          label={t('work.review.discardTitle')}
+          says={<p className="m-0 text-small text-ink-soft">{said}</p>}
+          meanIt={t('work.review.discardMeanIt')}
+          busy={discard.isPending}
+          onConfirm={forceDiscard}
+          onClose={() => setConfirmingDiscard(false)}
+        />
+      )}
       {heldPress && askingHeld && held?.keptAt && (
         <HeldDiscardAsk branch={held.branch} keptAt={held.keptAt} onDiscard={heldPress} onClose={() => setAskingHeld(false)} />
       )}
