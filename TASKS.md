@@ -16,6 +16,8 @@ Historical installation receipts and adoption mechanics remain in their evidence
 
 ## Workspace cleanup
 
+- [ ] **DOCSCRATCH1 — remove blocked verification scratch** (tools). Execution policy refused deletion of the ignored `_fixtures/doc-system-preview-git/` metadata created by DOCSYS1; its helper is removed and no process uses it. Once deletion is permitted, inspect that exact directory and remove only its metadata; proof: the directory is absent.
+
 - [ ] **CLEANUP1 — remove the empty harness-held directory** (after the paused harness releases it). `.claude/worktrees/agent-a3b92da3b8bb159c9` is empty; its branch and Git registration are gone, and backups are preserved. Proof: inspect emptiness again, then normal directory removal; integration review.
 
 ## UI/UX first

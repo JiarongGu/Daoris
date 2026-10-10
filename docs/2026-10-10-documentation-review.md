@@ -91,8 +91,9 @@ The subsequent ordinary baseline passed CLI types/tests, doctrine, all document 
 tests and release references; only the same HEAD-date signal remained. The restricted universal
 preview then passed all five gates: sensitive, version, five guide dates, 56 links across 562
 Markdown files, and doctrine. No hook or gate was bypassed. The development guide records the
-Git-environment boundary; the scratch preview is restricted to universal verification and removed
-after use.
+Git-environment boundary; the scratch preview was restricted to universal verification. Its helper
+was removed after use. Execution policy rejected both recursive and explicit nonrecursive deletion
+of its ignored metadata directory; DOCSCRATCH1 records that cleanup in the backlog.
 
 Additional verification: service 1,758 and HTTP 245 tests passed; devkit 85 tests passed;
 orientation index fresh (133 generated files), code map fresh (18 modules/17 dependencies),
@@ -101,3 +102,8 @@ six document budgets within their ceilings, routing inventory without findings, 
 the actual diff, counterpart wiring, preserved snapshots and record roles; no implementation
 or record work remains for DOCSYS1. Full process/UI/deployment rehearsals were not run for this
 documentation change; their existing product proofs remain separate.
+
+Committed-tree confirmation: after `6ffc0e2f`, ordinary universal verification passed all five
+gates with five guides current and 56 links across 562 documents. Routing and orientation freshness
+also passed, with a clean working tree. The preview's branch-reference incident was fully local;
+no push occurred.
