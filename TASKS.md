@@ -48,7 +48,10 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 Contracts: toolchain (D57 §3), account rotation (D125), account use (D130), browser (D78/D84).
 Original row proofs remain in the frozen backlog; measurements precede declarations.
 
-- [ ] **ACCTUX4 — account windows for both makers** (web in flight; modules only if a gap shows). Stable window cells with allowance, reset and per-window age; explicit unknown states. D125/UX7; revise geometry, tests/stories/installed proof.
+- [ ] **ACCTUX4i — installed account cells, and the row budget** (parent; after republish). Shots at 1546/680, English light and 中文 dark: read, never-read, key and own sign-in, cool-off, Codex. Settle D152's row budget against D125's ACCTUX4 measures.
+- [ ] **ACCTUX4b — Next start above the accounts** (web). One sentence naming the next account and why, with *first* marking `scope.next`. Second-opinion review lines 125, 128-133; D152 §4.2; `agents.test.ts`, `AgentsView.test.tsx`, stories at 52rem/37rem.
+- [ ] **ACCTPLAN1 — plan, spend and reset credits** (driver/modules/web; design first). Nothing reads them yet (D125:898-899); show them in a fold, and never redeem a credit without `InlineConfirm`. Second-opinion review lines 132-133.
+- [ ] **WINDOWNAME1 — `<n>-minute` windows in the reader's language** (web-settings). Codex's other windows show *90-minute* in 中文 too. D125's CODEXUSE1 note; a 中文 case in `accounts.test.ts`.
 - [ ] **ACCTNAME1 — email names read once** (CLI/driver/web). Avoid duplicate email/name; size roster columns. D125 notes; long-name and equal-email cases.
 - [ ] **ACCTUX1b — refused keys read as keys** (web). Correct Settings next-start and start-form labels. D125 note; account and start-form tests.
 - [ ] **KEYREPLACE1 — replace refused keys in place** (all doors; after ACCTUX1). Preserve account lists; clear refusal/cooling. D67/D125; key-file twins, route and row tests.

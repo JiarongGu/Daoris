@@ -10,6 +10,9 @@ with the version and date at release.
   enough to search. `daoris-driver help list` takes `--offset` and `--limit`.
 - `daoris plugin new` and `try`, a new plugin's README and the install's README send people to the
   Plugins place, which replaced Settings → Plugins.
+- Account rows show each usage window as its own cell, in the same place on every row: the share used,
+  a bar of that window's allowance, its reset and how old its reading is. A window the agent has not
+  reported says *unknown*, never 0%.
 - Deleting a tool version, removing a plugin, retiring a repository, and pausing or abandoning work
   confirm in place: the ask stays open while the act runs, says a refusal inside it, and returns
   focus to the press.

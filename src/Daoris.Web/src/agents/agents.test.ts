@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import i18n from '../i18n';
-import { ago, moment } from '../format';
+import { ago, clockOf, moment } from '../format';
 import { byTool, type ToolDoor } from '../tools';
 import { scopeOf, THREE } from '../settings/accountsFixtures';
 import type { AgentAccounts } from '../settings/accounts';
 import {
   accountAct, accountName, accountState, accountWho, agentRows, doorsSummary, heldBy, joinChoices, ownRunsFor, ownSaid, ownState,
-  readLine, rulesSummary, runsFor, runsForLine, settingsSummary, signedOutHeld, stateWhen, stateWord, usageLine, usageSummary,
+  readLine, rulesSummary, runsFor, runsForLine, settingsSummary, signedOutHeld, stateWhen, stateWord, usageCells, usageSummary,
   useSummary, versionOnly, workspacesSummary,
 } from './agents';
 
@@ -312,19 +312,22 @@ describe('the one act an account’s state asks for (D152 §4)', () => {
 });
 
 /**
- * ACCTUX1: what an account's agent last said, as the row's second line, read beside its state. Each window's share is a reading
- * a person acts on, so it wears the ink; its reset and when it was said are times, and wear the soft ink. A reset is said
- * beside the window that reported it, and a cool-off whose length Daoris chose says the reset is unknown.
+ * ACCTUX4 (the second opinion's account section, adopted): what an account's agent last said, as stable cells, a window each,
+ * the same two for both makers, `session` then `weekly`, then any other a reading named. Each says its exact share, its
+ * agent's own word, its reset and how long ago its own reading was; a window its agent did not report is unknown, in words,
+ * with no bar and never 0% (D130 §5.2). One sentence of every window compared badly across windows and makers. ACCTUX1 holds:
+ * a share is a reading in the ink, a time the soft ink, and a cool-off whose length Daoris chose says the reset is unknown.
  */
-describe('what an account’s agent last said, on its row', () => {
+describe('what an account’s agent last said, a cell a window', () => {
   beforeEach(() => i18n.changeLanguage('en'));
   const SEEN = '2026-10-04T11:00:00.000Z';
+  const EARLIER = '2026-10-04T09:30:00.000Z';
   const RESET = '2026-10-04T15:00:00.000Z';
   const WEEK = '2026-10-09T17:00:00.000Z';
   const said = {
     seen: SEEN,
     windows: [
-      { window: 'weekly', used: 0.15, reset: WEEK, credits: false, seen: SEEN },
+      { window: 'weekly', used: 0.15, reset: WEEK, credits: false, seen: EARLIER },
       { window: 'session', used: 0.88, reset: RESET, standing: 'near', credits: false, seen: SEEN },
     ],
   };
@@ -332,52 +335,70 @@ describe('what an account’s agent last said, on its row', () => {
   const cooling = (stated: boolean) => accountState({ login: 'in', read: TEN }, {
     cooling: { until: '2026-10-04T16:02:00.000Z', stated, window: stated ? 'session' : null, seen: TEN, assumedZone: false, notBelieved: false },
   }, true);
-  const text = (parts: ReturnType<typeof usageLine>) => (parts ?? []).map((part) => part.text).join('');
 
-  it('says each window’s share in the ink, and its reset and when it was said in the soft ink', () => {
-    const parts = usageLine({ said }, signedIn)!;
-    expect(parts.filter((part) => part.tone === 'reading').map((part) => part.text)).toEqual([
-      'near its five-hour limit, by its own word', '88% of its five-hour limit used', '15% of its weekly limit used',
+  it('says each window in a cell of its own, the session first: its exact share, its own word, its reset and its own reading’s age', () => {
+    const usage = usageCells({ said }, signedIn, { now: NOW })!;
+    expect(usage.cells).toEqual([
+      {
+        window: 'session', name: 'five-hour', known: true, used: 0.88, warned: true,
+        reading: '88% used, near its limit, by its own word', times: [`resets ${clockOf(RESET, NOW)}`, `said ${ago(SEEN)}`],
+      },
+      {
+        window: 'weekly', name: 'weekly', known: true, used: 0.15, warned: false,
+        reading: '15% used', times: [`resets ${clockOf(WEEK, NOW)}`, `said ${ago(EARLIER)}`],
+      },
     ]);
-    expect(parts.filter((part) => part.tone === 'when').map((part) => part.text)).toEqual([
-      `resets ${moment(RESET)}`, `resets ${moment(WEEK)}`, `said ${ago(SEEN)}`,
-    ]);
-    expect(text(parts)).toBe(
-      `near its five-hour limit, by its own word; 88% of its five-hour limit used, resets ${moment(RESET)}; `
-      + `15% of its weekly limit used, resets ${moment(WEEK)} · said ${ago(SEEN)}`);
+    expect(usage.notes).toEqual([]);
   });
 
-  it('says nothing where its agent said nothing and nothing holds it', () => {
-    expect(usageLine({}, signedIn)).toBeNull();
-    expect(usageLine({ said: { seen: SEEN, windows: [] } }, signedIn)).toBeNull();
+  it('says a window its agent did not report unknown, in words with no bar, never 0%', () => {
+    const weekOnly = { seen: SEEN, windows: [said.windows[0]!] };
+    const [session, weekly] = usageCells({ said: weekOnly }, signedIn, { now: NOW })!.cells;
+    expect(session).toEqual({ window: 'session', name: 'five-hour', known: false, used: null, warned: false, reading: 'unknown', times: [] });
+    expect(weekly).toMatchObject({ window: 'weekly', known: true, used: 0.15, reading: '15% used' });
   });
 
-  it('says a cool-off’s reset unknown where Daoris chose the wait and no window reported one', () => {
-    expect(text(usageLine({}, cooling(false)))).toBe('reset unknown');
-    expect(usageLine({}, cooling(false))!.every((part) => part.tone === 'when')).toBe(true);
+  it('draws the same two cells where its agent speaks, each unknown until read, and another window after them', () => {
+    expect(usageCells({}, signedIn, { fixed: true, now: NOW })!.cells.map((cell) => [cell.window, cell.reading, cell.used]))
+      .toEqual([['session', 'unknown', null], ['weekly', 'unknown', null]]);
+    // Where nothing could be said (a key, an agent that does not speak), nothing said is not said (D152 §4.2).
+    expect(usageCells({}, signedIn, { now: NOW })).toBeNull();
+    expect(usageCells({ said: { seen: SEEN, windows: [] } }, signedIn, { now: NOW })).toBeNull();
+    // A Codex window of another length (CODEXUSE1) after the two, in a cell of its own, named as the driver names it.
+    const odd = { seen: SEEN, windows: [{ window: '90-minute', used: 0.4, reset: RESET, credits: false, seen: SEEN }] };
+    expect(usageCells({ said: odd }, signedIn, { now: NOW })!.cells.map((cell) => [cell.window, cell.name, cell.reading]))
+      .toEqual([['session', 'five-hour', 'unknown'], ['weekly', 'weekly', 'unknown'], ['90-minute', '90-minute', '40% used']]);
+  });
+
+  it('says a window its agent gave no share for by its own word, with no bar', () => {
+    const reached = { seen: SEEN, windows: [{ window: 'weekly', used: null, reset: WEEK, standing: 'refused', credits: true, seen: SEEN }] };
+    expect(usageCells({ said: reached }, signedIn, { now: NOW })!.cells[1]).toEqual({
+      window: 'weekly', name: 'weekly', known: true, used: null, warned: true,
+      reading: 'limit reached, by its own word, drawing on usage credits', times: [`resets ${clockOf(WEEK, NOW)}`, `said ${ago(SEEN)}`],
+    });
+    const clear = { seen: SEEN, windows: [{ window: 'session', used: null, reset: RESET, standing: 'clear', credits: false, seen: SEEN }] };
+    expect(usageCells({ said: clear }, signedIn, { now: NOW })!.cells[0])
+      .toMatchObject({ known: true, used: null, warned: false, reading: 'clear, by its own word' });
+  });
+
+  it('says a cool-off’s reset unknown where Daoris chose the wait and no window reported one, and since when it is offered again', () => {
+    expect(usageCells({}, cooling(false), { now: NOW })).toEqual({ cells: [], notes: ['reset unknown'] });
+    expect(usageCells({}, cooling(false), { fixed: true, now: NOW })!.notes).toEqual(['reset unknown']);
     // The agent named the time: the hold says it, and no reset is said apart from a window that reported one.
-    expect(usageLine({}, cooling(true))).toBeNull();
-    // A window that reported a reset says it beside itself, cooling or not.
-    expect(text(usageLine({ said }, cooling(false)))).toContain(`88% of its five-hour limit used, resets ${moment(RESET)}`);
-    expect(text(usageLine({ said }, cooling(false)))).not.toContain('reset unknown');
+    expect(usageCells({}, cooling(true), { now: NOW })).toBeNull();
+    // A window that reported a reset says it in its own cell, cooling or not.
+    expect(usageCells({ said }, cooling(false), { now: NOW })!.notes).toEqual([]);
+    expect(usageCells({ offered: TEN }, signedIn, { now: NOW })).toEqual({ cells: [], notes: [`offered again since ${moment(TEN)}`] });
   });
 
-  it('says a window its agent named a reset for with no share, beside its own word', () => {
-    const reached = { seen: SEEN, windows: [{ window: 'weekly', used: null, reset: WEEK, standing: 'refused', credits: false, seen: SEEN }] };
-    expect(text(usageLine({ said: reached }, cooling(false))))
-      .toBe(`its weekly limit reached, by its own word, resets ${moment(WEEK)} · said ${ago(SEEN)}`);
-  });
-
-  it('says since when it is offered again, as a time', () => {
-    const parts = usageLine({ offered: TEN }, signedIn)!;
-    expect(parts).toEqual([{ text: `offered again since ${moment(TEN)}`, tone: 'when' }]);
-  });
-
-  it('says it in 中文, tight, its times set apart', () => {
+  it('says it in 中文', () => {
     i18n.changeLanguage('zh');
-    expect(text(usageLine({ said }, signedIn))).toBe(
-      `它自己说接近5 小时上限；5 小时上限已用 88%，${moment(RESET)} 重置；每周上限已用 15%，${moment(WEEK)} 重置 · ${ago(SEEN)}报告`);
-    expect(text(usageLine({}, cooling(false)))).toBe('重置时间未知');
+    expect(usageCells({ said }, signedIn, { now: NOW })!.cells.map((cell) => [cell.name, cell.reading, ...cell.times])).toEqual([
+      ['5 小时', '已用 88%，它自己说接近上限', `${clockOf(RESET, NOW)} 重置`, `${ago(SEEN)}报告`],
+      ['每周', '已用 15%', `${clockOf(WEEK, NOW)} 重置`, `${ago(EARLIER)}报告`],
+    ]);
+    expect(usageCells({}, signedIn, { fixed: true, now: NOW })!.cells[0]!.reading).toBe('未知');
+    expect(usageCells({}, cooling(false), { now: NOW })!.notes).toEqual(['重置时间未知']);
   });
 
   /**
@@ -385,20 +406,19 @@ describe('what an account’s agent last said, on its row', () => {
    * and its row says them as an account's row says its own; a shell older than that answers none, and its row says nothing.
    */
   it('reads your own sign-in’s windows beside the accounts, and none where the shell answers none', () => {
-    const use = (own: AgentAccounts['own'] & { said?: unknown }): AgentAccounts => ({
+    const use = (own: Record<string, unknown>): AgentAccounts => ({
       agent: 'codex', speaks: true, own: own as AgentAccounts['own'], accounts: [], scopes: [scopeOf()],
     });
     const codex = byTool([{ ...claude({ profiles: [] }), harness: 'codex-acp', product: 'Codex', maker: 'OpenAI', accountOf: 'codex' }])[0]!;
 
     expect(ownSaid(use({ said }))).toEqual(said);
-    expect(text(usageLine({ said: ownSaid(use({ said })) }, ownState(codex, use({ said }))))).toBe(
-      `near its five-hour limit, by its own word; 88% of its five-hour limit used, resets ${moment(RESET)}; `
-      + `15% of its weekly limit used, resets ${moment(WEEK)} · said ${ago(SEEN)}`);
+    expect(usageCells({ said: ownSaid(use({ said })) }, ownState(codex, use({ said })), { now: NOW })!.cells
+      .map((cell) => cell.reading)).toEqual(['88% used, near its limit, by its own word', '15% used']);
     expect(ownSaid(use({}))).toBeNull();
     expect(ownSaid(use({ said: null }))).toBeNull();
     expect(ownSaid(use({ said: { seen: SEEN } }))).toBeNull();
     expect(ownSaid(null)).toBeNull();
-    expect(usageLine({ said: ownSaid(use({})) }, ownState(codex, use({})))).toBeNull();
+    expect(usageCells({ said: ownSaid(use({})) }, ownState(codex, use({})), { now: NOW })).toBeNull();
   });
 });
 

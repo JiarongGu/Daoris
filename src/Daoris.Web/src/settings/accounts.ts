@@ -112,8 +112,11 @@ export type AgentAccounts = {
   agent: string;
   /** Whether its sessions say how near their limits are (TOOL6c): what switching before the limit waits for. */
   speaks: boolean;
-  /** The tool's own sign-in's cool-off (D125 §3.7), or when it ended (TOOL6e): never one of the accounts, never in a list. */
-  own: { cooling?: AccountCooling | null; offered?: string | null };
+  /**
+   * The tool's own sign-in's cool-off (D125 §3.7), or when it ended (TOOL6e): never one of the accounts, never in a list. What
+   * its agent last said of its windows where a press read them (CODEXUSE3); a shell older than that answers none.
+   */
+  own: { cooling?: AccountCooling | null; offered?: string | null; said?: AccountSaid | null };
   accounts: AccountFacts[];
   /** The machine's scope first, then each workspace's own. */
   scopes: AccountScope[];

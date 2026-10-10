@@ -12851,3 +12851,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6i2c — kit, CLI and tools name current places** (cli/driver/tools; merging). "Settings → Plugins" becomes the Plugins place in the CLI refusal, kit README and publish text.
 
 **Outcome** 2026-10-10: the CLI's `plugin new`/`try` refusal, the kit README template, the published install's README row and four comments name the Plugins place (D150's UX6j note). The refusal's test asserts the old words are gone. Built by a Sonnet worker in 9 turns. Detail: the merge commit.
+
+
+## ACCTUX4 — account windows for both makers (2026-10-10, D125)
+
+> - [ ] **ACCTUX4 — account windows for both makers** (web in flight; modules only if a gap shows). Stable window cells with allowance, reset and per-window age; explicit unknown states. D125/UX7; revise geometry, tests/stories/installed proof.
+
+**Outcome** 2026-10-10: account rows show each window as a stable cell (exact share, a bar of its own allowance, its reset, its own reading's age; unknown in words with no bar), session and weekly for both makers; no bridge change was needed. Rows grew past D152's budget, measured and reported. Installed shots and the budget: ACCTUX4i. Detail: D125's ACCTUX4 note.
