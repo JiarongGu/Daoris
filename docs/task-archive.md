@@ -13054,3 +13054,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ENTRY1g — a go opens the list its group is in** (web; in flight). Where the list is a strip, arranged by repository or searched, a go brings nothing into view: lay it over, show it by state, without changing the person's choice. D161's ENTRY1b note; D118; WorkFrame tests at strip width.
 
 **Outcome** 2026-10-11: a go lays a strip over the main area (even one the person closed, without undoing their closing), shows Sessions by state for that go alone, clears a typed rail search, and reaches the browser's frame too; a view switch no longer closes the laid-over list. A receiver filter is ENTRY1g2. Detail: D161's ENTRY1g note.
+
+
+## ENTRY1d1 — Ask Daoris moves a repository to a workspace (2026-10-11, D161)
+
+> - [ ] **ENTRY1d1 — Ask Daoris moves a repository to a workspace** (driver/service/modules/web; in flight). A `repository` kind names a registered repository and a workspace; the driver judges, the person applies through the drawer's route. D161's ENTRY1d note; the coverage table's wire row becomes its door.
+
+**Outcome** 2026-10-11: a `repository` kind (`repository_propose`, door `wire`) proposes moving a registered repository, adopted or not, to a named workspace, a new one allowed; the driver refuses an unknown repository or a move to where it is; Apply posts the drawer's route and the page re-reads the registry. No terminal verb exists for the act (WIRE1). Detail: D161's ENTRY1d1 note.

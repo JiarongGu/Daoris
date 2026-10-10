@@ -58,7 +58,8 @@ a `SessionTree`:
 - **`CLAUDE.md`** carrying `@AGENTS.md`, and **`.claude/settings.json`** allowing the family's read
   tools, the connector's `setting_propose` and `ask_propose` (and since HELP6 its four further
   `*_propose` tools, §9.6, since PLUG9 `plugin_propose`, §9.7, since WSR5b `hand_propose`, §9.8, and since HELP10
-  `browser_propose` and `sync_propose`, §9.10, and since DRIFT1d2 `accept_propose`, D133's note), and nothing else. Over the protocol door
+  `browser_propose` and `sync_propose`, §9.10, since DRIFT1d2 `accept_propose`, D133's note, and since ENTRY1d1
+  `repository_propose`, D161's ENTRY1d note), and nothing else. Over the protocol door
   a request for anything unlisted is refused by construction (D52), which is the point: it reads, and
   it proposes.
 

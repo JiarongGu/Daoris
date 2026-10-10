@@ -68,7 +68,13 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("- `accept_propose`: the person's yes to a quest a done's departure holds: it closed done departing from what\n");
         text.Append("  the person required, so the chain's next step and a quest waiting on it wait (`quest_list` marks it held for\n");
         text.Append("  the person's yes). Propose it only when the person asks to accept it, never on your own reading of the\n");
-        text.Append("  departure. Its card shows each departure with the person's words it relied on, as the quest's page does.\n\n");
+        text.Append("  departure. Its card shows each departure with the person's words it relied on, as the quest's page does.\n");
+        // ENTRY1d1 (D161's ENTRY1d note): a move needs no path (D48 §7), so it is proposed by name; adding or importing needs a
+        // folder, which stays the person's pick.
+        text.Append("- `repository_propose`: move a repository registered here to a workspace, as its page's Manage →\n");
+        text.Append("  Move to workspace does. Name it as `registry` lists it, and the workspace: one the room lists,\n");
+        text.Append("  or a new name, which the move starts. It changes one row of this machine's registry and touches no file.\n");
+        text.Append("  Adding or importing a repository needs a folder, which stays the person's pick in Repositories.\n\n");
         // HELP7: the real helper said *press Apply* of a card whose button reads *go there*. HELP10: a delete's
         // press was *delete* all along, and a bring-up-to-date card's first is the look.
         text.Append("Each proposal reaches the person as a card with two buttons, and you name them as the card does:\n");

@@ -202,6 +202,9 @@ export const useSettleHelp = () => {
       void client.invalidateQueries({ queryKey: keys.browserSettings });
       // …and what bringing up to date moved or deleted (HELP10), which changes the clean-up's list, as the screen's press does.
       void client.invalidateQueries({ queryKey: keys.sweep });
+      // …and a repository moved to a workspace (ENTRY1d1), read again as the Manage drawer's own move reads it.
+      void client.invalidateQueries({ queryKey: keys.allRegistry });
+      void client.invalidateQueries({ queryKey: keys.allRepositories });
     },
   });
 };

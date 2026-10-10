@@ -5,10 +5,10 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>One of Ask Daoris's proposals, as the connector wrote it (HELP1c, D89; HELP6; PLUG9; WSR5b; HELP10).</summary>
-/// <param name="Kind">Which kind it is, one <see cref="HelpProposalKinds"/> registers: `setting`, `ask`, `agent`, `delete`, `account`, `go`, `plugin`, `hand`, `browser`, `sync` or `accept`.</param>
+/// <param name="Kind">Which kind it is, one <see cref="HelpProposalKinds"/> registers: `setting`, `ask`, `agent`, `delete`, `account`, `go`, `plugin`, `hand`, `browser`, `sync`, `accept` or `repository`.</param>
 /// <param name="Door">Which of its kind's changes it is, as that kind's class says: a `daoris driver` verb for a setting, `update` or `pin` for an agent, and so on.</param>
 /// <param name="Target">What the change is for, as its kind's class says: a repository, an agent, a record's id, a view, a plugin, a session or a branch.</param>
-/// <param name="Value">What it is set to, where its kind takes one: a setting's value, a pin's version, a hand-off's plugin.</param>
+/// <param name="Value">What it is set to, where its kind takes one: a setting's value, a pin's version, a hand-off's plugin, a move's workspace.</param>
 /// <param name="Session">The conversation that proposed it.</param>
 /// <param name="State">`proposed`, then `applied`, `dismissed` or `refused`.</param>
 /// <remarks>MOD6: a field only one kind carries is declared in that kind's file, beside the judge that reads it.</remarks>

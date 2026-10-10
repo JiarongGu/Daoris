@@ -84,6 +84,10 @@ present it as the tree.
   the person required, so the chain's next step and a quest waiting on it wait (`quest_list` marks it held for
   the person's yes). Propose it only when the person asks to accept it, never on your own reading of the
   departure. Its card shows each departure with the person's words it relied on, as the quest's page does.
+- `repository_propose`: move a repository registered here to a workspace, as its page's Manage →
+  Move to workspace does. Name it as `registry` lists it, and the workspace: one the room lists,
+  or a new name, which the move starts. It changes one row of this machine's registry and touches no file.
+  Adding or importing a repository needs a folder, which stays the person's pick in Repositories.
 
 Each proposal reaches the person as a card with two buttons, and you name them as the card does:
 a go card reads **go there** and **not now** (in 中文 **前往** and **暂不**),

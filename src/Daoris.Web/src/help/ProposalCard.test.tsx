@@ -163,6 +163,22 @@ describe('the kinds that reach every door', () => {
     expect(screen.queryByText(/the same at a terminal/)).not.toBeInTheDocument();
   });
 
+  // ENTRY1d1: no command edits only the registry's row, so a move carries none, and its card is the plain one.
+  it('a move to a workspace says what moves and where, carries no command, with Apply and Not now', async () => {
+    const move: HelpProposal = {
+      id: 'p13', kind: 'repository', terminal: '', why: 'the person asked to keep engine beside the studio\'s work',
+      describe: 'Move `engine` from workspace `work` to workspace `studio` on this machine: one row of the registry changes, at once '
+        + 'and only here, and no file is touched.',
+    };
+
+    await press(move, 'Apply');
+
+    expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
+    expect(screen.getByText(code('engine'))).toBeInTheDocument();
+    expect(screen.getByText(code('studio'))).toBeInTheDocument();
+    expect(screen.queryByText(/the same at a terminal/)).not.toBeInTheDocument();
+  });
+
   it('a plugin to add shows what will run before Apply: its id, its command as written, its points, harnesses and servers', async () => {
     await press(PLUGIN_ADD, 'Apply');
 

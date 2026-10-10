@@ -92,3 +92,24 @@ describe('what settling a proposal writes to the machine log', () => {
     expect(await settle({ message: 'Looked for updates: 3 thing(s) would change.', applied: false, stands: true })).toEqual([]);
   });
 });
+
+/**
+ * ENTRY1d1: a move to a workspace changes the registry, so an Apply reads it again at once, as the Manage drawer's own
+ * *Move to workspace* does, rather than waiting for the driver's watch to say it moved.
+ */
+describe('what an Apply reads again', () => {
+  it('reads the registry again, which a move to a workspace changed', async () => {
+    invoke.mockReset();
+    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? { message: 'Applied.', applied: true } : undefined));
+    const client = new QueryClient();
+    const invalidated = vi.spyOn(client, 'invalidateQueries');
+    const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
+    const { result } = renderHook(() => useSettleHelp(), { wrapper });
+
+    await act(async () => { await result.current.mutateAsync({ id: 'p12', apply: true }); });
+
+    const keys = invalidated.mock.calls.map(([filters]) => filters?.queryKey);
+    expect(keys).toContainEqual(['registry']);
+    expect(keys).toContainEqual(['repositories']);
+  });
+});

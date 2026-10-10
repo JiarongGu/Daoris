@@ -16,7 +16,8 @@
       "mcp__daoris-knowledge__hand_propose",
       "mcp__daoris-knowledge__browser_propose",
       "mcp__daoris-knowledge__sync_propose",
-      "mcp__daoris-knowledge__accept_propose"
+      "mcp__daoris-knowledge__accept_propose",
+      "mcp__daoris-knowledge__repository_propose"
     ]
   }
 }

@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- Ask Daoris can propose moving a repository to another workspace on this machine, as its page's Manage →
+  *Move to workspace* does: the card names the repository and both workspaces, and Apply changes that one
+  row of the registry and no file. A workspace no repository is in yet is allowed, and the card says the
+  move starts it; a move to the workspace it is already in is refused. Adding or importing a repository
+  stays yours, since it needs a folder.
 - An ask Ask Daoris proposes keeps the review choice you gave it, and your words with it: its card says
   whether the work is reviewed in the default environment, in a named one or not at all, and Apply sends
   the choice as the ask composer does. A named environment the workspace does not declare is refused at
