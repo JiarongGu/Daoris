@@ -289,9 +289,29 @@ in two artefacts and would read these same codes; it is a later question, with n
 - **LANG1c — the session language.** The `driver.json` twin and its language table; the terminal verb, the two screens and
   Ask Daoris's door with `HelpCoverageTests`' row; the line in the instructions and a resumed opening; the glossary term
   *session language* / 会话语言. Lanes: the CLI, the driver, the modules, the web.
-- **Later, no row yet**: the conversation's note events (about 22 sites; *went* and *cannot* already carry `why`), the
-  notices, the terminal in 中文, and whether Ask Daoris, which is the user's and not a repository's work, answers in the
-  window's language and names its places by the window's names (its room would need both names).
+- **Later, no row yet**: the notices, the terminal in 中文, and whether Ask Daoris, which is the user's and not a
+  repository's work, answers in the window's language and names its places by the window's names (its room would need both
+  names).
+- **CONVNOTE2 — the conversation's note events** (2026-10-11; was "about 22 sites"). UX7d-1 coded the opening line
+  (D152's UX7d-1 note: a reason family per kind of step, values that are facts, an account id allowed since a
+  conversation's events never leave the machine, no parts where the codes cannot compose the English). A scout on
+  `18de0f84` found about 33 English-only `Note` sites in eight groups, each a branch of its own (the twin holds driver and
+  page together, and every group edits `NoteCodes.cs`, `noteLines.ts` and both `note.json`, so they run one after
+  another). Each site's `Text` stays byte for byte: the tests named below read it.
+
+  | Row | Group, and where | What reads the English |
+  |---|---|---|
+  | 2a | A resumed conversation's opening: `Continuations.Opening` (Continuation.cs ~:235-246), written by `ResumeAsk.Opening()` (Driver.Continue.cs ~:84, ~:233; ChatRunner.GoOn.cs ~:317; ChatRunner.Help.cs ~:81); `NativeWords.Opening` (Driver.Continue.cs ~:709) | AcpResumeTests, AnswerGoesOnOnceTests, AnswerContinuesTickTests (Process) |
+  | 2b | A refused permission: Acp.cs ~:1258-1264, the call's title a words part (it may hold a path); the event keeps its `Id` | SessionLogTests ~:240 |
+  | 2c | A press's note and a chat's settings: the person accepted or handed on (Landing.cs ~:399-420, whose English prefix `LandingRules` and the trace read); an option set (ChatRunner.cs ~:799); *told where the person is* (~:825, the preface a program words part); the browser notice (~:470) | LandingPluginTests, TraceTests, HandOffTests, traceFixtures.ts; ProtocolChatTests, HelpChatTests, HelpConversationsTests |
+  | 2d | Words that did not reach or were not taken: Acp.cs ~:515, ~:527; ChatRunner.cs ~:1302, ~:1306, ~:1474; Driver.cs ~:2375; Driver.Continue.cs ~:446, ~:683; ChatRunner.StartFrom.cs ~:159-161; the modules' SessionWords.cs ~:686-690 (its event `Why` first: a note with both takes the *cannot* path) | AcpSteerTests ~:346 |
+  | 2e | A failed door or turn: ChatRunner.cs ~:1112, ~:1130, ~:1366; Driver.cs ~:2356, ~:2367 (the resume refusal is Daoris's own sentence from a `ContinueReason`: decide first) | none found |
+  | 2f | Background work: Acp.cs ~:575-590 (names and states as a list value) | AcpBackgroundTests, ObservationTests |
+  | 2g | A wait for an account: `ResumeWords.NotYet` + `Waits` (ResumeAccount.cs ~:91-100) at ChatRunner.GoOn.cs ~:278, ~:425, ChatRunner.Help.cs ~:54, Driver.Continue.cs ~:153-165; `SessionGroups.cs` ~:807-815 and Driver.Continue.cs ~:156 read its English prefix; called from Harnesses.cs ~:2500, ~:2514 | ChatGoOnTests, SessionWordsWaitingTests, AskWordsHandedTests, AccountRotationTickTests (Process) |
+  | 2h | Review and opinion records: ReviewSetUps.cs ~:116; Driver.OpinionDelivery.cs ~:263 (`OpinionAnswers.Line`); rarely seen, last or left | — |
+
+  Already coded, not in scope: the opening on an account, the automatic landing, a refused sign-in, cooling, *went* and
+  *cannot*, and a chat's `lost`.
 
 ## 10. Rejected
 
