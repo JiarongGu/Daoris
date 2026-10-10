@@ -70,7 +70,6 @@ D88/D102 cleanup notes, machine log §4. Installed clears require the owner's ex
 
 - [ ] **ASKHIST1di — installed history paging** (parent; after republish). Over 200 conversations: *Show more* and its focus; a search's count and coverage; no match; a hit deep in a long line; one Han character; a found old conversation that goes on. Both languages, dock at 300 and 430 px. D158's ASKHIST1d2 note.
 - [ ] **UXLOADMORE1 — the load-more convention** (contract). A list read a page at a time says "{shown} of {total}" with *Show more* under its rows, and the press moves focus to the first row it brought; Ask Daoris's history is the first. Platform UX §4; RAILSRCH1b follows it.
-- [ ] **RAILSRCH1b — the page's search gates take one Han character** (web). Move ASKHIST1d2's `searchable` to a neutral module both pages import; use it in `bridge/sessions.ts`, `SessionRail.tsx`, `SessionConversation.tsx`, `ConversationFind.tsx`. Proof: a 区 query reaches `SESSION_SEARCH`; one Latin letter does not.
 - [ ] **AUTOTIDY1a — show automatic cleanup** (modules/web). Branches lists recent tidied/kept log facts. D88; route and bilingual list tests.
 - [ ] **AUTOTIDY1b — measure strict cleanup guards** (parent; installed AUTOTIDY1, after one week). Count ignored-file/unmoved-branch holds before deciding relaxations. D88 evidence.
 - [ ] **AUTOTIDY1c — automatic squash cleanup** (driver; after AUTOTIDY1b; decide first). Consider content proof plus merged PR state, preserving recovery refs. D88/D102; Process guards.

@@ -8,7 +8,8 @@ import { Button, Icon, type IconName, Inline, Menu, type MenuAct, SkeletonRows, 
 import { type Answered, InlineConfirm, Refused } from '../work/InlineConfirm';
 import { useListKeys } from '../work/listKeys';
 import { marked } from '../work/railSearch';
-import { HELP_NAME_LIMIT, type HelpConversationRow, historyGroups, searchable } from './history';
+import { searchable } from '../searchable';
+import { HELP_NAME_LIMIT, type HelpConversationRow, historyGroups } from './history';
 import { previewText, rowLine } from './preview';
 
 /** What a row of the history may do, each pressed through the organism that holds the bridge. */

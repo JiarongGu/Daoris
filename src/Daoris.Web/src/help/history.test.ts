@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type HelpConversationRow, historyGroups, joinPages, listingPage, searchable } from './history';
+import { type HelpConversationRow, historyGroups, joinPages, listingPage } from './history';
 
 // ASKHIST1c: the history grouped as a person reads time, by this machine's calendar days: what is pinned, then today,
 // yesterday, the rest of this week (from its Monday) and older; each row where its last word was said, in the driver's order.
@@ -54,14 +54,6 @@ describe('the history’s groups', () => {
 // ASKHIST1d2: the driver orders and searches every conversation and answers a page of them, with how many there are and
 // where the next page starts (D158's ASKHIST1d1 note); the page reads each answer, joins its pages, and searches by the
 // driver's own rule.
-
-describe('a search’s words', () => {
-  it('searches by two characters, or by one Han character, as the driver does (`SessionEvents.Searchable`)', () => {
-    for (const words of ['ab', ' a b ', '树', ' 区 ', '㐀', '豈', '𠀀']) expect(searchable(words), words).toBe(true);
-    // One letter of any other script would find nearly everything; kana is not Han.
-    for (const words of ['a', ' a ', 'あ', 'é', '', '   ']) expect(searchable(words), words).toBe(false);
-  });
-});
 
 describe('the history’s pages', () => {
   it('reads an answer’s rows, how many there are and where the next page starts', () => {

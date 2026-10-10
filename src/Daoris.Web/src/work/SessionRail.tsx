@@ -2,6 +2,7 @@ import { Fragment, type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HELP_REPOSITORY, type Quest, type Session } from '../api';
 import { useQuests, useRegistry, useSessions } from '../queries';
+import { searchable } from '../searchable';
 import {
   type SessionHit, useDriver, useSessionGroups, useSessionOpenings, useSessionSearch, useSessionWhere,
 } from '../shell';
@@ -309,7 +310,7 @@ function SearchResults({ query, settled, named, hits, cut, asking, sessionOf, ti
 }) {
   const { t } = useTranslation();
   const typed = query.trim();
-  const current = settled.trim() === typed && typed.length >= 2;
+  const current = settled.trim() === typed && searchable(typed);
   const listed = new Set(named.map((session) => session.id));
 
   // The hits by session, in the host's order — its newest records first.
@@ -362,7 +363,7 @@ function SearchResults({ query, settled, named, hits, cut, asking, sessionOf, ti
       )}
 
       {asking && <p className="m-0 px-3 py-1.5 text-small text-ink-faint">{t('work.rail.search.searching')}</p>}
-      {!asking && named.length === 0 && found.size === 0 && (current || typed.length < 2) && (
+      {!asking && named.length === 0 && found.size === 0 && (current || !searchable(typed)) && (
         <p className="m-0 px-3 py-1.5 text-small text-ink-faint">{t('work.rail.search.none', { query: typed })}</p>
       )}
       {current && cut && <p className="m-0 px-3 py-1.5 text-meta text-ink-faint">{t('work.rail.search.cut')}</p>}

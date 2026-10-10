@@ -2,6 +2,7 @@ import { type RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { useDebounced } from '../lib/useDebounced';
+import { searchable } from '../searchable';
 import { useHarnesses, useSessionEvents, useSessionSearch } from '../shell';
 import { Icon } from '../ui';
 import { settle, toTurns, type Turn, type Usage } from './conversation';
@@ -196,7 +197,7 @@ export function SessionConversation({
               setQuery(next);
               setAt(0);
             }}
-            hits={settled.trim().length >= 2 && found.data ? hits.length : undefined}
+            hits={searchable(settled) && found.data ? hits.length : undefined}
             at={at}
             cut={found.data?.cut}
             onStep={step}

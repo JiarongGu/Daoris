@@ -9,6 +9,8 @@ with the version and date at release.
   recently resumed old conversation stays listed and search reaches older ones; one Chinese character is
   enough to search. `daoris-driver help list` takes `--offset` and `--limit`. *Show more* lists the next
   page, a search says how many conversations it found, and a row shows where in a long line the words were.
+  The sessions rail's search and a conversation's find also take one Chinese character, and the rail's
+  search reaches older sessions.
 - `daoris plugin new` and `try`, a new plugin's README and the install's README send people to the
   Plugins place, which replaced Settings → Plugins.
 - Ask Daoris names the places the window has now: Knowledge, whose list switches between Search and

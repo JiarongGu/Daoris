@@ -71,18 +71,6 @@ export function joinPages(pages: readonly HelpListing[]): HelpListing {
   return { conversations, total: last?.total ?? 0, next: last?.next ?? null };
 }
 
-// The basic block, extension A and the compatibility block; the later extensions are surrogate pairs, two characters already.
-const HAN = /^[一-鿿㐀-䶿豈-﫿]$/;
-
-/**
- * Whether these words are enough to search by (ASKHIST1d2): two characters, or one Han character, which is a word on its own
- * (区, 圈). The driver's own rule (`SessionEvents.Searchable`): one letter of any other script would find nearly everything.
- */
-export function searchable(words: string): boolean {
-  const wanted = words.trim();
-  return wanted.length >= 2 || HAN.test(wanted);
-}
-
 /** The history's groups, in the order a person reads them (ASKHIST1c). */
 export const HISTORY_GROUPS = ['pinned', 'today', 'yesterday', 'week', 'older'] as const;
 export type HistoryGroup = (typeof HISTORY_GROUPS)[number];

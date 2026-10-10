@@ -12928,3 +12928,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6g2a — workspace-page guidance: sentences** (driver/CLI). Room, session-tree, plugin-kit and set-up sentences say the workspace's page (Setup → Defaults, Branches, Setup → Remote and reach) for Settings → Workspace/Permissions. D150 §3.1, UX6g note; room goldens; the CLI/driver set-up sentence twin.
 
 **Outcome** 2026-10-11: the room's doors, may-do and may-propose texts, the session-branch hand-on notes, the plugin-kit hint and the set-up's printed sentence (with its CLI twin) name the workspace's page; a test holds that no door names the retired Settings rows. The go twin is UX6g2b. Detail: D150's UX6g2a note.
+
+
+## RAILSRCH1b — the page's search gates take one Han character (2026-10-11, D158)
+
+> - [ ] **RAILSRCH1b — the page's search gates take one Han character** (web). Move ASKHIST1d2's `searchable` to a neutral module both pages import; use it in `bridge/sessions.ts`, `SessionRail.tsx`, `SessionConversation.tsx`, `ConversationFind.tsx`. Proof: a 区 query reaches `SESSION_SEARCH`; one Latin letter does not.
+
+**Outcome** 2026-10-11: `searchable` lives once in `src/searchable.ts` (ranges checked at the merge: 4E00-9FFF, 3400-4DBF, F900-FAFF); the bridge hook, the rail, a conversation's find and Ask Daoris's history gate on it, so 区 reaches `SESSION_SEARCH` and 'g' does not. Detail: the merge commit.

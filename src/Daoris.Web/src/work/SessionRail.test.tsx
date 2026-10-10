@@ -234,6 +234,28 @@ describe('the session rail', () => {
       expect(await screen.findByRole('heading', { name: 'Working (2)' })).toBeInTheDocument();
     });
 
+    it('searches by one Han character, and asks nothing of one other letter (RAILSRCH1b)', async () => {
+      answer((type, payload) => {
+        if (type === 'SESSION_OPENINGS') return { openings: {} };
+        if (type === 'SESSION_SEARCH' && payload.q === '区') {
+          return { query: '区', cut: false, hits: [{ session: 'c3d4e5f6', seq: 4, kind: 'message', snippet: '…the 区 holds the streamer.' }] };
+        }
+        return undefined;
+      });
+      rail({});
+      await screen.findByText('Expose a streaming budget on the chunk API');
+      const box = screen.getByRole('searchbox', { name: 'search sessions' });
+
+      await userEvent.type(box, 'g');
+      await new Promise((done) => setTimeout(done, 400));
+      expect(invoke.mock.calls.some((call) => call[1] === 'SESSION_SEARCH')).toBe(false);
+
+      await userEvent.clear(box);
+      await userEvent.type(box, '区');
+      const said = await screen.findByRole('region', { name: 'In what was said' });
+      expect(within(said).getByText('区').tagName).toBe('MARK');
+    });
+
     it('opens a session in its own window from its row\'s menu', async () => {
       answer(() => undefined);
       rail({ doors: { review: () => {} } });
