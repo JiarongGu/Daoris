@@ -132,7 +132,20 @@ export function useQuestsView({
   if (!asking && askSeen) setAskSeen(false);
   useEffect(() => { if (asking) onAsked?.(); }, [asking, onAsked]);
 
-  const quests = useQuests(filters.to, filters.closed);
+  // ENTRY1g2 (D161's ENTRY1g2 note): a go to the held group past a receiver filter, which would drop the quests held for
+  // the person that are addressed elsewhere. Everyone's are asked for the go alone, never remembered: it lasts until the
+  // person chooses a receiver in the ⋯, which says what is shown, or leaves Quests. Set as the go arrives, not after.
+  // One go sets it aside once (`goSeen`), so a choice in the ⋯ while the door still holds the group is not undone.
+  const [goAll, setGoAll] = useState(false);
+  const [goSeen, setGoSeen] = useState(false);
+  if (active && group === 'held' && !goSeen) {
+    setGoSeen(true);
+    if (filters.to) setGoAll(true);
+  }
+  if (group !== 'held' && goSeen) setGoSeen(false);
+  if (!active && goAll) setGoAll(false);
+  const receiver = goAll ? null : filters.to;
+  const quests = useQuests(receiver, filters.closed);
   // Every quest, closed ones included: a page for one the list leaves out, the chain a page shows (MAP1), whose
   // step before this one is usually closed and very often somebody else's, and the question a quest waits on.
   const everything = useQuests(null, true);
@@ -467,8 +480,8 @@ export function useQuestsView({
   // A receiver kept from before stays choosable, so the filter that names it can be seen and undone.
   const receivers = [...adopters, ...(filters.to && !adopters.includes(filters.to) ? [filters.to] : [])];
   const listed = quests.data !== undefined;
-  const headline = filters.to
-    ? t('quests.empty.headlineFor', { repository: filters.to })
+  const headline = receiver
+    ? t('quests.empty.headlineFor', { repository: receiver })
     : t('quests.empty.headlineAll');
 
   return {
@@ -483,9 +496,12 @@ export function useQuestsView({
           label={t('quests.list.more')}
           choice={{
             label: t('quests.addressedTo'),
-            value: filters.to ?? EVERYONE,
+            value: receiver ?? EVERYONE,
             options: [{ value: EVERYONE, label: t('quests.everyone') }, ...receivers.map((name) => ({ value: name, label: name }))],
-            onChoose: (value) => setFilters({ ...filters, to: value === EVERYONE ? null : value }),
+            onChoose: (value) => {
+              setGoAll(false);
+              setFilters({ ...filters, to: value === EVERYONE ? null : value });
+            },
           }}
           items={[{ id: 'closed', label: t('quests.includeClosed'), checked: filters.closed }]}
           onChoose={(id) => { if (id === 'closed') setFilters({ ...filters, closed: !filters.closed }); }}
@@ -503,7 +519,7 @@ export function useQuestsView({
           asks={asks.rows}
           quests={rows}
           closed={filters.closed}
-          filteredTo={filters.to}
+          filteredTo={receiver}
           empty={headline}
           unanswered={!listed && quests.error ? sentence(quests.error) : null}
           chosen={chosen}
