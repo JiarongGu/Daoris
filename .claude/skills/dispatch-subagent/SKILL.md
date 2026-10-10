@@ -38,6 +38,8 @@ Model: <model>, because <the row's kind in the table>.
 Start from: main at <sha> or later.
 Lanes: <lane ids in daoris.lanes.json, e.g. cli, tools>. Do not touch: <files a branch in flight holds>.
 Decision number: D<n>, reserved for this branch: write docs/decisions/D<n>.md. (Or: none. Write no decision.)
+How you work: edit files only with Edit and Write, never through python, sed, perl or a shell redirect; write
+each failing test first and watch it fail; commit each piece once its tests pass.
 Orientation pack:
 <the scout's pack, as it came back, with any pointer you corrected marked>
 ```

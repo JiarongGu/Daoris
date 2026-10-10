@@ -68,6 +68,24 @@ test('weighted counts each kind of token at its ratio to an input token, not a p
   assert.equal(a.weighted, 8 + 1.25 * 85_000 + 0.1 * 200_000 + 5 * 1000);
 });
 
+test('an edit made through the shell is counted, and is the work\'s first edit too', () => {
+  const scripted = [
+    JSON.stringify({ type: 'user', message: { content: 'Task: ROW2.' } }),
+    assistant('s1', usage(0, 40_000, 100), [tool('b1', 'Bash', { command: 'grep -n onPause work/pausing.ts' })]),
+    assistant('s2', usage(40_000, 10_000, 100), [tool('b2', 'Bash', { command: "cd web && python - <<'E'\nopen(p,'w').write(s)\nE" })]),
+    assistant('s2', usage(40_000, 10_000, 100), [tool('b2', 'Bash', { command: "cd web && python - <<'E'\nopen(p,'w').write(s)\nE" })]),
+    assistant('s3', usage(50_000, 5_000, 100), [tool('b3', 'PowerShell', { command: "sed -i 's/onCancel/onClose/g' A.tsx" })]),
+    assistant('s4', usage(55_000, 5_000, 100), [tool('b4', 'Bash', { command: 'sed -n 1,40p A.tsx' })]),
+    assistant('s5', usage(60_000, 5_000, 100), [tool('b5', 'Bash', { command: 'cd web && grep -c "writeFileSync(" tools/*.mjs' })]),
+    assistant('s6', usage(65_000, 5_000, 100), [tool('b6', 'Bash', { command: "node -e \"fs.writeFileSync('local/scratch/x.json', s)\"" })]),
+    assistant('s7', usage(70_000, 5_000, 100), [tool('b7', 'PowerShell', { command: 'npm test 2>&1 | Out-File -Encoding utf8 $env:TEMP\\t.log' })]),
+  ].join('\n');
+  const a = readTranscript(scripted);
+  assert.equal(a.shellEdits, 2, 'a python write and a sed -i, each once; a sed -n reads, a grep searches, scratch is no work');
+  assert.equal(a.preEditTurns, 1);
+  assert.equal(readTranscript(transcript).shellEdits, 0);
+});
+
 test('a message the harness wrote itself is not a turn', () => {
   const stopped = [transcript, assistant('m5', usage(0, 0, 0), [{ type: 'text', text: 'limit reached' }], '<synthetic>')].join('\n');
   const a = readTranscript(stopped);
@@ -112,6 +130,7 @@ test('summarize groups by type and model, with medians and each group\'s share',
   ], 'heaviest group first');
   assert.equal(groups[0].turns.median, 10, 'the upper middle of an even count');
   assert.ok(Math.abs(groups[0].share - 2 / 3.5) < 1e-9);
+  assert.deepEqual([groups[0].shellEdits, groups[0].shellEditors], [0, 0]);
   const parts = groups[0].split;
   assert.ok(Math.abs(Object.values(parts).reduce((n, v) => n + v, 0) - 1) < 1e-9, 'the parts are the whole');
   assert.ok(Math.abs(parts.startup - 0.1 * 150_004 / a.weighted) < 1e-9);

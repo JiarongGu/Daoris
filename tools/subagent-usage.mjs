@@ -29,7 +29,21 @@ export const RATIO = Object.freeze({ input: 1, cacheWrite: 1.25, cacheRead: 0.1,
 // A write under scratch is a probe, not the work: the load is measured at the first edit of a tracked file.
 const SCRATCH = /(^|[\\/])(local|_fixtures)[\\/]/;
 
+// A file written through the shell instead of the edit tools (file-tool-discipline): an in-place stream edit, or a
+// program's own write. A worker that edited this way showed no first edit at all (D160's SUBLOAD1c note). A search
+// for those words, and a write into scratch or temp, edit no work, so the count is an estimate that errs low.
+const SHELL_EDIT = /\bsed\s+(-\w*\s+)*-i|\bperl\s+-\w*i|\.write\(|writeFileSync|\b(Set|Add)-Content\b|\bOut-File\b/;
+const NOT_WORK = /local[\\/]scratch|_fixtures|[\\/]tmp\b|\$TMP|\$env:TEMP|[\\/]Temp[\\/]/i;
+const SEARCH = /^\s*(cd\s+\S+\s*(&&|;)\s*)?(grep|rg|git\s+grep|Select-String)\b/;
+
 const context = u => (u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0);
+
+const isEdit = block => (block.name === 'Edit' || block.name === 'Write') && !SCRATCH.test(String(block.input?.file_path ?? ''));
+const isShellEdit = block => {
+  if (block.name !== 'Bash' && block.name !== 'PowerShell') return false;
+  const command = String(block.input?.command ?? '');
+  return SHELL_EDIT.test(command) && !NOT_WORK.test(command) && !SEARCH.test(command);
+};
 
 /** One transcript's text (JSON lines) to its turns, its contexts and its token totals. */
 export function readTranscript(text) {
@@ -37,6 +51,7 @@ export function readTranscript(text) {
   const order = [];
   let model = '';
   let firstEdit = -1;
+  const shellEdits = new Set();
   for (const line of text.split('\n')) {
     if (!line.includes('"assistant"')) continue;
     let entry;
@@ -49,13 +64,12 @@ export function readTranscript(text) {
     if (!usage.has(message.id)) order.push(message.id);
     usage.set(message.id, message.usage);
     model = message.model || model;
-    if (firstEdit >= 0) continue;
     for (const block of Array.isArray(message.content) ? message.content : []) {
-      if (block.type === 'tool_use' && (block.name === 'Edit' || block.name === 'Write')
-        && !SCRATCH.test(String(block.input?.file_path ?? ''))) {
-        firstEdit = order.length - 1;
-        break;
-      }
+      if (block.type !== 'tool_use') continue;
+      const shell = isShellEdit(block);
+      // A streamed message repeats its blocks: a shell edit is counted once, by its id.
+      if (shell) shellEdits.add(block.id);
+      if (firstEdit < 0 && (shell || isEdit(block))) firstEdit = order.length - 1;
     }
   }
   const turns = order.map(id => usage.get(id));
@@ -88,6 +102,7 @@ export function readTranscript(text) {
     weighted: RATIO.input * totals.input + RATIO.cacheWrite * totals.cacheCreate
       + RATIO.cacheRead * totals.cacheRead + RATIO.output * totals.output,
     reads,
+    shellEdits: shellEdits.size,
     firstContext: startup,
     preEditTurns: firstEdit < 0 ? turns.length : firstEdit,
     editContext: turns.length ? context(turns[edit]) : 0,
@@ -146,6 +161,8 @@ export function summarize(agents) {
       lastContext: spread(list.map(a => a.lastContext)),
       weighted,
       share: weighted / total,
+      shellEdits: list.reduce((n, a) => n + a.shellEdits, 0),
+      shellEditors: list.filter(a => a.shellEdits > 0).length,
       // Where the group's weighted went: the four kinds of re-reading, the cache writes, the output and fresh input.
       split: {
         startup: part(a => RATIO.cacheRead * a.reads.startup),
@@ -185,5 +202,6 @@ if (isMain(import.meta.url)) {
     console.log(`  weighted went to: startup ${percent(s.startup)}, orienting ${percent(s.orientation)}, `
       + `orientation carried ${percent(s.carried)}, the work's reading ${percent(s.work)}, `
       + `cache writes ${percent(s.writes)}, output ${percent(s.output)}`);
+    if (g.shellEdits > 0) console.log(`  edits through the shell: ${g.shellEdits}, by ${g.shellEditors} of ${g.agents} agents`);
   }
 }

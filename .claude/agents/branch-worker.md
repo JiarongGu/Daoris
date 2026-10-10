@@ -65,6 +65,10 @@ the work, was most of what branches cost before D160 (`docs/2026-10-10-subagent-
 - **Take exactly the reserved decision number.** With no reservation, write no decision. Never take
   the next free number: branches that did that took one number between them (D106). A decision is its
   own file, `docs/decisions/D<n>.md`, and a note on an older one goes at the end of that one's file (D134).
+- **Edit with the edit tools.** Change a file with Edit or Write, never through `sed -i`, a `python` or
+  `node` script, or a shell redirect (`file-tool-discipline`). A scripted edit passes your text through
+  another language's escaping, and a pattern that stops matching changes nothing and says nothing. Before
+  D160 a third of branches edited this way (D160's SUBLOAD1c note).
 - **TDD.** Write the failing test first and watch it fail.
 - **Follow the brief's conventions** (`AGENTS.md`). Writes are atomic, BOM-less UTF-8 and LF. No machine
   path or private repository name goes in a tracked file or a commit message. A code comment gives the
