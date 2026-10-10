@@ -92,7 +92,10 @@ prove the long gates ran. Read D115 and the tool's usage before changing queue/m
 Commits are local work and follow green gates (D37). Push, publish, release, history rewrites and
 destructive actions retain their human boundary. Do not bypass provenance checks or hooks to make
 a task look complete. Subagent branches, when authorized, follow
-`.claude/skills/dispatch-subagent/SKILL.md`; documentation work does not implicitly authorize dispatch.
+`.claude/skills/dispatch-subagent/SKILL.md`: a `branch-scout` orients the row and a `branch-worker`
+builds it, each defined in `.claude/agents/` with its own model (D160), and
+`tools/subagent-usage.mjs` measures what a batch cost. Documentation work does not implicitly
+authorize dispatch.
 
 Record plans and findings while working, in the backlog or the matching review/design record. A
 load-bearing decision belongs under `docs/decisions/`, with its rejected alternatives and limits.

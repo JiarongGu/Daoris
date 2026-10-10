@@ -201,6 +201,9 @@ Contracts: session-economy (D127), workspace-setup (D124), setup-pilot lessons (
 knowledge review (D129). WSSETUP14b–e precede owner f/13; WSSETUP7 needs LAYOUT8.
 
 - [ ] **COST1 — measure long-turn cost** (owner's decision). Week of context/cache evidence before ceiling/window/compaction proposals. METER1/D127.
+- [ ] **SUBLOAD1b — probe scout and worker** (parent; after a harness restart). Agent definitions load at session start, so the first dispatch of each proves its tools, hand-back and startup context against 50K. D160 limits; `tools/subagent-usage.mjs`.
+- [ ] **SUBLOAD1c — the model trial** (parent; after SUBLOAD1b). A batch built by scout and worker, Sonnet workers on narrow rows. Proof: first-run gates, review findings and columns against evidence §2. D160; `docs/2026-10-10-subagent-load-evidence.md` §4.
+- [ ] **MODELROLE1 — a model per session role** (design; after SUBLOAD1c). If the split holds, managed sessions orient, build and review with a model configured per role, on every door. D160; decision before build.
 - [ ] **SESSOPT1d — complete documentation relocation** (steward). Maintain ≤5300 words and ≤60 per row; finish §4.3 diagnostic evidence homes for FLAKE1/TEST1/REH1.
 - [ ] **DOC7 — reading measurements**. session.read/session.skill by role and whole/partial. D127 §6.1.
 - [ ] **WSSETUP7 — workspace setup UI/proposal** (all doors; after LAYOUT8). Workspace page and bilingual coverage. D124 §4.4–§4.5.

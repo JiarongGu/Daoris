@@ -148,6 +148,7 @@ These retain their original dates, versions and measurement limits.
 | `2026-10-07-second-opinion-review.md` | Evidence: code/UI findings | Archive outcomes; remaining work in TASKS |
 | `2026-10-07-codex-usage-evidence.md` | Evidence: own-sign-in account windows | D125/D130 |
 | `2026-10-09-review-serving-evidence.md` | Evidence: Chromium serving behavior | D154 |
+| `2026-10-10-subagent-load-evidence.md` | Evidence: what dispatched subagents' context cost | D160; the trial in TASKS |
 
 ## Records and generated indexes
 

@@ -1,138 +1,81 @@
 ---
 name: dispatch-subagent
-description: The brief every subagent working a branch of this repository follows, and the parent's half of dispatching one. The subagent's half says what to read, which gates it may and may not run, which files it never edits, how it takes its reserved decision number, and what its hand-back carries. The parent's half covers reserving the number, naming the lane, running at most three at once, and merging with tools/merge-branch.mjs. Use when dispatching a subagent, and, as that subagent, before starting the task.
+description: The parent's half of dispatching a subagent to work a branch of this repository — orienting the row with a branch-scout, sizing it, choosing each role's model, reserving the decision number, naming the lane, running at most three workers at once, merging with tools/merge-branch.mjs, and measuring what the dispatch cost. The subagent's half is the branch-worker agent's own definition. Use when dispatching a subagent.
 ---
 
 # dispatch-subagent
 
-The parent used to type this brief into every subagent's prompt. It now lives here, so a dispatch prompt
-carries only what differs per branch: the task, its lane, the files it must not touch, and its reserved
-decision number (MOD9, `docs/2026-09-30-parallel-development-design.md` §3 rule 7).
+A row is built by two agents: a **branch-scout** orients it and returns an orientation pack, and a
+**branch-worker** builds it from the pack on its own branch (D160). Each one's brief is its agent
+definition in `.claude/agents/`, which the harness loads as that agent's instructions, so a dispatch prompt
+carries only what differs per branch (MOD9, `docs/2026-09-30-parallel-development-design.md` §3 rule 7).
+This skill is the parent's half; a worker never reads it.
 
-## The dispatch prompt
+## Why two agents
+
+Every turn re-reads the whole context, so what a branch loads before its first edit is paid again by every
+turn after it; that load, not the work, was most of what branches cost (D160,
+`docs/2026-10-10-subagent-load-evidence.md`). The scout pays for orienting once, on a smaller model and a
+context it hands back; the worker starts from a page of pointers.
+
+## The dispatch prompts
+
+The scout, read-only and outside any worktree:
+
+```
+Row: <ROW> in TASKS.md. Contract: <design document, section>. Main is at <sha>.
+Lanes the row names: <lane ids>. Branches in flight hold: <files>.
+```
+
+The worker, with `subagent_type: branch-worker` and the model the table below chooses:
 
 ```
 Task: <ROW>: <what, and why>. The contract is <design document, section> and the <ROW> row in TASKS.md.
+Model: <model>, because <the row's kind in the table>.
 Start from: main at <sha> or later.
 Lanes: <lane ids in daoris.lanes.json, e.g. cli, tools>. Do not touch: <files a branch in flight holds>.
 Decision number: D<n>, reserved for this branch: write docs/decisions/D<n>.md. (Or: none. Write no decision.)
-Follow the dispatch-subagent skill's subagent half.
+Orientation pack:
+<the scout's pack, as it came back, with any pointer you corrected marked>
 ```
 
-## The subagent's half
+## Choosing the model (D160)
 
-### Before any code
+Each role's model is its definition's `model:`, and the Agent call's `model` overrides it for one dispatch.
 
-1. Merge main into the branch (`git merge --ff-only main` on a fresh worktree) and confirm the start
-   commit the prompt names.
-2. Read `CLAUDE.md` and `AGENTS.md`, run `doc-loader`, and read what it routes you to, starting with the
-   design document the prompt names. Say which documents you read.
-   Read `docs/index/README.md` for where things are before searching the code: open the outline, then the lines.
-3. Count the tests in the suites your lane touches before changing anything. The hand-back reports the
-   count before and after.
+| Role | Model | Why |
+|---|---|---|
+| Parent: plan, review, merge | the session's | It holds the backlog and the merges |
+| `branch-scout` | Sonnet | Reading and locating; its context is handed back, not carried |
+| `branch-worker`, one lane, the pack names the change exactly (catalogue words, a rename, a refusal, a small fix) | Sonnet | The work is the pack's ranges |
+| `branch-worker`, design, UI, more than one lane, or a decision to write | Opus | The work is judgement |
 
-### While working
-
-- **Commit as you go.** A piece that passes its tests is committed before the next begins. A subagent stopped
-  by a usage limit keeps its worktree only while it holds a commit; one stopped with every change
-  uncommitted lost its worktree and all of its work (2026-10-09). The first commit comes before any
-  reading: a stopped agent's worktree is no longer locked, and a clean tree at main's tip counts as
-  merged, so the next merge's prune took one that had only read, and its resume found nothing (2026-10-09).
-- **Run no rehearsal unless the brief says to.** The family rehearsal's hosts sit on fixed ports, so a run in a worktree
-  and the merge gate's run on main answer each other's checks (REHEARSEPORT1), and a failed phase's git fallback once
-  committed a subagent's uncommitted work in its worktree (REHEARSEGIT1). The parent runs the rehearsals in the gate.
-- **Stay in your lane.** Change the files your lane owns (`daoris.lanes.json` lists each lane's paths
-  under its id) and the tests beside them. If you need a change in another lane, say so in the
-  hand-back and leave it to the parent to schedule. Never make it yourself.
-- **Never edit the `records` lane's files**: `TASKS.md`, `docs/task-archive.md` and `daoris.lanes.json`.
-  They are the steward's, and the parent is the steward. The merge tool names a branch that touches
-  them. One exception: a path you add that no lane owns fails the lanes test in `verify` until the map
-  places it. Place it, and name that change in the hand-back.
-- **Take exactly the reserved decision number.** With no reservation, write no decision. Never take
-  the next free number: branches that did that took one number between them (D106). A decision is its
-  own file, `docs/decisions/D<n>.md`, and a note on an older one goes at the end of that one's file (D134).
-- **TDD.** Write the failing test first and watch it fail.
-- **Follow `CLAUDE.md`'s conventions.** Writes are atomic, BOM-less UTF-8 and LF. No machine path or
-  private repository name goes in a tracked file or a commit message. A code comment gives the reason
-  and names the task, never the owner's words. A `tools/` script whose helpers are imported guards its
-  runner with `isMain`.
-
-### Gates
-
-- **You may run** `npm run verify` at the root (`npm ci` first in a fresh worktree), `node --test` in
-  `src/Daoris.Cli`, the web's vitest loop (`npm --prefix src/Daoris.Web run test`, after
-  `npm --prefix src/Daoris.Web ci`) when your lane is the web, and **whenever you change a catalogue or a
-  word the page shows, from any lane**, the web's `i18n:check` and `names:check -- --strict`: the build and
-  the web gate run both, and a catalogue gap otherwise surfaces only at the merge, failing the publish
-  with it. Also `dotnet test` on the .NET project
-  your lane changes, one suite at a time. A desktop suite runs its fast half only:
-  `dotnet test src/Daoris.Desktop/<project> --filter Category!=Process` (MOD8).
-- **Never run** any of these:
-  - a desktop suite's `Process` half (`--settings src/Daoris.Desktop/process.runsettings`): the test
-    classes that start real processes or run real ticks
-  - the rehearsals (`npm run rehearse`, `rehearse:family`, `rehearse:deploy`) or `test:web`
-  - the desktop window (`npm run desktop -- run|shot|eval|click|restart|kill`)
-  - `publish:desktop` or `publish:service`
-  - `tools/merge-branch.mjs`
-  - anything that touches the owner's running install: its folder, its home, its processes. Never stop
-    a Daoris process.
-
-  The parent runs these serially: the rehearsals a merge reaches when it merges, and the `Process` halves
-  and the deployment rehearsal in the full set before the install is staged. Several worktrees building
-  at once is the load that makes real-process tests fail (FLAKE1).
-- **What you cannot run, read.** When you change words a person or a test reads (a sentence, a label, a
-  refusal), search for the old words in every test you may not run: the desktop suites' `Process` half,
-  `tools/*rehearsal*.mjs` and the web's `e2e/` specs. Update each hit, and list them in the hand-back.
-  NAME1b's renames passed every gate it could run and failed three it could not, all on words it had changed.
-  **A shape is read too:** a field added to or renamed in a route's answer fails a rehearsal that compares that answer
-  whole. Search the rehearsals for the field's neighbours (`requirements`, `hold`, …) as well as for words. EVID1a's
-  `evidence: []` beside each requirement failed four family-rehearsal checks its branch could not run.
-- **A stored shape is never changed in place.** A coded note's declared values, a record's field and a wire answer
-  are kept on machines and read back later: add a field or a new code, and keep the old one read as it was. AGT3d first
-  widened `account.cooling`'s values, which would have left every cooling note already written "shown as recorded".
-- **A new bridge hook the page presses owes Ask Daoris a door or a reason.** The driver's `HelpCoverageTests` lists
-  every page control with its `Door` or `Exempt`, and a branch outside the driver lane cannot run it. Name the row
-  the hook needs, door or exemption with its reason, in the hand-back; the parent adds it at the merge. LAND3b's
-  `useDiscardSessionBranch` passed every gate it could run and failed the driver's.
-- **Report a flake; do not chase it.** If a real-process test fails under load and passes alone, say so.
-  If you think a failure is not yours, name it in the hand-back with the evidence (for example, it
-  fails the same way on main). Never skip it silently.
-
-### Finishing
-
-1. Merge main again, resolve any conflict inside your lane, and run your gates again.
-2. Commit once per part: `type(scope): <ROW>, <what>`, ending with the session's `Co-Authored-By:`
-   line. The merge tool's commit check refuses a commit without that line. Leave nothing uncommitted in
-   the worktree: the check refuses that too. Never push, and never rewrite history.
-3. The hand-back carries:
-   - the **branch**, exactly as `git branch --show-current` prints it in your worktree (two hand-backs named a
-     sibling's branch, read off another worktree's folder), and its **commits** (sha and subject)
-   - the **files** changed, grouped by lane
-   - **the shape built**, in a paragraph a reviewer can hold the diff against
-   - the **decision number** taken, or none
-   - **what the parent must look at on the window**: each surface changed and the screenshot that would
-     prove it, or "nothing on the window"
-   - **test counts** before and after, per suite
-   - what was **left out**, and why
-   - **the outcome in one line**, and where its detail lives (the decision's note, the design's section,
-     the commits), for the parent to paste under the row in `docs/task-archive.md`. What the note or the
-     commit already says is pointed to, never told again (`task-lifecycle`); a new backlog row it proposes
-     takes the row's shape: what and why in two sentences, its contract by section, its proof (SESSOPT1c)
+SUBLOAD1c compares each worker's merge (gates on the first run, review findings, what the window showed)
+and its cost with the runs before D160. Record each batch's numbers under D160's notes. Daoris's managed
+sessions take the same roles once the trial says which split works (MODELROLE1).
 
 ## The parent's half
 
-1. **Reserve the decision number** before dispatching. It is the next number after both the highest file
+1. **Orient with a scout.** Dispatch `branch-scout` with the row. Scouts read and build nothing, so they do
+   not count toward the three workers below, and several may run at once. Read the pack it returns,
+   open any pointer that looks wrong, and correct it before passing the pack on. A pack whose
+   *Size* says the row is more than one sitting is split first (step 3).
+2. **Reserve the decision number** before dispatching. It is the next number after both the highest file
    in `docs/decisions/` and every number already reserved for a branch in flight. Name it in the prompt.
-2. **Name the lanes by id** (`daoris.lanes.json`, design §5) and the files the branch must not touch,
+3. **Size the branch to about a hundred turns.** Cost grows with the square of a branch's turns: in the
+   evidence, branches of 100 to 200 turns cost three times those under 100, and branches of 200 to 300 cost
+   seven times. A row that changes more than one surface, or more than one lane, is split into rows that
+   each fit, and each gets its own pack.
+4. **Name the lanes by id** (`daoris.lanes.json`, design §5) and the files the branch must not touch,
    which is anything a branch in flight holds. When two branches need the same lane, one waits for the
    other or the work is split.
-3. **Run at most three at once.** More load makes real-process tests flake. **Dispatch before starting a merge, or
+5. **Run at most three workers at once.** More load makes real-process tests flake. **Dispatch before starting a merge, or
    once its gates are running, not in the moment it starts:** the harness's worktree isolation reads the checkout's git
    metadata, refuses while the merge tool is writing it, and leaves a locked worktree behind. Unlock it
    (`git worktree unlock`) so the next prune takes it, and dispatch again. Two dispatched in one message
    while a merge's gates ran were both refused the same way (2026-10-08), each a half-made tree holding only
    `.git` and `.claude`: remove each (`git worktree remove --force`, then its branch), and dispatch one at a time.
-4. **Merge with `tools/merge-branch.mjs`**, from the main checkout with a clean tree:
+6. **Merge with `tools/merge-branch.mjs`**, from the main checkout with a clean tree:
    - `--plan <branch>` shows the lanes, the commit check, the prune and the gate order, and merges nothing.
    - `<branch>` merges with `--no-ff --no-commit`, writes `docs/index/` from the merged tree (ORIENT1), then runs
      the baseline (the universal gates, the code map, the orientation index's check, `verify`), the fast halves of the suites the merge's changed paths can reach, and the web gate
@@ -175,7 +118,7 @@ Follow the dispatch-subagent skill's subagent half.
      🔴 **Lock a worktree you make by hand** (`git worktree add --lock …`, or `git worktree lock` after):
      an integration worktree at main's tip before its first commit counts as merged and clean, and the
      next merge's prune would take it. Unlock it once it has landed, so the prune can clear it.
-5. **Commit the merge yourself.** The tool never commits. Read `git diff --cached` and write the
+7. **Commit the merge yourself.** The tool never commits. Read `git diff --cached` and write the
    records, as the `records` lane's steward: move the row from `TASKS.md` to the archive with the
    hand-back's one-line outcome and its pointer, add the changelog entry, and update the counts in
    `TASKS.md`'s State. `doc-shapes` reports an outcome or a row over its shape.
@@ -183,10 +126,14 @@ Follow the dispatch-subagent skill's subagent half.
    **Scan what you staged first** (`daoris-devkit scan`): records written after the gates, and every records
    commit made outside a merge, are the one change no universal gate reads before it is committed. A
    backlog row quoting a window's caption put a private name into history that way (2026-10-08).
+8. **Measure the batch.** `node tools/subagent-usage.mjs <the harness's transcripts folder for this
+   repository> --since <the batch's first day>` prints each agent type and model's turns and its context
+   at the start, at the first edit and at the end. Feed the hand-back's *pack's gaps* into the next pack.
 
 ## Why
 
 Each rule here is here because a branch broke it. Two branches took one decision number. A hand-typed
 gate chain lost a rehearsal's reason. A "web only" batch skipped the .NET suites and broke main unseen.
 Three worktrees building at once made tests fail that pass alone. A prompt that restates all of this
-drifts from the last one. A skill is read the same way every time.
+drifts from the last one. A brief is read the same way every time. And branch after branch spent its first
+fifty turns finding what a page of pointers could have named (D160).

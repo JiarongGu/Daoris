@@ -12816,3 +12816,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **DOCSYS2 — make documentation mappings fail on drift** (documentation/tools). Reject missing or invalid described source paths and keep anchored router links discoverable. Contract: D159; proof: failing-first audit regressions, real inventory and baseline verification; findings in `docs/2026-10-10-documentation-review.md`.
 
 **Outcome** 2026-10-10: the local documentation audit rejects absent source paths and incomplete mappings, normalizes relative paths, and resolves section links to their file. Thirteen audit tests, command-level failing-first proof and the full baseline pass. D159 and the documentation review carry the contract, verification and limits; historical evidence remains intact.
+
+
+## SUBLOAD1 — cut what a subagent loads before it works (2026-10-10, D160)
+
+> - [ ] **SUBLOAD1 — optimize subagent token usage** (parent/tools). Measure where dispatched subagents' tokens go, then cut the initial load rather than compact. Contract: D160; proof: measured before, a repeatable measurement, the definitions in place.
+
+**Outcome** 2026-10-10: 356 branches measured; startup and orientation were 65% of their cost. A row is now oriented by `branch-scout` and built by `branch-worker` (`.claude/agents/`), each with its own model; the skill keeps the parent's half. `tools/subagent-usage.mjs` measures each batch. Evidence: `docs/2026-10-10-subagent-load-evidence.md`; probe and trial: SUBLOAD1b/c.

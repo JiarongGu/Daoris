@@ -98,8 +98,8 @@
       "paths": ["canon/**", "AGENTS.md", "daoris.json", "daoris.lock", ".claude/**", "examples/**"]
     },
     {
-      "what": "The harness's settings for working in this repository.",
-      "paths": [".mcp.json"]
+      "what": "The harnesses' settings for working in this repository.",
+      "paths": [".mcp.json", ".codex/**"]
     },
     {
       "what": "Build settings every desktop project shares, the driver's and the modules' alike.",
