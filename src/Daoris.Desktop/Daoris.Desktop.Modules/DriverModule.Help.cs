@@ -203,8 +203,9 @@ public sealed partial class DriverModule
     {
         Message = applied.Told,
         applied.Applied,
-        // Where a go takes the person: the page navigates, as its starters' doors do (HELP6).
-        Go = applied.Go is { } place ? new { place.View, place.Domain, place.Part } : null,
+        // Where a go takes the person: the page navigates, as its starters' doors do (HELP6), to the one quest or ask a go
+        // names in it, the driver's judged spelling (ENTRY1f1).
+        Go = applied.Go is { } place ? new { place.View, place.Domain, place.Part, place.Item } : null,
         // The action an update or a pin started, so the Agents screen follows its console and its end. A default
         // (HELP10) is a file edit that starts nothing, so there is nothing to follow.
         HarnessAction = applied.Applied && proposal.Kind == "agent" && proposal.Door is "update" or "pin"
@@ -411,6 +412,13 @@ public sealed partial class DriverModule
     }
 
     /// <summary>
+    /// Whether a pending proposal is judged against every quest and ask (HELP6): a delete, and since ENTRY1f1 a go naming
+    /// one, so the service is asked for the records only then. Public so the fast half holds the gate without a service.
+    /// </summary>
+    public static bool JudgedAgainstRecords(IEnumerable<HelpProposal> proposals) =>
+        proposals.Any(proposal => proposal.Kind == "delete" || proposal.Kind == "go" && !string.IsNullOrWhiteSpace(proposal.Item));
+
+    /// <summary>
     /// What a proposal of Ask Daoris's is judged against (HELP1c): the driver's file, and the names the
     /// machine holds — its registered repositories and their circles, the agents it has, and the quests the
     /// last tick parked (HELP10). For the
@@ -479,7 +487,7 @@ public sealed partial class DriverModule
             };
         }
 
-        if (proposals.Any(proposal => proposal.Kind == "delete"))
+        if (JudgedAgainstRecords(proposals))
         {
             var (quests, asks) = await HelpProposals.RecordsAsync(service, ct).ConfigureAwait(false);
             facts = facts with { Quests = quests, Asks = asks };
