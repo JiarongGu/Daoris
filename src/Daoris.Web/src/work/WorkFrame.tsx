@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { SessionConsole } from '../SessionConsole';
 import { sentence } from '../format';
 import { buildChain } from '../map/chain';
+import type { OpenGroup } from '../opener';
 import { useAnswerSession, useAsks, usePersonDone, useQuests, useRegistry, useSessions } from '../queries';
 import {
   type TurnStop, useCancelTurn, useEndChat, useHarnesses, useResolveSession, useSendMessage,
@@ -134,13 +135,19 @@ const door = (structured?: boolean): 'structured' | 'text' | undefined =>
  */
 export function WorkFrame({
   selected, onSelect, notify, onSendBack, onAnswerAsk, onOpenQuest, intent, onIntentTaken, ask, askFocus = 0, closings, placements,
-  lists, layout: viewLayout, onOpenSessions, terminal = false, onListMode,
+  lists, layout: viewLayout, onOpenSessions, terminal = false, onListMode, group = null, onGroupBrought,
 }: {
   /**
    * What each view's list remembers (D118 §3f), held by the application so the list's doors reach it from
    * every view; this frame's own where it is rendered alone.
    */
   lists?: ListPanes;
+  /**
+   * The group of Sessions' list a door into what waits on the person named (ENTRY1b), handed to the rail, which brings it
+   * into view and tells `onGroupBrought`.
+   */
+  group?: OpenGroup | null;
+  onGroupBrought?: () => void;
   /**
    * What the view's list is now — open, a strip, laid over, or none (D118 §3a) — for the application,
    * whose doors toggle it and say whether it is shown. The room decides it, and only this frame measures.
@@ -1234,6 +1241,9 @@ export function WorkFrame({
         taking={taking}
         arrangement={sessionsFilters.group}
         archived={sessionsFilters.archived}
+        // The strip draws no group, so it lets a door's go; laid over, the open list beside it brings it (ENTRY1b).
+        group={group}
+        onGroupBrought={onGroupBrought}
       />
     ),
     body: (
@@ -1247,6 +1257,8 @@ export function WorkFrame({
         archived={sessionsFilters.archived}
         archiveEnded={archivingEnded}
         onArchiveEnded={() => setArchivingEnded(false)}
+        group={group}
+        onGroupBrought={onGroupBrought}
         // A row's acts that are this frame's: answering, asking to stop or to delete, reviewing, a terminal there (SESSUX1d, SESSUX1f).
         doors={doors}
       />

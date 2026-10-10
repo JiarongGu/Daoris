@@ -201,6 +201,28 @@ describe('the Work frame', () => {
   });
 
   /**
+   * ENTRY1b (D161's ENTRY1 note): a door into what waits on the person names a group of Sessions' list, which the frame
+   * hands its rail: the group's heading is brought into view and focused, and the door told.
+   */
+  it('hands its rail the group a door names, which brings it into view and tells the door', async () => {
+    SESSIONS = [DRIVEN, PARKED];
+    const brought = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <WorkFrame selected={null} onSelect={vi.fn()} notify={() => {}} group="you" onGroupBrought={brought} />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+
+    const list = await screen.findByRole('complementary', { name: 'Sessions' });
+    const heading = await within(list).findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+    await waitFor(() => expect(brought).toHaveBeenCalled());
+    expect(heading).toHaveFocus();
+  });
+
+  /**
    * SESSUX1e, D126 §4.1: *Show archived* is a toggle in the list's ⋯, ticked as it stands and remembered beside the
    * arrangement; below a rule, *Archive what ended…* lists under the list's header before anything is archived.
    */

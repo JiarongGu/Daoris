@@ -127,6 +127,21 @@ describe('the opener', () => {
     expect(doorOpening({ view: 'knowledge', knowledge: 'search' })).toEqual(opening('knowledge', null, { knowledge: 'search' }));
   });
 
+  /**
+   * ENTRY1b (D161's ENTRY1 note): a door into what waits on the person names a group of Sessions' or Quests' list, which
+   * the view brings into view, and no item in it. A group means nothing to another view, Overview's among them.
+   */
+  it('opens Sessions or Quests with the group a door names, and only there', () => {
+    expect(opening('sessions', null, { group: 'you' })).toEqual({ view: 'sessions', group: 'you' });
+    expect(opening('sessions', null, { group: 'review' })).toEqual({ view: 'sessions', group: 'review' });
+    expect(opening('quests', null, { group: 'asks' })).toEqual({ view: 'quests', group: 'asks' });
+    expect(opening('quests', null, { group: 'held' })).toEqual({ view: 'quests', group: 'held' });
+    expect(opening('quests', null, { group: 'you' })).toEqual({ view: 'quests' });
+    expect(opening('sessions', null, { group: 'held' })).toEqual({ view: 'sessions' });
+    expect(opening('overview', null, { group: 'you' })).toEqual({ view: 'overview' });
+    expect(doorOpening({ view: 'sessions', group: 'you' })).toEqual(opening('sessions', null, { group: 'you' }));
+  });
+
   it('keeps no chosen item for a view with no list', () => {
     expect(opening('map', 'engine')).toEqual({ view: 'map' });
     expect(opening('overview', 'abc123')).toEqual({ view: 'overview' });

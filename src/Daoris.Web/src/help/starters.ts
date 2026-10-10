@@ -58,7 +58,10 @@ export function starters(
 ): Starter[] {
   const found: Starter[] = [];
 
-  if (machine.waiting > 0) found.push({ id: 'waiting', values: { count: machine.waiting }, door: { view: 'sessions' } });
+  // ENTRY1b: the sessions waiting on the person are Sessions' *Waiting on you*, which the door brings into view.
+  if (machine.waiting > 0) {
+    found.push({ id: 'waiting', values: { count: machine.waiting }, door: { view: 'sessions', group: 'you' } });
+  }
 
   if (machine.repositories.length === 0) {
     found.push({ id: 'nothing-registered', values: {}, door: { view: 'projects' }, command: 'daoris connect' });

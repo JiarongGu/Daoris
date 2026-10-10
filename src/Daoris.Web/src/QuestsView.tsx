@@ -5,7 +5,7 @@ import { linksOf, toUpload } from './attachments';
 import { useAsksPart } from './asks/AsksPart';
 import { sentence } from './format';
 import { buildChain } from './map/chain';
-import { askItem, questsItem } from './opener';
+import { askItem, type OpenGroup, questsItem } from './opener';
 import {
   useAcceptQuest, useDeleteQuest, useDismissConflict, usePersonDone, usePublishQuest, useQuests, useRegistry, useRespondQuest,
   useSessions,
@@ -28,7 +28,7 @@ import { useHistoryActs } from './work/historyActs';
 import { stepState } from './work/review';
 import { useReviewActs } from './work/reviewActs';
 import type { Answered } from './work/InlineConfirm';
-import { ListMore } from './work/ListPane';
+import { groupHeading, ListMore, useBringGroup } from './work/ListPane';
 import { type AbandonAnswer, wiredFor, type WorkDoor, type WorkTarget } from './work/pausing';
 import type { TraceDoor } from './work/HowItCameToBe';
 import type { ViewLayout } from './work/ViewFrame';
@@ -57,6 +57,7 @@ const EVERYONE = '*';
  */
 export function useQuestsView({
   active, chosen, onChoose, filters: kept, onFilters, notify, onAttend, onOpenRun, opening, onOpened, asking, onAsked,
+  group = null, onGroupBrought,
 }: {
   /**
    * The door into a run (WORKFLOW1c, the workflow design §7): its session attended, the side bar on its *Workflow*. Absent where
@@ -88,6 +89,12 @@ export function useQuestsView({
   /** The palette asked for the ask composer (INT4c) — an event like `opening`. */
   asking?: boolean;
   onAsked?: () => void;
+  /**
+   * The group a door into what waits on the person names (ENTRY1b): the asks, or the quests held for the person, brought
+   * into view once the list has answered, and `onGroupBrought` told, whether the list drew it or not.
+   */
+  group?: OpenGroup | null;
+  onGroupBrought?: () => void;
 }): ViewLayout {
   const { t } = useTranslation();
   const filters = questFilters(kept);
@@ -195,6 +202,14 @@ export function useQuestsView({
     composing: askComposing,
     onComposingChange: setAskComposing,
   });
+
+  // ENTRY1b: a door's group, the asks or the quests held for the person, looked for in front once both have answered. A list
+  // that draws none (nothing held, a receiver's filter, the strip) lets it go.
+  useBringGroup(
+    active && (group === 'asks' || group === 'held') ? groupHeading('quests', group) : null,
+    !quests.isPending && !asks.loading,
+    onGroupBrought,
+  );
 
   const latest = latestSessions(sessions.data ?? []);
   // Only what the host says can be asked is offered (D70: an adopter, or a repository registered with a root) —

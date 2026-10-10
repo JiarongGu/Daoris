@@ -217,15 +217,42 @@ function EmptyActs({ make }: { make: ListMake }) {
 
 /**
  * A group of a list's rows under its name and count, as the session rail draws a repository's (`RepositoryGroup`) and
- * the Plugins view a state's. Its rows are `<li>`s, each a row of its list (`data-list-row`).
+ * the Plugins view a state's. Its rows are `<li>`s, each a row of its list (`data-list-row`). A group a door may bring into
+ * view (ENTRY1b) has its heading's `id` (`groupHeading`), and the heading takes the focus there, out of the Tab order.
  */
-export function ListGroup({ title, children }: { title: string; children: ReactNode }) {
+export function ListGroup({ title, id, children }: { title: string; id?: string; children: ReactNode }) {
   return (
     <section className="border-t border-line first:border-t-0">
-      <h3 className="m-0 truncate px-2.5 pb-1 pt-2.5 text-small font-semibold text-ink">{title}</h3>
+      <h3 id={id} tabIndex={id ? -1 : undefined} className="m-0 truncate px-2.5 pb-1 pt-2.5 text-small font-semibold text-ink">
+        {title}
+      </h3>
       <ul className="m-0 list-none p-0">{children}</ul>
     </section>
   );
+}
+
+/** The id of a list's group heading, the one a door brings into view (ENTRY1b): the view's, then the group's own name. */
+export const groupHeading = (view: string, group: string) => `${view}-group-${group}`;
+
+/**
+ * A group a door names, brought into view once its list has answered (ENTRY1b, D161's ENTRY1 note): its heading scrolled to
+ * the list's top and focused, then the door told, so the next visit opens as the list was left.
+ *
+ * @remarks
+ * **An event, let go once the list has answered**, as Settings' anchor and an agent's part are told once brought. A list
+ * that draws no such group then (nothing waits in it, it is arranged by repository or searched, it is a strip) tells the
+ * door all the same: a group that appeared later would take the focus from wherever the person had gone since.
+ */
+export function useBringGroup(heading: string | null, answered: boolean, onBrought?: () => void) {
+  const told = useRef(onBrought);
+  told.current = onBrought;
+  useEffect(() => {
+    if (!heading || !answered) return;
+    const found = document.getElementById(heading);
+    found?.scrollIntoView?.({ block: 'start' });
+    found?.focus({ preventScroll: true });
+    told.current?.();
+  }, [heading, answered]);
 }
 
 /**

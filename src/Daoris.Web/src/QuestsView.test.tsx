@@ -1198,3 +1198,76 @@ describe('QuestsView', () => {
     expect(within(questMain()).queryByRole('button', { name: 'Stop session' })).not.toBeInTheDocument();
   });
 });
+
+/**
+ * ENTRY1b (D161's ENTRY1 note): a go to what waits on the person names a group of the list, the asks above it or the
+ * quests held for the person's yes, which the view brings into view once the quests and the asks have answered: its heading
+ * scrolled to and focused, then the door told. A list that draws no such group lets the door go.
+ */
+describe('a group a door brings into view', () => {
+  const HELD = { ...QUESTS[0], id: 'def456', title: 'Hold the cap', status: 'Done', held: true, parent: undefined, then: [] };
+  const ASK = {
+    id: '7c1e9a04b2d5', workspace: 'default', sentence: 'Cap the hydration per frame.', state: 'Proposed', tier: 'declarations',
+    asked: '2026-09-02T00:00:00Z', updated: '2026-09-02T00:00:00Z', links: [], attachments: [], quests: [], proposal: [],
+  };
+  let quests: unknown[] = [];
+
+  function shown(group: 'asks' | 'held', onGroupBrought: () => void) {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <QuestsView notify={vi.fn()} group={group} onGroupBrought={onGroupBrought} />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+  }
+
+  beforeEach(() => {
+    ASKS = [ASK];
+    quests = [...QUESTS, HELD];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      return url.startsWith('/api/quests') ? Response.json(quests) : respond(url);
+    }));
+  });
+  afterEach(() => {
+    ASKS = [];
+    vi.unstubAllGlobals();
+    window.localStorage.clear();
+  });
+
+  it('scrolls to the quests held for the person and focuses their heading, then tells the door', async () => {
+    const scroll = vi.spyOn(Element.prototype, 'scrollIntoView');
+    const brought = vi.fn();
+    try {
+      shown('held', brought);
+
+      const heading = await within(questList()).findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+      await waitFor(() => expect(brought).toHaveBeenCalledTimes(1));
+      expect(heading).toHaveFocus();
+      expect(scroll.mock.instances).toContain(heading);
+    } finally {
+      scroll.mockRestore();
+    }
+  });
+
+  it('brings the asks above the quests into view', async () => {
+    const brought = vi.fn();
+    shown('asks', brought);
+
+    const heading = await within(questList()).findByRole('heading', { level: 3, name: 'Asks (1)' });
+    await waitFor(() => expect(brought).toHaveBeenCalledTimes(1));
+    expect(heading).toHaveFocus();
+  });
+
+  it('lets the door go where nothing is held', async () => {
+    quests = QUESTS;
+    const brought = vi.fn();
+    shown('held', brought);
+
+    await within(questList()).findByText('Expose a streaming budget');
+    await waitFor(() => expect(brought).toHaveBeenCalledTimes(1));
+    expect(document.activeElement).toBe(document.body);
+  });
+});

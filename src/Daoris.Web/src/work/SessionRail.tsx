@@ -11,7 +11,9 @@ import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import { useDebounced } from '../lib/useDebounced';
 import { offeredActs, type SessionActId } from './acts';
+import type { OpenGroup } from '../opener';
 import { endedToArchive, type SessionArrangement } from './groups';
+import { groupHeading, useBringGroup } from './ListPane';
 import { SessionRow } from './SessionRow';
 import { ArchiveEndedAsk, type RepositoryFacts, SessionList, type SessionRowFacts, SessionStrip } from './SessionList';
 import { isIntake, ownTree, sessionTitle } from './identity';
@@ -44,7 +46,7 @@ import { type SessionDoors, useSessionActs } from './sessionActs';
  */
 export function SessionRail({
   selected = null, onSelect, notify, compact = false, doors, taking = {}, lastTurns = {}, live = false,
-  arrangement = 'state', archived = false, archiveEnded = false, onArchiveEnded,
+  arrangement = 'state', archived = false, archiveEnded = false, onArchiveEnded, group = null, onGroupBrought,
 }: {
   /** The attended session's id, held by the frame. */
   selected?: string | null;
@@ -84,6 +86,12 @@ export function SessionRail({
    */
   archiveEnded?: boolean;
   onArchiveEnded?: () => void;
+  /**
+   * The group a door into what waits on the person names (ENTRY1b): *Waiting on you* or *To review*, brought into view once
+   * the records and the reader have answered, and `onGroupBrought` told, whether this rail drew it or not.
+   */
+  group?: OpenGroup | null;
+  onGroupBrought?: () => void;
 }) {
   const { t } = useTranslation();
   // Closed records included, then filtered here: the rail needs the attended one whatever state it
@@ -114,6 +122,11 @@ export function SessionRail({
   const said = useSessionSearch(settled);
 
   useErrorNotify(sessions.error, notify);
+
+  // ENTRY1b: a door's group, looked for once the records and the reader have answered, since a parked quest's session waits
+  // on the person by the reader's word alone. A strip, a search or the list by repository draws none, and lets it go.
+  const answered = !sessions.isPending && (noReader || groups.data !== undefined || groups.isError);
+  useBringGroup(group === 'you' || group === 'review' ? groupHeading('sessions', group) : null, answered, onGroupBrought);
 
   const questFor = new Map((quests.data ?? []).map((quest): [string, Quest] => [quest.id, quest]));
   const registered = new Map((registry.data ?? []).map((row) => [row.repository, row]));

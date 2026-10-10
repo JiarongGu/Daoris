@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { OpenGroup } from '../opener';
 import { useQuestsView } from '../QuestsView';
 import type { Notify } from '../ui';
 import { useListPanes } from '../work/listPanes';
@@ -11,7 +12,7 @@ import { useDoor } from './door';
 // application's list memory, so what a test chooses is what a relaunch would remember. The doors' events are props,
 // held the way `App` holds them.
 
-export function QuestsView({ notify, onAttend, opening, onOpened, asking, onAsked, door }: {
+export function QuestsView({ notify, onAttend, opening, onOpened, asking, onAsked, door, group, onGroupBrought }: {
   notify: Notify;
   onAttend?: (session: string) => void;
   opening?: { from?: string; to?: string } | null;
@@ -20,6 +21,9 @@ export function QuestsView({ notify, onAttend, opening, onOpened, asking, onAske
   onAsked?: () => void;
   /** The item a door names as it opens the view (`useDoor`). */
   door?: string;
+  /** The group a door brings into view (ENTRY1b), and its telling. */
+  group?: OpenGroup | null;
+  onGroupBrought?: () => void;
 }) {
   const lists = useListPanes();
   const [over, setOver] = useState(false);
@@ -31,7 +35,7 @@ export function QuestsView({ notify, onAttend, opening, onOpened, asking, onAske
     onChoose: (item) => lists.choose('quests', item),
     filters: pane.filters,
     onFilters: (filters) => lists.setFilters('quests', filters),
-    notify, onAttend, opening, onOpened, asking, onAsked,
+    notify, onAttend, opening, onOpened, asking, onAsked, group, onGroupBrought,
   });
   return <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />;
 }
