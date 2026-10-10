@@ -12963,3 +12963,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6i3 — "Settings → Agents" leftovers** (driver/modules/service). UX6e retired it; `DriverModule.Accounts.cs:11`, its tests, room tests and the `agents` domain word in the service still name it. D150's UX6e notes.
 
 **Outcome** 2026-10-11: the four places left were comments, now naming the Agents place; the room tests' `DoesNotContain` guards stay, and the service's `agents` domain went with UX6i2b. The merge brought the desktop README's help and session-search routes up to ASKHIST1d1's paging and RAILSRCH1's reach. Detail: the merge commit.
+
+
+## SUBLOAD1b — probe scout and worker (2026-10-11, D160)
+
+> - [ ] **SUBLOAD1b — probe scout and worker** (parent; after a harness restart). Agent definitions load at session start, so the first dispatch of each proves its tools, hand-back and startup context against 50K. D160 limits; `tools/subagent-usage.mjs`.
+
+**Outcome** 2026-10-11: both definitions load with their model, tools and worktree; a scout starts at 25-27K and a worker at 33-34K against 50K; hand-backs arrive with the restricted tools; the scout's preloaded skills route without a Skill call. Two of the first findings were corrected against the transcripts. Detail: D160's SUBLOAD1b note and its corrections.
