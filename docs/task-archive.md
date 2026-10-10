@@ -13033,3 +13033,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **DESKCLICK1 — the window's click moves the focus as a pointer does** (tools). `desktop click` and `eval` press with `element.click()`, so a focus judged on the window is not a person's; focus the press first, or say it did not. `tools/desktop.mjs:995-1024`; a tools test that reports where focus moved.
 
 **Outcome** 2026-10-11: `desktop click` focuses the element or its nearest focusable ancestor before it clicks and prints `focus after:`; `eval`'s own `.click()` still moves no focus, as the usage line now says. Detail: the merge commit.
+
+
+## ENTRY1h — go_propose names what waits on the person (2026-10-11, D161)
+
+> - [ ] **ENTRY1h — go_propose names what waits on the person** (service; proposed by ENTRY1b's hand-back). The part description did not name ENTRY1b's four parts, so the helper was not told it could take a person to what waits on them.
+
+**Outcome** 2026-10-11: `go_propose`'s part description names `waiting` and `review` under sessions and `asks` and `held` under quests, and says a part brings its group into view naming no item; the text test holds them. Detail: the merge commit.

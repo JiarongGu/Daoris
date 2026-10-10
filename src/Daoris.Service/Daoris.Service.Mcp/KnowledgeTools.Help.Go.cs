@@ -18,7 +18,7 @@ public sealed partial class KnowledgeTools
         string why,
         [Description("For settings: the domain, as the room lists them (start, appearance, ai, driver, browser, logs).")]
         string? domain = null,
-        [Description("A part of that domain or view, as the room lists them — a setup step under start, add, import, setup or one of a workspace's six parts under projects (workspace-details, workspace-branches, workspace-workflow, workspace-setup, workspace-defaults, workspace-remote: a workspace's Details, Branches, Workflow, Setup, Defaults, Remote and reach), search or convergence under knowledge.")]
+        [Description("A part of that domain or view, as the room lists them — a setup step under start, add, import, setup or one of a workspace's six parts under projects (workspace-details, workspace-branches, workspace-workflow, workspace-setup, workspace-defaults, workspace-remote: a workspace's Details, Branches, Workflow, Setup, Defaults, Remote and reach), search or convergence under knowledge, waiting (Waiting on you) or review (To review) under sessions, asks (Asks) or held (Waiting on you) under quests. A part brings that group into view and names no session or quest.")]
         string? part = null)
     {
         var box = help ?? HelpProposalBox.FromEnvironment();
