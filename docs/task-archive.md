@@ -13201,3 +13201,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CANNOTSHOW1b — the page words it** (web; after or beside 1a: an absent fact falls to the reason). `sittingSentence` (signals.ts ~:185-239) words CannotShow by its code in en and zh (`work.sitting.CannotShow_*`), retiring the mixed-language lead at work.json ~:229; `ResumeHold` (pausing.ts ~:130) picks it. D154's c2 note; signals.test.ts ~:179-193.
 
 **Outcome** 2026-10-11: a CannotShow sitting reads by its code (`_unnamed`, `_noAddress`, `_noWindow`) fully in en and in zh, naming the environment (and the address with no window); no fact or an unknown code shows the driver's sentence alone, with no zh lead, which retires D154's c2 mixed line. Detail: D154's CANNOTSHOW1b note.
+
+
+## RAILPAGE1a — the session search pages (2026-10-11, D158)
+
+> - [ ] **RAILPAGE1a — the session search pages** (driver/modules). `SESSION_SEARCH` (DriverModule.Sessions.cs ~:484) takes `q` and `session` only, and `SessionEvents.Search` stops at 50 hits, 3 per session, with a `cut` and no count. Take `offset` and `limit` and answer a `total` (of sessions, the rail's rows) and a `next`, as `help list` does (ASKHIST1d1); read past the cap to count. D158's RAILPAGE1 note.
+
+**Outcome** 2026-10-11: `SessionEvents.Search` pages by sessions (`offset`, `limit` clamped at 200, a default of 16), a session's hits never split, `Total` counts every session with a hit and `Next` is the next offset or null; the route answers `{ query, hits, cut, total, next }`, `cut` still "anything left out" for the page until RAILPAGE1b. No terminal search exists, so no twin is owed. Detail: D158's RAILPAGE1a note.

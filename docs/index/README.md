@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (128)
+## Files over 40 KB (129)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -83,6 +83,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 64 | 1117 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 93 | 1693 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionEvents.cs` | 41 | 896 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionGroups.cs` | 60 | 1073 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.Sync.cs` | 68 | 1146 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.cs` | 82 | 1418 |
@@ -96,7 +97,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleSessionsTests.cs` | 45 | 758 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleSessionsTests.cs` | 47 | 781 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs` | 49 | 897 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs` | 63 | 1158 |
 
