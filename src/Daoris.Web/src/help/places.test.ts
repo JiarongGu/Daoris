@@ -127,6 +127,24 @@ describe('the places a go may name', () => {
   });
 
   /**
+   * ENTRY1d2b (D161's ENTRY1d note): a go to Add repository or Import a folder may carry the workspace the driver judged, and
+   * the drawer opens with it filled; the folder stays the person's pick. Every other place ignores it, as the driver holds.
+   */
+  it("open Add or Import with the go's workspace filled, and ignore it anywhere else", () => {
+    expect(placeDoor({ view: 'projects', part: 'add', workspace: 'work' })).toEqual({ view: 'projects', drawer: 'add', drawerWorkspace: 'work' });
+    expect(placeDoor({ view: 'projects', domain: null, part: 'import', item: null, workspace: ' work ' }))
+      .toEqual({ view: 'projects', drawer: 'import', drawerWorkspace: 'work' });
+    expect(placeDoor({ view: 'projects', part: 'add', workspace: null })).toEqual({ view: 'projects', drawer: 'add' });
+    expect(placeDoor({ view: 'projects', part: 'import', workspace: '  ' })).toEqual({ view: 'projects', drawer: 'import' });
+    expect(placeDoor({ view: 'projects', part: 'setup', workspace: 'work' })).toEqual({ view: 'projects', tab: 'setup' });
+    expect(placeDoor({ view: 'projects', part: 'workspace-details', workspace: 'work' })).toEqual({ view: 'projects', workspaceTab: 'details' });
+    expect(placeDoor({ view: 'projects', workspace: 'work' })).toEqual({ view: 'projects' });
+    expect(placeDoor({ view: 'quests', item: 'q1a2b3c4', workspace: 'work' })).toEqual({ view: 'quests', item: 'q1a2b3c4' });
+    expect(placeDoor({ view: 'settings', domain: 'start', part: 'repositories', workspace: 'work' }))
+      .toEqual({ view: 'settings', section: 'start', anchor: 'step-repositories' });
+  });
+
+  /**
    * UX6g (D150 §3.1): Settings → Workspace and Permissions retired into a workspace's page, and a go naming one opens the
    * workspace in view's page where its part went: its remote, its defaults (a line, a landing rule, reading across), its
    * Branches; Permissions alone opens what agents may do, on the agent that takes the rules. UX6g2b: each is a kept row of

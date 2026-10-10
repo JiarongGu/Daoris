@@ -46,7 +46,7 @@ const GROUP_VIEW: Readonly<Record<OpenGroup, View>> = { you: 'sessions', review:
  * Sessions' or Quests' list.
  */
 export type OpenPart = {
-  anchor?: SettingsAnchor; drawer?: 'add' | 'import'; tab?: ProjectTab; code?: string; agentPart?: AgentPart;
+  anchor?: SettingsAnchor; drawer?: 'add' | 'import'; drawerWorkspace?: string; tab?: ProjectTab; code?: string; agentPart?: AgentPart;
   workspaceTab?: WorkspaceTab; workspaceSection?: WorkspaceSection; knowledge?: KnowledgeMode; group?: OpenGroup;
 };
 
@@ -62,6 +62,11 @@ export type Opening = {
   anchor?: SettingsAnchor | null;
   /** One of Repositories' forms, which stay drawers (§3d). */
   drawer?: 'add' | 'import';
+  /**
+   * The workspace the form opens filled with (ENTRY1d2b, D161's ENTRY1d note): Ask Daoris's go names it, and the person
+   * still picks the folder there. Only with a form.
+   */
+  drawerWorkspace?: string;
   /**
    * The tab a repository's page opens at (UX6f, D150 §4.2): Settings' doors into a repository's own value open its Setup.
    * The tab is the view's, remembered for whichever repository it shows.
@@ -118,7 +123,10 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}, h
   } else if (named && listed(view)) plan.chosen = { view, item: named };
   // A door naming a domain opens it at the part it names, or at its top: never at a part another door left.
   if (view === 'settings' && (item || part.anchor)) plan.anchor = part.anchor ?? null;
-  if (view === 'projects' && part.drawer) plan.drawer = part.drawer;
+  if (view === 'projects' && part.drawer) {
+    plan.drawer = part.drawer;
+    if (part.drawerWorkspace) plan.drawerWorkspace = part.drawerWorkspace;
+  }
   if (view === 'projects' && part.tab) plan.tab = part.tab;
   if (view === 'projects' && workspaceTab) plan.workspaceTab = workspaceTab;
   if (view === 'projects' && part.workspaceSection) plan.workspaceSection = part.workspaceSection;

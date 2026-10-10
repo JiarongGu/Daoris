@@ -16,6 +16,8 @@ import type { Machine } from './machine';
  */
 export type StarterDoor = {
   view: View; item?: string; section?: SettingsSection; anchor?: SettingsAnchor; drawer?: 'add' | 'import';
+  /** The workspace the drawer opens filled with (ENTRY1d2b): Ask Daoris's go's. The folder is never a door's. */
+  drawerWorkspace?: string;
   /** A repository page's tab (UX6f): a door into a repository's own value opens its Setup. */
   tab?: ProjectTab;
   agentPart?: AgentPart;

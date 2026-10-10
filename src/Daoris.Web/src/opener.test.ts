@@ -46,6 +46,15 @@ describe('the opener', () => {
     expect(opening('projects', null, { drawer: 'import' })).toEqual({ view: 'projects', drawer: 'import' });
   });
 
+  /** ENTRY1d2b (D161's ENTRY1d note): Ask Daoris's go opens Add or Import with its workspace filled, and only a form takes it. */
+  it('opens one of Repositories\' forms with the workspace a door fills it with, and nothing else with it', () => {
+    expect(opening('projects', null, { drawer: 'add', drawerWorkspace: 'work' })).toEqual({ view: 'projects', drawer: 'add', drawerWorkspace: 'work' });
+    expect(opening('projects', null, { drawer: 'import', drawerWorkspace: 'work' }))
+      .toEqual({ view: 'projects', drawer: 'import', drawerWorkspace: 'work' });
+    expect(opening('projects', null, { drawerWorkspace: 'work' })).toEqual({ view: 'projects' });
+    expect(opening('sessions', null, { drawer: 'add', drawerWorkspace: 'work' })).toEqual({ view: 'sessions' });
+  });
+
   /** PLUGUI1b (D119 §3.1): a plugin by its id, and one of Daoris's own plugins as an offer, since the two may share an id. */
   it('chooses the plugin or the offer a door names, in Plugins\' list', () => {
     expect(opening('plugins', 'acme.gate')).toEqual({ view: 'plugins', chosen: { view: 'plugins', item: 'acme.gate' } });
@@ -153,6 +162,8 @@ describe('the opener', () => {
     expect(doorOpening({ view: 'settings', section: 'start', anchor: 'step-helper' })).toEqual(
       opening('settings', 'start', { anchor: 'step-helper' }));
     expect(doorOpening({ view: 'projects', drawer: 'add' })).toEqual({ view: 'projects', drawer: 'add' });
+    expect(doorOpening({ view: 'projects', drawer: 'import', drawerWorkspace: 'work' }))
+      .toEqual({ view: 'projects', drawer: 'import', drawerWorkspace: 'work' });
     expect(doorOpening({ view: 'sessions' })).toEqual({ view: 'sessions' });
   });
 });
