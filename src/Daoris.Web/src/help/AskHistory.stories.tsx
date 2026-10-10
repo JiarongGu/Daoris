@@ -18,7 +18,8 @@ const daysAgo = (days: number) => {
 
 const row = (over: Partial<HelpConversationRow> & { session: string }): HelpConversationRow => ({
   title: 'what is a workspace?', name: null, opening: 'what is a workspace?', about: 'A circle of repositories that share a remote.',
-  created: daysAgo(3), last: daysAgo(3), pinned: null, live: false, resumable: true, from: null, handed: null, found: null, ...over,
+  created: daysAgo(3), last: daysAgo(3), pinned: null, live: false, resumable: true, from: null, handed: null, found: null,
+  foundLine: null, ...over,
 });
 
 const URL = 'https://example.atlassian.net/browse/TK-2205?focusedCommentId=1234567&page=com.example.plugin.tabpanels%3Acomments';

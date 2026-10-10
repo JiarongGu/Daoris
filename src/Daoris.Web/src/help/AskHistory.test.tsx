@@ -22,7 +22,7 @@ const daysAgo = (days: number) => {
 const row = (over: Partial<HelpConversationRow> & { session: string }): HelpConversationRow => ({
   title: 'what is a workspace?', name: null, opening: 'what is a workspace?', about: 'A circle of repositories that share a remote.',
   created: minutesAgo(120), last: minutesAgo(1), pinned: null, live: false, resumable: true, from: null, handed: null, found: null,
-  ...over,
+  foundLine: null, ...over,
 });
 
 const ROWS = [

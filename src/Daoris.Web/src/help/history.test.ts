@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type HelpConversationRow, historyGroups } from './history';
+import { type HelpConversationRow, historyGroups, joinPages, listingPage, searchable } from './history';
 
 // ASKHIST1c: the history grouped as a person reads time, by this machine's calendar days: what is pinned, then today,
 // yesterday, the rest of this week (from its Monday) and older; each row where its last word was said, in the driver's order.
@@ -9,7 +9,7 @@ const local = (year: number, month: number, day: number, hour = 12) => new Date(
 
 const row = (session: string, last: string, pinned: string | null = null): HelpConversationRow => ({
   session, title: session, name: null, opening: session, about: null, created: last, last, pinned, live: false,
-  resumable: true, from: null, handed: null, found: null,
+  resumable: true, from: null, handed: null, found: null, foundLine: null,
 });
 
 // A Thursday, mid-afternoon.
@@ -48,5 +48,45 @@ describe('the history’s groups', () => {
     expect(groups.map((group) => [group.id, group.rows.map((each) => each.session)])).toEqual([
       ['today', ['m']], ['yesterday', ['s']], ['older', ['f']],
     ]);
+  });
+});
+
+// ASKHIST1d2: the driver orders and searches every conversation and answers a page of them, with how many there are and
+// where the next page starts (D158's ASKHIST1d1 note); the page reads each answer, joins its pages, and searches by the
+// driver's own rule.
+
+describe('a search’s words', () => {
+  it('searches by two characters, or by one Han character, as the driver does (`SessionEvents.Searchable`)', () => {
+    for (const words of ['ab', ' a b ', '树', ' 区 ', '㐀', '豈', '𠀀']) expect(searchable(words), words).toBe(true);
+    // One letter of any other script would find nearly everything; kana is not Han.
+    for (const words of ['a', ' a ', 'あ', 'é', '', '   ']) expect(searchable(words), words).toBe(false);
+  });
+});
+
+describe('the history’s pages', () => {
+  it('reads an answer’s rows, how many there are and where the next page starts', () => {
+    const a = row('a', local(2026, 10, 8));
+    expect(listingPage({ conversations: [a], cut: true, total: 450, next: 200 })).toEqual({ conversations: [a], total: 450, next: 200 });
+    expect(listingPage({ conversations: [a], cut: false, total: 1, next: null })).toEqual({ conversations: [a], total: 1, next: null });
+  });
+
+  it('reads a driver from before pages as one page that holds them all, and nothing as nothing', () => {
+    const a = row('a', local(2026, 10, 8));
+    expect(listingPage({ conversations: [a], cut: true })).toEqual({ conversations: [a], total: 1, next: null });
+    expect(listingPage(undefined)).toEqual({ conversations: [], total: 0, next: null });
+    expect(listingPage({ conversations: 'none', total: '3', next: -1 })).toEqual({ conversations: [], total: 0, next: null });
+  });
+
+  it('joins its pages in order, each conversation once by its session, with the last page’s count and next', () => {
+    const [a, b, c] = ['a', 'b', 'c'].map((session) => row(session, local(2026, 10, 8)));
+    // Spoken in between two asks, b moved down a page: it shows once, where it was first listed.
+    const joined = joinPages([
+      { conversations: [a!, b!], total: 4, next: 2 },
+      { conversations: [{ ...b!, title: 'moved' }, c!], total: 3, next: null },
+    ]);
+    expect(joined.conversations.map((each) => each.session)).toEqual(['a', 'b', 'c']);
+    expect(joined.conversations[1]!.title).toBe('b');
+    expect(joined).toMatchObject({ total: 3, next: null });
+    expect(joinPages([])).toEqual({ conversations: [], total: 0, next: null });
   });
 });

@@ -9,7 +9,10 @@ export type HelpConversationRow = {
   title: string;
   name: string | null;
   opening: string | null;
-  /** A line of what it was about: the first line of Ask Daoris's last answer in it. */
+  /**
+   * A line of what it was about: the first line of Ask Daoris's last answer in it, as Markdown, whole up to 1000 characters
+   * (ASKHIST1d1), so the page parses it before it cuts it to a row.
+   */
   about: string | null;
   created: string;
   /** When it was last spoken in. */
@@ -21,12 +24,65 @@ export type HelpConversationRow = {
   /** The earlier conversation it started from, and what it was handed of it. */
   from: string | null;
   handed: string | null;
-  /** Where a search found its words. */
+  /** Where a search found its words: the title they were in, or 60 characters of what was said around them, raw. */
   found: string | null;
+  /**
+   * Where a search found its words in what was said: the line they are on, as Markdown, whole up to 1000 characters, else a
+   * window around them with an ellipsis (ASKHIST1d1). Null when the title held them; absent from a driver before pages.
+   */
+  foundLine?: string | null;
 };
 
 /** A name's longest: a title, as the driver keeps it (`HelpConversations.NameLimit`). */
 export const HELP_NAME_LIMIT = 80;
+
+/**
+ * A page of the history as the driver answers it (ASKHIST1d1): its rows, how many the whole list holds or the search found,
+ * and the offset the next page starts at, null on the last.
+ */
+export type HelpListing = { conversations: HelpConversationRow[]; total: number; next: number | null };
+
+const count = (value: unknown): number | null =>
+  typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : null;
+
+/**
+ * One `HELP_CONVERSATIONS` answer read as a page (ASKHIST1d2). A driver from before pages answered `{conversations, cut}`,
+ * which is read as one page holding all it listed: its `cut` said only that older ones were left out, never where they start.
+ */
+export function listingPage(answer: unknown): HelpListing {
+  const held = (answer ?? {}) as { conversations?: unknown; total?: unknown; next?: unknown };
+  const conversations = Array.isArray(held.conversations) ? held.conversations as HelpConversationRow[] : [];
+  return { conversations, total: count(held.total) ?? conversations.length, next: count(held.next) };
+}
+
+/**
+ * A history's pages as one list (ASKHIST1d2): in the order they were asked, each conversation once by its session. An offset
+ * points into one order, and a conversation spoken in or pinned between two asks can be on two pages; it stays where it was
+ * first listed, and the list is asked again from its start after a change made here. The count and the next page are the
+ * last page's, the newest the driver said.
+ */
+export function joinPages(pages: readonly HelpListing[]): HelpListing {
+  const seen = new Set<string>();
+  const conversations = pages.flatMap((page) => page.conversations).filter((row) => {
+    if (seen.has(row.session)) return false;
+    seen.add(row.session);
+    return true;
+  });
+  const last = pages.at(-1);
+  return { conversations, total: last?.total ?? 0, next: last?.next ?? null };
+}
+
+// The basic block, extension A and the compatibility block; the later extensions are surrogate pairs, two characters already.
+const HAN = /^[一-鿿㐀-䶿豈-﫿]$/;
+
+/**
+ * Whether these words are enough to search by (ASKHIST1d2): two characters, or one Han character, which is a word on its own
+ * (区, 圈). The driver's own rule (`SessionEvents.Searchable`): one letter of any other script would find nearly everything.
+ */
+export function searchable(words: string): boolean {
+  const wanted = words.trim();
+  return wanted.length >= 2 || HAN.test(wanted);
+}
 
 /** The history's groups, in the order a person reads them (ASKHIST1c). */
 export const HISTORY_GROUPS = ['pinned', 'today', 'yesterday', 'week', 'older'] as const;
