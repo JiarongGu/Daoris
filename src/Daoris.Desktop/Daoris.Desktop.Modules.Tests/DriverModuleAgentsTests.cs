@@ -99,6 +99,33 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         // roster leaves the test doubles out, and every harness it lists carries structure today.
     }
 
+    /// <summary>
+    /// AGENTMARK1 (D152): each door says its declared strip mark and whether Daoris has an installer for it, so the page
+    /// offers Install only where it can run and How to install elsewhere. A declared agent with no `install` and no mark
+    /// answers false and null.
+    /// </summary>
+    [Fact]
+    public async Task The_roster_says_each_doors_mark_and_whether_it_has_an_installer()
+    {
+        var folder = Path.Combine(Home, "plugins", "acme.gate");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "plugin.json"), """
+            { "id": "acme.gate", "harnesses": [ { "name": "acme-agent", "command": ["${plugin}/agent.mjs"] } ] }
+            """);
+        File.WriteAllText(Path.Combine(folder, "agent.mjs"), "// never run by a probe\n");
+
+        var rows = (await AnswerAsync(Module(), "HARNESSES")).GetProperty("harnesses").EnumerateArray()
+            .ToDictionary(h => h.GetProperty("harness").GetString()!);
+
+        Assert.Equal("CC", rows["claude-code"].GetProperty("mark").GetString());
+        Assert.Equal("CC", rows["claude-code-acp"].GetProperty("mark").GetString());
+        Assert.Equal("Cx", rows["codex-acp"].GetProperty("mark").GetString());
+        Assert.True(rows["claude-code"].GetProperty("installs").GetBoolean());
+        Assert.True(rows["codex-acp"].GetProperty("installs").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, rows["acme-agent"].GetProperty("mark").ValueKind);
+        Assert.False(rows["acme-agent"].GetProperty("installs").GetBoolean());
+    }
+
     /// <summary>Detection is free and read-only (D49 §4) — the roster answers with no service at all.</summary>
     [Fact]
     public async Task The_harness_roster_answers_this_machine_s_toolchains()

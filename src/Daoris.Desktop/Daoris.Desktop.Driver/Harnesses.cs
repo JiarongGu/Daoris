@@ -224,7 +224,11 @@ public sealed record HarnessToolchain(
     // home, read into the same readings `Windows` fills and kept in `windows.json`. Declared only where an answer was recorded;
     // a door onto another agent reads its owner's (AGT7). Null asks nothing. Not a twin: the CLI asks no server, and reads
     // what this kept from `windows.json`.
-    UsageQuestion? Usage = null)
+    UsageQuestion? Usage = null,
+    // The two-letter mark this tool wears on the page's strip (AGENTMARK1, D152): "CC" for Claude Code, "Cx" for Codex, so
+    // two doors onto different tools never share one. Declared by the harness, never derived from its name; null declares
+    // none and the page derives its own. Page-only: the CLI prints no strip, so there is no twin.
+    string? Mark = null)
 {
     /// <summary>The command this harness actually runs as: the machine's configured one, or the declared one.</summary>
     public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>

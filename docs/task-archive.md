@@ -13131,3 +13131,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX7d-2 — agents list remainder** (web; after ACCTUX4b). *How to install* where Daoris has no installer (if the roster says so; else a follow-up with AGENTMARK1), and an audit of the zh fold summaries against platform UX's spacing rule at 1546/680. Install, version and the summaries' named case were built by AGENTS2/UX7b, the marks' page half by ACCTUX2. D152 §4.6.
 
 **Outcome** 2026-10-11: the zh fold summaries keep a count apart and a Chinese word tight; the one break, `{{door}} 未安装`, now reads `{{door}}未安装`. *How to install* needs a roster field the page lacks, so it is INSTALLDOOR1. With UX7d-1, UX7d is closed; the window's look is UX7e's. Detail: D152's UX7d-2 note.
+
+
+## AGENTMARK1 — the roster's mark and installer (2026-10-11, D152)
+
+> - [ ] **AGENTMARK1 — the roster's mark and installer** (driver/modules). Each harness declares its two-letter `Mark` (CC, Cx) on `HarnessToolchain` (Harnesses.cs ~:164-227; Adapters.cs's built-ins; CodexAccounts.cs); the roster row (DriverModule.Agents.cs ~:66-149) sends `mark` and `installs` (`toolchain?.Install is { Count: > 0 }`, beside `SignsIn`/`Updates`). The page half is INSTALLDOOR1. UX7 §4.6; DriverModuleAgentsTests ~:89-100.
+
+**Outcome** 2026-10-11: the built-ins declare CC, Cx and DH; the roster's door sends `mark` and `installs` (an installer declared); a plugin agent sends no mark, and without an installer `installs` false. The CLI needed nothing: both doors already agree on a missing installer. Detail: D152's AGENTMARK1 note.

@@ -1447,6 +1447,7 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
     /// </summary>
     public HarnessToolchain? Toolchain => new(
         Product: "Claude Code",
+        Mark: "CC",
         Maker: "Anthropic",
         // 🔴 The BINARY is `claude-agent-acp`, not this adapter's Daoris name — verified against
         // the installed package, after a guess was caught by `harness list` reporting a pin that
@@ -1544,6 +1545,7 @@ public sealed class DshAdapter : ISessionAdapter
         // The name its maker publishes it under (AGENTS2): `dsh` beside DeepSeek still read as no DeepSeek agent. The
         // binary and the adapter's Daoris name stay `dsh`, which is what a terminal types.
         Product: "DeepSeek Harness",
+        Mark: "DH",
         Maker: "DeepSeek",
         Binary: ["dsh"],
         // `-V, --version` — verified against the installed CLI, which printed its exact version.
@@ -1606,6 +1608,7 @@ public sealed class CodexAcpAdapter : ISessionAdapter
 
     public HarnessToolchain? Toolchain => new(
         Product: "Codex",
+        Mark: "Cx",
         Maker: "OpenAI",
         // 🔴 The BINARY is `codex-acp` — the adapter's own bin, not this adapter's Daoris name and
         // not `codex`. Verified against the installed package's `bin` map, the same check that
@@ -1819,6 +1822,7 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     /// </remarks>
     public HarnessToolchain? Toolchain => new(
         Product: "Claude Code",
+        Mark: "CC",
         Maker: "Anthropic",
         Binary: ["claude"],
         VersionArguments: ["--version"],

@@ -32,6 +32,7 @@ public static class CodexAccounts
     /// <summary>Codex's own mechanisms for its accounts, read by the roster and the modules for its doors (AGT7).</summary>
     public static HarnessToolchain Toolchain { get; } = new(
         Product: "Codex",
+        Mark: "Cx",
         Maker: "OpenAI",
         Binary: ["codex"],
         VersionArguments: ["--version"],

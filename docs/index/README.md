@@ -74,12 +74,12 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/TraceTests.cs` | 41 | 691 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/AccountRotation.cs` | 58 | 977 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Acp.cs` | 91 | 1845 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 112 | 1993 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 112 | 1997 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 82 | 1548 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.Continue.cs` | 42 | 713 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 157 | 2686 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 61 | 1106 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 198 | 3662 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 199 | 3666 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 63 | 1088 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 93 | 1693 |
@@ -98,7 +98,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleSessionsTests.cs` | 45 | 758 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs` | 49 | 896 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs` | 62 | 1151 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs` | 63 | 1158 |
 
 ### Service (`service`)
 
