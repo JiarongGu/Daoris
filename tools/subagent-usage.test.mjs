@@ -79,9 +79,14 @@ test('an edit made through the shell is counted, and is the work\'s first edit t
     assistant('s5', usage(60_000, 5_000, 100), [tool('b5', 'Bash', { command: 'cd web && grep -c "writeFileSync(" tools/*.mjs' })]),
     assistant('s6', usage(65_000, 5_000, 100), [tool('b6', 'Bash', { command: "node -e \"fs.writeFileSync('local/scratch/x.json', s)\"" })]),
     assistant('s7', usage(70_000, 5_000, 100), [tool('b7', 'PowerShell', { command: 'npm test 2>&1 | Out-File -Encoding utf8 $env:TEMP\\t.log' })]),
+    assistant('s8', usage(75_000, 5_000, 100), [tool('b8', 'Bash', { command: "cd web && cat >> src/work/A.test.tsx <<'EOF'\nit('x')\nEOF" })]),
+    assistant('s9', usage(80_000, 5_000, 100), [tool('b9', 'Bash', { command: 'npm test 2>&1 | tail -n 40; dotnet build > /dev/null' })]),
+    assistant('s10', usage(85_000, 5_000, 100), [tool('b10', 'Bash', { command: 'npm run verify > local-verify.log 2>&1' })]),
+    assistant('s11', usage(90_000, 5_000, 100), [tool('b11', 'Bash', { command: "node -e \"rows.map((x)=>x.id)\"" })]),
   ].join('\n');
   const a = readTranscript(scripted);
-  assert.equal(a.shellEdits, 2, 'a python write and a sed -i, each once; a sed -n reads, a grep searches, scratch is no work');
+  assert.equal(a.shellEdits, 3, 'a python write, a sed -i and a redirect into a file, each once; a sed -n reads, a grep '
+    + 'searches, scratch is no work, 2>&1 or > /dev/null writes no file, a log is no work, and an arrow is no redirect');
   assert.equal(a.preEditTurns, 1);
   assert.equal(readTranscript(transcript).shellEdits, 0);
 });

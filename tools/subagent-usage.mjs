@@ -32,7 +32,10 @@ const SCRATCH = /(^|[\\/])(local|_fixtures)[\\/]/;
 // A file written through the shell instead of the edit tools (file-tool-discipline): an in-place stream edit, or a
 // program's own write. A worker that edited this way showed no first edit at all (D160's SUBLOAD1c note). A search
 // for those words, and a write into scratch or temp, edit no work, so the count is an estimate that errs low.
-const SHELL_EDIT = /\bsed\s+(-\w*\s+)*-i|\bperl\s+-\w*i|\.write\(|writeFileSync|\b(Set|Add)-Content\b|\bOut-File\b/;
+// A redirect into a source or record file counts too (`cat >> A.test.tsx <<EOF` appended a test, `>> FIX-LOG.md` an
+// entry; D160's second SUBLOAD1c note). A shell redirect stands after a space, so `=>x.id` is no redirect; `2>&1` and
+// `> /dev/null` write no file, and a log written beside the work is no edit of it.
+const SHELL_EDIT = /\bsed\s+(-\w*\s+)*-i|\bperl\s+-\w*i|\.write\(|writeFileSync|\b(Set|Add)-Content\b|\bOut-File\b|\s>>?\s*[\w./\\-]+\.(ts|tsx|js|mjs|cjs|cs|json|md|css|html|ya?ml)\b/;
 const NOT_WORK = /local[\\/]scratch|_fixtures|[\\/]tmp\b|\$TMP|\$env:TEMP|[\\/]Temp[\\/]/i;
 const SEARCH = /^\s*(cd\s+\S+\s*(&&|;)\s*)?(grep|rg|git\s+grep|Select-String)\b/;
 
