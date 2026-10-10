@@ -66,6 +66,10 @@ public sealed class HelpCommandTests : IDisposable
         new[] { "resume", "h1" },
         new[] { "list", "--search" },
         new[] { "list", "--all" },
+        new[] { "list", "--offset" },
+        new[] { "list", "--offset", "-1" },
+        new[] { "list", "--limit", "0" },
+        new[] { "list", "--limit", "many" },
         new[] { "forget", "h1" },
     };
 
@@ -81,6 +85,7 @@ public sealed class HelpCommandTests : IDisposable
     public void Each_verb_reads_what_it_names()
     {
         Assert.Equal(new HelpVerbAsk("list") { Search = "remote", Json = true }, HelpCommand.Read(["list", "--search", " remote ", "--json"], out _));
+        Assert.Equal(new HelpVerbAsk("list") { Offset = 50, Limit = 20 }, HelpCommand.Read(["list", "--offset", "50", "--limit", "20"], out _));
         var resume = HelpCommand.Read(["resume", "h1", "and", "the", "remote?", "--file", "notes.md"], out _)!;
         Assert.Equal(("resume", "h1", "and the remote?"), (resume.Verb, resume.Id, resume.Text));
         Assert.Equal(["notes.md"], resume.Files);
@@ -128,8 +133,54 @@ public sealed class HelpCommandTests : IDisposable
         using var document = JsonDocument.Parse(said);
         var first = document.RootElement.GetProperty("conversations")[0];
         Assert.Equal(HelpCommand.JsonFields, first.EnumerateObject().Select(field => field.Name));
+        Assert.Equal(["conversations", "cut", "total", "next"], document.RootElement.EnumerateObject().Select(field => field.Name));
         Assert.False(document.RootElement.GetProperty("cut").GetBoolean());
         Assert.Equal(2, document.RootElement.GetProperty("conversations").GetArrayLength());
+        Assert.Equal(2, document.RootElement.GetProperty("total").GetInt32());
+        Assert.Equal(JsonValueKind.Null, document.RootElement.GetProperty("next").ValueKind);
+    }
+
+    /// <summary>
+    /// ASKHIST1d: a listing is a page, as the panel's is: <c>--limit</c> says how many, <c>--offset</c> where it starts, and a page
+    /// that does not hold them all says which it holds of how many, and the words that list the next.
+    /// </summary>
+    [Fact]
+    public async Task A_listing_is_a_page_that_says_how_to_list_the_next()
+    {
+        var ledger = Ledger();
+
+        var (exit, first) = await RunAsync(ledger, "list", "--limit", "1");
+        var (_, last) = await RunAsync(ledger, "list", "--offset", "1", "--limit", "1");
+        var (_, found) = await RunAsync(ledger, "list", "--search", "repositories", "--limit", "1");
+        var (_, json) = await RunAsync(ledger, "list", "--offset", "1", "--limit", "1", "--json");
+
+        Assert.Equal(0, exit);
+        Assert.EndsWith("\n1–1 of 2 are listed; `daoris-driver help list --offset 1 --limit 1` lists the next.\n", first);
+        Assert.EndsWith("\n2–2 of 2 are listed.\n", last);
+        Assert.EndsWith("\n1–1 of 2 are listed; `daoris-driver help list --search \"repositories\" --offset 1 --limit 1` lists the next.\n", found);
+        using var document = JsonDocument.Parse(json);
+        var root = document.RootElement;
+        Assert.Equal(1, root.GetProperty("conversations").GetArrayLength());
+        Assert.Equal((false, 2, JsonValueKind.Null), (root.GetProperty("cut").GetBoolean(), root.GetProperty("total").GetInt32(), root.GetProperty("next").ValueKind));
+    }
+
+    /// <summary>
+    /// ASKHIST1d: the line of what a conversation was about is its answer's first line whole, for the page to parse before it
+    /// cuts it; the terminal shows it raw, so it cuts it to a line itself, and its <c>--json</c> carries it whole as the page's does.
+    /// </summary>
+    [Fact]
+    public async Task The_terminal_cuts_a_long_line_where_its_json_keeps_it_whole()
+    {
+        var ledger = Ledger();
+        var line = "**Setup** " + new string('w', 300);
+        Said(Events, "h3", "a long answer?", line);
+
+        var (_, listed) = await RunAsync(ledger, "list");
+        var (_, json) = await RunAsync(ledger, "list", "--json");
+
+        Assert.Contains($"\n    {line[..HelpCommand.LineLimit]}…\n", listed);
+        using var document = JsonDocument.Parse(json);
+        Assert.Contains(document.RootElement.GetProperty("conversations").EnumerateArray(), row => row.GetProperty("about").GetString() == line);
     }
 
     /// <summary>A name and a pin are the person's, kept on this machine, and the listing says them; a clear gives the question back.</summary>

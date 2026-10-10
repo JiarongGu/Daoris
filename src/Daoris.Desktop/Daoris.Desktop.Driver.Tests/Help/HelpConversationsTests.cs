@@ -239,7 +239,175 @@ public sealed class HelpConversationsTests : IDisposable
     {
         Said("h1", "what is a workspace?", "A circle.");
 
-        Assert.Empty(new HelpConversations(_home).List([Help("h1")], Events, Resumes, " a ").Conversations);
+        var found = new HelpConversations(_home).List([Help("h1")], Events, Resumes, " a ");
+        Assert.Empty(found.Conversations);
+        Assert.Equal((0, null, false), (found.Total, found.Next, found.Cut));
+    }
+
+    /// <summary>
+    /// ASKHIST1d: one Han character is a word, so it is searched for, in the title and in what was said; one letter of any other
+    /// script still finds nothing rather than nearly everything. The page said the minimum rather than search for 圈.
+    /// </summary>
+    [Fact]
+    public void One_han_character_is_searched_for_and_one_other_letter_is_not()
+    {
+        Said("h1", "工作区是什么?", "一个仓库的圈子。");
+        Said("h2", "what is a workspace?", "A circle.");
+        HelpListing Find(string words) => new HelpConversations(_home).List([Help("h1"), Help("h2")], Events, Resumes, words);
+
+        Assert.Equal(["h1"], Find("圈").Conversations.Select(row => row.Session));
+        Assert.Equal("工作区是什么?", Assert.Single(Find(" 区 ").Conversations).Found);
+        Assert.Empty(Find("a").Conversations);
+        Assert.Empty(Find("é").Conversations);
+    }
+
+    /// <summary>Conversations h000 to h(n-1), each opened a minute after the one before, and spoken in as it was opened.</summary>
+    private List<SessionRecord> Many(int count)
+    {
+        var records = new List<SessionRecord>();
+        for (var at = 0; at < count; at++)
+        {
+            var id = $"h{at:000}";
+            SaidAt(Monday.AddMinutes(at), id, $"question {id}", $"answer {id}");
+            records.Add(Help(id, created: Monday.AddMinutes(at)));
+        }
+
+        return records;
+    }
+
+    /// <summary>
+    /// ASKHIST1d: every conversation is ordered before a page is taken, so one pinned, or spoken in lately, comes first however
+    /// long ago it was opened. The list took the newest 200 by when each was opened and only then read pins and last words, so
+    /// both of these fell off it.
+    /// </summary>
+    [Fact]
+    public void A_pinned_or_lately_spoken_conversation_comes_first_however_long_ago_it_was_opened()
+    {
+        var records = Many(250);
+        SaidAt(Monday.AddDays(3), "h001", "and one more thing?", "Here.");
+        var kept = new HelpConversations(_home);
+        kept.Pin("h000", true, Monday.AddDays(1));
+
+        var listing = kept.List(records, Events, Resumes);
+
+        Assert.Equal(["h000", "h001", "h249", "h248"], listing.Conversations.Take(4).Select(row => row.Session));
+        Assert.Equal(Monday.AddDays(3), listing.Conversations[1].Last);
+        Assert.Equal("Here.", listing.Conversations[1].About);
+        Assert.Equal(HelpConversations.PageLimit, listing.Conversations.Count);
+        Assert.Equal((250, HelpConversations.PageLimit, true), (listing.Total, listing.Next, listing.Cut));
+    }
+
+    /// <summary>
+    /// ASKHIST1d: pages asked one after the next hold every conversation once, in the list's order, and the last one says it is
+    /// the last. Two spoken in at the same moment are ordered the same way every time, the newer opened first, so a page's edge
+    /// never moves between asks.
+    /// </summary>
+    [Fact]
+    public void Pages_hold_every_conversation_once_in_the_lists_order()
+    {
+        var records = Many(250);
+        var kept = new HelpConversations(_home);
+        kept.Pin("h010", true, Monday.AddDays(1));
+        kept.Pin("h200", true, Monday.AddDays(2));
+        SaidAt(Monday.AddDays(3), "h005", "again?", "Yes.");
+        SaidAt(Monday.AddDays(3), "h006", "again?", "Yes.");
+
+        var seen = new List<string>();
+        var nexts = new List<int?>();
+        int? offset = 0;
+        while (offset is { } at)
+        {
+            var page = kept.List(records, Events, Resumes, offset: at, limit: 60);
+            Assert.Equal(250, page.Total);
+            Assert.Equal(page.Next is not null, page.Cut);
+            seen.AddRange(page.Conversations.Select(row => row.Session));
+            nexts.Add(page.Next);
+            offset = page.Next;
+        }
+
+        string[] first = ["h200", "h010", "h006", "h005"];
+        Assert.Equal(first.Concat(Enumerable.Range(0, 250).Reverse().Select(n => $"h{n:000}").Except(first)), seen);
+        Assert.Equal([60, 120, 180, 240, null], nexts);
+
+        var past = kept.List(records, Events, Resumes, offset: 300);
+        Assert.Equal((0, 250, null), (past.Conversations.Count, past.Total, past.Next));
+        Assert.Equal(HelpConversations.PageLimit, kept.List(records, Events, Resumes, limit: 0).Conversations.Count);
+        Assert.Equal(HelpConversations.PageLimit, kept.List(records, Events, Resumes, limit: 5000).Conversations.Count);
+    }
+
+    /// <summary>
+    /// ASKHIST1d: a search reads every conversation, not only the newest 200 the list once read, and its finds page as the list
+    /// does, counted whole.
+    /// </summary>
+    [Fact]
+    public void A_search_reads_every_conversation_and_pages_its_finds()
+    {
+        var records = Many(250);
+        SaidAt(Monday, "h000", "and the needle?", "In the haystack.");
+        var kept = new HelpConversations(_home);
+
+        var needle = kept.List(records, Events, Resumes, "HAYSTACK");
+        Assert.Equal("h000", Assert.Single(needle.Conversations).Session);
+        Assert.Equal((1, null, false), (needle.Total, needle.Next, needle.Cut));
+
+        var first = kept.List(records, Events, Resumes, "answer h0", limit: 60);
+        var second = kept.List(records, Events, Resumes, "answer h0", offset: 60, limit: 60);
+        Assert.Equal((100, 60, true), (first.Total, first.Next, first.Cut));
+        Assert.Equal((100, null, false), (second.Total, second.Next, second.Cut));
+        Assert.Equal(
+            Enumerable.Range(0, 100).Reverse().Select(n => $"h{n:000}"),
+            first.Conversations.Concat(second.Conversations).Select(row => row.Session));
+    }
+
+    /// <summary>
+    /// ASKHIST1d: the line of what it was about is the answer's first line whole, so the page parses its Markdown before it cuts
+    /// it to a row; the driver cut it at 160 characters first, and a delimiter could lose its partner. Only a line longer than
+    /// any row shows is cut, and says so.
+    /// </summary>
+    [Fact]
+    public void The_line_of_what_it_was_about_is_the_first_line_whole_for_the_page_to_parse()
+    {
+        var line = new string('w', 150) + " **the colour #d208d4** and [the guide](https://example.com/guide) after it";
+        Said("h1", "what colour?", line + "\nSecond line.");
+        Said("h2", "and a long one?", new string('x', HelpConversations.PreviewLimit + 50));
+
+        var rows = new HelpConversations(_home).List([Help("h1"), Help("h2")], Events, Resumes).Conversations
+            .ToDictionary(row => row.Session);
+
+        Assert.Equal(line, rows["h1"].About);
+        Assert.Equal(new string('x', HelpConversations.PreviewLimit) + "…", rows["h2"].About);
+    }
+
+    /// <summary>
+    /// ASKHIST1d: where a search found its words in what was said, the row has the line they are on as Markdown, whole, for the
+    /// page to parse before it cuts around them; the snippet the rows read until now is kept beside it as it was. A line longer
+    /// than any row shows is a window around the words, cut between words and saying so. A find in the title has no line: the
+    /// title is marked where it is.
+    /// </summary>
+    [Fact]
+    public void A_search_gives_the_line_it_found_words_on_whole_beside_its_snippet()
+    {
+        const string held = "- **Remote** hosts share [records](https://example.com/a/rather/long/path/to/the/guide) with each other";
+        var words = string.Join(' ', Enumerable.Repeat("word", 400));
+        Said("h1", "what is a remote?", $"A shared host.\n{held}\nThat is all.");
+        Said("h2", "and a long line?", $"{words} needle {words}");
+        HelpConversation Find(string id, string search) =>
+            Assert.Single(new HelpConversations(_home).List([Help(id)], Events, Resumes, search).Conversations);
+
+        var line = Find("h1", "with each other");
+        Assert.Equal(held, line.FoundLine);
+        Assert.StartsWith("…", line.Found);
+        Assert.DoesNotContain("\n", line.Found);
+
+        var window = Find("h2", "needle").FoundLine!;
+        Assert.Contains(" needle ", window);
+        Assert.StartsWith("…word ", window);
+        Assert.EndsWith(" word…", window);
+        Assert.True(window.Length <= HelpConversations.PreviewLimit + 2, $"{window.Length}");
+
+        var titled = Find("h1", "a remote");
+        Assert.Equal("what is a remote?", titled.Found);
+        Assert.Null(titled.FoundLine);
     }
 
     /// <summary>

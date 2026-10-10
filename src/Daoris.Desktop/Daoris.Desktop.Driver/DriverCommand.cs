@@ -118,11 +118,11 @@ public static class DriverCommand
           sessions start-from <id>
               words a session cannot go on with: start a conversation here with them, as `chat` does, without that
               session's context; they leave that session, naming the conversation.
-          help list [--search "…"] [--json]  ·  help resume <id> "…" [--file <path>]…
+          help list [--search "…"] [--json] [--offset <n>] [--limit <n>]  ·  help resume <id> "…" [--file <path>]…
           help rename <id> "…" | --clear  ·  help pin <id>  ·  help unpin <id>  ·  help delete <id> [--yes]
-              Ask Daoris's conversations, kept on this machine only: list or search them, go on in one with your
-              words (it goes on in the window), name, pin or unpin one, or delete one, listed first and deleted
-              with --yes.
+              Ask Daoris's conversations, kept on this machine only: list or search them a page at a time, go on
+              in one with your words (it goes on in the window), name, pin or unpin one, or delete one, listed
+              first and deleted with --yes.
           trees [list | remove <path|session|branch> [--repository <name>] [--force]
                 | clean [--workspace <name>] [--yes] | land <session> [--plan]
                 | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]

@@ -28,6 +28,42 @@ public sealed class SessionEventsTests : IDisposable
         new() { Kind = SessionEventKind.User, Origin = origin, Text = text };
 
     /// <summary>
+    /// ASKHIST1d: when a record was last written, read from its end as a whole read finds it, since Ask Daoris's list orders
+    /// every conversation by it. A torn last line costs itself, and a line longer than the first read from the end is read whole
+    /// all the same.
+    /// </summary>
+    [Fact]
+    public void When_a_record_was_last_written_is_read_from_its_end()
+    {
+        var events = new SessionEvents(_directory);
+        var monday = new DateTimeOffset(2026, 10, 5, 9, 0, 0, TimeSpan.Zero);
+        events.Append("last1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "hi", At = monday });
+        events.Append("last1", new SessionEvent { Kind = SessionEventKind.Message, Text = new string('x', 60_000), At = monday.AddMinutes(1) });
+
+        Assert.Equal(monday.AddMinutes(1), events.LastAt("last1"));
+        Assert.Equal(events.Spoken("last1").Last, events.LastAt("last1"));
+
+        File.AppendAllText(events.PathOf("last1"), "{\"kind\":\"message\",\"te");
+        Assert.Equal(monday.AddMinutes(1), events.LastAt("last1"));
+        Assert.Null(events.LastAt("nobody0"));
+        Assert.Null(events.LastAt("../x"));
+    }
+
+    /// <summary>ASKHIST1d: one Han character is a word to search for, within a session as in Ask Daoris's list; one other letter is not.</summary>
+    [Fact]
+    public void One_han_character_is_enough_to_search_with()
+    {
+        var events = new SessionEvents(_directory);
+        events.Append("han1", Asked("工作区是什么?"));
+
+        Assert.Single(events.Within("han1", "区").Hits);
+        Assert.True(SessionEvents.Searchable(" 道 "));
+        Assert.False(SessionEvents.Searchable("g"));
+        Assert.False(SessionEvents.Searchable(" "));
+        Assert.True(SessionEvents.Searchable("go"));
+    }
+
+    /// <summary>
     /// PARK1: what a session that parks to ask the person last said, whole — joined from the chunks it was
     /// streamed in, indented lists and all. Its record holds the message as it was written; the transcript
     /// read it as console lines and stopped at the first indented one, so a question's list was lost.
