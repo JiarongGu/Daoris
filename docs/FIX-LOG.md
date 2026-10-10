@@ -18,7 +18,7 @@ repository.
 - **Verify:** five failing-first regressions, all 13 audit tests passing, and a real declaration mutation
   producing exit 1 with the guide and missing source named, restored to exit 0. Final baseline receipt:
   `docs/2026-10-10-documentation-review.md`.
-- **Commit:** pending.
+- **Commit:** `c17a7bfb`.
 
 ### Workflows: damaged bindings silently fell back to Current
 
