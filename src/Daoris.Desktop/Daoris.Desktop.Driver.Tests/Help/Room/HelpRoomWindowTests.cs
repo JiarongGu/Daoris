@@ -68,6 +68,20 @@ public sealed class HelpRoomWindowTests
     }
 
     /// <summary>
+    /// FRAME1i-b (D118 point 4): every view but Overview and Map has a list, and the list shows or hides by four doors, so the
+    /// room no longer ties the list and Ctrl+B to Sessions alone.
+    /// </summary>
+    [Fact]
+    public void The_room_says_every_view_but_overview_and_map_has_a_list_and_its_four_doors()
+    {
+        var window = new HelpRoomWindow().Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("Every view but Overview and Map has a list beside its centre: Sessions, Quests, Repositories, Knowledge,", window);
+        Assert.Contains("its strip, the View menu, `Ctrl+B`,\nand a press on the current place in the activity bar", window);
+        Assert.DoesNotContain("and the session list (`Ctrl+B`) on Sessions", window);
+    }
+
+    /// <summary>
     /// HELP10: PREVIEW1's file preview (D111) — its two doors, where it opens, that it reads and never writes — so the
     /// helper asked how to read a file an agent touched points at it rather than at an editor there is none of.
     /// </summary>

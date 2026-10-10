@@ -225,7 +225,10 @@ terminal is the person's, never a session's.
 A view moves from its region's tab list (the button at the end of the tab row), by a right-click on
 its tab, or by dragging its tab to the other region; View → Reset view locations puts every view
 back. The toggles beside the window controls, and the View menu, show or hide the panel (`Ctrl+J`)
-and the right side bar (`Ctrl+Alt+B`) on every view, and the session list (`Ctrl+B`) on Sessions.
+and the right side bar (`Ctrl+Alt+B`) on every view.
+Every view but Overview and Map has a list beside its centre: Sessions, Quests, Repositories, Knowledge,
+Agents, Plugins and Settings. The list shows or hides by four doors: its strip, the View menu, `Ctrl+B`,
+and a press on the current place in the activity bar. Hidden, it leaves a narrow strip.
 You open on `F1` or `Ctrl+Alt+I`, and Quick Ask, a box where the palette opens, on
 `Ctrl+Shift+Alt+L`.
 
