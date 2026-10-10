@@ -362,6 +362,12 @@ public sealed record SessionView(
 
     /// <summary>Its note's lines by code (LANG1a), handed on wherever its note is; null for a record from before parts.</summary>
     public IReadOnlyList<NotePart>? NoteParts { get; init; }
+
+    /// <summary>
+    /// The person's answer to its park (STANDDOWN2), or null: an answered park goes on at the driver's next look, so it waits
+    /// on nobody (ANSWER1c), which Ask Daoris's room reads as the Sessions list does (ENTRY1f2). Answered on loopback alone.
+    /// </summary>
+    public string? Answer { get; init; }
 }
 
 /// <summary>

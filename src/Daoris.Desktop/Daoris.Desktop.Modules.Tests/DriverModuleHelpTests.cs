@@ -150,20 +150,29 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
 
     /// <summary>
     /// ENTRY1f1: the quests and asks are read from the service only while a proposal is judged against them, a delete as
-    /// before or a go naming an item; a go to a place alone, or any other kind, asks the service for none.
+    /// before or a go naming an item on Quests; a go to a place alone, or any other kind, asks the service for none.
+    /// ENTRY1f2: a go naming an item on Sessions reads this machine's session records instead, and a go naming one on a view
+    /// that holds none reads neither, since the judge refuses it unread.
     /// </summary>
     [Theory]
-    [InlineData("delete", null, true)]
-    [InlineData("go", "q1a2b3c4", true)]
-    [InlineData("go", " ", false)]
-    [InlineData("go", null, false)]
-    [InlineData("ask", null, false)]
-    public void The_records_are_read_only_for_a_proposal_judged_against_them(string kind, string? item, bool read)
+    [InlineData("delete", "quests", null, true, false)]
+    [InlineData("go", "quests", "q1a2b3c4", true, false)]
+    [InlineData("go", "Quests ", "ask:a1", true, false)]
+    [InlineData("go", "sessions", "s1a2b3c4", false, true)]
+    [InlineData("go", " Sessions", "#s1a2b3c4", false, true)]
+    [InlineData("go", "overview", "s1a2b3c4", false, false)]
+    [InlineData("go", "quests", " ", false, false)]
+    [InlineData("go", "sessions", null, false, false)]
+    [InlineData("ask", "sessions", "s1a2b3c4", false, false)]
+    public void The_records_are_read_only_for_a_proposal_judged_against_them(
+        string kind, string view, string? item, bool records, bool sessions)
     {
-        var proposal = new HelpProposal("p1", kind, kind, "quests", null, null, null, "why", "h1", "proposed") { Item = item };
+        var proposal = new HelpProposal("p1", kind, kind, view, null, null, null, "why", "h1", "proposed") { Item = item };
 
-        Assert.Equal(read, DriverModule.JudgedAgainstRecords([proposal]));
+        Assert.Equal(records, DriverModule.JudgedAgainstRecords([proposal]));
+        Assert.Equal(sessions, DriverModule.JudgedAgainstSessions([proposal]));
         Assert.False(DriverModule.JudgedAgainstRecords([]));
+        Assert.False(DriverModule.JudgedAgainstSessions([]));
     }
 
     /// <summary>

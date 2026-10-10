@@ -15,7 +15,11 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
         Intake = sources.Config.IntakeAdapter,
         Helper = sources.Config.HelperAdapter,
         Cap = sources.Config.Cap,
-        Waiting = sources.Snapshot.Active.Count(session => session.State == "awaiting-person"),
+        // ENTRY1f2 (D161's ENTRY1f note): by the Sessions list's own rule, so the count and the list name the same sessions,
+        // less Ask Daoris's own conversation, which opens here; a teammate's never reached the snapshot.
+        Waiting = [.. sources.Snapshot.Active
+            .Where(session => SessionGroups.WaitsOnYou(session.Id, session.State, session.Answer) && session.Repository != HelpRoom.Repository)
+            .Select(session => new HelpWaitingSession(session.Id, session.Repository) { Ask = session.Ask })],
         Asks = sources.Asks,
         Plugins = [.. sources.Plugins.Plugins.Select(entry =>
             new HelpPlugin(entry.Manifest.Id, entry.Enabled, entry.Manifest.Hooks?.Points ?? [])
@@ -51,8 +55,12 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
             ? $"- The intake: asks are answered on `{intake}`.\n"
             : "- The intake: no agent answers asks, so an ask the declarations do not settle waits for the person.\n");
         if (machine.Helper is { Length: > 0 } helper) text.Append($"- Ask Daoris: you, on `{helper}`.\n");
-        text.Append($"- {Count(machine.Waiting, "session waits", "sessions wait")} on the person; "
+        text.Append($"- {Count(machine.Waiting.Count, "session waits", "sessions wait")} on the person; "
             + $"{Count(machine.Asks, "ask waits", "asks wait")} for an answer.\n");
+        // ENTRY1f2: by id and where each runs, so a go names one it was shown.
+        text.Append("- Sessions waiting on the person: "
+            + (machine.Waiting.Count > 0 ? string.Join(", ", machine.Waiting.Select(WaitingLine)) : "none")
+            + ".\n");
         // HELP10: by id and repository, so a retry names one the quest's page would offer Try again on.
         text.Append("- Quests parked by their failed sessions, at the driver's last look: "
             + (machine.Parked.Count > 0
@@ -84,6 +92,10 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
             : "- Landed branches: none recorded.\n\n");
         return text.ToString();
     }
+
+    // An intake runs for its ask, whose record names it as its repository (D65 §1b).
+    private static string WaitingLine(HelpWaitingSession session) =>
+        session.Ask is { } ask ? $"`{session.Id}` (answering ask `#{ask}`)" : $"`{session.Id}` (in `{session.Repository}`)";
 
     // PLUGHOOK1c: with what its plugin last answered about its pull request, and when, so the helper reads it rather than guess
     // or ask; asking again is the person's own `trees state`.
@@ -147,8 +159,11 @@ public sealed partial record HelpMachine
 
     public int Cap { get; init; }
 
-    /// <summary>How many sessions wait on the person.</summary>
-    public int Waiting { get; init; }
+    /// <summary>
+    /// The sessions waiting on the person (ENTRY1f2), as the Sessions list's <i>Waiting on you</i> holds them less Ask Daoris's
+    /// own, by id, so a go names one the room was shown; the room's count is theirs.
+    /// </summary>
+    public IReadOnlyList<HelpWaitingSession> Waiting { get; init; } = [];
 
     /// <summary>How many asks wait for the person's answer.</summary>
     public int Asks { get; init; }
@@ -167,6 +182,14 @@ public sealed partial record HelpMachine
 
     /// <summary>Daoris's browser as its files hold it (HELP10), or null where the desktop read none.</summary>
     public HelpBrowser? Browser { get; init; }
+}
+
+/// <summary>A session waiting on the person, as the room lists it (ENTRY1f2): by id and where it runs, so a go names one it was shown.</summary>
+/// <param name="Repository">Where it runs, as its record says: a repository's name, or <c>ask #id</c> for an intake.</param>
+public sealed record HelpWaitingSession(string Id, string Repository)
+{
+    /// <summary>The ask an intake answers (D65 §1b), or null for every other session.</summary>
+    public string? Ask { get; init; }
 }
 
 /// <summary>Daoris's browser as the room says it (HELP10): which one, where links open, extensions, and the pages it keeps.</summary>

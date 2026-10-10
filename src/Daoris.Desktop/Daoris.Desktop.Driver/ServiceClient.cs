@@ -1289,7 +1289,7 @@ public sealed partial class ServiceClient : IDisposable
     /// spend this machine's cap on work another machine is doing, block a repository whose tree that
     /// machine holds and this one does not, and park-notify for a session nobody here can reach.
     /// </remarks>
-    private static IReadOnlyList<SessionView> ReadSessions(string json)
+    internal static IReadOnlyList<SessionView> ReadSessions(string json)
     {
         using var document = JsonDocument.Parse(json);
         var sessions = new List<SessionView>();
@@ -1315,6 +1315,8 @@ public sealed partial class ServiceClient : IDisposable
                 BaseCommit = Text(session, "baseCommit") is { Length: > 0 } baseCommit ? baseCommit : null,
                 // Its note's lines by code (LANG1a), handed on wherever the note is; null for a record from before parts.
                 NoteParts = NotePart.Read(session),
+                // The person's answer to its park (ENTRY1f2), read as SessionRecords reads it: a blank one is none.
+                Answer = Text(session, "answer") is { Length: > 0 } answer ? answer : null,
             });
         }
 
