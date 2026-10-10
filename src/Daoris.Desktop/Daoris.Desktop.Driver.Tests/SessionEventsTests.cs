@@ -168,6 +168,29 @@ public sealed class SessionEventsTests : IDisposable
     }
 
     /// <summary>
+    /// RAILSRCH1: the rail's search takes one Han character, as Ask Daoris's list does (ASKHIST1d1), and reads every record, so a
+    /// conversation older than the newest 200 is found; one other letter is still no word to search for.
+    /// </summary>
+    [Fact]
+    public void Search_takes_one_han_character_and_reads_every_record()
+    {
+        var events = new SessionEvents(_directory);
+        events.Append("old00001", Asked("工作区是什么?"));
+        File.SetLastWriteTimeUtc(events.PathOf("old00001"), new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        for (var i = 0; i < 205; i++)
+        {
+            var id = $"new{i:D5}";
+            events.Append(id, Asked("nothing to see"));
+            File.SetLastWriteTimeUtc(events.PathOf(id), new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc).AddMinutes(i));
+        }
+
+        var found = events.Search("区");
+        Assert.Equal("old00001", Assert.Single(found.Hits).Session);
+        Assert.False(found.Cut);
+        Assert.Empty(events.Search("g").Hits);
+    }
+
+    /// <summary>
     /// STEER1 (D136): what a person told a driven session is kept twice — the moment it was said, with when it reaches the
     /// session, and again where the session took it, paired by one id — and a search finds it once, where it was taken.
     /// </summary>
