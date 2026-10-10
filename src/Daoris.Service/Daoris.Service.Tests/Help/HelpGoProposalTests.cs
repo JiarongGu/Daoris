@@ -47,6 +47,10 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
         // UX6g2c: the workspace page's six parts are named under projects.
         foreach (var name in new[] { "workspace-details", "workspace-branches", "workspace-workflow", "workspace-setup", "workspace-defaults", "workspace-remote" })
             Assert.Contains(name, part);
+        // ENTRY1h: the four parts ENTRY1b added, and that a part names no session or quest.
+        foreach (var name in new[] { "waiting", "review", "asks", "held" })
+            Assert.Contains(name, part);
+        Assert.Contains("names no session or quest", part);
     }
 
     /// <summary>The shape, checked here and nothing more; which places exist is the driver's to judge.</summary>
