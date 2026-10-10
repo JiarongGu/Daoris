@@ -200,7 +200,7 @@ export const PauseAsking: Story = {
     asking: (
       <PauseAsk
         className="mt-2.5" target={{ scope: 'quest', id: 'abc123' }} meanIt="Pause quest"
-        lines={[{ key: 'work.pause.ask.stops', values: { count: 1 } }]} onPause={() => {}} onCancel={() => {}}
+        lines={[{ key: 'work.pause.ask.stops', values: { count: 1 } }]} onPause={() => {}} onClose={() => {}}
       />
     ),
   },

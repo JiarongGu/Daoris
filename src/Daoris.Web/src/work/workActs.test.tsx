@@ -44,12 +44,30 @@ describe('the acts on a work', () => {
     const { result, notify } = acts();
     const done = vi.fn();
 
-    act(() => result.current.pause({ scope: 'ask', id: 'a1' }, done));
+    act(() => result.current.pause({ scope: 'ask', id: 'a1' }, undefined, done));
 
     await waitFor(() => expect(notify).toHaveBeenCalledWith(
       'Paused ask #a1 and stopped 1 session: nothing of it starts on this machine until you resume it.', 'ok'));
     expect(notify).toHaveBeenCalledWith('Could not stop session s2: Stop… on its page asks again.', 'error');
     expect(done).toHaveBeenCalledOnce();
+  });
+
+  it('tells a refused pause to the ask it came from, and to a toast where there is none (UXFIX2b2a)', async () => {
+    invoke.mockImplementation(async () => { throw new Error('The driver is not running.'); });
+    const { result, notify } = acts();
+    const answered = { done: vi.fn(), refused: vi.fn() };
+
+    act(() => result.current.pause({ scope: 'ask', id: 'a1' }, answered));
+    await waitFor(() => expect(answered.refused).toHaveBeenCalledOnce());
+    expect(answered.refused.mock.calls[0]![0]).toContain('The driver is not running.');
+    expect(answered.done).not.toHaveBeenCalled();
+    expect(notify).not.toHaveBeenCalled();
+
+    act(() => result.current.abandon({ scope: 'ask', id: 'a1' }, 'why', ['quest:q1'], answered));
+    await waitFor(() => expect(answered.refused).toHaveBeenCalledTimes(2));
+
+    act(() => result.current.pause({ scope: 'ask', id: 'a1' }));
+    await waitFor(() => expect(notify).toHaveBeenCalledOnce());
   });
 
   it('resumes, and says the one quest still held by its hold’s own sentence, translated by its verdict', async () => {
@@ -148,7 +166,7 @@ describe('the acts on a work', () => {
     const { result, notify } = acts();
     const done = vi.fn();
 
-    act(() => result.current.abandon({ scope: 'ask', id: 'a1b2c3' }, 'It went the wrong way.', ['quest:9a8b7c'], done));
+    act(() => result.current.abandon({ scope: 'ask', id: 'a1b2c3' }, 'It went the wrong way.', ['quest:9a8b7c'], undefined, done));
 
     // A partial abandon, said in the error's tone (PAUSE1h).
     await waitFor(() => expect(notify).toHaveBeenCalledWith(
