@@ -25,10 +25,10 @@ The scout, read-only and outside any worktree:
 ```
 Row: <ROW> in TASKS.md. Contract: <design document, section>. Main is at <sha>.
 Lanes the row names: <lane ids>. Branches in flight hold: <files>.
-Call the Skill tool with doc-loader before anything else, and name what it routed to.
 ```
 
-The last line stays until a scout's transcript shows its preloaded skills working (D160's SUBLOAD1b note).
+The scout preloads `doc-loader` and `pattern-finder` (D160's SUBLOAD1c note); a pack whose *Knowledge routed* line is
+empty goes back to it.
 
 The worker, with `subagent_type: branch-worker` and the model the table below chooses:
 
