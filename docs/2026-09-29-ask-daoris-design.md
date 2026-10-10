@@ -418,9 +418,10 @@ line git can name. With an agent named, a starter is also a first message.
      selected, with *Use the original question* for a named one and the terminal's twin; a delete asks once (`InlineConfirm`)
      through `SESSION_DELETE`.
    - **Both doors** (D50): `HELP_CONVERSATIONS`, `HELP_RENAME`, `HELP_PIN`, `HELP_START_FROM`, with going on as `SESSION_INPUT`
-     and a delete as `SESSION_DELETE`; and `daoris-driver help list [--search "…"] [--json] | resume <id> "…" | rename <id>
-     "…"|--clear | pin|unpin <id> | delete <id> [--yes]`, its `--json` the panel's row field for field. Exempt from Ask Daoris:
-     the conversations are the person's own (`HelpCoverageTests`).
+     and a delete as `SESSION_DELETE`; and `daoris-driver help list [--search "…"] [--json] [--offset <n>] [--limit <n>] |
+     resume <id> "…" | rename <id> "…"|--clear | pin|unpin <id> | delete <id> [--yes]`, its `--json` the panel's row field for
+     field. A listing is a page of every conversation, ordered and searched before it is taken (ASKHIST1d, D158's note).
+     Exempt from Ask Daoris: the conversations are the person's own (`HelpCoverageTests`).
    - **It amends** D137's MSG1c note (*Ask Daoris's keeps none, since it never goes on*) and §2.2's `help` never, HELP1a's *a
      message opens the next* after a restart (it still does, unless the person chooses to go on), and D76's RAIL1 rejection of
      hand-naming, for Ask Daoris's conversations alone: the name is the person's, kept on this machine, never the record.

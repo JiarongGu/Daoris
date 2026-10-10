@@ -153,8 +153,10 @@ public sealed class HelpCommandTests : IDisposable
         var (_, last) = await RunAsync(ledger, "list", "--offset", "1", "--limit", "1");
         var (_, found) = await RunAsync(ledger, "list", "--search", "repositories", "--limit", "1");
         var (_, json) = await RunAsync(ledger, "list", "--offset", "1", "--limit", "1", "--json");
+        var (_, past) = await RunAsync(ledger, "list", "--offset", "5");
 
         Assert.Equal(0, exit);
+        Assert.Equal("help: the list holds 2, so none from 6 on.\n", past);
         Assert.EndsWith("\n1–1 of 2 are listed; `daoris-driver help list --offset 1 --limit 1` lists the next.\n", first);
         Assert.EndsWith("\n2–2 of 2 are listed.\n", last);
         Assert.EndsWith("\n1–1 of 2 are listed; `daoris-driver help list --search \"repositories\" --offset 1 --limit 1` lists the next.\n", found);
