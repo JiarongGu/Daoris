@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import i18n from '../i18n';
 import type { NotePart } from '../api';
+import { moment } from '../format';
 import { linesTaken, NOTE_CODES, noteBlocks, noteLines, noteText } from './noteLines';
 
 // A session's note as the page words it (LANG1b, D142 points 1, 4, 5; the language design §2, §5, §6): a coded part from
@@ -114,6 +115,74 @@ describe('noteLines', () => {
     const [line] = noteLines(t, { parts: [cooling] }, 'en');
     expect(line).toMatchObject({ kind: 'said' });
     expect(line.text).toMatch(/^The claude-code account it ran on is cooling until .+ \(Daoris's default: the agent named no time\); nothing starts on it until then\.$/);
+  });
+
+  /**
+   * UX7d-1 (D152's UX7d-1 note): a conversation's first line, worded by its codes: the account it opened on with the step
+   * that chose it, a reason with its own values (a percent, a window, a moment, another account), the rest's step, a refused
+   * turn, and what each account said, a line per account and per thing it said. The record's English is never read.
+   */
+  describe('a conversation’s first line', () => {
+    const seen = '2026-10-02T11:50:00Z';
+    const carried = [
+      coded('opening.carried-on', 'carried on from session `s0` on `account-2`; …', {
+        session: 's0', account: 'account-2', why: 'near-used', over: 'account-1', used: 95, window: 'session', near: 90,
+      }),
+      coded('opening.rest', 'of the rest, Daoris started on it least recently', { why: 'least-recent' }),
+      coded('opening.turn-context', 'its turn 3 was refused with 370,104 tokens of context', { turn: 3, tokens: 370104 }),
+      coded('opening.said-at', '`account-1` 10 min ago', { account: 'account-1', seen }),
+      coded('opening.said-used', '95% of its session limit', { used: 95, window: 'session' }),
+      coded('opening.said-near-at', 'near at 90%', { near: 90 }),
+      coded('opening.said-nothing', '`account-2` nothing yet', { account: 'account-2' }),
+    ];
+
+    it('words each line by its code in English and 中文', () => {
+      expect(noteLines(t, { parts: carried }, 'en')).toEqual([
+        'Carried on from session `s0` on `account-2`: `account-1` has used 95% of its five-hour limit, at or over the 90% that counts as near.',
+        'Of the rest, Daoris started on it least recently.',
+        'Its turn 3 was refused with 370,104 tokens of context.',
+        `\`account-1\` last said what it has left at ${moment(seen, 'en')}.`,
+        'It had used 95% of its five-hour limit.',
+        'That is at or over the 90% that counts as near.',
+        '`account-2` has said nothing yet.',
+      ].map((text) => ({ kind: 'said', text })));
+      expect(noteLines(zh, { parts: carried }, 'zh')).toEqual([
+        '在账户 `account-2` 上接续会话 `s0`：`account-1` 的5 小时上限已用 95%，达到或超过视为接近的 90%。',
+        '其余账户中，Daoris 最久没有在它上面启动。',
+        '它的第 3 轮被拒绝，当时上下文有 370,104 个 token。',
+        `\`account-1\` 最近一次说明剩余用量是在 ${moment(seen, 'zh')}。`,
+        '它的5 小时上限已用 95%。',
+        '这已达到或超过视为接近的 90%。',
+        '`account-2` 还没有说明剩余用量。',
+      ].map((text) => ({ kind: 'said', text })));
+    });
+
+    it('words a passed account’s cool-off with its reset and its own reason, and a workspace’s list by name', () => {
+      const cooling = coded('opening.opened', 'opened on `account-2`: …', {
+        account: 'account-2', why: 'cooling', agent: 'claude-code', over: 'account-1', until: '2026-10-03T18:00:00Z', cooling: 'stated',
+      });
+      expect(noteLines(t, { parts: [cooling] }, 'en')).toEqual([{
+        kind: 'said',
+        text: `Opened on \`account-2\`: the \`claude-code\` account \`account-1\` is cooling until ${moment('2026-10-03T18:00:00Z', 'en')} (the agent said so).`,
+      }]);
+      const first = coded('opening.opened', 'opened on `account-1`: …', { account: 'account-1', why: 'first', workspace: 'work' });
+      expect(noteLines(zh, { parts: [first, coded('opening.unsaid', 'No account has said what it has left yet.')] }, 'zh').map((line) => line.text))
+        .toEqual(['在账户 `account-1` 上开始：它在 `work` 的列表中排第一。', '尚无账户说明它还剩多少用量。']);
+      const paced = coded('opening.opened', 'opened on `account-2`: …', { account: 'account-2', why: 'behind', used: 10, gone: 43 });
+      expect(noteLines(t, { parts: [paced] }, 'en')[0].text)
+        .toBe("Opened on `account-2`: it is furthest behind its week's pace, 10% of its weekly limit used with 43% of its week gone.");
+    });
+
+    it('shows a line as recorded where its step is a reason it does not know or lacks a value its reason says', () => {
+      const newer = coded('opening.opened', 'opened on `account-2`: a newer step.', { account: 'account-2', why: 'newer' });
+      const short = coded('opening.opened', 'opened on `account-2`: `account-1` is ahead.', { account: 'account-2', why: 'ahead', over: 'account-1', used: 80 });
+      const shaped = coded('opening.said-used', '95% of its session limit', { used: '95%', window: 'session' });
+      expect(noteLines(zh, { parts: [newer, short, shaped] }, 'zh')).toEqual([
+        { kind: 'recorded', text: 'opened on `account-2`: a newer step.' },
+        { kind: 'recorded', text: 'opened on `account-2`: `account-1` is ahead.' },
+        { kind: 'recorded', text: '95% of its session limit' },
+      ]);
+    });
   });
 
   /**

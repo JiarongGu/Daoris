@@ -8,7 +8,8 @@ import { CLAIMED } from './handedFixtures';
 // reviewer designs against is what a session shows: a finished turn folded, a running one open, a
 // driven session's composed target with what it was handed beneath it (CONTEXT1), the kinds a tool call
 // can be, a plan, the driver's own note and one worded from its parts (CONVNOTE1), an update this version does not know, a door that carries only
-// text, words a cooling account holds with *Go on in a new session* and what it came to (MSG1g2), and 中文.
+// text, words a cooling account holds with *Go on in a new session* and what it came to (MSG1g2), the opening line worded
+// from its codes and an older one with none (UX7d-1), and 中文.
 
 let seq = 0;
 // A second and a half between events, so a finished turn's meter reads a span a session could take (CONV5).
@@ -129,6 +130,39 @@ const SIGN_IN_REFUSED: SessionEvent[] = [
   ev({ kind: 'turn', stopReason: 'refusal' }),
 ];
 
+/**
+ * UX7d-1 (D152's UX7d-1 note): a conversation that carried on from a cut-off session on another account. Its first line is
+ * worded from its codes: the account and the step that chose it, the rest's step, the refused turn, and what each account
+ * said; its English is the console's.
+ */
+const OPENING_ENGLISH = 'carried on from session `3f9c2a71` on `account-2`; `account-1` has used 95% of its session limit, at or over '
+  + 'the 90% that counts as near; of the rest, Daoris started on it least recently; its turn 3 was refused with 370,104 tokens of '
+  + 'context. What each account said: `account-1` 20 min ago, 95% of its session limit used, near at 90%; `account-2` nothing yet.';
+const OPENED: SessionEvent[] = [
+  ev({
+    kind: 'note', text: OPENING_ENGLISH,
+    parts: [
+      { code: 'opening.carried-on', text: OPENING_ENGLISH, values: {
+        session: '3f9c2a71', account: 'account-2', why: 'near-used', over: 'account-1', used: 95, window: 'session', near: 90,
+      } },
+      { code: 'opening.rest', text: 'of the rest, Daoris started on it least recently', values: { why: 'least-recent' } },
+      { code: 'opening.turn-context', text: 'its turn 3 was refused with 370,104 tokens of context', values: { turn: 3, tokens: 370_104 } },
+      { code: 'opening.said-at', text: '`account-1` 20 min ago', values: { account: 'account-1', seen: '2026-09-25T08:40:00Z' } },
+      { code: 'opening.said-used', text: '95% of its session limit', values: { used: 95, window: 'session' } },
+      { code: 'opening.said-near-at', text: 'near at 90%', values: { near: 90 } },
+      { code: 'opening.said-nothing', text: '`account-2` nothing yet', values: { account: 'account-2' } },
+    ],
+  }),
+  ev({ kind: 'user', origin: 'target', text: 'You are the engine repository\'s agent. Carry quest #q1 on — "Expose a streaming budget".' }),
+  ev({ kind: 'message', text: 'Picking up where the last session stopped: the cap is in, the tests are next.' }),
+];
+
+/** An opening line an older driver wrote with no parts: its English, its backticks drawn as code. */
+const OPENED_BEFORE: SessionEvent[] = [
+  ev({ kind: 'note', text: 'opened on `account-1`: Daoris started on it least recently. No account has said what it has left yet.' }),
+  ev({ kind: 'user', origin: 'person', text: 'Where does the streamer read its budget?' }),
+];
+
 const CHINESE: SessionEvent[] = [
   ev({ kind: 'user', origin: 'person', text: '把每帧的加载上限做成可配置的。' }),
   ev({ kind: 'message', text: '已在 `level.rs` 中加入 `streaming_budget` 字段，默认值为 **4**。' }),
@@ -168,6 +202,12 @@ export const WordCutOffByAStop: Story = { args: { turns: toTurns(CUT_OFF).turns,
 export const RefusedForItsSignIn: Story = { args: { turns: toTurns(SIGN_IN_REFUSED).turns, chat: true } };
 /** CONVNOTE1, in 中文: the same line from the other catalogue, never the driver's English. */
 export const RefusedForItsSignInChinese: Story = { ...RefusedForItsSignIn, decorators: [chinese] };
+/** UX7d-1: the line a conversation opens with, worded from its codes. */
+export const OpenedOnAnAccount: Story = { args: { turns: toTurns(OPENED).turns } };
+/** UX7d-1, in 中文: the same line under 驱动, every word from the catalogue, the accounts as code. */
+export const OpenedOnAnAccountChinese: Story = { ...OpenedOnAnAccount, decorators: [chinese] };
+/** UX7d-1: an older driver's opening line with no parts, its English as written and its backticks as code. */
+export const OpenedBeforeCodes: Story = { args: { turns: toTurns(OPENED_BEFORE).turns, chat: true } };
 
 /** MSG1g2 (D137 §2.2): the account it ran on cools until a reset the agent named, so the words wait, with the door out. */
 const COOLING_UNTIL = '2026-09-25T13:10:00Z';

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { NOTE_CODES, NOTE_VALUES } from '../work/noteLines';
+import { NOTE_CODES, NOTE_VALUES, OPENING_REASONS } from '../work/noteLines';
 import { REASONS } from '../work/say';
 import { en, zh } from '.';
 
@@ -67,7 +67,8 @@ describe('a session note’s codes, held to both catalogues', () => {
   });
 
   it.each([['en', en], ['zh', zh]] as const)('keeps no `note.*` entry in %s that no writer declares', (_, catalogue) => {
-    const keys = new Set(codes.map((code) => code.key));
+    // A reason a `why` names is declared by its writer too (UX7d-1: the opening's, `note.opening.why.*`).
+    const keys = new Set([...codes.map((code) => code.key), ...['Continue', 'Cooling', 'Opening'].flatMap((family) => reasons(family).map((reason) => reason.key))]);
     const orphans = Object.keys(catalogue).filter((key) => key.startsWith('note.') && !keys.has(key));
     expect(orphans).toEqual([]);
   });
@@ -118,5 +119,24 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
     expect(cooling.map((reason) => reason.key).sort()).toEqual([
       'harness.cooling.why.assumed', 'harness.cooling.why.default', 'harness.cooling.why.notBelieved', 'harness.cooling.why.stated',
     ]);
+  });
+
+  /**
+   * UX7d-1 (D152's UX7d-1 note): a conversation's first line names its account's step by a reason of the opening's family,
+   * each with its own values. The page's map holds the driver's reasons key for key and value for value, both catalogues say
+   * exactly each reason's values, and every value a reason carries has a way the page says it.
+   */
+  it('words every step a conversation’s first line may name, with its own values', () => {
+    const opening = reasons('Opening');
+    expect(opening.length).toBeGreaterThan(15);
+    const page = Object.values(OPENING_REASONS).map(({ key, values }) => ({ key, values: [...values] }));
+    const byKey = (a: { key: string }, b: { key: string }) => a.key.localeCompare(b.key);
+    expect(page.sort(byKey)).toEqual([...opening].sort(byKey));
+    for (const catalogue of [en, zh]) {
+      for (const { key, values } of opening) {
+        expect(placeholders(catalogue[key] ?? ''), `\`${key}\``).toEqual([...values].sort());
+      }
+    }
+    expect(opening.flatMap((reason) => reason.values).filter((value) => !(value in NOTE_VALUES))).toEqual([]);
   });
 });

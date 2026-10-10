@@ -1,5 +1,5 @@
 import type { NotePart } from '../api';
-import { list, moment } from '../format';
+import { figure, list, moment } from '../format';
 import { windowName } from '../settings/accounts';
 import { reasonOf } from './say';
 
@@ -9,8 +9,11 @@ import { reasonOf } from './say';
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
-/** A family of reasons a `why` names: MSG1f's (`work.say.why.*`, by `reasonOf`) or a cool-off's (`harness.cooling.why.*`). */
-type Why = 'continue' | 'cooling';
+/**
+ * A family of reasons a `why` names: MSG1f's (`work.say.why.*`, by `reasonOf`), a cool-off's (`harness.cooling.why.*`), or
+ * the step that chose a conversation's account (`note.opening.why.*`, UX7d-1).
+ */
+type Why = 'continue' | 'cooling' | 'opening';
 
 /** A code the page words: the values its sentence says, its key where it is not `note.<code>`, and the reasons a `why` names. */
 export type NoteCode = { values: readonly string[]; key?: string; why?: Why };
@@ -126,21 +129,71 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // Another agent's findings alone, or beside the person's words (XAGENT1e2), worded since XAGENT1g.
   'ledger.went-on-findings': { values: ['at'] },
   'ledger.went-on-both': { values: ['at'] },
+  // A conversation's first line (UX7d-1): the account it opened on and the step that chose it, then what each account said.
+  'opening.opened': { values: ['account', 'why'], why: 'opening' },
+  'opening.carried-on': { values: ['session', 'account', 'why'], why: 'opening' },
+  'opening.rest': { values: ['why'], why: 'opening' },
+  'opening.turn-refused': { values: ['turn'] },
+  'opening.turn-context': { values: ['turn', 'tokens'] },
+  'opening.unsaid': { values: [] },
+  'opening.said-at': { values: ['account', 'seen'] },
+  'opening.said-nothing': { values: ['account'] },
+  'opening.said-reached': { values: ['window'] },
+  'opening.said-near': { values: ['window'] },
+  'opening.said-credits': { values: [] },
+  'opening.said-used': { values: ['used', 'window'] },
+  'opening.said-near-at': { values: ['near'] },
+  'opening.said-clear': { values: [] },
+};
+
+/**
+ * The steps that chose a conversation's account (UX7d-1, D152's UX7d-1 note; the driver's `NoteCodes.Opening`), each its
+ * entry and its own values, which ride beside the line's `why`. `locales/note.test.ts` holds this map to the driver's
+ * declaration key for key and value for value.
+ */
+export const OPENING_REASONS: Readonly<Record<string, { key: string; values: readonly string[] }>> = {
+  cooling: { key: 'note.opening.why.cooling', values: ['agent', 'over', 'until', 'cooling'] },
+  refused: { key: 'note.opening.why.refused', values: ['agent', 'over'] },
+  'signed-out': { key: 'note.opening.why.signed-out', values: ['agent', 'over'] },
+  'kept-self': { key: 'note.opening.why.kept-self', values: [] },
+  'kept-last': { key: 'note.opening.why.kept-last', values: ['over'] },
+  kept: { key: 'note.opening.why.kept', values: ['over'] },
+  'near-reached': { key: 'note.opening.why.near-reached', values: ['over', 'window'] },
+  'near-word': { key: 'note.opening.why.near-word', values: ['over', 'window'] },
+  'near-credits': { key: 'note.opening.why.near-credits', values: ['over'] },
+  'near-used': { key: 'note.opening.why.near-used', values: ['over', 'used', 'window', 'near'] },
+  near: { key: 'note.opening.why.near', values: ['over'] },
+  fewest: { key: 'note.opening.why.fewest', values: [] },
+  lapsing: { key: 'note.opening.why.lapsing', values: ['at'] },
+  behind: { key: 'note.opening.why.behind', values: ['used', 'gone'] },
+  ahead: { key: 'note.opening.why.ahead', values: ['over', 'used', 'gone'] },
+  'not-started': { key: 'note.opening.why.not-started', values: [] },
+  'least-recent': { key: 'note.opening.why.least-recent', values: [] },
+  default: { key: 'note.opening.why.default', values: ['workspace'] },
+  'default-here': { key: 'note.opening.why.default-here', values: [] },
+  first: { key: 'note.opening.why.first', values: ['workspace'] },
+  'first-here': { key: 'note.opening.why.first-here', values: [] },
 };
 
 /**
  * How each value a code carries is said (the language design §3–§4): an id as the record writes it, a list of quest ids
  * joined the reader's way, a moment in the reader's language and zone, a number in its figures, a fact as it is, a reason
  * by its family, and a limit's window as the agents' screens word it (`harness.window.*`, AGT3d), one this build does not
- * know said as named. `locales/note.test.ts` holds that every value a writer declares has a way here.
+ * know said as named. A conversation's first line (UX7d-1) adds a count grouped the reader's way, a whole percent, and a
+ * cool-off's reason as a value of its own. `locales/note.test.ts` holds that every value a writer declares has a way here.
  */
-export const NOTE_VALUES: Readonly<Record<string, 'id' | 'ids' | 'moment' | 'number' | 'text' | 'why' | 'window'>> = {
+export const NOTE_VALUES: Readonly<
+  Record<string, 'id' | 'ids' | 'moment' | 'number' | 'count' | 'percent' | 'text' | 'why' | 'cooling' | 'window'>
+> = {
   awaits: 'id', answered: 'id', ask: 'id', quest: 'id', session: 'id',
   quests: 'ids',
-  until: 'moment', at: 'moment',
-  exit: 'number', minutes: 'number', paths: 'number',
-  owner: 'text', branch: 'text', basedOn: 'text', plugin: 'text',
+  until: 'moment', at: 'moment', seen: 'moment',
+  exit: 'number', minutes: 'number', paths: 'number', turn: 'number',
+  tokens: 'count',
+  used: 'percent', near: 'percent', gone: 'percent',
+  owner: 'text', branch: 'text', basedOn: 'text', plugin: 'text', account: 'text', over: 'text', agent: 'text', workspace: 'text',
   why: 'why',
+  cooling: 'cooling',
   window: 'window',
 };
 
@@ -181,10 +234,19 @@ function said(t: Translate, name: string, values: Record<string, unknown>, code:
     case 'number':
       return typeof value === 'number' && Number.isFinite(value) ? String(value)
         : typeof value === 'string' && /^-?\d+$/.test(value) ? value : null;
+    case 'count':
+      return typeof value === 'number' && Number.isInteger(value) ? figure(value, language) : null;
+    case 'percent':
+      return typeof value === 'number' && Number.isInteger(value) ? `${value}%` : null;
+    case 'cooling': {
+      const why = text(value);
+      return why && COOLING.has(why) ? t(`harness.cooling.why.${why}`) : null;
+    }
     case 'why': {
       const why = text(value);
       if (!why) return null;
       if (code.why === 'cooling') return COOLING.has(why) ? t(`harness.cooling.why.${why}`) : null;
+      if (code.why === 'opening') return opening(t, why, values, code, language);
       return reasonOf(t, why, {
         from: text(values.from), to: text(values.to), adapter: text(values.adapter), agent: text(values.agent),
       });
@@ -196,6 +258,22 @@ function said(t: Translate, name: string, values: Record<string, unknown>, code:
     default:
       return text(value);
   }
+}
+
+/**
+ * The step that chose a conversation's account (UX7d-1), with its own values beside the line's, or null where it is a step
+ * this page does not know or a value its entry says is absent, so the line shows as recorded.
+ */
+function opening(t: Translate, why: string, values: Record<string, unknown>, code: NoteCode, language: string): string | null {
+  const reason = OPENING_REASONS[why];
+  if (!reason) return null;
+  const options: Record<string, string> = {};
+  for (const name of reason.values) {
+    const value = said(t, name, values, code, language);
+    if (value === null) return null;
+    options[name] = value;
+  }
+  return t(reason.key, options);
 }
 
 /** A coded part in the reader's language, or null where the page cannot word it (§5). */
