@@ -39,7 +39,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/QuestsView.test.tsx` | 65 | 1273 |
 | `src/Daoris.Web/src/agents/AgentPage.tsx` | 47 | 889 |
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 97 | 1875 |
-| `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 51 | 1018 |
+| `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 53 | 1044 |
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 46 | 858 |
 | `src/Daoris.Web/src/ui.test.tsx` | 44 | 910 |
 | `src/Daoris.Web/src/ui.tsx` | 77 | 1647 |
@@ -118,11 +118,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs` | 49 | 861 |
 | `src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs` | 44 | 839 |
 | `src/Daoris.Service/Daoris.Service.Tests/IndexEntriesTests.cs` | 45 | 855 |
-| `src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.cs` | 48 | 863 |
+| `src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.cs` | 48 | 865 |
 | `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 82 | 1691 |
 | `src/Daoris.Service/Daoris.Service.Tests/ReviewStepTests.cs` | 41 | 734 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 70 | 1420 |
-| `src/Daoris.Service/README.md` | 76 | 729 |
+| `src/Daoris.Service/README.md` | 76 | 730 |
 
 ### CLI (`cli`)
 
