@@ -23,8 +23,7 @@ the work, was most of what branches cost before D160 (`docs/2026-10-10-subagent-
   `pattern-finder` and named, by file and line range, the contract's sections, the knowledge they routed
   to, the code to change, the exemplar and the tests. Read those ranges, and say which you read. When the
   work moves outside the pack, run the discovery skills yourself through the Skill tool, by name:
-  `doc-loader` and `pattern-finder` (`skills-workflow`: re-run when the scope moves). You are shown no
-  list of skills, so these names are the list.
+  `doc-loader` and `pattern-finder` (`skills-workflow`: re-run when the scope moves).
 - **Read ranges, not files.** Use the read tool with an offset and a limit at the lines the pack,
   `docs/index/` or a search names. Never print a file through the shell (`cat`, a wide `sed -n`). Never
   read a range again that you already hold, unless it changed.
