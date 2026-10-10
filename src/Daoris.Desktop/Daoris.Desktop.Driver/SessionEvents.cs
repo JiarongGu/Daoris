@@ -555,14 +555,12 @@ public sealed class SessionEvents(string directory)
     {
         var wanted = query.Trim();
         var path = PathOf(sessionId);
-        if (wanted.Length < 2 || !File.Exists(path)) return new([], false);
+        if (!Searchable(wanted) || !File.Exists(path)) return new([], false);
 
         var hits = new List<SessionHit>();
         var cut = false;
-        foreach (var (seq, kind, text) in Passages(path).Concat(Calls(path)).OrderBy(passage => passage.Seq))
+        foreach (var (seq, kind, text, at) in Holding(path, wanted))
         {
-            var at = text.IndexOf(wanted, StringComparison.OrdinalIgnoreCase);
-            if (at < 0) continue;
             if (hits.Count == limit)
             {
                 cut = true;
@@ -574,6 +572,45 @@ public sealed class SessionEvents(string directory)
 
         return new SessionSearch(hits, cut);
     }
+
+    /// <summary>
+    /// Where one session's record first holds these words (ASKHIST1d), as <see cref="Within"/> finds it: the hit, with its
+    /// snippet, and the whole passage it is in with where the words start, for a reader that cuts its own view of it. Null where
+    /// the record does not hold them, there is no record, or the words are too few to search with.
+    /// </summary>
+    public (SessionHit Hit, string Passage, int At)? FirstFound(string sessionId, string query)
+    {
+        var wanted = query.Trim();
+        var path = PathOf(sessionId);
+        if (!Searchable(wanted) || !File.Exists(path)) return null;
+
+        foreach (var (seq, kind, text, at) in Holding(path, wanted))
+        {
+            return (new SessionHit(sessionId, seq, kind, Snippet(text, at, wanted.Length)), text, at);
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Whether these words are enough to search with (ASKHIST1d): two characters, or one Han character, which is a word on its
+    /// own (区, 圈). One letter of any other script would find nearly everything, so it finds nothing.
+    /// </summary>
+    public static bool Searchable(string? words)
+    {
+        var wanted = words?.Trim() ?? "";
+        return wanted.Length >= 2 || (wanted.Length == 1 && IsHan(wanted[0]));
+    }
+
+    // The basic block, extension A and the compatibility block; the later extensions are surrogate pairs, two characters already.
+    private static bool IsHan(char c) => c is (>= '一' and <= '鿿') or (>= '㐀' and <= '䶿') or (>= '豈' and <= '﫿');
+
+    /// <summary>What was said, and each call by its title, that holds the words, in the order they came, with where they start.</summary>
+    private static IEnumerable<(long Seq, string Kind, string Text, int At)> Holding(string path, string wanted) =>
+        Passages(path).Concat(Calls(path))
+            .OrderBy(passage => passage.Seq)
+            .Select(passage => (passage.Seq, passage.Kind, passage.Text, At: passage.Text.IndexOf(wanted, StringComparison.OrdinalIgnoreCase)))
+            .Where(passage => passage.At >= 0);
 
     /// <summary>
     /// The agent's last message, whole (PARK1): what a session that parks to ask the person said to them,
@@ -623,6 +660,44 @@ public sealed class SessionEvents(string directory)
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             return ([], null);
+        }
+    }
+
+    /// <summary>
+    /// When a session's record was last written (ASKHIST1d): its last readable event's time, as <see cref="Spoken"/> reads it, but
+    /// read from the file's end, so a list that orders every conversation by it reads a line of each rather than the whole of
+    /// each. Null for no record, an unreadable one, one with no readable event, or an id that is not one.
+    /// </summary>
+    public DateTimeOffset? LastAt(string sessionId)
+    {
+        if (!IsId(sessionId)) return null;
+        try
+        {
+            var path = PathOf(sessionId);
+            if (!File.Exists(path)) return null;
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            var length = stream.Length;
+            // A window from the end, grown until it holds a whole readable line: a line longer than the window is read in a later one.
+            for (var window = 4096L; ; window *= 4)
+            {
+                var start = Math.Max(0, length - window);
+                var bytes = new byte[length - start];
+                stream.Seek(start, SeekOrigin.Begin);
+                stream.ReadExactly(bytes);
+                var lines = Utf8.GetString(bytes).Split('\n');
+
+                // A window's first line is part of one unless the window starts the file.
+                for (var at = lines.Length - 1; at >= (start == 0 ? 0 : 1); at--)
+                {
+                    if (Event(lines[at]) is { } e) return e.At;
+                }
+
+                if (start == 0) return null;
+            }
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return null;
         }
     }
 
@@ -761,18 +836,22 @@ public sealed class SessionEvents(string directory)
         using var reader = new StreamReader(stream, Utf8);
         while (reader.ReadLine() is { } line)
         {
-            if (string.IsNullOrWhiteSpace(line)) continue;
-            SessionEvent? e = null;
-            try
-            {
-                e = JsonSerializer.Deserialize<SessionEvent>(line, Json);
-            }
-            catch (JsonException)
-            {
-                // A torn or foreign line costs itself, never the conversation around it.
-            }
+            if (Event(line) is { } e) yield return e;
+        }
+    }
 
-            if (e is { Kind.Length: > 0 }) yield return e;
+    /// <summary>One line of a record read as its event, or null for a blank, torn or foreign line.</summary>
+    private static SessionEvent? Event(string line)
+    {
+        if (string.IsNullOrWhiteSpace(line)) return null;
+        try
+        {
+            return JsonSerializer.Deserialize<SessionEvent>(line.TrimEnd('\r'), Json) is { Kind.Length: > 0 } e ? e : null;
+        }
+        catch (JsonException)
+        {
+            // A torn or foreign line costs itself, never the conversation around it.
+            return null;
         }
     }
 

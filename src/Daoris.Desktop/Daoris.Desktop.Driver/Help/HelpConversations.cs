@@ -28,8 +28,9 @@ public sealed record HelpConversation(string Session, string State)
     public string Title => Name ?? Opening ?? "";
 
     /// <summary>
-    /// A line of what it was about: the first line of Ask Daoris's last answer in it. Daoris makes no model call (D24), so it
-    /// writes no summary of its own; where the conversation got to is the agent's own words.
+    /// A line of what it was about: the first line of Ask Daoris's last answer in it, as Markdown, whole as far as
+    /// <see cref="HelpConversations.PreviewLimit"/>, so the page parses it before it cuts it to a row (ASKHIST1d). Daoris makes
+    /// no model call (D24), so it writes no summary of its own; where the conversation got to is the agent's own words.
     /// </summary>
     public string? About { get; init; }
 
@@ -57,12 +58,26 @@ public sealed record HelpConversation(string Session, string State)
     /// <summary>What it was handed of that one: <see cref="HelpConversations.Transcript"/>, or null.</summary>
     public string? Handed { get; init; }
 
-    /// <summary>Where a search found its words: a snippet around the match, or null.</summary>
+    /// <summary>Where a search found its words: its title where that holds them, else a snippet around the match, or null.</summary>
     public string? Found { get; init; }
+
+    /// <summary>
+    /// Where a search found its words in what was said (ASKHIST1d): the line they are on, as Markdown, whole as far as
+    /// <see cref="HelpConversations.PreviewLimit"/>, for the page to parse before it cuts around them; <see cref="Found"/>'s
+    /// snippet was cut first, and a delimiter could lose its partner. Null where the title holds them, or for no search.
+    /// </summary>
+    public string? FoundLine { get; init; }
 }
 
-/// <summary>A listing of Ask Daoris's history, and whether it left conversations out.</summary>
-public sealed record HelpListing(IReadOnlyList<HelpConversation> Conversations, bool Cut);
+/// <summary>
+/// A page of Ask Daoris's history (ASKHIST1d): its conversations, how many the whole list holds (or the search found), and the
+/// offset the next page starts at, null for the last page.
+/// </summary>
+public sealed record HelpListing(IReadOnlyList<HelpConversation> Conversations, int Total, int? Next)
+{
+    /// <summary>Whether this page left conversations out, so more follow at <see cref="Next"/>: ASKHIST1's <c>cut</c>, read as it was.</summary>
+    public bool Cut => Next is not null;
+}
 
 /// <summary>
 /// Ask Daoris's conversations, kept (ASKHIST1): each is a help record the host already keeps (its words this machine's own
@@ -91,11 +106,14 @@ public sealed class HelpConversations(string home)
     /// <summary>A name's longest: a title, not a note.</summary>
     public const int NameLimit = 80;
 
-    /// <summary>How many records a listing reads, newest first: the rest are said to be left out.</summary>
-    public const int ListLimit = 200;
+    /// <summary>A page's most, and a page where none is asked for: every record is read, and a page is what is answered of them.</summary>
+    public const int PageLimit = 200;
 
-    /// <summary>How long the line of what a conversation was about may be before it is cut.</summary>
-    public const int AboutLimit = 160;
+    /// <summary>
+    /// How much of a line the page is given to parse before it cuts it (ASKHIST1d): an answer's first line, or the line a search
+    /// found its words on. Far past the two lines a row shows, so a delimiter cut here is never in a row's view.
+    /// </summary>
+    public const int PreviewLimit = 1000;
 
     // One writer at a time in this process: a rename and a pin pressed together would otherwise each drop the other's field.
     private static readonly object Gate = new();
@@ -150,78 +168,122 @@ public sealed class HelpConversations(string home)
         Change(session, kept => kept with { From = Checked(from), Handed = handed });
 
     /// <summary>
-    /// Ask Daoris's conversations among <paramref name="records"/>: pinned first, the newest pin first, then the newest by when
-    /// each was last spoken in. With <paramref name="search"/>, only those whose name or words hold it, each with where.
+    /// A page of Ask Daoris's conversations among <paramref name="records"/>: pinned first, the newest pin first, then the newest
+    /// by when each was last spoken in. With <paramref name="search"/>, only those whose name or words hold it, each with where.
     /// </summary>
+    /// <remarks>
+    /// <para><b>Every record is ordered and searched before a page is taken</b> (ASKHIST1d). The list read the newest 200 records
+    /// by when each was opened and only then read pins, last words and the search, so a pinned or lately spoken conversation
+    /// opened long ago fell off it, and an older one was never searched. What orders a record is cheap to read for each: its kept
+    /// file, its first question and its record's last line. What only a row shows (its last answer, whether it goes on) is read
+    /// for the page alone. A search reads each record's words, as a search must.</para>
+    ///
+    /// <para><b>An offset into one order.</b> Ties go by when each was opened, newest first, then by id, so a page's edge is the
+    /// same each time it is asked. A conversation that moves between two asks (spoken in, pinned) can show on two pages or on
+    /// neither until the list is asked again from its start.</para>
+    /// </remarks>
     /// <param name="resumes">Whether an adapter's door resumes a conversation by its id, by the adapter's name.</param>
-    /// <param name="search">Words to find; under two characters, nothing is found, as the rail's search answers.</param>
+    /// <param name="search">Words to find; too few to search with (<see cref="SessionEvents.Searchable"/>), nothing is found.</param>
+    /// <param name="offset">Where the page starts in the whole list; below 0 is 0.</param>
+    /// <param name="limit">The most the page holds; below 1, or above <see cref="PageLimit"/>, is <see cref="PageLimit"/>.</param>
     public HelpListing List(
-        IEnumerable<SessionRecord> records, SessionEvents events, Func<string, bool> resumes, string? search = null)
+        IEnumerable<SessionRecord> records, SessionEvents events, Func<string, bool> resumes, string? search = null,
+        int offset = 0, int limit = PageLimit)
     {
         var wanted = search?.Trim();
-        if (wanted is not null && wanted.Length < 2) return new([], false);
+        if (wanted is not null && !SessionEvents.Searchable(wanted)) return new([], 0, null);
+        offset = Math.Max(0, offset);
+        limit = limit is < 1 or > PageLimit ? PageLimit : limit;
 
         var help = records
             .Where(record => record.Repository == HelpRoom.Repository && !record.Teammate && SessionEvents.IsId(record.Id))
-            .OrderByDescending(record => record.Created)
             .ToList();
-        var cut = help.Count > ListLimit;
-        var conversations = new HarnessConversations(home);
-        var openings = events.Openings(help.Take(ListLimit).Select(record => record.Id));
+        var openings = events.Openings(help.Select(record => record.Id));
 
-        var rows = new List<HelpConversation>();
-        foreach (var record in help.Take(ListLimit))
+        // Every record by what orders it; one the person never spoke in nor named is no conversation.
+        var ordered = help
+            .Select(record => (Record: record, Kept: Read(record.Id), Opening: openings.GetValueOrDefault(record.Id)))
+            .Where(each => each.Opening is not null || each.Kept.Name is not null)
+            .Select(each => (each.Record, each.Kept, each.Opening, Last: events.LastAt(each.Record.Id) ?? each.Record.Updated))
+            .OrderByDescending(each => each.Kept.Pinned.HasValue)
+            .ThenByDescending(each => each.Kept.Pinned ?? DateTimeOffset.MinValue)
+            .ThenByDescending(each => each.Last)
+            .ThenByDescending(each => each.Record.Created)
+            .ThenBy(each => each.Record.Id, StringComparer.Ordinal);
+
+        // The search, over every one: the title first, then what was said.
+        var listed = new List<(SessionRecord Record, HelpKept Kept, string? Opening, DateTimeOffset Last, string? Found, string? FoundLine)>();
+        foreach (var (record, kept, opening, last) in ordered)
         {
-            var kept = Read(record.Id);
-            var opening = openings.GetValueOrDefault(record.Id);
-            if (opening is null && kept.Name is null) continue;
-
-            var (said, last) = events.Spoken(record.Id);
-            var answer = said.LastOrDefault(passage => passage.Kind == SessionEventKind.Message).Text;
-            var conversation = conversations.Read(record.Id);
-            var row = new HelpConversation(record.Id, record.State)
-            {
-                Name = kept.Name,
-                Opening = opening,
-                About = FirstLine(answer),
-                Created = record.Created,
-                Last = last ?? record.Updated,
-                Pinned = kept.Pinned,
-                Live = record.Live,
-                Resumable = conversation is not null && resumes(conversation.Adapter),
-                From = kept.From,
-                Handed = kept.Handed,
-            };
-
             if (wanted is null)
             {
-                rows.Add(row);
+                listed.Add((record, kept, opening, last, null, null));
                 continue;
             }
 
-            if (row.Title.Contains(wanted, StringComparison.OrdinalIgnoreCase))
+            var title = kept.Name ?? opening ?? "";
+            if (title.Contains(wanted, StringComparison.OrdinalIgnoreCase))
             {
-                rows.Add(row with { Found = row.Title });
+                listed.Add((record, kept, opening, last, title, null));
             }
-            else if (events.Within(record.Id, wanted, limit: 1).Hits.FirstOrDefault() is { } hit)
+            else if (events.FirstFound(record.Id, wanted) is { } found)
             {
-                rows.Add(row with { Found = hit.Snippet });
+                listed.Add((record, kept, opening, last, found.Hit.Snippet, LineAround(found.Passage, found.At, wanted.Length)));
             }
         }
 
-        var ordered = rows
-            .OrderByDescending(row => row.Pinned.HasValue)
-            .ThenByDescending(row => row.Pinned ?? DateTimeOffset.MinValue)
-            .ThenByDescending(row => row.Last)
-            .ToList();
-        return new(ordered, cut);
+        // Only now the page, and what only a row shows.
+        var conversations = new HarnessConversations(home);
+        var page = listed.Skip(offset).Take(limit).Select(each =>
+        {
+            var (said, _) = events.Spoken(each.Record.Id);
+            var answer = said.LastOrDefault(passage => passage.Kind == SessionEventKind.Message).Text;
+            var conversation = conversations.Read(each.Record.Id);
+            return new HelpConversation(each.Record.Id, each.Record.State)
+            {
+                Name = each.Kept.Name,
+                Opening = each.Opening,
+                About = FirstLine(answer),
+                Created = each.Record.Created,
+                Last = each.Last,
+                Pinned = each.Kept.Pinned,
+                Live = each.Record.Live,
+                Resumable = conversation is not null && resumes(conversation.Adapter),
+                From = each.Kept.From,
+                Handed = each.Kept.Handed,
+                Found = each.Found,
+                FoundLine = each.FoundLine,
+            };
+        }).ToList();
+
+        var end = offset + page.Count;
+        return new(page, listed.Count, end < listed.Count ? end : null);
     }
 
-    /// <summary>The first non-blank line of an answer, cut to a line's length; null for none.</summary>
+    /// <summary>The first non-blank line of an answer, whole as far as <see cref="PreviewLimit"/>; null for none.</summary>
     private static string? FirstLine(string? text)
     {
         var line = text?.Split('\n').Select(each => each.Trim()).FirstOrDefault(each => each.Length > 0);
-        return line is null ? null : line.Length <= AboutLimit ? line : $"{line[..AboutLimit]}…";
+        return line is null ? null : line.Length <= PreviewLimit ? line : $"{line[..PreviewLimit]}…";
+    }
+
+    /// <summary>
+    /// The line a match is on, whole as far as <see cref="PreviewLimit"/> (ASKHIST1d). A longer line is a window around the
+    /// match, cut between words, with an ellipsis where it goes on: far past what a row shows, so the page's own cut comes first.
+    /// </summary>
+    private static string LineAround(string text, int at, int length)
+    {
+        var start = at == 0 ? 0 : text.LastIndexOf('\n', at - 1) + 1;
+        var stop = text.IndexOf('\n', at + length);
+        var end = stop < 0 ? text.Length : stop;
+        if (end - start <= PreviewLimit) return text[start..end].Trim();
+
+        var half = PreviewLimit / 2;
+        var from = Math.Max(start, at - half);
+        var to = Math.Min(end, at + length + half);
+        if (from > start && text.IndexOf(' ', from, at - from) is >= 0 and var space) from = space + 1;
+        if (to < end && text.LastIndexOf(' ', to - 1, to - (at + length)) is >= 0 and var last) to = last;
+        return $"{(from > start ? "…" : "")}{text[from..to]}{(to < end ? "…" : "")}";
     }
 
     private void Change(string session, Func<HelpKept, HelpKept> edit)

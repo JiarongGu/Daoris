@@ -23,6 +23,12 @@ public sealed record HelpVerbAsk(string Verb)
     /// <summary>The listing as the screen's answer.</summary>
     public bool Json { get; init; }
 
+    /// <summary>A listing's <c>--offset</c>: where its page starts in the whole list (ASKHIST1d).</summary>
+    public int Offset { get; init; }
+
+    /// <summary>A listing's <c>--limit</c>: the most its page holds, or null for <see cref="HelpConversations.PageLimit"/>.</summary>
+    public int? Limit { get; init; }
+
     /// <summary>A rename's <c>--clear</c>: its first question is its title again.</summary>
     public bool Clear { get; init; }
 
@@ -49,7 +55,7 @@ public static class HelpCommand
 {
     public const string Usage =
         """
-        usage: daoris-driver help list [--search "…"] [--json]
+        usage: daoris-driver help list [--search "…"] [--json] [--offset <n>] [--limit <n>]
                daoris-driver help resume <id> "…" [--file <path>]…
                daoris-driver help rename <id> "…" | --clear  ·  help pin <id>  ·  help unpin <id>
                daoris-driver help delete <id> [--yes]
@@ -60,7 +66,13 @@ public static class HelpCommand
 
     /// <summary>The fields of a conversation in <c>--json</c>, in order: <c>HELP_CONVERSATIONS</c>' row, field for field.</summary>
     public static IReadOnlyList<string> JsonFields { get; } =
-        ["session", "title", "name", "opening", "about", "created", "last", "pinned", "live", "resumable", "from", "handed", "found"];
+        ["session", "title", "name", "opening", "about", "created", "last", "pinned", "live", "resumable", "from", "handed", "found", "foundLine"];
+
+    /// <summary>
+    /// How much of a conversation's line the terminal's listing shows (ASKHIST1d). The terminal shows it raw, so it cuts it to a
+    /// line itself; <c>--json</c> carries it whole as far as <see cref="HelpConversations.PreviewLimit"/>, as the page's route does.
+    /// </summary>
+    public const int LineLimit = 160;
 
     /// <summary>What the words after <c>help</c> ask, or null with what is wrong with them.</summary>
     public static HelpVerbAsk? Read(IReadOnlyList<string> args, out string? problem)
@@ -115,6 +127,20 @@ public static class HelpCommand
                 case "--search":
                     problem = "`--search` takes the words to find.";
                     return null;
+                case "--offset" when at + 1 < rest.Count && int.TryParse(rest[at + 1], NumberStyles.None, CultureInfo.InvariantCulture, out var offset):
+                    ask = ask with { Offset = offset };
+                    at++;
+                    break;
+                case "--offset":
+                    problem = "`--offset` takes where the page starts: a whole number, 0 for the first.";
+                    return null;
+                case "--limit" when at + 1 < rest.Count && int.TryParse(rest[at + 1], NumberStyles.None, CultureInfo.InvariantCulture, out var limit) && limit is > 0 and <= HelpConversations.PageLimit:
+                    ask = ask with { Limit = limit };
+                    at++;
+                    break;
+                case "--limit":
+                    problem = $"`--limit` takes how many a page holds: a whole number from 1 to {HelpConversations.PageLimit}.";
+                    return null;
                 default:
                     problem = $"`{rest[at]}` is not a word `help list` takes.";
                     return null;
@@ -144,8 +170,9 @@ public static class HelpCommand
         var events = new SessionEvents(Path.Combine(world.Home, "sessions"));
         if (ask.Verb == "list")
         {
-            var listing = new HelpConversations(world.Home).List(records, events, resumes, ask.Search);
-            output.WriteLine(ask.Json ? Json(listing) : Listed(listing, ask.Search, DateTimeOffset.UtcNow));
+            var listing = new HelpConversations(world.Home).List(
+                records, events, resumes, ask.Search, ask.Offset, ask.Limit ?? HelpConversations.PageLimit);
+            output.WriteLine(ask.Json ? Json(listing) : Listed(listing, ask, DateTimeOffset.UtcNow));
             return 0;
         }
 
@@ -205,13 +232,17 @@ public static class HelpCommand
         }
     }
 
-    /// <summary>The listing in the terminal's words: each conversation's id, when it was last spoken in, its title and marks, then its line.</summary>
-    internal static string Listed(HelpListing listing, string? search, DateTimeOffset now)
+    /// <summary>
+    /// The listing in the terminal's words: each conversation's id, when it was last spoken in, its title and marks, then its line;
+    /// and, for a page that does not hold them all, which it holds of how many and the words that list the next.
+    /// </summary>
+    internal static string Listed(HelpListing listing, HelpVerbAsk ask, DateTimeOffset now)
     {
+        var search = ask.Search;
         if (listing.Conversations.Count == 0)
         {
-            return search is { Length: > 0 } words
-                ? $"help: no Ask Daoris conversation on this machine holds “{words}”."
+            return listing.Total > 0 ? $"help: the list holds {listing.Total}, so none from {ask.Offset + 1} on."
+                : search is { Length: > 0 } words ? $"help: no Ask Daoris conversation on this machine holds “{words}”."
                 : "help: Ask Daoris has no conversations on this machine yet.";
         }
 
@@ -226,11 +257,25 @@ public static class HelpCommand
             text.Append(row.Session).Append("  ").Append(Ago(row.Last, now)).Append("  ").Append(row.Title);
             if (marks.Count > 0) text.Append("  · ").Append(string.Join(" · ", marks));
             text.Append('\n');
-            if (row.About is { } about) text.Append("    ").Append(about).Append('\n');
+            if (row.About is { } about) text.Append("    ").Append(about.Length <= LineLimit ? about : $"{about[..LineLimit]}…").Append('\n');
             if (row.Found is { } found && found != row.Title) text.Append("    found: ").Append(found).Append('\n');
         }
 
-        if (listing.Cut) text.Append($"The newest {HelpConversations.ListLimit} are read; older ones are left out.\n");
+        if (ask.Offset > 0 || listing.Next is not null)
+        {
+            text.Append(CultureInfo.InvariantCulture, $"{ask.Offset + 1}–{ask.Offset + listing.Conversations.Count} of {listing.Total} are listed");
+            if (listing.Next is { } next)
+            {
+                text.Append("; `daoris-driver help list")
+                    .Append(search is { Length: > 0 } words ? $" --search \"{words}\"" : "")
+                    .Append(CultureInfo.InvariantCulture, $" --offset {next}")
+                    .Append(ask.Limit is { } limit ? string.Create(CultureInfo.InvariantCulture, $" --limit {limit}") : "")
+                    .Append("` lists the next");
+            }
+
+            text.Append(".\n");
+        }
+
         return text.ToString().TrimEnd('\n');
     }
 
@@ -244,7 +289,10 @@ public static class HelpCommand
             : $"{(int)span.TotalDays}d ago";
     }
 
-    /// <summary>The written form of a listing, as <c>HELP_CONVERSATIONS</c> answers it: <c>{"conversations": [...], "cut": …}</c>.</summary>
+    /// <summary>
+    /// The written form of a listing, as <c>HELP_CONVERSATIONS</c> answers it:
+    /// <c>{"conversations": [...], "cut": …, "total": …, "next": … | null}</c>.
+    /// </summary>
     public static string Json(HelpListing listing)
     {
         using var stream = new MemoryStream();
@@ -268,11 +316,15 @@ public static class HelpCommand
                 Text(writer, "from", row.From);
                 Text(writer, "handed", row.Handed);
                 Text(writer, "found", row.Found);
+                Text(writer, "foundLine", row.FoundLine);
                 writer.WriteEndObject();
             }
 
             writer.WriteEndArray();
             writer.WriteBoolean("cut", listing.Cut);
+            writer.WriteNumber("total", listing.Total);
+            if (listing.Next is { } next) writer.WriteNumber("next", next);
+            else writer.WriteNull("next");
             writer.WriteEndObject();
         }
 

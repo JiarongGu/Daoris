@@ -1212,6 +1212,11 @@ at XAGENT1c's merge, 2026-10-09, a service-only change, with three worktrees bui
 had taken the stand-in record's waiting `reopens` word before the press. It passed alone five times. The test races
 the loop it brings up; FLAKE2 holds the fix. `setup-kit.test.ts`'s stub sighting below came twice more (XAGENT1c2's
 verify, the same words).
+Again at ASKHIST1d1's merge, 2026-10-10 (a driver and modules change; no CLI file changed), with two branch-workers
+building beside it: four of `setup-kit.test.ts`'s stub cases (the set-up quest at `:551`, the version decline, STUB1,
+ANSWER1b) answered `session/prompt` with `fetch failed`, the stub's request to its stand-in quest door. The file passed
+31/31 alone, and `--rerun cli` on the open merge passed. Four cases of one file at once point at the stand-in door
+itself, not at each stub.
 `setup-kit.test.ts:531` (*a set-up quest is done as its body says*) failed once at SWEEPCARRIED1's merge, 2026-10-08, a
 web-only change: *the stub never answered 3 (session/prompt) within 30000 ms* after it had run all four commands, with
 a Codex review and two subagents building beside the gate. The same file's stub bound as STUB3's, after its command

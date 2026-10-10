@@ -22,14 +22,14 @@ Historical installation receipts and adoption mechanics remain in their evidence
 
 ## UI/UX first
 
-Start with UXFIX2b1–3, ASKHIST1d1–2, ACCTUX4 and the remaining place-name inconsistencies.
+Start with UXFIX2b3, ASKHIST1d2, ACCTUX1b and the remaining place-name inconsistencies (UX6i2a/b, UX6i3).
 Contracts: platform UX §4/§6, `docs/2026-10-05-ux7-design.md` (D152),
 `docs/2026-10-04-ux6-redesign.md` (D150, §12 proofs). UI work needs stories, behavior tests and
 installed-window evidence in both themes/languages; Storybook alone does not close an installed proof.
 
 - [ ] **UXFIX2b2b — confirmations: decline, close, awaiting, archive, discard** (web). Quest decline, ask close, awaiting-person finish/decline, archive ended (`tone="primary"`), DiffPane force-discard. Proof: focus, pending, refusal, cancellation and returned focus.
 - [ ] **UXFIX2bi — installed confirmations look** (parent; after republish). Tool version delete, plugin removal, project retire, pause and abandon asks in the window, both themes/languages: focus on open, pending, refusal inside, returned focus.
-- [ ] **UXFIX2b3 — confirmations: attention, trust, account use** (web; after ACCTUX4). AttentionRow's asks, TrustAsk, GoAheadList, AccountUse inherit and AgentPage's key ask; settle which are `tone="primary"`. Same proof.
+- [ ] **UXFIX2b3 — confirmations: attention, trust, account use** (web; after ACCTUX4). AttentionRow's asks, TrustAsk, GoAheadList, AccountUse inherit and AgentPage's key ask; settle which are `tone="primary"`; drop AgentPage's settings guard SETTINGSWAIT1 made redundant. Same proof.
 - [ ] **UX7b — installed account UI** (web). Verify recovered account rows and add/name/join flow at 1546/680 px, both themes/languages. D152 §4.
 - [ ] **ACCTEDIT1b — installed refused edits** (parent; after republish). Verify rename, workspace use and add refusals retain drafts, including dark borders. D152 §4; dated shots.
 - [ ] **BRSCOPE1b — checkout scope and sync workspace** (modules/service/driver; after BRSCOPE1a). Share checkout-scope fixtures; carry workspace through sync proposals. D150 notes; three-door proof.
@@ -37,7 +37,10 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 - [ ] **UX7e — installed menus and heads** (parent; after republish). Verify keyboard menus, shortcuts, composer editing, head geometry and titles at 1546/680 px. D152 §6.
 - [ ] **UX6g2 — workspace-page guidance** (driver/CLI). Repoint help, registration, plugins, trees and setup wording. D150 §3.1; twins and room goldens.
 - [ ] **UX6h — Git inside Repositories** (web; after GIT1d; absorbs GIT1e). Branch kinds and graph; retire Git place. UX6 §4.4/D147.
-- [ ] **UX6i2 — doors name current places** (driver/service/CLI/tools). Replace old Search/Convergence, Settings Setup/Plugins destinations in rooms, proposals, kit and install guidance. D150 notes; twins/goldens.
+- [ ] **UX6i2a — the room and its twin name current places** (driver + web twin). Help room text, `HelpPlaces`/`places.ts` and goldens: Knowledge, Plugins, Get started; add new ids, keep old ones accepted (D150's UX6i note). D150 notes; twins/goldens.
+- [ ] **UX6i2b — the service's go and plugin text** (service; after a). `go_propose`'s view and domain lists and refusals name the current places. D150 notes; the box's text.
+- [ ] **UX6i2c — kit, CLI and tools name current places** (cli/driver/tools; merging). "Settings → Plugins" becomes the Plugins place in the CLI refusal, kit README and publish text.
+- [ ] **UX6i3 — "Settings → Agents" leftovers** (driver/modules/service). UX6e retired it; `DriverModule.Accounts.cs:11`, its tests, room tests and the `agents` domain word in the service still name it. D150's UX6e notes.
 - [ ] **PLUGTOOL1c — tools on their plugin** (web/modules/driver; after PLUGUI1c). Tools retains Daoris's own. UX6 §7.5.
 - [ ] **COWORK1 — agents working together** (design; owner's direction required). Define progress sharing, questions and handoffs. D32/D65/D145/D149; decision before implementation.
 
@@ -66,8 +69,8 @@ Original row proofs remain in the frozen backlog; measurements precede declarati
 Contracts: `docs/2026-10-07-history-clearing-design.md` (D153), D158,
 D88/D102 cleanup notes, machine log §4. Installed clears require the owner's existing authorization.
 
-- [ ] **ASKHIST1d1 — every conversation remains reachable: driver** (driver/modules; in flight). Order/filter before 200-row bound; paginate; search older records; Markdown left parseable. D158 note; old pinned/resumed/search cases.
-- [ ] **ASKHIST1d2 — every conversation remains reachable: page** (web; after d1). Page through the list, say what search covered, parse Markdown before preview truncation. D158 note; history tests and stories.
+- [ ] **ASKHIST1d2 — every conversation remains reachable: page** (web). Page through the list with `next`, say what search covered, parse `about`/`foundLine` as Markdown before cutting. D158's ASKHIST1d1 note is the contract; history tests and stories.
+- [ ] **RAILSRCH1 — the rail's search reaches every record** (driver). The session rail's search refuses one Han character and never reads past the newest 200 records. D158's ASKHIST1d1 note (`Searchable`), RAIL1; a single-character hit and a hit past 200 in `SessionEventsTests`.
 - [ ] **AUTOTIDY1a — show automatic cleanup** (modules/web). Branches lists recent tidied/kept log facts. D88; route and bilingual list tests.
 - [ ] **AUTOTIDY1b — measure strict cleanup guards** (parent; installed AUTOTIDY1, after one week). Count ignored-file/unmoved-branch holds before deciding relaxations. D88 evidence.
 - [ ] **AUTOTIDY1c — automatic squash cleanup** (driver; after AUTOTIDY1b; decide first). Consider content proof plus merged PR state, preserving recovery refs. D88/D102; Process guards.

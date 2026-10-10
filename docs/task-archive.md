@@ -12837,3 +12837,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UXFIX2b2a — confirmations: pause and abandon** (web; in flight). Pause/abandon move to `InlineConfirm`, `Answered` threaded through `pausing.ts`, `workActs.ts` and the three doors. Proof: focus, pending, refusal, cancellation and returned focus.
 
 **Outcome** 2026-10-10: both asks confirm through `InlineConfirm`; the work door takes an optional `Answered`, so a refusal is said inside the ask and the quiet pause keeps its toast. Six new behaviour cases. Built by a Sonnet worker, which edited through shell scripts (D160's SUBLOAD1c note). Installed look: UXFIX2bi. Detail: the merge commit.
+
+
+## ASKHIST1d1 — every conversation remains reachable: driver (2026-10-10, D158)
+
+> - [ ] **ASKHIST1d1 — every conversation remains reachable: driver** (driver/modules; in flight). Order/filter before 200-row bound; paginate; search older records; Markdown left parseable. D158 note; old pinned/resumed/search cases.
+
+**Outcome** 2026-10-10: the list orders and searches every help record before taking a page; `HELP_CONVERSATIONS` and `help list` take offset/limit and answer total/next beside `cut`; `about` is whole up to 1000 characters, a find carries `foundLine`, one Han character searches. 1000 conversations list in 120–150 ms. Detail: D158's ASKHIST1d1 note; the merge commit.

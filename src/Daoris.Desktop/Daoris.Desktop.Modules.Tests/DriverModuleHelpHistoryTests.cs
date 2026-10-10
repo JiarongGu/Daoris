@@ -68,12 +68,42 @@ public sealed class DriverModuleHelpHistoryTests : DriverModuleBridge
     public void A_row_is_the_terminals_json_field_for_field()
     {
         var camel = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-        var listing = new HelpListing([new HelpConversation("h1", "completed") { Opening = "what is a workspace?" }], Cut: false);
+        var listing = new HelpListing([new HelpConversation("h1", "completed") { Opening = "what is a workspace?" }], Total: 1, Next: null);
 
         var answer = JsonSerializer.SerializeToElement(DriverModule.HistoryAnswer(listing), camel);
 
         Assert.Equal(HelpCommand.JsonFields, answer.GetProperty("conversations")[0].EnumerateObject().Select(field => field.Name));
-        Assert.Equal(["conversations", "cut"], answer.EnumerateObject().Select(field => field.Name));
+        Assert.Equal(["conversations", "cut", "total", "next"], answer.EnumerateObject().Select(field => field.Name));
+    }
+
+    /// <summary>
+    /// ASKHIST1d: the route answers a page, as the terminal does: <c>limit</c> how many, <c>offset</c> where it starts, with how
+    /// many there are and where the next page starts, and <c>cut</c> read as it was, whether this answer left some out. A search
+    /// pages the same way, each find with the line it found its words on.
+    /// </summary>
+    [Fact]
+    public async Task The_list_is_answered_a_page_at_a_time()
+    {
+        var (loop, module, _) = await UpAsync(Record("h1"), Record("h2"), Record("h3"));
+        Said(loop, "h1", "what is a workspace?", "A circle that shares a remote.");
+        Said(loop, "h2", "how do I land on a branch?", "Setup, then a remote.");
+        Said(loop, "h3", "which agent runs intake?", "Settings, and a remote.");
+
+        var first = await AnswerAsync(module, "HELP_CONVERSATIONS", new { limit = 2 });
+        var rest = await AnswerAsync(module, "HELP_CONVERSATIONS", new { offset = 2, limit = 2 });
+        var found = await AnswerAsync(module, "HELP_CONVERSATIONS", new { q = "remote", offset = 1, limit = 1 });
+
+        static (int, bool, int, JsonElement) Page(JsonElement answer) => (answer.GetProperty("conversations").GetArrayLength(),
+            answer.GetProperty("cut").GetBoolean(), answer.GetProperty("total").GetInt32(), answer.GetProperty("next"));
+        var (rows, cut, total, next) = Page(first);
+        Assert.Equal((2, true, 3, 2), (rows, cut, total, next.GetInt32()));
+        (rows, cut, total, next) = Page(rest);
+        Assert.Equal((1, false, 3, JsonValueKind.Null), (rows, cut, total, next.ValueKind));
+        (rows, cut, total, next) = Page(found);
+        Assert.Equal((1, true, 3, 2), (rows, cut, total, next.GetInt32()));
+        Assert.Equal(3, first.GetProperty("conversations").EnumerateArray().Concat(rest.GetProperty("conversations").EnumerateArray())
+            .Select(row => row.GetProperty("session").GetString()).Distinct().Count());
+        Assert.Contains("a remote.", found.GetProperty("conversations")[0].GetProperty("foundLine").GetString());
     }
 
     /// <summary>A name and a pin are the person's, kept beside the conversation's words and listed; a clear gives the question back.</summary>

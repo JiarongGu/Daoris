@@ -501,13 +501,18 @@ public sealed partial class DriverModule
     // the words are this machine's record (D76), what the person keeps of each a file beside them (`HelpConversations`), and
     // nothing here reaches a remote.
 
-    // Ask Daoris's conversations, pinned first, then the newest; with `q`, those whose name or words hold it, each with where.
+    // A page of Ask Daoris's conversations, pinned first, then the newest; with `q`, those whose name or words hold it, each with
+    // where. `offset` and `limit` are the terminal's `--offset` and `--limit` (ASKHIST1d): every record is ordered and searched
+    // before the page is taken, and the answer says how many there are and where the next page starts.
     [DriverRoute("HELP_CONVERSATIONS")]
     private async Task<object?> HelpConversationsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var service = _loop.Service ?? throw NotReady();
         var records = SessionRecords.Parse(await service.SessionRecordsJsonAsync(cancellationToken).ConfigureAwait(false));
-        var listing = new HelpConversations(_loop.Home).List(records, _loop.Events, Resumes, Optional(request, "q"));
+        var listing = new HelpConversations(_loop.Home).List(
+            records, _loop.Events, Resumes, Optional(request, "q"),
+            (int)Math.Clamp(Number(request, "offset") ?? 0, 0, int.MaxValue),
+            (int)Math.Clamp(Number(request, "limit") ?? HelpConversations.PageLimit, 0, HelpConversations.PageLimit));
         return HistoryAnswer(listing);
     }
 
@@ -520,9 +525,11 @@ public sealed partial class DriverModule
         Conversations = listing.Conversations.Select(row => new
         {
             row.Session, row.Title, row.Name, row.Opening, row.About, row.Created, row.Last, row.Pinned, row.Live, row.Resumable,
-            row.From, row.Handed, row.Found,
+            row.From, row.Handed, row.Found, row.FoundLine,
         }).ToArray(),
         listing.Cut,
+        listing.Total,
+        listing.Next,
     };
 
     // Name an Ask Daoris conversation, or clear its name with none: its first question is its title again.

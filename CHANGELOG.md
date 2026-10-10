@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- Ask Daoris history orders and searches every conversation before it shows a page, so a pinned or
+  recently resumed old conversation stays listed and search reaches older ones; one Chinese character is
+  enough to search. `daoris-driver help list` takes `--offset` and `--limit`.
 - Deleting a tool version, removing a plugin, retiring a repository, and pausing or abandoning work
   confirm in place: the ask stays open while the act runs, says a refusal inside it, and returns
   focus to the press.
