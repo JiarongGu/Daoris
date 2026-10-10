@@ -245,7 +245,7 @@ public static class HelpPlaces
         // HELPSETUP1: a repository's Setup (UX6f, D150 §4.2), where its own values are set; a go names no repository.
         ("projects", "add", "Add repository"), ("projects", "import", "Import a folder"), ("projects", "setup", "a repository's Setup"),
         // UX6g2b (D161 §3, D150 §4.3): a workspace's page's four tabs and its Setup's two sections, prefixed since a
-        // repository's page has three of the tabs' names; a go names no workspace, so the one in view opens.
+        // repository's page has three of the tabs' names; a go to one names no workspace, so the one in view opens.
         ("projects", "workspace-details", "a workspace's Details"), ("projects", "workspace-branches", "a workspace's Branches"),
         ("projects", "workspace-workflow", "a workspace's Workflow"), ("projects", "workspace-setup", "a workspace's Setup"),
         ("projects", "workspace-defaults", "a workspace's Defaults"), ("projects", "workspace-remote", "a workspace's Remote and reach"),

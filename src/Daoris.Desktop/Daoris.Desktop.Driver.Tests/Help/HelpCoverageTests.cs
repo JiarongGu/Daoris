@@ -351,11 +351,12 @@ public sealed partial class HelpCoverageTests
         place, $"{what}, so it is done in its own place and conversation, where Ask Daoris takes the person with a go and does "
         + "not take over (D161's ENTRY1 note).");
 
-    /// <summary>ENTRY1d's: a repository added or a folder imported, today a go to Repositories' Add and Import (audit §4.4).</summary>
-    private static readonly Owed RepositoryAddOwed = new(
-        "adding a repository or importing a folder's registers what the person picked, a widening they apply as a card, so Ask "
-        + "Daoris should propose it while the folder stays their pick (D48 §3/§7); that is ENTRY1d's design, mirroring the "
-        + "`plugin` kind's `add`, and until then a go reaches Repositories' Add repository and Import a folder.");
+    /// <summary>
+    /// ENTRY1d2a (D161's ENTRY1d note): a repository added or a folder imported registers the folder the person picked, which
+    /// stays their pick (D48 §3/§7), so Ask Daoris's door to it is a go to Repositories' Add repository or Import a folder
+    /// with the workspace filled, and the person picks the folder and presses Register there.
+    /// </summary>
+    private static readonly Door RepositoryAddGo = new("go", "go");
 
     /// <summary>
     /// ENTRY1a: Ask Daoris's own conversation, pressed in its panel: the words and the turns are the person's with it, so a
@@ -675,13 +676,15 @@ public sealed partial class HelpCoverageTests
             "it discards a failed attempt's branch and its commits for good, a discard, which stays the person's own press "
             + "(D89), as the clean-up beside it does.")),
         // ENTRY1a: the registration lifecycle (D48 §3/§7), the page's own service calls, read since `queries.ts` is.
-        ("projects", "useRegisterRepository", null, RepositoryAddOwed),
-        ("projects", "useImportFolder", null, RepositoryAddOwed),
+        // ENTRY1d2a: the folder stays the person's, so a go opens the drawer with the workspace filled.
+        ("projects", "useRegisterRepository", null, RepositoryAddGo),
+        ("projects", "useImportFolder", null, RepositoryAddGo),
         // ENTRY1d1 (D161's ENTRY1d note): a move needs no path, so the `repository` kind proposes it by name.
         ("projects", "useWireRepository", null, new Door("repository", "wire")),
         ("projects", "useRetireRepository", null, new Exempt(
             "retiring takes a repository off this machine's registry and its entries out of the index, a removal, which stays "
-            + "the person's own press (D89), as a plugin's removal does; registering it again is the add, owed to ENTRY1d.")),
+            + "the person's own press (D89), as a plugin's removal does; registering it again is the person's Add repository, "
+            + "which Ask Daoris's go opens with the workspace filled.")),
         ("projects", "useWireRemote", null, new Exempt("wiring a workspace to a remote takes that remote's key; " + Key)),
         ("projects", "useUnwireRemote", null, new Exempt(
             "unwiring drops the remote's key from this machine, which only the person can give back (D89).")),
