@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { composeStories } from '@storybook/react-vite';
 import { useState } from 'react';
 import i18n from '../i18n';
-import { Button, Icon, Menu } from '../ui';
+import { Button, Drawer, Icon, Menu } from '../ui';
 import { type Answered, InlineConfirm } from './InlineConfirm';
 import * as stories from './InlineConfirm.stories';
 
@@ -77,6 +77,38 @@ function MenuPage() {
       </Menu.Root>
       {asking && (
         <InlineConfirm label="delete this quest" says={SAYS} meanIt="Delete quest" onConfirm={() => {}} onClose={() => setAsking(false)} />
+      )}
+    </div>
+  );
+}
+
+const RETIRES = 'Unregisters engine. Nothing is deleted.';
+
+/** The retire ask's shape (`ProjectManage.tsx`): a press in a drawer, which stays open, not offered twice while it asks. */
+function DrawerPage() {
+  const [asking, setAsking] = useState(false);
+  return (
+    <Drawer title="Manage engine" onClose={() => {}}>
+      <div>
+        {asking ? (
+          <InlineConfirm label="retire this repository" says={RETIRES} meanIt="Retire repository" onConfirm={() => {}} onClose={() => setAsking(false)} />
+        ) : (
+          <Button variant="danger" onClick={() => setAsking(true)}>Retire</Button>
+        )}
+      </div>
+    </Drawer>
+  );
+}
+
+/** An ask a page draws later, by something other than a press (an answer, a route). */
+function OpenedLater({ open }: { open: boolean }) {
+  const [closed, setClosed] = useState(false);
+  return (
+    <div>
+      <Button>Elsewhere</Button>
+      <Button>Here</Button>
+      {open && !closed && (
+        <InlineConfirm label="delete this quest" says={SAYS} meanIt="Delete quest" onConfirm={() => {}} onClose={() => setClosed(true)} />
       )}
     </div>
   );
@@ -188,6 +220,70 @@ describe('an inline confirmation', () => {
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('group', { name: 'delete this quest' })).toBeNull();
     expect(screen.getByRole('button', { name: 'More actions' })).toHaveFocus();
+  });
+
+  /**
+   * UXFIX2d (seen on the install, D161 §2): in a repository's Manage drawer, *Never mind* on the retire ask left the focus on
+   * the drawer's *Close*. The window's press was a script's `click()`, which activates a press without moving the focus, as an
+   * assistive tool's invoke or a browser that does not focus a clicked button can; the focus still sat on *Close*, where the
+   * drawer put it as it opened, and the ask took what opened it from the focus alone. `userEvent.click` moves the focus to the
+   * press first, as a pointer does in Chromium, which is why the jsdom tests passed it.
+   */
+  describe('gives the focus back to the press, whether or not pressing it moved the focus (UXFIX2d)', () => {
+    /** Pressed as a script, an assistive tool or such a browser presses it: the click alone, the focus left where it was. */
+    const pressOnly = (press: HTMLElement) => fireEvent.click(press);
+
+    it('inside a drawer, Never mind gives the focus to the press drawn again, not to the drawer’s Close', async () => {
+      render(<DrawerPage />);
+      const drawer = screen.getByRole('dialog');
+      await waitFor(() => expect(within(drawer).getByRole('button', { name: 'Close' })).toHaveFocus());
+
+      pressOnly(within(drawer).getByRole('button', { name: 'Retire' }));
+      const ask = within(drawer).getByRole('group', { name: 'retire this repository' });
+      await waitFor(() => expect(within(ask).getByText(RETIRES)).toHaveFocus());
+      pressOnly(within(ask).getByRole('button', { name: 'Never mind' }));
+
+      expect(within(drawer).queryByRole('group', { name: 'retire this repository' })).toBeNull();
+      expect(within(drawer).getByRole('button', { name: 'Retire' })).toHaveFocus();
+    });
+
+    it('inside a drawer, a press that moved the focus gets it back as before', async () => {
+      const user = userEvent.setup();
+      render(<DrawerPage />);
+      const drawer = screen.getByRole('dialog');
+      await user.click(within(drawer).getByRole('button', { name: 'Retire' }));
+      const ask = within(drawer).getByRole('group', { name: 'retire this repository' });
+      await waitFor(() => expect(within(ask).getByText(RETIRES)).toHaveFocus());
+      await user.keyboard('{Escape}');
+
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+      expect(within(drawer).getByRole('button', { name: 'Retire' })).toHaveFocus();
+    });
+
+    it('in the page, Escape gives the focus to the press it heard, not to where the focus sat', async () => {
+      render(<Page />);
+      screen.getByRole('button', { name: 'Before' }).focus();
+      pressOnly(screen.getByRole('button', { name: 'Delete…' }));
+      const told = screen.getByText(SAYS);
+      await waitFor(() => expect(told).toHaveFocus());
+      fireEvent.keyDown(told, { key: 'Escape' });
+
+      expect(screen.queryByRole('group', { name: 'delete this quest' })).toBeNull();
+      expect(screen.getByRole('button', { name: 'Delete…' })).toHaveFocus();
+    });
+
+    it('forgets a press once the task it was heard in ends, so an ask drawn later reads the focus', async () => {
+      const { rerender } = render(<OpenedLater open={false} />);
+      pressOnly(screen.getByRole('button', { name: 'Elsewhere' }));
+      await new Promise((resolve) => { window.setTimeout(resolve, 0); });
+      screen.getByRole('button', { name: 'Here' }).focus();
+      rerender(<OpenedLater open />);
+      const told = screen.getByText(SAYS);
+      await waitFor(() => expect(told).toHaveFocus());
+      fireEvent.keyDown(told, { key: 'Escape' });
+
+      expect(screen.getByRole('button', { name: 'Here' })).toHaveFocus();
+    });
   });
 
   it('stays open and waits while its act is on its way, then closes once it lands', async () => {

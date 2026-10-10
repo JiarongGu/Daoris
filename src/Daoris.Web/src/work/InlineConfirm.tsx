@@ -46,8 +46,32 @@ function noted(node: Element | null): Opener | null {
   return { node, label: labelOf(node), around };
 }
 
-/** A surface that gives the focus back by itself as it closes: a menu, or a box over the page (the palette). */
+/**
+ * A surface that gives the focus back by itself as it closes: a menu, or a box over the page (the palette). A drawer matches
+ * too and stays open around an ask drawn in it; its focus trap keeps every focus inside it, so the beat's second reading
+ * finds nothing outside it to take, and the press keeps its place (UXFIX2d).
+ */
 const CLOSES_ITSELF = '[role="menu"], [role="dialog"]';
+
+/** What a person presses: a button, a link, or a menu's item. */
+const PRESS = 'button, a[href], [role="button"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"]';
+
+/**
+ * The press the last click went to, until the task that heard it ends (UXFIX2d). A click need not move the focus: a script's
+ * `click()` (the desktop driver's), an assistive tool's invoke or a browser that does not focus a clicked button leaves it
+ * where it sat, a drawer's *Close* as the drawer opened, and an ask that took what opened it from the focus alone gave the
+ * focus back there. Heard at the document before the page's own handlers, so it is known when the ask is first drawn; the
+ * next task forgets it, so an ask drawn later by anything but that click reads the focus.
+ */
+let pressed: Element | null = null;
+
+function heard(event: MouseEvent) {
+  const press = event.target instanceof Element ? event.target.closest(PRESS) : null;
+  pressed = press;
+  if (press) window.setTimeout(() => { if (pressed === press) pressed = null; }, 0);
+}
+
+if (typeof document !== 'undefined') document.addEventListener('click', heard, true);
 
 /**
  * Where an ask opened from a menu's item came from: the menu's trigger, which names the menu (`aria-labelledby`); the
@@ -137,7 +161,8 @@ function giveBack(opener: Opener) {
  * - **It opens whole in view** (UXFIX2d): the ask is scrolled into view, nearest edge first, before the explanation takes
  *   the focus without scrolling again, so an ask opened near the page's foot shows its presses, not one line.
  * - **Escape and *Never mind* put it down** and give the focus back to what opened it, or to the same press drawn again
- *   where it was not offered twice while the ask was open.
+ *   where it was not offered twice while the ask was open. What opened it is the press its click went to, whether or not the
+ *   click moved the focus (UXFIX2d), and the focus only where no click opened it.
  * - **The press keeps it open and waiting** until the act answers (ACCTEDIT1's `done`/`refused`): `done` closes it, and
  *   `refused` says the sentence inside it, whole (`role="alert"`), and lets the move be pressed again. *Never mind* and
  *   Escape wait with the move, so a refusal is never said to nobody. An answer to an ask put down changes nothing; a `done`
@@ -188,9 +213,9 @@ export function InlineConfirm({
   const [pending, setPending] = useState(false);
   const [refusal, setRefusal] = useState<string | null>(refused);
   // Read while it is first drawn, before the commit that draws it can take the press away (a press not offered twice, a
-  // menu's item).
+  // menu's item): the press a click just went to, else the focus (UXFIX2d).
   const [first] = useState(() => {
-    const now = typeof document === 'undefined' ? null : document.activeElement;
+    const now = typeof document === 'undefined' ? null : pressed?.isConnected ? pressed : document.activeElement;
     return { opener: openedBy(now), closing: Boolean(now?.closest(CLOSES_ITSELF)) };
   });
   const opener = useRef(first.opener);
