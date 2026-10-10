@@ -370,7 +370,9 @@ offers `setting_propose` (one of the `daoris driver` doors: every verb but `list
 `across`, `cap`, `adapter` and `retry` among them) and `ask_propose` (something to start, as
 an ask at a workspace), and since HELP6 `agent_propose` (an agent's update, or a pin to one exact
 version; since HELP10 also the account it runs as by default), `delete_propose` (a quest or an ask made by mistake), `agent_settings_propose` (an account's
-own model and effort) and `go_propose` (a screen to open, changing nothing), and since PLUG9
+own model and effort) and `go_propose` (a place to open, changing nothing: a view, a Settings domain, or a part
+such as Knowledge's mode or a workspace's tab, as D150's UX6i2a and UX6g2b notes list them; since D161 the front door's
+way to take a person to the place), and since PLUG9
 `plugin_propose` (a plugin that has landed, added from its folder in a repository's checkout, or one
 installed here switched on or off; since D103 also one of the install's own plugins by its id in
 `offer`, or an `update` of an installed one from where it came from), and since WSR5b `hand_propose` (a

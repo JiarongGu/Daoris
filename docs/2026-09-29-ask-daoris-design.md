@@ -333,8 +333,11 @@ line git can name. With an agent named, a starter is also a first message.
      domain holds, is a door, a door owed with what it waits on, or exempt with its reason. The controls are read
      from the page's source: each domain's component and everything it imports, the bridge hooks among them that
      change something, and each action a hook's payload names; the theme, the language and the setup guide's step
-     doors, which press no hook, are named by what their source says. A control or verb on none fails, and so
-     does a row whose control is gone. D110 has the exemptions' principles and `--share`'s answer.
+     doors, which press no hook, are named by what their source says. Every other start on the page is read too,
+     the page's own service calls (`queries.ts`) among the hooks, each by where it is pressed, and a quest's or a
+     session's own act may answer *its own conversation*, the view a go reaches it by (D161's ENTRY1a note). A
+     control or verb on none fails, and so does a row whose control is gone. D110 has the exemptions' principles
+     and `--share`'s answer.
    - **Owed** (the desktop modules' to add): `retry`, whose judge needs the parked quests in the facts; an
      account made default, which needs `HARNESS_ACTION`'s own door; the browser's settings, which need
      `BrowserModule`'s. The room names each one's screen and command meanwhile, and every `daoris driver` verb
