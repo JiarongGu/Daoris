@@ -23,6 +23,8 @@ with the version and date at release.
 - The line a conversation goes on with after it was parked or ended, saying whose words are its next turn and
   which agent it resumed on, reads in the window's language too, and a harness version that moved since it
   opened is a line beside it.
+- The line saying a permission was refused, because the rules the agent runs under do not allow it, reads in the
+  window's language too; the call it names stays as the agent titled it.
 - `daoris wire <repository> --workspace <name>` moves a registered repository to another workspace from a
   terminal, as the page's Manage → *Move to workspace* does, and changes nothing else about it. An unknown
   repository, or a workspace a shared host does not serve, is refused in the service's own words.

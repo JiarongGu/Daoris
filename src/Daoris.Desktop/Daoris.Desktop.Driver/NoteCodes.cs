@@ -519,6 +519,11 @@ public static class NoteCodes
     public static readonly NoteCode ResumedMoved = new("resumed.moved", ["now", "then"]);
     public static readonly NoteCode ResumedNative = new("resumed.native", ["adapter"]);
 
+    // ——— A permission the rules refused (CONVNOTE2b, Acp.AnswerPermissionAsync): the lead and the closing sentence are facts
+    // of Daoris's; the call's title between them is the agent's words, which may hold a path (D142 point 2).
+    public static readonly NoteCode RefusedLead = new("refused.lead", []);
+    public static readonly NoteCode RefusedGoverns = new("refused.governs", []);
+
     /// <summary>Every code above, read off the declarations so none escapes the catalogue test.</summary>
     public static IReadOnlyList<NoteCode> All { get; } =
         [.. typeof(NoteCodes).GetFields().Where(field => field.FieldType == typeof(NoteCode)).Select(field => (NoteCode)field.GetValue(null)!)];

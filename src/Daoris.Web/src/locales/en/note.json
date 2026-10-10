@@ -106,6 +106,8 @@
   "note.resumed.why.findings": "another agent's findings are",
   "note.resumed.why.answer-and-findings": "your answer and another agent's findings are",
   "note.resumed.why.words-and-findings": "your words and another agent's findings are",
+  "note.refused.lead": "Permission refused:",
+  "note.refused.governs": "— the rules it runs under govern, and the driver may not widen them.",
   "note.opening.why.cooling": "the `{{agent}}` account `{{over}}` is cooling until {{until}} ({{cooling}})",
   "note.opening.why.refused": "the `{{agent}}` account `{{over}}` was refused by its provider",
   "note.opening.why.signed-out": "the `{{agent}}` account `{{over}}` is not signed in",

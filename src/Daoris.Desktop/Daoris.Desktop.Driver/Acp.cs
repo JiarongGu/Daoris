@@ -1245,22 +1245,27 @@ public sealed partial class AcpSession(
             ? named : (JsonElement?)null;
         // Said of every place a session runs — a repository, an intake's room, Ask Daoris's — since the
         // rules it was handed and the place's own settings are what refused it, wherever that is.
-        const string governs = " — the rules it runs under govern, and the driver may not widen them";
+        const string governs = "— the rules it runs under govern, and the driver may not widen them";
         if (call is { } refusedCall && refusedCall.TryGetProperty("toolCallId", out var refusedId)
             && refusedId.ValueKind == JsonValueKind.String && refusedId.GetString() is { } refusedName)
         {
             _refused[refusedName] = 0;
         }
         // The console is the raw view, and keeps the request as the wire said it.
-        onLine($"  permission refused: {(call is { } raw ? Compact(raw) : "a tool call")}{governs}");
+        onLine($"  permission refused: {(call is { } raw ? Compact(raw) : "a tool call")} {governs}");
         // 🔴 The record names the call as a reader knows it (SESS1 S6): its title, else its kind — the
         // request's JSON made every refusal four lines of wire. Its id keeps the note with its call.
+        // CONVNOTE2b: coded lead, the title as the agent's words (it may hold a path), coded close; the English is unchanged.
+        var refused = Noted.Of(NoteCodes.RefusedLead, "permission refused:")
+            .Then(" ", Noted.Said(Named(call), NoteBy.Agent))
+            .Then(" ", Noted.Of(NoteCodes.RefusedGoverns, governs));
         Emit(new SessionEvent
         {
             Kind = SessionEventKind.Note,
             Id = call is { } c && c.TryGetProperty("toolCallId", out var callId) && callId.ValueKind == JsonValueKind.String
                 ? callId.GetString() : null,
-            Text = $"permission refused: {Named(call)}{governs}",
+            Text = refused.Note,
+            Parts = refused.Parts,
         });
 
         await SendAsync(new JsonObject

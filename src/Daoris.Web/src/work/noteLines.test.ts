@@ -210,6 +210,28 @@ describe('noteLines', () => {
     });
   });
 
+  /** CONVNOTE2b: a refused permission's lead and close are worded, the call's title between them the agent's words as written. */
+  describe('a refused permission', () => {
+    const parts = [
+      coded('refused.lead', 'permission refused:'),
+      words('`git push origin release`', 'agent'),
+      coded('refused.governs', '— the rules it runs under govern, and the driver may not widen them'),
+    ];
+
+    it('is worded in either language, the title between them as written', () => {
+      expect(noteLines(t, { parts }, 'en')).toEqual([
+        { kind: 'said', text: 'Permission refused:' },
+        { kind: 'words', text: '`git push origin release`', by: 'agent' },
+        { kind: 'said', text: '— the rules it runs under govern, and the driver may not widen them.' },
+      ]);
+      expect(noteLines(zh, { parts }, 'zh')).toEqual([
+        { kind: 'said', text: '权限被拒绝：' },
+        { kind: 'words', text: '`git push origin release`', by: 'agent' },
+        { kind: 'said', text: '—— 它所遵循的规则说了算，驱动不得放宽。' },
+      ]);
+    });
+  });
+
   /**
    * AGT3d (D125's AGT3c note): a limit's line says the kind of limit, its window worded as the agents' screens word it
    * (`harness.window.*`), and whose accounts, in either language; a window this build does not know is said as named.

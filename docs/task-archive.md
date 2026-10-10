@@ -13180,3 +13180,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ACCTUX4c — the next start of the workspace in view** (web). On the installed window (2026-10-11) every account serves the workspace in view and the machine's scope starts on the tool's own sign-in, so ACCTUX4b's sentence, the machine's only, never shows; the workspace's next start stays in its fold. Say the next start for the window's workspace when it has a scope of its own, else the machine's. D125's ACCTUX4b note; its window look.
 
 **Outcome** 2026-10-11: `nextStartSaidFor` says the scope of the workspace in view (`useScope`, or the registry's only workspace) when it has a `next`, named ("In `x`:"), else the machine's; a workspace on its own sign-in says nothing. The English reads "In x: The next start takes …", to be judged on the window. Detail: D125's ACCTUX4c note.
+
+
+## CONVNOTE2b — a refused permission, by code (2026-10-11, D152)
+
+> - [ ] **CONVNOTE2a–h — the conversation's other driver notes, by code** … (Group b: a refused permission, Acp.cs ~:1258-1264.)
+
+**Outcome** 2026-10-11: a refused permission's note is `refused.lead`, the call's title as the agent's words, and `refused.governs`, worded in en and zh; its English byte for byte, its `Id` kept, the console line unchanged. Detail: D152's CONVNOTE2b note.
