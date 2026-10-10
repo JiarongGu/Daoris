@@ -12829,4 +12829,11 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **UXFIX2b1 — confirmations: tools, plugins, retire** (web; in flight). Tool version delete, plugin removal and project retire move to `InlineConfirm`. Proof: focus, pending, refusal, cancellation and returned focus.
 
-**Outcome** 2026-10-10: the three asks confirm through `InlineConfirm`; each handler takes `Answered`, so a refusal is said inside the ask instead of a toast (an unknown plugin keeps its gone-page route). Behaviour tests per surface; built by a Sonnet worker from a scout's pack (D160's trial). Installed look: UXFIX2b1i. Detail: the merge commit, the UXFIX2 note on D153.
+**Outcome** 2026-10-10: the three asks confirm through `InlineConfirm`; each handler takes `Answered`, so a refusal is said inside the ask instead of a toast (an unknown plugin keeps its gone-page route). Behaviour tests per surface; built by a Sonnet worker from a scout's pack (D160's trial). Installed look: UXFIX2bi. Detail: the merge commit, the UXFIX2 note on D153.
+
+
+## UXFIX2b2a — confirmations: pause and abandon (2026-10-10)
+
+> - [ ] **UXFIX2b2a — confirmations: pause and abandon** (web; in flight). Pause/abandon move to `InlineConfirm`, `Answered` threaded through `pausing.ts`, `workActs.ts` and the three doors. Proof: focus, pending, refusal, cancellation and returned focus.
+
+**Outcome** 2026-10-10: both asks confirm through `InlineConfirm`; the work door takes an optional `Answered`, so a refusal is said inside the ask and the quiet pause keeps its toast. Six new behaviour cases. Built by a Sonnet worker, which edited through shell scripts (D160's SUBLOAD1c note). Installed look: UXFIX2bi. Detail: the merge commit.

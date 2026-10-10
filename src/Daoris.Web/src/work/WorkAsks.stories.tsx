@@ -29,7 +29,7 @@ type Story = StoryObj<typeof PauseAsk>;
 
 /** A pause that stops one running session, on a workspace no remote reaches: what follows, then *Pause ask*. */
 export const PauseAsking: Story = {
-  args: { target: ASK, lines: pauseAsk(PAUSABLE_ASK, { wired: false }), meanIt: 'Pause ask', onPause: nothing, onCancel: nothing },
+  args: { target: ASK, lines: pauseAsk(PAUSABLE_ASK, { wired: false }), meanIt: 'Pause ask', onPause: nothing, onClose: nothing },
 };
 
 /** The same on a wired workspace, with a running intake: another machine may still take its open quest. */
@@ -40,48 +40,48 @@ export const PauseAskingWired: Story = {
       ...PAUSABLE_ASK,
       sessions: [...PAUSABLE_ASK.sessions, { ...PAUSABLE_ASK.sessions[0], session: 'i9n8t7k6', quest: null, intake: true, pause: 'intake', key: 'session:i9n8t7k6' }],
     }, { wired: true }),
-    meanIt: 'Pause ask', onPause: nothing, onCancel: nothing,
+    meanIt: 'Pause ask', onPause: nothing, onClose: nothing,
   },
 };
 
 /** One quest's pause, from a session's header. */
 export const PauseAskingQuest: Story = {
-  args: { target: QUEST, lines: pauseAsk(PAUSABLE_QUEST, { wired: false }), meanIt: 'Pause quest', onPause: nothing, onCancel: nothing },
+  args: { target: QUEST, lines: pauseAsk(PAUSABLE_QUEST, { wired: false }), meanIt: 'Pause quest', onPause: nothing, onClose: nothing },
 };
 
 /** The plan is still on its way: no move is offered until it says what the pause stops. */
 export const PauseReading: Story = {
-  args: { target: ASK, lines: null, meanIt: 'Pause ask', onPause: nothing, onCancel: nothing },
+  args: { target: ASK, lines: null, meanIt: 'Pause ask', onPause: nothing, onClose: nothing },
 };
 
 /** A pause on its way: the presses wait. */
 export const PauseOnItsWay: Story = {
-  args: { target: ASK, lines: pauseAsk(PAUSABLE_ASK, { wired: false }), meanIt: 'Pause ask', busy: true, onPause: nothing, onCancel: nothing },
+  args: { target: ASK, lines: pauseAsk(PAUSABLE_ASK, { wired: false }), meanIt: 'Pause ask', busy: true, onPause: nothing, onClose: nothing },
 };
 
 /** The abandon's list: what goes, each with what it does; what stays, each with why; the reason the move waits for. */
 export const AbandonListing: StoryObj<typeof AbandonAsk> = {
   render: () => (
-    <AbandonAsk target={ASK} plan={MIXED_ASK} meanIt="Abandon ask" placeholder="why — kept with each decline" onAbandon={nothing} onCancel={nothing} />
+    <AbandonAsk target={ASK} plan={MIXED_ASK} meanIt="Abandon ask" placeholder="why — kept with each decline" onAbandon={nothing} onClose={nothing} />
   ),
 };
 
 /** One quest's abandon: its decline, its session, and its tree with the files only it holds. */
 export const AbandonListingQuest: StoryObj<typeof AbandonAsk> = {
   render: () => (
-    <AbandonAsk target={QUEST} plan={PAUSABLE_QUEST} meanIt="Abandon quest" placeholder="why — kept with each decline" onAbandon={nothing} onCancel={nothing} />
+    <AbandonAsk target={QUEST} plan={PAUSABLE_QUEST} meanIt="Abandon quest" placeholder="why — kept with each decline" onAbandon={nothing} onClose={nothing} />
   ),
 };
 
 /** Nothing left to take: said, with only *Close*. */
 export const AbandonNothingLeft: StoryObj<typeof AbandonAsk> = {
-  render: () => <AbandonAsk target={ASK} plan={SPENT_ASK} meanIt="Abandon ask" placeholder="why" onAbandon={nothing} onCancel={nothing} />,
+  render: () => <AbandonAsk target={ASK} plan={SPENT_ASK} meanIt="Abandon ask" placeholder="why" onAbandon={nothing} onClose={nothing} />,
 };
 
 /** The second press on its way. */
 export const AbandonOnItsWay: StoryObj<typeof AbandonAsk> = {
   render: () => (
-    <AbandonAsk target={ASK} plan={PAUSABLE_ASK} meanIt="Abandon ask" placeholder="why — kept with each decline" busy onAbandon={nothing} onCancel={nothing} />
+    <AbandonAsk target={ASK} plan={PAUSABLE_ASK} meanIt="Abandon ask" placeholder="why — kept with each decline" busy onAbandon={nothing} onClose={nothing} />
   ),
 };
 

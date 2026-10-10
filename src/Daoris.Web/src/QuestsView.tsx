@@ -323,11 +323,10 @@ export function useQuestsView({
       wired: wiredFor(wiring, quest.workspace),
       busy: workActs.busy,
       outcome: abandonedNow?.id === quest.id ? abandonedNow : null,
-      onPause: (done) => workActs.pause(target, () => done()),
+      onPause: (answered) => workActs.pause(target, answered),
       onResume: () => workActs.resume(target),
-      onAbandon: (reason, pieces, done) => workActs.abandon(target, reason, pieces, (answer) => {
+      onAbandon: (reason, pieces, answered) => workActs.abandon(target, reason, pieces, answered, (answer) => {
         setAbandonedNow({ id: quest.id, answer, at: new Date().toISOString() });
-        done();
       }),
     };
   };

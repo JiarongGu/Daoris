@@ -1,5 +1,6 @@
 import type { Quest } from '../api';
 import type { Consideration } from '../signals';
+import type { Answered } from './InlineConfirm';
 
 // Pausing and abandoning an ask's work or a quest's on the screen (PAUSE1e, D132, `docs/2026-10-02-pause-and-clean-up-design.md`
 // §2.6, §3.1, §3.2, §4.2, §7.1): the shapes the driver answers (`bridge/work.ts` asks them) and what each says, as catalogue
@@ -162,10 +163,11 @@ export type WorkDoor = {
   busy: boolean;
   /** The last abandon's answer here, and when it came, said at once before the record catches up. */
   outcome?: { answer: AbandonAnswer; at: string } | null;
-  onPause: (done: () => void) => void;
+  /** The pause: with its ask's `Answered` it closes or says its refusal there; the quiet pause has no ask to answer. */
+  onPause: (answered?: Answered) => void;
   onResume: () => void;
   /** The second press: the person's reason and exactly the pieces the first press listed. */
-  onAbandon: (reason: string, pieces: readonly string[], done: () => void) => void;
+  onAbandon: (reason: string, pieces: readonly string[], answered?: Answered) => void;
 };
 
 /** A sentence the page says, as a catalogue key and its values; the caller adds `what`, the scope's own name. */

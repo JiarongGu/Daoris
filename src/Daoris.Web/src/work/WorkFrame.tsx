@@ -1117,7 +1117,7 @@ export function WorkFrame({
     const key = `${pausing.target.scope}:${pausing.target.id}`;
     if (pausedQuietly.current === key) return;
     pausedQuietly.current = key;
-    actions.work.pause(pausing.target, () => setPauseAsking(null));
+    actions.work.pause(pausing.target, undefined, () => setPauseAsking(null));
   }, [pausing, pauseQuiet, actions.work]);
   useEffect(() => { if (!pausing) pausedQuietly.current = null; }, [pausing]);
   const attendedTitle = attended ? sessionTitle(attended, quest, openings[attended.id]) : '';
@@ -1172,8 +1172,8 @@ export function WorkFrame({
           lines={pauseLines}
           meanIt={t(pausing.target.scope === 'ask' ? 'asks.record.pauseMeanIt' : 'quests.detail.pauseMeanIt')}
           busy={actions.work.pausing}
-          onPause={() => actions.work.pause(pausing.target, () => setPauseAsking(null))}
-          onCancel={() => setPauseAsking(null)}
+          onPause={(answered) => actions.work.pause(pausing.target, answered)}
+          onClose={() => setPauseAsking(null)}
         />
       ) : null}
     />

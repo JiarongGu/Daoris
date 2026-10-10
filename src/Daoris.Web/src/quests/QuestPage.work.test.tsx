@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render as rtlRender, screen, within } from '@testing-library/react';
+import { act, render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../i18n';
@@ -57,6 +57,20 @@ describe('pausing and abandoning a quest', () => {
     page({ work: door() });
     expect(headerActs()).toEqual(['Take', 'Decline…', 'More actions']);
     expect(await foldedActs()).toEqual(['Mark done…', 'Pause…', 'Abandon…', 'Copy quest ID']);
+  });
+
+  it('says a refused pause inside its ask, and closes the ask once it lands (UXFIX2b2a)', async () => {
+    const work = door();
+    page({ quest: TAKEN, work: { ...work, plan: { ...PLAN, id: TAKEN.id } } });
+
+    await folded('Pause…');
+    const ask = screen.getByRole('group', { name: 'pause this work' });
+    await userEvent.click(within(ask).getByRole('button', { name: 'Pause quest' }));
+    const answered = vi.mocked(work.onPause).mock.calls[0]![0]!;
+    act(() => answered.refused('The driver is not running.'));
+    expect(within(ask).getByRole('alert')).toHaveTextContent('The driver is not running.');
+    act(() => answered.done());
+    expect(screen.queryByRole('group', { name: 'pause this work' })).toBeNull();
   });
 
   it('asks once before a pause that stops its running session, then pauses', async () => {
@@ -120,7 +134,7 @@ describe('pausing and abandoning a quest', () => {
     expect(screen.queryByRole('menuitem', { name: 'Abandon…' })).toBeNull();
     await user.type(screen.getByRole('textbox', { name: 'why — kept with each decline' }), 'Not needed now.');
     await user.click(screen.getByRole('button', { name: 'Abandon quest' }));
-    expect(work.onAbandon).toHaveBeenCalledWith('Not needed now.', PLAN.abandon.pieces, expect.any(Function));
+    expect(work.onAbandon).toHaveBeenCalledWith('Not needed now.', PLAN.abandon.pieces, expect.objectContaining({ done: expect.any(Function), refused: expect.any(Function) }));
   });
 
   it('shows what went and what stayed after an abandon', () => {

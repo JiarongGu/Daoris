@@ -5,8 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
-- Deleting a tool version, removing a plugin and retiring a repository confirm in place: the ask
-  stays open while the act runs, says a refusal inside it, and returns focus to the press.
+- Deleting a tool version, removing a plugin, retiring a repository, and pausing or abandoning work
+  confirm in place: the ask stays open while the act runs, says a refusal inside it, and returns
+  focus to the press.
 
 - Contributor guidance is shared across agents; development verification checks documentation routing
   and guide freshness declarations, including missing described source paths. Document checks ignore
