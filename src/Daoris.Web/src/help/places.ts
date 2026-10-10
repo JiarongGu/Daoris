@@ -1,6 +1,7 @@
 import type { AgentPart } from '../agents/agents';
 import type { View } from '../commands';
 import type { KnowledgeMode } from '../knowledge/modes';
+import type { OpenGroup } from '../opener';
 import type { SettingsAnchor, SettingsSection } from '../SettingsView';
 import type { StarterDoor } from './starters';
 
@@ -9,9 +10,9 @@ export type HelpPlace = { view: string; domain?: string | null; part?: string | 
 
 /**
  * The places Ask Daoris's go may name (HELP6): the views, Settings' domains, and the parts of them a door
- * already opens — the setup guide's steps, a domain's cards, Repositories' drawers, a repository's Setup and a
- * workspace's page's tabs and sections, Knowledge's two modes, an agent's page's sections — and the places a go named
- * before they moved.
+ * already opens — the groups of Sessions' and Quests' lists that wait on the person, the setup guide's steps, a domain's
+ * cards, Repositories' drawers, a repository's Setup and a workspace's page's tabs and sections, Knowledge's two modes, an
+ * agent's page's sections — and the places a go named before they moved.
  *
  * @remarks
  * A twin (`.claude/knowledge/twins.md`) of the driver's `HelpPlaces`, which judges a go before the person
@@ -63,11 +64,26 @@ const WORKSPACE_PARTS: Readonly<Record<string, Pick<StarterDoor, 'workspaceTab' 
   'workspace-remote': { workspaceSection: 'remote' },
 };
 
+/**
+ * The groups that wait on the person below Sessions and Quests (ENTRY1b, D161's ENTRY1 note), each the group of the view's
+ * list it brings into view: Sessions' by the driver's reader's names, Quests' asks and held quests by its own.
+ */
+const GROUP_PARTS: Readonly<Record<string, OpenGroup>> = {
+  'sessions/waiting': 'you',
+  'sessions/review': 'review',
+  'quests/asks': 'asks',
+  'quests/held': 'held',
+};
+
 const same = (one: HelpPlace, other: HelpPlace) =>
   one.view === other.view && (one.domain ?? null) === (other.domain ?? null) && (one.part ?? null) === (other.part ?? null);
 
-/** The parts, each within a view (Repositories, Knowledge, Agents) or a Settings domain. */
+/** The parts, each within a view (Sessions, Quests, Repositories, Knowledge, Agents) or a Settings domain. */
 export const PLACE_PARTS: readonly { within: string; part: string }[] = [
+  // ENTRY1b (D161's ENTRY1 note): what waits on the person below Sessions and Quests, a group of the list (`GROUP_PARTS`).
+  // Overview has no part, since what waits on the person leads it.
+  { within: 'sessions', part: 'waiting' }, { within: 'sessions', part: 'review' },
+  { within: 'quests', part: 'asks' }, { within: 'quests', part: 'held' },
   // HELPSETUP1: a repository's Setup (UX6f, D150 §4.2), where its own values are set; a go names no repository.
   { within: 'projects', part: 'add' }, { within: 'projects', part: 'import' }, { within: 'projects', part: 'setup' },
   // UX6g2b (D161 §3, D150 §4.3): a workspace's page's four tabs and its Setup's two sections (`WORKSPACE_PARTS`).
@@ -84,13 +100,14 @@ export const PLACE_PARTS: readonly { within: string; part: string }[] = [
 
 /**
  * Where a go takes the person, as a starter's door (HELP6): a domain of Settings at the card or the setup
- * step it names, a view, one of Repositories' drawers, a repository's Setup or a workspace's page at a tab or a section,
- * Knowledge in a mode, or a section of an agent's page — or null for a place this window does not have, which is never
- * guessed at. Pure, so every place is an argument.
+ * step it names, a view, Sessions or Quests with a group of its list brought into view, one of Repositories' drawers, a
+ * repository's Setup or a workspace's page at a tab or a section, Knowledge in a mode, or a section of an agent's page — or
+ * null for a place this window does not have, which is never guessed at. Pure, so every place is an argument.
  *
  * @remarks
  * A go names no item: Repositories' Setup opens on the repository its list has chosen, an agent's part on the agent
- * that has it (UX6e), and a workspace's part on the workspace in view's page (UX6g2b), as the room tells the helper.
+ * that has it (UX6e), a workspace's part on the workspace in view's page (UX6g2b), and a group of Sessions or Quests with
+ * no session or quest in it chosen (ENTRY1b), as the room tells the helper.
  * Knowledge with no part opens in the mode it was left in (UX6i). A go spelled as a place was before it moved opens where
  * it went (`PLACE_KEPT`).
  */
@@ -122,5 +139,7 @@ export function placeDoor(asked: HelpPlace): StarterDoor | null {
   }
   if (view === 'agents') return { view, agentPart: part as AgentPart };
   if (view === 'knowledge') return { view, knowledge: part as KnowledgeMode };
-  return null;
+  // The list brings the group into view (ENTRY1b); the person opens the session or quest in it they mean.
+  const group = GROUP_PARTS[`${view}/${part}`];
+  return group ? { view, group } : null;
 }

@@ -201,6 +201,8 @@ view, for Settings its domain, and a part where the place has one.
 
 - Views: `overview` (Overview), `sessions` (Sessions), `quests` (Quests), `projects` (Repositories), `map` (Map), `knowledge` (Knowledge), `agents` (Agents), `plugins` (Plugins), `settings` (Settings).
 - Settings domains: `start` (Get started), `appearance` (Appearance), `ai` (AI features), `driver` (Driver), `browser` (Browser), `logs` (Machine log).
+- Parts of `sessions`: `waiting` (Waiting on you), `review` (To review).
+- Parts of `quests`: `asks` (Asks), `held` (Waiting on you).
 - Parts of `projects`: `add` (Add repository), `import` (Import a folder), `setup` (a repository's Setup), `workspace-details` (a workspace's Details), `workspace-branches` (a workspace's Branches), `workspace-workflow` (a workspace's Workflow), `workspace-setup` (a workspace's Setup), `workspace-defaults` (a workspace's Defaults), `workspace-remote` (a workspace's Remote and reach).
 - Parts of `knowledge`: `search` (Search), `convergence` (Convergence).
 - Parts of `start`, the setup guide's steps: `agent` (step 1, an agent), `helper` (step 2, Ask Daoris's agent), `repositories` (step 3, a workspace and its repositories), `driven` (step 4, what is driven), `landing` (step 5, how work lands), `rules` (step 6, what agents may do).
@@ -210,6 +212,8 @@ A go names no repository, agent or workspace: `setup` opens the Setup of the rep
 where the person picks the one they mean, and a part of `agents` opens the agent that has it.
 A `workspace-` part opens that tab or section on the page of the workspace in view, the scope or the only one;
 with none in view it opens Repositories, where the person picks the workspace they mean.
+A part of `sessions` or `quests` brings that group of its list into view and names no session or quest in it:
+the person opens the one they mean there. `overview` has no part: what waits on the person leads it.
 `knowledge` alone opens Knowledge as the person left it; name its part for Search or Convergence.
 
 ## The window

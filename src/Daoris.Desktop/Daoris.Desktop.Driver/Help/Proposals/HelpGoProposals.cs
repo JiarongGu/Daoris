@@ -85,9 +85,9 @@ public sealed record HelpPlace(string View, string? Domain, string? Part);
 
 /// <summary>
 /// The places on the window a go may name (HELP6): the views, Settings' domains, and the parts of them a
-/// door already opens — the setup guide's steps, a domain's cards, Repositories' drawers, a repository's Setup and a
-/// workspace's page's tabs and sections, Knowledge's two modes, an agent's page's sections — and the places a go named
-/// before they moved.
+/// door already opens — the groups of Sessions' and Quests' lists that wait on the person, the setup guide's steps, a
+/// domain's cards, Repositories' drawers, a repository's Setup and a workspace's page's tabs and sections, Knowledge's two
+/// modes, an agent's page's sections — and the places a go named before they moved.
 /// </summary>
 /// <remarks>
 /// A twin (`.claude/knowledge/twins.md`) of the page's <c>help/places.ts</c>, which navigates to them:
@@ -112,9 +112,15 @@ public static class HelpPlaces
         ("browser", "Browser"), ("logs", "Machine log"),
     ];
 
-    /// <summary>The parts, each within a view (Repositories, Knowledge, Agents) or a Settings domain.</summary>
+    /// <summary>The parts, each within a view (Sessions, Quests, Repositories, Knowledge, Agents) or a Settings domain.</summary>
     public static readonly IReadOnlyList<(string Within, string Id, string Name)> Parts =
     [
+        // ENTRY1b (D161's ENTRY1 note): what waits on the person below Sessions and Quests, a group of the view's list the
+        // page brings into view, named by its heading: Sessions' parked and to-review groups (the reader's `you` and
+        // `review`), Quests' asks and the quests held for the person's yes or review. A go names no session or quest in it;
+        // Overview has no part, since what waits on the person leads it.
+        ("sessions", "waiting", "Waiting on you"), ("sessions", "review", "To review"),
+        ("quests", "asks", "Asks"), ("quests", "held", "Waiting on you"),
         // HELPSETUP1: a repository's Setup (UX6f, D150 §4.2), where its own values are set; a go names no repository.
         ("projects", "add", "Add repository"), ("projects", "import", "Import a folder"), ("projects", "setup", "a repository's Setup"),
         // UX6g2b (D161 §3, D150 §4.3): a workspace's page's four tabs and its Setup's two sections, prefixed since a

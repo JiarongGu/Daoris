@@ -31,6 +31,13 @@ export function projectsItem(item: string): { workspace: string } | { repository
 }
 
 /**
+ * A group of a view's list that a door brings into view (ENTRY1b, D161's ENTRY1 note): what waits on the person there.
+ * Sessions' *Waiting on you* and *To review*, by the driver's reader's names (`SessionGroupName`), and Quests' asks and
+ * the quests held for the person (`questGroups`). A door naming a group names no item in it.
+ */
+export type OpenGroup = 'you' | 'review' | 'asks' | 'held';
+
+/**
  * What a door names besides its item: the part of a Settings domain, one of Repositories' forms, a repository page's tab
  * or a workspace page's tab and Setup section, the repository whose code map the Map opens on, or Knowledge's mode.
  */

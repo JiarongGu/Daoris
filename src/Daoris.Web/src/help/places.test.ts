@@ -14,6 +14,7 @@ describe('the places a go may name', () => {
     expect(PLACE_VIEWS).toEqual(['overview', 'sessions', 'quests', 'projects', 'map', 'knowledge', 'agents', 'plugins', 'settings']);
     expect(PLACE_DOMAINS).toEqual(['start', 'appearance', 'ai', 'driver', 'browser', 'logs']);
     expect(PLACE_PARTS.map(({ within, part }) => `${within}/${part}`)).toEqual([
+      'sessions/waiting', 'sessions/review', 'quests/asks', 'quests/held',
       'projects/add', 'projects/import', 'projects/setup',
       'projects/workspace-details', 'projects/workspace-branches', 'projects/workspace-workflow',
       'projects/workspace-setup', 'projects/workspace-defaults', 'projects/workspace-remote',
@@ -73,6 +74,23 @@ describe('the places a go may name', () => {
     expect(placeDoor({ view: 'projects', part: 'setup' })).toEqual({ view: 'projects', tab: 'setup' });
     expect(placeDoor({ view: 'projects', part: 'defaults' })).toBeNull();
     expect(placeDoor({ view: 'projects', part: 'workspace-colours' })).toBeNull();
+  });
+
+  /**
+   * ENTRY1b (D161's ENTRY1 note): a go reaches what waits on the person below Sessions and Quests, a group of the view's
+   * list it brings into view: Sessions' *Waiting on you* and *To review*, by the driver's reader's names, and Quests' asks
+   * and the quests held for the person. It names no session or quest, and Overview, which what waits leads, has no part.
+   */
+  it('open Sessions or Quests with a group that waits on the person brought into view', () => {
+    expect(placeDoor({ view: 'sessions', part: 'waiting' })).toEqual({ view: 'sessions', group: 'you' });
+    expect(placeDoor({ view: 'sessions', part: 'review' })).toEqual({ view: 'sessions', group: 'review' });
+    expect(placeDoor({ view: 'quests', part: 'asks' })).toEqual({ view: 'quests', group: 'asks' });
+    expect(placeDoor({ view: 'quests', part: 'held' })).toEqual({ view: 'quests', group: 'held' });
+    expect(placeDoor({ view: 'sessions' })).toEqual({ view: 'sessions' });
+    expect(placeDoor({ view: 'sessions', part: 'you' })).toBeNull();
+    expect(placeDoor({ view: 'sessions', part: 'working' })).toBeNull();
+    expect(placeDoor({ view: 'quests', part: 'open' })).toBeNull();
+    expect(placeDoor({ view: 'overview', part: 'waiting' })).toBeNull();
   });
 
   /**

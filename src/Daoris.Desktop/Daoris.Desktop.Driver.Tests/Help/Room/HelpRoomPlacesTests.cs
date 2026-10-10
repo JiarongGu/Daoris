@@ -67,6 +67,23 @@ public sealed class HelpRoomPlacesTests
     }
 
     /// <summary>
+    /// ENTRY1b (D161's ENTRY1 note): a quest or a session keeps its own conversation, so Ask Daoris takes the person to what
+    /// waits on them there. The room names Sessions' and Quests' groups by their headings, says a part brings its group into
+    /// view and names no session or quest, and gives Overview none, since what waits on the person leads it.
+    /// </summary>
+    [Fact]
+    public void The_room_names_the_groups_that_wait_on_the_person_and_says_a_go_names_no_item_in_them()
+    {
+        var places = new HelpRoomPlaces().Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("- Parts of `sessions`: `waiting` (Waiting on you), `review` (To review).", places);
+        Assert.Contains("- Parts of `quests`: `asks` (Asks), `held` (Waiting on you).", places);
+        Assert.Contains("A part of `sessions` or `quests` brings that group of its list into view and names no session or quest", places);
+        Assert.Contains("`overview` has no part", places);
+        Assert.DoesNotContain("Parts of `overview`", places);
+    }
+
+    /// <summary>
     /// UX6i2a (D150 §2): the room names the places as the window has them, Knowledge with its two modes as its parts and
     /// Plugins as a view, and lists no place that moved: a go still spelled so lands, but the helper is never offered it.
     /// </summary>

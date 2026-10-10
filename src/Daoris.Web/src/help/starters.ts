@@ -1,6 +1,7 @@
 import type { AgentPart } from '../agents/agents';
 import type { View } from '../commands';
 import type { KnowledgeMode } from '../knowledge/modes';
+import type { OpenGroup } from '../opener';
 import type { ProjectTab, WorkspaceSection, WorkspaceTab } from '../projects/tabs';
 import type { SettingsAnchor, SettingsSection } from '../SettingsView';
 import type { Machine } from './machine';
@@ -26,6 +27,8 @@ export type StarterDoor = {
   workspaceSection?: WorkspaceSection;
   /** Knowledge's mode (UX6i): a door into Search or Convergence, which are Knowledge's two lists. */
   knowledge?: KnowledgeMode;
+  /** A group of Sessions' or Quests' list that waits on the person, brought into view (ENTRY1b); no item in it. */
+  group?: OpenGroup;
 };
 
 /**
