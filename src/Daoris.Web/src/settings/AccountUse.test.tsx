@@ -1,8 +1,10 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
+import { act } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../i18n';
+import type { Answered } from '../work/InlineConfirm';
 import { USE_DEFAULTS } from './accounts';
 import {
   CHOICES, MACHINE_NEAR, OFFERED_AGAIN, OWN_COOLING, scopeOf, SILENT, SIX, SIX_AGENT, SIX_CHOICES, THREE,
@@ -12,13 +14,15 @@ import { AccountFactsLines, OwnSignInLine, type ScopeActs, ScopeEditor, TermsLin
 // How an agent's accounts are used, as molecules (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9, §16.6): props in, presses out,
 // each the terminal's door's twin. With three accounts and with six: nothing counts accounts.
 
-const acts = (): ScopeActs & { calls: unknown[][] } => {
+const acts = (): ScopeActs & { calls: unknown[][]; answers: Answered[] } => {
   const calls: unknown[][] = [];
+  const answers: Answered[] = [];
   return {
     calls,
+    answers,
     onOrder: (workspace, list) => calls.push(['order', workspace, list]),
     onUse: (workspace, change) => calls.push(['use', workspace, change]),
-    onInherit: (workspace) => calls.push(['inherit', workspace]),
+    onInherit: (workspace, answered) => { calls.push(['inherit', workspace]); answers.push(answered); },
   };
 };
 
@@ -320,6 +324,28 @@ describe('a workspace\'s scope', () => {
     await userEvent.click(screen.getByRole('button', { name: "Use this machine's accounts" }));
 
     expect(pressed.calls).toEqual([['inherit', 'work']]);
+  });
+
+  /** UXFIX2b3c: the ask stays open while the act runs, says a refusal inside it, and closes only once it lands. */
+  it('keeps the ask open while it waits, says a refusal inside it, and closes on done with the focus returned', async () => {
+    const pressed = acts();
+    wrap(<WorkspaceScope agent={THREE} product="Claude Code" workspace="work" scope={THREE.scopes[1]!} machine={THREE.scopes[0]!} accounts={CHOICES} acts={pressed} />);
+
+    await userEvent.click(screen.getByRole('radio', { name: "This machine's accounts" }));
+    const group = screen.getByRole('group', { name: "Use this machine's accounts" });
+    expect(group.contains(document.activeElement)).toBe(true);
+    await userEvent.click(within(group).getByRole('button', { name: "Use this machine's accounts" }));
+
+    expect(screen.getByRole('group', { name: "Use this machine's accounts" })).toBeTruthy();
+    expect(screen.getByRole('status').textContent).not.toBe('');
+    act(() => pressed.answers[0]!.refused('Not saved: the file is locked.'));
+    expect(within(screen.getByRole('group', { name: "Use this machine's accounts" })).getByRole('alert').textContent).toContain('the file is locked');
+    expect(screen.getByRole('status').textContent).toBe('');
+
+    await userEvent.click(within(screen.getByRole('group', { name: "Use this machine's accounts" })).getByRole('button', { name: "Use this machine's accounts" }));
+    act(() => pressed.answers[1]!.done());
+    expect(screen.queryByRole('group', { name: "Use this machine's accounts" })).toBeNull();
+    expect(document.activeElement).not.toBe(document.body);
   });
 
   /** Its hint is the terminal's twin that returns it to this machine's accounts, or gives it a list of its own. */

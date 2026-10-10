@@ -9,7 +9,6 @@ with the version and date at release.
   recently resumed old conversation stays listed and search reaches older ones; one Chinese character is
   enough to search. `daoris-driver help list` takes `--offset` and `--limit`. *Show more* lists the next
   page, a search says how many conversations it found, and a row shows where in a long line the words were.
-  enough to search. `daoris-driver help list` takes `--offset` and `--limit`.
 - `daoris plugin new` and `try`, a new plugin's README and the install's README send people to the
   Plugins place, which replaced Settings → Plugins.
 - Ask Daoris names the places the window has now: Knowledge, whose list switches between Search and
@@ -24,7 +23,8 @@ with the version and date at release.
   declining a quest, closing an ask, finishing or declining a session that waits on you, archiving
   ended sessions and discarding a tree anyway all confirm in place: the ask stays open while the act
   runs, says a refusal inside it, and returns focus to the press. So do the asks on a *What needs you*
-  row: approve, refuse, choose, accept a rule, let it run, not yet, and go on anyway.
+  row: approve, refuse, choose, accept a rule, let it run, not yet, and go on anyway; and a workspace's
+  *Use this machine's accounts*.
 
 - Contributor guidance is shared across agents; development verification checks documentation routing
   and guide freshness declarations, including missing described source paths. Document checks ignore

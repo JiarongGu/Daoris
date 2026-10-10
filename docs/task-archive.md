@@ -12907,3 +12907,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UXFIX2b3 — confirmations: attention, trust, account use** (web). AttentionRow's asks, TrustAsk, GoAheadList, AccountUse inherit and AgentPage's key ask; settle which are `tone="primary"`; drop AgentPage's settings guard SETTINGSWAIT1 made redundant. Same proof.
 
 **Outcome** 2026-10-10 (its first slice): the row's seven asks (approve, refuse, choose, accept-rule, let-run, not-yet, opinion-anyway) confirm through `InlineConfirm` with `Answered`, threaded through `AttentionActs` and the band's `run`; refuse is danger, the rest primary (platform UX §4). Trust is UXFIX2b3b, the inherit ask UXFIX2b3c. Detail: the merge commit.
+
+
+## UXFIX2b3c — confirmations: account inherit (2026-10-11)
+
+> - [ ] **UXFIX2b3c — confirmations: account inherit** (web; merging). Settings' inherit ask on `InlineConfirm`; AgentPage's redundant settings guard dropped.
+
+**Outcome** 2026-10-11: the workspace's *use this machine's accounts* ask confirms through `InlineConfirm` with `Answered` (danger: it clears the workspace's own default, list and settings), and AgentPage no longer guards the settings form's *Never mind*, which the form holds itself since SETTINGSWAIT1. Detail: the merge commit.

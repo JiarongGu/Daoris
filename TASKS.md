@@ -29,7 +29,6 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 
 - [ ] **UXFIX2bi — installed confirmations look** (parent; after republish). The UXFIX2b1/2a/2b asks in the window (tool, plugin, retire, pause, abandon, decline, close, finish, archive, discard), both themes/languages: focus on open, pending, refusal inside, returned focus.
 - [ ] **UXFIX2b3b — confirmations: trust and go-aheads** (web). TrustAsk (row, quest page) takes `Answered` through `onGrant`, its refusal said inside; GoAheadList keeps direct presses (not destructive) but says a refusal in place. Proof: focus, pending, refusal, cancellation and returned focus.
-- [ ] **UXFIX2b3c — confirmations: account inherit** (web; merging). Settings' inherit ask on `InlineConfirm`; AgentPage's redundant settings guard dropped.
 - [ ] **UX7b — installed account UI** (web). Verify recovered account rows and add/name/join flow at 1546/680 px, both themes/languages. D152 §4.
 - [ ] **ACCTEDIT1b — installed refused edits** (parent; after republish). Verify rename, workspace use and add refusals retain drafts, including dark borders. D152 §4; dated shots.
 - [ ] **BRSCOPE1b — checkout scope and sync workspace** (modules/service/driver; after BRSCOPE1a). Share checkout-scope fixtures; carry workspace through sync proposals. D150 notes; three-door proof.
