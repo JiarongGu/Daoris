@@ -12942,3 +12942,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UXFIX2b3b — confirmations: trust and go-aheads** (web). TrustAsk (row, quest page) takes `Answered` through `onGrant`, its refusal said inside; GoAheadList keeps direct presses (not destructive) but says a refusal in place. Proof: focus, pending, refusal, cancellation and returned focus.
 
 **Outcome** 2026-10-11: TrustAsk keeps its card (the agent's own question, not a destructive second press) and takes `Answered`, with a pending status and the refusal inside; the go-ahead list's presses stay direct and each item holds its own wait and says its refusal beside it. No toast is left on either path. UXFIX2b's confirmation work is complete; installed look: UXFIX2bi. Detail: the merge commit.
+
+
+## UX6g3 — the page's own words name the workspace's page (2026-10-11, D150)
+
+> - [ ] **UX6g3 — the page's own words name the workspace's page** (web). `projects.json:41-42` ("Settings → Workspace lists it", en/zh) and comments in `opener.ts`, `SettingsView.tsx`, `bridge/driver.ts`, `help/starters.ts`. D150 §3.1.
+
+**Outcome** 2026-10-11: the unlanded-branches sentence (en/zh) says the workspace's page lists it under Branches, and four comments point at Repositories → the workspace's page. Detail: the merge commit.

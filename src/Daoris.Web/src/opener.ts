@@ -68,7 +68,7 @@ export type Opening = {
   agentPart?: AgentPart;
   /**
    * The tab a workspace's page opens at (UX6g, D150 §4.3), and the section of its Setup to open: the remote, or its
-   * defaults. Its doors are where Settings → Workspace and Permissions were.
+   * defaults. Its doors are what Settings → Workspace and Permissions held, now Repositories → the workspace's page.
    */
   workspaceTab?: WorkspaceTab;
   workspaceSection?: WorkspaceSection;

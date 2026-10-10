@@ -76,7 +76,7 @@ export function starters(
   if (machine.unnamedLines.length > 0) {
     found.push({
       id: 'no-line', values: { count: machine.unnamedLines.length, first: machine.unnamedLines[0]! },
-      // The first one's Setup, where its line is set (UX6f), since Settings → Workspace left for the pages (UX6g).
+      // The first one's Setup, where its line is set (UX6f), since the lines moved from Settings to the workspace's page (UX6g).
       door: { view: 'projects', item: machine.unnamedLines[0]!, tab: 'setup' },
       command: `daoris driver line ${machine.unnamedLines[0]} <branch>`,
     });

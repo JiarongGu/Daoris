@@ -34,7 +34,6 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 - [ ] **UX7d — remaining visual findings** (web/driver). Absent-agent Install, strip marks, version, compact Chinese summaries and coded opening notes. D152 §4.6.
 - [ ] **UX7e — installed menus and heads** (parent; after republish). Verify keyboard menus, shortcuts, composer editing, head geometry and titles at 1546/680 px. D152 §6.
 - [ ] **UX6g2b — the go twin reaches the workspace's page** (design first; driver + web twin). Retire the `workspace`/`permissions` domains into `Kept`; decide whether the page's tabs and sections become go parts. D150 §3.1/§4.3, UX6i2a note; twins.
-- [ ] **UX6g3 — the page's own words name the workspace's page** (web). `projects.json:41-42` ("Settings → Workspace lists it", en/zh) and comments in `opener.ts`, `SettingsView.tsx`, `bridge/driver.ts`, `help/starters.ts`. D150 §3.1.
 - [ ] **UX6h — Git inside Repositories** (web; after GIT1d; absorbs GIT1e). Branch kinds and graph; retire Git place. UX6 §4.4/D147.
 - [ ] **UX6i2i — installed go cards** (parent; after republish). Ask Daoris answering "where do I turn a plugin on?" and "where is Convergence?": a go card reading *Open Plugins.* or *Open Knowledge → Convergence.* that opens the right place and mode.
 - [ ] **UX6i3 — "Settings → Agents" leftovers** (driver/modules/service). UX6e retired it; `DriverModule.Accounts.cs:11`, its tests, room tests and the `agents` domain word in the service still name it. D150's UX6e notes.
