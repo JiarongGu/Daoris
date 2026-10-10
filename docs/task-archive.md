@@ -13019,3 +13019,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UXFIX2b1r — the retire ask says its sentence once** (web). The ask's explanation repeats the drawer's retire sentence just above it, word for word (seen on the window, flagged by UXFIX2b1). UXFIX2b1's archive entry.
 
 **Outcome** 2026-10-11: the ask asks its own question, "Retire {{name}} from this machine?" (从本机注销 {{name}}？, `projects.manage.retireAsk`), and the drawer's paragraph is printed once; the retire test holds both. Detail: the merge commit.
+
+
+## ENTRY1b — a go reaches what needs the person (2026-10-11, D161)
+
+> - [ ] **ENTRY1b — a go reaches what needs the person** (driver + web twin). Below Quests, Sessions and Overview, to what is waiting on them, since a quest or session keeps its own conversation and Ask Daoris takes the person there. D161's ENTRY1 note; audit §4.2; the go twin's tables and goldens.
+
+**Outcome** 2026-10-11: `sessions/waiting`, `sessions/review`, `quests/asks` and `quests/held` open their view with that group's heading at the top of the list and focused, naming no item; Overview stays the view. Where a list cannot show the group it opens as it was (ENTRY1g); the service's text is ENTRY1h. Detail: D161's ENTRY1b note.

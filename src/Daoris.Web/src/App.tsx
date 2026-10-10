@@ -24,7 +24,7 @@ import { commandForKey } from './shortcuts';
 import { focusRegion } from './work/regions';
 import type { StarterDoor } from './help/starters';
 import {
-  askItem, doorOpening, type Opening, type OpenPart, opening as plannedOpening, questsItem, workspaceItem,
+  askItem, doorOpening, type OpenGroup, type Opening, type OpenPart, opening as plannedOpening, questsItem, workspaceItem,
 } from './opener';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { Drawer, failure, Prose, SESSION_ACTIVE, Toasts, useToasts } from './ui';
@@ -159,6 +159,9 @@ export function App() {
   const [settingsAnchor, setSettingsAnchor] = useState<SettingsAnchor | null>(null);
   // And the part of an agent's page a door named (UX6e, D150 §2.4): its accounts, what it may do, its usage.
   const [agentPart, setAgentPart] = useState<AgentPart | null>(null);
+  // And the group of Sessions' or Quests' list a door into what waits on the person named (ENTRY1b): brought into view once
+  // the list has answered, then let go.
+  const [listGroup, setListGroup] = useState<OpenGroup | null>(null);
   // A quest the review asked for (SURF6b): the repository whose work is being sent back, handed
   // to the composer as an opening draft. Held here because the door crosses two views.
   const [opening, setOpening] = useState<{ from?: string; to?: string } | null>(null);
@@ -477,6 +480,7 @@ export function App() {
     }
     if (plan.anchor !== undefined) setSettingsAnchor(plan.anchor);
     setAgentPart(plan.agentPart ?? null);
+    setListGroup(plan.group ?? null);
     if (plan.drawer === 'add') setAddRequested(true);
     if (plan.drawer === 'import') setImportRequested(true);
     if (plan.tab) chooseProjectTab(plan.tab);
@@ -750,6 +754,8 @@ export function App() {
     onOpened: () => setOpening(null),
     asking,
     onAsked: () => setAsking(false),
+    group: listGroup,
+    onGroupBrought: () => setListGroup(null),
   });
   // The Repositories view (FRAME1e, D118 §2): held on every view, as Quests is; its list is the registry and its main
   // area the chosen repository's page, which every door into it names (§3i). Its drawers are the Workspace menu's too.
@@ -1101,6 +1107,8 @@ export function App() {
               placements={placements}
               layout={view === 'sessions' ? undefined : renderView()}
               onOpenSessions={() => open('sessions')}
+              group={listGroup}
+              onGroupBrought={() => setListGroup(null)}
             />
           )
           : (

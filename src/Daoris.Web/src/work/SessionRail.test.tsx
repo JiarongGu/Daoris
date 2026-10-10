@@ -725,3 +725,78 @@ describe('the session rail by state', () => {
     expect(within(rows(engine)[0]!).getByText('parked')).toBeInTheDocument();
   });
 });
+
+/**
+ * ENTRY1b (D161's ENTRY1 note): a go to what waits on the person names a group of the list, and the rail brings it into
+ * view once it and the driver's reader have answered: its heading scrolled to and focused, then the door told. A rail that
+ * does not draw the group then lets the door go, rather than taking the focus when the group appears later.
+ */
+describe('a group a door brings into view', () => {
+  beforeEach(() => {
+    SESSIONS = LIVE;
+    GROUPS = LIVE_GROUPS;
+    bridge.available = true;
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+    invoke.mockImplementation(drive);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+  });
+
+  it("scrolls to the group's heading and focuses it, then tells the door", async () => {
+    const scroll = vi.spyOn(Element.prototype, 'scrollIntoView');
+    const brought = vi.fn();
+    try {
+      show(<SessionRail notify={() => {}} group="you" onGroupBrought={brought} />);
+
+      const heading = await screen.findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+      await waitFor(() => expect(brought).toHaveBeenCalledTimes(1));
+      expect(heading).toHaveFocus();
+      expect(scroll.mock.instances).toContain(heading);
+    } finally {
+      scroll.mockRestore();
+    }
+  });
+
+  /** A parked quest's session is the reader's alone to place in *Waiting on you*: the rail waits for its answer. */
+  it("waits for the reader's answer before it looks for the group", async () => {
+    SESSIONS = [{ ...base, id: 'f41led00', quest: '7a82cc', repository: 'engine', state: 'failed', created: at(60), updated: at(20) }];
+    GROUPS = [{ session: 'f41led00', group: 'you', shown: 'parked', archived: false, teammate: false, strikes: 3 }];
+    let answer: (value: unknown) => void = () => {};
+    invoke.mockImplementation((_module: string, type: string) => (type === 'SESSION_GROUPS'
+      ? new Promise((resolve) => { answer = resolve; })
+      : Promise.resolve(DRIVER_STATE)));
+    const brought = vi.fn();
+    show(<SessionRail notify={() => {}} group="you" onGroupBrought={brought} />);
+
+    // By its record alone it ended; the reader has not said yet where it waits.
+    await screen.findByRole('heading', { level: 3, name: 'Ended (1)' });
+    expect(brought).not.toHaveBeenCalled();
+    answer({ sessions: GROUPS });
+    const heading = await screen.findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+    await waitFor(() => expect(brought).toHaveBeenCalledTimes(1));
+    expect(heading).toHaveFocus();
+  });
+
+  it('lets the door go where the list draws no such group: nothing to review, by repository, the strip', async () => {
+    const nothing = vi.fn();
+    const first = show(<SessionRail notify={() => {}} group="review" onGroupBrought={nothing} />);
+    await screen.findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+    await waitFor(() => expect(nothing).toHaveBeenCalledTimes(1));
+    expect(screen.getByRole('heading', { level: 3, name: 'Waiting on you (1)' })).not.toHaveFocus();
+    first.unmount();
+
+    const byRepository = vi.fn();
+    const second = show(<SessionRail notify={() => {}} arrangement="repository" group="you" onGroupBrought={byRepository} />);
+    await screen.findByRole('heading', { level: 3, name: 'engine' });
+    await waitFor(() => expect(byRepository).toHaveBeenCalledTimes(1));
+    expect(document.activeElement).toBe(document.body);
+    second.unmount();
+
+    const strip = vi.fn();
+    show(<Tooltip.Provider><SessionRail notify={() => {}} compact group="you" onGroupBrought={strip} /></Tooltip.Provider>);
+    await waitFor(() => expect(strip).toHaveBeenCalledTimes(1));
+    expect(document.activeElement).toBe(document.body);
+  });
+});

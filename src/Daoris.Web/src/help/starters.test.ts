@@ -30,7 +30,9 @@ describe('starters', () => {
     });
 
     expect(all.map((starter) => starter.id)).toEqual(['waiting', 'nothing-registered', 'agent-signed-out', 'helper-off']);
-    expect(all[0]).toMatchObject({ values: { count: 2 }, door: { view: 'sessions' } });
+    // ENTRY1b: the sessions waiting on the person are Sessions' *Waiting on you*, which its door brings into view.
+    expect(all[0]).toMatchObject({ values: { count: 2 } });
+    expect(all[0]!.door).toEqual({ view: 'sessions', group: 'you' });
     expect(all[1]).toMatchObject({ door: { view: 'projects' }, command: 'daoris connect' });
   });
 

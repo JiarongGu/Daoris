@@ -11,6 +11,12 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
 
     [Theory]
     [InlineData("quests", null, null, "Open Quests.")]
+    // ENTRY1b (D161's ENTRY1 note): a go reaches what waits on the person below Sessions and Quests, each group by the name
+    // its list's heading shows; it names no session and no quest.
+    [InlineData("sessions", null, "waiting", "Open Sessions → Waiting on you.")]
+    [InlineData("sessions", null, "review", "Open Sessions → To review.")]
+    [InlineData("quests", null, "asks", "Open Quests → Asks.")]
+    [InlineData("quests", null, "held", "Open Quests → Waiting on you.")]
     // UX6e2 (D150 §3.1): Agents is a place, and its parts are the agent's page's.
     [InlineData("agents", null, null, "Open Agents.")]
     [InlineData("agents", null, "rules", "Open Agents → What it may do.")]
@@ -63,6 +69,12 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     // A workspace's parts are Repositories', unprefixed names are a repository's, and the page has no other.
     [InlineData("projects", null, "defaults", "no part `defaults` of `projects`")]
     [InlineData("projects", null, "workspace-colours", "no part `workspace-colours` of `projects`")]
+    // ENTRY1b: a part is the group's go name, not the reader's (`you`); a group that waits on nobody is no part; and
+    // Overview stays the view alone, since what waits leads it.
+    [InlineData("sessions", null, "you", "no part `you` of `sessions` — one of `review`, `waiting`.")]
+    [InlineData("sessions", null, "working", "no part `working` of `sessions`")]
+    [InlineData("quests", null, "open", "no part `open` of `quests` — one of `asks`, `held`.")]
+    [InlineData("overview", null, "waiting", "no part `waiting` of `overview`.")]
     public void A_screen_the_window_does_not_have_is_refused(string view, string? domain, string? part, string says)
     {
         var plan = HelpProposals.Plan(Go(view, domain, part), DriverConfig.Empty, Machine);
@@ -110,6 +122,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
         Assert.Equal(["start", "appearance", "ai", "driver", "browser", "logs"], HelpPlaces.Domains.Select(domain => domain.Id));
         Assert.Equal(
             [
+                "sessions/waiting", "sessions/review", "quests/asks", "quests/held",
                 "projects/add", "projects/import", "projects/setup",
                 "projects/workspace-details", "projects/workspace-branches", "projects/workspace-workflow",
                 "projects/workspace-setup", "projects/workspace-defaults", "projects/workspace-remote",

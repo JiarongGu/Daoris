@@ -9,7 +9,7 @@ import { Button, Inline, Pill, QUEST_TONE, SESSION_ACTIVE, SESSION_TONE } from '
 import { cn } from '../lib/cn';
 import { contextOffer } from '../menus/press';
 import { questName } from '../work/identity';
-import { ListGroup, ListRowDoor } from '../work/ListPane';
+import { groupHeading, ListGroup, ListRowDoor } from '../work/ListPane';
 import { questGroups } from './records';
 
 /** What a quest's row says beside the quest itself. */
@@ -77,15 +77,16 @@ export function QuestList({
       {filteredTo && (
         <p className="m-0 truncate px-2.5 pb-0.5 pt-2 text-meta text-ink-faint">{t('quests.list.filtered', { repository: filteredTo })}</p>
       )}
+      {/* Each heading's id is what a door into its group brings into view (ENTRY1b). */}
       {asks.length > 0 && (
-        <ListGroup title={t('asks.group', { count: asks.length })}>
+        <ListGroup id={groupHeading('quests', 'asks')} title={t('asks.group', { count: asks.length })}>
           {asks.map(({ ask, intake }) => (
             <AskRow key={ask.id} ask={ask} intake={intake ?? null} chosen={chosen === askItem(ask.id)} onOpen={() => onChoose(askItem(ask.id))} />
           ))}
         </ListGroup>
       )}
       {groups.map(({ group, quests: rows }) => rows.length > 0 && (
-        <ListGroup key={group} title={t(`quests.groups.${group}`, { count: rows.length })}>
+        <ListGroup key={group} id={groupHeading('quests', group)} title={t(`quests.groups.${group}`, { count: rows.length })}>
           {rows.map((quest) => (
             <QuestRow
               key={quest.id}

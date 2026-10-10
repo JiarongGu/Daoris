@@ -31,12 +31,23 @@ export function projectsItem(item: string): { workspace: string } | { repository
 }
 
 /**
+ * A group of a view's list that a door brings into view (ENTRY1b, D161's ENTRY1 note): what waits on the person there.
+ * Sessions' *Waiting on you* and *To review*, by the driver's reader's names (`SessionGroupName`), and Quests' asks and
+ * the quests held for the person (`questGroups`). A door naming a group names no item in it.
+ */
+export type OpenGroup = 'you' | 'review' | 'asks' | 'held';
+
+/** The view whose list holds each group: a group means nothing to another view. */
+const GROUP_VIEW: Readonly<Record<OpenGroup, View>> = { you: 'sessions', review: 'sessions', asks: 'quests', held: 'quests' };
+
+/**
  * What a door names besides its item: the part of a Settings domain, one of Repositories' forms, a repository page's tab
- * or a workspace page's tab and Setup section, the repository whose code map the Map opens on, or Knowledge's mode.
+ * or a workspace page's tab and Setup section, the repository whose code map the Map opens on, Knowledge's mode, or a group of
+ * Sessions' or Quests' list.
  */
 export type OpenPart = {
   anchor?: SettingsAnchor; drawer?: 'add' | 'import'; tab?: ProjectTab; code?: string; agentPart?: AgentPart;
-  workspaceTab?: WorkspaceTab; workspaceSection?: WorkspaceSection; knowledge?: KnowledgeMode;
+  workspaceTab?: WorkspaceTab; workspaceSection?: WorkspaceSection; knowledge?: KnowledgeMode; group?: OpenGroup;
 };
 
 /** What opening a view does, as a value. */
@@ -77,6 +88,11 @@ export type Opening = {
    * that mode's list. A door into the place names none, and it opens in the mode it was left in.
    */
   knowledge?: KnowledgeMode;
+  /**
+   * The group of Sessions' or Quests' list to bring into view (ENTRY1b, D161's ENTRY1 note): what waits on the person there,
+   * with no item in it chosen. The list brings it once it has answered, then lets it go (`useBringGroup`).
+   */
+  group?: OpenGroup;
 };
 
 const listed =(view: View): view is View & ListView => Object.hasOwn(LIST_BOUNDS, view);
@@ -108,6 +124,7 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}, h
   if (view === 'projects' && part.workspaceSection) plan.workspaceSection = part.workspaceSection;
   if (view === 'map' && part.code) plan.code = part.code;
   if (view === 'agents' && part.agentPart) plan.agentPart = part.agentPart;
+  if (part.group && GROUP_VIEW[part.group] === view) plan.group = part.group;
   return plan;
 }
 

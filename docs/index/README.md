@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (127)
+## Files over 40 KB (128)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -34,9 +34,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Web/e2e/platform.spec.ts` | 56 | 965 |
 | `src/Daoris.Web/src/App.test.tsx` | 50 | 966 |
-| `src/Daoris.Web/src/App.tsx` | 69 | 1260 |
+| `src/Daoris.Web/src/App.tsx` | 69 | 1268 |
 | `src/Daoris.Web/src/ProjectsView.test.tsx` | 72 | 1304 |
-| `src/Daoris.Web/src/QuestsView.test.tsx` | 62 | 1200 |
+| `src/Daoris.Web/src/QuestsView.test.tsx` | 65 | 1273 |
 | `src/Daoris.Web/src/agents/AgentPage.tsx` | 47 | 889 |
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 97 | 1875 |
 | `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 51 | 1018 |
@@ -45,8 +45,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/ui.tsx` | 77 | 1647 |
 | `src/Daoris.Web/src/work/ConversationView.test.tsx` | 45 | 860 |
 | `src/Daoris.Web/src/work/SessionHead.test.tsx` | 48 | 907 |
-| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 205 | 3963 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 83 | 1555 |
+| `src/Daoris.Web/src/work/SessionRail.test.tsx` | 40 | 802 |
+| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 206 | 3985 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 84 | 1567 |
 | `src/Daoris.Web/src/work/attention.test.ts` | 42 | 857 |
 | `src/Daoris.Web/src/work/conversation.test.ts` | 44 | 871 |
 | `src/Daoris.Web/src/work/frame.tsx` | 40 | 877 |

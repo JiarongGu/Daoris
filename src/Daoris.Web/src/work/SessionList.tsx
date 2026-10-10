@@ -8,7 +8,7 @@ import {
 } from './groups';
 import { isHelp, isIntake } from './identity';
 import { type Answered, InlineConfirm } from './InlineConfirm';
-import { ListGroup } from './ListPane';
+import { groupHeading, ListGroup } from './ListPane';
 import { RepositoryGroup } from './RepositoryGroup';
 import { SessionRow, SessionStripRow, type SessionWhere } from './SessionRow';
 
@@ -141,7 +141,8 @@ export function SessionList({
     return (
       <>
         {groups.map(({ group, sessions: members }) => (
-          <ListGroup key={group} title={t(`work.group.${group}`, { count: members.length })}>
+          // Its heading's id is what a door into the group brings into view (ENTRY1b).
+          <ListGroup key={group} id={groupHeading('sessions', group)} title={t(`work.group.${group}`, { count: members.length })}>
             {group === 'ended' || group === 'archived'
               ? ended(members, true, group === 'archived')
               : members.map((session) => row(session, true))}
