@@ -149,6 +149,9 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'resumed.opening': { values: ['adapter', 'why'], why: 'resumed' },
   'resumed.moved': { values: ['now', 'then'] },
   'resumed.native': { values: ['adapter'] },
+  // A permission the rules refused (CONVNOTE2b): the call's title rides between the two as the agent's words.
+  'refused.lead': { values: [] },
+  'refused.governs': { values: [] },
 };
 
 /**

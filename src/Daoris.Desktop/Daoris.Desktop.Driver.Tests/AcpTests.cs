@@ -618,6 +618,12 @@ public sealed class AcpTests
         Assert.Contains("`git push`", note.Text);
         Assert.DoesNotContain("toolCallId", note.Text);
         Assert.Equal("c9", note.Id);
+        // CONVNOTE2b: the English is byte for byte what it was; the page words it by code, the title the agent's words
+        // between the two (a title may hold a path, so never a value).
+        Assert.Equal("permission refused: `git push` — the rules it runs under govern, and the driver may not widen them", note.Text);
+        Assert.Equal(["refused.lead", null, "refused.governs"], note.Parts!.Select(part => part.Code).ToArray());
+        Assert.Equal(("`git push`", NoteBy.Agent), (note.Parts![1].Words, note.Parts![1].By));
+        NoteAssert.Holds(note.Text, note.Parts);
     }
 
     /// <summary>

@@ -106,6 +106,8 @@
   "note.resumed.why.findings": "另一个智能体的发现是",
   "note.resumed.why.answer-and-findings": "你的回答和另一个智能体的发现是",
   "note.resumed.why.words-and-findings": "你的话和另一个智能体的发现是",
+  "note.refused.lead": "权限被拒绝：",
+  "note.refused.governs": "—— 它所遵循的规则说了算，驱动不得放宽。",
   "note.opening.why.cooling": "`{{agent}}` 账户 `{{over}}` 冷却至 {{until}}（{{cooling}}）",
   "note.opening.why.refused": "`{{agent}}` 账户 `{{over}}` 被其服务商拒绝",
   "note.opening.why.signed-out": "`{{agent}}` 账户 `{{over}}` 未登录",
