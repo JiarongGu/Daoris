@@ -316,13 +316,18 @@ describe('the next start, above the accounts', () => {
     });
   });
 
-  it('says a wait, and that a sign-in frees it, with no held sentence where nothing else holds one', () => {
+  it('says a wait and what frees it, and not again account by account, which the wait’s sentence already names', () => {
+    const until = '2026-10-04T14:20:00.000Z';
     const scope = scopeOf({
-      list: ['account-1'], begins: 'account-1',
-      next: { account: null, reason: 'waits', others: [{ account: 'account-1', hold: 'ready' }] },
+      list: ['account-1', 'account-2'], begins: 'account-1',
+      next: {
+        account: null, reason: 'waits', when: until,
+        others: [{ account: 'account-1', hold: 'cooling', until }, { account: 'account-2', hold: 'signedOut' }],
+      },
     });
     expect(nextStartSaid(scope, labelOf)).toEqual({
-      takes: 'No account here is ready, and none comes ready by itself: the next start waits for you.', held: null,
+      takes: `No account here is ready, so the next start waits until ${moment(until)}. Signing in to account-2 starts it sooner.`,
+      held: null,
     });
   });
 

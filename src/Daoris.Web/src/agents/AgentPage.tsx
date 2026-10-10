@@ -17,8 +17,8 @@ import { ACCOUNT_COLUMNS, AccountColumnsHead, AccountRow } from './AccountRow';
 import { type BackAccount, PlaceAccount, RenameAccount, ReSignIn } from './AddAccount';
 import {
   type AccountAct, type AccountState, type AgentPart, type AgentUsage, accountAct, accountName, accountStates, accountWho,
-  doorsSummary, joinChoices, latestRead, ownRunsFor, ownSaid, ownState, rulesSummary, runsFor, runsForLine, settingsSummary,
-  usageCells, usageSummary, useSummary, versionOnly, workspacesSummary,
+  doorsSummary, joinChoices, latestRead, nextStartSaid, ownRunsFor, ownSaid, ownState, rulesSummary, runsFor, runsForLine,
+  settingsSummary, usageCells, usageSummary, useSummary, versionOnly, workspacesSummary,
 } from './agents';
 
 /** The sections that fold (D150 §1 rule 4): the accounts never do. */
@@ -177,6 +177,9 @@ export function AgentPage({
   const rulesShown = tool.takesRules && rules !== null;
   const settingsShown = Boolean(tool.settingsChoices) && tool.accounts.some((account) => account.settings);
   const joinable = (name: string) => joinChoices(tool, use, scopeWorkspaces, labelOf, name);
+  // This machine's next start, said above the accounts (ACCTUX4b): the scope this page edits; a workspace's own is said in
+  // its fold under *Workspaces*. None on the tool's own sign-in, nor from a shell that names none.
+  const nextSaid = nextStartSaid(machine, labelOf, (name) => Boolean(accountOf(name)?.key));
 
   // What the person has open: a section, the add flow's first step, a row's question or rename, *Remove…*'s ask, the model
   // and effort form, a key's field, a pin's version, the plans and terms.
@@ -577,6 +580,15 @@ export function AgentPage({
               )}
             </span>
           </div>
+          {/* Which account the next start takes and why, above the rows that answer it in parts (ACCTUX4b; the second opinion's
+              lines 128-133): a light line, not a setting's row, in the words of the fold's *Next start*; what holds the others
+              follows in the soft ink, since the account the list begins on is the one a person expects it to take. */}
+          {nextSaid && (
+            <p className="m-0 mb-2 text-small text-ink [overflow-wrap:anywhere]">
+              <span>{nextSaid.takes}</span>
+              {nextSaid.held && <>{t('harness.said.sentences')}<span className="text-ink-soft">{nextSaid.held}</span></>}
+            </p>
+          )}
           <ul className={ACCOUNT_COLUMNS}>
             {(tool.accounts.length > 0 || tool.present) && <AccountColumnsHead />}
             {tool.accounts.map(accountRow)}

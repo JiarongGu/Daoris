@@ -1832,10 +1832,63 @@ describe('how accounts are used', () => {
     place();
 
     await unfold('How accounts are used');
+    const fold = screen.getByRole('region', { name: 'How accounts are used' });
     // An account is named by its name everywhere on the page (ACCT2), an old `account-N`-like id where the person gave none.
-    expect(await screen.findByText('The next start takes work: it is the only account here that is ready.')).toBeTruthy();
-    expect(screen.getByText(/^personal is cooling until .+\.$/)).toBeTruthy();
-    expect(screen.getByText(/^Claude Code's own sign-in, the account it uses at your terminal, carries none of these starts/)).toBeTruthy();
+    expect(await within(fold).findByText('The next start takes work: it is the only account here that is ready.')).toBeTruthy();
+    expect(within(fold).getByText(/^personal is cooling until .+\.$/)).toBeTruthy();
+    expect(within(fold).getByText(/^Claude Code's own sign-in, the account it uses at your terminal, carries none of these starts/)).toBeTruthy();
+  });
+
+  /**
+   * ACCTUX4b (the second opinion's lines 125, 128-133): this machine's next start is said above the accounts, in the fold's
+   * words and with no fold opened, and *first* on a row marks the account it takes, not the list's head.
+   */
+  it('says above the accounts which account the next start takes and why, and marks that account’s row first', async () => {
+    const next = {
+      agents: [{
+        ...ACCOUNTS.agents[0]!,
+        scopes: [{
+          ...MACHINE, list: ['personal', 'work'],
+          next: { account: 'work', reason: 'onlyReady', over: null, when: null, others: [{ account: 'personal', hold: 'cooling', until }] },
+        }],
+      }],
+    };
+    invoke.mockImplementation(answer(ROSTER, next));
+    place();
+
+    const accounts = await screen.findByRole('region', { name: 'Accounts' });
+    const said = await within(accounts).findByText('The next start takes work: it is the only account here that is ready.');
+    // Above the list, beneath its head: the question a person comes with, before the rows that answer it in parts.
+    expect(said.compareDocumentPosition(within(accounts).getByRole('list')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(accounts).getByText(/^personal is cooling until .+\.$/)).toBeTruthy();
+    // The fold's third sentence, on the tool's own sign-in, stays in the fold: the list's own row says it there.
+    expect(within(accounts).queryByText(/carries none of these starts/)).toBeNull();
+    // *personal* heads the list and is the default, and cools: the row marked first is the one the next start takes.
+    expect(within(screen.getByRole('listitem', { name: 'work' })).getByText('this machine (first)')).toBeTruthy();
+    expect(within(screen.getByRole('listitem', { name: 'personal' })).queryByText(/\(first\)/)).toBeNull();
+  });
+
+  it('says no next start above the accounts where it runs on your own sign-in, or where the answer names none', async () => {
+    const own = {
+      agents: [{
+        ...ACCOUNTS.agents[0]!,
+        scopes: [{ ...MACHINE, default: null, list: [], begins: null, next: { account: null, reason: 'own', others: [] } }],
+      }],
+    };
+    invoke.mockImplementation(answer({ ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0]!, machineDefault: null }] }, own));
+    const { unmount } = place();
+    const accounts = await screen.findByRole('region', { name: 'Accounts' });
+    await within(accounts).findByRole('listitem', { name: 'work' });
+    expect(within(accounts).queryByText(/next start/)).toBeNull();
+    unmount();
+
+    // An older shell names no next start: nothing is guessed from the list's head, and no row is marked first.
+    invoke.mockImplementation(answer(ROSTER, ACCOUNTS));
+    place();
+    const older = await screen.findByRole('region', { name: 'Accounts' });
+    await within(older).findByRole('listitem', { name: 'work' });
+    expect(within(older).queryByText(/next start/)).toBeNull();
+    expect(within(older).queryByText(/\(first\)/)).toBeNull();
   });
 
   /** Each workspace on this machine's accounts or its own (D130 §3.2), moved here from Settings (D150 §3.1). */
