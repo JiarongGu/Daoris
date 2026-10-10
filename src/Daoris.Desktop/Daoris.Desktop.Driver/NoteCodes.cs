@@ -31,7 +31,8 @@ public static class NoteBy
 /// <remarks>
 /// <b>Values are facts, never sentences, and never a path or an account's name</b>: the note travels (D125 §3.6). A value is
 /// text, a whole number, or a list of texts; one read back that is none of them is kept as it was read, so a newer writer's
-/// part passes through this one unchanged.
+/// part passes through this one unchanged. The one exception is a conversation's first line (<c>opening.*</c>, UX7d-1): it is
+/// kept only in the conversation's record, which never leaves the machine (D76 §2), so its values name accounts by id.
 /// </remarks>
 [JsonConverter(typeof(NotePartJson))]
 public sealed record NotePart
@@ -333,6 +334,36 @@ public static class NoteCodes
         new(CoolingWhy.NotBelieved, [], "harness.cooling.why.notBelieved"),
     ]);
 
+    /// <summary>
+    /// Why a start ran on its account, a step of the walk as a conversation's first line says it (UX7d-1;
+    /// <see cref="RotationWords.Steps"/>): each with its own values, the other account it names always <c>over</c>, and a
+    /// moment, a percent or a window as a fact, never a clause.
+    /// </summary>
+    public static readonly NoteReasons Opening = new(
+    [
+        new(OpeningWhy.Cooling, ["agent", "over", "until", "cooling"], "note.opening.why.cooling"),
+        new(OpeningWhy.Refused, ["agent", "over"], "note.opening.why.refused"),
+        new(OpeningWhy.SignedOut, ["agent", "over"], "note.opening.why.signed-out"),
+        new(OpeningWhy.KeptSelf, [], "note.opening.why.kept-self"),
+        new(OpeningWhy.KeptLast, ["over"], "note.opening.why.kept-last"),
+        new(OpeningWhy.Kept, ["over"], "note.opening.why.kept"),
+        new(OpeningWhy.NearReached, ["over", "window"], "note.opening.why.near-reached"),
+        new(OpeningWhy.NearWord, ["over", "window"], "note.opening.why.near-word"),
+        new(OpeningWhy.NearCredits, ["over"], "note.opening.why.near-credits"),
+        new(OpeningWhy.NearUsed, ["over", "used", "window", "near"], "note.opening.why.near-used"),
+        new(OpeningWhy.Near, ["over"], "note.opening.why.near"),
+        new(OpeningWhy.Fewest, [], "note.opening.why.fewest"),
+        new(OpeningWhy.Lapsing, ["at"], "note.opening.why.lapsing"),
+        new(OpeningWhy.Behind, ["used", "gone"], "note.opening.why.behind"),
+        new(OpeningWhy.Ahead, ["over", "used", "gone"], "note.opening.why.ahead"),
+        new(OpeningWhy.NotStarted, [], "note.opening.why.not-started"),
+        new(OpeningWhy.LeastRecent, [], "note.opening.why.least-recent"),
+        new(OpeningWhy.Default, ["workspace"], "note.opening.why.default"),
+        new(OpeningWhy.DefaultHere, [], "note.opening.why.default-here"),
+        new(OpeningWhy.First, ["workspace"], "note.opening.why.first"),
+        new(OpeningWhy.FirstHere, [], "note.opening.why.first-here"),
+    ]);
+
     // ——— A session's end (Observation, the driver's own ends).
     public static readonly NoteCode EndedAwaits = new("ended.awaits", ["awaits"]);
     public static readonly NoteCode EndedExit = new("ended.exit", ["exit"]);
@@ -451,6 +482,24 @@ public static class NoteCodes
     public static readonly NoteCode LandingNoTree = new("landing.no-tree", []);
     public static readonly NoteCode LandingNotDone = new("landing.not-done", []);
 
+    // ——— A conversation's first line, where a start's account was chosen (UX7d-1, RotatedOpening): said in the conversation's
+    // record, which never leaves the machine (D76 §2), so its values name accounts and a workspace. The line, then the rest's
+    // step and a refused turn riding inside it, then what each account said, a line per account and one per thing it said.
+    public static readonly NoteCode OpeningOpened = new("opening.opened", ["account", "why"]) { Why = Opening };
+    public static readonly NoteCode OpeningCarriedOn = new("opening.carried-on", ["session", "account", "why"]) { Why = Opening };
+    public static readonly NoteCode OpeningRest = new("opening.rest", ["why"]) { Why = Opening };
+    public static readonly NoteCode OpeningTurnRefused = new("opening.turn-refused", ["turn"]);
+    public static readonly NoteCode OpeningTurnContext = new("opening.turn-context", ["turn", "tokens"]);
+    public static readonly NoteCode OpeningUnsaid = new("opening.unsaid", []);
+    public static readonly NoteCode OpeningSaidAt = new("opening.said-at", ["account", "seen"]);
+    public static readonly NoteCode OpeningSaidNothing = new("opening.said-nothing", ["account"]);
+    public static readonly NoteCode OpeningSaidReached = new("opening.said-reached", ["window"]);
+    public static readonly NoteCode OpeningSaidNear = new("opening.said-near", ["window"]);
+    public static readonly NoteCode OpeningSaidCredits = new("opening.said-credits", []);
+    public static readonly NoteCode OpeningSaidUsed = new("opening.said-used", ["used", "window"]);
+    public static readonly NoteCode OpeningSaidNearAt = new("opening.said-near-at", ["near"]);
+    public static readonly NoteCode OpeningSaidClear = new("opening.said-clear", []);
+
     /// <summary>Every code above, read off the declarations so none escapes the catalogue test.</summary>
     public static IReadOnlyList<NoteCode> All { get; } =
         [.. typeof(NoteCodes).GetFields().Where(field => field.FieldType == typeof(NoteCode)).Select(field => (NoteCode)field.GetValue(null)!)];
@@ -471,6 +520,76 @@ public static class NoteCodes
     /// <summary>A moment as a value: ISO 8601 in UTC, to the second, which the page formats in the reader's language and zone.</summary>
     public static string Moment(DateTimeOffset at) =>
         at.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
+}
+
+/// <summary>
+/// Why a start ran on its account, by code (UX7d-1): each step of the walk as a conversation's first line says it
+/// (<see cref="RotationWords.Steps"/>), the page's <c>note.opening.why.*</c>.
+/// </summary>
+public static class OpeningWhy
+{
+    /// <summary>The account its scope begins at is cooling.</summary>
+    public const string Cooling = "cooling";
+
+    /// <summary>Its provider refused the account its scope begins at.</summary>
+    public const string Refused = "refused";
+
+    /// <summary>The account its scope begins at is not signed in.</summary>
+    public const string SignedOut = "signed-out";
+
+    /// <summary>It runs on the account kept for conversations, which is where its scope begins.</summary>
+    public const string KeptSelf = "kept-self";
+
+    /// <summary>A conversation passed the kept account, which conversations take last.</summary>
+    public const string KeptLast = "kept-last";
+
+    /// <summary>Driven work passed the kept account.</summary>
+    public const string Kept = "kept";
+
+    /// <summary>The account passed said a limit is reached.</summary>
+    public const string NearReached = "near-reached";
+
+    /// <summary>The account passed said it is near a limit.</summary>
+    public const string NearWord = "near-word";
+
+    /// <summary>The account passed said it is drawing on usage credits.</summary>
+    public const string NearCredits = "near-credits";
+
+    /// <summary>The account passed has used a window at or over what counts as near.</summary>
+    public const string NearUsed = "near-used";
+
+    /// <summary>The account passed is near its limit, with nothing it said to name.</summary>
+    public const string Near = "near";
+
+    /// <summary>It runs the fewest of Daoris's sessions.</summary>
+    public const string Fewest = "fewest";
+
+    /// <summary>Its week resets first.</summary>
+    public const string Lapsing = "lapsing";
+
+    /// <summary>It is furthest behind its week's pace.</summary>
+    public const string Behind = "behind";
+
+    /// <summary>The account it was weighed against is ahead of its week's pace.</summary>
+    public const string Ahead = "ahead";
+
+    /// <summary>Daoris has not started on it yet.</summary>
+    public const string NotStarted = "not-started";
+
+    /// <summary>Daoris started on it least recently.</summary>
+    public const string LeastRecent = "least-recent";
+
+    /// <summary>It is a workspace's default.</summary>
+    public const string Default = "default";
+
+    /// <summary>It is this machine's default.</summary>
+    public const string DefaultHere = "default-here";
+
+    /// <summary>It comes first in a workspace's list.</summary>
+    public const string First = "first";
+
+    /// <summary>It comes first in this machine's list.</summary>
+    public const string FirstHere = "first-here";
 }
 
 /// <summary>Why a cool-off lasts until then, by code (TOOL4d): the page's <c>harness.cooling.why.*</c>.</summary>
