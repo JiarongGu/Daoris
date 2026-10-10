@@ -17,6 +17,10 @@ with the version and date at release.
   row of the registry and no file. A workspace no repository is in yet is allowed, and the card says the
   move starts it; a move to the workspace it is already in is refused. Adding or importing a repository
   stays yours, since it needs a folder.
+- Ask Daoris can take you to Repositories → *Add repository* or *Import a folder* with the workspace
+  filled in: its *Go there* opens the drawer with the workspace you named already in its field, shown
+  before you choose the folder. The folder stays yours to pick, and Import keeps that workspace rather
+  than offering the folder's name over it; a name you type there is kept the same way.
 - An ask Ask Daoris proposes keeps the review choice you gave it, and your words with it: its card says
   whether the work is reviewed in the default environment, in a named one or not at all, and Apply sends
   the choice as the ask composer does. A named environment the workspace does not declare is refused at
