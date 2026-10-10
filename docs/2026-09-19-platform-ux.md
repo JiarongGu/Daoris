@@ -228,6 +228,34 @@ controls are in the frame design's §3.
   state** in the answering tier's own words, with the action that changes it.
 - **Loading**: a first load shows static skeleton rows, with its words on the line the count will
   take; a refetch holds the previous render at reduced opacity — content never jumps.
+- **A list read a page at a time says how much it shows, and *Show more* reads the next page**
+  (UXLOADMORE1, built as ASKHIST1d2; D158's note of that name). A **foot under the rows**, left-aligned and inside the
+  scroller, holds three things in order: the count line, "{shown} of {total} are listed." (`help.history.listed`; zh
+  `已列出 {{total}} 段中的 {{shown}} 段。`), the *Show more* button (`help.history.more`; zh `显示更多`), and beside the
+  button a status span that says "Reading more conversations…" while the page is on its way (`help.history.loadingMore`),
+  empty but present from the first so a reader hears it begin. `shown` is the rows held, `total` what the driver says the whole
+  list (or the search) holds. The foot exists only while a next page does and rows are listed: on the last page it goes, and
+  the count line with it, so a list that fits says no count. A page that could not be read puts its sentence in the foot
+  (`moreError`) over the button, which stays pressable; the rows held remain. A press while one is reading asks nothing more and
+  takes no focus. **After the press, focus goes to the first row the page brought**, found by its session once the rows arrive,
+  so the keyboard reader goes on where the list went on; it stays where it is when the reader meanwhile went elsewhere (the
+  search changed, or the focus is on something outside the foot), and it is taken from a button that left with the last page.
+  **A search keeps this**: it says what it found and what it covered, "{count} conversation(s) hold “{words}”. Every
+  conversation was searched." (`help.history.searched`, `_other`; zh `{{count}} 段对话包含「{{words}}」。已搜索全部对话。`) above
+  its rows, never over a newer search's wait; its pages are counted by `total` as the list's are, so the foot still reads "{shown}
+  of {total}" when the matches are more than a page. A search never says it left some out: the driver searches every record, and
+  the sentence says so. A search that finds nothing is an empty state (`help.history.none` and `noneHint`, which repeats that
+  every one was searched) with the button that clears it, and a list with no rows has no foot and so no *Show more*. **The
+  terminal's twin** is `daoris-driver help list [--search "…"] [--offset <n>] [--limit <n>]`: a page that does not hold them
+  all ends with "{from}–{to} of {total} are listed; `daoris-driver help list … --offset {next}` lists the next", the command
+  to press in place of the button, and `--json` answers `total` and `next` (null on the last page), which the page reads to
+  draw its foot. **A new paged list follows this**: the count line, the button and the status span in the foot under its rows,
+  the same words in both languages, focus to the first row it brought, and a terminal verb with `--offset` and `--limit`
+  where it has one. A list whose search is not yet paged (the sessions rail's, whose answer is capped and says
+  `work.rail.search.cut`) is the exception until RAILSRCH1b pages it. Sources:
+  `src/Daoris.Web/src/help/AskHistory.tsx:53-55` (the rule), `:109-132` (the press and focus), `:229-233` (the search's
+  count), `:261-271` (the foot), `:215-221` (nothing found); `src/Daoris.Web/src/locales/{en,zh}/help.json:89-96`;
+  `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpCommand.cs:130-142,264-277`.
 - **A panel that keeps its height keeps it as a sentence**: an ended session's console was an empty
   bordered well, which reads as a field to type in.
 

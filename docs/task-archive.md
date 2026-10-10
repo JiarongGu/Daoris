@@ -13159,3 +13159,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CONVNOTE2a–h — the conversation's other driver notes, by code** (driver + web twin; one group per branch, in order). About 33 English-only note sites in eight groups: a resumed opening, … Each a branch; the table, the sites and the tests that read their English are the language design §9's CONVNOTE2. (Group a.)
 
 **Outcome** 2026-10-11: a resumed conversation's opening (an answer, the person's words, another agent's findings, and the native door's line) carries `resumed.opening`, `resumed.moved` and `resumed.native` with the `NoteCodes.Resumed` reasons, worded in en and zh; its English byte for byte, the `ResumeAsk` string form unchanged for other sites. Detail: D152's CONVNOTE2a note.
+
+
+## UXLOADMORE1 — the load-more convention (2026-10-11, D158)
+
+> - [ ] **UXLOADMORE1 — the load-more convention** (contract). A list read a page at a time says "{shown} of {total}" with *Show more* under its rows, and the press moves focus to the first row it brought; Ask Daoris's history is the first. Platform UX §4; RAILSRCH1b follows it.
+
+**Outcome** 2026-10-11: platform UX §4 holds the rule as Ask Daoris's history built it: the foot under the rows (count line, *Show more*, a status), shown while a next page exists; focus to the first row brought; a search's count and coverage; the terminal's `help list --offset --limit` twin. The rail's search is not paged (RAILSRCH1b was its Han-character gate), so it is RAILPAGE1. Detail: D158's UXLOADMORE1 note.
