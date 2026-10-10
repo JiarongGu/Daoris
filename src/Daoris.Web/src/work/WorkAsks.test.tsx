@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../i18n';
 import { code } from '../test/code';
 import { outcomeOf, pauseAsk } from './pausing';
 import { ABANDON_ANSWER, ABANDONED_ENTRY, MIXED_ASK, PAUSABLE_ASK, SPENT_ASK } from './pausingFixtures';
+import type { Answered } from './InlineConfirm';
 import { AbandonAsk, AbandonedWork, PauseAsk } from './WorkAsks';
 
 // What a pause and an abandon ask under a header, and what an abandon leaves on a page (PAUSE1e, D132 §2.6, §3.1, §4.2), as
@@ -18,7 +19,7 @@ describe('the pause’s ask (design §2.6)', () => {
   it('says what follows, then pauses on its second press, with never mind beside it', async () => {
     const pause = vi.fn();
     const cancel = vi.fn();
-    render(<PauseAsk target={ASK} lines={pauseAsk(PAUSABLE_ASK, { wired: true })} meanIt="Pause ask" onPause={pause} onCancel={cancel} />);
+    render(<PauseAsk target={ASK} lines={pauseAsk(PAUSABLE_ASK, { wired: true })} meanIt="Pause ask" onPause={pause} onClose={cancel} />);
 
     const ask = screen.getByRole('group', { name: 'pause this work' });
     expect(ask).toHaveTextContent('Stops 1 running session now and starts nothing of ask #a1b2c3 on this machine until you resume it.');
@@ -28,20 +29,42 @@ describe('the pause’s ask (design §2.6)', () => {
     expect(cancel).toHaveBeenCalledOnce();
     await userEvent.click(within(ask).getByRole('button', { name: 'Pause ask' }));
     expect(pause).toHaveBeenCalledOnce();
+    expect(pause).toHaveBeenCalledWith(expect.objectContaining({ done: expect.any(Function), refused: expect.any(Function) }));
   });
 
   it('offers no pause while it reads what the pause would stop, and waits while one is on its way', () => {
-    const { rerender } = render(<PauseAsk target={ASK} lines={null} meanIt="Pause ask" onPause={() => {}} onCancel={() => {}} />);
+    const { rerender } = render(<PauseAsk target={ASK} lines={null} meanIt="Pause ask" onPause={() => {}} onClose={() => {}} />);
     expect(screen.getByRole('group')).toHaveTextContent('Reading what the pause would stop…');
     expect(screen.queryByRole('button', { name: 'Pause ask' })).toBeNull();
 
-    rerender(<PauseAsk target={ASK} lines={pauseAsk(PAUSABLE_ASK, { wired: false })} meanIt="Pause ask" busy onPause={() => {}} onCancel={() => {}} />);
+    rerender(<PauseAsk target={ASK} lines={pauseAsk(PAUSABLE_ASK, { wired: false })} meanIt="Pause ask" busy onPause={() => {}} onClose={() => {}} />);
     expect(screen.getByRole('button', { name: 'Pause ask' })).toBeDisabled();
+  });
+
+  it('waits, says a refusal inside the ask, lets the move be pressed again, and closes when it lands (UXFIX2b2a)', async () => {
+    const close = vi.fn();
+    let answered: Answered | undefined;
+    render(<PauseAsk target={ASK} lines={pauseAsk(PAUSABLE_ASK, { wired: false })} meanIt="Pause ask" onPause={(a) => { answered = a; }} onClose={close} />);
+    const user = userEvent.setup();
+    const ask = screen.getByRole('group', { name: 'pause this work' });
+    expect(ask.querySelector('[tabindex="-1"]')).toBe(document.activeElement);
+
+    await user.click(screen.getByRole('button', { name: 'Pause ask' }));
+    expect(screen.getByRole('status')).toHaveTextContent(/\S/);
+    expect(screen.getByRole('button', { name: 'Pause ask' })).toBeDisabled();
+    act(() => answered!.refused('The driver could not stop it.'));
+    expect(within(ask).getByRole('alert')).toHaveTextContent('The driver could not stop it.');
+    expect(screen.getByRole('button', { name: 'Pause ask' })).toBeEnabled();
+    expect(close).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: 'Pause ask' }));
+    act(() => answered!.done());
+    expect(close).toHaveBeenCalledOnce();
   });
 
   it('says it in 中文, the ask by its Chinese name', async () => {
     await i18n.changeLanguage('zh');
-    render(<PauseAsk target={ASK} lines={pauseAsk(PAUSABLE_ASK, { wired: false })} meanIt="确认暂缓需求" onPause={() => {}} onCancel={() => {}} />);
+    render(<PauseAsk target={ASK} lines={pauseAsk(PAUSABLE_ASK, { wired: false })} meanIt="确认暂缓需求" onPause={() => {}} onClose={() => {}} />);
     expect(screen.getByRole('group')).toHaveTextContent('本机不会再启动需求 #a1b2c3 的任何工作');
   });
 });
@@ -50,7 +73,7 @@ describe('the abandon’s list (design §3.1, §3.2)', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
   it('lists what goes and what stays, each kept piece with why, and never a path on this machine', () => {
-    render(<AbandonAsk target={ASK} plan={MIXED_ASK} meanIt="Abandon ask" placeholder="why — kept with each decline" onAbandon={() => {}} onCancel={() => {}} />);
+    render(<AbandonAsk target={ASK} plan={MIXED_ASK} meanIt="Abandon ask" placeholder="why — kept with each decline" onAbandon={() => {}} onClose={() => {}} />);
 
     const goes = screen.getByRole('list', { name: 'What goes' });
     expect(within(goes).getByText('#9a8b7c Cap chunk hydration per frame')).toBeInTheDocument();
@@ -70,18 +93,30 @@ describe('the abandon’s list (design §3.1, §3.2)', () => {
   it('asks for the reason, and abandons on its second press with the reason as typed', async () => {
     const abandon = vi.fn();
     const user = userEvent.setup();
-    render(<AbandonAsk target={ASK} plan={PAUSABLE_ASK} meanIt="Abandon ask" placeholder="why — kept with each decline" onAbandon={abandon} onCancel={() => {}} />);
+    render(<AbandonAsk target={ASK} plan={PAUSABLE_ASK} meanIt="Abandon ask" placeholder="why — kept with each decline" onAbandon={abandon} onClose={() => {}} />);
 
     const move = screen.getByRole('button', { name: 'Abandon ask' });
     expect(move).toBeDisabled();
     await user.type(screen.getByRole('textbox', { name: 'why — kept with each decline' }), '  It went the wrong way.  ');
     await user.click(move);
-    expect(abandon).toHaveBeenCalledWith('It went the wrong way.');
+    expect(abandon).toHaveBeenCalledWith('It went the wrong way.', expect.objectContaining({ refused: expect.any(Function) }));
+  });
+
+  it('says a refusal inside the ask, and keeps the reason typed (UXFIX2b2a)', async () => {
+    let answered: Answered | undefined;
+    const user = userEvent.setup();
+    render(<AbandonAsk target={ASK} plan={PAUSABLE_ASK} meanIt="Abandon ask" placeholder="why" onAbandon={(_, a) => { answered = a; }} onClose={() => {}} />);
+    await user.type(screen.getByRole('textbox', { name: 'why' }), 'Wrong way.');
+    await user.click(screen.getByRole('button', { name: 'Abandon ask' }));
+    act(() => answered!.refused('Nothing was abandoned.'));
+    expect(screen.getByRole('alert')).toHaveTextContent('Nothing was abandoned.');
+    expect(screen.getByRole('textbox', { name: 'why' })).toHaveValue('Wrong way.');
+    expect(screen.getByRole('button', { name: 'Abandon ask' })).toBeEnabled();
   });
 
   it('says so where nothing is left to take, and offers only Close', async () => {
     const cancel = vi.fn();
-    render(<AbandonAsk target={ASK} plan={SPENT_ASK} meanIt="Abandon ask" placeholder="why" onAbandon={() => {}} onCancel={cancel} />);
+    render(<AbandonAsk target={ASK} plan={SPENT_ASK} meanIt="Abandon ask" placeholder="why" onAbandon={() => {}} onClose={cancel} />);
     const ask = screen.getByRole('group', { name: 'abandon this work' });
     expect(ask).toHaveTextContent('Nothing of ask #a1b2c3 is left to abandon on this machine.');
     expect(within(ask).getAllByRole('button').map((button) => button.textContent)).toEqual(['Close']);
@@ -91,7 +126,7 @@ describe('the abandon’s list (design §3.1, §3.2)', () => {
 
   it('lists in 中文', async () => {
     await i18n.changeLanguage('zh');
-    render(<AbandonAsk target={ASK} plan={MIXED_ASK} meanIt="确认放弃需求" placeholder="原因" onAbandon={() => {}} onCancel={() => {}} />);
+    render(<AbandonAsk target={ASK} plan={MIXED_ASK} meanIt="确认放弃需求" placeholder="原因" onAbandon={() => {}} onClose={() => {}} />);
     expect(screen.getByRole('list', { name: '要放弃的部分' })).toHaveTextContent('连同工作树一起丢弃');
     expect(screen.getByRole('list', { name: '会保留的部分' })).toHaveTextContent('已在 studio-pc 上接下');
   });

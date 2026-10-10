@@ -994,6 +994,35 @@ describe('the shell-attached registry management', () => {
     expect(window.localStorage.getItem(CHOSEN)).toBeNull();
   });
 
+  /** UXFIX2b1: the retire is the shared inline ask: its sentence focused, a refusal said inside, Never mind returns focus. */
+  it('retiring asks inline: focused, a refusal said inside it, and Never mind gives the focus back', async () => {
+    const notify = vi.fn();
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === '/api/registry/engine' && init?.method === 'DELETE') {
+        return Response.json({ error: 'The registry is locked by another process.' }, { status: 409 });
+      }
+      return respond(url);
+    }));
+    show(<ProjectsView notify={notify} />);
+    const page = await chooseRepository('engine');
+
+    await userEvent.click(within(page).getByRole('button', { name: 'Manage' }));
+    const drawer = await screen.findByRole('dialog');
+    await userEvent.click(within(drawer).getByRole('button', { name: 'Retire' }));
+    const ask = within(drawer).getByRole('group', { name: 'Retire' });
+    expect(ask.querySelector('[tabindex="-1"]')).toHaveFocus();
+
+    await userEvent.click(within(ask).getByRole('button', { name: 'Retire repository' }));
+    expect(await within(ask).findByRole('alert')).toHaveTextContent('The registry is locked by another process.');
+    expect(within(ask).getByRole('button', { name: 'Retire repository' })).toBeEnabled();
+    expect(notify).not.toHaveBeenCalled();
+
+    await userEvent.click(within(ask).getByRole('button', { name: 'Never mind' }));
+    expect(within(drawer).queryByRole('group', { name: 'Retire' })).toBeNull();
+    expect(within(drawer).getByRole('button', { name: 'Retire' })).toHaveFocus();
+  });
+
   /**
    * UX5 U37: *owns* and *accepts* were edited in monospace, beside a summary in the body face, and
    * they become chips in the body face. They are phrases, not code, so they are written as phrases.

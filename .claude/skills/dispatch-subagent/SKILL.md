@@ -25,7 +25,10 @@ The scout, read-only and outside any worktree:
 ```
 Row: <ROW> in TASKS.md. Contract: <design document, section>. Main is at <sha>.
 Lanes the row names: <lane ids>. Branches in flight hold: <files>.
+Call the Skill tool with doc-loader before anything else, and name what it routed to.
 ```
+
+The last line stays until a scout's transcript shows its preloaded skills working (D160's SUBLOAD1b note).
 
 The worker, with `subagent_type: branch-worker` and the model the table below chooses:
 
@@ -35,6 +38,8 @@ Model: <model>, because <the row's kind in the table>.
 Start from: main at <sha> or later.
 Lanes: <lane ids in daoris.lanes.json, e.g. cli, tools>. Do not touch: <files a branch in flight holds>.
 Decision number: D<n>, reserved for this branch: write docs/decisions/D<n>.md. (Or: none. Write no decision.)
+How you work: edit files only with Edit and Write, never through python, sed, perl or a shell redirect; write
+each failing test first and watch it fail; commit each piece once its tests pass.
 Orientation pack:
 <the scout's pack, as it came back, with any pointer you corrected marked>
 ```

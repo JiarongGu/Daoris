@@ -4,6 +4,7 @@ import { cn } from '../lib/cn';
 import { Button, Inline, PathText, Pill, Prose } from '../ui';
 import { type KitPoint, type PluginTrialResult, TrialReport } from '../settings/PluginKit';
 import { PluginSourceLine, PluginUpdatePlan, type PluginUpdatePlanShown, updatable } from '../settings/PluginUpdate';
+import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import { PageHead, PageSection, ViewMain } from '../work/ViewMain';
 import { type PluginShown, pluginState, speaks, updateWaits } from './catalog';
 import { PluginIcon } from './PluginIcon';
@@ -102,7 +103,8 @@ export function PluginPage({
   onApplyUpdate: (id: string) => void;
   onCancelUpdate: () => void;
   onAskRemove: (id: string) => void;
-  onRemove: (id: string) => void;
+  /** The second press, told how the removal ended: a refusal is said inside the ask (UXFIX2b1). */
+  onRemove: (id: string, answered: Answered) => void;
   onCancelRemove: () => void;
 }) {
   const { t } = useTranslation();
@@ -169,17 +171,15 @@ export function PluginPage({
       {plugin.problem && <Lead text={plugin.problem} />}
 
       {asking && (
-        <div
-          role="group"
-          aria-label={t('plugin.removeTitle', { id: plugin.id })}
-          className="mb-4 flex flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2"
-        >
-          <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft">
-            <Inline text={t('plugin.removeConfirm', { data: plugin.data })} />
-          </span>
-          <Button variant="danger" disabled={acting} onClick={() => onRemove(plugin.id)}>{t('plugin.removeMeanIt')}</Button>
-          <Button variant="ghost" onClick={onCancelRemove}>{t('common.cancel')}</Button>
-        </div>
+        <InlineConfirm
+          className="mb-4"
+          label={t('plugin.removeTitle', { id: plugin.id })}
+          says={<Inline text={t('plugin.removeConfirm', { data: plugin.data })} />}
+          meanIt={t('plugin.removeMeanIt')}
+          busy={acting}
+          onConfirm={(answered) => onRemove(plugin.id, answered)}
+          onClose={onCancelRemove}
+        />
       )}
 
       {plan && (

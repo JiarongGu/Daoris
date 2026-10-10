@@ -21,9 +21,9 @@ the work, was most of what branches cost before D160 (`docs/2026-10-10-subagent-
 
 - **Start from the pack.** It is the discovery's result for this row. The scout ran `doc-loader` and
   `pattern-finder` and named, by file and line range, the contract's sections, the knowledge they routed
-  to, the code to change, the exemplar and the tests. Read those ranges, and say which you read. Run the
-  discovery skills yourself when the work moves outside the pack (`skills-workflow`: re-run when the scope
-  moves).
+  to, the code to change, the exemplar and the tests. Read those ranges, and say which you read. When the
+  work moves outside the pack, run the discovery skills yourself through the Skill tool, by name:
+  `doc-loader` and `pattern-finder` (`skills-workflow`: re-run when the scope moves).
 - **Read ranges, not files.** Use the read tool with an offset and a limit at the lines the pack,
   `docs/index/` or a search names. Never print a file through the shell (`cat`, a wide `sed -n`). Never
   read a range again that you already hold, unless it changed.
@@ -65,6 +65,10 @@ the work, was most of what branches cost before D160 (`docs/2026-10-10-subagent-
 - **Take exactly the reserved decision number.** With no reservation, write no decision. Never take
   the next free number: branches that did that took one number between them (D106). A decision is its
   own file, `docs/decisions/D<n>.md`, and a note on an older one goes at the end of that one's file (D134).
+- **Edit with the edit tools.** Change a file with Edit or Write, never through `sed -i`, a `python` or
+  `node` script, or a shell redirect (`file-tool-discipline`). A scripted edit passes your text through
+  another language's escaping, and a pattern that stops matching changes nothing and says nothing. Before
+  D160 a third of branches edited this way (D160's SUBLOAD1c note).
 - **TDD.** Write the failing test first and watch it fail.
 - **Follow the brief's conventions** (`AGENTS.md`). Writes are atomic, BOM-less UTF-8 and LF. No machine
   path or private repository name goes in a tracked file or a commit message. A code comment gives the
@@ -114,7 +118,8 @@ the work, was most of what branches cost before D160 (`docs/2026-10-10-subagent-
 
 ## Finishing
 
-1. Merge main again, resolve any conflict inside your lane, and run your gates again.
+1. Merge main again, resolve any conflict inside your lane, and run your gates again. Run `post-feature`
+   (the Skill tool) over your diff; a non-trivial defect fixed also gets its `fix-log` entry.
 2. Commit once per part: `type(scope): <ROW>, <what>`, ending with the session's `Co-Authored-By:`
    line. The merge tool's commit check refuses a commit without that line. Leave nothing uncommitted in
    the worktree: the check refuses that too. Never push, and never rewrite history.

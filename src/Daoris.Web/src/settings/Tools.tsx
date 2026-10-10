@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ago, size } from '../format';
+import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import {
   Button, Card, CardHeader, Inline, PathText, Pill, Prose, Segmented, SelectField, SettingRow,
 } from '../ui';
@@ -164,7 +165,8 @@ export function ToolCard({
   onAsk?: (use: ToolUse | null) => void;
   onDownload: (version: string) => void;
   onStop: () => void;
-  onDelete: (version: string) => void;
+  /** The delete's second press, told how it ended: a refusal is said inside the ask (UXFIX2b1). */
+  onDelete: (version: string, answered: Answered) => void;
   /** The system's file picker, where this window has one. */
   onBrowse?: () => void;
 }) {
@@ -340,27 +342,15 @@ export function ToolCard({
               </Prose>
             )}
             {deleting !== null && (
-              <div
-                role="group"
-                aria-label={t('settings.tools.deleteTitle', { name: tool.name, version: deleting })}
-                className="mt-2 flex flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2"
-              >
-                <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft">
-                  {t('settings.tools.deleteSays', { name: tool.name, version: deleting })}
-                </span>
-                <Button
-                  variant="danger"
-                  disabled={acting}
-                  onClick={() => {
-                    const version = deleting;
-                    setDeleting(null);
-                    onDelete(version);
-                  }}
-                >
-                  {t('settings.tools.deleteConfirm')}
-                </Button>
-                <Button variant="ghost" onClick={() => setDeleting(null)}>{t('common.cancel')}</Button>
-              </div>
+              <InlineConfirm
+                className="mt-2"
+                label={t('settings.tools.deleteTitle', { name: tool.name, version: deleting })}
+                says={t('settings.tools.deleteSays', { name: tool.name, version: deleting })}
+                meanIt={t('settings.tools.deleteConfirm')}
+                busy={acting}
+                onConfirm={(answered) => onDelete(deleting, answered)}
+                onClose={() => setDeleting(null)}
+              />
             )}
           </SettingRow>
         )}
