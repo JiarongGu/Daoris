@@ -115,7 +115,7 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
     // ENTRY1d2a: a workspace is named, never a folder, so no path the conversation was not given is written (D48 §3/§7).
     [InlineData("projects||add||C:\\work", "never by a folder")]
     [InlineData("projects||import||work/engine", "never by a folder")]
-    [InlineData("projects||add||/home/someone/work", "never by a folder")]
+    [InlineData("projects||add||/checkouts/work", "never by a folder")]
     [InlineData("projects||add||D:", "never by a folder")]
     public void A_malformed_go_proposal_is_refused_with_nothing_written(string fields, string says)
     {
