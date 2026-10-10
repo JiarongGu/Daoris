@@ -27,7 +27,9 @@ Contracts: platform UX §4/§6, `docs/2026-10-05-ux7-design.md` (D152),
 `docs/2026-10-04-ux6-redesign.md` (D150, §12 proofs). UI work needs stories, behavior tests and
 installed-window evidence in both themes/languages; Storybook alone does not close an installed proof.
 
-- [ ] **UXFIX2bi — installed confirmations look** (parent; after republish). The UXFIX2b1/2a/2b asks in the window (tool, plugin, retire, pause, abandon, decline, close, finish, archive, discard), both themes/languages: focus on open, pending, refusal inside, returned focus.
+- [ ] **UXFIX2d — an ask inside a drawer gives focus back to its press** (web). On the window, the retire ask's Never mind left focus on the drawer's Close: `InlineConfirm`'s `CLOSES_ITSELF` counts any `[role=dialog]` around it as closing, but a drawer stays open. D161 note (2026-10-11); a test with the real drawer, then the window.
+- [ ] **UXFIX2b1r — the retire ask says its sentence once** (web). The ask's explanation repeats the drawer's retire sentence just above it, word for word (seen on the window, flagged by UXFIX2b1). UXFIX2b1's archive entry.
+- [ ] **UXFIX2bi — installed confirmations look** (parent; after republish). Retire seen 2026-10-11 (UXFIX2d, UXFIX2b1r); the rest need data the machine lacks (a managed tool version, a plugin, a parked or ended session): tool, plugin, pause, abandon, decline, close, finish, archive, discard, both themes/languages.
 - [ ] **UX7b — installed account UI** (web). Verify recovered account rows and add/name/join flow at 1546/680 px, both themes/languages. D152 §4.
 - [ ] **ACCTEDIT1b — installed refused edits** (parent; after republish). Verify rename, workspace use and add refusals retain drafts, including dark borders. D152 §4; dated shots.
 - [ ] **BRSCOPE1b — checkout scope and sync workspace** (modules/service/driver; after BRSCOPE1a). Share checkout-scope fixtures; carry workspace through sync proposals. D150 notes; three-door proof.
@@ -49,7 +51,7 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 Contracts: toolchain (D57 §3), account rotation (D125), account use (D130), browser (D78/D84).
 Original row proofs remain in the frozen backlog; measurements precede declarations.
 
-- [ ] **ACCTUX4i — installed account cells, and the row budget** (parent; after republish). Shots at 1546/680, English light and 中文 dark: read, never-read, key and own sign-in, cool-off, Codex. Settle D152's row budget against D125's ACCTUX4 measures.
+- [ ] **ACCTUX4i — installed account cells, and the row budget** (parent). 中文 dark and light at 1546 and 680 seen 2026-10-11; English, a key and Codex rows remain. The *Now* header stands over an empty column, the cells starting under *Used for*. Settle D152's row budget against D125's ACCTUX4 measures.
 - [ ] **ACCTUX4b — Next start above the accounts** (web). One sentence naming the next account and why, with *first* marking `scope.next`. Second-opinion review lines 125, 128-133; D152 §4.2; `agents.test.ts`, `AgentsView.test.tsx`, stories at 52rem/37rem.
 - [ ] **ACCTPLAN1 — plan, spend and reset credits** (driver/modules/web; design first). Nothing reads them yet (D125:898-899); show them in a fold, and never redeem a credit without `InlineConfirm`. Second-opinion review lines 132-133.
 - [ ] **ACCTNAME1 — email names read once** (CLI/driver/web). Avoid duplicate email/name; size roster columns. D125 notes; long-name and equal-email cases.
@@ -69,7 +71,7 @@ Original row proofs remain in the frozen backlog; measurements precede declarati
 Contracts: `docs/2026-10-07-history-clearing-design.md` (D153), D158,
 D88/D102 cleanup notes, machine log §4. Installed clears require the owner's existing authorization.
 
-- [ ] **ASKHIST1di — installed history paging** (parent; after republish). Over 200 conversations: *Show more* and its focus; a search's count and coverage; no match; a hit deep in a long line; one Han character; a found old conversation that goes on. Both languages, dock at 300 and 430 px. D158's ASKHIST1d2 note.
+- [ ] **ASKHIST1di — installed history paging** (parent). Seen 2026-10-11 in 中文: a search's count and coverage, no match, a hit cut around its words, one Han character. Remaining: over 200 conversations (*Show more* and its focus; this machine has 7), English, the dock at 300 and 430 px. D158's ASKHIST1d2 note.
 - [ ] **UXLOADMORE1 — the load-more convention** (contract). A list read a page at a time says "{shown} of {total}" with *Show more* under its rows, and the press moves focus to the first row it brought; Ask Daoris's history is the first. Platform UX §4; RAILSRCH1b follows it.
 - [ ] **AUTOTIDY1a — show automatic cleanup** (modules/web). Branches lists recent tidied/kept log facts. D88; route and bilingual list tests.
 - [ ] **AUTOTIDY1b — measure strict cleanup guards** (parent; installed AUTOTIDY1, after one week). Count ignored-file/unmoved-branch holds before deciding relaxations. D88 evidence.
