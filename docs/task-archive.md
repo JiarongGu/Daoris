@@ -13082,3 +13082,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ENTRY1f2 — a go names one waiting session** (driver/modules/web; after f1 and ENTRY1g). The room lists waiting sessions by id; the driver judges a session item on the machine and refuses Ask Daoris's own. D161's ENTRY1f note.
 
 **Outcome** 2026-10-11: the room lists the sessions waiting on the person by id under the Sessions list's own rule (`SessionGroups.WaitsOnYou`), and its count is now that list's (it had counted answered parks); a go on `sessions` names one by id, judged against the machine's session records, refusing an unknown id, a teammate's and Ask Daoris's own; the page opens it. Detail: D161's ENTRY1f2 note; FIX-LOG 2026-10-11.
+
+
+## ENTRY1g2 — a go past a receiver filter on Quests (2026-10-11, D161)
+
+> - [ ] **ENTRY1g2 — a go past a receiver filter on Quests** (web; after ENTRY1g). A receiver filter hides the `held` group a go asks for; showing it for the go alone changes the query (`useQuests(filters.to, …)`), not the layout. D161's ENTRY1b note; QuestsView tests.
+
+**Outcome** 2026-10-11: a go to `quests/held` asks for everyone's quests for that go alone (`goAll`), until the person chooses in the ⋯ or leaves Quests; the ⋯ shows Everyone meanwhile and the stored filter is never written. Asks were never filtered. Detail: D161's ENTRY1g2 note.

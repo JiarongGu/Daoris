@@ -33,7 +33,6 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 - [ ] **BRSCOPE1b — checkout scope and sync workspace** (modules/service/driver; after BRSCOPE1a). Share checkout-scope fixtures; carry workspace through sync proposals. D150 notes; three-door proof.
 - [ ] **UX7d — remaining visual findings** (web/driver). Absent-agent Install, strip marks, version, compact Chinese summaries and coded opening notes. D152 §4.6.
 - [ ] **UX7e — installed menus and heads** (parent; after republish). Verify keyboard menus, shortcuts, composer editing, head geometry and titles at 1546/680 px. D152 §6.
-- [ ] **ENTRY1g2 — a go past a receiver filter on Quests** (web; after ENTRY1g). A receiver filter hides the `held` group a go asks for; showing it for the go alone changes the query (`useQuests(filters.to, …)`), not the layout. D161's ENTRY1b note; QuestsView tests.
 - [ ] **ENTRY1bi — installed go to what waits** (parent; after republish). A go to `sessions/waiting`, `quests/held` and `quests/asks`, and the waiting starter, each with a group to show: its heading at the top, focused. D161's ENTRY1b note.
 - [ ] **ENTRY1d2a — a go to Add or Import carries a workspace** (service/driver/modules; after ENTRY1f2, which holds the same files). The go box and tool take `workspace`, the driver judges it on `add`/`import` only, the room's sentence and the register/import owed rows change. D161's ENTRY1d note; the go's `item` (ENTRY1f1) is the exemplar.
 - [ ] **ENTRY1d2b — Add and Import open prefilled** (web; after ENTRY1f2). `placeDoor` carries the go's workspace to the drawer; Import keeps a prefill over the folder's name. The folder stays the person's pick. D161's ENTRY1d note; ProjectsView's `addRequested` one-shot.
@@ -86,8 +85,9 @@ FRAME1i precedes PLUGUI1h. Installed looks cover both themes/languages.
 - [ ] **PLUGUI1c2 — plugin-page remainder** (web). Move kit/update types, fix agent/landing doors, put Update now first, remove doubled heading. D119; stories/tests/look.
 - [ ] **PLUGUI1f — complete plugin page** (after c/e). Health, Points, Agents, Servers, Activity, Data, Source and folder install. D119.
 - [ ] **PLUGUI1g — plugin checks** (after f). Keep trial and run tests in a home copy. D119.
-- [ ] **PLUGUI1h — Ask Daoris opens Plugins** (after c/FRAME1i). D119; matching coverage and screen proof.
-- [ ] **FRAME1i — item-aware Ask Daoris**. Update where.ts, go and room for lists/items. D118.
+- [ ] **PLUGUI1h — Ask Daoris opens Plugins** (after c/FRAME1i-a). D119; matching coverage and screen proof. A plugin as a go's item (`ItemViews` gains plugins) is this row's.
+- [ ] **FRAME1i-a — the preface names the chosen item** (web; after ENTRY1d2b, which holds App.tsx). `help/where.ts` names the item each view has chosen (quest, ask, repository, workspace, plugin, agent), only what the screen shows; App passes it from the list panes, a gone choice unsaid. The go's item is ENTRY1f1/f2's. Frame-model design ~:375-388; D118.
+- [ ] **FRAME1i-b — the room says every view's list** (driver; after ENTRY1d2a, which holds the goldens). `HelpRoomWindow.cs` says each view but Overview and Map has a list, its four doors (D118 point 4), and that where the person is names the chosen item. Frame-model design ~:375-388; goldens.
 - [ ] **FRAME2b — maximized restore under pointer** (owner sends request). Wait for runtime position support, then update handler. D56/D32; owner response and handler proof.
 
 ## Workflows
