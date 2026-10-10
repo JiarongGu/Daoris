@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import type { Session } from '../api';
 import { keys } from '../queries';
+import { searchable } from '../searchable';
 import type { SessionEvent } from '../work/conversation';
 import type { SessionGroupName, SessionGrouping } from '../work/groups';
 import type { NewSessionAnswer } from '../work/say';
@@ -251,8 +252,8 @@ export type SessionHit = { session: string; seq: number; kind: string; snippet: 
 
 /**
  * What sessions said, searched (RAIL1): the person's words and the agent's, on this machine's own
- * record, bounded by the host and saying so (`cut`). Asked from two letters on — one letter matches
- * everything — and the caller debounces, so a word typed is one question, not one per key.
+ * record, bounded by the host and saying so (`cut`). Asked from two letters on, or one Han character
+ * (`searchable`, RAILSRCH1b) — one other letter matches everything — and the caller debounces, so a word typed is one question, not one per key.
  */
 export const useSessionSearch = (query: string, session?: string) => {
   const { isAvailable } = useShenora();
@@ -262,7 +263,7 @@ export const useSessionSearch = (query: string, session?: string) => {
     // Within one session, where one is named (SESS1 S9): its words and its calls by their titles.
     queryFn: () => call<{ query: string; hits: SessionHit[]; cut: boolean }>(
       'SESSION_SEARCH', { q, ...(session ? { session } : {}) }),
-    enabled: isAvailable && q.length >= 2,
+    enabled: isAvailable && searchable(q),
     staleTime: 10_000,
     refetchOnWindowFocus: false,
     retry: false,

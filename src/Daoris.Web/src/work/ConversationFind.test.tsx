@@ -84,4 +84,10 @@ describe('the way through a long run', () => {
 
     expect(screen.queryByText('nothing found')).toBeNull();
   });
+
+  it('asks about one Han character, which the driver searches by (RAILSRCH1b)', () => {
+    draw({ query: '区', hits: 0 });
+
+    expect(screen.getByText('nothing found')).toBeInTheDocument();
+  });
 });

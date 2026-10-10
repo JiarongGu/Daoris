@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { isComposing } from '../lib/composing';
+import { searchable } from '../searchable';
 import { Button, Icon } from '../ui';
 
 /**
@@ -60,7 +61,7 @@ export function ConversationFind({
           }}
           className="w-56 rounded-control border border-line-strong bg-raised px-2.5 py-1 text-small text-ink placeholder:text-ink-faint"
         />
-        {hits !== undefined && query.trim().length >= 2 && (
+        {hits !== undefined && searchable(query) && (
           <>
             <span aria-live="polite" className="whitespace-nowrap text-meta tabular-nums text-ink-faint">
               {found === 0
