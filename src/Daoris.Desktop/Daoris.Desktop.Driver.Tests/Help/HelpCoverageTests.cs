@@ -394,11 +394,8 @@ public sealed partial class HelpCoverageTests
     /// or <see cref="Elsewhere"/> already answers is answered here too, since the answer is the act's, not the place's.
     /// </summary>
     /// <remarks>
-    /// Four answers, by D161's ENTRY1 note. A quest's or a session's verb is <see cref="Conversation"/>, reached by a go to its
-    /// view. Where a kind already takes the act (`setting`'s retry, `accept`, `hand`, `delete`'s quest and ask, `ask`), it
-    /// stays that kind's door, beside the place's own press. What changes nothing, a discard (D89), the person's own words (D133
-    /// §1) and a decline (D126 §7.3) are exempt; what a named row builds is owed to it. A press that is not a mutation is no
-    /// start and no row: *Look now* (`useNudge`) is a callback that asks the loop to look sooner and changes nothing.
+    /// Each answer follows the rule D161's ENTRY1a note gives. A press that is not a mutation is no start and no row: *Look
+    /// now* (`useNudge`) is a callback that asks the loop to look sooner and changes nothing.
     /// </remarks>
     private static readonly (string Where, string Hook, string? Action, Answer Answer)[] Starts =
     [
