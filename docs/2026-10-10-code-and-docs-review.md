@@ -176,3 +176,26 @@ and installed-window proof remain their existing tasks, and no live installation
 
 Local implementation commit: `423cc132`. The documentation follow-up fills its fix-log provenance;
 it changes no runtime behavior and is checked by the documentation and universal gates.
+
+### Cleanup authorization follow-up
+
+The owner explicitly requested resolving the policy refusal and continuing the two cleanup actions.
+Session permissions already report full filesystem access with approval prompts disabled; the prior
+rejection did not identify a repository rule to edit. Reinspection confirms the scratch metadata is
+ignored with no reparse points, the harness directory is empty, and only the primary Git worktree is
+registered. Retry the exact native cleanup through the normal command review under this explicit
+authorization; do not route a refused deletion through another mechanism.
+
+The owner further requested repository-local policy rather than global Codex changes. Added
+`.codex/config.toml` with the active full-access/no-prompt defaults and placed the local cleanup
+procedure in the development guide, linked from the handwritten brief. Global settings were only
+inspected. The exact native removal was reviewed again under explicit authorization and rejected
+before execution with “blocked by policy.” Both directories still exist; no alternate API was used.
+This proves the active command restriction remains independently enforced, not that future sessions
+loaded the new project configuration. DOCSCRATCH1/CLEANUP1 remain open; documentation checks follow.
+
+Configuration TOML parses and contains only the requested two defaults. Doctrine, six document
+budgets, backlog/router shapes, duplicate checks and structural coverage pass; historical archive
+overruns remain advisory. The orientation index is regenerated. This changes local configuration
+and contributor guidance; application behavior and its preceding gate verdicts remain unchanged.
+Staged universal verification passes all five gates, including 59 links across 563 Markdown files.

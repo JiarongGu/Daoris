@@ -19,6 +19,25 @@ The web package has its own lockfile and is not an npm workspace of the root. Wi
 for the desktop application and deployment rehearsal; native AOT publishing needs the target
 platform's native toolchain. The individual [component guides](README.md#guides) explain their loops.
 
+## Repository scratch cleanup
+
+The owner chose repository-scoped Codex defaults in [`.codex/config.toml`](../.codex/config.toml).
+They match the full-access, no-prompt session mode; trusted project configuration loads above user
+defaults, subject to session overrides and managed requirements. These defaults do not override a
+tool's refusal or authorize unrelated destructive actions. See [official configuration precedence](https://learn.chatgpt.com/docs/config-file/config-basic#configuration-precedence).
+
+When cleanup is part of an authorized task, remove its own generated scratch using the normal
+native filesystem command. An existing grant for the exact targets needs no repeated confirmation.
+Immediately before removal, resolve each target inside this checkout, confirm it is ignored and
+contains only disposable generated material, and reject reparse points. Preserve authored content,
+backups and evidence still needed by the task. For a leftover worktree directory, confirm it is empty
+and absent from `git worktree list`; registered managed worktrees use their owning lifecycle tool.
+
+Use literal targets and one shell throughout; verify absence afterward. If execution is rejected,
+record the action and exact reason, leave the task open, and resolve the actual permission setting
+or surface it to the owner. Retry after new authorization or a real permission change through the
+same review path. Do not substitute another deletion API, wrapper or shell to evade that rejection.
+
 ## Choose the checks
 
 `npm run verify` is the baseline check, not a substitute for testing a component you changed. Its

@@ -29,6 +29,9 @@ without a service. Model-dependent capabilities state the tier that actually ran
   decisions, and move completed tasks from the backlog to the archive.
 - Do not hand-edit versions or release headings. The release workflow owns their stamping.
   Local commits follow green gates; push, publication and history rewrites remain the owner's call.
+- Keep Codex execution defaults in `.codex/config.toml`. Authorized scratch cleanup follows
+  [the repository cleanup procedure](docs/development.md#repository-scratch-cleanup); do not repeat
+  an already-granted approval or work around a tool rejection.
 
 ## Layout
 

@@ -16,9 +16,9 @@ Historical installation receipts and adoption mechanics remain in their evidence
 
 ## Workspace cleanup
 
-- [ ] **DOCSCRATCH1 — remove blocked verification scratch** (tools). Execution policy refused deletion of the ignored `_fixtures/doc-system-preview-git/` metadata created by DOCSYS1; its helper is removed and no process uses it. Once deletion is permitted, inspect that exact directory and remove only its metadata; proof: the directory is absent.
+- [ ] **DOCSCRATCH1 — remove blocked verification scratch** (command review). Deletion of ignored `_fixtures/doc-system-preview-git/` metadata remains rejected after explicit owner authorization and repository-local defaults. Inspect the exact target, then native removal when permitted; proof: absence. Restriction and retry receipt: `docs/2026-10-10-code-and-docs-review.md`.
 
-- [ ] **CLEANUP1 — remove the empty harness-held directory** (after the paused harness releases it). `.claude/worktrees/agent-a3b92da3b8bb159c9` is empty; its branch and Git registration are gone, and backups are preserved. Proof: inspect emptiness again, then normal directory removal; integration review.
+- [ ] **CLEANUP1 — remove the empty harness-held directory** (command review). `.claude/worktrees/agent-a3b92da3b8bb159c9` is empty and unregistered; backups are preserved. Native removal remains rejected after explicit authorization and repository-local defaults. Proof: recheck emptiness/registration, remove when permitted and verify absence; retry receipt: the maintenance review.
 
 ## UI/UX first
 
