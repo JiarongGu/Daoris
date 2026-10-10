@@ -224,9 +224,10 @@ function Band({ doors, notify, onSessions, onRun }: {
     acceptDeparture: (item) => run(item, () => accept.mutateAsync(item.id), (answer) => notify(answer.message)),
     // A driver's verdicts, holds and rules reach only a shell, so in a browser these rows, and these acts, never appear.
     retry: (item) => run(item, () => retry.mutateAsync({ quest: item.id }), (state) => notify(t(...retryNotice(item.id, state)))),
-    trust: (item) => {
+    trust: (item, answered) => {
       const hold = item.trust;
-      if (hold) run(item, () => trust.mutateAsync(hold), (granted) => notify(granted.message, granted.verified ? 'ok' : 'error'));
+      if (hold) run(item, () => trust.mutateAsync(hold), (granted) => notify(granted.message, granted.verified ? 'ok' : 'error'), answered);
+      else answered.done();
     },
     acceptRule: (item, answered) => run(item, () => settle.mutateAsync({ id: item.id, accept: true }),
       () => notify(t('settings.rules.proposals.accepted', { change: item.title })), answered),

@@ -293,6 +293,21 @@ describe('What needs you on a machine', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TRUST_FOLDER', { payload: { folder: HOLD.folder, trustFile: HOLD.trustFile } });
   });
 
+  it('says a refused grant inside the trust question, and toasts nothing (UXFIX2b3b)', async () => {
+    const notify = vi.fn();
+    start({ untrusted: [HOLD] }, { notify });
+    const was = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, request?: { payload?: Record<string, unknown> }) =>
+      type === 'TRUST_FOLDER' ? Promise.reject(new Error('The agent file is locked.')) : was(module, type, request));
+    const row = await screen.findByRole('listitem', { name: 'C:/somewhere/engine' });
+    await userEvent.click(within(row).getByRole('button', { name: 'Trust this folder…' }));
+    await userEvent.click(within(row).getByRole('button', { name: 'Trust this folder' }));
+
+    expect(await within(row).findByRole('alert')).toHaveTextContent('The agent file is locked.');
+    expect(within(row).getByRole('button', { name: 'Trust this folder' })).toBeEnabled();
+    expect(notify).not.toHaveBeenCalled();
+  });
+
   it('declines a widening in a press, and accepts one only after saying what it widens', async () => {
     const notify = vi.fn();
     start({ proposals: [WIDENING] }, { notify });

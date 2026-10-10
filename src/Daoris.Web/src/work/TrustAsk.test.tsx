@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { Answered } from './InlineConfirm';
 import { TrustAsk } from './TrustAsk';
 
 // The question the agent asks the first time it runs in a folder, asked by Daoris for a folder the
@@ -49,5 +50,34 @@ describe('asking for an agent\'s trust in a folder', () => {
     expect(screen.getByRole('button', { name: 'Trust this folder' })).toBeDisabled();
     await userEvent.click(screen.getByRole('button', { name: 'Not now' }));
     expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('the grant, answered in the question (UXFIX2b3b)', () => {
+  it('waits saying so, then says a refusal inside and can be pressed again', async () => {
+    let answer: Answered | null = null;
+    const onGrant = vi.fn((answered: Answered) => { answer = answered; });
+    show({ onGrant, onCancel: () => {} });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Trust this folder' }));
+    expect(screen.getByRole('status')).not.toBeEmptyDOMElement();
+    expect(screen.getByRole('button', { name: 'Trust this folder' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Not now' })).toBeDisabled();
+
+    act(() => answer!.refused('The file could not be written.'));
+    expect(screen.getByRole('alert')).toHaveTextContent('The file could not be written.');
+    expect(screen.getByRole('button', { name: 'Trust this folder' })).toBeEnabled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Trust this folder' }));
+    expect(onGrant).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('is released when the grant lands', async () => {
+    let answer: Answered | null = null;
+    show({ onGrant: (answered) => { answer = answered; } });
+    await userEvent.click(screen.getByRole('button', { name: 'Trust this folder' }));
+    act(() => answer!.done());
+    expect(screen.getByRole('button', { name: 'Trust this folder' })).toBeEnabled();
   });
 });

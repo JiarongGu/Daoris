@@ -191,8 +191,8 @@ export function QuestPage({
   onRetry?: () => void;
   /** Open or put down the trust question (D73) — the shell's, which closes it once the grant is written. */
   onTrusting?: (open: boolean) => void;
-  /** Grant the agent's trust for the folder held (D73) — the shell's. */
-  onGrant?: (hold: TrustHold) => void;
+  /** Grant the agent's trust for the folder held (D73) — the shell's; a refusal is said in the question (UXFIX2b3b). */
+  onGrant?: (hold: TrustHold, answered: Answered) => void;
   onOpenQuest: (id: string) => void;
   /** The door into Sessions: absent where there are none, a browser, or no driver is attached. */
   onAttend?: (session: string) => void;
@@ -621,7 +621,7 @@ export function QuestPage({
 
       {hold && onGrant && trusting && (
         <div className="mb-4">
-          <TrustAsk hold={hold} busy={granting} onCancel={onTrusting && (() => onTrusting(false))} onGrant={() => onGrant(hold)} />
+          <TrustAsk hold={hold} busy={granting} onCancel={onTrusting && (() => onTrusting(false))} onGrant={(answered) => onGrant(hold, answered)} />
         </div>
       )}
 

@@ -364,7 +364,24 @@ describe('settling one where it stands', () => {
     expect(screen.getByText('The driver is holding quest #7a82cc for it.')).toBeInTheDocument();
     expect(acts.trust).not.toHaveBeenCalled();
     await userEvent.click(screen.getByRole('button', { name: 'Trust this folder' }));
-    expect(acts.trust).toHaveBeenCalledWith(TRUST);
+    expect(acts.trust).toHaveBeenCalledWith(TRUST, answeredByAct);
+  });
+
+  /** UXFIX2b3b: the question stays while the grant is written; it closes once it landed and says a refusal itself. */
+  it('keeps the trust question open for a refusal, and closes it once the grant lands', async () => {
+    const acts = everyAct();
+    render(<AttentionRow item={TRUST} acts={acts} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Trust this folder…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Trust this folder' }));
+    const answered = vi.mocked(acts.trust!).mock.calls[0]![1]!;
+    act(() => answered.refused('The agent file is locked.'));
+    expect(screen.getByRole('alert')).toHaveTextContent('The agent file is locked.');
+    expect(screen.getByText('Trust this folder for the agent?')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Trust this folder' }));
+    act(() => vi.mocked(acts.trust!).mock.calls[1]![1]!.done());
+    expect(screen.queryByText('Trust this folder for the agent?')).toBeNull();
   });
 
   it('accepts a departure in one press', async () => {

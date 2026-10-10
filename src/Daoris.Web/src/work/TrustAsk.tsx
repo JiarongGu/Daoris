@@ -1,6 +1,8 @@
+import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TrustHold } from '../signals';
 import { Button, PathText, WaitingCard } from '../ui';
+import { type Answered, Refused } from './InlineConfirm';
 
 /**
  * The agent's trust question, asked by Daoris for a folder the driver is holding (D73).
@@ -18,16 +20,47 @@ import { Button, PathText, WaitingCard } from '../ui';
  *
  * A molecule: handed the hold, it reports the grant and the putting-down. It sits inline on a
  * quest's page and inside the drawer the band's row opens.
+ *
+ * **It keeps its card and answers in it** (UXFIX2b3b): it is the agent's own question, not a destructive edit's second
+ * press, so it is not an `InlineConfirm`. It takes the same `Answered`: it waits saying so while the grant is written, and a
+ * refusal is said inside it (not toasted) with the grant pressable again. The caller puts it down once the grant landed.
+ * Trust is outward and loses nothing, so the grant stays the primary's hue.
  */
 export function TrustAsk({ hold, busy = false, onGrant, onCancel }: {
   hold: TrustHold;
   /** The grant is being written: the press is held so it cannot be given twice. */
   busy?: boolean;
-  onGrant: () => void;
+  /** The grant, and how to tell the question how it ended (UXFIX2b3b): a refusal is said inside it, not toasted. */
+  onGrant: (answered: Answered) => void;
   /** Put the question down. Absent where there is nothing to return to. */
   onCancel?: () => void;
 }) {
   const { t } = useTranslation();
+  const refusalId = useId();
+  const [pending, setPending] = useState(false);
+  const [refusal, setRefusal] = useState<string | null>(null);
+  const alive = useRef(true);
+  const turn = useRef(0);
+  useEffect(() => {
+    alive.current = true;
+    return () => { alive.current = false; };
+  }, []);
+
+  const grant = () => {
+    const mine = ++turn.current;
+    setRefusal(null);
+    setPending(true);
+    onGrant({
+      // The caller puts the question down; here the wait only lets go.
+      done: () => { if (mine === turn.current && alive.current) setPending(false); },
+      refused: (sentence) => {
+        if (mine !== turn.current || !alive.current) return;
+        setPending(false);
+        setRefusal(sentence);
+      },
+    });
+  };
+  const waiting = busy || pending;
 
   return (
     <WaitingCard title={t('trust.title')}>
@@ -41,8 +74,20 @@ export function TrustAsk({ hold, busy = false, onGrant, onCancel }: {
       <p className="m-0 mt-2 text-small text-ink-faint">{t('trust.file')}</p>
       <p className="m-0 mt-0.5 text-meta text-ink-faint"><PathText path={hold.trustFile} /></p>
       <div className="mt-3 flex flex-wrap gap-2">
-        <Button variant="primary" disabled={busy} onClick={onGrant}>{t('trust.grant')}</Button>
-        {onCancel && <Button variant="ghost" onClick={onCancel}>{t('trust.cancel')}</Button>}
+        <Button
+          variant="primary"
+          disabled={waiting}
+          aria-describedby={refusal ? refusalId : undefined}
+          onClick={grant}
+        >
+          {t('trust.grant')}
+        </Button>
+        {onCancel && <Button variant="ghost" disabled={pending} onClick={onCancel}>{t('trust.cancel')}</Button>}
+        {/* Drawn from the first, so it is a live region before it speaks (UXFIX2c). */}
+        <span role="status" aria-live="polite" className={pending ? 'self-center text-small text-ink-faint' : 'sr-only'}>
+          {pending ? t('work.confirm.pending') : null}
+        </span>
+        {refusal && <Refused id={refusalId} sentence={refusal} />}
       </div>
     </WaitingCard>
   );
