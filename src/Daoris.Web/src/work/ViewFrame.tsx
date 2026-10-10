@@ -136,7 +136,7 @@ export function ViewListPane({ spec, layout, lists, onOver }: {
       // The strip's open: beside where there is room, over the main area where the window drew the strip.
       onOpen={() => {
         const next = listToggled(layout);
-        lists.setClosed(spec.view, next.closed);
+        if (next.closed !== undefined) lists.setClosed(spec.view, next.closed);
         onOver(next.over);
       }}
       onClose={() => lists.setClosed(spec.view, true)}

@@ -353,9 +353,10 @@ export function App() {
     else if (region === 'panel') closings.setPanel(!closings.panel);
     else if (isListed(view) && listMode) {
       // By what the room made of it: an open list closes, one laid over goes, and a strip opens — over
-      // the main area where the window drew it (D118 §3a). The closing is this view's own (§3f).
+      // the main area where the window drew it (D118 §3a). The closing is this view's own (§3f), and one laid
+      // over leaves it as it was.
       const next = listToggled({ mode: listMode });
-      lists.setClosed(view, next.closed);
+      if (next.closed !== undefined) lists.setClosed(view, next.closed);
       closings.setListOver(next.over);
     }
     else return false;

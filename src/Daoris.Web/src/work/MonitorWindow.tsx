@@ -72,7 +72,7 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
       if (frameShortcut(event) !== 'view.list' || !mode) return;
       event.preventDefault();
       const next = listToggled({ mode });
-      held.setClosed('monitor', next.closed);
+      if (next.closed !== undefined) held.setClosed('monitor', next.closed);
       setOver(next.over);
     };
     window.addEventListener('keydown', onKey);

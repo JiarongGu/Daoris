@@ -52,8 +52,20 @@ describe('the list', () => {
   it('is a strip when the person closes it, at every width, and nothing but the person opens it again', () => {
     for (const width of WIDTHS) {
       expect(at(width, {}, { closed: true }).list).toEqual({ mode: 'strip', width: LIST_STRIP, beside: LIST_STRIP, auto: false });
-      // Asked to lay itself over, a list the person closed stays their strip: the open is theirs to press.
-      expect(at(width, {}, { closed: true, over: true }).list!.mode).toBe('strip');
+    }
+  });
+
+  /**
+   * ENTRY1g (D161's ENTRY1b note): a go to a group of the list lays the strip the person closed over the main area, room or
+   * none, since opening it beside would undo their closing. Laying over is never remembered, so once it goes the strip is
+   * theirs again.
+   */
+  it('lays the strip the person closed over the main area for a go, at every width, and keeps their closing', () => {
+    for (const width of WIDTHS) {
+      const laid = at(width, {}, { closed: true, over: true }).list!;
+      expect(laid).toEqual({ mode: 'over', width: Math.min(280, width - 48 - LIST_STRIP), beside: LIST_STRIP, auto: false });
+      // Let go by any of its doors, it is their strip again: the toggle leaves the closing as it was.
+      expect(at(width, {}, { closed: true, ...listToggled(laid) }).list).toEqual(at(width, {}, { closed: true }).list);
     }
   });
 
@@ -167,7 +179,8 @@ describe('a view with no list', () => {
 describe('a toggle of the list', () => {
   it('closes an open list, dismisses one laid over, and opens a strip — over the main area where there is no room', () => {
     expect(listToggled({ mode: 'open' })).toEqual({ closed: true, over: false });
-    expect(listToggled({ mode: 'over' })).toEqual({ closed: false, over: false });
+    // Laid over, it goes and its closing stays as it was: a go lays over a strip the person closed (ENTRY1g).
+    expect(listToggled({ mode: 'over' })).toEqual({ over: false });
     // A strip opens whoever drew it: the person's closing is undone, and the window's is laid over.
     expect(listToggled({ mode: 'strip' })).toEqual({ closed: false, over: true });
   });
