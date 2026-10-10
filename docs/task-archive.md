@@ -13138,3 +13138,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **AGENTMARK1 — the roster's mark and installer** (driver/modules). Each harness declares its two-letter `Mark` (CC, Cx) on `HarnessToolchain` (Harnesses.cs ~:164-227; Adapters.cs's built-ins; CodexAccounts.cs); the roster row (DriverModule.Agents.cs ~:66-149) sends `mark` and `installs` (`toolchain?.Install is { Count: > 0 }`, beside `SignsIn`/`Updates`). The page half is INSTALLDOOR1. UX7 §4.6; DriverModuleAgentsTests ~:89-100.
 
 **Outcome** 2026-10-11: the built-ins declare CC, Cx and DH; the roster's door sends `mark` and `installs` (an installer declared); a plugin agent sends no mark, and without an installer `installs` false. The CLI needed nothing: both doors already agree on a missing installer. Detail: D152's AGENTMARK1 note.
+
+
+## INSTALLDOOR1 — *How to install* where Daoris has no installer (2026-10-11, D152)
+
+> - [ ] **INSTALLDOOR1 — *How to install* where Daoris has no installer** (web; the page half of AGENTMARK1, either order: an older shell's absent fields read as today). `ToolDoor` (tools.ts) gains `mark?` and `installs?`; `declaredMark` drops its cast; where `installs === false` the list offers *How to install* (the agent's page, no installer run) and the page's head no Install, en and zh. D152's UX7d-2 note; UX7 design §4.6.
+
+**Outcome** 2026-10-11: the page reads `mark` and `installs`; where no installer is declared the list's press and menu act say *How to install* and open the agent's page, nothing installs, and the page shows no Install but a sentence naming the agent's maker. The window's look is UX7e's (the built-ins all install). Detail: D152's INSTALLDOOR1 note.

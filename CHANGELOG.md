@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- An agent Daoris has no installer for offers *How to install* in the Agents list, where it offered Install: it
+  opens the agent's page and installs nothing. Its page shows no Install and says the agent is installed with its
+  maker's own tooling.
 - An agent's page says above its accounts which account this machine's next start takes and why, in the
   words of *How accounts are used*, and what holds the account its list begins on where the start passes
   that one. An account's *Runs for* marks *(first)* where the next start takes it, no longer where its list

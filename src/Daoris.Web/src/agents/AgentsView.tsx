@@ -182,8 +182,9 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, install = false, 
     if (installTaken.current) return;
     installTaken.current = true;
     onInstallTaken?.();
-    if (!tool.present) run(door, 'install');
-  }, [install, onInstallTaken, tool.present, run, door]);
+    // An agent Daoris has no installer for is never run one (INSTALLDOOR1): the driver refuses it, and its page says how.
+    if (!tool.present && tool.doors[0]!.installs !== false) run(door, 'install');
+  }, [install, onInstallTaken, tool.present, tool.doors, run, door]);
 
   const labelOf = (name: string | null) => {
     if (!name) return t('agents.account.own');

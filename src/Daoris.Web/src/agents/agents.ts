@@ -440,6 +440,11 @@ export type AgentRow = {
   waiting: number;
   /** Its mark on the list's strip, a letter or two no agent above it wears (ACCTUX2): *CC*, *Co*. */
   mark: string;
+  /**
+   * Whether Daoris has an installer for it (INSTALLDOOR1): false offers *How to install*, never Install. Read from the door the
+   * install runs on, and true where an older shell sends none.
+   */
+  installs: boolean;
 };
 
 /** A strip mark's most letters: two fit the strip's 40 px at its size, a 中文 name's two characters included. */
@@ -447,11 +452,10 @@ const MARK_LETTERS = 2;
 
 /**
  * The mark an agent's declaration gives (ACCTUX2, the UX7 design §4.6's *CC*, *Cx*), as written and cut to a mark's letters;
- * null where none does. Read from its doors defensively: a door carries it only once the roster declares one, which no
- * shell does yet, so the first letters stand meanwhile.
+ * null where none does (a shell older than AGENTMARK1 sends none, and the first letters stand).
  */
 function declaredMark(tool: Tool): string | null {
-  for (const door of tool.doors as (Tool['doors'][number] & { mark?: unknown })[]) {
+  for (const door of tool.doors) {
     const letters = typeof door.mark === 'string' ? Array.from(door.mark.trim()).slice(0, MARK_LETTERS).join('') : '';
     if (letters) return letters;
   }
@@ -509,6 +513,7 @@ export function agentRows(tools: readonly Tool[], answer: AccountsAnswer | null 
       phrase,
       waiting: tool.present ? signedOutHeld(tool, use) : 0,
       mark: marks[at]!,
+      installs: tool.doors[0]?.installs !== false,
     };
   });
 }

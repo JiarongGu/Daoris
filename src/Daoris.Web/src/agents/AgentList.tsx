@@ -17,7 +17,8 @@ import type { AgentRow } from './agents';
  * an agent arrives by its own installer or a plugin (D64). Adding an agent adds a row, never a screen.
  *
  * **No fold for the agents not installed** (AGENTS2): the list's ⋯ hid them, and Codex, which this build drives, went
- * unseen behind it. An agent's *Install* is its own installer, the one `daoris agent install` runs.
+ * unseen behind it. An agent's *Install* is its own installer, the one `daoris agent install` runs; one Daoris has no
+ * installer for (`installs` false) offers *How to install* in its place, which opens its page and runs nothing (INSTALLDOOR1).
  */
 export function AgentList({ rows, chosen, onChoose, onInstall }: {
   rows: readonly AgentRow[];
@@ -32,7 +33,9 @@ export function AgentList({ rows, chosen, onChoose, onInstall }: {
   return (
     <ul className="m-0 list-none p-0" aria-label={t('nav.agents')}>
       {installedFirst(rows).map((row, at) => {
-        const install = !row.installed && onInstall ? () => onInstall(row.name) : undefined;
+        const install = !row.installed && row.installs && onInstall ? () => onInstall(row.name) : undefined;
+        // Where Daoris has no installer, the same slot says how: it opens the agent's page and runs nothing (INSTALLDOOR1).
+        const howTo = !row.installed && !row.installs && onInstall ? () => onChoose(row.name) : undefined;
         return [
           // The agents not installed, a group of their own under the installed (D152 §4.6), named once at its head.
           at === absentFrom && (
@@ -40,7 +43,7 @@ export function AgentList({ rows, chosen, onChoose, onInstall }: {
               {t('agents.list.absent')}
             </li>
           ),
-          <li key={row.name} data-list-row="" className="flex items-center" {...contextOffer(rowMenu(t, row, () => onChoose(row.name), install))}>
+          <li key={row.name} data-list-row="" className="flex items-center" {...contextOffer(rowMenu(t, row, () => onChoose(row.name), install, howTo))}>
             <div className="min-w-0 flex-1">
               <RowDoor chosen={chosen === row.name} onPress={() => onChoose(row.name)}>
                 <span className="flex min-w-0 items-baseline gap-2">
@@ -69,6 +72,16 @@ export function AgentList({ rows, chosen, onChoose, onInstall }: {
                 {t('harness.install')}
               </Button>
             )}
+            {howTo && (
+              <Button
+                variant="ghost"
+                aria-label={t('agents.list.howToInstallOf', { agent: row.product })}
+                onClick={howTo}
+                className="mr-1.5 shrink-0 px-2 py-0.5 text-small"
+              >
+                {t('agents.list.howToInstall')}
+              </Button>
+            )}
           </li>,
         ];
       })}
@@ -85,12 +98,13 @@ function installedFirst(rows: readonly AgentRow[]): AgentRow[] {
  * What a row offers a right-click (CTX1, D138 §4): opening it, its Install where its row carries one, and its id. What
  * else is done to an agent is its page's.
  */
-function rowMenu(t: (key: string) => string, row: AgentRow, open: () => void, install?: () => void): ContextOffer {
+function rowMenu(t: (key: string) => string, row: AgentRow, open: () => void, install?: () => void, howTo?: () => void): ContextOffer {
   return {
     label: row.product,
     acts: [
       { id: 'open', label: t('contextMenu.act.open'), onSelect: open },
       ...(install ? [{ id: 'install', label: t('harness.install'), icon: 'plus' as const, onSelect: install }] : []),
+      ...(howTo ? [{ id: 'howToInstall', label: t('agents.list.howToInstall'), onSelect: howTo }] : []),
       { id: 'copy', label: t('contextMenu.act.copyAgent'), icon: 'copy', copy: row.name },
     ],
   };
