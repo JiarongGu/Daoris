@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Session } from '../api';
 import { VIEWS } from '../commands';
-import type { SettingsSection } from '../SettingsView';
 import type { KnowledgeMode } from '../knowledge/modes';
 import { en } from '../locales';
 import { PLACE_DOMAINS, PLACE_PARTS } from './places';
@@ -36,10 +35,9 @@ describe('where the person is', () => {
         .toBe(`Where the person is now: the ${en[`nav.${view}`]} view, every workspace.`);
     }
     // Agents left Settings for a place of its own (UX6e), which the views above name since the twins moved it (UX6e2);
-    // Workspace and Permissions left for a workspace's page (UX6g), and Plugins for its place (UX6j), and the twins still
-    // name them until they move together.
-    const retired = new Set(['workspace', 'permissions', 'plugins']);
-    for (const domain of PLACE_DOMAINS.filter((name): name is SettingsSection => !retired.has(name))) {
+    // Workspace and Permissions left for a workspace's page (UX6g), and Plugins for its place (UX6j), and since UX6g2b the
+    // twins name only the domains Settings shows.
+    for (const domain of PLACE_DOMAINS) {
       expect(prefaceOf({ view: 'settings', workspace: null, settings: domain }), domain)
         .toBe(`Where the person is now: Settings → ${en[`settings.domain.${domain}`]}, every workspace.`);
     }

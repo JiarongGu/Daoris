@@ -12,31 +12,32 @@ const spelled = ({ view, domain, part }: HelpPlace) => [view, domain, part].filt
 describe('the places a go may name', () => {
   it('are the driver\'s table, line for line', () => {
     expect(PLACE_VIEWS).toEqual(['overview', 'sessions', 'quests', 'projects', 'map', 'knowledge', 'agents', 'plugins', 'settings']);
-    expect(PLACE_DOMAINS).toEqual(['start', 'appearance', 'ai', 'workspace', 'driver', 'permissions', 'browser', 'logs']);
+    expect(PLACE_DOMAINS).toEqual(['start', 'appearance', 'ai', 'driver', 'browser', 'logs']);
     expect(PLACE_PARTS.map(({ within, part }) => `${within}/${part}`)).toEqual([
       'projects/add', 'projects/import', 'projects/setup',
+      'projects/workspace-details', 'projects/workspace-branches', 'projects/workspace-workflow',
+      'projects/workspace-setup', 'projects/workspace-defaults', 'projects/workspace-remote',
       'knowledge/search', 'knowledge/convergence',
       'start/agent', 'start/helper', 'start/repositories', 'start/driven', 'start/landing', 'start/rules',
-      'workspace/wiring', 'workspace/lines', 'workspace/landing', 'workspace/sweep',
       'agents/accounts', 'agents/rules', 'agents/usage',
-      'permissions/across',
     ]);
     expect(PLACE_KEPT.map(({ was, now }) => `${spelled(was)} → ${spelled(now)}`)).toEqual([
       'search → knowledge/search', 'convergence → knowledge/convergence', 'settings/plugins → plugins',
+      'settings/workspace → projects/workspace-details', 'settings/workspace/wiring → projects/workspace-remote',
+      'settings/workspace/lines → projects/workspace-defaults', 'settings/workspace/landing → projects/workspace-defaults',
+      'settings/workspace/sweep → projects/workspace-branches', 'settings/permissions → agents/rules',
+      'settings/permissions/across → projects/workspace-defaults',
     ]);
   });
 
   /**
    * UX6i2a (D150 §2): the views are the bar's, Knowledge and Plugins among them, and Settings at its foot. Settings → Tools
    * (TOOLS7) is a place a go names once TOOLS8 adds it here and to `HelpPlaces` together (D121 §4.3). Workspace and
-   * Permissions left Settings with UX6g, and a go still names them until the twins move them together: the door opens
-   * their new homes.
+   * Permissions left Settings with UX6g, and since UX6g2b the twins name neither: a go still spelled so is kept.
    */
   it('are every view the activity bar has and every domain Settings shows, and nothing else', () => {
     expect([...PLACE_VIEWS].sort()).toEqual(VIEWS.map(({ view }) => view as string).sort());
-    const moved = new Set(['workspace', 'permissions']);
-    expect([...PLACE_DOMAINS].filter((domain) => !moved.has(domain)).sort())
-      .toEqual([...SETTINGS_SECTIONS].filter((domain) => domain !== 'tools').sort());
+    expect([...PLACE_DOMAINS].sort()).toEqual([...SETTINGS_SECTIONS].filter((domain) => domain !== 'tools').sort());
   });
 
   it('open where the starters\' doors open: a domain at its card or step, a view, a drawer, a tab, a section', () => {
@@ -58,9 +59,27 @@ describe('the places a go may name', () => {
   });
 
   /**
+   * UX6g2b (D161 §3, D150 §4.3): a workspace's page's tabs and its Setup's two sections are Repositories' parts, prefixed
+   * where a repository's page shares their names. A go names no workspace, so each opens the workspace in view's page, as
+   * a door naming a tab or a section does; `setup` alone stays a repository's.
+   */
+  it("open a workspace's page at its tab or its Setup's section", () => {
+    expect(placeDoor({ view: 'projects', part: 'workspace-details' })).toEqual({ view: 'projects', workspaceTab: 'details' });
+    expect(placeDoor({ view: 'projects', part: 'workspace-branches' })).toEqual({ view: 'projects', workspaceTab: 'branches' });
+    expect(placeDoor({ view: 'projects', part: 'workspace-workflow' })).toEqual({ view: 'projects', workspaceTab: 'workflow' });
+    expect(placeDoor({ view: 'projects', part: 'workspace-setup' })).toEqual({ view: 'projects', workspaceTab: 'setup' });
+    expect(placeDoor({ view: 'projects', part: 'workspace-defaults' })).toEqual({ view: 'projects', workspaceSection: 'defaults' });
+    expect(placeDoor({ view: 'projects', part: 'workspace-remote' })).toEqual({ view: 'projects', workspaceSection: 'remote' });
+    expect(placeDoor({ view: 'projects', part: 'setup' })).toEqual({ view: 'projects', tab: 'setup' });
+    expect(placeDoor({ view: 'projects', part: 'defaults' })).toBeNull();
+    expect(placeDoor({ view: 'projects', part: 'workspace-colours' })).toBeNull();
+  });
+
+  /**
    * UX6g (D150 §3.1): Settings → Workspace and Permissions retired into a workspace's page, and a go naming one opens the
    * workspace in view's page where its part went: its remote, its defaults (a line, a landing rule, reading across), its
-   * Branches; Permissions alone opens what agents may do, on the agent that takes the rules.
+   * Branches; Permissions alone opens what agents may do, on the agent that takes the rules. UX6g2b: each is a kept row of
+   * the twin, the old spelling with its part, and one no row names opens nothing.
    */
   it("open a retired domain's part where it went: the workspace's page, or what agents may do", () => {
     expect(placeDoor({ view: 'settings', domain: 'workspace' })).toEqual({ view: 'projects', workspaceTab: 'details' });
@@ -70,6 +89,7 @@ describe('the places a go may name', () => {
     expect(placeDoor({ view: 'settings', domain: 'workspace', part: 'sweep' })).toEqual({ view: 'projects', workspaceTab: 'branches' });
     expect(placeDoor({ view: 'settings', domain: 'permissions' })).toEqual({ view: 'agents', agentPart: 'rules' });
     expect(placeDoor({ view: 'settings', domain: 'permissions', part: 'across' })).toEqual({ view: 'projects', workspaceSection: 'defaults' });
+    expect(placeDoor({ view: 'settings', domain: 'workspace', part: 'workspace-defaults' })).toBeNull();
   });
 
   /**

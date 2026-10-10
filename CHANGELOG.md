@@ -16,6 +16,9 @@ with the version and date at release.
 - Ask Daoris names the places the window has now: Knowledge, whose list switches between Search and
   Convergence, the Plugins place and Get started. A *Go there* to Search, Convergence or Settings →
   Plugins from an earlier conversation opens where that place went.
+- Ask Daoris can take you to a workspace's page: its Details, Branches, Workflow and Setup tabs, and
+  Setup's Defaults and Remote and reach, on the workspace in view. It no longer offers Settings →
+  Workspace or Permissions; a *Go there* to either from an earlier conversation opens where it went.
 - Account rows show each usage window as its own cell, in the same place on every row: the share used,
   a bar of that window's allowance, its reset and how old its reading is. A window the agent has not
   reported says *unknown*, never 0%. A Codex window that is neither five hours nor a week is named in

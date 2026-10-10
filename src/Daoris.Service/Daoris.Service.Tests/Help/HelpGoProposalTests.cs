@@ -39,7 +39,14 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
         Assert.Contains("logs", domain);
         Assert.DoesNotContain("plugins", domain);
         Assert.DoesNotContain("agents", domain);
-        Assert.Contains("search", Of("part"));
+        Assert.DoesNotContain("workspace", domain);
+        Assert.DoesNotContain("permissions", domain);
+        var part = Of("part");
+        Assert.Contains("search", part);
+        Assert.DoesNotContain("lines under workspace", part);
+        // UX6g2c: the workspace page's six parts are named under projects.
+        foreach (var name in new[] { "workspace-details", "workspace-branches", "workspace-workflow", "workspace-setup", "workspace-defaults", "workspace-remote" })
+            Assert.Contains(name, part);
     }
 
     /// <summary>The shape, checked here and nothing more; which places exist is the driver's to judge.</summary>
