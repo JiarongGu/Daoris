@@ -27,8 +27,9 @@ Contracts: platform UX §4/§6, `docs/2026-10-05-ux7-design.md` (D152),
 `docs/2026-10-04-ux6-redesign.md` (D150, §12 proofs). UI work needs stories, behavior tests and
 installed-window evidence in both themes/languages; Storybook alone does not close an installed proof.
 
-- [ ] **UXFIX2b1 — confirmations: tools, plugins, retire** (web; in flight). Tool version delete, plugin removal and project retire move to `InlineConfirm`. Proof: focus, pending, refusal, cancellation and returned focus.
-- [ ] **UXFIX2b2 — confirmations: work asks** (web). Pause/abandon (thread `Answered` through `pausing.ts`), quest decline, ask close, awaiting-person finish/decline, archive ended, DiffPane force-discard. Same proof.
+- [ ] **UXFIX2b2a — confirmations: pause and abandon** (web; in flight). Pause/abandon move to `InlineConfirm`, `Answered` threaded through `pausing.ts`, `workActs.ts` and the three doors. Proof: focus, pending, refusal, cancellation and returned focus.
+- [ ] **UXFIX2b2b — confirmations: decline, close, awaiting, archive, discard** (web; after b2a). Quest decline, ask close, awaiting-person finish/decline, archive ended (`tone="primary"`), DiffPane force-discard. Same proof.
+- [ ] **UXFIX2b1i — installed confirmations look** (parent; after republish). Tool version delete, plugin removal and project retire asks in the window, both themes/languages: focus on open, pending, refusal inside, returned focus.
 - [ ] **UXFIX2b3 — confirmations: attention, trust, account use** (web; after ACCTUX4). AttentionRow's asks, TrustAsk, GoAheadList, AccountUse inherit and AgentPage's key ask; settle which are `tone="primary"`. Same proof.
 - [ ] **UX7b — installed account UI** (web). Verify recovered account rows and add/name/join flow at 1546/680 px, both themes/languages. D152 §4.
 - [ ] **ACCTEDIT1b — installed refused edits** (parent; after republish). Verify rename, workspace use and add refusals retain drafts, including dark borders. D152 §4; dated shots.

@@ -12823,3 +12823,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SUBLOAD1 — optimize subagent token usage** (parent/tools). Measure where dispatched subagents' tokens go, then cut the initial load rather than compact. Contract: D160; proof: measured before, a repeatable measurement, the definitions in place.
 
 **Outcome** 2026-10-10: 356 branches measured; startup and orientation were 65% of their cost. A row is now oriented by `branch-scout` and built by `branch-worker` (`.claude/agents/`), each with its own model; the skill keeps the parent's half. `tools/subagent-usage.mjs` measures each batch. Evidence: `docs/2026-10-10-subagent-load-evidence.md`; probe and trial: SUBLOAD1b/c.
+
+
+## UXFIX2b1 — confirmations: tools, plugins, retire (2026-10-10)
+
+> - [ ] **UXFIX2b1 — confirmations: tools, plugins, retire** (web; in flight). Tool version delete, plugin removal and project retire move to `InlineConfirm`. Proof: focus, pending, refusal, cancellation and returned focus.
+
+**Outcome** 2026-10-10: the three asks confirm through `InlineConfirm`; each handler takes `Answered`, so a refusal is said inside the ask instead of a toast (an unknown plugin keeps its gone-page route). Behaviour tests per surface; built by a Sonnet worker from a scout's pack (D160's trial). Installed look: UXFIX2b1i. Detail: the merge commit, the UXFIX2 note on D153.

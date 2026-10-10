@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
@@ -7,6 +7,7 @@ import {
   changes, choiceOf, endSaid, GitSwitch, ToolCard, type ToolChoice, ToolLocations, type ToolShown,
 } from './Tools';
 import { BUILT_IN, GH, GIT, MIRROR, NODE, PWSH } from './toolsFixtures';
+import type { Answered } from '../work/InlineConfirm';
 
 // TOOLS7 (D121 §4.1): one tool's card, git's switch said before it applies, and the resource locations, drawn from
 // props. ToolsDomain holds the bridge, and `daoris tool` is the terminal's door to the same file (D50).
@@ -114,11 +115,45 @@ describe('a tool\'s card', () => {
     expect(within(asking).getByText(/removes Node\.js 20\.18\.0 from Daoris's home/)).toBeInTheDocument();
     expect(onDelete).not.toHaveBeenCalled();
     await userEvent.click(within(asking).getByRole('button', { name: 'Confirm delete' }));
-    expect(onDelete).toHaveBeenCalledWith('20.18.0');
+    expect(onDelete).toHaveBeenCalledWith('20.18.0', expect.objectContaining({ done: expect.any(Function) }));
 
     view.unmount();
     card(NODE);
     expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull();
+  });
+
+  /** UXFIX2b1: the version's delete is the shared inline ask: its sentence focused, pending, a refusal said inside. */
+  it('asks with its sentence focused, waits saying so, says a refusal inside, and closes once it lands', async () => {
+    let answer: Answered | undefined;
+    card(NODE, { choice: { ...choiceOf(NODE), version: '20.18.0' }, onDelete: (_version, answered) => { answer = answered; } });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    const asking = screen.getByRole('group', { name: 'Delete Node.js 20.18.0' });
+    expect(asking.querySelector('[tabindex="-1"]')).toHaveFocus();
+    await userEvent.click(within(asking).getByRole('button', { name: 'Confirm delete' }));
+    // The ask stays open while the delete is on its way.
+    expect(within(asking).getByRole('status')).toHaveTextContent('working…');
+    expect(within(asking).getByRole('button', { name: 'Never mind' })).toBeDisabled();
+
+    act(() => answer!.refused('The folder is in use.'));
+    expect(within(asking).getByRole('alert')).toHaveTextContent('The folder is in use.');
+    expect(within(asking).getByRole('button', { name: 'Confirm delete' })).toBeEnabled();
+
+    await userEvent.click(within(asking).getByRole('button', { name: 'Confirm delete' }));
+    act(() => answer!.done());
+    expect(screen.queryByRole('group', { name: 'Delete Node.js 20.18.0' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Delete' })).toHaveFocus();
+  });
+
+  it('gives the focus back to Delete on Never mind', async () => {
+    const { onDelete } = card(NODE, { choice: { ...choiceOf(NODE), version: '20.18.0' } });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Never mind' }));
+
+    expect(screen.queryByRole('group', { name: 'Delete Node.js 20.18.0' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Delete' })).toHaveFocus();
+    expect(onDelete).not.toHaveBeenCalled();
   });
 
   it('says where no list names a version for this machine, and what changes that', () => {

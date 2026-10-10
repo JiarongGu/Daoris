@@ -1,6 +1,6 @@
-import type { ReactElement } from 'react';
+import { type ReactElement, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { render as rtlRender, screen, within } from '@testing-library/react';
+import { act, render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
@@ -8,6 +8,7 @@ import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
 import { code } from '../test/code';
 import { cappedBlocks } from '../test/measure';
+import type { Answered } from '../work/InlineConfirm';
 import type { PluginShown } from './catalog';
 import { PluginMainNotice, PluginPage } from './PluginPage';
 
@@ -196,7 +197,52 @@ describe("a plugin's page", () => {
       await userEvent.click(moves[1]!);
       expect(onCancelRemove).toHaveBeenCalled();
       await userEvent.click(moves[0]!);
-      expect(onRemove).toHaveBeenCalledWith('acme.gate');
+      expect(onRemove).toHaveBeenCalledWith('acme.gate', expect.objectContaining({ done: expect.any(Function), refused: expect.any(Function) }));
+    });
+
+    /** UXFIX2b1: the ask takes the focus on opening, waits for its answer, and says a refusal inside, staying open. */
+    it('focuses its sentence, waits saying so, and says a refusal inside while it stays open', async () => {
+      let answer: Answered | undefined;
+      const { onCancelRemove } = page({ asking: true, onRemove: (_id, answered) => { answer = answered; } });
+
+      const ask = screen.getByRole('group', { name: 'remove acme.gate' });
+      expect(ask.querySelector('[tabindex="-1"]')).toHaveFocus();
+      await userEvent.click(within(ask).getByRole('button', { name: 'Remove plugin' }));
+      expect(within(ask).getByRole('status')).toHaveTextContent('working…');
+      expect(within(ask).getByRole('button', { name: 'Remove plugin' })).toBeDisabled();
+      expect(within(ask).getByRole('button', { name: 'Never mind' })).toBeDisabled();
+
+      act(() => answer!.refused('The folder is in use by another program.'));
+      expect(within(ask).getByRole('alert')).toHaveTextContent('The folder is in use by another program.');
+      expect(within(ask).getByRole('button', { name: 'Remove plugin' })).toBeEnabled();
+      expect(onCancelRemove).not.toHaveBeenCalled();
+    });
+
+    it('closes once the removal lands, and Never mind gives the focus back', async () => {
+      let answer: Answered | undefined;
+      const { onCancelRemove } = page({ asking: true, onRemove: (_id, answered) => { answer = answered; } });
+
+      const ask = screen.getByRole('group', { name: 'remove acme.gate' });
+      await userEvent.click(within(ask).getByRole('button', { name: 'Remove plugin' }));
+      act(() => answer!.done());
+      expect(onCancelRemove).toHaveBeenCalledTimes(1);
+    });
+
+    it('draws Remove… again and focuses it when the ask is put down', async () => {
+      function Held() {
+        const [asking, setAsking] = useState(false);
+        return (
+          <PluginPage
+            plugin={PLUGIN} asking={asking} onSwitch={vi.fn()} onTry={vi.fn()} onAskUpdate={vi.fn()} onApplyUpdate={vi.fn()}
+            onCancelUpdate={vi.fn()} onAskRemove={() => setAsking(true)} onRemove={vi.fn()} onCancelRemove={() => setAsking(false)}
+          />
+        );
+      }
+      render(<Held />);
+
+      await userEvent.click(within(header()).getByRole('button', { name: 'Remove…' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Never mind' }));
+      expect(within(header()).getByRole('button', { name: 'Remove…' })).toHaveFocus();
     });
   });
 

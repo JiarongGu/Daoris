@@ -125,12 +125,14 @@ export function ToolsDomain({ notify }: { notify: Notify }) {
               onError: failed,
             })}
             onStop={() => stop.mutate(tool.tool, { onError: failed })}
-            onDelete={(version) => remove.mutate({ tool: tool.tool, version }, {
+            // A refusal is said inside the delete's ask, where it was pressed (UXFIX2b1), not in a toast.
+            onDelete={(version, answered) => remove.mutate({ tool: tool.tool, version }, {
               onSuccess: () => {
                 settled(tool);
                 notify(t('settings.tools.deleted', { name: tool.name, version }));
+                answered.done();
               },
-              onError: failed,
+              onError: (error) => answered.refused(sentence(error)),
             })}
             onBrowse={() => browse(tool)}
           />

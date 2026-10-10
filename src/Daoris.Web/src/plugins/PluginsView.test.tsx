@@ -226,6 +226,21 @@ describe('the Plugins view', () => {
     expect(await within(main()).findByText('Choose a plugin')).toBeInTheDocument();
   });
 
+  /** UXFIX2b1: a refused removal is said inside the ask, which stays open to press again; no toast says it twice. */
+  it('says a refused removal inside the ask, which stays open', async () => {
+    routes.PLUGIN_ACTION = () => { throw new Error('The folder is in use by another program.'); };
+    window.localStorage.setItem('daoris.list.plugins.chosen', 'acme.gate');
+    const { notify } = show();
+
+    await userEvent.click(within(await screenHeader()).getByRole('button', { name: 'Remove…' }));
+    const ask = within(main()).getByRole('group', { name: 'remove acme.gate' });
+    await userEvent.click(within(ask).getByRole('button', { name: 'Remove plugin' }));
+
+    expect(await within(ask).findByRole('alert')).toHaveTextContent('The folder is in use by another program.');
+    expect(within(ask).getByRole('button', { name: 'Remove plugin' })).toBeEnabled();
+    expect(notify).not.toHaveBeenCalledWith(expect.stringMatching(/in use by another/), 'error');
+  });
+
   it('puts the ask away on Never mind, removing nothing', async () => {
     window.localStorage.setItem('daoris.list.plugins.chosen', 'acme.gate');
     show();
