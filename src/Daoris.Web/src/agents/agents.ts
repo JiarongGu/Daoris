@@ -3,7 +3,7 @@ import { ago, clockOf, moment } from '../format';
 import type { Account, AccountPlace, Tool } from '../tools';
 import {
   type AccountCooling, type AccountFacts, type AccountSaid, type AccountScope, type AccountsAnswer, type AgentAccounts, agentOf,
-  coolingLine, machineScope, offeredLine, orderedWindows, percent, windowName, workspaceScope,
+  coolingLine, machineScope, offeredLine, orderedWindows, percent, type WindowSaid, windowName, workspaceScope,
 } from '../settings/accounts';
 import type { AgentRulesState } from '../settings/AgentRules';
 import { OPEN_STATES } from '../settings/proposals';
@@ -78,11 +78,11 @@ export function ownState(tool: Tool, use: AgentAccounts | null | undefined): Acc
 /**
  * What the tool's own sign-in last said of its windows (CODEXUSE3): read at a person's press by its agent's own server and
  * answered beside the accounts as `own.said`, never as one of them; null where nothing was said. Read defensively, as a shell
- * older than that answers none, and `AgentAccounts`' `own` does not declare it yet.
+ * older than that answers none.
  */
 export function ownSaid(use: AgentAccounts | null | undefined): AccountSaid | null {
-  const own = use?.own as (AgentAccounts['own'] & { said?: AccountSaid | null }) | undefined;
-  return own?.said && Array.isArray(own.said.windows) ? own.said : null;
+  const said = use?.own?.said;
+  return said && Array.isArray(said.windows) ? said : null;
 }
 
 /** Each named account's state on this agent, by its directory. */
@@ -130,7 +130,7 @@ export function readLine(state: AccountState, now: Date = new Date()): string | 
  * When, beside the state's word in its column (D152 §4.2): *signed in · 01:31*, *unknown · never read*, *cooling · until 6
  * Oct 22:02*. The time alone, since the column and the list's head say what it is; its tip says the whole (`readLine`). A
  * cool-off is a hold, said until its end whoever chose the time (ACCTUX1): *resets …* claimed a reset where Daoris chose the
- * wait because the agent named none, and a reported reset is said beside its window (`usageLine`).
+ * wait because the agent named none, and a reported reset is said in its window's cell (`usageCells`).
  */
 export function stateWhen(state: AccountState, now: Date = new Date()): string {
   if (state.state === 'cooling') return i18n.t('agents.state.until', { when: moment(state.cooling!.until) });
@@ -139,57 +139,89 @@ export function stateWhen(state: AccountState, now: Date = new Date()): string {
   return state.state === 'unknown' ? i18n.t('agents.read.failed', { when }) : when;
 }
 
-/**
- * A piece of what an account's agent last said, by what it is (ACCTUX1): a `reading` a person acts on (a window's share, the
- * agent's own word), a `when` (a reset, when it was said, since when it is offered again), or the `join` between them.
- */
-export type UsagePart = { text: string; tone: 'reading' | 'when' | 'join' };
+/** The windows every row draws a cell for, for both makers (ACCTUX4): Claude Code's and Codex's five hours and week. */
+export const FIXED_WINDOWS = ['session', 'weekly'] as const;
 
 /**
- * What an account's agent last said, as its row's second line (TOOL6c, D130 §5.2; ACCTUX1): its own word where it gave one,
- * credits, and each window's share with its reset beside it, then when it said so; since when it is offered again; and, for
- * a cool-off whose length Daoris chose because the agent named no reset, that the reset is unknown, where no window reported
- * one. A reset is said only beside the window that reported it: the state's column says the hold's end. Null says nothing,
- * as *nothing said yet* is not said on a row (D152 §4.2). The words are the CLI's `saidLine`'s, in pieces, so a share can
- * wear the ink and a time the soft ink.
+ * One window on an account's row (ACCTUX4, the second opinion's account section): a cell in the same place on every row, so a
+ * person compares a window down the rows and two makers by the same cells. It says its exact share, a thin bar of that
+ * window's own allowance, the agent's own word, its reset and how long ago its own reading was (each window keeps its newest
+ * reading, D130 §5.2). One its agent did not report is unknown, said in words with no bar and never 0%: absent is nothing
+ * said, never zero.
  */
-export function usageLine(facts: Pick<AccountFacts, 'said' | 'offered'> | null | undefined, state: AccountState): UsagePart[] | null {
-  const said = facts?.said && facts.said.windows.length > 0 ? facts.said : null;
-  const comma: UsagePart = { text: i18n.t('agents.said.comma'), tone: 'join' };
-  const resets = (reset: string): UsagePart => ({ text: i18n.t('agents.said.resets', { when: moment(reset) }), tone: 'when' });
-  const groups: UsagePart[][] = [];
-  if (said) {
-    const reached = said.windows.find((each) => each.standing === 'refused');
-    const standing = reached ?? said.windows.find((each) => each.standing === 'near');
-    if (standing) {
-      const word: UsagePart = {
-        text: i18n.t(reached ? 'harness.said.reached' : 'harness.said.warned', { window: windowName(standing.window) }), tone: 'reading',
-      };
-      // A window the agent gave no share for says its reset beside its own word, where nothing else would say it.
-      groups.push(typeof standing.used === 'number' ? [word] : [word, comma, resets(standing.reset)]);
-    }
-    if (said.windows.some((each) => each.credits)) groups.push([{ text: i18n.t('harness.said.credits'), tone: 'reading' }]);
-    for (const each of orderedWindows(said.windows)) {
-      if (typeof each.used !== 'number') continue;
-      groups.push([
-        { text: i18n.t('agents.said.used', { used: percent(each.used), window: windowName(each.window) }), tone: 'reading' },
-        comma, resets(each.reset),
-      ]);
-    }
-    if (groups.length === 0) groups.push([{ text: i18n.t('harness.said.clear'), tone: 'reading' }]);
-  }
-  const resetSaid = groups.some((group) => group.some((part) => part.tone === 'when'));
-  const times: UsagePart[] = [
-    ...(said ? [{ text: i18n.t('agents.said.at', { age: ago(said.seen) }), tone: 'when' as const }] : []),
-    ...(state.state === 'cooling' && !state.cooling!.stated && !resetSaid
-      ? [{ text: i18n.t('agents.said.resetUnknown'), tone: 'when' as const }] : []),
-    ...(facts?.offered && state.state !== 'cooling' ? [{ text: offeredLine(facts.offered), tone: 'when' as const }] : []),
+export type WindowCell = {
+  /** Daoris's name for it: `session`, `weekly`, or another a reading named (`<n>-minute`, CODEXUSE1). */
+  window: string;
+  /** Its name in the reader's language: *five-hour*, *weekly*; one this build does not know as it is. */
+  name: string;
+  /** Whether its agent said anything of it; false is unknown. */
+  known: boolean;
+  /** Its share used, 0 and up, where its agent gave one: the bar's fill. Null draws no bar. */
+  used: number | null;
+  /** Its agent's own word that it is near or reached: the bar wears the warning hue. */
+  warned: boolean;
+  /** What a person acts on, in the ink: its share, its agent's own word, that it draws on credits; or *unknown*. */
+  reading: string;
+  /** Its times, in the soft ink: when it resets, and how long ago its agent said so. None where it is unknown. */
+  times: string[];
+};
+
+/** What an account's agent last said, as its row draws it: a cell a window, and what is the account's and no window's. */
+export type AccountUsage = { cells: WindowCell[]; notes: string[] };
+
+/** A window as its agent last said it, as its cell says it. */
+function windowCell(said: WindowSaid, now: Date): WindowCell {
+  const used = typeof said.used === 'number' ? said.used : null;
+  const word = said.standing === 'refused' ? 'agents.window.reached' : said.standing === 'near' ? 'agents.window.near' : null;
+  const readings = [
+    ...(used !== null ? [i18n.t('agents.window.used', { used: percent(used) })] : []),
+    ...(word ? [i18n.t(word)] : []),
+    ...(said.credits ? [i18n.t('harness.said.credits')] : []),
   ];
-  const parts = [
-    ...groups.flatMap((group, at) => (at > 0 ? [{ text: i18n.t('harness.said.join'), tone: 'join' as const }, ...group] : group)),
-    ...times.flatMap((part, at) => (at > 0 || groups.length > 0 ? [{ text: ' · ', tone: 'join' as const }, part] : [part])),
+  // A window with no share and no word of trouble is one its agent said was clear (the driver keeps none with neither).
+  if (readings.length === 0) readings.push(i18n.t('harness.said.clear'));
+  return {
+    window: said.window, name: windowName(said.window), known: true, used, warned: word !== null,
+    reading: readings.join(i18n.t('agents.said.comma')),
+    times: [i18n.t('agents.said.resets', { when: clockOf(said.reset, now) }), i18n.t('agents.said.at', { age: ago(said.seen) })],
+  };
+}
+
+/**
+ * What an account's agent last said, as its row draws it under its line (ACCTUX4; TOOL6c, D130 §5.2; ACCTUX1): a cell for
+ * the session and the week, each unknown where its agent did not report it, then a cell for any other window a reading named.
+ * The two are drawn where something was said, and where `fixed` asks for them though nothing was: a sign-in whose agent
+ * speaks, which a session's frame or a press reads. A key, an agent that does not speak and a sign-in nothing reads say
+ * nothing where nothing was said, as *nothing said yet* is not said on a row (D152 §4.2).
+ *
+ * Its notes are the account's and no window's: since when it is offered again, and for a cool-off whose length Daoris chose
+ * because the agent named no reset, that the reset is unknown, where no window reported one (the state's column says the
+ * hold's end, never a reset). Null says nothing.
+ */
+export function usageCells(
+  facts: Pick<AccountFacts, 'said' | 'offered'> | null | undefined, state: AccountState,
+  { fixed = false, now = new Date() }: { fixed?: boolean; now?: Date } = {},
+): AccountUsage | null {
+  const windows = facts?.said?.windows ?? [];
+  const named = (window: string) => windows.find((each) => each.window.toLowerCase() === window);
+  const cells: WindowCell[] = windows.length > 0 || fixed
+    ? [
+      ...FIXED_WINDOWS.map((window) => {
+        const said = named(window);
+        return said
+          ? windowCell(said, now)
+          : { window, name: windowName(window), known: false, used: null, warned: false, reading: i18n.t('agents.window.unknown'), times: [] };
+      }),
+      ...orderedWindows(windows.filter((each) => !(FIXED_WINDOWS as readonly string[]).includes(each.window.toLowerCase())))
+        .map((each) => windowCell(each, now)),
+    ]
+    : [];
+  const resetSaid = cells.some((cell) => cell.known);
+  const notes = [
+    ...(state.state === 'cooling' && !state.cooling!.stated && !resetSaid ? [i18n.t('agents.said.resetUnknown')] : []),
+    ...(facts?.offered && state.state !== 'cooling' ? [offeredLine(facts.offered)] : []),
   ];
-  return parts.length > 0 ? parts : null;
+  return cells.length > 0 || notes.length > 0 ? { cells, notes } : null;
 }
 
 /** The latest moment any of an agent's accounts was read, for its Accounts section's head; null where none was. */

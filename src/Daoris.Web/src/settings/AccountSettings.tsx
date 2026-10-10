@@ -148,7 +148,7 @@ export function AccountSettingsForm({
         <Button variant="primary" disabled={busy || !changed || incomplete} onClick={() => onSave(change)}>
           {t('harness.settings.save')}
         </Button>
-        <Button variant="ghost" onClick={onCancel}>{t('common.cancel')}</Button>
+        <Button variant="ghost" disabled={busy} onClick={onCancel}>{t('common.cancel')}</Button>
       </div>
     </div>
   );

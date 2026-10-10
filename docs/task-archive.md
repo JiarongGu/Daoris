@@ -12844,3 +12844,24 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ASKHIST1d1 — every conversation remains reachable: driver** (driver/modules; in flight). Order/filter before 200-row bound; paginate; search older records; Markdown left parseable. D158 note; old pinned/resumed/search cases.
 
 **Outcome** 2026-10-10: the list orders and searches every help record before taking a page; `HELP_CONVERSATIONS` and `help list` take offset/limit and answer total/next beside `cut`; `about` is whole up to 1000 characters, a find carries `foundLine`, one Han character searches. 1000 conversations list in 120–150 ms. Detail: D158's ASKHIST1d1 note; the merge commit.
+
+
+## UX6i2c — kit, CLI and tools name current places (2026-10-10, D150)
+
+> - [ ] **UX6i2c — kit, CLI and tools name current places** (cli/driver/tools; merging). "Settings → Plugins" becomes the Plugins place in the CLI refusal, kit README and publish text.
+
+**Outcome** 2026-10-10: the CLI's `plugin new`/`try` refusal, the kit README template, the published install's README row and four comments name the Plugins place (D150's UX6j note). The refusal's test asserts the old words are gone. Built by a Sonnet worker in 9 turns. Detail: the merge commit.
+
+
+## ACCTUX4 — account windows for both makers (2026-10-10, D125)
+
+> - [ ] **ACCTUX4 — account windows for both makers** (web in flight; modules only if a gap shows). Stable window cells with allowance, reset and per-window age; explicit unknown states. D125/UX7; revise geometry, tests/stories/installed proof.
+
+**Outcome** 2026-10-10: account rows show each window as a stable cell (exact share, a bar of its own allowance, its reset, its own reading's age; unknown in words with no bar), session and weekly for both makers; no bridge change was needed. Rows grew past D152's budget, measured and reported. Installed shots and the budget: ACCTUX4i. Detail: D125's ACCTUX4 note.
+
+
+## SETTINGSWAIT1 — Never mind waits during save (2026-10-10, D125)
+
+> - [ ] **SETTINGSWAIT1 — Never mind waits during save** (web-settings). Disable the ignored cancel press in AccountSettingsForm. D125 note; form regression.
+
+**Outcome** 2026-10-10: the account settings form's *Never mind* is disabled while a save runs, as its Save is; the case that rerenders `busy` asserts it, seen failing first. AgentPage's page-side guard is now redundant and goes with UXFIX2b3. Built by a Sonnet worker in 4 turns. Detail: the merge commit.

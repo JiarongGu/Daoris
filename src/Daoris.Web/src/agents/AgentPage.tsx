@@ -18,7 +18,7 @@ import { type BackAccount, PlaceAccount, RenameAccount, ReSignIn } from './AddAc
 import {
   type AccountAct, type AccountState, type AgentPart, type AgentUsage, accountAct, accountName, accountStates, accountWho,
   doorsSummary, joinChoices, latestRead, ownRunsFor, ownSaid, ownState, rulesSummary, runsFor, runsForLine, settingsSummary,
-  usageLine, usageSummary, useSummary, versionOnly, workspacesSummary,
+  usageCells, usageSummary, useSummary, versionOnly, workspacesSummary,
 } from './agents';
 
 /** The sections that fold (D150 §1 rule 4): the accounts never do. */
@@ -446,9 +446,10 @@ export function AgentPage({
     });
     const offered = act?.act === 'place' && joinable(account.name).length === 0 ? null : act;
     // What its agent last said, and since when it is offered again, under that row alone; a cool-off's column says its hold's
-    // end, so each reset the agent reported is said here beside its window, and one Daoris chose the length of says the
-    // reset is unknown (ACCTUX1).
-    const said = usageLine(facts, state);
+    // end, so each reset the agent reported is said in its window's cell, and one Daoris chose the length of says the reset is
+    // unknown (ACCTUX1). The session's and the week's cells are on every sign-in whose agent speaks, unknown until read
+    // (ACCTUX4); a key's are drawn only where it said something, since a key has no window its agent was heard to keep.
+    const usage = usageCells(facts, state, { fixed: Boolean(use?.speaks) && !account.key, now });
     return (
       <AccountRow
         key={account.home}
@@ -459,7 +460,7 @@ export function AgentPage({
         state={state}
         runs={runsForLine(runs)}
         current={typeof facts?.running === 'number' && facts.running > 0 ? t('agents.now.sessions', { count: facts.running }) : null}
-        said={said}
+        usage={usage}
         act={actOf(offered, account.name, name)}
         menu={accountMenu(account, state)}
         now={now}
@@ -588,9 +589,10 @@ export function AgentPage({
                 why={ownLine(tool.ownAccount, use?.own.cooling)}
                 state={own}
                 runs={runsForLine(ownRunsFor(tool, use, scopeWorkspaces))}
-                // What its agent last said of its windows, where a press asked its own server (CODEXUSE3), as an account's
-                // row says its own; else only that a cool-off Daoris chose the length of has no known reset (ACCTUX1).
-                said={usageLine({ said: ownSaid(use) }, own)}
+                // What its agent last said of its windows, where a press asked its own server (CODEXUSE3), in the cells an
+                // account's row draws (ACCTUX4); else only that a cool-off Daoris chose the length of has no known reset
+                // (ACCTUX1). No unknown cells where nothing was said: Claude Code's own sign-in is never read.
+                usage={usageCells({ said: ownSaid(use) }, own, { now })}
                 act={actOf(own.state === 'cooling' || own.state === 'unknown' ? accountAct(own, { signsIn: false, present: tool.present, runs: 1 }) : null, null, ownLabel)}
                 menu={ownMenu}
                 now={now}

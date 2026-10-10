@@ -101,6 +101,52 @@ const OWN_READ: AgentAccounts['own'] & { said: AccountSaid } = {
 export const CODEX_OWN_USE: AgentAccounts = { agent: 'codex', speaks: true, own: OWN_READ, accounts: [], scopes: [scopeOf()] };
 
 /**
+ * Codex's accounts read as Claude Code's are (ACCTUX4, CODEXUSE1), so the two makers' rows show the same cells: *team* with
+ * both windows read, a minute apart, its week nearly gone; *reserve* with its week alone read, its five hours unknown, and a
+ * window of another length the app server named; *spare* never read, each window unknown; and your own sign-in, read at a press.
+ */
+const CODEX_READ_DOOR: ToolDoor = {
+  ...CODEX,
+  profiles: [
+    { name: 'team', home: 'C:/somewhere/data/harnesses/codex/team', login: 'in', account: 'team@example.invalid', read: READ },
+    { name: 'reserve', home: 'C:/somewhere/data/harnesses/codex/reserve', login: 'in', account: 'reserve@example.invalid', read: READ },
+    { name: 'spare', home: 'C:/somewhere/data/harnesses/codex/spare', login: 'unknown', read: null },
+  ],
+};
+
+export const CODEX_READ_TOOL: Tool = byTool([CODEX_READ_DOOR])[0]!;
+
+export const CODEX_READ_USE: AgentAccounts = {
+  agent: 'codex',
+  speaks: true,
+  own: OWN_READ,
+  accounts: [
+    {
+      name: 'team', running: 1,
+      said: {
+        seen: minutesFrom(-8),
+        windows: [
+          { window: 'session', used: 0.01, reset: minutesFrom(4 * 60 + 20), credits: false, seen: minutesFrom(-8) },
+          { window: 'weekly', used: 0.94, reset: minutesFrom(2 * 24 * 60), standing: 'near', credits: false, seen: minutesFrom(-9) },
+        ],
+      },
+    },
+    {
+      name: 'reserve', running: 0,
+      said: {
+        seen: minutesFrom(-40),
+        windows: [
+          { window: 'weekly', used: 0.15, reset: minutesFrom(6 * 24 * 60), credits: false, seen: minutesFrom(-40) },
+          { window: '90-minute', used: 0.4, reset: minutesFrom(50), credits: false, seen: minutesFrom(-40) },
+        ],
+      },
+    },
+    { name: 'spare', running: 0 },
+  ],
+  scopes: [scopeOf({ list: ['team', 'reserve', 'spare'], begins: 'team', use: USE_DEFAULTS })],
+};
+
+/**
  * The install's shape, as the UX7 design §4.7 draws it (UX7b): account-1 signed in with a session on it, first in work's
  * list; account-2 a list holds, unknown and never read; *personal*, named by the person (ACCT2), cooling; a new account
  * (`acct-…`, ACCT2's fresh id) signed in and in no list (ACCT1); your own sign-in never read, which forge starts on since

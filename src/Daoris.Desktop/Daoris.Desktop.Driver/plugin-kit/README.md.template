@@ -91,4 +91,4 @@ reaches a network.
 ## Installing it
 
 Once it is reviewed and landed: `daoris plugin add <this folder>`, or copy the folder under the Daoris
-home's `plugins/`. Then turn it on with `daoris plugin enable {{id}}` or in Settings → Plugins.{{install}}
+home's `plugins/`. Then turn it on with `daoris plugin enable {{id}}` or in the Plugins place.{{install}}
