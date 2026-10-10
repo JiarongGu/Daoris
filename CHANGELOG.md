@@ -19,6 +19,10 @@ with the version and date at release.
 - Ask Daoris can take you to a workspace's page: its Details, Branches, Workflow and Setup tabs, and
   Setup's Defaults and Remote and reach, on the workspace in view. It no longer offers Settings →
   Workspace or Permissions; a *Go there* to either from an earlier conversation opens where it went.
+- Ask Daoris can take you to what waits on you: Sessions' *Waiting on you* and *To review*, and Quests'
+  asks and the quests waiting on you. The list opens with that group at its top and its heading focused;
+  you open the session or quest you mean. The start that counts sessions waiting on you opens them the
+  same way.
 - Account rows show each usage window as its own cell, in the same place on every row: the share used,
   a bar of that window's allowance, its reset and how old its reading is. A window the agent has not
   reported says *unknown*, never 0%. A Codex window that is neither five hours nor a week is named in
