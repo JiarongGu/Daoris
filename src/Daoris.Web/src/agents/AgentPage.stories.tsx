@@ -4,15 +4,15 @@ import { chinese } from '../storyLanguage';
 import type { AgentActs } from './AgentPage';
 import { AgentMainNotice, AgentPage } from './AgentPage';
 import {
-  CLAUDE_TOOL, CLAUDE_USE, CODEX_OWN_TOOL, CODEX_OWN_USE, CODEX_TOOL, CODEX_USE, DSH_TOOL, INSTALL_TOOL, INSTALL_USE,
-  INSTALL_WORKSPACES, READ, READINGS_TOOL, READINGS_USE, RULES, USAGE, WORKSPACES,
+  CLAUDE_TOOL, CLAUDE_USE, CODEX_OWN_TOOL, CODEX_OWN_USE, CODEX_READ_TOOL, CODEX_READ_USE, CODEX_TOOL, CODEX_USE, DSH_TOOL,
+  INSTALL_TOOL, INSTALL_USE, INSTALL_WORKSPACES, READ, READINGS_TOOL, READINGS_USE, RULES, USAGE, WORKSPACES,
 } from './agentsFixtures';
 
 // An agent's page (UX7b, D152 §4; first UX6e, D150 §5.2) in the main area: the design's Claude Code, three accounts of which
 // two read signed out and one cools, your own sign-in never read, each section folded to its line; the install's shape, a
 // row per state with its one act; the add flow's last step; *Read again* on its way; a proposal waiting, which opens *What
 // it may do*; an agent with one account and no settings Daoris knows; Codex's own sign-in with its windows read (CODEXUSE3);
-// one not installed; an API key; what each row knows (ACCTUX1), in both themes; the same read without a pointer (ACCTUX2), each
+// Codex's accounts read, in the same window cells as Claude Code's (ACCTUX4), at each width and in 中文; one not installed; an API key; what each row knows (ACCTUX1), in both themes; the same read without a pointer (ACCTUX2), each
 // row's explanation opened, at 680 px and the main area's 400 px floor in both themes; a key added asking its name and lists,
 // and a key refused in its field (ACCTUX3), at the same widths; and the main area with no page. Each at
 // the main area's two widths: the frame's 52rem, and the 680 px window's main area, where rows stack.
@@ -85,6 +85,13 @@ export const OwnSignInRead: Story = { args: { tool: CODEX_OWN_TOOL, use: CODEX_O
 /** The same in 中文. */
 export const OwnSignInReadChinese: Story = { args: OwnSignInRead.args, decorators: [chinese] };
 
+/**
+ * Codex's accounts read (ACCTUX4): the same cells as Claude Code's `Readings`, the five hours then the week on every row, each
+ * with its exact share, a bar of that window's own allowance, its reset and its own reading's age; a window not reported is
+ * unknown in words with no bar, and a window of another length follows the two.
+ */
+export const CodexWindows: Story = { args: { tool: CODEX_READ_TOOL, use: CODEX_READ_USE, rules: QUIET_RULES, usage: [] } };
+
 /** An agent not installed: the header says so, and *Ways in* offers its installer. */
 export const NotInstalled: Story = { args: { tool: DSH_TOOL, use: null, rules: null, usage: [] } };
 
@@ -124,6 +131,15 @@ export const ReadingsChinese: Story = { args: Readings.args, decorators: [chines
 const narrow: Decorator = (Story) => <div className="w-[37rem] max-w-full"><Story /></div>;
 /** The main area's floor, 400 px beside an open list and side bar (UXFIX2c). */
 const atFloor: Decorator = (Story) => <div className="w-[25rem] max-w-full"><Story /></div>;
+
+/** Codex's windows at the 680 px window's main area, each row stacked, its two cells side by side, in dark. */
+export const CodexWindowsNarrowDark: Story = { args: CodexWindows.args, decorators: [narrow, dark] };
+
+/** The same in 中文, at the frame's width. */
+export const CodexWindowsChinese: Story = { args: CodexWindows.args, decorators: [chinese] };
+
+/** At the 400 px floor: each cell's times wrap under its share, and the two cells keep their columns. */
+export const CodexWindowsFloor: Story = { args: CodexWindows.args, decorators: [atFloor] };
 
 /** Each row's *About … state* pressed (ACCTUX2): why it cools, why a key reads unchecked or refused, said under the row. */
 const explainEach: Story['play'] = async ({ canvasElement }) => {
