@@ -677,10 +677,8 @@ public sealed partial class HelpCoverageTests
         // ENTRY1a: the registration lifecycle (D48 §3/§7), the page's own service calls, read since `queries.ts` is.
         ("projects", "useRegisterRepository", null, RepositoryAddOwed),
         ("projects", "useImportFolder", null, RepositoryAddOwed),
-        ("projects", "useWireRepository", null, new Owed(
-            "which workspace a repository is in is its registration, set as it is added and changed by the same kind of press, "
-            + "a move that undoes itself, so Ask Daoris should propose it; ENTRY1d's design takes a repository's registration "
-            + "through Ask Daoris (D48 §3/§7), and until then the repository's Manage drawer is its door.")),
+        // ENTRY1d1 (D161's ENTRY1d note): a move needs no path, so the `repository` kind proposes it by name.
+        ("projects", "useWireRepository", null, new Door("repository", "wire")),
         ("projects", "useRetireRepository", null, new Exempt(
             "retiring takes a repository off this machine's registry and its entries out of the index, a removal, which stays "
             + "the person's own press (D89), as a plugin's removal does; registering it again is the add, owed to ENTRY1d.")),

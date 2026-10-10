@@ -80,6 +80,8 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Contains("mcp__daoris-knowledge__plugin_propose", allowed);
         // WSR5b: handing a landed branch to its plugin, a card the person applies like the rest.
         Assert.Contains("mcp__daoris-knowledge__hand_propose", allowed);
+        // ENTRY1d1: moving a registered repository to a workspace, by name, a card the person applies like the rest.
+        Assert.Contains("mcp__daoris-knowledge__repository_propose", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__permission_propose", allowed);
         Assert.DoesNotContain(allowed, rule => rule.StartsWith("Bash", StringComparison.Ordinal)
             || rule.StartsWith("Edit", StringComparison.Ordinal) || rule.StartsWith("Write", StringComparison.Ordinal));

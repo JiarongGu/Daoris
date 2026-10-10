@@ -37,7 +37,8 @@ export type HelpPluginShown = {
  */
 export type HelpProposal = {
   id: string;
-  kind: 'setting' | 'ask' | 'agent' | 'account' | 'delete' | 'go' | 'plugin' | 'hand' | 'browser' | 'sync' | 'accept';
+  /** A move to a workspace (`repository`, ENTRY1d1) has no card of its own: its sentence, Apply and Not now. */
+  kind: 'setting' | 'ask' | 'agent' | 'account' | 'delete' | 'go' | 'plugin' | 'hand' | 'browser' | 'sync' | 'accept' | 'repository';
   describe: string;
   terminal: string;
   why: string;

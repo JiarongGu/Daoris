@@ -53,6 +53,21 @@ public sealed class HelpRoomMayProposeTests
     }
 
     /// <summary>
+    /// ENTRY1d1 (D161's ENTRY1d note): a repository is moved to a workspace by name, a new workspace allowed, as the Manage
+    /// drawer's *Move to workspace* moves it; adding or importing one needs a folder, which stays the person's pick.
+    /// </summary>
+    [Fact]
+    public void The_room_says_how_a_repository_is_moved_to_a_workspace()
+    {
+        var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("- `repository_propose`: move a repository registered here to a workspace, as its page's Manage →", proposes);
+        Assert.Contains("or a new name, which the move starts", proposes);
+        Assert.Contains("It changes one row of this machine's registry and touches no file.", proposes);
+        Assert.Contains("Adding or importing a repository needs a folder, which stays the person's pick", proposes);
+    }
+
+    /// <summary>
     /// HELP6: every door built since HELP1c is a proposal too — an agent's update or pin, a delete of a
     /// record made by mistake, an account's model and effort, and a screen to open — each named with its
     /// tool and the rule its route judges it by, so the helper does not propose what would be refused.

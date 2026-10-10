@@ -31,6 +31,7 @@ public sealed partial class HelpProposalKindsTests
         ("browser", "browser_propose"),
         ("sync", "sync_propose"),
         ("accept", "accept_propose"),
+        ("repository", "repository_propose"),
     ];
 
     internal static string RepositoryRoot()

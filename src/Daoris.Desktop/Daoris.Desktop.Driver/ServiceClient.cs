@@ -215,6 +215,32 @@ public sealed partial class ServiceClient : IDisposable
     }
 
     /// <summary>
+    /// Move a registered repository to a workspace on this machine (ENTRY1d1, D48 §7): the local host's
+    /// <c>POST /api/registry/{repository}/workspace</c>, the request the Manage drawer's *Move to workspace* sends, which edits
+    /// one field of the row. The workspace the host took is said as the drawer says it; a refusal comes back in the service's
+    /// words (a name it does not hold, a shared host's boundary), and a host older than the door is said to be.
+    /// </summary>
+    public async Task<(bool Ok, string Message)> WireRepositoryAsync(string repository, string workspace, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("workspace", workspace);
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync(
+            $"/api/registry/{Uri.EscapeDataString(repository)}/workspace", body, ct).ConfigureAwait(false);
+        if (root is not { } answer)
+        {
+            return (false, $"the service at {_base} has no workspace door for a repository ({status}) — is it older than this driver?");
+        }
+
+        return ok
+            ? (true, $"`{Text(answer, "repository") ?? repository}` is now in workspace `{Text(answer, "workspace") ?? workspace}`.")
+            : (false, Text(answer, "error") ?? payload);
+    }
+
+    /// <summary>
     /// Ask the host to read the index again (the refresh every door has): registering does not re-index (D124 §3.3). Null
     /// when it did; else why not, in the service's words.
     /// </summary>
