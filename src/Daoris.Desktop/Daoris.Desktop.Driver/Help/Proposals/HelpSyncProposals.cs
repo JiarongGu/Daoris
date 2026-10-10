@@ -6,7 +6,7 @@ using static Daoris.Driver.HelpProposals;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's <c>sync</c> proposal (HELP10, D109): Settings → Workspace → Session branches → *Bring up to date*, and
+/// Ask Daoris's <c>sync</c> proposal (HELP10, D109): the workspace's page → Branches → Updates → *Bring up to date*, and
 /// <c>daoris-driver trees sync</c> — each repository's line fast-forwarded from <c>origin</c>, the branches still at work
 /// replayed onto it, the landed branches whose work reached it deleted. Its target a repository, or none for every one
 /// with a checkout here.

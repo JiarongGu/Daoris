@@ -1065,7 +1065,7 @@ export function commandDriver(
 
     // The session language (LANG1c, D142 point 7): what a repository's sessions — or, with `--workspace`, those of each
     // repository there that sets none of its own — are asked to write to the person in. The work's, set apart from the
-    // window's (Settings → Appearance); unset, no line is handed. A repository's page, Settings → Workspace and Ask Daoris's
+    // window's (Settings → Appearance); unset, no line is handed. A repository's page, the workspace's page and Ask Daoris's
     // `setting` kind are its other doors (D50).
     case 'language': {
       const workspace = flagValue(argv, '--workspace');

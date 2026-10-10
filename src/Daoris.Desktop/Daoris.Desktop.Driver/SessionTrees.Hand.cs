@@ -123,7 +123,7 @@ public sealed partial class SessionTrees
         if (proof.Kind is LandedKind.OnLine or LandedKind.Merged)
         {
             return Refused($"`{branch}`'s work already reads on the line — its pull request was merged. Nothing to hand on: the "
-                + "clean-up removes it (Settings → Workspace → Session branches, or `daoris-driver trees clean`).", commits.Count);
+                + "clean-up removes it (Repositories → the workspace's page → Branches → Session branches, or `daoris-driver trees clean`).", commits.Count);
         }
 
         // PLUGHOOK1a (D148, amending D102): the same refusal where the platform's kept word clears it and git confirms it.
@@ -132,7 +132,7 @@ public sealed partial class SessionTrees
         {
             return Refused($"`{branch}`'s work already reads on the line — its pull request completed"
                 + (kept.Plugin is { } answered ? $", as `{answered}` answered," : "") + $" and its merge commit is on `{verdict.Form}`. "
-                + "Nothing to hand on: the clean-up removes it (Settings → Workspace → Session branches, or `daoris-driver trees clean`).",
+                + "Nothing to hand on: the clean-up removes it (Repositories → the workspace's page → Branches → Session branches, or `daoris-driver trees clean`).",
                 commits.Count);
         }
 

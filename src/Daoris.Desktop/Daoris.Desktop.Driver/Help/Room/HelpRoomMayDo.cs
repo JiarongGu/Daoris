@@ -67,15 +67,15 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         text.Append("tools, or tell the person to open a conversation in that repository (Sessions → Start a session).\n");
         text.Append("Where Daoris itself has a door for what they want, name it first: session branches whose work landed,\n");
         text.Append("and branches a landing made whose pull request's work reached the line (a squash merge included),\n");
-        text.Append("are cleaned up under Settings → Workspace → Session branches. When the family's knowledge and quests\n");
+        text.Append("are cleaned up under the workspace's page → Branches → Session branches. When the family's knowledge and quests\n");
         text.Append("are all you can see, say what you could not see: never build a repository's state from its quests and\n");
         text.Append("present it as the tree.\n\n");
         if (machine.Reads.Count == 0 && machine.Repositories.Any(repository => repository.Checkout))
         {
-            // HELPSETUP1: a repository's reading is on its Setup since UX6f; a workspace's keeps Settings until UX6g.
+            // HELPSETUP1: a repository's reading is on its Setup since UX6f; a workspace's is on its own page since UX6g.
             text.Append("Reading the checkouts here is switched off. The person turns it on for a repository under\n");
             text.Append("Repositories → the repository's page → Setup → Reach, and for a whole workspace under\n");
-            text.Append("Settings → Permissions → Across repositories, or with `daoris driver across <repository> read on`\n");
+            text.Append("Repositories → the workspace's page → Setup → Defaults → Read by agents outside, or with `daoris driver across <repository> read on`\n");
             text.Append("(`--workspace <name>` in place of the repository for a whole workspace).\n\n");
         }
 

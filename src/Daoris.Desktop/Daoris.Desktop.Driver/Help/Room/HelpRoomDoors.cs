@@ -16,6 +16,9 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
     /// <summary>A repository's Setup (UX6f, D150 §4.2), where its own values are set, before the section that holds one.</summary>
     private const string Setup = "Repositories → the repository's page → Setup → ";
 
+    /// <summary>A workspace's page (UX6g, D150 §3.1), where its own values, branches and rules are, before its tab.</summary>
+    private const string Ws = "Repositories → the workspace's page → ";
+
     /// <summary>An agent's page in the Agents place (UX6e, D150 §5.2), before the section or press that holds a change.</summary>
     private const string Agent = "Agents → the agent's page → ";
 
@@ -28,8 +31,8 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("walk through setting this machine up: an agent, Ask Daoris's agent, a workspace and its repositories, "
             + "what is driven, how work lands, what agents may do", "Settings → Get started (Help → *Get started*)",
             "(each step shows its own command there)"),
-        // HELPSETUP1: a repository's own values are on its Setup since UX6f (D150 §4.2); a workspace's default keeps its
-        // Settings home until the workspace's page takes it (UX6g).
+        // HELPSETUP1: a repository's own values are on its Setup since UX6f (D150 §4.2); a workspace's are on its page
+        // since UX6g (D150 §3.1).
         ("drive a repository, or stop", Setup + "Driving", "`daoris driver drive|undrive <repository>`"),
         // PAUSE1b (D132 §13): a repository's hold, never a pause; a pause is an ask's or a quest's, and stops what runs.
         ("hold one, so nothing new starts there, or resume it", Setup + "Driving", "`daoris driver hold|resume <repository>`"),
@@ -49,9 +52,9 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("register a repository from what its line declares, as `connect` would, without running it: after a set-up's "
             + "branch is merged and brought up to date, or a declaration changed outside Daoris",
             "(no screen yet)", "`daoris-driver register [--repository <name>]`"),
-        ("set the line its work grows from and lands on", Setup + "Line and landing; a workspace's, Settings → Workspace → Lines",
+        ("set the line its work grows from and lands on", Setup + "Line and landing; a workspace's, " + Ws + "Setup → Defaults → Line",
             "`daoris driver line <repository> <branch>|--clear` (`--workspace <name>` for a whole workspace)"),
-        ("set how accepted work lands", Setup + "Line and landing; a workspace's, Settings → Workspace → How work lands",
+        ("set how accepted work lands", Setup + "Line and landing; a workspace's, " + Ws + "Setup → Defaults → How work lands",
             "`daoris driver landing <repository> merge|branch <pattern>|--clear` (`--workspace <name>`, `--tidy`, "
             + "and on a branch `--plugin <id>`: an installed plugin that pushes it and opens the pull request, and "
             + "`--auto-accept`: a quest's done lands it with no press)"),
@@ -110,10 +113,10 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("bring a repository up to date after its pull request merged: fetch and fast-forward the line, delete the branches "
             + "whose work reached it, replay the branches still at work onto it (Daoris fetches, never pushes; it takes the "
             + "repositories holding Daoris's branches, and another where named or included)",
-            "Settings → Workspace → Session branches → Updates",
+            Ws + "Branches → Updates",
             "`daoris-driver trees sync [--repository <name>] [--workspace <name>] [--all] [--yes]`"),
         ("clean up session branches whose work landed, and branches a landing made whose work reached the line",
-            "Settings → Workspace → Session branches", "`daoris-driver trees clean [--workspace <name>]`"),
+            Ws + "Branches → Session branches", "`daoris-driver trees clean [--workspace <name>]`"),
         // LAND3: a failed or superseded attempt's branch holds commits on no branch of the person's, so only they discard it.
         ("discard a failed or superseded session's branch, with its tree where it is still here",
             "Sessions → the session's review → Discard, while its tree is here",
@@ -144,12 +147,12 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("bound how many sessions run at once", "(no screen yet)", "`daoris driver cap <n>`"),
         ("say so when a session parks", "Settings → Driver", "`daoris driver notify on|off`"),
         // UX6e2: the rules for every session and Daoris's defaults are the agent's page's (UX6e); a repository's are on its
-        // Setup (UX6f); a workspace's stay in Settings → Permissions until UX6g.
+        // Setup (UX6f); a workspace's are on its page (UX6g2a).
         ("allow, ask or deny what an agent may do",
-            Agent + "What it may do; a repository's, " + Setup + "Reach; a workspace's, Settings → Permissions", "`daoris agent rules …`"),
+            Agent + "What it may do; a repository's, " + Setup + "Reach; a workspace's, " + Ws + "Setup → Remote and reach", "`daoris agent rules …`"),
         // D107: reading other checkouts is on unless switched off; writing into one is a declared relationship.
         ("let agents read a repository's checkout, or not; let one repository's sessions write into another",
-            Setup + "Reach; a workspace's reading, Settings → Permissions → Across repositories",
+            Setup + "Reach; a workspace's reading, " + Ws + "Setup → Defaults → Read by agents outside",
             "`daoris driver across <repository> read on|off|--clear` (`--workspace <name>` for a whole workspace), "
             + "`daoris driver across <repository> write-to <other> [--clear]`"),
         // KNOWUSE1b: what the person says holds for every session in one repository, kept on this machine (D135 §3).
@@ -159,7 +162,7 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         // kind's `language` door since LANG1c2.
         ("set the language a repository's sessions write to you in, or a workspace's: their questions, closing notes, decline "
             + "reasons and last words (the window's own language is Settings → Appearance, and neither sets the other)",
-            Setup + "Sessions; a workspace's, Settings → Workspace → Session language",
+            Setup + "Sessions; a workspace's, " + Ws + "Setup → Defaults → Session language",
             "`daoris driver language <repository> en|zh|--clear` (`--workspace <name>` for a whole workspace)"),
         // UX6e2: an agent's accounts, ways in and model are on its page in the Agents place since UX6e (D150 §5.2). ACCT1: a
         // sign-in reaches the account named, never a new folder; a new account joins the lists named at its end.
