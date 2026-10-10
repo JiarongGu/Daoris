@@ -456,6 +456,35 @@ describe('Ask Daoris, with an agent named', () => {
     }));
   });
 
+  /** FRAME1i-a: the chosen item is part of where the person is, so a change of it is said again and a same one is not. */
+  it('hands the conversation the item again when it changed', async () => {
+    SESSIONS = [HELP];
+    bridge();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const page = (id: string) => (
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <AskDaoris where={{ view: 'quests', workspace: null, item: { kind: 'quest', id } }} attending={null} onGo={vi.fn()} onClose={vi.fn()} />
+        </Tooltip.Provider>
+      </QueryClientProvider>
+    );
+    const { rerender } = render(page('abc123'));
+
+    const box = await screen.findByLabelText('Message');
+    await userEvent.type(box, 'what is this?');
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: HELP.id, text: 'what is this?', preface: 'Where the person is now: the Quests view, every workspace, looking at quest `abc123`.' },
+    }));
+
+    rerender(page('def456'));
+    await userEvent.type(box, 'and this?');
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: HELP.id, text: 'and this?', preface: 'Where the person is now: the Quests view, every workspace, looking at quest `def456`.' },
+    }));
+  });
+
   /**
    * With HELP5: the conversation opened as the panel showed was refused, which says nothing and is not
    * asked again while the person types. The send asks for itself, and says why it cannot.

@@ -4,7 +4,7 @@ import { VIEWS } from '../commands';
 import type { KnowledgeMode } from '../knowledge/modes';
 import { en } from '../locales';
 import { PLACE_DOMAINS, PLACE_PARTS } from './places';
-import { attendedOf, prefaceOf } from './where';
+import { attendedOf, type HelpWhere, itemOf, prefaceOf } from './where';
 
 // HELP1b (D89): where the person is, as the helper is told it ahead of their words.
 
@@ -132,6 +132,39 @@ describe('where the person is', () => {
     expect(prefaceOf({ view: 'quests', workspace: null, layout: { right: ['ask'], panel: ['console', 'terminal'], rightShown: true, panelShown: true } }))
       .toBe('Where the person is now: the Quests view, every workspace. The right side bar holds Ask Daoris, and is open; '
         + 'the panel holds the console and the terminal, and is showing.');
+  });
+
+  /** FRAME1i-a (D118): the item a view has chosen, by the id a go names, only while the screen shows it. */
+  it('names the item a view has chosen, one case per kind, and says nothing with none', () => {
+    const at = (view: Parameters<typeof prefaceOf>[0]['view'], kind: NonNullable<HelpWhere['item']>['kind'], id: string) =>
+      prefaceOf({ view, workspace: null, item: { kind, id } });
+    expect(at('quests', 'quest', 'abc123')).toBe('Where the person is now: the Quests view, every workspace, looking at quest `abc123`.');
+    expect(at('quests', 'ask', 'ask:7c1e9a04b2d5')).toBe('Where the person is now: the Quests view, every workspace, looking at ask `ask:7c1e9a04b2d5`.');
+    expect(at('projects', 'repository', 'engine')).toContain(', looking at repository `engine`.');
+    expect(at('projects', 'workspace', 'aurora')).toContain(', looking at workspace `aurora`.');
+    expect(at('agents', 'agent', 'claude')).toContain(', looking at agent `claude`.');
+    expect(at('plugins', 'plugin', 'acme.gate')).toContain(', looking at plugin `acme.gate`.');
+    expect(prefaceOf({ view: 'quests', workspace: null, item: { kind: 'quest', id: 'abc123', closed: true } }))
+      .toBe('Where the person is now: the Quests view, every workspace, looking at quest `abc123`, which is closed.');
+    expect(prefaceOf({ view: 'quests', workspace: null, item: null })).toBe('Where the person is now: the Quests view, every workspace.');
+    expect(prefaceOf({ view: 'quests', workspace: null, item: { kind: 'quest', id: 'abc123' }, layout: { right: ['ask'], panel: [], rightShown: true, panelShown: true } }))
+      .toContain('looking at quest `abc123`. The right side bar');
+  });
+
+  it('reads a view\'s choice and standing: live is said, closed is said as closed, anything else is unsaid', () => {
+    expect(itemOf('quests', 'abc123', 'live')).toEqual({ kind: 'quest', id: 'abc123' });
+    expect(itemOf('quests', 'abc123', 'closed')).toEqual({ kind: 'quest', id: 'abc123', closed: true });
+    expect(itemOf('quests', 'ask:7c1e', 'live')).toEqual({ kind: 'ask', id: 'ask:7c1e' });
+    expect(itemOf('projects', 'engine', 'live')).toEqual({ kind: 'repository', id: 'engine' });
+    expect(itemOf('projects', 'workspace:aurora', 'live')).toEqual({ kind: 'workspace', id: 'aurora' });
+    expect(itemOf('agents', 'claude', 'live')).toEqual({ kind: 'agent', id: 'claude' });
+    expect(itemOf('plugins', 'acme.gate', 'live')).toEqual({ kind: 'plugin', id: 'acme.gate' });
+    for (const standing of ['gone', 'unread', undefined] as const) expect(itemOf('quests', 'abc123', standing)).toBeNull();
+    expect(itemOf('quests', null, 'live')).toBeNull();
+    // An offer is not an installed plugin (left to PLUGUI1h); Knowledge and Settings keep what they say today.
+    expect(itemOf('plugins', 'offer:acme.gate', 'live')).toBeNull();
+    expect(itemOf('knowledge', 'x', 'live')).toBeNull();
+    expect(itemOf('settings', 'x', 'live')).toBeNull();
   });
 
   it('names a working session by its state, and one that asked nothing by no quote', () => {

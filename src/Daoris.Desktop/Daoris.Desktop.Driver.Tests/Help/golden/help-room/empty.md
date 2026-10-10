@@ -238,7 +238,8 @@ the lines a read named marked, and its changes one press away where the review h
 a session; opening another replaces it, and its own × goes back. In this conversation a path is plain text.
 
 You cannot see the window. Where the person is, and where the views stand, comes with their
-message when it changed; for anything else on the screen, ask them rather than guess.
+message when it changed. It names the quest, ask, repository, workspace, agent or plugin the view has open, by the id a go names,
+while the screen still shows it. For anything else on the screen, ask them rather than guess.
 
 ## This machine, now
 

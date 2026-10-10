@@ -68,6 +68,19 @@ public sealed class HelpRoomWindowTests
     }
 
     /// <summary>
+    /// FRAME1i-a (D118 point 3): the preface names the item the view has open, by the id a go names, so "what is this?" is
+    /// answered about it.
+    /// </summary>
+    [Fact]
+    public void The_room_says_the_preface_names_the_item_the_view_has_open_by_the_id_a_go_names()
+    {
+        var window = new HelpRoomWindow().Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("It names the quest, ask, repository, workspace, agent or plugin the view has open, by the id a go names,", window);
+        Assert.Contains("while the screen still shows it.", window);
+    }
+
+    /// <summary>
     /// FRAME1i-b (D118 point 4): every view but Overview and Map has a list, and the list shows or hides by four doors, so the
     /// room no longer ties the list and Ctrl+B to Sessions alone.
     /// </summary>

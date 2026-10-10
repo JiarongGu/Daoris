@@ -13145,3 +13145,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **INSTALLDOOR1 — *How to install* where Daoris has no installer** (web; the page half of AGENTMARK1, either order: an older shell's absent fields read as today). `ToolDoor` (tools.ts) gains `mark?` and `installs?`; `declaredMark` drops its cast; where `installs === false` the list offers *How to install* (the agent's page, no installer run) and the page's head no Install, en and zh. D152's UX7d-2 note; UX7 design §4.6.
 
 **Outcome** 2026-10-11: the page reads `mark` and `installs`; where no installer is declared the list's press and menu act say *How to install* and open the agent's page, nothing installs, and the page shows no Install but a sentence naming the agent's maker. The window's look is UX7e's (the built-ins all install). Detail: D152's INSTALLDOOR1 note.
+
+
+## FRAME1i-a — the preface names the chosen item (2026-10-11, D118)
+
+> - [ ] **FRAME1i-a — the preface names the chosen item** (web; after ENTRY1d2b, which holds App.tsx). `help/where.ts` names the item each view has chosen (quest, ask, repository, workspace, plugin, agent), only what the screen shows; App passes it from the list panes, a gone choice unsaid; the room's window section gains the one sentence saying so (the driver line rides along). The go's item is ENTRY1f1/f2's. Frame-model design ~:375-388; D118.
+
+**Outcome** 2026-10-11: the preface says *looking at* the front view's chosen quest, ask, repository, workspace, agent or plugin by the id a go names (`itemOf`), a closed one as closed; a gone, unread or missing choice, a plugin offer, Knowledge and Settings say nothing new. The room says so. With FRAME1i-b, FRAME1i is closed. Detail: D118's FRAME1i-a note.
