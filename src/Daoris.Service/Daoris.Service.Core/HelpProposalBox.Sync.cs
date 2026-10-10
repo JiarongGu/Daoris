@@ -2,7 +2,7 @@ namespace Daoris.Knowledge;
 
 /// <summary>
 /// The <c>sync</c> kind's writer (HELP10): bringing repositories up to date after a pull request merged (WSR6, D109) —
-/// Settings → Workspace → Session branches → <i>Bring up to date</i>, and <c>daoris-driver trees sync</c> — for one
+/// Repositories → the workspace's page → Branches → <i>Bring up to date</i>, and <c>daoris-driver trees sync</c> — for one
 /// repository, or every one with a checkout on the machine.
 /// </summary>
 public sealed partial class HelpProposalBox

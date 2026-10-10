@@ -10,7 +10,7 @@ public sealed partial class KnowledgeTools
     [Description(
         "Ask Daoris only: propose adding a plugin that has landed or one of Daoris's own, switching one installed here "
         + "on or off, or updating one, for the person to apply — `daoris plugin add <folder>`, `daoris plugin add --offer "
-        + "<id>`, Settings → Plugins' switch and `daoris plugin update <id>`. `add` copies the plugin's folder into "
+        + "<id>`, the Plugins place's switch (Turn on / Turn off) and `daoris plugin update <id>`. `add` copies the plugin's folder into "
         + "Daoris's home under its manifest's id: name the repository whose checkout holds it and the folder there, or "
         + "name one of the install's own plugins by its id in `offer`, as the room lists them. `update` takes a newer copy "
         + "from where an installed plugin came from. The card shows what the plugin runs (and for an update what changes) "

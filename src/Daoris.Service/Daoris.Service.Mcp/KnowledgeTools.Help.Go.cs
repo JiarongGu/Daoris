@@ -12,13 +12,13 @@ public sealed partial class KnowledgeTools
         + "a step of the setup guide. It changes nothing: the card's Go opens the screen, where the person does "
         + "what it is for. Use it when the answer is a place on the window; the room lists every place.")]
     public string ProposeGo(
-        [Description("The view: overview, sessions, quests, projects, map, convergence, search or settings.")]
+        [Description("The view: overview, sessions, quests, projects, map, knowledge, agents, plugins or settings. Knowledge's search and convergence are its parts.")]
         string view,
         [Description("Why: what the person asked, and what they will find there.")]
         string why,
-        [Description("For settings: the domain, as the room lists them (start, appearance, ai, workspace, driver, agents, permissions, plugins, browser).")]
+        [Description("For settings: the domain, as the room lists them (start, appearance, ai, workspace, driver, permissions, browser, logs).")]
         string? domain = null,
-        [Description("A part of that domain or view, as the room lists them — a setup step under start, lines under workspace, add under projects.")]
+        [Description("A part of that domain or view, as the room lists them — a setup step under start, lines under workspace, add under projects, search or convergence under knowledge.")]
         string? part = null)
     {
         var box = help ?? HelpProposalBox.FromEnvironment();

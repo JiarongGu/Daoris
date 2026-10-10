@@ -9,7 +9,7 @@ public sealed partial class HelpProposalBox
     /// <summary>
     /// Write one plugin proposal (PLUG9): <c>add</c> a plugin that has landed, from its folder in the
     /// checkout of the repository that holds it — <c>daoris plugin add</c>'s copy — or <c>enable</c> or
-    /// <c>disable</c> one installed here, Settings → Plugins' switch. Whether the folder holds a sound
+    /// <c>disable</c> one installed here, the Plugins place's switch. Whether the folder holds a sound
     /// manifest, and whether the id is installed, is the driver's, read with the catalogue's own reader.
     /// </summary>
     /// <param name="id">For enable, disable and update: the installed plugin's id.</param>
