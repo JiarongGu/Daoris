@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import i18n from '../i18n';
 import {
   type AccountScope, type AgentAccounts, agentOf, cannotLeave, coolingLine, heldLine, listedIn, machineScope, moved, nextLine,
-  type NextStart, nothingSaid, offeredLine, ownLine, saidLine, used, USE_DEFAULTS, workspaceScope,
+  type NextStart, nothingSaid, offeredLine, ownLine, saidLine, used, USE_DEFAULTS, windowName, workspaceScope,
 } from './accounts';
 
 // How each agent's accounts are used, read and said (TOOL4g; D125 §2.4, §3.7; D130 §3.1, §4.6, §5.2, §16.4): the pure half
@@ -82,6 +82,15 @@ describe('what is said', () => {
     expect(coolingLine(cooling, now)).toMatch(/^冷却至 .+ · 还有 .+ · 智能体如此说明$/);
   });
 
+  /** WINDOWNAME1: a window of another length is named in the reader's language, its digits kept. */
+  it('names a "<n>-minute" window in either language', async () => {
+    expect(windowName('90-minute')).toBe('90-minute');
+    expect(windowName('monthly')).toBe('monthly');
+    await i18n.changeLanguage('zh');
+    expect(windowName('90-minute')).toBe('90 分钟');
+    expect(windowName('monthly')).toBe('monthly');
+  });
+
   /** D130 §5.2, as the CLI's `saidLine` says it: its own word first, then each window's use and reset. */
   it('says what an agent last said, with how long ago, and nothing said as nothing', () => {
     const seen = new Date(Date.now() - 3 * 3_600_000).toISOString();
@@ -95,6 +104,8 @@ describe('what is said', () => {
 
     const line = saidLine(said);
     expect(line).toMatch(/^said 3h ago: near its five-hour limit, by its own word; 88% of its five-hour limit used, resets .+; 14% of its weekly limit used, resets .+$/);
+    expect(saidLine({ seen, windows: [{ window: '90-minute', used: 0.4, reset: '2026-10-03T16:00:00Z', credits: false, seen }] }))
+      .toContain('40% of its 90-minute limit used');
     expect(saidLine(null)).toBe('nothing said yet');
     expect(saidLine({ seen, windows: [{ window: 'session', reset: '2026-10-03T16:00:00Z', standing: 'clear', credits: false, seen }] }))
       .toBe('said 3h ago: clear, by its own word');

@@ -152,6 +152,7 @@
   "harness.week": "它的一周额度在 {{when}} 重置",
   "harness.window.session": "5 小时",
   "harness.window.weekly": "每周",
+  "harness.window.minutes": "{{n}} 分钟",
   "harness.said.line": "{{age}}报告：{{what}}",
   "harness.said.join": "；",
   "harness.said.sentences": "",

@@ -152,6 +152,7 @@
   "harness.week": "its week resets {{when}}",
   "harness.window.session": "five-hour",
   "harness.window.weekly": "weekly",
+  "harness.window.minutes": "{{n}}-minute",
   "harness.said.line": "said {{age}}: {{what}}",
   "harness.said.join": "; ",
   "harness.said.sentences": " ",
