@@ -43,7 +43,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 46 | 858 |
 | `src/Daoris.Web/src/ui.test.tsx` | 48 | 975 |
 | `src/Daoris.Web/src/ui.tsx` | 79 | 1683 |
-| `src/Daoris.Web/src/work/ConversationView.test.tsx` | 45 | 860 |
+| `src/Daoris.Web/src/work/ConversationView.test.tsx` | 47 | 897 |
 | `src/Daoris.Web/src/work/SessionHead.test.tsx` | 48 | 907 |
 | `src/Daoris.Web/src/work/SessionRail.test.tsx` | 42 | 831 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 211 | 4070 |
@@ -72,14 +72,14 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/ToolInstallTests.cs` | 41 | 726 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/ToolResourcesTests.cs` | 40 | 559 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/TraceTests.cs` | 41 | 691 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/AccountRotation.cs` | 49 | 849 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/AccountRotation.cs` | 58 | 977 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Acp.cs` | 91 | 1845 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 112 | 1993 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 82 | 1548 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.Continue.cs` | 42 | 713 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 157 | 2686 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 61 | 1106 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 198 | 3649 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 198 | 3662 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 63 | 1088 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 93 | 1693 |
