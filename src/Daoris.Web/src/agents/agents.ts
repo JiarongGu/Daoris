@@ -3,7 +3,8 @@ import { ago, clockOf, moment } from '../format';
 import type { Account, AccountPlace, Tool } from '../tools';
 import {
   type AccountCooling, type AccountFacts, type AccountSaid, type AccountScope, type AccountsAnswer, type AgentAccounts, agentOf,
-  coolingLine, machineScope, offeredLine, orderedWindows, percent, type WindowSaid, windowName, workspaceScope,
+  coolingLine, heldLine, machineScope, nextLine, offeredLine, orderedWindows, percent, type WindowSaid, windowName,
+  workspaceScope,
 } from '../settings/accounts';
 import type { AgentRulesState } from '../settings/AgentRules';
 import { OPEN_STATES } from '../settings/proposals';
@@ -292,30 +293,28 @@ const byPlace = (a: RunsFor, b: RunsFor) =>
 
 /**
  * Where an account runs (D152 §4.2's *Runs for*, ACCT1): each scope whose own list holds it or whose own default names it,
- * this machine first, the one it starts on first marked. The roster says it where the shell does (`places`); an older shell's
- * is worked out from the same lists and defaults.
+ * this machine first. The roster says it where the shell does (`places`); an older shell's is worked out from the same lists
+ * and defaults. *First* marks the scope whose next start takes it (ACCTUX4b): the driver's own walk (`scope.next`), never
+ * the default or the list's head, which a cooling or signed-out account still is. A scope whose answer names no next start,
+ * from a shell older than TOOL6e or a workspace with no scope of its own, marks none.
  */
 export function runsFor(tool: Tool, use: AgentAccounts | null | undefined, name: string): RunsFor[] {
   const account = tool.accounts.find((each) => each.name === name);
   const scopeOf = (workspace: string | null) => (use?.scopes ?? []).find((scope) => (scope.workspace ?? null) === workspace);
-  const begins = (workspace: string | null) => scopeOf(workspace)?.begins === name;
+  const takes = (workspace: string | null) => scopeOf(workspace)?.next?.account === name;
   if (Array.isArray(account?.places)) {
     return account.places.map((place: AccountPlace) => ({
-      workspace: place.workspace ?? null, first: place.default || begins(place.workspace ?? null),
+      workspace: place.workspace ?? null, first: takes(place.workspace ?? null),
     })).sort(byPlace);
   }
-  const places = new Map<string | null, boolean>();
-  const add = (workspace: string | null, first: boolean) => places.set(workspace, (places.get(workspace) ?? false) || first);
+  const places = new Set<string | null>();
   const machine = use ? machineScope(use) : null;
-  if (tool.machineDefault === name || machine?.default === name) add(null, true);
-  if (machine?.list.includes(name)) add(null, begins(null));
-  for (const circle of tool.workspaceDefaults) if (circle.profile === name) add(circle.workspace, true);
+  if (tool.machineDefault === name || machine?.default === name || machine?.list.includes(name)) places.add(null);
+  for (const circle of tool.workspaceDefaults) if (circle.profile === name) places.add(circle.workspace);
   for (const scope of use?.scopes ?? []) {
-    if (!scope.workspace) continue;
-    if (scope.default === name) add(scope.workspace, true);
-    if (scope.list.includes(name)) add(scope.workspace, scope.begins === name);
+    if (scope.workspace && (scope.default === name || scope.list.includes(name))) places.add(scope.workspace);
   }
-  return [...places].map(([workspace, first]) => ({ workspace, first })).sort(byPlace);
+  return [...places].map((workspace) => ({ workspace, first: takes(workspace) })).sort(byPlace);
 }
 
 /**
@@ -329,13 +328,34 @@ export function ownRunsFor(tool: Tool, use: AgentAccounts | null | undefined, wo
   return plain.length > 0 ? plain.map((workspace) => ({ workspace, first: false })) : [{ workspace: null, first: false }];
 }
 
-/** *Runs for*, in words: *this machine · work (first)*, and *no workspace* where nothing runs on it, said rather than left blank. */
+/**
+ * *Runs for*, in words: *this machine · work (first)*, and *no workspace* where nothing runs on it, said rather than left blank.
+ * The mark is said where it runs in one place too (ACCTUX4b): it says that scope's next start takes it, a fact of the row
+ * whatever its other places, and the account the sentence above the list names would otherwise go unmarked.
+ */
 export function runsForLine(runs: readonly RunsFor[]): string {
   if (runs.length === 0) return i18n.t('agents.runs.none');
   return runs.map((place) => {
     const name = place.workspace ?? i18n.t('agents.runs.machine');
-    return place.first && runs.length > 1 ? i18n.t('agents.runs.first', { scope: name }) : name;
+    return place.first ? i18n.t('agents.runs.first', { scope: name }) : name;
   }).join(' · ');
+}
+
+/** This machine's next start as the page says it above the accounts (ACCTUX4b): the sentence, then what holds the others. */
+export type NextStartSaid = { takes: string; held: string | null };
+
+/**
+ * Which account this machine's next start takes and why, above the account list (ACCTUX4b; the second opinion's lines
+ * 128-133, D152 §4.2): the fold's words (`nextLine`, `heldLine`, TOOL6e), so the two never say it differently. Nothing where
+ * the scope runs on the tool's own sign-in, which the list's own row and the fold say already (as `NextStartRow` does), nor
+ * where the answer names no next start, a shell older than TOOL6e, rather than a guess from the list's head.
+ */
+export function nextStartSaid(
+  scope: AccountScope | null | undefined, labelOf: (name: string) => string, isKey: (name: string) => boolean = () => false,
+): NextStartSaid | null {
+  const next = scope?.next;
+  if (!scope || !next || next.reason === 'own') return null;
+  return { takes: nextLine(next, scope, labelOf, isKey), held: heldLine(next, labelOf, isKey) };
 }
 
 /** The one act a row's state asks for (D152 §4.2): its name, and whether it is loud, which is where it holds work. */

@@ -1697,7 +1697,8 @@ describe('how accounts are used', () => {
             parameters: { message: '`orbit` names no `claude-code` account or list of its own, so its starts take this machine\'s list.' },
           });
         }
-        return { harness: 'claude-code', action: 'profile-join', exitCode: 0, profile: 'work', places: [{ workspace: 'orbit', list: true, default: false }] };
+        // Its default there: the toast still marks no place first, since *first* is a next start the join's answer never names (ACCTUX4b).
+        return { harness: 'claude-code', action: 'profile-join', exitCode: 0, profile: 'work', places: [{ workspace: 'orbit', list: true, default: true }] };
       }
       return answer(ROSTER, nowhere)(module, type, args);
     });

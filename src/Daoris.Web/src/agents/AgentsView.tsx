@@ -202,7 +202,9 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, install = false, 
   };
   const join = async (account: string, lists: (string | null)[], called?: string) => {
     const answer = await act.mutateAsync({ harness: door, action: 'profile-join', profile: account, join: lists });
-    const places = (answer.places ?? []).map((place) => ({ workspace: place.workspace ?? null, first: place.default }));
+    // ACCTUX4b: *first* is the scope whose next start takes it, which the join's answer never names, so the toast marks none;
+    // the row says it once the accounts are read again.
+    const places = (answer.places ?? []).map((place) => ({ workspace: place.workspace ?? null, first: false }));
     notify(t('agents.joined', { account: called ?? labelOf(account), places: runsForLine(places) }));
   };
 
