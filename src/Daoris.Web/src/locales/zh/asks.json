@@ -66,6 +66,7 @@
   "asks.record.close": "关闭需求",
   "asks.record.closeWhy": "原因——它最终怎样了",
   "asks.record.closeConfirm": "以此原因关闭",
+  "asks.record.closeTitle": "关闭这个需求",
   "asks.record.delete": "删除…",
   "asks.record.deleteTitle": "删除这个需求",
   "asks.record.deleteConfirm": "这会把这个需求从本机移除，它变成的每项委托也会一并删除。无法撤销。",

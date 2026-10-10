@@ -87,6 +87,27 @@ describe('the person’s done on a quest’s page (QUESTCLOSE1)', () => {
     expect(within(ask).getByRole('button', { name: 'Mark done' })).toBeEnabled();
   });
 
+  it('asks a decline in place with its reason: a refusal is said inside it, and it closes once it landed (UXFIX2b2b)', async () => {
+    const { onRespond } = page();
+
+    await userEvent.click(header().getByRole('button', { name: 'Decline…' }));
+    const ask = screen.getByRole('group', { name: 'decline this quest' });
+    expect(within(ask).getByRole('button', { name: 'Decline with this reason' })).toBeDisabled();
+    expect(header().queryByRole('button', { name: 'Decline…' })).toBeNull();
+    await userEvent.type(within(ask).getByLabelText('the reason — it is the part the asker can act on'), 'Not ours.');
+    await userEvent.click(within(ask).getByRole('button', { name: 'Decline with this reason' }));
+
+    expect(onRespond).toHaveBeenCalledWith('decline', 'Not ours.', ANSWERED);
+    const answered = onRespond.mock.calls[0]![2] as { done: () => void; refused: (sentence: string) => void };
+    act(() => answered.refused('The service is not reachable.'));
+    expect(within(ask).getByRole('alert')).toHaveTextContent('The service is not reachable.');
+    expect(within(ask).getByLabelText('the reason — it is the part the asker can act on')).toHaveValue('Not ours.');
+
+    act(() => answered.done());
+    expect(screen.queryByRole('group', { name: 'decline this quest' })).toBeNull();
+    expect(header().getByRole('button', { name: 'Decline…' })).toBeInTheDocument();
+  });
+
   it('says that its requirements are not answered one by one, where it carries some', async () => {
     page({ quest: REQUIRING, session: { ...FINISHED, quest: REQUIRING.id } });
 
