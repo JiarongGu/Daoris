@@ -538,6 +538,8 @@ describe('a done ask', () => {
  * by its kind, where it lands and what it touches, what became of it, and the person's words on an answer verbatim; one
  * waiting is answered here, yes or no with words if any, and one answered can be answered again.
  */
+const answeredByPress = { done: expect.any(Function), refused: expect.any(Function) };
+
 describe('the go-aheads on an ask', () => {
   const section = (page: HTMLElement) => within(within(page).getByRole('region', { name: 'Go-aheads' }));
 
@@ -571,7 +573,46 @@ describe('the go-aheads on an ask', () => {
     await userEvent.type(waiting.getByRole('textbox', { name: 'your words, if any' }), 'only on the report site');
     await userEvent.click(waiting.getByRole('button', { name: 'Approve' }));
 
-    expect(onAnswerGoAhead).toHaveBeenCalledWith(3, true, 'only on the report site');
+    expect(onAnswerGoAhead).toHaveBeenCalledWith(3, true, 'only on the report site', answeredByPress);
+  });
+
+  /** UXFIX2b3b: a yes or no is a direct press, and a refused answer is said beside that item, not toasted. */
+  it('waits saying so, says a refusal beside the item it answered, and can be pressed again with its words kept', async () => {
+    let answer: Answered | null = null;
+    const onAnswerGoAhead = vi.fn((_n: number, _a: boolean, _w: string | undefined, answered: Answered) => { answer = answered; });
+    const { page } = record(WITH_GO_AHEADS, { onAnswerGoAhead });
+    const items = section(page).getAllByRole('listitem');
+    const waiting = within(items[2]);
+
+    await userEvent.type(waiting.getByRole('textbox', { name: 'your words, if any' }), 'report site only');
+    await userEvent.click(waiting.getByRole('button', { name: 'Approve' }));
+    expect(waiting.getByRole('status')).not.toBeEmptyDOMElement();
+    expect(waiting.getByRole('button', { name: 'Approve' })).toBeDisabled();
+    expect(waiting.getByRole('button', { name: 'Refuse' })).toBeDisabled();
+
+    act(() => answer!.refused('That go-ahead was answered elsewhere.'));
+    expect(waiting.getByRole('alert')).toHaveTextContent('That go-ahead was answered elsewhere.');
+    expect(within(items[3]).queryByRole('alert')).toBeNull();
+    expect(waiting.getByRole('textbox', { name: 'your words, if any' })).toHaveValue('report site only');
+    expect(waiting.getByRole('button', { name: 'Approve' })).toBeEnabled();
+
+    await userEvent.click(waiting.getByRole('button', { name: 'Refuse' }));
+    expect(onAnswerGoAhead).toHaveBeenLastCalledWith(3, false, 'report site only', answeredByPress);
+    expect(waiting.queryByRole('alert')).toBeNull();
+  });
+
+  it('closes a changed answer and clears its words once the answer landed', async () => {
+    let answer: Answered | null = null;
+    const onAnswerGoAhead = vi.fn((_n: number, _a: boolean, _w: string | undefined, answered: Answered) => { answer = answered; });
+    const { page } = record(WITH_GO_AHEADS, { onAnswerGoAhead });
+    const approved = within(section(page).getAllByRole('listitem')[0]);
+
+    await userEvent.click(approved.getByRole('button', { name: 'Change answer' }));
+    await userEvent.click(approved.getByRole('button', { name: 'Refuse' }));
+    act(() => answer!.done());
+
+    expect(approved.queryByRole('button', { name: 'Refuse' })).toBeNull();
+    expect(approved.getByRole('button', { name: 'Change answer' })).toBeInTheDocument();
   });
 
   it('answers one waiting no, with no words', async () => {
@@ -580,7 +621,7 @@ describe('the go-aheads on an ask', () => {
 
     await userEvent.click(within(section(page).getAllByRole('listitem')[2]).getByRole('button', { name: 'Refuse' }));
 
-    expect(onAnswerGoAhead).toHaveBeenCalledWith(3, false, undefined);
+    expect(onAnswerGoAhead).toHaveBeenCalledWith(3, false, undefined, answeredByPress);
   });
 
   it('answers one already answered again, only once asked to', async () => {
@@ -592,7 +633,7 @@ describe('the go-aheads on an ask', () => {
     await userEvent.click(approved.getByRole('button', { name: 'Change answer' }));
     await userEvent.click(approved.getByRole('button', { name: 'Refuse' }));
 
-    expect(onAnswerGoAhead).toHaveBeenCalledWith(1, false, undefined);
+    expect(onAnswerGoAhead).toHaveBeenCalledWith(1, false, undefined, answeredByPress);
   });
 
   it('offers no answer where there is no door to give it', () => {

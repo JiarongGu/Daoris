@@ -19,7 +19,7 @@ import { ASK_TONE, firstLine, tierWords } from './AskRow';
 import { AskReview } from './AskReview';
 import { AskWork } from './AskWork';
 import { workTree } from './workTree';
-import { GoAheadList } from './GoAheadList';
+import { type GoAheadAnswer, GoAheadList } from './GoAheadList';
 
 /** The acts in an ask's header (CTX1, D138 §4): its buttons and its page's right-click draw this one list. */
 type AskAct = 'resume' | 'pause' | 'close' | 'abandon' | 'delete';
@@ -129,7 +129,7 @@ export function AskPage({
   onDelete?: (answered: Answered) => void;
   onOpenQuest: (id: string) => void;
   /** The person's yes or no to a go-ahead its sessions asked (KNOWUSE1a) — absent where there is no door to give it. */
-  onAnswerGoAhead?: (number: number, approved: boolean, words?: string) => void;
+  onAnswerGoAhead?: GoAheadAnswer;
   /** This machine's driver's half (PAUSE1e): the plan and the three presses. Absent in a browser, which has no driver. */
   work?: WorkDoor;
   /**

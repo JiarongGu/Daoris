@@ -5,7 +5,7 @@ import { WorkflowHold } from '../workflow/WorkflowHold';
 import { DiscardBranchAsk, type SweepBranch } from '../settings/Sweep';
 import type { GoAhead, Quest, Session } from '../api';
 import type { AccountNamer } from '../tools';
-import { GoAheadList } from '../asks/GoAheadList';
+import { type GoAheadAnswer, GoAheadList } from '../asks/GoAheadList';
 import { ago, elapsed, sessionTool, stamp } from '../format';
 import {
   answeredPark, Button, Inline, PathText, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
@@ -140,7 +140,7 @@ export function SessionHead({
    * Answer one of them (KNOWUSE1a2), which sends the park on once none is open (GOAHEAD2b): which go-ahead, yes or no, and
    * the person's words where they gave any. Absent where nothing can answer them here, and then they are shown with no door.
    */
-  onGoAhead?: (number: number, approved: boolean, words?: string) => void;
+  onGoAhead?: GoAheadAnswer;
   /**
    * A page header above carries its state, its title and its facts (SESSUX1d, D126 §3.2; UX7c, D152 §7): the head says
    * none again, and the quest's whole title only where the header showed its short title. Absent, a window with no header

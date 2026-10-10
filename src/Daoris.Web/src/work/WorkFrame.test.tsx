@@ -3924,7 +3924,7 @@ describe('a park\'s go-aheads', () => {
     ));
   });
 
-  it('says a refused go-ahead in the service\'s words, and keeps the go-aheads to answer', async () => {
+  it('says a refused go-ahead in the service\'s words beside it (UXFIX2b3b), and keeps the go-aheads to answer', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type !== 'SESSION_GO_AHEAD') return DRIVER_STATE;
       throw Object.assign(new Error('fallback'), {
@@ -3937,9 +3937,11 @@ describe('a park\'s go-aheads', () => {
 
     await userEvent.click(within(second).getByRole('button', { name: 'Approve' }));
 
-    await waitFor(() => expect(notify).toHaveBeenCalledWith('Ask `#a5k001` holds no go-ahead 2: it holds 1.', 'error'));
+    expect(await within(second).findByRole('alert')).toHaveTextContent('Ask #a5k001 holds no go-ahead 2: it holds 1.');
+    expect(notify).not.toHaveBeenCalled();
     expect(within(screen.getByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('button', { name: 'Approve' }))
       .toHaveLength(2);
+    expect(within(second).getByRole('button', { name: 'Approve' })).toBeEnabled();
   });
 
   it('shows nothing new for a park whose ask holds none of its own, and asks for no asks where no ask asked its quest', async () => {
