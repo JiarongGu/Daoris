@@ -1,6 +1,6 @@
 import {
   type ButtonHTMLAttributes, type ComponentProps, createContext, Fragment, type ReactNode, useCallback, useContext, useEffect,
-  useRef, useState,
+  useLayoutEffect, useRef, useState, useSyncExternalStore,
 } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
@@ -813,6 +813,23 @@ const composingEscape = (event: KeyboardEvent) => {
 };
 
 /**
+ * How many drawers this window has open, for the toasts (UXTOAST1). A drawer holds the toasts' corner whole, so while one
+ * is open they stand beside it; the drawer and the corner are siblings under the page, never one inside the other, so
+ * the count is the window's rather than a context's.
+ */
+let drawersOpen = 0;
+const drawerWatchers = new Set<() => void>();
+const watchDrawers = (watch: () => void) => {
+  drawerWatchers.add(watch);
+  return () => { drawerWatchers.delete(watch); };
+};
+const drawerOpen = () => drawersOpen > 0;
+const countDrawer = (by: 1 | -1) => {
+  drawersOpen += by;
+  drawerWatchers.forEach((watch) => watch());
+};
+
+/**
  * The single detail-and-form surface (D41), on Radix Dialog: focus is trapped, ESC and the scrim
  * dismiss, and the list behind it survives. Every pixel is ours; the behaviour is not hand-rolled.
  */
@@ -821,6 +838,11 @@ export function Drawer({ title, meta, onClose, footer, children }: {
   children: ReactNode;
 }) {
   const { t } = useTranslation();
+  // Counted before the drawer is painted, so a toast is never drawn over it for a frame (UXTOAST1).
+  useLayoutEffect(() => {
+    countDrawer(1);
+    return () => countDrawer(-1);
+  }, []);
   return (
     <Dialog.Root open onOpenChange={(open) => { if (!open) onClose(); }}>
       <Dialog.Portal>
@@ -847,7 +869,9 @@ export function Drawer({ title, meta, onClose, footer, children }: {
           className={cn(
             'fixed bottom-6 right-0 top-9 z-10 flex flex-col border-l border-line bg-overlay focus:outline-none motion-safe:animate-[drawer-in_var(--speed)_ease-out]',
             // Never over the activity bar (3rem): the frame is three bars, and an overlay sits between
-            // them (POLISH3). A wide one read a source file until FRAME1f gave an entry the main area (U43).
+            // them (POLISH3). A wide one read a source file until FRAME1f gave an entry the main area (U43). The toasts
+            // stand this width in from the right while it is open (`Toasts`, UXTOAST1), and `ui.test.tsx` holds the two
+            // together.
             'w-[min(32rem,calc(100%-3rem))]',
           )}
         >
@@ -1570,6 +1594,7 @@ export function useToasts(): { toasts: ToastItem[]; notify: Notify; dismiss: (id
  */
 export function Toasts({ items, onClose }: { items: ToastItem[]; onClose: (id: number) => void }) {
   const { t } = useTranslation();
+  const beside = useSyncExternalStore(watchDrawers, drawerOpen, drawerOpen);
   return (
     <Toast.Provider swipeDirection="right" duration={7000}>
       {items.map((toast) => (
@@ -1596,7 +1621,20 @@ export function Toasts({ items, onClose }: { items: ToastItem[]; onClose: (id: n
           </Toast.Close>
         </Toast.Root>
       ))}
-      <Toast.Viewport className="fixed bottom-5 right-5 z-20 flex w-[26rem] max-w-[90vw] flex-col gap-2 outline-none" />
+      {/* 🔴 Beside an open drawer, never over it (UXTOAST1). The drawer holds this corner whole, and on the installed
+          window a toast here lay over the retire ask's presses at the Manage drawer's foot; a footer's presses sit there
+          too. So while one is open the toasts stand at its left edge, over the scrim, the corner's gap from it and from
+          the activity bar: `right` is the drawer's width (`Drawer`) and that gap. Narrower than 56rem no toast fits
+          beside the drawer, and they keep the corner. A modal drawer turns the page's pointer off, and a toast over the
+          scrim would pass a press to it, which closes the drawer: the toasts take their own presses while they show. */}
+      <Toast.Viewport
+        data-beside={beside ? 'drawer' : undefined}
+        className={cn(
+          'fixed bottom-5 right-5 z-20 flex w-[26rem] max-w-[90vw] flex-col gap-2 outline-none',
+          beside && 'min-[56rem]:right-[calc(min(32rem,calc(100%-3rem))+1.25rem)] min-[56rem]:max-w-[calc(100%-min(32rem,calc(100%-3rem))-5.5rem)]',
+          items.length > 0 && 'pointer-events-auto',
+        )}
+      />
     </Toast.Provider>
   );
 }

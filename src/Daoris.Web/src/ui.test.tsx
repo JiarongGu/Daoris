@@ -8,10 +8,11 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import {
   Button, CodeText, CountBadge, Dot, Drawer, EmptyState, Inline, Menu, MetaLine, MonoWell, PathText, Pill, QuickPanel, Segmented,
   SelectField, SESSION_ACTIVE, SESSION_DOT, SESSION_TONE, SettingRow, shownKey, type ShownState, shownState, StripMark, Tile,
-  Tip, WaitingCard,
+  Tip, Toasts, WaitingCard,
 } from './ui';
 import { code } from './test/code';
 import { CommandPalette } from './work/CommandPalette';
+import { InlineConfirm } from './work/InlineConfirm';
 
 describe('the primitives', () => {
   it('a pill always carries its text label — status never rides on hue alone', () => {
@@ -732,6 +733,71 @@ describe('a dialog keeps the Escape an input method is composing with', () => {
 
     fireEvent.keyDown(field, { key: 'Escape' });
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});
+
+/**
+ * UXTOAST1: a toast never lies over an open drawer. On the installed window a toast in its corner (bottom-right, 26rem)
+ * lay over the retire ask's presses at the Manage drawer's foot, since the drawer (right, 32rem) holds that corner whole.
+ * While a drawer is open the toasts stand beside it, over the scrim. jsdom draws nothing, so the check is the positions
+ * the rule sets: the drawer hugs the right edge at its width, and the toasts' right edge is that width and the corner's
+ * gap in from the same edge, their left edge clear of the activity bar, from the first width that holds a toast beside it.
+ */
+describe('a toast beside an open drawer', () => {
+  const notice = [{ id: 1, kind: 'ok' as const, text: 'Declaration written.' }];
+  const toasts = () => screen.getByRole('region', { hidden: true }).querySelector('ol')!;
+  const classes = (element: Element) => element.className.split(/\s+/);
+
+  it('stands clear of the drawer and of the ask open at its foot', () => {
+    render(
+      <Tooltip.Provider>
+        <Drawer title="Manage engine" onClose={() => {}}>
+          <InlineConfirm label="Retire" says="Retire engine?" meanIt="Retire" onClose={() => {}} />
+        </Drawer>
+        <Toasts items={notice} onClose={() => {}} />
+      </Tooltip.Provider>,
+    );
+    const drawer = screen.getByRole('dialog');
+    expect(drawer).toContainElement(screen.getByRole('group', { name: 'Retire' }));
+
+    // The drawer hugs the right edge at its width.
+    expect(classes(drawer)).toContain('right-0');
+    const width = /^w-\[(.+)\]$/.exec(classes(drawer).find((name) => name.startsWith('w-['))!)![1];
+
+    const viewport = toasts();
+    expect(viewport).toHaveAttribute('data-beside', 'drawer');
+    const from = /^min-\[(\d+)rem\]:right-/.exec(classes(viewport).find((name) => /^min-\[\d+rem\]:right-/.test(name)) ?? '');
+    expect(from).not.toBeNull();
+    const breakpoint = `min-[${from![1]}rem]`;
+    // Their right edge is the drawer's left edge and the corner's gap (1.25rem, `right-5`) ...
+    expect(classes(viewport)).toContain(`${breakpoint}:right-[calc(${width}+1.25rem)]`);
+    // ... and their left edge the activity bar's (3rem, the scrim's `left-12`) and the same gap.
+    expect(classes(viewport)).toContain(`${breakpoint}:max-w-[calc(100%-${width}-5.5rem)]`);
+    // From that width a toast has 18rem at least beside the widest drawer; narrower, they keep their corner.
+    const widest = Number(/^min\((\d+)rem,/.exec(width)![1]);
+    expect(Number(from![1]) - widest - 5.5).toBeGreaterThanOrEqual(18);
+    // A modal drawer turns the page's pointer off, and a toast over the scrim would pass its press to the scrim, which
+    // closes the drawer: the toasts take their own presses.
+    expect(classes(viewport)).toContain('pointer-events-auto');
+  });
+
+  it('keeps its corner with no drawer open, and goes back to it when the drawer closes', () => {
+    const { rerender } = render(
+      <Tooltip.Provider>
+        <Drawer title="Manage engine" onClose={() => {}}>a form</Drawer>
+        <Toasts items={notice} onClose={() => {}} />
+      </Tooltip.Provider>,
+    );
+    expect(toasts()).toHaveAttribute('data-beside', 'drawer');
+
+    rerender(
+      <Tooltip.Provider>
+        <Toasts items={notice} onClose={() => {}} />
+      </Tooltip.Provider>,
+    );
+    expect(toasts()).not.toHaveAttribute('data-beside');
+    expect(classes(toasts())).toContain('right-5');
+    expect(toasts().className).not.toContain('min-[56rem]:right-');
   });
 });
 
