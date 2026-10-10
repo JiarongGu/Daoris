@@ -45,7 +45,6 @@ Contracts: toolchain (D57 §3), account rotation (D125), account use (D130), bro
 Original row proofs remain in the frozen backlog; measurements precede declarations.
 
 - [ ] **ACCTUX4i — installed account cells, and the row budget** (parent). 中文 dark and light at 1546 and 680 seen 2026-10-11; English, a key and Codex rows remain. The *Now* header stands over an empty column, the cells starting under *Used for*. Settle D152's row budget against D125's ACCTUX4 measures.
-- [ ] **ACCTUX4j — 中文 stories reach the helpers' words** (web). The story decorator reaches `useTranslation` only, so pure helpers calling the global `i18n.t` (*Runs for*, the next-start sentence) drew English in ACCTUX4b's 中文 stories. STORY2's `readerIn`; proof: CodexWindowsChinese shows zh `harness.next.takes` and `agents.runs.first`.
 - [ ] **ACCTPLAN1 — plan, spend and reset credits** (driver/modules/web; design first). Nothing reads them yet (D125:898-899); show them in a fold, and never redeem a credit without `InlineConfirm`. Second-opinion review lines 132-133.
 - [ ] **ACCTNAME1 — email names read once** (CLI/driver/web). Avoid duplicate email/name; size roster columns. D125 notes; long-name and equal-email cases.
 - [ ] **KEYREPLACE1 — replace refused keys in place** (all doors; after ACCTUX1). Preserve account lists; clear refusal/cooling. D67/D125; key-file twins, route and row tests.
@@ -178,7 +177,7 @@ Contracts: session-management (D126 §9), session-messages (D137), answer-contin
 pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build rows.
 
 - [ ] **QUESTREBASE1 — pure rebase planner** (service; consider). Preserve operation identity, accepted-before-pending order and transaction. D69/D79; unchanged sync suite and loss tests.
-- [ ] **SESSUX1h2 — the `session` kind: archive, unarchive, delete** (driver/service/web; split by lane). `session_propose` for the tidy acts and the delete kind's `session` door (§5.4), the facts' sessions, the room's doors table; the coverage rows `SessionArchiveDoor`/`SessionDeleteDoor` become doors. Management §7.3/§9 (~:532-554, ~:743-753).
+- [ ] **SESSUX1h2 — the `session` kind: archive, unarchive, delete** (service+web → driver → modules, a chain merged once). `HelpProposalKindsTests` reads the service's source and the web's union, and the modules compile against the driver's doors, so the halves cannot merge apart: 2a (service box and tool, web union) → 2b (driver kind, delete's `session` door, room, coverage; branched from 2a) → 2c (modules facts, gates, doors; branched from 2b); merge 2c. Shape: kind `session`, doors `archive`/`unarchive`, `target` ids comma-joined or `value` `ended`; delete door `session`, one id; Ask Daoris's own refused. Management §5.2-§5.4, §7.3, §9.
 - [ ] **MSG1d2 — queued chat survives restart** (driver/web; with MSG1c). Record ids/reach/withdrawals; take by id. Messages §3.1.
 - [ ] **MSG1g3 — cooling note and twins** (driver/web). Code held line; compare newSessionSaid with GoOnNew/WordsNever. D137/D142.
 - [ ] **MSG1h — Codex next-step words** (driver; after measured STEER3). Messages §8.

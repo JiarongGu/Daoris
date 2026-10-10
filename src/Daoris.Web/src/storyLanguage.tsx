@@ -1,5 +1,6 @@
 import type { Decorator } from '@storybook/react-vite';
 import type { i18n as I18n } from 'i18next';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import i18n from './i18n';
 
@@ -23,8 +24,40 @@ export function readerIn(language: 'en' | 'zh'): I18n {
 const ZH = readerIn('zh');
 
 /**
- * The story in 中文, whatever the window's language. Only what reads the provider's reader (`useTranslation`) changes: a
- * pure helper that calls the page's `i18n.t`, such as `runsForLine` or `nextStartSaid`, still speaks the page's language
- * (seen measuring ACCTUX4b's stories), so a 中文 story is not proof of those words.
+ * Points the page's own `i18n` at a language and hands back what puts it as it was. The page's switch remembers through
+ * its detector (STORY2), so the detector is set aside for the change and put back after: nothing is cached under
+ * `daoris.language`. The catalogues are loaded, so the change is made before this returns.
  */
-export const chinese: Decorator = (Story) => <I18nextProvider i18n={ZH}><Story /></I18nextProvider>;
+function pointPageAt(language: 'en' | 'zh'): () => void {
+  const was = i18n.language;
+  const detector = i18n.services.languageDetector;
+  i18n.services.languageDetector = undefined;
+  void i18n.changeLanguage(language);
+  i18n.services.languageDetector = detector;
+  return () => {
+    i18n.services.languageDetector = undefined;
+    void i18n.changeLanguage(was);
+    i18n.services.languageDetector = detector;
+  };
+}
+
+/** The wrapper a 中文 story draws in: the page's language is 中文 from its first render until it unmounts (ACCTUX4j). */
+function InChinese({ children }: { children: ReactNode }) {
+  // Set during render, not in an effect: a helper that calls the page's `i18n.t` runs while the children render.
+  const restore = useRef<(() => void) | null>(null);
+  restore.current ??= pointPageAt('zh');
+  // The effect sets it again after a strict-mode remount's cleanup has given the language back.
+  useEffect(() => {
+    restore.current ??= pointPageAt('zh');
+    return () => { restore.current?.(); restore.current = null; };
+  }, []);
+  return <I18nextProvider i18n={ZH}>{children}</I18nextProvider>;
+}
+
+/**
+ * The story in 中文, whatever the window's language. What reads the provider's reader (`useTranslation`) speaks 中文
+ * through it; a pure helper that calls the page's `i18n.t`, such as `runsForLine` or `nextStartSaid`, speaks it because
+ * the page's `i18n` is pointed at 中文 for the story's life and given back after, its remembered choice untouched
+ * (ACCTUX4j; ACCTUX4b's 中文 stories had drawn those words in English).
+ */
+export const chinese: Decorator = (Story) => <InChinese><Story /></InChinese>;

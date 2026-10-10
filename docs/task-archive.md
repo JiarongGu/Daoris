@@ -13208,3 +13208,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **RAILPAGE1a — the session search pages** (driver/modules). `SESSION_SEARCH` (DriverModule.Sessions.cs ~:484) takes `q` and `session` only, and `SessionEvents.Search` stops at 50 hits, 3 per session, with a `cut` and no count. Take `offset` and `limit` and answer a `total` (of sessions, the rail's rows) and a `next`, as `help list` does (ASKHIST1d1); read past the cap to count. D158's RAILPAGE1 note.
 
 **Outcome** 2026-10-11: `SessionEvents.Search` pages by sessions (`offset`, `limit` clamped at 200, a default of 16), a session's hits never split, `Total` counts every session with a hit and `Next` is the next offset or null; the route answers `{ query, hits, cut, total, next }`, `cut` still "anything left out" for the page until RAILPAGE1b. No terminal search exists, so no twin is owed. Detail: D158's RAILPAGE1a note.
+
+
+## ACCTUX4j — 中文 stories reach the helpers' words (2026-10-11, D125)
+
+> - [ ] **ACCTUX4j — 中文 stories reach the helpers' words** (web). The story decorator reaches `useTranslation` only, so pure helpers calling the global `i18n.t` (*Runs for*, the next-start sentence) drew English in ACCTUX4b's 中文 stories. STORY2's `readerIn`; proof: CodexWindowsChinese shows zh `harness.next.takes` and `agents.runs.first`.
+
+**Outcome** 2026-10-11: the `chinese` decorator also points the page's global `i18n` at zh for the story's life, the language detector set aside so nothing is remembered, and gives the language back on unmount; CodexWindowsChinese shows （优先） and 下一次启动使用, and `daoris.language` stays as found. Detail: D125's ACCTUX4j note.
