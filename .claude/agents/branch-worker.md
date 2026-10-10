@@ -10,7 +10,7 @@ hooks:
       hooks:
         - type: command
           shell: powershell
-          command: "node tools/shell-edit-guard.mjs"
+          command: "node tools/shell-edit-guard.mjs; exit $LASTEXITCODE"
 ---
 
 # branch-worker

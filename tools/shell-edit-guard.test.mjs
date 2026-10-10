@@ -8,6 +8,7 @@
  */
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -44,4 +45,27 @@ test('reading, searching, gates and scratch pass', () => {
 test('a call it cannot read passes, so a broken input never blocks the work', () => {
   const answered = spawnSync(process.execPath, [guard], { input: 'not json', encoding: 'utf8' });
   assert.equal(answered.status, 0);
+});
+
+/**
+ * The guard's own exit is not the hook's: the harness reads the exit of the shell the definition names. Windows
+ * PowerShell's `-Command` exits 1 when its last native command fails, whatever that command's code, and the harness
+ * reads 1 as a non-blocking error: from SUBLOAD1c's first workers to WIRE1, the guard wrote its refusal and the command
+ * ran (D161's guard note). So the hook is run here as the definition writes it, through its shell.
+ */
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const hook = (() => {
+  const definition = readFileSync(join(root, '.claude', 'agents', 'branch-worker.md'), 'utf8');
+  const shell = /^\s*shell:\s*(\S+)/m.exec(definition)?.[1] ?? 'bash';
+  const command = /^\s*command:\s*"((?:[^"\\]|\\.)*)"/m.exec(definition)?.[1];
+  return { shell, command };
+})();
+const viaShell = (call) => hook.shell === 'powershell'
+  ? spawnSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', hook.command], { cwd: root, input: JSON.stringify(call), encoding: 'utf8' })
+  : spawnSync('bash', ['-c', hook.command], { cwd: root, input: JSON.stringify(call), encoding: 'utf8' });
+
+test('the definition\'s hook refuses through its own shell, with exit 2', { skip: hook.shell === 'powershell' && process.platform !== 'win32' }, () => {
+  assert.ok(hook.command, 'the branch-worker definition names the guard as a command');
+  assert.equal(viaShell(bash("sed -i 's/a/b/' src/x.ts")).status, 2, `${hook.shell}: ${hook.command}`);
+  assert.equal(viaShell(bash('sed -n 1,40p A.tsx')).status, 0, 'a read still passes');
 });
