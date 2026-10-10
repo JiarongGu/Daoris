@@ -56,10 +56,9 @@ export function listingPage(answer: unknown): HelpListing {
 }
 
 /**
- * A history's pages as one list (ASKHIST1d2): in the order they were asked, each conversation once by its session. An offset
- * points into one order, and a conversation spoken in or pinned between two asks can be on two pages; it stays where it was
- * first listed, and the list is asked again from its start after a change made here. The count and the next page are the
- * last page's, the newest the driver said.
+ * A history's pages as one list (ASKHIST1d2): in the order they were asked, each conversation once by its session. One spoken
+ * in or pinned between two asks can be on two pages (D158's ASKHIST1d1 note); it stays where it was first listed. The count
+ * and the next page are the last page's, the newest the driver said.
  */
 export function joinPages(pages: readonly HelpListing[]): HelpListing {
   const seen = new Set<string>();
