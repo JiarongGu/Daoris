@@ -268,6 +268,40 @@ describe('noteLines', () => {
     });
   });
 
+  /** CONVNOTE2d1: words the agent would not take, ones that never reached it, and ones not taken off the record, worded; others' words as written. */
+  describe('words that did not reach an agent or were not taken', () => {
+    it('words a refusal by its lead and leaves the agent’s words as written', () => {
+      const parts = [coded('words.refused', '— the session would not take what the person added:'), words('Internal error: busy', 'agent')];
+      expect(noteLines(t, { parts }, 'en')).toEqual([
+        { kind: 'said', text: 'The session would not take what you added:' },
+        { kind: 'words', text: 'Internal error: busy', by: 'agent' },
+      ]);
+      expect(noteLines(zh, { parts }, 'zh')[0]).toEqual({ kind: 'said', text: '会话没有接受你补充的内容：' });
+    });
+
+    it('words a count of messages and why they never reached it, by reason', () => {
+      const unreached = (why: string, count: unknown = 2) =>
+        coded('words.unreached', '— 2 message(s) the person sent never reached the session: …', { count, why });
+      expect(noteLines(t, { parts: [unreached('ended-first')] }, 'en')[0].text)
+        .toBe('2 message(s) you sent while it worked never reached it: it ended first.');
+      expect(noteLines(t, { parts: [unreached('unkept', 1200)] }, 'en')[0].text)
+        .toBe('1,200 message(s) you sent while it worked never reached it: Daoris kept no id for its conversation.');
+      expect(noteLines(zh, { parts: [unreached('ended-first')] }, 'zh')[0].text)
+        .toBe('你在它工作时发送的 2 条消息没有送达：它先结束了。');
+      // A reason this build does not know, or a count that is no number, leaves the line as recorded.
+      expect(noteLines(zh, { parts: [unreached('moved-on')] }, 'zh')[0].kind).toBe('recorded');
+      expect(noteLines(zh, { parts: [unreached('ended-first', 'two')] }, 'zh')[0].kind).toBe('recorded');
+    });
+
+    it('words a take that failed and leaves the service’s message as written', () => {
+      const parts = [coded('words.not-taken', '— your words could not be taken off its record:'), words('no record at D:/x', 'program')];
+      expect(noteLines(zh, { parts }, 'zh')).toEqual([
+        { kind: 'said', text: '你的话无法从它的记录中移除：' },
+        { kind: 'words', text: 'no record at D:/x', by: 'program' },
+      ]);
+    });
+  });
+
   /**
    * AGT3d (D125's AGT3c note): a limit's line says the kind of limit, its window worded as the agents' screens word it
    * (`harness.window.*`), and whose accounts, in either language; a window this build does not know is said as named.

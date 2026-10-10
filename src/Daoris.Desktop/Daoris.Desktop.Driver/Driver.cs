@@ -2265,6 +2265,13 @@ public sealed partial class Driver(
             Event(new SessionEvent { Kind = SessionEventKind.Note, Text = text });
         }
 
+        // The same by its code (CONVNOTE2d1): the console keeps the English, the record its parts too.
+        void SaidByCode(Noted noted)
+        {
+            Line(noted.Note);
+            Event(new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts.Count > 0 ? noted.Parts : null });
+        }
+
         var errors = PumpAsync(process.StandardError, file, sessionId, output, ct);
 
         try
@@ -2372,7 +2379,7 @@ public sealed partial class Driver(
             // What the person said that never reached it (SESS3): said, never dropped without a trace.
             if (inbox?.Close() is { Count: > 0 } left)
             {
-                Said($"— {left.Count} message(s) the person sent never reached the session: it ended first.");
+                SaidByCode(WordsNotes.Unreached(left.Count, "never reached the session", UnreachedWhy.EndedFirst));
             }
 
             try

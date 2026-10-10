@@ -377,6 +377,13 @@ public static class NoteCodes
         new(ResumedWhy.WordsAndFindings, [], "note.resumed.why.words-and-findings"),
     ]);
 
+    /// <summary>Why the person's words never reached the session (CONVNOTE2d1; <see cref="UnreachedWhy"/>): the page's <c>note.words.why.*</c>.</summary>
+    public static readonly NoteReasons Unreached = new(
+    [
+        new(UnreachedWhy.EndedFirst, [], "note.words.why.ended-first"),
+        new(UnreachedWhy.Unkept, [], "note.words.why.unkept"),
+    ]);
+
     // ——— A session's end (Observation, the driver's own ends).
     public static readonly NoteCode EndedAwaits = new("ended.awaits", ["awaits"]);
     public static readonly NoteCode EndedExit = new("ended.exit", ["exit"]);
@@ -532,6 +539,13 @@ public static class NoteCodes
     public static readonly NoteCode ChatOptionSet = new("chat.option-set", ["option", "chosen"]);
     public static readonly NoteCode ChatToldWhere = new("chat.told-where", []);
 
+    // ——— Words that did not reach an agent, or were not taken (CONVNOTE2d1, <see cref="WordsNotes"/>): the lead is Daoris's; what
+    // follows a refusal is the agent's words, and what follows a failed take is a program's or the service's (it may hold a path).
+    // The count and why a send never reached are facts, `why` one of `Unreached`'s.
+    public static readonly NoteCode WordsRefused = new("words.refused", []);
+    public static readonly NoteCode WordsUnreached = new("words.unreached", ["count", "why"]) { Why = Unreached };
+    public static readonly NoteCode WordsNotTaken = new("words.not-taken", []);
+
     // ——— A server that drives Daoris's own browser, withheld (CONVNOTE2c, InAppBrowserServers.HandNotedAsync): the servers are
     // plugin-declared names; why it was not handed is a fact of the host's, or an exception's words riding after the lead.
     public static readonly NoteCode BrowserWithheld = new("browser.withheld", ["servers"]);
@@ -558,6 +572,50 @@ public static class NoteCodes
     /// <summary>A moment as a value: ISO 8601 in UTC, to the second, which the page formats in the reader's language and zone.</summary>
     public static string Moment(DateTimeOffset at) =>
         at.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
+}
+
+/// <summary>Why the person's words never reached the session, by code (CONVNOTE2d1): the page's <c>note.words.why.*</c>.</summary>
+public static class UnreachedWhy
+{
+    /// <summary>The session ended while they waited.</summary>
+    public const string EndedFirst = "ended-first";
+
+    /// <summary>Daoris kept no id for the conversation, so there was nothing to resume.</summary>
+    public const string Unkept = "unkept";
+
+    /// <summary>The English a reason says, as a site writes it.</summary>
+    public static string English(string why) => why switch
+    {
+        EndedFirst => "it ended first",
+        Unkept => "Daoris kept no id for its conversation",
+        _ => throw new ArgumentOutOfRangeException(nameof(why), why, "an unreached reason NoteCodes.Unreached does not declare"),
+    };
+}
+
+/// <summary>
+/// The notes for words that did not reach an agent, or that it or the record would not take (CONVNOTE2d1): each English as
+/// its site always wrote it, byte for byte, with its parts.
+/// </summary>
+public static class WordsNotes
+{
+    /// <summary>What the agent said when it would not take the person's words mid-turn, in its own words.</summary>
+    public static Noted Refused(string agentWords) =>
+        Noted.Of(NoteCodes.WordsRefused, "— the session would not take what the person added:")
+            .Then(" ", Noted.Said(agentWords, NoteBy.Agent));
+
+    /// <summary>
+    /// Words the person sent that never reached the session, and why. <paramref name="never"/> is the English between the count
+    /// and the reason, which the two doors have always worded a little differently.
+    /// </summary>
+    public static Noted Unreached(int count, string never, string why) =>
+        Noted.Of(
+            NoteCodes.WordsUnreached, $"— {count} message(s) the person sent {never}: {UnreachedWhy.English(why)}.",
+            ("count", count), ("why", why));
+
+    /// <summary>Words handed to a session that could not be taken off its record, the service's own message beneath.</summary>
+    public static Noted NotTaken(string message) =>
+        Noted.Of(NoteCodes.WordsNotTaken, "— your words could not be taken off its record:")
+            .Then(" ", Noted.Said(message, NoteBy.Program));
 }
 
 /// <summary>
