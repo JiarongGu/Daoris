@@ -39,7 +39,8 @@ const OPENED_ELSEWHERE = `[data-radix-popper-content-wrapper], [role="menu"], [r
  * - **A strip**, it keeps its doors: the open, the `＋`, and the view's marks. A strip the window drew
  *   has an open too, which lays the list over the main area (amending FRAME6, whose window strip offered
  *   none and so left an ended session and the rail's search out of reach below 1024 px).
- * - **Laid over**, the list lies beside its strip, over the main area, and takes the focus. It closes on
+ * - **Laid over**, the list lies beside its strip, over the main area, and takes the focus where nothing in it
+ *   took it first (a group's heading a go brought into view, ENTRY1g). It closes on
  *   Escape, on a press outside it, from its header, and from the strip's open pressed again; the caller
  *   closes it on a choice. Escape a search inside it answered first is the search's.
  *
@@ -86,10 +87,12 @@ export function ListPane({
   const dismiss = useRef(onDismiss);
   dismiss.current = onDismiss;
 
-  // Laid over, the list takes the focus, so its keys work at once; and a press outside it closes it.
+  // Laid over, the list takes the focus, so its keys work at once; and a press outside it closes it. Not from something in
+  // it that took the focus first: a group's heading a go brought into view as it was laid over (ENTRY1g), whose effect, a
+  // child's, runs before this one.
   useEffect(() => {
     if (!laid) return undefined;
-    over.current?.focus();
+    if (!over.current?.contains(document.activeElement)) over.current?.focus();
     const outside = (event: PointerEvent) => {
       const target = event.target as Element | null;
       if (!target || aside.current?.contains(target) || target.closest?.(OPENED_ELSEWHERE)) return;
@@ -240,8 +243,10 @@ export const groupHeading = (view: string, group: string) => `${view}-group-${gr
  *
  * @remarks
  * **An event, let go once the list has answered**, as Settings' anchor and an agent's part are told once brought. A list
- * that draws no such group then (nothing waits in it, it is arranged by repository or searched, it is a strip) tells the
- * door all the same: a group that appeared later would take the focus from wherever the person had gone since.
+ * that draws no such group then (nothing waits in it, a receiver's filter hides it, no reader places it) tells the door
+ * all the same: a group that appeared later would take the focus from wherever the person had gone since. What hid a
+ * group the list holds is undone for the go (ENTRY1g): its strip laid over by the frame, Sessions shown by state, the
+ * rail's search cleared.
  */
 export function useBringGroup(heading: string | null, answered: boolean, onBrought?: () => void) {
   const told = useRef(onBrought);

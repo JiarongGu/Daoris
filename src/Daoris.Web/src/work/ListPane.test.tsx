@@ -149,6 +149,15 @@ describe('the list pane, laid over the main area', () => {
     expect(screen.getByRole('button', { name: 'Show the session list' })).toHaveAttribute('aria-expanded', 'true');
   });
 
+  /**
+   * ENTRY1g (D161's ENTRY1b note): a go lays the list over and its list focuses the group's heading as it mounts, which is
+   * before the pane's own effect runs; the pane takes the focus only where nothing in it has it.
+   */
+  it('leaves the focus where something in it took it as it was laid over', () => {
+    pane(OVER, { children: <h3 ref={(heading) => heading?.focus()} tabIndex={-1}>Waiting on you</h3> });
+    expect(screen.getByRole('heading', { name: 'Waiting on you' })).toHaveFocus();
+  });
+
   it('closes on Escape, handing the focus back to the strip\'s open', async () => {
     const { onDismiss } = pane(OVER);
     await userEvent.keyboard('{Escape}');
