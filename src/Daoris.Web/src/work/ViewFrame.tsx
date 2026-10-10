@@ -1,4 +1,5 @@
 import { type ReactNode, type RefObject, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import type { OpenGroup } from '../opener';
 import { LIST_BOUNDS, type ListChoice, type ListLayout, type ListMode, type ListView, listLayout, listToggled } from './layout';
 import { type ListMake, ListPane } from './ListPane';
 import type { ChoiceStanding, ListPanes } from './listPanes';
@@ -79,12 +80,42 @@ export function listChoice(view: ListView, lists: ListPanes, over: boolean): Lis
 /**
  * The list's mode told to the application, whose doors toggle it and say whether it is shown; and a list
  * laid over the main area let go once the room makes it anything else (D118 §3f: it is never kept).
+ *
+ * `over` and `setOver` are the application's own; `bringing`, a go's group still on its way (`useGoOver`), whose list
+ * laid over stays laid over once the group is brought.
  */
 export function useListMode(
   mode: ListMode | null, onListMode: ((mode: ListMode | null) => void) | undefined, over: boolean, setOver: (over: boolean) => void,
+  bringing = false,
 ) {
   useEffect(() => { onListMode?.(mode); }, [mode, onListMode]);
   useEffect(() => { if (over && mode !== 'over') setOver(false); }, [over, mode, setOver]);
+  useEffect(() => { if (bringing && mode === 'over' && !over) setOver(true); }, [bringing, mode, over, setOver]);
+}
+
+/**
+ * A go to a group of the view's list (ENTRY1g, D161's ENTRY1b note): a list drawn as a strip, whoever drew it, is laid over
+ * the main area while the group is brought into view, and `useListMode` keeps it laid over once it is, as a strip the
+ * person opened. Never remembered, so the person's closing stands once it goes.
+ *
+ * @remarks
+ * **Laid over in the render the go arrives in**, not by an effect after it: the view looks for the group's heading once its
+ * list has answered, and a list still a strip then would let the go go with nothing brought.
+ *
+ * **Let go with the list.** The list's own doors set `setOver`, so a list let go before its group is brought (Escape, a
+ * press outside, a choice) lets the go go too: a group appearing later would take the focus from where the person went. A
+ * group is held only for the view whose list holds it (`opener.ts`), so the frame need not ask whose it is.
+ */
+export function useGoOver(group: OpenGroup | null, over: boolean, onOver: (over: boolean) => void, onGroupBrought?: () => void) {
+  const bringing = group !== null;
+  return {
+    bringing,
+    over: over || bringing,
+    setOver: (next: boolean) => {
+      if (!next && bringing) onGroupBrought?.();
+      onOver(next);
+    },
+  };
 }
 
 /**
@@ -93,7 +124,8 @@ export function useListMode(
  * @remarks
  * Its closing and its width are the view's own (`listPanes.ts`); laying it over the main area is the
  * frame's, and never kept. **A choice closes a list laid over**: a change of the chosen item, and the `＋`,
- * which opens a form.
+ * which opens a form. Not a change that is no choice (ENTRY1g): the next view's item as a go opens it, the
+ * frame drawing every view's list on this one pane, nor a remembered item let go as the view opens (UX6b).
  *
  * **A remembered choice ends with what it chose** (UX6b, design §1 rule 6): what the view reads of its chosen item is
  * told to the list's memory, which lets go of a remembered one that closed or went. Before paint, so a done quest's page
@@ -107,12 +139,13 @@ export function ViewListPane({ spec, layout, lists, onOver }: {
   onOver: (over: boolean) => void;
 }) {
   const chosen = spec.chosen ?? null;
-  const was = useRef(chosen);
+  const was = useRef({ view: spec.view, chosen });
   const laid = layout.mode === 'over';
   useEffect(() => {
-    if (was.current !== chosen && laid) onOver(false);
-    was.current = chosen;
-  }, [chosen, laid, onOver]);
+    const before = was.current;
+    if (laid && before.view === spec.view && before.chosen !== chosen && chosen !== null) onOver(false);
+    was.current = { view: spec.view, chosen };
+  }, [spec.view, chosen, laid, onOver]);
   const { settle } = lists;
   const standing = chosen ? spec.standing : undefined;
   const memory = spec.chosenIn ?? spec.view;
@@ -156,24 +189,28 @@ export function ViewListPane({ spec, layout, lists, onOver }: {
  * **The monitor window's too** (FRAME1h): its rail and its tiles, under its native frame, with no side bar
  * beside them either (D55 §b).
  */
-export function ViewFrame({ layout, lists, over, onOver, onListMode }: {
+export function ViewFrame({ layout, lists, over, onOver, onListMode, group = null, onGroupBrought }: {
   layout: ViewLayout;
   lists: ListPanes;
   /** The list laid over the main area: the application's, so its doors reach it. */
   over: boolean;
   onOver: (over: boolean) => void;
   onListMode?: (mode: ListMode | null) => void;
+  /** The group of the view's list a go brings into view (ENTRY1g), laid over where the list is a strip; and its letting go. */
+  group?: OpenGroup | null;
+  onGroupBrought?: () => void;
 }) {
   const root = useRef<HTMLDivElement>(null);
   const width = useFrameWidth(root);
   const spec = layout.list;
-  const list = spec ? listLayout(width.frame, 0, listChoice(spec.view, lists, over)) : null;
-  useListMode(list?.mode ?? null, onListMode, over, onOver);
+  const go = useGoOver(group, over, onOver, onGroupBrought);
+  const list = spec ? listLayout(width.frame, 0, listChoice(spec.view, lists, go.over)) : null;
+  useListMode(list?.mode ?? null, onListMode, over, onOver, go.bringing);
 
   return (
     // Its own stacking context, as the Work frame's is, so an overlay drawn at the page's root lies above it.
     <div ref={root} className="relative isolate flex min-h-0 min-w-0 flex-1">
-      {spec && list && <ViewListPane spec={spec} layout={list} lists={lists} onOver={onOver} />}
+      {spec && list && <ViewListPane spec={spec} layout={list} lists={lists} onOver={go.setOver} />}
       <div className="flex min-w-0 flex-1 flex-col">{layout.main}</div>
     </div>
   );

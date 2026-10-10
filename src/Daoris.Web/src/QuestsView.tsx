@@ -204,7 +204,7 @@ export function useQuestsView({
   });
 
   // ENTRY1b: a door's group, the asks or the quests held for the person, looked for in front once both have answered. A list
-  // that draws none (nothing held, a receiver's filter, the strip) lets it go.
+  // that draws none (nothing held, a receiver's filter) lets it go; a strip the frame lays over for it (ENTRY1g).
   useBringGroup(
     active && (group === 'asks' || group === 'held') ? groupHeading('quests', group) : null,
     !quests.isPending && !asks.loading,

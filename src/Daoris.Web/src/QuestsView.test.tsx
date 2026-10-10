@@ -1261,6 +1261,22 @@ describe('a group a door brings into view', () => {
     expect(heading).toHaveFocus();
   });
 
+  /** ENTRY1g (D161's ENTRY1b note): where the list is a strip, the go lays it over the main area and brings the group there. */
+  it('lays the list over the main area where it is a strip, and brings the held quests into view there', async () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 600 });
+    try {
+      const brought = vi.fn();
+      shown('held', brought);
+
+      const over = await screen.findByRole('region', { name: 'Quests' });
+      const heading = await within(over).findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+      await waitFor(() => expect(brought).toHaveBeenCalledTimes(1));
+      expect(heading).toHaveFocus();
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
+    }
+  });
+
   it('lets the door go where nothing is held', async () => {
     quests = QUESTS;
     const brought = vi.fn();

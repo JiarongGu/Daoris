@@ -354,10 +354,12 @@ export function App() {
     else if (isListed(view) && listMode) {
       // By what the room made of it: an open list closes, one laid over goes, and a strip opens — over
       // the main area where the window drew it (D118 §3a). The closing is this view's own (§3f), and one laid
-      // over leaves it as it was.
+      // over leaves it as it was. A go's group still on its way goes with it, since the frame lays the list over
+      // for it (ENTRY1g).
       const next = listToggled({ mode: listMode });
       if (next.closed !== undefined) lists.setClosed(view, next.closed);
       closings.setListOver(next.over);
+      setListGroup(null);
     }
     else return false;
     return true;
@@ -1119,6 +1121,9 @@ export function App() {
               over={closings.listOver}
               onOver={closings.setListOver}
               onListMode={setListMode}
+              // A go's group lays Quests' strip over its main area in a browser as on the desktop (ENTRY1g).
+              group={listGroup}
+              onGroupBrought={() => setListGroup(null)}
             />
           )}
       </div>
