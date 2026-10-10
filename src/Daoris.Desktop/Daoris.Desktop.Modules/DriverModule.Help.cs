@@ -242,9 +242,21 @@ public sealed partial class DriverModule
         // SET_DRIVABLE, SET_LINE, SET_LANDING…: an edit to the driver's file, then a nudge.
         public void Change(Func<DriverConfig, DriverConfig> edit) => module.Change(edit);
 
-        // The ask composer's door, the local host's `POST /api/asks`.
-        public Task<AskAnswer> AskAsync(string workspace, string sentence, CancellationToken ct) =>
-            (service ?? throw NotReady()).AskAsync(workspace, sentence, [], [], null, ct);
+        // The ask composer's door, the local host's `POST /api/asks`, with its review choice and words (ENTRY1c). A named
+        // environment the workspace does not declare is refused before anything is sent, as `daoris-driver ask --review` refuses
+        // it: the service holds no rule, and the proposal's plan holds no repositories per workspace.
+        public async Task<AskAnswer> AskAsync(string workspace, string sentence, string? review, string? reviewWords, CancellationToken ct)
+        {
+            var asks = service ?? throw NotReady();
+            if (review is not null
+                && await AskReviewCommand.UndeclaredAsync(review, workspace, new AskReviewWorld(asks, () => DriverConfig.Load(module._loop.ConfigPath)), ct)
+                    .ConfigureAwait(false) is { } undeclared)
+            {
+                return new AskAnswer(false, undeclared, null, null);
+            }
+
+            return await asks.AskAsync(workspace, sentence, [], [], null, ct, review, reviewWords).ConfigureAwait(false);
+        }
 
         // The quest drawer's Delete: the local host's `DELETE /api/quests/{id}`.
         public Task<(bool Ok, string Message)> DeleteQuestAsync(string id, CancellationToken ct) =>
