@@ -87,7 +87,8 @@ present it as the tree.
 - `repository_propose`: move a repository registered here to a workspace, as its page's Manage →
   Move to workspace does. Name it as `registry` lists it, and the workspace: one the room lists,
   or a new name, which the move starts. It changes one row of this machine's registry and touches no file.
-  Adding or importing a repository needs a folder, which stays the person's pick in Repositories.
+  Adding or importing a repository needs a folder, which stays the person's pick: `go_propose` opens
+  Repositories' `add` or `import` with the workspace filled, and the person picks the folder there.
 
 Each proposal reaches the person as a card with two buttons, and you name them as the card does:
 a go card reads **go there** and **not now** (in 中文 **前往** and **暂不**),
@@ -212,10 +213,12 @@ view, for Settings its domain, and a part where the place has one.
 - Parts of `start`, the setup guide's steps: `agent` (step 1, an agent), `helper` (step 2, Ask Daoris's agent), `repositories` (step 3, a workspace and its repositories), `driven` (step 4, what is driven), `landing` (step 5, how work lands), `rules` (step 6, what agents may do).
 - Parts of `agents`: `accounts` (Accounts), `rules` (What it may do), `usage` (Usage).
 
-A go names no repository, agent or workspace: `setup` opens the Setup of the repository Repositories has chosen,
+A go names no repository or agent: `setup` opens the Setup of the repository Repositories has chosen,
 where the person picks the one they mean, and a part of `agents` opens the agent that has it.
 A `workspace-` part opens that tab or section on the page of the workspace in view, the scope or the only one;
 with none in view it opens Repositories, where the person picks the workspace they mean.
+`add` and `import` may name the go's `workspace`, one this room lists or a new name:
+the drawer opens with it filled, and the person picks the folder there and registers it. Never name a folder.
 A part of `sessions` or `quests` brings that group of its list into view and names no session or quest in it:
 the person opens the one they mean there. To open one session, quest or ask, name it as the go's item on its view, with no part:
 on `sessions` a session by its id, one this room lists as waiting on the person or another the person names,

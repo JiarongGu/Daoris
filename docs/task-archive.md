@@ -13089,3 +13089,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ENTRY1g2 — a go past a receiver filter on Quests** (web; after ENTRY1g). A receiver filter hides the `held` group a go asks for; showing it for the go alone changes the query (`useQuests(filters.to, …)`), not the layout. D161's ENTRY1b note; QuestsView tests.
 
 **Outcome** 2026-10-11: a go to `quests/held` asks for everyone's quests for that go alone (`goAll`), until the person chooses in the ⋯ or leaves Quests; the ⋯ shows Everyone meanwhile and the stored filter is never written. Asks were never filtered. Detail: D161's ENTRY1g2 note.
+
+
+## ENTRY1d2a — a go to Add or Import carries a workspace (2026-10-11, D161)
+
+> - [ ] **ENTRY1d2a — a go to Add or Import carries a workspace** (service/driver/modules; after ENTRY1f2, which holds the same files). The go box and tool take `workspace`, the driver judges it on `add`/`import` only, the room's sentence and the register/import owed rows change. D161's ENTRY1d note; the go's `item` (ENTRY1f1) is the exemplar.
+
+**Outcome** 2026-10-11: `go_propose` takes a `workspace`, refused as a folder; the driver accepts it on `projects/add` and `projects/import` only (never beside an item), normalized and in the registry's spelling, a new name said as starting one; the modules hand it in the go; the room teaches it, and register and import are answered by the go in the coverage table. Detail: D161's ENTRY1d2a note.

@@ -9,7 +9,8 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para><b>A move needs no path</b> (D48 §7, the workspace design §7): it edits one field of the registry's row, locally and
 /// at once, and touches no file. So the proposal names only the repository and the workspace. Adding or importing one needs a
-/// folder, which stays the person's pick (ENTRY1d2).</para>
+/// folder, which stays the person's pick: a go opens Repositories' Add or Import with the workspace filled (ENTRY1d2a,
+/// <see cref="HelpGoProposals"/>).</para>
 ///
 /// <para><b>A new workspace is allowed</b>, as the drawer's free text allows it: a move to a name no repository is in yet
 /// starts that workspace here, and the card says so. A move to the workspace it is already in is refused, since nothing would

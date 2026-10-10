@@ -6,8 +6,8 @@ namespace Daoris.Driver.Tests;
 /// <summary>Ask Daoris's <c>go</c> proposal (HELP6): a place the window has, which changes nothing.</summary>
 public sealed class HelpGoProposalsTests : HelpProposalsFixture
 {
-    private static HelpProposal Go(string view, string? domain = null, string? part = null, string? item = null) =>
-        Of("go", "go", view) with { Domain = domain, Part = part, Item = item };
+    private static HelpProposal Go(string view, string? domain = null, string? part = null, string? item = null, string? workspace = null) =>
+        Of("go", "go", view) with { Domain = domain, Part = part, Item = item, Workspace = workspace };
 
     [Theory]
     [InlineData("quests", null, null, "Open Quests.")]
@@ -21,7 +21,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     [InlineData("agents", null, null, "Open Agents.")]
     [InlineData("agents", null, "rules", "Open Agents → What it may do.")]
     // UX6g2b (D161 §3): a workspace's page's tabs and its Setup's sections are parts of Repositories, as a repository's
-    // Setup is; a go names no workspace.
+    // Setup is; a go to them names no workspace, and the one in view opens.
     [InlineData("projects", null, "workspace-details", "Open Repositories → a workspace's Details.")]
     [InlineData("projects", null, "workspace-branches", "Open Repositories → a workspace's Branches.")]
     [InlineData("projects", null, "workspace-workflow", "Open Repositories → a workspace's Workflow.")]
@@ -201,6 +201,55 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
         Assert.Null(plan.Go);
     }
 
+    /// <summary>The registry as Repositories lists it (ENTRY1d2a): `engine` in `work`, and `game` in none, so the default.</summary>
+    private static readonly HelpMachineFacts WithRegistry = Machine with
+    {
+        Registered = [("engine", "work", "/checkouts/engine"), ("game", null, null)],
+    };
+
+    /// <summary>
+    /// ENTRY1d2a (D161's ENTRY1d note): a go to Repositories' Add repository or Import a folder may name the workspace the
+    /// drawer opens with, since the folder stays the person's pick there. It is normalized as the route stores a name, a
+    /// workspace the registry holds handed in the registry's spelling, and a name no repository is in yet allowed, as the
+    /// drawer's free text allows it, the card saying so.
+    /// </summary>
+    [Theory]
+    [InlineData("add", "work", "work", "Open Repositories → Add repository, in workspace `work`.")]
+    [InlineData("import", " WORK ", "work", "Open Repositories → Import a folder, in workspace `work`.")]
+    [InlineData("add", "Default", "default", "Open Repositories → Add repository, in workspace `default`.")]
+    [InlineData("import", " Team Alpha ", "Team Alpha",
+        "Open Repositories → Import a folder, in workspace `Team Alpha`, which no repository is in yet.")]
+    public void A_go_to_add_or_import_may_name_the_workspace(string part, string workspace, string handed, string says)
+    {
+        var plan = HelpProposals.Plan(Go("projects", part: part, workspace: workspace), DriverConfig.Empty, WithRegistry);
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal(says, plan.Describe);
+        Assert.Equal(new HelpPlace("projects", null, part) { Workspace = handed }, plan.Go);
+    }
+
+    /// <summary>
+    /// ENTRY1d2a: a workspace is named on Repositories' Add and Import alone, the drawers that take one, never with an item,
+    /// and never as a folder: a path the conversation was not given never enters it (D48 §3/§7).
+    /// </summary>
+    [Theory]
+    [InlineData("projects", null, null, null, "work", "a go names a workspace only with `projects` and its part `add` or `import`")]
+    [InlineData("projects", null, "setup", null, "work", "a go names a workspace only with `projects` and its part `add` or `import`")]
+    [InlineData("projects", null, "workspace-details", null, "work", "a go names a workspace only with `projects` and its part `add` or `import`")]
+    [InlineData("settings", "start", "repositories", null, "work", "a go names a workspace only with `projects` and its part `add` or `import`")]
+    [InlineData("quests", null, null, "q1a2b3c4", "work", "a go names a workspace or an item, not both")]
+    [InlineData("projects", null, "add", null, "C:\\work", "`C:\\work` is a folder, never a workspace's name")]
+    [InlineData("projects", null, "import", null, "work/engine", "`work/engine` is a folder, never a workspace's name")]
+    [InlineData("projects", null, "add", null, "D:", "`D:` is a folder, never a workspace's name")]
+    public void A_workspace_anywhere_but_add_or_import_or_as_a_folder_is_refused(
+        string view, string? domain, string? part, string? item, string workspace, string says)
+    {
+        var plan = HelpProposals.Plan(Go(view, domain, part, item, workspace), DriverConfig.Empty, WithRegistry);
+
+        Assert.Contains(says, plan.Refusal);
+        Assert.Null(plan.Go);
+    }
+
     /// <summary>ENTRY1f2: a session named on Quests is no quest there, and a quest named on Sessions no session.</summary>
     [Fact]
     public void An_item_is_judged_against_its_own_views_records()
@@ -307,6 +356,17 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
         Assert.Equal(new HelpPlace("sessions", null, null) { Item = "s1a2b3c4" }, go.Go);
     }
 
+    /// <summary>ENTRY1d2a: a go to Add repository hands the page the workspace the drawer opens with, and calls no door.</summary>
+    [Fact]
+    public async Task A_go_to_add_hands_the_page_its_workspace()
+    {
+        var (go, doors, _) = await ApplyAsync(Go("projects", part: "add", workspace: " Work "), facts: WithRegistry);
+
+        Assert.True(go.Applied);
+        Assert.Empty(doors.Calls);
+        Assert.Equal(new HelpPlace("projects", null, "add") { Workspace = "work" }, go.Go);
+    }
+
     /// <summary>A go's fields, read from the file the service's box writes — and an account's, which it lacks, read as not named.</summary>
     [Fact]
     public void A_gos_fields_are_read_from_the_file()
@@ -343,5 +403,27 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
         var go = Assert.Single(HelpProposals.Pending(_home, "h1"), proposal => proposal.Kind == "go");
 
         Assert.Equal("ask:#a2none00", go.Item);
+    }
+
+    /// <summary>
+    /// ENTRY1d2a: a go's workspace is the file's <c>workspace</c>, which every proposal's reader already reads, spelled as
+    /// written, so the kind's own reader adds nothing for it.
+    /// </summary>
+    [Fact]
+    public void A_gos_workspace_is_read_from_the_file()
+    {
+        var node = new JsonObject
+        {
+            ["id"] = "k4", ["proposed"] = "2026-10-11T10:00:00.0000000+00:00", ["by"] = new JsonObject { ["session"] = "h1" },
+            ["kind"] = "go", ["door"] = "go", ["target"] = "projects", ["workspace"] = "Team Alpha", ["value"] = null,
+            ["sentence"] = null, ["domain"] = null, ["part"] = "import", ["item"] = null,
+            ["why"] = "the person asked to import a folder into it", ["state"] = "proposed", ["note"] = null,
+        };
+        System.IO.File.WriteAllText(Path.Combine(HelpProposals.FolderOf(_home), "k4.json"), node.ToJsonString());
+
+        var go = Assert.Single(HelpProposals.Pending(_home, "h1"), proposal => proposal.Kind == "go");
+
+        Assert.Equal(("import", "Team Alpha"), (go.Part, go.Workspace));
+        Assert.Null(go.Item);
     }
 }

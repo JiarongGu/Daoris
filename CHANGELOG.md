@@ -22,6 +22,10 @@ with the version and date at release.
   row of the registry and no file. A workspace no repository is in yet is allowed, and the card says the
   move starts it; a move to the workspace it is already in is refused. Adding or importing a repository
   stays yours, since it needs a folder.
+- Ask Daoris's *Go there* to Repositories' *Add repository* or *Import a folder* can name the workspace
+  you mean: the card says it, and says when no repository is in that workspace yet. A workspace with any
+  other place is refused on the card, and one named as a folder is never proposed. The folder stays yours
+  to pick.
 - An ask Ask Daoris proposes keeps the review choice you gave it, and your words with it: its card says
   whether the work is reviewed in the default environment, in a named one or not at all, and Apply sends
   the choice as the ask composer does. A named environment the workspace does not declare is refused at

@@ -54,7 +54,8 @@ public sealed class HelpRoomMayProposeTests
 
     /// <summary>
     /// ENTRY1d1 (D161's ENTRY1d note): a repository is moved to a workspace by name, a new workspace allowed, as the Manage
-    /// drawer's *Move to workspace* moves it; adding or importing one needs a folder, which stays the person's pick.
+    /// drawer's *Move to workspace* moves it; adding or importing one needs a folder, which stays the person's pick, so a go
+    /// opens the drawer with the workspace filled (ENTRY1d2a).
     /// </summary>
     [Fact]
     public void The_room_says_how_a_repository_is_moved_to_a_workspace()
@@ -64,7 +65,9 @@ public sealed class HelpRoomMayProposeTests
         Assert.Contains("- `repository_propose`: move a repository registered here to a workspace, as its page's Manage →", proposes);
         Assert.Contains("or a new name, which the move starts", proposes);
         Assert.Contains("It changes one row of this machine's registry and touches no file.", proposes);
-        Assert.Contains("Adding or importing a repository needs a folder, which stays the person's pick", proposes);
+        Assert.Contains("Adding or importing a repository needs a folder, which stays the person's pick: `go_propose` opens", proposes);
+        Assert.Contains("Repositories' `add` or `import` with the workspace filled, and the person picks the folder there.", proposes);
+        Assert.DoesNotContain("the person's pick in Repositories.", proposes);
     }
 
     /// <summary>

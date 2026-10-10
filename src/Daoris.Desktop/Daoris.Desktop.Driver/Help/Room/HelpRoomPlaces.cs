@@ -27,12 +27,16 @@ internal sealed class HelpRoomPlaces : IHelpRoomSection
                 : $"- Parts of `{within}`: {Listed(parts)}.\n");
         }
 
-        // UX6e2, HELPSETUP1, UX6g2b: a go carries no item, so the helper is told where the parts that need one land; a
-        // workspace's part opens the workspace in view, as a door naming its tab or section does (D150 §4.3).
-        text.Append("\nA go names no repository, agent or workspace: `setup` opens the Setup of the repository Repositories has chosen,\n");
+        // UX6e2, HELPSETUP1, UX6g2b: a go names no repository or agent, so the helper is told where the parts that need one
+        // land; a workspace's part opens the workspace in view, as a door naming its tab or section does (D150 §4.3).
+        text.Append("\nA go names no repository or agent: `setup` opens the Setup of the repository Repositories has chosen,\n");
         text.Append("where the person picks the one they mean, and a part of `agents` opens the agent that has it.\n");
         text.Append("A `workspace-` part opens that tab or section on the page of the workspace in view, the scope or the only one;\n");
         text.Append("with none in view it opens Repositories, where the person picks the workspace they mean.\n");
+        // ENTRY1d2a (D161's ENTRY1d note): adding or importing needs a folder, which stays the person's pick (D48 §3/§7), so a
+        // go opens the drawer with what Ask Daoris knows filled; the driver refuses a workspace anywhere else, or as a folder.
+        text.Append("`add` and `import` may name the go's `workspace`, one this room lists or a new name:\n");
+        text.Append("the drawer opens with it filled, and the person picks the folder there and registers it. Never name a folder.\n");
         // ENTRY1b (D161's ENTRY1 note): a quest or a session keeps its own conversation, so a go takes the person to the
         // group that waits on them there and leaves the one to open to them. ENTRY1f1 (its ENTRY1f note): a go on Quests may
         // name the one, as the room lists it, and the driver judges it against the machine's records. ENTRY1f2: on Sessions
