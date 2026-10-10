@@ -129,14 +129,86 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     [InlineData("quests", null, "ask:", "`ask:` is no item of `quests` — a quest by its id, or an ask as `ask:<id>`.")]
     [InlineData("quests", null, "session:s1", "`session:s1` is no item of `quests` — a quest by its id, or an ask as `ask:<id>`.")]
     [InlineData("quests", "held", "q1a2b3c4", "a go names a part of `quests` or an item in it, not both")]
-    [InlineData("sessions", null, "q1a2b3c4", "a go names an item only on `quests`")]
-    [InlineData("overview", null, "ask:a2none00", "a go names an item only on `quests`")]
+    // ENTRY1f2: an item is named on Sessions too, and on no other view.
+    [InlineData("overview", null, "ask:a2none00", "a go names an item only on `quests`, `sessions` — on Sessions a session by its id")]
     public void An_item_the_machine_does_not_hold_or_cannot_be_is_refused(string view, string? part, string item, string says)
     {
         var plan = HelpProposals.Plan(Go(view, part: part, item: item), DriverConfig.Empty, Machine);
 
         Assert.Contains(says, plan.Refusal);
         Assert.Null(plan.Go);
+    }
+
+    /// <summary>
+    /// The machine's own session records, as the Sessions list places them (ENTRY1f2): a park waiting on the person, one
+    /// working, one ended, a park the person answered, an intake's park, Ask Daoris's own conversation and a teammate's park.
+    /// </summary>
+    private static readonly HelpMachineFacts WithSessions = Machine with
+    {
+        Sessions =
+        [
+            new SessionRecord("s1a2b3c4", "console-ui", "awaiting-person") { Quest = "q1a2b3c4" },
+            new SessionRecord("s2b3c4d5", "engine", "working") { Quest = "q2taken0" },
+            new SessionRecord("s3c4d5e6", "game", "completed") { Quest = "q3done00" },
+            new SessionRecord("s4d5e6f7", "engine", "awaiting-person") { Quest = "q5start0", Answer = "Port 8080." },
+            new SessionRecord("s7a8b9c0", "ask #a2none00", "awaiting-person") { Ask = "a2none00" },
+            new SessionRecord("s5e6f7a8", HelpRoom.Repository, "awaiting-person") { Kind = "chat" },
+            new SessionRecord("laptop/s6f7a8b9", "engine", "awaiting-person"),
+        ],
+    };
+
+    /// <summary>
+    /// ENTRY1f2 (D161's ENTRY1f note): a go on Sessions may name one session by its id, judged against the machine's own
+    /// records, since only the desktop knows its sessions. Any the Sessions list shows may be named, the one waiting on the
+    /// person or another the person asks for; a <c>#</c> before the id is stripped, the id matched without case, and the
+    /// page handed the record's own. The card says where it ran and whether it waits on the person or ended.
+    /// </summary>
+    [Theory]
+    [InlineData("s1a2b3c4", "s1a2b3c4", "Open Sessions → session `s1a2b3c4` in `console-ui`, waiting on you.")]
+    [InlineData(" #S1A2B3C4 ", "s1a2b3c4", "Open Sessions → session `s1a2b3c4` in `console-ui`, waiting on you.")]
+    [InlineData("s2b3c4d5", "s2b3c4d5", "Open Sessions → session `s2b3c4d5` in `engine`.")]
+    [InlineData("s3c4d5e6", "s3c4d5e6", "Open Sessions → session `s3c4d5e6` in `game`, completed.")]
+    // An answered park goes on at the driver's next look, so it waits on nobody (ANSWER1c), as the list says.
+    [InlineData("s4d5e6f7", "s4d5e6f7", "Open Sessions → session `s4d5e6f7` in `engine`.")]
+    [InlineData("s7a8b9c0", "s7a8b9c0", "Open Sessions → session `s7a8b9c0` answering ask `#a2none00`, waiting on you.")]
+    public void A_go_may_name_one_session_the_machine_holds(string item, string handed, string says)
+    {
+        var plan = HelpProposals.Plan(Go("sessions", item: item), DriverConfig.Empty, WithSessions);
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal(says, plan.Describe);
+        Assert.Equal(new HelpPlace("sessions", null, null) { Item = handed }, plan.Go);
+    }
+
+    /// <summary>
+    /// ENTRY1f2: a session the machine's records do not hold is refused on the card, as Ask Daoris's own conversation is,
+    /// which opens in Ask Daoris and not in Sessions, and a teammate's, which nothing here reaches. An item on Sessions is a
+    /// bare id: the prefixes Quests' items take are no item of it, and a part beside it is refused as on Quests.
+    /// </summary>
+    [Theory]
+    [InlineData(null, "s9", "there is no session `s9` on this machine.")]
+    [InlineData(null, "S5E6F7A8", "`s5e6f7a8` is Ask Daoris's own conversation; it opens here, not in Sessions.")]
+    [InlineData(null, "laptop/s6f7a8b9", "`laptop/s6f7a8b9` is a teammate's session: it runs on their machine, and nothing here reaches it.")]
+    [InlineData(null, "ask:a2none00", "`ask:a2none00` is no item of `sessions` — a session by its id.")]
+    [InlineData(null, "session:s1a2b3c4", "`session:s1a2b3c4` is no item of `sessions` — a session by its id.")]
+    [InlineData(null, "#", "`#` is no item of `sessions` — a session by its id.")]
+    [InlineData("waiting", "s1a2b3c4", "a go names a part of `sessions` or an item in it, not both")]
+    public void A_session_the_machine_does_not_hold_or_the_person_cannot_open_there_is_refused(string? part, string item, string says)
+    {
+        var plan = HelpProposals.Plan(Go("sessions", part: part, item: item), DriverConfig.Empty, WithSessions);
+
+        Assert.Contains(says, plan.Refusal);
+        Assert.Null(plan.Go);
+    }
+
+    /// <summary>ENTRY1f2: a session named on Quests is no quest there, and a quest named on Sessions no session.</summary>
+    [Fact]
+    public void An_item_is_judged_against_its_own_views_records()
+    {
+        Assert.Equal("there is no quest `#s1a2b3c4` on this machine.",
+            HelpProposals.Plan(Go("quests", item: "s1a2b3c4"), DriverConfig.Empty, WithSessions).Refusal);
+        Assert.Equal("there is no session `q1a2b3c4` on this machine.",
+            HelpProposals.Plan(Go("sessions", item: "q1a2b3c4"), DriverConfig.Empty, WithSessions).Refusal);
     }
 
     /// <summary>
@@ -197,8 +269,8 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
                 "settings/permissions/across → projects/workspace-defaults",
             ],
             HelpPlaces.Kept.Select(kept => $"{Spelled(kept.Was)} → {Spelled(kept.Now)}"));
-        // ENTRY1f1: the views a go may name an item in, and how an ask's item is told from a quest's.
-        Assert.Equal(["quests"], HelpPlaces.ItemViews);
+        // ENTRY1f1: the views a go may name an item in, and how an ask's item is told from a quest's. ENTRY1f2: Sessions too.
+        Assert.Equal(["sessions", "quests"], HelpPlaces.ItemViews);
         Assert.Equal("ask:", HelpPlaces.AskItem);
     }
 
@@ -222,6 +294,17 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
         Assert.True(go.Applied);
         Assert.Empty(doors.Calls);
         Assert.Equal(new HelpPlace("quests", null, null) { Item = "ask:a2none00" }, go.Go);
+    }
+
+    /// <summary>ENTRY1f2: a go naming a session hands the page the place with the session's id, as its record spells it.</summary>
+    [Fact]
+    public async Task A_go_naming_a_session_hands_the_page_its_id()
+    {
+        var (go, doors, _) = await ApplyAsync(Go("sessions", item: "#S1A2B3C4"), facts: WithSessions);
+
+        Assert.True(go.Applied);
+        Assert.Empty(doors.Calls);
+        Assert.Equal(new HelpPlace("sessions", null, null) { Item = "s1a2b3c4" }, go.Go);
     }
 
     /// <summary>A go's fields, read from the file the service's box writes — and an account's, which it lacks, read as not named.</summary>

@@ -22,7 +22,8 @@ public sealed class HelpRoomGoldenTests
         Intake = "claude-code-acp",
         Helper = "claude-code-acp",
         Cap = 4,
-        Waiting = 1,
+        // ENTRY1f2: a session waiting on the person, by id and repository.
+        Waiting = [new("s9c0d1e2", "console-ui")],
         Asks = 2,
         Repositories =
         [

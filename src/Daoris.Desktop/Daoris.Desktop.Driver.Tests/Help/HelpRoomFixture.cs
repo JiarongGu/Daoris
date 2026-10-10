@@ -11,7 +11,8 @@ internal static class HelpRoomFixture
         Intake = "claude-code-acp",
         Helper = "claude-code-acp",
         Cap = 4,
-        Waiting = 2,
+        // ENTRY1f2: by id and where each runs, an intake by its ask.
+        Waiting = [new("s1a2b3c4", "console-ui"), new("s7a8b9c0", "ask #a1") { Ask = "a1" }],
         Asks = 1,
         Repositories =
         [

@@ -570,6 +570,32 @@ describe('Ask Daoris, with an agent named', () => {
     APPLIED = APPLIED_SETTING;
   });
 
+  /**
+   * ENTRY1f2 (D161's ENTRY1f note): a go may name the one session that waits, judged by the driver against the machine's
+   * own records; the page opens Sessions with it chosen, by its id.
+   */
+  it('takes the person to the one session a go names', async () => {
+    SESSIONS = [HELP];
+    PROPOSALS = [{
+      id: 'g3o4t5o6', kind: 'go', describe: 'Open Sessions → session `s1a2b3c4` in `console-ui`, waiting on you.', terminal: '',
+      why: 'the person asked which session waits on them',
+    }];
+    APPLIED = {
+      message: 'Applied: `#g3o4t5o6` — Open Sessions → session `s1a2b3c4` in `console-ui`, waiting on you. Nothing else changed.',
+      applied: true, go: { view: 'sessions', domain: null, part: null, item: 's1a2b3c4' },
+    };
+    bridge();
+    const onGo = vi.fn();
+    show(undefined, null, onGo);
+
+    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
+    await userEvent.click(within(cards).getByRole('button', { name: 'Go there' }));
+
+    await waitFor(() => expect(onGo).toHaveBeenCalledWith({ view: 'sessions', item: 's1a2b3c4' }));
+    PROPOSALS = [];
+    APPLIED = APPLIED_SETTING;
+  });
+
   /** HELP6: a delete is applied through the driver's Apply, like every card, and opens nothing. */
   it('deletes a record made by mistake on the person\'s press, and goes nowhere', async () => {
     SESSIONS = [HELP];

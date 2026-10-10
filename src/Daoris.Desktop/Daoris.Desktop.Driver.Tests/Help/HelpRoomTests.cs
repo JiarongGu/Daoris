@@ -183,7 +183,7 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Equal(LandingSource.Workspace, report.Landing.Source);
         Assert.True(Assert.Single(machine.Repositories, repository => repository.Name == "reports-db").Held);
         Assert.False(Assert.Single(machine.Repositories, repository => repository.Name == "engine").Checkout);
-        Assert.Equal(1, machine.Waiting);
+        Assert.Equal([new HelpWaitingSession("s1", "console-ui")], machine.Waiting);
         Assert.Equal(1, machine.Asks);
         // The asks by id (HELP6), with the quests each became.
         Assert.Equal(["a1", "a2"], machine.OpenAsks.Select(ask => ask.Id));
