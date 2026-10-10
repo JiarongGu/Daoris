@@ -8,11 +8,8 @@ import { Button, Icon, type IconName, Inline, Menu, type MenuAct, SkeletonRows, 
 import { type Answered, InlineConfirm, Refused } from '../work/InlineConfirm';
 import { useListKeys } from '../work/listKeys';
 import { marked } from '../work/railSearch';
-import { HELP_NAME_LIMIT, type HelpConversationRow, historyGroups } from './history';
-import { previewText } from './preview';
-
-/** The fewest characters a search finds by: the driver finds nothing under two (`HelpConversations.List`). */
-export const SEARCH_FROM = 2;
+import { HELP_NAME_LIMIT, type HelpConversationRow, historyGroups, searchable } from './history';
+import { previewText, rowLine } from './preview';
 
 /** What a row of the history may do, each pressed through the organism that holds the bridge. */
 export type AskHistoryActs = {
@@ -51,17 +48,26 @@ const KEEPS_ESCAPE = 'form, [role="menu"], [role="dialog"]';
  *   that row went.
  * - **Every state says itself** (UX §4): a first load as skeleton rows with its words, a newer answer over the rows held
  *   dimmed, a list it could not read with why and a retry, an empty one with a way to start, a search that found nothing with
- *   a way to clear it and whether older ones were searched, and a search too short to look with how long one must be.
+ *   a way to clear it, and a search too short to look with how long one must be.
+ * - **It is read a page at a time** (ASKHIST1d2): the driver orders and searches every conversation and answers a page of
+ *   them (D158's ASKHIST1d1 note). A search says how many it found and that it searched every one; a list with more says how
+ *   many of how many it shows, and *Show more* lists the next page and takes the reader to the first row it brought.
  */
 export function AskHistory({
-  rows, cut = false, loading = false, refreshing = false, error = null, search, shown = null, busy = false, refusal = null,
-  restore = null, now, onSearch, onNew, onClose, onRetry, ...acts
+  rows, total, loading = false, refreshing = false, error = null, search, shown = null, busy = false, refusal = null,
+  restore = null, now, onMore, loadingMore = false, moreError = null, onSearch, onNew, onClose, onRetry, ...acts
 }: {
   rows: HelpConversationRow[];
   /** Why the last act pressed from a row's menu (a pin, a new conversation from it) did not happen; null when it did. */
   refusal?: string | null;
-  /** Whether older conversations were left out of the list, or out of a search. */
-  cut?: boolean;
+  /** How many the whole list holds, or how many a search found; the rows' own count until the driver says. */
+  total?: number;
+  /** List the next page; absent on the last. */
+  onMore?: () => void;
+  /** The next page is on its way. */
+  loadingMore?: boolean;
+  /** Why the next page could not be read, in the sentence the person reads; null when it was. */
+  moreError?: string | null;
   /** Its first answer is on its way. */
   loading?: boolean;
   /** A newer answer is on its way: the rows shown are the last one's. */
@@ -91,12 +97,38 @@ export function AskHistory({
   const keys = useListKeys();
   const scroller = useRef<HTMLDivElement>(null);
   const field = useRef<HTMLInputElement>(null);
+  const moreFoot = useRef<HTMLDivElement>(null);
   // The one row whose question is open: its rename, or its delete.
   const [asking, setAsking] = useState<{ id: string; what: 'rename' | 'delete' } | null>(null);
   const words = search.trim();
-  const searching = words.length >= SEARCH_FROM;
+  const searching = searchable(words);
   const short = words.length > 0 && !searching;
   const groups = historyGroups(rows, now);
+  const count = total ?? rows.length;
+  // *Show more* pressed: how many rows there were and what was searched, so the first row the next page brings takes the focus.
+  const pressed = useRef<{ words: string; at: number } | null>(null);
+
+  // The next page arrived: the reader goes on from its first row, unless they went elsewhere meanwhile (the search, say),
+  // where the focus stays. The press leaves with the last page, so the focus may be nowhere when the rows arrive.
+  useLayoutEffect(() => {
+    const was = pressed.current;
+    if (!was) return;
+    if (was.words !== words) { pressed.current = null; return; }
+    if (rows.length <= was.at) return;
+    pressed.current = null;
+    const focused = document.activeElement;
+    if (focused && focused !== document.body && !moreFoot.current?.contains(focused)) return;
+    const first = rows[was.at]!.session;
+    [...(scroller.current?.querySelectorAll<HTMLElement>('[data-session]') ?? [])]
+      .find((door) => door.dataset.session === first)?.focus();
+  }, [rows, words]);
+
+  const more = () => {
+    // Pressed again while it reads, it asks nothing more; it stays a press, so the focus is never taken from it.
+    if (loadingMore || !onMore) return;
+    pressed.current = { words, at: rows.length };
+    onMore();
+  };
 
   // Coming back to the list: the row it was left from, where the list was scrolled; the search where that row went.
   useLayoutEffect(() => {
@@ -181,12 +213,8 @@ export function AskHistory({
           </Notice>
         ) : searching ? (
           !refreshing && (
-            <Notice
-              icon="search"
-              headline={t('help.history.none', { words })}
-              // Whether older ones were searched at all, since a search reads only the newest the driver lists.
-              body={t(cut ? 'help.history.noneHintOlder' : 'help.history.noneHint')}
-            >
+            // Every conversation was searched (ASKHIST1d1), and the hint says so: none is left out of a search.
+            <Notice icon="search" headline={t('help.history.none', { words })} body={t('help.history.noneHint')}>
               <Button onClick={clear}>{t('help.history.clearSearch')}</Button>
             </Notice>
           )
@@ -195,6 +223,13 @@ export function AskHistory({
             {onNew && <Button disabled={busy} onClick={onNew}>{t('help.history.start')}</Button>}
           </Notice>
         ))}
+
+        {/* What a search covered, said as it answers: never over a newer search's wait, whose rows are the last one's. */}
+        {searching && !refreshing && rows.length > 0 && (
+          <p role="status" className="m-0 px-2.5 pb-1 pt-1.5 text-meta text-ink-faint wrap-anywhere">
+            {t('help.history.searched', { count, words })}
+          </p>
+        )}
 
         {groups.map((group) => (
           <div key={group.id} role="group" aria-labelledby={`${headingId}-${group.id}`} className="mt-1.5 first:mt-0">
@@ -222,10 +257,16 @@ export function AskHistory({
           </div>
         ))}
 
-        {cut && rows.length > 0 && (
-          <p className="m-0 px-2.5 pt-2 text-meta text-ink-faint">
-            {searching ? t('help.history.noneOlder') : t('help.history.cut', { count: rows.length })}
-          </p>
+        {onMore && rows.length > 0 && (
+          <div ref={moreFoot} className="grid grid-cols-[minmax(0,1fr)] justify-items-start gap-1.5 px-2.5 pt-2">
+            <p className="m-0 text-meta text-ink-faint">{t('help.history.listed', { shown: rows.length, total: count })}</p>
+            {moreError && <Refused sentence={moreError} />}
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <Button className="px-2.5 text-small" onClick={more}>{t('help.history.more')}</Button>
+              {/* There from the first, so a reader hears it speak when the wait begins. */}
+              <span role="status" className="text-small text-ink-soft">{loadingMore ? t('help.history.loadingMore') : ''}</span>
+            </div>
+          </div>
         )}
       </div>
     </section>
@@ -269,9 +310,13 @@ function HistoryRow({ row, current, busy, words, asking, onAsk, onOpen, onRename
   const { t } = useTranslation();
   const trigger = useRef<HTMLButtonElement>(null);
   // Where a search found its words: in the title, which is then marked, or in what was said, which takes the line's place.
+  // Its line is parsed whole and then cut from a little before the words (ASKHIST1d2); a driver before pages sent only the
+  // 60 characters around them, already cut.
   const inTitle = words !== '' && row.found === row.title;
-  const find = words !== '' && row.found && !inTitle ? previewText(row.found) : null;
-  const about = row.about ? previewText(row.about) : null;
+  const find = words === '' || inTitle ? null
+    : row.foundLine ? rowLine(previewText(row.foundLine), words)
+      : row.found ? previewText(row.found) : null;
+  const about = row.about ? rowLine(previewText(row.about)) : null;
   const marks = [
     ago(row.last),
     row.live ? t('help.history.running') : null,

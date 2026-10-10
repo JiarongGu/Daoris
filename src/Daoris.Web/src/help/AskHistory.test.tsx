@@ -7,6 +7,7 @@ import i18n from '../i18n';
 import { code } from '../test/code';
 import { AskHistory, type AskHistoryActs } from './AskHistory';
 import type { HelpConversationRow } from './history';
+import { ROW_LINE } from './preview';
 
 // ASKHIST1, as ASKHIST1c made it: Ask Daoris's history, a molecule. Its head (what it is, kept on this machine, a new
 // conversation, the search), its rows grouped by day, each row's acts, and its states, in both catalogues.
@@ -149,9 +150,40 @@ describe.each(['en', 'zh'])('Ask Daoris’s history in %s', (language) => {
 
   it('says a search needs two characters, and keeps the whole list meanwhile', async () => {
     await i18n.changeLanguage(language);
-    draw({ search: '树' });
+    draw({ search: 'a' });
     expect(screen.getByRole('status')).toHaveTextContent(i18n.t('help.history.short'));
     expect(screen.getAllByRole('listitem')).toHaveLength(3);
+  });
+
+  // ASKHIST1d2: one Han character is a word on its own (区, 圈), and the driver searches by it (`SessionEvents.Searchable`).
+  it('searches by one Han character', async () => {
+    await i18n.changeLanguage(language);
+    draw({ search: '树', rows: [] });
+    expect(screen.queryByText(i18n.t('help.history.short'))).toBeNull();
+    expect(screen.getByText(i18n.t('help.history.none', { words: '树' }))).toBeInTheDocument();
+  });
+
+  it('shows a found line parsed before it is cut, from a little before its words, marked', async () => {
+    await i18n.changeLanguage(language);
+    const before = 'the **feed** keeps `engine` in step; '.repeat(20);
+    draw({
+      search: 'remote',
+      rows: [row({ session: 'h1', found: '…in step; the `engine` **remote** is …', foundLine: `${before}the \`engine\` **remote** is set once.` })],
+    });
+
+    const found = door('what is a workspace?');
+    expect(within(found).getByText('remote', { selector: 'mark' })).toBeInTheDocument();
+    expect(found).toHaveTextContent(/….*in step; the engine remote is set once\./);
+    expect(found.textContent).not.toMatch(/[*`]/);
+    expect(found.textContent!.length).toBeLessThan(ROW_LINE + 'what is a workspace?'.length + 40);
+  });
+
+  it('cuts a whole first line to what a row holds, after its Markdown is read', async () => {
+    await i18n.changeLanguage(language);
+    draw({ rows: [row({ session: 'h1', about: `**Landing**: ${'a branch lands on its line, '.repeat(40)}` })] });
+    const line = within(door('what is a workspace?')).getByText(/^Landing: a branch lands/);
+    expect(line.textContent!.length).toBeLessThanOrEqual(ROW_LINE + 1);
+    expect(line.textContent).toMatch(/…$/);
   });
 
   it('draws a first load as skeleton rows with its words, and holds the rows dimmed while a newer answer comes', async () => {
@@ -183,7 +215,7 @@ describe.each(['en', 'zh'])('Ask Daoris’s history in %s', (language) => {
     expect(screen.getByRole('button', { name: i18n.t('help.history.retry') })).toBeInTheDocument();
   });
 
-  it('offers a conversation from an empty list, and clears a search that found nothing, saying older ones were not searched', async () => {
+  it('offers a conversation from an empty list, and clears a search that found nothing, saying every one was searched', async () => {
     await i18n.changeLanguage(language);
     const { onNew } = draw({ rows: [] });
     expect(screen.getByText(i18n.t('help.history.emptyHeadline'))).toBeInTheDocument();
@@ -192,21 +224,72 @@ describe.each(['en', 'zh'])('Ask Daoris’s history in %s', (language) => {
     expect(onNew).toHaveBeenCalledOnce();
 
     cleanup();
-    const { onSearch } = draw({ rows: [], search: 'nothing like this', cut: true });
+    const { onSearch } = draw({ rows: [], search: 'nothing like this' });
     expect(screen.getByText(i18n.t('help.history.none', { words: 'nothing like this' }))).toBeInTheDocument();
-    expect(screen.getByText(new RegExp(i18n.t('help.history.noneOlder')))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('help.history.noneHint'))).toBeInTheDocument();
+    // The driver searches every conversation (ASKHIST1d1): none is said to be left unsearched.
+    expect(screen.queryByText(/not searched|未被搜索/)).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: i18n.t('help.history.clearSearch') }));
     expect(onSearch).toHaveBeenCalledWith('');
-
-    cleanup();
-    draw({ rows: [], search: 'nothing like this' });
-    expect(screen.queryByText(new RegExp(i18n.t('help.history.noneOlder')))).toBeNull();
   });
 
-  it('says older ones were left out where they were', async () => {
+  it('says how many a search found and that it searched every conversation, never over a newer search’s wait', async () => {
     await i18n.changeLanguage(language);
-    draw({ cut: true });
-    expect(screen.getByText(i18n.t('help.history.cut', { count: 3 }))).toBeInTheDocument();
+    draw({ search: 'land', total: 3 });
+    expect(screen.getByRole('status')).toHaveTextContent(i18n.t('help.history.searched', { count: 3, words: 'land' }));
+
+    cleanup();
+    draw({ search: 'land', total: 1, rows: [ROWS[0]!] });
+    expect(screen.getByRole('status')).toHaveTextContent(i18n.t('help.history.searched', { count: 1, words: 'land' }));
+
+    // The rows shown are the last search's while the newer one comes, so the count would be theirs.
+    cleanup();
+    draw({ search: 'landing', total: 3, refreshing: true });
+    expect(screen.queryByRole('status')).toBeNull();
+    // A list not searched says nothing of a search.
+    cleanup();
+    draw({ total: 3 });
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('lists more on a press, saying how many of how many are listed, and takes the reader to the first row it brought', async () => {
+    await i18n.changeLanguage(language);
+    const onMore = vi.fn();
+    const acts: AskHistoryActs = { onOpen: vi.fn(), onRename: vi.fn(), onPin: vi.fn(), onStartFrom: vi.fn(), onDelete: vi.fn() };
+    const page = (rows: HelpConversationRow[], more: boolean) => (
+      <Tooltip.Provider>
+        <AskHistory rows={rows} total={5} search="" onSearch={vi.fn()} {...(more ? { onMore } : {})} {...acts} />
+      </Tooltip.Provider>
+    );
+    const { rerender } = render(page(ROWS, true));
+
+    expect(screen.getByText(i18n.t('help.history.listed', { shown: 3, total: 5 }))).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: i18n.t('help.history.more') }));
+    expect(onMore).toHaveBeenCalledOnce();
+
+    const older = [row({ session: 'h4', title: 'an older one', last: daysAgo(60) }), row({ session: 'h5', title: 'the oldest', last: daysAgo(90) })];
+    rerender(page([...ROWS, ...older], false));
+    await waitFor(() => expect(door('an older one')).toHaveFocus());
+    // The last page: nothing more to list, and nothing said of it.
+    expect(screen.queryByRole('button', { name: i18n.t('help.history.more') })).toBeNull();
+    expect(screen.queryByText(i18n.t('help.history.listed', { shown: 5, total: 5 }))).toBeNull();
+  });
+
+  it('says it is reading more, and why the next page could not be read, its press asking again', async () => {
+    await i18n.changeLanguage(language);
+    const onMore = vi.fn();
+    draw({ total: 450, onMore, loadingMore: true });
+    expect(screen.getByRole('status')).toHaveTextContent(i18n.t('help.history.loadingMore'));
+    // Pressed again while it reads, it asks nothing more: the focus stays on it, so it is never taken away.
+    await userEvent.click(screen.getByRole('button', { name: i18n.t('help.history.more') }));
+    expect(onMore).not.toHaveBeenCalled();
+
+    cleanup();
+    draw({ total: 450, onMore, moreError: 'the driver stopped answering.' });
+    expect(screen.getByRole('alert')).toHaveTextContent('the driver stopped answering.');
+    expect(screen.getAllByRole('listitem')).toHaveLength(3);
+    await userEvent.click(screen.getByRole('button', { name: i18n.t('help.history.more') }));
+    expect(onMore).toHaveBeenCalledOnce();
   });
 
   it('pins, unpins and starts a new conversation from a row’s menu', async () => {

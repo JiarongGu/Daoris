@@ -754,12 +754,15 @@ describe.each(['en', 'zh'])('Ask Daoris’s history and open conversation in %s'
   });
   const ROWS = [row(A.id, 'about A?'), row(B.id, 'about B?')];
 
-  /** The bridge as {@link bridge} answers it, with the history's routes answering by the words searched. */
-  function historyBridge(listed: (words: string | undefined) => unknown, started?: { sessionId: string; message: string; from: string }) {
+  /** The bridge as {@link bridge} answers it, with the history's routes answering by the words searched and the page's offset. */
+  function historyBridge(
+    listed: (words: string | undefined, offset: number | undefined) => unknown,
+    started?: { sessionId: string; message: string; from: string },
+  ) {
     bridge({ sessionId: 'n3xt0000', message: 'opened' });
     const answered = invoke.getMockImplementation()!;
-    invoke.mockImplementation(async (module: string, type: string, body?: { payload?: { q?: string } }, ...rest: unknown[]) => {
-      if (type === 'HELP_CONVERSATIONS') return listed(body?.payload?.q);
+    invoke.mockImplementation(async (module: string, type: string, body?: { payload?: { q?: string; offset?: number } }, ...rest: unknown[]) => {
+      if (type === 'HELP_CONVERSATIONS') return listed(body?.payload?.q, body?.payload?.offset);
       if (type === 'HELP_START_FROM') return started;
       if (type === 'SESSION_INPUT') return { sent: true, reaches: 'resume', why: null };
       return answered(module, type, body, ...rest);
@@ -846,17 +849,96 @@ describe.each(['en', 'zh'])('Ask Daoris’s history and open conversation in %s'
     await waitFor(() => expect(box()).toHaveFocus());
   });
 
-  it('says it is checking whether a conversation can go on, and takes no words until it knows', async () => {
-    // The whole list has not answered; a search has.
-    historyBridge((words) => (words ? { conversations: [row(A.id, 'about A?', { found: 'about A?' })], cut: false } : new Promise(() => {})));
+  // ASKHIST1d2: a search reaches every conversation, past the pages the whole list has read, and its row says whether one
+  // can go on as the list's does (D158's ASKHIST1d1 note).
+  it('knows from the search that found it whether a conversation can go on, while the whole list has not answered', async () => {
+    historyBridge((words) => (words
+      ? { conversations: [row(A.id, 'about A?', { found: 'about A?', resumable: false })], total: 1, next: null }
+      : new Promise(() => {})));
     show();
 
     await userEvent.click(await back());
     await userEvent.type(screen.getByRole('searchbox', { name: i18n.t('help.history.search.label') }), 'about');
     await userEvent.click(await door('about A?'));
 
+    expect(await screen.findByText(i18n.t('help.endedAnew'))).toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('help.checking'))).toBeNull();
+    expect(box()).toBeNull();
+  });
+
+  it('keeps knowing that one a search found past the list’s pages goes on, once the search is cleared', async () => {
+    historyBridge((words) => (words
+      ? { conversations: [row(A.id, 'about A?', { found: 'about A?' })], total: 1, next: null }
+      : { conversations: [row(B.id, 'about B?')], total: 2, next: 1 }));
+    show();
+
+    await userEvent.click(await back());
+    const search = screen.getByRole('searchbox', { name: i18n.t('help.history.search.label') });
+    await userEvent.type(search, 'about');
+    await userEvent.click(await door('about A?'));
+    await screen.findByRole('heading', { name: 'about A?' });
+    expect(box()).not.toBeNull();
+
+    // Back in the list, the search cleared: the whole list's one page does not hold A, and A still goes on.
+    await userEvent.click(await back());
+    const cleared = screen.getByRole('searchbox', { name: i18n.t('help.history.search.label') });
+    await userEvent.clear(cleared);
+    expect(await door('about B?')).toBeInTheDocument();
+    await userEvent.keyboard('{Escape}');
+    await screen.findByRole('heading', { name: 'about A?' });
+    expect(box()).not.toBeNull();
+    expect(screen.queryByText(i18n.t('help.endedAnew'))).toBeNull();
+  });
+
+  it('says it is checking whether a conversation can go on while the whole list has not answered, and takes no words', async () => {
+    // The whole list has not answered; a search has, and is then cleared, so no list read names the one shown.
+    historyBridge((words) => (words
+      ? { conversations: [row(A.id, 'about A?', { found: 'about A?' })], total: 1, next: null }
+      : new Promise(() => {})));
+    show();
+
+    await userEvent.click(await back());
+    await userEvent.type(screen.getByRole('searchbox', { name: i18n.t('help.history.search.label') }), 'about');
+    await userEvent.click(await door('about A?'));
+    await userEvent.click(await back());
+    await userEvent.clear(screen.getByRole('searchbox', { name: i18n.t('help.history.search.label') }));
+    await userEvent.keyboard('{Escape}');
+
+    // Called by the row it was opened from meanwhile.
+    await screen.findByRole('heading', { name: 'about A?' });
     expect(await screen.findByRole('status')).toHaveTextContent(i18n.t('help.checking'));
     expect(box()).toBeNull();
+  });
+
+  it('pages through every conversation with the driver’s next, and asks again from the start after a change', async () => {
+    historyBridge((_words, offset) => (offset
+      ? { conversations: [row(B.id, 'about B?')], cut: false, total: 2, next: null }
+      : { conversations: [row(A.id, 'about A?')], cut: true, total: 2, next: 1 }));
+    show();
+
+    await userEvent.click(await back());
+    expect(await door('about A?')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: (name) => name.startsWith('about B?') })).toBeNull();
+    expect(screen.getByText(i18n.t('help.history.listed', { shown: 1, total: 2 }))).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: i18n.t('help.history.more') }));
+    // The next page, and the reader taken to its first row; the last page offers no more.
+    await waitFor(async () => expect(await door('about B?')).toHaveFocus());
+    expect(screen.queryByRole('button', { name: i18n.t('help.history.more') })).toBeNull();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_CONVERSATIONS', { payload: { offset: 1 } });
+
+    // A pin moves a conversation in the order: the list is asked again from its start, each page from the one before.
+    const pages = () => invoke.mock.calls.filter((call) => call[1] === 'HELP_CONVERSATIONS').map((call) => (call[2] as { payload: unknown }).payload);
+    const before = pages().length;
+    (screen.getByRole('button', { name: i18n.t('help.history.menu', { title: 'about A?' }) })).focus();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.click(await screen.findByRole('menuitem', { name: i18n.t('help.history.pin') }));
+    await waitFor(() => expect(pages().slice(before)).toEqual([{}, { offset: 1 }]));
+    expect(await door('about B?')).toBeInTheDocument();
+    // Each conversation once, keyed by its session.
+    const list = screen.getByRole('region', { name: i18n.t('help.history.title') });
+    expect(list.querySelectorAll(`[data-session="${A.id}"]`)).toHaveLength(1);
+    expect(list.querySelectorAll(`[data-session="${B.id}"]`)).toHaveLength(1);
   });
 
   it('goes from the list into a conversation and back to the row it was opened from, by the keys alone', async () => {
@@ -897,7 +979,7 @@ describe.each(['en', 'zh'])('Ask Daoris’s history and open conversation in %s'
     await userEvent.click(screen.getByRole('button', { name: i18n.t('help.history.retry') }));
     expect(await door('about B?')).toBeInTheDocument();
 
-    // One character is too few for the driver: said, and the whole list kept.
+    // One letter is too few for the driver (one Han character is not): said, and the whole list kept.
     const search = screen.getByRole('searchbox', { name: i18n.t('help.history.search.label') });
     await userEvent.type(search, 'a');
     expect(screen.getByText(i18n.t('help.history.short'))).toBeInTheDocument();

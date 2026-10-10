@@ -1,7 +1,7 @@
-import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { type InfiniteData, type QueryClient, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../queries';
-import type { HelpConversationRow } from '../help/history';
+import { type HelpListing, joinPages, listingPage } from '../help/history';
 import type { HelpProposal } from '../help/ProposalCard';
 import type { HelpPlace } from '../help/places';
 import { call, pressBound } from './call';
@@ -108,22 +108,31 @@ export const settleBound = (client: QueryClient, id: string): number | undefined
 export const HELP_HISTORY = ['help-conversations'] as const;
 const HISTORY = HELP_HISTORY;
 
+/** A history's pages as the one list the page shows: stable, so its answer is read again only when a page changes. */
+const joined = (data: InfiniteData<HelpListing, number>): HelpListing => joinPages(data.pages);
+
 /**
- * Ask Daoris's conversations (ASKHIST1), pinned first and then the newest, or those whose name or words hold `search`.
- * Asked only while `enabled`, and again whenever a change to one is made here.
+ * Ask Daoris's conversations (ASKHIST1), pinned first and then the newest, or those whose name or words hold `search`, a page
+ * at a time (ASKHIST1d2): `fetchNextPage` asks for the one at the driver's `next`, and `data` is every page read, joined, each
+ * conversation once. Asked only while `enabled`, and again whenever a change to one is made here.
+ *
+ * @remarks
+ * An offset points into one order, which a change moves (D158's ASKHIST1d1 note). Asked again, an infinite query asks from
+ * offset 0 and takes each next offset from the page it just read, as many pages as it held, so the rows after a change are read
+ * in the new order, not half in the old. The first ask is the one a driver before pages took: no offset.
  */
 export const useHelpConversations = (search: string, enabled = true) => {
   const { isAvailable } = useShenora();
   const words = search.trim();
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: [...HISTORY, words],
-    queryFn: async () => {
-      const answer = await call<{ conversations?: unknown; cut?: boolean }>('HELP_CONVERSATIONS', words ? { q: words } : {});
-      return {
-        conversations: Array.isArray(answer?.conversations) ? answer.conversations as HelpConversationRow[] : [],
-        cut: answer?.cut === true,
-      };
-    },
+    queryFn: async ({ pageParam }) => listingPage(await call<unknown>('HELP_CONVERSATIONS', {
+      ...(words ? { q: words } : {}),
+      ...(pageParam > 0 ? { offset: pageParam } : {}),
+    })),
+    initialPageParam: 0,
+    getNextPageParam: (page: HelpListing) => page.next,
+    select: joined,
     enabled: isAvailable && enabled,
     staleTime: 5_000,
   });
