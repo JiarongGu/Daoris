@@ -737,11 +737,10 @@ describe('a dialog keeps the Escape an input method is composing with', () => {
 });
 
 /**
- * UXTOAST1: a toast never lies over an open drawer. On the installed window a toast in its corner (bottom-right, 26rem)
- * lay over the retire ask's presses at the Manage drawer's foot, since the drawer (right, 32rem) holds that corner whole.
- * While a drawer is open the toasts stand beside it, over the scrim. jsdom draws nothing, so the check is the positions
- * the rule sets: the drawer hugs the right edge at its width, and the toasts' right edge is that width and the corner's
- * gap in from the same edge, their left edge clear of the activity bar, from the first width that holds a toast beside it.
+ * UXTOAST1 (D41): a toast never lies over an open drawer, whose foot held the retire ask a toast covered on the installed
+ * window. jsdom draws nothing, so the check is the positions the rule sets: the drawer hugs the right edge at its width,
+ * and the toasts' right edge is that width and the corner's gap in from the same edge, their left edge clear of the
+ * activity bar, from the first width that holds a toast beside it.
  */
 describe('a toast beside an open drawer', () => {
   const notice = [{ id: 1, kind: 'ok' as const, text: 'Declaration written.' }];
@@ -776,8 +775,8 @@ describe('a toast beside an open drawer', () => {
     // From that width a toast has 18rem at least beside the widest drawer; narrower, they keep their corner.
     const widest = Number(/^min\((\d+)rem,/.exec(width)![1]);
     expect(Number(from![1]) - widest - 5.5).toBeGreaterThanOrEqual(18);
-    // A modal drawer turns the page's pointer off, and a toast over the scrim would pass its press to the scrim, which
-    // closes the drawer: the toasts take their own presses.
+    // A modal drawer turns the page's pointer off, and a press on a toast went through it: to the scrim, which closes
+    // the drawer, or to the press it covered. The toasts take their own presses.
     expect(classes(viewport)).toContain('pointer-events-auto');
   });
 

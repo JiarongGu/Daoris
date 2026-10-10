@@ -1621,12 +1621,10 @@ export function Toasts({ items, onClose }: { items: ToastItem[]; onClose: (id: n
           </Toast.Close>
         </Toast.Root>
       ))}
-      {/* 🔴 Beside an open drawer, never over it (UXTOAST1). The drawer holds this corner whole, and on the installed
-          window a toast here lay over the retire ask's presses at the Manage drawer's foot; a footer's presses sit there
-          too. So while one is open the toasts stand at its left edge, over the scrim, the corner's gap from it and from
-          the activity bar: `right` is the drawer's width (`Drawer`) and that gap. Narrower than 56rem no toast fits
-          beside the drawer, and they keep the corner. A modal drawer turns the page's pointer off, and a toast over the
-          scrim would pass a press to it, which closes the drawer: the toasts take their own presses while they show. */}
+      {/* 🔴 Beside an open drawer, never over it (UXTOAST1, D41): the drawer holds this corner whole, its foot's presses
+          with it. `right` is the drawer's width (`Drawer`) and the corner's gap; under 56rem none fits beside it, and they
+          keep the corner. A modal drawer turns the page's pointer off, so a press on a toast went through it, to the scrim
+          (closing the drawer) or to the press it covered: the toasts take their own presses while they show. */}
       <Toast.Viewport
         data-beside={beside ? 'drawer' : undefined}
         className={cn(
