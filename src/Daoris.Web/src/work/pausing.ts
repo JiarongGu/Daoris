@@ -127,7 +127,7 @@ export type PauseAnswer = {
  * (`strikes`) and whose take (`takenBy`), so `sittingSentence` words a hold as it words a sitting quest. Each is absent for
  * every verdict but its own, and from a host older than the facts, where the driver's sentence stands.
  */
-export type ResumeHold = Pick<Consideration, 'quest' | 'verdict' | 'reason' | 'heldBy' | 'pausedBy' | 'strikes' | 'takenBy'>;
+export type ResumeHold = Pick<Consideration, 'quest' | 'verdict' | 'reason' | 'heldBy' | 'pausedBy' | 'strikes' | 'takenBy' | 'cannotShow'>;
 
 /** `WORK_RESUME`'s answer: what it released, and what still holds each quest by the planner's verdict (null: unread). */
 export type ResumeAnswer = {

@@ -8,6 +8,8 @@ with the version and date at release.
 - The line above an agent's accounts saying which account the next start takes now speaks for the workspace the
   window shows, named (*In work: …*), where that workspace has its own scope. It showed nothing where this machine
   runs on the tool's own sign-in.
+- A set-up step Daoris cannot show here is worded in full in English and in Chinese, naming its environment and why,
+  where a Chinese window mixed in the driver's English sentence.
 - An agent Daoris has no installer for offers *How to install* in the Agents list, where it offered Install: it
   opens the agent's page and installs nothing. Its page shows no Install and says the agent is installed with its
   maker's own tooling.

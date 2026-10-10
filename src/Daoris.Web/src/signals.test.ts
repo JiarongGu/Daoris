@@ -181,15 +181,33 @@ describe('sittingSentence', () => {
    * with the driver's sentence as written beneath: it names an environment, an address and the door that declares one, none of
    * which the tick carries. English passes the driver's words through, as every verdict's does.
    */
-  it('says a set-up step that cannot be shown here in 中文, the driver’s sentence and its door kept as written', async () => {
+  it('says a set-up step that cannot be shown here from the tick’s fact in each language, and the driver’s sentence without it', async () => {
     const reason = "set-up step `#9a9492` shows its chain's work in `dev`, and no review rule here names `dev` for `engine`: "
       + '`daoris driver review engine dev --kind local|deployed --procedure <path>` declares it.';
+    const withFact = (code: string, address: string | null): Consideration => ({
+      ...sits('CannotShow', reason), cannotShow: { code, environment: 'dev', address },
+    } as Consideration);
 
     await i18n.changeLanguage('en');
+    const enUnnamed = sittingSentence(withFact('unnamed', null));
+    expect(enUnnamed).toContain('`dev`');
+    expect(enUnnamed).not.toBe(reason);
+    expect(enUnnamed).not.toMatch(/[一-鿿]/);
+    expect(sittingSentence(withFact('no-address', null))).toMatch(/address/);
+    expect(sittingSentence(withFact('no-window', 'http://localhost:5173'))).toMatch(/window/);
+    expect(sittingSentence(withFact('no-window', 'http://localhost:5173'))).toContain('http://localhost:5173');
     expect(sittingSentence(sits('CannotShow', reason))).toBe(reason);
 
     await i18n.changeLanguage('zh');
-    expect(sittingSentence(sits('CannotShow', reason))).toBe(`这个搭建步骤无法在本机开始，原因如下：${reason}`);
+    for (const [code, word] of [['unnamed', '审查规则'], ['no-address', '地址'], ['no-window', '窗口']] as const) {
+      const said = sittingSentence(withFact(code, 'http://localhost:5173'));
+      expect(said).toContain('`dev`');
+      expect(said).toContain('搭建步骤');
+      expect(said).toContain(word);
+      expect(said).not.toContain('set-up step');
+      expect(said).not.toContain(reason);
+    }
+    expect(sittingSentence(sits('CannotShow', reason))).toBe(reason);
   });
 
   /**

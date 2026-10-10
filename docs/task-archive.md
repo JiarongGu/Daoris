@@ -13194,3 +13194,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CANNOTSHOW1a — the cannot-show fact on the tick** (driver/modules). `ReviewSetUps.Sits` (~:28-48) composes one English sentence in three cases (no rule names the environment, a local one with no address, no window); carry a `CannotShow` fact (code, environment, address) on the consideration, the tick (DriverLoop.cs ~:265-286) and a resume's hold (WorkPausing.cs ~:556-565, DriverModule.Work.cs ~:244-257), as `TakenBy` is (CARRY2c/2d); `Reason` unchanged. D154 ~:305-319.
 
 **Outcome** 2026-10-11: `Sits` answers the fact and the sentence from one branch; the consideration, the tick and a resume's hold carry `cannotShow` `{ code: unnamed | no-address | no-window, environment, address }` or null; `Reason` byte for byte. No positive resume-hold test (it needs a headless resume with a set-up step). Detail: D154's CANNOTSHOW1a note.
+
+
+## CANNOTSHOW1b — the page words it (2026-10-11, D154)
+
+> - [ ] **CANNOTSHOW1b — the page words it** (web; after or beside 1a: an absent fact falls to the reason). `sittingSentence` (signals.ts ~:185-239) words CannotShow by its code in en and zh (`work.sitting.CannotShow_*`), retiring the mixed-language lead at work.json ~:229; `ResumeHold` (pausing.ts ~:130) picks it. D154's c2 note; signals.test.ts ~:179-193.
+
+**Outcome** 2026-10-11: a CannotShow sitting reads by its code (`_unnamed`, `_noAddress`, `_noWindow`) fully in en and in zh, naming the environment (and the address with no window); no fact or an unknown code shows the driver's sentence alone, with no zh lead, which retires D154's c2 mixed line. Detail: D154's CANNOTSHOW1b note.

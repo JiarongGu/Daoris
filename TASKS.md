@@ -137,7 +137,6 @@ Contract: `docs/2026-10-08-second-agent-design.md` (D155), section proofs.
 
 Contract: `docs/2026-10-08-review-environment-design.md` (D154), section proofs.
 
-- [ ] **CANNOTSHOW1b — the page words it** (web; after or beside 1a: an absent fact falls to the reason). `sittingSentence` (signals.ts ~:185-239) words CannotShow by its code in en and zh (`work.sitting.CannotShow_*`), retiring the mixed-language lead at work.json ~:229; `ResumeHold` (pausing.ts ~:130) picks it. D154's c2 note; signals.test.ts ~:179-193.
 - [ ] **REVIEWENV1d2 — live review_serve** (service/driver). Loopback serving wire reaches shell before session ends; tool waits for served answer. §2.3/§2.6.
 - [ ] **REVIEWENV1e — separate review process** (driver/modules; after d). Procedure quote, Keep it, port/readiness/output and owned-tree stop. §2.3; stub/port/stop tests.
 - [ ] **REVIEWENV1f — intake review choice** (driver/service; after b). Level-driven step; quoted choice or proposal; proposed off creates none. §1.5–§1.6/§2.1.
