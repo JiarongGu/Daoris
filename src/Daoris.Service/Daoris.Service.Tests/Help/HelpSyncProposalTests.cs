@@ -8,6 +8,18 @@ namespace Daoris.Service.Tests;
 /// </summary>
 public sealed class HelpSyncProposalTests : HelpProposalBoxFixture
 {
+    /// <summary>UX6i2b: the updates live on the workspace's page, not under Settings.</summary>
+    [Fact]
+    public void The_tool_names_the_workspaces_page_not_Settings()
+    {
+        var method = typeof(Daoris.Knowledge.Mcp.KnowledgeTools).GetMethod(nameof(Daoris.Knowledge.Mcp.KnowledgeTools.ProposeSync))!;
+        var tool = method.GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
+            .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
+
+        Assert.DoesNotContain("Settings → Workspace", tool);
+        Assert.Contains("Repositories → the workspace's page → Branches → Updates", tool);
+    }
+
     [Fact]
     public void Bringing_up_to_date_is_written_with_its_repository_or_none()
     {

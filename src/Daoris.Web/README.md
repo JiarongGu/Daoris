@@ -14,7 +14,7 @@ One activity bar (D66), landing on management (D40). The views that read the fam
 | **Quests** | what has been asked of whom, grouped by where it is in its life; publish, take, done, decline — and, beside a driven quest, its session **record** (D46): state, adapter, note and evidence, read-only in a browser, with stop offered only where a shell's driver actually holds the process |
 | **Repositories** | repositories and workspaces, their ownership, setup and driver controls; workspace pages carry wiring, lines, landing and permissions (D150) |
 | **Knowledge** | Search and Convergence are two modes of one view: find entries or compare independently learned lessons |
-| **Agents** | installed agents and accounts: names, sign-in state, known reading time, workspace lists and actions; desktop only |
+| **Agents** | installed agents and accounts: names, sign-in state, each usage window as a cell in the same place on every row (its share, reset and reading's age, or *unknown*), workspace lists and actions; desktop only |
 | **Plugins** | this machine's plugins and offers; desktop only |
 
 **Sessions** is the working surface — the agent sessions this machine runs, attended one at a
@@ -37,6 +37,11 @@ Each Settings domain is `src/settings/<Name>Domain.tsx`, with its tests beside i
 detail-and-form surface alongside the frame's list and main panes (D118), toasts carrying the service's sentences verbatim, and a status palette that
 was **computed, not tasted** — both themes pass all six checks of the visualization validator, and a
 status pill never appears without its text label.
+
+**An act that ends, removes or reaches outward asks once, in the page** (platform UX §4, UXFIX2):
+`src/work/InlineConfirm.tsx` is the one ask. Its act takes an `Answered`, so the ask stays open while the act
+runs, says a refusal inside itself rather than in a toast, and returns focus to the press. A search gate asks
+`src/searchable.ts`: two characters, or one Han character, as the driver's own rule does (D158).
 
 ## Built on (D42, `docs/2026-09-19-frontend-architecture.md`)
 

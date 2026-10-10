@@ -17,6 +17,31 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
         Assert.Equal(JsonValueKind.Null, Written(view!).GetProperty("domain").ValueKind);
     }
 
+    /// <summary>UX6i2b: the texts list the places the frame has (D150's UX6i2a note), never the ones it retired.</summary>
+    [Fact]
+    public void The_texts_name_the_places_the_window_has()
+    {
+        var method = typeof(Daoris.Knowledge.Mcp.KnowledgeTools).GetMethod(nameof(Daoris.Knowledge.Mcp.KnowledgeTools.ProposeGo))!;
+        string Of(string name) => method.GetParameters().Single(parameter => parameter.Name == name)
+            .GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
+            .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
+        var (_, refusal) = Box().ProposeGo("", null, null, "a reason", "h1", Now);
+
+        foreach (var text in new[] { Of("view"), refusal })
+        {
+            Assert.Contains("knowledge", text);
+            Assert.Contains("agents", text);
+            Assert.Contains("plugins", text);
+            Assert.DoesNotContain("convergence, search", text);
+        }
+
+        var domain = Of("domain");
+        Assert.Contains("logs", domain);
+        Assert.DoesNotContain("plugins", domain);
+        Assert.DoesNotContain("agents", domain);
+        Assert.Contains("search", Of("part"));
+    }
+
     /// <summary>The shape, checked here and nothing more; which places exist is the driver's to judge.</summary>
     [Theory]
     [InlineData("||", "names the view")]

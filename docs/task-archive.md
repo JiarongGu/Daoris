@@ -12914,3 +12914,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UXFIX2b3c — confirmations: account inherit** (web; merging). Settings' inherit ask on `InlineConfirm`; AgentPage's redundant settings guard dropped.
 
 **Outcome** 2026-10-11: the workspace's *use this machine's accounts* ask confirms through `InlineConfirm` with `Answered` (danger: it clears the workspace's own default, list and settings), and AgentPage no longer guards the settings form's *Never mind*, which the form holds itself since SETTINGSWAIT1. Detail: the merge commit.
+
+
+## UX6i2b — the service's go and plugin text (2026-10-11, D150)
+
+> - [ ] **UX6i2b — the service's go and plugin text** (service). `go_propose`'s view and domain lists and refusals name the current places (`knowledge`, `plugins`, Get started), as D150's UX6i2a note settled them. D150 notes; the box's text.
+
+**Outcome** 2026-10-11: `go_propose`'s views, domains and parts, its refusal, the plugin tool and (widened mid-task) the sync tool name the places the window has; three new tests pin the texts, which none held before. The merge also brought the web README up to the day's work, which its freshness gate asked for. Detail: the merge commit.

@@ -13,7 +13,7 @@ public sealed partial class HelpProposalBox
         var within = Blank(domain)?.ToLowerInvariant();
         var piece = Blank(part)?.ToLowerInvariant();
         if (string.IsNullOrWhiteSpace(why)) return NoReason;
-        var refused = where is null ? "a screen names the view it is on — overview, sessions, quests, projects, map, convergence, search or settings."
+        var refused = where is null ? "a screen names the view it is on — overview, sessions, quests, projects, map, knowledge, agents, plugins or settings."
             : within is not null && where != "settings" ? "a domain is a part of Settings — name `settings` as the view."
             : Word(where, "a view") ?? (within is null ? null : Word(within, "a domain")) ?? (piece is null ? null : Word(piece, "a part"));
         if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");

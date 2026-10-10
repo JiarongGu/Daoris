@@ -10,6 +10,18 @@ namespace Daoris.Service.Tests;
 /// </summary>
 public sealed class HelpPluginProposalTests : HelpProposalBoxFixture
 {
+    /// <summary>UX6i2b: the switch is the Plugins place's, not a Settings domain's.</summary>
+    [Fact]
+    public void The_tool_names_the_Plugins_place_not_a_Settings_domain()
+    {
+        var method = typeof(Daoris.Knowledge.Mcp.KnowledgeTools).GetMethod(nameof(Daoris.Knowledge.Mcp.KnowledgeTools.ProposePlugin))!;
+        var tool = method.GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
+            .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
+
+        Assert.DoesNotContain("Settings → Plugins", tool);
+        Assert.Contains("Plugins place", tool);
+    }
+
     [Fact]
     public void A_plugin_is_written_with_its_repository_and_folder_or_its_id()
     {
