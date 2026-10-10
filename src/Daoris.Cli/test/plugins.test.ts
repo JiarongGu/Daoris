@@ -581,7 +581,8 @@ test('new and try say where the plugin kit is, and touch nothing', () => {
         root: process.cwd(), argv: [verb, 'acme.gate'], write: () => {}, packageRoot: process.cwd(),
       }));
       assert.match(error.message, new RegExp(`\`daoris-driver plugins ${verb}\``));
-      assert.match(error.message, /Settings → Plugins/);
+      assert.match(error.message, /or the Plugins place/);
+      assert.doesNotMatch(error.message, /Settings → Plugins/);
       assert.equal((error as { exitCode?: number }).exitCode, 2);
     }
   } finally {

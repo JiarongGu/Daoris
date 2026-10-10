@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The plugin kit from a terminal (PLUG8, D50): `daoris-driver plugins new|try`. Settings → Plugins is
+/// The plugin kit from a terminal (PLUG8, D50): `daoris-driver plugins new|try`. The Plugins place is
 /// the other door, onto the same <see cref="PluginKit"/>.
 /// </summary>
 /// <remarks>

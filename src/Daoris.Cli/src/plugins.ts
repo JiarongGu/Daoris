@@ -1366,7 +1366,7 @@ export function commandPlugin({ argv, write }: CommandArgs): ExitCode {
     case 'new':
     case 'try':
       throw new DaorisError(
-        `the plugin kit is \`daoris-driver plugins ${verb}\`, or Settings → Plugins — it starts a plugin as the `
+        `the plugin kit is \`daoris-driver plugins ${verb}\`, or the Plugins place — it starts a plugin as the `
         + 'driver would, so it lives with the driver. `daoris-driver plugins` says what each takes.');
 
     // A plugin package (PLUGDIST1a, D120 §4) is read by the driver alone: this side reads and lists the
