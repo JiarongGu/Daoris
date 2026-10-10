@@ -276,6 +276,52 @@ public sealed class SessionEventsTests : IDisposable
         Assert.Equal(["said-1"], lost.Words!);
     }
 
+    /// <summary>RAILPAGE1a: a page is a page of sessions, whole; the total counts every session past the page, and next says where it goes on.</summary>
+    [Fact]
+    public void Search_pages_by_sessions_and_counts_past_the_page()
+    {
+        var events = new SessionEvents(_directory);
+        var start = DateTime.UtcNow.AddHours(-1);
+        for (var i = 0; i < 5; i++)
+        {
+            for (var pass = 0; pass < 4; pass++) events.Append($"chat{i}", Asked($"the budget, pass {pass}"));
+            File.SetLastWriteTimeUtc(Path.Combine(_directory, $"chat{i}.events.jsonl"), start.AddMinutes(i));
+        }
+
+        var first = events.Search("budget", offset: 0, limit: 2);
+        Assert.Equal(["chat4", "chat3"], first.Hits.Select(h => h.Session).Distinct());
+        Assert.Equal(2 * SessionEvents.HitsPerSession, first.Hits.Count);
+        Assert.True(first.Cut);
+        Assert.Equal(5, first.Total);
+        Assert.Equal(2, first.Next);
+
+        var second = events.Search("budget", offset: 2, limit: 2);
+        Assert.Equal(["chat2", "chat1"], second.Hits.Select(h => h.Session).Distinct());
+        Assert.Equal(4, second.Next);
+
+        var last = events.Search("budget", offset: 4, limit: 2);
+        Assert.Equal("chat0", last.Hits.Select(h => h.Session).Distinct().Single());
+        Assert.Null(last.Next);
+        Assert.Equal(5, last.Total);
+
+        Assert.Empty(events.Search("budget", offset: 9, limit: 2).Hits);
+    }
+
+    /// <summary>RAILPAGE1a: a caller naming no page gets the rail's old page, and the total goes past it.</summary>
+    [Fact]
+    public void Search_with_no_page_named_reads_the_default_page_and_counts_the_rest()
+    {
+        var events = new SessionEvents(_directory);
+        for (var i = 0; i < SessionEvents.SearchSessions + 3; i++) events.Append($"chat{i}", Asked("the budget"));
+
+        var answer = events.Search("budget");
+
+        Assert.Equal(SessionEvents.SearchSessions, answer.Hits.Count);
+        Assert.False(answer.Cut);
+        Assert.Equal(SessionEvents.SearchSessions + 3, answer.Total);
+        Assert.Equal(SessionEvents.SearchSessions, answer.Next);
+    }
+
     /// <summary>The answer is bounded and says so: a few hits per session, the snippet a window, not the whole text.</summary>
     [Fact]
     public void Search_is_bounded_and_says_when_it_left_hits_out()
@@ -284,7 +330,7 @@ public sealed class SessionEventsTests : IDisposable
         for (var i = 0; i < 5; i++) events.Append("chat1", Asked($"the budget, pass {i}"));
         events.Append("chat2", Asked(new string('a', 500) + " budget " + new string('b', 500)));
 
-        var answer = events.Search("budget", limit: 4);
+        var answer = events.Search("budget");
 
         Assert.Equal(SessionEvents.HitsPerSession, answer.Hits.Count(h => h.Session == "chat1"));
         Assert.True(answer.Cut);

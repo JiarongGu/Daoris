@@ -269,7 +269,10 @@ public sealed record SessionEvent
 public sealed record SessionHit(string Session, long Seq, string Kind, string Snippet);
 
 /// <summary>What a search found, and whether its bounds left anything out.</summary>
-public sealed record SessionSearch(IReadOnlyList<SessionHit> Hits, bool Cut);
+/// <param name="Cut">Whether a session on this page held more hits than the page shows of it.</param>
+/// <param name="Total">The sessions with a hit, all pages (RAILPAGE1a); a search within one session counts it as one.</param>
+/// <param name="Next">Where the next page starts, in sessions; null on the last.</param>
+public sealed record SessionSearch(IReadOnlyList<SessionHit> Hits, bool Cut, int Total = 0, int? Next = null);
 
 /// <summary>One page of a session's events, oldest first.</summary>
 /// <param name="Earlier">Whether events older than this page exist — what "load earlier" asks after.</param>
@@ -434,8 +437,14 @@ public sealed class SessionEvents(string directory)
     /// <summary>A search's hits from one session, at most — the rest of that session is one press away.</summary>
     public const int HitsPerSession = 3;
 
-    /// <summary>A search's hits in all, unless the caller asks for fewer.</summary>
-    public const int SearchLimit = 50;
+    /// <summary>
+    /// A search page's sessions when the caller names no limit: the rail's old page, whole sessions that fit its 50 hits
+    /// (<see cref="HitsPerSession"/> each) now that a page is a page of sessions (RAILPAGE1a).
+    /// </summary>
+    public const int SearchSessions = 16;
+
+    /// <summary>The most sessions one search page holds, as <c>help list</c>'s page does (ASKHIST1d1).</summary>
+    public const int SearchPageLimit = 200;
 
     /// <summary>How much text a snippet keeps either side of the match.</summary>
     private const int SnippetRadius = 60;
@@ -503,30 +512,42 @@ public sealed class SessionEvents(string directory)
     /// <para><b>What was said, not what a tool printed</b>: a tool's output is a file's contents or a
     /// command's noise, and would bury the conversation that mentioned it.</para>
     ///
-    /// <para><b>Bounded, and it says so</b> (<see cref="SessionSearch.Cut"/>): a few hits per session, a
-    /// limit in all. Every record is read, newest first, and the query is two characters or one Han
+    /// <para><b>Bounded, and it says so</b> (<see cref="SessionSearch.Cut"/>): a few hits per session, and a page
+    /// of sessions (<c>offset</c>, <c>limit</c>) with the total and where the next starts (RAILPAGE1a). Every record is read, newest first, and the query is two characters or one Han
     /// character (<see cref="Searchable"/>, RAILSRCH1). Machine-local, like the record.</para>
     /// </remarks>
-    public SessionSearch Search(string query, int limit = SearchLimit)
+    public SessionSearch Search(string query, int offset = 0, int limit = SearchSessions)
     {
         var wanted = query.Trim();
         if (!Searchable(wanted) || !Directory.Exists(directory)) return new([], false);
 
+        offset = Math.Max(offset, 0);
+        limit = limit is < 1 or > SearchPageLimit ? SearchPageLimit : limit;
         var records = new DirectoryInfo(directory).EnumerateFiles("*.events.jsonl")
             .OrderByDescending(file => file.LastWriteTimeUtc)
             .ToList();
         var cut = false;
         var hits = new List<SessionHit>();
+        var total = 0;
 
+        // Every record is read, so the total counts what the page leaves out (RAILPAGE1a); a session outside the page is read
+        // only as far as its first hit, and one on the page up to a fourth, which is how a page knows it cut a session.
         foreach (var record in records)
         {
+            var onPage = total >= offset && total < offset + limit;
             var session = record.Name[..^".events.jsonl".Length];
             var found = 0;
             foreach (var (seq, kind, text) in Passages(record.FullName))
             {
                 var at = text.IndexOf(wanted, StringComparison.OrdinalIgnoreCase);
                 if (at < 0) continue;
-                if (found == HitsPerSession || hits.Count == limit)
+                if (!onPage)
+                {
+                    found++;
+                    break;
+                }
+
+                if (found == HitsPerSession)
                 {
                     cut = true;
                     break;
@@ -536,10 +557,10 @@ public sealed class SessionEvents(string directory)
                 found++;
             }
 
-            if (hits.Count == limit && cut) break;
+            if (found > 0) total++;
         }
 
-        return new SessionSearch(hits, cut);
+        return new SessionSearch(hits, cut, total, offset + limit < total ? offset + limit : null);
     }
 
     /// <summary>A search within one session's record, at most — a long run's every mention of a word.</summary>
@@ -568,7 +589,7 @@ public sealed class SessionEvents(string directory)
             hits.Add(new SessionHit(sessionId, seq, kind, Snippet(text, at, wanted.Length)));
         }
 
-        return new SessionSearch(hits, cut);
+        return new SessionSearch(hits, cut, hits.Count > 0 ? 1 : 0);
     }
 
     /// <summary>
