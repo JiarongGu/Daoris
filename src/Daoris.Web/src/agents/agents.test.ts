@@ -166,6 +166,14 @@ describe('the list', () => {
    * mark its declaration gives leads; else the first letters, each word's initial or a lone word's first two; and none
    * repeats a mark above it in the list.
    */
+  /** INSTALLDOOR1: a row says whether Daoris has an installer for it; a shell that sends no `installs` reads as one that does. */
+  it('says whether Daoris installs each agent, an absent field reading as it does', () => {
+    const rows = (door: Partial<ToolDoor>) => agentRows(byTool([{ ...claude(), present: false, ...door }]), undefined)[0]!;
+    expect(rows({}).installs).toBe(true);
+    expect(rows({ installs: true }).installs).toBe(true);
+    expect(rows({ installs: false }).installs).toBe(false);
+  });
+
   it('gives each agent a mark of its own: a declared one, else its first letters, never one already worn', () => {
     const doors: ToolDoor[] = [
       claude(),
@@ -179,7 +187,9 @@ describe('the list', () => {
     // A mark the agent's declaration gives is its own, as written, a letter or two of it.
     const declared = doors.map((door) => (door.harness === 'codex-acp' ? { ...door, mark: ' Cx ' } : door));
     expect(agentRows(byTool(declared), undefined).map((row) => row.mark)).toEqual(['CC', 'Cx', 'DH', 'Co', 'Ac']);
-    expect(agentRows(byTool([{ ...claude(), mark: 'Claude' } as ToolDoor]), undefined)[0]!.mark).toBe('Cl');
+    expect(agentRows(byTool([{ ...claude(), mark: 'Claude' }]), undefined)[0]!.mark).toBe('Cl');
+    // INSTALLDOOR1: a null mark falls back to the letters.
+    expect(agentRows(byTool([{ ...claude(), mark: null }]), undefined)[0]!.mark).toBe('CC');
 
     // A 中文 name gives its first two characters whole.
     expect(agentRows(byTool([{ harness: 'yinqing', product: '引擎', present: true, profiles: [] }]), undefined)[0]!.mark).toBe('引擎');

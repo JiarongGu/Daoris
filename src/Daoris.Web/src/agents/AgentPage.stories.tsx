@@ -105,7 +105,15 @@ export const CodexWindows: Story = { args: { tool: CODEX_READ_TOOL, use: CODEX_R
 /** An agent not installed: the header says so, and *Ways in* offers its installer. */
 export const NotInstalled: Story = { args: { tool: DSH_TOOL, use: null, rules: null, usage: [] } };
 
-/** An account that is an API key: its handle, *unchecked*, and no sign-in. */
+/**
+ * An agent not installed that Daoris has no installer for (INSTALLDOOR1): no Install in the header or under *Ways in*, and
+ * the foot says its maker's own tooling installs it.
+ */
+export const NotInstalledNoInstaller: Story = {
+  args: { tool: { ...DSH_TOOL, doors: DSH_TOOL.doors.map((door) => ({ ...door, installs: false })) }, use: null, rules: null, usage: [] },
+};
+
+/** An account that is an API key:its handle, *unchecked*, and no sign-in. */
 export const ApiKey: Story = {
   args: {
     tool: {

@@ -30,6 +30,9 @@ export const Known: Story = {};
 /** Only installed agents, as a machine that has every agent this build knows. */
 export const AllInstalled: Story = { args: { rows: ROWS.filter((row) => row.installed) } };
 
+/** DeepSeek Harness with no installer of Daoris's (INSTALLDOOR1): *How to install* where its Install was. */
+export const NoInstaller: Story = { args: { rows: ROWS.map((row) => (row.name === 'dsh' ? { ...row, installs: false } : row)) } };
+
 /** Nothing chosen. */
 export const NothingChosen: Story = { args: { chosen: null } };
 

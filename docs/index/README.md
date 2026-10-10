@@ -37,8 +37,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/App.tsx` | 70 | 1278 |
 | `src/Daoris.Web/src/ProjectsView.test.tsx` | 76 | 1377 |
 | `src/Daoris.Web/src/QuestsView.test.tsx` | 70 | 1375 |
-| `src/Daoris.Web/src/agents/AgentPage.tsx` | 48 | 901 |
-| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 100 | 1929 |
+| `src/Daoris.Web/src/agents/AgentPage.tsx` | 48 | 907 |
+| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 101 | 1949 |
 | `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 55 | 1096 |
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 46 | 858 |
 | `src/Daoris.Web/src/ui.test.tsx` | 48 | 975 |

@@ -329,7 +329,7 @@ export function AgentPage({
             </Button>
           )}
           {/* An agent not installed heads with its own installer (D152 §4.6), the same one *Ways in* runs. */}
-          {!tool.present && (
+          {!tool.present && door.installs !== false && (
             <Button variant="primary" disabled={busy} onClick={() => acts.onDoor(door.harness, 'install')}>{t('harness.install')}</Button>
           )}
           <Menu.Root>
@@ -696,7 +696,7 @@ export function AgentPage({
               {each.harness === adapter && <Chip accent>{t('harness.spawns')}</Chip>}
               {each.plugin && <Chip>{t('harness.declaredBy', { plugin: each.plugin })}</Chip>}
               <span className="ml-auto flex gap-2">
-                {!each.present && <Button disabled={busy} onClick={() => acts.onDoor(each.harness, 'install')}>{t('harness.install')}</Button>}
+                {!each.present && each.installs !== false && <Button disabled={busy} onClick={() => acts.onDoor(each.harness, 'install')}>{t('harness.install')}</Button>}
                 {each.present && (each.updates === 'pin' || each.updates === 'tool') && (
                   <Tip content={t(each.updates === 'pin' ? 'harness.update.pinTip' : 'harness.update.toolTip')}>
                     <Button variant="ghost" disabled={busy} onClick={() => acts.onDoor(each.harness, 'update')}>{t('harness.update')}</Button>
@@ -851,7 +851,13 @@ export function AgentPage({
       {/* The two doors stay in sight (D50): the agent's id is said here, where the terminal types it; an agent not installed
           has one door to name, its installer. */}
       <p className="m-0 mt-8 border-t border-line pt-3 text-meta text-ink-faint">
-        <Inline text={t(tool.present ? 'agents.page.terminal' : 'agents.page.terminalAbsent', { agent: tool.name })} />
+        {/* An agent Daoris has no installer for is installed with its maker's own tooling, so no `daoris agent install` (INSTALLDOOR1). */}
+        <Inline text={t(
+          tool.present ? 'agents.page.terminal'
+            : door.installs === false ? (tool.maker ? 'agents.page.installedByMaker' : 'agents.page.installedByMakerUnnamed')
+              : 'agents.page.terminalAbsent',
+          { agent: tool.name, product, maker: tool.maker },
+        )} />
       </p>
     </ViewMain>
   );

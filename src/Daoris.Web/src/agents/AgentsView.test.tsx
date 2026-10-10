@@ -281,6 +281,26 @@ describe('the Agents place', () => {
   });
 
   /**
+   * INSTALLDOOR1: where Daoris has no installer for an agent, its row offers *How to install*, which opens the page and
+   * installs nothing; the page shows no Install press, and says the maker's own tooling installs it.
+   */
+  it('an agent Daoris has no installer for opens its page from its row, and nothing installs', async () => {
+    const roster = { ...ROSTER, harnesses: [ROSTER.harnesses[0], { ...ROSTER.harnesses[1], installs: false, maker: 'OpenAI' }] };
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES' ? roster : WIRING));
+    place();
+
+    const list = await screen.findByRole('list', { name: 'Agents' });
+    expect(within(list).queryByRole('button', { name: 'Install codex' })).toBeNull();
+    await userEvent.click(within(list).getByRole('button', { name: 'How to install codex' }));
+    const head = (await screen.findByRole('heading', { level: 1, name: 'codex' })).closest('header')!;
+    expect(within(head).queryByRole('button', { name: 'Install' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Install' })).toBeNull();
+    expect(screen.getByText(/installed with OpenAI's own tooling/)).toBeTruthy();
+    expect(screen.queryByText(/daoris agent install codex/)).toBeNull();
+    expect(invoke.mock.calls.filter(([, type]) => type === 'HARNESS_ACTION')).toHaveLength(0);
+  });
+
+  /**
    * 🔴 A login outlives its request (2026-09-23): the host answers `started`, the sign-in sits on the row while the person
    * is in the browser, and the end arrives as news — the row then says what the person can do, and the panel goes.
    */

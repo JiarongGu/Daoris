@@ -29,6 +29,8 @@ export interface ToolDoor {
   /** What a person calls the tool this door runs, and who makes it (AGT1). Absent from an older shell. */
   product?: string | null;
   maker?: string | null;
+  /** The agent's declared two-letter mark on the Agents strip (ACCTUX2), or null where none is declared. Absent from an older shell. */
+  mark?: string | null;
   /**
    * Whether this harness can be pinned at all — false where it declares no package for Daoris to
    * fetch. The control is **absent** there rather than present and refusing: half a control is
@@ -43,6 +45,11 @@ export interface ToolDoor {
    * only be refused.
    */
   updates?: 'pin' | 'tool' | null;
+  /**
+   * Whether Daoris has an installer for this agent (INSTALLDOOR1). False means it is installed with its maker's own tooling,
+   * so no Install is offered, only how to install it. Absent from an older shell, read as true: today's Install.
+   */
+  installs?: boolean;
   /** Whether this agent takes an API key from Daoris (AGT3) — only where its key variable was measured. */
   takesKey?: boolean;
   /** The version this machine pinned, or null for whatever is on `PATH` (TOOL2/D57). */
