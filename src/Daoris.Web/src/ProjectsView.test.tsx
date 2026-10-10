@@ -1012,6 +1012,9 @@ describe('the shell-attached registry management', () => {
     await userEvent.click(within(drawer).getByRole('button', { name: 'Retire' }));
     const ask = within(drawer).getByRole('group', { name: 'Retire' });
     expect(ask.querySelector('[tabindex="-1"]')).toHaveFocus();
+    // UXFIX2b1r: the drawer's paragraph is printed once; the ask says what the press does in its own words.
+    expect(within(drawer).getAllByText(/Take it off this machine's registry/)).toHaveLength(1);
+    expect(within(ask).getByText('Retire engine from this machine?')).toBeInTheDocument();
 
     await userEvent.click(within(ask).getByRole('button', { name: 'Retire repository' }));
     expect(await within(ask).findByRole('alert')).toHaveTextContent('The registry is locked by another process.');

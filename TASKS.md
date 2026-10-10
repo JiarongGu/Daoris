@@ -28,7 +28,6 @@ Contracts: platform UX §4/§6, `docs/2026-10-05-ux7-design.md` (D152),
 installed-window evidence in both themes/languages; Storybook alone does not close an installed proof.
 
 - [ ] **DESKCLICK1 — the window's click moves the focus as a pointer does** (tools). `desktop click` and `eval` press with `element.click()`, so a focus judged on the window is not a person's; focus the press first, or say it did not. `tools/desktop.mjs:995-1024`; a tools test that reports where focus moved.
-- [ ] **UXFIX2b1r — the retire ask says its sentence once** (web). The ask's explanation repeats the drawer's retire sentence just above it, word for word (seen on the window, flagged by UXFIX2b1). UXFIX2b1's archive entry.
 - [ ] **UXFIX2bi — installed confirmations look** (parent; after republish). Retire seen 2026-10-11 (UXFIX2d, UXFIX2b1r); the rest need data the machine lacks (a managed tool version, a plugin, a parked or ended session): tool, plugin, pause, abandon, decline, close, finish, archive, discard, both themes/languages.
 - [ ] **UX7b — installed account UI** (web). Verify recovered account rows and add/name/join flow at 1546/680 px, both themes/languages. D152 §4.
 - [ ] **ACCTEDIT1b — installed refused edits** (parent; after republish). Verify rename, workspace use and add refusals retain drafts, including dark borders. D152 §4; dated shots.

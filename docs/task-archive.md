@@ -13012,3 +13012,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UXFIX2d — an ask gives focus back to the press its click went to** (web; merging). The window's script click moved no focus, so the ask took the drawer's Close for its opener; it now records the clicked press. D161's corrected §2 note; D153's UXFIX2d note.
 
 **Outcome** 2026-10-11: `InlineConfirm` records the press a click went to and reads it before the focus, so an ask opened by a click that moved no focus still gives the focus back to its press. The window's finding was the instrument's (D161's correction); `CLOSES_ITSELF` was not the cause. Detail: D153's UXFIX2d note, FIX-LOG 2026-10-11.
+
+
+## UXFIX2b1r — the retire ask says its sentence once (2026-10-11)
+
+> - [ ] **UXFIX2b1r — the retire ask says its sentence once** (web). The ask's explanation repeats the drawer's retire sentence just above it, word for word (seen on the window, flagged by UXFIX2b1). UXFIX2b1's archive entry.
+
+**Outcome** 2026-10-11: the ask asks its own question, "Retire {{name}} from this machine?" (从本机注销 {{name}}？, `projects.manage.retireAsk`), and the drawer's paragraph is printed once; the retire test holds both. Detail: the merge commit.
