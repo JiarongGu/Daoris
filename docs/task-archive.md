@@ -12768,3 +12768,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **DOCSYS1 — review and refresh the documentation system** (documentation/tools). Inventory every documentation tier, compare current guidance with code and decisions, repair drift and keep historical evidence intact. Plan, findings and verification: `docs/2026-10-10-documentation-review.md`; proof: doctrine, document checks, generated indexes and reached gates.
 
 **Outcome** 2026-10-10: shared brief, contributor guide, roadmap and router refreshed; stale current claims corrected and previous guides preserved. Structural routing/freshness checks join verify. D159 records placement; `docs/2026-10-10-documentation-review.md` records source coverage, passed checks and the corrected verification incident. Historical paragraphs and owner-only product proofs retain their stated limits.
+
+
+## DOCSYS2 — make documentation mappings fail on drift (2026-10-10, D159)
+
+> - [ ] **DOCSYS2 — make documentation mappings fail on drift** (documentation/tools). Reject missing or invalid described source paths and keep anchored router links discoverable. Contract: D159; proof: failing-first audit regressions, real inventory and baseline verification; findings in `docs/2026-10-10-documentation-review.md`.
+
+**Outcome** 2026-10-10: the local documentation audit rejects absent source paths and incomplete mappings, normalizes relative paths, and resolves section links to their file. Thirteen audit tests, command-level failing-first proof and the full baseline pass. D159 and the documentation review carry the contract, verification and limits; historical evidence remains intact.

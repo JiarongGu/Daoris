@@ -24,12 +24,21 @@ function routedPaths(file, text) {
   const paths = [];
   for (const line of text.split(/\r?\n/)) {
     const match = /^\|\s*(?:`([^`]+)`|\[[^\]]+\]\(([^)]+)\))\s*\|/.exec(line);
-    const value = match?.[1] ?? match?.[2];
+    // A Markdown section link still routes to its file; inline-code cells are literal paths.
+    const value = match?.[1] ?? match?.[2]?.split(/[?#]/, 1)[0];
     if (!value || !(/\.(md|json)$/.test(value) || value.endsWith('/'))) continue;
     if (/^[a-z]+:/i.test(value) || value.startsWith('/')) continue;
     paths.push({ path: posix.normalize(posix.join(posix.dirname(file), value)).replace(/\/$/, ''), folder: value.endsWith('/') });
   }
   return paths;
+}
+
+/** Normalize declared repository paths, accepting Windows separators but never outside paths. */
+function repositoryPath(value) {
+  if (typeof value !== 'string' || !value.trim() || value.includes('\0')) return null;
+  const path = value.replace(/\\/g, '/');
+  if (path.startsWith('/') || /^[a-z]+:/i.test(path) || path.split('/').includes('..')) return null;
+  return posix.normalize(path).replace(/\/$/, '');
 }
 
 /** Audit a repository file inventory. The caller supplies reads so fixtures need no Git checkout. */
@@ -70,12 +79,32 @@ export function auditDocuments(files, read) {
   const tracked = JSON.parse(read('daoris.gates.json')).docs?.tracked ?? [];
   const seen = new Set();
   for (const row of tracked) {
-    if (seen.has(row.document)) findings.push(`${row.document}: freshness declared twice`);
-    seen.add(row.document);
-    if (!present.has(row.document)) findings.push(`${row.document}: freshness names a missing document`);
+    const document = repositoryPath(row?.document);
+    if (document === null) {
+      findings.push('daoris.gates.json: freshness needs a repository-relative document path');
+      continue;
+    }
+    if (seen.has(document)) findings.push(`${document}: freshness declared twice`);
+    seen.add(document);
+    if (!present.has(document)) findings.push(`${document}: freshness names a missing document`);
+    if (!Array.isArray(row.describes) || row.describes.length === 0) {
+      findings.push(`${document}: freshness needs nonempty described source paths`);
+      continue;
+    }
+    for (const value of row.describes) {
+      const source = repositoryPath(value);
+      if (source === null) {
+        findings.push(`${document}: described source needs a repository-relative path`);
+        continue;
+      }
+      // Checking only Git dates would silently accept a typo or a path deleted since its last commit.
+      const exists = present.has(source) || source === '.'
+        || files.some((file) => file.startsWith(`${source}/`));
+      if (!exists) findings.push(`${document}: described source missing from inventory: ${source}`);
+    }
   }
   for (const file of markdown.filter((file) => /^src\/[^/]+\/README\.md$/.test(file))) {
-    if (!tracked.some((row) => row.document === file && Array.isArray(row.describes) && row.describes.length > 0)) {
+    if (!seen.has(file)) {
       findings.push(`${file}: component guide has no code-freshness declaration`);
     }
   }

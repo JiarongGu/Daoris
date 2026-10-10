@@ -69,3 +69,54 @@ test('duplicate freshness declarations fail rather than silently picking one', (
   assert.ok(audit({ 'daoris.gates.json': JSON.stringify({ docs: { tracked: [tracked, tracked] } }) })
     .findings.some((x) => x.includes('README.md') && x.includes('twice')));
 });
+
+test('a renamed described source file fails even when its replacement exists', () => {
+  const result = audit({
+    'src/App/new.ts': '// Renamed source',
+    'daoris.gates.json': JSON.stringify({ docs: { tracked: [{ document: 'README.md', describes: ['src/App/old.ts'] }] } }),
+  });
+  assert.ok(result.findings.some((x) => x.includes('README.md') && x.includes('src/App/old.ts')));
+});
+
+test('a described source directory must contain an inventoried file at its exact boundary', () => {
+  const result = audit({
+    'src/Application/main.ts': '// Other directory',
+    'daoris.gates.json': JSON.stringify({ docs: { tracked: [{ document: 'README.md', describes: ['src/App'] }] } }),
+  });
+  assert.ok(result.findings.some((x) => x.includes('README.md') && x.includes('src/App')));
+});
+
+test('every tracked guide needs described source paths, including the root guide', () => {
+  for (const row of [{ document: 'README.md' }, { document: 'README.md', describes: [] }]) {
+    const result = audit({ 'daoris.gates.json': JSON.stringify({ docs: { tracked: [row] } }) });
+    assert.ok(result.findings.some((x) => x.includes('README.md') && x.includes('source')));
+  }
+});
+
+test('invalid described paths produce findings rather than passing or throwing', () => {
+  for (const path of [null, 7, '', '../outside', '/outside', 'https://example.invalid/code']) {
+    const result = audit({
+      'daoris.gates.json': JSON.stringify({ docs: { tracked: [{ document: 'README.md', describes: [path] }] } }),
+    });
+    assert.ok(result.findings.some((x) => x.includes('README.md') && x.includes('source')));
+  }
+});
+
+test('source mappings accept existing files and directories with relative path normalization', () => {
+  assert.deepEqual(audit({
+    'src/App/main.ts': '// Source',
+    'tools/build.mjs': '// Build',
+    'daoris.gates.json': JSON.stringify({ docs: { tracked: [{ document: 'README.md', describes: ['./src/App/', 'tools/build.mjs'] }] } }),
+  }).findings, []);
+  assert.deepEqual(audit({
+    'src/App/main.ts': '// Source',
+    'tools/build.mjs': '// Build',
+    'daoris.gates.json': JSON.stringify({ docs: { tracked: [{ document: './README.md', describes: ['.\\src\\App\\', 'tools\\build.mjs'] }] } }),
+  }).findings, []);
+});
+
+test('a router link with a section fragment covers the document and still catches a missing target', () => {
+  const extra = { 'docs/README.md': '| [Product](../README.md#commands) | guide |\n| [Development](development.md#choose-the-checks) | method |' };
+  assert.deepEqual(audit(extra).findings, []);
+  assert.ok(audit(extra, ['docs/development.md']).findings.some((x) => x.includes('stale') && x.includes('docs/development.md')));
+});

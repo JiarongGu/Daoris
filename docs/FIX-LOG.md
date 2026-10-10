@@ -7,6 +7,19 @@ repository.
 
 ## 2026-10-10 — review fixes
 
+### Documentation: a freshness declaration passed after its source disappeared (DOCSYS2)
+
+- **Symptom:** the structural audit accepted a guide mapped to a nonexistent source file or directory;
+  router links with section fragments were skipped.
+- **Root cause:** `6ffc0e2f` checked only the mapping's presence and length, while the date gate skips
+  paths without commit dates. The router parser tested the URL's suffix before stripping fragments.
+- **Fix:** validate described paths against the inventory with exact directory boundaries and relative
+  normalization; require source paths for every tracked guide; resolve Markdown section links to files.
+- **Verify:** five failing-first regressions, all 13 audit tests passing, and a real declaration mutation
+  producing exit 1 with the guide and missing source named, restored to exit 0. Final baseline receipt:
+  `docs/2026-10-10-documentation-review.md`.
+- **Commit:** pending.
+
 ### Workflows: damaged bindings silently fell back to Current
 
 - **Symptom:** an existing malformed run binding let the landing gate go under Current. When the chain could not be read, a damaged inventory also incorrectly ruled out a named workflow.

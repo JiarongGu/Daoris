@@ -89,7 +89,12 @@ notes; open work in the backlog; receipts in the archive. A design's baseline co
 dated. Update its standing pointer when later decisions supersede it, rather than rewriting evidence
 as if the observation had been made today.
 
-`node tools/doc-system.mjs` checks routing coverage and guide freshness declarations.
+`node tools/doc-system.mjs` checks routing coverage and guide freshness declarations. Each tracked
+guide needs nonempty repository-relative source paths; every path must match a file or directory
+in the Git inventory, including new non-ignored files. A renamed or deleted source needs its
+mapping updated. Markdown router links may name sections; this audit checks their file targets,
+not whether the section headings exist.
+
 `--json` reports the inventory by role. It checks structure, not whether prose accurately describes
 the code. Compare changed behavioral claims with implementation and tests, and record what remains
 unmeasured. The devkit's `docs` gate compares commit dates; it is also a freshness signal, not a

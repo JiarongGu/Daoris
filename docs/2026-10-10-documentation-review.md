@@ -107,3 +107,42 @@ Committed-tree confirmation: after `6ffc0e2f`, ordinary universal verification p
 gates with five guides current and 56 links across 562 documents. Routing and orientation freshness
 also passed, with a clean working tree. The preview's branch-reference incident was fully local;
 no push occurred.
+
+## DOCSYS2 — maintenance follow-up
+
+The owner's continuation requests further improvements to the documentation system. D159's role
+boundaries remain: current instructions in the guides, history preserved, and semantic prose
+checked separately from structural coverage. DOCSCRATCH1 remains blocked; changing the runner to
+evade its deletion policy is excluded.
+
+Confirmed pre-fix gap: `auditDocuments` checked whether a component had a nonempty freshness
+declaration, but never checked `describes` against the file inventory. A misspelled or renamed
+source path therefore passed. The devkit's date gate also skips a path with no commit date
+(`DocsGate.cs`), so it did not supply this missing structural proof. Router rows with section
+fragments were skipped by the filename suffix test. This follow-up strengthens the local checker,
+not the shared gate.
+
+Plan: prove missing files/directories, incomplete or invalid mappings and anchored router rows
+fail; validate source paths against the same Git inventory; update maintenance guidance and D159's
+amendment; run reached checks, review the actual diff and archive DOCSYS2. Mirror the existing
+pure audit/test-fixture structure in `tools/doc-system.mjs`: read-only, dependency-free and import-safe.
+No preview Git environment or product behavior change is needed.
+
+Failing-first proof: the original audit passed eight of thirteen tests and failed five new cases
+(missing file, exact directory boundary, incomplete mappings, invalid source values and anchored
+links). The valid file/directory case passed before the fix, establishing the acceptance baseline.
+
+The fixed audit passes all thirteen tests, including existing file/directory acceptance and Windows
+separator normalization. A temporary exact edit to the real README mapping named a nonexistent
+source; the command returned exit 1 and named README plus that source. Restoring the original
+declaration returned exit 0, and the gate configuration has no diff. The repository's 562-file
+inventory has no findings. D159 and the development guide now state the source-side check and its
+file-only section-link limit; the fix log records the mechanism.
+
+Final verification: ordinary `npm run verify` passed CLI types and 1,481 CLI tests, 56 tooling
+tests (13 audit cases), doctrine, budgets, shapes, duplicates, release references and all five
+universal gates. The five declared guides are current, and 56 links resolve across 562 Markdown
+files. The orientation index is fresh. Post-feature reviewed the actual diff and invocation chain;
+DOCSYS2 has moved to the archive. The shared date gate and product behavior are unchanged, and
+neither this audit nor its tests establish semantic accuracy of historical paragraphs or heading
+anchors. DOCSCRATCH1 remains open under its recorded execution-policy refusal.
