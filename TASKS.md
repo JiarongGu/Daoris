@@ -29,7 +29,7 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 
 - [ ] **UXFIX2b2b — confirmations: decline, close, awaiting, archive, discard** (web). Quest decline, ask close, awaiting-person finish/decline, archive ended (`tone="primary"`), DiffPane force-discard. Proof: focus, pending, refusal, cancellation and returned focus.
 - [ ] **UXFIX2bi — installed confirmations look** (parent; after republish). Tool version delete, plugin removal, project retire, pause and abandon asks in the window, both themes/languages: focus on open, pending, refusal inside, returned focus.
-- [ ] **UXFIX2b3 — confirmations: attention, trust, account use** (web; after ACCTUX4). AttentionRow's asks, TrustAsk, GoAheadList, AccountUse inherit and AgentPage's key ask; settle which are `tone="primary"`; drop AgentPage's settings guard SETTINGSWAIT1 made redundant. Same proof.
+- [ ] **UXFIX2b3 — confirmations: attention, trust, account use** (web). AttentionRow's asks, TrustAsk, GoAheadList, AccountUse inherit and AgentPage's key ask; settle which are `tone="primary"`; drop AgentPage's settings guard SETTINGSWAIT1 made redundant. Same proof.
 - [ ] **UX7b — installed account UI** (web). Verify recovered account rows and add/name/join flow at 1546/680 px, both themes/languages. D152 §4.
 - [ ] **ACCTEDIT1b — installed refused edits** (parent; after republish). Verify rename, workspace use and add refusals retain drafts, including dark borders. D152 §4; dated shots.
 - [ ] **BRSCOPE1b — checkout scope and sync workspace** (modules/service/driver; after BRSCOPE1a). Share checkout-scope fixtures; carry workspace through sync proposals. D150 notes; three-door proof.
@@ -39,7 +39,6 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 - [ ] **UX6h — Git inside Repositories** (web; after GIT1d; absorbs GIT1e). Branch kinds and graph; retire Git place. UX6 §4.4/D147.
 - [ ] **UX6i2a — the room and its twin name current places** (driver + web twin). Help room text, `HelpPlaces`/`places.ts` and goldens: Knowledge, Plugins, Get started; add new ids, keep old ones accepted (D150's UX6i note). D150 notes; twins/goldens.
 - [ ] **UX6i2b — the service's go and plugin text** (service; after a). `go_propose`'s view and domain lists and refusals name the current places. D150 notes; the box's text.
-- [ ] **UX6i2c — kit, CLI and tools name current places** (cli/driver/tools; merging). "Settings → Plugins" becomes the Plugins place in the CLI refusal, kit README and publish text.
 - [ ] **UX6i3 — "Settings → Agents" leftovers** (driver/modules/service). UX6e retired it; `DriverModule.Accounts.cs:11`, its tests, room tests and the `agents` domain word in the service still name it. D150's UX6e notes.
 - [ ] **PLUGTOOL1c — tools on their plugin** (web/modules/driver; after PLUGUI1c). Tools retains Daoris's own. UX6 §7.5.
 - [ ] **COWORK1 — agents working together** (design; owner's direction required). Define progress sharing, questions and handoffs. D32/D65/D145/D149; decision before implementation.
@@ -49,12 +48,14 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 Contracts: toolchain (D57 §3), account rotation (D125), account use (D130), browser (D78/D84).
 Original row proofs remain in the frozen backlog; measurements precede declarations.
 
-- [ ] **ACCTUX4 — account windows for both makers** (web in flight; modules only if a gap shows). Stable window cells with allowance, reset and per-window age; explicit unknown states. D125/UX7; revise geometry, tests/stories/installed proof.
+- [ ] **ACCTUX4i — installed account cells, and the row budget** (parent; after republish). Shots at 1546/680, English light and 中文 dark: read, never-read, key and own sign-in, cool-off, Codex. Settle D152's row budget against D125's ACCTUX4 measures.
+- [ ] **ACCTUX4b — Next start above the accounts** (web). One sentence naming the next account and why, with *first* marking `scope.next`. Second-opinion review lines 125, 128-133; D152 §4.2; `agents.test.ts`, `AgentsView.test.tsx`, stories at 52rem/37rem.
+- [ ] **ACCTPLAN1 — plan, spend and reset credits** (driver/modules/web; design first). Nothing reads them yet (D125:898-899); show them in a fold, and never redeem a credit without `InlineConfirm`. Second-opinion review lines 132-133.
+- [ ] **WINDOWNAME1 — `<n>-minute` windows in the reader's language** (web-settings). Codex's other windows show *90-minute* in 中文 too. D125's CODEXUSE1 note; a 中文 case in `accounts.test.ts`.
 - [ ] **ACCTNAME1 — email names read once** (CLI/driver/web). Avoid duplicate email/name; size roster columns. D125 notes; long-name and equal-email cases.
 - [ ] **ACCTUX1b — refused keys read as keys** (web). Correct Settings next-start and start-form labels. D125 note; account and start-form tests.
 - [ ] **KEYREPLACE1 — replace refused keys in place** (all doors; after ACCTUX1). Preserve account lists; clear refusal/cooling. D67/D125; key-file twins, route and row tests.
 - [ ] **AGENTMARK1 — declared strip marks** (driver/modules; after ACCTUX2). Forward CC/Cx with each product. UX7 §4.6; roster/680 px proof.
-- [ ] **SETTINGSWAIT1 — Never mind waits during save** (web-settings). Disable the ignored cancel press in AccountSettingsForm. D125 note; form regression.
 - [ ] **CODEXUSE2 — installed Codex reading** (parent/owner). Pins are verified; account sign-in remains unavailable. Use CODEXUSE3's own-sign-in reading meanwhile. D57/D63/D125.
 - [ ] **CODEXKEY1 — Codex API-key account** (measure first; owner supplies throwaway key). Determine spawn variable for both tools before declaring support. D67/D125; real variable-start proof.
 - [ ] **TOOL6d — continue on another account** (driver/modules/web; after TOOL6b). Offer last plan/words to selected account. D130 §8–§9; both-door tests/look.
