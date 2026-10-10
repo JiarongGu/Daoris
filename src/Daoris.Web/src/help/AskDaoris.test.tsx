@@ -596,6 +596,32 @@ describe('Ask Daoris, with an agent named', () => {
     APPLIED = APPLIED_SETTING;
   });
 
+  /**
+   * ENTRY1d2b (D161's ENTRY1d note): a go to Add repository or Import a folder may carry the workspace the driver judged; the
+   * page opens the drawer with it filled, and the folder stays the person's pick, so no path is in the go.
+   */
+  it('takes the person to Add repository with the workspace a go names filled', async () => {
+    SESSIONS = [HELP];
+    PROPOSALS = [{
+      id: 'g5a6d7d8', kind: 'go', describe: 'Open Repositories → Add repository, its workspace `work` filled.', terminal: '',
+      why: 'the person asked to add a repository to work',
+    }];
+    APPLIED = {
+      message: 'Applied: `#g5a6d7d8` — Open Repositories → Add repository, its workspace `work` filled. Nothing else changed.',
+      applied: true, go: { view: 'projects', domain: null, part: 'add', item: null, workspace: 'work' },
+    };
+    bridge();
+    const onGo = vi.fn();
+    show(undefined, null, onGo);
+
+    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
+    await userEvent.click(within(cards).getByRole('button', { name: 'Go there' }));
+
+    await waitFor(() => expect(onGo).toHaveBeenCalledWith({ view: 'projects', drawer: 'add', drawerWorkspace: 'work' }));
+    PROPOSALS = [];
+    APPLIED = APPLIED_SETTING;
+  });
+
   /** HELP6: a delete is applied through the driver's Apply, like every card, and opens nothing. */
   it('deletes a record made by mistake on the person\'s press, and goes nowhere', async () => {
     SESSIONS = [HELP];

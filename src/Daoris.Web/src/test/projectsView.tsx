@@ -15,8 +15,8 @@ import { useDoor } from './door';
 // props, held the way `App` holds them.
 
 export function ProjectsView({
-  notify, onOpenCode, onOpenAgent, onSyncNow, addRequested, onAddOpened, importRequested, onImportOpened, door, section = null,
-  onOpenQuest, onOpenAsk, onAttend,
+  notify, onOpenCode, onOpenAgent, onSyncNow, addRequested, onAddOpened, importRequested, onImportOpened, drawerWorkspace, door,
+  section = null, onOpenQuest, onOpenAsk, onAttend,
 }: {
   notify: Notify;
   onOpenCode?: (repository: string) => void;
@@ -29,6 +29,8 @@ export function ProjectsView({
   onAddOpened?: () => void;
   importRequested?: boolean;
   onImportOpened?: () => void;
+  /** The workspace a go's Add or Import opens filled with (ENTRY1d2b). */
+  drawerWorkspace?: string | null;
   /** The item a door names as it opens the view (`useDoor`): a repository, or a workspace's item. */
   door?: string;
   /** The section of a workspace's Setup the door asked to see open (UX6g). */
@@ -49,7 +51,7 @@ export function ProjectsView({
     workspaceTab,
     onWorkspaceTab: (next) => { setWorkspaceTab(next); storeWorkspaceTab(next); },
     workspaceSection: section,
-    notify, onOpenCode, onOpenAgent, onSyncNow, addRequested, onAddOpened, importRequested, onImportOpened,
+    notify, onOpenCode, onOpenAgent, onSyncNow, addRequested, onAddOpened, importRequested, onImportOpened, drawerWorkspace,
     onOpenQuest, onOpenAsk, onAttend,
   });
   return <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />;

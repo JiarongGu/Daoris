@@ -28,17 +28,23 @@ import { Button, Chip, Drawer, failure, Inline, type Notify, PathText, SectionTi
 const EMPTY_LINES = (value: string): string[] =>
   value.split('\n').map((line) => line.trim()).filter(Boolean);
 
-export function AddProjectDrawer({ onClose, onAdded, notify }: {
+export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }: {
   onClose: () => void;
   /** Told the repository registered, so the list that opened the drawer can have it chosen (FRAME1e). */
   onAdded?: (repository: string) => void;
   notify: Notify;
+  /**
+   * The workspace the drawer opens filled with (ENTRY1d2b): Ask Daoris's go's. Its field shows before the folder is
+   * chosen, so the person sees where the repository lands before picking the folder, which stays theirs (D48 §3/§7).
+   */
+  initialWorkspace?: string;
 }) {
   const { t } = useTranslation();
   const pick = usePickFolder();
   const register = useRegisterRepository();
   const [found, setFound] = useState<FolderInspection | null>(null);
-  const [workspace, setWorkspace] = useState('');
+  const [workspace, setWorkspace] = useState(initialWorkspace ?? '');
+  const filled = Boolean(initialWorkspace);
 
   const choose = () => pick.mutate(undefined, {
     // Null is the person cancelling the dialog: an answer, and not a thing to report as a failure.
@@ -73,6 +79,23 @@ export function AddProjectDrawer({ onClose, onAdded, notify }: {
     });
   };
 
+  // Below what the folder holds once it is found; before it, alone, where a go filled it (ENTRY1d2b).
+  const field = (
+    <>
+      <label className={`${found ? 'mt-4 ' : ''}block text-small text-ink-faint`} htmlFor="add-workspace">
+        {t('projects.workspace')}
+      </label>
+      <input
+        id="add-workspace"
+        value={workspace}
+        onChange={(event) => setWorkspace(event.target.value)}
+        placeholder={t('projects.manage.workspacePlaceholder')}
+        className="mt-1 w-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
+      />
+      <p className="mt-1.5 text-small text-ink-faint">{t('projects.manage.workspaceNote')}</p>
+    </>
+  );
+
   return (
     <Drawer
       title={t('projects.manage.addTitle')}
@@ -97,6 +120,8 @@ export function AddProjectDrawer({ onClose, onAdded, notify }: {
       <Button className="mt-3" onClick={choose} disabled={pick.isPending}>
         {t('projects.manage.choose')}
       </Button>
+
+      {!found && filled && <div className="mt-4 border-t border-line pt-3.5">{field}</div>}
 
       {found && (
         <div className="mt-4 border-t border-line pt-3.5">
@@ -123,17 +148,7 @@ export function AddProjectDrawer({ onClose, onAdded, notify }: {
             </p>
           )}
 
-          <label className="mt-4 block text-small text-ink-faint" htmlFor="add-workspace">
-            {t('projects.workspace')}
-          </label>
-          <input
-            id="add-workspace"
-            value={workspace}
-            onChange={(event) => setWorkspace(event.target.value)}
-            placeholder={t('projects.manage.workspacePlaceholder')}
-            className="mt-1 w-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
-          />
-          <p className="mt-1.5 text-small text-ink-faint">{t('projects.manage.workspaceNote')}</p>
+          {field}
         </div>
       )}
     </Drawer>
@@ -145,19 +160,31 @@ export function AddProjectDrawer({ onClose, onAdded, notify }: {
  * workspace named here — `daoris import <folder> --workspace <name>`'s screen twin. The folder's own
  * name is offered, because that is what setting a folder up as a workspace means. Emptied, the import
  * names none, and an import that names none moves nobody (D48 §2).
+ *
+ * Since ENTRY1d2b Ask Daoris's go may open it filled (`initialWorkspace`), its field shown before the folder is chosen, as
+ * Add's is. The folder's name is offered only over an empty field or the name it offered last, so a name the go filled or
+ * the person typed stays when a folder is chosen.
  */
-export function ImportFolderDrawer({ onClose, notify }: { onClose: () => void; notify: Notify }) {
+export function ImportFolderDrawer({ onClose, notify, initialWorkspace }: {
+  onClose: () => void;
+  notify: Notify;
+  initialWorkspace?: string;
+}) {
   const { t } = useTranslation();
   const pick = usePickFolder();
   const importFolder = useImportFolder();
   const [folder, setFolder] = useState<FolderInspection | null>(null);
-  const [workspace, setWorkspace] = useState('');
+  const [workspace, setWorkspace] = useState(initialWorkspace ?? '');
+  const [offered, setOffered] = useState<string | null>(null);
+  const filled = Boolean(initialWorkspace);
 
   const choose = () => pick.mutate(undefined, {
     onSuccess: (inspection) => {
       if (!inspection) return;
       setFolder(inspection);
+      if (workspace.trim() && workspace !== offered) return;
       setWorkspace(inspection.name);
+      setOffered(inspection.name);
     },
     onError: failure(notify),
   });
@@ -193,11 +220,11 @@ export function ImportFolderDrawer({ onClose, notify }: { onClose: () => void; n
         {t('projects.manage.choose')}
       </Button>
 
-      {folder && (
+      {(folder || filled) && (
         <div className="mt-4 border-t border-line pt-3.5">
-          <p className="text-small text-ink-soft"><PathText path={folder.path} /></p>
+          {folder && <p className="text-small text-ink-soft"><PathText path={folder.path} /></p>}
 
-          <label className="mt-4 block text-small text-ink-faint" htmlFor="import-workspace">
+          <label className={`${folder ? 'mt-4 ' : ''}block text-small text-ink-faint`} htmlFor="import-workspace">
             {t('projects.workspace')}
           </label>
           <input

@@ -83,7 +83,10 @@ export const useHelpProposals = (session: string | null, live: boolean) => {
 export type HelpSettled = {
   message: string;
   applied?: boolean;
-  /** Where a go takes the person: a place, and since ENTRY1f1 the one quest or ask in it (`item`). */
+  /**
+   * Where a go takes the person: a place, since ENTRY1f1 the one quest or ask in it (`item`), and since ENTRY1d2b the
+   * workspace Add repository or Import a folder opens filled with (`workspace`), on those two parts alone.
+   */
   go?: HelpPlace | null;
   harnessAction?: { harness: string; action: 'update' | 'pin' } | null;
   /** The card still stands for another press: a sync card's look, which settles nothing (LEFT3). A host before it answers none. */

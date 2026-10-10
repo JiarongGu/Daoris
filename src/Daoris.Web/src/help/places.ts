@@ -8,9 +8,12 @@ import type { StarterDoor } from './starters';
 /**
  * A place on the window a go names (HELP6), as the driver judged it: a view, a Settings domain, a part — or, since
  * ENTRY1f1, the one record of the view's list it opens, a quest's id or an ask's `ask:<id>`, or since ENTRY1f2 a session's
- * id, as the machine's record spells it.
+ * id, as the machine's record spells it. Since ENTRY1d2b a go to Add repository or Import a folder may carry the workspace
+ * the drawer opens filled with, as the driver normalized it; it names no folder (D161's ENTRY1d note).
  */
-export type HelpPlace = { view: string; domain?: string | null; part?: string | null; item?: string | null };
+export type HelpPlace = {
+  view: string; domain?: string | null; part?: string | null; item?: string | null; workspace?: string | null;
+};
 
 /**
  * The places Ask Daoris's go may name (HELP6): the views, Settings' domains, and the parts of them a door
@@ -116,11 +119,12 @@ export const PLACE_PARTS: readonly { within: string; part: string }[] = [
  * null for a place this window does not have, which is never guessed at. Pure, so every place is an argument.
  *
  * @remarks
- * A go names no repository, agent or workspace: Repositories' Setup opens on the repository its list has chosen, an
- * agent's part on the agent that has it (UX6e), a workspace's part on the workspace in view's page (UX6g2b), and a group
- * of Sessions or Quests with no session or quest in it chosen (ENTRY1b), as the room tells the helper. On Quests it may
- * name the one quest or ask instead of a part (ENTRY1f1), and on Sessions the one session (ENTRY1f2), which the list
- * chooses as any door's item.
+ * A go opens no repository's, agent's or workspace's page by name: Repositories' Setup opens on the repository its list
+ * has chosen, an agent's part on the agent that has it (UX6e), a workspace's part on the workspace in view's page (UX6g2b),
+ * and a group of Sessions or Quests with no session or quest in it chosen (ENTRY1b), as the room tells the helper. On
+ * Quests it may name the one quest or ask instead of a part (ENTRY1f1), and on Sessions the one session (ENTRY1f2), which
+ * the list chooses as any door's item. A go to Add or Import may name a workspace since ENTRY1d2b, the one the drawer
+ * opens filled with; on any other place a workspace is ignored.
  * Knowledge with no part opens in the mode it was left in (UX6i). A go spelled as a place was before it moved opens where
  * it went (`PLACE_KEPT`).
  */
@@ -160,7 +164,10 @@ export function placeDoor(asked: HelpPlace): StarterDoor | null {
     // The page opens the workspace in view at the tab or section, as a door naming one does (`doorOpening`).
     const workspace = WORKSPACE_PARTS[part];
     if (workspace) return { view, ...workspace };
-    return part === 'setup' ? { view, tab: 'setup' } : { view, drawer: part as 'add' | 'import' };
+    if (part === 'setup') return { view, tab: 'setup' };
+    // ENTRY1d2b: Add or Import opens with the go's workspace filled; the folder stays the person's pick (D48 §3/§7).
+    const filled = asked.workspace?.trim();
+    return { view, drawer: part as 'add' | 'import', ...(filled ? { drawerWorkspace: filled } : {}) };
   }
   if (view === 'agents') return { view, agentPart: part as AgentPart };
   if (view === 'knowledge') return { view, knowledge: part as KnowledgeMode };

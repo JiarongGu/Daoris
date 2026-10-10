@@ -13103,3 +13103,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ACCTUX4b — Next start above the accounts** (web). One sentence naming the next account and why, with *first* marking `scope.next`. Second-opinion review lines 125, 128-133; D152 §4.2; `agents.test.ts`, `AgentsView.test.tsx`, stories at 52rem/37rem.
 
 **Outcome** 2026-10-11: an agent's page says this machine's next start above its accounts in the fold's words, with the list head's hold where the start passes it; nothing for the own sign-in or an older shell. *(first)* marks `scope.next`, on a single place too; the join toasts mark none. The 中文 stories drew it in English (ACCTUX4j); the window's look is ACCTUX4i's. Detail: D125's ACCTUX4b note; the UX7 design §4.2.
+
+
+## ENTRY1d2b — Add and Import open prefilled (2026-10-11, D161)
+
+> - [ ] **ENTRY1d2b — Add and Import open prefilled** (web; after ENTRY1f2). `placeDoor` carries the go's workspace to the drawer; Import keeps a prefill over the folder's name. The folder stays the person's pick. D161's ENTRY1d note; ProjectsView's `addRequested` one-shot.
+
+**Outcome** 2026-10-11: a go to `projects/add` or `projects/import` with a workspace opens that drawer with the field filled and shown before the folder (`drawerWorkspace` through the door, the opener and App); Import offers the folder's name only over an empty field or its own last offer. No new words, no story (the drawers reach the shell). Detail: D161's ENTRY1d2b note.
