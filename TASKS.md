@@ -27,7 +27,6 @@ Contracts: platform UX §4/§6, `docs/2026-10-05-ux7-design.md` (D152),
 `docs/2026-10-04-ux6-redesign.md` (D150, §12 proofs). UI work needs stories, behavior tests and
 installed-window evidence in both themes/languages; Storybook alone does not close an installed proof.
 
-- [ ] **UXFIX2d — an ask gives focus back to the press its click went to** (web; merging). The window's script click moved no focus, so the ask took the drawer's Close for its opener; it now records the clicked press. D161's corrected §2 note; D153's UXFIX2d note.
 - [ ] **DESKCLICK1 — the window's click moves the focus as a pointer does** (tools). `desktop click` and `eval` press with `element.click()`, so a focus judged on the window is not a person's; focus the press first, or say it did not. `tools/desktop.mjs:995-1024`; a tools test that reports where focus moved.
 - [ ] **UXFIX2b1r — the retire ask says its sentence once** (web). The ask's explanation repeats the drawer's retire sentence just above it, word for word (seen on the window, flagged by UXFIX2b1). UXFIX2b1's archive entry.
 - [ ] **UXFIX2bi — installed confirmations look** (parent; after republish). Retire seen 2026-10-11 (UXFIX2d, UXFIX2b1r); the rest need data the machine lacks (a managed tool version, a plugin, a parked or ended session): tool, plugin, pause, abandon, decline, close, finish, archive, discard, both themes/languages.

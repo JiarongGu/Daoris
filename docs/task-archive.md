@@ -13005,3 +13005,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ENTRY1c — an ask proposed with its review choice** (service/driver/modules; in flight). `ask_propose` carries the sentence, workspace and why only, though the composer takes a review choice; the kind stays the person's (WORKFLOW1i, D157 point 10). Audit §4.3; the kind's twins.
 
 **Outcome** 2026-10-11: `ask_propose` carries the person's review choice and words; the box checks the shape, the driver judges with `AskReviewCommand.Compose`, and the ask door refuses an environment the workspace does not declare (`POST /api/asks` holds no rule). The kind stays off. Detail: D161's ENTRY1c note.
+
+
+## UXFIX2d — an ask gives focus back to the press its click went to (2026-10-11, D153)
+
+> - [ ] **UXFIX2d — an ask gives focus back to the press its click went to** (web; merging). The window's script click moved no focus, so the ask took the drawer's Close for its opener; it now records the clicked press. D161's corrected §2 note; D153's UXFIX2d note.
+
+**Outcome** 2026-10-11: `InlineConfirm` records the press a click went to and reads it before the focus, so an ask opened by a click that moved no focus still gives the focus back to its press. The window's finding was the instrument's (D161's correction); `CLOSES_ITSELF` was not the cause. Detail: D153's UXFIX2d note, FIX-LOG 2026-10-11.

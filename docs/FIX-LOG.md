@@ -5,6 +5,30 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-11 — the shared ask's focus (UXFIX2d)
+
+### Web: Never mind on an ask inside a drawer gave the focus to the drawer's Close
+
+- **Symptom:** on the installed window (D161 §2), Repositories → a repository's Manage → *Retire* opened the retire ask
+  with its explanation focused, and *Never mind* left the focus on the drawer's *Close*, not on *Retire* drawn again.
+  Every gate passed it, `ProjectsView.test.tsx`'s retire case included.
+- **Root cause:** `InlineConfirm` took what opened it from `document.activeElement` alone, read as it is first drawn
+  (since UXFIX2, `364e1873`). The window's press is `tools/desktop.mjs`'s `click`, a script's `element.click()`, which
+  activates a press without moving the focus, as a browser that does not focus a clicked button does too. The focus still
+  sat on *Close*, where Radix's focus scope put it as the drawer opened, so the ask named
+  *Close* its opener and gave the focus back there. `userEvent.click` moves the focus to the press first, as a pointer
+  does in Chromium, which is why jsdom passed it. The suspected `CLOSES_ITSELF` was not the cause: a drawer counts as a
+  surface that closes, but its focus trap keeps every focus inside it, so the beat's second reading never replaced the
+  opener; the same press in a plain page failed the same way.
+- **Fix:** the ask hears the press a click went to, at the document in the capture phase, until the task that heard it
+  ends, and reads the focus only where no click opened it (`pressed`, `heard`; `src/Daoris.Web/src/work/InlineConfirm.tsx`).
+  `CLOSES_ITSELF`'s comment now says why a drawer may match it.
+- **Verify:** `InlineConfirm.test.tsx`'s UXFIX2d cases with the real `Drawer`: a press that leaves the focus where it sat,
+  inside a drawer (*Never mind*) and in the page (Escape), failed first on *Close* and on the page's other press, and pass;
+  a pointer's press in a drawer still gets it back; a press heard is forgotten once its task ends, watched failing with the
+  forgetting removed.
+- **Commit:** `be650022`.
+
 ## 2026-10-10 — Ask Daoris's history read a page at a time (ASKHIST1d2)
 
 ### Ask Daoris: a conversation a search found past the list's first page read as one that cannot go on
