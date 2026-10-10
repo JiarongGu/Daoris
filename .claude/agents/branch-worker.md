@@ -21,9 +21,9 @@ the work, was most of what branches cost before D160 (`docs/2026-10-10-subagent-
 
 - **Start from the pack.** It is the discovery's result for this row. The scout ran `doc-loader` and
   `pattern-finder` and named, by file and line range, the contract's sections, the knowledge they routed
-  to, the code to change, the exemplar and the tests. Read those ranges, and say which you read. Run the
-  discovery skills yourself when the work moves outside the pack (`skills-workflow`: re-run when the scope
-  moves).
+  to, the code to change, the exemplar and the tests. Read those ranges, and say which you read. When the
+  work moves outside the pack, run the discovery skills yourself through the Skill tool, by name:
+  `doc-loader` and `pattern-finder` (`skills-workflow`: re-run when the scope moves).
 - **Read ranges, not files.** Use the read tool with an offset and a limit at the lines the pack,
   `docs/index/` or a search names. Never print a file through the shell (`cat`, a wide `sed -n`). Never
   read a range again that you already hold, unless it changed.
@@ -114,7 +114,8 @@ the work, was most of what branches cost before D160 (`docs/2026-10-10-subagent-
 
 ## Finishing
 
-1. Merge main again, resolve any conflict inside your lane, and run your gates again.
+1. Merge main again, resolve any conflict inside your lane, and run your gates again. Run `post-feature`
+   (the Skill tool) over your diff; a non-trivial defect fixed also gets its `fix-log` entry.
 2. Commit once per part: `type(scope): <ROW>, <what>`, ending with the session's `Co-Authored-By:`
    line. The merge tool's commit check refuses a commit without that line. Leave nothing uncommitted in
    the worktree: the check refuses that too. Never push, and never rewrite history.

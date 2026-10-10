@@ -257,11 +257,10 @@ export function useAsksPart({
       wired: wiredFor(wiring, item.workspace),
       busy: workActs.busy,
       outcome: abandonedNow?.id === item.id ? abandonedNow : null,
-      onPause: (done) => workActs.pause(target, () => done()),
+      onPause: (answered) => workActs.pause(target, answered),
       onResume: () => workActs.resume(target),
-      onAbandon: (reason, pieces, done) => workActs.abandon(target, reason, pieces, (answer) => {
+      onAbandon: (reason, pieces, answered) => workActs.abandon(target, reason, pieces, answered, (answer) => {
         setAbandonedNow({ id: item.id, answer, at: new Date().toISOString() });
-        done();
       }),
     };
   };

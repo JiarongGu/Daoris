@@ -7,6 +7,7 @@ import { sentence } from '../format';
 import { Drawer, failure, type Notify, useErrorNotify } from '../ui';
 import { type KitPoint, PluginKitCard, type PluginTrialResult } from '../settings/PluginKit';
 import type { PluginUpdatePlanShown } from '../settings/PluginUpdate';
+import type { Answered } from '../work/InlineConfirm';
 import { ListMore } from '../work/ListPane';
 import type { ViewLayout } from '../work/ViewFrame';
 import { chosenOf, type OfferShown, pluginGroups, type PluginShown } from './catalog';
@@ -113,14 +114,21 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
     onSuccess: () => notify(t(action === 'enable' ? 'plugin.enabled' : 'plugin.disabled', { id })),
     onError: failed,
   });
-  const remove = (id: string) => act.mutate({ id, action: 'remove' }, {
+  // A refusal is said inside the ask, where *Remove plugin* was pressed (UXFIX2b1), not in a toast; a plugin the driver no
+  // longer holds is the exception, since the page itself then says it has gone.
+  const remove = (id: string, answered: Answered) => act.mutate({ id, action: 'remove' }, {
     onSuccess: (result) => {
-      setAsking(null);
       notify(t(result.data ? 'plugin.removedKept' : 'plugin.removed', { id, data: result.data ?? '' }));
       // Removed by the person's own press, so the page goes back to choosing, not to *gone*.
       onChoose(null);
+      answered.done();
     },
-    onError: failed,
+    onError: (error) => {
+      if (unknown(error)) {
+        failed(error);
+        setAsking(null);
+      } else answered.refused(sentence(error));
+    },
   });
   const tryOne = (id: string) => trying.mutate({ id }, {
     onSuccess: (trial) => setTrials((was) => ({ ...was, [id]: trial })),

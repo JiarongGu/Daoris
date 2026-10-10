@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render as rtlRender, screen, within } from '@testing-library/react';
+import { act, cleanup, render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { Ask } from '../api';
@@ -61,6 +61,22 @@ describe('pausing and abandoning an ask', () => {
     expect(work.onPause).toHaveBeenCalledOnce();
   });
 
+  it('says a refused pause inside its ask, and closes the ask and gives the focus back once it lands (UXFIX2b2a)', async () => {
+    const work = door({ wired: true });
+    page(work);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Pause…' }));
+    const ask = screen.getByRole('group', { name: 'pause this work' });
+    await userEvent.click(within(ask).getByRole('button', { name: 'Pause ask' }));
+    const answered = vi.mocked(work.onPause).mock.calls[0]![0]!;
+    act(() => answered.refused('The driver is not running.'));
+    expect(within(ask).getByRole('alert')).toHaveTextContent('The driver is not running.');
+
+    await userEvent.click(within(ask).getByRole('button', { name: 'Never mind' }));
+    expect(screen.queryByRole('group', { name: 'pause this work' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Pause…' })).toHaveFocus();
+  });
+
   it('applies a pause that stops nothing at once, since nothing is lost', async () => {
     const quiet = { ...PAUSABLE_ASK, sessions: PAUSABLE_ASK.sessions.filter((session) => session.pause !== 'stopped') };
     const work = door({ plan: quiet });
@@ -104,7 +120,7 @@ describe('pausing and abandoning an ask', () => {
     await user.type(screen.getByRole('textbox', { name: 'why — kept with each decline' }), 'It went the wrong way.');
     await user.click(screen.getByRole('button', { name: 'Abandon ask' }));
 
-    expect(work.onAbandon).toHaveBeenCalledWith('It went the wrong way.', MIXED_ASK.abandon.pieces, expect.any(Function));
+    expect(work.onAbandon).toHaveBeenCalledWith('It went the wrong way.', MIXED_ASK.abandon.pieces, expect.objectContaining({ done: expect.any(Function), refused: expect.any(Function) }));
   });
 
   it('shows when it was abandoned, what went and what stayed, from this machine’s record', () => {

@@ -163,7 +163,7 @@ export function AskPage({
 
   // A pause that stops nothing applies at once, with its notice, since nothing is lost (§2.6).
   const onPauseFirst = () => {
-    if (pauseLines === null) work?.onPause(() => {});
+    if (pauseLines === null) work?.onPause();
     else setAsking('pause');
   };
 
@@ -245,8 +245,8 @@ export function AskPage({
           lines={pauseLines}
           meanIt={t('asks.record.pauseMeanIt')}
           busy={waiting}
-          onPause={() => work.onPause(() => setAsking(null))}
-          onCancel={() => setAsking(null)}
+          onPause={(answered) => work.onPause(answered)}
+          onClose={() => setAsking(null)}
         />
       )}
 
@@ -257,8 +257,8 @@ export function AskPage({
           meanIt={t('asks.record.abandonMeanIt')}
           placeholder={t('asks.record.abandonWhy')}
           busy={waiting}
-          onAbandon={(why) => work.onAbandon(why, listed.abandon.pieces, () => { setAsking(null); setListed(null); })}
-          onCancel={() => { setAsking(null); setListed(null); }}
+          onAbandon={(why, answered) => work.onAbandon(why, listed.abandon.pieces, answered)}
+          onClose={() => { setAsking(null); setListed(null); }}
         />
       )}
 
