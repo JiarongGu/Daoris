@@ -1,37 +1,40 @@
 import { describe, expect, it } from 'vitest';
 import { VIEWS } from '../commands';
 import { SETTINGS_SECTIONS } from '../SettingsView';
-import { PLACE_DOMAINS, PLACE_PARTS, PLACE_VIEWS, placeDoor } from './places';
+import { PLACE_DOMAINS, PLACE_KEPT, PLACE_PARTS, PLACE_VIEWS, placeDoor, type HelpPlace } from './places';
 
 // HELP6: the places Ask Daoris's go may name. A twin (`.claude/knowledge/twins.md`) of the driver's
 // `HelpPlaces`, which judges a go before the person sees it: the tables below are the driver test's
 // `The_places_are_the_pages_twin`, line for line.
 
+const spelled = ({ view, domain, part }: HelpPlace) => [view, domain, part].filter((each) => each != null).join('/');
+
 describe('the places a go may name', () => {
   it('are the driver\'s table, line for line', () => {
-    expect(PLACE_VIEWS).toEqual(['overview', 'sessions', 'quests', 'projects', 'map', 'convergence', 'search', 'agents', 'settings']);
-    expect(PLACE_DOMAINS).toEqual(['start', 'appearance', 'ai', 'workspace', 'driver', 'permissions', 'plugins', 'browser', 'logs']);
+    expect(PLACE_VIEWS).toEqual(['overview', 'sessions', 'quests', 'projects', 'map', 'knowledge', 'agents', 'plugins', 'settings']);
+    expect(PLACE_DOMAINS).toEqual(['start', 'appearance', 'ai', 'workspace', 'driver', 'permissions', 'browser', 'logs']);
     expect(PLACE_PARTS.map(({ within, part }) => `${within}/${part}`)).toEqual([
       'projects/add', 'projects/import', 'projects/setup',
+      'knowledge/search', 'knowledge/convergence',
       'start/agent', 'start/helper', 'start/repositories', 'start/driven', 'start/landing', 'start/rules',
       'workspace/wiring', 'workspace/lines', 'workspace/landing', 'workspace/sweep',
       'agents/accounts', 'agents/rules', 'agents/usage',
       'permissions/across',
     ]);
+    expect(PLACE_KEPT.map(({ was, now }) => `${spelled(was)} → ${spelled(now)}`)).toEqual([
+      'search → knowledge/search', 'convergence → knowledge/convergence', 'settings/plugins → plugins',
+    ]);
   });
 
   /**
-   * Plugins is a view since PLUGUI1b and left Settings with UX6j, and a go still names Settings → `plugins` until the twins
-   * move it to the views in this table and the driver's `HelpPlaces` together (D119 §5): the door opens the place.
-   * Settings → Tools (TOOLS7) is a place a go names once TOOLS8 adds it here and to `HelpPlaces` together (D121 §4.3).
-   * Workspace and Permissions left Settings with UX6g, and a go still names them until the twins move them together: the
-   * door opens their new homes. Search and Convergence became Knowledge's two modes with UX6i, and a go still names each
-   * until the twins move them together: the door opens Knowledge in that mode.
+   * UX6i2a (D150 §2): the views are the bar's, Knowledge and Plugins among them, and Settings at its foot. Settings → Tools
+   * (TOOLS7) is a place a go names once TOOLS8 adds it here and to `HelpPlaces` together (D121 §4.3). Workspace and
+   * Permissions left Settings with UX6g, and a go still names them until the twins move them together: the door opens
+   * their new homes.
    */
   it('are every view the activity bar has and every domain Settings shows, and nothing else', () => {
-    const bar = VIEWS.map(({ view }) => view as string).filter((view) => view !== 'plugins' && view !== 'knowledge');
-    expect([...PLACE_VIEWS].sort()).toEqual([...bar, 'search', 'convergence'].sort());
-    const moved = new Set(['workspace', 'permissions', 'plugins']);
+    expect([...PLACE_VIEWS].sort()).toEqual(VIEWS.map(({ view }) => view as string).sort());
+    const moved = new Set(['workspace', 'permissions']);
     expect([...PLACE_DOMAINS].filter((domain) => !moved.has(domain)).sort())
       .toEqual([...SETTINGS_SECTIONS].filter((domain) => domain !== 'tools').sort());
   });
@@ -47,6 +50,11 @@ describe('the places a go may name', () => {
     expect(placeDoor({ view: 'projects', part: 'setup' })).toEqual({ view: 'projects', tab: 'setup' });
     expect(placeDoor({ view: 'settings', domain: 'start', part: 'helper' })).toEqual({ view: 'settings', section: 'start', anchor: 'step-helper' });
     expect(placeDoor({ view: 'projects', part: 'import' })).toEqual({ view: 'projects', drawer: 'import' });
+    // UX6i2a: Knowledge alone opens as it was left, a part in that mode (UX6i); Plugins is a place with no parts.
+    expect(placeDoor({ view: 'knowledge' })).toEqual({ view: 'knowledge' });
+    expect(placeDoor({ view: 'knowledge', part: 'convergence' })).toEqual({ view: 'knowledge', knowledge: 'convergence' });
+    expect(placeDoor({ view: 'knowledge', part: 'search' })).toEqual({ view: 'knowledge', knowledge: 'search' });
+    expect(placeDoor({ view: 'plugins' })).toEqual({ view: 'plugins' });
   });
 
   /**
@@ -65,21 +73,15 @@ describe('the places a go may name', () => {
   });
 
   /**
-   * UX6j (D150 §2.3; the plugins design §5): Settings → Plugins retired into the Plugins place, and a go the twin still
-   * spells as the domain, or one kept in an earlier conversation, opens the place rather than nowhere. It has no parts.
+   * UX6i2a (D150 §2): a go spelled as a place was before it moved, kept in an earlier conversation, opens where the place
+   * went rather than nowhere: Settings → Plugins the Plugins place (UX6j), Search and Convergence Knowledge in that mode
+   * (UX6i). None had parts, so one spelled with a part opens nothing.
    */
-  it('open Settings → Plugins as the Plugins place', () => {
+  it('open a place that moved where it went', () => {
     expect(placeDoor({ view: 'settings', domain: 'plugins' })).toEqual({ view: 'plugins' });
     expect(placeDoor({ view: 'settings', domain: 'plugins', part: 'kit' })).toBeNull();
-  });
-
-  /**
-   * UX6i (D150 §2.2): Search and Convergence are Knowledge's two modes, and a go naming either, including one kept in an
-   * earlier conversation, opens Knowledge in that mode rather than nowhere. Neither has parts.
-   */
-  it("open Search or Convergence as Knowledge's mode", () => {
     expect(placeDoor({ view: 'search' })).toEqual({ view: 'knowledge', knowledge: 'search' });
-    expect(placeDoor({ view: 'convergence' })).toEqual({ view: 'knowledge', knowledge: 'convergence' });
+    expect(placeDoor({ view: 'convergence', domain: null, part: null })).toEqual({ view: 'knowledge', knowledge: 'convergence' });
     expect(placeDoor({ view: 'convergence', part: 'findings' })).toBeNull();
     expect(placeDoor({ view: 'search', domain: 'ai' })).toBeNull();
   });
@@ -93,5 +95,8 @@ describe('the places a go may name', () => {
     expect(placeDoor({ view: 'settings', domain: 'agents' })).toBeNull();
     expect(placeDoor({ view: 'settings', domain: 'permissions', part: 'proposals' })).toBeNull();
     expect(placeDoor({ view: 'agents', part: 'workspaces' })).toBeNull();
+    // UX6i2a: Knowledge's parts are its two modes, and Plugins has none.
+    expect(placeDoor({ view: 'knowledge', part: 'findings' })).toBeNull();
+    expect(placeDoor({ view: 'plugins', part: 'kit' })).toBeNull();
   });
 });

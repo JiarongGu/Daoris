@@ -64,7 +64,7 @@ const DELETE: HelpProposal = {
 };
 
 const GO: HelpProposal = {
-  id: 'p5', kind: 'go', describe: 'Open Settings → Setup at step 2, Ask Daoris\'s agent.', terminal: '',
+  id: 'p5', kind: 'go', describe: 'Open Settings → Get started at step 2, Ask Daoris\'s agent.', terminal: '',
   why: 'the person asked where to name its agent',
 };
 

@@ -119,7 +119,7 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 
 | To | On the screen | At a terminal |
 |---|---|---|
-| walk through setting this machine up: an agent, Ask Daoris's agent, a workspace and its repositories, what is driven, how work lands, what agents may do | Settings → Setup (Help → *Setup*) | (each step shows its own command there) |
+| walk through setting this machine up: an agent, Ask Daoris's agent, a workspace and its repositories, what is driven, how work lands, what agents may do | Settings → Get started (Help → *Get started*) | (each step shows its own command there) |
 | drive a repository, or stop | Repositories → the repository's page → Setup → Driving | `daoris driver drive|undrive <repository>` |
 | hold one, so nothing new starts there, or resume it | Repositories → the repository's page → Setup → Driving | `daoris driver hold|resume <repository>` |
 | give its sessions their own tree | Repositories → the repository's page → Setup → Driving | `daoris driver trees <repository> on|off` |
@@ -166,8 +166,8 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | delete a quest or an ask made by mistake | Quests → the quest's drawer, or the ask's record → Delete… | `daoris-driver quest delete <id>`, `daoris-driver ask --delete <id>` |
 | accept a quest's departure from what you required, so what it held goes on: the chain's next step, a quest waiting on it | Quests → the quest's page → Accept the departure | `daoris-driver quest accept <id>` |
 | read a done's evidence again, so a commit that holds it now lifts its hold: at the commit a session's end here read, or one named after it on the same history (a done no session here ended needs the commit named) | (no screen yet) | `daoris-driver quest check <id> [--commit <sha>]` |
-| add a plugin that has landed, or switch one on or off | Settings → Plugins (its switch) | `daoris plugin add <folder>`, `daoris plugin enable|disable <id>` |
-| install one of Daoris's own plugins, or update one from where it came from | Settings → Plugins (Install beside Daoris's own; Update on an installed one's row) | `daoris plugin add --offer <id>`, `daoris plugin update <id>` |
+| add a plugin that has landed, or switch one on or off | Plugins → the plugin's page → Turn on or Turn off | `daoris plugin add <folder>`, `daoris plugin enable|disable <id>` |
+| install one of Daoris's own plugins, or update one from where it came from | Plugins → Daoris's own plugins → Install; Plugins → the plugin's page → Update… | `daoris plugin add --offer <id>`, `daoris plugin update <id>` |
 | choose Daoris's browser, where the page's links open, whether extensions are offered, and its favorites | Settings → Browser | `daoris browser use daoris|edge`, `daoris browser links system|daoris`, `daoris browser extensions offer|refuse`, `daoris browser favorite add|remove <address>` |
 | install the build staged beside this install: when its work allows (nothing new starts, and once no driven session runs Daoris closes and starts again on it), now (Daoris closes at once, ending what runs as a close does), or not now (it stays staged, for that build only); plain `update` says what is staged and how the last update ended (Ask Daoris never proposes it: an update is your act on the application) | the update banner, and Settings → Driver → Update: *Update when idle*, *Update now*, *Not now* | `daoris-driver update --when-idle|--now|--cancel`, `daoris-driver update` |
 | start a task | Quests → Ask | `daoris-driver ask --workspace <name> "…"` |
@@ -192,16 +192,17 @@ A branch rule may also add `--auto-accept`: a quest's done then lands its work w
 rule's plugin pushes it and opens a pull request without asking each time. It is the person's standing
 say-so for that push, so propose it only when they ask for it, and never on a merge.
 No plugin that lands work is installed here: the person installs one (`daoris plugin add <folder>`,
-Settings → Plugins), so never propose a rule naming one until it is installed; this install offers `github-pull-request`, which you may propose installing first.
+or the Plugins place), so never propose a rule naming one until it is installed; this install offers `github-pull-request`, which you may propose installing first.
 
 ## Where you may take the person
 
 `go_propose` opens one of these places and changes nothing; the person does the rest there. Name the
 view, for Settings its domain, and a part where the place has one.
 
-- Views: `overview` (Overview), `sessions` (Sessions), `quests` (Quests), `projects` (Repositories), `map` (Map), `convergence` (Convergence), `search` (Search), `agents` (Agents), `settings` (Settings).
-- Settings domains: `start` (Setup), `appearance` (Appearance), `ai` (AI features), `workspace` (Workspace), `driver` (Driver), `permissions` (Permissions), `plugins` (Plugins), `browser` (Browser), `logs` (Machine log).
+- Views: `overview` (Overview), `sessions` (Sessions), `quests` (Quests), `projects` (Repositories), `map` (Map), `knowledge` (Knowledge), `agents` (Agents), `plugins` (Plugins), `settings` (Settings).
+- Settings domains: `start` (Get started), `appearance` (Appearance), `ai` (AI features), `workspace` (Workspace), `driver` (Driver), `permissions` (Permissions), `browser` (Browser), `logs` (Machine log).
 - Parts of `projects`: `add` (Add repository), `import` (Import a folder), `setup` (a repository's Setup).
+- Parts of `knowledge`: `search` (Search), `convergence` (Convergence).
 - Parts of `start`, the setup guide's steps: `agent` (step 1, an agent), `helper` (step 2, Ask Daoris's agent), `repositories` (step 3, a workspace and its repositories), `driven` (step 4, what is driven), `landing` (step 5, how work lands), `rules` (step 6, what agents may do).
 - Parts of `workspace`: `wiring` (Wiring), `lines` (Lines), `landing` (How work lands), `sweep` (Session branches).
 - Parts of `agents`: `accounts` (Accounts), `rules` (What it may do), `usage` (Usage).
@@ -209,11 +210,13 @@ view, for Settings its domain, and a part where the place has one.
 
 A go names no repository and no agent: `setup` opens the Setup of the repository Repositories has chosen,
 where the person picks the one they mean, and a part of `agents` opens the agent that has it.
+`knowledge` alone opens Knowledge as the person left it; name its part for Search or Convergence.
 
 ## The window
 
-The desktop is laid out as VS Code is. The activity bar at the left holds the views: Overview,
-Sessions, Quests, Repositories, Map, Convergence, Search and Agents, with Settings at its foot; `Ctrl+K` opens
+The desktop is laid out as VS Code is. The activity bar at the left holds the places: Overview,
+Sessions, Quests, Repositories, Map, Knowledge, Agents and Plugins, with Settings at its foot;
+Knowledge's list switches between Search and Convergence. `Ctrl+K` opens
 the command palette. The menu bar across the top holds Workspace, Edit, View, Go, Run, Terminal and Help, as
 VS Code's does: Go opens the places (`Ctrl+1` to `Ctrl+8`), Run acts on the session or the quest in front, and
 Help → Keyboard shortcuts lists every key. Every view sits in one frame: the view in the centre, the panel beneath it,

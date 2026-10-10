@@ -12886,3 +12886,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **RAILSRCH1 — the rail's search reaches every record** (driver). The session rail's search refuses one Han character and never reads past the newest 200 records. D158's ASKHIST1d1 note (`Searchable`), RAIL1; a single-character hit and a hit past 200 in `SessionEventsTests`.
 
 **Outcome** 2026-10-10: `SessionEvents.Search` takes `Searchable`'s rule and reads every record; `Cut` now says only that the hit caps left hits out. 1000 records search in 290–400 ms warm. The page's own gate is RAILSRCH1b. Built by a Sonnet worker in 10 turns. Detail: D158's RAILSRCH1 note.
+
+
+## UX6i2a — the room and its twin name current places (2026-10-10, D150)
+
+> - [ ] **UX6i2a — the room and its twin name current places** (driver + web twin). Help room text, `HelpPlaces`/`places.ts` and goldens: Knowledge, Plugins, Get started; add new ids, keep old ones accepted (D150's UX6i note). D150 notes; twins/goldens.
+
+**Outcome** 2026-10-10: the room and its go twin name Knowledge (parts `search`/`convergence`), the Plugins place and Get started; old ids land through `HelpPlaces.Kept`/`PLACE_KEPT`. The merge fixed `where.test.ts`, whose loop the change left running over nothing, and narrowed `PLACE_VIEWS` back to views. Installed look: UX6i2i. Detail: D150's UX6i2a note.

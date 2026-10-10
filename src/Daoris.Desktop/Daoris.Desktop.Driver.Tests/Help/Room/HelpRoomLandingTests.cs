@@ -19,6 +19,9 @@ public sealed class HelpRoomLandingTests
         Assert.Contains("Plugins that can land work here: `example.github-pull-request`, `example.lands`.", some);
         Assert.Contains("No plugin that lands work is installed here", none);
         Assert.Contains("`daoris plugin add <folder>`", none);
+        // UX6i2a (D150 §2): Settings → Plugins retired into the Plugins place with UX6j.
+        Assert.Contains("or the Plugins place), so never propose a rule naming one", none);
+        Assert.DoesNotContain("Settings → Plugins", none);
     }
 
     [Fact]

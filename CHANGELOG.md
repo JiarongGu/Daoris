@@ -10,6 +10,9 @@ with the version and date at release.
   enough to search. `daoris-driver help list` takes `--offset` and `--limit`.
 - `daoris plugin new` and `try`, a new plugin's README and the install's README send people to the
   Plugins place, which replaced Settings → Plugins.
+- Ask Daoris names the places the window has now: Knowledge, whose list switches between Search and
+  Convergence, the Plugins place and Get started. A *Go there* to Search, Convergence or Settings →
+  Plugins from an earlier conversation opens where that place went.
 - Account rows show each usage window as its own cell, in the same place on every row: the share used,
   a bar of that window's allowance, its reset and how old its reading is. A window the agent has not
   reported says *unknown*, never 0%.

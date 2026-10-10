@@ -524,11 +524,11 @@ describe('Ask Daoris, with an agent named', () => {
   it('takes the person to the place a go names once they press go there', async () => {
     SESSIONS = [HELP];
     PROPOSALS = [{
-      id: 'g1o2t3o4', kind: 'go', describe: 'Open Settings → Setup at step 2, Ask Daoris\'s agent.', terminal: '',
+      id: 'g1o2t3o4', kind: 'go', describe: 'Open Settings → Get started at step 2, Ask Daoris\'s agent.', terminal: '',
       why: 'the person asked where to name its agent',
     }];
     APPLIED = {
-      message: 'Applied: `#g1o2t3o4` — Open Settings → Setup at step 2, Ask Daoris\'s agent. Nothing else changed.',
+      message: 'Applied: `#g1o2t3o4` — Open Settings → Get started at step 2, Ask Daoris\'s agent. Nothing else changed.',
       applied: true, go: { view: 'settings', domain: 'start', part: 'helper' },
     };
     bridge();

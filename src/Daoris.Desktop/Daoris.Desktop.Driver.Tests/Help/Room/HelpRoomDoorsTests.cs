@@ -68,9 +68,14 @@ public sealed class HelpRoomDoorsTests
         foreach (var token in new[] { "{quest}", "{session}", "{slug}", "{repository}" }) Assert.Contains(token, agents);
         Assert.Contains("Settings → AI features", agents);
         // SETUP1b: the setup guide the person may be walked through, by the names the window gives it; Help's since UX7a
-        // (D152), where the Daoris menu held it.
-        Assert.Contains("Settings → Setup (Help → *Setup*)", agents);
+        // (D152), where the Daoris menu held it. UX6i2a: named Get started since UX6j (D150 §2).
+        Assert.Contains("Settings → Get started (Help → *Get started*)", agents);
+        Assert.DoesNotContain("Settings → Setup", agents);
         Assert.DoesNotContain("Daoris menu", agents);
+        // UX6i2a: a plugin is switched, installed and updated in the Plugins place since UX6j retired Settings → Plugins.
+        Assert.Contains("Plugins → the plugin's page → Turn on or Turn off", agents);
+        Assert.Contains("Plugins → Daoris's own plugins → Install", agents);
+        Assert.DoesNotContain("Settings → Plugins", agents);
         // It reads and advises; the moves that stay the person's are named as never its own.
         Assert.Contains("You change nothing yourself", agents);
         // It proposes (HELP1c): a card the person applies, through the connector's two tools.

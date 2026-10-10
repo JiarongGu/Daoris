@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { Session } from '../api';
 import { VIEWS } from '../commands';
 import type { SettingsSection } from '../SettingsView';
+import type { KnowledgeMode } from '../knowledge/modes';
 import { en } from '../locales';
-import { PLACE_DOMAINS, PLACE_VIEWS } from './places';
+import { PLACE_DOMAINS, PLACE_PARTS } from './places';
 import { attendedOf, prefaceOf } from './where';
 
 // HELP1b (D89): where the person is, as the helper is told it ahead of their words.
@@ -50,8 +51,11 @@ describe('where the person is', () => {
       .toBe(`Where the person is now: the ${en['nav.knowledge']} view, showing ${en['nav.convergence']}, every workspace.`);
     expect(prefaceOf({ view: 'knowledge', workspace: 'aurora', knowledge: 'search' }))
       .toBe('Where the person is now: the Knowledge view, showing Search, workspace `aurora`.');
-    // Each mode a go may name is one the preface names.
-    for (const mode of PLACE_VIEWS.filter((name) => name === 'search' || name === 'convergence')) {
+    // Each mode a go may name is one the preface names: since UX6i2a a mode is a part within Knowledge, not a view, and the
+    // two are held here so the loop can never run over nothing again.
+    const modes = PLACE_PARTS.filter(({ within }) => within === 'knowledge').map(({ part }) => part as KnowledgeMode);
+    expect(modes).toEqual(['search', 'convergence']);
+    for (const mode of modes) {
       expect(prefaceOf({ view: 'knowledge', workspace: null, knowledge: mode })).toContain(`showing ${en[`nav.${mode}`]}`);
     }
   });

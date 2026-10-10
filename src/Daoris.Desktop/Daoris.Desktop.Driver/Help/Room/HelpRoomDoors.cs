@@ -23,9 +23,10 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
     internal static readonly (string To, string Screen, string Terminal)[] Doors =
     [
         // SETUP1b: the page hands the helper a first message asking to be walked through it, naming the
-        // steps by these titles, so it is told the guide exists and what each step is done on.
+        // steps by these titles, so it is told the guide exists and what each step is done on. UX6i2a: named Get started
+        // since UX6j (D150 §2), in Settings and on Help's row.
         ("walk through setting this machine up: an agent, Ask Daoris's agent, a workspace and its repositories, "
-            + "what is driven, how work lands, what agents may do", "Settings → Setup (Help → *Setup*)",
+            + "what is driven, how work lands, what agents may do", "Settings → Get started (Help → *Get started*)",
             "(each step shows its own command there)"),
         // HELPSETUP1: a repository's own values are on its Setup since UX6f (D150 §4.2); a workspace's default keeps its
         // Settings home until the workspace's page takes it (UX6g).
@@ -219,11 +220,12 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "or one named after it on the same history (a done no session here ended needs the commit named)",
             "(no screen yet)", "`daoris-driver quest check <id> [--commit <sha>]`"),
         // PLUG9: the card installs one that landed; the screen switches one installed, installs one of
-        // Daoris's own (d) and updates one from where it came from (c).
-        ("add a plugin that has landed, or switch one on or off", "Settings → Plugins (its switch)",
+        // Daoris's own (d) and updates one from where it came from (c). UX6i2a: the Plugins place's since UX6j (D150 §2),
+        // by its list's group and its page's presses.
+        ("add a plugin that has landed, or switch one on or off", "Plugins → the plugin's page → Turn on or Turn off",
             "`daoris plugin add <folder>`, `daoris plugin enable|disable <id>`"),
         ("install one of Daoris's own plugins, or update one from where it came from",
-            "Settings → Plugins (Install beside Daoris's own; Update on an installed one's row)",
+            "Plugins → Daoris's own plugins → Install; Plugins → the plugin's page → Update…",
             "`daoris plugin add --offer <id>`, `daoris plugin update <id>`"),
         ("choose Daoris's browser, where the page's links open, whether extensions are offered, and its favorites",
             "Settings → Browser",

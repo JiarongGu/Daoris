@@ -32,10 +32,32 @@ public sealed class HelpRoomPlacesTests
         var places = new HelpRoomPlaces().Render(HelpRoomFixture.Machine);
 
         Assert.Contains("- Views: `overview` (Overview)", places);
-        Assert.Contains("`agents` (Agents), `settings` (Settings).", places);
+        Assert.Contains("`agents` (Agents), `plugins` (Plugins), `settings` (Settings).", places);
         Assert.DoesNotContain("`agents` (Agents), `permissions`", places);
         Assert.Contains("A go names no repository and no agent", places);
         Assert.Contains("`setup` opens the Setup of the repository Repositories has chosen", places);
         Assert.Contains("a part of `agents` opens the agent that has it", places);
+    }
+
+    /// <summary>
+    /// UX6i2a (D150 §2): the room names the places as the window has them, Knowledge with its two modes as its parts and
+    /// Plugins as a view, and lists no place that moved: a go still spelled so lands, but the helper is never offered it.
+    /// </summary>
+    [Fact]
+    public void The_room_names_the_places_as_they_are_and_none_that_moved()
+    {
+        var places = new HelpRoomPlaces().Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("`map` (Map), `knowledge` (Knowledge), `agents` (Agents)", places);
+        Assert.Contains("- Parts of `knowledge`: `search` (Search), `convergence` (Convergence).", places);
+        Assert.Contains("`knowledge` alone opens Knowledge as the person left it", places);
+        Assert.Contains("- Settings domains: `start` (Get started), ", places);
+        Assert.DoesNotContain("`plugins` (Plugins), `browser`", places);
+        Assert.DoesNotContain("`search` (Search), `agents`", places);
+        foreach (var (was, _) in HelpPlaces.Kept)
+        {
+            Assert.DoesNotContain(HelpPlaces.Views, view => view.Id == was.View && was.Domain is null);
+            Assert.DoesNotContain(HelpPlaces.Domains, domain => domain.Id == was.Domain);
+        }
     }
 }
