@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A toast no longer covers an open drawer: while one is open, toasts stand at its left edge, so an ask at
+  the drawer's foot, such as a repository's Manage → Retire, keeps its Confirm and Never mind in view. A
+  press on a toast while a drawer is open stays on the toast, rather than closing the drawer or pressing
+  what it covered.
 - Ask Daoris can propose moving a repository to another workspace on this machine, as its page's Manage →
   *Move to workspace* does: the card names the repository and both workspaces, and Apply changes that one
   row of the registry and no file. A workspace no repository is in yet is allowed, and the card says the

@@ -206,7 +206,11 @@ controls are in the frame design's §3.
   `tokens.test.ts` holds the rule for every overlay, so the next one cannot inherit `inset-0`.
 - **Toast** (bottom-right, overlay surface, auto-dismiss with close) carries an action's outcome and
   an error that has no form to stand in — the service's sentence verbatim, because the refusal text is
-  the contract. Nothing shifts the layout to speak. **A request that reaches nobody is said in
+  the contract. Nothing shifts the layout to speak. **Beside an open drawer, never over it** (UXTOAST1, D41
+  amended 2026-10-11): the drawer holds the corner whole, and a toast there lay over an ask's presses at its foot, so
+  while one is open the toasts stand at its left edge, over the scrim, the corner's gap from it; narrower than 56rem,
+  where none fits beside it, they keep the corner. They take their own presses, so a press on one never reaches the
+  scrim nor a press it covers. **A request that reaches nobody is said in
   Daoris's words**, never the browser's *Failed to fetch* nor a socket's, and the page's own requests
   and the driver's tick say the same sentence for it (U29, U30). **A sentence already on screen is said
   once**: its newest copy replaces it, and a failure the tick repeats is said once until a tick runs
