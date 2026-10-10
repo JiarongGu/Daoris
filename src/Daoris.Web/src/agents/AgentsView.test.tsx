@@ -1798,10 +1798,13 @@ describe('how accounts are used', () => {
     place();
 
     const own = await screen.findByRole('listitem', { name: 'Your own sign-in' });
-    expect(await within(own).findByText('1% of its five-hour limit used')).toBeTruthy();
-    expect(within(own).getByText('15% of its weekly limit used')).toBeTruthy();
-    // It is none of the accounts: their rows say only their own readings.
-    expect(within(screen.getByRole('listitem', { name: 'work' })).queryByText(/limit used/)).toBeNull();
+    // A cell a window (ACCTUX4): its name, then its exact share.
+    expect((await within(own).findByText('1% used')).closest('[data-window]')).toHaveAttribute('data-window', 'session');
+    expect(within(own).getByText('15% used').closest('[data-window]')).toHaveAttribute('data-window', 'weekly');
+    // It is none of the accounts: their rows say only their own readings, here none, so each window unknown and no share.
+    const work = screen.getByRole('listitem', { name: 'work' });
+    expect(within(work).queryByText(/% used/)).toBeNull();
+    expect(within(work).getAllByText('unknown')).toHaveLength(2);
 
     // The press reads its windows again, so the accounts' files are asked again once it answers, not at the next tick.
     const accountsAsked = () => invoke.mock.calls.filter(([, type]) => type === 'ACCOUNTS').length;
