@@ -87,7 +87,7 @@ FRAME1i precedes PLUGUI1h. Installed looks cover both themes/languages.
 - [ ] **PLUGUI1f — complete plugin page** (after c/e). Health, Points, Agents, Servers, Activity, Data, Source and folder install. D119.
 - [ ] **PLUGUI1g — plugin checks** (after f). Keep trial and run tests in a home copy. D119.
 - [ ] **PLUGUI1h — Ask Daoris opens Plugins** (after c/FRAME1i-a). D119; matching coverage and screen proof. A plugin as a go's item (`ItemViews` gains plugins) is this row's.
-- [ ] **FRAME1i-a — the preface names the chosen item** (web; after ENTRY1d2b, which holds App.tsx). `help/where.ts` names the item each view has chosen (quest, ask, repository, workspace, plugin, agent), only what the screen shows; App passes it from the list panes, a gone choice unsaid. The go's item is ENTRY1f1/f2's. Frame-model design ~:375-388; D118.
+- [ ] **FRAME1i-a — the preface names the chosen item** (web; after ENTRY1d2b, which holds App.tsx). `help/where.ts` names the item each view has chosen (quest, ask, repository, workspace, plugin, agent), only what the screen shows; App passes it from the list panes, a gone choice unsaid; the room's window section gains the one sentence saying so (the driver line rides along). The go's item is ENTRY1f1/f2's. Frame-model design ~:375-388; D118.
 - [ ] **FRAME1i-b — the room says every view's list** (driver; after ENTRY1d2a, which holds the goldens). `HelpRoomWindow.cs` says each view but Overview and Map has a list, its four doors (D118 point 4), and that where the person is names the chosen item. Frame-model design ~:375-388; goldens.
 - [ ] **FRAME2b — maximized restore under pointer** (owner sends request). Wait for runtime position support, then update handler. D56/D32; owner response and handler proof.
 
