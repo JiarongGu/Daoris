@@ -22,12 +22,14 @@ Historical installation receipts and adoption mechanics remain in their evidence
 
 ## UI/UX first
 
-Start with UXFIX2b, ASKHIST1d, ACCTUX4 and the remaining place-name inconsistencies.
+Start with UXFIX2b1–3, ASKHIST1d1–2, ACCTUX4 and the remaining place-name inconsistencies.
 Contracts: platform UX §4/§6, `docs/2026-10-05-ux7-design.md` (D152),
 `docs/2026-10-04-ux6-redesign.md` (D150, §12 proofs). UI work needs stories, behavior tests and
 installed-window evidence in both themes/languages; Storybook alone does not close an installed proof.
 
-- [ ] **UXFIX2b — remaining inline confirmations** (web). Migrate WorkAsks, decline/close/archive/trust, plugin/tool removal, AccountUse and DiffPane. Proof: focus, pending, refusal, cancellation and returned focus.
+- [ ] **UXFIX2b1 — confirmations: tools, plugins, retire** (web; in flight). Tool version delete, plugin removal and project retire move to `InlineConfirm`. Proof: focus, pending, refusal, cancellation and returned focus.
+- [ ] **UXFIX2b2 — confirmations: work asks** (web). Pause/abandon (thread `Answered` through `pausing.ts`), quest decline, ask close, awaiting-person finish/decline, archive ended, DiffPane force-discard. Same proof.
+- [ ] **UXFIX2b3 — confirmations: attention, trust, account use** (web; after ACCTUX4). AttentionRow's asks, TrustAsk, GoAheadList, AccountUse inherit and AgentPage's key ask; settle which are `tone="primary"`. Same proof.
 - [ ] **UX7b — installed account UI** (web). Verify recovered account rows and add/name/join flow at 1546/680 px, both themes/languages. D152 §4.
 - [ ] **ACCTEDIT1b — installed refused edits** (parent; after republish). Verify rename, workspace use and add refusals retain drafts, including dark borders. D152 §4; dated shots.
 - [ ] **BRSCOPE1b — checkout scope and sync workspace** (modules/service/driver; after BRSCOPE1a). Share checkout-scope fixtures; carry workspace through sync proposals. D150 notes; three-door proof.
@@ -44,7 +46,7 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 Contracts: toolchain (D57 §3), account rotation (D125), account use (D130), browser (D78/D84).
 Original row proofs remain in the frozen backlog; measurements precede declarations.
 
-- [ ] **ACCTUX4 — account windows for both makers** (web/modules). Stable window cells with allowance, reset and per-window age; explicit unknown states. D125/UX7; revise geometry, tests/stories/installed proof.
+- [ ] **ACCTUX4 — account windows for both makers** (web in flight; modules only if a gap shows). Stable window cells with allowance, reset and per-window age; explicit unknown states. D125/UX7; revise geometry, tests/stories/installed proof.
 - [ ] **ACCTNAME1 — email names read once** (CLI/driver/web). Avoid duplicate email/name; size roster columns. D125 notes; long-name and equal-email cases.
 - [ ] **ACCTUX1b — refused keys read as keys** (web). Correct Settings next-start and start-form labels. D125 note; account and start-form tests.
 - [ ] **KEYREPLACE1 — replace refused keys in place** (all doors; after ACCTUX1). Preserve account lists; clear refusal/cooling. D67/D125; key-file twins, route and row tests.
@@ -64,7 +66,8 @@ Original row proofs remain in the frozen backlog; measurements precede declarati
 Contracts: `docs/2026-10-07-history-clearing-design.md` (D153), D158,
 D88/D102 cleanup notes, machine log §4. Installed clears require the owner's existing authorization.
 
-- [ ] **ASKHIST1d — every conversation remains reachable** (driver/web). Order/filter before 200-row bound; paginate; search older records; parse Markdown before preview truncation. D158; old pinned/resumed/search cases.
+- [ ] **ASKHIST1d1 — every conversation remains reachable: driver** (driver/modules; in flight). Order/filter before 200-row bound; paginate; search older records; Markdown left parseable. D158 note; old pinned/resumed/search cases.
+- [ ] **ASKHIST1d2 — every conversation remains reachable: page** (web; after d1). Page through the list, say what search covered, parse Markdown before preview truncation. D158 note; history tests and stories.
 - [ ] **AUTOTIDY1a — show automatic cleanup** (modules/web). Branches lists recent tidied/kept log facts. D88; route and bilingual list tests.
 - [ ] **AUTOTIDY1b — measure strict cleanup guards** (parent; installed AUTOTIDY1, after one week). Count ignored-file/unmoved-branch holds before deciding relaxations. D88 evidence.
 - [ ] **AUTOTIDY1c — automatic squash cleanup** (driver; after AUTOTIDY1b; decide first). Consider content proof plus merged PR state, preserving recovery refs. D88/D102; Process guards.

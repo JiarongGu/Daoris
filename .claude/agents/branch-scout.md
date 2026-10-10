@@ -3,6 +3,9 @@ name: branch-scout
 description: Read-only orientation for one backlog row of this repository, run before a branch-worker is dispatched. Runs the discovery skills, locates the contract, the code, the exemplar and the tests, and returns an orientation pack of file:line ranges. Changes nothing. Use before every branch-worker dispatch (the dispatch-subagent skill).
 tools: Read, Glob, Grep, Bash, PowerShell, Skill
 model: sonnet
+skills:
+  - doc-loader
+  - pattern-finder
 ---
 
 # branch-scout
@@ -15,8 +18,10 @@ rehearsal is never yours to run.
 ## How to orient
 
 1. Read the row in `TASKS.md` and the contract it names, at the sections it names.
-2. Run `doc-loader` for the row's area and read what it routes you to, by section. Run `pattern-finder` when
-   the row adds a unit of a shape the code already has.
+2. Follow `doc-loader` for the row's area and read what it routes you to, by section; follow
+   `pattern-finder` when the row adds a unit of a shape the code already has. Both are preloaded above:
+   a subagent is shown no list of skills, and two of the first three scouts skipped discovery (D160).
+   The pack's *Knowledge routed* line names what `doc-loader` matched, or says none did.
 3. Open `docs/index/README.md` and follow its outlines to the files and line ranges before searching.
    Search narrow: a path or glob, file names first, then lines.
 4. When the row changes words a person or a test reads, search for those words in the tests a worker may
