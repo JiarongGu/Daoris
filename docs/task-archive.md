@@ -12858,3 +12858,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ACCTUX4 — account windows for both makers** (web in flight; modules only if a gap shows). Stable window cells with allowance, reset and per-window age; explicit unknown states. D125/UX7; revise geometry, tests/stories/installed proof.
 
 **Outcome** 2026-10-10: account rows show each window as a stable cell (exact share, a bar of its own allowance, its reset, its own reading's age; unknown in words with no bar), session and weekly for both makers; no bridge change was needed. Rows grew past D152's budget, measured and reported. Installed shots and the budget: ACCTUX4i. Detail: D125's ACCTUX4 note.
+
+
+## SETTINGSWAIT1 — Never mind waits during save (2026-10-10, D125)
+
+> - [ ] **SETTINGSWAIT1 — Never mind waits during save** (web-settings). Disable the ignored cancel press in AccountSettingsForm. D125 note; form regression.
+
+**Outcome** 2026-10-10: the account settings form's *Never mind* is disabled while a save runs, as its Save is; the case that rerenders `busy` asserts it, seen failing first. AgentPage's page-side guard is now redundant and goes with UXFIX2b3. Built by a Sonnet worker in 4 turns. Detail: the merge commit.

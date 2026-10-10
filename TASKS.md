@@ -29,7 +29,7 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 
 - [ ] **UXFIX2b2b — confirmations: decline, close, awaiting, archive, discard** (web). Quest decline, ask close, awaiting-person finish/decline, archive ended (`tone="primary"`), DiffPane force-discard. Proof: focus, pending, refusal, cancellation and returned focus.
 - [ ] **UXFIX2bi — installed confirmations look** (parent; after republish). Tool version delete, plugin removal, project retire, pause and abandon asks in the window, both themes/languages: focus on open, pending, refusal inside, returned focus.
-- [ ] **UXFIX2b3 — confirmations: attention, trust, account use** (web; after ACCTUX4). AttentionRow's asks, TrustAsk, GoAheadList, AccountUse inherit and AgentPage's key ask; settle which are `tone="primary"`; drop AgentPage's settings guard SETTINGSWAIT1 made redundant. Same proof.
+- [ ] **UXFIX2b3 — confirmations: attention, trust, account use** (web). AttentionRow's asks, TrustAsk, GoAheadList, AccountUse inherit and AgentPage's key ask; settle which are `tone="primary"`; drop AgentPage's settings guard SETTINGSWAIT1 made redundant. Same proof.
 - [ ] **UX7b — installed account UI** (web). Verify recovered account rows and add/name/join flow at 1546/680 px, both themes/languages. D152 §4.
 - [ ] **ACCTEDIT1b — installed refused edits** (parent; after republish). Verify rename, workspace use and add refusals retain drafts, including dark borders. D152 §4; dated shots.
 - [ ] **BRSCOPE1b — checkout scope and sync workspace** (modules/service/driver; after BRSCOPE1a). Share checkout-scope fixtures; carry workspace through sync proposals. D150 notes; three-door proof.
@@ -56,7 +56,6 @@ Original row proofs remain in the frozen backlog; measurements precede declarati
 - [ ] **ACCTUX1b — refused keys read as keys** (web). Correct Settings next-start and start-form labels. D125 note; account and start-form tests.
 - [ ] **KEYREPLACE1 — replace refused keys in place** (all doors; after ACCTUX1). Preserve account lists; clear refusal/cooling. D67/D125; key-file twins, route and row tests.
 - [ ] **AGENTMARK1 — declared strip marks** (driver/modules; after ACCTUX2). Forward CC/Cx with each product. UX7 §4.6; roster/680 px proof.
-- [ ] **SETTINGSWAIT1 — Never mind waits during save** (web-settings). Disable the ignored cancel press in AccountSettingsForm. D125 note; form regression.
 - [ ] **CODEXUSE2 — installed Codex reading** (parent/owner). Pins are verified; account sign-in remains unavailable. Use CODEXUSE3's own-sign-in reading meanwhile. D57/D63/D125.
 - [ ] **CODEXKEY1 — Codex API-key account** (measure first; owner supplies throwaway key). Determine spawn variable for both tools before declaring support. D67/D125; real variable-start proof.
 - [ ] **TOOL6d — continue on another account** (driver/modules/web; after TOOL6b). Offer last plan/words to selected account. D130 §8–§9; both-door tests/look.
