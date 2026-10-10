@@ -1,8 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GoAhead } from '../api';
 import { ago } from '../format';
 import { Button, Pill } from '../ui';
+import { type Answered, Refused } from '../work/InlineConfirm';
+
+/** A yes or no to a go-ahead: its number, the answer, the person's words if any, and how the answer ended (UXFIX2b3b). */
+export type GoAheadAnswer = (number: number, approved: boolean, words: string | undefined, answered: Answered) => void;
 
 /** A go-ahead's state on its pill: waiting is the person's to answer, approved done, refused declined. */
 const GO_AHEAD_TONE: Record<GoAhead['state'], 'open' | 'done' | 'declined'> = {
@@ -31,8 +35,11 @@ const KINDS = new Set(['write', 'release', 'push', 'sign-in', 'run']);
 export function GoAheadList({ goAheads, busy = false, onAnswer, lead }: {
   goAheads: GoAhead[];
   busy?: boolean;
-  /** The person's yes or no to go-ahead `number`, with their words where they gave any; absent where there is no door. */
-  onAnswer?: (number: number, approved: boolean, words?: string) => void;
+  /**
+   * The person's yes or no to go-ahead `number`, with their words where they gave any, and how to tell the item how it ended
+   * (UXFIX2b3b); absent where there is no door.
+   */
+  onAnswer?: GoAheadAnswer;
   /** What the list's line above it says where it stands: the ask's own, absent. */
   lead?: string;
 }) {
@@ -51,26 +58,60 @@ export function GoAheadList({ goAheads, busy = false, onAnswer, lead }: {
   );
 }
 
+/**
+ * One go-ahead. Its yes and no are direct presses, not an ask (platform UX §4: a yes or no every session is handed is not a
+ * destructive edit), so they wait in place and a refused answer is said beside this item (UXFIX2b3b), the words kept and
+ * both presses pressable again.
+ */
 function GoAheadItem({ goAhead, kindWord, busy, onAnswer }: {
   goAhead: GoAhead;
   kindWord: string;
   busy: boolean;
-  onAnswer?: (number: number, approved: boolean, words?: string) => void;
+  onAnswer?: GoAheadAnswer;
 }) {
   const { t } = useTranslation();
   const [changing, setChanging] = useState(false);
   const [words, setWords] = useState('');
+  const [pending, setPending] = useState(false);
+  const [refusal, setRefusal] = useState<string | null>(null);
+  const item = useRef<HTMLLIElement>(null);
+  const field = useRef<HTMLInputElement>(null);
+  const alive = useRef(true);
+  const turn = useRef(0);
+  const refusalId = useId();
   const first = goAhead.asked[0];
   const more = goAhead.asked.length - 1;
   const answering = onAnswer !== undefined && (goAhead.state === 'asked' || changing);
+  const waiting = busy || pending;
+  useEffect(() => {
+    alive.current = true;
+    return () => { alive.current = false; };
+  }, []);
   const answer = (approved: boolean) => {
-    onAnswer!(goAhead.number, approved, words.trim() || undefined);
-    setChanging(false);
-    setWords('');
+    const mine = ++turn.current;
+    // The presses wait disabled, which would drop the focus to the page: it stays in the item, on its words.
+    if (item.current?.contains(document.activeElement)) field.current?.focus({ preventScroll: true });
+    setRefusal(null);
+    setPending(true);
+    onAnswer!(goAhead.number, approved, words.trim() || undefined, {
+      done: () => {
+        if (mine !== turn.current || !alive.current) return;
+        setPending(false);
+        setChanging(false);
+        setWords('');
+        // The words and presses go as it closes: the focus stays on the item rather than falling to the page.
+        if (item.current?.contains(document.activeElement)) item.current.focus({ preventScroll: true });
+      },
+      refused: (sentence) => {
+        if (mine !== turn.current || !alive.current) return;
+        setPending(false);
+        setRefusal(sentence);
+      },
+    });
   };
 
   return (
-    <li className="grid gap-1 rounded-control border border-line bg-raised px-3 py-2">
+    <li ref={item} tabIndex={-1} className="grid gap-1 rounded-control border border-line bg-raised px-3 py-2 outline-none">
       <p className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
         <span className="font-mono text-meta text-ink-faint">#{goAhead.number}</span>
         <Pill tone={GO_AHEAD_TONE[goAhead.state]}>{t(`asks.goAhead.state.${goAhead.state}`)}</Pill>
@@ -95,15 +136,25 @@ function GoAheadItem({ goAhead, kindWord, busy, onAnswer }: {
       {answering && (
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <input
+            ref={field}
             aria-label={t('asks.goAhead.words')}
             placeholder={t('asks.goAhead.words')}
             value={words}
             onChange={(e) => setWords(e.target.value)}
             className="min-h-[1.9rem] flex-1 basis-56 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
           />
-          <Button disabled={busy} onClick={() => answer(true)}>{t('asks.goAhead.approve')}</Button>
-          <Button variant="danger" disabled={busy} onClick={() => answer(false)}>{t('asks.goAhead.refuse')}</Button>
-          {changing && <Button variant="ghost" disabled={busy} onClick={() => setChanging(false)}>{t('common.cancel')}</Button>}
+          <Button disabled={waiting} aria-describedby={refusal ? refusalId : undefined} onClick={() => answer(true)}>
+            {t('asks.goAhead.approve')}
+          </Button>
+          <Button variant="danger" disabled={waiting} aria-describedby={refusal ? refusalId : undefined} onClick={() => answer(false)}>
+            {t('asks.goAhead.refuse')}
+          </Button>
+          {changing && <Button variant="ghost" disabled={waiting} onClick={() => setChanging(false)}>{t('common.cancel')}</Button>}
+          {/* Drawn from the first, so it is a live region before it speaks (UXFIX2c). */}
+          <span role="status" aria-live="polite" className={pending ? 'self-center text-small text-ink-faint' : 'sr-only'}>
+            {pending ? t('work.confirm.pending') : null}
+          </span>
+          {refusal && <Refused id={refusalId} sentence={refusal} />}
         </div>
       )}
     </li>

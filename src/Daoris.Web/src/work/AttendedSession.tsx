@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GoAhead, Quest, Session } from '../api';
+import type { GoAheadAnswer } from '../asks/GoAheadList';
 import { answeredPark, Button, EmptyState } from '../ui';
 import type { ChainStep } from '../map/chain';
 import { ChainLine } from '../map/ChainLine';
@@ -80,7 +81,7 @@ export function AttendedSession({
   /** The go-aheads it asked on its quest's ask, shown in the head while it is parked (KNOWUSE1a2). */
   goAheads?: GoAhead[];
   /** Passed straight through to the head: one of them answered, the park with it once none is open (KNOWUSE1a2, GOAHEAD2b). */
-  onGoAhead?: (number: number, approved: boolean, words?: string) => void;
+  onGoAhead?: GoAheadAnswer;
   /**
    * A page header above carries its state, its id and its acts (SESSUX1d, D126 §3.2), so the record head says neither
    * again. A window with no header (a detached session) keeps them in the head.

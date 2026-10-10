@@ -386,12 +386,14 @@ export function useQuestsView({
           onError: failure(notify),
         })}
         onTrusting={(open) => setTrustingFor(open ? quest.id : null)}
-        onGrant={(granted) => trust.mutate(granted, {
+        // A refusal is said in the question, which stays open to press again (UXFIX2b3b).
+        onGrant={(granted, answered) => trust.mutate(granted, {
           onSuccess: (answer) => {
             notify(answer.message, answer.verified ? 'ok' : 'error');
             setTrustingFor(null);
+            answered.done();
           },
-          onError: failure(notify),
+          onError: (error) => answered.refused(sentence(error)),
         })}
         onOpenQuest={(id) => onChoose(id)}
         onAttend={attend}

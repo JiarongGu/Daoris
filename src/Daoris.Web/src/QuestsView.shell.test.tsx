@@ -126,6 +126,23 @@ describe('trusting a folder the driver is holding (D73)', () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith(GRANTED.message, 'ok'));
   });
 
+  it('a refused grant is said in the question on the quest page, which stays open to press again (UXFIX2b3b)', async () => {
+    const notify = vi.fn();
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'TRUST_FOLDER') throw new Error('The agent file is locked.');
+      return DRIVER_STATE;
+    });
+    show(<QuestsView notify={notify} />, holding());
+
+    const page = await chooseRow('Expose a streaming budget');
+    await userEvent.click(within(page).getByRole('button', { name: 'Trust this folder…' }));
+    await userEvent.click(within(page).getByRole('button', { name: 'Trust this folder' }));
+
+    expect(await within(page).findByRole('alert')).toHaveTextContent('The agent file is locked.');
+    expect(within(page).getByRole('button', { name: 'Trust this folder' })).toBeEnabled();
+    expect(notify).not.toHaveBeenCalled();
+  });
+
   /**
    * RETRY1 (D50): a quest parked by its strikes was retried only from a terminal (`daoris driver
    * retry`). The page had the other half ready, and nothing rendered it. The retry is offered where

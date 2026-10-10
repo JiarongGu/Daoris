@@ -114,7 +114,7 @@ export type AttentionActs = {
   /** A go-ahead's yes or no, with the person's words where they gave any (KNOWUSE1a). */
   answer?: (item: Attention, approved: boolean, words: string | undefined, answered: Answered) => void;
   /** A folder trusted for the agent, after its own question (D73). */
-  trust?: (item: Attention) => void;
+  trust?: (item: Attention, answered: Answered) => void;
   /** A held done's departure accepted (DRIFT1d2): what it held goes on. */
   acceptDeparture?: (item: Attention) => void;
   /** An agent's widening of the rules accepted, after saying what it widens (D74). */
@@ -385,7 +385,8 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
               else if (asking === 'opinion-anyway') acts.opinionAnyway?.(item, words.trim() || undefined, answered);
               else answered.done();
             }}
-            onGrant={() => { acts.trust?.(item); done(); }}
+            // The question closes once the grant is written; a refusal stays in it (UXFIX2b3b).
+            onGrant={(answered) => acts.trust?.(item, { done: () => { answered.done(); done(); }, refused: answered.refused })}
           />
         </div>
       )}
@@ -425,8 +426,8 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
   onChoice: (choice: string) => void;
   onCancel: () => void;
   onConfirm: (answered: Answered) => void;
-  /** A folder's trust, which keeps its own question until UXFIX2b3b: it closes on the press. */
-  onGrant: () => void;
+  /** A folder's trust, in its own question: told how the grant ended, it closes only once it landed (UXFIX2b3b). */
+  onGrant: (answered: Answered) => void;
 }) {
   const { t } = useTranslation();
   if (act === 'trust' && item.trust) {

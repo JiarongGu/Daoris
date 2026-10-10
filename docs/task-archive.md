@@ -12935,3 +12935,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **RAILSRCH1b — the page's search gates take one Han character** (web). Move ASKHIST1d2's `searchable` to a neutral module both pages import; use it in `bridge/sessions.ts`, `SessionRail.tsx`, `SessionConversation.tsx`, `ConversationFind.tsx`. Proof: a 区 query reaches `SESSION_SEARCH`; one Latin letter does not.
 
 **Outcome** 2026-10-11: `searchable` lives once in `src/searchable.ts` (ranges checked at the merge: 4E00-9FFF, 3400-4DBF, F900-FAFF); the bridge hook, the rail, a conversation's find and Ask Daoris's history gate on it, so 区 reaches `SESSION_SEARCH` and 'g' does not. Detail: the merge commit.
+
+
+## UXFIX2b3b — confirmations: trust and go-aheads (2026-10-11)
+
+> - [ ] **UXFIX2b3b — confirmations: trust and go-aheads** (web). TrustAsk (row, quest page) takes `Answered` through `onGrant`, its refusal said inside; GoAheadList keeps direct presses (not destructive) but says a refusal in place. Proof: focus, pending, refusal, cancellation and returned focus.
+
+**Outcome** 2026-10-11: TrustAsk keeps its card (the agent's own question, not a destructive second press) and takes `Answered`, with a pending status and the refusal inside; the go-ahead list's presses stay direct and each item holds its own wait and says its refusal beside it. No toast is left on either path. UXFIX2b's confirmation work is complete; installed look: UXFIX2bi. Detail: the merge commit.

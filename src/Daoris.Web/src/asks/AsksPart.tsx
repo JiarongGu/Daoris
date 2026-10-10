@@ -217,10 +217,11 @@ export function useAsksPart({
 
   // The person's yes or no to a go-ahead (KNOWUSE1a): the record as the door answers it, and a nudge, since a session that
   // waits on it is the driver's next move once the person answers it too.
-  const onAnswerGoAhead = (id: string, number: number, approved: boolean, words?: string) =>
+  // A refusal is said beside the go-ahead that was answered (UXFIX2b3b), and its presses are pressable again.
+  const onAnswerGoAhead = (id: string, number: number, approved: boolean, words: string | undefined, answered: Answered) =>
     answerGoAhead.mutate({ id, number, approved, words }, {
-      onSuccess: (result) => { notify(result.message); setHeld(result.ask); nudge(); },
-      onError: failure(notify),
+      onSuccess: (result) => { notify(result.message); setHeld(result.ask); nudge(); answered.done(); },
+      onError: (error) => answered.refused(sentence(error)),
     });
 
   // Deleted with every quest asked by it (D95): the record is gone, so the list chooses nothing, on the service's
@@ -282,7 +283,7 @@ export function useAsksPart({
           onClose={(reason, answered) => onClose(shown.id, reason, answered)}
           onDelete={(answered) => onDelete(shown.id, answered)}
           onOpenQuest={(id) => onChoose(id)}
-          onAnswerGoAhead={(number, approved, words) => onAnswerGoAhead(shown.id, number, approved, words)}
+          onAnswerGoAhead={(number, approved, words, answered) => onAnswerGoAhead(shown.id, number, approved, words, answered)}
           environments={environmentsIn(shown.workspace)}
           // The record as the door answers it, so the page shows the choice before the list catches up; a refusal (a
           // repository that declares no environment) is the service's sentence.

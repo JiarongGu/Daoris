@@ -859,7 +859,8 @@ describe('a park\'s go-aheads', () => {
     fireEvent.click(within(second!).getByRole('button', { name: 'Approve' }));
     fireEvent.click(within(first!).getByRole('button', { name: 'Refuse' }));
 
-    expect(onGoAhead.mock.calls).toEqual([[2, true, 'dev first, then production'], [1, false, undefined]]);
+    const answered = { done: expect.any(Function), refused: expect.any(Function) };
+    expect(onGoAhead.mock.calls).toEqual([[2, true, 'dev first, then production', answered], [1, false, undefined, answered]]);
   });
 
   it('keeps them beneath an answered park, the one still waiting answerable until the session goes on', () => {

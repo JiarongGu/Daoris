@@ -29,6 +29,7 @@ import {
 } from './say';
 import { SessionBox } from './SessionBox';
 import { askOf, pauseAsk, wiredFor, type WorkTarget } from './pausing';
+import type { GoAheadAnswer } from '../asks/GoAheadList';
 import { goAheadsAsked, goAheadToast } from './parkGoAheads';
 import { PauseAsk } from './WorkAsks';
 import { FilePreview } from './FilePreview';
@@ -645,13 +646,14 @@ export function WorkFrame({
   // on once none of the go-aheads it asked is open, as the ask's page does (GOAHEAD2b). The person's words are the
   // go-ahead's, never a message to the park, so nothing is counted as one; the toast names any go-ahead still open from the
   // list as it stood at the press.
-  const onGoAhead = (number: number, approved: boolean, words?: string) => {
-    if (!attended || !parkAsk) return;
+  // A refusal is said beside the go-ahead that was answered (UXFIX2b3b), not toasted.
+  const onGoAhead: GoAheadAnswer = (number, approved, words, answered) => {
+    if (!attended || !parkAsk) { answered.done(); return; }
     const sessionQuest = attended.quest;
     const asked = goAheads;
     parkGoAhead.mutate({ id: attended.id, ask: parkAsk, number, approved, words }, {
-      onSuccess: (answered) => notify(goAheadToast(t, number, approved, answered, { quest: sessionQuest, asked })),
-      onError: failure(notify),
+      onSuccess: (answer) => { notify(goAheadToast(t, number, approved, answer, { quest: sessionQuest, asked })); answered.done(); },
+      onError: (error) => answered.refused(sentence(error)),
     });
   };
 

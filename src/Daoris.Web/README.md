@@ -40,7 +40,9 @@ status pill never appears without its text label.
 
 **An act that ends, removes or reaches outward asks once, in the page** (platform UX §4, UXFIX2):
 `src/work/InlineConfirm.tsx` is the one ask. Its act takes an `Answered`, so the ask stays open while the act
-runs, says a refusal inside itself rather than in a toast, and returns focus to the press. A search gate asks
+runs, says a refusal inside itself rather than in a toast, and returns focus to the press. A question the agent
+asks in the page (the trust question, a go-ahead) holds its own wait the same way and says a refusal beside what
+was pressed (UXFIX2b3b). A search gate asks
 `src/searchable.ts`: two characters, or one Han character, as the driver's own rule does (D158).
 
 ## Built on (D42, `docs/2026-09-19-frontend-architecture.md`)
