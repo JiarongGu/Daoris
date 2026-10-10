@@ -119,11 +119,12 @@ export const PLACE_PARTS: readonly { within: string; part: string }[] = [
  * null for a place this window does not have, which is never guessed at. Pure, so every place is an argument.
  *
  * @remarks
- * A go names no repository, agent or workspace: Repositories' Setup opens on the repository its list has chosen, an
- * agent's part on the agent that has it (UX6e), a workspace's part on the workspace in view's page (UX6g2b), and a group
- * of Sessions or Quests with no session or quest in it chosen (ENTRY1b), as the room tells the helper. On Quests it may
- * name the one quest or ask instead of a part (ENTRY1f1), and on Sessions the one session (ENTRY1f2), which the list
- * chooses as any door's item. A workspace it carries fills Add or Import (ENTRY1d2b) and is ignored on any other place.
+ * A go opens no repository's, agent's or workspace's page by name: Repositories' Setup opens on the repository its list
+ * has chosen, an agent's part on the agent that has it (UX6e), a workspace's part on the workspace in view's page (UX6g2b),
+ * and a group of Sessions or Quests with no session or quest in it chosen (ENTRY1b), as the room tells the helper. On
+ * Quests it may name the one quest or ask instead of a part (ENTRY1f1), and on Sessions the one session (ENTRY1f2), which
+ * the list chooses as any door's item. A go to Add or Import may name a workspace since ENTRY1d2b, the one the drawer
+ * opens filled with; on any other place a workspace is ignored.
  * Knowledge with no part opens in the mode it was left in (UX6i). A go spelled as a place was before it moved opens where
  * it went (`PLACE_KEPT`).
  */
