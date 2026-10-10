@@ -9,6 +9,7 @@ import { Button, Dot, Icon, Inline, SelectField } from '../ui';
 import type { AccountRowFacts } from './accountAttention';
 import { ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers } from './attention';
 import { Note } from './Note';
+import { type Answered, InlineConfirm } from './InlineConfirm';
 import { hasNote, type NoteRecord } from './noteLines';
 import { type OpinionWait, opinionState } from './opinion';
 import { unsettledWords } from './OpinionGate';
@@ -107,17 +108,17 @@ export type Attention = {
  */
 export type AttentionActs = {
   /** An ask published to these receivers: its declarations' in one press, or the one chosen under the row. */
-  publish?: (item: Attention, to: readonly string[]) => void;
+  publish?: (item: Attention, to: readonly string[], answered?: Answered) => void;
   /** A quest parked on its failed sessions, started again (D126 §3.4): one press, which starts a session. */
   retry?: (item: Attention) => void;
   /** A go-ahead's yes or no, with the person's words where they gave any (KNOWUSE1a). */
-  answer?: (item: Attention, approved: boolean, words?: string) => void;
+  answer?: (item: Attention, approved: boolean, words: string | undefined, answered: Answered) => void;
   /** A folder trusted for the agent, after its own question (D73). */
   trust?: (item: Attention) => void;
   /** A held done's departure accepted (DRIFT1d2): what it held goes on. */
   acceptDeparture?: (item: Attention) => void;
   /** An agent's widening of the rules accepted, after saying what it widens (D74). */
-  acceptRule?: (item: Attention) => void;
+  acceptRule?: (item: Attention, answered: Answered) => void;
   /** An agent's widening of the rules declined: the rules stay as they were. */
   declineRule?: (item: Attention) => void;
   /** An account's sign-in started (UX6d): the agent's own, through its door, as the agent's page starts it. */
@@ -125,17 +126,17 @@ export type AttentionActs = {
   /** One account read on the press (§5.3, ROSTER1): the one reading a person may ask for, never a look. */
   read?: (item: Attention, account: string) => void;
   /** A ready account let into the list the waiting start reads (D130 §3.3), after its question. */
-  letRun?: (item: Attention, account: string) => void;
+  letRun?: (item: Attention, account: string, answered: Answered) => void;
   /** A set-up the person looked at said reviewed (REVIEWENV1g): one press, naming the set-up the row drew. */
   reviewed?: (item: Attention) => void;
   /** A set-up said not yet, with the person's words, which go to its session as its next turn (REVIEWENV1g). */
-  notYet?: (item: Attention, words: string) => void;
+  notYet?: (item: Attention, words: string, answered: Answered) => void;
   /** A set-up's build served to its tab again, the tab brought forward (REVIEWENV1d). */
   showAgain?: (item: Attention) => void;
   /** A second opinion asked again, or tried again where none could be had (XAGENT1g): a pass the driver's next look starts. */
   opinionAgain?: (item: Attention) => void;
   /** *Go on anyway…* at a second opinion's gate, with the person's words where they gave any (XAGENT1g). */
-  opinionAnyway?: (item: Attention, words?: string) => void;
+  opinionAnyway?: (item: Attention, words: string | undefined, answered: Answered) => void;
 };
 
 /** Which handler each act needs. */
@@ -373,16 +374,18 @@ export function AttentionRow({ item, onOpen, onRun, acts = {}, busy = false, ope
             choice={choice}
             onChoice={setChoice}
             onCancel={done}
-            onConfirm={() => {
-              if (asking === 'approve' || asking === 'refuse') acts.answer?.(item, asking === 'approve', words.trim() || undefined);
-              else if (asking === 'choose') acts.publish?.(item, [choice]);
-              else if (asking === 'trust') acts.trust?.(item);
-              else if (asking === 'accept-rule') acts.acceptRule?.(item);
-              else if (asking === 'let-run' && item.account?.outside) acts.letRun?.(item, item.account.outside.id);
-              else if (asking === 'not-yet') acts.notYet?.(item, words.trim());
-              else if (asking === 'opinion-anyway') acts.opinionAnyway?.(item, words.trim() || undefined);
-              done();
+            // The ask stays open while its act runs, and is told how it ended (UXFIX2b3a, D153's note).
+            onConfirm={(answered) => {
+              if (asking === 'approve' || asking === 'refuse') {
+                acts.answer?.(item, asking === 'approve', words.trim() || undefined, answered);
+              } else if (asking === 'choose') acts.publish?.(item, [choice], answered);
+              else if (asking === 'accept-rule') acts.acceptRule?.(item, answered);
+              else if (asking === 'let-run' && item.account?.outside) acts.letRun?.(item, item.account.outside.id, answered);
+              else if (asking === 'not-yet') acts.notYet?.(item, words.trim(), answered);
+              else if (asking === 'opinion-anyway') acts.opinionAnyway?.(item, words.trim() || undefined, answered);
+              else answered.done();
             }}
+            onGrant={() => { acts.trust?.(item); done(); }}
           />
         </div>
       )}
@@ -411,7 +414,7 @@ function letRunSentence(
  * A folder's trust is the agent's own question (`TrustAsk`); a go-ahead's yes or no takes the person's words; a choice of
  * receiver is the workspace's receivers. Named by the act's own label, so a person and a test find it as the press they made.
  */
-function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onCancel, onConfirm }: {
+function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onCancel, onConfirm, onGrant }: {
   act: AttentionActId;
   item: Attention;
   label: string;
@@ -421,7 +424,9 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
   choice: string;
   onChoice: (choice: string) => void;
   onCancel: () => void;
-  onConfirm: () => void;
+  onConfirm: (answered: Answered) => void;
+  /** A folder's trust, which keeps its own question until UXFIX2b3b: it closes on the press. */
+  onGrant: () => void;
 }) {
   const { t } = useTranslation();
   if (act === 'trust' && item.trust) {
@@ -430,7 +435,7 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
         <TrustAsk
           hold={{ ...item.trust, ...(item.quest ? { quest: item.quest } : {}), ...(item.ask ? { ask: item.ask } : {}) }}
           busy={busy}
-          onGrant={onConfirm}
+          onGrant={onGrant}
           onCancel={onCancel}
         />
       </div>
@@ -468,35 +473,25 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
         : act === 'accept-rule'
           ? t('settings.rules.proposals.accept')
           : t('asks.record.publish');
+  // The words a go-ahead's answer, a second opinion's gate or a *not yet* takes, in the one field each names.
+  const wordsLabel = answering ? t('asks.goAhead.words') : anyway ? t('opinion.ask.words') : notYet ? t('review.ask.notYetWords') : null;
   return (
-    <div
-      role="group"
-      aria-label={label}
-      className="mt-2 flex flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2"
+    // Only a refusal ends or removes something (platform UX §4): every other ask here is outward and loses nothing.
+    <InlineConfirm
+      className="mt-2"
+      tone={act === 'refuse' ? 'danger' : 'primary'}
+      label={label}
+      says={<Inline text={sentence} />}
+      meanIt={move}
+      busy={busy}
+      ready={!(act === 'choose' && !choice) && !(notYet && !words.trim())}
+      onConfirm={onConfirm}
+      onClose={onCancel}
     >
-      <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft"><Inline text={sentence} /></span>
-      {answering && (
+      {wordsLabel && (
         <input
-          aria-label={t('asks.goAhead.words')}
-          placeholder={t('asks.goAhead.words')}
-          value={words}
-          onChange={(event) => onWords(event.target.value)}
-          className="min-h-[1.9rem] min-w-0 flex-1 basis-48 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
-        />
-      )}
-      {anyway && (
-        <input
-          aria-label={t('opinion.ask.words')}
-          placeholder={t('opinion.ask.words')}
-          value={words}
-          onChange={(event) => onWords(event.target.value)}
-          className="min-h-[1.9rem] min-w-0 flex-1 basis-48 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
-        />
-      )}
-      {notYet && (
-        <input
-          aria-label={t('review.ask.notYetWords')}
-          placeholder={t('review.ask.notYetWords')}
+          aria-label={wordsLabel}
+          placeholder={wordsLabel}
           value={words}
           onChange={(event) => onWords(event.target.value)}
           className="min-h-[1.9rem] min-w-0 flex-1 basis-48 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
@@ -511,14 +506,6 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
           options={(item.choices ?? []).map((name) => ({ value: name, label: name }))}
         />
       )}
-      <Button
-        variant={act === 'refuse' ? 'danger' : 'default'}
-        disabled={busy || (act === 'choose' && !choice) || (notYet && !words.trim())}
-        onClick={onConfirm}
-      >
-        {move}
-      </Button>
-      <Button variant="ghost" disabled={busy} onClick={onCancel}>{t('common.cancel')}</Button>
-    </div>
+    </InlineConfirm>
   );
 }

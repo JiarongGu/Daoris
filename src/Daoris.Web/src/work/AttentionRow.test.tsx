@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { clockOf } from '../format';
 import i18n from '../i18n';
@@ -103,6 +103,9 @@ const SIGNED_OUT: Attention = {
 };
 
 /** Every act a row can be handed, each a spy. */
+/** What an ask under the row hands its act to say how it ended (UXFIX2b3a). */
+const answeredByAct = { done: expect.any(Function), refused: expect.any(Function) };
+
 const everyAct = (): Required<AttentionActs> => ({
   publish: vi.fn(), retry: vi.fn(), answer: vi.fn(), trust: vi.fn(),
   acceptDeparture: vi.fn(), acceptRule: vi.fn(), declineRule: vi.fn(),
@@ -301,7 +304,7 @@ describe('settling one where it stands', () => {
     await userEvent.click(await screen.findByRole('option', { name: 'tools' }));
     await userEvent.click(within(screen.getByRole('group', { name: 'Choose where it goes…' })).getByRole('button', { name: 'Publish' }));
 
-    expect(acts.publish).toHaveBeenCalledWith({ ...PROPOSAL, publishTo: [] }, ['tools']);
+    expect(acts.publish).toHaveBeenCalledWith({ ...PROPOSAL, publishTo: [] }, ['tools'], answeredByAct);
   });
 
   it('puts a question down with never mind, having done nothing', async () => {
@@ -334,7 +337,10 @@ describe('settling one where it stands', () => {
     await userEvent.type(within(asking).getByRole('textbox', { name: 'your words, if any' }), 'dev first');
     await userEvent.click(within(asking).getByRole('button', { name: 'Approve' }));
 
-    expect(acts.answer).toHaveBeenCalledWith(GO_AHEAD, true, 'dev first');
+    expect(acts.answer).toHaveBeenCalledWith(GO_AHEAD, true, 'dev first', answeredByAct);
+    // It stays open until its act says it landed.
+    expect(screen.getByRole('group', { name: 'Approve…' })).toBeInTheDocument();
+    act(() => (vi.mocked(acts.answer).mock.calls[0]![3]).done());
     expect(screen.queryByRole('group')).toBeNull();
   });
 
@@ -345,7 +351,7 @@ describe('settling one where it stands', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Refuse…' }));
     expect(screen.getByText(/is handed your no/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Refuse' }));
-    expect(acts.answer).toHaveBeenCalledWith(GO_AHEAD, false, undefined);
+    expect(acts.answer).toHaveBeenCalledWith(GO_AHEAD, false, undefined, answeredByAct);
   });
 
   /** The agent's own trust question, asked in the open under the row, and granted only on its press (D73). */
@@ -380,7 +386,7 @@ describe('settling one where it stands', () => {
     expect(screen.getByText(/It widens what agents may do: allow WebFetch for every session on this machine/)).toBeInTheDocument();
     expect(acts.acceptRule).not.toHaveBeenCalled();
     await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
-    expect(acts.acceptRule).toHaveBeenCalledWith(RULE);
+    expect(acts.acceptRule).toHaveBeenCalledWith(RULE, answeredByAct);
   });
 
   /** A press already on its way is not offered twice. */
@@ -447,7 +453,7 @@ describe('an account’s row', () => {
     expect(within(asking).getByText(code('daoris agent profile join claude-code account-4 work'))).toBeInTheDocument();
     expect(acts.letRun).not.toHaveBeenCalled();
     await userEvent.click(within(asking).getByRole('button', { name: "Add to work's list" }));
-    expect(acts.letRun).toHaveBeenCalledWith(LET_IN, 'account-4');
+    expect(acts.letRun).toHaveBeenCalledWith(LET_IN, 'account-4', answeredByAct);
   });
 
   it('says a join to this machine’s list is one, for every workspace that runs on it', async () => {
@@ -525,4 +531,82 @@ describe('an account’s row', () => {
     render(<AttentionRow item={SIGNED_OUT} acts={everyAct()} below={<p>the sign-in’s steps</p>} />);
     expect(within(screen.getByRole('listitem')).getByText('the sign-in’s steps')).toBeInTheDocument();
   });
+});
+
+const SET_UP: Attention = {
+  id: 'q2', kind: 'set-up', title: 'Show #q1 in `local` for review', where: 'reports', since: '2026-09-21T11:35:00Z',
+  detail: 'Shown in `local`.', setUp: { machine: 'desk', sequence: 7 }, local: true, session: 's9',
+};
+
+const OPINION: Attention = {
+  id: 's42', kind: 'opinion', title: 'Fix the page bound in the catalog', where: 'storefront', since: '2026-09-21T11:35:00Z',
+  detail: 'A finding is disputed.',
+  opinion: {
+    session: 's42', quest: 'q7', repository: 'storefront', since: '2026-09-21T11:35:00Z', auto: true,
+    opinion: { state: 'disputed', holds: true, opinion: 'o1', reviewer: 'codex-acp', product: 'Codex', maker: 'OpenAI', disputes: 1 },
+  },
+};
+
+/**
+ * UXFIX2b3a: each ask of the row is the shared inline confirmation: it takes the focus on opening, stays open and says it is
+ * waiting while its act runs, says a refusal inside it, and closes on success with the focus back on the press that opened it.
+ */
+describe('an ask under the row answers inside itself', () => {
+  type Case = {
+    name: string; item: Attention; open: string; move: string; handler: keyof AttentionActs;
+    prepare?: (ask: HTMLElement) => Promise<void>;
+  };
+  const cases: Case[] = [
+    { name: 'approve', item: GO_AHEAD, open: 'Approve…', move: 'Approve', handler: 'answer' },
+    { name: 'refuse', item: GO_AHEAD, open: 'Refuse…', move: 'Refuse', handler: 'answer' },
+    {
+      name: 'choose', item: { ...PROPOSAL, publishTo: [] }, open: 'Choose where it goes…', move: 'Publish', handler: 'publish',
+      prepare: async (ask) => {
+        await userEvent.click(within(ask).getByRole('combobox', { name: 'Choose a repository' }));
+        await userEvent.click(await screen.findByRole('option', { name: 'tools' }));
+      },
+    },
+    { name: 'accept-rule', item: RULE, open: 'Accept…', move: 'Accept', handler: 'acceptRule' },
+    { name: 'let-run', item: LET_IN, open: 'Let account-4 run work…', move: "Add to work's list", handler: 'letRun' },
+    {
+      name: 'not-yet', item: SET_UP, open: 'Not yet…', move: 'Send not yet', handler: 'notYet',
+      prepare: async (ask) => { await userEvent.type(within(ask).getByRole('textbox'), 'the chart is empty'); },
+    },
+    { name: 'opinion-anyway', item: OPINION, open: 'Go on anyway…', move: 'Go on anyway', handler: 'opinionAnyway' },
+  ];
+
+  for (const one of cases) {
+    it(`${one.name}: takes the focus, waits for its act, says a refusal inside, and gives the focus back once it lands`, async () => {
+      const acts = everyAct();
+      const handler = acts[one.handler] as ReturnType<typeof vi.fn>;
+      render(<AttentionRow item={one.item} acts={acts} />);
+
+      await userEvent.click(screen.getByRole('button', { name: one.open }));
+      const ask = screen.getByRole('group', { name: one.open });
+      // The explanation takes the focus on opening.
+      expect(ask.contains(document.activeElement)).toBe(true);
+      await one.prepare?.(ask);
+      await userEvent.click(within(screen.getByRole('group', { name: one.open })).getByRole('button', { name: one.move }));
+
+      // It stays open and says it waits while the act runs; the act hears how to answer.
+      expect(handler).toHaveBeenCalledTimes(1);
+      const answered = handler.mock.calls[0]!.at(-1) as { done: () => void; refused: (sentence: string) => void };
+      expect(typeof answered.done).toBe('function');
+      expect(screen.getByRole('group', { name: one.open })).toBeInTheDocument();
+      expect(screen.getByRole('status')).toHaveTextContent(/\S/);
+
+      // A refusal is said in the ask, and the move may be pressed again.
+      act(() => answered.refused('The host said no.'));
+      expect(within(screen.getByRole('group', { name: one.open })).getByRole('alert')).toHaveTextContent('The host said no.');
+      expect(within(screen.getByRole('group', { name: one.open })).getByRole('button', { name: one.move })).toBeEnabled();
+
+      await userEvent.click(within(screen.getByRole('group', { name: one.open })).getByRole('button', { name: one.move }));
+      expect(handler).toHaveBeenCalledTimes(2);
+      const again = handler.mock.calls[1]!.at(-1) as { done: () => void };
+      act(() => again.done());
+
+      expect(screen.queryByRole('group')).toBeNull();
+      expect(screen.getByRole('button', { name: one.open })).toHaveFocus();
+    });
+  }
 });

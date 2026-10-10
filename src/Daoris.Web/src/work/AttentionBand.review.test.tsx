@@ -31,9 +31,10 @@ const posts = () => vi.mocked(fetch).mock.calls
   .filter(([, init]) => init?.method === 'POST')
   .map(([path, init]) => ({ path: String(path), body: JSON.parse(String(init!.body)) }));
 
-function start(notify = vi.fn()) {
+function start(notify = vi.fn(), post?: () => Response) {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
+    if (init?.method === 'POST' && post) return post();
     if (init?.method === 'POST') return Response.json({ quest: STEP_SHOWN, message: 'Reviewed set-up step `#q2` in `local`.' });
     if (url.startsWith('/api/quests')) return Response.json([STEP_SHOWN]);
     return Response.json([]);
@@ -95,6 +96,22 @@ describe('a set-up waiting in What needs you', () => {
       path: '/api/quests/q2/review',
       body: { verdict: 'not-yet', words: 'The total is off by one.', setUp: { machine: 'desk', sequence: 7 } },
     });
+  });
+
+  /** UXFIX2b3a: a refused not yet is said inside its ask, where it was pressed, and never toasted; the ask stays for a retry. */
+  it('says a refused not yet inside its ask, and toasts nothing', async () => {
+    const notify = start(vi.fn(), () => Response.json({ error: 'The set-up moved on.' }, { status: 409 }));
+    const user = userEvent.setup();
+
+    const row = await screen.findByRole('listitem', { name: STEP_SHOWN.title });
+    await user.click(within(row).getByRole('button', { name: 'Not yet…' }));
+    const ask = within(row).getByRole('group', { name: 'Not yet…' });
+    await user.type(within(ask).getByRole('textbox'), 'The total is off by one.');
+    await user.click(within(ask).getByRole('button', { name: 'Send not yet' }));
+
+    expect(await within(ask).findByRole('alert')).toBeInTheDocument();
+    expect(notify).not.toHaveBeenCalled();
+    expect(within(ask).getByRole('button', { name: 'Send not yet' })).toBeEnabled();
   });
 
   it('shows it again through the shell', async () => {
