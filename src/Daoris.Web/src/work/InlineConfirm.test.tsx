@@ -224,13 +224,13 @@ describe('an inline confirmation', () => {
 
   /**
    * UXFIX2d (seen on the install, D161 §2): in a repository's Manage drawer, *Never mind* on the retire ask left the focus on
-   * the drawer's *Close*. The window's press was a script's `click()`, which activates a press without moving the focus, as an
-   * assistive tool's invoke or a browser that does not focus a clicked button can; the focus still sat on *Close*, where the
-   * drawer put it as it opened, and the ask took what opened it from the focus alone. `userEvent.click` moves the focus to the
-   * press first, as a pointer does in Chromium, which is why the jsdom tests passed it.
+   * the drawer's *Close*. The window's press was a script's `click()`, which activates a press without moving the focus, as a
+   * browser that does not focus a clicked button does too; the focus still sat on *Close*, where the drawer put it as it
+   * opened, and the ask took what opened it from the focus alone. `userEvent.click` moves the focus to the press first, as a
+   * pointer does in Chromium, which is why the jsdom tests passed it.
    */
   describe('gives the focus back to the press, whether or not pressing it moved the focus (UXFIX2d)', () => {
-    /** Pressed as a script, an assistive tool or such a browser presses it: the click alone, the focus left where it was. */
+    /** Pressed as a script or such a browser presses it: the click alone, the focus left where it was. */
     const pressOnly = (press: HTMLElement) => fireEvent.click(press);
 
     it('inside a drawer, Never mind gives the focus to the press drawn again, not to the drawer’s Close', async () => {

@@ -58,9 +58,8 @@ const PRESS = 'button, a[href], [role="button"], [role="menuitem"], [role="menui
 
 /**
  * The press the last click went to, until the task that heard it ends (UXFIX2d). A click need not move the focus: a script's
- * `click()` (the desktop driver's), an assistive tool's invoke or a browser that does not focus a clicked button leaves it
- * where it sat, a drawer's *Close* as the drawer opened, and an ask that took what opened it from the focus alone gave the
- * focus back there. Heard at the document before the page's own handlers, so it is known when the ask is first drawn; the
+ * `click()` (the desktop driver's) or a browser that does not focus a clicked button leaves it where it sat, a drawer's
+ * *Close* as the drawer opened, and an ask that took what opened it from the focus alone gave the focus back there. Heard at the document before the page's own handlers, so it is known when the ask is first drawn; the
  * next task forgets it, so an ask drawn later by anything but that click reads the focus.
  */
 let pressed: Element | null = null;

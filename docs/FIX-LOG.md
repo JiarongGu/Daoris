@@ -14,8 +14,8 @@ repository.
   Every gate passed it, `ProjectsView.test.tsx`'s retire case included.
 - **Root cause:** `InlineConfirm` took what opened it from `document.activeElement` alone, read as it is first drawn
   (since UXFIX2, `364e1873`). The window's press is `tools/desktop.mjs`'s `click`, a script's `element.click()`, which
-  activates a press without moving the focus, as an assistive tool's invoke or a browser that does not focus a clicked
-  button can. The focus still sat on *Close*, where Radix's focus scope put it as the drawer opened, so the ask named
+  activates a press without moving the focus, as a browser that does not focus a clicked button does too. The focus still
+  sat on *Close*, where Radix's focus scope put it as the drawer opened, so the ask named
   *Close* its opener and gave the focus back there. `userEvent.click` moves the focus to the press first, as a pointer
   does in Chromium, which is why jsdom passed it. The suspected `CLOSES_ITSELF` was not the cause: a drawer counts as a
   surface that closes, but its focus trap keeps every focus inside it, so the beat's second reading never replaced the
