@@ -27,8 +27,7 @@ Contracts: platform UX §4/§6, `docs/2026-10-05-ux7-design.md` (D152),
 `docs/2026-10-04-ux6-redesign.md` (D150, §12 proofs). UI work needs stories, behavior tests and
 installed-window evidence in both themes/languages; Storybook alone does not close an installed proof.
 
-- [ ] **UXFIX2b2b — confirmations: decline, close, awaiting, archive, discard** (web). Quest decline, ask close, awaiting-person finish/decline, archive ended (`tone="primary"`), DiffPane force-discard. Proof: focus, pending, refusal, cancellation and returned focus.
-- [ ] **UXFIX2bi — installed confirmations look** (parent; after republish). Tool version delete, plugin removal, project retire, pause and abandon asks in the window, both themes/languages: focus on open, pending, refusal inside, returned focus.
+- [ ] **UXFIX2bi — installed confirmations look** (parent; after republish). The UXFIX2b1/2a/2b asks in the window (tool, plugin, retire, pause, abandon, decline, close, finish, archive, discard), both themes/languages: focus on open, pending, refusal inside, returned focus.
 - [ ] **UXFIX2b3 — confirmations: attention, trust, account use** (web). AttentionRow's asks, TrustAsk, GoAheadList, AccountUse inherit and AgentPage's key ask; settle which are `tone="primary"`; drop AgentPage's settings guard SETTINGSWAIT1 made redundant. Same proof.
 - [ ] **UX7b — installed account UI** (web). Verify recovered account rows and add/name/join flow at 1546/680 px, both themes/languages. D152 §4.
 - [ ] **ACCTEDIT1b — installed refused edits** (parent; after republish). Verify rename, workspace use and add refusals retain drafts, including dark borders. D152 §4; dated shots.
@@ -72,6 +71,7 @@ D88/D102 cleanup notes, machine log §4. Installed clears require the owner's ex
 
 - [ ] **ASKHIST1d2 — every conversation remains reachable: page** (web). Page through the list with `next`, say what search covered, parse `about`/`foundLine` as Markdown before cutting. D158's ASKHIST1d1 note is the contract; history tests and stories.
 - [ ] **RAILSRCH1 — the rail's search reaches every record** (driver). The session rail's search refuses one Han character and never reads past the newest 200 records. D158's ASKHIST1d1 note (`Searchable`), RAIL1; a single-character hit and a hit past 200 in `SessionEventsTests`.
+- [ ] **RAILSRCH1b — the page's search gates take one Han character** (web; after ASKHIST1d2 and RAILSRCH1). Move ASKHIST1d2's `searchable` to a neutral module both pages import; use it in `bridge/sessions.ts`, `SessionRail.tsx`, `SessionConversation.tsx`, `ConversationFind.tsx`. Proof: a 区 query reaches `SESSION_SEARCH`; one Latin letter does not.
 - [ ] **AUTOTIDY1a — show automatic cleanup** (modules/web). Branches lists recent tidied/kept log facts. D88; route and bilingual list tests.
 - [ ] **AUTOTIDY1b — measure strict cleanup guards** (parent; installed AUTOTIDY1, after one week). Count ignored-file/unmoved-branch holds before deciding relaxations. D88 evidence.
 - [ ] **AUTOTIDY1c — automatic squash cleanup** (driver; after AUTOTIDY1b; decide first). Consider content proof plus merged PR state, preserving recovery refs. D88/D102; Process guards.

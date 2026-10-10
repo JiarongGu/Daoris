@@ -2220,8 +2220,10 @@ describe('clearing a parked session', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Finish…' }));
     await userEvent.click(screen.getByRole('button', { name: 'Finish' }));
 
-    await vi.waitFor(() => expect(notify)
-      .toHaveBeenCalledWith(expect.stringContaining('Declining needs a reason'), 'error'));
+    // Said inside the ask that was pressed, and in no toast (UXFIX2b2b); the ask stays, to be pressed again.
+    const ask = screen.getByRole('group', { name: 'finish this session' });
+    expect(await within(ask).findByRole('alert')).toHaveTextContent('Declining needs a reason');
+    expect(notify).not.toHaveBeenCalled();
   });
 
   /**

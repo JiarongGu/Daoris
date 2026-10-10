@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { NotePart, Quest } from '../api';
 import { Button, Segmented, WaitingCard } from '../ui';
+import { type Answered, InlineConfirm } from './InlineConfirm';
 import { Note } from './Note';
 
 /** What the ledger lets a person do from `awaiting-person` — and nothing this surface invented. */
@@ -61,7 +62,7 @@ export function AwaitingPerson({ note, parts, quest = null, pending = false, onR
    * The ledger's moves this card makes, finish and decline, where this surface can make them (the shell); a finish that
    * closes its quest says how (QUESTCLOSE1).
    */
-  onResolve?: (state: Resolution, note: string | null, close?: QuestClose) => void;
+  onResolve?: (state: Resolution, note: string | null, close?: QuestClose, answered?: Answered) => void;
   /** The answer to a session with no process left — its quest carried on with the words (STANDDOWN2). */
   onAnswer?: (answer: string | null) => void;
 }) {
@@ -75,10 +76,9 @@ export function AwaitingPerson({ note, parts, quest = null, pending = false, onR
   const [questTo, setQuestTo] = useState<'leave' | 'done'>('leave');
   const [questNote, setQuestNote] = useState('');
   const closable = quest !== null && (quest.status === 'Open' || quest.status === 'Taken');
-  const finish = () => {
+  const finish = (answered: Answered) => {
     if (!onResolve) return;
-    if (questTo === 'done' && closable) onResolve('completed', null, { as: 'done', note: questNote.trim() || null });
-    else onResolve('completed', null);
+    onResolve('completed', null, questTo === 'done' && closable ? { as: 'done', note: questNote.trim() || null } : undefined, answered);
   };
 
   const field = 'min-h-14 resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink';
@@ -114,9 +114,22 @@ export function AwaitingPerson({ note, parts, quest = null, pending = false, onR
         )
         : finishing && onResolve && closable
         ? (
-          <div className="mt-2.5 grid gap-2">
-            <p className="m-0 text-small text-ink-soft">{t('work.awaiting.finishQuest', { quest: quest!.id })}</p>
-            <div>
+          /* A finish that may close its quest asks once, open until the ledger answers, a refusal said inside it
+             (UXFIX2b2b). Put down, it forgets the choice: the next finish asks again from leaving the quest as it is. */
+          <InlineConfirm
+            className="mt-2.5"
+            label={t('work.awaiting.finishTitle')}
+            says={t('work.awaiting.finishQuest', { quest: quest!.id })}
+            meanIt={t('work.awaiting.finish')}
+            busy={pending}
+            onConfirm={finish}
+            onClose={() => {
+              setFinishing(false);
+              setQuestTo('leave');
+              setQuestNote('');
+            }}
+          >
+            <div className="basis-full">
               <Segmented
                 label={t('work.awaiting.questChoice')}
                 value={questTo}
@@ -128,7 +141,7 @@ export function AwaitingPerson({ note, parts, quest = null, pending = false, onR
               />
             </div>
             {questTo === 'done' && (
-              <label className="grid gap-1 text-small text-ink-faint">
+              <label className="grid basis-full gap-1 text-small text-ink-faint">
                 <span className="sr-only">{t('work.awaiting.questNote')}</span>
                 <textarea
                   autoFocus
@@ -140,29 +153,24 @@ export function AwaitingPerson({ note, parts, quest = null, pending = false, onR
                 />
               </label>
             )}
-            <div className="flex flex-wrap gap-2">
-              <Button variant="primary" disabled={pending} onClick={finish}>{t('work.awaiting.finish')}</Button>
-              {/* Put down, it forgets the choice: the next finish asks again from leaving the quest as it is. */}
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setFinishing(false);
-                  setQuestTo('leave');
-                  setQuestNote('');
-                }}
-              >
-                {t('common.cancel')}
-              </Button>
-            </div>
-          </div>
+          </InlineConfirm>
         )
         : declining && onResolve
         ? (
-          <div className="mt-2.5 grid gap-2">
-            <label className="grid gap-1 text-small text-ink-faint">
+          /* A decline needs its reason, the part whoever reads the record can act on: the move waits for it. */
+          <InlineConfirm
+            className="mt-2.5"
+            label={t('work.awaiting.declineTitle')}
+            says={t('work.awaiting.declineSays')}
+            meanIt={t('work.awaiting.declineConfirm')}
+            busy={pending}
+            ready={reason.trim() !== ''}
+            onConfirm={(answered) => onResolve('declined', reason.trim(), undefined, answered)}
+            onClose={() => setDeclining(false)}
+          >
+            <label className="grid basis-full gap-1 text-small text-ink-faint">
               <span className="sr-only">{t('work.awaiting.declinePlaceholder')}</span>
               <textarea
-                autoFocus
                 value={reason}
                 aria-label={t('work.awaiting.declinePlaceholder')}
                 onChange={(event) => setReason(event.target.value)}
@@ -170,17 +178,7 @@ export function AwaitingPerson({ note, parts, quest = null, pending = false, onR
                 className={field}
               />
             </label>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="danger"
-                disabled={!reason.trim() || pending}
-                onClick={() => onResolve('declined', reason.trim())}
-              >
-                {t('work.awaiting.declineConfirm')}
-              </Button>
-              <Button variant="ghost" onClick={() => setDeclining(false)}>{t('common.cancel')}</Button>
-            </div>
-          </div>
+          </InlineConfirm>
         )
         : (
           <div className="mt-2.5 flex flex-wrap gap-2">

@@ -665,6 +665,22 @@ describe('the session rail by state', () => {
       ));
     });
 
+    /** UXFIX2b2b: a refusal is said inside the ask, which stays open to be pressed again, and nothing is toasted. */
+    it('says a refused archive inside its ask, and keeps it open', async () => {
+      const notify = vi.fn();
+      const closed = vi.fn();
+      answering(() => { throw new Error('The driver is not running.'); });
+      rail({ notify, archiveEnded: true, onArchiveEnded: closed });
+
+      const ask = await screen.findByRole('group', { name: 'Archive what ended…' });
+      await userEvent.click(within(ask).getByRole('button', { name: /^Archive \d+$/ }));
+
+      expect(await within(ask).findByRole('alert')).toHaveTextContent('The driver is not running.');
+      expect(within(ask).getByRole('button', { name: /^Archive \d+$/ })).toBeEnabled();
+      expect(closed).not.toHaveBeenCalled();
+      expect(notify).not.toHaveBeenCalled();
+    });
+
     it('closes the ask on Never mind, archiving nothing', async () => {
       const closed = vi.fn();
       answering(() => { throw new Error('archived on Never mind'); });

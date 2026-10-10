@@ -209,9 +209,10 @@ export function useAsksPart({
     onError: failure(notify),
   });
 
-  const onClose = (id: string, reason: string) => close.mutate({ id, reason }, {
-    onSuccess: (result) => { notify(result.message); setHeld(result.ask); },
-    onError: failure(notify),
+  // A refusal is said inside the ask that was pressed (UXFIX2b2b), and the page stays on the ask as it was.
+  const onClose = (id: string, reason: string, answered: Answered) => close.mutate({ id, reason }, {
+    onSuccess: (result) => { notify(result.message); answered.done(); setHeld(result.ask); },
+    onError: (error) => answered.refused(sentence(error)),
   });
 
   // The person's yes or no to a go-ahead (KNOWUSE1a): the record as the door answers it, and a nudge, since a session that
@@ -278,7 +279,7 @@ export function useAsksPart({
           onAttend={onAttend}
           busy={busy}
           onPublish={(to) => onPublish(shown.id, to)}
-          onClose={(reason) => onClose(shown.id, reason)}
+          onClose={(reason, answered) => onClose(shown.id, reason, answered)}
           onDelete={(answered) => onDelete(shown.id, answered)}
           onOpenQuest={(id) => onChoose(id)}
           onAnswerGoAhead={(number, approved, words) => onAnswerGoAhead(shown.id, number, approved, words)}

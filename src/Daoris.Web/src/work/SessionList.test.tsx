@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../i18n';
@@ -245,7 +245,27 @@ describe("Archive what ended's first press", () => {
     const group = screen.getByRole('group', { name: 'Archive what ended…' });
     expect(group).toHaveTextContent('Archives 2 sessions that ended. Kept in the list: 2 waiting on you, 1 to review.');
     await userEvent.click(within(group).getByRole('button', { name: 'Archive 2' }));
-    expect(archive).toHaveBeenCalledWith(['d0ne0001', 'd0ne0000']);
+    expect(archive).toHaveBeenCalledWith(['d0ne0001', 'd0ne0000'], expect.objectContaining({ done: expect.any(Function) }));
+  });
+
+  /** UXFIX2b2b: nothing is destroyed, so the move wears the primary's hue; it waits, says a refusal inside, closes once it landed. */
+  it('archives in the primary hue, says a refusal inside the ask, and closes it once the archive landed', async () => {
+    const archive = vi.fn();
+    const cancel = vi.fn();
+    ask({ onArchive: archive, onCancel: cancel });
+
+    const group = screen.getByRole('group', { name: 'Archive what ended…' });
+    const move = within(group).getByRole('button', { name: 'Archive 2' });
+    expect(move.className).toContain('bg-accent');
+    await userEvent.click(move);
+    expect(move).toBeDisabled();
+    const answered = archive.mock.calls[0]![1] as { done: () => void; refused: (sentence: string) => void };
+    act(() => answered.refused('The driver is not running.'));
+    expect(within(group).getByRole('alert')).toHaveTextContent('The driver is not running.');
+    expect(cancel).not.toHaveBeenCalled();
+
+    act(() => answered.done());
+    expect(cancel).toHaveBeenCalledOnce();
   });
 
   /** The reader answers on every tick; the second press sends what the first listed, never a later answer's list. */
@@ -256,7 +276,7 @@ describe("Archive what ended's first press", () => {
     rerender(<ArchiveEndedAsk going={['d0ne0001', 'd0ne0000', 'n3wly000']} kept={{ you: 0, review: 0 }} onArchive={archive} onCancel={() => {}} />);
     expect(screen.getByRole('group', { name: 'Archive what ended…' })).toHaveTextContent('Archives 2 sessions that ended.');
     await userEvent.click(screen.getByRole('button', { name: 'Archive 2' }));
-    expect(archive).toHaveBeenCalledWith(['d0ne0001', 'd0ne0000']);
+    expect(archive).toHaveBeenCalledWith(['d0ne0001', 'd0ne0000'], expect.objectContaining({ done: expect.any(Function) }));
   });
 
   it('names only what it keeps, one session in the singular', () => {

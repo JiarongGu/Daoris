@@ -12865,3 +12865,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SETTINGSWAIT1 — Never mind waits during save** (web-settings). Disable the ignored cancel press in AccountSettingsForm. D125 note; form regression.
 
 **Outcome** 2026-10-10: the account settings form's *Never mind* is disabled while a save runs, as its Save is; the case that rerenders `busy` asserts it, seen failing first. AgentPage's page-side guard is now redundant and goes with UXFIX2b3. Built by a Sonnet worker in 4 turns. Detail: the merge commit.
+
+
+## UXFIX2b2b — confirmations: decline, close, awaiting, archive, discard (2026-10-10)
+
+> - [ ] **UXFIX2b2b — confirmations: decline, close, awaiting, archive, discard** (web). Quest decline, ask close, awaiting-person finish/decline, archive ended (`tone="primary"`), DiffPane force-discard. Proof: focus, pending, refusal, cancellation and returned focus.
+
+**Outcome** 2026-10-10: the five asks confirm through `InlineConfirm` with `Answered`, `onResolve` threaded through the awaiting band's four places; archive ended is primary-toned, and a refused forced discard is said inside its ask. Seven new catalogue keys (en/zh); the forced discard had no tests and gained four. Installed look: UXFIX2bi. Detail: the merge commit.

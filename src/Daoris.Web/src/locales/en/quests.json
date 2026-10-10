@@ -57,6 +57,8 @@
   "quests.detail.endedTaken": "Its last session here, {{session}}, ended, and the quest is still taken: nothing here carries it on. Mark it done once its work is done.",
   "quests.detail.decline": "Decline…",
   "quests.detail.declineConfirm": "Decline with this reason",
+  "quests.detail.declineTitle": "decline this quest",
+  "quests.detail.declineSays": "Declines #{{id}} with your reason, which is the part the asker can act on.",
   "quests.detail.declinePlaceholder": "the reason — it is the part the asker can act on",
   "quests.detail.delete": "Delete…",
   "quests.detail.deleteTitle": "delete this quest",

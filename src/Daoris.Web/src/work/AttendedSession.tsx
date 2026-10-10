@@ -109,7 +109,7 @@ export function AttendedSession({
   lastTurn?: string | null;
   resolving?: boolean;
   /** Passed straight through to the head, where a parked session's moves live (design §4); its stop is the page header's. */
-  onResolve?: (state: Resolution, note: string | null, close?: QuestClose) => void;
+  onResolve?: (state: Resolution, note: string | null, close?: QuestClose, answered?: Answered) => void;
   /** Passed straight through too: where an intake's answer is, its ask (INT4g). */
   onAnswerAsk?: (ask: string) => void;
   /** And the answer to a driven session that parked to ask the person (STANDDOWN2). */

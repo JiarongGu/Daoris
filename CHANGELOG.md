@@ -13,9 +13,10 @@ with the version and date at release.
 - Account rows show each usage window as its own cell, in the same place on every row: the share used,
   a bar of that window's allowance, its reset and how old its reading is. A window the agent has not
   reported says *unknown*, never 0%.
-- Deleting a tool version, removing a plugin, retiring a repository, and pausing or abandoning work
-  confirm in place: the ask stays open while the act runs, says a refusal inside it, and returns
-  focus to the press.
+- Deleting a tool version, removing a plugin, retiring a repository, pausing or abandoning work,
+  declining a quest, closing an ask, finishing or declining a session that waits on you, archiving
+  ended sessions and discarding a tree anyway all confirm in place: the ask stays open while the act
+  runs, says a refusal inside it, and returns focus to the press.
 
 - Contributor guidance is shared across agents; development verification checks documentation routing
   and guide freshness declarations, including missing described source paths. Document checks ignore

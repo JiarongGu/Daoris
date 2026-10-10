@@ -33,6 +33,7 @@
   "work.review.accepting": "落地中…",
   "work.review.sendBack": "退回…",
   "work.review.discard": "丢弃工作树",
+  "work.review.discardTitle": "丢弃这个工作树",
   "work.review.discardMeanIt": "仍然丢弃",
   "work.review.landed.label": "这份工作落地在哪里",
   "work.review.landed.on": "这个会话的工作落地在 `{{branch}}` 上。",

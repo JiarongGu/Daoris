@@ -57,6 +57,8 @@
   "quests.detail.endedTaken": "它在本机的最后一个会话 {{session}} 已不再运行，而委托仍是已接下：本机不会再继续它。工作完成后，把它标为完成。",
   "quests.detail.decline": "谢绝…",
   "quests.detail.declineConfirm": "以此理由谢绝",
+  "quests.detail.declineTitle": "谢绝这项委托",
+  "quests.detail.declineSays": "以你的理由谢绝 #{{id}}，委托方能据以行动的正是这部分。",
   "quests.detail.declinePlaceholder": "理由——委托方能据以行动的部分",
   "quests.detail.delete": "删除…",
   "quests.detail.deleteTitle": "删除这项委托",

@@ -120,7 +120,8 @@ export function AskPage({
   onAttend?: (session: string) => void;
   busy?: boolean;
   onPublish: (to: string) => void;
-  onClose: (reason: string) => void;
+  /** Close the ask with the person's reason, told back to its ask (UXFIX2b2b): open until it answers. */
+  onClose: (reason: string, answered: Answered) => void;
   /**
    * Delete the ask with every quest asked by it (D95), told back to its ask (UXFIX2) — absent where there is no door to do
    * it.
@@ -292,25 +293,26 @@ export function AskPage({
       )}
 
       {live && closing && (
-        <div className="mb-4 grid gap-2 rounded-control border border-line bg-sunken px-2.5 py-2">
-          {/* A close is the person's word that the ask is answered, and leaves its quests as they are (§6.5). */}
-          <span className="text-small text-ink-soft">{t('asks.record.closeLeaves')}</span>
+        /* A close is the person's word that the ask is answered, and leaves its quests as they are (§6.5). It stays open
+           until the service answers, and says a refusal inside itself (UXFIX2b2b). */
+        <InlineConfirm
+          className="mb-4"
+          label={t('asks.record.closeTitle')}
+          says={t('asks.record.closeLeaves')}
+          meanIt={t('asks.record.closeConfirm')}
+          busy={busy}
+          ready={reason.trim() !== ''}
+          onConfirm={(answered) => onClose(reason.trim(), answered)}
+          onClose={() => { setAsking((was) => (was === 'close' ? null : was)); setReason(''); }}
+        >
           <textarea
             aria-label={t('asks.record.closeWhy')}
             placeholder={t('asks.record.closeWhy')}
             rows={2} value={reason}
             onChange={(e) => setReason(e.target.value)}
-            className="resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
+            className="min-w-0 basis-full resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
           />
-          <div className="flex flex-wrap gap-2">
-            <Button variant="danger" disabled={busy || !reason.trim()} onClick={() => onClose(reason.trim())}>
-              {t('asks.record.closeConfirm')}
-            </Button>
-            <Button variant="ghost" disabled={busy} onClick={() => { setAsking(null); setReason(''); }}>
-              {t('common.cancel')}
-            </Button>
-          </div>
-        </div>
+        </InlineConfirm>
       )}
 
       {/* The first line is the page's title, so the body is what follows it — a one-line ask was its title

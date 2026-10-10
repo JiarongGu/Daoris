@@ -7,6 +7,7 @@ import {
   cutEnded, ENDED_SHOWN, type SessionArrangement, type SessionGrouping, sessionsByRepository, sessionsByState, stripSessions,
 } from './groups';
 import { isHelp, isIntake } from './identity';
+import { type Answered, InlineConfirm } from './InlineConfirm';
 import { ListGroup } from './ListPane';
 import { RepositoryGroup } from './RepositoryGroup';
 import { SessionRow, SessionStripRow, type SessionWhere } from './SessionRow';
@@ -197,7 +198,8 @@ export function ArchiveEndedAsk({ going, kept, busy = false, onArchive, onCancel
   kept: { you: number; review: number };
   /** An archive on its way: the presses wait for it. */
   busy?: boolean;
-  onArchive: (ids: readonly string[]) => void;
+  /** The second press, sending what the first listed, and how to tell the ask how it ended (UXFIX2b2b). */
+  onArchive: (ids: readonly string[], answered: Answered) => void;
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
@@ -211,21 +213,18 @@ export function ArchiveEndedAsk({ going, kept, busy = false, onArchive, onCancel
         : null;
 
   return (
-    <div
-      role="group"
-      aria-label={t('work.list.archiveEnded')}
-      className="mx-2 mb-1 mt-1.5 grid gap-2 rounded-control border border-line bg-sunken px-2.5 py-2"
-    >
-      <p className="m-0 text-small text-ink-soft">{keeps ? t('work.archive.join', { first: takes, second: keeps }) : takes}</p>
-      <div className="flex flex-wrap gap-2">
-        {count > 0 && (
-          <Button variant="primary" disabled={busy} onClick={() => onArchive(listed.going)}>
-            {t('work.list.archiveMeanIt', { count })}
-          </Button>
-        )}
-        <Button variant="ghost" disabled={busy} onClick={onCancel}>{t(count > 0 ? 'common.cancel' : 'common.close')}</Button>
-      </div>
-    </div>
+    // Nothing is destroyed (an archive is shown again from *Show archived*), so the move wears the primary's hue (UXFIX2b2b).
+    // Nothing to archive offers only *Close*, as the shared ask does where it has no move.
+    <InlineConfirm
+      className="mx-2 mb-1 mt-1.5"
+      tone="primary"
+      label={t('work.list.archiveEnded')}
+      says={keeps ? t('work.archive.join', { first: takes, second: keeps }) : takes}
+      meanIt={count > 0 ? t('work.list.archiveMeanIt', { count }) : undefined}
+      busy={busy}
+      onConfirm={(answered) => onArchive(listed.going, answered)}
+      onClose={onCancel}
+    />
   );
 }
 

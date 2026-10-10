@@ -66,6 +66,7 @@
   "asks.record.close": "Close ask",
   "asks.record.closeWhy": "why — what became of it",
   "asks.record.closeConfirm": "Close with this reason",
+  "asks.record.closeTitle": "close this ask",
   "asks.record.delete": "Delete…",
   "asks.record.deleteTitle": "delete this ask",
   "asks.record.deleteConfirm": "This removes the ask from this machine, and every quest it became goes with it. It cannot be undone.",

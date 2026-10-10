@@ -174,7 +174,34 @@ describe('AskPage', () => {
     await userEvent.type(within(page).getByLabelText('why — what became of it'), 'Answered elsewhere.');
     await userEvent.click(confirm);
 
-    expect(onClose).toHaveBeenCalledWith('Answered elsewhere.');
+    expect(onClose).toHaveBeenCalledWith('Answered elsewhere.', expect.objectContaining({ done: expect.any(Function) }));
+  });
+
+  it('says a refused close inside its ask, keeps the reason, and gives the focus back once it lands (UXFIX2b2b)', async () => {
+    const { page, onClose } = record(PROPOSED);
+
+    await userEvent.click(within(page).getByRole('button', { name: 'Close ask' }));
+    const ask = within(page).getByRole('group', { name: 'close this ask' });
+    await userEvent.type(within(ask).getByLabelText('why — what became of it'), 'Answered elsewhere.');
+    await userEvent.click(within(ask).getByRole('button', { name: 'Close with this reason' }));
+    const answered = vi.mocked(onClose).mock.calls[0]![1];
+    expect(within(ask).getByRole('button', { name: 'Close with this reason' })).toBeDisabled();
+    act(() => answered.refused('The service is not reachable.'));
+    expect(within(ask).getByRole('alert')).toHaveTextContent('The service is not reachable.');
+    expect(within(ask).getByLabelText('why — what became of it')).toHaveValue('Answered elsewhere.');
+
+    act(() => answered.done());
+    expect(within(page).queryByRole('group', { name: 'close this ask' })).toBeNull();
+  });
+
+  it('puts the close down on Never mind and returns the focus to Close ask', async () => {
+    const { page, onClose } = record(PROPOSED);
+
+    await userEvent.click(within(page).getByRole('button', { name: 'Close ask' }));
+    await userEvent.click(within(page).getByRole('button', { name: 'Never mind' }));
+    expect(within(page).queryByRole('group', { name: 'close this ask' })).toBeNull();
+    expect(within(page).getByRole('button', { name: 'Close ask' })).toHaveFocus();
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   /** A closed ask becomes nothing more (INT4a): its reason stays, and no verb is offered. */

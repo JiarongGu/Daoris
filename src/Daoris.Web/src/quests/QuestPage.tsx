@@ -472,23 +472,29 @@ export function QuestPage({
       )}
 
       {declining && moving && (
-        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2">
+        /* Declining without a reason is refused by the service; the ask does not offer the mistake. It stays open until
+           the service answers, a refusal said inside it (UXFIX2b2b). */
+        <InlineConfirm
+          className="mb-4"
+          label={t('quests.detail.declineTitle')}
+          says={t('quests.detail.declineSays', { id: quest.id })}
+          meanIt={t('quests.detail.declineConfirm')}
+          busy={busy}
+          ready={reason.trim() !== ''}
+          onConfirm={(answered) => onRespond('decline', reason, answered)}
+          onClose={() => {
+            setAsking((was) => (was === 'decline' ? null : was));
+            setReason('');
+          }}
+        >
           <input
-            autoFocus
             aria-label={t('quests.detail.declinePlaceholder')}
             placeholder={t('quests.detail.declinePlaceholder')}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            className="min-h-[1.9rem] flex-1 basis-56 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
+            className="min-h-[1.9rem] min-w-0 basis-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
           />
-          {/* Declining without a reason is refused by the service; the form does not offer the mistake. */}
-          <Button variant="danger" disabled={busy || !reason.trim()} onClick={() => onRespond('decline', reason)}>
-            {t('quests.detail.declineConfirm')}
-          </Button>
-          <Button variant="ghost" disabled={busy} onClick={() => { setAsking(null); setReason(''); }}>
-            {t('common.cancel')}
-          </Button>
-        </div>
+        </InlineConfirm>
       )}
 
       {/* What its head leaves out (UX7c, D152 §7): its id with *Copy*, whom it asks and who asked, its lanes, and the full

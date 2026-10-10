@@ -176,7 +176,7 @@ export function SessionHead({
    * How a parked session is finished or declined, and a finish's close of its quest (QUESTCLOSE1). Absent where nothing can
    * act — a browser, or a story. Its stop is the page header's, its one owner (D126 §3.3).
    */
-  onResolve?: (state: Resolution, note: string | null, close?: QuestClose) => void;
+  onResolve?: (state: Resolution, note: string | null, close?: QuestClose, answered?: Answered) => void;
   /**
    * Open the ask an intake serves (INT4g) — a parked one's answer is there, not on the session.
    * Absent where nothing can open it.

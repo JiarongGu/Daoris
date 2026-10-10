@@ -33,6 +33,7 @@
   "work.review.accepting": "Landing…",
   "work.review.sendBack": "Send back…",
   "work.review.discard": "Discard tree",
+  "work.review.discardTitle": "discard this tree",
   "work.review.discardMeanIt": "Discard anyway",
   "work.review.landed.label": "where this work landed",
   "work.review.landed.on": "This session's work landed on `{{branch}}`.",
