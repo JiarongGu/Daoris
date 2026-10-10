@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { afterEach, describe, expect, it } from 'vitest';
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
+import type { OpenGroup } from '../opener';
 import type { ListMode } from './layout';
+import { groupHeading, useBringGroup } from './ListPane';
 import { type ChoiceStanding, useListPanes } from './listPanes';
 import { type ListSpec, ViewFrame } from './ViewFrame';
 import { ViewMain } from './ViewMain';
@@ -17,27 +19,50 @@ const ROWS = ['Expose a streaming budget', 'Read the budget from the level file'
 /**
  * The application's half, as `App` holds it in a browser: the lists' memory and a list laid over. `standings` is what
  * the view reads of each item (UX6b); an item it does not name still waits.
+ *
+ * A go's group (ENTRY1g) arrives with the view it opens, as `App.apply` sets both at once, and is brought into view as Quests
+ * brings it, from above the frame, once its list has `answered`. `view` is Quests, or a view of another list to go from.
  */
-function Browser({ withList = true, onMode, standings = {} }: {
+function Browser({ withList = true, onMode, standings = {}, view = 'quests', go = null, answered = true, onBrought }: {
   withList?: boolean;
   onMode?: (mode: ListMode | null) => void;
   standings?: Record<string, ChoiceStanding>;
+  view?: 'quests' | 'projects';
+  go?: OpenGroup | null;
+  answered?: boolean;
+  onBrought?: () => void;
 }) {
   const lists = useListPanes();
   const [over, setOver] = useState(false);
-  const chosen = lists.pane('quests').chosen;
+  const [group, setGroup] = useState(go);
+  const [went, setWent] = useState(go);
+  if (go !== went) {
+    setWent(go);
+    setGroup(go);
+  }
+  const brought = () => {
+    onBrought?.();
+    setGroup(null);
+  };
+  useBringGroup(view === 'quests' && group ? groupHeading('quests', group) : null, answered, brought);
+  const chosen = lists.pane(view).chosen;
   const list: ListSpec = {
-    view: 'quests',
-    name: 'Quests',
-    labels: { open: 'Show the quest list', close: 'Hide the quest list', resize: 'quest list width' },
+    view,
+    name: view === 'quests' ? 'Quests' : 'Repositories',
+    labels: view === 'quests'
+      ? { open: 'Show the quest list', close: 'Hide the quest list', resize: 'quest list width' }
+      : { open: 'Show the repository list', close: 'Hide the repository list', resize: 'repository list width' },
     chosen,
     standing: chosen ? standings[chosen] ?? 'live' : undefined,
     body: (
-      <ul>
-        {ROWS.map((title) => (
-          <li key={title} data-list-row=""><button type="button" onClick={() => lists.choose('quests', title)}>{title}</button></li>
-        ))}
-      </ul>
+      <>
+        {view === 'quests' && <h3 id={groupHeading('quests', 'held')} tabIndex={-1}>Waiting on you</h3>}
+        <ul>
+          {ROWS.map((title) => (
+            <li key={title} data-list-row=""><button type="button" onClick={() => lists.choose(view, title)}>{title}</button></li>
+          ))}
+        </ul>
+      </>
     ),
   };
   return (
@@ -47,6 +72,8 @@ function Browser({ withList = true, onMode, standings = {} }: {
       over={over}
       onOver={setOver}
       onListMode={onMode}
+      group={group}
+      onGroupBrought={brought}
     />
   );
 }
@@ -109,6 +136,76 @@ describe("a browser's frame", () => {
     expect(screen.getByRole('main')).toBeInTheDocument();
     expect(document.querySelector('[data-region="list"]')).toBeNull();
     expect(modes).toEqual([null]);
+  });
+});
+
+/**
+ * ENTRY1g (D161's ENTRY1b note): a go to a group of the list lays it over the main area where it is a strip, whoever drew the
+ * strip, so the group is brought into view there; and it stays laid over, as one the person opened does, until they let it
+ * go. Nothing is remembered: the person's closing stands once it goes.
+ */
+describe('a go to a group of the list', () => {
+  const mode = () => document.querySelector('[data-region="list"]')?.getAttribute('data-list-mode');
+
+  it('lays a strip the window drew over the main area, focuses the group there, and keeps it laid over', async () => {
+    widen(600);
+    const brought = vi.fn();
+    show({ go: 'held', onBrought: brought });
+
+    const over = screen.getByRole('region', { name: 'Quests' });
+    expect(within(over).getByRole('heading', { name: 'Waiting on you' })).toHaveFocus();
+    expect(brought).toHaveBeenCalledTimes(1);
+    // The go is let go and the list stays, until the person lets it go too.
+    await waitFor(() => expect(mode()).toBe('over'));
+    await userEvent.keyboard('{Escape}');
+    expect(mode()).toBe('strip');
+    expect(window.localStorage.getItem('daoris.list.quests.closed')).toBeNull();
+  });
+
+  it('lays the strip the person closed over, where there is room too, and their closing stands once it goes', () => {
+    window.localStorage.setItem('daoris.list.quests.closed', '1');
+    show({ go: 'held' });
+
+    expect(mode()).toBe('over');
+    expect(screen.getByRole('heading', { name: 'Waiting on you' })).toHaveFocus();
+    fireEvent.pointerDown(screen.getByRole('main'));
+    expect(mode()).toBe('strip');
+    expect(window.localStorage.getItem('daoris.list.quests.closed')).toBe('1');
+  });
+
+  it('lets the go go with the list, where the person lets it go before its group is brought', async () => {
+    widen(600);
+    const brought = vi.fn();
+    show({ go: 'held', answered: false, onBrought: brought });
+
+    expect(screen.getByRole('region', { name: 'Quests' })).toHaveFocus();
+    await userEvent.keyboard('{Escape}');
+    expect(mode()).toBe('strip');
+    expect(brought).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the list laid over as the go opens its view, whatever the view before had chosen', () => {
+    widen(600);
+    window.localStorage.setItem('daoris.list.projects.chosen', ROWS[1]!);
+    window.localStorage.setItem('daoris.list.quests.chosen', ROWS[0]!);
+    const { rerender } = show({ view: 'projects' });
+
+    rerender(<Tooltip.Provider><Browser view="quests" go="held" answered={false} /></Tooltip.Provider>);
+    expect(mode()).toBe('over');
+    rerender(<Tooltip.Provider><Browser view="quests" go="held" /></Tooltip.Provider>);
+    expect(screen.getByRole('heading', { name: 'Waiting on you' })).toHaveFocus();
+  });
+
+  /** UX6b: a remembered item that closed is let go as the view opens, which is no choice, so the list stays laid over. */
+  it('keeps the list laid over as the view lets go of a remembered item that closed', () => {
+    widen(600);
+    window.localStorage.setItem('daoris.list.quests.chosen', ROWS[1]!);
+    const { rerender } = show({ go: 'held', answered: false, standings: { [ROWS[1]!]: 'closed' } });
+
+    expect(screen.getByRole('main')).toHaveTextContent('Nothing chosen');
+    expect(mode()).toBe('over');
+    rerender(<Tooltip.Provider><Browser go="held" standings={{ [ROWS[1]!]: 'closed' }} /></Tooltip.Provider>);
+    expect(screen.getByRole('heading', { name: 'Waiting on you' })).toHaveFocus();
   });
 });
 

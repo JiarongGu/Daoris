@@ -37,7 +37,7 @@ export function QuestsView({ notify, onAttend, opening, onOpened, asking, onAske
     onFilters: (filters) => lists.setFilters('quests', filters),
     notify, onAttend, opening, onOpened, asking, onAsked, group, onGroupBrought,
   });
-  return <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />;
+  return <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} group={group} onGroupBrought={onGroupBrought} />;
 }
 
 /** The list pane: the one region of a browser's frame beside the main area. */

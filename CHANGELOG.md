@@ -30,6 +30,9 @@ with the version and date at release.
 - Ask Daoris can take you to one quest or ask: its *Go there* opens Quests with that quest or ask
   chosen. One this machine does not hold is refused on the card; a closed one is found, and the card
   says it closed.
+  same way. A list you closed, or one the window draws narrow, lies over the page for the go; Sessions
+  kept by repository is shown by state, and a search typed in its list is cleared. What you chose for
+  the list stays as you left it.
 - Account rows show each usage window as its own cell, in the same place on every row: the share used,
   a bar of that window's allowance, its reset and how old its reading is. A window the agent has not
   reported says *unknown*, never 0%. A Codex window that is neither five hours nor a week is named in

@@ -124,9 +124,13 @@ export function SessionRail({
   useErrorNotify(sessions.error, notify);
 
   // ENTRY1b: a door's group, looked for once the records and the reader have answered, since a parked quest's session waits
-  // on the person by the reader's word alone. A strip, a search or the list by repository draws none, and lets it go.
+  // on the person by the reader's word alone. A list that draws none (nothing waits there, no reader, the strip) lets it go.
+  // A search typed here hides every group, and is this rail's alone and never kept, so a go clears it, in the render the
+  // go arrives in (ENTRY1g); the frame shows the list by state for it, and lays its strip over.
+  const bringing = group === 'you' || group === 'review';
+  if (bringing && !compact && query) setQuery('');
   const answered = !sessions.isPending && (noReader || groups.data !== undefined || groups.isError);
-  useBringGroup(group === 'you' || group === 'review' ? groupHeading('sessions', group) : null, answered, onGroupBrought);
+  useBringGroup(bringing ? groupHeading('sessions', group) : null, answered, onGroupBrought);
 
   const questFor = new Map((quests.data ?? []).map((quest): [string, Quest] => [quest.id, quest]));
   const registered = new Map((registry.data ?? []).map((row) => [row.repository, row]));

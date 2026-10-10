@@ -52,8 +52,9 @@ export type ListChoice = {
   width: number | null;
   closed: boolean;
   /**
-   * The person opened a strip the window drew (D118 §3a), so the list lies over the main area. Never
-   * remembered: it closes on a choice, on Escape and on a press outside it.
+   * The person opened a strip the window drew (D118 §3a), or a go brought a group of the list into view
+   * (ENTRY1g), so the list lies over the main area. Never remembered: it closes on a choice, on Escape and
+   * on a press outside it.
    */
   over: boolean;
 };
@@ -76,7 +77,8 @@ export type FramePrefs = {
 /**
  * - `open`: beside the main area, at its width.
  * - `strip`: its 56 px strip, closed by the person or drawn by the window.
- * - `over`: a strip the window drew, opened: the list lies over the main area, beside the strip.
+ * - `over`: a strip the window drew, opened, or any strip a go opened (ENTRY1g): the list lies over the main area,
+ *   beside the strip.
  */
 export type ListMode = 'open' | 'strip' | 'over';
 
@@ -117,18 +119,21 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
  *
  * A browser's frame asks it with no side bar at all (D118 §4): its view keeps its list and its main area,
  * and never the side bar.
+ *
+ * **A strip the person closed is laid over only for a go** (ENTRY1g, D161's ENTRY1b note): a go to a group of the list
+ * lays it over the main area, room or none, since opening it beside would undo their closing. Their own open still
+ * undoes it (`listToggled`), and laying over is never remembered, so the strip is theirs again once it goes.
  */
 export function listLayout(frame: number, sideBar: number, choice: ListChoice): ListLayout {
   const strip = { width: LIST_STRIP, beside: LIST_STRIP };
-  if (choice.closed) return { mode: 'strip', ...strip, auto: false };
-
   const width = clamp(choice.width ?? choice.bounds.initial, choice.bounds.min, choice.bounds.max);
-  if (frame - width - sideBar >= CENTRE_FLOOR) return { mode: 'open', width, beside: width, auto: false };
-
   // Opened over the main area, it is never wider than what lies beside the strip.
-  return choice.over
-    ? { mode: 'over', width: Math.max(0, Math.min(width, frame - LIST_STRIP)), beside: LIST_STRIP, auto: true }
-    : { mode: 'strip', ...strip, auto: true };
+  const over = (auto: boolean): ListLayout =>
+    ({ mode: 'over', width: Math.max(0, Math.min(width, frame - LIST_STRIP)), beside: LIST_STRIP, auto });
+
+  if (choice.closed) return choice.over ? over(false) : { mode: 'strip', ...strip, auto: false };
+  if (frame - width - sideBar >= CENTRE_FLOOR) return { mode: 'open', width, beside: width, auto: false };
+  return choice.over ? over(true) : { mode: 'strip', ...strip, auto: true };
 }
 
 /**
@@ -160,12 +165,13 @@ export function frameLayout(viewport: number, frame: number, prefs: FramePrefs):
 
 /**
  * What a toggle of the list asks for (D118 §3a), from any of its four doors: an open list closes, the
- * person's; one laid over the main area is dismissed; a strip opens — beside where there is room, and
- * over the main area where the window drew it for want of room.
+ * person's; one laid over the main area is dismissed, its closing left as it was (`closed` absent), since a
+ * go lays over a strip the person closed (ENTRY1g); a strip opens — beside where there is room, and over the
+ * main area where the window drew it for want of room.
  */
-export function listToggled(list: Pick<ListLayout, 'mode'>): { closed: boolean; over: boolean } {
+export function listToggled(list: Pick<ListLayout, 'mode'>): { closed?: boolean; over: boolean } {
   if (list.mode === 'open') return { closed: true, over: false };
-  if (list.mode === 'over') return { closed: false, over: false };
+  if (list.mode === 'over') return { over: false };
   return { closed: false, over: true };
 }
 

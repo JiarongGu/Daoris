@@ -13047,3 +13047,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ENTRY1f1 — a go names one quest or ask** (service/driver/modules/web; in flight). An `item` on the go, judged by the driver against the quests and asks it reads for `delete`; the page opens it. D161's ENTRY1f note.
 
 **Outcome** 2026-10-11: a go on Quests may name one quest, or an ask as `ask:<id>`; the driver judges it against the records `delete` reads (closed ones named closed) and refuses one the machine lacks, or an ask's id without its prefix; the page opens it through `placeDoor`. Detail: D161's ENTRY1f1 note.
+
+
+## ENTRY1g — a go opens the list its group is in (2026-10-11, D161)
+
+> - [ ] **ENTRY1g — a go opens the list its group is in** (web; in flight). Where the list is a strip, arranged by repository or searched, a go brings nothing into view: lay it over, show it by state, without changing the person's choice. D161's ENTRY1b note; D118; WorkFrame tests at strip width.
+
+**Outcome** 2026-10-11: a go lays a strip over the main area (even one the person closed, without undoing their closing), shows Sessions by state for that go alone, clears a typed rail search, and reaches the browser's frame too; a view switch no longer closes the laid-over list. A receiver filter is ENTRY1g2. Detail: D161's ENTRY1g note.
