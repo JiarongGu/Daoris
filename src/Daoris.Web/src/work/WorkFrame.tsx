@@ -143,8 +143,9 @@ export function WorkFrame({
    */
   lists?: ListPanes;
   /**
-   * The group of Sessions' list a door into what waits on the person named (ENTRY1b), handed to the rail, which brings it
-   * into view and tells `onGroupBrought`.
+   * The group of the view's list a door into what waits on the person named (ENTRY1b): Sessions' is handed to the rail, which
+   * brings it into view and tells `onGroupBrought`, and shown by state for it; another view's is its own to bring. Either
+   * way the frame lays the list over the main area for it where the list is a strip (ENTRY1g).
    */
   group?: OpenGroup | null;
   onGroupBrought?: () => void;

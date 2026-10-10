@@ -26,7 +26,9 @@ with the version and date at release.
 - Ask Daoris can take you to what waits on you: Sessions' *Waiting on you* and *To review*, and Quests'
   asks and the quests waiting on you. The list opens with that group at its top and its heading focused;
   you open the session or quest you mean. The start that counts sessions waiting on you opens them the
-  same way.
+  same way. A list you closed, or one the window draws narrow, lies over the page for the go; Sessions
+  kept by repository is shown by state, and a search typed in its list is cleared. What you chose for
+  the list stays as you left it.
 - Account rows show each usage window as its own cell, in the same place on every row: the share used,
   a bar of that window's allowance, its reset and how old its reading is. A window the agent has not
   reported says *unknown*, never 0%. A Codex window that is neither five hours nor a week is named in
