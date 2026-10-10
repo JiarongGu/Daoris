@@ -27,7 +27,9 @@ Contracts: platform UX §4/§6, `docs/2026-10-05-ux7-design.md` (D152),
 `docs/2026-10-04-ux6-redesign.md` (D150, §12 proofs). UI work needs stories, behavior tests and
 installed-window evidence in both themes/languages; Storybook alone does not close an installed proof.
 
-- [ ] **UXFIX2bi — installed confirmations look** (parent; after republish). Retire seen 2026-10-11 (UXFIX2d, UXFIX2b1r); the rest need data the machine lacks (a managed tool version, a plugin, a parked or ended session): tool, plugin, pause, abandon, decline, close, finish, archive, discard, both themes/languages.
+- [ ] **UXTOAST1 — a toast covers an ask at the drawer's foot** (web). On the window a toast (fixed bottom-right, `ui.tsx` ~:1599) lay over the retire ask's Confirm and Never mind in the Manage drawer. Keep an open ask clear of toasts. Seen 2026-10-11; a test with a toast and a drawer's ask, then the window.
+- [ ] **WIRE1 — a terminal door for moving a repository** (cli; D50). The page and Ask Daoris move a repository's workspace; no terminal verb edits that one field (`connect --workspace` re-registers the row). D161's ENTRY1d1 note; D50's twin rule.
+- [ ] **UXFIX2bi — installed confirmations look** (parent; after republish). Retire right on 2026-10-11's second look (its own question; focus back to the press with a pointer-like click); the rest need data the machine lacks: tool, plugin, pause, abandon, decline, close, finish, archive, discard, both themes/languages.
 - [ ] **UX7b — installed account UI** (web). Verify recovered account rows and add/name/join flow at 1546/680 px, both themes/languages. D152 §4.
 - [ ] **ACCTEDIT1b — installed refused edits** (parent; after republish). Verify rename, workspace use and add refusals retain drafts, including dark borders. D152 §4; dated shots.
 - [ ] **BRSCOPE1b — checkout scope and sync workspace** (modules/service/driver; after BRSCOPE1a). Share checkout-scope fixtures; carry workspace through sync proposals. D150 notes; three-door proof.
