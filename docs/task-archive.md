@@ -12970,3 +12970,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SUBLOAD1b — probe scout and worker** (parent; after a harness restart). Agent definitions load at session start, so the first dispatch of each proves its tools, hand-back and startup context against 50K. D160 limits; `tools/subagent-usage.mjs`.
 
 **Outcome** 2026-10-11: both definitions load with their model, tools and worktree; a scout starts at 25-27K and a worker at 33-34K against 50K; hand-backs arrive with the restricted tools; the scout's preloaded skills route without a Skill call. Two of the first findings were corrected against the transcripts. Detail: D160's SUBLOAD1b note and its corrections.
+
+
+## ENTRY1e — what Ask Daoris may start of the person's own (2026-10-11, D161)
+
+> - [ ] **ENTRY1e — what Ask Daoris may start of the person's own** (owner's decision). Publishing a quest by hand beside D65's intake; proposing a landing beside D154 point 8; trusting a folder. Audit §4.6.
+
+**Outcome** 2026-10-11, answered by the owner: Ask Daoris is the general front door, and a quest or session keeps its own conversation. Publishing a quest by hand, landing, answering a session and trusting a folder stay in their own place; Ask Daoris takes the person there. Detail: D161's ENTRY1 note.
