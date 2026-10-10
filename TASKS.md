@@ -35,11 +35,10 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 - [ ] **BRSCOPE1b — checkout scope and sync workspace** (modules/service/driver; after BRSCOPE1a). Share checkout-scope fixtures; carry workspace through sync proposals. D150 notes; three-door proof.
 - [ ] **UX7d — remaining visual findings** (web/driver). Absent-agent Install, strip marks, version, compact Chinese summaries and coded opening notes. D152 §4.6.
 - [ ] **UX7e — installed menus and heads** (parent; after republish). Verify keyboard menus, shortcuts, composer editing, head geometry and titles at 1546/680 px. D152 §6.
-- [ ] **ENTRY1a — the coverage table reads every start** (driver tests). `HelpCoverageTests` reads Settings and three places only; add `queries.ts` and the Quests, Sessions, Overview, `work/`, `asks/`, `help/` presses, each a door, an exemption, an owed row, or *its own conversation* (a quest's or session's, reached by a go). D161's ENTRY1 note; audit §1.
 - [ ] **ENTRY1b — a go reaches what needs the person** (driver + web twin). Below Quests, Sessions and Overview, to what is waiting on them, since a quest or session keeps its own conversation and Ask Daoris takes the person there. D161's ENTRY1 note; audit §4.2; the go twin's tables and goldens.
 - [ ] **ENTRY1f — a go names one quest or session** (design first). ENTRY1b's parts bring a group into view; taking the person to the one that waits needs an item on `HelpPlace` and `go_propose`, and a judge that it exists. D161's ENTRY1 note.
 - [ ] **ENTRY1c — an ask proposed with its review choice** (service/driver/modules; in flight). `ask_propose` carries the sentence, workspace and why only, though the composer takes a review choice; the kind stays the person's (WORKFLOW1i, D157 point 10). Audit §4.3; the kind's twins.
-- [ ] **ENTRY1d — a repository added through Ask Daoris** (design first). Today a go only; the folder stays the person's pick (D48 §3/§7). Audit §4.4; mirror the `plugin` kind's `add`.
+- [ ] **ENTRY1d — a repository added, imported or moved to a workspace through Ask Daoris** (design first). Today a go only; the folder stays the person's pick (D48 §3/§7); the coverage table owes register, import and wire to it. Audit §4.4; mirror the `plugin` kind's `add`.
 - [ ] **UX6h — Git inside Repositories** (web; after GIT1d; absorbs GIT1e). Branch kinds and graph; retire Git place. UX6 §4.4/D147.
 - [ ] **UX6i2i — installed go cards** (parent; after republish). Ask Daoris answering "where do I turn a plugin on?" and "where is Convergence?": a go card reading *Open Plugins.* or *Open Knowledge → Convergence.* that opens the right place and mode.
 - [ ] **PLUGTOOL1c — tools on their plugin** (web/modules/driver; after PLUGUI1c). Tools retains Daoris's own. UX6 §7.5.
@@ -187,7 +186,7 @@ Contracts: session-management (D126 §9), session-messages (D137), answer-contin
 pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build rows.
 
 - [ ] **QUESTREBASE1 — pure rebase planner** (service; consider). Preserve operation identity, accepted-before-pending order and transaction. D69/D79; unchanged sync suite and loss tests.
-- [ ] **SESSUX1h — session proposals** (driver/service/web; after d–g/FRAME1i). Management §7.3/§9.
+- [ ] **SESSUX1h — session proposals** (driver/service/web; after d–g/FRAME1i). Management §7.3/§9. Reread against D161's ENTRY1 note: a session's stop is its own conversation on the page, while `SessionsVerbDoor` still owes the terminal's `sessions stop` a door; give both one answer.
 - [ ] **MSG1d2 — queued chat survives restart** (driver/web; with MSG1c). Record ids/reach/withdrawals; take by id. Messages §3.1.
 - [ ] **MSG1g3 — cooling note and twins** (driver/web). Code held line; compare newSessionSaid with GoOnNew/WordsNever. D137/D142.
 - [ ] **MSG1h — Codex next-step words** (driver; after measured STEER3). Messages §8.
