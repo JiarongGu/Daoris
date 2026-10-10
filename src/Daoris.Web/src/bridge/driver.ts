@@ -157,7 +157,7 @@ export const askAgainWhenReady = (client: QueryClient) => {
  *
  * @remarks
  * A screen opened as the shell starts asks at once and is refused *still coming up*. Before LOOK2a only a tick asked
- * again, and the first tick can wait on a remote's sync or on another driver's lock, so Settings → Workspace said no
+ * again, and the first tick can wait on a remote's sync or on another driver's lock, so the workspace's page (then Settings → Workspace) said no
  * repository had a line until something else happened to ask. Said once by the shell, the moment the refusals stop.
  */
 export const useDriverReady = () => {

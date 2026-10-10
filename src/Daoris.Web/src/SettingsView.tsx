@@ -30,7 +30,7 @@ export type { SettingsSection } from './settings/domains';
 /**
  * A part of a domain a menu item is named for (UX5 U72), found by the id `settings-<anchor>` — and since
  * HELP6 each place Ask Daoris's go may name: each step of the setup guide. Session branches, the lines, the landing,
- * the wiring and reading across left with Settings → Workspace and Permissions for a workspace's page (UX6g), whose
+ * the wiring and reading across left Settings (the old Workspace and Permissions) for Repositories → the workspace's page (UX6g), whose
  * doors name its tab and section instead.
  */
 export type SettingsAnchor = 'usage' | 'proposals' | 'update' | `step-${SetupStepId}`;
