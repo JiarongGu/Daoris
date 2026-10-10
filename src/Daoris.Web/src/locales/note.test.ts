@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { NOTE_CODES, NOTE_VALUES, OPENING_REASONS } from '../work/noteLines';
+import { NOTE_CODES, NOTE_VALUES, OPENING_REASONS, RESUMED_REASONS } from '../work/noteLines';
 import { REASONS } from '../work/say';
 import { en, zh } from '.';
 
@@ -68,7 +68,7 @@ describe('a session note’s codes, held to both catalogues', () => {
 
   it.each([['en', en], ['zh', zh]] as const)('keeps no `note.*` entry in %s that no writer declares', (_, catalogue) => {
     // A reason a `why` names is declared by its writer too (UX7d-1: the opening's, `note.opening.why.*`).
-    const keys = new Set([...codes.map((code) => code.key), ...['Continue', 'Cooling', 'Opening'].flatMap((family) => reasons(family).map((reason) => reason.key))]);
+    const keys = new Set([...codes.map((code) => code.key), ...['Continue', 'Cooling', 'Opening', 'Resumed'].flatMap((family) => reasons(family).map((reason) => reason.key))]);
     const orphans = Object.keys(catalogue).filter((key) => key.startsWith('note.') && !keys.has(key));
     expect(orphans).toEqual([]);
   });
@@ -138,5 +138,19 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
       }
     }
     expect(opening.flatMap((reason) => reason.values).filter((value) => !(value in NOTE_VALUES))).toEqual([]);
+  });
+
+  /** CONVNOTE2a: whose words a resumed conversation goes on with is a reason of its own family, held key for key. */
+  it('words every way a resumed conversation’s first line says whose words', () => {
+    const resumed = reasons('Resumed');
+    expect(resumed.length).toBe(5);
+    const page = Object.values(RESUMED_REASONS).map(({ key, values }) => ({ key, values: [...values] }));
+    const byKey = (a: { key: string }, b: { key: string }) => a.key.localeCompare(b.key);
+    expect(page.sort(byKey)).toEqual([...resumed].sort(byKey));
+    for (const catalogue of [en, zh]) {
+      for (const { key, values } of resumed) {
+        expect(placeholders(catalogue[key] ?? ''), `\`${key}\``).toEqual([...values].sort());
+      }
+    }
   });
 });

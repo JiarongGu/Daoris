@@ -314,7 +314,7 @@ public sealed partial class ChatRunner
         // rules already read its own files folder (CONV4c).
         var ask = new ResumeAsk(
             kept.Conversation, words,
-            Continuations.Opening(adapter.Name, selection.Version, record.HarnessVersion, answer: false),
+            Continuations.OpeningNoted(adapter.Name, selection.Version, record.HarnessVersion, answer: false),
             files: word => ChatFiles.Kept(_home, sessionId, word.Files));
 
         return await RunAsync(
