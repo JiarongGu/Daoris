@@ -37,8 +37,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/App.tsx` | 70 | 1274 |
 | `src/Daoris.Web/src/ProjectsView.test.tsx` | 72 | 1304 |
 | `src/Daoris.Web/src/QuestsView.test.tsx` | 70 | 1375 |
-| `src/Daoris.Web/src/agents/AgentPage.tsx` | 47 | 889 |
-| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 97 | 1875 |
+| `src/Daoris.Web/src/agents/AgentPage.tsx` | 48 | 901 |
+| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 100 | 1929 |
 | `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 54 | 1070 |
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 46 | 858 |
 | `src/Daoris.Web/src/ui.test.tsx` | 48 | 975 |
@@ -183,7 +183,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-02-session-management-design.md` | 69 | 849 |
 | `docs/2026-10-03-session-messages-design.md` | 41 | 485 |
 | `docs/2026-10-04-ux6-redesign.md` | 72 | 895 |
-| `docs/2026-10-05-ux7-design.md` | 66 | 787 |
+| `docs/2026-10-05-ux7-design.md` | 67 | 792 |
 | `docs/2026-10-07-history-clearing-design.md` | 51 | 618 |
 | `docs/2026-10-08-review-environment-design.md` | 56 | 692 |
 | `docs/2026-10-08-second-agent-design.md` | 57 | 769 |

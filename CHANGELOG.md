@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- An agent's page says above its accounts which account this machine's next start takes and why, in the
+  words of *How accounts are used*, and what holds the account its list begins on where the start passes
+  that one. An account's *Runs for* marks *(first)* where the next start takes it, no longer where its list
+  begins.
 - `daoris wire <repository> --workspace <name>` moves a registered repository to another workspace from a
   terminal, as the page's Manage → *Move to workspace* does, and changes nothing else about it. An unknown
   repository, or a workspace a shared host does not serve, is refused in the service's own words.
