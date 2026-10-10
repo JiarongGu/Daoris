@@ -112,7 +112,7 @@
   "agents.workspaces.own": "{{workspace}}：自有账户（{{accounts}}）",
   "agents.doors.door": "{{door}} {{version}}",
   "agents.doors.driven": "{{door}} {{version}}，用于驱动的工作",
-  "agents.doors.absent": "{{door}} 未安装",
+  "agents.doors.absent": "{{door}}未安装",
   "agents.rules.summary.defaults": "Daoris 的 {{count}} 条默认规则已开启",
   "agents.rules.summary.defaults_other": "Daoris 的 {{count}} 条默认规则已开启",
   "agents.rules.summary.mine": "你的 {{count}} 条规则",

@@ -13124,3 +13124,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **FRAME1i-b — the room says every view's list** (driver; after ENTRY1d2a, which holds the goldens). `HelpRoomWindow.cs` says each view but Overview and Map has a list, its four doors (D118 point 4), and that where the person is names the chosen item. Frame-model design ~:375-388; goldens.
 
 **Outcome** 2026-10-11: the room's window section says every view but Overview and Map has a list beside its centre and the four doors that show or hide it (its strip, the View menu, `Ctrl+B`, a press on the current place); the Sessions line keeps only what is Sessions' own. That where the person is names the chosen item is FRAME1i-a's, with its sentence. Detail: D118's FRAME1i-b note.
+
+
+## UX7d-2 — agents list remainder (2026-10-11, D152)
+
+> - [ ] **UX7d-2 — agents list remainder** (web; after ACCTUX4b). *How to install* where Daoris has no installer (if the roster says so; else a follow-up with AGENTMARK1), and an audit of the zh fold summaries against platform UX's spacing rule at 1546/680. Install, version and the summaries' named case were built by AGENTS2/UX7b, the marks' page half by ACCTUX2. D152 §4.6.
+
+**Outcome** 2026-10-11: the zh fold summaries keep a count apart and a Chinese word tight; the one break, `{{door}} 未安装`, now reads `{{door}}未安装`. *How to install* needs a roster field the page lacks, so it is INSTALLDOOR1. With UX7d-1, UX7d is closed; the window's look is UX7e's. Detail: D152's UX7d-2 note.
