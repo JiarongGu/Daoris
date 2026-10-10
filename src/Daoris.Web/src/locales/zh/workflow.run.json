@@ -1,4 +1,9 @@
 {
+  "workflow.run.said.cannotStart": "无法开始：{{why}}",
+  "workflow.run.short.workflowHeld": "工作流暂不允许继续",
+  "workflow.run.unreadHead": "{{repository}} · 工作流无法读取",
+  "workflow.run.namedHead": "{{repository}} · {{workflow}} 工作流，版本 {{version}}",
+  "workflow.run.short.unread": "无法读取其工作流",
   "workflow.run.state.not-reached": "未到达",
   "workflow.run.state.working": "进展中",
   "workflow.run.state.waiting-on-you": "等你处理",

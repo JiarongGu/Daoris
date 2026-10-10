@@ -11,7 +11,187 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
 {
+    public DriverModuleWorkflowRunTests() : base("workflow-runs") { }
     private static readonly DateTimeOffset T = new(2026, 10, 9, 9, 0, 0, TimeSpan.Zero);
+
+    [Theory]
+    [InlineData("kind-paths")]
+    [InlineData("cannot-start")]
+    [InlineData("unread")]
+    [Trait(Category.Name, Category.Process)]
+    public async Task The_landing_preview_and_refused_press_carry_the_same_workflow_hold(string state)
+    {
+        var config = DriverConfig.Parse("""
+            {"landings":{"engine":{"form":"branch","pattern":"feature/{quest}"}}}
+            """);
+        WorkflowStore.Add(Home, new WorkflowVersionAdded("release", "Release", "terminal", T.ToString("O"),
+            System.Text.Json.Nodes.JsonNode.Parse("""
+                [{"id":"write","kind":"work"},{"id":"publish","kind":"landing","form":"branch","accept":"automatic"}]
+                """)), kept: []);
+        config = WorkflowSelection.Apply(config, new WorkflowDeclare("docs", "aurora", "Documentation", ["docs/**"]));
+        config = WorkflowSelection.Apply(config, new WorkflowUse("release", null, "aurora", "docs"));
+        config.Save(DriverConfigPath);
+        Assert.True(WorkflowRunBindings.Bind(Home, WorkflowRunBindings.Plan(config, Home, "q1", "engine", "aurora", null,
+            new WorkflowTaskChoice("docs", null), [], T)));
+        var root = Path.Combine(Home, "fixture-root");
+        Directory.CreateDirectory(root);
+        try
+        {
+            await GitAsync(root, "init", "--quiet", "-b", "main");
+            await File.WriteAllTextAsync(Path.Combine(root, "README.md"), "Fixture\n");
+            await GitAsync(root, "add", "README.md");
+            await GitAsync(root, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.test", "commit", "--quiet", "-m", "base");
+            var tree = (await new SessionTrees(Home).OpenAsync(root, "engine", "aurora")).Path;
+            await File.WriteAllTextAsync(Path.Combine(tree, "outside.txt"), "work\n");
+            await GitAsync(tree, "add", "outside.txt");
+            await GitAsync(tree, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.test", "commit", "--quiet", "-m", "work");
+            if (state == "cannot-start") File.Delete(Path.Combine(WorkflowStore.FolderOf(Home), "release.json"));
+            if (state == "unread") File.WriteAllText(WorkflowRunBindings.PathOf(Home, "q1"), "{broken");
+            var (module, _) = await UpAsync(tree);
+
+            var preview = await AnswerAsync(module, "LANDING", new { id = "s1" });
+            var press = await AnswerAsync(module, "LAND_SESSION_TREE", new { id = "s1" });
+
+            Assert.Equal(state, preview.GetProperty("workflow").GetProperty("state").GetString());
+            Assert.True(preview.GetProperty("workflow").GetProperty("holds").GetBoolean());
+            Assert.Equal(preview.GetProperty("workflow").GetRawText(), press.GetProperty("workflow").GetRawText());
+            Assert.False(press.GetProperty("done").GetBoolean());
+            Assert.Empty(new LandedBranches(Home).Entries());
+            var branches = await GitAsync(root, "branch", "--list", "feature/*");
+            Assert.True(string.IsNullOrWhiteSpace(branches));
+            if (state == "kind-paths")
+            {
+                Assert.Contains("workflow keep s1", preview.GetProperty("workflow").GetProperty("says").GetString());
+                Assert.Equal("outside.txt", Assert.Single(preview.GetProperty("workflow").GetProperty("outside").EnumerateArray()).GetString());
+                var run = (await AnswerAsync(module, "WORKFLOW_RUN", new { session = "s1" })).GetProperty("runs")[0];
+                Assert.Equal(preview.GetProperty("workflow").GetRawText(), run.GetProperty("workflowGate").GetRawText());
+                Assert.Equal("cannot-start", run.GetProperty("steps")[1].GetProperty("state").GetString());
+            }
+        }
+        finally
+        {
+            // Git's object files are read-only on Windows; the bridge owns and removes this fixture home.
+            foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+                File.SetAttributes(file, File.GetAttributes(file) & ~FileAttributes.ReadOnly);
+        }
+    }
+
+    private static async Task<string> GitAsync(string root, params string[] arguments)
+    {
+        var info = new System.Diagnostics.ProcessStartInfo("git")
+        { WorkingDirectory = root, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true };
+        foreach (var argument in arguments) info.ArgumentList.Add(argument);
+        using var process = System.Diagnostics.Process.Start(info)!;
+        var output = process.StandardOutput.ReadToEndAsync();
+        var error = process.StandardError.ReadToEndAsync();
+        await Task.WhenAll(output, error);
+        await process.WaitForExitAsync();
+        Assert.True(process.ExitCode == 0, await error);
+        return await output;
+    }
+
+    [Fact]
+    public async Task A_named_runs_bound_steps_survive_Current_changes_and_a_newer_saved_version()
+    {
+        var config = DriverConfig.Parse("""
+            {"reviews":{"engine":{"required":false,"environments":[
+              {"name":"local","kind":"local","procedure":"README.md","address":"http://localhost:4200"}]}}}
+            """);
+        WorkflowStore.Add(Home, new WorkflowVersionAdded("release", "Release with a look", "terminal", T.ToString("O"),
+            System.Text.Json.Nodes.JsonNode.Parse("""
+                [{"id":"write","kind":"work"},{"id":"inspect","kind":"look","environment":"local"},
+                 {"id":"publish","kind":"landing","form":"merge","accept":"you"}]
+                """)), kept: []);
+        var binding = WorkflowRunBindings.Plan(config, Home, "q1", "engine", "aurora", "a1",
+            new WorkflowTaskChoice(null, "release"), [], T);
+        Assert.True(WorkflowRunBindings.Bind(Home, binding));
+        WorkflowStore.Add(Home, new WorkflowVersionAdded("release", "Release with a look", "terminal", T.AddMinutes(1).ToString("O"),
+            System.Text.Json.Nodes.JsonNode.Parse("""
+                [{"id":"write","kind":"work"},{"id":"publish","kind":"landing","form":"merge","accept":"you"}]
+                """)), kept: [1]);
+        DriverConfig.Parse("""
+            {"reviews":{"engine":{"required":true,"environments":[
+              {"name":"dev","kind":"deployed","procedure":"README.md"},
+              {"name":"local","kind":"local","procedure":"README.md","address":"http://localhost:4200"}]}}}
+            """).Save(DriverConfigPath);
+        var (module, _) = await UpAsync();
+
+        var answer = await AnswerAsync(module, "WORKFLOW_RUN", new { quest = "q1" });
+        var run = Assert.Single(answer.GetProperty("runs").EnumerateArray());
+        var workflow = run.GetProperty("workflow");
+        Assert.Equal("release", workflow.GetProperty("id").GetString());
+        Assert.Equal(1, workflow.GetProperty("boundVersion").GetInt32());
+        Assert.Equal(binding.Digest, workflow.GetProperty("version").GetString());
+        var steps = run.GetProperty("steps").EnumerateArray().ToList();
+        Assert.Equal(["write", "inspect", "publish"], steps.Select(step => step.GetProperty("step").GetProperty("id").GetString()));
+        Assert.Equal("local", steps[1].GetProperty("step").GetProperty("settings").GetProperty("environment").GetString());
+        Assert.Equal("waiting-on-you", steps[1].GetProperty("state").GetString());
+    }
+
+    [Theory]
+    [InlineData("version")]
+    [InlineData("binding")]
+    public async Task An_unreadable_bound_workflow_is_not_drawn_as_Current_or_done(string broken)
+    {
+        WorkflowStore.Add(Home, new WorkflowVersionAdded("release", "Release", "terminal", T.ToString("O"),
+            System.Text.Json.Nodes.JsonNode.Parse("""
+                [{"id":"write","kind":"work"},{"id":"publish","kind":"landing","form":"merge","accept":"you"}]
+                """)), kept: []);
+        var binding = WorkflowRunBindings.Plan(DriverConfig.Empty, Home, "q1", "engine", "aurora", null,
+            new WorkflowTaskChoice(null, "release"), [], T);
+        Assert.True(WorkflowRunBindings.Bind(Home, binding));
+        var path = broken == "binding" ? WorkflowRunBindings.PathOf(Home, "q1") : Path.Combine(WorkflowStore.FolderOf(Home), "release.json");
+        File.WriteAllText(path, "{broken");
+        var (module, _) = await UpAsync();
+
+        var answer = await AnswerAsync(module, "WORKFLOW_RUN", new { quest = "q1" });
+        var run = Assert.Single(answer.GetProperty("runs").EnumerateArray());
+        Assert.False(string.IsNullOrWhiteSpace(run.GetProperty("problem").GetString()));
+        Assert.Empty(run.GetProperty("steps").EnumerateArray());
+    }
+
+    [Theory]
+    [InlineData(false, "cannot-start")]
+    [InlineData(true, "not-known")]
+    public async Task A_bound_look_with_no_declaration_is_never_skipped_even_when_the_ask_is_unreadable(bool askUnread, string state)
+    {
+        WorkflowStore.Add(Home, new WorkflowVersionAdded("release", "Release", "terminal", T.ToString("O"),
+            System.Text.Json.Nodes.JsonNode.Parse("""
+                [{"id":"write","kind":"work"},{"id":"inspect","kind":"look"},
+                 {"id":"publish","kind":"landing","form":"merge","accept":"you"}]
+                """)), kept: []);
+        Assert.True(WorkflowRunBindings.Bind(Home, WorkflowRunBindings.Plan(DriverConfig.Empty, Home, "q1", "engine", "aurora", null,
+            new WorkflowTaskChoice(null, "release"), [], T)));
+        var (module, _) = await UpAsync(askUnread: askUnread);
+
+        var answer = await AnswerAsync(module, "WORKFLOW_RUN", new { quest = "q1" });
+        var look = answer.GetProperty("runs")[0].GetProperty("steps")[1];
+
+        Assert.Equal("inspect", look.GetProperty("step").GetProperty("id").GetString());
+        Assert.Equal(state, look.GetProperty("state").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(look.GetProperty("words").GetString()));
+    }
+
+    [Theory]
+    [InlineData("opinion")]
+    [InlineData("landing")]
+    public async Task A_bound_step_that_lacks_its_declaration_cannot_start(string kind)
+    {
+        var steps = kind == "opinion"
+            ? """[{"id":"write","kind":"work"},{"id":"inspect","kind":"opinion"},{"id":"publish","kind":"landing","form":"merge","accept":"you"}]"""
+            : """[{"id":"write","kind":"work"},{"id":"publish","kind":"landing","form":"branch","accept":"you"}]""";
+        WorkflowStore.Add(Home, new WorkflowVersionAdded("release", "Release", "terminal", T.ToString("O"),
+            System.Text.Json.Nodes.JsonNode.Parse(steps)), kept: []);
+        Assert.True(WorkflowRunBindings.Bind(Home, WorkflowRunBindings.Plan(DriverConfig.Empty, Home, "q1", "engine", "aurora", null,
+            new WorkflowTaskChoice(null, "release"), [], T)));
+        var (module, _) = await UpAsync();
+
+        var answer = await AnswerAsync(module, "WORKFLOW_RUN", new { quest = "q1" });
+        var step = answer.GetProperty("runs")[0].GetProperty("steps")[1];
+
+        Assert.Equal("cannot-start", step.GetProperty("state").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(step.GetProperty("words").GetString()));
+    }
 
     /// <summary>
     /// A chain's work done in a repository whose branch rule names a plugin that lands and answers its state, landed here on a
@@ -114,11 +294,11 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
     }
 
     /// <summary>The module over a loop come up on the stand-in service below.</summary>
-    private async Task<(DriverModule Module, DriverLoop Loop)> UpAsync()
+    private async Task<(DriverModule Module, DriverLoop Loop)> UpAsync(string? tree = null, bool askUnread = false)
     {
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService())));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService(tree, askUnread))));
         return (module, loop);
     }
 
@@ -126,7 +306,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
     /// A stand-in service: `engine` in the `aurora` workspace, ask `a1`'s one quest done there by session `s1`, and a chat. Every
     /// other door answers an empty list.
     /// </summary>
-    private sealed class StandInService : HttpMessageHandler
+    private sealed class StandInService(string? tree = null, bool askUnread = false) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
@@ -143,7 +323,13 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
                 "/api/asks/a1" => """{"id":"a1","workspace":"aurora","sentence":"Fix it","state":"Open","tier":"none","quests":["q1"]}""",
                 _ => "[]",
             };
-            return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            if (tree is not null && request.RequestUri!.PathAndQuery == "/api/sessions?includeClosed=true")
+                body = JsonSerializer.Serialize(new[] { new { id = "s1", repository = "engine", state = "completed", quest = "q1", tree } });
+            if (request.RequestUri!.PathAndQuery == "/api/quests/q1")
+                body = """{"id":"q1","from":"ask #a1","to":"engine","title":"Quest q1","body":"","status":"Done"}""";
+            var status = askUnread && request.RequestUri!.PathAndQuery == "/api/asks/a1"
+                ? System.Net.HttpStatusCode.ServiceUnavailable : System.Net.HttpStatusCode.OK;
+            return Task.FromResult(new HttpResponseMessage(status)
             {
                 Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json"),
             });

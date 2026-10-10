@@ -45,6 +45,13 @@ function pane() {
 describe("the review's foot while a review's gate holds the work", () => {
   afterEach(() => { invoke.mockReset(); });
 
+  it.each(['kind-paths', 'cannot-start', 'unread'])('shows the workflow %s hold instead of Accept', async (state) => {
+    answer({ ...PLAN, workflow: { state, holds: true, says: 'Holds: choose a saved workflow in the terminal.' } });
+    pane();
+    expect(await screen.findByRole('region', { name: 'Workflow before it lands' })).toHaveTextContent('choose a saved workflow');
+    expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
+  });
+
   it('says it waits for the review in its environment, in the gate\'s state, and offers no Accept', async () => {
     answer({ ...PLAN, review: { state: 'shown', environment: 'local', level: 'set-up-step', quest: 'q2' } });
     pane();

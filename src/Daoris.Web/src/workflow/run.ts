@@ -15,7 +15,7 @@ export const KNOWN_STATES: readonly RunState[] = [
   'not-reached', 'working', 'waiting-on-you', 'waiting-on-agent', 'not-known', 'cannot-start', 'done', 'skipped', 'failed', 'stopped',
 ];
 
-/** One step of a run: Current's cell beside where it stands, and the facts its words and its door are made of. */
+/** One step of a run: the chosen graph's cell beside where it stands, and the facts its words and its door are made of. */
 export interface RunStep {
   step: WorkflowStep;
   /** One of `RunState`; a state this page does not know is said as recorded. */
@@ -53,10 +53,13 @@ export interface WorkflowRun {
   quests: string[];
   /** The run's newest session: the one its doors attend. */
   session?: string | null;
-  /** The step it stands at, or none where every step is settled: the run finished. */
+  /** Its unsettled step, or none when settled or unreadable; check `problem` before saying it finished. */
   at?: string | null;
-  /** Its Current's version, the plugins that may hold a start and each limit's sentence, as `WORKFLOW_CURRENT` answers them. */
-  workflow: { version: string; startHolds: string[]; limits: Record<string, string> };
+  /** The driver's explanation where the bound process could not be read; an empty graph here is never a finished run. */
+  problem?: string | null;
+  workflowGate?: import('./gate').WorkflowGateState | null;
+  /** Its graph digest, bound identity when named, start plugins and each limit's sentence. */
+  workflow: { version: string; startHolds: string[]; limits: Record<string, string>; id?: string | null; boundVersion?: number | null };
   steps: RunStep[];
 }
 

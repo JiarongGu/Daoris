@@ -20,6 +20,9 @@ One activity bar (D66), landing on management (D40). The views that read the fam
 **Sessions** is the working surface — the agent sessions this machine runs, attended one at a
 time (D55, `docs/2026-09-21-working-surface-design.md`) — and exists only in the desktop, because a
 stream never leaves its machine. **Map** is how a workspace's repositories are wired (MAP2).
+The session's Workflow view names its bound saved version, or Current for live declarations.
+Unreadable bindings show a problem without a completed diagram. Both the head and diff pane
+show workflow holds before Accept, preserving the driver's explanation and available terminal doors.
 **Settings** is everywhere: Get started, Appearance and AI in a browser; the desktop also offers
 Driver, Tools, Browser and Logs. Plugins has its own view. Agent accounts live in Agents; workspace controls live in
 Repositories. The desktop's seven menus share one command table, with shortcuts and a command palette

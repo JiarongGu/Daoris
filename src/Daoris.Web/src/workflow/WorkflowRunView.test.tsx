@@ -26,6 +26,41 @@ const row = (id: string) => steps().find((item) => item.getAttribute('data-step'
 describe("the session's Workflow view", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
+  it('names the bound version beside its graph', () => {
+    render(<WorkflowRunView answer={answerOf({ ...IN_REVIEW, workflow: { ...IN_REVIEW.workflow, id: 'release', boundVersion: 1 } })} />);
+    expect(screen.getByText('engine · release workflow, version 1')).toBeInTheDocument();
+    expect(screen.queryByText(/Current workflow/)).toBeNull();
+  });
+
+  it('shows an unread binding without a completed diagram', () => {
+    const run = { ...IN_REVIEW, steps: [], at: null, problem: 'Its stored binding could not be read.' };
+    render(<WorkflowRunView answer={answerOf(run)} />);
+    expect(screen.getByText('Its stored binding could not be read.')).toBeInTheDocument();
+    expect(screen.queryByText('done')).toBeNull();
+    expect(screen.queryByText(/Current workflow/)).toBeNull();
+    expect(screen.queryByText('Workflow: finished')).toBeNull();
+  });
+
+  it('names a bound run in Chinese', async () => {
+    await i18n.changeLanguage('zh');
+    render(<WorkflowRunView answer={answerOf({ ...IN_REVIEW, workflow: { ...IN_REVIEW.workflow, id: 'release', boundVersion: 1 } })} />);
+    expect(screen.getByText('engine · release 工作流，版本 1')).toBeInTheDocument();
+  });
+
+  it('shows a kind-path hold beside the bound graph instead of claiming it only waits for Accept', () => {
+    render(<WorkflowRunView answer={answerOf({ ...IN_REVIEW,
+      workflowGate: { state: 'kind-paths', holds: true, says: 'Holds: keep this workflow in the terminal.' } })} />);
+    expect(screen.getByRole('region', { name: 'Workflow before it lands' })).toHaveTextContent('keep this workflow');
+    expect(screen.getByText('Workflow: its workflow holds it')).toBeInTheDocument();
+  });
+
+  it('preserves why a bound step cannot start', () => {
+    render(<WorkflowRunView answer={answerOf({ ...IN_REVIEW, steps: IN_REVIEW.steps.map((step) => step.step.kind === 'look'
+      ? { ...step, state: 'cannot-start', detail: 'cannot-start', words: 'No declared reviewer.', step: { ...step.step, kind: 'opinion' } }
+      : step) })} />);
+    expect(row('look')).toHaveTextContent('Cannot start: No declared reviewer.');
+  });
+
   it('draws the run on the chart: each step, its part, where it stands, and where the run stands in a few words', () => {
     render(<WorkflowRunView answer={answerOf(IN_REVIEW)} here="work" />);
 

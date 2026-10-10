@@ -77,6 +77,11 @@ workflow gate. `SessionHead` consequently considers only those two when offering
 `WORKFLOW1g2` covers unreadable and kind-path holds before the press, with appropriate person
 actions; the backend already refuses the held landing. This is part of completing the workflow UI.
 
+**Review closure (2026-10-10).** WORKFLOW1f2, WORKFLOW1c6 and WORKFLOW1g2 are fixed and archived.
+Root causes are in `docs/FIX-LOG.md`; the code review and final receipts are in
+`docs/2026-10-10-code-and-docs-review.md` (MAINT2). The preceding findings describe the reviewed
+recovery snapshot; workflow editor work remains open as WORKFLOW1g.
+
 Documentation: condensed the backlog without losing any of its 204 outstanding identifiers; full
 acceptance details remain at `38065d97:TASKS.md`. Every row is within 60 words and all five budgeted
 documents fit their ceilings. README's oversized driver catalogue now routes to its guide, the brief

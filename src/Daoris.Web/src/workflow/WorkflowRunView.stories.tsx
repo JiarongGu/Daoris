@@ -37,6 +37,20 @@ type Story = StoryObj<typeof WorkflowRunView>;
 /** **Working**: the agent at work on its quest, *this session* marked on the work; the landing not reached, drawn faint. */
 export const Working: Story = {};
 
+/** The run still follows the saved version it started with. */
+export const BoundVersion: Story = { args: { here: 'write', answer: answerOf({ ...IN_REVIEW, at: 'inspect',
+  workflow: { ...IN_REVIEW.workflow, id: 'release', boundVersion: 1 },
+  steps: IN_REVIEW.steps.map((step) => ({ ...step, step: { ...step.step,
+    id: step.step.kind === 'work' ? 'write' : step.step.kind === 'look' ? 'inspect' : step.step.id,
+    source: { rule: 'workflow' as const, level: 'task' as const },
+  } })),
+}) } };
+
+/** An unread binding has no replacement graph and no completed mark. */
+export const BindingUnread: Story = { args: { answer: answerOf({ ...IN_REVIEW, steps: [], at: null,
+  problem: 'Its stored run binding could not be read. Restore the binding to continue.' }) } };
+export const BindingUnreadChineseDark: Story = { ...BindingUnread, decorators: [chinese, dark] };
+
 /** **Waiting on you**: a go-ahead its session asked, in open's hue, with the door to the ask where it is answered. */
 export const WaitingOnYou: Story = { args: { answer: answerOf(WAITING_ON_YOU) } };
 

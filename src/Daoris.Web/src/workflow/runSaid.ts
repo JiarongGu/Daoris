@@ -42,6 +42,7 @@ export function stateSaid(t: TFunction, state: string): string {
 export function runSaid(t: TFunction, step: RunStep): string | null {
   const { kind } = step.step;
   if (step.state === 'not-reached') return null;
+  if (step.state === 'cannot-start' && step.words) return t('workflow.run.said.cannotStart', { why: step.words });
   if (!knownState(step.state) || !(DETAILS[kind] ?? []).includes(step.detail)) {
     return t('workflow.run.said.recorded', { state: step.state, detail: step.detail || '—' });
   }
@@ -102,6 +103,8 @@ export function addedSaid(t: TFunction, step: RunStep): string | null {
  * *pull request open* and *merged* are said apart.
  */
 export function runShort(t: TFunction, run: WorkflowRun): string {
+  if (run.problem) return t('workflow.run.short.unread');
+  if (run.workflowGate?.holds) return t('workflow.run.short.workflowHeld');
   const at = standsAt(run);
   if (!at) {
     const last = [...run.steps].reverse().find((step) => step.state === 'done');

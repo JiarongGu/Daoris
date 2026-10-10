@@ -1,5 +1,7 @@
 import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { workflowHolds } from '../workflow/gate';
+import { WorkflowHold } from '../workflow/WorkflowHold';
 import type { Session } from '../api';
 import { sentence } from '../format';
 import { cn } from '../lib/cn';
@@ -129,10 +131,11 @@ export function DiffPane({
   // While the review's gate holds the work (REVIEWENV1g, design §3.1), the review says it waits where *Accept* would be, and
   // offers no *Accept*, which the landing door would refuse; the session's head carries the verdict's presses.
   const waits = reviewHolds(landing.data);
+  const workflow = workflowHolds(landing.data);
   // So too while the second opinion's gate holds it (XAGENT1g, the second-agent design §7): *Accept* here is one press that shows
   // nothing it answers, so the head's *Accept…*, which lists a dispute or the commits nobody read, is the press that answers them.
   const opinionWaits = opinionHolds(landing.data);
-  const canAccept = plannable && !waits && !opinionWaits;
+  const canAccept = plannable && !workflow && !waits && !opinionWaits;
   const discard = useDiscardSessionTree();
   // The branch this session's landing made, handed to a landing plugin afterwards (WSR5b) — asked whether
   // or not a tree is still here, since a tidy removes it and the branch stands.
@@ -266,6 +269,7 @@ export function DiffPane({
           <Inline text={t('work.review.landsOnLine', { line: landing.data.target })} />
         </p>
       )}
+      {!said && plannable && workflow && <WorkflowHold gate={workflow} />}
       {!said && plannable && opinionWaits && (
         <p className="m-0 border-l-[3px] border-st-open pl-2 text-small text-ink-soft">
           {t('opinion.line')}{' · '}{t(`opinion.state.${opinionState(opinionWaits.state)}`)}

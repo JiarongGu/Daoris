@@ -152,12 +152,15 @@ public static class WorkflowRunDetails
 }
 
 /// <summary>
-/// What one run is read from (WORKFLOW1c; the workflow design §5.1): the repository's Current and the records that already exist,
+/// What one run is read from (the workflow design §5.1): its chosen workflow graph and the records that already exist,
 /// never a copy of its own. Every list is the run's own, gathered by its reader, so the derivation decides from these alone.
 /// </summary>
-/// <param name="Current">The repository's Current (<see cref="WorkflowCurrent.Derive"/>): which steps there are, and who takes part.</param>
+/// <param name="Current">The graph: Current live or the bound version's steps, with each participant.</param>
 public sealed record WorkflowRunFacts(string Repository, CurrentWorkflow Current)
 {
+    public WorkflowProcess? Process { get; init; }
+    public WorkflowGateState? WorkflowGate { get; init; }
+
     /// <summary>The chain's quests in this repository, in the chain's order: its work, and any set-up step of its review.</summary>
     public IReadOnlyList<QuestView> Quests { get; init; } = [];
 
@@ -187,7 +190,7 @@ public sealed record WorkflowRunFacts(string Repository, CurrentWorkflow Current
 }
 
 /// <summary>
-/// One step of a run (WORKFLOW1c; design §5.2, §7): the step as Current draws it, where it stands, the row of that state's table,
+/// One step of a run (design §5.2, §7): the chosen workflow's step, where it stands, the row of that state's table,
 /// and the facts its words and its door are made of, each the record's own.
 /// </summary>
 /// <param name="State">One of <see cref="WorkflowRunStates"/>.</param>
@@ -195,8 +198,8 @@ public sealed record WorkflowRunFacts(string Repository, CurrentWorkflow Current
 public sealed record WorkflowRunStep(WorkflowStep Step, string State, string Detail)
 {
     /// <summary>
-    /// Why a step Current does not draw is in this run: the review's level that asked for a look for this work (<see cref="ReviewLevels"/>),
-    /// or <c>opinion</c> for a reading nothing declared. Null for Current's own steps.
+    /// Why a step outside the chosen graph is in this run: the review's level that asked for a look for this work (<see cref="ReviewLevels"/>),
+    /// or <c>opinion</c> for a reading nothing declared. Null for the graph's own steps.
     /// </summary>
     public string? Added { get; init; }
 
@@ -244,13 +247,17 @@ public sealed record WorkflowRunStep(WorkflowStep Step, string State, string Det
 /// <param name="Quests">The run's quests, in the chain's order.</param>
 public sealed record WorkflowRun(string Repository, string Workspace, CurrentWorkflow Current, IReadOnlyList<string> Quests, IReadOnlyList<WorkflowRunStep> Steps)
 {
+    public WorkflowProcess? Process { get; init; }
+    public WorkflowGateState? WorkflowGate { get; init; }
+    public string? Problem { get; init; }
+
     /// <summary>The ask the chain was asked by, or null.</summary>
     public string? Ask { get; init; }
 
     /// <summary>The run's newest session: the one its doors attend.</summary>
     public string? Session { get; init; }
 
-    /// <summary>The step the run stands at: the first that is not settled, or null where every step is, which is the run finished.</summary>
+    /// <summary>The first unsettled step; null where all settled or no graph could be read. Problem distinguishes the latter.</summary>
     public string? At => Steps.FirstOrDefault(step => !WorkflowRunStates.Settled(step.State))?.Step.Id;
 }
 
@@ -263,8 +270,7 @@ public sealed record WorkflowRun(string Repository, string Workspace, CurrentWor
 /// derived</i>): each step reads the store that keeps it. The work its quests and their sessions, and the go-aheads on its ask;
 /// the second opinion its gate (<see cref="OpinionGate"/>); the look the review's gate (<see cref="ReviewGate"/>); the landing
 /// this machine's landing record, the acceptance its session's conversation keeps, and the due list; the pull request the
-/// landing's kept answer (D148). What only a run would know (a named workflow's version, a check's answers) is WORKFLOW1e's and
-/// later.</para>
+/// landing's kept answer (D148). The reader resolves the run's stored binding once; checks remain outside this runtime.</para>
 ///
 /// <para><b>A quest done is not a run done</b> (design §5.2): the work finished, landed, the pull request open and merged are
 /// four steps apart, so a closed quest whose work waits on a merge reads as waiting.</para>
@@ -278,7 +284,7 @@ public static class WorkflowRuns
     /// <summary>The states a session's record ends in: anything else still runs or waits.</summary>
     private static readonly HashSet<string> Endings = new(StringComparer.Ordinal) { "completed", "declined", "failed", "stopped", "stood-down" };
 
-    /// <summary>The run of <paramref name="facts"/>: Current's steps, each where it stands, and a look the work's own choice added.</summary>
+    /// <summary>The run of <paramref name="facts"/>: its chosen graph's steps, each where it stands, and a look the work's own choice added.</summary>
     public static WorkflowRun Derive(WorkflowRunFacts facts, string workspace, string? ask = null)
     {
         var work = facts.Quests.Where(quest => quest.SetUpIn is null).ToList();
@@ -317,6 +323,12 @@ public static class WorkflowRuns
             landing = new WorkflowRunStep(landing.Step, WorkflowRunStates.NotReached, "");
         }
 
+        if (workDone && landing.State != WorkflowRunStates.Done)
+        {
+            var why = facts.WorkflowGate is { LetsGo: false } workflow ? workflow.Says
+                : facts.Process is { LandingCannot: not null } process ? WorkflowGate.LandingSays(process) : null;
+            if (why is not null) landing = landing with { State = WorkflowRunStates.CannotStart, Detail = WorkflowRunDetails.Refused, Words = why };
+        }
         steps.Add(landing);
         if (facts.Current.Steps.FirstOrDefault(step => step.Kind == WorkflowKinds.PullRequest) is { } pullRequest)
         {
@@ -324,14 +336,25 @@ public static class WorkflowRuns
         }
 
         var newest = facts.Sessions.MaxBy(session => session.Created ?? DateTimeOffset.MinValue);
+        if (facts.Process?.Named == true)
+        {
+            var added = steps.Where(step => step.Added is not null).ToList();
+            // A version owns its ids and order. Partial kinds remain visible rather than disappearing as passed.
+            steps = facts.Current.Steps.Select(cell => steps.FirstOrDefault(step => step.Step.Id == cell.Id)
+                ?? new WorkflowRunStep(cell, WorkflowRunStates.CannotStart, WorkflowRunDetails.Unread)
+                { Words = cell.Limit is { } limit ? WorkflowLimits.Says(limit) : "This step cannot be read here." }).ToList();
+            steps.InsertRange(steps.FindIndex(step => step.Step.Kind == WorkflowKinds.Landing), added);
+        }
         return new WorkflowRun(facts.Repository, workspace, facts.Current, [.. facts.Quests.Select(quest => quest.Id)], steps)
         {
+            Process = facts.Process,
+            WorkflowGate = facts.WorkflowGate,
             Ask = ask,
             Session = newest?.Id,
         };
     }
 
-    /// <summary>Current's step of a kind; the landing and the work are always drawn (design §2.7).</summary>
+    /// <summary>The graph's step of a kind; the landing and the work are required (design §2.7).</summary>
     private static WorkflowStep Cell(WorkflowRunFacts facts, string kind) =>
         facts.Current.Steps.First(step => step.Kind == kind);
 
@@ -494,8 +517,10 @@ public static class WorkflowRuns
         if (cell is null && !asks) return null;
 
         var environment = decision?.Environment ?? (cell is null ? null : TextOf(cell, "environment"));
+        var id = WorkflowKinds.Look;
+        while (cell is null && facts.Current.Steps.Any(each => each.Id == id)) id = "added-" + id;
         var step = cell ?? new WorkflowStep(
-            WorkflowKinds.Look, WorkflowKinds.Look, WorkflowParticipation.AgentAndYou, WorkflowExecutor.Agent, WorkflowPress.Reviewed,
+            id, WorkflowKinds.Look, WorkflowParticipation.AgentAndYou, WorkflowExecutor.Agent, WorkflowPress.Reviewed,
             new WorkflowSource(WorkflowRule.Review, LandingSource.Default), [new("environment", environment)],
             WorkflowRuntime.Partial, WorkflowLimits.LookPartial);
         var on = new WorkflowRunStep(step, "", "")
@@ -548,6 +573,7 @@ public static class WorkflowRuns
                 State = WorkflowRunStates.Done, Detail = WorkflowRunDetails.Reviewed, Commit = setUp?.Commit, At = gate.Verdict?.At, Session = setUpSession,
             },
             ReviewStates.NotShown => on with { State = WorkflowRunStates.WaitingOnYou, Detail = WorkflowRunDetails.NotShown },
+            ReviewStates.CannotStart => on with { State = WorkflowRunStates.CannotStart, Detail = WorkflowRunDetails.Unread, Words = gate.Says },
             ReviewStates.BeingSetUp => on with { State = WorkflowRunStates.Working, Detail = WorkflowRunDetails.BeingSetUp, Session = setUpSession },
             ReviewStates.Shown => on with
             {

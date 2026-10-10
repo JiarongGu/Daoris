@@ -120,8 +120,8 @@ public sealed partial class DriverModule
     }
 
     /// <summary>
-    /// One run as the page draws it: its Current's version, the plugins that may hold a start and each limit's sentence, as
-    /// `WORKFLOW_CURRENT` answers them; then each step, the shared table's cell beside where it stands and its facts.
+    /// One run as the page draws it: its chosen graph's digest and bound version identity, the plugins that may hold a start,
+    /// each limit's sentence, and each step beside where it stands and its facts. A problem has no replacement graph.
     /// </summary>
     private static object RunAnswer(WorkflowRun run)
     {
@@ -139,7 +139,11 @@ public sealed partial class DriverModule
             run.Quests,
             run.Session,
             run.At,
-            Workflow = new { run.Current.Version, run.Current.StartHolds, Limits = limits },
+            run.Problem,
+            WorkflowGate = WorkflowWaits(run.WorkflowGate),
+            Workflow = new { run.Current.Version, run.Current.StartHolds, Limits = limits,
+                Id = run.Process?.Named == true ? run.Process.Binding!.Workflow : null,
+                BoundVersion = run.Process?.Named == true ? run.Process.Binding!.Version : null },
             Steps = run.Steps.Select(step => new
             {
                 Step = JsonDocument.Parse(WorkflowCurrent.ToJson(step.Step)).RootElement.Clone(),

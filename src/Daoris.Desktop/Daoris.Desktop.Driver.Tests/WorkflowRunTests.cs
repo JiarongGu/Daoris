@@ -12,6 +12,39 @@ public sealed class WorkflowRunTests
 {
     private static readonly DateTimeOffset T = new(2026, 10, 9, 9, 0, 0, TimeSpan.Zero);
 
+    [Fact]
+    public void A_bound_graph_keeps_partial_steps_and_a_task_added_look_without_colliding_ids()
+    {
+        var config = DriverConfig.Parse(LookRule);
+        var binding = new WorkflowRunBinding("q1", "engine", "aurora", "release", WorkflowLevels.Task, T)
+        { Version = 1, Digest = "bound-digest" };
+        IReadOnlyList<NamedStep> named = [
+            new("look", WorkflowKinds.Work, []),
+            new("permit", WorkflowKinds.GoAhead, [new("act", "publish"), new("on", "local")]),
+            new("land", WorkflowKinds.Landing, [new("form", "merge"), new("accept", "you")]),
+        ];
+        var process = WorkflowProcesses.Of(config, "engine", "aurora", binding, named);
+        var graph = WorkflowRunGraph.Read(process, WorkflowCurrent.Derive(config, "engine", "aurora", []), []);
+        var facts = new WorkflowRunFacts("engine", graph)
+        {
+            Process = process, Quests = [Quest("q1", "Done")], Sessions = [Session("s1", "q1", "completed")],
+            Review = new ReviewGateState(ReviewStates.NotShown, new ReviewDecision(ReviewLevels.Chain, "local")),
+        };
+
+        var run = WorkflowRuns.Derive(facts, "aurora");
+
+        Assert.Equal(["look", "permit", "added-look", "land"], run.Steps.Select(step => step.Step.Id));
+        Assert.Equal(WorkflowRunStates.CannotStart, run.Steps[1].State);
+        Assert.Equal(WorkflowLimits.Says(WorkflowLimits.GoAheadPartial), run.Steps[1].Words);
+        Assert.Contains(WorkflowLimits.Says(WorkflowLimits.GoAheadPartial), WorkflowRunWords.Said(run.Steps[1]));
+        Assert.Equal(ReviewLevels.Chain, run.Steps[2].Added);
+        Assert.Equal(WorkflowRunStates.WaitingOnYou, run.Steps[2].State);
+        Assert.Equal("permit", run.At);
+        var said = WorkflowRunWords.Say([run], null);
+        Assert.Contains("`release` v1 workflow", said);
+        Assert.DoesNotContain("Current workflow", said);
+    }
+
     /// <summary>A branch landing pushed by a plugin that lands and answers its state.</summary>
     private const string PullRequestRule =
         """{"landings":{"engine":{"form":"branch","pattern":"work/{quest}","plugin":"example.pull-request"}}}""";

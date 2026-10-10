@@ -56,7 +56,11 @@ public static class WorkflowKeepCommand
                 + $"{gate.Workflow?.Says ?? "It follows Current: the rules as they stand, read at each gate."}");
         }
 
-        WorkflowRunBindings.Keep(home, run, new WorkflowKept(at, door) { Words = words });
+        if (WorkflowRunBindings.Keep(home, run, new WorkflowKept(at, door) { Words = words }) is null)
+        {
+            return (false, $"session {session}'s run binding disappeared or could not be read before your words were saved, so nothing was kept. "
+                + held.Says);
+        }
         var after = await trees.GateAsync(tree, quest, world, session, ct).ConfigureAwait(false);
         return (true, $"Kept {held.Process.Name} for session {session}'s work. {after.Workflow!.Says}");
     }

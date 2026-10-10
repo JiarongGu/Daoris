@@ -280,6 +280,7 @@ export const useLanding = (id: string | null) => {
     queryFn: () => call<{
       session: string; form?: string; target?: string; source?: string; plugin?: string; problem?: string; review?: ReviewWaits | null;
       opinion?: OpinionGate | null;
+      workflow?: import('../workflow/gate').WorkflowGateState | null;
     }>('LANDING', { id }),
     enabled: isAvailable && id !== null,
   });

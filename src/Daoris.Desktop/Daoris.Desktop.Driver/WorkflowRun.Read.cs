@@ -7,7 +7,7 @@ public sealed record WorkflowRunAsk(string? Session = null, string? Quest = null
 
 /// <summary>
 /// Where a run's records are read (WORKFLOW1c; design §5.1): this machine's service, its home (the landing record, the due list and
-/// each session's conversation), its driver file and plugins (Current), and the registry's workspace for a repository.
+/// each session's conversation and bound workflow), its live declarations and plugins, and the registry's workspace for a repository.
 /// </summary>
 /// <param name="WorkspaceOf">The workspace the registry holds a repository in, or null where it holds none (read as in no workspace).</param>
 public sealed record WorkflowRunSources(
@@ -118,6 +118,15 @@ public static class WorkflowRunReader
         var mine = sessions.Where(session => session.Quest is { } quest && ids.Contains(quest)).ToList();
         var workspace = RemoteTarget.Workspace(sources.WorkspaceOf(repository));
         var current = WorkflowCurrent.Derive(sources.Config, repository, sources.WorkspaceOf(repository), sources.Plugins);
+        var process = WorkflowProcesses.Read(sources.Home, sources.Config, repository, sources.WorkspaceOf(repository),
+            WorkflowRunBindings.RunOf(chain, repository));
+        current = WorkflowRunGraph.Read(process, current, sources.Plugins);
+        if (process.Problem is not null || process.Unread is not null)
+            return new WorkflowRun(repository, workspace, current, [.. part.Select(quest => quest.Id)], [])
+            {
+                Process = process, Problem = process.Problem ?? process.Unread,
+                Session = mine.MaxBy(session => session.Created ?? DateTimeOffset.MinValue)?.Id,
+            };
 
         var askId = chain.Select(quest => AskWords.AskOf(quest.From)).FirstOrDefault(id => id is not null);
         var (ask, askUnread) = askId is null ? (null, null) : await reads.AskAsync(askId).ConfigureAwait(false);
@@ -129,15 +138,21 @@ public static class WorkflowRunReader
             .Where(session => session.Quest is { } quest && work.Contains(quest) && !session.Teammate && session.Tree is { Length: > 0 })
             .OrderBy(session => session.Created ?? DateTimeOffset.MinValue)
             .LastOrDefault(session => Directory.Exists(session.Tree));
-        var review = await ReviewAsync(chain, repository, sources.WorkspaceOf(repository), ask, askUnread, standing?.Tree, reads).ConfigureAwait(false);
+        var review = await ReviewAsync(chain, repository, ask, askUnread, standing?.Tree, reads, process).ConfigureAwait(false);
+        var trees = new SessionTrees(sources.Home);
+        var workflow = process.Named && standing is not null
+            ? await trees.WorkflowAsync(standing.Tree!, process, standing.Id, reads.Ct).ConfigureAwait(false) : null;
 
-        // The second opinion's gate (XAGENT1f) as every landing door reads it, for that tree's session; asked only where Current
-        // draws an opinion, since no rule stands to ask one otherwise. With no tree here, it cannot be read.
+        // The second opinion's gate as every landing door reads it, through this same process. With no tree here it cannot be read.
         OpinionGateState? opinion = null;
         if (standing is not null && current.Steps.Any(step => step.Kind == WorkflowKinds.Opinion))
         {
-            opinion = await new SessionTrees(sources.Home).OpinionAsync(
-                standing.Tree!, repository, workspace, standing.Quest, standing.Id, reads.World, review, OpinionRules.Landing, reads.Ct).ConfigureAwait(false);
+            opinion = await trees.OpinionAsync(
+                standing.Tree!, repository, workspace, standing.Quest, standing.Id, reads.World, review, OpinionRules.Landing, reads.Ct, process).ConfigureAwait(false);
+        }
+        else if (process.OpinionCannot is { } cannot)
+        {
+            opinion = new OpinionGateState(OpinionGateStates.CannotStart, repository) { Rule = process.Opinion, Problem = cannot };
         }
 
         var facts = new WorkflowRunFacts(repository, current)
@@ -147,6 +162,8 @@ public static class WorkflowRunReader
             GoAheads = ask?.GoAheads ?? [],
             Review = review,
             Opinion = opinion,
+            Process = process,
+            WorkflowGate = workflow,
             Landings = [.. reads.Landings.Where(entry => sessionIds.Any(entry.Names))],
             Accepted = Acceptances(mine, sources.Home),
             AutoLandings = [.. reads.AutoLandings.Where(entry => sessionIds.Contains(entry.Session))],
@@ -161,16 +178,17 @@ public static class WorkflowRunReader
     /// </summary>
     /// <param name="tree">The work's newest tree here that still stands, whose tip would land; null where none does.</param>
     private static async Task<ReviewGateState> ReviewAsync(
-        IReadOnlyList<QuestView> chain, string repository, string? workspace, AskView? ask, string? askUnread, string? tree, Reads reads)
+        IReadOnlyList<QuestView> chain, string repository, AskView? ask, string? askUnread, string? tree, Reads reads, WorkflowProcess process)
     {
-        var rule = ReviewRules.Resolve(reads.Sources.Config, repository, workspace);
+        var rule = process.Review;
         if (askUnread is not null)
         {
             var none = new ReviewDecision(ReviewLevels.Nothing, null) { Repository = repository };
-            return rule is { Rule.IsNone: false } ? new(ReviewStates.Unread, none) { Problem = askUnread } : new(ReviewStates.None, none);
+            return rule is { Rule.IsNone: false } || process.Look is { Environment: not null } or { Cannot: not null }
+                ? new(ReviewStates.Unread, none) { Problem = askUnread } : new(ReviewStates.None, none);
         }
 
-        var decision = ReviewGate.Decide(chain, repository, ask, rule);
+        var decision = ReviewGate.Decide(chain, repository, ask, rule, process.Look, process.Name);
         // Git is asked only where a review is asked.
         var tip = decision.Reviews && tree is not null ? await ReviewGate.HeadAsync(tree, reads.Ct).ConfigureAwait(false) : null;
         return await ReviewGate.JudgeAsync(decision, tip, commit => tree is null || tip is null

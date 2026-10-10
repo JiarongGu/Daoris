@@ -1,4 +1,9 @@
 {
+  "workflow.run.said.cannotStart": "Cannot start: {{why}}",
+  "workflow.run.short.workflowHeld": "its workflow holds it",
+  "workflow.run.unreadHead": "{{repository}} · workflow unread",
+  "workflow.run.namedHead": "{{repository}} · {{workflow}} workflow, version {{version}}",
+  "workflow.run.short.unread": "cannot read its workflow",
   "workflow.run.state.not-reached": "not reached",
   "workflow.run.state.working": "working",
   "workflow.run.state.waiting-on-you": "waiting on you",

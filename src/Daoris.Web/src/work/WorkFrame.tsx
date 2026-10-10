@@ -883,7 +883,13 @@ export function WorkFrame({
           onOpenFile={headOpinion.onOpenFile}
         />
       ) : null;
-      const controls = { ...(lookControl ? { look: lookControl } : {}), ...(opinionControl ? { opinion: opinionControl } : {}) };
+      const cells = (Array.isArray(workflowRun.data?.runs) ? workflowRun.data.runs : []).flatMap((run) => run.steps);
+      const controls = Object.fromEntries(cells.flatMap(({ step }) => {
+        const control = step.kind === 'look' ? lookControl : step.kind === 'opinion' ? opinionControl : null;
+        return control ? [[step.id, control]] : [];
+      }));
+      const ownKind = following && following.kind !== 'chat' && following.quest ? quest?.setUpIn ? 'look' : 'work' : null;
+      const ownStep = cells.find(({ step }) => step.kind === ownKind)?.step.id ?? null;
       return following
         ? withWhose(
           <div className="p-3">
@@ -893,7 +899,7 @@ export function WorkFrame({
               reading={workflowRun.isPending}
               refusal={workflowRun.error ? sentence(workflowRun.error) : null}
               // The step the followed session is its own: a set-up step's session shows the work for the look.
-              here={following.kind === 'chat' || !following.quest ? null : quest?.setUpIn ? 'look' : 'work'}
+              here={ownStep}
               doors={{
                 session: (id) => { attend(id); if (elsewhere) onOpenSessions?.(); },
                 ...(onOpenQuest ? { quest: onOpenQuest } : {}),

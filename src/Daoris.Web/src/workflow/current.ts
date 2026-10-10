@@ -20,13 +20,13 @@ export type WorkflowValue = string | boolean | string[] | null;
 
 /** The rule a step was read from, or none for the work, and the level it stood at. */
 export interface WorkflowSource {
-  rule: 'landing' | 'review' | 'opinion' | null;
-  level: 'repository' | 'workspace' | 'default';
+  rule: 'landing' | 'review' | 'opinion' | 'workflow' | null;
+  level: 'repository' | 'workspace' | 'default' | 'task' | 'repository-kind' | 'workspace-kind' | 'current';
 }
 
 /** One step, as the shared table's cell (the driver's `WorkflowCurrent.ToJson`). */
 export interface WorkflowStep {
-  /** Its kind, under Current: each kind is drawn at most once. */
+  /** The kind under Current; a saved version keeps its own step id. */
   id: string;
   /** `work`, `opinion`, `look`, `landing` or `pull-request` today; a kind this page cannot word is drawn as unknown. */
   kind: string;

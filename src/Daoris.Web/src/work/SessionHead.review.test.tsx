@@ -20,6 +20,36 @@ const gate = () => screen.getByRole('region', { name: /Review in|Review before/ 
 describe("the head's review gate", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
+  it.each(['kind-paths', 'cannot-start', 'unread'])('shows the workflow %s hold and offers no Accept', (state) => {
+    render(<SessionHead session={session()} lands={LANDS} onLand={vi.fn()}
+      landing={{ ...PLAN, workflow: { state, holds: true, says: 'Holds: keep this workflow in the terminal.' } }} />);
+    expect(screen.queryByRole('button', { name: 'Accept…' })).toBeNull();
+    expect(screen.getByRole('region', { name: 'Workflow before it lands' })).toHaveTextContent('keep this workflow');
+  });
+
+  it('withdraws an open Accept confirmation when a workflow hold arrives', async () => {
+    const { rerender } = render(<SessionHead session={session()} lands={LANDS} onLand={vi.fn()} landing={PLAN} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Accept…' }));
+    rerender(<SessionHead session={session()} lands={LANDS} onLand={vi.fn()}
+      landing={{ ...PLAN, workflow: { state: 'unread', holds: true, says: 'Binding unread.' } }} />);
+    expect(screen.queryByRole('button', { name: /Accept/ })).toBeNull();
+  });
+
+  it.each(['follows', 'kept'])('offers Accept when the workflow %s lets go', (state) => {
+    render(<SessionHead session={session()} lands={LANDS} onLand={vi.fn()}
+      landing={{ ...PLAN, workflow: { state, holds: false, says: 'Follows the bound workflow.' } }} />);
+    expect(screen.getByRole('button', { name: 'Accept…' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Workflow before it lands' })).toBeNull();
+  });
+
+  it('translates the workflow hold chrome and preserves the driver words', async () => {
+    await i18n.changeLanguage('zh');
+    render(<SessionHead session={session()} lands={LANDS} onLand={vi.fn()}
+      landing={{ ...PLAN, workflow: { state: 'unread', holds: true, says: 'Binding unread.' } }} />);
+    expect(screen.getByRole('region', { name: '落地前的工作流' })).toHaveTextContent('Binding unread.');
+    expect(screen.queryByRole('button', { name: /接受/ })).toBeNull();
+  });
+
   it('stands where Accept… would while the gate holds, with the set-up shown and its verdict', async () => {
     const reviewed = vi.fn();
     const user = userEvent.setup();

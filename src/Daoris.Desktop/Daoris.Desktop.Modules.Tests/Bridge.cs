@@ -23,10 +23,10 @@ public abstract class Bridge : IDisposable
 {
     private readonly Dictionary<string, string?> _restore = new();
 
-    protected Bridge()
+    protected Bridge(string? repositoryFixture = null)
     {
-        Home = Path.Combine(
-            Path.GetTempPath(), "daoris-modules-tests", Guid.NewGuid().ToString("N")[..8]);
+        Home = Path.Combine(repositoryFixture is null ? Path.Combine(Path.GetTempPath(), "daoris-modules-tests")
+            : Path.Combine(RepositoryRoot(), "_fixtures", repositoryFixture), Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(Home);
 
         // Set BEFORE any module or loop exists — see the remarks above. The home first (D63): every
@@ -53,6 +53,18 @@ public abstract class Bridge : IDisposable
     }
 
     private readonly List<EventMessage> _raised = [];
+
+    private static string RepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            if (Directory.Exists(Path.Combine(directory.FullName, ".git")) || File.Exists(Path.Combine(directory.FullName, ".git")))
+                return directory.FullName;
+            directory = directory.Parent;
+        }
+        throw new InvalidOperationException("Repository fixtures require a checkout.");
+    }
 
     /// <summary>What the module raised. A page listens to these, so they are part of the contract.</summary>
     protected IReadOnlyList<EventMessage> Raised

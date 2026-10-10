@@ -1,4 +1,6 @@
 {
+  "workflow.gate.title": "落地前的工作流",
+  "workflow.source.bound": "此运行绑定的工作流版本。",
   "workflow.head.title": "现行工作流",
   "workflow.head.repository": "{{repository}} 中的工作如何推进：读自它的规则在每道关口时的样子。",
   "workflow.head.unregistered": "注册表中没有它，所以它被视为不在任何工作区中：`{{workspace}}` 工作区的规则作用于它。",

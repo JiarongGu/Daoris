@@ -5,6 +5,39 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## MAINT2 — close review findings (2026-10-10)
+
+> - [ ] **MAINT2 — close review findings** (review follow-up). Reconcile fixed findings and resolve the remaining integration defects within the owner's requested scope. Contract: D157/D159; proof: defect regressions, reached gates and explicit cleanup outcomes. Closure ledger: `docs/2026-10-10-code-and-docs-review.md`.
+
+**Outcome.** Closed WORKFLOW1c6, WORKFLOW1f2 and WORKFLOW1g2; earlier documentation/tooling findings
+remain repaired. Reached application gates and family rehearsal pass; final baseline receipts live in
+the maintenance review. Rechecked cleanup was rejected by execution policy; DOCSCRATCH1 and CLEANUP1
+remain open. No live installation or remote was changed.
+
+## WORKFLOW1c6 — show the bound workflow in a run (2026-10-10)
+
+> - [ ] **WORKFLOW1c6 — show the bound workflow in a run** (driver/web; after f). `WorkflowRun.Read.cs:120` still derives Current, so the diagram can disagree with named-version gates. Read the bound version and its unreadable state; prove a later Current change cannot redraw a named run. D157 §5/§7.
+
+**Outcome.** Runs share the gate's bound process and preserve saved ids/order, version identity and
+task-added review floors. Unreadable bindings/versions show a problem. Terminal, bridge, owner controls
+and bilingual UI regressions pass; reached gates and visual evidence: `docs/2026-10-10-code-and-docs-review.md`.
+
+## WORKFLOW1f2 — Keep must confirm its write (2026-10-10)
+
+> - [ ] **WORKFLOW1f2 — Keep must confirm its write** (driver). `WorkflowKeepCommand.cs:59` ignores a null binding update and claims success. Retain the hold if the binding disappears between judging and writing; prove the race and the successful press. D157 §4.4.
+
+**Outcome.** Keep requires a saved binding before answering success. Real-Git removal/corruption races
+and the successful Keep/automatic-landing case pass; the driver process suite passes all 809 tests.
+Root cause: `docs/FIX-LOG.md`; final verification: the maintenance review.
+
+## WORKFLOW1g2 — show workflow holds before Accept (2026-10-10)
+
+> - [ ] **WORKFLOW1g2 — show workflow holds before Accept** (modules/web; after f). `DriverModule.Trees.cs:410` omits the workflow gate from LANDING, and `SessionHead.tsx:460` only considers review/opinion. Carry unreadable/kind-path holds to each landing surface with the person's available actions; prove no misleading Accept offer. D157 §3.7/§4.4/§7.
+
+**Outcome.** Preview/press share workflow gate data; both landing surfaces display its terminal doors
+and suppress Accept while held, including an open confirmation. Three real-Git hold cases and bilingual
+UI regressions pass; full web gate and visual receipt: the maintenance review. Editor work remains WORKFLOW1g.
+
 ## MAINT1 — review code and docs for future generation (2026-10-10)
 
 > - [ ] **MAINT1 — review code and docs for future generation** (tools/documentation). Consolidate duplicated generator inputs and keep quoted Markdown examples out of structural checks. Contract: D159 and the maintenance review; proof: failing-first regressions, inventory compatibility and baseline verification; record: `docs/2026-10-10-code-and-docs-review.md`.

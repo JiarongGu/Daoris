@@ -90,6 +90,7 @@ public static class WorkflowRunWords
     {
         var kind = step.Step.Kind;
         if (step.State == WorkflowRunStates.NotReached) return null;
+        if (step.State == WorkflowRunStates.CannotStart && step.Words is { Length: > 0 } cannotStartWords) return $"Cannot start: {cannotStartWords}";
         if (!States.Contains(step.State) || !Details.TryGetValue(kind, out var details) || !details.Contains(step.Detail))
         {
             return $"Shown as recorded: {step.State}, {(step.Detail.Length == 0 ? "—" : step.Detail)}.";
@@ -233,9 +234,13 @@ public static class WorkflowRunWords
             var run = runs[index];
             if (index > 0) said.Append('\n');
             var quests = run.Quests.Count == 1 ? $"quest #{run.Quests[0]}" : $"quests {string.Join(", ", run.Quests.Select(id => $"#{id}"))}";
-            said.Append($"{run.Repository} · Current workflow, version {run.Current.Version} · {quests}");
+            var workflow = run.Process?.Named == true ? $"{run.Process.Name} workflow"
+                : run.Problem is not null ? "Workflow unread" : $"Current workflow, version {run.Current.Version}";
+            said.Append($"{run.Repository} · {workflow} · {quests}");
             if (run.Ask is { } ask) said.Append($" · ask #{ask}");
             said.Append('\n');
+            if (run.Problem is { } problem) said.Append($"  Cannot read this run: {problem}\n");
+            if (run.WorkflowGate is { LetsGo: false } held) said.Append($"  {held.Says}\n");
 
             foreach (var step in run.Steps)
             {

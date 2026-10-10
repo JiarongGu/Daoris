@@ -87,6 +87,7 @@ export function stepSet(t: TFunction, step: WorkflowStep): string | null {
  */
 export function sourceSaid(t: TFunction, step: WorkflowStep, page: 'repository' | 'workspace', workspace: string): string {
   const { rule, level } = step.source;
+  if (rule === 'workflow') return t('workflow.source.bound');
   if (rule === null) return t('workflow.source.always');
   const named = t(`workflow.rule.${rule}`);
   if (level === 'repository') return t('workflow.source.repository', { rule: named });

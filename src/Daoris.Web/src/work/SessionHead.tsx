@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { workflowHolds } from '../workflow/gate';
+import { WorkflowHold } from '../workflow/WorkflowHold';
 import { DiscardBranchAsk, type SweepBranch } from '../settings/Sweep';
 import type { GoAhead, Quest, Session } from '../api';
 import type { AccountNamer } from '../tools';
@@ -414,6 +416,7 @@ function Left({ branch, onReview, onDiscard, discarding = false }: {
  * review's gate while it holds the work (REVIEWENV1c), absent where nothing waits for a review.
  */
 export type LandingPlan = {
+  workflow?: import('../workflow/gate').WorkflowGateState | null;
   session?: string; form?: string; target?: string; source?: string; plugin?: string; problem?: string;
   review?: ReviewWaits | null;
   /** The second opinion's gate where a level asks one (XAGENT1f), which the head draws before the review's (XAGENT1g). */
@@ -452,12 +455,13 @@ function Lands({ session, lands, landing, onReview, onLand, review, opinion }: {
   // While the review's gate holds the work (REVIEWENV1g, design §3.1), *Review in `<environment>`* stands where *Accept…*
   // would, in the gate's state, and no *Accept…* is offered: the landing door would refuse it.
   const waits = reviewHolds(landing);
+  const workflow = workflowHolds(landing);
   // The second opinion's gate comes first (XAGENT1g, the second-agent design §7): while it holds, no *Accept…*, unless *Accept…*
   // is the press that answers it, drawn with the token it sends back (§8.2–§8.3).
   const second = opinionAsked(landing);
   const opinionWaits = opinionHolds(landing);
   const answers = opinionWaits && acceptAnswers(opinionWaits) ? opinionWaits.answers ?? null : null;
-  const acceptable = !waits && (!opinionWaits || answers !== null);
+  const acceptable = !workflow && !waits && (!opinionWaits || answers !== null);
   // A session that did not finish lands what it committed before it ended (LAND4); one finished, at a checkpoint or by
   // itself, lands its work.
   const unfinished = session.state !== 'completed';
@@ -477,6 +481,7 @@ function Lands({ session, lands, landing, onReview, onLand, review, opinion }: {
         )}
         {onReview && <Button className="px-2 py-0.5 text-small" onClick={onReview}>{t('work.head.review')}</Button>}
       </p>
+      {workflow && <WorkflowHold gate={workflow} />}
       {second && (
         <OpinionGate
           gate={second}
@@ -484,7 +489,7 @@ function Lands({ session, lands, landing, onReview, onLand, review, opinion }: {
           acts={opinion?.acts}
           busy={opinion?.busy}
           // A press of the person's answers a dispute here: *Accept…*, or D154's *Reviewed* while its look holds the work.
-          pressComing={Boolean((onLand && acceptable) || waits)}
+          pressComing={Boolean(!workflow && ((onLand && acceptable) || waits))}
           working={session.id}
           onOpenFile={opinion?.onOpenFile}
         />

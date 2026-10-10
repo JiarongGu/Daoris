@@ -11,6 +11,8 @@ with the version and date at release.
 
 - Named workflows govern landing, review and opinion from their bound version. Damaged run bindings
   hold the work until they can be read, preserving its required checks.
+  Run diagrams and terminal reads show that bound version; landing previews explain workflow holds
+  before offering Accept, and Keep confirms that its approval was saved.
 
 - Ask Daoris history groups conversations and keeps titles readable in narrow panels. Starting a
   new conversation waits for the current one to finish and preserves the draft if that is refused.

@@ -465,6 +465,40 @@ public sealed class AutoLandingTests : IDisposable
         Assert.Equal(new LandingWorkflow("docs-to-pr", 1, WorkflowLevels.WorkspaceKind) { Kind = "docs" }, new LandedBranches(_home).Landing("s1")!.Workflow);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Keep_refuses_when_the_binding_disappears_or_breaks_after_the_gate_read(bool corrupt)
+    {
+        var root = await RepositoryAsync("engine");
+        WorkflowSelection.Apply(
+            DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}")),
+            new WorkflowDeclare("docs", "aurora", "Documentation", ["docs/**"]))
+            .Save(Path.Combine(_home, "driver.json"));
+        Follow("""[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"branch","accept":"automatic"}]""", kind: "docs");
+        var tree = await NamedDoneAsync(root, "s1", "q1");
+        var binding = WorkflowRunBindings.PathOf(_home, "q1");
+        var reads = 0;
+        _world.ReadingQuests = () =>
+        {
+            // Process read first; the review reads the chain after the workflow's path hold was judged.
+            if (++reads != 2) return;
+            if (corrupt) File.WriteAllText(binding, "{broken");
+            else File.Delete(binding);
+        };
+
+        var (done, message) = await WorkflowKeepCommand.KeepAsync(
+            _home, "s1", tree, "q1", _world, "keep these paths", ReviewDoors.Terminal, DateTimeOffset.UtcNow);
+
+        Assert.False(done, message);
+        Assert.Contains("nothing was kept", message);
+        Assert.Contains("Holds: this work changed 1 path outside Documentation's", message);
+        Assert.Null(WorkflowRunBindings.Read(_home, "q1"));
+        Assert.Equal(corrupt, File.Exists(binding));
+        if (corrupt) Assert.Equal("{broken", File.ReadAllText(binding));
+        Assert.False(await BranchAsync(root, "feature/q1-fix-the-gap"));
+    }
+
     /// <summary>
     /// A named workflow `docs-to-pr` saved here with one version and chosen as `engine`'s default (or, with a kind, the workspace's for
     /// it), and run q1 bound to it as its first start binds it (WORKFLOW1e), over the rule <see cref="Rule"/> wrote.
@@ -500,6 +534,7 @@ public sealed class AutoLandingTests : IDisposable
     /// <summary>The service's quests and records, standing in.</summary>
     private sealed class World : IAutoLandingWorld
     {
+        public Action? ReadingQuests { get; set; }
         public Dictionary<string, QuestView> Quests { get; } = new(StringComparer.OrdinalIgnoreCase);
 
         public List<SessionRecord> Records { get; } = [];
@@ -512,7 +547,11 @@ public sealed class AutoLandingTests : IDisposable
             Task.FromResult<IReadOnlySet<string>>(Records.Where(r => r.Live && r.Tree is not null).Select(r => r.Tree!).ToHashSet());
 
         // The review's gate reads the chain and its ask (REVIEWENV1c): no rule names a review here, so these decide nothing.
-        public Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<QuestView>>([.. Quests.Values]);
+        public Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct)
+        {
+            ReadingQuests?.Invoke();
+            return Task.FromResult<IReadOnlyList<QuestView>>([.. Quests.Values]);
+        }
 
         public Task<AskView?> AskAsync(string id, CancellationToken ct) => Task.FromResult<AskView?>(null);
 

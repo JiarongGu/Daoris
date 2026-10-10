@@ -50,6 +50,19 @@ type Story = StoryObj<typeof SessionHead>;
 /** Driven work in its own tree, running as a named account. */
 export const Driven: Story = {};
 
+/** The kind's workflow asks less of the person and its paths were exceeded; the terminal's Keep is the available door. */
+export const WorkflowPathsHeld: Story = { args: {
+  session: { ...SESSION, state: 'completed' },
+  lands: { branch: 'daoris/s-workflow', tree: 's-workflow', commits: 2, uncommitted: 0 },
+  onLand: () => {},
+  landing: { form: 'branch', target: 'feature/docs', workflow: { state: 'kind-paths', holds: true,
+    says: 'Holds: this work changed paths outside Documentation. Keep its workflow with `daoris-driver workflow keep s1a2b3c4`.' } },
+} };
+export const WorkflowPathsHeldChineseDark: Story = { ...WorkflowPathsHeld, decorators: [chinese, dark] };
+export const WorkflowBindingUnread: Story = { ...WorkflowPathsHeld, args: { ...WorkflowPathsHeld.args,
+  landing: { workflow: { state: 'unread', holds: true, says: 'Its stored run binding could not be read. Restore the binding to continue.' } },
+} };
+
 /** A conversation: no quest, so the identity is the kind and nothing is invented. */
 export const Conversation: Story = {
   args: {

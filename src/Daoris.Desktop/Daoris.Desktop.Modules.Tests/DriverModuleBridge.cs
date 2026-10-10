@@ -15,6 +15,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </remarks>
 public abstract class DriverModuleBridge : Bridge
 {
+    protected DriverModuleBridge(string? repositoryFixture = null) : base(repositoryFixture) { }
     protected DriverLoop Loop() => new(Bus, new HostSupervisor("http://localhost:0"), "http://localhost:0");
 
     protected DriverModule Module() => new(Bus, Loop());

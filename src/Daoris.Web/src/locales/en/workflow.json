@@ -1,4 +1,6 @@
 {
+  "workflow.gate.title": "Workflow before it lands",
+  "workflow.source.bound": "The run's bound workflow version.",
   "workflow.head.title": "Current workflow",
   "workflow.head.repository": "How work in {{repository}} moves, read from its rules as they stand at each gate.",
   "workflow.head.unregistered": "The registry does not hold it, so it is read as in no workspace: the `{{workspace}}` workspace's rules reach it.",

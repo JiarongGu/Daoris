@@ -86,6 +86,30 @@ describe("the session's Workflow view", () => {
     expect(work).toHaveTextContent('Being worked on by claude-code.');
   });
 
+  it('attaches the session mark and owned review controls to saved step ids', async () => {
+    RUN = answerOf({ ...IN_REVIEW, at: 'inspect', workflow: { ...IN_REVIEW.workflow, id: 'release', boundVersion: 1 },
+      steps: IN_REVIEW.steps.map((step) => ({ ...step, step: { ...step.step,
+        id: step.step.kind === 'work' ? 'write' : step.step.kind === 'look' ? 'inspect' : step.step.id } })) });
+    const previous = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, ...args: unknown[]) => {
+      if (type === 'SESSION_GROUPS') return { sessions: [{ session: 's1', group: 'review', shown: 'completed',
+        lands: { branch: 'daoris/s1', tree: 's1', commits: 1, uncommitted: 0 } }] };
+      if (type === 'LANDING') return { session: 's1', form: 'merge', target: 'main',
+        review: { state: 'not-shown', environment: 'local', says: 'Waits for your look.' } };
+      return previous(module, type, ...args);
+    });
+    render(<QueryClientProvider client={client()}><Tooltip.Provider>
+      <WorkFrame selected="s1" onSelect={vi.fn()} notify={() => {}} />
+    </Tooltip.Provider></QueryClientProvider>);
+    const side = await screen.findByRole('complementary', { name: 'right side bar' });
+    await userEvent.click(within(side).getByRole('tab', { name: 'Workflow' }));
+    await within(side).findByText('engine · release workflow, version 1');
+    const rows = within(side).getAllByRole('listitem');
+    expect(rows.find((row) => row.getAttribute('data-step') === 'write')).toHaveTextContent('this session');
+    const inspect = rows.find((row) => row.getAttribute('data-step') === 'inspect')!;
+    expect(await within(inspect).findByRole('button', { name: 'Set it up in local' })).toBeInTheDocument();
+  });
+
   it('opens on the run when a door asks for it, as the application hands it a frame intent', async () => {
     RUN = answerOf(IN_REVIEW);
     // The application's intent, held as App holds it and cleared once taken; a door sends it once its session is attended.

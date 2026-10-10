@@ -7,6 +7,7 @@ import type { CurrentWorkflow } from './current';
 import { type RunStep, runTone, type WorkflowRun, type WorkflowRunAnswer } from './run';
 import { addedSaid, runSaid, runShort, stateSaid } from './runSaid';
 import { type RunMarks, WorkflowChart } from './WorkflowChart';
+import { WorkflowHold } from './WorkflowHold';
 
 /** Where a step's door leads (design §7: *a step's door opens where its record is*). */
 export type RunDoors = {
@@ -152,15 +153,19 @@ function Run({ run, here, doors, controls, named }: {
         <Prose className="text-ink">
           <Inline text={named ? t('workflow.run.lineIn', { repository: run.repository, says }) : t('workflow.run.line', { says })} />
         </Prose>
-        <p className="m-0 text-meta text-ink-faint">{t('workflow.run.head', { repository: run.repository, version: run.workflow.version })}</p>
+        <p className="m-0 text-meta text-ink-faint">{run.workflow.id && run.workflow.boundVersion != null
+          ? t('workflow.run.namedHead', { repository: run.repository, workflow: run.workflow.id, version: run.workflow.boundVersion })
+          : run.problem ? t('workflow.run.unreadHead', { repository: run.repository })
+            : t('workflow.run.head', { repository: run.repository, version: run.workflow.version })}</p>
       </div>
-      <WorkflowChart
+      {run.workflowGate?.holds && <WorkflowHold gate={run.workflowGate} />}
+      {run.problem ? <Prose className="text-small"><Inline text={run.problem} /></Prose> : <WorkflowChart
         workflow={runWorkflow(run)}
         page="repository"
         name={run.repository}
         run={marks}
         end={at === null ? <Pill tone="done">{stateSaid(t, 'done')}</Pill> : undefined}
-      />
+      />}
     </div>
   );
 }

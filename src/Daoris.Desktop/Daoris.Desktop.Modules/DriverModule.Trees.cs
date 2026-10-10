@@ -407,7 +407,8 @@ public sealed partial class DriverModule
             var plan = await trees.PlanAsync(tree, subject, cancellationToken, gate.Process);
             return new
             {
-                Session = id, plan.Form, plan.Target, plan.Source, plan.Plugin, plan.Problem, Review = Waits(gate.Review), Opinion = Opinion(gate.Opinion),
+                Session = id, plan.Form, plan.Target, plan.Source, plan.Plugin, plan.Problem,
+                Workflow = WorkflowWaits(gate.Workflow), Review = Waits(gate.Review), Opinion = Opinion(gate.Opinion),
             };
         }
 
@@ -433,8 +434,15 @@ public sealed partial class DriverModule
                 : null,
             Review = Waits(gate.Review),
             Opinion = Opinion(gate.Opinion),
+            Workflow = WorkflowWaits(gate.Workflow),
         };
     }
+
+    /// <summary>The workflow gate's own explanation and terminal doors, shared by the preview and the press.</summary>
+    public static object? WorkflowWaits(WorkflowGateState? gate) => gate is null || gate.State == WorkflowGateStates.None
+        ? null
+        : new { gate.State, Holds = !gate.LetsGo, gate.Says, gate.Outside, gate.Lowered, gate.Otherwise,
+            Workflow = gate.Process.Binding?.Workflow, Version = gate.Process.Binding?.Version, gate.Process.Binding?.Kind };
 
     /// <summary>
     /// What the second opinion's gate says beside a landing's plan or press (XAGENT1f, the second-agent design §8.1, §8.5): its
