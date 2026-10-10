@@ -1048,7 +1048,7 @@ test('the driver’s language reading is this table, row for row and in this ord
 
 /**
  * The terminal's door onto the session language (LANG1c, D50): set for a repository or a workspace, replaced under the spelling
- * first written, listed with where each was set, and cleared; a repository's page, Settings → Workspace and Ask Daoris are
+ * first written, listed with where each was set, and cleared; a repository's page, the workspace's page and Ask Daoris are
  * its other doors.
  */
 test('language sets a repository\'s and a workspace\'s, replaces, lists and clears them', () => {

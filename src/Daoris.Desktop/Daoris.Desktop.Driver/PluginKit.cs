@@ -341,7 +341,7 @@ public static partial class PluginKit
                 StringComparison.Ordinal)
             .Replace("{{install}}", lands
                 ? $" A landing plugin also needs a rule to name it: `daoris driver landing --workspace <name> branch "
-                  + $"\"feature/{{quest}}-{{slug}}\" --plugin {id}`, or Settings → Workspace → How work lands."
+                  + $"\"feature/{{quest}}-{{slug}}\" --plugin {id}`, or Repositories → the workspace's page → Setup → Defaults → How work lands."
                 : "", StringComparison.Ordinal);
     }
 

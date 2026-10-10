@@ -191,7 +191,7 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
         Assert.Equal(1, await RunAsync(["--workspace", "my team"], again, world));
         Assert.Equal(0, await RunAsync(["--workspace", "my team", "--pause"], paused, world));
 
-        Assert.Contains("taken back in Settings → Permissions, or `daoris agent rules remove <rule> --workspace \"my team\"`.",
+        Assert.Contains("taken back in Repositories → the workspace's page → Setup → Remote and reach, or `daoris agent rules remove <rule> --workspace \"my team\"`.",
             pressed.ToString(), StringComparison.Ordinal);
         Assert.Contains("a plan for workspace `my team` is already working, made 2026-10-02. `daoris-driver setup --workspace \"my team\" "
             + "--pause`, `--resume` or `--stop` steers it", again.ToString(), StringComparison.Ordinal);

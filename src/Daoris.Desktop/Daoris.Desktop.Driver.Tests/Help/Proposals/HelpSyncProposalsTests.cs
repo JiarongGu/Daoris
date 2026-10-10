@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// Ask Daoris's <c>sync</c> proposal (HELP10, D109): Settings → Workspace → Session branches → *Bring up to date*, as a
+/// Ask Daoris's <c>sync</c> proposal (HELP10, D109): the workspace's page → Branches → Updates → *Bring up to date*, as a
 /// card with the screen's two presses — the look, which is the person's and so the only thing that fetches, then the
 /// Apply, which acts on the rows that look listed and on nothing else.
 /// </summary>

@@ -12921,3 +12921,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6i2b — the service's go and plugin text** (service). `go_propose`'s view and domain lists and refusals name the current places (`knowledge`, `plugins`, Get started), as D150's UX6i2a note settled them. D150 notes; the box's text.
 
 **Outcome** 2026-10-11: `go_propose`'s views, domains and parts, its refusal, the plugin tool and (widened mid-task) the sync tool name the places the window has; three new tests pin the texts, which none held before. The merge also brought the web README up to the day's work, which its freshness gate asked for. Detail: the merge commit.
+
+
+## UX6g2a — workspace-page guidance: sentences (2026-10-11, D150)
+
+> - [ ] **UX6g2a — workspace-page guidance: sentences** (driver/CLI). Room, session-tree, plugin-kit and set-up sentences say the workspace's page (Setup → Defaults, Branches, Setup → Remote and reach) for Settings → Workspace/Permissions. D150 §3.1, UX6g note; room goldens; the CLI/driver set-up sentence twin.
+
+**Outcome** 2026-10-11: the room's doors, may-do and may-propose texts, the session-branch hand-on notes, the plugin-kit hint and the set-up's printed sentence (with its CLI twin) name the workspace's page; a test holds that no door names the retired Settings rows. The go twin is UX6g2b. Detail: D150's UX6g2a note.

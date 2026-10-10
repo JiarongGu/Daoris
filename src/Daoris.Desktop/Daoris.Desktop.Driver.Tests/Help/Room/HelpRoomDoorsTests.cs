@@ -59,7 +59,7 @@ public sealed class HelpRoomDoorsTests
             Assert.Contains(command, agents);
         }
 
-        Assert.Contains("Settings → Workspace → Lines", agents);
+        Assert.Contains("Repositories → the workspace's page → Setup → Defaults → Line", agents);
         // HELP9: a parked quest's Retry is on its quest's page, which the room names beside the command (HELP10: and
         // proposes). SESSUX1b: FRAME1d made the drawer a page; the row said a drawer until then.
         Assert.Contains("Quests → the quest's page → Try again", agents);
@@ -105,18 +105,26 @@ public sealed class HelpRoomDoorsTests
         Assert.Equal("Repositories → the repository's page → Setup → Driving", Screen("drive a repository"));
         Assert.Equal("Repositories → the repository's page → Setup → Driving", Screen("hold one"));
         Assert.Equal("Repositories → the repository's page → Setup → Driving", Screen("give its sessions their own tree"));
-        Assert.Equal("Repositories → the repository's page → Setup → Line and landing; a workspace's, Settings → Workspace → Lines",
+        Assert.Equal(
+            "Repositories → the repository's page → Setup → Line and landing; a workspace's, Repositories → the workspace's page → Setup → Defaults → Line",
             Screen("set the line"));
         Assert.Equal(
-            "Repositories → the repository's page → Setup → Line and landing; a workspace's, Settings → Workspace → How work lands",
+            "Repositories → the repository's page → Setup → Line and landing; a workspace's, Repositories → the workspace's page → Setup → Defaults → How work lands",
             Screen("set how accepted work lands"));
         Assert.Equal(
-            "Repositories → the repository's page → Setup → Reach; a workspace's reading, Settings → Permissions → Across repositories",
+            "Repositories → the repository's page → Setup → Reach; a workspace's reading, Repositories → the workspace's page → Setup → Defaults → Read by agents outside",
             Screen("let agents read"));
         Assert.Equal("Repositories → the repository's page → Setup → Sessions", Screen("keep a standing answer"));
-        Assert.Equal("Repositories → the repository's page → Setup → Sessions; a workspace's, Settings → Workspace → Session language",
+        Assert.Equal(
+            "Repositories → the repository's page → Setup → Sessions; a workspace's, Repositories → the workspace's page → Setup → Defaults → Session language",
             Screen("set the language"));
         Assert.Contains("a repository's, Repositories → the repository's page → Setup → Reach", Screen("allow, ask or deny"));
+        // UX6g2a: a workspace's session branches and updates are on its Branches tab, its rules on Setup → Remote and reach.
+        Assert.Equal("Repositories → the workspace's page → Branches → Updates", Screen("bring a repository up to date"));
+        Assert.Equal("Repositories → the workspace's page → Branches → Session branches", Screen("clean up session branches"));
+        Assert.EndsWith("a workspace's, Repositories → the workspace's page → Setup → Remote and reach", Screen("allow, ask or deny"));
+        Assert.DoesNotContain(HelpRoomDoors.Doors, door => door.Screen.Contains("Settings → Workspace", StringComparison.Ordinal)
+            || door.Screen.Contains("Settings → Permissions", StringComparison.Ordinal));
     }
 
     /// <summary>

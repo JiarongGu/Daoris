@@ -34,7 +34,6 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 - [ ] **BRSCOPE1b — checkout scope and sync workspace** (modules/service/driver; after BRSCOPE1a). Share checkout-scope fixtures; carry workspace through sync proposals. D150 notes; three-door proof.
 - [ ] **UX7d — remaining visual findings** (web/driver). Absent-agent Install, strip marks, version, compact Chinese summaries and coded opening notes. D152 §4.6.
 - [ ] **UX7e — installed menus and heads** (parent; after republish). Verify keyboard menus, shortcuts, composer editing, head geometry and titles at 1546/680 px. D152 §6.
-- [ ] **UX6g2a — workspace-page guidance: sentences** (driver/CLI). Room, session-tree, plugin-kit and set-up sentences say the workspace's page (Setup → Defaults, Branches, Setup → Remote and reach) for Settings → Workspace/Permissions. D150 §3.1, UX6g note; room goldens; the CLI/driver set-up sentence twin.
 - [ ] **UX6g2b — the go twin reaches the workspace's page** (design first; driver + web twin). Retire the `workspace`/`permissions` domains into `Kept`; decide whether the page's tabs and sections become go parts. D150 §3.1/§4.3, UX6i2a note; twins.
 - [ ] **UX6g3 — the page's own words name the workspace's page** (web). `projects.json:41-42` ("Settings → Workspace lists it", en/zh) and comments in `opener.ts`, `SettingsView.tsx`, `bridge/driver.ts`, `help/starters.ts`. D150 §3.1.
 - [ ] **UX6h — Git inside Repositories** (web; after GIT1d; absorbs GIT1e). Branch kinds and graph; retire Git place. UX6 §4.4/D147.

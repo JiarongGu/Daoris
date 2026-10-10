@@ -268,7 +268,7 @@ const WORKSPACE_PRESSED = [
     + 'The driver\'s loop asks the next at each look while fewer are open; with no loop running, nothing is asked until one runs.',
   'added to workspace `meridian`\'s rules, so each set-up\'s session may run the doctrine tool:',
   ...SETUP_RULES.map((rule) => `  ${rule}`),
-  '  taken back in Settings → Permissions, or `daoris agent rules remove <rule> --workspace meridian`.',
+  '  taken back in Repositories → the workspace\'s page → Setup → Remote and reach, or `daoris agent rules remove <rule> --workspace meridian`.',
   '',
 ];
 const WORKSPACE_RESUMED = [
