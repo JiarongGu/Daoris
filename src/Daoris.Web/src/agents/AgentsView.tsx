@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { sentence } from '../format';
 import { useHarnessRun, WithHarnessRuns } from '../harnessRuns';
 import { useRegistry } from '../queries';
+import { useScope } from '../scope';
 import { SessionConsole } from '../SessionConsole';
 import {
   useAccountUse, useAccounts, useHarnessAction, useHarnesses, useRefreshHarnesses, useRuleAction, useRuleProposal, useRules,
@@ -155,6 +156,10 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, install = false, 
   const ruleAct = useRuleAction();
   const settle = useRuleProposal();
   const registry = useRegistry('machine');
+  // The workspace the window looks at: the one chosen, or the only one there is, as the application's circle (ACCTUX4c).
+  const chosenScope = useScope();
+  const known = workspacesOf(registry.data ?? []);
+  const inView = chosenScope.workspace ?? (known.length === 1 ? known[0]! : null);
   const { running, runningProfile, signingInNew, busy: acting, run, added, settleAdded } = useHarnessRun();
   const onError = failure(notify);
   const door = tool.doors[0]!.harness;
@@ -303,6 +308,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, install = false, 
       rules={rulesAnswer}
       usage={used.filter((account) => tool.doors.some((each) => each.harness === account.harness))}
       workspaces={workspacesOf(registry.data ?? [])}
+      inView={inView}
       adapter={adapter}
       part={part}
       reading={read.isPending}

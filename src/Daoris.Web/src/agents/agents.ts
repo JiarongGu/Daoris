@@ -342,7 +342,7 @@ export function runsForLine(runs: readonly RunsFor[]): string {
 }
 
 /** This machine's next start as the page says it above the accounts (ACCTUX4b): the sentence, then what holds the others. */
-export type NextStartSaid = { takes: string; held: string | null };
+export type NextStartSaid = { takes: string; held: string | null; workspace?: string };
 
 /**
  * Which account this machine's next start takes and why, above the account list (ACCTUX4b; the second opinion's lines
@@ -364,6 +364,24 @@ export function nextStartSaid(
     && next.over !== scope.begins;
   const head = { ...next, others: next.others.filter((held) => held.account === scope.begins) };
   return { takes: nextLine(next, scope, labelOf, isKey), held: passed ? heldLine(head, labelOf, isKey) : null };
+}
+
+/**
+ * The next start of the workspace in view where it has a scope of its own that names one, else this machine's (ACCTUX4c).
+ * On the install every account serves the workspace the window shows, and this machine's scope starts on the tool's own
+ * sign-in, which says nothing: the sentence was never drawn. The workspace is named, since the sentence speaks for it.
+ */
+export function nextStartSaidFor(
+  use: AgentAccounts | null | undefined, workspace: string | null, labelOf: (name: string) => string,
+  isKey: (name: string) => boolean = () => false,
+): NextStartSaid | null {
+  if (!use) return null;
+  const own = workspace ? workspaceScope(use, workspace) : null;
+  if (workspace && own?.next) {
+    const said = nextStartSaid(own, labelOf, isKey);
+    return said && { workspace, ...said };
+  }
+  return nextStartSaid(machineScope(use), labelOf, isKey);
 }
 
 /** The one act a row's state asks for (D152 §4.2): its name, and whether it is loud, which is where it holds work. */

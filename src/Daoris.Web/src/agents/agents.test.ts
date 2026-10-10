@@ -5,7 +5,7 @@ import { byTool, type ToolDoor } from '../tools';
 import { scopeOf, THREE } from '../settings/accountsFixtures';
 import type { AgentAccounts } from '../settings/accounts';
 import {
-  accountAct, accountName, accountState, accountWho, agentRows, doorsSummary, heldBy, joinChoices, nextStartSaid, ownRunsFor,
+  accountAct, accountName, accountState, accountWho, agentRows, doorsSummary, heldBy, joinChoices, nextStartSaid, nextStartSaidFor, ownRunsFor,
   ownSaid, ownState, readLine, rulesSummary, runsFor, runsForLine, settingsSummary, signedOutHeld, stateWhen, stateWord,
   usageCells, usageSummary, useSummary, versionOnly, workspacesSummary,
 } from './agents';
@@ -367,6 +367,29 @@ describe('the next start, above the accounts', () => {
     expect(nextStartSaid(scopeOf({ next: { account: null, reason: 'own', others: [] } }), labelOf)).toBeNull();
     expect(nextStartSaid(scopeOf({ list: ['account-1'] }), labelOf)).toBeNull();
     expect(nextStartSaid(null, labelOf)).toBeNull();
+  });
+
+  /** ACCTUX4c: the window's workspace speaks where it has a scope of its own with a next start, else this machine. */
+  it('says the next start of the workspace in view, named, where it has a scope of its own', () => {
+    expect(nextStartSaidFor(THREE, 'work', labelOf)).toEqual({
+      workspace: 'work', takes: 'The next start takes account-2: it is the only account here that is ready.', held: null,
+    });
+  });
+
+  it('says this machine’s where the workspace has no scope of its own, or none is in view', () => {
+    const machine = nextStartSaid(THREE.scopes[0]!, labelOf);
+    expect(nextStartSaidFor(THREE, 'forge', labelOf)).toEqual(machine);
+    expect(nextStartSaidFor(THREE, null, labelOf)).toEqual(machine);
+    // A workspace's scope that names no next start (an older shell) is not guessed at: this machine's speaks.
+    const bare: AgentAccounts = { ...THREE, scopes: [THREE.scopes[0]!, scopeOf({ workspace: 'work', list: ['account-1'] })] };
+    expect(nextStartSaidFor(bare, 'work', labelOf)).toEqual(machine);
+  });
+
+  it('says the workspace’s next start where this machine runs on your own sign-in', () => {
+    const own: AgentAccounts = { ...THREE, scopes: [scopeOf({ next: { account: null, reason: 'own', others: [] } }), THREE.scopes[1]!] };
+    expect(nextStartSaidFor(own, 'work', labelOf)?.workspace).toBe('work');
+    expect(nextStartSaidFor(own, null, labelOf)).toBeNull();
+    expect(nextStartSaidFor(null, 'work', labelOf)).toBeNull();
   });
 });
 

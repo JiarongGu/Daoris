@@ -28,6 +28,7 @@ vi.mock('@shenora/react', () => ({
 import { HarnessRuns } from '../harnessRuns';
 import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
+import { WorkspaceScopeProvider } from '../scope';
 import { REGISTRY, respond, serviceCalls, show, WIRING } from '../test/shellHarness';
 import { useListPanes } from '../work/listPanes';
 import { ViewFrame } from '../work/ViewFrame';
@@ -1886,6 +1887,31 @@ describe('how accounts are used', () => {
     // *personal* heads the list and is the default, and cools: the row marked first is the one the next start takes.
     expect(within(screen.getByRole('listitem', { name: 'work' })).getByText('this machine (first)')).toBeTruthy();
     expect(within(screen.getByRole('listitem', { name: 'personal' })).queryByText(/\(first\)/)).toBeNull();
+  });
+
+  /**
+   * ACCTUX4c: on the install this machine's scope starts on your own sign-in and says nothing, while every account serves the
+   * workspace in view, so that workspace's next start is the one said above the accounts, named.
+   */
+  it('says above the accounts the next start of the workspace in view, named, where this machine runs on your own sign-in', async () => {
+    const next = {
+      agents: [{
+        ...ACCOUNTS.agents[0]!,
+        scopes: [
+          { ...MACHINE, default: null, list: [], begins: null, next: { account: null, reason: 'own', others: [] } },
+          {
+            ...MACHINE, workspace: 'orbit', list: ['personal', 'work'],
+            next: { account: 'work', reason: 'onlyReady', over: null, when: null, others: [{ account: 'personal', hold: 'cooling', until }] },
+          },
+        ],
+      }],
+    };
+    invoke.mockImplementation(answer(ROSTER, next));
+    show(<WorkspaceScopeProvider initial="orbit"><Place notify={() => {}} /></WorkspaceScopeProvider>);
+
+    const accounts = await screen.findByRole('region', { name: 'Accounts' });
+    const said = await within(accounts).findByText('The next start takes work: it is the only account here that is ready.');
+    expect(said.parentElement!.textContent).toMatch(/^In orbit: The next start takes work/);
   });
 
   it('says no next start above the accounts where it runs on your own sign-in, or where the answer names none', async () => {

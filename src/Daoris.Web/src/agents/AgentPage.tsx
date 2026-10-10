@@ -17,7 +17,7 @@ import { ACCOUNT_COLUMNS, AccountColumnsHead, AccountRow } from './AccountRow';
 import { type BackAccount, PlaceAccount, RenameAccount, ReSignIn } from './AddAccount';
 import {
   type AccountAct, type AccountState, type AgentPart, type AgentUsage, accountAct, accountName, accountStates, accountWho,
-  doorsSummary, joinChoices, latestRead, nextStartSaid, ownRunsFor, ownSaid, ownState, rulesSummary, runsFor, runsForLine,
+  doorsSummary, joinChoices, latestRead, nextStartSaidFor, ownRunsFor, ownSaid, ownState, rulesSummary, runsFor, runsForLine,
   settingsSummary, usageCells, usageSummary, useSummary, versionOnly, workspacesSummary,
 } from './agents';
 
@@ -107,7 +107,7 @@ export type AgentActs = {
  * - **Explanation folds** (D152 §4.4): your own sign-in's paragraph is its row's ⓘ, the plans and terms one line that opens.
  */
 export function AgentPage({
-  tool, use, rules, usage, workspaces, adapter, part, reading = false, busy = false, settingsBusy = false, signingIn = null,
+  tool, use, rules, usage, workspaces, inView = null, adapter, part, reading = false, busy = false, settingsBusy = false, signingIn = null,
   signInPanel, signInNewPanel, added = null, doorRunning = null, doorConsole, acts, onAnchored, now,
 }: {
   tool: Tool;
@@ -119,6 +119,8 @@ export function AgentPage({
   usage: AgentUsage[];
   /** Every workspace this machine has, the unnamed `default` included: the CLI sets that one's accounts too. */
   workspaces: string[];
+  /** The workspace the window is looking at, or null for every one: its next start is said above the accounts (ACCTUX4c). */
+  inView?: string | null;
   /** The adapter driven work starts on (`driver.json`'s). */
   adapter?: string;
   /** The part a door named, opened and brought into view. */
@@ -177,9 +179,10 @@ export function AgentPage({
   const rulesShown = tool.takesRules && rules !== null;
   const settingsShown = Boolean(tool.settingsChoices) && tool.accounts.some((account) => account.settings);
   const joinable = (name: string) => joinChoices(tool, use, scopeWorkspaces, labelOf, name);
-  // This machine's next start, said above the accounts (ACCTUX4b): the scope this page edits; a workspace's own is said in
-  // its fold under *Workspaces*. None on the tool's own sign-in, nor from a shell that names none.
-  const nextSaid = nextStartSaid(machine, labelOf, (name) => Boolean(accountOf(name)?.key));
+  // The next start, said above the accounts (ACCTUX4b): the workspace in view's where it has a scope of its own (ACCTUX4c),
+  // else this machine's; every workspace's is also said in its fold under *Workspaces*. None on the tool's own sign-in, nor
+  // from a shell that names none.
+  const nextSaid = nextStartSaidFor(use, inView, labelOf, (name) => Boolean(accountOf(name)?.key));
 
   // What the person has open: a section, the add flow's first step, a row's question or rename, *Remove…*'s ask, the model
   // and effort form, a key's field, a pin's version, the plans and terms.
@@ -585,6 +588,7 @@ export function AgentPage({
               the list begins on follows in the soft ink, since that is the one a person expects it to take. */}
           {nextSaid && (
             <p className="m-0 mb-2 text-small text-ink [overflow-wrap:anywhere]">
+              {nextSaid.workspace && <span className="font-medium">{t('agents.nextStart.in', { workspace: nextSaid.workspace })}{' '}</span>}
               <span>{nextSaid.takes}</span>
               {nextSaid.held && <>{t('harness.said.sentences')}<span className="text-ink-soft">{nextSaid.held}</span></>}
             </p>

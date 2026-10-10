@@ -13173,3 +13173,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SESSUX1h1 — a session's stop is its own, at both doors** (driver tests + notes). The page's stop is already *its own conversation* (HelpCoverageTests ~:474); `SessionsVerbDoor` (~:172-180) still owes the terminal's `sessions stop` a door. Give the verb the same answer (D161's ENTRY1/ENTRY1e: a session keeps its own conversation, Ask Daoris goes there), narrow the owed row to archive, unarchive and delete, and append notes to D161 and the management design §7.3. No kind.
 
 **Outcome** 2026-10-11: `daoris-driver sessions stop` is answered *its own conversation* (`SessionsStopVerb`, Own("sessions")), as the page's stop is; `SessionsVerbDoor` owes only archive, unarchive and delete to SESSUX1h2's `session` kind; the design's *Stop* row and `stop` door are superseded by its 2026-10-11 amendment. Detail: D161's SESSUX1h1 note.
+
+
+## ACCTUX4c — the next start of the workspace in view (2026-10-11, D125)
+
+> - [ ] **ACCTUX4c — the next start of the workspace in view** (web). On the installed window (2026-10-11) every account serves the workspace in view and the machine's scope starts on the tool's own sign-in, so ACCTUX4b's sentence, the machine's only, never shows; the workspace's next start stays in its fold. Say the next start for the window's workspace when it has a scope of its own, else the machine's. D125's ACCTUX4b note; its window look.
+
+**Outcome** 2026-10-11: `nextStartSaidFor` says the scope of the workspace in view (`useScope`, or the registry's only workspace) when it has a `next`, named ("In `x`:"), else the machine's; a workspace on its own sign-in says nothing. The English reads "In x: The next start takes …", to be judged on the window. Detail: D125's ACCTUX4c note.
