@@ -71,7 +71,7 @@ D88/D102 cleanup notes, machine log §4. Installed clears require the owner's ex
 - [ ] **AUTOTIDY1c — automatic squash cleanup** (driver; after AUTOTIDY1b; decide first). Consider content proof plus merged PR state, preserving recovery refs. D88/D102; Process guards.
 - [ ] **QUESTBACK1 — hand back without a session** (service/driver/web). Both doors preserve note and taker facts. D32/D46/D132; transition/route/press tests.
 - [ ] **LANDNAME1 — entered landing branch** (driver/web). Accept and terminal take an entered name. D145/D149/D126; landing and field tests.
-- [ ] **HIST1f — Ask Daoris clear proposal** (driver/service/web; after HIST1e/SESSUX1h). Listed plan is confirmed on Apply. D153 §6.4; kinds, coverage, room/card tests.
+- [ ] **HIST1f — Ask Daoris clear proposal** (driver/service/web; after HIST1e/SESSUX1h2). Listed plan is confirmed on Apply. D153 §6.4; kinds, coverage, room/card tests.
 - [ ] **HIST1h — installed clear** (parent; republish a–f first). Verify counts/bytes, terminal/page agreement at 1280/888/680 px, themes/languages. D153 §12.
 
 ## Consistent screens
@@ -181,7 +181,8 @@ Contracts: session-management (D126 §9), session-messages (D137), answer-contin
 pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build rows.
 
 - [ ] **QUESTREBASE1 — pure rebase planner** (service; consider). Preserve operation identity, accepted-before-pending order and transaction. D69/D79; unchanged sync suite and loss tests.
-- [ ] **SESSUX1h — session proposals** (driver/service/web; after d–g/FRAME1i). Management §7.3/§9. Reread against D161's ENTRY1 note: a session's stop is its own conversation on the page, while `SessionsVerbDoor` still owes the terminal's `sessions stop` a door; give both one answer.
+- [ ] **SESSUX1h1 — a session's stop is its own, at both doors** (driver tests + notes). The page's stop is already *its own conversation* (HelpCoverageTests ~:474); `SessionsVerbDoor` (~:172-180) still owes the terminal's `sessions stop` a door. Give the verb the same answer (D161's ENTRY1/ENTRY1e: a session keeps its own conversation, Ask Daoris goes there), narrow the owed row to archive, unarchive and delete, and append notes to D161 and the management design §7.3. No kind.
+- [ ] **SESSUX1h2 — the `session` kind: archive, unarchive, delete** (driver/service/web; split by lane; after SESSUX1h1). `session_propose` for the tidy acts and the delete kind's `session` door (§5.4), the facts' sessions, the room's doors table; the coverage rows `SessionArchiveDoor`/`SessionDeleteDoor` become doors. Management §7.3/§9 (~:532-554, ~:743-753).
 - [ ] **MSG1d2 — queued chat survives restart** (driver/web; with MSG1c). Record ids/reach/withdrawals; take by id. Messages §3.1.
 - [ ] **MSG1g3 — cooling note and twins** (driver/web). Code held line; compare newSessionSaid with GoOnNew/WordsNever. D137/D142.
 - [ ] **MSG1h — Codex next-step words** (driver; after measured STEER3). Messages §8.
@@ -191,7 +192,7 @@ pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build 
 - [ ] **STEER3 — measure other steering** (driver). Native stream-json and Codex turn/steer before implementation. D136 §5; one-turn evidence.
 - [ ] **ANSWER1d — installed same-record resume** (parent). One row and session.answered resumed=true. D131 §6; real run.
 - [ ] **DRIFT1e — follow-ups preserve requirements** (design first). Reopen parent corrections; closing notes are not requirements. D133 §5.
-- [ ] **PAUSE1f — pause proposal** (driver/service/web; after b/SESSUX1h). Abandon remains person's act. D132 §7.4.
+- [ ] **PAUSE1f — pause proposal** (driver/service/web; after b/SESSUX1h2). Abandon remains person's act. D132 §7.4.
 - [ ] **PAUSE1g — installed pause/abandon** (parent; after a–f). Pause/resume same tree; abandon preserves landed work. D132 §12.
 - [ ] **SESSUX1k — limit-ended list state** (driver/web; after UX6e). Waiting carry-ons and account door. D126 §2.2/§9.
 - [ ] **SESSUX1l — installed management** (parent; republish a–i). States, carry-on, stop/try-again/archive across widths/themes/languages. D126 §9.
