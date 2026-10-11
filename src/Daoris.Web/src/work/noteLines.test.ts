@@ -283,9 +283,9 @@ describe('noteLines', () => {
       const unreached = (why: string, count: unknown = 2) =>
         coded('words.unreached', '— 2 message(s) the person sent never reached the session: …', { count, why });
       expect(noteLines(t, { parts: [unreached('ended-first')] }, 'en')[0].text)
-        .toBe('2 message(s) you sent while it worked never reached it: it ended first.');
+        .toBe('Messages you sent while it worked never reached it (2 in all): it ended first.');
       expect(noteLines(t, { parts: [unreached('unkept', 1200)] }, 'en')[0].text)
-        .toBe('1,200 message(s) you sent while it worked never reached it: Daoris kept no id for its conversation.');
+        .toBe('Messages you sent while it worked never reached it (1,200 in all): Daoris kept no id for its conversation.');
       expect(noteLines(zh, { parts: [unreached('ended-first')] }, 'zh')[0].text)
         .toBe('你在它工作时发送的 2 条消息没有送达：它先结束了。');
       // A reason this build does not know, or a count that is no number, leaves the line as recorded.
