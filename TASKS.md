@@ -44,6 +44,9 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 Contracts: toolchain (D57 §3), account rotation (D125), account use (D130), browser (D78/D84).
 Original row proofs remain in the frozen backlog; measurements precede declarations.
 
+- [ ] **CONNECTOR2 — the knowledge server's entry carries the home** (driver). Seen 2026-10-12 on the install: a Codex chat's `daoris-knowledge` failed its handshake (*connection closed: initialize response*), since Codex hands an MCP server only its entry's variables and the entry (`KnowledgeConnector.Offer`) carries no `DAORIS_HOME`: the host exits 2, *no Daoris home*. Claude hands its whole environment, so it never showed. Carry the home in the entry; prove the host answers `initialize` under the entry's variables alone.
+- [ ] **BRWHINT1 — an agent is told the browser it was handed** (driver). The same chat had Daoris's browser (`browser`, Playwright over CDP to the window the person signs in to) and reached for Codex's computer-use, which saw no browser: a handed browser is said to the agent only when it is left out. Say it to the agent when it is handed, on both doors. D78.
+
 - [ ] **ACCTUX4i — installed account cells, and the row budget** (parent). 中文 dark and light at 1546 and 680 seen 2026-10-11; English, a key and Codex rows remain. The *Now* header stands over an empty column, the cells starting under *Used for*. Settle D152's row budget against D125's ACCTUX4 measures.
 - [ ] **ACCTPLAN1 — plan, spend and reset credits** (driver/modules/web; design first). Nothing reads them yet (D125:898-899); show them in a fold, and never redeem a credit without `InlineConfirm`. Second-opinion review lines 132-133.
 - [ ] **CODEXUSE2 — installed Codex reading** (parent/owner). Pins are verified; account sign-in remains unavailable. Use CODEXUSE3's own-sign-in reading meanwhile. D57/D63/D125.
