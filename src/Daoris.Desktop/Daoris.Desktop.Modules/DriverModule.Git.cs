@@ -62,6 +62,30 @@ public sealed partial class DriverModule
         };
     }
 
+    // The checkout's current branch, for the composer's tree chip (NEW1e-a): `{ branch }`, null where HEAD is detached. Its own
+    // route, since the list costs every branch. The checkout is found as GitAnsweredAsync finds it; 🔴 no path in any answer or
+    // sentence (D47 §4), and the git failure's words name none either.
+    [DriverRoute("CHECKOUT_BRANCH")]
+    private async Task<object?> CheckoutBranchAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = Optional(request, "repository") ?? throw new DriverException("a Git read names its repository.");
+        var service = _loop.Service ?? throw NotReady();
+        var rows = Checkouts(await service.RegistryAsync(cancellationToken).ConfigureAwait(false), repository, Optional(request, "workspace"));
+        if (rows.FirstOrDefault(row => Directory.Exists(row.Root)).Root is not { } root)
+        {
+            throw Refusals.Because(Refusals.GitNoCheckout, $"{repository} has no checkout on this machine, so there is no branch to name.");
+        }
+
+        try
+        {
+            return new { Branch = await WorkingTree.BranchAsync(root, cancellationToken).ConfigureAwait(false) };
+        }
+        catch (DriverException error)
+        {
+            throw new DriverException(WithoutRoots(error.Message, [root], repository) ?? "git could not name this checkout's branch.");
+        }
+    }
+
     // A graph page from the tips named (a branch's whole commit ids, resolved by the list), the commits drawn in date order.
     [DriverRoute("GIT_GRAPH")]
     private async Task<object?> GitGraphAsync(IpcRequest request, CancellationToken cancellationToken)

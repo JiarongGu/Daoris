@@ -95,6 +95,8 @@ export const keys = {
    */
   gitBranches: (all: boolean, repository: string, workspace: string) => ['git', 'branches', all, repository, workspace] as const,
   allGitBranches: ['git', 'branches'] as const,
+  // The checkout's current branch (NEW1e-a): it moves with a `git switch` anywhere, so it is never kept as settled.
+  checkoutBranch: (repository: string, workspace: string) => ['git', 'checkoutBranch', repository, workspace] as const,
   // Each one-repository read carries its workspace: two workspaces may each hold a repository of one name (GIT1d-c).
   gitGraph: (repository: string, tips: readonly string[], page: number, sinceParted: boolean, workspace: string) =>
     ['git', 'graph', repository, tips.join(','), page, sinceParted, workspace] as const,

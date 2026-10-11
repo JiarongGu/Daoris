@@ -13747,3 +13747,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **NEW1g — a task handed to Ask Daoris opens a new conversation** (web). *Make it a task with Daoris…* put its draft into the last Ask Daoris conversation, already ended, under its history; the hand-over opens a new conversation with the draft. D162's window note.
 
 **Outcome** 2026-10-12: a draft handed to Ask Daoris, by either door, clears the panel to a new conversation first when the one shown is not live, and waits for the session list so it lands in the right box. Detail: D162's NEW1g note.
+
+## NEW1e-a — the checkout's branch, read (2026-10-12, D162)
+
+> - [ ] **NEW1e — the checkout's branch on the tree chip** (driver/web). The design's *the checkout · main* needs the checkout's current branch, which no route answers (`GitLine` is the landing line, not its head). Add the read, then the chip says it. Design §1 (Tree); a story and the window.
+
+**Outcome** 2026-10-12: the read's half. `WorkingTree.BranchAsync` (one `symbolic-ref`, null where detached), the shell-only `CHECKOUT_BRANCH` route (`GIT_NO_CHECKOUT` where none, no path in any answer) and the page's `useCheckoutBranch`; the real-git cases passed on the merge. The chip is NEW1e-b. Detail: D162's NEW1e-a note.
