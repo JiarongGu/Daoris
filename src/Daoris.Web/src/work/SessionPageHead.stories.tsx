@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import i18n from '../i18n';
+import { InTheme } from '../plugins/storyIcons';
+import { chinese } from '../storyLanguage';
 import type { Session } from '../api';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import { ViewMain } from './ViewMain';
@@ -33,7 +35,7 @@ const meta: Meta<typeof SessionPageHead> = {
   component: SessionPageHead,
   args: {
     session: SESSION, title: TITLE, shown: 'working',
-    facts: ['engine', 'account-1', '2m'],
+    facts: ['engine', '2m'],
     acts: ['stop', 'review', 'openFolder', 'terminal', 'detach', 'copy'],
     onAct: () => {},
   },
@@ -143,7 +145,7 @@ export const DeleteAsking: Story = {
   },
 };
 
-/** Below 560 px: the acts take their own line under the title. */
+/** At 480 px of main area (under 640 px): the acts take their own right-aligned row under the facts. */
 export const Narrow: Story = {
   args: { acts: ['stop', 'retry', 'review', 'openFolder', 'detach', 'copy'], primary: 'retry' },
   decorators: [(Story) => (
@@ -180,12 +182,53 @@ export const ParkedFacts: Story = {
   },
 };
 
-/** The same at 680 px of window (a main area of about 596 px): the acts beside the title still, the facts cut on their line. */
+/** The same at 680 px of window (a main area of about 596 px): the acts take their own right-aligned row under the facts. */
 export const FourthAttemptNarrow: Story = {
   args: { ...FourthAttemptWithNoShortTitle.args },
   decorators: [(Story) => (
     <div className="flex h-[30rem] w-[37.25rem] max-w-full border border-line bg-page"><Story /></div>
   )],
+};
+
+// ——— HEAD2c (D162; the entry-and-heads design §2): one line whatever the request's length, the acts where they were, the
+// facts the repository, its age and one fact; the request as written is its record's *Details*, never a line under the head.
+// At the main area of a 1546 px window and of a 680 px one, in dark and in 中文.
+
+const LONG_REQUEST = 'Repair streaming hydration budget for the sync look so a long request never wraps the head into a second line';
+
+/** The frame at a width: a main area of 1180 px beside a 1546 px window's side bar and list, 596 px at 680 px. */
+const at = (main: number): Decorator => (Story) => (
+  <div className="flex h-[30rem] max-w-full border border-line bg-page" style={{ width: main + 280 }}>
+    <div className="w-[17.5rem] shrink-0 border-r border-line p-3 text-meta text-ink-faint">The session list</div>
+    <div className="flex min-w-0 flex-1 flex-col"><Story /></div>
+  </div>
+);
+
+/** A long request at 1546 px: one line, cut with its tip, *Stop…* and ⋯ where they are, the facts one line. */
+export const OneLineAt1546: Story = {
+  args: { title: LONG_REQUEST, facts: ['engine', '12m', 'attempt 4: the 3 before it failed'] },
+  decorators: [at(1180)],
+};
+
+/** The same at 680 px: the acts take their own row under the facts, *Stop…* still shown. */
+export const OneLineAt680: Story = {
+  args: { ...OneLineAt1546.args },
+  decorators: [at(596)],
+};
+
+/** The same in dark. */
+export const OneLineDark: Story = {
+  args: { ...OneLineAt1546.args },
+  decorators: [at(1180), (Story) => <InTheme theme="dark"><Story /></InTheme>],
+};
+
+/** The same in 中文, at 680 px. */
+export const OneLineChinese: Story = {
+  args: {
+    title: '修复同步外观中的流式水合预算，让很长的请求也不会把页头撑成第二行，并保持按钮不动',
+    facts: ['engine', '12 分钟', '第 4 次尝试：之前 3 次失败'],
+  },
+  decorators: [at(596), chinese],
 };
 
 /** A running driven session whose quest an ask asked (PAUSE1e): *Pause quest…* and *Pause ask…* in its ⋯. */
