@@ -23,11 +23,14 @@ describe('Keyboard shortcuts', () => {
     render(<KeyboardShortcuts groups={groups()} onClose={() => {}} />);
 
     const workspace = within(screen.getByRole('region', { name: 'Workspace' }));
-    expect(workspace.getByText('New ask…')).toBeInTheDocument();
+    expect(workspace.getByText('New conversation…')).toBeInTheDocument();
     expect(workspace.getByText('Ctrl+N')).toBeInTheDocument();
+    expect(workspace.getByText('New ask…')).toBeInTheDocument();
+    expect(workspace.getByText('Ctrl+Shift+N')).toBeInTheDocument();
     expect(within(screen.getByRole('region', { name: 'Go' })).getByText('Ctrl+8')).toBeInTheDocument();
     expect(within(screen.getByRole('region', { name: 'Help' })).getByText('Ctrl+Alt+I')).toBeInTheDocument();
-    expect(screen.getAllByRole('region')).toHaveLength(7);
+    // Run prints no key since NEW1b moved its one keyed item to Workspace's *New conversation…*.
+    expect(screen.getAllByRole('region')).toHaveLength(6);
     expect(screen.getByText(/Alt, pressed and let go, or F10/)).toBeInTheDocument();
   });
 
@@ -35,6 +38,7 @@ describe('Keyboard shortcuts', () => {
     render(<KeyboardShortcuts groups={groups({ attached: false })} browser onClose={() => {}} />);
 
     expect(screen.queryByText('Ctrl+N')).toBeNull();
+    expect(screen.queryByText('Ctrl+Shift+N')).toBeNull();
     expect(screen.queryByText('Ctrl+3')).toBeNull();
     expect(screen.queryByRole('region', { name: 'Terminal' })).toBeNull();
     expect(screen.getByText('Ctrl+,')).toBeInTheDocument();

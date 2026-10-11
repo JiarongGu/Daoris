@@ -128,10 +128,10 @@ describe('the bar from the keyboard (the design §3.3)', () => {
     within(places()).getByRole('button', { name: /^Overview/ }).focus();
     fireEvent.keyDown(window, { key: 'Alt', code: 'AltLeft', altKey: true });
     expect(bar.querySelectorAll('u')).toHaveLength(7);
-    fireEvent.keyDown(window, { key: 'r', code: 'KeyR', altKey: true });
+    fireEvent.keyDown(window, { key: 'w', code: 'KeyW', altKey: true });
     await waitFor(() => expect(document.querySelectorAll('[role="menu"]').length).toBe(1));
-    expect(within(document.querySelector<HTMLElement>('[role="menu"]')!).getByText(/^Start a session/)).toBeInTheDocument();
-    expect(document.querySelector('[role="menu"]')).toHaveTextContent('Ctrl+Shift+N');
+    expect(within(document.querySelector<HTMLElement>('[role="menu"]')!).getByText(/^New conversation/)).toBeInTheDocument();
+    expect(document.querySelector('[role="menu"]')).toHaveTextContent('Ctrl+N');
     fireEvent.keyUp(window, { key: 'Alt', code: 'AltLeft' });
     expect(bar.querySelectorAll('u')).toHaveLength(0);
   });
@@ -200,7 +200,7 @@ describe('a narrow window\'s menu bar', () => {
     fireEvent.keyDown(window, { key: 'r', code: 'KeyR', altKey: true });
     const run = await screen.findByRole('menuitem', { name: 'Run' });
     expect(run).toHaveAttribute('aria-expanded', 'true');
-    expect(await screen.findByRole('menuitem', { name: /^Start a session/ })).toHaveTextContent('Ctrl+Shift+N');
+    expect(await screen.findByRole('menuitem', { name: /^Answer/ })).toBeInTheDocument();
     expect(screen.getByRole('menuitem', { name: 'Terminal' })).toBeInTheDocument();
   });
 });
@@ -219,7 +219,8 @@ describe('the keys (D152 §3.4)', () => {
     expect(await screen.findByRole('navigation', { name: 'Settings domains' })).toBeInTheDocument();
   });
 
-  it('leaves Ctrl+K and Ctrl+F to a field, and takes Ctrl+N in one', async () => {
+  /** NEW1b (D162 point 1): Ctrl+N is *New conversation*, in Sessions with the focus in its prompt; a new ask is Ctrl+Shift+N. */
+  it('leaves Ctrl+K and Ctrl+F to a field, and takes Ctrl+N and Ctrl+Shift+N in one', async () => {
     start();
     await menuBar();
     const field = document.createElement('input');
@@ -227,9 +228,17 @@ describe('the keys (D152 §3.4)', () => {
     field.focus();
     expect(fireEvent.keyDown(field, { key: 'k', code: 'KeyK', ctrlKey: true })).toBe(true);
     expect(fireEvent.keyDown(field, { key: 'f', code: 'KeyF', ctrlKey: true })).toBe(true);
-    expect(fireEvent.keyDown(field, { key: 'n', code: 'KeyN', ctrlKey: true })).toBe(false);
+    expect(fireEvent.keyDown(field, { key: 'N', code: 'KeyN', ctrlKey: true, shiftKey: true })).toBe(false);
     expect(await screen.findByRole('dialog', { name: 'Ask the workspace' })).toBeInTheDocument();
     field.remove();
+  });
+
+  it('opens a new conversation on Ctrl+N, with the focus in its prompt', async () => {
+    start();
+    await menuBar();
+    expect(fireEvent.keyDown(window, { key: 'n', code: 'KeyN', ctrlKey: true })).toBe(false);
+    const prompt = await screen.findByRole('textbox', { name: 'What would you like to work on?' });
+    await waitFor(() => expect(prompt).toHaveFocus());
   });
 
   it('opens a new terminal on Ctrl+Shift+`, and gives Stop… no key', async () => {
