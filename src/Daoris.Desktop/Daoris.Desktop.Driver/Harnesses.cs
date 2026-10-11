@@ -1672,6 +1672,14 @@ public sealed record HarnessSelection(
     /// held for an account (<see cref="NotReady"/>). A fact beside the sentence, so a reader judges no words.
     /// </summary>
     public AgentAbsence? Absent { get; init; }
+
+    /// <summary>
+    /// <see cref="Refusal"/> by code (ROSTERREFUSE1), its English the same to the byte: the kind of refusal, and the account by its
+    /// owner and id where it names one, never by the name the person gave it. Null where the refusal is not one a held note can
+    /// carry by code (a wait over a list, a pick refused, a provider's refusal, an agent with its own tooling, a refusal with
+    /// more said after it); the note then carries its words. A fact beside the sentence, so a reader judges no words.
+    /// </summary>
+    public Noted? RefusalNote { get; init; }
 }
 
 /// <summary>Why an agent itself cannot run (XAGENT1b): what <see cref="HarnessSelection.Absent"/> says.</summary>
@@ -2663,13 +2671,14 @@ public sealed partial class HarnessRoster(AdapterSet adapters, string? settingsP
                 // 🔴 Refused, never a silent fall back to PATH. Running a different tool than the one
                 // that was pinned — and recording its version as though it were the pinned one —
                 // is the failure this whole shape exists to prevent.
-                return new HarnessSelection(
-                    $"`{resolved.Name}` is pinned to {pinned} on this machine, and nothing is "
+                var pinRefusal = $"`{resolved.Name}` is pinned to {pinned} on this machine, and nothing is "
                     + $"installed at that version — `daoris agent pin {resolved.Name} {pinned}` "
                     + $"installs it, and `daoris agent unpin {resolved.Name}` goes back to PATH. "
-                    + "Daoris will not quietly run a different version than the one you asked for.")
+                    + "Daoris will not quietly run a different version than the one you asked for.";
+                return new HarnessSelection(pinRefusal)
                 {
                     Absent = AgentAbsence.PinNotInstalled,
+                    RefusalNote = Noted.Of(NoteCodes.HeldPinNotInstalled, pinRefusal, ("agent", resolved.Name), ("version", pinned)),
                 };
             }
         }
@@ -2685,16 +2694,19 @@ public sealed partial class HarnessRoster(AdapterSet adapters, string? settingsP
 
         if (report is { Present: false })
         {
-            var install = toolchain.Install is { Count: > 0 }
+            var installs = toolchain.Install is { Count: > 0 };
+            var install = installs
                 ? $"`daoris agent install {resolved.Name}` installs it"
                 : $"install it with its own tooling ({string.Join(' ', toolchain.Command(config.Commands.GetValueOrDefault(resolved.Name)))})";
 
-            return new HarnessSelection(
-                $"`{resolved.Name}` is not installed on this machine, so there is nothing to spawn — "
+            var absent = $"`{resolved.Name}` is not installed on this machine, so there is nothing to spawn — "
                 + $"{install}. Daoris never installs an agent unasked: a tool that changed under a "
-                + "running loop is a moving target.")
+                + "running loop is a moving target.";
+            return new HarnessSelection(absent)
             {
                 Absent = AgentAbsence.NotInstalled,
+                // An agent with its own tooling names that command, which may hold a path: its sentence keeps its words.
+                RefusalNote = installs ? Noted.Of(NoteCodes.HeldNotInstalled, absent, ("agent", resolved.Name)) : null,
             };
         }
 
@@ -2746,13 +2758,16 @@ public sealed partial class HarnessRoster(AdapterSet adapters, string? settingsP
 
             if (login == LoginState.Out)
             {
+                var profile = ShellWord.Of(account, ShellWord.Account);
+                var refusal = $"the `{owner}` account `{AccountNames.Said(names, account)}` is not signed in, so a session would have "
+                    + $"nothing to run as — `daoris agent login {owner} --profile {profile}` runs "
+                    + "the agent's own sign-in into it. Daoris manages the directory and the name; the "
+                    + "credential stays in the agent's own store.";
                 states[i] = states[i] with
                 {
                     Readiness = AccountReadiness.SignedOut,
-                    Refusal = $"the `{owner}` account `{AccountNames.Said(names, account)}` is not signed in, so a session would have "
-                        + $"nothing to run as — `daoris agent login {owner} --profile {ShellWord.Of(account, ShellWord.Account)}` runs "
-                        + "the agent's own sign-in into it. Daoris manages the directory and the name; the "
-                        + "credential stays in the agent's own store.",
+                    Refusal = refusal,
+                    RefusalNote = Noted.Of(NoteCodes.HeldSignedOut, refusal, ("owner", owner), ("account", account), ("profile", profile)),
                 };
                 continue;
             }
@@ -2864,7 +2879,8 @@ public sealed partial class HarnessRoster(AdapterSet adapters, string? settingsP
     {
         if (AccountCooling.Of(Home, owner, account, now) is { } cooling)
         {
-            return new AccountState(account, AccountReadiness.Cooling, cooling, CoolingWords.Hold(cooling, Zone, names));
+            var hold = CoolingWords.HoldOf(cooling, Zone, names);
+            return new AccountState(account, AccountReadiness.Cooling, cooling, hold.Note) { RefusalNote = hold };
         }
 
         return _refused.TryGetValue(AccountKey(owner, account), out var refused)
@@ -2896,7 +2912,10 @@ public sealed partial class HarnessRoster(AdapterSet adapters, string? settingsP
         // each is named with its sign-in, where the first account's refusal alone named only its own.
         var signedOut = RotationWords.SignedOut(states) is { Count: > 0 } passed ? SignedOutAccounts.Of(owner, passed, names) : null;
         var held = states.Count == 1 || (first is null && signedOut is null)
-            ? new HarnessSelection(states[0].Refusal) { Cooling = states[0].Cooling, NotReady = states[0].Readiness, SignedOut = signedOut }
+            ? new HarnessSelection(states[0].Refusal)
+            {
+                Cooling = states[0].Cooling, NotReady = states[0].Readiness, SignedOut = signedOut, RefusalNote = states[0].RefusalNote,
+            }
             : first is null
                 ? new HarnessSelection(RotationWords.NoneReady(owner, states, names)) { SignedOut = signedOut }
                 : new HarnessSelection(RotationWords.Wait(owner, states, Zone, names)) { Cooling = first, SignedOut = signedOut };
@@ -2927,7 +2946,8 @@ public sealed partial class HarnessRoster(AdapterSet adapters, string? settingsP
             }
         }
 
-        return held with { Refusal = sentence };
+        // What is said after the refusal is no part of its code: the note then carries the sentence's words (ROSTERREFUSE1).
+        return held with { Refusal = sentence, RefusalNote = sentence == held.Refusal ? held.RefusalNote : null };
     }
 
     // ——— What the goal's walk counts (TOOL6b, D130 §4.2, §16.2): Daoris's sessions as of the driver's last look, and the

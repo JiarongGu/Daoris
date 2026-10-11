@@ -8,6 +8,8 @@ with the version and date at release.
 - Ask Daoris can now propose pausing or resuming an ask's or a quest's work on this machine. The card says what stops (the
   running sessions), what it adds where another machine may still take an open quest, and what is left as it is; Apply makes
   the same pause or resume the pages' buttons do. Abandoning stays yours: it takes your reason, so Ask Daoris never proposes it.
+- A conversation held because its account is cooling or signed out, or its agent is not installed or its pin has nothing
+  installed, now says so in the page's language, not in English only.
 - `daoris agent key <agent> --account <id|name>` writes a new key, read from stdin, into an account that is already an API
   key, so a key its provider refused is repaired without losing the account's name, lists, defaults or order; what marked it
   refused is cleared. Without `--account` the verb adds a new account as before.

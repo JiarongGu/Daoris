@@ -404,6 +404,30 @@ describe('noteLines', () => {
       expect(noteLines(zh, { parts: unread }, 'zh')[0].kind).toBe('said');
     });
 
+    /** ROSTERREFUSE1: the roster's refusal, by code between the lead and the tail; an account by the name the page knows. */
+    it('words the roster’s refusals, an account named as the page knows it', () => {
+      const until = '2026-10-03T16:02:00Z';
+      const names = new Map([['account-1', 'Work']]);
+      const cooling = [coded('held.cooling-account', '…', { owner: 'claude-code', account: 'account-1', until, why: 'stated' })];
+      expect(noteLines(t, { parts: cooling }, 'en', names)[0].text).toBe(
+        `The \`claude-code\` account \`Work\` is cooling until ${moment(until, 'en')} (the agent said so). Daoris starts nothing on it until then.`,
+      );
+      const signedOut = [coded('held.signed-out', '…', { owner: 'codex', account: 'a-1', profile: 'a-1' })];
+      expect(noteLines(t, { parts: signedOut }, 'en')[0].text).toBe(
+        "The `codex` account `a-1` is not signed in, so a session would have nothing to run as — `daoris agent login codex --profile a-1` runs the agent's own sign-in into it. Daoris manages the directory and the name; the credential stays in the agent's own store.",
+      );
+      const own = [coded('held.cooling-own', '…', { owner: 'codex', until, why: 'default' })];
+      expect(noteLines(t, { parts: own }, 'en')[0].text).toMatch(/^`codex`'s own sign-in is cooling until .+\. Daoris starts nothing on it until then\.$/);
+      const missing = [coded('held.not-installed', '…', { agent: 'codex' }), coded('held.pin-not-installed', '…', { agent: 'codex', version: '1.2.3' })];
+      expect(noteLines(t, { parts: missing }, 'en').map((line) => line.text)).toEqual([
+        '`codex` is not installed on this machine, so there is nothing to spawn — `daoris agent install codex` installs it. Daoris never installs an agent unasked: a tool that changed under a running loop is a moving target.',
+        '`codex` is pinned to 1.2.3 on this machine, and nothing is installed at that version — `daoris agent pin codex 1.2.3` installs it, and `daoris agent unpin codex` goes back to PATH. Daoris will not quietly run a different version than the one you asked for.',
+      ]);
+      for (const parts of [cooling, signedOut, own, missing]) {
+        expect(noteLines(zh, { parts }, 'zh', names).every((line) => line.kind === 'said')).toBe(true);
+      }
+    });
+
     it('shows a hold as recorded where its repository is absent', () => {
       const parts = [coded('held.no-checkout', '— it does not go on yet: …')];
       expect(noteLines(zh, { parts }, 'zh')[0].kind).toBe('recorded');

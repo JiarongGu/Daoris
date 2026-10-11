@@ -373,6 +373,40 @@ public sealed class AccountCoolingTests : IDisposable
         Assert.Contains("is not installed on this machine", probed.Refusal);
     }
 
+    /// <summary>
+    /// ROSTERREFUSE1: the roster's refusal carries its coded parts beside the English, which is unchanged to the byte: a cooling
+    /// account by its owner and id (never its name), the tool's own sign-in with its refresh line, and an agent not installed.
+    /// </summary>
+    [Fact]
+    public async Task A_refusal_carries_its_parts_by_code_beside_its_unchanged_english()
+    {
+        var roster = Roster(new Adapter("fake", Present()));
+        AccountCooling.Cool(_home, Entry(agent: "fake", account: null), _now);
+
+        var own = await roster.SelectAsync("fake", Config, null, null);
+        Assert.Equal(own.Refusal, own.RefusalNote!.Note);
+        Assert.Equal(["held.cooling-own", "waits.read-again"], own.RefusalNote.Parts.Select(part => part.Code));
+        Assert.Equal("fake", own.RefusalNote.Parts[0].Value("owner"));
+
+        Assert.True(roster.Ready("fake", null));
+        // An agent with its own tooling names that command, which may hold a path: its sentence keeps its words.
+        var ownTooling = await roster.SelectAsync("fake", Config, null, null);
+        Assert.Equal((AgentAbsence.NotInstalled, (Noted?)null), (ownTooling.Absent, ownTooling.RefusalNote));
+
+        var installing = Roster(new Adapter("fake", Present() with { Install = ["fake-install"] }));
+        var absent = await installing.SelectAsync("fake", Config, null, null);
+        Assert.Equal(absent.Refusal, absent.RefusalNote!.Note);
+        Assert.Equal(("held.not-installed", "fake"), (absent.RefusalNote.Parts[0].Code, absent.RefusalNote.Parts[0].Value("agent")));
+        Assert.Equal(AgentAbsence.NotInstalled, absent.Absent);
+
+        new HarnessSettings().WithDefault("fake", "account-1").Save(Settings);
+        AccountCooling.Cool(_home, Entry(agent: "fake", account: "account-1"), _now);
+        var named = await roster.SelectAsync("fake", Config, null, null);
+        Assert.Equal(named.Refusal, named.RefusalNote!.Note);
+        var part = Assert.Single(named.RefusalNote.Parts);
+        Assert.Equal(("held.cooling-account", "fake", "account-1"), (part.Code, part.Value("owner"), part.Value("account")));
+    }
+
     [Fact]
     public async Task A_named_account_s_cool_off_holds_starts_on_it_and_not_on_another_account()
     {

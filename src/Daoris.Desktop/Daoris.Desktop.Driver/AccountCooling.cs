@@ -260,16 +260,27 @@ public static class CoolingWords
     /// The owner's names by id, read as the hold is said (ACCT2b): the account is said by the name the person gave it, else its
     /// id. Null says the id.
     /// </param>
-    public static string Hold(CoolingEntry entry, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null)
+    public static string Hold(CoolingEntry entry, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null) =>
+        HoldOf(entry, zone, names).Note;
+
+    /// <summary>
+    /// <see cref="Hold"/> by code (ROSTERREFUSE1), its English the same to the byte: the account by its owner and its id, never by
+    /// the name the person gave it, which only the English says; until when a moment; why a cool-off's reason. The tool's own
+    /// sign-in is a line of its own, its refresh <c>waits.read-again</c>.
+    /// </summary>
+    public static Noted HoldOf(CoolingEntry entry, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null)
     {
         var said = $"{Who(entry, names)} is cooling until {When(entry.Until, zone)}, {Why(entry)}. Daoris starts nothing on it until then.";
+        (string Name, object? Value)[] facts =
+            [("owner", entry.Agent), ("until", NoteCodes.Moment(entry.Until)), ("why", CoolingWhy.Of(entry))];
+        if (entry.Account is { } account) return Noted.Of(NoteCodes.HeldCoolingAccount, said, [("account", account), .. facts]);
+
         // The own home holds whoever last signed in at the person's terminal, and the roster's refresh ends its
         // cool-off, since Daoris cannot see that sign-in change (D125 §3.7). UX6e2: opening the Agents place asks nothing
         // (D150 §5.3), so the refresh is its Read again.
-        return entry.Account is null
-            ? $"{said} If you have signed in to another account at your own terminal since, press Read again under Agents → "
-              + "the agent's page → Accounts."
-            : said;
+        return Noted.Of(NoteCodes.HeldCoolingOwn, said, facts).Then(" ", Noted.Of(
+            NoteCodes.WaitsReadAgain,
+            "If you have signed in to another account at your own terminal since, press Read again under Agents → the agent's page → Accounts."));
     }
 
     /// <summary>

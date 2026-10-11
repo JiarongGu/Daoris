@@ -86,6 +86,9 @@ public sealed record WalkChoice(WalkStep Step, WalkStep? Rest = null)
 public sealed record AccountState(string? Account, AccountReadiness Readiness, CoolingEntry? Cooling = null, string? Refusal = null)
 {
     public bool IsReady => Readiness == AccountReadiness.Ready;
+
+    /// <summary><see cref="Refusal"/> by code (ROSTERREFUSE1), its English the same to the byte; null where nothing composed it.</summary>
+    public Noted? RefusalNote { get; init; }
 }
 
 /// <summary>

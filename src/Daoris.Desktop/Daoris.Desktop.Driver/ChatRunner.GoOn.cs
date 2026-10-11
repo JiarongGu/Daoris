@@ -281,7 +281,7 @@ public sealed partial class ChatRunner
 
         if (resume.Elsewhere is { } elsewhere) return CannotGoOn(record, elsewhere, adapter.Name);
         var selection = resume.Selection;
-        if (!selection.Allowed) return Held(sessionId, HeldWords.Program(selection.Refusal!));
+        if (!selection.Allowed) return Held(sessionId, HeldWords.Refused(selection));
         if (Continuations.Judge(record, adapter.Name, adapter.Resumes, selection.Profile, kept) is { } account)
         {
             return CannotGoOn(record, account, adapter.Name);

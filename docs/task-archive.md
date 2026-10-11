@@ -13397,3 +13397,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PAUSE1f — pause proposal** (driver/service/web; after b/SESSUX1h2). Abandon remains person's act. D132 §7.4.
 
 **Outcome** 2026-10-11: Ask Daoris proposes pausing or resuming an ask's or a quest's work (`pause_propose`, doors `pause`/`resume`, the box writing which one it names); the driver's card says §2.6's sentence (what stops, another machine may still take it, its intake keeps reading) and what §2.1 leaves (a waiting session, a teammate's, a take with no session here), says the no-change cases, and names the pauses a resume does not lift; Apply pauses or resumes through `WorkPausing` and nudges the loop; the room lists what is paused; the coverage table's pause and resume are doors, abandon stays exempt. Built as a chain of three workers merged once (SESSUX1h2's shape). Detail: D132's PAUSE1f-a, b and c notes.
+
+
+## ROSTERREFUSE1 — the roster's refusal by code (2026-10-11, D152)
+
+> - [ ] **ROSTERREFUSE1 — the roster's refusal by code** (driver + web twin). A start the roster refuses is one English string, so the held note carries it as program words. Give `HarnessSelection` a coded refusal and word it on the page. D152's CONVNOTE2g2 note.
+
+**Outcome** 2026-10-11: `HarnessSelection` and `AccountState` carry `RefusalNote` beside the byte-equal `Refusal`; a cooling account (`held.cooling-account`, or the own sign-in with `waits.read-again`), a signed-out account (`held.signed-out`), a pin not installed and an agent not installed reach the held note by code (`HeldWords.Refused`, falling back to words when the English differs); the account is its id, named on the page by NOTENAME1. The other kinds are ROSTERREFUSE2. Detail: D152's ROSTERREFUSE1 note.
