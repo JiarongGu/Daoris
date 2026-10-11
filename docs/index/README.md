@@ -161,7 +161,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 51 | 1052 |
 | `tools/family-rehearsal.mjs` | 339 | 5982 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 130 | 2386 |
+| `tools/merge-branch.mjs` | 131 | 2392 |
 | `tools/orient-index.mjs` | 65 | 1409 |
 | `tools/rehearsal-kit.mjs` | 42 | 812 |
 | `tools/usage-report.mjs` | 57 | 1254 |
