@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { ago, stamp } from '../format';
 import { ExternalLink } from '../links';
+import { ListMore } from '../work/ListPane';
 import { Button, Inline, Pill, Prose, SESSION_TONE, type ShownState } from '../ui';
 
 /** Yours are folded after five (the built-in Git design §2.2): the rest are one press away. */
@@ -64,8 +65,8 @@ const SOURCES = new Set(['repository', 'workspace', 'checkout']);
  *
  * @remarks
  * **A molecule**: the list arrives as a prop, and a session's title with it, joined on the page by its holder (the rail's
- * rule, `sessionTitle`). Origin's branches, with no local branch, are on the wire and not drawn here: they are the list's ⋯
- * (UX6h2b). **Its words are git's facts**: a count git did not make is said as one it could not make, a fetch as git's own
+ * rule, `sessionTitle`). Origin's branches, with no local branch, are on the wire and drawn only from the list's ⋯ after
+ * Yours (drawn where some exist), a ticked item that shows *Origin's* and hides it again (UX6h2b1). **Its words are git's facts**: a count git did not make is said as one it could not make, a fetch as git's own
  * `FETCH_HEAD` time or never, and a pull request's state only where its plugin answered (§2.4); nothing is guessed.
  */
 export function BranchList({ repository, list, titles = NO_TITLES }: {
@@ -80,6 +81,9 @@ export function BranchList({ repository, list, titles = NO_TITLES }: {
   const sessions = of('session');
   const landed = of('landed');
   const yours = of('yours');
+  const origins = of('origin');
+  // Hidden each time the tab opens: page state, not remembered (UX6h2b1).
+  const [showOrigin, setShowOrigin] = useState(false);
   const line = list.line.branch;
 
   return (
@@ -128,6 +132,26 @@ export function BranchList({ repository, list, titles = NO_TITLES }: {
           fold={YOURS_SHOWN}
           row={(branch) => line && <Facts><Said text={standing(t, line, branch.ahead, branch.behind)} /></Facts>}
         />
+      )}
+
+      {origins.length > 0 && (
+        <>
+          {/* The list's own ⋯, a body control: ListMore's pieces as the rail's header uses them (platform language §4). */}
+          <div className="flex">
+            <ListMore
+              label={t('projects.git.branches.origin.more')}
+              items={[{ id: 'origin', label: t('projects.git.branches.origin.show', { count: origins.length }), checked: showOrigin }]}
+              onChoose={() => setShowOrigin((shown) => !shown)}
+            />
+          </div>
+          {showOrigin && (
+            <Kind
+              heading={t('projects.git.branches.kind.origin', { count: origins.length })}
+              branches={origins}
+              row={() => null}
+            />
+          )}
+        </>
       )}
     </section>
   );

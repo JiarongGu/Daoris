@@ -33,7 +33,6 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 - [ ] **BRSCOPE1b — checkout scope and sync workspace** (modules/service/driver; after BRSCOPE1a). Share checkout-scope fixtures; carry workspace through sync proposals. D150 notes; three-door proof.
 - [ ] **UX7e — installed menus and heads** (parent; after republish). Verify keyboard menus, shortcuts, composer editing, head geometry and titles at 1546/680 px. D152 §6.
 - [ ] **ENTRY1bi — installed go to what waits** (parent; after republish). A go to `sessions/waiting`, `quests/held` and `quests/asks`, and the waiting starter, each with a group to show: its heading at the top, focused. D161's ENTRY1b note.
-- [ ] **UX6h2b1 — origin's branches behind the list's ⋯** (web). `BranchList` keeps `origin` rows and draws none; a ⋯ after Yours shows them, only where some exist (mirror `ListMore`, work/ListPane.tsx:304-364). Built-in-git design §2.2; D150's UX6h2a note.
 - [ ] **UX6h2b2 — the branch list in a workspace's Branches tab** (web; after b1). Each repository a group above the clean-up and sync (which stay workspace-only), `apart` folded and included by the person (D112) with a per-repository read; titles per group. BRSCOPE1's tests hold. Design §2.2; D150's UX6h2a and BRSCOPE1 notes.
 - [ ] **UX6h3 — the branch page, the graph and History** (web; after 2). A branch opens as a record in the main area with a way back in its header; its graph pages by `sinceParted` with the load-more foot ("{shown} commits listed", *Show more* while `more`: the graph answers no total); History is the line's graph; *All branches*. A commit's press waits on GIT1f. Create, fetch and push stay absent until GIT1g. Design §2.3.
 - [ ] **UX6i2i — installed go cards** (parent; after republish). Ask Daoris answering "where do I turn a plugin on?" and "where is Convergence?": a go card reading *Open Plugins.* or *Open Knowledge → Convergence.* that opens the right place and mode.
@@ -73,7 +72,9 @@ Contracts: plugin-screen design (D119), frame model (D118). Order: PLUGUI1c → 
 FRAME1i precedes PLUGUI1h. Installed looks cover both themes/languages.
 
 - [ ] **NAME2b — verify four labels**. Inspect help.setup, scope.every, signin.titleNew and work.group.noCheckout at 888 px; rename or accept. NAME2 handback.
-- [ ] **PLUGUI1c2 — plugin-page remainder** (web). Move kit/update types, fix agent/landing doors, put Update now first, remove doubled heading. D119; stories/tests/look.
+- [ ] **PLUGUI1c2a — the plugin files leave Settings** (web). Move `PluginKit`, `PluginUpdate` and `PluginOffers` (tests, stories) to `plugins/`; *Update now* is the plan's primary control (design §3.2); the drawer says *Make a plugin* once. D119:135-138.
+- [ ] **PLUGUI1c2b — a harness's plugin chip is a door** (web). `AgentPage.tsx:741`'s *declared by plugin* opens the plugin's page, threaded as `onOpenAgent` is (App.tsx:769-777). Design §5:677-691.
+- [ ] **PLUGUI1c2c — a landing rule's plugin is a door** (web; after UX6h2b2, which holds `projects/`). `RepositorySetup.tsx:447` and `WorkspaceSetup.tsx:298` name the plugin as a door to its page; the chooser stays. Design §5:688.
 - [ ] **PLUGUI1f — complete plugin page** (after c/e). Health, Points, Agents, Servers, Activity, Data, Source and folder install. D119.
 - [ ] **PLUGUI1g — plugin checks** (after f). Keep trial and run tests in a home copy. D119.
 - [ ] **FRAME2b — maximized restore under pointer** (owner sends request). Wait for runtime position support, then update handler. D56/D32; owner response and handler proof.

@@ -13489,3 +13489,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6h2 — the branch list by kind** (web; after 1). The list by repository and kind (the line, sessions', landed, yours folded after five, origin's from ⋯; D112 order, `apart`, `sessionsUnread`) in the repository's Branches tab and above the workspace's clean-up and sync (which stay workspace-only for now). Built-in-git design §2.2.
 
 **Outcome** 2026-10-11 (the row's first half): a repository's Branches tab lists the line at the head (what set it, its origin standing, its last fetch), then sessions' (title and state, joined on the page), landed (pushed state, pull request and its state) and yours folded after five, each with its distance; `BranchList` imports nothing of the bridge. Origin's ⋯ and the workspace's tab are UX6h2b1 and b2. Detail: D150's UX6h2a note.
+
+## UX6h2b1 — origin's branches behind the list's ⋯ (2026-10-11, D150)
+
+> - [ ] **UX6h2b1 — origin's branches behind the list's ⋯** (web). `BranchList` keeps `origin` rows and draws none; a ⋯ after Yours shows them, only where some exist (mirror `ListMore`, work/ListPane.tsx:304-364). Built-in-git design §2.2; D150's UX6h2a note.
+
+**Outcome** 2026-10-11: a ⋯ after Yours, drawn only where origin holds branches no local one names, ticks *Show origin's branches (N)* to draw *Origin's (N)* and unticks it again; hidden each time the tab opens, focus back on the ⋯. `ListMore` as it is; no wire change. Detail: D150's UX6h2b1 note.

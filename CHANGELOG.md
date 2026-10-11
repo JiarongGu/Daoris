@@ -8,7 +8,8 @@ with the version and date at release.
 - A repository's Branches tab lists its branches by kind. Its line heads the list: what set it, how it stands to origin and
   when the checkout last fetched. Then sessions' branches, each named by its session's title and state; landed branches, each
   saying whether it is pushed and opening its pull request, with its state and when where a plugin answered; and yours, the
-  first five shown and the rest a press away. Each says how far it stands from the line or from origin.
+  first five shown and the rest a press away. Each says how far it stands from the line or from origin. Branches only
+  origin holds are behind the list's ⋯.
 - Ask Daoris can now propose clearing finished history for a quest, an ask or a workspace, or a closed quest's failed
   sessions. The card lists what goes and what is kept and why, and Apply clears exactly what it listed.
 - Ask Daoris can take you to a repository's Branches or History tab.

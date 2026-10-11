@@ -218,6 +218,25 @@ export const WorkflowInABrowser: Story = { args: { ...InABrowser.args, start: 'w
  */
 export const Branches: Story = { args: { start: 'branches' } };
 
+/** Branches with origin's shown (UX6h2b1): the ⋯ after Yours pressed and its ticked item chosen, *Origin's (1)* under Yours. */
+export const BranchesOriginShown: Story = {
+  args: Branches.args,
+  play: async ({ canvasElement }) => {
+    const more = canvasElement.querySelector<HTMLButtonElement>('button[aria-haspopup="menu"][aria-label^="Show origin"]');
+    more?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, ctrlKey: false }));
+    const item = await new Promise<HTMLElement | null>((resolve) => {
+      const started = Date.now();
+      const look = () => {
+        const found = document.querySelector<HTMLElement>('[role="menuitemcheckbox"]');
+        if (found || Date.now() - started > 2000) resolve(found);
+        else requestAnimationFrame(look);
+      };
+      look();
+    });
+    item?.click();
+  },
+};
+
 /**
  * Branches where the line has gone its own way from origin and the last fetch heard nothing, and the landed branches stand
  * otherwise: diverged with an ask that failed since, ahead with no state answered, behind with its pull request abandoned,

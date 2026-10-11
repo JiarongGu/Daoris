@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render as renderPlain, screen, within, type RenderOptions } from '@testing-library/react';
+import * as Tooltip from '@radix-ui/react-tooltip';
+import type { ReactElement, ReactNode } from 'react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../i18n';
 import { GIT_BRANCHES_ENGINE, GIT_HISTORY_ENGINE } from './fixtures';
@@ -9,7 +11,11 @@ import { BranchesTab, HistoryTab } from './RepositoryGit';
 // are this machine's (D147 §6): a tab says its answer is on its way, that this machine has no checkout, or why Git did not
 // answer, in its place, so it never goes blank. History draws its line's commits with their lanes (graphLanes).
 
-const tips = [GIT_HISTORY_ENGINE[0]!.commit];
+// The page's tooltips live under the app's provider; the list's ⋯ (UX6h2b1) carries one, so a case renders under its own.
+const render = (ui: ReactElement, options?: RenderOptions) =>
+  renderPlain(ui, { wrapper: ({ children }: { children: ReactNode }) => <Tooltip.Provider>{children}</Tooltip.Provider>, ...options });
+
+const tips =[GIT_HISTORY_ENGINE[0]!.commit];
 
 describe("a repository's Branches tab", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
@@ -141,6 +147,37 @@ describe("a repository's Branches tab", () => {
     expect(row('Yours (7)', 'experiment/jobs')).toHaveFocus();
   });
 
+  it("keeps origin's branches behind the list's ⋯: drawn only where some exist, shown by its checked item, hidden again", async () => {
+    const { rerender } = render(<BranchesTab repository="engine" read={read()} />);
+    const more = screen.getByRole('button', { name: "Show origin's branches" });
+    expect(screen.queryByRole('list', { name: /^Origin's/ })).toBeNull();
+
+    await opened(more);
+    const item = screen.getByRole('menuitemcheckbox', { name: "Show origin's branches (1)" });
+    expect(item).toHaveAttribute('aria-checked', 'false');
+    await userEvent.click(item);
+    expect(names("Origin's (1)")).toEqual(['origin/release']);
+    expect(row("Origin's (1)", 'origin/release')).toHaveTextContent(/ago/);
+    expect(more).toHaveFocus();
+
+    await opened(more);
+    expect(screen.getByRole('menuitemcheckbox', { name: "Show origin's branches (1)" })).toHaveAttribute('aria-checked', 'true');
+    await userEvent.click(screen.getByRole('menuitemcheckbox', { name: "Show origin's branches (1)" }));
+    expect(screen.queryByRole('list', { name: /^Origin's/ })).toBeNull();
+
+    // None only origin holds: no ⋯.
+    rerender(<BranchesTab repository="engine" read={read({ branches: GIT_BRANCHES_ENGINE.branches.filter((branch) => branch.kind !== 'origin') })} />);
+    expect(screen.queryByRole('button', { name: "Show origin's branches" })).toBeNull();
+  });
+
+  it("says origin's branches in 中文", async () => {
+    await i18n.changeLanguage('zh');
+    render(<BranchesTab repository="engine" read={read()} />);
+    await opened(screen.getByRole('button', { name: '显示 origin 的分支' }));
+    await userEvent.click(screen.getByRole('menuitemcheckbox', { name: '显示 origin 的分支（1）' }));
+    expect(names('origin 的分支（1）')).toEqual(['origin/release']);
+  });
+
   it('says its states in 中文', async () => {
     await i18n.changeLanguage('zh');
     const { rerender } = render(<BranchesTab repository="engine" read={{ state: 'noCheckout' }} />);
@@ -156,6 +193,13 @@ describe("a repository's Branches tab", () => {
     expect(screen.getByRole('button', { name: '再显示 2 个' })).toBeInTheDocument();
   });
 });
+
+/** A menu opened from its trigger by the keyboard, as the doors' tests open one (a jsdom pointer does not open Radix's). */
+async function opened(trigger: HTMLElement) {
+  trigger.focus();
+  await userEvent.keyboard('{Enter}');
+  await screen.findByRole('menuitemcheckbox');
+}
 
 /** The engine's list as read, with what a case changes. */
 function read(more: Partial<typeof GIT_BRANCHES_ENGINE> & { sessionsUnread?: boolean } = {}) {
