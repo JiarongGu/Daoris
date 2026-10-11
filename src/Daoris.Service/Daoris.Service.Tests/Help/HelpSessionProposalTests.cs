@@ -51,6 +51,32 @@ public sealed class HelpSessionProposalTests : HelpProposalBoxFixture
         Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
     }
 
+    /// <summary>A teammate's session is <c>&lt;origin&gt;/&lt;id&gt;</c> (SYNC4), and §5.2 lets it be archived here.</summary>
+    [Fact]
+    public void A_teammates_session_id_is_written_as_it_is_listed()
+    {
+        var (id, message) = Box().ProposeSession("archive", "machine-b/s1,s2", false, "a reason", "h1", Now);
+
+        Assert.Contains("Proposed", message);
+        Assert.Equal("machine-b/s1,s2", Written(id!).GetProperty("target").GetString());
+    }
+
+    [Theory]
+    [InlineData("/x/s1")]
+    [InlineData("C:/x/s1")]
+    [InlineData("a/b/c")]
+    [InlineData("a/")]
+    [InlineData("/b")]
+    [InlineData("a\\b")]
+    [InlineData("a/b\\c")]
+    public void A_path_is_still_refused_where_a_teammates_id_is_not(string path)
+    {
+        var (id, message) = Box().ProposeSession("archive", path, false, "a reason", "h1", Now);
+
+        Assert.Null(id);
+        Assert.Contains("never by its path", message);
+    }
+
     [Fact]
     public void Ids_with_a_space_inside_one_are_refused()
     {

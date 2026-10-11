@@ -25,7 +25,7 @@ public sealed partial class HelpProposalBox
                 ? "the ended sessions are archived, not unarchived: `ended` goes only with archive."
             : ids is null ? null
             : ids.Any(id => id.Length == 0) ? "an id is one word — an empty one is not."
-            : ids.FirstOrDefault(id => id.IndexOfAny(['/', '\\']) >= 0 || Path.IsPathRooted(id)) is { } path
+            : ids.FirstOrDefault(id => !IsSessionId(id)) is { } path
                 ? $"a session is named by its id, never by its path: `{path}`."
             : ids.Select(id => Word(id, "an id")).FirstOrDefault(said => said is not null);
         if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
@@ -40,4 +40,10 @@ public sealed partial class HelpProposalBox
             writer.WriteNull("sentence");
         }, why, session, at);
     }
+
+    // A session is named by its id; a teammate's is `<origin>/<id>` (SYNC4), the one form with a slash that §5.2 lets be archived
+    // here: one slash, a word each side, no drive, no backslash, not rooted. Anything else is a path.
+    private static bool IsSessionId(string id) =>
+        id.IndexOf('\\') < 0 && !id.Contains(':') && !Path.IsPathRooted(id) && id.Split('/') is { Length: <= 2 } parts
+        && parts.All(part => part.Length > 0);
 }

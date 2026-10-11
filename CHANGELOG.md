@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- Ask Daoris can propose archiving or unarchiving sessions, by id or everything that ended, and deleting one. The card says
+  what the list keeps and why, and nothing changes until you press Apply.
 - A conversation's notes that an agent would not take what you added, that messages you sent while it worked never reached
   it (and why), and that your words could not be taken off its record now read in your language, in English and 中文. The
   agent's own words and the service's message in them stay as written.
