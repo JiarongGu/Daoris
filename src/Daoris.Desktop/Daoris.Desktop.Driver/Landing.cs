@@ -318,6 +318,9 @@ public sealed record SweepResult(SweepItem Item, bool Removed, string Message)
     /// <summary>Kept by the look's own tidy (AUTOTIDY1): why, as the machine log's code (<see cref="TidyKept"/>); null where the press kept it.</summary>
     public string? Kept { get; init; }
 
+    /// <summary>Which <see cref="TidyKept.Unread"/> it was (AUTOTIDY1a2, <see cref="TidyCause"/>); null for any other reason.</summary>
+    public string? Cause { get; init; }
+
     /// <summary>Removed by the look's own tidy (AUTOTIDY1): where its tree's folder was moved aside to; null where it had no folder here.</summary>
     public string? MovedTo { get; init; }
 }

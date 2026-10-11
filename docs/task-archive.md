@@ -13615,3 +13615,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **XAGENT1g4b — the reviewer's measured use** (modules/web). The gate's pass shows what the reviewer used of its context, *not measured* where none was recorded. §6.3, §9; D57 §4.
 
 **Outcome** 2026-10-12: each pass of `OPINION_GATE` answers `usage {used, size}` read by its reviewer session, or null; the gate's *What it used* row says "{used} of {size} of its context", *not measured* where none (never a zero), en and zh. Detail: D155's XAGENT1g4b note.
+
+## AUTOTIDY1a2 — one row per branch kept, and why by code (2026-10-12, D88)
+
+> - [ ] **AUTOTIDY1a2 — one row per branch kept, and why by code** (driver/web). On the install one branch is kept `unread` seven times in a day: the driver's "once while the reason lasts" resets at each start, and the page lists every line. Show one row per branch and reason (the latest, and since when); log which `unread` cause as a code (no tree git lists, the index, the list, the toplevel, the folders), never the sentence's path. D88's window note of 2026-10-12.
+
+**Outcome** 2026-10-12: `branch.kept` carries a `cause` code (`toplevel`, `refs`, `list`, `folder`, `index`, `folders`) for six `unread` paths, never the sentence's path; the Branches tab groups kept lines by branch, repository, why and cause into one row with "since" and the cause's word (en and zh). `BranchTidyingProcessTests` passed 16/16 at the merge. Two paths are AUTOTIDY1a3's. Detail: D88's AUTOTIDY1a2 note.

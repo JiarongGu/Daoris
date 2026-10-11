@@ -274,5 +274,12 @@
   "projects.tidied.why.nested": "nested repo",
   "projects.tidied.why.linked": "linked",
   "projects.tidied.why.starting": "starting",
-  "projects.tidied.why.sessions": "sessions unknown"
+  "projects.tidied.why.sessions": "sessions unknown",
+  "projects.tidied.since": "since {{when}}",
+  "projects.tidied.cause.toplevel": "checkout path",
+  "projects.tidied.cause.refs": "branch list",
+  "projects.tidied.cause.list": "tree list",
+  "projects.tidied.cause.folder": "stray folder",
+  "projects.tidied.cause.index": "tree's index",
+  "projects.tidied.cause.folders": "folders unread"
 }
