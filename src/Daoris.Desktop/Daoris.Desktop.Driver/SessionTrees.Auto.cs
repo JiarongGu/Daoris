@@ -17,6 +17,9 @@ public sealed record TidyPass(IReadOnlyList<SweepResult> Results, string? Held =
 
     /// <summary>Its workspace, as <see cref="RemoteTarget.Workspace"/> reads the registry's row.</summary>
     public string Workspace { get; init; } = "";
+
+    /// <summary>Which <see cref="TidyKept.Unread"/> held it (<see cref="TidyCause"/>); null for any other reason.</summary>
+    public string? Cause { get; init; }
 }
 
 /// <summary>
@@ -48,6 +51,31 @@ public static class TidyKept
 
     /// <summary>Its tree is reached through a link under the trees home, so it is somewhere else.</summary>
     public const string Linked = "linked";
+}
+
+/// <summary>
+/// Which <see cref="TidyKept.Unread"/> it was (AUTOTIDY1a2): the machine log's <c>branch.kept</c> <c>cause</c>, a code so the page can
+/// word why without the sentence, whose path stays the console's (D47 §4). Other reasons carry none.
+/// </summary>
+public static class TidyCause
+{
+    /// <summary>git could not say where the checkout's top is.</summary>
+    public const string Toplevel = "toplevel";
+
+    /// <summary>git could not list the session branches.</summary>
+    public const string Refs = "refs";
+
+    /// <summary>git could not list the repository's working trees.</summary>
+    public const string List = "list";
+
+    /// <summary>A branch's folder here, with no tree git lists for it.</summary>
+    public const string Folder = "folder";
+
+    /// <summary>git could not read a tree's index.</summary>
+    public const string Index = "index";
+
+    /// <summary>A tree's folders could not be read.</summary>
+    public const string Folders = "folders";
 }
 
 public sealed partial class SessionTrees
@@ -83,14 +111,14 @@ public sealed partial class SessionTrees
         CancellationToken ct = default)
     {
         var space = RemoteTarget.Workspace(workspace);
-        TidyPass Pass(IReadOnlyList<SweepResult> results, string? held = null, string? detail = null) =>
-            new(results, held, detail) { Repository = repository, Workspace = space };
+        TidyPass Pass(IReadOnlyList<SweepResult> results, string? held = null, string? detail = null, string? cause = null) =>
+            new(results, held, detail) { Repository = repository, Workspace = space, Cause = cause };
 
         // A main checkout's `.git` is a folder; a linked worktree's is a file, and a folder inside a repository has none. Asked
         // before any git, so a root that cannot hold session branches costs nothing.
         if (!Directory.Exists(Path.Combine(root, ".git"))) return Pass([]);
         var (topCode, toplevel, topErr) = await WorkingTree.GitAsync(root, ["rev-parse", "--show-toplevel"], ct).ConfigureAwait(false);
-        if (topCode != 0) return Pass([], TidyKept.Unread, FirstLine(topErr));
+        if (topCode != 0) return Pass([], TidyKept.Unread, FirstLine(topErr), TidyCause.Toplevel);
         if (!SamePath(toplevel.Trim(), root)) return Pass([]);
 
         // The line here, read with no fetch: the local branch, else origin's copy as this checkout last saw it.
@@ -99,14 +127,14 @@ public sealed partial class SessionTrees
         if (against is null) return Pass([]);
         var (code, refs, err) = await WorkingTree.GitAsync(
             root, ["for-each-ref", "--format=%(refname:short)", $"--merged={against}", "refs/heads/daoris/"], ct).ConfigureAwait(false);
-        if (code != 0) return Pass([], TidyKept.Unread, FirstLine(err));
+        if (code != 0) return Pass([], TidyKept.Unread, FirstLine(err), TidyCause.Refs);
         var candidates = refs.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(branch => $"{repository}:{branch}")
             .ToHashSet(StringComparer.Ordinal);
         if (candidates.Count == 0) return Pass([]);
 
         // A list of the working trees git could not give is never "no tree here": nothing in the repository is judged this look.
-        if (await ListWorktreesAsync(root, ct).ConfigureAwait(false) is null) return Pass([], TidyKept.Unread, ListUnread);
+        if (await ListWorktreesAsync(root, ct).ConfigureAwait(false) is null) return Pass([], TidyKept.Unread, ListUnread, TidyCause.List);
 
         using var hold = TreeLock.TryReplaying(home, space, repository);
         if (hold is null) return Pass([], TidyKept.Starting);
@@ -151,26 +179,26 @@ public sealed partial class SessionTrees
     /// </list>
     /// What cannot be read keeps it too.
     /// </remarks>
-    private async Task<(string Code, string Sentence)?> LastLookAsync(string root, SweepItem item, CancellationToken ct)
+    private async Task<(string Code, string Sentence, string? Cause)?> LastLookAsync(string root, SweepItem item, CancellationToken ct)
     {
         if (item.Tree is not { } tree)
         {
             var folder = Path.Combine(TreesRoot, item.Workspace, item.Repository, item.Branch[SessionPrefix.Length..]);
-            return Directory.Exists(folder) ? (TidyKept.Unread, $"its folder at {folder} is here, and git lists no tree for it") : null;
+            return Directory.Exists(folder) ? (TidyKept.Unread, $"its folder at {folder} is here, and git lists no tree for it", TidyCause.Folder) : null;
         }
 
-        if (LinkBelowTreesRoot(tree) is not null) return (TidyKept.Linked, "its tree is reached through a link under the trees home");
-        if (await ListWorktreesAsync(root, ct).ConfigureAwait(false) is not { } entries) return (TidyKept.Unread, ListUnread);
+        if (LinkBelowTreesRoot(tree) is not null) return (TidyKept.Linked, "its tree is reached through a link under the trees home", null);
+        if (await ListWorktreesAsync(root, ct).ConfigureAwait(false) is not { } entries) return (TidyKept.Unread, ListUnread, TidyCause.List);
         if (entries.FirstOrDefault(entry => SamePath(entry.Path, tree)) is { Locked: true } locked)
         {
             return (TidyKept.Refused, "its tree is locked" + (locked.LockReason is { Length: > 0 } reason ? $" ({reason})" : "")
-                + "; `git worktree unlock` lets it go");
+                + "; `git worktree unlock` lets it go", null);
         }
 
         if (!Directory.Exists(tree)) return null;
 
         var (code, listed, err) = await WorkingTree.GitAsync(tree, ["ls-files", "-v", "-z"], ct).ConfigureAwait(false);
-        if (code != 0) return (TidyKept.Unread, $"git could not read its tree's index: {FirstLine(err)}");
+        if (code != 0) return (TidyKept.Unread, $"git could not read its tree's index: {FirstLine(err)}", TidyCause.Index);
         // `ls-files -v` tags an assume-unchanged entry in lower case, and a skip-worktree one `S`.
         var hidden = listed.Split('\0', StringSplitOptions.RemoveEmptyEntries)
             .Where(entry => entry.Length > 2 && (char.IsLower(entry[0]) || entry[0] == 'S'))
@@ -179,16 +207,16 @@ public sealed partial class SessionTrees
         if (hidden.Count > 0)
         {
             return (TidyKept.Hidden, $"{hidden.Count} tracked path(s) in its tree are marked assume-unchanged or skip-worktree, which "
-                + $"hides their changes from git: {string.Join(", ", hidden.Take(3))}" + (hidden.Count > 3 ? $" and {hidden.Count - 3} more" : ""));
+                + $"hides their changes from git: {string.Join(", ", hidden.Take(3))}" + (hidden.Count > 3 ? $" and {hidden.Count - 3} more" : ""), null);
         }
 
         try
         {
-            return NestedRepository(tree) is { } nested ? (TidyKept.Nested, $"its tree holds another repository at {nested}") : null;
+            return NestedRepository(tree) is { } nested ? (TidyKept.Nested, $"its tree holds another repository at {nested}", null) : null;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            return (TidyKept.Unread, $"its tree's folders could not be read: {error.Message}");
+            return (TidyKept.Unread, $"its tree's folders could not be read: {error.Message}", TidyCause.Folders);
         }
     }
 

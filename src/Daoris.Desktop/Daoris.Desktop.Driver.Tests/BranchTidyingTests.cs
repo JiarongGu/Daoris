@@ -156,6 +156,55 @@ public sealed class BranchTidyingTests : IDisposable
         Assert.Contains("\"branch\":\"daoris/s-1a2b3c4d\",\"why\":\"unread\"", line, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Each path that keeps a branch as <c>unread</c> logs which one it was as a code (AUTOTIDY1a2), so the page can word why; the
+    /// sentence, with its folder, stays the console's, never the log's data (D47 §4).
+    /// </summary>
+    [Theory]
+    [InlineData(TidyCause.Folder)]
+    [InlineData(TidyCause.List)]
+    [InlineData(TidyCause.Index)]
+    [InlineData(TidyCause.Folders)]
+    public void A_branch_kept_unread_logs_which_path_it_was_by_code_and_no_path(string cause)
+    {
+        using var log = new MachineLog(_home, "driver", () => _now);
+        var tidying = new BranchTidying(_home);
+        var kept = new SweepResult(Item("daoris/s-1a2b3c4d"), false, $"its folder at {_home} is here") { Kept = TidyKept.Unread, Cause = cause };
+
+        tidying.Said([Pass("engine", kept)], log);
+
+        var line = Assert.Single(LogLines());
+        Assert.Contains($"\"why\":\"unread\",\"cause\":\"{cause}\"", line, StringComparison.Ordinal);
+        Assert.DoesNotContain(Path.GetFileName(_home), line, StringComparison.Ordinal);
+    }
+
+    /// <summary>A repository held unread names its path too: git's top level, its refs, or its working trees' list.</summary>
+    [Theory]
+    [InlineData(TidyCause.Toplevel)]
+    [InlineData(TidyCause.Refs)]
+    [InlineData(TidyCause.List)]
+    public void A_repository_held_unread_logs_its_cause(string cause)
+    {
+        using var log = new MachineLog(_home, "driver", () => _now);
+        var held = new TidyPass([], TidyKept.Unread, "git said no") { Repository = "engine", Workspace = "default", Cause = cause };
+
+        new BranchTidying(_home).Said([held], log);
+
+        Assert.Contains($"\"why\":\"unread\",\"cause\":\"{cause}\"", Assert.Single(LogLines()), StringComparison.Ordinal);
+    }
+
+    /// <summary>A why that is not <c>unread</c> carries no cause, and a keep with none logs none (a field added, the old read kept).</summary>
+    [Fact]
+    public void Another_why_logs_no_cause()
+    {
+        using var log = new MachineLog(_home, "driver", () => _now);
+        var kept = new SweepResult(Item("daoris/s-1a2b3c4d", HomeTree), false, "its tree holds another repository at x") { Kept = TidyKept.Nested };
+
+        new BranchTidying(_home).Said([Pass("engine", kept)], log);
+
+        Assert.DoesNotContain("cause", Assert.Single(LogLines()), StringComparison.Ordinal);
+    }
+
     /// <summary>A removal git refused (a locked tree among them) is said once with git's words, as the press says it.</summary>
     [Fact]
     public void A_removal_git_refused_is_said_once_with_the_press_s_sentence()
