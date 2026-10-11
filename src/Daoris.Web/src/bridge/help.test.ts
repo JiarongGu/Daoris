@@ -112,4 +112,18 @@ describe('what an Apply reads again', () => {
     expect(keys).toContainEqual(['registry']);
     expect(keys).toContainEqual(['repositories']);
   });
+
+  // HIST1f-a: a clear card's Apply removed history, so the history plan is read again, as the Clear history press does.
+  it('reads the history plan again, which a clear changed', async () => {
+    invoke.mockReset();
+    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? { message: 'Applied.', applied: true } : undefined));
+    const client = new QueryClient();
+    const invalidated = vi.spyOn(client, 'invalidateQueries');
+    const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
+    const { result } = renderHook(() => useSettleHelp(), { wrapper });
+
+    await act(async () => { await result.current.mutateAsync({ id: 'p20', apply: true }); });
+
+    expect(invalidated.mock.calls.map(([filters]) => filters?.queryKey)).toContainEqual(['history']);
+  });
 });
