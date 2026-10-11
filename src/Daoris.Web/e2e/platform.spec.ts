@@ -681,8 +681,10 @@ test('a browser learns nothing about this machine’s harnesses (D49 §4)', asyn
   // Nor anything a browser cannot do: adding and importing touch machine paths (D48 §7), and so does Manage.
   await expect(repositoryList(page).getByRole('button', { name: 'Add repository' })).toHaveCount(0);
   await expect(record(page).getByRole('button', { name: 'Manage' })).toHaveCount(0);
-  // A repository's Setup is this machine's (UX6f, D47 §4): a browser's page is Details alone, with no tab row.
+  // A repository's Setup is this machine's (UX6f, D47 §4): a browser's page is Details alone, with no tab row. So are its
+  // branches and its history (UX6h1, D147 §6).
   await expect(record(page).getByRole('tab', { name: 'Setup' })).toHaveCount(0);
+  await expect(record(page).getByRole('tab', { name: 'History' })).toHaveCount(0);
 });
 
 /**
