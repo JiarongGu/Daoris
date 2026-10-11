@@ -111,6 +111,17 @@ describe("a page's header", () => {
     expect(line).not.toHaveAttribute('title');
   });
 
+  /** HEAD2f (D162 §2): a head with its own door to the whole text offers one way, so the title keeps its tip and drops Show all. */
+  it('drops Show all where the head has its own door to the whole text, and keeps the tip', () => {
+    const tall = vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(120);
+    const fits = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(60);
+    render(<PageHead title="A long title" clamp={2} wholeElsewhere />);
+    expect(screen.queryByRole('button', { name: 'Show all' })).toBeNull();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveAttribute('title', 'A long title');
+    tall.mockRestore();
+    fits.mockRestore();
+  });
+
   /**
    * UX7c (D152 §7, the UX7 design §5.1, §5.3): a record whose state moves leads with its state, then its title, at most the
    * lines it is given, whole in its tip; and under them its facts, once, faint. No id line where it is handed none.

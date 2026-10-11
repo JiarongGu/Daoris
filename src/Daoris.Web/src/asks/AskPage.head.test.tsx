@@ -86,6 +86,19 @@ describe('an ask’s head (HEAD2d)', () => {
     expect(request).toHaveTextContent(LONG_ASK.sentence);
   });
 
+  it('offers one way to the whole request: View full request, and no Show all beside it (HEAD2f)', () => {
+    const tall = vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(120);
+    const fits = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(60);
+    try {
+      const head = page(LONG_ASK);
+      expect(within(head).getByRole('button', { name: 'View full request' })).toBeInTheDocument();
+      expect(within(head).queryByRole('button', { name: 'Show all' })).toBeNull();
+    } finally {
+      tall.mockRestore();
+      fits.mockRestore();
+    }
+  });
+
   it('offers View full request only where the title was long', () => {
     expect(within(page()).queryByRole('button', { name: 'View full request' })).toBeNull();
   });
