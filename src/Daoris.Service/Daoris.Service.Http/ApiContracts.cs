@@ -158,9 +158,11 @@ public sealed record AskPublishRequest(
     string? To, string? Title = null, string? Body = null, IReadOnlyList<string>? Links = null,
     IReadOnlyList<QuestAttachmentRequest>? Attachments = null, IReadOnlyList<QuestStepWire?>? Then = null,
     string? Session = null, IReadOnlyList<QuestRequirementWire?>? Requirements = null, string? Short = null,
-    QuestReviewWire? Review = null, ReviewProposalWire? ReviewProposal = null);
+    QuestReviewWire? Review = null, ReviewProposalWire? ReviewProposal = null, WorkflowProposalWire? WorkflowProposal = null);
 // An intake's review proposal (REVIEWENV1b, design §1.5): a choice and its reason, at most 300 characters.
 public sealed record ReviewProposalWire(string? Choice, string? Reason);
+// An intake's kind proposal (WORKFLOW1i, design §4.3): a kind and its reason, the person's own words it quotes, at most 300 characters.
+public sealed record WorkflowProposalWire(string? Kind, string? Reason);
 // The person's review choice on an ask's page (REVIEWENV1b, design §1.5), and their words with it.
 public sealed record AskReviewRequest(string? Choice, string? Words = null);
 // The person's kind and workflow on an ask (WORKFLOW1e, the workflow design §4.3): either, both, or neither to clear them.
@@ -178,7 +180,9 @@ public sealed record DeclarationMatchResponse(string Repository, int Score, IRea
 // `ReviewChoices` (REVIEWENV1b, design §1.5) is the person's review choices on it, oldest first, the latest standing;
 // `ReviewProposals` its intake's proposals, each with its reason and the quest it came with. Each absent where there is none.
 // `WorkflowChoices` (WORKFLOW1e, the workflow design §4.3) is the person's kind and workflow choices on it, oldest first, the
-// latest standing, one naming neither a choice cleared; absent where there is none.
+// latest standing, one naming neither a choice cleared; absent where there is none. `WorkflowProposals` (WORKFLOW1i) is its intake's
+// kind proposals, each with its reason and the quest it came with, kept beside the choices and applied only by the person's press;
+// absent where there is none.
 public sealed record AskResponse(
     string Id, string Workspace, string Sentence, string State, string Tier, DateTimeOffset Asked,
     DateTimeOffset Updated, string? Asker, string? Note, IReadOnlyList<string> Links,
@@ -187,7 +191,8 @@ public sealed record AskResponse(
     IReadOnlyList<AskWordResponse>? Words = null, DateTimeOffset? WordsKeptFrom = null,
     IReadOnlyList<GoAheadResponse>? GoAheads = null,
     IReadOnlyList<AskReviewChoiceResponse>? ReviewChoices = null, IReadOnlyList<AskReviewProposalResponse>? ReviewProposals = null,
-    IReadOnlyList<AskWorkflowChoiceResponse>? WorkflowChoices = null);
+    IReadOnlyList<AskWorkflowChoiceResponse>? WorkflowChoices = null, IReadOnlyList<AskWorkflowProposalResponse>? WorkflowProposals = null);
+public sealed record AskWorkflowProposalResponse(string Kind, string Reason, DateTimeOffset At, string? Session, string? Quest);
 public sealed record AskReviewChoiceResponse(string Choice, DateTimeOffset At, string? Words);
 public sealed record AskWorkflowChoiceResponse(string? Kind, string? Workflow, DateTimeOffset At, string? Words);
 public sealed record AskReviewProposalResponse(string Choice, string Reason, DateTimeOffset At, string? Session, string? Quest);

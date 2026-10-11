@@ -841,6 +841,44 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// WORKFLOW1i-a (the workflow design §4.3): an intake's publish carries a kind proposal whose reason quotes the person, and the
+    /// ask answers it as <c>workflowProposals</c>, beside <c>workflowChoices</c>, which it never touches; an ask with none answers
+    /// without the field. A reason the person never said is 409, and a kind that is not a kind's id 400.
+    /// </summary>
+    [Fact]
+    public async Task An_asks_publish_keeps_an_intakes_kind_proposal_and_the_ask_answers_it()
+    {
+        var asked = await host.PostAsync("/api/asks", new { workspace = "default", sentence = "Write the guide for the totals column." });
+        var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
+        Assert.False(asked.Json.GetProperty("ask").TryGetProperty("workflowProposals", out _));
+
+        var unsaid = await host.PostAsync($"/api/asks/{ask}/publish", new
+        {
+            to = "Keeper", title = "Write the guide", body = "Done.", session = "s1a2b3c4",
+            workflowProposal = new { kind = "docs", reason = "it only changes a document" },
+        });
+        Assert.Equal(409, unsaid.Status);
+        Assert.Equal(400, (await host.PostAsync($"/api/asks/{ask}/publish", new
+        {
+            to = "Keeper", title = "Write the guide", body = "Done.", session = "s1a2b3c4",
+            workflowProposal = new { kind = "Docs", reason = "the guide for the totals column" },
+        })).Status);
+
+        var published = await host.PostAsync($"/api/asks/{ask}/publish", new
+        {
+            to = "Keeper", title = "Write the guide", body = "Done.", session = "s1a2b3c4",
+            workflowProposal = new { kind = "docs", reason = "the guide for the totals column" },
+        });
+        Assert.Equal(200, published.Status);
+        var kept = (await host.GetAsync($"/api/asks/{ask}")).Json;
+        var proposal = Assert.Single(kept.GetProperty("workflowProposals").EnumerateArray().ToList());
+        Assert.Equal(("docs", "the guide for the totals column", "s1a2b3c4"),
+            (proposal.GetProperty("kind").GetString(), proposal.GetProperty("reason").GetString(), proposal.GetProperty("session").GetString()));
+        Assert.Equal(published.Json.GetProperty("quest").GetProperty("id").GetString(), proposal.GetProperty("quest").GetString());
+        Assert.False(kept.TryGetProperty("workflowChoices", out _));
+    }
+
+    /// <summary>
     /// DRIFT1a: the added door keeps nothing for a session on no ask, and says so with a 200 — its own record
     /// holds what was said, which is no error; it refuses a session it does not hold, 404, and no words, 400.
     /// </summary>

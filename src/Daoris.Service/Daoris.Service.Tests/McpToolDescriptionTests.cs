@@ -70,6 +70,21 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
+    /// WORKFLOW1i-a: quest_publish's kind proposal says it quotes the person's own words, is at most 300 characters, is a kind and
+    /// not a workflow, and that only the person's press applies it.
+    /// </summary>
+    [Fact]
+    public void The_publish_tool_describes_the_kind_proposal_as_a_quote_only_the_person_applies()
+    {
+        var text = string.Join(" ", Descriptions().Where(d => d.Tool == "quest_publish").Select(d => d.Text));
+
+        Assert.Contains(typeof(KnowledgeTools).GetMethod("PublishQuestAsync")!.GetParameters(), p => p.Name == "workflowProposal");
+        Assert.Contains("only their press applies it", text);
+        Assert.Contains("the person's own words", text);
+        Assert.Contains("at most 300", text);
+    }
+
+    /// <summary>
     /// A server over one checkout says what it reads and that it matches words (ORIENT1c), in the words a
     /// session reads before it searches the files: the checkout's name, the folders it was given, the tier.
     /// </summary>

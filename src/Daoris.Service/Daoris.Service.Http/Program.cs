@@ -959,7 +959,7 @@ if (mode == ServiceMode.Local)
         // §1b). Anything beyond `to` makes a draft — words, links, files or a chain alone included.
         var drafted = body.Title is not null || body.Body is not null || body.Links is { Count: > 0 }
             || uploads.Count > 0 || body.Then is { Count: > 0 } || body.Requirements is { Count: > 0 } || body.Short is not null
-            || body.Review is not null || body.ReviewProposal is not null;
+            || body.Review is not null || body.ReviewProposal is not null || body.WorkflowProposal is not null;
         var draft = drafted
             ? new AskDraft(body.Title, body.Body)
             {
@@ -972,6 +972,8 @@ if (mode == ServiceMode.Local)
                 // The chain's review choice and an intake's proposal (REVIEWENV1b), judged by the exchange and the desk.
                 Review = ReviewOf(body.Review),
                 ReviewProposal = body.ReviewProposal is { } proposal ? new ReviewProposed(proposal.Choice, proposal.Reason) : null,
+                // An intake's kind proposal (WORKFLOW1i): the exchange checks its reason quotes the ask; the desk keeps it.
+                WorkflowProposal = body.WorkflowProposal is { } kind ? new WorkflowProposed(kind.Kind, kind.Reason) : null,
             }
             : null;
 
@@ -2023,7 +2025,11 @@ static AskResponse ToAsk(Ask a, QuestFiles? files, bool machineLocal)
         // The person's kind and workflow choices (WORKFLOW1e), absent where there is none.
         WorkflowChoices: a.WorkflowChoices.Count == 0
             ? null
-            : a.WorkflowChoices.Select(c => new AskWorkflowChoiceResponse(c.Kind, c.Workflow, c.At, c.Words)).ToList());
+            : a.WorkflowChoices.Select(c => new AskWorkflowChoiceResponse(c.Kind, c.Workflow, c.At, c.Words)).ToList(),
+        // The intake's kind proposals (WORKFLOW1i), absent where there is none.
+        WorkflowProposals: a.WorkflowProposals.Count == 0
+            ? null
+            : a.WorkflowProposals.Select(p => new AskWorkflowProposalResponse(p.Kind, p.Reason, p.At, p.Session, p.Quest)).ToList());
 }
 
 // A chain's steps as a door hands them to the exchange (D65 §4, REVIEWENV1b): a set-up step's environment rides with its words.
