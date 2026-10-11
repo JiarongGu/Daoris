@@ -64,6 +64,43 @@ public sealed class HelpWorkflowProposalTests : HelpProposalBoxFixture
         Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
     }
 
+    /// <summary>WORKFLOW1h-name: a new workflow's name is the person's words, trimmed, written only when given.</summary>
+    [Fact]
+    public void A_new_workflow_s_name_is_trimmed_and_written_only_when_given()
+    {
+        var (named, _) = Box().ProposeWorkflow("web-app", "docs-to-pr", null, Steps, false, null, null, null, "why", "h1", Now, name: "  Docs to a pull request ");
+        Assert.Equal("Docs to a pull request", Written(named!).GetProperty("name").GetString());
+
+        var (blank, _) = Box().ProposeWorkflow("web-app", "docs-to-pr", null, Steps, false, null, null, null, "why", "h1", Now, name: "  ");
+        Assert.False(Written(blank!).TryGetProperty("name", out _));
+
+        var (none, _) = Box().ProposeWorkflow("web-app", "docs-to-pr", null, Steps, false, null, null, null, "why", "h1", Now);
+        Assert.False(Written(none!).TryGetProperty("name", out _));
+    }
+
+    [Fact]
+    public void A_name_over_sixty_characters_is_refused()
+    {
+        var (id, message) = Box().ProposeWorkflow("web-app", "docs-to-pr", null, Steps, false, null, null, null, "why", "h1", Now, name: new string('n', 61));
+
+        Assert.Null(id);
+        Assert.Contains("at most 60", message);
+        Assert.Contains("Nothing was proposed", message);
+        var (ok, _) = Box().ProposeWorkflow("web-app", "docs-to-pr", null, Steps, false, null, null, null, "why", "h1", Now, name: new string('n', 60));
+        Assert.NotNull(ok);
+    }
+
+    [Fact]
+    public void A_name_on_an_edit_is_refused_by_name()
+    {
+        var (id, message) = Box().ProposeWorkflow("web-app", "docs-to-pr", 2, Steps, false, null, null, null, "why", "h1", Now, name: "Renamed");
+
+        Assert.Null(id);
+        Assert.Contains("`name`", message);
+        Assert.Contains("keeps", message);
+        Assert.Contains("Nothing was proposed", message);
+    }
+
     [Fact]
     public void Changes_kind_and_import_are_refused_as_not_proposed_yet()
     {

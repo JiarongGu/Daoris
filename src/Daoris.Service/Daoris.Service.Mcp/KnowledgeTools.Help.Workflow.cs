@@ -11,7 +11,8 @@ public sealed partial class KnowledgeTools
         "Ask Daoris only: propose a whole version of a workflow (how work in a repository or workspace goes from its start to "
         + "its landing) for the person to apply, new or an edit of an existing one, and optionally that the scope use it. "
         + "Nothing changes until the person presses Apply, and the driver refuses a version it cannot take. Send the whole "
-        + "steps, never a change to them.")]
+        + "steps, never a change to them. A new workflow is named by the person's words in `name`, at most 60 characters; "
+        + "left out, its id names it. An edit keeps its name, so send none with a base.")]
     public string ProposeWorkflow(
         [Description("The repository or workspace the workflow applies to, one word.")]
         string scope,
@@ -30,9 +31,11 @@ public sealed partial class KnowledgeTools
         [Description("Not proposed yet: leave out.")]
         string? kind = null,
         [Description("Not proposed yet: leave out.")]
-        string? import = null)
+        string? import = null,
+        [Description("A new workflow's name, the person's words: a short line, at most 60 characters. Leave out to name it by its id, and for an edit.")]
+        string? name = null)
     {
         var box = help ?? HelpProposalBox.FromEnvironment();
-        return box.ProposeWorkflow(scope, workflow, @base, steps, choose, changes, kind, import, why, intake?.Session, DateTimeOffset.UtcNow).Message;
+        return box.ProposeWorkflow(scope, workflow, @base, steps, choose, changes, kind, import, why, intake?.Session, DateTimeOffset.UtcNow, name).Message;
     }
 }

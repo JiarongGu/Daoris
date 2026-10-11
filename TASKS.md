@@ -81,7 +81,6 @@ Foundation precedes editor/proposals/intake; waits/checks/stages follow the gate
 
 - [ ] **WORKFLOW1e2 — quest-specific choice** (service/driver; after e). Field, census, person's door and selection for quests without asks. §4.1/D156.
 - [ ] **WORKFLOW1g — workflow editor** (web/modules; after d/e). Presets, save, insert/failure/move/remove, drawer, selection, terminal twins and keys; then Ask Daoris's workflow card gains *Open in the editor*. §6; 680 px/bilingual proof.
-- [ ] **WORKFLOW1h-name — a proposed workflow's name** (service/driver). The box carries an optional `name` for a new workflow, read by the judge, so it is not named by its id. Design §2.5, §8.1; the box's and judge's tests.
 - [ ] **WORKFLOW1h2 — workflow proposal, changes and kinds** (after h). `changes` against a base (the CLI's change language twinned in C#), `kind` and `import`. §8.1, §4.7.
 - [ ] **WORKFLOW1i — intake kind proposal** (driver/service; after e). Set only from quoted requirements without lowering involvement. §4.3; prompt/table/refusal proof.
 - [ ] **WORKFLOW1j — wait on pull request** (driver/examples; after f/PLUGHOOK1b). Backoff work/state only for awaited runs. §3.2/§5.4; wait/occasion/plugin tests.

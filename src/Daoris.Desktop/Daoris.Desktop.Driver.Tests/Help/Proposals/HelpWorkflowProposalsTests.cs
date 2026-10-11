@@ -28,7 +28,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         new WorkflowUse(Id, "engine", null, null));
 
     /// <summary>The proposal's file as the service's box writes it (WORKFLOW1h-a), read back as the driver reads it.</summary>
-    private HelpProposal Propose(string steps, int? @base = null, bool choose = false, string scope = "engine")
+    private HelpProposal Propose(string steps, int? @base = null, bool choose = false, string scope = "engine", string? name = null)
     {
         var node = new JsonObject
         {
@@ -36,6 +36,9 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
             ["kind"] = "workflow", ["scope"] = scope, ["workflow"] = Id, ["base"] = @base, ["choose"] = choose,
             ["steps"] = JsonNode.Parse(steps), ["why"] = "the person asked", ["state"] = "proposed", ["note"] = null,
         };
+
+        // The box writes `name` only when one is given (WORKFLOW1h-name).
+        if (name is not null) node["name"] = name;
         System.IO.File.WriteAllText(Path.Combine(HelpProposals.FolderOf(_home), "p6.json"), node.ToJsonString());
         return HelpProposals.Find(_home, "p6")!;
     }
@@ -87,6 +90,23 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.Equal("New work only, once a repository or a workspace chooses `docs-to-pr`: nothing does now.", card.AppliesTo);
         Assert.Equal("daoris driver workflow import <file>", plan.Terminal);
         Assert.StartsWith("Save a new workflow `docs-to-pr` as v1.\nYour part:\n", plan.Describe, StringComparison.Ordinal);
+    }
+
+    /// <summary>WORKFLOW1h-name: a new workflow is named by the person's words, on the card and in the saved version; absent, by its id.</summary>
+    [Fact]
+    public async Task A_new_workflow_is_saved_under_the_name_given_else_its_id()
+    {
+        var named = Propose(Merge, name: "Docs to a pull request");
+        Assert.Equal("Docs to a pull request", named.Name);
+        var plan = HelpProposals.Plan(named, DriverConfig.Empty, Here());
+        Assert.Equal("Docs to a pull request", Card(plan).Name);
+
+        var applied = await HelpProposals.ApplyAsync(_home, named, plan, new HelpStandInDoors(), _ => { }, CancellationToken.None);
+        Assert.True(applied.Applied);
+        Assert.Equal("Docs to a pull request", WorkflowStore.Load(_home, Id)!.Read.Name);
+
+        System.IO.File.Delete(WorkflowStore.PathOf(_home, Id));
+        Assert.Equal(Id, Card(HelpProposals.Plan(Propose(Merge), DriverConfig.Empty, Here())).Name);
     }
 
     /// <summary>§8.2: an edit's diff by step id, the person's part first, then the steps, then what leaves with no press.</summary>

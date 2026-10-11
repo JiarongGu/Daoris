@@ -49,6 +49,15 @@ public sealed partial class HelpProposalKindsTests
         ["use"] = """WriteBoolean("choose",""",
     };
 
+    /// <summary>WORKFLOW1h-name: the workflow file's optional <c>name</c> is read by the judge, so its twin is held to writing it.</summary>
+    [Fact]
+    public void The_workflow_writer_writes_its_name()
+    {
+        var writer = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core", "HelpProposalBox.Workflow.cs"));
+
+        Assert.Contains("""WriteString("name",""", writer);
+    }
+
     internal static string RepositoryRoot()
     {
         var at = new DirectoryInfo(AppContext.BaseDirectory);
