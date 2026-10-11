@@ -32,6 +32,22 @@ const record = (ask = PROPOSED, over: Partial<Parameters<typeof AskPage>[0]> = {
   return { ...props, page: screen.getByRole('main') };
 };
 
+/** An act of the page's ⋯, pressed (HEAD2d: the head draws only *Resume*): the menu opened from the keyboard, as in jsdom. */
+async function pick(page: HTMLElement, name: string) {
+  within(page).getByRole('button', { name: 'More actions' }).focus();
+  await userEvent.keyboard('{Enter}');
+  await userEvent.click(await screen.findByRole('menuitem', { name }));
+}
+
+/** Whether the page's ⋯ offers an act. */
+async function offers(page: HTMLElement, name: string) {
+  within(page).getByRole('button', { name: 'More actions' }).focus();
+  await userEvent.keyboard('{Enter}');
+  const found = (await screen.findAllByRole('menuitem')).some((item) => item.textContent === name);
+  await userEvent.keyboard('{Escape}');
+  return found;
+}
+
 describe('AskRow', () => {
   it('leads with its state and its first line, and says what answered and what it proposed', () => {
     rtlRender(row(<AskRow ask={PROPOSED} onOpen={() => {}} />));
@@ -168,7 +184,7 @@ describe('AskPage', () => {
   it('closes with a reason, and not without one', async () => {
     const { page, onClose } = record(PROPOSED);
 
-    await userEvent.click(within(page).getByRole('button', { name: 'Close ask' }));
+    await pick(page, 'Close ask');
     const confirm = within(page).getByRole('button', { name: 'Close with this reason' });
     expect(confirm).toBeDisabled();
     await userEvent.type(within(page).getByLabelText('why — what became of it'), 'Answered elsewhere.');
@@ -180,7 +196,7 @@ describe('AskPage', () => {
   it('says a refused close inside its ask, keeps the reason, and gives the focus back once it lands (UXFIX2b2b)', async () => {
     const { page, onClose } = record(PROPOSED);
 
-    await userEvent.click(within(page).getByRole('button', { name: 'Close ask' }));
+    await pick(page, 'Close ask');
     const ask = within(page).getByRole('group', { name: 'close this ask' });
     await userEvent.type(within(ask).getByLabelText('why — what became of it'), 'Answered elsewhere.');
     await userEvent.click(within(ask).getByRole('button', { name: 'Close with this reason' }));
@@ -194,23 +210,23 @@ describe('AskPage', () => {
     expect(within(page).queryByRole('group', { name: 'close this ask' })).toBeNull();
   });
 
-  it('puts the close down on Never mind and returns the focus to Close ask', async () => {
+  it('puts the close down on Never mind and returns the focus to the ⋯ that held Close ask', async () => {
     const { page, onClose } = record(PROPOSED);
 
-    await userEvent.click(within(page).getByRole('button', { name: 'Close ask' }));
+    await pick(page, 'Close ask');
     await userEvent.click(within(page).getByRole('button', { name: 'Never mind' }));
     expect(within(page).queryByRole('group', { name: 'close this ask' })).toBeNull();
-    expect(within(page).getByRole('button', { name: 'Close ask' })).toHaveFocus();
+    expect(within(page).getByRole('button', { name: 'More actions' })).toHaveFocus();
     expect(onClose).not.toHaveBeenCalled();
   });
 
   /** A closed ask becomes nothing more (INT4a): its reason stays, and no verb is offered. */
-  it('offers nothing to do on a closed ask, and says why it closed', () => {
+  it('offers nothing to do on a closed ask, and says why it closed', async () => {
     const { page } = record(CLOSED);
 
     expect(within(page).getByText('Answered in the design review instead.')).toBeInTheDocument();
     expect(within(page).queryByRole('button', { name: /publish/i })).toBeNull();
-    expect(within(page).queryByRole('button', { name: 'Close ask' })).toBeNull();
+    expect(await offers(page, 'Close ask')).toBe(false);
   });
 
   it('names its files and never the path this machine keeps them at', () => {
@@ -401,15 +417,15 @@ describe('the asks, in the order they are read', () => {
  * service says the ask may go, and asked once, because it cannot be undone.
  */
 describe('deleting an ask', () => {
-  it('offers no delete on an ask the service does not say may go', () => {
+  it('offers no delete on an ask the service does not say may go', async () => {
     const { page } = record(PUBLISHED, { onDelete: vi.fn() });
-    expect(within(page).queryByRole('button', { name: 'Delete…' })).toBeNull();
+    expect(await offers(page, 'Delete…')).toBe(false);
   });
 
   it('asks once, saying its quests go with it, then deletes', async () => {
     const { page, onDelete } = record({ ...PUBLISHED, deletable: true }, { onDelete: vi.fn() });
 
-    await userEvent.click(within(page).getByRole('button', { name: 'Delete…' }));
+    await pick(page, 'Delete…');
     const confirm = within(page).getByRole('group', { name: 'delete this ask' });
     expect(within(confirm).getByText(/every quest it became goes with it/)).toBeInTheDocument();
     expect(onDelete).not.toHaveBeenCalled();
@@ -421,10 +437,10 @@ describe('deleting an ask', () => {
   it('never mind puts the verbs back and deletes nothing', async () => {
     const { page, onDelete } = record({ ...PROPOSED, deletable: true }, { onDelete: vi.fn() });
 
-    await userEvent.click(within(page).getByRole('button', { name: 'Delete…' }));
+    await pick(page, 'Delete…');
     await userEvent.click(within(page).getByRole('button', { name: 'Never mind' }));
 
-    expect(within(page).getByRole('button', { name: 'Close ask' })).toBeInTheDocument();
+    expect(await offers(page, 'Close ask')).toBe(true);
     expect(onDelete).not.toHaveBeenCalled();
   });
 
@@ -439,15 +455,15 @@ describe('deleting an ask', () => {
     const { page } = record({ ...PUBLISHED, deletable: true }, { onDelete: (told: Answered) => { answered = told; } });
     const user = userEvent.setup();
 
-    await user.click(within(page).getByRole('button', { name: 'Delete…' }));
+    await pick(page, 'Delete…');
     const says = within(page).getByText(/every quest it became goes with it/);
     await waitFor(() => expect(says).toHaveFocus());
     expect(within(page).getByRole('button', { name: 'Delete ask' })).toHaveAccessibleDescription(says.textContent!);
     await user.keyboard('{Escape}');
     expect(within(page).queryByRole('group', { name: 'delete this ask' })).toBeNull();
-    expect(within(page).getByRole('button', { name: 'Delete…' })).toHaveFocus();
+    expect(within(page).getByRole('button', { name: 'More actions' })).toHaveFocus();
 
-    await user.click(within(page).getByRole('button', { name: 'Delete…' }));
+    await pick(page, 'Delete…');
     await user.click(within(page).getByRole('button', { name: 'Delete ask' }));
     const confirm = within(page).getByRole('group', { name: 'delete this ask' });
     expect(within(confirm).getByRole('button', { name: 'Never mind' })).toBeDisabled();
@@ -460,11 +476,11 @@ describe('deleting an ask', () => {
   });
 
   /** A closed ask becomes nothing more — but one made by mistake can still go, when the service says so. */
-  it('offers delete on a closed ask the service says may go, and nothing else', () => {
+  it('offers delete on a closed ask the service says may go, and nothing else', async () => {
     const { page } = record({ ...CLOSED, deletable: true }, { onDelete: vi.fn() });
 
-    expect(within(page).getByRole('button', { name: 'Delete…' })).toBeInTheDocument();
-    expect(within(page).queryByRole('button', { name: 'Close ask' })).toBeNull();
+    expect(await offers(page, 'Delete…')).toBe(true);
+    expect(await offers(page, 'Close ask')).toBe(false);
   });
 });
 

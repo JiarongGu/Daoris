@@ -133,5 +133,7 @@
   "asks.goAhead.words": "你的说明（可选）",
   "asks.goAhead.approve": "放行",
   "asks.goAhead.refuse": "拒绝",
-  "asks.goAhead.change": "更改答复"
+  "asks.goAhead.change": "更改答复",
+  "asks.head.quests": "{{count}} 个委托",
+  "asks.head.quests_other": "{{count}} 个委托"
 }

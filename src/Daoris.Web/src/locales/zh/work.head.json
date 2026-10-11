@@ -37,5 +37,6 @@
   "work.head.account": "账户",
   "work.head.id": "ID",
   "work.head.copyId": "复制",
-  "work.head.copied": "已复制"
+  "work.head.copied": "已复制",
+  "work.head.viewRequest": "查看完整需求"
 }

@@ -92,7 +92,7 @@ Daoris on this machine to start a conversation*; *Make it a task with Daoris…*
 ## 2. The heads: titles bounded, buttons where they were
 
 **Titles.** A quest's and an ask's title take two lines at most, a session's one; the head never grows. *Show all* becomes
-*View full request* (查看完整请求), which moves the focus to the request as written, the body's first block, after any card
+*View full request* (查看完整需求, the glossary's word for an ask), which moves the focus to the request as written, the body's first block, after any card
 that waits on the person; the tip stays a convenience, not the way in. **A session stops repeating the quest's whole
 title**: `WholeTitle` goes; the request as written is a row of its *Details*, with the quest's door; a conversation with no
 quest puts its whole opening there when the head cut it.

@@ -1,4 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
+import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../storyLanguage';
 import { ASK_PLAN } from '../work/historyFixtures';
 import type { WorkDoor } from '../work/pausing';
@@ -8,7 +9,7 @@ import {
 } from '../work/pausingFixtures';
 import { AskPage } from './AskPage';
 import {
-  BY_INTAKE, CLOSED, DONE, INTAKE_ASKED, INTAKE_PARKED, INTAKE_SESSION, LONG_CJK, NAMED, NAMES_ITS_REPOSITORY, PROPOSED,
+  BY_INTAKE, CLOSED, DONE, INTAKE_ASKED, INTAKE_PARKED, INTAKE_SESSION, LONG_ASK, LONG_CJK, NAMED, NAMES_ITS_REPOSITORY, PROPOSED,
   PUBLISHED, REFUSED, UNKNOWN_TIER, UNMATCHED, WITH_GO_AHEADS,
 } from './fixtures';
 
@@ -103,6 +104,22 @@ export const Closed: Story = { args: { ask: CLOSED } };
 export const UnknownTier: Story = { args: { ask: UNKNOWN_TIER } };
 /** A long CJK sentence, which the title wraps. */
 export const LongCjk: Story = { args: { ask: LONG_CJK } };
+/** The main area at a width: 1180 px beside a 1546 px window's side bar and list, 600 px at a 680 px window (HEAD2d). */
+const at = (width: number, theme?: 'dark'): Decorator => (Story) => {
+  const frame = <div className="flex h-[40rem] max-w-full border border-line bg-page" style={{ width }}><Story /></div>;
+  return theme ? <InTheme theme={theme}>{frame}</InTheme> : frame;
+};
+/**
+ * A request of a thousand characters with no line break, as the install's longest are (HEAD2d, D162 §4): the state leads, the
+ * title keeps two lines, one line of facts follows, and *View full request* reads it whole in the body. At a 1546 px window.
+ */
+export const LongRequest: Story = { args: { ask: LONG_ASK }, decorators: [at(1180)] };
+/** The same at a 680 px window: its acts take a row under the facts. */
+export const LongRequestNarrow: Story = { args: { ask: LONG_ASK }, decorators: [at(600)] };
+/** The same in dark. */
+export const LongRequestDark: Story = { args: { ask: LONG_ASK }, decorators: [at(1180, 'dark')] };
+/** The same in 中文. */
+export const LongRequestChinese: Story = { args: { ask: LONG_ASK }, decorators: [chinese, at(1180)] };
 /** Its intake read it and published it — on the desktop, the session is a door. */
 export const ByIntake: Story = { args: { ask: BY_INTAKE, intake: INTAKE_SESSION, onAttend: nothing } };
 /** The same page in a browser: the session is named, and is not a door. */
@@ -149,6 +166,8 @@ const WORKING = { ...PUBLISHED, id: 'a1b2c3', deletable: true };
 export const WorkInFlight: Story = { args: { ask: WORKING, work: work() } };
 /** Paused here: *paused* beside its state, and *Resume* its loud act. */
 export const WorkPaused: Story = { args: { ask: WORKING, work: work({ plan: PAUSED_ASK }) } };
+/** A long request, paused: *Resume* its loud act, the rest in its ⋯ (HEAD2d). */
+export const LongRequestPaused: Story = { args: { ask: LONG_ASK, work: work({ plan: PAUSED_ASK }) }, decorators: [at(1180)] };
 /** The plan still on its way: none of the three is offered until it answers. */
 export const WorkReading: Story = { args: { ask: WORKING, work: work({ plan: null }) } };
 /** Abandoned: closed with the reason, when, what went and what stayed, from this machine's record. */
