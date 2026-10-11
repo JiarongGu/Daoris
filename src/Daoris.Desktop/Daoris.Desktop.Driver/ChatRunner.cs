@@ -388,7 +388,7 @@ public sealed partial class ChatRunner : IDisposable
     /// set: that holds the plugins' own agents, so a plugin declaring an agent and a server was refused as one this build
     /// carries, and its servers were withheld from every conversation.
     /// </remarks>
-    internal static async Task<(IReadOnlyList<AcpMcpServer> Handed, Noted? Notice, bool Drives)> HandServersAsync(
+    internal static async Task<(IReadOnlyList<AcpMcpServer> Handed, Noted? Notice, bool Drives, IReadOnlyList<string> Drivers)> HandServersAsync(
         string home, IInAppBrowser? browser, PluginLog plugins, string sessionId, CancellationToken ct)
     {
         var catalog = PluginCatalog.Load(home, AdapterSet.Built().Names);
@@ -466,8 +466,12 @@ public sealed partial class ChatRunner : IDisposable
             // for one that drives it (D78), or that one left out and the conversation told why.
             if (place.Plugins)
             {
-                (pluginServers, browserNotice, drivesBrowser) = await HandServersAsync(
+                IReadOnlyList<string> drivers;
+                (pluginServers, browserNotice, drivesBrowser, drivers) = await HandServersAsync(
                     _home, _browser, _plugins, sessionId, ct).ConfigureAwait(false);
+                // A new conversation's agent is told of the browser with its first message (BRWHINT1a); one going on resumes a
+                // conversation already told when it opened, so it is told nothing again.
+                if (goOn is null && InAppBrowserServers.Told(drivers) is { } line) _browsers[sessionId] = line;
                 if (browserNotice is not null)
                 {
                     Record(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = browserNotice.Note, Parts = browserNotice.Parts });
@@ -690,7 +694,9 @@ public sealed partial class ChatRunner : IDisposable
             preface = preface?.Trim() is { Length: > 0 } where ? $"{handed.Preface}\n\n{where}" : handed.Preface;
         }
 
-        var said = new ChatMessage(message, kept) { Preface = ChatMessage.Bound(preface) };
+        // The browser it was handed is told once, ahead of the first message's words (BRWHINT1a).
+        var briefing = held && _browsers.TryRemove(sessionId, out var browserLine) ? browserLine : null;
+        var said = new ChatMessage(message, kept) { Preface = ChatMessage.Bound(preface), Briefing = briefing };
 
         if (_turned.TryGetValue(sessionId, out var chat))
         {
@@ -835,6 +841,17 @@ public sealed partial class ChatRunner : IDisposable
     }
 
     /// <summary>
+    /// The browser the agent was handed and told of beside the person's first words (BRWHINT1a), as the record keeps it: a note of
+    /// its own, so the person sees what Daoris told the agent. The line is Daoris's one-copy English (D142 point 6), shown as written.
+    /// </summary>
+    internal static SessionEvent? ToldBrowser(ChatMessage message)
+    {
+        if (message.Briefing is not { Length: > 0 } line) return null;
+        var told = Noted.Of(NoteCodes.ChatToldBrowser, "told the agent:").Then(" ", Noted.Said(line, NoteBy.Program));
+        return new SessionEvent { Kind = SessionEventKind.Note, Text = told.Note, Parts = told.Parts };
+    }
+
+    /// <summary>
     /// A conversation's turn the door refused, read for an account's limit (TOOL4d, D125 §2.3): where the adapter's table
     /// recognises it, the account the conversation runs as cools, the log says so, and the line for its record comes back
     /// with its code (CONVNOTE1b), as a session record's cooling line carries it. Null is a refusal as today. The
@@ -936,6 +953,7 @@ public sealed partial class ChatRunner : IDisposable
             _turned.TryRemove(sessionId, out _);
             _rooms.TryRemove(sessionId, out _);
             _handing.TryRemove(sessionId, out _);
+            _browsers.TryRemove(sessionId, out _);
             // Nothing waiting will be sent now, and the page is told its queue emptied.
             chat?.Turns.Gone();
             native?.Gone();
@@ -1360,6 +1378,7 @@ public sealed partial class ChatRunner : IDisposable
                     return;
                 }
 
+                if (ToldBrowser(message) is { } toldBrowser) _record(toldBrowser);
                 if (Told(message) is { } told) _record(told);
                 _record(Asked(message));
                 // Each attached file a `resource_link` to where it is kept (CONV4c).
@@ -1478,6 +1497,7 @@ public sealed partial class ChatRunner : IDisposable
                     }
                     else
                     {
+                        if (ToldBrowser(message) is { } toldBrowser) record(toldBrowser);
                         if (Told(message) is { } told) record(told);
                         record(Asked(message));
                         // Each attached file named by its path, which the agent reads with its own tool

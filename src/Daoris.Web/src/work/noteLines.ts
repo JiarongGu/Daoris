@@ -173,6 +173,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'browser.withheld': { values: ['servers'] },
   'browser.no-host': { values: [] },
   'browser.none-up': { values: [] },
+  // The line a chat's agent was told of the browser it was handed (BRWHINT1a): the line follows as a program's words.
+  'chat.told-browser': { values: [] },
   // A session's own background work (CONVNOTE2f): the work's names as code, a state as the harness said it; a program's words
   // follow `unread`.
   'background.unread': { values: [] },

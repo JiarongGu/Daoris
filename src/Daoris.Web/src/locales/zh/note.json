@@ -121,6 +121,7 @@
   "note.landing.person-handed": "你已将这项工作移交出去：",
   "note.chat.option-set": "你已将这次对话的 {{option}} 设为 {{chosen}}。",
   "note.chat.told-where": "已告知智能体你所在的位置：",
+  "note.chat.told-browser": "已告知智能体它拥有 Daoris 的浏览器：",
   "note.browser.withheld": "—— {{servers}} 要使用 Daoris 自己的浏览器，但没有交给它：",
   "note.browser.no-host": "此主机没有内置浏览器——只有桌面应用才有。",
   "note.background.unread": "它的这一轮在它自己的后台工作仍在运行时结束了，无法确定它的委托是否在等这些后台工作：",

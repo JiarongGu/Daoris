@@ -34,8 +34,16 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     /// </summary>
     internal ResumeAsk? GoesOn { get; init; }
 
-    /// <summary>What the agent is handed: the preface, a blank line, then the person's words.</summary>
-    public string Prompt => Preface is { Length: > 0 } preface ? $"{preface}\n\n{Text}" : Text;
+    /// <summary>
+    /// What Daoris has handed the agent that it should know before the person speaks (BRWHINT1a): the browser it was given,
+    /// said once with a new conversation's first message. A field of its own, never the preface — that is recorded as where
+    /// the person is and bounded — and never the person's words, which the record keeps as written.
+    /// </summary>
+    public string? Briefing { get; init; }
+
+    /// <summary>What the agent is handed: the briefing, the preface, then the person's words, each after a blank line.</summary>
+    public string Prompt => string.Join(
+        "\n\n", new[] { Briefing, Preface }.Where(part => !string.IsNullOrEmpty(part)).Append(Text));
 
     /// <summary>A preface as a message carries it: trimmed, bounded, and null when there is none.</summary>
     public static string? Bound(string? preface) =>
