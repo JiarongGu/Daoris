@@ -39,7 +39,7 @@ export type HelpProposal = {
   id: string;
   /** A move to a workspace (`repository`, ENTRY1d1) has no card of its own: its sentence, Apply and Not now. */
   /** Archiving or unarchiving sessions (`session`, SESSUX1h2a) is the generic card too, with its command. */
-  kind: 'setting' | 'ask' | 'agent' | 'account' | 'delete' | 'go' | 'plugin' | 'hand' | 'browser' | 'sync' | 'accept' | 'repository' | 'session' | 'pause' | 'clear';
+  kind: 'setting' | 'ask' | 'agent' | 'account' | 'delete' | 'go' | 'plugin' | 'hand' | 'browser' | 'sync' | 'accept' | 'repository' | 'session' | 'pause' | 'clear' | 'workflow';
   describe: string;
   terminal: string;
   why: string;
@@ -48,6 +48,30 @@ export type HelpProposal = {
   sync?: HelpSyncShown | null;
   /** A yes to a departure (DRIFT1d2): the quest, and each departure its done answered. */
   accept?: HelpAcceptShown | null;
+  /** A workflow version (`workflow`, WORKFLOW1h-a): drawn by the generic card until WORKFLOW1h-d's own. */
+  workflow?: HelpWorkflowShown | null;
+};
+
+/**
+ * What a workflow card will show (design §8.2), as the driver's judge reads the version: the workflow, the version it is
+ * made on and the one it becomes, the steps' diff lines, the person's part, each outward act, what is still needed, who it
+ * applies to, and whether the scope also chooses it. Lines are the driver's words, as it writes them.
+ */
+export type HelpWorkflowShown = {
+  id: string;
+  name: string;
+  /** The version the edit is made on; absent for a new workflow. */
+  base?: number | null;
+  /** The number the saved version takes. */
+  version: number;
+  scope: string;
+  diff: string[];
+  yourPart: string[];
+  outward: string[];
+  /** What is missing; while any is, the plan offers no Apply (a draft). */
+  needs: string[];
+  appliesTo: string;
+  choose: boolean;
 };
 
 /**

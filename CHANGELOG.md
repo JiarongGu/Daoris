@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- Ask Daoris can propose a workflow: a new one, or a new version of one on its newest, and optionally choose it for a
+  repository or workspace. It is judged as the editor would, said with your part first and what it does without asking
+  you, held as a draft while something it needs is missing, and saved only on your Apply. Its room names each
+  repository's workflow.
 - A repository's History reads further back: *Show more* adds the line's next 200 commits under the last.
 - A workspace's Branches tab says which empty session branches Daoris cleaned up on its own in the last week, and which it
   left in place and why.

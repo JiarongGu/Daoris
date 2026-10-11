@@ -13549,3 +13549,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UXDOC2 — the platform contract names a workspace's page** (docs). Its Repositories bullet (~:432-454) names only a repository's page; a workspace's header, four tabs and Branches' groups above the clean-up live only in D150's notes (UX6g, UX6h2b2). D150 §4.3; the doc gates.
 
 **Outcome** 2026-10-12: the platform contract's Repositories part has a paragraph for a workspace's page: what opens it, its header (*Sync now* or *Wire to a remote…*), its four tabs, a browser's Details alone, and Branches in order, the 28-twice reading named as UX6h2b3's; the detail stays in D150's and D88's notes.
+
+## WORKFLOW1h a–c — Ask Daoris proposes a workflow version (2026-10-12, D157)
+
+> - [ ] **WORKFLOW1h — workflow proposal, whole versions** (service/driver/modules/web chain a → b → c). `workflow_propose` with whole `steps` (new, or edit on a base, stale when not newest) and an optional choice; judge validation, version, diff, the person's part, outward acts and needs; Apply saves by the `ask-daoris:` door, a draft shows only *Not now*. §8; kinds/coverage/goldens/card tests.
+
+**Outcome** 2026-10-12 (legs a–c, merged once): the service's `workflow_propose` box and tool; the driver's judge (a new workflow or an edit on the newest base, its diff in the CLI's words, the needs the gate itself names making a draft, Apply saving through `ask-daoris:` and choosing), the room's bullet, Workflow column and the workspace's kinds, coverage's `new`/`edit`/`use` doors; the modules' facts and the card's fields. The bespoke card is WORKFLOW1h-d; a proposal's name, WORKFLOW1h-name. Detail: D157's WORKFLOW1h-a, -b and -c notes.

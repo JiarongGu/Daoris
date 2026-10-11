@@ -39,10 +39,17 @@ public sealed class HelpRoomGoldenTests
                     new ReviewRule([new("dev", "local", "README.md", "http://localhost:4200")], Required: true), ReviewSource.Workspace),
                 // XAGENT1a: a workspace's required second opinion, another maker's agent first.
                 Opinion = new ResolvedOpinion(new OpinionRule(["codex-acp", "dsh"], ["landing"], Required: true), OpinionSource.Workspace),
+                // WORKFLOW1h-b: a named workflow chosen for it, with a kind of its own mapped.
+                Workflow = new HelpWorkflowFollowed("docs-to-pr", WorkflowLevels.Repository)
+                {
+                    Name = "Documentation to a pull request", Version = 2, Kinds = [("feature", "current")],
+                },
             },
             new("reports-db", "work")
             {
                 Checkout = true, Drivable = true, Held = true, Line = new Line("main", LineSource.Checkout),
+                // WORKFLOW1h-b: its workspace's choice, which is not saved here.
+                Workflow = new HelpWorkflowFollowed("release-flow", WorkflowLevels.Workspace) { Problem = "not saved here" },
             },
             new("engine", "default")
             {
@@ -56,6 +63,12 @@ public sealed class HelpRoomGoldenTests
             {
                 Checkout = true, Drivable = true, Line = new Line("develop", LineSource.Workspace),
             },
+        ],
+        // WORKFLOW1h-b (design §8.4): the kinds a workspace declares, one mapped and one left to the default.
+        WorkflowKinds =
+        [
+            new HelpWorkflowKind("work", "docs", "Documentation", ["docs/**", "**/*.md"], "docs-to-pr"),
+            new HelpWorkflowKind("work", "feature", "Feature", [], null),
         ],
         // Reading across (D107): `reports-db` switched off, the rest on, one path that git needs quoted.
         Reads = [new("console-ui", "work", "/work/console-ui"), new("tools", "default", "/src/my tools")],
