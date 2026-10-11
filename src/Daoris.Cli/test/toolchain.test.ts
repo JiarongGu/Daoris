@@ -6,13 +6,15 @@ import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import {
   TOOLCHAINS, accountLines, addKeyAccount, commandHarness, harnessesPath, joinsOf, keyOf, managedBinary, managedHome,
-  nextAccount, profileHome, profiles, probe, readHarnessSettings, removeProfile, resolveProfile,
+  nextAccount, profileHome, profiles, probe, readHarnessSettings, removeProfile, replaceKeyAccount, resolveProfile,
   resolveVersion, signInNew, signInTo, versionFromNpm, withDefault, writeHarnessSettings,
 } from '../src/toolchain.ts';
 import type { HarnessSettings, Toolchain } from '../src/toolchain.ts';
 import { CLAUDE_LATEST, CODEX_LATEST, CODEX_RELEASES, codexTarget } from '../src/channels.ts';
 import type { Fetcher } from '../src/channels.ts';
-import { COOLING_FILE, coolingWhen, machineZone } from '../src/cooling.ts';
+import { COOLING_FILE, coolingOf, coolingWhen, machineZone } from '../src/cooling.ts';
+import { keepRead, readOf, readsOf } from '../src/accountreads.ts';
+import { accountNames } from '../src/accountnames.ts';
 import { WINDOWS_FILE } from '../src/windows.ts';
 import { makeFixture } from './_fixture.ts';
 import { captureError } from './_fixture.ts';
@@ -471,6 +473,60 @@ test('removing a key account removes its key, and another account keeps its own'
 
   assert.equal(keyOf(fx.root, 'claude-code', first), null);
   assert.equal(keyOf(fx.root, 'claude-code', second), 'sk-second-2222');
+  fx.cleanup();
+});
+
+// KEYREPLACE1a: a refused key is replaced in the same account, which keeps its id and so its name, lists and defaults.
+test('a new key replaces an account\'s key in place, ends what marked it refused, and leaves another account alone', () => {
+  const fx = makeFixture('harness-key-replace');
+  const first = addKeyAccount(fx.root, 'claude-code', 'sk-first-1111', () => {});
+  const second = addKeyAccount(fx.root, 'claude-code', 'sk-second-2222', () => {});
+  run(['profile', 'rename', 'claude-code', first, 'work-key'], at(fx));
+  run(['profile', 'default', 'claude-code', first], at(fx));
+  keepRead(fx.root, 'claude-code', first, 'out', new Date());
+  writeFileSync(join(fx.root, COOLING_FILE), JSON.stringify({ 'claude-code': { [first]: { until: '2999-01-01T00:00:00Z' } } }), 'utf8');
+  const lines: string[] = [];
+
+  replaceKeyAccount(fx.root, 'claude-code', 'work-key', 'sk-ant-api03-new-key-abcd\n', (l) => lines.push(l));
+
+  assert.equal(keyOf(fx.root, 'claude-code', first), 'sk-ant-api03-new-key-abcd');
+  assert.equal(keyOf(fx.root, 'claude-code', second), 'sk-second-2222');
+  assert.deepEqual(profiles(fx.root, 'claude-code').sort(), [first, second].sort());
+  assert.equal(readHarnessSettings(at(fx)).defaults['claude-code'], first);
+  assert.equal(accountNames(fx.root, 'claude-code')[first], 'work-key');
+  assert.notEqual(readOf(readsOf(fx.root, 'claude-code'), first)?.login, 'out');
+  assert.equal(coolingOf(fx.root, 'claude-code', first, new Date()), null);
+  const said = lines.join('\n');
+  assert.match(said, /…abcd/);
+  assert.doesNotMatch(said, /sk-ant-api03-new/);
+  assert.match(said, /running desktop reads the account again at its next press/);
+  fx.cleanup();
+});
+
+test('a key is replaced only in an account that exists and is a key, with a key that is one', () => {
+  const fx = makeFixture('harness-key-replace-refused');
+  const kept = addKeyAccount(fx.root, 'claude-code', 'sk-kept-1111', () => {});
+  mkdirSync(profileHome(fx.root, 'claude-code', 'signed-in'), { recursive: true });
+
+  assert.match(captureError(() => replaceKeyAccount(fx.root, 'claude-code', 'nobody', 'sk-x-1234', () => {})).message, /no account/);
+  assert.match(captureError(() => replaceKeyAccount(fx.root, 'claude-code', 'signed-in', 'sk-x-1234', () => {})).message, /not an API key account/);
+  assert.match(captureError(() => replaceKeyAccount(fx.root, 'claude-code', kept, '  \n', () => {})).message, /not an API key/);
+  assert.match(captureError(() => replaceKeyAccount(fx.root, 'claude-code', kept, 'sk a b', () => {})).message, /not an API key/);
+  assert.match(captureError(() => replaceKeyAccount(fx.root, 'dsh', kept, 'sk-x-1234', () => {})).message, /takes no API key/);
+  assert.equal(keyOf(fx.root, 'claude-code', kept), 'sk-kept-1111');
+  fx.cleanup();
+});
+
+// The verb reads stdin, which a test cannot hand it: the argv is judged first, so a key typed beside `--account` is still
+// refused as one in the shell's history, and the account's own value is not mistaken for one.
+test('`agent key <agent> --account` still refuses a key on the command line', () => {
+  const fx = makeFixture('harness-key-replace-argv');
+  const kept = addKeyAccount(fx.root, 'claude-code', 'sk-kept-1111', () => {});
+
+  const error = captureError(() => run(['key', 'claude-code', '--account', kept, 'sk-ant-api03-in-history-0000'], at(fx)));
+
+  assert.match(error.message, /stdin, not on the command line/);
+  assert.equal(keyOf(fx.root, 'claude-code', kept), 'sk-kept-1111');
   fx.cleanup();
 });
 

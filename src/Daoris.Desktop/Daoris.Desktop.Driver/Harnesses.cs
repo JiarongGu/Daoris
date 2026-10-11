@@ -1072,6 +1072,50 @@ public static class HarnessKeys
         return account;
     }
 
+    /// <summary>
+    /// Write a new key into an account that is already a key (KEYREPLACE1a): the repair for a key its provider refused. The
+    /// account keeps its id, so its name, lists, defaults and order stand (ACCT2); its last reading and its cool-off, what
+    /// marked it refused on disk, are cleared and it is marked signed in as <see cref="Add"/> does. The roster's in-memory
+    /// refusal is the caller's (<c>Harnesses.Removed</c> and <c>LookedAgain</c>). The CLI's <c>replaceKeyAccount</c> is the twin.
+    /// An account not on this machine, one that is not a key, and a blank or spaced key are refused before anything is written.
+    /// </summary>
+    public static string Replace(string home, string harness, string account, string key)
+    {
+        var named = HarnessSettings.Profiles(home, harness).FirstOrDefault(each => string.Equals(each, account, StringComparison.Ordinal))
+            ?? throw new DriverException(
+                $"`{harness}` has no account `{account}` on this machine — accounts that exist: "
+                + (HarnessSettings.Profiles(home, harness) is { Count: > 0 } accounts ? string.Join(", ", accounts) : "(none)"));
+        var keys = Read(home);
+        if (!keys.TryGetValue(harness, out var held) || !held.ContainsKey(named))
+        {
+            throw new DriverException(
+                $"`{named}` is not an API key account — it is a sign-in, so sign in again with `daoris agent login {harness}`.");
+        }
+
+        var trimmed = key?.Trim() ?? "";
+        if (trimmed.Length == 0 || trimmed.Any(char.IsWhiteSpace))
+        {
+            throw new DriverException("that is not an API key — it is blank, or has spaces in it.");
+        }
+
+        held[named] = trimmed;
+        Write(home, keys);
+
+        // What marked it refused is cleared, none the reason the key is not kept.
+        try
+        {
+            AccountReads.Forget(home, harness, named);
+            AccountCooling.End(home, harness, named, DateTimeOffset.UtcNow);
+            ProbeLock.MarkSignedIn(HarnessSettings.ProfileHome(home, harness, named), DateTimeOffset.UtcNow);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // The key is kept; the next press reads the account again.
+        }
+
+        return named;
+    }
+
     /// <summary>The key an account is, or null for a sign-in.</summary>
     public static string? Of(string home, string harness, string profile) =>
         Read(home).TryGetValue(harness, out var held) && held.TryGetValue(profile, out var key) ? key : null;
