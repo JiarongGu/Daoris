@@ -63,6 +63,7 @@ public sealed partial class DriverModule
         // This machine's sessions as the Sessions list places them (SESSUX1h3), so an archive or a delete names one it was shown;
         // the room still opens where the look cannot be taken, saying the sessions were not read.
         SessionLook? sessions = null;
+        var looking = System.Diagnostics.Stopwatch.StartNew();
         try
         {
             sessions = await SessionGroups.LookAsync(service, config, Door(config), _loop.Look.Latest, _loop.Home, null, cancellationToken).ConfigureAwait(false);
@@ -72,6 +73,8 @@ public sealed partial class DriverModule
         {
             // Left null: the room says `not read`, and a go still names a session the person names.
         }
+
+        HelpRoomLookLog.Said(_loop.Log, looking.Elapsed, sessions is not null);
 
         // The asks by id too (HELP6), so a delete of one made by mistake can name it.
         // And the branches landings made here (WSR5b), so a hand-off names one the record holds.
