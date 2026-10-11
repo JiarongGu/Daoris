@@ -28,7 +28,8 @@ public sealed partial class HelpProposalBox
             writer.WriteString("door", door);
             writer.WriteString("target", questId ?? askId);
             writer.WriteNull("workspace");
-            writer.WriteNull("value");
+            // Which one was named, so the driver need not tell an ask from a quest by lookup, which an id both have defeats.
+            writer.WriteString("value", questId is not null ? "quest" : "ask");
             writer.WriteNull("sentence");
         }, why, session, at);
     }

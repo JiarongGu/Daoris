@@ -20,7 +20,8 @@ public sealed class HelpPauseProposalTests : HelpProposalBoxFixture
             ("pause", door, target),
             (written.GetProperty("kind").GetString(), written.GetProperty("door").GetString(), written.GetProperty("target").GetString()));
         Assert.Equal(System.Text.Json.JsonValueKind.Null, written.GetProperty("workspace").ValueKind);
-        Assert.Equal(System.Text.Json.JsonValueKind.Null, written.GetProperty("value").ValueKind);
+        // PAUSE1f-c: which one was named, so the driver need not tell an ask from a quest by lookup.
+        Assert.Equal(quest is null ? "ask" : "quest", written.GetProperty("value").GetString());
         Assert.Equal(System.Text.Json.JsonValueKind.Null, written.GetProperty("sentence").ValueKind);
         Assert.Equal("the person asked to stop it", written.GetProperty("why").GetString());
         Assert.Contains($"Proposed `#{id}`", message);

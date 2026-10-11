@@ -18,8 +18,8 @@ namespace Daoris.Driver;
 /// A resume names each other pause over a quest of the work, which it does not lift (§2.4).</para>
 ///
 /// <para><b>Abandon is never proposed</b> (§7.4): it declines quests with the person's reason, which is their answer (D37).
-/// The box writes the id alone, not whether it is an ask's or a quest's, so the judge finds it among this machine's works and
-/// pauses, and refuses an id both an ask and a quest have.</para>
+/// The box writes the id and, since PAUSE1f-c, whether it is an ask's or a quest's (<c>value</c>); a file without that word
+/// is found among this machine's works and pauses, and an id both an ask and a quest have is refused there.</para>
 /// </remarks>
 internal sealed class HelpPauseProposals : IHelpProposalKind
 {
@@ -46,11 +46,21 @@ internal sealed class HelpPauseProposals : IHelpProposalKind
 
         var pause = proposal.Door == "pause";
         // A resume also finds a pause whose ask or quest has gone: the pause is this machine's, and only Resume takes it away.
-        var found = new[] { WorkScope.Ask, WorkScope.Quest }
+        // The box says which was named (PAUSE1f-c); a file from before it, or a word that is neither, is left to the lookup.
+        var kinds = proposal.Value?.Trim().ToLowerInvariant() switch
+        {
+            "ask" => [WorkScope.Ask],
+            "quest" => [WorkScope.Quest],
+            _ => new[] { WorkScope.Ask, WorkScope.Quest },
+        };
+        var found = kinds
             .Select(scope => (Scope: scope, Work: WorkOf(facts, scope, id)))
             .Where(each => each.Work is not null || (!pause && WorkPausing.Entry(config, each.Scope, id) is not null))
             .ToList();
-        if (found.Count == 0) return Refused($"there is no ask or quest `#{id}` on this machine.");
+        if (found.Count == 0)
+        {
+            return Refused($"there is no {(kinds.Length == 1 ? WorkPausing.Word(kinds[0]) : "ask or quest")} `#{id}` on this machine.");
+        }
         if (found.Count > 1)
         {
             return Refused($"`#{id}` names both an ask and a quest on this machine, and a pause proposal does not say which: the "

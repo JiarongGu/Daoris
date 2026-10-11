@@ -266,7 +266,41 @@ public sealed class HelpPauseProposalsTests : HelpProposalsFixture
             plan.Refusal);
     }
 
-    /// <summary>The service writes the one id the helper named and not whether it is an ask's or a quest's, so one both name is refused.</summary>
+    /// <summary>PAUSE1f-c: the box writes which one was named, so an id both have is the one it said; a word it does not know is the lookup's.</summary>
+    [Theory]
+    [InlineData("ask", WorkScope.Ask)]
+    [InlineData("quest", WorkScope.Quest)]
+    public void An_id_both_have_is_the_one_the_proposal_names(string value, WorkScope scope)
+    {
+        var twin = Quest(AskId, "Open");
+        var facts = Works with { Work = [AskPlan(), QuestPlan(twin)] };
+
+        var plan = HelpProposals.Plan(Pause("pause", AskId) with { Value = value }, DriverConfig.Empty, facts);
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal(scope, plan.Pause!.Scope);
+        Assert.Equal(AskId, plan.Pause.Id);
+    }
+
+    /// <summary>A named kind that this machine has no work of is not found, though the other kind has the id.</summary>
+    [Fact]
+    public void A_named_kind_the_machine_does_not_have_is_not_found()
+    {
+        var plan = HelpProposals.Plan(Pause("pause", AskId) with { Value = "quest" }, DriverConfig.Empty, Works);
+
+        Assert.Equal("there is no quest `#a1paus00` on this machine.", plan.Refusal);
+    }
+
+    [Fact]
+    public void A_word_that_is_not_a_kind_leaves_the_lookup_to_tell()
+    {
+        var plan = HelpProposals.Plan(Pause("pause", AskId) with { Value = "both" }, DriverConfig.Empty, Works);
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal(WorkScope.Ask, plan.Pause!.Scope);
+    }
+
+    /// <summary>The service writes the one id the helper named and, from a file before PAUSE1f-c, not whether it is an ask's or a quest's, so one both name is refused.</summary>
     [Fact]
     public void An_id_both_an_ask_and_a_quest_have_is_refused()
     {
