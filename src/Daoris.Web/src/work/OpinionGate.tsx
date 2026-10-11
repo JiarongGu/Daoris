@@ -301,7 +301,7 @@ const tierKey = (tier: string) => (tier === 'person' || tier === 'none' ? `opini
 
 /** The findings, each beside its answer, and what the pass read and could not tell (§9). */
 function Findings({ detail }: { detail: OpinionDetail }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const first = detail.first?.findings ?? [];
   const recheck = detail.recheck?.findings ?? [];
   return (
@@ -331,6 +331,16 @@ function Findings({ detail }: { detail: OpinionDetail }) {
             <div className="min-w-0">
               <dt className="text-meta text-ink-faint">{t('opinion.limits')}</dt>
               <dd className="m-0 whitespace-pre-wrap text-ink-soft [overflow-wrap:anywhere]">{pass!.limits}</dd>
+            </div>
+          )}
+          {pass!.usage !== undefined && (
+            <div className="min-w-0">
+              <dt className="text-meta text-ink-faint">{t('opinion.usage')}</dt>
+              <dd className="m-0 text-ink-soft">
+                {pass!.usage && pass!.usage.size > 0
+                  ? t('opinion.usageMeasured', { used: pass!.usage.used.toLocaleString(i18n.language), size: pass!.usage.size.toLocaleString(i18n.language) })
+                  : t('opinion.usageNone')}
+              </dd>
             </div>
           )}
         </dl>

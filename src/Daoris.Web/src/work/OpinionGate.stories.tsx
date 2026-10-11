@@ -56,6 +56,9 @@ export const Disputed: Story = {};
 /** The same in 中文. */
 export const DisputedChinese: Story = { decorators: [chinese] };
 
+/** XAGENT1g4b: the reviewer's door carried no usage, so the gate says *not measured*, never 0 (D57 §4). */
+export const DisputedUseNotMeasured: Story = { args: { detail: { ...DETAIL, first: { ...DETAIL.first!, usage: null } } } };
+
 /** The same in dark. */
 export const DisputedDark: Story = { decorators: [dark] };
 
