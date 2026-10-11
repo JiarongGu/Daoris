@@ -13591,3 +13591,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6h2b3 — one fold for a workspace's repositories apart** (web; design call first). A workspace's Branches says its repositories holding no Daoris branch twice: the groups' fold, then *Updates*' (each its own include). Decide one fold whose include serves both, or say why two. D150's window note of 2026-10-11.
 
 **Outcome** 2026-10-12: the parent's call, one fold (D112's one concept): the groups' fold is the only one on a workspace's Branches; its include lists the repository's branches and adds it to *Updates*' next look, which asks the included by name (`also`) and draws no fold of its own there; elsewhere `SyncSection` keeps its own. BRSCOPE1's expectations moved to the fold, none dropped. Detail: D150's UX6h2b3 note.
+
+## UX6h3d — the way back returns the focus (2026-10-12, D150)
+
+> - [ ] **UX6h3d — the way back returns the focus** (web). After *Back to Branches* (and the code map's *Back to the workspace*) the focus goes to the row whose press opened the page, not the body. Platform UX :240-242; D150's UX6h3b note; a ProjectsView.git.test.tsx case.
+
+**Outcome** 2026-10-12: `returnFocus` (src/Daoris.Web/src/returnFocus.ts) puts the focus back on the press that opened a branch's page or the code map once the page has drawn again, else on its heading, standing down if the reader moved and after five seconds. Detail: D150's UX6h3d note.

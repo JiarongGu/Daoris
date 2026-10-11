@@ -9,6 +9,7 @@ import { MapDetail } from './map/MapDetail';
 import { buildTopology, keepQuests, type LineKind, showLines } from './map/topology';
 import { useCodeMap, useConvergence, useQuests, useRegistry, useSessions } from './queries';
 import { useScope } from './scope';
+import { buttonNamed, returnFocus } from './returnFocus';
 import {
   Button, Card, EmptyState, Icon, type Notify, PageHeader, SkeletonRows, useErrorNotify,
 } from './ui';
@@ -52,7 +53,17 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
   useErrorNotify(registry.error ?? quests.error ?? sessions.error ?? codeMap.error, notify);
 
   if (code !== null) {
-    const back = () => { setCode(null); setModule(null); };
+    const back = () => {
+      // The focus goes back to the press that opened the code map (UX6h3d); a map a door opened has none, so the heading.
+      const press = t('map.detail.openCode');
+      returnFocus({
+        find: () => buttonNamed(press),
+        settled: () => document.querySelector('h1')?.textContent !== t('code.title', { repository: code }) && document.querySelector('[aria-busy]') === null,
+        fallback: () => document.querySelector<HTMLElement>('h1'),
+      });
+      setCode(null);
+      setModule(null);
+    };
     const answer = codeMap.data;
     return (
       <section>

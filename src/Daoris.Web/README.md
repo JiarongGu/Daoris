@@ -43,7 +43,9 @@ status pill never appears without its text label.
 runs, says a refusal inside itself rather than in a toast, and returns focus to the press. A question the agent
 asks in the page (the trust question, a go-ahead) holds its own wait the same way and says a refusal beside what
 was pressed (UXFIX2b3b). A search gate asks
-`src/searchable.ts`: two characters, or one Han character, as the driver's own rule does (D158).
+`src/searchable.ts`: two characters, or one Han character, as the driver's own rule does (D158). A page opened from a
+press (a branch's page from its name, the code map from *Open code map*) goes back with the focus on that press, waited
+for until it is drawn, else on the page's heading: `src/returnFocus.ts` (UX6h3d).
 
 ## Built on (D42, `docs/2026-09-19-frontend-architecture.md`)
 

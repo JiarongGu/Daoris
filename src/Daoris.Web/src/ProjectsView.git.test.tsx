@@ -299,6 +299,34 @@ describe("a repository's Branches and History tabs", () => {
       expect(within(repositoryMain()).getByRole('tab', { name: 'Branches' })).toHaveAttribute('aria-selected', 'true');
     });
 
+    // UX6h3d: the way back returns the focus to the press that opened the page, so a keyboard reader keeps their place.
+    it("leaves the focus on the opened branch's name button when it goes back", async () => {
+      answering({ graph });
+      show(<ProjectsView notify={() => {}} />);
+      const page = await chooseRepository('engine');
+      await userEvent.click(within(page).getByRole('tab', { name: 'Branches' }));
+      await userEvent.click(await within(repositoryMain()).findByRole('button', { name: `Open ${PHYSICS}` }));
+      await within(repositoryMain()).findByRole('list', { name: `${PHYSICS} beside main since they parted` });
+
+      await userEvent.click(within(repositoryMain()).getByRole('button', { name: 'Back to Branches' }));
+      await waitFor(() => expect(within(repositoryMain()).getByRole('button', { name: `Open ${PHYSICS}` })).toHaveFocus());
+    });
+
+    it('leaves the focus on the page heading when the branch is no longer listed', async () => {
+      const without = { ...ENGINE_LIST, repositories: [{ ...ENGINE_LIST.repositories[0]!, branches: GIT_BRANCHES_ENGINE.branches.filter((branch) => branch.name !== PHYSICS) }] };
+      answering({ graph, branches: (payload) => (payload.repository ? without : ENGINE_LIST) });
+      show(<ProjectsView notify={() => {}} />);
+      await chooseWorkspace('aurora');
+      await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
+      const engine = await within(repositoryMain()).findByRole('region', { name: "engine's branches" });
+      await userEvent.click(within(engine).getByRole('button', { name: `Open ${PHYSICS}` }));
+      await within(repositoryMain()).findByText('No such branch here');
+
+      await userEvent.click(within(repositoryMain()).getByRole('button', { name: 'Back to Branches' }));
+      await within(repositoryMain()).findByRole('region', { name: "engine's branches" });
+      await waitFor(() => expect(within(repositoryMain()).getByRole('heading', { level: 1, name: 'engine' })).toHaveFocus());
+    });
+
     it('says a branch its repository no longer lists, with the way back', async () => {
       // The workspace's read lists it; the repository's own, read for the page, no longer does.
       const without = { ...ENGINE_LIST, repositories: [{ ...ENGINE_LIST.repositories[0]!, branches: GIT_BRANCHES_ENGINE.branches.filter((branch) => branch.name !== PHYSICS) }] };

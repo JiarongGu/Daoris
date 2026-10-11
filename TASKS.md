@@ -33,7 +33,6 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 - [ ] **BRSCOPE1b — checkout scope and sync workspace** (modules/service/driver; after BRSCOPE1a). Share checkout-scope fixtures; carry workspace through sync proposals. D150 notes; three-door proof.
 - [ ] **UX7e — installed menus and heads** (parent; after republish). Verify keyboard menus, shortcuts, composer editing, head geometry and titles at 1546/680 px. D152 §6.
 - [ ] **ENTRY1bi — installed go to what waits** (parent; after republish). A go to `sessions/waiting`, `quests/held` and `quests/asks`, and the waiting starter, each with a group to show: its heading at the top, focused. D161's ENTRY1b note.
-- [ ] **UX6h3d — the way back returns the focus** (web). After *Back to Branches* (and the code map's *Back to the workspace*) the focus goes to the row whose press opened the page, not the body. Platform UX :240-242; D150's UX6h3b note; a ProjectsView.git.test.tsx case.
 - [ ] **UX6i2i — installed go cards** (parent; after republish). Ask Daoris answering "where do I turn a plugin on?" and "where is Convergence?": a go card reading *Open Plugins.* or *Open Knowledge → Convergence.* that opens the right place and mode.
 - [ ] **PLUGTOOL1c — tools on their plugin** (web/modules/driver; after PLUGUI1c). Tools retains Daoris's own. UX6 §7.5.
 - [ ] **COWORK1 — agents working together** (design; owner's direction required). Define progress sharing, questions and handoffs. D32/D65/D145/D149; decision before implementation.
