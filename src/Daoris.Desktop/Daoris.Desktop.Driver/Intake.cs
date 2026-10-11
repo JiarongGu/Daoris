@@ -150,7 +150,9 @@ public static class IntakeRoom
         Path.Combine(home, Folder, SafeName(workspace));
 
     /// <summary>Seed the room with the circle's declarations as they stand now, and answer where it is.</summary>
-    public static string Prepare(string home, string workspace, IReadOnlyList<DeclarationView> declarations)
+    /// <param name="kinds">The kinds its workspace declares, per repository (WORKFLOW1i-b); null or empty where it declares none.</param>
+    public static string Prepare(
+        string home, string workspace, IReadOnlyList<DeclarationView> declarations, IReadOnlyList<IntakeRepositoryKinds>? kinds = null)
     {
         var room = PathOf(home, workspace);
         Directory.CreateDirectory(Path.Combine(room, ".claude"));
@@ -163,7 +165,7 @@ public static class IntakeRoom
             if (SelfDescription.Read(repository.Root!) is { } description) described[repository.Repository] = description;
         }
 
-        Write(Path.Combine(room, "AGENTS.md"), Render(workspace, declarations, described));
+        Write(Path.Combine(room, "AGENTS.md"), Render(workspace, declarations, described, kinds));
         // Two harnesses read AGENTS.md; Claude Code reads CLAUDE.md — the canon's own shape (D59).
         Write(Path.Combine(room, "CLAUDE.md"), "@AGENTS.md\n");
         Write(Path.Combine(room, ".claude", "settings.json"), Settings());
@@ -176,7 +178,8 @@ public static class IntakeRoom
     /// </summary>
     public static string Render(
         string workspace, IReadOnlyList<DeclarationView> declarations,
-        IReadOnlyDictionary<string, RepositoryDescription>? described = null)
+        IReadOnlyDictionary<string, RepositoryDescription>? described = null,
+        IReadOnlyList<IntakeRepositoryKinds>? kinds = null)
     {
         described ??= new Dictionary<string, RepositoryDescription>();
         var text = new StringBuilder();
@@ -264,6 +267,34 @@ public static class IntakeRoom
             }
 
             text.Append('\n');
+        }
+
+        // WORKFLOW1i-b (the workflow design §4.3): the kinds the workspace declares, per repository with the workflow each follows
+        // there and whether it lowers the person's part, so a proposal is made knowing it. The intake only proposes (WORKFLOW1i).
+        if (kinds is { Count: > 0 })
+        {
+            text.Append("## Kinds of work\n\n");
+            text.Append("This workspace declares kinds of work. You may PROPOSE one for the ask — `workflowProposal` on\n");
+            text.Append("`quest_publish` — and never set one: the person's press does. Each repository follows a workflow for a\n");
+            text.Append("kind, listed below; a kind that \"lowers your part\" asks the person to do less there (a look, a second\n");
+            text.Append("opinion or a press dropped), and is proposed only on the person's words saying so.\n\n");
+            foreach (var repository in kinds)
+            {
+                text.Append($"### `{repository.Repository}` — with no kind it follows {repository.Otherwise}\n\n");
+                foreach (var kind in repository.Kinds)
+                {
+                    var paths = kind.Paths.Count == 0 ? "" : ", paths " + string.Join(", ", kind.Paths.Select(path => $"`{path}`"));
+                    var part = kind.Lowers switch
+                    {
+                        null => "its steps could not be read here, so take it as lowering your part",
+                        { Count: 0 } => "keeps your part",
+                        var lowers => $"lowers your part: {string.Join("; ", lowers)}",
+                    };
+                    text.Append($"- `{kind.Kind}`{(kind.Label is { Length: > 0 } label ? $" ({label})" : "")}{paths}: {kind.Workflow} — {part}\n");
+                }
+
+                text.Append('\n');
+            }
         }
 
         return text.ToString();
@@ -434,6 +465,13 @@ public static class IntakePrompt
         text.Append("documents give it a meaning, quote the word and say in the check what it requires there. Your\n");
         text.Append("reading of their words belongs in the body, never in a requirement; a quote they did not say is\n");
         text.Append("refused, naming it. A `then` step carries the quest's requirements with it.\n\n");
+
+        // WORKFLOW1i-b (the workflow design §4.3, D157): a kind is proposed, never set — the person's press applies it — and one that
+        // lowers their part needs their words, which the room's kinds section says per repository.
+        text.Append("Where the room lists kinds of work and the ask plainly is one, you may propose it on the quest as\n");
+        text.Append("`workflowProposal`: `{ \"kind\": \"docs\", \"reason\": \"…\" }`, a `kind` its workspace declares, and its `reason` the\n");
+        text.Append("person's own words, copied exactly. You never set a kind; the person's press applies a proposal. Propose\n");
+        text.Append("a kind the room says lowers the person's part only where the person's words say so.\n\n");
 
         // EVID1b (D144 §2): the part of a check a fact settles, named by whoever writes the requirement and never the session it
         // judges; a path only where the work plainly leaves one, and no gate while gates are refused at publish (EVID1d).

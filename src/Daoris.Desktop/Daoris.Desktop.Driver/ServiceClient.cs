@@ -722,6 +722,8 @@ public sealed partial class ServiceClient : IDisposable
             ReviewProposals = ReadReviewProposals(ask),
             // The person's kind and workflow for its work (WORKFLOW1e). Absent is none, and a host before them.
             WorkflowChoices = ReadWorkflowChoices(ask),
+            // Its intake's kind proposals (WORKFLOW1i): read, never applied here (WORKFLOW1i2).
+            WorkflowProposals = ReadWorkflowProposals(ask),
         };
     }
 

@@ -123,8 +123,11 @@ public sealed partial class Driver
         string room;
         try
         {
+            var declarations = await service.DeclarationsAsync(ask.Workspace, ct).ConfigureAwait(false);
+            // WORKFLOW1i-b: the workspace's kinds per repository, read from the choices as they stand now, like the declarations.
             room = IntakeRoom.Prepare(
-                home, ask.Workspace, await service.DeclarationsAsync(ask.Workspace, ct).ConfigureAwait(false));
+                home, ask.Workspace, declarations,
+                IntakeKinds.Read(home, config, ask.Workspace, declarations.Select(declaration => declaration.Repository)));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException
                                           or HttpRequestException or System.Text.Json.JsonException)
