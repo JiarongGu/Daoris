@@ -349,6 +349,22 @@ public sealed class DriverLoop(
     /// </summary>
     public LastLook Look { get; } = new();
 
+    /// <summary>
+    /// The second-opinion gates the last tick judged (XAGENT1g3), replaced whole each tick: what <c>OPINION_WAITS</c> answers, as of
+    /// that tick, at most one poll old. Null before the first.
+    /// </summary>
+    public LastOpinions Judged { get; } = new();
+
+    /// <summary>
+    /// What the kept second-opinion gates say that waits on the person, as one string (XAGENT1g3): the tick is forwarded when it
+    /// changes, so the page reads the route again, and a gate that waits on no one moves nothing.
+    /// </summary>
+    public static string JudgedSignature(IEnumerable<OpinionJudged> judged) =>
+        string.Join("\n", judged
+            .Where(each => DriverModule.WaitsOnPerson(each.Gate, each.Auto))
+            .Select(each => string.Join("\t", each.Session, each.Quest, each.Auto, each.Gate.State, each.Gate.Says))
+            .OrderBy(line => line, StringComparer.Ordinal));
+
     /// <summary>The loop's syncs, once it is up — the ones its tick runs, and the ones *Sync now* runs.</summary>
     private RemoteSyncSet? _sync;
 
@@ -485,6 +501,7 @@ public sealed class DriverLoop(
         var parks = new QuestParkReader();
         string? lastConsidered = null;
         var lastWaited = "";
+        var lastJudged = "";
         string? lastAsked = null;
         string? lastActive = null;
         string? lastRegistered = null;
@@ -542,6 +559,11 @@ public sealed class DriverLoop(
                 var waited = WaitsSignature(report.Waits);
                 changed |= waited != lastWaited;
                 lastWaited = waited;
+                // …or what waits on the person at a second opinion (XAGENT1g3): the route reads the look's judgments, so a changed one
+                // has to reach the page, which asks the route again at the tick.
+                var judged = JudgedSignature(report.JudgedOpinions);
+                changed |= judged != lastJudged;
+                lastJudged = judged;
 
                 // What this tick held for trust, kept for the screen's grant to be checked against
                 // (D73) — replaced whole, so a folder the driver stopped holding cannot be granted.
@@ -554,6 +576,8 @@ public sealed class DriverLoop(
                 // And all of it, whole, for the session list's groups (SESSUX1a): parked and awaiting reply are its verdicts;
                 // with the cool-offs it held starts on, which a record whose words one holds names (MSG1f2).
                 Look.Record(report.Considerations, report.Waits);
+                // And the second-opinion gates it judged, whole (XAGENT1g3), for *What needs you* to read without running a gate.
+                Judged.Record(report.JudgedOpinions);
 
                 // 🔴 And the asks (INT4d): the attention band reads them beside the sessions, and an
                 // ask made by the other door — a terminal, a teammate's sync — moves nothing above,
