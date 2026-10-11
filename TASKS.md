@@ -66,8 +66,9 @@ D88/D102 cleanup notes, machine log §4. Installed clears require the owner's ex
 - [ ] **AUTOTIDY1a — show automatic cleanup** (modules/web). Branches lists recent tidied/kept log facts. D88; route and bilingual list tests.
 - [ ] **AUTOTIDY1b — measure strict cleanup guards** (parent; installed AUTOTIDY1, after one week). Count ignored-file/unmoved-branch holds before deciding relaxations. D88 evidence.
 - [ ] **AUTOTIDY1c — automatic squash cleanup** (driver; after AUTOTIDY1b; decide first). Consider content proof plus merged PR state, preserving recovery refs. D88/D102; Process guards.
-- [ ] **QUESTBACK1 — hand back without a session** (service/driver/web). Both doors preserve note and taker facts. D32/D46/D132; transition/route/press tests.
-- [ ] **LANDNAME1 — entered landing branch** (driver/web). Accept and terminal take an entered name. D145/D149/D126; landing and field tests.
+- [ ] **QUESTBACK1 — hand back without a session** (owner's decision first; then service → driver + web). No hand back exists from anywhere: `QuestTransitions.Allows` lets nothing move back to open (D46 §3), and D126 ~:570-573 parks it. A new operation kind (quest-operations.md's eleven places), so a decision amending D46 §3 and D68 must say which taker facts survive (the claim, `Awaits`, set-ups, the ledger's carry-on, a remote's held claim). The label cannot be *Send back…* (DiffPane's); *Hand back…*/交还… to check against D116. After QUESTCLOSE1b1 (same files).
+- [ ] **LANDNAME1a — an entered landing branch, the driver's half** (driver/modules). `LandingSubject` takes an entered name (Landing.cs ~:56-70) that replaces the rule's branch wholesale (blank keeps it), only where the rule makes a branch; a standing branch Daoris did not make is refused in its own words (SessionTrees.cs ~:998-1015); the landed record keeps it (D143). `trees land <session> --branch <name>` (TreesConsole.cs ~:300-380, usage ~:486, Program.cs ~:151) and the route's optional `branch` (DriverModule.Trees.cs ~:374-424, as `answers` ~:417). D145/D149; D126 ~:492.
+- [ ] **LANDNAME1b — the land ask takes a name** (web; after or beside 1a: no `branch` sent keeps today's payload). The session head's land ask (SessionHead.tsx ~:509-540) gains the name field, blank keeping `{{branch}}`; `useLandSessionTree` sends `branch`; the review pane's one-press Accept stays one press. en/zh words in work.head.json and the glossary's section.
 - [ ] **HIST1f — Ask Daoris clear proposal** (driver/service/web; after HIST1e/SESSUX1h2). Listed plan is confirmed on Apply. D153 §6.4; kinds, coverage, room/card tests.
 - [ ] **HIST1h — installed clear** (parent; republish a–f first). Verify counts/bytes, terminal/page agreement at 1280/888/680 px, themes/languages. D153 §12.
 
@@ -138,7 +139,6 @@ Contract: `docs/2026-10-08-review-environment-design.md` (D154), section proofs.
 - [ ] **REVIEWENV1e — separate review process** (driver/modules; after d). Procedure quote, Keep it, port/readiness/output and owned-tree stop. §2.3; stub/port/stop tests.
 - [ ] **REVIEWENV1f — intake review choice** (driver/service; after b). Level-driven step; quoted choice or proposal; proposed off creates none. §1.5–§1.6/§2.1.
 - [ ] **REVIEWENV1i — canon see-it-run** (canon/examples; parent's decision). §7 doctrine, resync and changelog. Verify/example rehearsal.
-- [ ] **REVIEWENV1j2 — visible terminal twins** (web/driver). Draw existing choice twins in AskComposer/AskReview/ReviewGate; fix usage fallback. D50/D154; bilingual tests.
 - [ ] **REVIEWENV1g2 — Stop showing** (modules/web; after d2). Route ends tab serving; press beside Show again. D154 point 8; route/gate tests.
 
 ## Landing, trace and Git
@@ -176,6 +176,7 @@ Contracts: session-management (D126 §9), session-messages (D137), answer-contin
 pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build rows.
 
 - [ ] **QUESTREBASE1 — pure rebase planner** (service; consider). Preserve operation identity, accepted-before-pending order and transaction. D69/D79; unchanged sync suite and loss tests.
+- [ ] **SESSUX1h3 — the room counts sessions by group and lists the ended by id** (driver; after SESSUX1h2). The helper learns session ids only from the person or `ended`, so it cannot name one to archive or delete. *The machine now* counts sessions by group (§7.3's room bullet) and lists the ended ones by id, as ENTRY1f2 lists the waiting. HelpRoomMachineNowTests and the goldens.
 - [ ] **SESSUX1h2 — the `session` kind: archive, unarchive, delete** (service+web → driver → modules, a chain merged once). `HelpProposalKindsTests` reads the service's source and the web's union, and the modules compile against the driver's doors, so the halves cannot merge apart: 2a (service box and tool, web union) → 2b (driver kind, delete's `session` door, room, coverage; branched from 2a) → 2c (modules facts, gates, doors; branched from 2b); merge 2c. Shape: kind `session`, doors `archive`/`unarchive`, `target` ids comma-joined or `value` `ended`; delete door `session`, one id; Ask Daoris's own refused. Management §5.2-§5.4, §7.3, §9.
 - [ ] **MSG1d2 — queued chat survives restart** (driver/web; with MSG1c). Record ids/reach/withdrawals; take by id. Messages §3.1.
 - [ ] **MSG1g3 — cooling note and twins** (driver/web). Code held line; compare newSessionSaid with GoOnNew/WordsNever. D137/D142.

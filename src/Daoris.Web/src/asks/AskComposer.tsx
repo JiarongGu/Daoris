@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { type Carry, CarryFields, useCarry } from '../compose/carry';
-import { Button, Drawer, EmptyState, SelectField } from '../ui';
+import { Button, Drawer, EmptyState, Inline, SelectField } from '../ui';
 
 /** An ask being written: its circle, its words, a receiver if the person names one, and what it carries. */
 export type AskDraft = Carry & {
@@ -164,6 +164,8 @@ export function AskComposer({
             className="min-h-[1.9rem] rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
           />
         )}
+        {/* The terminal's way to the same choice (D50, REVIEWENV1j2). */}
+        <p className="m-0 text-meta text-ink-faint [overflow-wrap:anywhere]"><Inline text={t('asks.compose.reviewTwin')} /></p>
         <CarryFields
           carry={draft}
           filesLabel={t('asks.compose.filesLabel')}
