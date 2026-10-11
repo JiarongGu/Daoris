@@ -55,6 +55,9 @@ export const ThreeAccounts: Story = {};
 /** The workspace in view has a scope of its own: its next start is said above the accounts, named (ACCTUX4c). */
 export const WorkspaceInView: Story = { args: { inView: 'work' } };
 
+/** The same in 中文: the workspace is joined into the one sentence, no space after 「，」 or 「：」 (ACCTUX4d). */
+export const WorkspaceInViewChinese: Story = { args: { inView: 'work' }, decorators: [chinese] };
+
 /** The same at the 680 px window's main area, where the wait's two sentences wrap. */
 export const ThreeAccountsNarrow: Story = {
   decorators: [(Story) => <div className="w-[37rem] max-w-full"><Story /></div>],

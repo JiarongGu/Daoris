@@ -371,9 +371,17 @@ describe('the next start, above the accounts', () => {
 
   /** ACCTUX4c: the window's workspace speaks where it has a scope of its own with a next start, else this machine. */
   it('says the next start of the workspace in view, named, where it has a scope of its own', () => {
+    // ACCTUX4d: the workspace is joined into the one sentence, not prefixed to it.
     expect(nextStartSaidFor(THREE, 'work', labelOf)).toEqual({
-      workspace: 'work', takes: 'The next start takes account-2: it is the only account here that is ready.', held: null,
+      takes: 'In work, the next start takes account-2: it is the only account here that is ready.', held: null,
     });
+  });
+
+  it('says it in one sentence in 中文, with no space after a full-width mark', async () => {
+    await i18n.changeLanguage('zh');
+    const said = nextStartSaidFor(THREE, 'work', labelOf)!;
+    expect(said.takes).toBe('在 work 中，下一次启动使用 account-2：它是这里唯一就绪的账户。');
+    expect(said.takes).not.toMatch(/[：，。] /);
   });
 
   it('says this machine’s where the workspace has no scope of its own, or none is in view', () => {
@@ -387,7 +395,7 @@ describe('the next start, above the accounts', () => {
 
   it('says the workspace’s next start where this machine runs on your own sign-in', () => {
     const own: AgentAccounts = { ...THREE, scopes: [scopeOf({ next: { account: null, reason: 'own', others: [] } }), THREE.scopes[1]!] };
-    expect(nextStartSaidFor(own, 'work', labelOf)?.workspace).toBe('work');
+    expect(nextStartSaidFor(own, 'work', labelOf)?.takes).toMatch(/^In work, the next start takes /);
     expect(nextStartSaidFor(own, null, labelOf)).toBeNull();
     expect(nextStartSaidFor(null, 'work', labelOf)).toBeNull();
   });

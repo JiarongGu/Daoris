@@ -1910,8 +1910,8 @@ describe('how accounts are used', () => {
     show(<WorkspaceScopeProvider initial="orbit"><Place notify={() => {}} /></WorkspaceScopeProvider>);
 
     const accounts = await screen.findByRole('region', { name: 'Accounts' });
-    const said = await within(accounts).findByText('The next start takes work: it is the only account here that is ready.');
-    expect(said.parentElement!.textContent).toMatch(/^In orbit: The next start takes work/);
+    const said = await within(accounts).findByText('In orbit, the next start takes work: it is the only account here that is ready.');
+    expect(said.parentElement!.textContent).toMatch(/^In orbit, the next start takes work/);
   });
 
   it('says no next start above the accounts where it runs on your own sign-in, or where the answer names none', async () => {

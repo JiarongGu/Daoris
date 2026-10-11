@@ -4,6 +4,7 @@
   "harness.next.whyGoal": "Each start walks this list: driven work passes the account kept for conversations, and an account its agent said is near its limit goes last; then the account running the fewest of Daoris's sessions, then one whose week resets within a day, then the one furthest behind its week's pace, then the one Daoris started on least recently, then the list's order. The first ready account runs: not cooling, not refused, and signed in.",
   "harness.next.whyOrder": "Each start runs on the first ready account in the list's order, begun at its default; with Switch before the limit on, an account its agent said is near its limit goes last. Driven work passes the account kept for conversations.",
   "harness.next.takes": "The next start takes {{account}}: {{why}}.",
+  "harness.next.takesIn": "In {{workspace}}, the next start takes {{account}}: {{why}}.",
   "harness.next.own": "The next start runs on your own sign-in: nothing here names an account.",
   "harness.next.waitsUntil": "No account here is ready, so the next start waits until {{when}}.",
   "harness.next.waits": "No account here is ready, and none comes ready by itself: the next start waits for you.",
