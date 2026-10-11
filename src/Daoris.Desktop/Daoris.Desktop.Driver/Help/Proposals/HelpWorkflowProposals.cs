@@ -27,7 +27,7 @@ namespace Daoris.Driver;
 /// draft is shown with no Apply, and an Apply pressed anyway is refused before anything is saved, leaving it standing.</para>
 ///
 /// <para><b>Left for WORKFLOW1h2</b>: changes against a base, a kind, and an import; the box refuses them by name. A new workflow's
-/// name is its id, since the box carries no name.</para>
+/// name is the person's words where the box carries them (WORKFLOW1h-name), else its id; an edit keeps its workflow's name.</para>
 /// </remarks>
 internal sealed class HelpWorkflowProposals : IHelpProposalKind
 {
@@ -48,6 +48,7 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
             Scope = Text(file, "scope"),
             Workflow = Text(file, "workflow"),
             Base = baseVersion,
+            Name = Text(file, "name"),
             Choose = file.TryGetProperty("choose", out var choose) && choose.ValueKind == JsonValueKind.True,
             // Cloned: the file's document is gone once it is read.
             Steps = file.TryGetProperty("steps", out var steps) && steps.ValueKind == JsonValueKind.Array ? steps.Clone() : null,
@@ -87,7 +88,10 @@ internal sealed class HelpWorkflowProposals : IHelpProposalKind
         var (steps, shape) = WorkflowNamed.ReadShape(raw, version, prior);
         if (steps is null) return Refused(shape!);
 
-        var name = found?.Read.Name ?? id;
+        // An edit keeps its workflow's name; a new workflow takes the person's words, else its id (WORKFLOW1h-name).
+        var given = proposal.Base is null ? proposal.Name?.Trim() : null;
+        if (!string.IsNullOrEmpty(given) && WorkflowNamed.NameProblem(given) is { } nameProblem) return Refused(nameProblem);
+        var name = found?.Read.Name ?? (string.IsNullOrEmpty(given) ? id : given);
         var unchanged = before?.Steps is not null && before.Digest == WorkflowNamed.Digest(steps);
 
         // The choice: the scope's default made this workflow, judged by the edit that makes it; none where it is made already.
@@ -371,6 +375,9 @@ public sealed partial record HelpProposal
 
     /// <summary>A workflow proposal's whole steps, the design's JSON list (§2.5), as the box wrote them; null where none are.</summary>
     public JsonElement? Steps { get; init; }
+
+    /// <summary>A new workflow's name, the person's words (WORKFLOW1h-name); null where the box wrote none, and the id names it.</summary>
+    public string? Name { get; init; }
 }
 
 public sealed partial record HelpMachineFacts
