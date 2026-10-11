@@ -219,6 +219,25 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText(code('q1'))).toBeInTheDocument();
   });
 
+  // WORKFLOW1h-a: a workflow proposal is the generic card until WORKFLOW1h-d draws its own; it offers what the plan offers.
+  it('a workflow card is the generic one, offering Apply while the plan offers it', async () => {
+    const workflow: HelpProposal = {
+      id: 'p21', kind: 'workflow', terminal: 'daoris driver workflow edit docs-to-pr --base 1', why: 'the person asked',
+      describe: 'Save version 2 of workflow `docs-to-pr` for `web-app`: new work only.',
+      workflow: {
+        id: 'docs-to-pr', name: 'Documentation to a pull request', base: 1, version: 2, scope: 'web-app',
+        diff: ['~ land: accept'], yourPart: ['= You still merge its pull request'], outward: [], needs: [], appliesTo: 'new work only',
+        choose: false,
+      },
+    };
+
+    await press(workflow, 'Apply');
+
+    expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
+    expect(screen.getByText(code('docs-to-pr'))).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Not now' })).toBeInTheDocument();
+  });
+
   it('a session delete card is the delete kind\'s, naming the session', async () => {
     const remove: HelpProposal = {
       id: 'p15', kind: 'delete', terminal: 'daoris sessions delete s9', why: 'a test run',
