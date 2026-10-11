@@ -227,6 +227,11 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         // Ask Daoris's `accept` kind.
         ("accept a quest's departure from what you required, so what it held goes on: the chain's next step, a quest "
             + "waiting on it", "Quests → the quest's page → Accept the departure", "`daoris-driver quest accept <id>`"),
+        // QUESTCLOSE1b3: the person's own done, with the note they give (D126's QUESTCLOSE1): the page's press is its own
+        // conversation on Quests, which Ask Daoris takes the person to and never writes (D161's ENTRY1 note).
+        ("mark a quest done as yours, with a note if you give one: what a finish at a checkpoint says, said on the quest itself "
+            + "(Ask Daoris takes you to the quest's page and never writes the done)",
+            "Quests → the quest's page → Mark done…", "`daoris-driver quest done <id> [--note \"…\"]`"),
         // EVID1b (D144 §5): reading a done's evidence again, the terminal's door; the quest page's *Check again* and Ask Daoris's
         // check card are EVID1c's, owed meanwhile (HelpCoverageTests).
         ("read a done's evidence again, so a commit that holds it now lifts its hold: at the commit a session's end here read, "

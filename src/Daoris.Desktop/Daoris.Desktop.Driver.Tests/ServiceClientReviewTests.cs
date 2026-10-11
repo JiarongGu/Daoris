@@ -72,6 +72,25 @@ public sealed class ServiceClientReviewTests
             step.Verdicts);
     }
 
+    /// <summary>
+    /// QUESTCLOSE1b3: a quest's note comes with its parts as the service answers them (QUESTCLOSE1b1), read as a session's are;
+    /// a quest from before them reads none, and its English whole stays its note.
+    /// </summary>
+    [Fact]
+    public void A_quests_note_is_read_with_its_parts_and_one_from_before_carries_none()
+    {
+        var quests = ServiceClient.ReadQuests(
+            """
+            [{ "id": "q1", "to": "engine", "status": "Done", "note": "Done by the person.",
+               "noteParts": [{ "code": "quest.person-done", "text": "Done by the person." }] },
+             { "id": "q2", "to": "engine", "status": "Done", "note": "an older line" }]
+            """);
+
+        Assert.Equal(["quest.person-done"], NoteAssert.Codes(quests[0].NoteParts));
+        Assert.Equal("Done by the person.", quests[0].Note);
+        Assert.Null(quests[1].NoteParts);
+    }
+
     /// <summary>A quest no review touches, or one from a host before the review, answers none of the fields: none is read.</summary>
     [Fact]
     public void A_quest_no_review_touches_reads_as_it_did()
