@@ -57,13 +57,13 @@ public sealed partial class ChatRunner
 
         if (resume.Elsewhere is { } elsewhere) return CannotGoOn(record, elsewhere, adapter.Name);
         var selection = resume.Selection;
-        if (!selection.Allowed) return Held(sessionId, selection.Refusal!);
+        if (!selection.Allowed) return Held(sessionId, HeldWords.Program(selection.Refusal!));
         if (Continuations.Judge(record, adapter.Name, adapter.Resumes, selection.Profile, kept) is { } account)
         {
             return CannotGoOn(record, account, adapter.Name);
         }
 
-        if (await SetAsideHelpAsync(sessionId, ct).ConfigureAwait(false) is { } answering) return Held(sessionId, answering);
+        if (await SetAsideHelpAsync(sessionId, ct).ConfigureAwait(false) is { } answering) return Held(sessionId, HeldWords.Answering(answering));
 
         // 🔴 The ledger's one move out of an ended state (MSG1a, D137 §2.3), before anything is spawned: it holds the room again,
         // and refuses where another conversation holds it, one another process here runs among them.
@@ -73,7 +73,7 @@ public sealed partial class ChatRunner
         }
         catch (DriverException refused)
         {
-            return Held(sessionId, refused.Message);
+            return Held(sessionId, HeldWords.Program(refused.Message));
         }
 
         var now = await ReadAgainAsync(sessionId, ct).ConfigureAwait(false);
@@ -109,7 +109,7 @@ public sealed partial class ChatRunner
             return new(null, $"nothing was said in conversation `{earlier}`, so there is nothing to start from.");
         }
 
-        if (await SetAsideHelpAsync(null, ct).ConfigureAwait(false) is { } answering) return new(null, $"{answering}.");
+        if (await SetAsideHelpAsync(null, ct).ConfigureAwait(false) is { } answering) return new(null, $"{HeldWords.AnsweringWhy(answering)}.");
 
         var start = await StartHelpAsync(adapter, config, machine, onEnded, ct).ConfigureAwait(false);
         if (start.SessionId is not { } id) return start;
@@ -131,7 +131,7 @@ public sealed partial class ChatRunner
     /// <summary>
     /// Set aside the room's running conversation (HELP1a holds one at a time): each other Ask Daoris conversation running here
     /// is stopped, keeping its own id to go on later, and waited for until its record ends. One answering a turn is never
-    /// stopped: the sentence why comes back instead.
+    /// stopped: its id comes back instead (<see cref="HeldWords.Answering"/> says why).
     /// </summary>
     /// <param name="goingOn">The conversation going on, which is never its own obstacle; null for a new one.</param>
     private async Task<string?> SetAsideHelpAsync(string? goingOn, CancellationToken ct)
@@ -140,7 +140,7 @@ public sealed partial class ChatRunner
         {
             if (Taking(other))
             {
-                return $"Ask Daoris is answering in conversation `{other}`; once its turn ends, a word said here takes these with it";
+                return other;
             }
 
             _processes.Stop(other);

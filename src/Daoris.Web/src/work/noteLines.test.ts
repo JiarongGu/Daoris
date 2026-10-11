@@ -368,6 +368,48 @@ describe('noteLines', () => {
     });
   });
 
+  /** CONVNOTE2g2: the runner's other holds, a reason of Daoris's own as one line, a program's message as its words between lead and tail. */
+  describe('a conversation’s words held for another reason', () => {
+    it('words each reason of Daoris’s own as one line, its repository or conversation a value', () => {
+      const checkout = [coded('held.no-checkout', '— it does not go on yet: `engine` has no checkout …', { repository: 'engine' })];
+      expect(noteLines(t, { parts: checkout }, 'en').map((line) => line.text)).toEqual([
+        'It does not go on yet: `engine` has no checkout on this machine any more. Your words wait on it.',
+      ]);
+      expect(noteLines(zh, { parts: checkout }, 'zh')[0].kind).toBe('said');
+
+      const replaying = [coded('held.replaying', '— it does not go on yet: …', { repository: 'engine' })];
+      expect(noteLines(t, { parts: replaying }, 'en')[0].text).toBe(
+        "It does not go on yet: `engine`'s branches are being brought up to date right now, so a session does not start in one of its trees until that is done; it starts at the next look. Your words wait on it.",
+      );
+      expect(noteLines(zh, { parts: replaying }, 'zh')[0].kind).toBe('said');
+
+      const answering = [coded('held.answering', '— it does not go on yet: …', { session: 'h2' })];
+      expect(noteLines(t, { parts: answering }, 'en')[0].text).toBe(
+        'It does not go on yet: Ask Daoris is answering in conversation `h2`; once its turn ends, a word said here takes these with it. Your words wait on it.',
+      );
+      expect(noteLines(zh, { parts: answering }, 'zh')[0].kind).toBe('said');
+    });
+
+    it('words the lead and the tail around a program’s message and leaves it as written', () => {
+      const parts = [coded('held.lead', '— it does not go on yet:'), words('the ledger will not move it D:/x', 'program'), coded('held.tail', 'Your words wait on it.')];
+      expect(noteLines(t, { parts }, 'en')).toEqual([
+        { kind: 'said', text: 'It does not go on yet:' },
+        { kind: 'words', text: 'the ledger will not move it D:/x', by: 'program' },
+        { kind: 'said', text: 'Your words wait on it.' },
+      ]);
+      expect(noteLines(zh, { parts }, 'zh').map((line) => line.kind)).toEqual(['said', 'words', 'said']);
+
+      const unread = [coded('held.config-unread', "— it does not go on yet: this machine's driver.json could not be read:"), words('bad json', 'program')];
+      expect(noteLines(t, { parts: unread }, 'en')[0]).toEqual({ kind: 'said', text: "It does not go on yet: this machine's driver.json could not be read:" });
+      expect(noteLines(zh, { parts: unread }, 'zh')[0].kind).toBe('said');
+    });
+
+    it('shows a hold as recorded where its repository is absent', () => {
+      const parts = [coded('held.no-checkout', '— it does not go on yet: …')];
+      expect(noteLines(zh, { parts }, 'zh')[0].kind).toBe('recorded');
+    });
+  });
+
   /** CONVNOTE2d1: words the agent would not take, ones that never reached it, and ones not taken off the record, worded; others' words as written. */
   describe('words that did not reach an agent or were not taken', () => {
     it('words a refusal by its lead and leaves the agent’s words as written', () => {

@@ -579,6 +579,16 @@ public static class NoteCodes
     public static readonly NoteCode WaitsDoorChat = new("waits.door-chat", ["session"]);
     public static readonly NoteCode WaitsDoorHelp = new("waits.door-help", []);
 
+    // ——— A conversation's words held for another reason (CONVNOTE2g2, <see cref="HeldWords"/>): a reason of Daoris's own sentence is
+    // one line, its repository or conversation a value; a program's message (driver.json unread, the roster's refusal, the ledger's)
+    // rides as its words between `lead` (or the reason `config-unread`) and `tail`, never a value, since it may hold a path.
+    public static readonly NoteCode HeldNoCheckout = new("held.no-checkout", ["repository"]);
+    public static readonly NoteCode HeldReplaying = new("held.replaying", ["repository"]);
+    public static readonly NoteCode HeldAnswering = new("held.answering", ["session"]);
+    public static readonly NoteCode HeldConfigUnread = new("held.config-unread", []);
+    public static readonly NoteCode HeldLead = new("held.lead", []);
+    public static readonly NoteCode HeldTail = new("held.tail", []);
+
     /// <summary>Every code above, read off the declarations so none escapes the catalogue test.</summary>
     public static IReadOnlyList<NoteCode> All { get; } =
         [.. typeof(NoteCodes).GetFields().Where(field => field.FieldType == typeof(NoteCode)).Select(field => (NoteCode)field.GetValue(null)!)];

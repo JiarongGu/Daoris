@@ -187,6 +187,14 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'waits.door-new-session': { values: ['session'] },
   'waits.door-chat': { values: ['session'] },
   'waits.door-help': { values: [] },
+  // A conversation's words held for another reason (CONVNOTE2g2): a reason of Daoris's own is one line, its repository or
+  // conversation a value; a program's message is words between `held.lead` (or `config-unread`) and `held.tail`.
+  'held.no-checkout': { values: ['repository'] },
+  'held.replaying': { values: ['repository'] },
+  'held.answering': { values: ['session'] },
+  'held.config-unread': { values: [] },
+  'held.lead': { values: [] },
+  'held.tail': { values: [] },
 };
 
 /**
@@ -252,7 +260,7 @@ export const NOTE_VALUES: Readonly<
   awaits: 'id', answered: 'id', ask: 'id', quest: 'id', session: 'id',
   quests: 'ids',
   servers: 'names', works: 'names',
-  option: 'text', chosen: 'text', work: 'text', state: 'text',
+  option: 'text', chosen: 'text', work: 'text', state: 'text', repository: 'text',
   until: 'moment', at: 'moment', seen: 'moment',
   exit: 'number', minutes: 'number', paths: 'number', turn: 'number',
   tokens: 'count', count: 'count',
