@@ -140,8 +140,8 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("start a quest your stop holds again: carry a taken one on in its tree, or plan an open one", "Quests → the quest's page, "
             + "whose *Sitting* names the session", "`daoris driver retry <quest> --session <id>`"),
         ("bound how long one session runs", "(no screen yet)", "`daoris driver timeout <minutes>`"),
-        // TOOL4e: the terminal's door onto the default cool-off; TOOL4g gave it Settings → Driver's control. Ask Daoris's
-        // `setting` kind's `cooloff` waits on the service's writer (HelpCoverageTests).
+        // TOOL4e: the terminal's door onto the default cool-off; TOOL4g gave it Settings → Driver's control, and TOOL4l-b
+        // Ask Daoris's `setting` kind's `cooloff` (HelpCoverageTests).
         ("set how long an account cools when its agent hits a limit and names no time", "Settings → Driver → Cool-off when no time is named",
             "`daoris driver cooloff <minutes>`"),
         ("bound how many sessions run at once", "(no screen yet)", "`daoris driver cap <n>`"),
@@ -181,13 +181,13 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             Agent + "an account's ⋯ → Use by default, Use by default in a workspace",
             "`daoris agent profile default <agent> <profile>|--clear [--workspace <name>]` (`--clear` names none again: "
             + "the tool's own home, or for a workspace the machine's default)"),
-        // TOOL4e (D125 §6): the order and *Try now*, the terminal's doors; TOOL4g gave them the screen. Ask Daoris's `order`
-        // and `ready` wait on the service's writer (HelpCoverageTests).
+        // TOOL4e (D125 §6): the order and *Try now*, the terminal's doors; TOOL4g gave them the screen, and TOOL4l-b Ask Daoris's
+        // `order` and `ready` (HelpCoverageTests).
         ("choose the accounts rotation may use, in order, for the machine or a workspace (an account not listed never "
             + "rotates)", Agent + "How accounts are used → Use, up and down; and Workspaces → Its own accounts",
             "`daoris agent profile order <agent> <profile>…|--clear [--workspace <name>]`"),
         // TOOL6a (D130 §16.6): how a list is used, the terminal's door; TOOL4g gave it the screen's controls, and judges Ask
-        // Daoris's `use` door (`use`, `keep`, `early`, `near`), offered once the service's writer spells it.
+        // Daoris's `use` door (`use`, `keep`, `early`, `near`), listed since TOOL4l-b.
         ("choose how a list is used, for the machine or a workspace: make the most of its accounts (`goal`) or one by one "
             + "in order (`order`), one kept for conversations, and switching before a limit",
             Agent + "How accounts are used → Use accounts, Keep for conversations, Switch before the limit",

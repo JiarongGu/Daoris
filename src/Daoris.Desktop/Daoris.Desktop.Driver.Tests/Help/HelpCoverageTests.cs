@@ -50,12 +50,6 @@ public sealed partial class HelpCoverageTests
         + "against the lists as last fetched; that is the `tool` kind's `use` door, which TOOLS8 builds (D121 §4.3), and "
         + "until then `daoris tool use` is the terminal's door.";
 
-    /// <summary>The default cool-off (TOOL4g, D125 §6): the `setting` kind's `cooloff`, whose service half is another lane's.</summary>
-    private const string CoolOffOwed =
-        "the cool-off a limit naming no time takes is a setting that undoes itself, so Ask Daoris should propose it; that is "
-        + "the `setting` kind's `cooloff` door (D125 §6), which waits on the service's setting writer listing it beside this "
-        + "side's doors, and until then `daoris driver cooloff` and Settings → Driver are its doors.";
-
     /// <summary>
     /// A named workflow saved, or chosen, from the terminal (WORKFLOW1d, WORKFLOW1e; D157 point 13): Ask Daoris's `workflow` kind is
     /// WORKFLOW1h's, its card a version and optionally a choice (the workflow design §8.1).
@@ -65,15 +59,6 @@ public sealed partial class HelpCoverageTests
         + "Ask Daoris should propose them as the `workflow` kind's card, its part said first (D157 point 13, the workflow design §8), "
         + "which WORKFLOW1h builds; until then `daoris driver workflow` is its terminal's door, and every gate reads the version "
         + "each run bound (WORKFLOW1f).";
-
-    /// <summary>
-    /// How an agent's accounts are used, the agent's page's controls (TOOL4g, UX6e; D125 §6, D130 §9): each a door of the `agent`
-    /// kind that the service's `agent_propose` does not write yet, which another lane's row holds.
-    /// </summary>
-    private static Owed AccountDoorOwed(string door, string what, string terminal) => new(
-        $"{what}, so Ask Daoris should propose it as a card the person applies (D89); that is the `agent` kind's `{door}` "
-        + $"door (D125 §6, D130 §9), which waits on the service's `agent_propose` writing it, and until then `{terminal}` is the "
-        + "terminal's door.");
 
     private const string Rules =
         "what an agent may do is never proposed by an agent: the room is not handed `permission_propose` (HELP1c), "
@@ -89,11 +74,10 @@ public sealed partial class HelpCoverageTests
 
     /// <summary>
     /// ACCT1's <c>daoris agent profile join</c> and the route's <c>profile-join</c>: putting an account in a list widens what
-    /// Daoris may spend, as <c>order</c> does, so it is the <c>agent</c> kind's <c>order</c> door, owed with it. The agent's page
-    /// presses it (UX7b), and this is its control's row.
+    /// Daoris may spend, as <c>order</c> does, so it is the <c>agent</c> kind's <c>order</c> door (TOOL4l-b): the list with the
+    /// account added. The agent's page presses it (UX7b), and this is its control's row.
     /// </summary>
-    private static readonly Owed JoinDoor = AccountDoorOwed(
-        "order", "putting an account in a list widens what Daoris may spend", "daoris agent profile join");
+    private static readonly Door JoinDoor = new("agent", "order");
 
     /// <summary>
     /// The driver lock's <c>--share</c> (DRV8, D104), decided: a flag on the start of a headless loop, not a setting.
@@ -548,9 +532,8 @@ public sealed partial class HelpCoverageTests
         ("strikes", new Door("setting", "strikes")),
         ("retry", new Door("setting", "retry")),
         ("timeout", new Door("setting", "timeout")),
-        // TOOL4e: the default cool-off's terminal door (D125 §6); TOOL4g built Settings → Driver's control, and its Ask Daoris
-        // door waits on the service.
-        ("cooloff", new Owed(CoolOffOwed)),
+        // TOOL4e: the default cool-off's terminal door (D125 §6); TOOL4g built Settings → Driver's control, TOOL4l-b its Ask Daoris door.
+        ("cooloff", new Door("setting", "cooloff")),
         ("cap", new Door("setting", "cap")),
         ("adapter", new Door("setting", "adapter")),
     ];
@@ -566,22 +549,17 @@ public sealed partial class HelpCoverageTests
 
         ("driver", "useSetNotify", null, new Door("setting", "notify")),
         ("driver", "useSetStrikes", null, new Door("setting", "strikes")),
-        ("driver", "useSetCoolOff", null, new Owed(CoolOffOwed)),
+        ("driver", "useSetCoolOff", null, new Door("setting", "cooloff")),
         // UPDATE1e: the install's update, *Update when idle*, *Update now* and *Not now*, read once the hooks exported as
         // functions were; UPDATE1f gave the room its row.
         ("driver", "useSayUpdate", null, UpdateDoor),
 
-        // TOOL4g: how an agent's accounts are used. The `use` door is judged and applied on this side already
-        // (`HelpAgentProposals`); every one waits on the service's writer.
-        ("agents", "useAccountUse", "order", AccountDoorOwed(
-            "order", "adding an account to a list widens what Daoris may spend", "daoris agent profile order")),
-        ("agents", "useAccountUse", "use", AccountDoorOwed(
-            "use", "how a list is used changes which account a start spends, and undoes itself", "daoris agent profile use")),
-        ("agents", "useAccountUse", "ready", AccountDoorOwed(
-            "ready", "*Try now* spends an account sooner than its cool-off said", "daoris agent profile ready")),
-        ("agents", "useAccountUse", "inherit", AccountDoorOwed(
-            "order", "returning a workspace to this machine's accounts may widen what its work spends",
-            "daoris agent profile order <agent> --clear --workspace <name>")),
+        // TOOL4g: how an agent's accounts are used; TOOL4l-b gave each its door. Returning a workspace to this machine's accounts
+        // (`inherit`) is the `order` door's `clear`.
+        ("agents", "useAccountUse", "order", new Door("agent", "order")),
+        ("agents", "useAccountUse", "use", new Door("agent", "use")),
+        ("agents", "useAccountUse", "ready", new Door("agent", "ready")),
+        ("agents", "useAccountUse", "inherit", new Door("agent", "order")),
 
         ("agents", "useHarnessAction", "install", new Exempt(
             "an install fetches a maker's release and runs its installer on this machine, the person's own press (HELP6).")),
@@ -821,7 +799,6 @@ public sealed partial class HelpCoverageTests
             .Append(OpinionJudgementDoor)
             .Append(UpdateDoor)
             .Append(RenameDoor)
-            .Append(JoinDoor)
             .Select(answer => answer switch
             {
                 Exempt exempt => exempt.Reason,
@@ -1345,7 +1322,8 @@ public sealed partial class HelpCoverageTests
         Assert.Contains("`daoris agent profile join <agent> <account> <workspace>…|--machine`", room);
         Assert.Contains("`daoris agent login <agent> --new [--name <name>] [--join <workspace>] [--join-machine]`", room);
         Assert.Contains("D66", RenameDoor.Reason);
-        Assert.Contains("daoris agent profile join", JoinDoor.Reason);
+        // Joining is the list with the account added (TOOL4l-b), so it is the `order` door.
+        Assert.Equal(new Door("agent", "order"), JoinDoor);
         Assert.IsType<Exempt>(Controls.Single(row => row.Hook == "useHarnessAction" && row.Action == "login-new").Answer);
         // UX7b: the page presses both, so each is its control's row.
         Assert.Same(RenameDoor, Controls.Single(row => row.Hook == "useHarnessAction" && row.Action == "profile-rename").Answer);
