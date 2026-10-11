@@ -13513,3 +13513,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **MSG1g3 — cooling note and twins** (driver/web). Code held line; compare newSessionSaid with GoOnNew/WordsNever. D137/D142.
 
 **Outcome** 2026-10-11: the held line was already coded (CONVNOTE2g/2g2). `locales/say.test.ts` holds the page's refusal tables (`NEVER`, `START_FROM`, `NEW_SESSION_REFUSED`, now exported) to the driver's `WordsNever`, `StartFrom` and `GoOnNew` codes key for key, the page's own named, and each to both catalogues; the merge tool's MOD9e row names the four driver files it reads. Detail: D137's MSG1g3 note.
+
+## UX6h2b2 — the branch list in a workspace's Branches tab (2026-10-11, D150)
+
+> - [ ] **UX6h2b2 — the branch list in a workspace's Branches tab** (web; after b1). Each repository a group above the clean-up and sync (which stay workspace-only), `apart` folded and included by the person (D112) with a per-repository read; titles per group. BRSCOPE1's tests hold. Design §2.2; D150's UX6h2a and BRSCOPE1 notes.
+
+**Outcome** 2026-10-11: a workspace's Branches tab lists each repository holding Daoris's branches as a group headed by a door to its page (`WorkspaceBranches`), five shown and the rest a press away, the rest folded apart and each included with its own read; titles are asked only for groups shown; the clean-up and sync below are unchanged. UX6h2 is closed. Detail: D150's UX6h2b2 note.

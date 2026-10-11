@@ -19,6 +19,7 @@ import type { KeptDoors } from '../work/ClearAsk';
 import { useHistoryActs } from '../work/historyActs';
 import { WorkflowTab } from '../workflow/WorkflowTab';
 import { KeptHistory } from './KeptHistory';
+import { WorkspaceBranchGroups } from './RepositoryGitView';
 import type { WorkspaceSection, WorkspaceTab } from './tabs';
 import { accountsHere, hostOf } from './workspace';
 import { WorkspaceDetails, WorkspacePage } from './WorkspacePage';
@@ -105,7 +106,7 @@ export function WorkspaceView({
   const body = !attached
     ? <WorkspaceDetails repositories={repositories} onOpen={onOpenRepository} />
     : tab === 'branches'
-      ? <BranchesPart workspace={workspace} notify={notify} />
+      ? <BranchesPart workspace={workspace} notify={notify} onOpenRepository={onOpenRepository} />
       : tab === 'workflow'
         ? (
           <WorkflowPart
@@ -192,17 +193,25 @@ function DetailsPart({ workspace, repositories, notify, onOpenRepository, onOpen
 }
 
 /**
- * Branches: the clean-up (WSR3, D88) and bringing up to date (WSR6), moved from Settings → Workspace. The clean-up lists
- * this workspace's session branches, and its press removes only what it listed. A look reaches the network as the person,
- * so it is asked by its own press.
+ * Branches: each repository's branches by kind, a group per repository (UX6h2b2, the built-in Git design §2.2), then the
+ * clean-up (WSR3, D88) and bringing up to date (WSR6), moved from Settings → Workspace. The clean-up lists this workspace's
+ * session branches, and its press removes only what it listed. A look reaches the network as the person, so it is asked by
+ * its own press.
  *
  * @remarks
+ * **The groups are Git's reads** (`WorkspaceBranchGroups`): read while the tab shows, each heading the door to its
+ * repository's page, as Details' names are.
+ *
  * **Everything here is this workspace's** (BRSCOPE1, WSP5). The clean-up's list and the machine's reading of which
  * checkouts hold Daoris's branches are the machine's answers, read once for every page, and filtered to it. The look and
  * the press are asked for it, so the driver fetches and judges its checkouts alone, and what the look leaves apart is
  * its own. The rows are filtered again, so a host before BRSCOPE1, whose look is the machine's, still shows only its own.
  */
-function BranchesPart({ workspace, notify }: { workspace: string; notify: Notify }) {
+function BranchesPart({ workspace, notify, onOpenRepository }: {
+  workspace: string;
+  notify: Notify;
+  onOpenRepository: (repository: string) => void;
+}) {
   const { t } = useTranslation();
   const plan = useSweepPlan();
   const sweep = useSweep();
@@ -223,50 +232,53 @@ function BranchesPart({ workspace, notify }: { workspace: string; notify: Notify
   const answered = looked && Array.isArray(looked.lines) && Array.isArray(looked.rebases) && Array.isArray(looked.deletes);
 
   return (
-    <SweepList
-      branches={Array.isArray(plan.data?.branches) ? mine(plan.data.branches, workspace) : undefined}
-      landed={Array.isArray(plan.data?.landed) ? mine(plan.data.landed, workspace) : undefined}
-      busy={sweep.isPending || plan.isFetching}
-      onLook={() => void plan.refetch()}
-      onClean={(only) => sweep.mutate(only, {
-        onSuccess: (done) => notify(t('settings.sweep.done', { removed: done.removed, count: only.length })),
-        onError: failure(notify),
-      })}
-      // Told back to its ask (UXFIX2): a branch kept, or a refusal, is said inside it.
-      onDiscard={(branch, answered) => discard.mutate(branch, {
-        onSuccess: sayDiscard(notify, t, answered),
-        onError: (error) => answered.refused(sentence(error)),
-      })}
-      discarding={discard.isPending && discard.variables ? sweepKey(discard.variables) : null}
-      sync={(
-        <SyncSection
-          plan={answered
-            ? {
-                lines: mine(looked.lines, workspace),
-                rebases: mine(looked.rebases, workspace),
-                deletes: mine(looked.deletes, workspace),
-                ...(Array.isArray(looked.looked) ? { looked: mine(looked.looked, workspace) } : {}),
-                ...(Array.isArray(looked.apart) ? { apart: mine(looked.apart, workspace) } : {}),
-              }
-            : undefined}
-          scope={Array.isArray(scope) ? mine(scope, workspace) : undefined}
-          included={syncPlan.asked?.include}
-          looking={syncPlan.isFetching}
-          lookingAt={syncPlan.asked?.count}
-          bringing={sync.isPending}
-          stopped={stopped}
-          onLook={(include) => { sync.reset(); void syncPlan.look(include); }}
-          onSync={(only) => sync.mutate(only, {
-            onSuccess: (done) => {
-              notify(t('settings.sync.done', { changed: done.changed, count: only.length }));
-              // Look again, so the list shows what is left, with why — taking what the person included.
-              void syncPlan.look(syncPlan.asked?.include ?? []);
-            },
-            onError: (error) => { if (!stoppedWaiting(error)) failure(notify)(error); },
-          })}
-        />
-      )}
-    />
+    <>
+      <WorkspaceBranchGroups workspace={workspace} onOpenRepository={onOpenRepository} />
+      <SweepList
+        branches={Array.isArray(plan.data?.branches) ? mine(plan.data.branches, workspace) : undefined}
+        landed={Array.isArray(plan.data?.landed) ? mine(plan.data.landed, workspace) : undefined}
+        busy={sweep.isPending || plan.isFetching}
+        onLook={() => void plan.refetch()}
+        onClean={(only) => sweep.mutate(only, {
+          onSuccess: (done) => notify(t('settings.sweep.done', { removed: done.removed, count: only.length })),
+          onError: failure(notify),
+        })}
+        // Told back to its ask (UXFIX2): a branch kept, or a refusal, is said inside it.
+        onDiscard={(branch, answered) => discard.mutate(branch, {
+          onSuccess: sayDiscard(notify, t, answered),
+          onError: (error) => answered.refused(sentence(error)),
+        })}
+        discarding={discard.isPending && discard.variables ? sweepKey(discard.variables) : null}
+        sync={(
+          <SyncSection
+            plan={answered
+              ? {
+                  lines: mine(looked.lines, workspace),
+                  rebases: mine(looked.rebases, workspace),
+                  deletes: mine(looked.deletes, workspace),
+                  ...(Array.isArray(looked.looked) ? { looked: mine(looked.looked, workspace) } : {}),
+                  ...(Array.isArray(looked.apart) ? { apart: mine(looked.apart, workspace) } : {}),
+                }
+              : undefined}
+            scope={Array.isArray(scope) ? mine(scope, workspace) : undefined}
+            included={syncPlan.asked?.include}
+            looking={syncPlan.isFetching}
+            lookingAt={syncPlan.asked?.count}
+            bringing={sync.isPending}
+            stopped={stopped}
+            onLook={(include) => { sync.reset(); void syncPlan.look(include); }}
+            onSync={(only) => sync.mutate(only, {
+              onSuccess: (done) => {
+                notify(t('settings.sync.done', { changed: done.changed, count: only.length }));
+                // Look again, so the list shows what is left, with why — taking what the person included.
+                void syncPlan.look(syncPlan.asked?.include ?? []);
+              },
+              onError: (error) => { if (!stoppedWaiting(error)) failure(notify)(error); },
+            })}
+          />
+        )}
+      />
+    </>
   );
 }
 

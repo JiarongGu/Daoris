@@ -20,9 +20,10 @@ export type HistoryRead =
 
 /**
  * What a Git tab has nothing to show for: its fact as a headline and why beneath it. A block of the page, so it wraps at the
- * pane's edge as every block of a record page does (D141), where the main area's own empty state keeps a narrow body.
+ * pane's edge as every block of a record page does (D141), where the main area's own empty state keeps a narrow body. A
+ * workspace's Branches says its own the same way (UX6h2b2).
  */
-function Nothing({ headline, body }: { headline: string; body: string }) {
+export function Nothing({ headline, body }: { headline: string; body: string }) {
   return (
     <div className="grid gap-1">
       <p className="m-0 text-body font-semibold text-ink">{headline}</p>
@@ -32,7 +33,7 @@ function Nothing({ headline, body }: { headline: string; body: string }) {
 }
 
 /** A Git tab's answer on its way, said and drawn as rows, or why it did not come: never a blank tab. */
-function Waiting({ sentence, reading }: { sentence: string; reading: boolean }) {
+export function Waiting({ sentence, reading }: { sentence: string; reading: boolean }) {
   return (
     <div aria-busy={reading || undefined} className="grid gap-2">
       <Prose className="text-small"><Inline text={sentence} /></Prose>

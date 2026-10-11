@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A workspace's Branches tab lists each of its repositories' branches above the clean-up, a group per repository holding a
+  branch of Daoris's, headed by a door to the repository's page; the first five are shown and the rest a press away. The
+  repositories holding none are folded apart, and each one you include is listed too.
 - A repository's Branches tab lists its branches by kind. Its line heads the list: what set it, how it stands to origin and
   when the checkout last fetched. Then sessions' branches, each named by its session's title and state; landed branches, each
   saying whether it is pushed and opening its pull request, with its state and when where a plugin answered; and yours, the
