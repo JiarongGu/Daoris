@@ -189,7 +189,7 @@ public sealed partial class DriverModule
         var applied = await HelpProposals.ApplyAsync(
             _loop.Home, proposal, plan, HelpDoors(service), Say, cancellationToken).ConfigureAwait(false);
         // An accept publishes the step a departure held and lets a quest waiting on it go on (DRIFT1d2), as a delete or an ask moves the work.
-        if (proposal.Kind is "ask" or "delete" or "accept") _loop.Nudge();
+        if (proposal.Kind is "ask" or "delete" or "accept" or "session") _loop.Nudge();
 
         return ApplyAnswer(proposal, applied);
     }
@@ -271,6 +271,47 @@ public sealed partial class DriverModule
         // The quest page's Accept the departure (DRIFT1d2): the local host's `POST /api/quests/{id}/accept`, the terminal's too.
         public Task<(bool Ok, string Message)> AcceptDepartureAsync(string id, CancellationToken ct) =>
             (service ?? throw NotReady()).AcceptDepartureAsync(id, ct);
+
+        // SESSION_ARCHIVE's own marks (SESSUX1h2c): each judged again by where the list places it as it goes, counted in the
+        // machine log as the screen's. The service is the one this Apply was handed, as the other doors use it.
+        public async Task<(bool Ok, string Message)> ArchiveSessionsAsync(IReadOnlyList<string> ids, bool archived, CancellationToken ct)
+        {
+            var marks = new SessionArchive(module._loop.Home);
+            static string Listed(IEnumerable<string> each) => string.Join(", ", each.Select(id => $"`{id}`"));
+            static string Count(int n) => $"{n} session{(n == 1 ? "" : "s")}";
+            if (!archived)
+            {
+                var back = marks.Unarchive(ids);
+                var undone = back.NotArchived.Count == 0 ? "" : $" Not archived, so left as they were: {Listed(back.NotArchived)}.";
+                return (true, $"Unarchived {Count(ids.Count - back.NotArchived.Count)}.{undone}");
+            }
+
+            var asked = service ?? throw NotReady();
+            var config = DriverConfig.Load(module._loop.ConfigPath);
+            var look = await SessionGroups.LookAsync(asked, config, module.Door(config), module._loop.Look.Latest, module._loop.Home, ids, ct)
+                .ConfigureAwait(false);
+            look = look with { Waits = module._loop.Look.Waits };
+            var answer = marks.Archive(ids, SessionGroups.Read(look, ids), [.. look.Records.Select(record => record.Id)], DateTimeOffset.UtcNow);
+            var done = answer.Outcomes.Where(outcome => outcome.Verdict == ArchiveVerdict.Archived).Select(outcome => outcome.Session).ToList();
+            var kept = answer.Outcomes.Where(outcome => outcome.Verdict != ArchiveVerdict.Archived).Select(outcome => outcome.Session).ToList();
+            SessionArchive.Said(module._loop.Log, done.Count, PluginEvents.Screen);
+            var left = kept.Count == 0 ? "" : $" Kept in the list, as archive never hides what needs you or stops what runs: {Listed(kept)}.";
+            return done.Count == 0
+                ? (false, $"Nothing was archived.{left}")
+                : (true, $"Archived {Count(done.Count)}: {Listed(done)}.{left}");
+        }
+
+        // SESSION_DELETE's own delete: the driver library's one owner, then the loop asked to look (SESSUX1h2c).
+        public async Task<(bool Ok, string Message)> DeleteSessionAsync(string id, CancellationToken ct)
+        {
+            var outcome = await new SessionDeletion(module._loop.Home)
+                .DeleteAsync(service ?? throw NotReady(), id, PluginEvents.Screen, module._loop.Log, module._loop.Events, ct)
+                .ConfigureAwait(false);
+            if (outcome.Verdict != DeleteVerdict.Deleted) return (false, outcome.Message);
+
+            module._loop.Nudge();
+            return (true, outcome.Message);
+        }
 
         // The Manage drawer's Move to workspace (ENTRY1d1): the local host's `POST /api/registry/{repository}/workspace`, one
         // field of the row. The loop's registry watch (FG4) tells the page what moved.
@@ -429,7 +470,12 @@ public sealed partial class DriverModule
     /// session on Sessions (ENTRY1f2), so the service is asked for them only then.
     /// </summary>
     public static bool JudgedAgainstSessions(IEnumerable<HelpProposal> proposals) =>
-        proposals.Any(proposal => ItemOn(proposal, "sessions"));
+        proposals.Any(proposal => ItemOn(proposal, "sessions") || SessionKind(proposal));
+
+    // An archive or unarchive (kind `session`) and a delete naming a session (SESSUX1h2c): judged against where the list places
+    // each session, which the records alone do not say.
+    private static bool SessionKind(HelpProposal proposal) =>
+        proposal.Kind == "session" || (proposal.Kind == "delete" && proposal.Door == "session");
 
     // A go naming an item on the view, read as the judge reads its view (`HelpGoProposals.Plan`); an item on any other view
     // is refused unread.
@@ -517,6 +563,32 @@ public sealed partial class DriverModule
         if (JudgedAgainstSessions(proposals))
         {
             facts = facts with { Sessions = await service.SessionRecordsAsync(ct).ConfigureAwait(false) };
+        }
+
+        // A session proposal is judged by where the list places each session, and a delete by what this machine keeps and the
+        // ledger's own answer (SESSUX1h2c, D126 §5.2, §5.4): the one look the Sessions screen takes, read only for those.
+        if (proposals.Any(SessionKind))
+        {
+            var look = await SessionGroups.LookAsync(service, config, Door(config), _loop.Look.Latest, _loop.Home, null, ct).ConfigureAwait(false);
+            look = look with { Waits = _loop.Look.Waits };
+            var judged = new Dictionary<string, SessionDeleteAnswer>(StringComparer.Ordinal);
+            foreach (var proposal in proposals.Where(each => each.Kind == "delete" && each.Door == "session"))
+            {
+                var target = proposal.Target?.Trim().TrimStart('#') ?? "";
+                // Only a record the ledger can be asked of: a teammate's, a live one and Ask Daoris's own are refused before it.
+                if (facts.Sessions.FirstOrDefault(each => string.Equals(each.Id, target, StringComparison.OrdinalIgnoreCase)) is
+                    { Teammate: false, Live: false } record && !WordsNever.IsHelp(record))
+                {
+                    judged[record.Id] = await service.JudgeSessionDeleteAsync(record.Id, ct).ConfigureAwait(false);
+                }
+            }
+
+            facts = facts with
+            {
+                Placed = SessionGroups.Read(look, null),
+                Kept = new SessionDeletion(_loop.Home).Kept(facts.Sessions),
+                SessionDeletes = judged,
+            };
         }
 
         // Every quest as the service answers it, its requirements, answers and hold with it (DRIFT1d2), read only when an
