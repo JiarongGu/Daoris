@@ -145,7 +145,7 @@ public sealed partial class DriverModule : ModuleBase
     /// A conversation's tree choice (D51, NEW1a): absent is the driver's own, true a tree of its own, false the checkout.
     /// <see cref="Flag"/> cannot tell absent from false.
     /// </summary>
-    private static bool? TreeChoice(IpcRequest request) =>
+    public static bool? TreeChoice(IpcRequest request) =>
         request.Payload is { } payload && payload.TryGetProperty("ownTree", out var value)
             ? value.ValueKind switch { JsonValueKind.True => true, JsonValueKind.False => false, _ => null }
             : null;

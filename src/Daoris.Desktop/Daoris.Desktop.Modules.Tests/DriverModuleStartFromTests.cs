@@ -140,7 +140,7 @@ public sealed class DriverModuleStartFromTests : DriverModuleBridge
     }
 
     /// <summary>The service's doors a start crosses, standing in: the records, the registry, no quests, a chat's open and its moves.</summary>
-    private sealed class StandIn(string root) : HttpMessageHandler
+    internal sealed class StandIn(string root) : HttpMessageHandler
     {
         private readonly object _gate = new();
         private readonly List<JsonObject> _sessions = [];
