@@ -57,6 +57,7 @@ import type { Answered } from './InlineConfirm';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import { type SessionDoors, useSessionActs } from './sessionActs';
 import { ListMore } from './ListPane';
+import { AddProjectDrawer, ImportFolderDrawer } from '../ProjectManage';
 import { NewConversation, type NewStart } from './NewConversation';
 import { keepChosen, keepRecent, readChosen, readRecent } from './startRecent';
 import { type Carry, NO_CARRY } from '../compose/carry';
@@ -231,6 +232,16 @@ export function WorkFrame({
   };
   // The composer's words and files, held here so a visit to a session and back keeps them; a start that opened a
   // conversation lets them go. Its last refusal is said under Start until the next press (UX5 U68).
+  // The drawers the composer's picker opens over Sessions (NEW1c): Projects' own, on this frame's state, so the draft stays where
+  // it is and App's views are not asked to navigate. `pickNew` and `reveal` are the answers it hands the composer, each a counted
+  // ask; `refocus` is bumped when a drawer goes down, so the prompt takes the focus Radix would return to a press that is gone.
+  const [adding, setAdding] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [pickNew, setPickNew] = useState<{ repository: string; n: number } | null>(null);
+  const [reveal, setReveal] = useState<{ workspace: string; n: number } | null>(null);
+  const [refocus, setRefocus] = useState(0);
+  // An import that opened the picker keeps the focus in its field: the drawer's closing must not take it back to the prompt.
+  const listOpened = useRef(false);
   const [newDraft, setNewDraft] = useState('');
   const [newCarry, setNewCarry] = useState<Carry>(NO_CARRY);
   const [startRefusal, setStartRefusal] = useState<string | null>(null);
@@ -1373,12 +1384,21 @@ export function WorkFrame({
       onCarry={setNewCarry}
       pending={startChat.isPending}
       refusal={startRefusal}
-      focus={focusOwed ? composing : 0}
+      focus={(focusOwed ? composing : 0) + refocus}
       onFocused={() => setFocusOwed(false)}
       onStart={onStart}
       onOpenSession={attend}
+      onAdd={() => setAdding(true)}
+      onImport={() => setImporting(true)}
+      pick={pickNew}
+      reveal={reveal}
     />
   );
+  const drawerDown = (close: () => void) => () => {
+    close();
+    if (listOpened.current) listOpened.current = false;
+    else setRefocus((count) => count + 1);
+  };
 
   return (
     // Positioned, so a dock filling the frame (FRAME6) lies over exactly this and nothing more.
@@ -1403,7 +1423,34 @@ export function WorkFrame({
           // handed, so the state's body is the composer.
           state={attended ? 'chosen' : selected && sessions.isPending ? 'loading' : 'none'}
         >
-          {!attended && newConversation}
+          {!attended && (
+            <>
+              {newConversation}
+              {adding && (
+                // Once registered it is chosen, as Projects' list chooses what it registered, and the words stay (NEW1c).
+                <AddProjectDrawer
+                  onClose={drawerDown(() => setAdding(false))}
+                  onAdded={(repository) => setPickNew((last) => ({ repository, n: (last?.n ?? 0) + 1 }))}
+                  notify={notify}
+                />
+              )}
+              {importing && (
+                <ImportFolderDrawer
+                  onClose={drawerDown(() => setImporting(false))}
+                  onImported={({ repositories: landed, workspace }) => {
+                    // One is chosen; several, or none, leave the choice to the person, in the list opened on where they landed.
+                    if (landed.length === 1) {
+                      setPickNew((last) => ({ repository: landed[0]!, n: (last?.n ?? 0) + 1 }));
+                      return;
+                    }
+                    listOpened.current = true;
+                    setReveal((last) => ({ workspace: landed.length > 1 ? workspace ?? '' : '', n: (last?.n ?? 0) + 1 }));
+                  }}
+                  notify={notify}
+                />
+              )}
+            </>
+          )}
           {attended && <AttendedSession
             session={attended}
             quest={quest}

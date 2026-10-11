@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Registration } from './api';
+import type { api, Registration } from './api';
 import { sentence } from './format';
 import { InlineConfirm } from './work/InlineConfirm';
 import { workspaceOf } from './workspaces';
@@ -25,7 +25,10 @@ import { Button, Chip, Drawer, failure, Inline, type Notify, PathText, SectionTi
  *   are shown as text to run in that repository, never as a button here (D31's shape).
  */
 
-const EMPTY_LINES = (value: string): string[] =>
+/** What an import answered: the repositories it registered, the workspace they landed in and the service's own sentence. */
+export type ImportAnswer = Awaited<ReturnType<typeof api.importFolder>>;
+
+const EMPTY_LINES =(value: string): string[] =>
   value.split('\n').map((line) => line.trim()).filter(Boolean);
 
 export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }: {
@@ -165,8 +168,10 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
  * Add's is. The folder's name is offered only over an empty field or the name it offered last, so a name the go filled or
  * the person typed stays when a folder is chosen.
  */
-export function ImportFolderDrawer({ onClose, notify, initialWorkspace }: {
+export function ImportFolderDrawer({ onClose, onImported, notify, initialWorkspace }: {
   onClose: () => void;
+  /** Told what the import answered, before the drawer closes, so a composer that opened it can choose or list what came (NEW1c). */
+  onImported?: (result: ImportAnswer) => void;
   notify: Notify;
   initialWorkspace?: string;
 }) {
@@ -195,6 +200,7 @@ export function ImportFolderDrawer({ onClose, notify, initialWorkspace }: {
       // The service's sentence, as said: it names what registered and where it landed.
       onSuccess: (result) => {
         notify(result.message);
+        onImported?.(result);
         onClose();
       },
       onError: failure(notify),
