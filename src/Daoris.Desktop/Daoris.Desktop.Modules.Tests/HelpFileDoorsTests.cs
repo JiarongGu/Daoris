@@ -59,6 +59,25 @@ public sealed class HelpFileDoorsTests : Bridge
     }
 
     /// <summary>
+    /// TOOL4l-b: a ready is <c>ACCOUNT_USE</c>'s own <c>ready</c> — <i>Try now</i>, an account's cool-off ended as its owner's
+    /// (AGT7), the tool's own sign-in's where none is named; one that was not cooling is told so and nothing changes.
+    /// </summary>
+    [Fact]
+    public async Task A_ready_ends_the_cool_off_as_the_accounts_screens_try_now_does()
+    {
+        var now = DateTimeOffset.UtcNow;
+        AccountCooling.Cool(Home, new CoolingEntry("claude-code", "play", now.AddHours(2), true, "weekly", now, "s1a2b3c4"), now);
+        AccountCooling.Cool(Home, new CoolingEntry("claude-code", null, now.AddHours(1), false, null, now, null), now);
+        var doors = Module().HelpDoors(null);
+
+        Assert.True(await doors.ReadyAccountAsync("claude-code-acp", "play", CancellationToken.None));
+        Assert.False(await doors.ReadyAccountAsync("claude-code-acp", "play", CancellationToken.None));
+        Assert.Equal([null], AccountCooling.Read(Home, now).Select(entry => entry.Account));
+        Assert.True(await doors.ReadyAccountAsync("claude-code", null, CancellationToken.None));
+        Assert.Empty(AccountCooling.Read(Home, now));
+    }
+
+    /// <summary>
     /// HELP10: the browser's settings are <c>BrowserModule</c>'s own edits, written to the files the Browser screen and
     /// <c>daoris browser</c> write, and read by <c>daoris-browser</c> at its next start.
     /// </summary>

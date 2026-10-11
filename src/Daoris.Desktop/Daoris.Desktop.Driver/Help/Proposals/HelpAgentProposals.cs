@@ -21,9 +21,9 @@ namespace Daoris.Driver;
 /// <para>Since TOOL4g the <c>use</c> door's judge (D130 §9, §16.6): how a scope's list is used — <c>use</c> (<c>goal</c> or
 /// <c>order</c>), <c>keep</c> (an account of the list, or JSON null for none), <c>early</c> and <c>near</c>, each a field of
 /// the proposal's file beside its target and workspace — judged as <c>daoris agent profile use</c> judges it and applied as
-/// the screen's <c>ACCOUNT_USE</c>. 🔴 It is not in <see cref="Doors"/> yet: a door listed there is one the service's
-/// <c>agent_propose</c> writes (<c>HelpProposalKindsTests</c>), and the service's half is another lane's row, so the room
-/// offers it once the service writes the four fields above.</para>
+/// the screen's <c>ACCOUNT_USE</c>. Since TOOL4l-b it is listed in <see cref="Doors"/>, with <c>order</c> (a scope's list written
+/// whole, or a workspace sent back to the machine's accounts) and <c>ready</c> (<i>Try now</i>, an account's cool-off ended),
+/// since the service's <c>agent_propose</c> writes all three (TOOL4l-a).</para>
 /// </remarks>
 internal sealed partial class HelpAgentProposals : IHelpProposalKind
 {
@@ -84,6 +84,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         if (proposal.Door == "default") return Default(proposal, facts);
         if (proposal.Door == "use") return Use(proposal, facts);
         if (proposal.Door == "order") return Order(proposal, facts);
+        if (proposal.Door == "ready") return Ready(proposal, facts);
 
         var name = proposal.Target?.Trim() ?? "";
         var version = proposal.Value?.Trim() ?? "";
@@ -91,7 +92,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         var terminal = update ? $"daoris agent update {name}" : $"daoris agent pin {name} {version}";
         HelpPlan Refused(string why) => new(why, "", terminal, null);
 
-        if (proposal.Door is not ("update" or "pin")) return Refused($"`{proposal.Door}` is not an agent's change — `update`, `pin` or `default`.");
+        if (proposal.Door is not ("update" or "pin")) return Refused($"`{proposal.Door}` is not an agent's change — `update`, `pin`, `default`, `use`, `order` or `ready`.");
         if (facts.Doors.FirstOrDefault(each => string.Equals(each.Name, name, StringComparison.Ordinal)) is not { } door)
         {
             return Refused($"there is no agent `{name}` on this machine — one of {Names(facts.Doors.Select(each => each.Name))}.");
@@ -368,6 +369,55 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
             terminal, null);
     }
 
+    /// <summary>
+    /// <c>ready</c> (TOOL4l-b, D125 §2.3): <i>Try now</i>, an account's cool-off ended early as <c>daoris agent profile ready</c>
+    /// ends it, since the person may know the limit was raised. An account of the door's owner (AGT7) that is cooling, or
+    /// <c>own</c>, the tool's own sign-in, when that is; one not cooling has nothing to end, as the terminal says.
+    /// </summary>
+    private static HelpPlan Ready(HelpProposal proposal, HelpMachineFacts facts)
+    {
+        var name = proposal.Target?.Trim() ?? "";
+        if (facts.Doors.FirstOrDefault(each => string.Equals(each.Name, name, StringComparison.Ordinal)) is not { } door)
+        {
+            return new HelpPlan($"there is no agent `{name}` on this machine — one of {Names(facts.Doors.Select(each => each.Name))}.", "", "", null);
+        }
+
+        var owner = door.AccountsOf;
+        var account = proposal.ReadyAccount?.Trim() ?? "";
+        var own = account == OwnSignIn;
+        var terminal = $"daoris agent profile ready {owner} " + (own ? "--own" : ShellWord.Of(account, ShellWord.Account));
+        HelpPlan Refused(string why) => new(why, "", terminal, null);
+
+        if (account.Length == 0)
+        {
+            return Refused($"`ready` names the account whose cool-off ends, or `{OwnSignIn}` for the tool's own sign-in.");
+        }
+
+        if (!own && !door.Accounts.Contains(account, StringComparer.Ordinal))
+        {
+            return Refused($"`{owner}` has no account `{account}` on this machine — accounts that exist: "
+                + (door.Accounts.Count > 0 ? string.Join(", ", door.Accounts) : "(none)"));
+        }
+
+        var cooling = facts.Cooling.Where(each => string.Equals(each.Agent, owner, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (!cooling.Any(each => own ? string.IsNullOrEmpty(each.Account) : string.Equals(each.Account, account, StringComparison.OrdinalIgnoreCase)))
+        {
+            var who = own ? $"`{owner}`'s own sign-in" : $"`{account}`";
+            return Refused($"{who} is not cooling, so there is nothing to end — "
+                + (cooling.Count > 0
+                    ? $"cooling now: {string.Join(", ", cooling.Select(each => string.IsNullOrEmpty(each.Account) ? "its own sign-in" : $"`{each.Account}`"))}."
+                    : $"no account of `{owner}` is cooling."));
+        }
+
+        return new HelpPlan(null,
+            $"Try {(own ? $"`{owner}`'s own sign-in" : $"`{account}`")} now: its cool-off ends, so starts may run on it again. If the limit "
+            + "still holds, the agent refuses the next start at once and the account cools again.",
+            terminal, null);
+    }
+
+    /// <summary>What a <c>ready</c> names for the tool's own sign-in, as the service's writer and the terminal's <c>--own</c> do.</summary>
+    private const string OwnSignIn = "own";
+
     private static string? OwnDefault(HarnessSettings? wiring, string owner, string? workspace) =>
         wiring is null ? null
         : (workspace is null
@@ -397,6 +447,29 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
     {
         var (proposal, plan, id) = (applying.Proposal, applying.Plan, applying.Id);
         var harness = proposal.Target!.Trim();
+        if (proposal.Door == "ready")
+        {
+            var account = proposal.ReadyAccount?.Trim() is { } named && named != OwnSignIn ? named : null;
+            bool ended;
+            try
+            {
+                ended = await applying.Doors.ReadyAccountAsync(harness, account, ct).ConfigureAwait(false);
+            }
+            catch (DriverException error)
+            {
+                return applying.Settled(false, $"Not applied: `#{id}` (`{plan.Terminal}`) — {error.Message}", error.Message);
+            }
+
+            // Cooling at the judge and not at the press: the file moved between, so nothing was changed (as the terminal says).
+            if (!ended)
+            {
+                const string passed = "it is not cooling any more, so nothing changed.";
+                return applying.Settled(false, $"Not applied: `#{id}` (`{plan.Terminal}`) — {passed}", passed);
+            }
+
+            return applying.Settled(true, $"Applied: `#{id}` — {plan.Describe} (`{plan.Terminal}`)", null);
+        }
+
         if (proposal.Door == "order")
         {
             var order = proposal.AccountOrder ?? new AccountOrder([], false);
@@ -493,6 +566,12 @@ public partial interface IHelpDoors
     /// (<c>inherit</c>); refused as the screen refuses it and written as it writes it.
     /// </summary>
     Task SetAccountOrderAsync(string harness, IReadOnlyList<string> accounts, bool clear, string? workspace, CancellationToken ct);
+
+    /// <summary>
+    /// <c>ACCOUNT_USE</c>'s own <c>ready</c> (TOOL4l-b): <i>Try now</i>, an account's cool-off ended, or the tool's own sign-in's
+    /// where <paramref name="account"/> is null; true when it was cooling, then the loop asked to look.
+    /// </summary>
+    Task<bool> ReadyAccountAsync(string harness, string? account, CancellationToken ct);
 }
 
 /// <summary>The <c>order</c> door's fields (TOOL4l-b): the list in walk order, or a workspace's list cleared.</summary>

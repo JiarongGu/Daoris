@@ -411,6 +411,15 @@ public sealed partial class DriverModule
             return Task.CompletedTask;
         }
 
+        // ACCOUNT_USE's own `ready` (TOOL4l-b): *Try now*, the loop's own end of a cool-off, then the loop asked to look so an account
+        // offered again takes a waiting start now, not at the next poll.
+        public Task<bool> ReadyAccountAsync(string harness, string? account, CancellationToken ct)
+        {
+            var ended = module._loop.Harnesses.Ready(harness, account);
+            module._loop.Nudge();
+            return Task.FromResult(ended);
+        }
+
         // TREES_SYNC_PLAN's own list (HELP10, WSR6): the same checkouts and sessions, and each line fetched as the person,
         // whose press this is — the look on Ask Daoris's card, never its proposal (D109).
         // It takes what the screen's look takes (D112): the repositories holding Daoris's branches, and the one a card names.
@@ -595,6 +604,8 @@ public sealed partial class DriverModule
                 })],
                 // A default's scope and a use's list, as ACCOUNT_USE and profile-default read them (TOOL4g).
                 Wiring = settings,
+                // The cool-offs a ready's judge reads, as the account rows show them (TOOL4l-b).
+                Cooling = AccountCooling.Read(_loop.Home, DateTimeOffset.UtcNow),
             };
         }
 
