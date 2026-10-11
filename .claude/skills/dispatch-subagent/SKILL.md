@@ -45,7 +45,8 @@ and say which you saw fail; commit each piece once its tests pass. A component's
 its README asks the README to describe the change (the docs gate). New words on the page run `src/locales`' tests too:
 `names:check --strict` does not hold a sentence's glossary words, `names.test.ts` does (WORKFLOW1h-d's 这台机器).
 A control moved or renamed runs the whole web suite, not only the touched files: other views' tests press it by name
-(HEAD2d's *Pause…*, pressed in QuestsView.work.test.tsx).
+(HEAD2d's *Pause…*, pressed in QuestsView.work.test.tsx). An archive entry is appended at the file's end, after one
+blank line, in its neighbours' shape (`## ROW — title (date, Dn)`, the quoted row, `**Outcome** date: …`).
 Orientation pack:
 <the scout's pack, as it came back, with any pointer you corrected marked>
 ```
