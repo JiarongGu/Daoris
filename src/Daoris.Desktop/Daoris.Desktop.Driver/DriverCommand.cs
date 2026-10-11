@@ -75,6 +75,9 @@ public static class DriverCommand
               say what you saw of a set-up step's showing: reviewed lets the work it holds land; not-yet, with your
               words, sends them to the step's session as its next turn; skip lets this work land without a review.
           quest review <id> off ["…"]  ·  quest review <id> on|<environment>
+          ask … --short "…"
+              name a new ask in a list by a short title, at most 40 characters on one line: the service judges it, as the
+              composer's field is judged.
           ask … --review rule|on|<environment>|off [--review-words "…"]
           ask --set-review <id> on|<environment>|off ["…"]
               choose whether work is reviewed before it lands, and where: a done quest's at its gate, where off is the

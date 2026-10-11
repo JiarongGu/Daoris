@@ -43,7 +43,7 @@ public sealed class HelpRoomDoorsTests
             "daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--early on|off] [--near <percent>] "
                 + "[--workspace <name>]",
             // REVIEWENV1j (D154 point 3, D50): the person's review choice, the composer's, the ask page's and the gate's.
-            "daoris-driver ask … --review rule|on|<environment>|off", "daoris-driver ask --set-review <id> on|<environment>|off",
+            "daoris-driver ask … --short \"…\"", "daoris-driver ask … --review rule|on|<environment>|off","daoris-driver ask --set-review <id> on|<environment>|off",
             "daoris-driver quest review <quest> off [\"…\"]", "daoris-driver quest review <quest> on|<environment>",
             // WORKFLOW1e (D157 point 10): which workflow work follows and a workspace's kinds, and an ask's kind and workflow.
             "daoris driver workflow use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>]",

@@ -119,6 +119,25 @@ public sealed class HelpAskProposalsTests : HelpProposalsFixture
         Assert.Contains("Applied", ask.Told);
     }
 
+    /// <summary>HEAD2e2: the card's terminal line says the short title as the terminal takes it, after the review flags, quoted for any shell.</summary>
+    [Theory]
+    [InlineData(null, null, "")]
+    [InlineData("  ", null, "")]
+    [InlineData("Cold-cache stall", null, " --short \"Cold-cache stall\"")]
+    [InlineData("Stall", null, " --short Stall")]
+    [InlineData("Say \"hi\"", "dev", " --short <title>")]
+    public void An_asks_short_title_is_said_on_the_terminal_line(string? title, string? review, string said)
+    {
+        var ask = new HelpProposal("p11", "ask", "ask", null, "work", null, "add the compare setting", "why", "h1", "proposed")
+        {
+            Review = review,
+            ShortTitle = title,
+        };
+
+        var flags = review is null ? "" : "--review dev ";
+        Assert.Equal($"daoris-driver ask --workspace work {flags}\"add the compare setting\"{said}", HelpProposals.Plan(ask, DriverConfig.Empty, Facts).Terminal);
+    }
+
     /// <summary>ENTRY1c: the ask door hears the choice and the words as the composer sends them.</summary>
     [Fact]
     public async Task An_asks_review_choice_is_applied_through_the_ask_door()
