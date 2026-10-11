@@ -400,6 +400,69 @@ public sealed class BackgroundNotesTests
     }
 }
 
+/// <summary>CONVNOTE2e: a conversation's door that failed, by code; the English as it was written.</summary>
+public sealed class DoorNotesTests
+{
+    [Fact]
+    public void A_door_or_turn_that_failed_codes_its_lead_and_leaves_the_programs_words_as_theirs()
+    {
+        var open = DoorNotes.NotOpen("could not read D:/x/session.json");
+        Assert.Equal("the ACP session could not open: could not read D:/x/session.json", open.Note);
+        Assert.Equal(["door.not-open", null], NoteAssert.Codes(open.Parts));
+        Assert.Equal((NoteBy.Program, "could not read D:/x/session.json"), (open.Parts[1].By, open.Parts[1].Words));
+        NoteAssert.Holds(open);
+
+        var turn = DoorNotes.TurnNotTaken("the ACP agent refused the call: Authentication required");
+        Assert.Equal("the turn could not be taken: the ACP agent refused the call: Authentication required", turn.Note);
+        Assert.Equal(["door.turn-not-taken", null], NoteAssert.Codes(turn.Parts));
+        Assert.Equal(NoteBy.Program, turn.Parts[1].By);
+        NoteAssert.Holds(turn);
+
+        var failed = DoorNotes.Failed("the stream ended");
+        Assert.Equal("— the ACP session failed: the stream ended", failed.Note);
+        Assert.Equal(["door.failed", null], NoteAssert.Codes(failed.Parts));
+        Assert.Equal(NoteBy.Program, failed.Parts[1].By);
+        NoteAssert.Holds(failed);
+
+        // An exception with no message still writes the English it always did, and no empty words part.
+        Assert.Equal("the turn could not be taken: ", DoorNotes.TurnNotTaken("").Note);
+        Assert.Equal(["door.turn-not-taken"], NoteAssert.Codes(DoorNotes.TurnNotTaken("").Parts));
+    }
+
+    /// <summary>
+    /// The refusal is Daoris's own sentence from its <see cref="ContinueReason"/>: one code whose <c>why</c> is the reason by the
+    /// <c>Continue</c> family, the page's <c>work.say.why.*</c>, then the agent's words where it refused in any.
+    /// </summary>
+    [Theory]
+    [InlineData(ContinueWhy.Gone, null)]
+    [InlineData(ContinueWhy.Offered, null)]
+    [InlineData(ContinueWhy.Refused, "Internal error: thread D:/x busy")]
+    [InlineData(ContinueWhy.Elsewhere, "thread held by another client")]
+    public void A_refused_resume_says_its_reason_by_the_continue_family_with_the_english_as_its_refusal(string code, string? words)
+    {
+        var refused = new AcpResumeRefused(ContinueWhy.Of(code), words);
+
+        var chat = DoorNotes.ResumeRefused(refused, ranOn: "codex-acp");
+        Assert.Equal($"— {refused.Message}.", chat.Note);
+        string?[] said = words is null ? ["door.resume-refused"] : ["door.resume-refused", null];
+        Assert.Equal(said, NoteAssert.Codes(chat.Parts));
+        Assert.Equal(ContinueWhy.Of(code).Sentence, chat.Parts[0].Text);
+        Assert.Equal(code, chat.Parts[0].Value("why"));
+        // Elsewhere's line names the agent it ran on, as every line of the family does (NoteCodes.Reason).
+        Assert.Equal(code == ContinueWhy.Elsewhere ? "codex-acp" : null, chat.Parts[0].Value("agent"));
+        if (words is not null) Assert.Equal((NoteBy.Agent, words), (chat.Parts[1].By, chat.Parts[1].Words));
+        NoteAssert.Holds(chat);
+
+        var answer = DoorNotes.AnswerCarriedOn(refused, ranOn: "codex-acp");
+        Assert.Equal($"— {refused.Message}; your answer is carried on in a new session.", answer.Note);
+        string?[] carried = words is null
+            ? ["door.resume-refused", "door.answer-carried-on"]
+            : ["door.resume-refused", null, "door.answer-carried-on"];
+        Assert.Equal(carried, NoteAssert.Codes(answer.Parts));
+        NoteAssert.Holds(answer);
+    }
+}
+
 /// <summary>AGT3c: a words part a coded line will say as facts leaves the note, its space with it, and nothing else does.</summary>
 public sealed class NoteUnsaidTests
 {
