@@ -37,7 +37,7 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `git` | `Program.cs:240` | `Daoris.Desktop.Driver.Host/GitConsole.cs:9` GitConsole | branches |
 | `workflow` | `Program.cs:247` | `Daoris.Desktop.Driver.Host/WorkflowConsole.cs:10` WorkflowConsole | run · keep `WorkflowConsole.cs:14` |
 | `chat` | `Program.cs:274` | `Daoris.Desktop.Driver.Host/ChatConsole.cs:28` ChatConsole | — |
-| `ask` | `Program.cs:281` | `Daoris.Desktop.Driver.Host/WorkConsole.cs:10` WorkConsole; `Daoris.Desktop.Driver.Host/HistoryConsole.cs:11` HistoryConsole; `Daoris.Desktop.Driver.Host/AskConsole.cs:37` AskConsole | — |
+| `ask` | `Program.cs:281` | `Daoris.Desktop.Driver.Host/WorkConsole.cs:10` WorkConsole; `Daoris.Desktop.Driver.Host/HistoryConsole.cs:11` HistoryConsole; `Daoris.Desktop.Driver.Host/AskConsole.cs:40` AskConsole | — |
 | `setup` | `Program.cs:303` | `Daoris.Desktop.Driver.Host/SetupConsole.cs:9` SetupConsole | — |
 | `register` | `Program.cs:310` | `Daoris.Desktop.Driver.Host/RegisterConsole.cs:8` RegisterConsole | — |
 | `opinion` | `Program.cs:317` | `Daoris.Desktop.Driver.Host/OpinionConsole.cs:8` OpinionConsole | ask `OpinionCommand.cs:68` · show `OpinionCommand.cs:61` · stop `OpinionCommand.cs:61` · anyway `OpinionCommand.cs:66` · myself `OpinionCommand.cs:66` |
@@ -52,7 +52,7 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `update` | `Program.cs:441` | `Daoris.Desktop.Driver/UpdateCommand.cs:19` UpdateCommand | — |
 | `logs` | `Program.cs:451` | `Daoris.Desktop.Driver.Host/LogsConsole.cs:18` LogsConsole | — |
 | `plugins` | `Program.cs:458` | `Daoris.Desktop.Driver/PluginsCommand.cs:25` PluginsCommand | install `Program.cs:434` · new `PluginsCommand.cs:47` · try `PluginsCommand.cs:47` · show `PluginsCommand.cs:49` · activity `PluginsCommand.cs:51` |
-| `drive` | `Program.cs:262` | `Daoris.Desktop.Driver/DriverCommand.cs:184` DriverCommand.Read | — |
+| `drive` | `Program.cs:262` | `Daoris.Desktop.Driver/DriverCommand.cs:187` DriverCommand.Read | — |
 
 ## `daoris-devkit`
 

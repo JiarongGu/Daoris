@@ -13705,3 +13705,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **NEW1b — New conversation, the prompt first** (web; after a). Sessions' main area, when nothing is attended and from *New conversation* (Ctrl+N, File menu, the list head): the prompt, then the repository, tree and agent·account chips, *Start*; Enter starts with the words; a browser says to open Daoris on this machine. Replaces the *Start session* drawer. Design §1.
 
 **Outcome** 2026-10-12: `NewConversation` replaced the *Start session* drawer: the prompt, a repository combobox (recent first, then each workspace's), the three-way tree menu and the agent·account menu, *Start* on Enter with the words, files and a request id; Ctrl+N and Workspace › *New conversation…* open it, *New ask…* moved to Ctrl+Shift+N. The checkout's branch on the tree chip is NEW1e; the room's old place name rides with NEW1d. Detail: D162's NEW1b note.
+
+## HEAD2e2 — the ask command takes a short title (2026-10-12, D162)
+
+> - [ ] **HEAD2e2 — the ask command takes a short title** (driver). `daoris-driver ask` has no `--short`, so Ask Daoris's ask card says its short title on the page and not in its terminal line (HEAD2e). Add `--short "…"`, judged by `QuestTitles.Judge`, and the card's twin. D162's HEAD2e note; CLI and twin tests.
+
+**Outcome** 2026-10-12: `daoris-driver ask … --short "…"` sends the title as typed and prints the service's refusal (`AskRefusal.BadShort`), so the driver holds no second judge; beside another verb it is a usage problem. The ask card's terminal line and the room's ask door name it. Detail: D162's HEAD2e2 note.

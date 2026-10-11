@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris-driver ask` takes `--short "…"`, the ask's short title the composer's field gives, and Ask Daoris's ask card
+  says it in its terminal line.
+
 - A session that goes on with your answer no longer stops to ask you again while its own background work (a build, the
   gates) still runs: it waits for that work to end and goes on, as a new session already did.
 

@@ -279,7 +279,7 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "environment, in one its workspace declares, or not at all; at a done quest's gate, skip the review or set it up",
             "Quests → Ask → Review before it lands, and the ask's page; the gate's *Skip the review for this work…* and "
             + "*Set it up in `<environment>`*",
-            "`daoris-driver ask … --review rule|on|<environment>|off`, `daoris-driver ask --set-review <id> on|<environment>|off "
+            "`daoris-driver ask … --short \"…\"`, `daoris-driver ask … --review rule|on|<environment>|off`, `daoris-driver ask --set-review <id> on|<environment>|off "
             + "[\"…\"]`, `daoris-driver quest review <quest> off [\"…\"]`, `daoris-driver quest review <quest> on|<environment>`"),
         // WORKFLOW1c4: the run (WORKFLOW1c's view, line and door; WORKFLOW1c2's verb; the workflow design §7). Exempt from Ask
         // Daoris, since it reads (D157, D110 §4); each press a waiting step needs is a row of its own owner's.

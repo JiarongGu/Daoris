@@ -10,6 +10,7 @@ namespace Daoris.Driver.Host;
 /// daoris-driver ask --close &lt;id&gt; --reason "…"
 /// daoris-driver ask --delete &lt;id&gt;
 /// daoris-driver ask --go-ahead &lt;id&gt; &lt;n&gt; approve|refuse ["…"]
+/// daoris-driver ask … --short "…"
 /// daoris-driver ask … --review rule|on|&lt;environment&gt;|off [--review-words "…"]
 /// daoris-driver ask --set-review &lt;id&gt; on|&lt;environment&gt;|off ["…"]
 /// daoris-driver ask … --kind &lt;kind&gt; [--workflow &lt;id&gt;|current] [--workflow-words "…"]
@@ -26,6 +27,8 @@ namespace Daoris.Driver.Host;
 /// <para><c>--kind</c> and <c>--workflow</c> say what kind of task a new ask is and which workflow its work follows, as the composer
 /// will; <c>--set-workflow</c> changes an ask's, or clears it with <c>--clear</c> (WORKFLOW1e). The person's door: the window confirms a
 /// keyless call. The judgement is the library's (<see cref="AskWorkflowCommand"/>).</para>
+/// <para><c>--short</c> names a new ask in a list by a short title, as the composer's field does (HEAD2e2). It is sent as typed: the
+/// service judges it, and its sentence is printed, so the driver holds no second judge.</para>
 /// <para>The service answers with the tier that answered — by declarations only, with no intake
 /// harness, which proposes and publishes nothing; or the receiver named with <c>--to</c>, published
 /// at once. The answer is printed verbatim: it is the contract, and a rewording here would be a second
@@ -41,6 +44,7 @@ internal static class AskConsole
         string? workspace = null, to = null, publish = null, close = null, reason = null, delete = null, goAhead = null;
         string? review = null, reviewWords = null, setReview = null;
         string? kind = null, workflow = null, workflowWords = null, setWorkflow = null;
+        string? shortTitle = null;
         var clearWorkflow = false;
         var files = new List<string>();
         var links = new List<string>();
@@ -61,6 +65,8 @@ internal static class AskConsole
                 case "--delete": delete = Value(); break;
                 case "--go-ahead": goAhead = Value(); break;
                 case "--reason": reason = Value(); break;
+                // HEAD2e2: the composer's short title.
+                case "--short": shortTitle = Value(); break;
                 // REVIEWENV1j: the composer's review choice, and the ask page's.
                 case "--review": review = Value(); break;
                 case "--review-words": reviewWords = Value(); break;
@@ -81,6 +87,11 @@ internal static class AskConsole
             if ((review ?? reviewWords) is not null && (publish ?? close ?? delete ?? goAhead ?? setReview) is not null)
             {
                 return Usage("--review goes with a new ask's words; --set-review <id> changes an ask's review choice");
+            }
+
+            if (shortTitle is not null && (publish ?? close ?? delete ?? goAhead ?? setReview ?? setWorkflow) is not null)
+            {
+                return Usage("--short goes with a new ask's words: an ask's title is given when it is asked");
             }
 
             // A kind and a workflow go with a new ask's words or --set-workflow; --clear only with --set-workflow, since `ask --clear <id>`
@@ -182,7 +193,8 @@ internal static class AskConsole
             }
 
             return Report(await service.AskAsync(
-                workspace ?? "default", sentence, links, read, to, review: composed.Choice, reviewWords: composed.Words, workflow: chosenWorkflow)
+                workspace ?? "default", sentence, links, read, to, review: composed.Choice, reviewWords: composed.Words, workflow: chosenWorkflow,
+                shortTitle: shortTitle)
                 .ConfigureAwait(false));
         }
         catch (DriverException error)
@@ -213,6 +225,7 @@ internal static class AskConsole
         Console.Error.WriteLine("       daoris-driver ask --close <id> --reason \"…\"");
         Console.Error.WriteLine("       daoris-driver ask --delete <id>");
         Console.Error.WriteLine("       daoris-driver ask --go-ahead <id> <n> approve|refuse [\"…\"]");
+        Console.Error.WriteLine("       daoris-driver ask … --short \"…\"");
         Console.Error.WriteLine("       daoris-driver ask … --review rule|on|<environment>|off [--review-words \"…\"]");
         Console.Error.WriteLine("       daoris-driver ask --set-review <id> on|<environment>|off [\"…\"]");
         Console.Error.WriteLine("       daoris-driver ask … --kind <kind> [--workflow <id>|current] [--workflow-words \"…\"]");

@@ -20,6 +20,9 @@ internal sealed class HelpAskProposals : IHelpProposalKind
     /// <summary>The words with a review choice, where no spelling holds in every shell.</summary>
     private const string WordsPlaceholder = "<words>";
 
+    /// <summary>The short title (HEAD2e2), where no spelling holds in every shell.</summary>
+    private const string TitlePlaceholder = "<title>";
+
     public string Kind => "ask";
 
     public string Tool => "ask_propose";
@@ -41,7 +44,9 @@ internal sealed class HelpAskProposals : IHelpProposalKind
         // ACCTQUOTE1b: the workspace spelled for any shell, as every command the driver names spells it.
         var terminal = $"daoris-driver ask --workspace {ShellWord.Of(workspace, ShellWord.Workspace)} "
             + ReviewFlags(proposal.Review, proposal.ReviewWords)
-            + $"\"{sentence.Replace("\"", "\\\"", StringComparison.Ordinal)}\"";
+            + $"\"{sentence.Replace("\"", "\\\"", StringComparison.Ordinal)}\""
+            // HEAD2e2: the terminal's own `--short`, where the card says a short title.
+            + (string.IsNullOrWhiteSpace(proposal.ShortTitle) ? "" : $" --short {ShellWord.Of(proposal.ShortTitle.Trim(), TitlePlaceholder)}");
         // HEAD2e: the short title the ask is named by in a list, said on the card (the box already judged it as the quest's rule does).
         var titled = string.IsNullOrWhiteSpace(proposal.ShortTitle) ? "" : $" with short title “{proposal.ShortTitle.Trim()}”";
         var describe = $"Ask at workspace `{workspace}`: “{sentence}”{titled}{Said(composed)}";
