@@ -1667,7 +1667,7 @@ describe('starting and holding a conversation', () => {
     const rail = await screen.findByRole('navigation', { name: 'Sessions' });
     await waitFor(() => expect(within(rail).getByText('idle')).toBeInTheDocument());
     // The word is the page header's since SESSUX1d (D126 §3.2): its pill moved up from the record head.
-    const head = screen.getByRole('heading', { level: 1 }).parentElement!;
+    const head = screen.getByRole('heading', { level: 1 }).closest('header')!;
     expect(within(head).getByText('idle')).toBeInTheDocument();
 
     act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 'c0ffee11', queued: [], taking: true }));

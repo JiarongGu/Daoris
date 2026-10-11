@@ -180,18 +180,60 @@ describe('the attended session\'s head', () => {
    * UX7c (D152 §7): under a page header that says the title, the record does not say it again; where the header showed the
    * quest's short title (SESSUX1j), the record says the whole title once, at body size. The id is in *Details* alone.
    */
-  it('under a header says the whole title once, only where the header showed a short title', () => {
+  it('under a header says no title at all, not even the whole one of a short-titled quest (HEAD2c)', () => {
     const { rerender } = render(<SessionHead session={session()} quest={quest()} headed />);
     expect(screen.queryByRole('heading', { level: 2 })).toBeNull();
     expect(screen.queryByText('Expose a streaming budget on the chunk API')).toBeNull();
     expect(screen.queryByText('working')).toBeNull();
 
     rerender(<SessionHead session={session()} quest={quest({ short: 'Streaming budget' })} headed />);
-    const whole = screen.getByText('Expose a streaming budget on the chunk API');
-    expect(whole.tagName).toBe('P');
-    expect(whole.className).toContain('line-clamp-2');
+    expect(screen.queryByText('Expose a streaming budget on the chunk API')).toBeNull();
     expect(screen.queryByText('Streaming budget')).toBeNull();
     expect(screen.queryByText('s1a2b3c4')).toBeNull();
+  });
+
+  /**
+   * HEAD2c (D162 point 3, the entry-and-heads design §2): the request as written is a row of *Details*, whole, with the
+   * quest's door; a conversation with no quest puts its whole opening there when the header's one line cut it.
+   */
+  it('holds the request as written in Details, with the quest’s door', () => {
+    const onOpenQuest = vi.fn();
+    render(<SessionHead session={session()} quest={quest({ short: 'Streaming budget' })} headed onOpenQuest={onOpenQuest} />);
+    details();
+    const row = screen.getByText('Request').nextElementSibling as HTMLElement;
+    expect(within(row).getByText('Expose a streaming budget on the chunk API')).toBeInTheDocument();
+    fireEvent.click(within(row).getByRole('button', { name: 'Open quest #7a82cc' }));
+    expect(onOpenQuest).toHaveBeenCalledWith(expect.objectContaining({ id: '7a82cc' }));
+  });
+
+  it('draws no door where nothing can open the quest, and no Request row where the session has no quest to say', () => {
+    const { rerender } = render(<SessionHead session={session()} quest={quest()} headed />);
+    details();
+    expect(screen.getByText('Request')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Open quest/ })).toBeNull();
+
+    rerender(<SessionHead session={session({ quest: null, kind: 'chat' })} opening="Fix it" headed />);
+    expect(screen.queryByText('Request')).toBeNull();
+  });
+
+  it('puts a conversation’s whole opening in Details where the header’s line cut it', () => {
+    const LONG = 'Walk me through why the chunk hydrator drops frames when the budget is exceeded, and then propose a fix for it';
+    render(<SessionHead session={session({ quest: null, kind: 'chat' })} opening={LONG} headed />);
+    details();
+    expect(within(screen.getByText('Request').nextElementSibling as HTMLElement).getByText(LONG)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Open quest/ })).toBeNull();
+  });
+
+  it('says the request in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      render(<SessionHead session={session()} quest={quest()} headed onOpenQuest={vi.fn()} />);
+      details();
+      expect(screen.getByText('请求')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '打开委托 #7a82cc' })).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   /** UX5 U17: the head says a live chat between turns is idle, as the rail does. */

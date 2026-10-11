@@ -13675,3 +13675,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **HEAD2b — a quest's head** (web; after a). Title two lines, *View full request* moves focus to the request in the body; *Held*/*Unreviewed* to the facts line; facts: where, age, one live fact, the rest in *Details*. Design §2.
 
 **Outcome** 2026-10-12: the quest's state pill alone leads; *Awaits your yes* and *awaits review* open the facts line, then where, its age and one live fact (the requester in *Details*); *Take*/*Mark done* in `acts`, *Decline…* in `fold` and, at 640 px or less (measured as the ⋯ opens, since the menu is a portal), in the ⋯; *View full request* past 80 characters focuses the request block. Detail: D162's HEAD2b note.
+
+## HEAD2c — a session's head (2026-10-12, D162)
+
+> - [ ] **HEAD2c — a session's head** (web; after a). One line; `WholeTitle` goes, the request as written is a *Details* row with the quest's door; facts: repository, age, one state fact. Design §2.
+
+**Outcome** 2026-10-12: `SessionPageHead` draws `PageHead` in its sticky box: the title on one line, the state pill leading, the loud act and *Stop…* never folded; `WholeTitle` is gone and *Details* gains *Request* (the quest's whole title and *Open quest #id*, or a long opening); the facts are the repository, its age and one state fact, the account in *Details*. Detail: D162's HEAD2c note.

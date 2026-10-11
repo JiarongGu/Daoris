@@ -30,21 +30,13 @@ export type SessionFactsOf = {
 };
 
 /**
- * The account it ran as, as the head says it: the profile it names, by the person's name for it (ACCTNAME1, D152 §4.2), or
- * the tool's own sign-in where it names none. The record keeps the id; the name is looked up as the head is drawn.
+ * A session's facts line by its shown state (the UX7 design §5.2's table, as HEAD2c amends it): its repository first, then
+ * its age and the one fact its state makes matter. A live session's age, and how many failed before it where its quest's
+ * earlier sessions failed; what holds it, from the row's own line where the reader placed it (which names a cooling
+ * account); an ended one's landing and how long it ran. An intake says its ask. The account is *Details*' (ACCTNAME1 names
+ * it there). Nothing it has nothing to say: an absent fact is left out, never a dash.
  */
-function account(t: TFunction, session: Session, ownSignIn: boolean, nameOf?: AccountNamer): string | null {
-  if (session.profile) return nameOf ? nameOf(session.adapter, session.profile) : session.profile;
-  return ownSignIn ? t('quests.session.ownSignIn') : null;
-}
-
-/**
- * A session's facts line by its shown state (the UX7 design §5.2's table): its repository first, then what its state
- * makes matter. A live session's account and how long it has run, and how many failed before it where its quest's
- * earlier sessions failed; what holds it, from the row's own line where the reader placed it; an ended one's landing and
- * how long it ran. An intake says its ask. Nothing it has nothing to say: an absent fact is left out, never a dash.
- */
-export function sessionFacts(t: TFunction, { session, shown, grouping, ownSignIn = false, branch, nameOf }: SessionFactsOf): string[] {
+export function sessionFacts(t: TFunction, { session, shown, grouping, branch }: SessionFactsOf): string[] {
   if (isIntake(session)) return [t('work.scope.ask', { id: session.ask }), t('work.intake.kind')];
 
   const facts: (string | null)[] = [session.repository];
@@ -66,8 +58,8 @@ export function sessionFacts(t: TFunction, { session, shown, grouping, ownSignIn
   }
 
   if (running) {
-    facts.push(account(t, session, ownSignIn, nameOf));
-    if (session.kind !== 'chat') facts.push(elapsed(session.created));
+    // HEAD2c (D162): the account is *Details*'. Where it explains a hold, the row's own line above already says it.
+    facts.push(session.kind === 'chat' ? t('work.facts.started', { ago: ago(session.created) }) : elapsed(session.created));
     // UX7c (D152): the fact that matters most on a retried quest, another try and how many failed before it.
     const failed = typeof grouping?.strikes === 'number' && grouping.strikes > 0 ? grouping.strikes : null;
     if (failed !== null && session.kind !== 'chat') facts.push(t('work.facts.attempt', { count: failed, attempt: failed + 1 }));

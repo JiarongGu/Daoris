@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A quest's, an ask's and a session's title section no longer moves its buttons: a long title takes two lines at most
+  (one for a session) beside a fixed column of actions, and on a narrow window the actions take their own row. An ask's
+  long request is clamped with *View full request*; a session no longer repeats its quest's whole title above the
+  conversation, which moved into its *Details*.
+
 - Ask Daoris can propose a workflow: a new one, or a new version of one on its newest, and optionally choose it for a
   repository or workspace. It is judged as the editor would, said with your part first and what it does without asking
   you, held as a draft while something it needs is missing, and saved only on your Apply. Its room names each

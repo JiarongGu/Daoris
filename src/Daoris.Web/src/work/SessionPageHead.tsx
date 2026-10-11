@@ -4,6 +4,7 @@ import type { Session } from '../api';
 import { Button, Icon, Inline, Menu, Pill, SESSION_TONE, type ShownState, shownKey } from '../ui';
 import { ACT_LOOK, actMenu, headerActs, type SessionActId } from './acts';
 import { type Answered, InlineConfirm } from './InlineConfirm';
+import { PageHead } from './ViewMain';
 
 /**
  * **A session's page header** (SESSUX1d, D126 §3.2): Sessions' main area gains the header every view's chosen item has
@@ -22,8 +23,10 @@ import { type Answered, InlineConfirm } from './InlineConfirm';
  *   then ⋯ with the rest in §3.1's order. *Answer…* is not here: the card under the header keeps the answer.
  * - **What asks under it** (the stop's ask, §3.3; the delete's, §5.4) is pinned with it, since the ask is about the acts
  *   beside it.
- * - **Below 560 px** its acts take their own line under the title, as the plugin page's do (D119 §3.6): by the main
- *   area's width, never the window's.
+ * - **It is `PageHead`'s** (HEAD2c, D162; the entry-and-heads design §2): the title takes one line and the acts hold still,
+ *   a column of their own above 640 px of the main area and a right-aligned row under the facts at or below it, by the
+ *   main area's width, never the window's. *Stop…* stays; it never folds. The quest's whole title is not repeated under the
+ *   head: it is a row of the record's *Details*.
  *
  * **It says how tall it is** to the main area it is pinned in (`--session-head`), so the long run's toolbar (SESS1 S9)
  * pins beneath it rather than under it.
@@ -32,8 +35,8 @@ export function SessionPageHead({ title, shown, facts = [], acts, primary = null
   /** The session it heads, as the frame holds it; its acts and its facts are worked out from it by the frame. */
   session: Session;
   /**
-   * What the session is for, as `sessionTitle` names it (its quest's short title where there is one): one line here,
-   * whole in its tip, and the whole title once under the head where this is not all of it.
+   * What the session is for, as `sessionTitle` names it (its quest's short title where there is one): one line here, whole
+   * in its tip and in the record's *Details*, under the head.
    */
   title: string;
   /** Its facts line (`sessionFacts`), said in this order; none draws no line. */
@@ -52,7 +55,7 @@ export function SessionPageHead({ title, shown, facts = [], acts, primary = null
   asking?: ReactNode;
 }) {
   const { t } = useTranslation();
-  const own = useRef<HTMLElement>(null);
+  const own = useRef<HTMLDivElement>(null);
   const offered = onAct ? acts : [];
   // The one split the page's right-click offers whole (CTX1), so the header and the menu never disagree.
   const { lead, stop, rest } = headerActs(offered, primary);
@@ -75,27 +78,22 @@ export function SessionPageHead({ title, shown, facts = [], acts, primary = null
   return (
     // Pinned across the main area's gutters (`ViewMain`'s session gutters, 16 by 12 px), on the page's own surface so
     // the conversation scrolls under it rather than through it.
-    <header
+    // The sticky box holds PageHead (HEAD2a's grid: the acts hold still by the main area's width) and what asks under it;
+    // PageHead's own bottom margin is the box's padding instead.
+    <div
       ref={own}
-      className="sticky -top-3 z-10 -mx-4 -mt-3 mb-3 border-b border-line bg-page px-4 pb-2.5 pt-3"
+      className="sticky -top-3 z-10 -mx-4 -mt-3 mb-3 border-b border-line bg-page px-4 pb-2.5 pt-3 [&>header]:mb-0"
     >
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-        <div className="min-w-0 flex-1 basis-64">
-          <div className="flex min-w-0 items-baseline gap-2">
-            <span className="shrink-0"><Pill tone={SESSION_TONE[shown]}>{t(shownKey(shown))}</Pill></span>
-            <h1 title={title} className="m-0 min-w-0 truncate text-title font-[650] leading-[1.35]">{title}</h1>
-          </div>
-          {facts.length > 0 && (
-            <p className="m-0 mt-0.5 truncate text-small text-ink-faint" title={facts.join(' · ')}>{facts.join(' · ')}</p>
-          )}
-        </div>
-
-        {offered.length > 0 && (
-          <div
-            role="group"
-            aria-label={t('work.head.acts')}
-            className="flex shrink-0 flex-wrap items-center gap-2 @max-[35rem]/main:basis-full"
-          >
+      <PageHead
+        title={title}
+        clamp={1}
+        lead={<Pill tone={SESSION_TONE[shown]}>{t(shownKey(shown))}</Pill>}
+        facts={facts}
+        // One group names the buttons together, the ⋯ with them (its name is how the page's tests and readers find them), so
+        // the ⋯ is inside `acts` rather than PageHead's `more` slot: the two sit in one flex row either way, and *Stop…* is
+        // never PageHead's `fold`.
+        acts={offered.length > 0 && (
+          <div role="group" aria-label={t('work.head.acts')} className="flex items-center gap-2">
             {lead && (
               <Button variant="primary" disabled={busy} onClick={() => onAct?.(lead)}>{t(ACT_LOOK[lead].label)}</Button>
             )}
@@ -116,10 +114,10 @@ export function SessionPageHead({ title, shown, facts = [], acts, primary = null
             )}
           </div>
         )}
-      </div>
+      />
 
       {asking}
-    </header>
+    </div>
   );
 }
 
