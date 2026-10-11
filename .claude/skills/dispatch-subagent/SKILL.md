@@ -44,6 +44,8 @@ each failing test first and RUN it to watch it fail before writing the code (a c
 and say which you saw fail; commit each piece once its tests pass. A component's sources changed on a later day than
 its README asks the README to describe the change (the docs gate). New words on the page run `src/locales`' tests too:
 `names:check --strict` does not hold a sentence's glossary words, `names.test.ts` does (WORKFLOW1h-d's 这台机器).
+A control moved or renamed runs the whole web suite, not only the touched files: other views' tests press it by name
+(HEAD2d's *Pause…*, pressed in QuestsView.work.test.tsx).
 Orientation pack:
 <the scout's pack, as it came back, with any pointer you corrected marked>
 ```
