@@ -96,6 +96,29 @@ public sealed class HelpAskProposalsTests : HelpProposalsFixture
         Assert.Contains("Applied", ask.Told);
     }
 
+    /// <summary>HEAD2e: the short title is read from the file, said on the card, and carried to the ask door at Apply.</summary>
+    [Fact]
+    public async Task An_asks_short_title_is_read_said_and_applied_through_the_ask_door()
+    {
+        var node = new JsonObject
+        {
+            ["id"] = "p9", ["proposed"] = "2026-10-12T10:00:00.0000000+00:00", ["by"] = new JsonObject { ["session"] = "h1" },
+            ["kind"] = "ask", ["door"] = "ask", ["target"] = null, ["workspace"] = "work", ["value"] = null,
+            ["sentence"] = "start it", ["short"] = "Cold-cache stall", ["review"] = null, ["reviewWords"] = null,
+            ["why"] = "the person asked", ["state"] = "proposed", ["note"] = null,
+        };
+        System.IO.File.WriteAllText(Path.Combine(HelpProposals.FolderOf(_home), "p9.json"), node.ToJsonString());
+        var read = HelpProposals.Find(_home, "p9")!;
+
+        Assert.Equal("Cold-cache stall", read.ShortTitle);
+        Assert.Contains("short title “Cold-cache stall”", HelpProposals.Plan(read, DriverConfig.Empty, Facts).Describe);
+
+        var (ask, asked, _) = await ApplyAsync(read with { Id = "p10" });
+
+        Assert.Equal(["ask work start it [short Cold-cache stall]"], asked.Calls);
+        Assert.Contains("Applied", ask.Told);
+    }
+
     /// <summary>ENTRY1c: the ask door hears the choice and the words as the composer sends them.</summary>
     [Fact]
     public async Task An_asks_review_choice_is_applied_through_the_ask_door()
@@ -113,10 +136,10 @@ public sealed class HelpAskProposalsTests : HelpProposalsFixture
 
 public sealed partial class HelpStandInDoors
 {
-    public Task<AskAnswer> AskAsync(string workspace, string sentence, string? review, string? reviewWords, CancellationToken ct)
+    public Task<AskAnswer> AskAsync(string workspace, string sentence, string? review, string? reviewWords, CancellationToken ct, string? shortTitle = null)
     {
         var chosen = review is null ? "" : $" [review {review}{(reviewWords is null ? "" : $": {reviewWords}")}]";
-        Calls.Add($"ask {workspace} {sentence}{chosen}");
+        Calls.Add($"ask {workspace} {sentence}{chosen}{(shortTitle is null ? "" : $" [short {shortTitle}]")}");
         return Task.FromResult(new AskAnswer(true, "Asked.", "a1", null));
     }
 }

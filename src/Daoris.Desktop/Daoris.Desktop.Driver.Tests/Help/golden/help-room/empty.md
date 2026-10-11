@@ -38,7 +38,8 @@ present it as the tree.
   `across` takes `read on|off|--clear` for a repository or a whole workspace,
   or `write-to <other> [--clear]` for a repository, to let its sessions write into the other's checkout, one way.
   Applying a write-to is the person's standing say-so for writing across, and its card says so.
-- `ask_propose`: something to start, as an ask at a workspace.
+- `ask_propose`: something to start, as an ask at a workspace, with an optional short title (at most 40 characters,
+  the few words that tell it apart in a list, the person's own where they gave one).
 - `agent_propose`: an agent's Update or a pin to one version, as Agents → the agent's page → Ways in offers them,
   or which of its accounts it runs as by default, for the machine or one workspace (`default`,
   the account one the room lists under that agent).

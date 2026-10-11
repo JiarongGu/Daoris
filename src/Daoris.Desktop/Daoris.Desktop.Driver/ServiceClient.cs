@@ -502,14 +502,17 @@ public sealed partial class ServiceClient : IDisposable
     /// The person's kind and workflow for its work (WORKFLOW1e; the workflow design §4.3), as the composer sends them; null sends
     /// none, and each repository's choice decides.
     /// </param>
+    /// <param name="shortTitle">The ask's short title (HEAD2e), at most 40 characters; null sends none.</param>
     public Task<AskAnswer> AskAsync(
         string workspace, string sentence, IReadOnlyList<string> links,
         IReadOnlyList<(string Name, byte[] Content)> files, string? to, CancellationToken ct = default,
-        string? review = null, string? reviewWords = null, AskWorkflowComposed? workflow = null) =>
+        string? review = null, string? reviewWords = null, AskWorkflowComposed? workflow = null, string? shortTitle = null) =>
         PostAskAsync("/api/asks", writer =>
         {
             writer.WriteString("workspace", workspace);
             writer.WriteString("sentence", sentence);
+            // HEAD2e: written only where given, so an ask that gives none reads as it always did.
+            if (!string.IsNullOrWhiteSpace(shortTitle)) writer.WriteString("short", shortTitle.Trim());
             writer.WriteStartArray("links");
             foreach (var link in links) writer.WriteStringValue(link);
             writer.WriteEndArray();

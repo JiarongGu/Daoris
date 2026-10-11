@@ -30,6 +30,7 @@ internal sealed class HelpAskProposals : IHelpProposalKind
     {
         Review = Text(file, "review"),
         ReviewWords = Text(file, "reviewWords"),
+        ShortTitle = Text(file, "short"),
     };
 
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
@@ -41,7 +42,9 @@ internal sealed class HelpAskProposals : IHelpProposalKind
         var terminal = $"daoris-driver ask --workspace {ShellWord.Of(workspace, ShellWord.Workspace)} "
             + ReviewFlags(proposal.Review, proposal.ReviewWords)
             + $"\"{sentence.Replace("\"", "\\\"", StringComparison.Ordinal)}\"";
-        var describe = $"Ask at workspace `{workspace}`: “{sentence}”{Said(composed)}";
+        // HEAD2e: the short title the ask is named by in a list, said on the card (the box already judged it as the quest's rule does).
+        var titled = string.IsNullOrWhiteSpace(proposal.ShortTitle) ? "" : $" with short title “{proposal.ShortTitle.Trim()}”";
+        var describe = $"Ask at workspace `{workspace}`: “{sentence}”{titled}{Said(composed)}";
         if (sentence.Length == 0) return new HelpPlan("an ask needs its words.", describe, terminal, null);
         if (!facts.Workspaces.Contains(workspace, StringComparer.OrdinalIgnoreCase))
         {
@@ -59,8 +62,8 @@ internal sealed class HelpAskProposals : IHelpProposalKind
         var proposal = applying.Proposal;
         // A refused plan never reaches Apply (HelpProposals.ApplyAsync), so the choice is one Compose took.
         var review = AskReviewCommand.Compose(proposal.Review, proposal.ReviewWords, out _)!;
-        var answer = await applying.Doors.AskAsync(proposal.Workspace!.Trim(), proposal.Sentence!.Trim(), review.Choice, review.Words, ct)
-            .ConfigureAwait(false);
+        var answer = await applying.Doors.AskAsync(proposal.Workspace!.Trim(), proposal.Sentence!.Trim(), review.Choice, review.Words, ct,
+                string.IsNullOrWhiteSpace(proposal.ShortTitle) ? null : proposal.ShortTitle.Trim()).ConfigureAwait(false);
         return applying.Settled(answer.Ok, $"{(answer.Ok ? "Applied" : "Not applied")}: `#{applying.Id}` (`{applying.Plan.Terminal}`) — {answer.Message}", answer.Message);
     }
 
@@ -94,6 +97,9 @@ public sealed partial record HelpProposal
 
     /// <summary>ENTRY1c: the person's words with an ask's review choice, sent only with one.</summary>
     public string? ReviewWords { get; init; }
+
+    /// <summary>HEAD2e: an ask's short title, at most 40 characters, as the service's box wrote it; null where none was given.</summary>
+    public string? ShortTitle { get; init; }
 }
 
 public partial interface IHelpDoors
@@ -102,5 +108,6 @@ public partial interface IHelpDoors
     /// An ask, through the local host's ask door, with the review choice and words the composer sends (ENTRY1c): null for none.
     /// A named environment the ask's workspace does not declare is the door's refusal, as the terminal's.
     /// </summary>
-    Task<AskAnswer> AskAsync(string workspace, string sentence, string? review, string? reviewWords, CancellationToken ct);
+    /// <param name="shortTitle">HEAD2e: the ask's short title, sent as the composer's field is; null for none.</param>
+    Task<AskAnswer> AskAsync(string workspace, string sentence, string? review, string? reviewWords, CancellationToken ct, string? shortTitle = null);
 }
