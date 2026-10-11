@@ -49,6 +49,43 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
         Assert.Equal(JsonValueKind.Null, Written(none!).GetProperty("workspace").ValueKind);
     }
 
+    /// <summary>
+    /// NEW1d-a (D162's note): a go to Sessions' New conversation may carry the repository and the words the composer opens
+    /// with, in the common <c>repository</c> and <c>sentence</c> fields, written trimmed; a go with none writes none. Whether
+    /// the repository is registered with a checkout here is the driver's to judge.
+    /// </summary>
+    [Fact]
+    public void A_go_to_new_conversation_is_written_with_its_repository_and_words()
+    {
+        var (both, _) = Box().ProposeGo("sessions", null, "new", null, "the person asked where to start", "h1", Now,
+            repository: " engine ", sentence: "  fix the build\nthen test it ");
+        var (none, _) = Box().ProposeGo("sessions", null, "new", null, "the person asked to begin", "h1", Now);
+        var (other, _) = Box().ProposeGo("quests", null, null, null, "the person asked", "h1", Now);
+
+        var written = Written(both!);
+        Assert.Equal(("new", "engine", "fix the build\nthen test it"),
+            (written.GetProperty("part").GetString(), written.GetProperty("repository").GetString(), written.GetProperty("sentence").GetString()));
+        Assert.Equal(JsonValueKind.Null, Written(none!).GetProperty("repository").ValueKind);
+        Assert.Equal(JsonValueKind.Null, Written(none!).GetProperty("sentence").ValueKind);
+        Assert.Equal(JsonValueKind.Null, Written(other!).GetProperty("sentence").ValueKind);
+    }
+
+    /// <summary>NEW1d-a: a repository is named as Repositories lists it, never by a folder, as a workspace is.</summary>
+    [Theory]
+    [InlineData("C:\\work\\engine")]
+    [InlineData("work/engine")]
+    [InlineData("/checkouts/engine")]
+    [InlineData("D:")]
+    public void A_repository_named_as_a_folder_is_refused_with_nothing_written(string repository)
+    {
+        var (id, message) = Box().ProposeGo("sessions", null, "new", null, "a reason", "h1", Now, repository: repository);
+
+        Assert.Null(id);
+        Assert.Contains("never by a folder", message);
+        Assert.Contains("Nothing was proposed", message);
+        Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
+    }
+
     /// <summary>UX6i2b: the texts list the places the frame has (D150's UX6i2a note), never the ones it retired.</summary>
     [Fact]
     public void The_texts_name_the_places_the_window_has()
@@ -109,6 +146,12 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
         Assert.Contains("never a folder", workspace);
         Assert.Contains("may carry the workspace", part);
         Assert.Contains("Add repository or Import a folder", tool);
+        // NEW1d-a: New conversation opens with a repository and words.
+        Assert.Contains("new (New conversation", part);
+        Assert.Contains("New conversation", tool);
+        Assert.Contains("For sessions' new only", Of("repository"));
+        Assert.Contains("never a folder", Of("repository"));
+        Assert.Contains("For sessions' new only", Of("sentence"));
     }
 
     /// <summary>The shape, checked here and nothing more; which places exist is the driver's to judge.</summary>
