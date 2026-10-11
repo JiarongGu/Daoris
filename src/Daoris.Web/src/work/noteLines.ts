@@ -1,6 +1,7 @@
 import type { NotePart } from '../api';
 import { figure, list, moment } from '../format';
 import { windowName } from '../settings/accounts';
+import type { AccountNames } from './accountNames';
 import { reasonOf } from './say';
 
 // A session's note as the page words it (LANG1b, D142; the language design §2, §5, §6): each coded part from its code and
@@ -246,7 +247,7 @@ export const OPENING_REASONS: Readonly<Record<string, { key: string; values: rea
  * cool-off's reason as a value of its own. `locales/note.test.ts` holds that every value a writer declares has a way here.
  */
 export const NOTE_VALUES: Readonly<
-  Record<string, 'id' | 'ids' | 'names' | 'moment' | 'number' | 'count' | 'percent' | 'text' | 'why' | 'cooling' | 'window'>
+  Record<string, 'id' | 'ids' | 'names' | 'moment' | 'number' | 'count' | 'percent' | 'text' | 'why' | 'cooling' | 'window' | 'account'>
 > = {
   awaits: 'id', answered: 'id', ask: 'id', quest: 'id', session: 'id',
   quests: 'ids',
@@ -257,7 +258,9 @@ export const NOTE_VALUES: Readonly<
   tokens: 'count', count: 'count',
   used: 'percent', near: 'percent', gone: 'percent',
   adapter: 'text', now: 'text', then: 'text',
-  owner: 'text', branch: 'text', basedOn: 'text', plugin: 'text', account: 'text', over: 'text', agent: 'text', workspace: 'text',
+  // An account id is worded by the name the person gave it where the page knows it (NOTENAME1); `owner` is the agent.
+  account: 'account', over: 'account',
+  owner: 'text', branch: 'text', basedOn: 'text', plugin: 'text', agent: 'text', workspace: 'text',
   why: 'why',
   cooling: 'cooling',
   window: 'window',
@@ -285,9 +288,15 @@ const text = (value: unknown): string | null =>
   typeof value === 'string' && value.length > 0 ? value : typeof value === 'number' && Number.isFinite(value) ? String(value) : null;
 
 /** A value as its sentence says it, or null where it is absent or not the shape its kind is. */
-function said(t: Translate, name: string, values: Record<string, unknown>, code: NoteCode, language: string): string | null {
+function said(
+  t: Translate, name: string, values: Record<string, unknown>, code: NoteCode, language: string, names?: AccountNames,
+): string | null {
   const value = values[name];
   switch (NOTE_VALUES[name] ?? 'text') {
+    case 'account': {
+      const id = text(value);
+      return id === null ? null : names?.get(id) ?? id;
+    }
     case 'ids': {
       if (!Array.isArray(value) || value.length === 0) return null;
       const ids = value.map(text);
@@ -318,7 +327,7 @@ function said(t: Translate, name: string, values: Record<string, unknown>, code:
       const why = text(value);
       if (!why) return null;
       if (code.why === 'cooling') return COOLING.has(why) ? t(`harness.cooling.why.${why}`) : null;
-      if (code.why === 'opening') return opening(t, why, values, code, language);
+      if (code.why === 'opening') return opening(t, why, values, code, language, names);
       if (code.why === 'resumed') return RESUMED_REASONS[why] ? t(RESUMED_REASONS[why].key) : null;
       if (code.why === 'unreached') return UNREACHED_REASONS[why] ? t(UNREACHED_REASONS[why].key) : null;
       return reasonOf(t, why, {
@@ -338,12 +347,14 @@ function said(t: Translate, name: string, values: Record<string, unknown>, code:
  * The step that chose a conversation's account (UX7d-1), with its own values beside the line's, or null where it is a step
  * this page does not know or a value its entry says is absent, so the line shows as recorded.
  */
-function opening(t: Translate, why: string, values: Record<string, unknown>, code: NoteCode, language: string): string | null {
+function opening(
+  t: Translate, why: string, values: Record<string, unknown>, code: NoteCode, language: string, names?: AccountNames,
+): string | null {
   const reason = OPENING_REASONS[why];
   if (!reason) return null;
   const options: Record<string, string> = {};
   for (const name of reason.values) {
-    const value = said(t, name, values, code, language);
+    const value = said(t, name, values, code, language, names);
     if (value === null) return null;
     options[name] = value;
   }
@@ -351,13 +362,15 @@ function opening(t: Translate, why: string, values: Record<string, unknown>, cod
 }
 
 /** A coded part in the reader's language, or null where the page cannot word it (§5). */
-function worded(t: Translate, part: { code: string; values?: Record<string, unknown> | null }, language: string): string | null {
+function worded(
+  t: Translate, part: { code: string; values?: Record<string, unknown> | null }, language: string, names?: AccountNames,
+): string | null {
   const code = NOTE_CODES[part.code];
   if (!code) return null;
   const values = part.values ?? {};
   const options: Record<string, string> = {};
   for (const name of code.values) {
-    const value = said(t, name, values, code, language);
+    const value = said(t, name, values, code, language, names);
     if (value === null) return null;
     options[name] = value;
   }
@@ -369,13 +382,14 @@ function worded(t: Translate, part: { code: string; values?: Record<string, unkn
  * parts, its note as kept. Nothing is read out of the English: a record from before is shown, not re-read (§6).
  *
  * @param language The reader's language, which a list and a moment are written in.
+ * @param names What the person calls each account, by id (NOTENAME1); an id it lacks is said as the record wrote it.
  */
-export function noteLines(t: Translate, { note, parts }: NoteRecord, language: string): NoteLine[] {
+export function noteLines(t: Translate, { note, parts }: NoteRecord, language: string, names?: AccountNames): NoteLine[] {
   if (!parts || parts.length === 0) return note ? [{ kind: 'recorded', text: note }] : [];
   const lines: NoteLine[] = [];
   for (const part of parts) {
     if (typeof part.code === 'string') {
-      const line = worded(t, part, language);
+      const line = worded(t, part, language, names);
       if (line !== null) lines.push({ kind: 'said', text: line });
       else if (part.text) lines.push({ kind: 'recorded', text: part.text });
     } else if (typeof part.words === 'string' && part.words.length > 0) {
@@ -407,8 +421,8 @@ export function noteBlocks(t: Translate, lines: readonly NoteLine[]): NoteLine[]
 }
 
 /** A note as one run of words, for a row too narrow for its blocks: every line, joined the reader's way. */
-export function noteText(t: Translate, record: NoteRecord, language: string): string {
-  return joinLines(t, noteLines(t, record, language).map((line) => line.text));
+export function noteText(t: Translate, record: NoteRecord, language: string, names?: AccountNames): string {
+  return joinLines(t, noteLines(t, record, language, names).map((line) => line.text));
 }
 
 /** Whether a record has a note to show at all. */

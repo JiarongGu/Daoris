@@ -173,6 +173,27 @@ describe('noteLines', () => {
         .toBe("Opened on `account-2`: it is furthest behind its week's pace, 10% of its weekly limit used with 43% of its week gone.");
     });
 
+    /** NOTENAME1: an account id is worded by the name the person gave it, and an account the roster lacks keeps its id. */
+    it('words an account by the name the person gave it, and keeps the id of one the roster does not know', () => {
+      const names = new Map([['account-1', 'personal'], ['account-2', 'team']]);
+      expect(noteLines(t, { parts: carried }, 'en', names).map((line) => line.text)).toEqual([
+        'Carried on from session `s0` on `team`: `personal` has used 95% of its five-hour limit, at or over the 90% that counts as near.',
+        'Of the rest, Daoris started on it least recently.',
+        'Its turn 3 was refused with 370,104 tokens of context.',
+        `\`personal\` last said what it has left at ${moment(seen, 'en')}.`,
+        'It had used 95% of its five-hour limit.',
+        'That is at or over the 90% that counts as near.',
+        '`team` has said nothing yet.',
+      ]);
+      expect(noteLines(zh, { parts: carried }, 'zh', new Map([['account-2', '团队']])).map((line) => line.text).slice(0, 1))
+        .toEqual(['在账户 `团队` 上接续会话 `s0`：`account-1` 的5 小时上限已用 95%，达到或超过视为接近的 90%。']);
+      const waits = coded('waits.account', 'the `claude-code` account `account-1` is cooling', {
+        owner: 'claude-code', account: 'account-1', until: '2026-10-03T18:00:00Z', why: 'stated',
+      });
+      expect(noteLines(t, { parts: [waits] }, 'en', names)[0].text).toContain('`claude-code` account `personal`');
+      expect(noteText(t, { parts: [waits] }, 'en', names)).toContain('`personal`');
+    });
+
     it('shows a line as recorded where its step is a reason it does not know or lacks a value its reason says', () => {
       const newer = coded('opening.opened', 'opened on `account-2`: a newer step.', { account: 'account-2', why: 'newer' });
       const short = coded('opening.opened', 'opened on `account-2`: `account-1` is ahead.', { account: 'account-2', why: 'ahead', over: 'account-1', used: 80 });
