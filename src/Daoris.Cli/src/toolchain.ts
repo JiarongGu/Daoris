@@ -734,6 +734,47 @@ export function addKeyAccount(
 }
 
 /**
+ * Write a new key into an account that is already a key (KEYREPLACE1a): the repair for a key its provider refused. The account
+ * keeps its id, so its name, lists, defaults and order stand (ACCT2); what marked it refused is cleared as the driver's
+ * `HarnessKeys.Replace` clears it. Said back by the handle only. The account is an id or a name; refused, before anything is
+ * written, for an agent with no key variable, an account not here or not a key, and a blank or spaced key.
+ */
+export function replaceKeyAccount(
+  home: string, door: string, given: string, raw: string, write: (line: string) => void,
+): string {
+  const harness = ownerOf(door);
+  if (!TOOLCHAINS[harness]?.keyVariable) {
+    throw new DaorisError(`\`${door}\` takes no API key from Daoris — sign in with its own login instead.`);
+  }
+
+  const account = resolveAccount(profiles(home, harness), accountNames(home, harness), given) ?? given.trim();
+  if (!profiles(home, harness).includes(account)) {
+    throw new DaorisError(
+      `\`${harness}\` has no account \`${given.trim()}\` on this machine — accounts that exist: `
+      + `${profiles(home, harness).join(', ') || '(none)'}`);
+  }
+  const keys = readKeys(home);
+  if (!keys[harness]?.[account]) {
+    throw new DaorisError(`\`${account}\` is not an API key account — it is a sign-in, so sign in again with \`daoris agent login ${harness}\`.`);
+  }
+
+  const key = raw.trim();
+  if (!key || /\s/.test(key)) throw new DaorisError('that is not an API key — it is blank, or has spaces in it.');
+
+  keys[harness] = { ...keys[harness], [account]: key };
+  writeKeys(home, keys);
+  // What marked the account refused: its last reading, its cool-off. Marked signed in, as a key made into an account is.
+  forgetRead(home, harness, account);
+  endCooling(home, harness, account, new Date());
+  markSignedIn(home, harness, account, new Date());
+
+  write(`daoris: \`${harness}\` account \`${account}\` is now the API key ${keyHandle(key)}; its name, lists and defaults are as they were.`);
+  write(`  Kept in ${keysPath(home)} — machine-local, tracked by nothing, shown back only as its last four.`);
+  write('  A running desktop reads the account again at its next press; this terminal cannot tell it sooner.');
+  return account;
+}
+
+/**
  * A name that will become a directory. Refused rather than normalized: a name carrying a separator or
  * a traversal is a request to own a location somewhere else, and quietly rewriting it would put a
  * profile where nobody would look for it.
@@ -1587,7 +1628,9 @@ export function commandHarness(
     // argument is visible in the process list and saved in the shell's history.
     case 'key': {
       const { name } = required(argv, 'key');
-      const extra = argv.slice(1).filter((token) => !token.startsWith('--') && token !== name);
+      // `--account` names the account whose key is replaced (KEYREPLACE1a); its value is an operand to nothing else.
+      const replacing = flagValue(argv, '--account');
+      const extra = operands(argv, AGENT_VALUED).slice(2);
       if (extra.length > 0) {
         throw new DaorisError(
           'the key goes on stdin, not on the command line — pipe it in, or type it and end the input. '
@@ -1600,7 +1643,8 @@ export function commandHarness(
       } catch {
         // No stdin at all: the same as an empty one, which is refused as not a key.
       }
-      addKeyAccount(home, name, raw, write);
+      if (replacing === undefined) addKeyAccount(home, name, raw, write);
+      else replaceKeyAccount(home, name, replacing, raw, write);
       return 0;
     }
 

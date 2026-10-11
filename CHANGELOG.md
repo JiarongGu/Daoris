@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris agent key <agent> --account <id|name>` writes a new key, read from stdin, into an account that is already an API
+  key, so a key its provider refused is repaired without losing the account's name, lists, defaults or order; what marked it
+  refused is cleared. Without `--account` the verb adds a new account as before.
 - Ask Daoris can now propose an account's use, its order, *Try now* and the default cool-off: how an agent's list of accounts
   is used, the list itself (or a workspace sent back to this machine's accounts), an account's cool-off ended, and how long
   an account cools when its limit names no time. Each is a card you apply, judged as the Agents page and the terminal judge it.

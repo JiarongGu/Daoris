@@ -373,6 +373,29 @@ public sealed partial class DriverModule
             };
         }
 
+        // A new key into the account that holds a refused one (KEYREPLACE1a): the same id, so its name, lists, defaults and
+        // order stand; what marked it refused is cleared here and, through `LookedAgain`, in the roster. Answered by the
+        // handle only, as `key-add` is. The terminal's twin is `agent key <agent> --account`.
+        if (action == "key-replace")
+        {
+            if (_loop.Harnesses.AccountToolchain(harness)?.KeyVariable is not { Length: > 0 })
+            {
+                throw new DriverException(
+                    $"`{harness}` takes no API key from Daoris — sign it in instead.");
+            }
+
+            var replaced = HarnessKeys.Replace(
+                _loop.Harnesses.Home, owner, Named(request), PayloadHelper.GetRequiredValue<string>(request.Payload, "key"));
+            // The roster's own memory of the account: its last word and what it was owed, forgotten as a removal forgets them.
+            _loop.Harnesses.Removed(owner, replaced);
+            await ChangedAsync(harness, action, config, cancellationToken);
+            return new
+            {
+                Harness = harness, Action = action, ExitCode = 0, Profile = replaced,
+                Key = HarnessKeys.Handle(HarnessKeys.Of(_loop.Harnesses.Home, owner, replaced)!),
+            };
+        }
+
         // An account's name (ACCT2), the person's word, kept beside it by its id, so every list, default, reading and
         // record keeps it; naming it its own id, or none, gives it none. The terminal's twin is `profile rename`.
         if (action == "profile-rename")
@@ -421,7 +444,7 @@ public sealed partial class DriverModule
             _ => throw Refusals.Because(
                 Refusals.HarnessActionUnknown,
                 $"unknown agent action '{action}' — one of: install, update, login, login-new, "
-                + "key-add, pin, unpin, profile-add, profile-remove, profile-default, profile-rename, profile-join",
+                + "key-add, key-replace, pin, unpin, profile-add, profile-remove, profile-default, profile-rename, profile-join",
                 ("action", action)),
         };
         if (edited is { } code)

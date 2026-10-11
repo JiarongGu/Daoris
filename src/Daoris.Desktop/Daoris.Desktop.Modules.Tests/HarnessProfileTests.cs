@@ -291,6 +291,50 @@ public sealed class HarnessProfileTests : Bridge
         Assert.DoesNotContain(Raised, m => JsonSerializer.Serialize(m.Payload).Contains(key));
     }
 
+    /// <summary>
+    /// KEYREPLACE1a: a key its provider refused is written into the same account. The answer names the account and the new
+    /// key's handle only; another account's key, and this account's id and name, stand.
+    /// </summary>
+    [Fact]
+    public async Task Replacing_a_key_writes_it_into_the_same_account_and_nothing_ever_answers_it()
+    {
+        const string replacement = "sk-ant-api03-replaced-abcd";
+        var module = Module();
+        var first = (await AnswerAsync(module, "HARNESS_ACTION",
+            new { harness = "claude-code", action = "key-add", key = "sk-ant-api03-first-1111" })).GetProperty("profile").GetString()!;
+        var second = (await AnswerAsync(module, "HARNESS_ACTION",
+            new { harness = "claude-code", action = "key-add", key = "sk-ant-api03-second-2222" })).GetProperty("profile").GetString()!;
+        await AnswerAsync(module, "HARNESS_ACTION",
+            new { harness = "claude-code", action = "profile-rename", profile = first, name = "work-key" });
+
+        var answer = await AnswerAsync(module, "HARNESS_ACTION",
+            new { harness = "claude-code", action = "key-replace", profile = first, key = replacement });
+
+        Assert.Equal(first, answer.GetProperty("profile").GetString());
+        Assert.Equal("…abcd", answer.GetProperty("key").GetString());
+        Assert.Equal(replacement, HarnessKeys.Of(Home, "claude-code", first));
+        Assert.Equal("sk-ant-api03-second-2222", HarnessKeys.Of(Home, "claude-code", second));
+        Assert.Equal("work-key", AccountNames.Of(Home, "claude-code")[first]);
+        Assert.DoesNotContain(replacement, answer.GetRawText());
+        Assert.DoesNotContain(Raised, m => JsonSerializer.Serialize(m.Payload).Contains(replacement));
+    }
+
+    /// <summary>KEYREPLACE1a: an agent with no key, an account that is not here or not a key, and a blank key are refused.</summary>
+    [Fact]
+    public async Task Replacing_a_key_is_refused_where_there_is_no_key_account_to_hold_it()
+    {
+        var module = Module();
+        Directory.CreateDirectory(ProfileAt("claude-code", "signed-in"));
+
+        Assert.Contains("takes no API key", await RefusalAsync(module, "HARNESS_ACTION",
+            new { harness = "dsh", action = "key-replace", profile = "x", key = "sk-something-9999" }));
+        Assert.Contains("no account", await RefusalAsync(module, "HARNESS_ACTION",
+            new { harness = "claude-code", action = "key-replace", profile = "nobody", key = "sk-something-9999" }));
+        Assert.Contains("not an API key account", await RefusalAsync(module, "HARNESS_ACTION",
+            new { harness = "claude-code", action = "key-replace", profile = "signed-in", key = "sk-something-9999" }));
+        Assert.Null(HarnessKeys.Of(Home, "claude-code", "signed-in"));
+    }
+
     /// <summary>Removing a key account removes its key with its directory (D66 §3).</summary>
     [Fact]
     public async Task Removing_a_key_account_removes_its_key()
