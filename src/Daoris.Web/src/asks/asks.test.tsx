@@ -11,7 +11,7 @@ import { AskPage } from './AskPage';
 import { AskRow, asksInOrder } from './AskRow';
 import {
   BY_INTAKE, CLOSED, DONE, INTAKE_ASKED, INTAKE_PARKED, INTAKE_SESSION, NAMED, NAMES_ITS_REPOSITORY, PROPOSED, PUBLISHED,
-  REFUSED, UNKNOWN_TIER, UNMATCHED, WITH_GO_AHEADS,
+  REFUSED, SHORT_TITLED, UNKNOWN_TIER, UNMATCHED, WITH_GO_AHEADS,
 } from './fixtures';
 
 // An ask's three molecules (INT4c; FRAME1d): its row in Quests' list, its page in the main area, and the composer's
@@ -56,6 +56,15 @@ describe('AskRow', () => {
     expect(screen.getByText('The chunk streamer stalls on a cold cache — cap its hydration per frame.')).toBeInTheDocument();
     expect(screen.getByText(/by declarations/)).toBeInTheDocument();
     expect(screen.getByText(/proposed engine, game/)).toBeInTheDocument();
+  });
+
+  // HEAD2e: a row names an ask as a quest's row names it: its short title where it has one, else its first line.
+  it('shows its short title where it has one, the whole of it in its tip', () => {
+    rtlRender(row(<AskRow ask={SHORT_TITLED} onOpen={() => {}} />));
+
+    const name = screen.getByText('Cold-cache stall');
+    expect(name).toHaveAttribute('title', 'Cold-cache stall');
+    expect(screen.queryByText(/Step 1:/)).toBeNull();
   });
 
   /**
@@ -376,6 +385,36 @@ describe('AskComposer', () => {
     expect(within(drawer).getByText('There is no workspace to ask yet')).toBeInTheDocument();
     expect(within(drawer).queryByLabelText('What is wanted, and why')).toBeNull();
     expect(within(drawer).queryByRole('button', { name: 'Ask' })).toBeNull();
+  });
+
+  // HEAD2e: an optional short title, counted as the person types, held back past the service's 40 characters.
+  it('offers an optional short title, counts it as it is typed, and holds the ask back past forty characters', async () => {
+    const onSubmit = vi.fn();
+    render(<Holder fixed="aurora" circles={['aurora']} onSubmit={onSubmit} />);
+    const drawer = screen.getByRole('dialog');
+    await userEvent.type(within(drawer).getByLabelText('What is wanted, and why'), 'Cap the hydration.');
+
+    const field = within(drawer).getByLabelText('Short title');
+    expect(within(drawer).getByText('0 / 40')).toBeInTheDocument();
+    await userEvent.type(field, 'Hydration cap');
+    expect(within(drawer).getByText('13 / 40')).toBeInTheDocument();
+    await userEvent.click(within(drawer).getByRole('button', { name: 'Ask' }));
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ short: 'Hydration cap' }));
+
+    await userEvent.type(field, 'x'.repeat(30));
+    expect(within(drawer).getByText('43 / 40')).toBeInTheDocument();
+    expect(within(drawer).getByText(/at most 40 characters/)).toBeInTheDocument();
+    expect(within(drawer).getByRole('button', { name: 'Ask' })).toBeDisabled();
+  });
+
+  it('says its short title in Chinese', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      render(<Holder fixed="aurora" circles={['aurora']} />);
+      expect(within(screen.getByRole('dialog')).getByLabelText('短标题')).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   it('carries links and files like the quest composer, from the same fields', async () => {

@@ -230,6 +230,11 @@ export type Ask = {
   /** The intake session that served it (D65 §1b), once one opened — absent for every other ask. */
   intake?: string | null;
   /**
+   * The short title its asker gave (HEAD2e, D162 point 4), as a quest's (SESSUX1j): at most 40 characters, as written. Absent
+   * for an ask with none, every ask from before it, and a host older than the field.
+   */
+  short?: string | null;
+  /**
    * Whether the host would delete it, with every quest asked by it (D95): nothing stands on any of
    * them. The service's judgement, like a quest's; absent from a host older than the field.
    */
@@ -531,6 +536,8 @@ export const api = {
     to?: string;
     /** The person's review choice for its work (REVIEWENV1b, design §1.5): `off`, `on` or an environment's name, and their words. */
     review?: string; reviewWords?: string;
+    /** The person's short title for it (HEAD2e), at most 40 characters; the service refuses a longer one in its words. */
+    short?: string;
   }) => asThePerson<AskAction>('/api/asks', body),
   // The person's review choice on an ask's page, or its intake's proposal applied (REVIEWENV1b, design §1.5): the latest stands.
   chooseAskReview: (id: string, choice: string, words?: string) =>

@@ -10,7 +10,7 @@ import {
 import { AskPage } from './AskPage';
 import {
   BY_INTAKE, CLOSED, DONE, INTAKE_ASKED, INTAKE_PARKED, INTAKE_SESSION, LONG_ASK, LONG_CJK, NAMED, NAMES_ITS_REPOSITORY, PROPOSED,
-  PUBLISHED, REFUSED, UNKNOWN_TIER, UNMATCHED, WITH_GO_AHEADS,
+  PUBLISHED, REFUSED, SHORT_TITLED, UNKNOWN_TIER, UNMATCHED, WITH_GO_AHEADS,
 } from './fixtures';
 
 // An ask's page (INT4c; FRAME1d, D118 §3d): its record in Quests' main area, where it was a drawer, with *Close ask*
@@ -120,6 +120,10 @@ export const LongRequestNarrow: Story = { args: { ask: LONG_ASK }, decorators: [
 export const LongRequestDark: Story = { args: { ask: LONG_ASK }, decorators: [at(1180, 'dark')] };
 /** The same in 中文. */
 export const LongRequestChinese: Story = { args: { ask: LONG_ASK }, decorators: [chinese, at(1180)] };
+/** The same request with its asker's short title (HEAD2e): the head says it, and the body opens on the whole request. */
+export const ShortTitled: Story = { args: { ask: SHORT_TITLED }, decorators: [at(1180)] };
+/** The same in 中文. */
+export const ShortTitledChinese: Story = { args: { ask: SHORT_TITLED }, decorators: [chinese, at(1180)] };
 /** Its intake read it and published it — on the desktop, the session is a door. */
 export const ByIntake: Story = { args: { ask: BY_INTAKE, intake: INTAKE_SESSION, onAttend: nothing } };
 /** The same page in a browser: the session is named, and is not a door. */

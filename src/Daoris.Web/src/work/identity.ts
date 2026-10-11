@@ -1,5 +1,5 @@
 import i18n from '../i18n';
-import { HELP_REPOSITORY, type Quest, type Session } from '../api';
+import { type Ask, HELP_REPOSITORY, type Quest, type Session } from '../api';
 
 // The working surface's derived identity (docs/2026-09-21-working-surface-design.md §3). Pure, so
 // the rail and the head cannot disagree about what a session is called — which is the whole reason
@@ -13,6 +13,15 @@ import { HELP_REPOSITORY, type Quest, type Session } from '../api';
  */
 export function questName(quest: Pick<Quest, 'title' | 'short'>): string {
   return quest.short?.trim() ? quest.short.trim() : quest.title;
+}
+
+/**
+ * What a list or a head calls an ask (HEAD2e, D162 point 4): its asker's short title where it has one, as a quest's name
+ * is (`questName`), else the first line of its sentence, which an ask from before the field, or one given none, is called
+ * by. The page never cuts the sentence itself: content is shown as it is (platform language §4).
+ */
+export function askName(ask: Pick<Ask, 'sentence' | 'short'>): string {
+  return ask.short?.trim() ? ask.short.trim() : ask.sentence.split('\n', 1)[0].trim();
 }
 
 /**

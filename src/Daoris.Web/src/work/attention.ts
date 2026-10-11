@@ -1,6 +1,5 @@
 import i18n from '../i18n';
 import { type Ask, canBeAsked, type GoAhead, type Quest, type Registration, type Session } from '../api';
-import { firstLine } from '../asks/AskRow';
 import type { RuleProposal } from '../settings/AgentRules';
 import { proposalAuthor, proposalChange } from '../settings/proposals';
 import { type Consideration, type TrustHold, sittingSentence } from '../signals';
@@ -8,7 +7,7 @@ import { answeredPark } from '../ui';
 import { workspaceOf } from '../workspaces';
 import { accountAttention, type AccountsKnown } from './accountAttention';
 import type { SessionGrouping } from './groups';
-import { questName, sessionOrigin, sessionTitle } from './identity';
+import { askName, questName, sessionOrigin, sessionTitle } from './identity';
 import type { Attention, AttentionKind } from './AttentionRow';
 import { type OpinionWait, opinionState } from './opinion';
 import { opinionSays } from './OpinionGate';
@@ -318,7 +317,7 @@ export function needsAPerson(
     .map((ask): Attention => {
       const intake = intakeOf(ask);
       const asked = intake?.state === 'awaiting-person';
-      const row = { id: ask.id, title: firstLine(ask.sentence), where: ask.workspace };
+      const row = { id: ask.id, title: askName(ask), where: ask.workspace };
       // The intake's own note, which the row words in the reader's language (LANG1b).
       if (asked) return { ...row, kind: 'intake', since: intake.updated, note: { note: intake.note, parts: intake.noteParts } };
       return {

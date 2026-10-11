@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import i18n from '../i18n';
-import { HELP_REPOSITORY, type Quest, type Session } from '../api';
-import { inTree, isHelp, ownTree, questName, sessionOrigin, sessionTitle, shortened, treeName } from './identity';
+import { HELP_REPOSITORY, type Ask, type Quest, type Session } from '../api';
+import { askName, inTree, isHelp, ownTree, questName, sessionOrigin, sessionTitle, shortened, treeName } from './identity';
 
 const session = (over: Partial<Session> = {}): Session => ({
   id: 's1',
@@ -29,6 +29,20 @@ const quest = (over: Partial<Quest> = {}): Quest => ({
  * SESSUX1j (D126 §9, the session management design §6.2): a quest's name is its short title, the service's answer, else
  * its title, from a host older than the field. One helper, so no two places name one quest differently.
  */
+describe("an ask's name (HEAD2e)", () => {
+  const ask = (over: Partial<Ask> = {}) => ({ sentence: 'Cap the hydration.\n\nSeen on the rig.', ...over }) as Ask;
+
+  it("is its short title where the service answers one, as a quest's is", () => {
+    expect(askName(ask({ short: ' Cold-cache stall ' }))).toBe('Cold-cache stall');
+  });
+
+  it('is the first line of its sentence from an ask with none, or from a host older than the field', () => {
+    expect(askName(ask())).toBe('Cap the hydration.');
+    expect(askName(ask({ short: '  ' }))).toBe('Cap the hydration.');
+    expect(askName(ask({ short: null }))).toBe('Cap the hydration.');
+  });
+});
+
 describe("a quest's name", () => {
   it('is its short title where the service answers one', () => {
     expect(questName(quest({ short: 'Streaming budget' }))).toBe('Streaming budget');
