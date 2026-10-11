@@ -167,6 +167,7 @@ export function AttendedSession({
         onDiscardBranch={onDiscardBranch}
         discardingBranch={discardingBranch}
         headed={headed}
+        onOpenQuest={onQuest}
         goAheads={goAheads}
         onGoAhead={onGoAhead}
         ownSignIn={ownSignIn}

@@ -2,6 +2,8 @@
   "work.head.repository": "仓库",
   "work.head.tree": "工作树",
   "work.head.quest": "委托",
+  "work.head.request": "请求",
+  "work.head.openQuest": "打开委托 #{{id}}",
   "work.head.tool": "智能体",
   "work.head.machine": "机器",
   "work.head.started": "开始于",
@@ -37,5 +39,6 @@
   "work.head.account": "账户",
   "work.head.id": "ID",
   "work.head.copyId": "复制",
-  "work.head.copied": "已复制"
+  "work.head.copied": "已复制",
+  "work.head.viewRequest": "查看完整需求"
 }

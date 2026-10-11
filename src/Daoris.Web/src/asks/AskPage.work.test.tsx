@@ -31,30 +31,47 @@ const page = (work?: WorkDoor, ask: Ask = { ...PUBLISHED, id: 'a1b2c3', deletabl
   return { ...props, view, main: screen.getByRole('main') };
 };
 
-const headerActs = () => within(screen.getByRole('main').querySelector('header')!).getAllByRole('button').map((button) => button.textContent);
+/** The acts the head draws as buttons: since HEAD2d only the loud one, *Resume*, and the ⋯, which is named by its label. */
+const headerActs = () => within(screen.getByRole('main').querySelector('header')!).getAllByRole('button')
+  .map((button) => button.textContent || button.getAttribute('aria-label'));
+
+/** The header's ⋯, opened from the keyboard as every menu is in jsdom: its items' names. */
+async function more() {
+  screen.getByRole('button', { name: i18n.t('work.head.more') }).focus();
+  await userEvent.keyboard('{Enter}');
+  return (await screen.findAllByRole('menuitem')).map((item) => item.textContent);
+}
+
+/** One act of the ⋯, pressed. */
+async function pick(name: string) {
+  await more();
+  await userEvent.click(screen.getByRole('menuitem', { name }));
+}
 
 describe('pausing and abandoning an ask', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
-  it('offers Pause… and Abandon… where the plan says they apply, beside Close ask and Delete…', () => {
+  it('offers Pause… and Abandon… where the plan says they apply, beside Close ask and Delete…, in its ⋯', async () => {
     page(door());
-    expect(headerActs()).toEqual(['Pause…', 'Close ask', 'Abandon…', 'Delete…']);
+    expect(headerActs()).toEqual(['More actions']);
+    expect(await more()).toEqual(['Pause…', 'Close ask', 'Abandon…', 'Delete…', 'Copy ask ID']);
   });
 
-  it('offers none of the three while the plan is on its way: an act is never guessed', () => {
+  it('offers none of the three while the plan is on its way: an act is never guessed', async () => {
     page(door({ plan: null }));
-    expect(headerActs()).toEqual(['Close ask', 'Delete…']);
+    expect(await more()).toEqual(['Close ask', 'Delete…', 'Copy ask ID']);
   });
 
   it('asks once before a pause that stops a running session, saying what follows, then pauses', async () => {
     const work = door({ wired: true });
     page(work);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Pause…' }));
+    await pick('Pause…');
     const ask = screen.getByRole('group', { name: 'pause this work' });
     expect(ask).toHaveTextContent('Stops 1 running session now and starts nothing of ask #a1b2c3 on this machine until you resume it.');
     expect(ask).toHaveTextContent('Another machine may still take #5e4f3d');
-    expect(screen.queryByRole('button', { name: 'Pause…' })).toBeNull();
+    expect(await more()).not.toContain('Pause…');
+    await userEvent.keyboard('{Escape}');
     expect(work.onPause).not.toHaveBeenCalled();
 
     await userEvent.click(within(ask).getByRole('button', { name: 'Pause ask' }));
@@ -65,7 +82,7 @@ describe('pausing and abandoning an ask', () => {
     const work = door({ wired: true });
     page(work);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Pause…' }));
+    await pick('Pause…');
     const ask = screen.getByRole('group', { name: 'pause this work' });
     await userEvent.click(within(ask).getByRole('button', { name: 'Pause ask' }));
     const answered = vi.mocked(work.onPause).mock.calls[0]![0]!;
@@ -74,7 +91,8 @@ describe('pausing and abandoning an ask', () => {
 
     await userEvent.click(within(ask).getByRole('button', { name: 'Never mind' }));
     expect(screen.queryByRole('group', { name: 'pause this work' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Pause…' })).toHaveFocus();
+    // The ⋯ that held *Pause…* is always drawn since HEAD2d, so the focus goes back to it.
+    expect(screen.getByRole('button', { name: 'More actions' })).toHaveFocus();
   });
 
   it('applies a pause that stops nothing at once, since nothing is lost', async () => {
@@ -82,7 +100,7 @@ describe('pausing and abandoning an ask', () => {
     const work = door({ plan: quiet });
     page(work);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Pause…' }));
+    await pick('Pause…');
     expect(work.onPause).toHaveBeenCalledOnce();
     expect(screen.queryByRole('group', { name: 'pause this work' })).toBeNull();
   });
@@ -91,7 +109,7 @@ describe('pausing and abandoning an ask', () => {
     const work = door({ plan: PAUSED_ASK });
     page(work);
 
-    expect(headerActs()).toEqual(['Resume', 'Close ask', 'Abandon…', 'Delete…']);
+    expect(headerActs()).toEqual(['Resume', 'More actions']);
     expect(screen.getByRole('button', { name: 'Resume' }).className).toContain('bg-accent');
     expect(within(screen.getByRole('main').querySelector('header')!).getByText('paused')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Resume' }));
@@ -103,7 +121,7 @@ describe('pausing and abandoning an ask', () => {
     const { view } = page(work);
     const user = userEvent.setup();
 
-    await user.click(screen.getByRole('button', { name: 'Abandon…' }));
+    await pick('Abandon…');
     const list = screen.getByRole('group', { name: 'abandon this work' });
     expect(within(list).getByRole('list', { name: 'What stays' })).toHaveTextContent('taken on studio-pc');
 
@@ -138,13 +156,14 @@ describe('pausing and abandoning an ask', () => {
 
   it('says closing leaves its quests as they are, and that Abandon declines them', async () => {
     page(door());
-    await userEvent.click(screen.getByRole('button', { name: 'Close ask' }));
+    await pick('Close ask');
     expect(screen.getByText('Closing leaves its quests as they are; Abandon declines them.')).toBeInTheDocument();
   });
 
-  it('offers none of the three in a browser, and names the terminal’s commands instead', () => {
+  it('offers none of the three in a browser, and names the terminal’s commands instead', async () => {
     page(undefined);
-    expect(headerActs()).toEqual(['Close ask', 'Delete…']);
+    expect(await more()).toEqual(['Close ask', 'Delete…', 'Copy ask ID']);
+    await userEvent.keyboard('{Escape}');
     const said = screen.getByText(/a browser offers neither/);
     expect(within(said).getByText(code('daoris-driver ask --pause a1b2c3'))).toBeInTheDocument();
   });
@@ -152,7 +171,7 @@ describe('pausing and abandoning an ask', () => {
   it('names its acts in 中文', async () => {
     await i18n.changeLanguage('zh');
     page(door());
-    expect(headerActs()).toEqual(['暂缓…', '关闭需求', '放弃…', '删除…']);
+    expect(await more()).toEqual(['暂缓…', '关闭需求', '放弃…', '删除…', '复制需求 ID']);
   });
 });
 

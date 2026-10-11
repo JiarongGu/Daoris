@@ -30,21 +30,13 @@ export type SessionFactsOf = {
 };
 
 /**
- * The account it ran as, as the head says it: the profile it names, by the person's name for it (ACCTNAME1, D152 §4.2), or
- * the tool's own sign-in where it names none. The record keeps the id; the name is looked up as the head is drawn.
+ * A session's facts line by its shown state (the UX7 design §5.2's table, as HEAD2c amends it): its repository first, then
+ * its age and the one fact its state makes matter. A live session's age, and how many failed before it where its quest's
+ * earlier sessions failed; what holds it, from the row's own line where the reader placed it (which names a cooling
+ * account); an ended one's landing and how long it ran. An intake says its ask. The account is *Details*' (ACCTNAME1 names
+ * it there). Nothing it has nothing to say: an absent fact is left out, never a dash.
  */
-function account(t: TFunction, session: Session, ownSignIn: boolean, nameOf?: AccountNamer): string | null {
-  if (session.profile) return nameOf ? nameOf(session.adapter, session.profile) : session.profile;
-  return ownSignIn ? t('quests.session.ownSignIn') : null;
-}
-
-/**
- * A session's facts line by its shown state (the UX7 design §5.2's table): its repository first, then what its state
- * makes matter. A live session's account and how long it has run, and how many failed before it where its quest's
- * earlier sessions failed; what holds it, from the row's own line where the reader placed it; an ended one's landing and
- * how long it ran. An intake says its ask. Nothing it has nothing to say: an absent fact is left out, never a dash.
- */
-export function sessionFacts(t: TFunction, { session, shown, grouping, ownSignIn = false, branch, nameOf }: SessionFactsOf): string[] {
+export function sessionFacts(t: TFunction, { session, shown, grouping, branch }: SessionFactsOf): string[] {
   if (isIntake(session)) return [t('work.scope.ask', { id: session.ask }), t('work.intake.kind')];
 
   const facts: (string | null)[] = [session.repository];
@@ -66,8 +58,8 @@ export function sessionFacts(t: TFunction, { session, shown, grouping, ownSignIn
   }
 
   if (running) {
-    facts.push(account(t, session, ownSignIn, nameOf));
-    if (session.kind !== 'chat') facts.push(elapsed(session.created));
+    // HEAD2c (D162): the account is *Details*'. Where it explains a hold, the row's own line above already says it.
+    facts.push(session.kind === 'chat' ? t('work.facts.started', { ago: ago(session.created) }) : elapsed(session.created));
     // UX7c (D152): the fact that matters most on a retried quest, another try and how many failed before it.
     const failed = typeof grouping?.strikes === 'number' && grouping.strikes > 0 ? grouping.strikes : null;
     if (failed !== null && session.kind !== 'chat') facts.push(t('work.facts.attempt', { count: failed, attempt: failed + 1 }));
@@ -92,14 +84,16 @@ export type QuestFactsOf = {
 };
 
 /**
- * A quest's facts line (the UX7 design §5.3): whom it asks, who asked it and when it was filed, then the one live fact
- * where there is one: a session starting or working on it here, its park after its failed sessions, or when it closed.
- * The id, the full times and the lanes are its *Details*.
+ * A quest's facts line (HEAD2b, D162; the entry-and-heads design §2, amending the UX7 design §5.3): a hold the person lifts
+ * first where there is one (*awaits your yes*, *awaits review*: their sentences stay in their cards), then where it goes
+ * and its age, then the one live fact where there is one: a session starting or working on it here, its park after its
+ * failed sessions, or when it closed. The requester, the id, the full times and the lanes are its *Details*.
  */
 export function questFacts(t: TFunction, { quest, session, sitting }: QuestFactsOf): string[] {
+  const unreviewed = quest.held === true && quest.hold === 'unreviewed';
   const facts = [
+    ...(unreviewed ? [t('review.pill')] : quest.held === true ? [t('quests.card.held')] : []),
     t('quests.facts.to', { repository: quest.to }),
-    t('quests.facts.from', { from: quest.from }),
     t('quests.facts.filed', { ago: ago(quest.filed) }),
   ];
 

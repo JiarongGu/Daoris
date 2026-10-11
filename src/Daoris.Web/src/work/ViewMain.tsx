@@ -25,7 +25,7 @@ import { usePublishedOffer } from '../menus/mainOffer';
  * whole in its tip and on *Show all* where it was cut; and `facts` is the line under it, the facts the state makes
  * matter, said once. Such a head has no id line: the id is its ⋯'s and its *Details*'.
  */
-export function PageHead({ title, version, pills, id, line, acts, fold, more, icon, lead, clamp, facts, fact }: {
+export function PageHead({ title, version, pills, id, line, acts, fold, more, icon, lead, clamp, facts, fact, wholeElsewhere }: {
   title: string; version?: string; pills?: ReactNode; id?: string; line?: string; icon?: ReactNode;
   /**
    * The acts (HEAD2a, D162 §3, the entry-and-heads design §2): primary first, then the secondary. They hold still: above
@@ -48,6 +48,11 @@ export function PageHead({ title, version, pills, id, line, acts, fold, more, ic
    * workflow, whose door opens the run.
    */
   fact?: ReactNode;
+  /**
+   * The head offers its own door to the whole text (*View full request*, HEAD2f, D162 §2), so the clamped title keeps its tip
+   * and drops its *Show all*: one way to the same text.
+   */
+  wholeElsewhere?: boolean;
 }) {
   const said = facts && facts.length > 0 ? facts.join(' · ') : null;
   return (
@@ -58,7 +63,7 @@ export function PageHead({ title, version, pills, id, line, acts, fold, more, ic
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
             {lead && <span className="flex shrink-0 items-baseline gap-1.5 self-start pt-1.5">{lead}</span>}
             {clamp
-              ? <ClampedTitle title={title} lines={clamp} />
+              ? <ClampedTitle title={title} lines={clamp} showAll={!wholeElsewhere} />
               : <h1 className="m-0 min-w-0 text-view font-[650] tracking-[-0.01em] wrap-anywhere">{title}</h1>}
             {version && <span className="font-mono text-small text-ink-faint">{version}</span>}
             {pills}
@@ -104,7 +109,7 @@ export function useCut(element: RefObject<HTMLElement | null>, when: unknown): b
  * A title clamped to its lines (UX7c, the UX7 design §5.3): whole in its tip, and whole on *Show all* where the clamp cut
  * it. Content is shown as it is (platform language §4): nothing is rewritten to fit.
  */
-function ClampedTitle({ title, lines }: { title: string; lines: 1 | 2 }) {
+function ClampedTitle({ title, lines, showAll }: { title: string; lines: 1 | 2; showAll: boolean }) {
   const { t } = useTranslation();
   const own = useRef<HTMLHeadingElement>(null);
   const [whole, setWhole] = useState(false);
@@ -121,7 +126,7 @@ function ClampedTitle({ title, lines }: { title: string; lines: 1 | 2 }) {
       >
         {title}
       </h1>
-      {(cut || whole) && (
+      {showAll && (cut || whole) && (
         <Button variant="ghost" className="px-0 py-0 text-small" onClick={() => setWhole((was) => !was)}>
           {t(whole ? 'work.head.noteLess' : 'work.head.noteMore')}
         </Button>

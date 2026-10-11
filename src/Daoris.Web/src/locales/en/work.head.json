@@ -2,6 +2,8 @@
   "work.head.repository": "Repository",
   "work.head.tree": "tree",
   "work.head.quest": "Quest",
+  "work.head.request": "Request",
+  "work.head.openQuest": "Open quest #{{id}}",
   "work.head.tool": "Agent",
   "work.head.machine": "Machine",
   "work.head.started": "Started",
@@ -37,5 +39,6 @@
   "work.head.account": "Account",
   "work.head.id": "ID",
   "work.head.copyId": "Copy",
-  "work.head.copied": "copied"
+  "work.head.copied": "copied",
+  "work.head.viewRequest": "View full request"
 }

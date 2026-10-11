@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, type Quest, type Session } from '../api';
 import { isImage } from '../attachments';
@@ -72,6 +72,9 @@ export function bodyUnderHead(title: string, body: string, shortTitled: boolean)
   if (shortTitled) return opensOnTitle ? body : `${title}\n\n${body}`;
   return opensOnTitle ? rest.join('\n').replace(/^\s*\n/, '') : body;
 }
+
+/** A title longer than this (two lines of the head, about) is read whole in the request below. */
+const LONG_TITLE = 80;
 
 /** A record's row of facts: its name, and what it holds. */
 function Fact({ name, children }: { name: string; children: ReactNode }) {
@@ -313,35 +316,55 @@ export function QuestPage({
   // once taken) and *Decline…* beside it; the rest of the same list, and its id, in its ⋯. One list still, so the buttons,
   // the ⋯ and the right-click never disagree (CTX1).
   const lead: QuestAct | null = headActs.includes('take') ? 'take' : quest.status === 'Taken' && headActs.includes('done') ? 'done' : null;
-  const drawn = headActs.filter((act) => act === lead || act === 'decline');
-  const folded = headActs.filter((act) => !drawn.includes(act));
+  // HEAD2b (D162 §3): the primary holds still in `acts`; *Decline…* is the fold's, shown above 640 px of the main area, and said
+  // again in the ⋯ only below it. The ⋯'s menu is a portal outside the area's container query, so the width is read when it
+  // opens (`narrow`), and at that width the ⋯ lists what the fold hides.
+  const primary = headActs.filter((act) => act === lead);
+  const declinable = headActs.includes('decline');
+  const [narrow, setNarrow] = useState(true);
+  const moreRef = useRef<HTMLSpanElement>(null);
+  const folded = headActs.filter((act) => act !== lead && (act !== 'decline' || narrow));
   const copyId = { id: 'copy', label: t('contextMenu.act.copyQuest'), icon: 'copy' as const, copy: quest.id };
   const acts = (
     <>
-      {drawn.map((act) => (
+      {primary.map((act) => (
         <Button key={act} variant={buttonOf(act, quest.status)} disabled={waiting} onClick={() => press(act)}>
           {t(QUEST_ACT[act].label)}
         </Button>
       ))}
-      <Menu.Root>
-        <Menu.Trigger asChild>
-          <Button variant="ghost" aria-label={t('work.head.more')} className="h-[1.9rem] w-[1.9rem] justify-center px-0">
-            <Icon name="more" size={15} />
-          </Button>
-        </Menu.Trigger>
-        <Menu.Content side="bottom" align="end" className="min-w-48">
-          <Menu.Acts
-            acts={[
-              ...folded.map((act) => ({
-                id: act, label: t(QUEST_ACT[act].label), icon: QUEST_ACT[act].icon, disabled: waiting, onSelect: () => press(act),
-              })),
-              copyId,
-            ]}
-            onCopy={(text) => { void navigator.clipboard?.writeText(text).catch(() => {}); }}
-          />
-        </Menu.Content>
-      </Menu.Root>
     </>
+  );
+  const fold = declinable ? (
+    <Button variant={buttonOf('decline', quest.status)} disabled={waiting} onClick={() => press('decline')}>
+      {t(QUEST_ACT.decline.label)}
+    </Button>
+  ) : undefined;
+  const more = (
+    <span ref={moreRef} className="contents">
+    <Menu.Root
+      onOpenChange={(open) => {
+        const area = moreRef.current?.closest('[class*="@container/main"]');
+        if (open) setNarrow(!area || area.clientWidth <= 640);
+      }}
+    >
+      <Menu.Trigger asChild>
+        <Button variant="ghost" aria-label={t('work.head.more')} className="h-[1.9rem] w-[1.9rem] justify-center px-0">
+          <Icon name="more" size={15} />
+        </Button>
+      </Menu.Trigger>
+      <Menu.Content side="bottom" align="end" className="min-w-48">
+        <Menu.Acts
+          acts={[
+            ...folded.map((act) => ({
+              id: act, label: t(QUEST_ACT[act].label), icon: QUEST_ACT[act].icon, disabled: waiting, onSelect: () => press(act),
+            })),
+            copyId,
+          ]}
+          onCopy={(text) => { void navigator.clipboard?.writeText(text).catch(() => {}); }}
+        />
+      </Menu.Content>
+    </Menu.Root>
+    </span>
   );
 
   const menu = {
@@ -361,27 +384,34 @@ export function QuestPage({
   // of facts says whom it asks, who asked, when, and the one live fact. The state line, the id and the fact rows went: the
   // state's sentence is its pill's tip, and the id, the full times and the lanes are its *Details*.
   const named = questName(quest);
-  const head = (
-    <PageHead
-      title={named}
-      lead={(
-        <>
-          <Pill tone={QUEST_TONE[quest.status]} title={t(`statusHint.${quest.status}`)}>{t(`status.${quest.status}`)}</Pill>
-          {/* Open's hue is the person's (D126 §2.3): a departure waits on their yes (DRIFT1d2). */}
-          {held && <Pill tone="open" title={t('quests.card.heldHint')}>{t('quests.card.held')}</Pill>}
-          {unreviewed && <Pill tone="open" title={t('review.pillHint')}>{t('review.pill')}</Pill>}
-        </>
-      )}
-      clamp={2}
-      facts={questFacts(t, { quest, session, sitting })}
-      fact={workflow && workflow.runs.length > 0 ? <WorkflowLine runs={workflow.runs} onOpen={workflow.onOpen} /> : undefined}
-      acts={acts}
-    />
-  );
-
   // The body, its first line dropped where it is the title the head already said (POLISH4's rule, as the ask page drops
   // it); where the head said a short title, the body opens on the whole title, once.
   const body = bodyUnderHead(quest.title, quest.body, named !== quest.title);
+  const request = useRef<HTMLParagraphElement>(null);
+  const head = (
+    <PageHead
+      title={named}
+      lead={<Pill tone={QUEST_TONE[quest.status]} title={t(`statusHint.${quest.status}`)}>{t(`status.${quest.status}`)}</Pill>}
+      clamp={2}
+      wholeElsewhere={!!body && named.length > LONG_TITLE}
+      facts={questFacts(t, { quest, session, sitting })}
+      // *View full request* (HEAD2b, as the ask's HEAD2d): a long title is read whole, as written, in the request below, where
+      // the focus goes; on the facts line, since the head has no door slot. Where the body holds nothing more, nothing to go to.
+      fact={!(workflow && workflow.runs.length > 0) && !(body && named.length > LONG_TITLE) ? undefined : (
+        <>
+          {workflow && workflow.runs.length > 0 && <WorkflowLine runs={workflow.runs} onOpen={workflow.onOpen} />}
+          {body && named.length > LONG_TITLE && (
+            <Button variant="ghost" className="ml-1 px-0 py-0 text-small" onClick={() => request.current?.focus()}>
+              {t('work.head.viewRequest')}
+            </Button>
+          )}
+        </>
+      )}
+      acts={acts}
+      fold={fold}
+      more={more}
+    />
+  );
 
   return (
     <ViewMain header={head} menu={menu}>
@@ -690,7 +720,16 @@ export function QuestPage({
       {/* The ask itself, as the asker wrote it: content, wrapping at the column's edge with the title above it (D141: a
           65ch body beside a title that ran the pane left 750 px empty on the install). Its first line is left out where
           the head already said it (UX7c). */}
-      {body && <p className="m-0 whitespace-pre-wrap text-body leading-relaxed">{body}</p>}
+      {body && (
+        <p
+          ref={request}
+          id="quest-request"
+          tabIndex={-1}
+          className="m-0 whitespace-pre-wrap text-body leading-relaxed outline-none"
+        >
+          {body}
+        </p>
+      )}
 
       {!held && requirements.length > 0 && (
         /* What the person required (DRIFT1c, D133 §3), in their words: the measure, where the body above is the intake's

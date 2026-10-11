@@ -133,5 +133,7 @@
   "asks.goAhead.words": "your words, if any",
   "asks.goAhead.approve": "Approve",
   "asks.goAhead.refuse": "Refuse",
-  "asks.goAhead.change": "Change answer"
+  "asks.goAhead.change": "Change answer",
+  "asks.head.quests": "{{count}} quest",
+  "asks.head.quests_other": "{{count}} quests"
 }

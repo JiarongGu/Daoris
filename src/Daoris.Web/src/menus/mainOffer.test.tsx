@@ -109,6 +109,7 @@ describe('a quest\'s header and its offer', () => {
     await screen.findByRole('menuitem', { name: 'Copy quest ID' });
     const held = screen.getAllByRole('menuitem').map((item) => item.textContent!).filter((label) => label !== 'Copy quest ID');
     const offered = store.get()!.acts.filter((act) => act.id !== 'copy').map((act) => act.label);
-    expect([...offered].sort()).toEqual([...loud, ...held].sort());
+    // Decline… is the fold's button and said again in the ⋯ at the narrow width (HEAD2b): one act, two places.
+    expect([...offered].sort()).toEqual([...new Set([...loud, ...held])].sort());
   });
 });

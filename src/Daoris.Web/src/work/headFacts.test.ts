@@ -29,33 +29,40 @@ describe('a session’s facts line', () => {
   beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(NOW); });
   afterEach(async () => { vi.useRealTimers(); await i18n.changeLanguage('en'); });
 
-  it('says a working session’s repository, account and how long it has run', () => {
+  it('says a working session’s repository and how long it has run, and not its account (HEAD2c)', () => {
     expect(sessionFacts(t, { session: session({ profile: 'account-1' }), shown: 'working' }))
-      .toEqual(['engine', 'account-1', '2m']);
+      .toEqual(['engine', '2m']);
   });
 
   /** The install's fourth try, three failed before it, was the fourth line of a strip in mono; the head says it. */
   it('says a working session is another try, and how many failed before it', () => {
     expect(sessionFacts(t, { session: session({ profile: 'account-1' }), shown: 'working', grouping: grouping({ strikes: 3 }) }))
-      .toEqual(['engine', 'account-1', '2m', 'attempt 4: the 3 before it failed']);
+      .toEqual(['engine', '2m', 'attempt 4: the 3 before it failed']);
     expect(sessionFacts(t, { session: session(), shown: 'working', grouping: grouping({ strikes: 1 }) }))
       .toEqual(['engine', '2m', 'attempt 2: the one before it failed']);
   });
 
-  /** ACCTNAME1 (D152 §4.2): the account by the person's name, looked up on the roster as the head is drawn; the id without one. */
-  it('names the account by the person’s name where a namer is handed, and by its id where none is', () => {
-    const nameOf = (owner: string, profile?: string | null) => (owner === 'claude-code' && profile === 'acct-3f9c1a2b' ? 'work' : profile ?? 'own');
-    expect(sessionFacts(t, { session: session({ profile: 'acct-3f9c1a2b' }), shown: 'working', nameOf }))
-      .toEqual(['engine', 'work', '2m']);
-    expect(sessionFacts(t, { session: session({ profile: 'acct-3f9c1a2b' }), shown: 'working' }))
-      .toEqual(['engine', 'acct-3f9c1a2b', '2m']);
-    // A record naming none ran on the tool's own sign-in, said as it was, never through the namer.
-    expect(sessionFacts(t, { session: session(), shown: 'working', ownSignIn: true, nameOf }))
-      .toEqual(['engine', 'on your own sign-in', '2m']);
+  /** The account is *Details*' (ACCTNAME1 names it there), whoever it is and however it signed in. */
+  it('leaves the account to Details, named or on the tool’s own sign-in', () => {
+    const nameOf = () => 'work';
+    expect(sessionFacts(t, { session: session({ profile: 'acct-3f9c1a2b' }), shown: 'working', nameOf })).toEqual(['engine', '2m']);
+    expect(sessionFacts(t, { session: session(), shown: 'working', ownSignIn: true })).toEqual(['engine', '2m']);
   });
 
-  it('names the tool’s own sign-in where the record names no account and its agent has accounts', () => {
-    expect(sessionFacts(t, { session: session(), shown: 'working', ownSignIn: true })).toEqual(['engine', 'on your own sign-in', '2m']);
+  /** Where the account explains a hold, the row's own line says it: a cooling account keeps its place in the facts. */
+  it('keeps what a held session’s account explains, in the row’s words', () => {
+    const facts = sessionFacts(t, {
+      session: session({ state: 'completed', profile: 'account-1' }), shown: 'completed',
+      grouping: grouping({ group: 'you', shown: 'completed', holds: { why: 'cooling', reason: 'cooling.', until: '2026-10-05T16:02:00Z' } } as never),
+    });
+    expect(facts[0]).toBe('engine');
+    expect(facts).toHaveLength(3);
+    expect(facts).not.toContain('account-1');
+  });
+
+  it('says a running chat how long ago it began', () => {
+    expect(sessionFacts(t, { session: session({ kind: 'chat', quest: null, profile: 'account-1' }), shown: 'working' }))
+      .toEqual(['engine', 'started 2m ago']);
   });
 
   it('says how long a session has waited on the person', () => {
@@ -85,7 +92,7 @@ describe('a session’s facts line', () => {
   it('is said in 中文', async () => {
     await i18n.changeLanguage('zh');
     expect(sessionFacts(t, { session: session({ profile: 'account-1' }), shown: 'working', grouping: grouping({ strikes: 3 }) }))
-      .toEqual(['engine', 'account-1', '2 分钟', '第 4 次尝试：之前 3 次失败']);
+      .toEqual(['engine', '2 分钟', '第 4 次尝试：之前 3 次失败']);
   });
 });
 
@@ -93,9 +100,14 @@ describe('a quest’s facts line', () => {
   beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(NOW); });
   afterEach(async () => { vi.useRealTimers(); await i18n.changeLanguage('en'); });
 
-  it('says whom it asks, who asked and when, and that a session is starting for it here', () => {
+  it('says where it goes, its age, and that a session is starting for it here; the requester is its Details’', () => {
     expect(questFacts(t, { quest: quest(), session: session({ state: 'starting' }) }))
-      .toEqual(['to engine', 'from ask #f6d947', 'filed 4h ago', 'a session is starting here']);
+      .toEqual(['to engine', 'filed 4h ago', 'a session is starting here']);
+  });
+
+  it('opens on a hold the person lifts: a departure awaiting their yes, or a review (HEAD2b)', () => {
+    expect(questFacts(t, { quest: quest({ held: true }) })).toEqual(['awaits your yes', 'to engine', 'filed 4h ago']);
+    expect(questFacts(t, { quest: quest({ held: true, hold: 'unreviewed' }) })).toEqual(['awaits review', 'to engine', 'filed 4h ago']);
   });
 
   it('says its session working, its park, a take with nothing running, and when it closed', () => {
@@ -108,6 +120,6 @@ describe('a quest’s facts line', () => {
   });
 
   it('says nothing more of an open quest nothing is running for', () => {
-    expect(questFacts(t, { quest: quest() })).toEqual(['to engine', 'from ask #f6d947', 'filed 4h ago']);
+    expect(questFacts(t, { quest: quest() })).toEqual(['to engine', 'filed 4h ago']);
   });
 });

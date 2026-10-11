@@ -27,7 +27,7 @@ describe("a set-up step's page", () => {
   it('says it awaits review, never a yes, and offers no accept the review would refuse', () => {
     page({ onAccept: vi.fn() });
 
-    expect(screen.getByText('awaits review')).toBeInTheDocument();
+    expect(screen.getByText(/^awaits review · /)).toBeInTheDocument();
     expect(screen.queryByText('awaits your yes')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Accept the departure' })).toBeNull();
   });
@@ -78,7 +78,7 @@ describe("a set-up step's page", () => {
     await i18n.changeLanguage('zh');
     page({ review: { acts: { reviewed: vi.fn(), skip: vi.fn() }, served: true } });
 
-    expect(screen.getByText('等你审阅')).toBeInTheDocument();
+    expect(screen.getByText(/^等你审阅 · /)).toBeInTheDocument();
     expect(screen.getByRole('region', { name: /在 local 中审阅/ })).toHaveTextContent('仍在 Daoris 浏览器中展示');
     expect(screen.getByRole('button', { name: '已审阅' })).toBeInTheDocument();
   });

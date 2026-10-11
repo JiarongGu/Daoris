@@ -32,23 +32,23 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Web/e2e/platform.spec.ts` | 56 | 967 |
+| `src/Daoris.Web/e2e/platform.spec.ts` | 56 | 968 |
 | `src/Daoris.Web/src/App.test.tsx` | 50 | 966 |
 | `src/Daoris.Web/src/App.tsx` | 70 | 1285 |
 | `src/Daoris.Web/src/ProjectsView.test.tsx` | 77 | 1388 |
-| `src/Daoris.Web/src/QuestsView.test.tsx` | 70 | 1375 |
+| `src/Daoris.Web/src/QuestsView.test.tsx` | 70 | 1377 |
 | `src/Daoris.Web/src/agents/AgentPage.tsx` | 51 | 956 |
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 105 | 2030 |
 | `src/Daoris.Web/src/commands.ts` | 40 | 793 |
 | `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 57 | 1148 |
-| `src/Daoris.Web/src/quests/QuestPage.tsx` | 46 | 861 |
+| `src/Daoris.Web/src/quests/QuestPage.tsx` | 48 | 900 |
 | `src/Daoris.Web/src/ui.test.tsx` | 48 | 975 |
 | `src/Daoris.Web/src/ui.tsx` | 79 | 1683 |
 | `src/Daoris.Web/src/work/ConversationView.test.tsx` | 48 | 912 |
-| `src/Daoris.Web/src/work/SessionHead.test.tsx` | 48 | 907 |
+| `src/Daoris.Web/src/work/SessionHead.test.tsx` | 50 | 949 |
 | `src/Daoris.Web/src/work/SessionRail.test.tsx` | 48 | 950 |
-| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 216 | 4156 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 88 | 1636 |
+| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 217 | 4183 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 89 | 1644 |
 | `src/Daoris.Web/src/work/attention.test.ts` | 42 | 857 |
 | `src/Daoris.Web/src/work/conversation.test.ts` | 44 | 871 |
 | `src/Daoris.Web/src/work/frame.tsx` | 40 | 877 |

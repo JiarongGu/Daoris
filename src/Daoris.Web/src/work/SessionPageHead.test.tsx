@@ -34,7 +34,9 @@ describe('a session’s page header', () => {
     const header = screen.getByRole('banner');
     const title = within(header).getByRole('heading', { level: 1, name: 'Expose a streaming budget on the chunk API' });
     expect(title.getAttribute('title')).toBe('Expose a streaming budget on the chunk API');
-    expect(title.className).toContain('truncate');
+    // HEAD2c (D162): one line by PageHead's clamp, never a second the head grows by.
+    expect(title.className).toContain('line-clamp-1');
+    expect(title.className).not.toContain('line-clamp-2');
     const word = within(header).getByText('working');
     expect(word.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(header).getByText('engine · account-1 · 2m · attempt 4: the 3 before it failed')).toBeInTheDocument();
@@ -88,16 +90,22 @@ describe('a session’s page header', () => {
   });
 
   /** It is pinned: the page scrolls under it, and below 560 px its acts take their own line (§3.2). */
-  it('is pinned at the top of the main area, and puts its acts on their own line when the area is narrow', () => {
+  it('is pinned at the top of the main area, and its acts are PageHead’s: a column of their own above 640 px (HEAD2c)', () => {
     head();
     const header = screen.getByRole('banner');
-    expect(header.className).toContain('sticky');
-    expect(within(header).getByRole('group', { name: 'Session actions' }).className).toContain('@max-[35rem]/main:basis-full');
+    expect(header.closest('.sticky')).not.toBeNull();
+    expect(header.className).toContain('@[40rem]/main:grid-cols-[minmax(0,1fr)_auto]');
+    const acts = within(header).getByRole('group', { name: 'Session actions' });
+    expect(within(acts).getByRole('button', { name: 'Stop…' })).toBeInTheDocument();
+    // *Stop…* stays: it is not the fold's, which PageHead hides at the narrow width.
+    expect(acts.closest('.hidden')).toBeNull();
   });
 
   it('holds what asks under it, pinned with it', () => {
     head({ asking: <p>the stop’s ask</p> });
-    expect(within(screen.getByRole('banner')).getByText('the stop’s ask')).toBeInTheDocument();
+    const ask = screen.getByText('the stop’s ask');
+    // Pinned with the header: inside the sticky box that holds the banner.
+    expect(ask.closest('.sticky')).toBe(screen.getByRole('banner').closest('.sticky'));
   });
 
   it('names its acts in 中文', async () => {

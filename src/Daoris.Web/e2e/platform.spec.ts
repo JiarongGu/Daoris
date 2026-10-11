@@ -380,8 +380,9 @@ test('an ask is proposed by declarations, published by a person, and closed with
   await ask.getByRole('region', { name: 'Became' }).getByRole('button', { name: /^#[0-9a-f]{6} the rendering of the asset pipeline…$/ }).click();
   const quest = record(page);
   await expect(quest.getByRole('region', { name: 'Where it belongs' })).toHaveCount(0);
-  // Asked by the ask, on its head's facts line (UX7c).
-  await expect(quest.getByText(/from ask #[0-9a-f]{6}/).first()).toBeVisible();
+  // Asked by the ask, in its Details (HEAD2b moved the requester off the head's facts line).
+  await quest.getByRole('button', { name: /^Details/ }).click();
+  await expect(quest.getByText(/ask #[0-9a-f]{6}/).first()).toBeVisible();
   await expect(quest.getByRole('link', { name: /tickets\.example\/T-8/ })).toBeVisible();
   await expect(quest.getByRole('link', { name: /trace\.log/ })).toBeVisible();
 

@@ -42,6 +42,13 @@ describe('pausing and abandoning in the shell', () => {
     window.localStorage.clear();
   });
 
+  /** One act of the ask's ⋯ (HEAD2d moved its acts there), opened from the keyboard as every menu is in jsdom. */
+  const fromMore = async (page: HTMLElement, name: string) => {
+    within(page).getByRole('button', { name: 'More actions' }).focus();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.click(await screen.findByRole('menuitem', { name }));
+  };
+
   const answering = (answers: Record<string, unknown>) => invoke.mockImplementation(async (module: string, type: string) => {
     if (module === 'DAORIS.REMOTES') return WIRING;
     if (type in answers) return answers[type];
@@ -58,7 +65,7 @@ describe('pausing and abandoning in the shell', () => {
 
     const page = await chooseRow('Make chunk streaming smooth');
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORK_PLAN', { payload: { ask: 'a1b2c3' } }));
-    await userEvent.click(await within(page).findByRole('button', { name: 'Pause…' }));
+    await fromMore(page, 'Pause…');
 
     // The ask's workspace is wired here (`aurora`), so another machine may still take its open quest.
     const ask = within(page).getByRole('group', { name: 'pause this work' });
@@ -77,7 +84,7 @@ describe('pausing and abandoning in the shell', () => {
     const user = userEvent.setup();
 
     const page = await chooseRow('Make chunk streaming smooth');
-    await user.click(await within(page).findByRole('button', { name: 'Abandon…' }));
+    await fromMore(page, 'Abandon…');
     await user.type(within(page).getByRole('textbox', { name: 'why — kept with each decline' }), 'Taking another approach.');
     await user.click(within(page).getByRole('button', { name: 'Abandon ask' }));
 

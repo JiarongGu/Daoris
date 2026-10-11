@@ -13663,3 +13663,27 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **NEW1a — a conversation starts on its first words** (driver/modules). `START_CHAT` takes the opening words, their files and a request id; the driver opens the conversation and sends the words as its first message through *Start a conversation with these words*' machinery; the same id never starts twice; *the checkout* means the checkout (today OR'd with the standing opt-in, ChatRunner.cs ~:192-206). D162 §2; design §1.
 
 **Outcome** 2026-10-12: `START_CHAT` with words opens the conversation and hands them as its first message (files over a message's limit as words alone), answering `{sessionId, sent, why, message}` beside the old fields; a request id shares a running start and answers a finished one for 24 h (`<home>/starts/`), a refused start not kept; `ownTree` is three-way (absent the driver's choice, true its own tree, false the checkout). The real-process `sent: true` route test passed at the merge. Detail: D162's NEW1a note.
+
+## HEAD2d — an ask's head as a quest's (2026-10-12, D162)
+
+> - [ ] **HEAD2d — an ask's head as a quest's** (web; after a). `AskPage`'s head: the state pill leads, two lines, a facts line, the id to the ⋯ and *Details* (asks on the install run 200 to 1,715 characters, unclamped). Design §0, §2.
+
+**Outcome** 2026-10-12: the ask's head leads with its state pill, clamps its first line to two, says where, its age and one live fact (`askFacts`), offers *View full request* (`work.head.viewRequest`) past 90 characters, and keeps only *Resume* as a button, every other act and *Copy ask ID* in the ⋯; the id is a *Details* row. Two QuestsView tests that pressed the head's *Pause…*/*Abandon…* moved to the ⋯ at the merge. Detail: D162's HEAD2d note.
+
+## HEAD2b — a quest's head (2026-10-12, D162)
+
+> - [ ] **HEAD2b — a quest's head** (web; after a). Title two lines, *View full request* moves focus to the request in the body; *Held*/*Unreviewed* to the facts line; facts: where, age, one live fact, the rest in *Details*. Design §2.
+
+**Outcome** 2026-10-12: the quest's state pill alone leads; *Awaits your yes* and *awaits review* open the facts line, then where, its age and one live fact (the requester in *Details*); *Take*/*Mark done* in `acts`, *Decline…* in `fold` and, at 640 px or less (measured as the ⋯ opens, since the menu is a portal), in the ⋯; *View full request* past 80 characters focuses the request block. Detail: D162's HEAD2b note.
+
+## HEAD2c — a session's head (2026-10-12, D162)
+
+> - [ ] **HEAD2c — a session's head** (web; after a). One line; `WholeTitle` goes, the request as written is a *Details* row with the quest's door; facts: repository, age, one state fact. Design §2.
+
+**Outcome** 2026-10-12: `SessionPageHead` draws `PageHead` in its sticky box: the title on one line, the state pill leading, the loud act and *Stop…* never folded; `WholeTitle` is gone and *Details* gains *Request* (the quest's whole title and *Open quest #id*, or a long opening); the facts are the repository, its age and one state fact, the account in *Details*. Detail: D162's HEAD2c note.
+
+## HEAD2f — one way to the whole request (2026-10-12, D162)
+
+> - [ ] **HEAD2f — one way to the whole request** (web). Where a head offers *View full request* (the quest's and the ask's, HEAD2b/d), its clamped title still shows `PageHead`'s own *Show all*: give `PageHead` a way to drop it there, so the design's "*Show all* becomes *View full request*" holds. Design §2.
+
+**Outcome** 2026-10-12: `PageHead` takes `wholeElsewhere`; the quest's and the ask's heads pass it when they show *View full request*, and their clamped title drops *Show all* but keeps its tip; other heads keep *Show all*. Detail: D162's HEAD2f note.

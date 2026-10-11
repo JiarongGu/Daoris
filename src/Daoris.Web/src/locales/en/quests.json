@@ -137,7 +137,6 @@
   "quests.field.shortPlaceholder": "a few words that tell it apart",
   "quests.field.shortTooLong": "A short title is at most {{count}} characters, about 20 in Chinese.",
   "quests.facts.to": "to {{repository}}",
-  "quests.facts.from": "from {{from}}",
   "quests.facts.filed": "filed {{ago}}",
   "quests.facts.filedAt": "filed {{at}}",
   "quests.facts.movedAt": "moved {{at}}",
