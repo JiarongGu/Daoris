@@ -546,6 +546,13 @@ public static class NoteCodes
     public static readonly NoteCode WordsUnreached = new("words.unreached", ["count", "why"]) { Why = Unreached };
     public static readonly NoteCode WordsNotTaken = new("words.not-taken", []);
 
+    // The chat runner's and the modules' sites (CONVNOTE2d2): words a conversation never got, a send that found the agent gone,
+    // a start's words not taken off their session (the session id a fact), and held words the record would not keep.
+    public static readonly NoteCode WordsNotReached = new("words.not-reached", []);
+    public static readonly NoteCode WordsNotSent = new("words.not-sent", []);
+    public static readonly NoteCode WordsStartNotTaken = new("words.start-not-taken", ["session"]);
+    public static readonly NoteCode WordsNotKept = new("words.not-kept", []);
+
     // ——— A server that drives Daoris's own browser, withheld (CONVNOTE2c, InAppBrowserServers.HandNotedAsync): the servers are
     // plugin-declared names; why it was not handed is a fact of the host's, or an exception's words riding after the lead.
     public static readonly NoteCode BrowserWithheld = new("browser.withheld", ["servers"]);
@@ -599,9 +606,31 @@ public static class UnreachedWhy
 public static class WordsNotes
 {
     /// <summary>What the agent said when it would not take the person's words mid-turn, in its own words.</summary>
-    public static Noted Refused(string agentWords) =>
-        Noted.Of(NoteCodes.WordsRefused, "— the session would not take what the person added:")
+    /// <param name="agentWords">The agent's own words.</param>
+    /// <param name="who">What the English calls the one that refused: the chat runner has always said "conversation".</param>
+    public static Noted Refused(string agentWords, string who = "session") =>
+        Noted.Of(NoteCodes.WordsRefused, $"— the {who} would not take what the person added:")
             .Then(" ", Noted.Said(agentWords, NoteBy.Agent));
+
+    /// <summary>Words that never reached a conversation, the program's own message beneath (CONVNOTE2d2; it may hold a path).</summary>
+    public static Noted NeverReached(string message) =>
+        Noted.Of(NoteCodes.WordsNotReached, "— what the person added never reached it:")
+            .Then(" ", Noted.Said(message, NoteBy.Program));
+
+    /// <summary>A message the agent's process had gone before it could take (CONVNOTE2d2).</summary>
+    public static Noted NotSent() => Noted.Of(NoteCodes.WordsNotSent, "the message could not be sent: the agent had gone.");
+
+    /// <summary>The words a conversation started with that could not be taken off their session's record, the service's message beneath (CONVNOTE2d2).</summary>
+    public static Noted StartNotTaken(string session, string message) =>
+        Noted.Of(
+                NoteCodes.WordsStartNotTaken, $"— the words this conversation started with could not be taken off session `{session}`:",
+                ("session", session))
+            .Then(" ", Noted.Said(message, NoteBy.Program));
+
+    /// <summary>Held words the record would not keep once it ended, the service's message beneath (CONVNOTE2d2).</summary>
+    public static Noted NotKept(string message) =>
+        Noted.Of(NoteCodes.WordsNotKept, "— what you said as it wound up was not kept for it to go on with:")
+            .Then(" ", Noted.Said(message, NoteBy.Program));
 
     /// <summary>
     /// Words the person sent that never reached the session, and why. <paramref name="never"/> is the English between the count

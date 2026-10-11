@@ -163,6 +163,11 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'words.refused': { values: [] },
   'words.unreached': { values: ['count', 'why'], why: 'unreached' },
   'words.not-taken': { values: [] },
+  // The chat runner's and the modules' sites (CONVNOTE2d2): a program's or the service's words follow each lead but `not-sent`.
+  'words.not-reached': { values: [] },
+  'words.not-sent': { values: [] },
+  'words.start-not-taken': { values: ['session'] },
+  'words.not-kept': { values: [] },
   // A server that drives Daoris's own browser, withheld: why follows as a code of the host's or an exception's words.
   'browser.withheld': { values: ['servers'] },
   'browser.no-host': { values: [] },
