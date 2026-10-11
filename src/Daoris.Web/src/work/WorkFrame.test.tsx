@@ -1238,6 +1238,54 @@ describe('starting and holding a conversation', () => {
     expect(onSelect).toHaveBeenCalledWith(null);
   });
 
+  /**
+   * NEW1d-b (D162): Ask Daoris's go to New conversation arrives as an EVENT too, a `compose` with an id, consumed once by that
+   * id (FIX-LOG 2026-09-23): the attended session is put down, the repository chosen, the words put in above any already there,
+   * and the prompt owes the focus. Nothing is sent.
+   */
+  it('opens the composer filled by a go, once by its id, keeping the words already typed below its own', async () => {
+    const game = { ...REGISTRY[0]!, repository: 'game', root: 'C:/somewhere/game' };
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => (String(input).startsWith('/api/registry')
+      ? Response.json([...REGISTRY, game])
+      : respond(String(input)))));
+    SESSIONS = [DRIVEN, CHAT];
+    const onSelect = vi.fn();
+    let go: (next: { repository?: string; sentence?: string; id: number }) => void = () => {};
+    function Held() {
+      const [selected, setSelected] = useState<string | null>('c0ffee11');
+      const [compose, setCompose] = useState<{ repository?: string; sentence?: string; id: number } | null>(null);
+      go = setCompose;
+      return <WorkFrame selected={selected} onSelect={(id) => { onSelect(id); setSelected(id); }} notify={() => {}} compose={compose} />;
+    }
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider><Held /></Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+    await screen.findByLabelText('Message');
+
+    act(() => go({ repository: 'game', sentence: 'fix the build', id: 1 }));
+
+    const prompt = await promptBox();
+    expect(prompt).toHaveValue('fix the build');
+    expect(await screen.findByRole('button', { name: 'Repository: game' })).toBeInTheDocument();
+    await waitFor(() => expect(prompt).toHaveFocus());
+    expect(onSelect).toHaveBeenCalledWith(null);
+    expect(window.localStorage.getItem('daoris.start.chosen')).toBe('game');
+    expect(invoke.mock.calls.some(([, type]) => type === 'START_CHAT')).toBe(false);
+
+    // The same go again is not a new one; a new id puts its words above what is there.
+    act(() => go({ sentence: 'fix the build', id: 1 }));
+    expect(prompt).toHaveValue('fix the build');
+    act(() => go({ sentence: 'and the tests', id: 2 }));
+    await waitFor(() => expect(prompt).toHaveValue('and the tests\n\nfix the build'));
+    // A go naming neither opens the composer as it was.
+    act(() => go({ id: 3 }));
+    expect(prompt).toHaveValue('and the tests\n\nfix the build');
+    expect(screen.getByRole('button', { name: 'Repository: game' })).toBeInTheDocument();
+  });
+
   /** The prompt takes the focus for a press, and not when nothing is attended again by another path. */
   it('takes the focus for a press, and not when it comes back by another path', async () => {
     SESSIONS = [DRIVEN, CHAT];

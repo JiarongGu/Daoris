@@ -13723,3 +13723,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **NEW1c — add a repository from the picker, the draft kept** (web; after b). *Add a repository…* / *Import a folder…* at the picker's foot open Projects' drawers over Sessions; Add's `onAdded` chooses it and returns focus; Import gains the same. First run: *Add a repository…* is the primary press. Design §1.
 
 **Outcome** 2026-10-12: the picker's foot and the first run offer *Add repository…* and *Import a folder…* (the Workspace menu's words), opening Projects' two drawers over Sessions from `WorkFrame`'s own state with the words kept; Add chooses what it registered, one imported repository is chosen, several open the picker on their workspace, and the prompt takes the focus whenever a drawer closes. Detail: D162's NEW1c note.
+
+## NEW1d-b — the go fills the composer; *Make it a task with Daoris…* (2026-10-12, D162)
+
+> - [ ] **NEW1d-b — the go fills the composer; *Make it a task with Daoris…*** (web; after NEW1d-a and NEW1c). `placeDoor` opens the composer with the go's repository and words; the composer's quiet press hands its draft and repository to Ask Daoris as a draft. Design §1.
+
+**Outcome** 2026-10-12: a go to `sessions`/`new` becomes a `compose` door that `WorkFrame` consumes once by id (repository chosen through NEW1c's `pick`, words above any already typed, nothing sent), and the composer's quiet *Make it a task with Daoris…* puts its draft, under a line naming the repository, in Quick Ask for the person to send; a browser has no composer. Detail: D162's NEW1d-b note.

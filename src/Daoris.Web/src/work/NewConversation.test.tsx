@@ -332,6 +332,44 @@ describe('a new conversation', () => {
     expect(screen.getByRole('combobox', { name: 'find a repository' })).toHaveValue('aurora');
   });
 
+  /**
+   * NEW1d-b (D162): *Make it a task with Daoris…* is a quiet press beside *Start*, waiting for words, that hands the draft to Ask
+   * Daoris with one line naming the repository chosen above it. It sends nothing and clears nothing: the composer keeps its draft.
+   */
+  it('hands the draft and the repository to Ask Daoris from a quiet press, and keeps the draft', async () => {
+    const onMakeTask = vi.fn();
+    const onStart = show({ onMakeTask, draft: '' });
+    const press = screen.getByRole('button', { name: 'Make it a task with Daoris…' });
+    expect(press).toBeDisabled();
+
+    cleanup();
+    const onDraft = vi.fn();
+    show({ onMakeTask, onStart, draft: 'Fix the build', onDraft });
+    await userEvent.click(screen.getByRole('button', { name: 'Repository: engine' }));
+    await userEvent.click(await screen.findByRole('option', { name: /game/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Make it a task with Daoris…' }));
+
+    expect(onMakeTask).toHaveBeenCalledWith('In game:\n\nFix the build');
+    expect(onStart).not.toHaveBeenCalled();
+    expect(onDraft).not.toHaveBeenCalled();
+    expect(screen.getByRole('textbox', { name: 'What would you like to work on?' })).toHaveValue('Fix the build');
+  });
+
+  it('offers the quiet press in Chinese, naming the repository with its glossary word', async () => {
+    await i18n.changeLanguage('zh');
+    const onMakeTask = vi.fn();
+    show({ onMakeTask, draft: '修复构建' });
+    await userEvent.click(screen.getByRole('button', { name: '请道衍把它整理成任务…' }));
+
+    expect(onMakeTask).toHaveBeenCalledWith('在仓库 engine 中：\n\n修复构建');
+  });
+
+  it('offers no such press where nothing hands it on', () => {
+    show({ draft: 'Fix the build' });
+
+    expect(screen.queryByRole('button', { name: 'Make it a task with Daoris…' })).toBeNull();
+  });
+
   /** A browser has no shell (D46 §7): no composer, and the place says where a conversation starts. */
   it('is absent in a browser, which says to open Daoris on this machine', () => {
     show({ attached: false });

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { SessionConsole } from '../SessionConsole';
 import { sentence } from '../format';
 import { buildChain } from '../map/chain';
-import type { OpenGroup } from '../opener';
+import type { Compose, OpenGroup } from '../opener';
 import { useAnswerSession, useAsks, usePersonDone, useQuests, useRegistry, useSessions } from '../queries';
 import {
   type TurnStop, useCancelTurn, useEndChat, useHarnesses, useResolveSession, useSendMessage,
@@ -138,7 +138,7 @@ const door = (structured?: boolean): 'structured' | 'text' | undefined =>
  */
 export function WorkFrame({
   selected, onSelect, notify, onSendBack, onAnswerAsk, onOpenQuest, intent, onIntentTaken, ask, askFocus = 0, closings, placements,
-  lists, layout: viewLayout, onOpenSessions, terminal = false, onListMode, group = null, onGroupBrought,
+  lists, layout: viewLayout, onOpenSessions, terminal = false, onListMode, group = null, onGroupBrought, compose = null, onMakeTask,
 }: {
   /**
    * What each view's list remembers (D118 §3f), held by the application so the list's doors reach it from
@@ -202,6 +202,14 @@ export function WorkFrame({
    */
   intent?: FrameIntent | null;
   onIntentTaken?: () => void;
+  /**
+   * Ask Daoris's go to New conversation (NEW1d-b, D162): the repository to choose and the words to put in the composer, each
+   * only where the go named one. An event like `intent`, consumed once by its `id` and never by "if it is set" (FIX-LOG
+   * 2026-09-23): the attended session is put down, the prompt owed the focus, the words put above any already typed.
+   */
+  compose?: (Compose & { id: number }) | null;
+  /** *Make it a task with Daoris…* in the composer: its draft, to Ask Daoris as a draft the person sends (NEW1d-b). */
+  onMakeTask?: (text: string) => void;
   /**
    * Ask Daoris, as a tab of the right dock: one right region, as VS Code's chat is a view of its secondary side bar, never a
    * second column beside the dock. Absent where no shell is attached.
@@ -844,6 +852,19 @@ export function WorkFrame({
   }
   if (!intent && taken) setTaken(null);
 
+  // A go to New conversation (NEW1d-b): consumed by its id, as `intent` is by identity. The repository is NEW1c's pick, which waits
+  // until the registry lists it; the words go above what is typed, as `keepDraft` puts them. Files are not touched.
+  const [composed, setComposed] = useState<number | null>(null);
+  if (compose && compose.id !== composed) {
+    setComposed(compose.id);
+    newConversationPressed();
+    if (compose.repository) setPickNew((last) => ({ repository: compose.repository!, n: (last?.n ?? 0) + 1 }));
+    if (compose.sentence) {
+      const sentence = compose.sentence;
+      setNewDraft((was) => [sentence, was.trim()].filter(Boolean).join('\n\n'));
+    }
+  }
+
   // The console and its streams (CONSOLE2c), for whichever region it stands in. A session with nothing
   // held here says so as a sentence, not as an empty bordered well, which read as a field on the
   // installed window.
@@ -1392,6 +1413,7 @@ export function WorkFrame({
       onImport={() => setImporting(true)}
       pick={pickNew}
       reveal={reveal}
+      onMakeTask={onMakeTask}
     />
   );
   const drawerDown = (close: () => void) => () => {
