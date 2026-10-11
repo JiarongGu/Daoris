@@ -43,8 +43,6 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 Contracts: toolchain (D57 §3), account rotation (D125), account use (D130), browser (D78/D84).
 Original row proofs remain in the frozen backlog; measurements precede declarations.
 
-- [ ] **BRWHINT1b — a driven session's agent is told the browser it was handed** (driver). A chat's is told (BRWHINT1a); a driven session's is not, since its prompt composers (the quest's target prompt, `Adapters.cs` ~770-830, `Intake.cs` ~400) and their goldens say nothing of a handed browser. Say it there as the chat's line says it (`InAppBrowserServers.Told`), and only where a server that drives Daoris's browser was handed. D78's BRWHINT1a note; the goldens, and a driven session's prompt in a test.
-
 - [ ] **ACCTUX4i — installed account cells, and the row budget** (parent). 中文 dark and light at 1546 and 680 seen 2026-10-11; English, a key and Codex rows remain. The *Now* header stands over an empty column, the cells starting under *Used for*. Settle D152's row budget against D125's ACCTUX4 measures.
 - [ ] **ACCTPLAN1 — plan, spend and reset credits** (driver/modules/web; design first). Nothing reads them yet (D125:898-899); show them in a fold, and never redeem a credit without `InlineConfirm`. Second-opinion review lines 132-133.
 - [ ] **CODEXUSE2 — installed Codex reading** (parent/owner). Pins are verified; account sign-in remains unavailable. Use CODEXUSE3's own-sign-in reading meanwhile. D57/D63/D125.

@@ -13771,3 +13771,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **BRWHINT1 — an agent is told the browser it was handed** (driver). The same chat had Daoris's browser (`browser`, Playwright over CDP to the window the person signs in to) and reached for Codex's computer-use, which saw no browser: a handed browser is said to the agent only when it is left out. Say it to the agent when it is handed, on both doors. D78.
 
 **Outcome** 2026-10-12: the chat's half. A new chat's first message carries one line naming each handed server that drives Daoris's browser, before the person's words, on both doors, in `ChatMessage.Briefing` and kept as the note `chat.told-browser`; a going-on chat and a later message say nothing. Driven sessions are BRWHINT1b. Detail: D78's BRWHINT1a note.
+
+## BRWHINT1b — a driven session's agent is told the browser it was handed (2026-10-12, D78)
+
+> - [ ] **BRWHINT1b — a driven session's agent is told the browser it was handed** (driver). A chat's is told (BRWHINT1a); a driven session's is not, since its prompt composers (the quest's target prompt, `Adapters.cs` ~770-830, `Intake.cs` ~400) and their goldens say nothing of a handed browser. Say it there as the chat's line says it (`InAppBrowserServers.Told`), and only where a server that drives Daoris's browser was handed. D78's BRWHINT1a note; the goldens, and a driven session's prompt in a test.
+
+**Outcome** 2026-10-12: a quest's session and an intake read BRWHINT1a's line as a block of their own in their prompt, only where a browser-driving server was handed; a resumed run says nothing, the transcript preamble is unchanged, and the goldens did not move. Detail: D78's BRWHINT1b note.

@@ -10,6 +10,8 @@ with the version and date at release.
 - A new conversation's agent is told it has Daoris's browser, and by which tool name, with its first message, so it uses
   that browser (and the sign-in you made in it) rather than reaching for a tool of its own; the conversation shows what
   it was told.
+- A quest's agent, and an intake's, is told it has Daoris's browser, and by which tool name, in its instruction, so it uses
+  that browser for a page behind your sign-in; a session that was not handed one is told nothing.
 - A question or task handed to Ask Daoris (*Make it a task with Daoris…*, *Ask Daoris about it*) opens on a new
   conversation when the last one has ended, instead of under its history.
 - *New conversation* opens on the repository you were just in, and *Recent* lists where you have been working, not only
