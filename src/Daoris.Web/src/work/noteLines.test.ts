@@ -311,7 +311,12 @@ describe('noteLines', () => {
         'Its background work `Build` ended (failed).',
         'The session goes on.',
       ]);
-      expect(noteLines(zh, { parts }, 'zh')[0].text).toBe('它的后台工作 `Run the gates` 已结束（completed）。');
+      expect(noteLines(zh, { parts }, 'zh')[0].text).toBe('它的后台工作 `Run the gates` 已结束（已完成）。');
+      expect(noteLines(zh, { parts }, 'zh')[1].text).toBe('它的后台工作 `Build` 已结束（失败）。');
+      // An unknown state is shown as the harness sent it, in both languages.
+      const odd = [coded('background.work-ended', '`Build` (paused)', { work: 'Build', state: 'paused' })];
+      expect(noteLines(t, { parts: odd }, 'en')[0].text).toBe('Its background work `Build` ended (paused).');
+      expect(noteLines(zh, { parts: odd }, 'zh')[0].text).toBe('它的后台工作 `Build` 已结束（paused）。');
       expect(noteLines(zh, { parts: [coded('background.work-ended', '…', { work: 'x' })] }, 'zh')[0].kind).toBe('recorded');
     });
 

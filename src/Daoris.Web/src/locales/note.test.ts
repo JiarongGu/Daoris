@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { NOTE_CODES, NOTE_VALUES, OPENING_REASONS, RESUMED_REASONS, UNREACHED_REASONS } from '../work/noteLines';
+import { BACKGROUND_STATES, NOTE_CODES, NOTE_VALUES, OPENING_REASONS, RESUMED_REASONS, UNREACHED_REASONS } from '../work/noteLines';
 import { REASONS } from '../work/say';
 import { en, zh } from '.';
 
@@ -41,6 +41,12 @@ function reasons(family: string): { key: string; values: string[] }[] {
   return [...block.matchAll(/new\(\w+\.\w+, \[([^\]]*)\], "([^"]+)"\)/g)].map((match) => ({ key: match[2], values: names(match[1]) }));
 }
 
+/** The states the driver's `BackgroundState` declares as known (CONVNOTE2i). */
+function backgroundStates(): string[] {
+  const block = /static class BackgroundState\s*\{([\s\S]*?)\n\}/.exec(source('src/Daoris.Desktop/Daoris.Desktop.Driver/NoteCodes.cs'))?.[1] ?? '';
+  return [...block.matchAll(/public const string \w+ = "([^"]+)";/g)].map((match) => match[1]);
+}
+
 const driver = declared('driver', 'src/Daoris.Desktop/Daoris.Desktop.Driver/NoteCodes.cs');
 const ledger = declared('service', 'src/Daoris.Service/Daoris.Service.Core/NoteParts.cs');
 const codes = [...driver, ...ledger];
@@ -70,7 +76,7 @@ describe('a session note’s codes, held to both catalogues', () => {
 
   it.each([['en', en], ['zh', zh]] as const)('keeps no `note.*` entry in %s that no writer declares', (_, catalogue) => {
     // A reason a `why` names is declared by its writer too (UX7d-1: the opening's, `note.opening.why.*`).
-    const keys = new Set([...codes.map((code) => code.key), ...['Continue', 'Cooling', 'Opening', 'Resumed', 'Unreached'].flatMap((family) => reasons(family).map((reason) => reason.key))]);
+    const keys = new Set([...codes.map((code) => code.key), ...['Continue', 'Cooling', 'Opening', 'Resumed', 'Unreached'].flatMap((family) => reasons(family).map((reason) => reason.key)), ...backgroundStates().map((state) => `note.background.state.${state}`)]);
     const orphans = Object.keys(catalogue).filter((key) => key.startsWith('note.') && !keys.has(key));
     expect(orphans).toEqual([]);
   });
@@ -166,6 +172,19 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
     for (const catalogue of [en, zh]) {
       for (const { key, values } of unreached) {
         expect(placeholders(catalogue[key] ?? ''), `\`${key}\``).toEqual([...values].sort());
+      }
+    }
+  });
+
+  it('words every state background work is known to end in, and no other', () => {
+    // CONVNOTE2i: the driver's `BackgroundState` constants; any other state is shown as the harness sent it.
+    const known = backgroundStates();
+    expect(known.length).toBe(4);
+    expect(Object.keys(BACKGROUND_STATES).sort()).toEqual([...known].sort());
+    for (const catalogue of [en, zh]) {
+      for (const state of known) {
+        expect(catalogue[BACKGROUND_STATES[state]], state).toBeTruthy();
+        expect(BACKGROUND_STATES[state]).toBe(`note.background.state.${state}`);
       }
     }
   });

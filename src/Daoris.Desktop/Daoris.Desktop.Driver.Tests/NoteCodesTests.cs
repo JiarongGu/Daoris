@@ -398,6 +398,20 @@ public sealed class BackgroundNotesTests
         NoteAssert.Holds(ended);
         Assert.Equal("`Run the gates` (completed); `Build` (failed)", BackgroundNotes.EndedSaid([("Run the gates", "completed"), ("Build", "failed")]));
     }
+
+    [Fact]
+    public void The_known_states_are_declared_once_and_the_record_keeps_any_state_as_sent()
+    {
+        var states = typeof(BackgroundState).GetFields()
+            .Where(field => field.IsLiteral && field.FieldType == typeof(string))
+            .Select(field => (string)field.GetRawConstantValue()!)
+            .Order(StringComparer.Ordinal);
+
+        Assert.Equal(["completed", "ended", "failed", "stopped"], states);
+        Assert.Equal(states, BackgroundState.Known.Order(StringComparer.Ordinal));
+        var odd = BackgroundNotes.Ended([("Build", "paused")]);
+        Assert.Equal("paused", odd.Parts[0].Value("state"));
+    }
 }
 
 /// <summary>CONVNOTE2h: a review set-up's record and a second opinion's answers, by code; the English as it was written.</summary>

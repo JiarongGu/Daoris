@@ -779,6 +779,28 @@ public static class BackgroundNotes
 }
 
 /// <summary>
+/// The states background work is known to end in (CONVNOTE2i, D152's CONVNOTE2f note): the page words each from
+/// <c>note.background.state.*</c> and shows any other as the harness sent it, so the record's <c>state</c> stays an open value.
+/// </summary>
+public static class BackgroundState
+{
+    /// <summary>The harness said it completed.</summary>
+    public const string Completed = "completed";
+
+    /// <summary>The harness said it failed.</summary>
+    public const string Failed = "failed";
+
+    /// <summary>The harness said it was stopped.</summary>
+    public const string Stopped = "stopped";
+
+    /// <summary>The harness kept no state for it (AcpBackground's fallback).</summary>
+    public const string Ended = "ended";
+
+    /// <summary>Every known state, which the page's list is held to key for key.</summary>
+    public static readonly IReadOnlyList<string> Known = [Completed, Failed, Stopped, Ended];
+}
+
+/// <summary>
 /// The notes for a conversation's door that failed (CONVNOTE2e): each English as its site always wrote it, byte for byte, with
 /// its parts. An exception's message is a program's words, never a value, since it may hold a path.
 /// </summary>

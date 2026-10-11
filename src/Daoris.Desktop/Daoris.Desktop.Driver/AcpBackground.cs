@@ -119,7 +119,7 @@ internal sealed class AcpBackground
                     return [.. _work
                         .Select((work, at) => (work, at))
                         .Where(pair => watched.Contains(pair.work.Id) || pair.at >= since)
-                        .Select(pair => (pair.work.Name, pair.work.State ?? "ended"))];
+                        .Select(pair => (pair.work.Name, pair.work.State ?? BackgroundState.Ended))];
                 }
             }
 

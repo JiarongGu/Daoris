@@ -10,6 +10,8 @@ with the version and date at release.
 - Ask Daoris can take you to a repository's Branches or History tab.
 - A conversation's notes that a review's set-up was or was not posted, and how a second opinion's findings were answered as
   its turn ended, now read in your language, in English and 中文. The service's message in them stays as written.
+- A note that a session's background work ended says how in your language: completed, failed, stopped or ended, in
+  English and 中文. A state Daoris does not know is shown as the agent sent it.
 
 - A conversation's notes that its agent's session could not open or failed, that a turn could not be taken, and that the
   agent would not go on in its own conversation (and why, and that your answer is carried on in a new session) now read in

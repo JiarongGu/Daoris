@@ -269,6 +269,17 @@ export const UNREACHED_REASONS: Readonly<Record<string, { key: string; values: r
 };
 
 /**
+ * The states background work is known to end in (CONVNOTE2i; the driver's `BackgroundState`), each its entry. Any other state
+ * is shown as the harness sent it. `locales/note.test.ts` holds this map to the driver's declaration key for key.
+ */
+export const BACKGROUND_STATES: Readonly<Record<string, string>> = {
+  completed: 'note.background.state.completed',
+  failed: 'note.background.state.failed',
+  stopped: 'note.background.state.stopped',
+  ended: 'note.background.state.ended',
+};
+
+/**
  * The steps that chose a conversation's account (UX7d-1, D152's UX7d-1 note; the driver's `NoteCodes.Opening`), each its
  * entry and its own values, which ride beside the line's `why`. `locales/note.test.ts` holds this map to the driver's
  * declaration key for key and value for value.
@@ -307,13 +318,13 @@ export const OPENING_REASONS: Readonly<Record<string, { key: string; values: rea
 export const NOTE_VALUES: Readonly<
   Record<
     string,
-    'id' | 'ids' | 'names' | 'moment' | 'number' | 'count' | 'percent' | 'text' | 'why' | 'cooling' | 'window' | 'account' | 'accounts'
+    'id' | 'ids' | 'names' | 'moment' | 'number' | 'count' | 'percent' | 'text' | 'why' | 'cooling' | 'window' | 'account' | 'accounts' | 'bgstate'
   >
 > = {
   awaits: 'id', answered: 'id', ask: 'id', quest: 'id', session: 'id',
   quests: 'ids',
   servers: 'names', works: 'names',
-  option: 'text', chosen: 'text', work: 'text', state: 'text', repository: 'text',
+  option: 'text', chosen: 'text', work: 'text', state: 'bgstate', repository: 'text',
   until: 'moment', at: 'moment', seen: 'moment',
   exit: 'number', minutes: 'number', paths: 'number', turn: 'number',
   tokens: 'count', count: 'count',
@@ -390,6 +401,10 @@ function said(
       return typeof value === 'number' && Number.isInteger(value) ? figure(value, language) : null;
     case 'percent':
       return typeof value === 'number' && Number.isInteger(value) ? `${value}%` : null;
+    case 'bgstate': {
+      const state = text(value);
+      return state === null ? null : Object.hasOwn(BACKGROUND_STATES, state) ? t(BACKGROUND_STATES[state]) : state;
+    }
     case 'cooling': {
       const why = text(value);
       return why && COOLING.has(why) ? t(`harness.cooling.why.${why}`) : null;

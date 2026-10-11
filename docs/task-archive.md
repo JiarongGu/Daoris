@@ -13477,3 +13477,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6h4 — Ask Daoris's go to Branches and History** (driver/service/web twin; after HIST1f, which holds the goldens). `projects` parts `branches` and `history` in `HelpPlaces` and `help/places.ts` together, the room's places line and goldens.
 
 **Outcome** 2026-10-11: `projects` gains the parts `branches` ("a repository's Branches") and `history` ("a repository's History") in both twins, opening those tabs on the repository Repositories has chosen as `setup` does; the room's paragraph, its goldens and the go tool's `part` description name them. Detail: D161's UX6h4 note.
+
+## CONVNOTE2i — background work's states, worded (2026-10-11, D152)
+
+> - [ ] **CONVNOTE2i — background work's states, worded** (driver + web twin; small). `background.work-ended` [work, state] shows the state as the harness sent it (`completed`, `failed`, `stopped`, or `ended` where none was kept; an open set). Word the known four as a family the page translates, an unknown state still shown as sent; NoteCodesTests and noteLines.test.ts read the code's shape. D152's CONVNOTE2f note (:381-383).
+
+**Outcome** 2026-10-11: the record is unchanged; the driver declares the four known states (`BackgroundState`), the page's `BACKGROUND_STATES` holds them key for key and words each from `note.background.state.*` (已完成, 失败, 已停止, 已结束), an unknown state still shown as sent. Detail: D152's CONVNOTE2i amendment.
