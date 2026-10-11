@@ -58,7 +58,7 @@ const ruleOf = ({ form, pattern, tidy, plugin, autoAccept }: LandingRule): Landi
  */
 export function WorkspaceView({
   workspace, repositories, attached, tab, onTab, asked = null, notify, onOpenRepository, onOpenRepositoryWorkflow, onOpenAgent,
-  onSyncNow, syncing = false, onOpenQuest, onOpenAsk, onAttend,
+  onOpenPlugin, onSyncNow, syncing = false, onOpenQuest, onOpenAsk, onAttend,
 }: {
   workspace: string;
   /** Its repositories in the list's registry, by name. */
@@ -75,6 +75,8 @@ export function WorkspaceView({
   onOpenRepositoryWorkflow?: (repository: string) => void;
   /** Open an agent's page, where a workspace's accounts are set (D130 §3.2, UX6e). */
   onOpenAgent?: (agent: string) => void;
+  /** Open a plugin's page, from the plugin a landing rule names (PLUGUI1c2c). */
+  onOpenPlugin?: (plugin: string) => void;
   /** The status bar's *Sync now* (SYNC6b), the application's, which says the pass's own words. */
   onSyncNow?: (workspace: string) => void;
   syncing?: boolean;
@@ -116,7 +118,7 @@ export function WorkspaceView({
           />
         )
       : tab === 'setup'
-        ? <SetupPart workspace={workspace} notify={notify} open={wiring ? 'remote' : askedHere ?? asked ?? undefined} wiring={wiring} />
+        ? <SetupPart workspace={workspace} notify={notify} open={wiring ? 'remote' : askedHere ?? asked ?? undefined} wiring={wiring} onOpenPlugin={onOpenPlugin} />
         : (
           <DetailsPart
             workspace={workspace}
@@ -309,8 +311,9 @@ function WorkflowPart({ workspace, onSetup, onOpenRepository }: {
  * Setup: its defaults (WSR1, WSR2, LANG1c, READ1) and its remote and rules (D48 §5, PERM1), each from the answer the driver
  * gives every door and each change said as the toast Settings' cards said it.
  */
-function SetupPart({ workspace, notify, open, wiring }: {
+function SetupPart({ workspace, notify, open, wiring, onOpenPlugin }: {
   workspace: string;
+  onOpenPlugin?: (plugin: string) => void;
   notify: Notify;
   open?: WorkspaceSection;
   wiring: boolean;
@@ -461,5 +464,5 @@ function SetupPart({ workspace, notify, open, wiring }: {
     },
   };
 
-  return <WorkspaceSetup {...setup} />;
+  return <WorkspaceSetup {...setup} onOpenPlugin={onOpenPlugin} />;
 }

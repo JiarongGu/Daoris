@@ -34,7 +34,9 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 - [ ] **UX7e — installed menus and heads** (parent; after republish). Verify keyboard menus, shortcuts, composer editing, head geometry and titles at 1546/680 px. D152 §6.
 - [ ] **ENTRY1bi — installed go to what waits** (parent; after republish). A go to `sessions/waiting`, `quests/held` and `quests/asks`, and the waiting starter, each with a group to show: its heading at the top, focused. D161's ENTRY1b note.
 - [ ] **UXDOC2 — the platform contract names a workspace's page** (docs). Its Repositories bullet (~:432-454) names only a repository's page; a workspace's header, four tabs and Branches' groups above the clean-up live only in D150's notes (UX6g, UX6h2b2). D150 §4.3; the doc gates.
-- [ ] **UX6h3 — the branch page, the graph and History** (web; after 2). A branch opens as a record in the main area with a way back in its header; its graph pages by `sinceParted` with the load-more foot ("{shown} commits listed", *Show more* while `more`: the graph answers no total); History is the line's graph; *All branches*. A commit's press waits on GIT1f. Create, fetch and push stay absent until GIT1g. Design §2.3.
+- [ ] **UX6h3a — History pages** (web). History accumulates its graph's pages with the load-more foot ("{shown} commits listed", *Show more* while `more`: the graph answers no total), as Ask Daoris's history does. Design §2.3; platform UX :231-246.
+- [ ] **UX6h3b — the branch page** (web; after a). A branch row opens the branch as page state in Repositories with a way back to Branches in its header, its standing line and its graph by `sinceParted`, paged; the line's row opens History. A commit's press waits on GIT1f; create, fetch and push on GIT1g. Design §2.3.
+- [ ] **UX6h3c — All branches** (web; after b). History draws every local and origin branch's graph, within the graph's tip limit (`GIT_TOO_MANY_TIPS`). Design §2.3.
 - [ ] **UX6i2i — installed go cards** (parent; after republish). Ask Daoris answering "where do I turn a plugin on?" and "where is Convergence?": a go card reading *Open Plugins.* or *Open Knowledge → Convergence.* that opens the right place and mode.
 - [ ] **PLUGTOOL1c — tools on their plugin** (web/modules/driver; after PLUGUI1c). Tools retains Daoris's own. UX6 §7.5.
 - [ ] **COWORK1 — agents working together** (design; owner's direction required). Define progress sharing, questions and handoffs. D32/D65/D145/D149; decision before implementation.
@@ -72,7 +74,6 @@ Contracts: plugin-screen design (D119), frame model (D118). Order: PLUGUI1c → 
 FRAME1i precedes PLUGUI1h. Installed looks cover both themes/languages.
 
 - [ ] **NAME2b — verify four labels**. Inspect help.setup, scope.every, signin.titleNew and work.group.noCheckout at 888 px; rename or accept. NAME2 handback.
-- [ ] **PLUGUI1c2c — a landing rule's plugin is a door** (web; after UX6h2b2, which holds `projects/`). `RepositorySetup.tsx:447` and `WorkspaceSetup.tsx:298` name the plugin as a door to its page; the chooser stays. Design §5:688.
 - [ ] **PLUGUI1f — complete plugin page** (after c/e). Health, Points, Agents, Servers, Activity, Data, Source and folder install. D119.
 - [ ] **PLUGUI1g — plugin checks** (after f). Keep trial and run tests in a home copy. D119.
 - [ ] **FRAME2b — maximized restore under pointer** (owner sends request). Wait for runtime position support, then update handler. D56/D32; owner response and handler proof.
@@ -83,8 +84,9 @@ Contract: `docs/2026-10-09-workflow-design.md` (D157), §14 order/proofs.
 Foundation precedes editor/proposals/intake; waits/checks/stages follow the gate; installation last.
 
 - [ ] **WORKFLOW1e2 — quest-specific choice** (service/driver; after e). Field, census, person's door and selection for quests without asks. §4.1/D156.
-- [ ] **WORKFLOW1g — workflow editor** (web/modules; after d/e). Presets, save, insert/failure/move/remove, drawer, selection, terminal twins and keys. §6; 680 px/bilingual proof.
-- [ ] **WORKFLOW1h — workflow proposal** (service/driver/web; after d/e). Judge validation/version/diff/person/outward needs; Apply/editor/Not now. §8; kinds/coverage/goldens/card tests.
+- [ ] **WORKFLOW1g — workflow editor** (web/modules; after d/e). Presets, save, insert/failure/move/remove, drawer, selection, terminal twins and keys; then Ask Daoris's workflow card gains *Open in the editor*. §6; 680 px/bilingual proof.
+- [ ] **WORKFLOW1h — workflow proposal, whole versions** (service/driver/modules/web chain a → b → c). `workflow_propose` with whole `steps` (new, or edit on a base, stale when not newest) and an optional choice; judge validation, version, diff, the person's part, outward acts and needs; Apply saves by the `ask-daoris:` door, a draft shows only *Not now*. §8; kinds/coverage/goldens/card tests.
+- [ ] **WORKFLOW1h2 — workflow proposal, changes and kinds** (after h). `changes` against a base (the CLI's change language twinned in C#), `kind` and `import`. §8.1, §4.7.
 - [ ] **WORKFLOW1i — intake kind proposal** (driver/service; after e). Set only from quoted requirements without lowering involvement. §4.3; prompt/table/refusal proof.
 - [ ] **WORKFLOW1j — wait on pull request** (driver/examples; after f/PLUGHOOK1b). Backoff work/state only for awaited runs. §3.2/§5.4; wait/occasion/plugin tests.
 - [ ] **WORKFLOW1k — outside checks** (driver/examples; after j). Commit-specific checks, unknown/stale distinctions, failure policy and all-member joins. §3.3/§3.5/§3.7; fake-tool tests.

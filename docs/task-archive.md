@@ -13525,3 +13525,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PLUGUI1c2b — a harness's plugin chip is a door** (web). `AgentPage.tsx:741`'s *declared by plugin* opens the plugin's page, threaded as `onOpenAgent` is (App.tsx:769-777). Design §5:677-691.
 
 **Outcome** 2026-10-11: an agent's *Ways in* draws *declared by plugin X* as a ghost button that opens X in Plugins, the opener threaded from App.tsx through `useAgentsView` and `AgentsMain`; without one it stays text. No new words. Detail: D119's PLUGUI1c2b note.
+
+## PLUGUI1c2c — a landing rule's plugin is a door (2026-10-11, D119)
+
+> - [ ] **PLUGUI1c2c — a landing rule's plugin is a door** (web; after UX6h2b2, which holds `projects/`). `RepositorySetup.tsx:447` and `WorkspaceSetup.tsx:298` name the plugin as a door to its page; the chooser stays. Design §5:688.
+
+**Outcome** 2026-10-11: a repository's and a workspace's Setup draw the landing sentence's plugin as a ghost button that opens it in Plugins (`landingRowSays` in SetupParts.tsx, the sentence's words unchanged, plain where no opener or the sentence's shape differs); the chooser stays an option. PLUGUI1c2 is closed. Detail: D119's PLUGUI1c2c note.
