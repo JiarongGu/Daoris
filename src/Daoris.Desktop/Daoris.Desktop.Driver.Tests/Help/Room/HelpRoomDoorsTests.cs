@@ -232,4 +232,25 @@ public sealed class HelpRoomDoorsTests
         Assert.Contains("*Go on anyway…*", answer.Screen);
         Assert.Contains("*I looked myself…*", answer.Screen);
     }
+
+    /// <summary>
+    /// SESSUX1h2b (D126 §7.3): the room names Sessions' archive, archive what ended and unarchive, and a conversation's delete,
+    /// each with its press and the terminal's twin as <c>daoris-driver sessions</c> spells it, beside a quest's or an ask's delete.
+    /// </summary>
+    [Fact]
+    public void The_rooms_rows_name_a_sessions_archive_and_a_conversations_delete_with_their_twins()
+    {
+        var order = HelpRoomDoors.Doors.Select(door => door.To).ToList();
+        var archive = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris-driver sessions archive", StringComparison.Ordinal));
+        var delete = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris-driver sessions delete", StringComparison.Ordinal));
+
+        Assert.Equal("`daoris-driver sessions archive <id>… | --ended [--yes]`, `daoris-driver sessions unarchive <id>…`", archive.Terminal);
+        Assert.Equal("Sessions → a session's ⋯ → Archive or Unarchive; the list's ⋯ → Archive what ended…, and Show archived", archive.Screen);
+        Assert.Contains("a session running, waiting on you or to review is never archived", archive.To);
+        Assert.Equal("`daoris-driver sessions delete <id>`", delete.Terminal);
+        Assert.Equal("Sessions → a session's ⋯ → Delete…", delete.Screen);
+        Assert.StartsWith("delete a conversation that served no quest", delete.To);
+        Assert.Equal(order.IndexOf("delete a quest or an ask made by mistake") + 1, order.IndexOf(archive.To));
+        Assert.Equal(order.IndexOf(archive.To) + 1, order.IndexOf(delete.To));
+    }
 }

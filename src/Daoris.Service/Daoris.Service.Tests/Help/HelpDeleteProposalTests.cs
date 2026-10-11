@@ -6,8 +6,8 @@ public sealed class HelpDeleteProposalTests : HelpProposalBoxFixture
     [Fact]
     public void A_delete_is_written_with_what_it_would_delete()
     {
-        var (quest, _) = Box().ProposeDelete("#q1a2b3c4", null, "a duplicate of #q9", "h1", Now);
-        var (ask, _) = Box().ProposeDelete(null, "a5b6c7d8", "made by mistake", "h1", Now);
+        var (quest, _) = Box().ProposeDelete("#q1a2b3c4", null, null, "a duplicate of #q9", "h1", Now);
+        var (ask, _) = Box().ProposeDelete(null, "a5b6c7d8", null, "made by mistake", "h1", Now);
 
         var one = Written(quest!);
         Assert.Equal(("delete", "quest", "q1a2b3c4"), (one.GetProperty("kind").GetString(), one.GetProperty("door").GetString(), one.GetProperty("target").GetString()));
@@ -17,13 +17,13 @@ public sealed class HelpDeleteProposalTests : HelpProposalBoxFixture
 
     /// <summary>The shape, checked here and nothing more; whether the record may go is the driver's to ask.</summary>
     [Theory]
-    [InlineData("||", "a quest or an ask — name exactly one")]
-    [InlineData("q1|a1|", "a quest or an ask — name exactly one")]
+    [InlineData("||", "name exactly one")]
+    [InlineData("q1|a1|", "name exactly one")]
     public void A_malformed_delete_proposal_is_refused_with_nothing_written(string fields, string says)
     {
         var part = fields.Split('|').Select(field => field.Length == 0 ? null : field).ToArray();
 
-        var (id, message) = Box().ProposeDelete(part[0], part[1], "a reason", "h1", Now);
+        var (id, message) = Box().ProposeDelete(part[0], part[1], null, "a reason", "h1", Now);
 
         Assert.Null(id);
         Assert.Contains(says, message);

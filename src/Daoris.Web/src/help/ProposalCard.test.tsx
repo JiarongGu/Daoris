@@ -179,6 +179,32 @@ describe('the kinds that reach every door', () => {
     expect(screen.queryByText(/the same at a terminal/)).not.toBeInTheDocument();
   });
 
+  // SESSUX1h2a: archiving sessions is the generic card, with its command; a session delete is the delete kind's.
+  it('a session archive card is the generic one, with the terminal command beside Apply and Not now', async () => {
+    const archive: HelpProposal = {
+      id: 'p14', kind: 'session', terminal: 'daoris sessions archive s1 s2', why: 'the person is done with them',
+      describe: 'Archive 2 sessions: `s1`, `s2`. They leave the rail and keep their record.',
+    };
+
+    await press(archive, 'Apply');
+
+    expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
+    expect(screen.getByText(code('s1'))).toBeInTheDocument();
+    expect(screen.getByText(/the same at a terminal/)).toBeInTheDocument();
+  });
+
+  it('a session delete card is the delete kind\'s, naming the session', async () => {
+    const remove: HelpProposal = {
+      id: 'p15', kind: 'delete', terminal: 'daoris sessions delete s9', why: 'a test run',
+      describe: 'Delete session `s9` and its transcript.',
+    };
+
+    await press(remove, 'Delete');
+
+    expect(screen.getByText('Ask Daoris proposes a delete')).toBeInTheDocument();
+    expect(screen.getByText(code('s9'))).toBeInTheDocument();
+  });
+
   it('a plugin to add shows what will run before Apply: its id, its command as written, its points, harnesses and servers', async () => {
     await press(PLUGIN_ADD, 'Apply');
 

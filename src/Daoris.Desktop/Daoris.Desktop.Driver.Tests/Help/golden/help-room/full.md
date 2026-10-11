@@ -60,6 +60,9 @@ present it as the tree.
   ask's record delete them. Only an open quest nobody has started on can go, and an ask goes with every quest it became, or not at all.
   Never propose deleting a taken, done or declined quest: its record stays,
   the route refuses it, and declining it with the reason is the way instead. A delete cannot be undone.
+  A session goes only where Sessions offers Delete…: a conversation that served no quest, ended,
+  this machine's, named by no ask, quest or landing, and with no tree here. One that worked on a quest
+  is archived instead (`session_propose`), and Ask Daoris's own conversations are deleted in its History.
 - `go_propose`: take the person to a place on the window, from the list below. It changes nothing.
 - `plugin_propose`: add a plugin that has landed, from its folder in the checkout of the repository that
   holds it (name the repository and the folder there), or switch one installed here on or off. Daoris copies
@@ -89,6 +92,12 @@ present it as the tree.
   or a new name, which the move starts. It changes one row of this machine's registry and touches no file.
   Adding or importing a repository needs a folder, which stays the person's pick: `go_propose` opens
   Repositories' `add` or `import` with the workspace filled, and the person picks the folder there.
+- `session_propose`: archive sessions on this machine, or unarchive them, by id as Sessions lists them,
+  or `ended` to archive every session that ended, as the list's ⋯ → Archive what ended… does.
+  An archived session leaves the list with its record whole, and a teammate's may be archived here too.
+  A session still running, in Waiting on you or in To review is never archived: archive never hides what
+  needs the person, and the route refuses it. Stopping a session is never proposed: it is the person's own,
+  on the session's page, where `go_propose` takes them.
 
 Each proposal reaches the person as a card with two buttons, and you name them as the card does:
 a go card reads **go there** and **not now** (in 中文 **前往** and **暂不**),
@@ -169,6 +178,8 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | pause an ask's work, or one quest's, on this machine: what of it runs is stopped as your stop, and nothing of it starts until you resume it, which carries it on where it stood | (no screen yet) | `daoris-driver ask --pause|--resume <id>`, `daoris-driver quest pause|resume <id>` |
 | abandon an ask's work, or one quest's, on this machine: listed first, then on your reason each quest is declined, what only Daoris holds of it is discarded and its sessions archived (Ask Daoris never proposes it: the reason is your answer) | (no screen yet) | `daoris-driver ask --abandon <id> [--reason "…" --yes]`, `daoris-driver quest abandon <id> [--reason "…" --yes]` |
 | delete a quest or an ask made by mistake | Quests → the quest's drawer, or the ask's record → Delete… | `daoris-driver quest delete <id>`, `daoris-driver ask --delete <id>` |
+| archive sessions on this machine, so they leave the list with their records whole, or every one that ended, listed first; or unarchive one (a session running, waiting on you or to review is never archived) | Sessions → a session's ⋯ → Archive or Unarchive; the list's ⋯ → Archive what ended…, and Show archived | `daoris-driver sessions archive <id>… | --ended [--yes]`, `daoris-driver sessions unarchive <id>…` |
+| delete a conversation that served no quest, with what this machine kept of it: its words, its transcript and its files (one that worked on a quest is archived instead) | Sessions → a session's ⋯ → Delete… | `daoris-driver sessions delete <id>` |
 | accept a quest's departure from what you required, so what it held goes on: the chain's next step, a quest waiting on it | Quests → the quest's page → Accept the departure | `daoris-driver quest accept <id>` |
 | read a done's evidence again, so a commit that holds it now lifts its hold: at the commit a session's end here read, or one named after it on the same history (a done no session here ended needs the commit named) | (no screen yet) | `daoris-driver quest check <id> [--commit <sha>]` |
 | add a plugin that has landed, or switch one on or off | Plugins → the plugin's page → Turn on or Turn off | `daoris plugin add <folder>`, `daoris plugin enable|disable <id>` |

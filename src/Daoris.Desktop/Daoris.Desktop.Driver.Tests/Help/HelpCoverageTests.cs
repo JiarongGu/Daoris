@@ -151,34 +151,20 @@ public sealed partial class HelpCoverageTests
         + "and `stop` doors of LAYOUT8's `setup` kind, judged against the same plan (D124 §4.5).");
 
     /// <summary>
-    /// SESSUX1a's <c>useArchiveSessions</c> (D126 §7.3), a bridge hook no Settings domain presses and Sessions does (a
-    /// <see cref="Starts"/> row since ENTRY1a): a door Ask Daoris owes, until SESSUX1h builds the <c>session</c> kind's
-    /// <c>archive</c> and <c>unarchive</c> doors.
+    /// SESSUX1a's <c>useArchiveSessions</c> (D126 §7.3), the bridge hook Sessions' *Archive*, *Archive what ended…* and
+    /// *Unarchive* press: the <c>session</c> kind's <c>archive</c> door since SESSUX1h2b, its <c>archived: false</c> the kind's
+    /// <c>unarchive</c> (<see cref="SessionUnarchiveDoor"/>).
     /// </summary>
-    private static readonly Owed SessionArchiveDoor = new(
-        "archiving takes ended sessions out of this machine's list and unarchiving brings them back, a tidy that undoes "
-        + "itself, so Ask Daoris should propose it; that is the `session` kind's `archive` and `unarchive` doors, which "
-        + "SESSUX1h builds beside Sessions' own press (D126 §7.3).");
+    private static readonly Door SessionArchiveDoor = new("session", "archive");
+
+    /// <summary>The same hook's unarchive, which the hook carries as <c>archived: false</c> rather than as an action of its own.</summary>
+    private static readonly Door SessionUnarchiveDoor = new("session", "unarchive");
 
     /// <summary>
-    /// SESSUX1f's <c>useDeleteSession</c> (D126 §7.3), the bridge hook Sessions' *Delete…* presses: a door Ask Daoris owes,
-    /// until SESSUX1h gives the <c>delete</c> kind its <c>session</c> door, judged by §5.4.
+    /// SESSUX1f's <c>useDeleteSession</c> (D126 §7.3), the bridge hook Sessions' *Delete…* presses: the <c>delete</c> kind's
+    /// <c>session</c> door since SESSUX1h2b, judged by §5.4.
     /// </summary>
-    private static readonly Owed SessionDeleteDoor = new(
-        "deleting a conversation that served no quest removes its record and what this machine kept of it, a removal the "
-        + "person applies as a card, so Ask Daoris should propose it; that is the `delete` kind's `session` door, judged by "
-        + "the same two halves, which SESSUX1h builds (D126 §7.3).");
-
-    /// <summary>
-    /// SESSUX1g's <c>daoris-driver sessions</c> (D126 §7.1), a verb of the headless host: its archive, unarchive and delete
-    /// are doors Ask Daoris owes until SESSUX1h2 builds the <c>session</c> kind and the <c>delete</c> kind's <c>session</c>
-    /// door; its stop is its own conversation (<see cref="SessionsStopVerb"/>), its finish and decline the person's answer,
-    /// exempt as the screen's are (§7.3).
-    /// </summary>
-    private static readonly Owed SessionsVerbDoor = new(
-        "archiving, unarchiving and deleting tidy this machine's list, each a change the person applies as a card, so Ask "
-        + "Daoris should propose them; that is SESSUX1h2's `session` kind and the `delete` kind's `session` door, while "
-        + "finishing and declining stay the person's answer and a stop its own conversation (D126 §7.3).");
+    private static readonly Door SessionDeleteDoor = new("delete", "session");
 
     /// <summary>
     /// SESSUX1h1: the terminal's <c>daoris-driver sessions stop</c> answers as the page's <c>useStopSession</c> does (D161's
@@ -819,9 +805,6 @@ public sealed partial class HelpCoverageTests
             .Append(SetupDoor)
             .Append(RegisterDoor)
             .Append(WorkspaceDoor)
-            .Append(SessionArchiveDoor)
-            .Append(SessionDeleteDoor)
-            .Append(SessionsVerbDoor)
             .Append(SessionsStopVerb)
             .Append(ClearDoor)
             .Append(AbandonDoor)
@@ -1219,18 +1202,20 @@ public sealed partial class HelpCoverageTests
     }
 
     /// <summary>
-    /// SESSUX1a: the archive's bridge hook changes something, so it is a door owed to SESSUX1h's <c>session</c> kind (D126
-    /// §7.3) while no kind of that name is built. When the kind lands, this owed door becomes its door; Sessions' press of it
-    /// is read with every other start since ENTRY1a.
+    /// SESSUX1a: the archive's bridge hook changes something, and since SESSUX1h2b it is the <c>session</c> kind's door (D126
+    /// §7.3): <c>archive</c>, and with <c>archived: false</c> <c>unarchive</c>, which the hook carries as a flag rather than an
+    /// action, so it is answered here. Sessions' press of it is read with every other start since ENTRY1a.
     /// </summary>
     [Fact]
-    public void The_session_archive_is_a_door_owed_to_the_session_kind()
+    public void The_session_archive_is_the_session_kinds_door_and_its_unarchive_too()
     {
         var hooks = BridgeHooks();
 
         Assert.True(hooks.TryGetValue("useArchiveSessions", out var archive) && archive.Changes);
-        Assert.Null(HelpProposalKinds.Find("session"));
-        Assert.Contains("SESSUX1h", SessionArchiveDoor.Reason);
+        Assert.Empty(archive.Actions);
+        Assert.Same(SessionArchiveDoor, Starts.Single(row => row.Where == "work" && row.Hook == "useArchiveSessions").Answer);
+        Assert.Equal([SessionArchiveDoor.Name, SessionUnarchiveDoor.Name], HelpProposalKinds.Find("session")!.Doors);
+        Assert.Equal(SessionArchiveDoor.Kind, SessionUnarchiveDoor.Kind);
     }
 
     /// <summary>
@@ -1248,31 +1233,36 @@ public sealed partial class HelpCoverageTests
     }
 
     /// <summary>
-    /// SESSUX1f: the delete's bridge hook changes something, and the `delete` kind takes no `session` door yet, so it is a door
-    /// owed to SESSUX1h (D126 §7.3). When the door lands, this owed door becomes it.
+    /// SESSUX1f: the delete's bridge hook changes something, and since SESSUX1h2b it is the <c>delete</c> kind's
+    /// <c>session</c> door (D126 §7.3), judged by §5.4's two halves.
     /// </summary>
     [Fact]
-    public void The_session_delete_is_a_door_owed_to_the_delete_kinds_session_door()
+    public void The_session_delete_is_the_delete_kinds_session_door()
     {
         var hooks = BridgeHooks();
 
         Assert.True(hooks.TryGetValue("useDeleteSession", out var delete) && delete.Changes);
-        Assert.DoesNotContain("session", HelpProposalKinds.Find("delete")!.Doors);
-        Assert.Contains("SESSUX1h", SessionDeleteDoor.Reason);
+        // Ask Daoris's History presses the same hook for its own conversations, exempt as the person's own (ASKHIST1).
+        Assert.Same(SessionDeleteDoor, Starts.Single(row => row.Where == "work" && row.Hook == "useDeleteSession").Answer);
+        Assert.Contains(SessionDeleteDoor.Name, HelpProposalKinds.Find(SessionDeleteDoor.Kind)!.Doors);
     }
 
     /// <summary>
-    /// SESSUX1g: the headless host's <c>sessions</c> verbs are doors owed to SESSUX1h's <c>session</c> kind (D126 §7.3) while
-    /// the host's usage spells them and no kind of that name is built.
+    /// SESSUX1g: the headless host's <c>sessions</c> archive, unarchive and delete are, since SESSUX1h2b, the <c>session</c>
+    /// kind's doors and the <c>delete</c> kind's <c>session</c> door (D126 §7.3), while the host's usage spells them; the room
+    /// names each beside its press, so a card's terminal line is one the person can type. Its stop is its own conversation
+    /// (<see cref="SessionsStopVerb"/>), its finish and decline the person's answer, exempt as the screen's are.
     /// </summary>
     [Fact]
-    public void The_headless_hosts_sessions_verbs_are_doors_owed_to_the_session_kind()
+    public void The_headless_hosts_sessions_verbs_are_the_session_kinds_doors()
     {
-        Assert.Contains("sessions stop <id>", DriverCommand.Usage);
-        Assert.Contains("sessions archive <id>… | --ended [--yes]", DriverCommand.Usage);
-        Assert.Null(HelpProposalKinds.Find("session"));
-        Assert.Contains("SESSUX1h2", SessionsVerbDoor.Reason);
-        Assert.DoesNotContain("stopping", SessionsVerbDoor.Reason);
+        var room = string.Join("\n", HelpRoomDoors.Doors.Select(door => door.Terminal));
+
+        Assert.Contains("sessions archive <id>… | --ended [--yes]  ·  sessions unarchive <id>…  ·  sessions delete <id>", DriverCommand.Usage);
+        Assert.Equal(["archive", "unarchive"], HelpProposalKinds.Find("session")!.Doors);
+        Assert.Contains("session", HelpProposalKinds.Find("delete")!.Doors);
+        Assert.Contains("`daoris-driver sessions archive <id>… | --ended [--yes]`, `daoris-driver sessions unarchive <id>…`", room);
+        Assert.Contains("`daoris-driver sessions delete <id>`", room);
     }
 
     /// <summary>
@@ -1286,7 +1276,7 @@ public sealed partial class HelpCoverageTests
         Assert.Equal("sessions", SessionsStopVerb.Place);
         Assert.True(HelpPlaces.Views.Any(view => view.Id == SessionsStopVerb.Place));
         Assert.Contains("daoris-driver sessions stop", SessionsStopVerb.Reason);
-        Assert.Null(HelpProposalKinds.Find("session"));
+        Assert.DoesNotContain("stop", HelpProposalKinds.Find("session")!.Doors);
     }
 
     /// <summary>

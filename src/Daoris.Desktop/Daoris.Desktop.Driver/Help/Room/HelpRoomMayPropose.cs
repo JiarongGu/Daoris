@@ -40,6 +40,11 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  ask's record delete them. Only an open quest nobody has started on can go, and an ask goes with every quest it became, or not at all.\n");
         text.Append("  Never propose deleting a taken, done or declined quest: its record stays,\n");
         text.Append("  the route refuses it, and declining it with the reason is the way instead. A delete cannot be undone.\n");
+        // SESSUX1h2b (D126 §5.4): a session's delete is this kind's `session` door, judged as Sessions' Delete… is; Ask Daoris's
+        // own conversations are deleted in its History (ASKHIST1), never from here.
+        text.Append("  A session goes only where Sessions offers Delete…: a conversation that served no quest, ended,\n");
+        text.Append("  this machine's, named by no ask, quest or landing, and with no tree here. One that worked on a quest\n");
+        text.Append("  is archived instead (`session_propose`), and Ask Daoris's own conversations are deleted in its History.\n");
         text.Append("- `go_propose`: take the person to a place on the window, from the list below. It changes nothing.\n");
         text.Append("- `plugin_propose`: add a plugin that has landed, from its folder in the checkout of the repository that\n");
         text.Append("  holds it (name the repository and the folder there), or switch one installed here on or off. Daoris copies\n");
@@ -75,7 +80,15 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  Move to workspace does. Name it as `registry` lists it, and the workspace: one the room lists,\n");
         text.Append("  or a new name, which the move starts. It changes one row of this machine's registry and touches no file.\n");
         text.Append("  Adding or importing a repository needs a folder, which stays the person's pick: `go_propose` opens\n");
-        text.Append("  Repositories' `add` or `import` with the workspace filled, and the person picks the folder there.\n\n");
+        text.Append("  Repositories' `add` or `import` with the workspace filled, and the person picks the folder there.\n");
+        // SESSUX1h2b (D126 §5.2, §5.3): Sessions' Archive, Archive what ended… and Unarchive, judged as the list judges them. A stop
+        // is the session's own conversation, which a go reaches (D161's SESSUX1h1 note).
+        text.Append("- `session_propose`: archive sessions on this machine, or unarchive them, by id as Sessions lists them,\n");
+        text.Append("  or `ended` to archive every session that ended, as the list's ⋯ → Archive what ended… does.\n");
+        text.Append("  An archived session leaves the list with its record whole, and a teammate's may be archived here too.\n");
+        text.Append("  A session still running, in Waiting on you or in To review is never archived: archive never hides what\n");
+        text.Append("  needs the person, and the route refuses it. Stopping a session is never proposed: it is the person's own,\n");
+        text.Append("  on the session's page, where `go_propose` takes them.\n\n");
         // HELP7: the real helper said *press Apply* of a card whose button reads *go there*. HELP10: a delete's
         // press was *delete* all along, and a bring-up-to-date card's first is the look.
         text.Append("Each proposal reaches the person as a card with two buttons, and you name them as the card does:\n");

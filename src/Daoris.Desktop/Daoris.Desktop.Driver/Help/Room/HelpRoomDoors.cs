@@ -213,6 +213,16 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "`daoris-driver ask --abandon <id> [--reason \"…\" --yes]`, `daoris-driver quest abandon <id> [--reason \"…\" --yes]`"),
         ("delete a quest or an ask made by mistake", "Quests → the quest's drawer, or the ask's record → Delete…",
             "`daoris-driver quest delete <id>`, `daoris-driver ask --delete <id>`"),
+        // SESSUX1h2b (D126 §5.2, §5.3, §7.3): Sessions' archive, archive what ended and unarchive, the `session` kind's doors; a
+        // session's stop is its own conversation (SESSUX1h1), named on its page.
+        ("archive sessions on this machine, so they leave the list with their records whole, or every one that ended, listed "
+            + "first; or unarchive one (a session running, waiting on you or to review is never archived)",
+            "Sessions → a session's ⋯ → Archive or Unarchive; the list's ⋯ → Archive what ended…, and Show archived",
+            "`daoris-driver sessions archive <id>… | --ended [--yes]`, `daoris-driver sessions unarchive <id>…`"),
+        // SESSUX1h2b (D126 §5.4): the `delete` kind's `session` door.
+        ("delete a conversation that served no quest, with what this machine kept of it: its words, its transcript and its "
+            + "files (one that worked on a quest is archived instead)",
+            "Sessions → a session's ⋯ → Delete…", "`daoris-driver sessions delete <id>`"),
         // DRIFT1d: the person's yes to a done's departure, the terminal's door; DRIFT1d2 gave it the quest page's yes and
         // Ask Daoris's `accept` kind.
         ("accept a quest's departure from what you required, so what it held goes on: the chain's next step, a quest "
