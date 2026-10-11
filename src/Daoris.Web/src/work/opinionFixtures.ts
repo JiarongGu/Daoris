@@ -17,6 +17,7 @@ export const gateOf = (state: string, more: Partial<OpinionGate> = {}): OpinionG
 export const FIRST: OpinionPass = {
   id: 'o1', occasion: 'landing', pass: 'first', state: 'given', base: BASE, tip: TIP, commits: 3, minutes: 20, ...reviewer,
   reviewing: 'r7c1', handedTo: 's42', read: 'src/catalog/ and its tests, the three commits since the line', limits: 'did not run the build',
+  usage: { used: 41_200, size: 200_000 },
   findings: [
     {
       number: 1, weight: 'must', where: 'src/catalog/page.ts:42', claim: 'The last row of each page is dropped: the loop stops one short.',

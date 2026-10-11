@@ -529,7 +529,7 @@ public sealed partial class DriverModule
             Session = id, Done = pressed.Done, pressed.Message,
             Opinion = pressed.Gate is { } gate ? Opinion(gate.Opinion) : null,
             // What the review's *Second opinion* draws (XAGENT1g, design §9): the findings with their answers, beside the state.
-            Detail = pressed.Gate is { } read ? OpinionDetail(read.Opinion) : null,
+            Detail = pressed.Gate is { } read ? OpinionDetail(read.Opinion, session => _loop.Usage.Of(session)) : null,
         };
     }
 
@@ -544,8 +544,11 @@ public sealed partial class DriverModule
     /// counts of an answer (a fix's commit checked, an unanswered finding) is the driver's reading. The tier is <c>person</c> where
     /// the person read it themselves, <c>none</c> where no agent could read it, and <c>agent</c> otherwise (§10).
     /// </remarks>
-    public static object? OpinionDetail(OpinionGateState gate)
+    public static object? OpinionDetail(OpinionGateState gate, Func<string, UsageEntry?>? usageOf = null)
     {
+        // The reviewer's measured use (XAGENT1g4b, §6.3): read by the reviewer's own session; null where none was measured, never 0.
+        object? Usage(OpinionView view) => usageOf?.Invoke(view.Session) is { } entry ? new { entry.Used, entry.Size } : null;
+        object Pass<T>(OpinionView view, Func<OpinionFindingView, T> beside) => PassOf(view, Usage(view), beside);
         if (gate.State == OpinionGateStates.None) return null;
         var first = gate.Opinion;
         var disputed = gate.Disputes?.First ?? [];
@@ -582,8 +585,9 @@ public sealed partial class DriverModule
             }) : null,
         };
 
-        static object Pass<T>(OpinionView view, Func<OpinionFindingView, T> beside) => new
+        static object PassOf<T>(OpinionView view, object? usage, Func<OpinionFindingView, T> beside) => new
         {
+            Usage = usage,
             view.Id, view.Occasion, view.Pass, view.State, view.Why, view.Base, view.Tip, Commits = view.Commits.Count, view.Minutes,
             Reviewer = view.Adapter, view.Product, view.Maker, view.Label, Reviewing = view.Session, view.HandedTo, view.Read, view.Limits,
             Findings = view.Findings?.Select(finding => new

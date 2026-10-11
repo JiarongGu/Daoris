@@ -93,6 +93,8 @@ export type OpinionPass = {
   handedTo?: string | null;
   read?: string | null;
   limits?: string | null;
+  /** The reviewer's measured use (XAGENT1g4b, §6.3); null where its door carried none: *not measured*, never 0 (D57 §4). */
+  usage?: { used: number; size: number } | null;
   /** Null until it said its opinion. */
   findings?: OpinionFinding[] | null;
 };

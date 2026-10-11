@@ -139,6 +139,18 @@ describe('the second opinion’s gate', () => {
     expect(gate()).toHaveTextContent('src/catalog/ and its tests');
   });
 
+  /** XAGENT1g4b (§6.3, D57 §4): the reviewer's measured use beside what it read; absent says not measured, never 0. */
+  it('shows the reviewer’s measured use, and says not measured where the door carried none', () => {
+    const { rerender } = render(<OpinionGate gate={GATES.disputed} detail={{ ...DETAIL, first: { ...DETAIL.first!, usage: { used: 41_200, size: 200_000 } } }} />);
+
+    expect(gate()).toHaveTextContent('What it used41,200 of 200,000 of its context');
+
+    rerender(<OpinionGate gate={GATES.disputed} detail={{ ...DETAIL, first: { ...DETAIL.first!, usage: null } }} />);
+    expect(gate()).toHaveTextContent('What it used');
+    expect(gate()).toHaveTextContent('not measured');
+    expect(gate()).not.toHaveTextContent(/\b0 of/);
+  });
+
   it('says what the driver said where it could not read the gate', () => {
     render(<OpinionGate gate={GATES.unread} />);
 
@@ -163,5 +175,12 @@ describe('the second opinion’s gate', () => {
     expect(region).toHaveTextContent('有争议');
     expect(region).toHaveTextContent('Codex (OpenAI) 的 1 条发现有争议');
     expect(screen.getByRole('button', { name: '退回…' })).toBeInTheDocument();
+  });
+
+  it('words the reviewer’s use in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    render(<OpinionGate gate={GATES.disputed} detail={{ ...DETAIL, first: { ...DETAIL.first!, usage: { used: 41_200, size: 200_000 } } }} />);
+
+    expect(screen.getByRole('region', { name: '第二意见' })).toHaveTextContent('它用了多少41,200 / 200,000 的上下文');
   });
 });

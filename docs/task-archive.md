@@ -13609,3 +13609,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **XAGENT1g4 — coded answers and reviewer row** (driver/web). Reviewer beside work with measured usage; bilingual note parts. §6.4/§9.
 
 **Outcome** 2026-10-12 (the row's first part): the reviewer's three conclusion notes are `opinion.reviewer-failed` (the failure as the program's words), `opinion.reviewer-read` and `opinion.reviewer-exited`, worded in en and zh (阅读者, the glossary's), the English unchanged; the answers note was CONVNOTE2h's; transcript and console lines stay English. The measured use is XAGENT1g4b, the row's placement XAGENT1g4c. Detail: D152's XAGENT1g4a amendment.
+
+## XAGENT1g4b — the reviewer's measured use (2026-10-12, D155)
+
+> - [ ] **XAGENT1g4b — the reviewer's measured use** (modules/web). The gate's pass shows what the reviewer used of its context, *not measured* where none was recorded. §6.3, §9; D57 §4.
+
+**Outcome** 2026-10-12: each pass of `OPINION_GATE` answers `usage {used, size}` read by its reviewer session, or null; the gate's *What it used* row says "{used} of {size} of its context", *not measured* where none (never a zero), en and zh. Detail: D155's XAGENT1g4b note.
