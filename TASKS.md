@@ -72,7 +72,6 @@ Contracts: plugin-screen design (D119), frame model (D118). Order: PLUGUI1c → 
 FRAME1i precedes PLUGUI1h. Installed looks cover both themes/languages.
 
 - [ ] **NAME2b — verify four labels**. Inspect help.setup, scope.every, signin.titleNew and work.group.noCheckout at 888 px; rename or accept. NAME2 handback.
-- [ ] **PLUGUI1c2a — the plugin files leave Settings** (web). Move `PluginKit`, `PluginUpdate` and `PluginOffers` (tests, stories) to `plugins/`; *Update now* is the plan's primary control (design §3.2); the drawer says *Make a plugin* once. D119:135-138.
 - [ ] **PLUGUI1c2b — a harness's plugin chip is a door** (web). `AgentPage.tsx:741`'s *declared by plugin* opens the plugin's page, threaded as `onOpenAgent` is (App.tsx:769-777). Design §5:677-691.
 - [ ] **PLUGUI1c2c — a landing rule's plugin is a door** (web; after UX6h2b2, which holds `projects/`). `RepositorySetup.tsx:447` and `WorkspaceSetup.tsx:298` name the plugin as a door to its page; the chooser stays. Design §5:688.
 - [ ] **PLUGUI1f — complete plugin page** (after c/e). Health, Points, Agents, Servers, Activity, Data, Source and folder install. D119.

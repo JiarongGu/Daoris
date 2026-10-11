@@ -13501,3 +13501,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **WORKFLOW1e3 — clear run bindings with history** (driver; after e). Include binding in clear plan/count. D153/D157; clear test.
 
 **Outcome** 2026-10-11: a run's binding goes with its quest's cleared unit (planned, then taken after the service's yes), and a workspace's clear takes a binding no quest holds as a left-over; its size is in the bytes, with no new phrase or wire field, and an open quest's binding stays. Detail: D157's WORKFLOW1e3 note.
+
+## PLUGUI1c2a — the plugin files leave Settings (2026-10-11, D119)
+
+> - [ ] **PLUGUI1c2 — plugin-page remainder** (web). Move kit/update types, fix agent/landing doors, put Update now first, remove doubled heading. D119; stories/tests/look.
+
+**Outcome** 2026-10-11 (the row's first part, split as PLUGUI1c2a): `PluginKit` and `PluginUpdate` with their tests and stories moved to `plugins/` (stories `Plugins/…`), `PluginOffers`' one type folded into `plugins/catalog.ts`; *Update now* is the plan's primary control and stays first; the kit's drawer says *Make a plugin* once. The doors are PLUGUI1c2b and c. Detail: D119's PLUGUI1c2a note.

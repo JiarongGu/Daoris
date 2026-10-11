@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../queries';
-import type { KitPoint, NewPlugin, PluginTrialResult } from '../settings/PluginKit';
-import type { PluginOfferShown } from '../settings/PluginOffers';
-import type { PluginSourceShown, PluginUpdatePlanShown } from '../settings/PluginUpdate';
+import type { KitPoint, NewPlugin, PluginTrialResult } from '../plugins/PluginKit';
+import type { PluginOfferShown } from '../plugins/catalog';
+import type { PluginSourceShown, PluginUpdatePlanShown } from '../plugins/PluginUpdate';
 import { call } from './call';
 
 // This machine's plugins (MOD3): the catalogue, the switches, an update, the install's own, and the kit (D64).
