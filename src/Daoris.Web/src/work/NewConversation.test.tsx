@@ -1,25 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { ComponentProps, ReactNode } from 'react';
-
-// The tree chip reads the checkout's branch through the shell's bridge (NEW1e-b): the shell is here, and its answers are the test's.
-const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
-vi.mock('@shenora/react', async (original) => ({
-  ...(await original<typeof import('@shenora/react')>()),
-  isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke }),
-  useShenora: () => ({ isAvailable: true }),
-}));
-
+import { type ComponentProps, useState } from 'react';
 import i18n from '../i18n';
-import { NewConversation, type StartRepository } from './NewConversation';
-
-const inClient = (node: ReactNode) => (
-  <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{node}</QueryClientProvider>
-);
+import { type CheckoutReader, NewConversation, type StartRepository } from './NewConversation';
 
 /**
  * *New conversation* (NEW1b, D162 point 1, the entry design §1): the prompt first, then the repository, the tree and the
@@ -40,7 +25,7 @@ const ACCOUNTS = {
 
 function show(over: Partial<ComponentProps<typeof NewConversation>> = {}) {
   const onStart = vi.fn();
-  render(inClient(
+  render(
     <Tooltip.Provider>
       <NewConversation
         repositories={REPOSITORIES}
@@ -52,7 +37,7 @@ function show(over: Partial<ComponentProps<typeof NewConversation>> = {}) {
         {...over}
       />
     </Tooltip.Provider>,
-  ));
+  );
   return onStart;
 }
 
@@ -69,7 +54,6 @@ async function chipMenu(name: RegExp) {
 describe('a new conversation', () => {
   afterEach(async () => {
     cleanup();
-    invoke.mockReset();
     await i18n.changeLanguage('en');
   });
 
@@ -146,13 +130,24 @@ describe('a new conversation', () => {
       const menu = await chipMenu(/^Tree:/);
       await userEvent.click(within(menu).getByRole('menuitemradio', { name: /^The checkout/ }));
     };
-    const asked = () => invoke.mock.calls.filter((call) => call[1] === 'CHECKOUT_BRANCH');
+    /** A reader fixed to `first`, which a refresh replaces with `next`; it keeps the repositories it was asked about. */
+    const reader = (first: { branch: string | null } | undefined, next = first) => {
+      const asked: Array<[string | null, string | undefined]> = [];
+      let refreshed = 0;
+      const readCheckout: CheckoutReader = (repository, workspace) => {
+        const [read, setRead] = useState(first);
+        asked.push([repository, workspace]);
+        return { read, refresh: () => { refreshed += 1; setRead(next); } };
+      };
+      return { readCheckout, asked, refreshed: () => refreshed };
+    };
 
     it('names the branch the checkout is on, in the chip and the row\'s note', async () => {
-      invoke.mockResolvedValue({ branch: 'main' });
-      show();
-      await waitFor(() => expect(asked()).toHaveLength(1));
-      expect(asked()[0]![2]).toEqual({ payload: { repository: 'engine', workspace: 'aurora' } });
+      const read = reader({ branch: 'main' });
+      show({ readCheckout: read.readCheckout });
+      // The chosen repository, with its workspace; and nothing is said until the checkout is chosen.
+      expect(read.asked.at(-1)).toEqual(['engine', 'aurora']);
+      expect(screen.getByRole('button', { name: "Tree: Driver's choice" })).toBeInTheDocument();
       await checkout();
 
       expect(screen.getByRole('button', { name: 'Tree: The checkout · main' })).toHaveTextContent('The checkout · main');
@@ -161,9 +156,7 @@ describe('a new conversation', () => {
     });
 
     it('says a detached HEAD, and in Chinese by the glossary\'s words', async () => {
-      invoke.mockResolvedValue({ branch: null });
-      show();
-      await waitFor(() => expect(asked()).toHaveLength(1));
+      show({ readCheckout: reader({ branch: null }).readCheckout });
       await checkout();
       expect(screen.getByRole('button', { name: 'Tree: The checkout · detached HEAD' })).toBeInTheDocument();
 
@@ -172,31 +165,39 @@ describe('a new conversation', () => {
     });
 
     it('asks again when the menu opens, so a branch switched outside Daoris shows', async () => {
-      invoke.mockResolvedValue({ branch: 'main' });
-      show();
-      await waitFor(() => expect(asked()).toHaveLength(1));
+      const read = reader({ branch: 'main' }, { branch: 'release' });
+      show({ readCheckout: read.readCheckout });
       await checkout();
-      const before = asked().length;
+      const before = read.refreshed();
 
-      invoke.mockResolvedValue({ branch: 'release' });
       await chipMenu(/^Tree:/);
 
-      await waitFor(() => expect(asked().length).toBeGreaterThan(before));
-      await waitFor(() => expect(screen.getByRole('button', { name: 'Tree: The checkout · release' })).toBeInTheDocument());
+      expect(read.refreshed()).toBeGreaterThan(before);
+      expect(await screen.findByRole('button', { name: 'Tree: The checkout · release' })).toBeInTheDocument();
     });
 
-    it('says the checkout plain while the read is refused, and names no branch on the other two', async () => {
-      invoke.mockRejectedValue(new Error('GIT_NO_CHECKOUT'));
+    it('says the checkout plain while the read has no answer, and names no branch on the other two', async () => {
+      show({ readCheckout: reader(undefined).readCheckout });
+      await checkout();
+      expect(screen.getByRole('button', { name: 'Tree: The checkout' })).toBeInTheDocument();
+      // No reader at all is the same: a browser, or a story that hands none.
+      cleanup();
       show();
-      await waitFor(() => expect(asked()).toHaveLength(1));
       await checkout();
       expect(screen.getByRole('button', { name: 'Tree: The checkout' })).toBeInTheDocument();
 
-      invoke.mockReset();
-      invoke.mockResolvedValue({ branch: 'main' });
+      cleanup();
+      show({ readCheckout: reader({ branch: 'main' }).readCheckout });
       const menu = await chipMenu(/^Tree:/);
       await userEvent.click(within(menu).getByRole('menuitemradio', { name: /^Its own tree/ }));
       expect(screen.getByRole('button', { name: 'Tree: Its own tree' })).toBeInTheDocument();
+    });
+
+    it('asks nothing of a repository with no checkout here', () => {
+      const read = reader({ branch: 'main' });
+      show({ readCheckout: read.readCheckout, repositories: [{ name: 'portal', workspace: 'default', checkout: false }] });
+
+      expect(read.asked.every(([repository]) => repository === null)).toBe(true);
     });
   });
 
@@ -391,16 +392,13 @@ describe('a new conversation', () => {
   /** NEW1c: a registered repository is chosen once the registry lists it, and not before: the choice is kept pending. */
   it('chooses the repository just added once it is listed', () => {
     const onChoose = vi.fn();
-    const client = new QueryClient();
     const view = (over: Partial<ComponentProps<typeof NewConversation>>) => (
-      <QueryClientProvider client={client}>
-        <Tooltip.Provider>
-          <NewConversation
-            repositories={REPOSITORIES} harnesses={['claude-code']} defaultHarness="claude-code" accounts={ACCOUNTS}
-            onStart={vi.fn()} onChoose={onChoose} {...over}
-          />
-        </Tooltip.Provider>
-      </QueryClientProvider>
+      <Tooltip.Provider>
+        <NewConversation
+          repositories={REPOSITORIES} harnesses={['claude-code']} defaultHarness="claude-code" accounts={ACCOUNTS}
+          onStart={vi.fn()} onChoose={onChoose} {...over}
+        />
+      </Tooltip.Provider>
     );
     const { rerender } = render(view({ pick: { repository: 'borealis', n: 1 } }));
     // Not listed yet: the opening choice stands.

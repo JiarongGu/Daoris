@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- The tree chip on *New conversation* names the branch your checkout is on (*The checkout · main*), and says so when HEAD is
+  detached.
 - A question or task handed to Ask Daoris (*Make it a task with Daoris…*, *Ask Daoris about it*) opens on a new
   conversation when the last one has ended, instead of under its history.
 - *New conversation* opens on the repository you were just in, and *Recent* lists where you have been working, not only

@@ -2,7 +2,6 @@ import { type KeyboardEvent, useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { accountName, accountWho } from '../agents/agents';
 import { MAX_FILE_BYTES, MAX_FILES } from '../attachments';
-import { useCheckoutBranch } from '../bridge/git';
 import { type Carry, NO_CARRY, useCarry, useFileChooser } from '../compose/carry';
 import { size } from '../format';
 import { cn } from '../lib/cn';
@@ -34,22 +33,34 @@ export type NewStart = {
 const DEFAULT = '*';
 
 /**
+ * What the checkout's branch read answered: `read` is the answer once there is one (null `branch` is a detached HEAD), and
+ * absent while pending, refused or unavailable; `refresh` asks again. A hook handed in, as the molecule reaches no bridge
+ * (the presentational boundary): the frame owns the read, a story or a test hands a fixed one.
+ */
+export type CheckoutReader = (repository: string | null, workspace?: string) => {
+  read: { branch: string | null } | undefined;
+  refresh: () => void;
+};
+
+/** No reader handed in: the checkout is said plain. */
+const UNREAD: CheckoutReader = () => ({ read: undefined, refresh: () => {} });
+
+/**
  * The tree chip and its menu (NEW1e-b, design §1). The person's checkout is never switched, so where *The checkout* is chosen
  * the chip names the branch it is on: read for the chosen repository, again when the menu opens (a branch switched outside
  * Daoris shows), never polled. While the read is pending, refused or unavailable the checkout is said plain; the driver's
  * choice and its own tree name no branch.
  */
-function TreeChip({ tree, onTree, repository, workspace }: {
+function TreeChip({ tree, onTree, repository, workspace, readCheckout }: {
   tree: TreeChoice;
   onTree: (next: TreeChoice) => void;
   /** The chosen repository when it has a checkout here, else null: nothing is asked of one that has none. */
   repository: string | null;
   workspace?: string;
+  readCheckout: CheckoutReader;
 }) {
   const { t } = useTranslation();
-  const { query } = useCheckoutBranch({ repository, workspace });
-  // Only an answer is read: a refusal or a pending read leaves no data, and the checkout is said plain.
-  const read = query.isError ? undefined : query.data;
+  const { read, refresh } = readCheckout(repository, workspace);
   const on = (key: 'tree.checkout' | 'tree.checkoutNote') => {
     const plain = t(`work.start.${key}`);
     if (!read) return plain;
@@ -59,7 +70,7 @@ function TreeChip({ tree, onTree, repository, workspace }: {
   const named = (choice: TreeChoice) => (choice === 'checkout' ? on('tree.checkout') : t(`work.start.tree.${choice}`));
   const treeName = named(tree);
   return (
-    <Menu.Root onOpenChange={(open) => { if (open && repository) void query.refetch(); }}>
+    <Menu.Root onOpenChange={(open) => { if (open && repository) refresh(); }}>
       <Menu.Trigger asChild>
         <button type="button" aria-label={t('work.start.chip', { field: t('work.start.tree'), value: treeName })} className={CHIP}>
           <Icon name="stepBranch" size={13} className="shrink-0 text-ink-faint" />
@@ -131,7 +142,7 @@ export function openingRepository(
 export function NewConversation({
   attached = true, repositories, busy = {}, recent = [], remembered, attended, onChoose, harnesses, labels = {}, names = {},
   defaultHarness = '', accounts, scopeOf, draft, onDraft, carried, onCarry, pending = false, refusal, focus = 0, onFocused, onStart,
-  onOpenSession, onAdd, onImport, pick, reveal, pickerOpen = false, onMakeTask,
+  onOpenSession, onAdd, onImport, pick, reveal, pickerOpen = false, openingTree = 'driver', readCheckout = UNREAD, onMakeTask,
 }: {
   /** Whether a shell is here; false is a browser. */
   attached?: boolean;
@@ -194,6 +205,10 @@ export function NewConversation({
   reveal?: { workspace: string; n: number } | null;
   /** The repository picker drawn open, for a story. */
   pickerOpen?: boolean;
+  /** The tree the chip opens on, for a story: a person's own press is what chooses it. */
+  openingTree?: TreeChoice;
+  /** The checkout's branch for the chosen repository, for the tree chip (NEW1e-b). Absent, the checkout is said plain. A hook: keep it stable. */
+  readCheckout?: CheckoutReader;
   /**
    * *Make it a task with Daoris…* (NEW1d-b): hands the draft, with a line naming the repository chosen above it, to Ask Daoris as
    * a draft the person sends. Absent, the press is not offered. The composer keeps its own draft.
@@ -212,7 +227,7 @@ export function NewConversation({
   const attach = useCarry(carry, setCarry, attached);
   const chooser = useFileChooser(attach.attach, t('carry.choose'));
   const [chosen, setChosen] = useState<string | null>(null);
-  const [tree, setTree] = useState<TreeChoice>('driver');
+  const [tree, setTree] = useState<TreeChoice>(openingTree);
   const [adapter, setAdapter] = useState('');
   const [profile, setProfile] = useState('');
 
@@ -377,6 +392,7 @@ export function NewConversation({
           onTree={setTree}
           repository={repository && here.some((row) => row.name === repository) ? repository : null}
           workspace={here.find((row) => row.name === repository)?.workspace}
+          readCheckout={readCheckout}
         />
 
         <Menu.Root>
