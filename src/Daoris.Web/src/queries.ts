@@ -80,6 +80,8 @@ export const keys = {
   allMachineLog: ['machine-log'] as const,
   machineLog: (since: string, source: string, event: string, level: string) =>
     ['machine-log', since, source, event, level] as const,
+  /** What the look cleaned up in a workspace, for its Branches tab (AUTOTIDY1a) — the log's, so shell-only too. */
+  tidiedBranches: (workspace: string) => ['machine-log', 'tidied', workspace] as const,
   rules: ['rules'] as const,
   /** One session's landed work, read off the checkout — shell-only for the console's reason (SURF6). */
   diff: (session: string) => ['diff', session] as const,

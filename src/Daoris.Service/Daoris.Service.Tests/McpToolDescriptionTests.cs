@@ -47,6 +47,17 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains("quest_publish", tool == "quest_publish" ? "quest_publish " + text : text);
     }
 
+    /// <summary>WORKFLOW1h-a: the workflow tool says it only proposes, wants whole steps, and names the parts not proposed yet.</summary>
+    [Fact]
+    public void The_workflow_tool_says_it_only_proposes_whole_steps()
+    {
+        var text = string.Join(" ", Descriptions().Where(d => d.Tool == "workflow_propose").Select(d => d.Text));
+
+        Assert.Contains("Nothing changes until the person presses Apply", text);
+        Assert.Contains("whole", text);
+        Assert.Contains("Not proposed yet", text);
+    }
+
     /// <summary>
     /// A server over one checkout says what it reads and that it matches words (ORIENT1c), in the words a
     /// session reads before it searches the files: the checkout's name, the folders it was given, the tier.

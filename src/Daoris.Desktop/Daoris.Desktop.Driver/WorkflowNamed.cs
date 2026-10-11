@@ -208,6 +208,25 @@ public static partial class WorkflowNamed
     /// </summary>
     public static (IReadOnlyList<NamedStep>? Steps, string? Problem) ReadSteps(JsonElement? value, int number, IReadOnlyList<NamedVersion>? prior = null)
     {
+        var (steps, problem) = ReadShape(value, number, prior);
+        if (steps is null) return (null, problem);
+        foreach (var each in steps.SelectMany(step => new[] { step }.Concat(step.Members)))
+        {
+            if (WorkflowKindTable.Of(each.Kind)!.Runtime == WorkflowKindTable.None)
+            {
+                return (null, $"v{number}, step `{each.Id}`: this build does not run a step of kind `{each.Kind}` yet.");
+            }
+        }
+
+        return (steps, null);
+    }
+
+    /// <summary>
+    /// A version's steps read as <see cref="ReadSteps"/> reads them, all but whether this build runs each kind: Ask Daoris's judge
+    /// (WORKFLOW1h-b, design §8.1) says a kind this build does not run as what the card needs first, where the editor refuses it.
+    /// </summary>
+    public static (IReadOnlyList<NamedStep>? Steps, string? Problem) ReadShape(JsonElement? value, int number, IReadOnlyList<NamedVersion>? prior = null)
+    {
         var v = $"v{number}";
         if (value is not { ValueKind: JsonValueKind.Array } list || list.GetArrayLength() == 0) return (null, $"{v}: its `steps` is a list of at least one.");
         var count = list.GetArrayLength() + list.EnumerateArray().Sum(each =>
@@ -230,16 +249,7 @@ public static partial class WorkflowNamed
             steps.Add(step!);
         }
 
-        if (OrderProblem(steps, v) is { } order) return (null, order);
-        foreach (var each in steps.SelectMany(step => new[] { step }.Concat(step.Members)))
-        {
-            if (WorkflowKindTable.Of(each.Kind)!.Runtime == WorkflowKindTable.None)
-            {
-                return (null, $"{v}, step `{each.Id}`: this build does not run a step of kind `{each.Kind}` yet.");
-            }
-        }
-
-        return (steps, null);
+        return OrderProblem(steps, v) is { } order ? (null, order) : (steps, null);
     }
 
     /// <summary>One step's shape read (design §3.2): an object, its id once, its kind, a group's rule, its fields; a group's members inside it.</summary>

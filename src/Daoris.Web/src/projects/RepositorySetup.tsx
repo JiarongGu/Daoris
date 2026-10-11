@@ -9,7 +9,7 @@ import { type OpinionEdit, OpinionField, opinionRowSays, opinionSummary, type Re
 import { type RepositoryReview, type ReviewEdit, ReviewField, reviewRowSays, reviewSummary } from '../settings/Reviews';
 import { Button, CheckField, Chip, Icon, Segmented, SelectField, SettingRow } from '../ui';
 import { RepositoryRules, type RuleLists } from './RepositoryRules';
-import { Inheritable, landingSays, SetupSection } from './SetupParts';
+import { Inheritable, landingRowSays, landingSays, SetupSection } from './SetupParts';
 import { StandingAnswer } from './StandingAnswer';
 
 /** The four sections of a repository's Setup (UX6f, D150 §4.2), in the order the page draws them. */
@@ -91,6 +91,8 @@ export type RepositorySetupProps = {
   busy?: boolean;
   /** A section a door asked to see open, beside those that open on their own. */
   open?: SetupSectionId;
+  /** Open a plugin's page: the landing rule's plugin is a door (PLUGUI1c2c); absent, its name stays words. */
+  onOpenPlugin?: (plugin: string) => void;
 };
 
 const JOIN = ' · ';
@@ -116,7 +118,7 @@ const JOIN = ' · ';
  *
  * A molecule: every state is reached by its props, and every press goes out.
  */
-export function RepositorySetup({ repository, driving, work, sessions, reach, busy = false, open }: RepositorySetupProps) {
+export function RepositorySetup({ repository, driving, work, sessions, reach, busy = false, open, onOpenPlugin }: RepositorySetupProps) {
   const { t } = useTranslation();
   const marked = (value: string, source: 'repository' | 'workspace' | 'daoris') =>
     source === 'repository' ? value : t(`projects.setup.marked.${source}`, { value });
@@ -263,6 +265,7 @@ export function RepositorySetup({ repository, driving, work, sessions, reach, bu
               landers={work.landers ?? []}
               busy={busy}
               onLanding={work.onLanding}
+              onOpenPlugin={onOpenPlugin}
             />
           )}
           {review && work.onReview && (
@@ -426,8 +429,9 @@ export function RepositorySetup({ repository, driving, work, sessions, reach, bu
 }
 
 /** How its work lands: an `Inheritable` whose control is the rule's own, and what accepting automatically gives. */
-function LandingSetting({ repository, landing, above, landers, busy, onLanding }: {
+function LandingSetting({ repository, landing, above, landers, busy, onLanding, onOpenPlugin }: {
   repository: string;
+  onOpenPlugin?: (plugin: string) => void;
   landing: RepositoryLanding;
   above: LandingRule;
   landers: string[];
@@ -442,11 +446,8 @@ function LandingSetting({ repository, landing, above, landers, busy, onLanding }
     : t(`settings.landing.from.${landing.source}.${landing.form === 'branch' ? 'branch' : 'merge'}`, {
         pattern: landing.pattern, workspace: landing.workspace,
       });
-  const says = [
-    said,
-    ...(landing.form === 'branch' && landing.plugin ? [t('settings.landing.byPlugin', { plugin: landing.plugin })] : []),
-    ...(landing.form === 'branch' && landing.autoAccept ? [t('settings.landing.byAuto')] : []),
-  ].join(t('projects.setup.sentenceJoin'));
+  const branch = landing.form === 'branch';
+  const says = landingRowSays(t, said, branch ? landing.plugin : undefined, branch && !!landing.autoAccept, onOpenPlugin);
   return (
     <Inheritable
       setHere={t('projects.setup.setHere')}

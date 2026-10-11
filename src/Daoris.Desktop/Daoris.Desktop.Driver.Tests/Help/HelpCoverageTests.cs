@@ -51,14 +51,15 @@ public sealed partial class HelpCoverageTests
         + "until then `daoris tool use` is the terminal's door.";
 
     /// <summary>
-    /// A named workflow saved, or chosen, from the terminal (WORKFLOW1d, WORKFLOW1e; D157 point 13): Ask Daoris's `workflow` kind is
-    /// WORKFLOW1h's, its card a version and optionally a choice (the workflow design §8.1).
+    /// A named workflow's version from a file, an import, or a kind of task, from the terminal (WORKFLOW1d, WORKFLOW1e; D157 point
+    /// 13): Ask Daoris's `workflow` kind takes a whole version and its choice since WORKFLOW1h-b (`new`, `edit`, `use`); a change
+    /// against a base, an import and a kind are WORKFLOW1h2's (the workflow design §8.1).
     /// </summary>
     private const string WorkflowOwed =
-        "a named workflow's version, a choice of one and a kind of task are changes to how work moves that the person applies, so "
-        + "Ask Daoris should propose them as the `workflow` kind's card, its part said first (D157 point 13, the workflow design §8), "
-        + "which WORKFLOW1h builds; until then `daoris driver workflow` is its terminal's door, and every gate reads the version "
-        + "each run bound (WORKFLOW1f).";
+        "a version applied from a file, a workflow imported whole and a kind of task are changes to how work moves that the person "
+        + "applies, so Ask Daoris should propose them as the `workflow` kind's card, its part said first (D157 point 13, the "
+        + "workflow design §8, §4.7), which WORKFLOW1h2 builds; until then `daoris driver workflow` is its terminal's door, and every "
+        + "gate reads the version each run bound (WORKFLOW1f).";
 
     private const string Rules =
         "what an agent may do is never proposed by an agent: the room is not handed `permission_propose` (HELP1c), "
@@ -510,21 +511,22 @@ public sealed partial class HelpCoverageTests
         ("review", new Door("setting", "review")),
         // XAGENT1a: which other agent reads work before it lands, with the service's writer in the same change.
         ("opinion", new Door("setting", "opinion")),
-        // WORKFLOW1a: Current, drawn from the rules as they stand; a named workflow's Ask Daoris door is WORKFLOW1h's.
+        // WORKFLOW1a: Current, drawn from the rules as they stand; a named workflow's Ask Daoris doors are the `workflow` kind's.
         ("workflow show", new Exempt(
             "it reads `driver.json` and the plugins beside it and changes nothing; it draws the landing, review and opinion rules "
             + "the room already carries, from the same file.")),
-        // WORKFLOW1d: named workflows, each a file of versions under the home; the reads are exempt, the saves owed to WORKFLOW1h.
+        // WORKFLOW1d: named workflows, each a file of versions under the home; the reads are exempt. WORKFLOW1h-b proposes a whole
+        // version, new or an edit on the newest; a version from a file and an import are owed to WORKFLOW1h2.
         ("workflow list", new Exempt("it reads the home's workflows and the presets built in, and changes nothing.")),
-        ("workflow new", new Owed(WorkflowOwed)),
-        ("workflow edit", new Owed(WorkflowOwed)),
+        ("workflow new", new Door("workflow", "new")),
+        ("workflow edit", new Door("workflow", "edit")),
         ("workflow apply", new Owed(WorkflowOwed)),
         ("workflow export", new Exempt(
             "it copies a workflow's file out, whole, to a new file or the terminal, for the person to carry, and changes nothing here.")),
         ("workflow import", new Owed(WorkflowOwed)),
-        // WORKFLOW1e: which workflow work follows, and a workspace's kinds of task; Ask Daoris proposes a choice and a kind with
-        // the `workflow` kind (the workflow design §8.1, §8.3), WORKFLOW1h's.
-        ("workflow use", new Owed(WorkflowOwed)),
+        // WORKFLOW1e: which workflow work follows, and a workspace's kinds of task. WORKFLOW1h-b proposes the choice with a version
+        // (the workflow design §8.1); a kind is owed to WORKFLOW1h2 (§8.3).
+        ("workflow use", new Door("workflow", "use")),
         ("workflow kind", new Owed(WorkflowOwed)),
         ("notify", new Door("setting", "notify")),
         ("intake", new Door("setting", "intake")),

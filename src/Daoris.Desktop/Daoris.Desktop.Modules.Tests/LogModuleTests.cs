@@ -288,6 +288,33 @@ public sealed class LogModuleTests : Bridge
         Assert.Equal(5, warnings.GetProperty("events").GetArrayLength());
     }
 
+    /// <summary>
+    /// AUTOTIDY1a (D88): a workspace's Branches tab reads what the look cleaned up in it, so a request may name any of
+    /// several events and one workspace, whose name the driver writes trimmed and the page holds without case.
+    /// </summary>
+    [Fact]
+    public async Task Several_events_and_a_workspace_narrow_the_lines()
+    {
+        using var log = Log();
+        Logged("2026-09-30.driver.jsonl",
+            Line("2026-09-30T08:00:00.000Z", "driver", "info", "branch.tidied", """{"repository":"a","workspace":"Team","branch":"daoris/s-1","tree":true}"""),
+            Line("2026-09-30T09:00:00.000Z", "driver", "warn", "branch.kept", """{"repository":"a","workspace":"team","branch":"daoris/s-2","why":"busy"}"""),
+            Line("2026-09-30T10:00:00.000Z", "driver", "info", "branch.tidied", """{"repository":"b","workspace":"other","branch":"daoris/s-3","tree":false}"""),
+            Line("2026-09-30T11:00:00.000Z", "driver", "warn", "tidied.kept", """{"workspace":"team"}"""),
+            Line("2026-09-30T11:30:00.000Z", "driver", "info", "app.started"));
+        var module = Reader(log);
+
+        Assert.Equal(["branch.tidied", "branch.kept", "branch.tidied"],
+            Events(await AnswerAsync(module, "LINES", new { events = new[] { "branch.tidied", "branch.kept" } })));
+        Assert.Equal(["branch.kept", "branch.tidied"],
+            Events(await AnswerAsync(module, "LINES", new { events = new[] { "branch.tidied", "branch.kept" }, workspace = "TEAM" })));
+        Assert.Equal(["tidied.kept", "branch.kept", "branch.tidied"],
+            Events(await AnswerAsync(module, "LINES", new { workspace = "team" })));
+        // The one event and the list together keep what both name.
+        Assert.Equal(["branch.kept"],
+            Events(await AnswerAsync(module, "LINES", new { @event = "branch.kept", events = new[] { "branch.tidied", "branch.kept" } })));
+    }
+
     /// <summary>At most the cap, the newest; the total says how many there were, so the page can say it showed part.</summary>
     [Fact]
     public async Task At_most_the_limit_is_answered_and_never_more_than_the_cap()

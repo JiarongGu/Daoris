@@ -1,15 +1,21 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { render as renderPlain, screen, within, type RenderOptions } from '@testing-library/react';
+import * as Tooltip from '@radix-ui/react-tooltip';
+import type { ReactElement, ReactNode } from 'react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../i18n';
-import { GIT_BRANCHES_ENGINE, GIT_HISTORY_ENGINE } from './fixtures';
-import { BranchesTab, HistoryTab } from './RepositoryGit';
+import { GIT_BRANCHES_ENGINE, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES } from './fixtures';
+import { BranchesTab, HistoryTab, type HistoryRead } from './RepositoryGit';
 
 // A repository's Branches and History tabs (UX6h1, D150 §4.2, §4.4): molecules, each state reached by its props. The reads
 // are this machine's (D147 §6): a tab says its answer is on its way, that this machine has no checkout, or why Git did not
 // answer, in its place, so it never goes blank. History draws its line's commits with their lanes (graphLanes).
 
-const tips = [GIT_HISTORY_ENGINE[0]!.commit];
+// The page's tooltips live under the app's provider; the list's ⋯ (UX6h2b1) carries one, so a case renders under its own.
+const render = (ui: ReactElement, options?: RenderOptions) =>
+  renderPlain(ui, { wrapper: ({ children }: { children: ReactNode }) => <Tooltip.Provider>{children}</Tooltip.Provider>, ...options });
+
+const tips =[GIT_HISTORY_ENGINE[0]!.commit];
 
 describe("a repository's Branches tab", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
@@ -82,7 +88,7 @@ describe("a repository's Branches tab", () => {
     const named = row("Sessions' (2)", 'daoris/engine-physics-step');
     expect(named).toHaveTextContent('Fix the slow frame');
     expect(within(named).getByText('working')).toBeInTheDocument();
-    expect(named).toHaveTextContent('2 commits ahead of main, and 1 behind.');
+    expect(named).toHaveTextContent('2 commits ahead of main, and 2 behind.');
     // One no record names says so, and is still a session's by its namespace (D88).
     expect(row("Sessions' (2)", 'daoris/engine-audio-mix')).toHaveTextContent('No session record names it. 3 commits ahead of main.');
 
@@ -141,6 +147,78 @@ describe("a repository's Branches tab", () => {
     expect(row('Yours (7)', 'experiment/jobs')).toHaveFocus();
   });
 
+  it("keeps origin's branches behind the list's ⋯: drawn only where some exist, shown by its checked item, hidden again", async () => {
+    const { rerender } = render(<BranchesTab repository="engine" read={read()} />);
+    const more = screen.getByRole('button', { name: "Show origin's branches" });
+    expect(screen.queryByRole('list', { name: /^Origin's/ })).toBeNull();
+
+    await opened(more);
+    const item = screen.getByRole('menuitemcheckbox', { name: "Show origin's branches (1)" });
+    expect(item).toHaveAttribute('aria-checked', 'false');
+    await userEvent.click(item);
+    expect(names("Origin's (1)")).toEqual(['origin/release']);
+    expect(row("Origin's (1)", 'origin/release')).toHaveTextContent(/ago/);
+    expect(more).toHaveFocus();
+
+    await opened(more);
+    expect(screen.getByRole('menuitemcheckbox', { name: "Show origin's branches (1)" })).toHaveAttribute('aria-checked', 'true');
+    await userEvent.click(screen.getByRole('menuitemcheckbox', { name: "Show origin's branches (1)" }));
+    expect(screen.queryByRole('list', { name: /^Origin's/ })).toBeNull();
+
+    // None only origin holds: no ⋯.
+    rerender(<BranchesTab repository="engine" read={read({ branches: GIT_BRANCHES_ENGINE.branches.filter((branch) => branch.kind !== 'origin') })} />);
+    expect(screen.queryByRole('button', { name: "Show origin's branches" })).toBeNull();
+  });
+
+  // UX6h3b (the built-in Git design §2.3): a branch's name opens its page; the line's page is the repository's history.
+  it("opens a branch's page from its name, origin's once shown, and History from the line's own row", async () => {
+    const onOpen = vi.fn();
+    const onOpenHistory = vi.fn();
+    render(<BranchesTab repository="engine" read={read()} onOpen={onOpen} onOpenHistory={onOpenHistory} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Open daoris/engine-physics-step' }));
+    expect(onOpen).toHaveBeenLastCalledWith('daoris/engine-physics-step');
+    await userEvent.click(screen.getByRole('button', { name: 'Open review/q4-input-map' }));
+    expect(onOpen).toHaveBeenLastCalledWith('review/q4-input-map');
+    await userEvent.click(screen.getByRole('button', { name: 'Open spike/renderer' }));
+    expect(onOpen).toHaveBeenLastCalledWith('spike/renderer');
+    // The name is still the row's whole name, its press a ghost button around it.
+    expect(names('Yours (7)')[0]).toBe('spike/renderer');
+
+    await opened(screen.getByRole('button', { name: "Show origin's branches" }));
+    await userEvent.click(screen.getByRole('menuitemcheckbox', { name: "Show origin's branches (1)" }));
+    await userEvent.click(screen.getByRole('button', { name: 'Open origin/release' }));
+    expect(onOpen).toHaveBeenLastCalledWith('origin/release');
+
+    await userEvent.click(within(screen.getByRole('group', { name: 'Line' })).getByRole('button', { name: "Open main's history" }));
+    expect(onOpenHistory).toHaveBeenCalledTimes(1);
+    expect(onOpen).toHaveBeenCalledTimes(4);
+  });
+
+  it('offers no press where none is handed, where a branch has no commit, or where its line has none here', () => {
+    const { rerender } = render(<BranchesTab repository="engine" read={read()} />);
+    expect(screen.queryAllByRole('button', { name: /^Open / })).toEqual([]);
+
+    // A branch with no commit of its own has nothing to draw; the others keep theirs.
+    const [line, physics, ...rest] = GIT_BRANCHES_ENGINE.branches;
+    const pressed = { onOpen: vi.fn(), onOpenHistory: vi.fn() };
+    rerender(<BranchesTab repository="engine" read={read({ branches: [line!, { ...physics!, commit: '' }, ...rest] })} {...pressed} />);
+    expect(screen.queryByRole('button', { name: 'Open daoris/engine-physics-step' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Open daoris/engine-audio-mix' })).toBeInTheDocument();
+
+    // A line with no commit here: no branch can be drawn beside it, so no row but the line's own opens.
+    rerender(<BranchesTab repository="engine" read={read({ line: { ...GIT_BRANCHES_ENGINE.line, commit: null } })} {...pressed} />);
+    expect(screen.queryAllByRole('button', { name: /^Open / }).map((button) => button.getAttribute('aria-label'))).toEqual(["Open main's history"]);
+  });
+
+  it("says origin's branches in 中文", async () => {
+    await i18n.changeLanguage('zh');
+    render(<BranchesTab repository="engine" read={read()} />);
+    await opened(screen.getByRole('button', { name: '显示 origin 的分支' }));
+    await userEvent.click(screen.getByRole('menuitemcheckbox', { name: '显示 origin 的分支（1）' }));
+    expect(names('origin 的分支（1）')).toEqual(['origin/release']);
+  });
+
   it('says its states in 中文', async () => {
     await i18n.changeLanguage('zh');
     const { rerender } = render(<BranchesTab repository="engine" read={{ state: 'noCheckout' }} />);
@@ -154,8 +232,18 @@ describe("a repository's Branches tab", () => {
     expect(screen.getByText('无法读取会话记录，所以这里没有分支以它的会话命名。')).toBeInTheDocument();
     expect(row('已落地（3）', 'review/q2-shader-cache')).toHaveTextContent('未推送。');
     expect(screen.getByRole('button', { name: '再显示 2 个' })).toBeInTheDocument();
+    rerender(<BranchesTab repository="engine" read={read()} onOpen={() => {}} onOpenHistory={() => {}} />);
+    expect(screen.getByRole('button', { name: '打开 daoris/engine-physics-step' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '打开 main 的历史' })).toBeInTheDocument();
   });
 });
+
+/** A menu opened from its trigger by the keyboard, as the doors' tests open one (a jsdom pointer does not open Radix's). */
+async function opened(trigger: HTMLElement) {
+  trigger.focus();
+  await userEvent.keyboard('{Enter}');
+  await screen.findByRole('menuitemcheckbox');
+}
 
 /** The engine's list as read, with what a case changes. */
 function read(more: Partial<typeof GIT_BRANCHES_ENGINE> & { sessionsUnread?: boolean } = {}) {
@@ -199,7 +287,7 @@ describe("a repository's History tab", () => {
   });
 
   it('lists its line\'s commits newest first, with a lane drawn for each and a dot per commit', () => {
-    const { container } = render(<HistoryTab repository="engine" read={{ state: 'read', value: { line: 'main', tips, commits: GIT_HISTORY_ENGINE } }} />);
+    const { container } = render(<HistoryTab repository="engine" read={{ state: 'read', value: { line: 'main', tips, commits: GIT_HISTORY_ENGINE, more: false } }} />);
     const list = screen.getByRole('list', { name: "engine's history on main" });
     const rows = within(list).getAllByRole('listitem');
     expect(rows.map((row) => row.getAttribute('data-commit'))).toEqual(GIT_HISTORY_ENGINE.map((commit) => commit.commit));
@@ -216,7 +304,7 @@ describe("a repository's History tab", () => {
   it('lets its rows give way to the tab\'s width, so a long subject truncates and the id, author and time stay in view', () => {
     // jsdom lays nothing out: the class is what the window needed. Without it the graph, a grid item, grew to its longest
     // subject and pushed the row's last columns past the tab (the installed window, 2026-10-11; FIX-LOG).
-    render(<HistoryTab repository="engine" read={{ state: 'read', value: { line: 'main', tips, commits: GIT_HISTORY_ENGINE } }} />);
+    render(<HistoryTab repository="engine" read={{ state: 'read', value: { line: 'main', tips, commits: GIT_HISTORY_ENGINE, more: false } }} />);
     expect(screen.getByRole('list', { name: "engine's history on main" }).parentElement).toHaveClass('min-w-0');
   });
 
@@ -224,5 +312,135 @@ describe("a repository's History tab", () => {
     await i18n.changeLanguage('zh');
     render(<HistoryTab repository="engine" read={{ state: 'noLine', line: 'main' }} />);
     expect(screen.getByText('还没有历史')).toBeInTheDocument();
+  });
+});
+
+// The graph's pages (UX6h3a, the built-in Git design §2.3; UXLOADMORE1): the count of what is listed and *Show more* while the
+// graph answers `more`, with no total, as Ask Daoris's history foots its own.
+describe("a repository's History tab, a page at a time", () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  const [first, second] = GIT_HISTORY_PAGES;
+  const paged = (value: Partial<Extract<HistoryRead, { state: 'read' }>['value']> = {}): HistoryRead =>
+    ({ state: 'read', value: { line: 'main', tips, commits: first!, more: true, ...value } });
+
+  it('counts what is listed, with no total, and offers Show more while the graph has another page', () => {
+    render(<HistoryTab repository="engine" read={paged()} onMore={() => {}} />);
+    expect(screen.getByText('3 commits listed')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Show more' })).toBeEnabled();
+  });
+
+  it('says one commit in the singular', () => {
+    render(<HistoryTab repository="engine" read={paged({ commits: first!.slice(0, 1) })} onMore={() => {}} />);
+    expect(screen.getByText('1 commit listed')).toBeInTheDocument();
+  });
+
+  it('keeps the foot only while a next page exists', () => {
+    render(<HistoryTab repository="engine" read={paged({ commits: [...first!, ...second!], more: false })} onMore={() => {}} />);
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+    expect(screen.queryByText(/commits listed/)).toBeNull();
+  });
+
+  it('has its status from the first and empty, and says the wait in it', () => {
+    const { rerender } = render(<HistoryTab repository="engine" read={paged()} onMore={() => {}} />);
+    const status = screen.getByRole('status');
+    expect(status).toBeEmptyDOMElement();
+    rerender(<HistoryTab repository="engine" read={paged({ loadingMore: true })} onMore={() => {}} />);
+    expect(screen.getByRole('status')).toBe(status);
+    expect(status).toHaveTextContent('Reading more commits…');
+  });
+
+  it('says why the next page did not come, in the foot, and keeps the commits it has', () => {
+    render(<HistoryTab repository="engine" read={paged({ moreError: 'Git could not answer for this.' })} onMore={() => {}} />);
+    expect(within(screen.getByRole('button', { name: 'Show more' }).closest('div')!.parentElement!).getByText('Git could not answer for this.')).toBeInTheDocument();
+    expect(screen.getAllByRole('listitem')).toHaveLength(first!.length);
+  });
+
+  it('asks for the next page on a press', async () => {
+    const onMore = vi.fn();
+    render(<HistoryTab repository="engine" read={paged()} onMore={onMore} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Show more' }));
+    expect(onMore).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks nothing more while it reads', async () => {
+    const onMore = vi.fn();
+    render(<HistoryTab repository="engine" read={paged({ loadingMore: true })} onMore={onMore} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Show more' }));
+    expect(onMore).not.toHaveBeenCalled();
+  });
+
+  it('brings the focus to the first commit the press brought', async () => {
+    const { rerender } = render(<HistoryTab repository="engine" read={paged()} onMore={() => {}} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Show more' }));
+    rerender(<HistoryTab repository="engine" read={paged({ commits: [...first!, ...second!], more: false })} onMore={() => {}} />);
+    expect(document.activeElement).toBe(document.querySelector(`[data-commit="${second![0]!.commit}"]`));
+  });
+
+  it('leaves the focus where the reader went meanwhile', async () => {
+    const { rerender } = render(<><input aria-label="elsewhere" /><HistoryTab repository="engine" read={paged()} onMore={() => {}} /></>);
+    await userEvent.click(screen.getByRole('button', { name: 'Show more' }));
+    screen.getByLabelText('elsewhere').focus();
+    rerender(<><input aria-label="elsewhere" /><HistoryTab repository="engine" read={paged({ commits: [...first!, ...second!], more: false })} onMore={() => {}} /></>);
+    expect(document.activeElement).toBe(screen.getByLabelText('elsewhere'));
+  });
+
+  it('says its foot in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    render(<HistoryTab repository="engine" read={paged()} onMore={() => {}} />);
+    expect(screen.getByText('已列出 3 个提交')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '显示更多' })).toBeInTheDocument();
+  });
+});
+
+// *All branches* (UX6h3c, the built-in Git design §2.3): the ⋯ in History's head, one checked item, the page's state; ticked,
+// the head says the graph is the repository's over its branches, and past the read's limit how many it drew.
+describe("a repository's History tab, over all its branches", () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  const read: HistoryRead = { state: 'read', value: { line: 'main', tips, commits: GIT_HISTORY_ENGINE, more: false } };
+
+  it('offers *All branches* from a ⋯ in its head, ticked while shown, and tells its holder when it is pressed', async () => {
+    const onToggle = vi.fn();
+    const { rerender } = render(<HistoryTab repository="engine" read={read} all={{ on: false, onToggle }} />);
+    expect(screen.getByText(/newest first\.$/)).toHaveTextContent("engine's line, main, newest first.");
+    await opened(screen.getByRole('button', { name: 'History options' }));
+    const item = screen.getByRole('menuitemcheckbox', { name: 'All branches' });
+    expect(item).toHaveAttribute('aria-checked', 'false');
+    await userEvent.click(item);
+    expect(onToggle).toHaveBeenCalledTimes(1);
+
+    rerender(<HistoryTab repository="engine" read={read} all={{ on: true, onToggle }} />);
+    expect(screen.getByText(/every local branch and origin's/)).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: "engine's history over all its branches" })).toBeInTheDocument();
+    await userEvent.keyboard('{Escape}');
+    await opened(screen.getByRole('button', { name: 'History options' }));
+    expect(screen.getByRole('menuitemcheckbox', { name: 'All branches' })).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('draws no ⋯ where it is not handed', () => {
+    render(<HistoryTab repository="engine" read={read} />);
+    expect(screen.queryByRole('button', { name: 'History options' })).toBeNull();
+  });
+
+  it('keeps the ⋯ while ticked and the graph is on its way or refused, so it can be unticked', () => {
+    const all = { on: true, onToggle: () => {} };
+    const { rerender } = render(<HistoryTab repository="engine" read={{ state: 'reading' }} all={all} />);
+    expect(screen.getByRole('button', { name: 'History options' })).toBeInTheDocument();
+    rerender(<HistoryTab repository="engine" read={{ state: 'refused', sentence: 'Git could not answer for this.' }} all={all} />);
+    expect(screen.getByRole('button', { name: 'History options' })).toBeInTheDocument();
+  });
+
+  it('says past the limit that it drew the first of the branches', () => {
+    render(<HistoryTab repository="engine" read={read} all={{ on: true, onToggle: () => {}, limit: { shown: 256, total: 300 } }} />);
+    expect(screen.getByText(/the first 256 of 300 branches/)).toBeInTheDocument();
+  });
+
+  it('says it in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    render(<HistoryTab repository="engine" read={read} all={{ on: true, onToggle: () => {}, limit: { shown: 256, total: 300 } }} />);
+    expect(screen.getByText(/300 个分支中的前 256 个/)).toBeInTheDocument();
+    await opened(screen.getByRole('button', { name: '历史选项' }));
+    expect(screen.getByRole('menuitemcheckbox', { name: '所有分支' })).toBeInTheDocument();
   });
 });

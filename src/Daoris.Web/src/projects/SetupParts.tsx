@@ -18,6 +18,31 @@ export function landingSays(t: TFunction, landing: LandingRule): string {
   ].join(t('projects.setup.summary.clauseJoin'));
 }
 
+const PLUGIN_MARK = '\u0001';
+
+/**
+ * A landing rule's sentence for the row: its clauses joined, and, given `onOpenPlugin`, the plugin it names a door to that
+ * plugin's page (PLUGUI1c2c, plugins-screen design §5). The name is cut out of `settings.landing.byPlugin` where it sits,
+ * so the catalogue keeps one key; absent the opener, or a catalogue that does not hold it as code, it stays words.
+ */
+export function landingRowSays(
+  t: TFunction, said: string, plugin: string | undefined, auto: boolean, onOpenPlugin?: (plugin: string) => void,
+): ReactNode {
+  const join = t('projects.setup.sentenceJoin');
+  const autoSays = auto ? [t('settings.landing.byAuto')] : [];
+  if (!plugin) return [said, ...autoSays].join(join);
+  const byPlugin = t('settings.landing.byPlugin', { plugin: PLUGIN_MARK });
+  const parts = byPlugin.split(`\`${PLUGIN_MARK}\``);
+  if (!onOpenPlugin || parts.length !== 2) return [said, t('settings.landing.byPlugin', { plugin }), ...autoSays].join(join);
+  return (
+    <>
+      <Inline text={`${said}${join}${parts[0]}`} />
+      <Button variant="ghost" className="text-small" onClick={() => onOpenPlugin(plugin)}>{plugin}</Button>
+      <Inline text={[parts[1]!, ...autoSays].join(join)} />
+    </>
+  );
+}
+
 /**
  * One section of a Setup: its name and, folded, the line naming its values; a press opens it to its rows. Its name is
  * the press's name, and the line its description, so a reader hears the section and then what it holds. A section a
@@ -67,7 +92,7 @@ export function Inheritable({ label, twin, why, says, own, busy, wide = false, s
   label: string;
   twin: string;
   why?: string;
-  says: string;
+  says: ReactNode;
   own: boolean;
   busy: boolean;
   wide?: boolean;
@@ -90,7 +115,7 @@ export function Inheritable({ label, twin, why, says, own, busy, wide = false, s
     : wide ? close : <>{editor()}{close}</>;
   return (
     <SettingRow label={label} hint={twin} why={why} control={<div className="flex min-w-0 flex-wrap items-center justify-end gap-2 @max-[26rem]:justify-start">{control}</div>}>
-      <p className="m-0 text-small text-ink-soft"><Inline text={says} /></p>
+      <p className="m-0 text-small text-ink-soft">{typeof says === 'string' ? <Inline text={says} /> : says}</p>
       {open && wide && <div className="mt-2">{editor()}</div>}
       {children}
     </SettingRow>

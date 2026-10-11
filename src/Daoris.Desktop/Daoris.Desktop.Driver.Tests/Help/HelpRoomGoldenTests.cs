@@ -39,10 +39,17 @@ public sealed class HelpRoomGoldenTests
                     new ReviewRule([new("dev", "local", "README.md", "http://localhost:4200")], Required: true), ReviewSource.Workspace),
                 // XAGENT1a: a workspace's required second opinion, another maker's agent first.
                 Opinion = new ResolvedOpinion(new OpinionRule(["codex-acp", "dsh"], ["landing"], Required: true), OpinionSource.Workspace),
+                // WORKFLOW1h-b: a named workflow chosen for it, with a kind of its own mapped.
+                Workflow = new HelpWorkflowFollowed("docs-to-pr", WorkflowLevels.Repository)
+                {
+                    Name = "Documentation to a pull request", Version = 2, Kinds = [("feature", "current")],
+                },
             },
             new("reports-db", "work")
             {
                 Checkout = true, Drivable = true, Held = true, Line = new Line("main", LineSource.Checkout),
+                // WORKFLOW1h-b: its workspace's choice, which is not saved here.
+                Workflow = new HelpWorkflowFollowed("release-flow", WorkflowLevels.Workspace) { Problem = "not saved here" },
             },
             new("engine", "default")
             {
@@ -56,6 +63,12 @@ public sealed class HelpRoomGoldenTests
             {
                 Checkout = true, Drivable = true, Line = new Line("develop", LineSource.Workspace),
             },
+        ],
+        // WORKFLOW1h-b (design §8.4): the kinds a workspace declares, one mapped and one left to the default.
+        WorkflowKinds =
+        [
+            new HelpWorkflowKind("work", "docs", "Documentation", ["docs/**", "**/*.md"], "docs-to-pr"),
+            new HelpWorkflowKind("work", "feature", "Feature", [], null),
         ],
         // Reading across (D107): `reports-db` switched off, the rest on, one path that git needs quoted.
         Reads = [new("console-ui", "work", "/work/console-ui"), new("tools", "default", "/src/my tools")],
@@ -154,13 +167,56 @@ public sealed class HelpRoomGoldenTests
     internal static string GoldenPath(string file) =>
         Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "Help", "golden", "help-room", file);
 
+    /// <summary>GOLDEN1: set to 1, the tests write each golden from the render instead of comparing; unset, they compare.</summary>
+    internal const string WriteSwitch = "DAORIS_GOLDEN_WRITE";
+
+    internal static bool WriteRequested => Environment.GetEnvironmentVariable(WriteSwitch) == "1";
+
+    /// <summary>
+    /// Compares <paramref name="actual"/> with the golden at <paramref name="path"/>; with <paramref name="write"/>
+    /// writes it there instead (BOM-less UTF-8, as rendered, so LF stays LF) and says so on the test's output.
+    /// </summary>
+    internal static void Settle(string path, string actual, bool write)
+    {
+        if (!write)
+        {
+            Assert.Equal(File.ReadAllText(path), actual);
+            return;
+        }
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        var staged = path + ".new";
+        File.WriteAllText(staged, actual, new System.Text.UTF8Encoding(false));
+        File.Move(staged, path, overwrite: true);
+        Console.Error.WriteLine($"{WriteSwitch}: wrote {path}");
+    }
+
     [Theory]
     [InlineData("full")]
     [InlineData("sparse")]
     [InlineData("empty")]
     public void The_room_renders_the_text_it_rendered_before_its_sections_were_split(string machine)
     {
-        Assert.Equal(File.ReadAllText(GoldenPath($"{machine}.md")), HelpRoom.Render(Named(machine)));
+        Settle(GoldenPath($"{machine}.md"), HelpRoom.Render(Named(machine)), WriteRequested);
+    }
+
+    /// <summary>GOLDEN1: the switch writes the render, byte for byte and without a byte-order mark; without it a difference fails.</summary>
+    [Fact]
+    public void The_switch_writes_the_render_and_without_it_a_difference_fails()
+    {
+        var folder = Path.Combine(AppContext.BaseDirectory, "golden-write-" + Guid.NewGuid().ToString("N")[..8]);
+        var path = Path.Combine(folder, "x.md");
+        try
+        {
+            var text = "# Room\n\nline — two\n";
+            Settle(path, text, write: true);
+            Assert.Equal(System.Text.Encoding.UTF8.GetBytes(text), File.ReadAllBytes(path));
+            Settle(path, text, write: false);
+            Assert.ThrowsAny<Xunit.Sdk.XunitException>(() => Settle(path, text + "more\n", write: false));
+        }
+        finally
+        {
+            try { Directory.Delete(folder, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
     }
 
     /// <summary>The allow-list the room writes is the one it wrote before its kinds each named their own tool.</summary>
@@ -172,7 +228,7 @@ public sealed class HelpRoomGoldenTests
         {
             var room = HelpRoom.Prepare(home, Empty);
 
-            Assert.Equal(File.ReadAllText(GoldenPath("settings.json")), File.ReadAllText(Path.Combine(room, ".claude", "settings.json")));
+            Settle(GoldenPath("settings.json"), File.ReadAllText(Path.Combine(room, ".claude", "settings.json")), WriteRequested);
             using var settings = JsonDocument.Parse(File.ReadAllText(GoldenPath("settings.json")));
             Assert.Equal(
                 settings.RootElement.GetProperty("permissions").GetProperty("allow").EnumerateArray().Select(rule => rule.GetString()!),

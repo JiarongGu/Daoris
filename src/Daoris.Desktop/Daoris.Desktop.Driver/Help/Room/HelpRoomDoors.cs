@@ -91,18 +91,22 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "never proposes it: it reads and changes nothing)",
             "Repositories → the repository's page → Workflow; a workspace's, Repositories → the workspace's page → Workflow",
             "`daoris driver workflow show --repository <name>|--workspace <name>`"),
-        // WORKFLOW1d (D157 points 5 and 6): a named workflow, its versions never edited; Ask Daoris's `workflow` kind is
-        // WORKFLOW1h's and its screen WORKFLOW1g's. WORKFLOW1e chooses one, and every gate reads the version a run bound (WORKFLOW1f).
+        // WORKFLOW1d (D157 points 5 and 6): a named workflow, its versions never edited; its screen is WORKFLOW1g's. Ask Daoris's
+        // `workflow` kind takes `new` and `edit` since WORKFLOW1h-b, a whole version; `apply` and `import` are WORKFLOW1h2's
+        // (HelpCoverageTests). WORKFLOW1e chooses one, and every gate reads the version a run bound (WORKFLOW1f).
         ("name a workflow: its steps from a preset, a repository's Current or another workflow, each change saved as its next "
-            + "version, never edited, said step by step with your part first",
+            + "version, never edited, said step by step with your part first (Ask Daoris proposes a whole version, new or after "
+            + "the newest, which you apply; not an import yet)",
             "(no screen yet)",
             "`daoris driver workflow new <id> --from <preset>|current:<repository>|<id>[@<version>]`, `daoris driver workflow "
             + "edit|apply|export|import …`, `daoris driver workflow list`, `daoris driver workflow show <id>[@<version>]`"),
         // WORKFLOW1e (D157 point 10): which workflow work follows, by repository, workspace and kind of task, the first level
-        // that names one deciding; a run binds it at its first start, and every gate reads that version (WORKFLOW1f).
+        // that names one deciding; a run binds it at its first start, and every gate reads that version (WORKFLOW1f). Ask Daoris's
+        // `workflow` kind takes `use` since WORKFLOW1h-b, with the version it proposes; `kind` is WORKFLOW1h2's.
         ("choose which workflow a repository's or a workspace's work follows, or a kind of task's, and declare a workspace's kinds "
             + "with the paths their work keeps to (a repository's choice replaces its workspace's whole; each run binds the "
-            + "newest version at its first start, and how it lands, your look and its second opinion follow that version)",
+            + "newest version at its first start, and how it lands, your look and its second opinion follow that version) "
+            + "(Ask Daoris proposes the choice with a version it proposes, as a repository's or a workspace's default; not a kind yet)",
             "(no screen yet)",
             "`daoris driver workflow use <id>|current|--clear --repository <name>|--workspace <name> [--kind <kind>]`, "
             + "`daoris driver workflow kind <workspace> <kind> --label \"…\" [--paths <path,…>]|--drop`, "

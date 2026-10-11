@@ -88,8 +88,12 @@ public sealed partial class Driver
     /// before any quest's first start (D130 point 10). A service that does not answer is said, and everything is looked at again
     /// at the next look.
     /// </summary>
+    /// <param name="judged">
+    /// Where each owed landing opinion's gate is kept, as the attention band's route reads it (XAGENT1g3): oldest first, one per
+    /// session, the review's own answer read with it as every landing door reads it. A look that could not read leaves none.
+    /// </param>
     internal async Task<(IReadOnlyDictionary<string, string> Sits, int Passes)> OpinionsAsync(
-        Snapshot snapshot, List<string> events, CancellationToken ct)
+        Snapshot snapshot, List<string> events, CancellationToken ct, List<OpinionJudged>? judged = null)
     {
         var sits = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var dues = new OpinionDues(home);
@@ -119,8 +123,19 @@ public sealed partial class Driver
 
                 var key = SessionTrees.OpinionChain(chain, due.Quest);
                 var claim = $"{key}/{due.Repository}/{due.Occasion}";
-                var gate = await _trees.OpinionAsync(due.Tree, due.Repository, due.Workspace, due.Quest, due.Session, world, null, due.Occasion, ct, process)
+                // The landing's gate reads D154's review beside it, as every landing door does (XAGENT1g3): a review that answered what
+                // the opinion showed settles it. It moves no ask below, which read states the review never changes.
+                var review = judged is not null && due.Occasion == OpinionRules.Landing
+                    ? await ReviewGate.ReadAsync(world, config, Path.GetFullPath(due.Tree), due.Repository, due.Workspace, due.Quest, ct, process)
+                        .ConfigureAwait(false)
+                    : null;
+                var gate = await _trees.OpinionAsync(due.Tree, due.Repository, due.Workspace, due.Quest, due.Session, world, review, due.Occasion, ct, process)
                     .ConfigureAwait(false);
+                if (review is not null)
+                {
+                    judged!.Add(new OpinionJudged(due.Session, due.Quest, due.Repository, due.Workspace, due.At,
+                        (process.Landing ?? LandingRules.Choose(config, due.Repository, due.Workspace)).Rule.AutoAccept, gate));
+                }
 
                 // The person's asks first (§8.5): Ask now, Try again, Ask again, Ask the same agent, fresh. Not capped (§8.3).
                 var asked = gates.Read(key, due.Repository).Requests.Where(request => Same(request.Session, due.Session)).ToList();
@@ -151,12 +166,20 @@ public sealed partial class Driver
 
                 Sit(sits, due, chain, gate);
             }
+
+            if (judged is not null)
+            {
+                var ordered = judged.OrderBy(each => each.Since).DistinctBy(each => each.Session, StringComparer.OrdinalIgnoreCase).ToList();
+                judged.Clear();
+                judged.AddRange(ordered);
+            }
         }
         catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or IOException
                                           or UnauthorizedAccessException
                                           || (error is OperationCanceledException && !ct.IsCancellationRequested))
         {
             events.Add($"opinion  the second opinions owed could not be looked at this look, and are looked at again at the next: {error.Message}");
+            judged?.Clear();
         }
 
         return (sits, passes);

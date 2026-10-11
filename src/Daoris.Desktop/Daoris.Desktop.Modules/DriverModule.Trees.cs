@@ -603,33 +603,29 @@ public sealed partial class DriverModule
     /// <para><b>What waits on the person</b> (<see cref="WaitsOnPerson"/>): a dispute, a required opinion none could be had for, and
     /// commits nobody read where the work lands by itself (D145), since there no press of theirs is coming to answer them.</para>
     ///
-    /// <para>Read from the opinions owed (<see cref="OpinionDues"/>), each gate judged as every door judges it: nothing is asked, and
-    /// a work whose gate could not be read is left out rather than said wrongly.</para>
+    /// <para><b>Read from the look</b> (XAGENT1g3): the gates the driver's last look judged for each opinion owed
+    /// (<see cref="DriverLoop.Judged"/>, as every landing door judges them), so a poll runs no git and asks no service. A judgment
+    /// is as of that look, at most <see cref="DriverConfig.PollSeconds"/> old; a person's press nudges the loop, so it is not left
+    /// waiting a whole poll, and the tick the loop forwards when what waits changes has the page ask again.</para>
     /// </remarks>
     [DriverRoute("OPINION_WAITS")]
-    private async Task<object?> OpinionWaitsAsync(IpcRequest request, CancellationToken cancellationToken)
+    private Task<object?> OpinionWaitsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
-        var service = _loop.Service ?? throw NotReady();
-        var presses = new OpinionPresses(_loop.Home, service);
-        var config = DriverConfig.Load(_loop.ConfigPath);
+        _ = _loop.Service ?? throw NotReady();
         var waits = new List<object>();
-        foreach (var due in new OpinionDues(_loop.Home).Open().OrderBy(due => due.At).DistinctBy(due => due.Session, StringComparer.OrdinalIgnoreCase))
+        foreach (var judged in _loop.Judged.Latest ?? [])
         {
-            var pressed = await presses.GateAsync(due.Session, cancellationToken).ConfigureAwait(false);
-            if (pressed.Gate?.Opinion is not { } gate) continue;
-            // Whether it lands by itself, by the process the gate read (WORKFLOW1f): a named workflow's landing step, or the rule.
-            var auto = (pressed.Gate.Process?.Landing ?? LandingRules.Choose(config, due.Repository, due.Workspace)).Rule.AutoAccept;
-            if (!WaitsOnPerson(gate, auto)) continue;
+            if (!WaitsOnPerson(judged.Gate, judged.Auto)) continue;
             waits.Add(new
             {
-                due.Session, due.Quest, due.Repository, due.Workspace,
-                Since = due.At.ToString("O", System.Globalization.CultureInfo.InvariantCulture),
-                Auto = auto,
-                Opinion = Opinion(gate),
+                judged.Session, judged.Quest, judged.Repository, judged.Workspace,
+                Since = judged.Since.ToString("O", System.Globalization.CultureInfo.InvariantCulture),
+                judged.Auto,
+                Opinion = Opinion(judged.Gate),
             });
         }
 
-        return new { Waits = waits };
+        return Task.FromResult<object?>(new { Waits = waits });
     }
 
     /// <summary>

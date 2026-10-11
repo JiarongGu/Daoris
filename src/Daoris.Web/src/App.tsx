@@ -336,6 +336,7 @@ export function App() {
     notify,
     part: agentPart,
     onAnchored: () => setAgentPart(null),
+    onOpenPlugin: (plugin) => open('plugins', plugin),
   });
   // Its badge (D150 §2.1): the accounts a list or a default holds that read signed out, in open's hue. A browser has none.
   const agentsWaiting = useAgentsWaiting();
@@ -779,6 +780,8 @@ export function App() {
     onOpenCode: (repository) => open('map', null, { code: repository }),
     // A workspace's Details names each agent's accounts there, set on the agent's page (UX6e).
     onOpenAgent: (agent) => open('agents', agent),
+    // A landing rule's plugin opens its page (PLUGUI1c2c).
+    onOpenPlugin: (plugin) => open('plugins', plugin),
     onSyncNow,
     syncing: syncNow.isPending,
     addRequested,

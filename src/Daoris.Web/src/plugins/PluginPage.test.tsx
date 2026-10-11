@@ -77,7 +77,7 @@ describe("a plugin's page", () => {
   /**
    * D140 §2, from the install (LAYOUT11, D141): the detail's blocks share one width, the pane's. A paragraph capped at
    * 65ch beside a line that ran the pane's width wrapped the page at two edges, and in 中文 held about 32 glyphs. An
-   * update's refused plan, drawn by Settings' `PluginUpdatePlan`, kept the cap after the page's own went.
+   * update's refused plan, drawn by `PluginUpdatePlan`, kept the cap after the page's own went.
    */
   it('lets every block of its detail take the pane\'s width: no paragraph keeps a measure of its own', () => {
     const { container } = page({
@@ -257,6 +257,17 @@ describe("a plugin's page", () => {
     expect(onApplyUpdate).toHaveBeenCalledWith('acme.gate');
     await userEvent.click(within(plan).getByRole('button', { name: 'Not now' }));
     expect(onCancelUpdate).toHaveBeenCalled();
+  });
+
+  it("makes the plan's Update now the one primary control, first among the plan's buttons", () => {
+    page({
+      plan: { id: 'acme.gate', applied: false, changes: [{ what: 'version', was: '1.2.0', now: '1.3.0' }] },
+    });
+
+    const buttons = within(screen.getByRole('region', { name: 'What an update changes' })).getAllByRole('button');
+    expect(buttons.map((button) => button.textContent)).toEqual(['Update now', 'Not now']);
+    expect(buttons[0].className).toMatch(/\bbg-accent\b/);
+    expect(buttons[1].className).not.toMatch(/\bbg-accent\b/);
   });
 
   it('lists each declared point with what kind of question it is, and each agent by name', () => {

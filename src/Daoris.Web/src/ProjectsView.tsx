@@ -7,7 +7,7 @@ import { projectsItem, workspaceItem } from './opener';
 import type { WorkflowTabProps } from './workflow/WorkflowTab';
 import { ProjectList, type RepositoryRowFacts, type WorkspaceGroup } from './projects/ProjectList';
 import { ProjectPage, ProjectsMainNotice } from './projects/ProjectPage';
-import { RepositoryBranches, RepositoryHistory } from './projects/RepositoryGitView';
+import { RepositoryBranch, RepositoryBranches, RepositoryHistory } from './projects/RepositoryGitView';
 import type { Driving, RepositorySetupProps } from './projects/RepositorySetup';
 import type { ProjectTab, WorkspaceSection, WorkspaceTab } from './projects/tabs';
 import { WorkspaceView } from './projects/WorkspaceView';
@@ -46,7 +46,9 @@ const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] :
  * UX6h1, D150 §4.2), which its holder keeps so a door can open a repository at Setup.
  *
  * **Git is inside Repositories** (UX6h1, D150 §4.4): a repository's Branches and History are parts of their own
- * (`RepositoryGitView`), handed to its page and drawn only while their tab shows, so Git's reads are asked only then.
+ * (`RepositoryGitView`), handed to its page and drawn only while their tab shows, so Git's reads are asked only then. A
+ * branch's name in a repository's Branches, or a workspace's, opens the branch's page in the main area in its repository's
+ * place (UX6h3b); it is page state of the view's, not remembered, and its way back is the repository's Branches.
  *
  * **A repository's Setup is every setting it holds on this machine** (UX6f), each the screen's half of `daoris driver
  * <verb> <repository>` or `daoris agent rules … --repository` (D50), from the answers the driver gives every door: the
@@ -59,7 +61,7 @@ const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] :
  */
 export function useProjectsView({
   active, chosen, onChoose, tab = 'details', onTab, workspaceTab = 'details', onWorkspaceTab, workspaceSection = null, notify,
-  onOpenCode, onOpenAgent, onSyncNow, syncing = false, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
+  onOpenCode, onOpenAgent, onOpenPlugin, onSyncNow, syncing = false, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
   drawerWorkspace = null, onOpenQuest, onOpenAsk, onAttend,
 }: {
   /** The view is in front: only then are its errors said. */
@@ -82,6 +84,8 @@ export function useProjectsView({
   notify: Notify;
   /** Open an agent's page, where a workspace's accounts are set (UX6e): a workspace's Details names each agent's. */
   onOpenAgent?: (agent: string) => void;
+  /** Open a plugin's page, from the plugin a landing rule names in a Setup (PLUGUI1c2c). */
+  onOpenPlugin?: (plugin: string) => void;
   /** Sync a workspace with its remote, the status bar's pass (SYNC6b), which the application says. */
   onSyncNow?: (workspace: string) => void;
   syncing?: boolean;
@@ -195,6 +199,14 @@ export function useProjectsView({
     onImportOpened?.();
   }, [importRequested, attached, onImportOpened, drawerWorkspace]);
   const [managing, setManaging] = useState<Registration | null>(null);
+  // The branch open on a repository's page (UX6h3b): page state, as the Map holds its code map, never remembered across a
+  // restart. It shows while its repository is chosen at Branches, whose page it is, and its way back clears it.
+  const [branchOpen, setBranchOpen] = useState<{ repository: string; branch: string } | null>(null);
+  // The list's own press opens the item it names, never a branch left open on it.
+  const choose = (item: string | null) => {
+    setBranchOpen(null);
+    onChoose(item);
+  };
 
   const rows = registry.data ?? [];
   const indexed = (name: string) => (repositories.data ?? []).find((r) => r.name === name);
@@ -384,6 +396,7 @@ export function useProjectsView({
       work,
       sessions,
       reach,
+      onOpenPlugin,
       busy: setLine.isPending || setLanding.isPending || setReview.isPending || setOpinion.isPending || setLanguage.isPending
         || setStanding.isPending || setRead.isPending || setWrite.isPending || ruleAction.isPending,
     };
@@ -412,6 +425,7 @@ export function useProjectsView({
 
   const shown = chosenRepository ? rows.find((row) => row.repository === chosenRepository) : undefined;
   const workspaceHeld = chosenWorkspace !== null && groups.some((group) => group.workspace === chosenWorkspace);
+  const branchShown = attached && shown && tab === 'branches' && branchOpen?.repository === shown.repository ? branchOpen.branch : null;
   const add = { label: t('projects.manage.add'), onAct: () => setAdding({}) };
   const goneOrLoading = (of: 'repository' | 'workspace') => (registry.data === undefined && registry.error
     ? <ProjectsMainNotice state="unanswered" sentence={sentence(registry.error)} />
@@ -431,7 +445,11 @@ export function useProjectsView({
           onOpenRepository={onChoose}
           // A repository that sets rules of its own opens at its own workflow (WORKFLOW1b).
           onOpenRepositoryWorkflow={(repository) => { onChoose(repository); onTab?.('workflow'); }}
+          // A branch in its Branches opens on its repository's page, so its way back is that repository's Branches (UX6h3b).
+          onOpenBranch={(repository, branch) => { setBranchOpen({ repository, branch }); onChoose(repository); onTab?.('branches'); }}
+          onOpenRepositoryHistory={(repository) => { onChoose(repository); onTab?.('history'); }}
           onOpenAgent={onOpenAgent}
+          onOpenPlugin={onOpenPlugin}
           onSyncNow={onSyncNow}
           syncing={syncing}
           onOpenQuest={onOpenQuest}
@@ -441,7 +459,18 @@ export function useProjectsView({
       )
       : goneOrLoading('workspace')
     : chosen
-    ? shown
+    ? shown && branchShown
+      ? (
+        <RepositoryBranch
+          key={`${shown.repository}\n${branchShown}`}
+          repository={shown.repository}
+          workspace={workspaceOf(shown)}
+          here={Boolean(shown.root)}
+          branch={branchShown}
+          onBack={() => setBranchOpen(null)}
+        />
+      )
+    : shown
       ? (
         <ProjectPage
           key={shown.repository}
@@ -456,7 +485,16 @@ export function useProjectsView({
           workflow={workflowOf(shown)}
           // Its branches and its line's history (UX6h1): a shell's, each read only while its tab shows (D147 §6).
           branches={attached
-            ? <RepositoryBranches repository={shown.repository} workspace={workspaceOf(shown)} here={Boolean(shown.root)} />
+            ? (
+              <RepositoryBranches
+                repository={shown.repository}
+                workspace={workspaceOf(shown)}
+                here={Boolean(shown.root)}
+                // A branch's name opens its page over Branches; the line's opens History, the line's own page (UX6h3b).
+                onOpenBranch={(branch) => setBranchOpen({ repository: shown.repository, branch })}
+                onOpenHistory={onTab && (() => onTab('history'))}
+              />
+            )
             : undefined}
           history={attached
             ? <RepositoryHistory repository={shown.repository} workspace={workspaceOf(shown)} here={Boolean(shown.root)} />
@@ -501,8 +539,8 @@ export function useProjectsView({
           chosen={chosenRepository}
           chosenWorkspace={chosenWorkspace}
           unanswered={registry.data === undefined && registry.error ? sentence(registry.error) : null}
-          onChoose={onChoose}
-          onChooseWorkspace={(workspace) => onChoose(workspaceItem(workspace))}
+          onChoose={choose}
+          onChooseWorkspace={(workspace) => choose(workspaceItem(workspace))}
         />
       ),
     },

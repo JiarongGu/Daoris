@@ -11,6 +11,7 @@ vi.mock('@shenora/react', async (importOriginal) => ({
 }));
 
 import type { HelpProposal } from '../help/ProposalCard';
+import { keys } from '../queries';
 import { settleBound, useSettleHelp, type HelpSettled } from './help';
 
 /**
@@ -111,6 +112,24 @@ describe('what an Apply reads again', () => {
     const keys = invalidated.mock.calls.map(([filters]) => filters?.queryKey);
     expect(keys).toContainEqual(['registry']);
     expect(keys).toContainEqual(['repositories']);
+  });
+
+  // WORKFLOW1h-d: a workflow card's Apply saved a version, so the workflow tabs (a repository's Current, a run's place),
+  // which sit under the driver's key, are read again at once.
+  it('reads the workflow tabs again, which a saved workflow version changed', async () => {
+    invoke.mockReset();
+    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? { message: 'Applied.', applied: true } : undefined));
+    const client = new QueryClient();
+    const invalidated = vi.spyOn(client, 'invalidateQueries');
+    const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
+    const { result } = renderHook(() => useSettleHelp(), { wrapper });
+
+    await act(async () => { await result.current.mutateAsync({ id: 'p22', apply: true }); });
+
+    const reread = invalidated.mock.calls.map(([filters]) => filters?.queryKey as readonly string[]);
+    for (const tab of [keys.workflow('repository', 'engine'), keys.workflowRun('quest', 'q1')]) {
+      expect(reread.some((key) => key.every((part, at) => tab[at] === part))).toBe(true);
+    }
   });
 
   // HIST1f-a: a clear card's Apply removed history, so the history plan is read again, as the Clear history press does.

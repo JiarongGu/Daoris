@@ -9,7 +9,7 @@ import { type ReviewEdit, ReviewField, type ReviewRule, reviewRowSays, reviewSum
 import { shellWord } from '../shellWord';
 import { Button, Icon, Inline, PathText, Prose, Segmented, SettingRow, Tip } from '../ui';
 import { RepositoryRules, type RuleLists } from './RepositoryRules';
-import { Inheritable, landingSays, SetupSection } from './SetupParts';
+import { Inheritable, landingRowSays, landingSays, SetupSection } from './SetupParts';
 import type { WorkspaceSection } from './tabs';
 import { hostOf } from './workspace';
 
@@ -60,6 +60,8 @@ export type WorkspaceSetupProps = {
   open?: WorkspaceSection;
   /** The header's *Wire to a remote…*: the wiring form starts open. */
   wiring?: boolean;
+  /** Open a plugin's page: the landing rule's plugin is a door (PLUGUI1c2c); absent, its name stays words. */
+  onOpenPlugin?: (plugin: string) => void;
 };
 
 const JOIN = ' · ';
@@ -83,7 +85,7 @@ const plain = (text: string) => text.replace(/`/g, '');
  *
  * A molecule: every state is reached by its props, and every press goes out.
  */
-export function WorkspaceSetup({ workspace, defaults, remote, busy = false, open, wiring: startWiring = false }: WorkspaceSetupProps) {
+export function WorkspaceSetup({ workspace, defaults, remote, busy = false, open, wiring: startWiring = false, onOpenPlugin }: WorkspaceSetupProps) {
   const { t } = useTranslation();
   const daoris = (value: string) => t('projects.setup.marked.daoris', { value });
   const { line, landing, language, read, review, opinion } = defaults;
@@ -151,7 +153,7 @@ export function WorkspaceSetup({ workspace, defaults, remote, busy = false, open
               )}
             />
           )}
-          {landing && <LandingDefault workspace={workspace} landing={landing} busy={busy} />}
+          {landing && <LandingDefault workspace={workspace} landing={landing} busy={busy} onOpenPlugin={onOpenPlugin} />}
           {language && (
             <Inheritable
               setHere={t('projects.workspace.setHere')}
@@ -284,8 +286,9 @@ export function WorkspaceSetup({ workspace, defaults, remote, busy = false, open
 }
 
 /** How work lands by default: an `Inheritable` whose control is the rule's own, and what accepting automatically gives. */
-function LandingDefault({ workspace, landing, busy }: {
+function LandingDefault({ workspace, landing, busy, onOpenPlugin }: {
   workspace: string;
+  onOpenPlugin?: (plugin: string) => void;
   landing: NonNullable<WorkspaceDefaults['landing']>;
   busy: boolean;
 }) {
@@ -293,12 +296,14 @@ function LandingDefault({ workspace, landing, busy }: {
   const [accepting, setAccepting] = useState<Accepting>(null);
   const set = landing.set;
   const says = set
-    ? [
+    ? landingRowSays(
+        t,
         t(`settings.landing.from.workspace.${set.form === 'branch' ? 'branch' : 'merge'}`, { pattern: set.pattern, workspace }),
-        ...(set.form === 'branch' && set.plugin ? [t('settings.landing.byPlugin', { plugin: set.plugin })] : []),
-        ...(set.form === 'branch' && set.autoAccept ? [t('settings.landing.byAuto')] : []),
-      ].join(t('projects.setup.sentenceJoin'))
-    : t('settings.landing.from.default');
+        set.form === 'branch' ? set.plugin : undefined,
+        set.form === 'branch' && !!set.autoAccept,
+        onOpenPlugin,
+      )
+    :t('settings.landing.from.default');
   return (
     <Inheritable
       setHere={t('projects.workspace.setHere')}

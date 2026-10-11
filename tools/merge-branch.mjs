@@ -505,9 +505,12 @@ export const REACH = Object.freeze([
       'src/Daoris.Desktop/Daoris.Desktop.Driver/NoteCodes.cs', 'src/Daoris.Desktop/Daoris.Desktop.Driver/SessionEvents.cs',
       'src/Daoris.Desktop/Daoris.Desktop.Driver/InstructionAccount.cs', 'src/Daoris.Desktop/Daoris.Desktop.Driver/Trace.Chain.cs',
       'src/Daoris.Desktop/Daoris.Desktop.Driver/AutoLanding.cs', 'src/Daoris.Desktop/Daoris.Desktop.Driver/Landing.cs',
+      // MSG1g3: the page's say twin holds its refusal tables to these codes.
+      'src/Daoris.Desktop/Daoris.Desktop.Driver/GoOnNew.cs', 'src/Daoris.Desktop/Daoris.Desktop.Driver/SessionSay.cs',
+      'src/Daoris.Desktop/Daoris.Desktop.Driver/Continuation.cs', 'src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.StartFrom.cs',
     ],
     gates: [...DRIVER_READERS, 'web'],
-    why: "the driver's own, and the page's note, conversation, handed and trace vitests parse their declarations (MOD9e)",
+    why: "the driver's own, and the page's note, conversation, handed, trace and say vitests parse their declarations (MOD9e, MSG1g3)",
   },
   { paths: ['src/Daoris.Cli/test/**'], gates: [], why: "the CLI's tests, which verify runs at every merge" },
   // GATE6: a fix to a browser test was re-gated by the web gate alone, and the stage then voided every other verdict.

@@ -1,8 +1,30 @@
-import type { PluginSourceShown } from '../settings/PluginUpdate';
+import type { PluginSourceShown } from './PluginUpdate';
 
 // The Plugins view's list and page as values (PLUGUI1b, D119 §3.1): a plugin's state, its group, and what the list's
 // chosen item names. Pure, so every machine a person could have is an argument, and the list, the strip and the page
 // read one answer.
+
+/**
+ * One of Daoris's own plugins the install carries (PLUG9 d, D103), as the driver's `PLUGINS` answers it:
+ * what it declares, what its README says it needs, and whether this machine has installed it. The
+ * bridge leaves a null out, so an older shell's offer may carry no `problem`. The page draws an offer as
+ * `OfferShown` below; this is the bridge's wire shape (PLUGUI1c2a moved it here from Settings).
+ */
+export type PluginOfferShown = {
+  id: string;
+  name: string;
+  version: string;
+  description: string;
+  problem?: string | null;
+  harnesses: string[];
+  points: string[];
+  servers: string[];
+  needs: string[];
+  installed: boolean;
+  /** Its declared icon as its own bytes (PLUGUI2, D140 §3.2), never a path; absent until the host answers it. */
+  icon?: string | null;
+  iconProblem?: string | null;
+};
 
 /**
  * One installed plugin as the driver's `PLUGINS` answers it (D64). The bridge's own type is the same shape; the

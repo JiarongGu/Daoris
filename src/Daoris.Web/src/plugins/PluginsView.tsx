@@ -5,8 +5,8 @@ import {
 } from '../shell';
 import { sentence } from '../format';
 import { Drawer, failure, type Notify, useErrorNotify } from '../ui';
-import { type KitPoint, PluginKitCard, type PluginTrialResult } from '../settings/PluginKit';
-import type { PluginUpdatePlanShown } from '../settings/PluginUpdate';
+import { type KitPoint, PluginKitCard, type PluginTrialResult } from './PluginKit';
+import type { PluginUpdatePlanShown } from './PluginUpdate';
 import type { Answered } from '../work/InlineConfirm';
 import { ListMore } from '../work/ListPane';
 import type { ViewLayout } from '../work/ViewFrame';

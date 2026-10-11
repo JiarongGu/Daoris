@@ -11,8 +11,8 @@ import type { AccountsHere } from './workspace';
  * **A workspace's page** (UX6g, D150 §4.3): in Repositories' main area, opened from its row at the head of its group. Its
  * header names it, how many repositories it holds and where it syncs, with *Sync now* where it is wired or *Wire to a
  * remote…* where it is not. Beneath, four tabs, the chosen one remembered for the view: **Details** (its repositories,
- * what a start runs on, the accounts its work may run on), **Branches** (the clean-up and bringing up to date across its
- * repositories), **Workflow** (how work moves in its repositories, drawn from its rules, WORKFLOW1b) and **Setup** (its
+ * what a start runs on, the accounts its work may run on), **Branches** (each repository's branches by kind, UX6h2b2, then
+ * the clean-up and bringing up to date across its repositories), **Workflow** (how work moves in its repositories, drawn from its rules, WORKFLOW1b) and **Setup** (its
  * defaults, its remote and its rules).
  *
  * @remarks

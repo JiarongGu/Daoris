@@ -59,6 +59,8 @@ the work, was most of what branches cost before D160 (`docs/2026-10-10-subagent-
   uncommitted lost its worktree and all of its work (2026-10-09). The first commit comes before any
   reading: a stopped agent's worktree is no longer locked, and a clean tree at main's tip counts as
   merged, so the next merge's prune took one that had only read, and its resume found nothing (2026-10-09).
+  That first commit, empty or not, carries the `Co-Authored-By:` line like every other: the merge's commit check
+  refuses a commit without it, and the parent then merges past the check by hand (2026-10-12).
 - **Run no rehearsal unless the brief says to.** The family rehearsal's hosts sit on fixed ports, so a run in a worktree
   and the merge gate's run on main answer each other's checks (REHEARSEPORT1), and a failed phase's git fallback once
   committed a subagent's uncommitted work in its worktree (REHEARSEGIT1). The parent runs the rehearsals in the gate.

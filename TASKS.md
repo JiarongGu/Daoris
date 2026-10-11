@@ -33,9 +33,7 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 - [ ] **BRSCOPE1b — checkout scope and sync workspace** (modules/service/driver; after BRSCOPE1a). Share checkout-scope fixtures; carry workspace through sync proposals. D150 notes; three-door proof.
 - [ ] **UX7e — installed menus and heads** (parent; after republish). Verify keyboard menus, shortcuts, composer editing, head geometry and titles at 1546/680 px. D152 §6.
 - [ ] **ENTRY1bi — installed go to what waits** (parent; after republish). A go to `sessions/waiting`, `quests/held` and `quests/asks`, and the waiting starter, each with a group to show: its heading at the top, focused. D161's ENTRY1b note.
-- [ ] **UX6h2b1 — origin's branches behind the list's ⋯** (web). `BranchList` keeps `origin` rows and draws none; a ⋯ after Yours shows them, only where some exist (mirror `ListMore`, work/ListPane.tsx:304-364). Built-in-git design §2.2; D150's UX6h2a note.
-- [ ] **UX6h2b2 — the branch list in a workspace's Branches tab** (web; after b1). Each repository a group above the clean-up and sync (which stay workspace-only), `apart` folded and included by the person (D112) with a per-repository read; titles per group. BRSCOPE1's tests hold. Design §2.2; D150's UX6h2a and BRSCOPE1 notes.
-- [ ] **UX6h3 — the branch page, the graph and History** (web; after 2). A branch opens as a record in the main area with a way back in its header; its graph pages by `sinceParted` with the load-more foot ("{shown} commits listed", *Show more* while `more`: the graph answers no total); History is the line's graph; *All branches*. A commit's press waits on GIT1f. Create, fetch and push stay absent until GIT1g. Design §2.3.
+- [ ] **UX6h3d — the way back returns the focus** (web). After *Back to Branches* (and the code map's *Back to the workspace*) the focus goes to the row whose press opened the page, not the body. Platform UX :240-242; D150's UX6h3b note; a ProjectsView.git.test.tsx case.
 - [ ] **UX6i2i — installed go cards** (parent; after republish). Ask Daoris answering "where do I turn a plugin on?" and "where is Convergence?": a go card reading *Open Plugins.* or *Open Knowledge → Convergence.* that opens the right place and mode.
 - [ ] **PLUGTOOL1c — tools on their plugin** (web/modules/driver; after PLUGUI1c). Tools retains Daoris's own. UX6 §7.5.
 - [ ] **COWORK1 — agents working together** (design; owner's direction required). Define progress sharing, questions and handoffs. D32/D65/D145/D149; decision before implementation.
@@ -61,7 +59,6 @@ Contracts: `docs/2026-10-07-history-clearing-design.md` (D153), D158,
 D88/D102 cleanup notes, machine log §4. Installed clears require the owner's existing authorization.
 
 - [ ] **ASKHIST1di — installed history paging** (parent). Seen 2026-10-11 in 中文: a search's count and coverage, no match, a hit cut around its words, one Han character. Remaining: over 200 conversations (*Show more* and its focus; this machine has 7), English, the dock at 300 and 430 px. D158's ASKHIST1d2 note.
-- [ ] **AUTOTIDY1a — show automatic cleanup** (modules/web). Branches lists recent tidied/kept log facts. D88; route and bilingual list tests.
 - [ ] **AUTOTIDY1b — measure strict cleanup guards** (parent; installed AUTOTIDY1, after one week). Count ignored-file/unmoved-branch holds before deciding relaxations. D88 evidence.
 - [ ] **AUTOTIDY1c — automatic squash cleanup** (driver; after AUTOTIDY1b; decide first). Consider content proof plus merged PR state, preserving recovery refs. D88/D102; Process guards.
 - [ ] **QUESTBACK1 — hand back without a session** (owner's decision first; then service → driver + web). No hand back exists from anywhere: `QuestTransitions.Allows` lets nothing move back to open (D46 §3), and D126 ~:570-573 parks it. A new operation kind (quest-operations.md's eleven places), so a decision amending D46 §3 and D68 must say which taker facts survive (the claim, `Awaits`, set-ups, the ledger's carry-on, a remote's held claim). The label cannot be *Send back…* (DiffPane's); *Hand back…*/交还… to check against D116. After QUESTCLOSE1b1 (same files).
@@ -73,7 +70,6 @@ Contracts: plugin-screen design (D119), frame model (D118). Order: PLUGUI1c → 
 FRAME1i precedes PLUGUI1h. Installed looks cover both themes/languages.
 
 - [ ] **NAME2b — verify four labels**. Inspect help.setup, scope.every, signin.titleNew and work.group.noCheckout at 888 px; rename or accept. NAME2 handback.
-- [ ] **PLUGUI1c2 — plugin-page remainder** (web). Move kit/update types, fix agent/landing doors, put Update now first, remove doubled heading. D119; stories/tests/look.
 - [ ] **PLUGUI1f — complete plugin page** (after c/e). Health, Points, Agents, Servers, Activity, Data, Source and folder install. D119.
 - [ ] **PLUGUI1g — plugin checks** (after f). Keep trial and run tests in a home copy. D119.
 - [ ] **FRAME2b — maximized restore under pointer** (owner sends request). Wait for runtime position support, then update handler. D56/D32; owner response and handler proof.
@@ -84,9 +80,9 @@ Contract: `docs/2026-10-09-workflow-design.md` (D157), §14 order/proofs.
 Foundation precedes editor/proposals/intake; waits/checks/stages follow the gate; installation last.
 
 - [ ] **WORKFLOW1e2 — quest-specific choice** (service/driver; after e). Field, census, person's door and selection for quests without asks. §4.1/D156.
-- [ ] **WORKFLOW1e3 — clear run bindings with history** (driver; after e). Include binding in clear plan/count. D153/D157; clear test.
-- [ ] **WORKFLOW1g — workflow editor** (web/modules; after d/e). Presets, save, insert/failure/move/remove, drawer, selection, terminal twins and keys. §6; 680 px/bilingual proof.
-- [ ] **WORKFLOW1h — workflow proposal** (service/driver/web; after d/e). Judge validation/version/diff/person/outward needs; Apply/editor/Not now. §8; kinds/coverage/goldens/card tests.
+- [ ] **WORKFLOW1g — workflow editor** (web/modules; after d/e). Presets, save, insert/failure/move/remove, drawer, selection, terminal twins and keys; then Ask Daoris's workflow card gains *Open in the editor*. §6; 680 px/bilingual proof.
+- [ ] **WORKFLOW1h-name — a proposed workflow's name** (service/driver). The box carries an optional `name` for a new workflow, read by the judge, so it is not named by its id. Design §2.5, §8.1; the box's and judge's tests.
+- [ ] **WORKFLOW1h2 — workflow proposal, changes and kinds** (after h). `changes` against a base (the CLI's change language twinned in C#), `kind` and `import`. §8.1, §4.7.
 - [ ] **WORKFLOW1i — intake kind proposal** (driver/service; after e). Set only from quoted requirements without lowering involvement. §4.3; prompt/table/refusal proof.
 - [ ] **WORKFLOW1j — wait on pull request** (driver/examples; after f/PLUGHOOK1b). Backoff work/state only for awaited runs. §3.2/§5.4; wait/occasion/plugin tests.
 - [ ] **WORKFLOW1k — outside checks** (driver/examples; after j). Commit-specific checks, unknown/stale distinctions, failure policy and all-member joins. §3.3/§3.5/§3.7; fake-tool tests.
@@ -117,7 +113,6 @@ Contract: `docs/2026-10-08-second-agent-design.md` (D155), section proofs.
 - [ ] **XAGENT1f5 — answers under steps rules** (driver/modules; after f4). Judge correct occasion; refresh stale declared-only comments. §8.1/§8.5; Process gate/look cases.
 - [ ] **XAGENT1f3 — omitted gate behavior** (driver). Failure carry-on, safe verify commands, unfinished-work help and chain/ask choices. §8.4–§8.5; gate/look tests.
 - [ ] **XAGENT1g2 — quest/ask/struck doors** (web; after f3). Chain opinions and failure help through useOpinionActs. §9; bilingual tests.
-- [ ] **XAGENT1g3 — attention reads kept facts** (driver/modules). Cache look judgments; OPINION_WAITS runs no git. §9/UX6c; query tests.
 - [ ] **XAGENT1g4 — coded answers and reviewer row** (driver/web). Reviewer beside work with measured usage; bilingual note parts. §6.4/§9.
 - [ ] **XAGENT1h — intake reviewer choice** (driver/service; after c). Quoted choice or proposal only. §2.4; golden/refusal/stub proof.
 - [ ] **XAGENT1i — second-opinion rehearsal** (tools/examples; after f/plugin maker). Findings reach work; disputes/missing reviewer hold. §6/§8.
@@ -170,7 +165,6 @@ pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build 
 - [ ] **QUESTREBASE1 — pure rebase planner** (service; consider). Preserve operation identity, accepted-before-pending order and transaction. D69/D79; unchanged sync suite and loss tests.
 - [ ] **SESSUX1h3c — read the room's look time on the install** (parent; after a republish). SESSUX1h3b logs `help.room.look` (`ms`, `slow` over 500 ms, `read`) in the home's `logs/<date>.<source>.jsonl` on every room write. Read a day of it on the installed machine; if it is slow, propose keeping the last look for a short span (its groups then stale by that span). First reading, 2026-10-11: one look, 855 ms (`slow`), at the window's cold start. D161's SESSUX1h3 and SESSUX1h3b notes.
 - [ ] **MSG1d2 — queued chat survives restart** (driver/web; with MSG1c). Record ids/reach/withdrawals; take by id. Messages §3.1.
-- [ ] **MSG1g3 — cooling note and twins** (driver/web). Code held line; compare newSessionSaid with GoOnNew/WordsNever. D137/D142.
 - [ ] **MSG1h — Codex next-step words** (driver; after measured STEER3). Messages §8.
 - [ ] **MSG1i — native next-step words** (driver; after measured STEER3). Messages §8.
 - [ ] **MSG1j — installed message canary** (parent). Messages §8–§9; a–f installed per original record.

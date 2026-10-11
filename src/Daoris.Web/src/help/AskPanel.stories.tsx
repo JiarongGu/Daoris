@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../storyLanguage';
 import { Button } from '../ui';
 import { Composer } from '../work/Composer';
@@ -202,6 +203,52 @@ export const ProposingEveryKind: Story = {
       ),
     },
   },
+};
+
+// WORKFLOW1h-d: a workflow version's card (design §8.2): a new one, an edit, and a draft that offers only Not now.
+const WORKFLOW_SHOWN = {
+  id: 'docs-to-pr', name: 'Documentation to a pull request', base: 1, version: 2, scope: 'web-app',
+  diff: ['− Your look in local', '~ Landing on a branch: accept=automatic'],
+  yourPart: ['− Your look: Documentation work lands without you seeing it run', '= You still merge its pull request'],
+  outward: ['azure-devops-pull-request pushes the branch and opens a pull request.'], needs: [] as string[],
+  appliesTo: 'New work only; 2 runs keep the version they started on.', choose: true,
+};
+const workflowCards = (): ReactNode => (
+  <ul className="m-0 mt-3 grid list-none gap-2.5 p-0">
+    {[
+      {
+        id: 'w1', kind: 'workflow' as const, describe: 'Save version 1 of workflow `docs-to-pr`.', why: 'you asked for a docs flow',
+        terminal: 'daoris driver workflow import docs-to-pr.json',
+        workflow: { ...WORKFLOW_SHOWN, base: null, version: 1, diff: ['+ The work', '+ Landing on a branch'], yourPart: ['= You merge its pull request'], outward: [] },
+      },
+      {
+        id: 'w2', kind: 'workflow' as const, describe: 'Save version 2 of workflow `docs-to-pr`.', why: 'you asked to make docs-only work land without review',
+        terminal: 'daoris driver workflow apply docs-to-pr plan.json --base 1', workflow: WORKFLOW_SHOWN,
+      },
+      {
+        id: 'w3', kind: 'workflow' as const, describe: 'Save version 2 of workflow `docs-to-pr`.', why: 'you asked to make docs-only work land without review',
+        terminal: 'daoris driver workflow apply docs-to-pr plan.json --base 1',
+        workflow: { ...WORKFLOW_SHOWN, choose: false, needs: ['The plugin `azure-devops-pull-request` is not installed: add it on Plugins.'] },
+      },
+    ].map((proposal) => <ProposalCard key={proposal.id} proposal={proposal} onApply={() => {}} onDismiss={() => {}} />)}
+  </ul>
+);
+
+/** WORKFLOW1h-d: the three workflow cards in a conversation, as the panel draws them. */
+export const ProposingWorkflows: Story = {
+  args: { ...Talking.args, conversation: { ...Talking.args!.conversation!, proposals: workflowCards() } },
+};
+
+export const ProposingWorkflowsDark: Story = {
+  args: ProposingWorkflows.args,
+  decorators: [(Story) => <InTheme theme="dark" className="p-0"><Story /></InTheme>],
+};
+
+export const ProposingWorkflowsChinese: Story = { args: ProposingWorkflows.args, decorators: [chinese] };
+
+export const ProposingWorkflowsChineseDark: Story = {
+  args: ProposingWorkflows.args,
+  decorators: [(Story) => <InTheme theme="dark" className="p-0"><Story /></InTheme>, chinese],
 };
 
 export const Ended: Story = {

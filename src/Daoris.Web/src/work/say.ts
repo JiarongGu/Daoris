@@ -84,7 +84,7 @@ export function takesWords(box: Box): boolean {
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
 /** The sentence for each code nothing takes words for (MSG1d), by its key. */
-const NEVER: Record<string, string> = {
+export const NEVER: Record<string, string> = {
   'teammate': 'work.say.teammate',
   'stood-down': 'work.say.stoodDown',
   'intake': 'work.say.intake',
@@ -104,7 +104,7 @@ export function neverSentence(t: Translate, code: string, { quest }: { quest?: s
 }
 
 /** The sentence for each code *Start a conversation with these words* is refused by that is not a never (MSG1f2), by its key. */
-const START_FROM: Record<string, string> = {
+export const START_FROM: Record<string, string> = {
   'running': 'work.say.startFrom.running',
   'no-words': 'work.say.startFrom.noWords',
   'carried': 'work.say.startFrom.carried',
@@ -145,12 +145,12 @@ export function coolingFor(
 export type NewSessionAnswer = { sent: boolean; why: string | null; message: string };
 
 /** The sentence for each code the route refuses by that is its own, by its key; §2.2's nevers are the box's (`NEVER`). */
-const NEW_SESSION_REFUSED: Record<string, string> = {
+export const NEW_SESSION_REFUSED: Record<string, string> = {
   'running': 'work.say.newSession.running',
   'no-words': 'work.say.newSession.noWords',
   'conversation': 'work.say.newSession.conversation',
   'closed': 'work.say.newSession.closed',
-  'not-cooling': 'work.say.newSession.notCooling',
+  'not-cooling':'work.say.newSession.notCooling',
 };
 
 /** What nothing carries on by itself (D137 §2.2), whose door is *Start a conversation with these words* instead. */

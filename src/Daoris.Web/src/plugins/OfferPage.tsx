@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Button, Inline, Pill } from '../ui';
-import type { KitPoint } from '../settings/PluginKit';
+import type { KitPoint } from './PluginKit';
 import { ViewMain } from '../work/ViewMain';
 import type { OfferShown } from './catalog';
 import { PluginIcon } from './PluginIcon';

@@ -105,6 +105,22 @@ public sealed class HelpTerminalsSpelledTests : HelpProposalsFixture
         Assert.Equal(terminal, plan.Terminal);
     }
 
+    /// <summary>WORKFLOW1h-b: a workflow card's choice for a workspace spells the workspace for any shell; the workflow's id is an id.</summary>
+    [Theory]
+    [InlineData("my team", "daoris driver workflow import <file> && daoris driver workflow use docs-to-pr --workspace \"my team\"")]
+    [InlineData("R&D", "daoris driver workflow import <file> && daoris driver workflow use docs-to-pr --workspace <workspace>")]
+    public void A_workflow_s_choice_spells_its_workspace(string workspace, string terminal)
+    {
+        var steps = System.Text.Json.JsonDocument.Parse("""[{"id":"work","kind":"work"},{"id":"land","kind":"landing","form":"merge","accept":"you"}]""");
+        var plan = Plan(new HelpProposal("p8", "workflow", "new", null, null, null, null, "why", "h1", "proposed")
+        {
+            Workflow = "docs-to-pr", Scope = workspace, Choose = true, Steps = steps.RootElement.Clone(),
+        });
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal(terminal, plan.Terminal);
+    }
+
     [Theory]
     [InlineData("my team", "daoris-driver ask --workspace \"my team\" \"fix the stall\"")]
     [InlineData("R&D", "daoris-driver ask --workspace <workspace> \"fix the stall\"")]

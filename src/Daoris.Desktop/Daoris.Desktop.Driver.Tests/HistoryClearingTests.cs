@@ -517,6 +517,78 @@ public sealed class HistoryClearingTests : IDisposable
         Assert.False(outcome.Intake);
     }
 
+    // ——— A run's binding (WORKFLOW1e3).
+
+    private string Bound(string run)
+    {
+        Assert.True(WorkflowRunBindings.Bind(_home, new WorkflowRunBinding(run, "engine", "default", WorkflowSelection.Current, "default", At)));
+        return WorkflowRunBindings.PathOf(_home, run);
+    }
+
+    /// <summary>
+    /// A run's binding goes with its quest's unit, after the service's yes, and its size joins the unit's bytes (WORKFLOW1e3, which
+    /// supersedes D157's "not cleared with its work"). Another run's binding stays.
+    /// </summary>
+    [Fact]
+    public async Task A_cleared_quests_binding_goes_with_it_and_its_bytes_are_counted()
+    {
+        Kept("s1");
+        var mine = Bound("q1");
+        var other = Bound("q2");
+        var service = new StandIn { Records = [Record("s1", "q1")], Quests = [Quest("q1"), Quest("q2")] };
+        service.Listings["quest=q1"] = [Unit("quest", "q1", quests: ["q1"], sessions: ["s1"])];
+
+        var plan = await HistoryClearing.PlanAsync(World(service), HistoryScope.Quest, "#q1");
+        var unit = Assert.Single(plan.Units);
+        Assert.True(unit.Bytes.Total >= new FileInfo(mine).Length + HistoryBytes.Of(Path.Combine(Sessions, "s1.log")));
+        var outcome = await HistoryClearing.ClearAsync(World(service), HistoryScope.Quest, "q1", [unit.Name], PluginEvents.Screen);
+
+        Assert.False(File.Exists(mine));
+        Assert.True(File.Exists(other));
+        Assert.Equal(unit.Bytes.Total, outcome.Bytes);
+        Assert.Equal((1, 1, 0), (outcome.Quests, outcome.Sessions, outcome.Failed));
+    }
+
+    /// <summary>An ask's clear takes the binding of each run its quests name.</summary>
+    [Fact]
+    public async Task A_cleared_asks_runs_lose_their_bindings()
+    {
+        var mine = Bound("q1");
+        var service = new StandIn { Quests = [Quest("q1")], Asks = [Ask("a1")] };
+        service.Listings["ask=a1"] = [Unit("ask", "a1", quests: ["q1"], asks: ["a1"])];
+
+        await HistoryClearing.ClearAsync(World(service), HistoryScope.Ask, "#a1", [new HistoryUnitName("ask", "a1")], PluginEvents.Screen);
+
+        Assert.False(File.Exists(mine));
+    }
+
+    /// <summary>
+    /// A workspace's clear takes a binding no quest here holds any more, and keeps one whose quest is still held (here open, so
+    /// the service keeps it); the plan's bytes agree with what went.
+    /// </summary>
+    [Fact]
+    public async Task A_workspaces_clear_takes_a_binding_no_quest_holds_and_keeps_a_held_ones()
+    {
+        var now = DateTimeOffset.UtcNow + TimeSpan.FromHours(2);
+        var orphan = Bound("qgone");
+        var held = Bound("q3");
+        var cleared = Bound("q1");
+        File.SetLastWriteTimeUtc(orphan, DateTime.UtcNow - TimeSpan.FromHours(3));
+        var service = new StandIn { Quests = [Quest("q1", workspace: "aurora"), Quest("q3", status: "Open", workspace: "aurora")] };
+        service.Listings["workspace=aurora"] = [Unit("quest", "q1", "aurora", quests: ["q1"])];
+        var world = World(service, clock: () => now);
+
+        var plan = await HistoryClearing.PlanAsync(world, HistoryScope.Workspace, "aurora");
+        var outcome = await HistoryClearing.ClearAsync(
+            world, HistoryScope.Workspace, "aurora", [.. plan.Units.Where(unit => unit.Clearable).Select(unit => unit.Name)], PluginEvents.Screen);
+
+        Assert.False(File.Exists(orphan));
+        Assert.False(File.Exists(cleared));
+        Assert.True(File.Exists(held));
+        Assert.True(plan.Reading!.LeftOverBytes > 0);
+        Assert.Equal(plan.Reading.Takes.Bytes, outcome.Bytes);
+    }
+
     // ——— A workspace.
 
     /// <summary>
