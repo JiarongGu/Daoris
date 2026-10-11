@@ -257,7 +257,7 @@ DEV5 → 6 → 7, then 8/9, then 10/11. Predictions wait for LAYOUT2 measurement
 - [ ] **LAYOUT8 — setup UI/proposals**. Repository Setup and setup kind. §6.1/§6.5/UX6f; installed bilingual proof.
 - [ ] **LAYOUT9 — lane rooms** (after DEV6). §2.5/§7.
 - [ ] **BUDGET1 — budget scope** (owner decides). Align region-only behavior, README/design and analyze after decision. D59/REV3 F10.
-- [ ] **TRUST2 — measured trust** (owner grant). Written-key honoring and parent/child trust. D73/evidence; exact-folder hold remains.
+- [ ] **TRUST2 — measured trust** (owner grant). Written-key honoring and parent/child trust. D73/evidence; exact-folder hold remains. Seen 2026-10-12 on the install: a driven session's transcript opened with *Ignoring 7 permissions.allow entries from .claude/settings.json: this workspace has not been trusted*.
 - [ ] **AGENTS2a — DeepSeek key probe** (driver/CLI). No-key/invalid-key dsh measurement before twin declaration. D57/D67; ACP3 evidence.
 - [ ] **PROC1 — Process suite below ten minutes** (tests/tools). Measure/isolate/reuse fixtures; three serial-equivalent green timings. MOD8/FLAKE1; preserve measurements.
 - [ ] **TESTGIT1b — shared GitFixture** (driver tests). Landing plugin/tidy/fixture/landing/auto classes; eliminate independent git runners. Serial Process proof.
