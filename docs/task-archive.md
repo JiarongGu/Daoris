@@ -13693,3 +13693,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **HEAD2e — an ask's short title** (service/driver/web). An ask carries `short` (at most 40, the asker's words): the composer offers it, `ask_propose` writes it, lists and heads show it as a quest's. Design §2; SESSUX1j's rule.
 
 **Outcome** 2026-10-12: an ask carries an optional short title judged by `QuestTitles.Judge`, set from the composer (with its `n / 40` count), `POST /api/asks` and `ask_propose`'s `shortTitle`; `askName` heads and rows an ask by it, else its first line, and the page then says the whole request once. The ask command's `--short` is HEAD2e2. Detail: D162's HEAD2e note.
+
+## BGWAIT1b — resumed background wait (2026-10-12, D83)
+
+> - [ ] **BGWAIT1b — resumed background wait** (driver). Apply start judgment to Driver.Continue. D83; AcpBackgroundTests case.
+
+**Outcome** 2026-10-12: a resumed run waits on its own background work as a start does, by one shared helper (`Driver.WaitsOnBackground`), and never where its quest was closed as planned. Detail: D83's BGWAIT1b note.

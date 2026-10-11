@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session that goes on with your answer no longer stops to ask you again while its own background work (a build, the
+  gates) still runs: it waits for that work to end and goes on, as a new session already did.
+
 - A quest's, an ask's and a session's title section no longer moves its buttons: a long title takes two lines at most
   (one for a session) beside a fixed column of actions, and on a narrow window the actions take their own row. An ask's
   long request is clamped with *View full request*; a session no longer repeats its quest's whole title above the
