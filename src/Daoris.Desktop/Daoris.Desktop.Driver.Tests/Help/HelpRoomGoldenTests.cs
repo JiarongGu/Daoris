@@ -167,13 +167,56 @@ public sealed class HelpRoomGoldenTests
     internal static string GoldenPath(string file) =>
         Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "Help", "golden", "help-room", file);
 
+    /// <summary>GOLDEN1: set to 1, the tests write each golden from the render instead of comparing; unset, they compare.</summary>
+    internal const string WriteSwitch = "DAORIS_GOLDEN_WRITE";
+
+    internal static bool WriteRequested => Environment.GetEnvironmentVariable(WriteSwitch) == "1";
+
+    /// <summary>
+    /// Compares <paramref name="actual"/> with the golden at <paramref name="path"/>; with <paramref name="write"/>
+    /// writes it there instead (BOM-less UTF-8, as rendered, so LF stays LF) and says so on the test's output.
+    /// </summary>
+    internal static void Settle(string path, string actual, bool write)
+    {
+        if (!write)
+        {
+            Assert.Equal(File.ReadAllText(path), actual);
+            return;
+        }
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        var staged = path + ".new";
+        File.WriteAllText(staged, actual, new System.Text.UTF8Encoding(false));
+        File.Move(staged, path, overwrite: true);
+        Console.Error.WriteLine($"{WriteSwitch}: wrote {path}");
+    }
+
     [Theory]
     [InlineData("full")]
     [InlineData("sparse")]
     [InlineData("empty")]
     public void The_room_renders_the_text_it_rendered_before_its_sections_were_split(string machine)
     {
-        Assert.Equal(File.ReadAllText(GoldenPath($"{machine}.md")), HelpRoom.Render(Named(machine)));
+        Settle(GoldenPath($"{machine}.md"), HelpRoom.Render(Named(machine)), WriteRequested);
+    }
+
+    /// <summary>GOLDEN1: the switch writes the render, byte for byte and without a byte-order mark; without it a difference fails.</summary>
+    [Fact]
+    public void The_switch_writes_the_render_and_without_it_a_difference_fails()
+    {
+        var folder = Path.Combine(AppContext.BaseDirectory, "golden-write-" + Guid.NewGuid().ToString("N")[..8]);
+        var path = Path.Combine(folder, "x.md");
+        try
+        {
+            var text = "# Room\n\nline — two\n";
+            Settle(path, text, write: true);
+            Assert.Equal(System.Text.Encoding.UTF8.GetBytes(text), File.ReadAllBytes(path));
+            Settle(path, text, write: false);
+            Assert.ThrowsAny<Xunit.Sdk.XunitException>(() => Settle(path, text + "more\n", write: false));
+        }
+        finally
+        {
+            try { Directory.Delete(folder, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
     }
 
     /// <summary>The allow-list the room writes is the one it wrote before its kinds each named their own tool.</summary>
@@ -185,7 +228,7 @@ public sealed class HelpRoomGoldenTests
         {
             var room = HelpRoom.Prepare(home, Empty);
 
-            Assert.Equal(File.ReadAllText(GoldenPath("settings.json")), File.ReadAllText(Path.Combine(room, ".claude", "settings.json")));
+            Settle(GoldenPath("settings.json"), File.ReadAllText(Path.Combine(room, ".claude", "settings.json")), WriteRequested);
             using var settings = JsonDocument.Parse(File.ReadAllText(GoldenPath("settings.json")));
             Assert.Equal(
                 settings.RootElement.GetProperty("permissions").GetProperty("allow").EnumerateArray().Select(rule => rule.GetString()!),
