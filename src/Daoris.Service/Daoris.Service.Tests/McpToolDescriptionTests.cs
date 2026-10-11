@@ -83,7 +83,11 @@ public sealed partial class McpToolDescriptionTests
             .ToList();
 
         Assert.Contains("quest_publish", tools);
-        Assert.DoesNotContain(tools, name => name.Contains("clear") || name.Contains("history") || name.Contains("forget"));
+        // HIST1f-a: `clear_propose` only writes a proposal the person applies, as `delete_propose` does.
+        Assert.DoesNotContain(
+            tools.Where(name => name != "clear_propose"),
+            name => name.Contains("clear") || name.Contains("history") || name.Contains("forget"));
+        Assert.Contains("clear_propose", tools);
         Assert.DoesNotContain(
             typeof(KnowledgeTools).GetConstructors().SelectMany(constructor => constructor.GetParameters()),
             parameter => parameter.ParameterType == typeof(Daoris.Knowledge.HistoryDesk)

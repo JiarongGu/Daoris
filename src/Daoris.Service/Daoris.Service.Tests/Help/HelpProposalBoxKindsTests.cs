@@ -29,6 +29,7 @@ public sealed class HelpProposalBoxKindsTests
         ("repository", "repository_propose"),
         ("session", "session_propose"),
         ("pause", "pause_propose"),
+        ("clear", "clear_propose"),
     ];
 
     private static string RepositoryRoot()
