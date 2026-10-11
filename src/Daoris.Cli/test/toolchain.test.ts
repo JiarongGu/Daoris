@@ -735,6 +735,22 @@ test('signing back in to an account with no name offers who signed in as its nam
   fx.cleanup();
 });
 
+test('a sign-in named for its email says the email once (ACCTNAME1)', () => {
+  const fx = makeFixture('harness-sign-in-once');
+  const toolchain = fakeHarness(fx);
+  const lines: string[] = [];
+
+  signInNew('fake', toolchain, fx.root, (where) => {
+    writeFileSync(join(where, 'credentials.json'), 'Same@example.invalid', 'utf8');
+    return 0;
+  }, (line) => lines.push(line), { name: 'same@example.invalid', joins: [], path: at(fx) });
+
+  const end = lines.find((line) => line.startsWith('daoris: signed in as'))!;
+  assert.equal(end.toLowerCase().split('same@example.invalid').length - 1, 1);
+  assert.match(end, /this machine lists it by that name/);
+  fx.cleanup();
+});
+
 test('`--join` names workspaces, repeated or comma-separated, and `--join-machine` this machine\'s list', () => {
   assert.deepEqual(joinsOf(['login', 'claude-code', '--new', '--join', 'work,lab', '--join', ' tools ', '--join-machine']),
     ['work', 'lab', 'tools', null]);
@@ -798,6 +814,31 @@ test('`profile rename` names an account, and its lists, defaults, readings and r
   const cleared = run(['profile', 'rename', 'claude-code', 'you@work.example', 'account-1'], at(fx));
   assert.match(cleared.out, /has no name of yours now/);
   assert.deepEqual(JSON.parse(readFileSync(join(fx.root, 'accounts.json'), 'utf8')), {});
+  fx.cleanup();
+});
+
+/** ACCTNAME1: the email offered as the name is read once, and the name column fits the longest name. */
+test('`agent list` says an account\'s email once when it is the name, and sizes the name column to the longest', () => {
+  const fx = makeFixture('harness-acctname');
+  const long = 'a.rather.long.person@work.example';
+  const report = {
+    harness: 'claude-code', present: true, version: '1', problem: null, machineDefault: 'account-1',
+    profiles: [
+      { name: 'account-1', home: '', login: 'in', account: long.toUpperCase(), key: null },
+      { name: 'account-2', home: '', login: 'in', account: 'other@work.example', key: null },
+    ],
+  } as const;
+  writeFileSync(join(fx.root, 'accounts.json'), JSON.stringify({ 'claude-code': { 'account-1': { name: long } } }), 'utf8');
+  const lines = accountLines('claude-code', TOOLCHAINS['claude-code']!, report, readHarnessSettings(at(fx)), fx.root, new Date(), 'UTC');
+  const first = lines.find((line) => line.includes(long))!;
+  // Once: the email after the name is dropped where it folds equal; another account's is kept.
+  assert.equal(first.toLowerCase().split(long).length - 1, 1);
+  assert.match(lines.join('\n'), /account-2 +in +other@work\.example/);
+  // The column fits the long name, so the login starts one space after it, and the continuation lines align.
+  assert.match(first, new RegExp(`${long.replace(/\./g, '\\.')} in `));
+  const width = long.length;
+  assert.ok(lines.filter((line) => line.includes('rotation')).every((line) => /rotation +/.test(line)));
+  assert.ok(lines.some((line) => line.startsWith(`  ${' '.repeat(14)} ${' '.repeat(width)} `)));
   fx.cleanup();
 });
 
