@@ -26,6 +26,7 @@ import { failure, type Notify, useErrorNotify } from './ui';
 import { ListMore } from './work/ListPane';
 import type { ViewLayout } from './work/ViewFrame';
 import { workspaceOf, workspacesOf } from './workspaces';
+import { buttonNamed, returnFocus } from './returnFocus';
 
 const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] : []);
 
@@ -467,7 +468,17 @@ export function useProjectsView({
           workspace={workspaceOf(shown)}
           here={Boolean(shown.root)}
           branch={branchShown}
-          onBack={() => setBranchOpen(null)}
+          onBack={() => {
+            // The focus goes back to the branch's name button (UX6h3d); a branch no longer listed leaves it on the page's heading.
+            const label = t('projects.git.branches.open', { branch: branchShown });
+            returnFocus({
+              find: () => buttonNamed(label),
+              // The repository's page is drawn again (its tabs are back) and nothing in it is still reading.
+              settled: () => document.querySelector('main [role="tab"]') !== null && document.querySelector('main [aria-busy]') === null,
+              fallback: () => document.querySelector<HTMLElement>('main h1'),
+            });
+            setBranchOpen(null);
+          }}
         />
       )
     : shown

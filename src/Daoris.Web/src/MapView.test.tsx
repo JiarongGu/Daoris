@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -444,6 +444,17 @@ describe('the workspace map', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Back to the workspace' }));
     expect(await screen.findByRole('heading', { name: 'Map' })).toBeTruthy();
+  });
+
+  // UX6h3d: the way back returns the focus to the press that opened the code map.
+  it('goes back to the workspace with the focus on the Open code map button', async () => {
+    CODE_MAPS = {
+      engine: { repository: 'engine', file: 'docs/code-map.json', problem: null, modules: [], dependencies: [] },
+    };
+    show();
+    await openCode('engine');
+    await userEvent.click(await screen.findByRole('button', { name: 'Back to the workspace' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Open code map' })).toHaveFocus());
   });
 
   /** D118 §3b: one level in, the module's detail goes beside the code map by the main area's width too. */
