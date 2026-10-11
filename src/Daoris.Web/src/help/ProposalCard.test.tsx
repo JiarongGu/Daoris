@@ -219,23 +219,69 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText(code('q1'))).toBeInTheDocument();
   });
 
-  // WORKFLOW1h-a: a workflow proposal is the generic card until WORKFLOW1h-d draws its own; it offers what the plan offers.
-  it('a workflow card is the generic one, offering Apply while the plan offers it', async () => {
-    const workflow: HelpProposal = {
-      id: 'p21', kind: 'workflow', terminal: 'daoris driver workflow edit docs-to-pr --base 1', why: 'the person asked',
-      describe: 'Save version 2 of workflow `docs-to-pr` for `web-app`: new work only.',
-      workflow: {
-        id: 'docs-to-pr', name: 'Documentation to a pull request', base: 1, version: 2, scope: 'web-app',
-        diff: ['~ land: accept'], yourPart: ['= You still merge its pull request'], outward: [], needs: [], appliesTo: 'new work only',
-        choose: false,
-      },
-    };
+  // WORKFLOW1h-d: the design's card (§8.2): the title by version, Your part first, the diff, the outward acts, needs, applies to.
+  const WORKFLOW: HelpProposal = {
+    id: 'p21', kind: 'workflow', terminal: 'daoris driver workflow edit docs-to-pr --base 1', why: 'the person asked',
+    describe: 'Save version 2 of workflow `docs-to-pr` for `web-app`: new work only.',
+    workflow: {
+      id: 'docs-to-pr', name: 'Documentation to a pull request', base: 1, version: 2, scope: 'web-app',
+      diff: ['− Your look in local', '~ Landing: you accept'], yourPart: ['= You still merge its pull request'],
+      outward: ['azure-devops-pull-request pushes the branch and opens a pull request.'], needs: [],
+      appliesTo: 'New work only; 2 runs keep the version they started on.', choose: false,
+    },
+  };
+  const headings = () => screen.getAllByRole('heading').map((each) => each.textContent);
 
-    await press(workflow, 'Apply');
+  it('a workflow card reads the sections in the design\'s order, the driver\'s lines as sent, with Apply and Not now', async () => {
+    await press(WORKFLOW, 'Apply');
 
-    expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
-    expect(screen.getByText(code('docs-to-pr'))).toBeInTheDocument();
+    expect(screen.getByText('v2 of Documentation to a pull request, from v1')).toBeInTheDocument();
+    expect(headings()).toEqual(['Your part', 'Steps', 'Without asking you each time', 'Applies to']);
+    expect(screen.getByText('= You still merge its pull request')).toBeInTheDocument();
+    expect(screen.getByText('− Your look in local')).toBeInTheDocument();
+    expect(screen.getByText(/azure-devops-pull-request pushes the branch/)).toBeInTheDocument();
+    expect(screen.getByText(/2 runs keep the version/)).toBeInTheDocument();
+    expect(screen.queryByText(/chosen for/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /editor/ })).not.toBeInTheDocument();
+  });
+
+  it('a new workflow\'s card is titled v1 and says nothing leaves the machine without the person when no act is outward', () => {
+    const made = { ...WORKFLOW.workflow!, base: null, version: 1, outward: [] };
+    render(<ul><ProposalCard proposal={{ ...WORKFLOW, workflow: made }} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+
+    expect(screen.getByText('v1 of Documentation to a pull request')).toBeInTheDocument();
+    expect(screen.getByText('Nothing new leaves this machine without you.')).toBeInTheDocument();
+  });
+
+  it('a draft shows Needs first and offers only Not now', () => {
+    const draft = { ...WORKFLOW.workflow!, needs: ['The plugin `azure-devops-pull-request` is not installed.'] };
+    render(<ul><ProposalCard proposal={{ ...WORKFLOW, workflow: draft }} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+
+    expect(headings()).toContain('Needs first');
+    expect(screen.getByText(code('azure-devops-pull-request'), { exact: false })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Apply' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Not now' })).toBeInTheDocument();
+  });
+
+  it('says the scope also chooses the workflow when it does', () => {
+    const chosen = { ...WORKFLOW.workflow!, choose: true };
+    render(<ul><ProposalCard proposal={{ ...WORKFLOW, workflow: chosen }} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+
+    expect(screen.getByText('It is also chosen for web-app.')).toBeInTheDocument();
+  });
+
+  it('speaks 中文 in the headings and leaves the driver\'s lines as sent', async () => {
+    const { default: i18n } = await import('../i18n');
+    await i18n.changeLanguage('zh');
+    try {
+      render(<ul><ProposalCard proposal={WORKFLOW} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+      expect(headings()).toEqual(['你的部分', '步骤', '不再每次询问你', '适用于']);
+      expect(screen.getByText('= You still merge its pull request')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '应用' })).toBeInTheDocument();
+    } finally {
+      cleanup();
+      await i18n.changeLanguage('en');
+    }
   });
 
   it('a session delete card is the delete kind\'s, naming the session', async () => {

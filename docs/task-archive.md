@@ -13573,3 +13573,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **GOLDEN1 — the room's goldens rewritten by their test** (driver tests). An environment switch on `HelpRoomGoldenTests` writes the goldens from the room's render; unset, it compares. Today they are written by hand or a temporary test (WORKFLOW1h-b).
 
 **Outcome** 2026-10-12: `DAORIS_GOLDEN_WRITE=1` makes `HelpRoomGoldenTests` write the three room goldens and `settings.json` from the render (BOM-less UTF-8, atomically) and pass; unset, they compare as before, and no gate sets it. A switched run left them byte for byte. The command is in `src/Daoris.Desktop/README.md`.
+
+## WORKFLOW1h-d — the workflow card (2026-10-12, D157)
+
+> - [ ] **WORKFLOW1h-d — the workflow card** (web). `HelpWorkflowShown` drawn as §8.2 says: *Your part* first, the diff by step (+ − ~ ↕), *Without asking you each time*, *Needs first* for a draft (only *Not now*), *Applies to*, the choice; en and zh; `useSettleHelp` refreshes the workflows a saved card changed. D157's WORKFLOW1h-c note.
+
+**Outcome** 2026-10-12: Ask Daoris draws a workflow proposal as its own card: the version it makes, *Your part*, *Steps*, *Without asking you each time* (or that nothing new leaves this machine), *Needs first* with only *Not now* for a draft, *Applies to* and the choice, headings in en and zh, the lines the driver's. The design's *Checked* is not drawn (no field carries it). Apply's existing `driver` refresh already covers the workflow tabs. WORKFLOW1h is done but for its name and WORKFLOW1h2. Detail: D157's WORKFLOW1h-d note.

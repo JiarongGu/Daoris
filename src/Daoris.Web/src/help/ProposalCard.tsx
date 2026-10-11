@@ -48,7 +48,7 @@ export type HelpProposal = {
   sync?: HelpSyncShown | null;
   /** A yes to a departure (DRIFT1d2): the quest, and each departure its done answered. */
   accept?: HelpAcceptShown | null;
-  /** A workflow version (`workflow`, WORKFLOW1h-a): drawn by the generic card until WORKFLOW1h-d's own. */
+  /** A workflow version (`workflow`, WORKFLOW1h-a): drawn as the design's card (WORKFLOW1h-d). */
   workflow?: HelpWorkflowShown | null;
 };
 
@@ -139,6 +139,41 @@ function PluginRuns({ plugin }: { plugin: HelpPluginShown }) {
 }
 
 /**
+ * What a workflow proposal changes, in the design's order (WORKFLOW1h-d, §8.2): the version it makes, *Your part* first, the
+ * steps' diff, the acts that become standing, what is needed first, and who it applies to. Headings are the page's words;
+ * every line is the driver's English sentence, shown as it came.
+ */
+function WorkflowChange({ workflow }: { workflow: HelpWorkflowShown }) {
+  const { t } = useTranslation();
+  const section = (heading: string, lines: string[], key: string) => (
+    <section aria-label={heading} className="mt-2">
+      <h4 className="m-0 text-meta font-semibold text-ink">{heading}</h4>
+      <ul className="m-0 mt-0.5 flex list-none flex-col gap-0.5 p-0">
+        {lines.map((each, at) => <li key={`${key}-${at}`} className="m-0 break-words text-meta text-ink-soft"><Inline text={each} /></li>)}
+      </ul>
+    </section>
+  );
+  return (
+    <>
+      <p className="m-0 mt-1 text-small text-ink">
+        {workflow.base != null
+          ? t('help.proposal.workflow.versionEdit', { version: workflow.version, name: workflow.name, base: workflow.base })
+          : t('help.proposal.workflow.versionNew', { version: workflow.version, name: workflow.name })}
+      </p>
+      {workflow.yourPart.length > 0 && section(t('help.proposal.workflow.yourPart'), workflow.yourPart, 'part')}
+      {workflow.diff.length > 0 && section(t('help.proposal.workflow.steps'), workflow.diff, 'diff')}
+      {workflow.outward.length > 0
+        ? section(t('help.proposal.workflow.outward'), workflow.outward, 'outward')
+        : section(t('help.proposal.workflow.outward'), [t('help.proposal.workflow.nothingLeaves')], 'outward')}
+      {workflow.needs.length > 0 && section(t('help.proposal.workflow.needs'), workflow.needs, 'need')}
+      {workflow.needs.length > 0 && <p className="m-0 mt-1 text-meta text-ink-faint">{t('help.proposal.workflow.needsNote')}</p>}
+      {section(t('help.proposal.workflow.appliesTo'), [workflow.appliesTo], 'applies')}
+      {workflow.choose && <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.workflow.choose', { scope: workflow.scope })}</p>}
+    </>
+  );
+}
+
+/**
  * What a sync card's look did not fetch (LEFT3 b, WSR7), said once, after the rows, as the screen's note says it: how
  * many of the lines it looked at, grouped by git's reason, when each last heard from origin — which its row is judged
  * against — and what the git Daoris runs needs to reach an origin over SSH or HTTPS. Git's words are content.
@@ -208,6 +243,9 @@ function SyncApart({ apart }: { apart: string[] }) {
  * **A yes to a departure shows each departure first** (DRIFT1d2, D133 §4): its requirement in the person's words, its
  * check, the done's reason and the words that reason relied on, drawn as the quest's page draws them (`RequirementItem`),
  * so the person reads what they say yes to; its press is *accept*, the quest page's word.
+ *
+ * **A workflow version reads in the design's order** (WORKFLOW1h-d, §8.2): *Your part* first, then the steps' diff, the acts that
+ * become standing, what is needed first and who it applies to. A draft (needs present) offers only *Not now*.
  */
 export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: {
   proposal: HelpProposal;
@@ -224,6 +262,9 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
   const looking = syncing !== null && !syncing.looked;
   const accepting = proposal.kind === 'accept';
   const departures = accepting ? proposal.accept?.departures ?? [] : [];
+  const workflow = proposal.kind === 'workflow' ? proposal.workflow ?? null : null;
+  // A draft (WORKFLOW1h-b): what is still needed leaves no Apply, only Not now.
+  const draft = workflow !== null && workflow.needs.length > 0;
 
   return (
     <li className={deleting
@@ -236,9 +277,11 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
             : proposal.kind === 'plugin' ? 'help.proposal.titlePlugin'
               : handing ? 'help.proposal.titleHand'
                 : syncing ? 'help.proposal.titleSync'
-                  : accepting ? 'help.proposal.titleAccept' : 'help.proposal.title')}
+                  : accepting ? 'help.proposal.titleAccept' : workflow ? 'help.proposal.titleWorkflow' : 'help.proposal.title')}
       </p>
-      <p className="m-0 mt-1 text-small text-ink"><Inline text={proposal.describe} /></p>
+      {workflow
+        ? <WorkflowChange workflow={workflow} />
+        : <p className="m-0 mt-1 text-small text-ink"><Inline text={proposal.describe} /></p>}
       {plugin && <PluginRuns plugin={plugin} />}
       {departures.length > 0 && (
         <ol aria-label={t('help.proposal.departures')} className="m-0 mt-2 grid list-none gap-2.5 p-0">
@@ -291,12 +334,14 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
       {/* The agent's reason quotes names as code, as the description does, so it renders as it does. */}
       {proposal.why && <p className="m-0 mt-1 text-small text-ink-soft"><Inline text={t('help.proposal.why', { why: proposal.why })} /></p>}
       <div className="mt-2 flex flex-wrap gap-2">
-        <Button variant={deleting ? 'danger' : 'primary'} disabled={pending} onClick={() => onApply(proposal.id)}>
-          {t(deleting ? 'help.proposal.delete'
-            : going ? 'help.proposal.go'
-              : looking ? 'help.proposal.look'
-                : accepting ? 'help.proposal.accept' : 'help.proposal.apply')}
-        </Button>
+        {!draft && (
+          <Button variant={deleting ? 'danger' : 'primary'} disabled={pending} onClick={() => onApply(proposal.id)}>
+            {t(deleting ? 'help.proposal.delete'
+              : going ? 'help.proposal.go'
+                : looking ? 'help.proposal.look'
+                  : accepting ? 'help.proposal.accept' : 'help.proposal.apply')}
+          </Button>
+        )}
         <Button variant="ghost" disabled={pending} onClick={() => onDismiss(proposal.id)}>{t('help.proposal.dismiss')}</Button>
       </div>
     </li>

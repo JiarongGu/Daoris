@@ -42,7 +42,8 @@ How you work: edit files only with Edit and Write, never through python, sed, pe
 shell redirect (a hook refuses them; that includes appending a decision note); write
 each failing test first and RUN it to watch it fail before writing the code (a compile failure is a red: run it),
 and say which you saw fail; commit each piece once its tests pass. A component's sources changed on a later day than
-its README asks the README to describe the change (the docs gate).
+its README asks the README to describe the change (the docs gate). New words on the page run `src/locales`' tests too:
+`names:check --strict` does not hold a sentence's glossary words, `names.test.ts` does (WORKFLOW1h-d's 这台机器).
 Orientation pack:
 <the scout's pack, as it came back, with any pointer you corrected marked>
 ```
