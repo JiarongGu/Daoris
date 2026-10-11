@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- Cleaning up a landed branch keeps its commits recoverable: they stay on a ref under `refs/daoris/discarded/`, and the
+  removal says where, as removing a session's branch already did.
+
 - `daoris-driver ask` takes `--short "…"`, the ask's short title the composer's field gives, and Ask Daoris's ask card
   says it in its terminal line.
 

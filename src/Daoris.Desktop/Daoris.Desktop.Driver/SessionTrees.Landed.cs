@@ -234,15 +234,35 @@ public sealed partial class SessionTrees
 
                 // Only while it is still the commit judged (SQUASHTIDY1c): git's own -d asks only whether HEAD holds the
                 // commits, and a squash merge put none of them anywhere, so the proof made here is the one that counts.
+                // Its commits are kept on a ref of their own first (SQUASHTIDY1e), as a session branch's are (SQUASHTIDY1c): a squash
+                // carries the aggregate content only, so their own history and messages live on this branch alone. A merged
+                // branch's tip is on the line, so nothing is lost and no ref is made.
+                string? keptAt = null;
+                if (now.Item.Kind != LandedKind.Merged)
+                {
+                    var (reference, why) = await KeepDiscardedAsync(root, item.Branch, now.Tip, CancellationToken.None).ConfigureAwait(false);
+                    if (reference is null)
+                    {
+                        results.Add(new(now.Item, false, $"Daoris could not keep its commits on a ref of their own ({why}), so it is kept"));
+                        continue;
+                    }
+
+                    keptAt = reference;
+                }
+
                 var kept = await DeleteJudgedAsync(root, item.Branch, now.Tip, ct).ConfigureAwait(false);
                 if (kept is null)
                 {
                     removed.Add(item.Branch);
                     proven.Add(now.Item);
                 }
+                else
+                {
+                    await DropKeptAsync(root, item.Branch, keptAt, now.Tip, CancellationToken.None).ConfigureAwait(false);
+                }
 
                 results.Add(kept is null
-                    ? new(now.Item, true, "removed")
+                    ? new(now.Item, true, keptAt is null ? "removed" : $"{Sentence("removed")} {ContentHold.KeptAt(item.Branch, keptAt)}")
                     : new(now.Item, false, kept == MovedSince ? ChangedSince : kept));
             }
 

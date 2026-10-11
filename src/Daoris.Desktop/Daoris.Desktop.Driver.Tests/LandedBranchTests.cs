@@ -116,6 +116,79 @@ public sealed class LandedBranchTests : LandedFixture
     }
 
     /// <summary>
+    /// SQUASHTIDY1e: a squash carries the aggregate content only, so the removed branch's own commits and messages are kept on a
+    /// recovery ref at its judged tip, and the removal says where. A merged branch is on the line, so it keeps none; one that
+    /// changed since the list is not removed and leaves none; a name already taken is numbered.
+    /// </summary>
+    [Fact]
+    public async Task A_squash_landed_removal_keeps_its_commits_on_a_recovery_ref_and_says_where()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var b = await LandAsync(trees, root, "shared.txt", "one\ntwo\n", new LandingSubject("s2", "q2", "Second"));
+        await SquashAsync(root, b.Branch!);
+        var tip = (await GitAsync(root, "rev-parse", b.Branch!)).Trim();
+
+        var done = await trees.CleanAsync([("engine", "aurora", root)], new HashSet<string>());
+
+        var result = done.Landed.Single();
+        Assert.True(result.Removed, result.Message);
+        var reference = $"refs/daoris/discarded/{b.Branch}";
+        Assert.Equal(tip, (await GitAsync(root, "rev-parse", reference)).Trim());
+        Assert.Contains(ContentHold.KeptAt(b.Branch!, reference), result.Message);
+        Assert.Empty((await GitAsync(root, "branch", "--list", b.Branch!)).Trim());
+    }
+
+    [Fact]
+    public async Task A_merged_branchs_removal_keeps_no_recovery_ref()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var b = await LandAsync(trees, root, "shared.txt", "one\ntwo\n", new LandingSubject("s2", "q2", "Second"));
+        await GitAsync(root, "merge", "--no-ff", "--no-edit", b.Branch!);
+
+        var done = await trees.CleanAsync([("engine", "aurora", root)], new HashSet<string>());
+
+        Assert.True(done.Landed.Single().Removed, done.Landed.Single().Message);
+        Assert.Empty((await GitAsync(root, "for-each-ref", "refs/daoris/discarded/")).Trim());
+    }
+
+    [Fact]
+    public async Task A_branch_that_changed_since_the_list_keeps_no_recovery_ref()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var b = await LandAsync(trees, root, "shared.txt", "one\ntwo\n", new LandingSubject("s2", "q2", "Second"));
+        await SquashAsync(root, b.Branch!);
+        await CommitOnAsync(root, b.Branch!, "late.txt", "late\n", "arrived after the list");
+
+        var done = await trees.CleanAsync([("engine", "aurora", root)], new HashSet<string>(), only: new HashSet<string> { $"engine:{b.Branch}" });
+
+        Assert.False(done.Landed.Single().Removed);
+        Assert.Empty((await GitAsync(root, "for-each-ref", "refs/daoris/discarded/")).Trim());
+    }
+
+    [Fact]
+    public async Task A_taken_recovery_name_gets_the_next_number()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var b = await LandAsync(trees, root, "shared.txt", "one\ntwo\n", new LandingSubject("s2", "q2", "Second"));
+        await SquashAsync(root, b.Branch!);
+        var tip = (await GitAsync(root, "rev-parse", b.Branch!)).Trim();
+        var earlier = (await GitAsync(root, "rev-parse", "main~1")).Trim();
+        await GitAsync(root, "update-ref", $"refs/daoris/discarded/{b.Branch}", earlier);
+
+        var done = await trees.CleanAsync([("engine", "aurora", root)], new HashSet<string>());
+
+        var result = done.Landed.Single();
+        Assert.True(result.Removed, result.Message);
+        Assert.Equal(tip, (await GitAsync(root, "rev-parse", $"refs/daoris/discarded/{b.Branch}-2")).Trim());
+        Assert.Equal(earlier, (await GitAsync(root, "rev-parse", $"refs/daoris/discarded/{b.Branch}")).Trim());
+        Assert.Contains($"refs/daoris/discarded/{b.Branch}-2", result.Message);
+    }
+
+    /// <summary>
     /// The line in its remote-tracking form: the platform squash-merged the pull request on `origin` and
     /// deleted the branch there, and this checkout's own `main` is behind — `origin/main` holds the work.
     /// </summary>

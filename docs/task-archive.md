@@ -13723,3 +13723,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **NEW1c — add a repository from the picker, the draft kept** (web; after b). *Add a repository…* / *Import a folder…* at the picker's foot open Projects' drawers over Sessions; Add's `onAdded` chooses it and returns focus; Import gains the same. First run: *Add a repository…* is the primary press. Design §1.
 
 **Outcome** 2026-10-12: the picker's foot and the first run offer *Add repository…* and *Import a folder…* (the Workspace menu's words), opening Projects' two drawers over Sessions from `WorkFrame`'s own state with the words kept; Add chooses what it registered, one imported repository is chosen, several open the picker on their workspace, and the prompt takes the focus whenever a drawer closes. Detail: D162's NEW1c note.
+
+## SQUASHTIDY1e — landed content recovery (2026-10-12, D102)
+
+> - [ ] **SQUASHTIDY1e — landed content recovery** (driver). Preserve aggregate commit messages in recovery ref. D102; CleanLandedAsync test.
+
+**Outcome** 2026-10-12: a landed branch's removal, any kind but a plain merge, keeps its judged tip at `refs/daoris/discarded/<branch>[-n]` and says where, so its commits and messages stay recoverable after a squash; a failed keep leaves the branch, a refused delete drops the ref. Detail: D102's SQUASHTIDY1e note.
