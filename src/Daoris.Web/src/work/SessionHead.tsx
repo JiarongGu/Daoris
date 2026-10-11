@@ -1,4 +1,7 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
+/** How long a typed branch name rests before the landing plan is asked with it (LANDNAME1b). */
+const NAME_PAUSE = 300;
 import { useTranslation } from 'react-i18next';
 import { workflowHolds } from '../workflow/gate';
 import { WorkflowHold } from '../workflow/WorkflowHold';
@@ -93,8 +96,10 @@ import { RunningIntake } from './RunningIntake';
 export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
   onAnswerSession, branch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
-  ownSignIn = false, nameOf, lands, landing, onLand, discards, onDiscardTree, review, opinion,
+  ownSignIn = false, nameOf, lands, landing, planning, onLand, onName, discards, onDiscardTree, review, opinion,
 }: {
+  /** The landing plan shown is the previous one while the entered name's is read (LANDNAME1b); the press waits. */
+  planning?: boolean;
   /**
    * The second opinion's gate where a level asks one (XAGENT1g): its findings beside their answers, where the frame read them,
    * and its presses. Drawn from the landing's plan's own `opinion`.
@@ -126,7 +131,9 @@ export function SessionHead({
    * Land it: the review's Accept, told back to its ask, with the second opinion's token where the press answers what it showed
    * (XAGENT1g). Absent where nothing can press it (a browser, a story).
    */
-  onLand?: (answered: Answered, answers?: string | null) => void;
+  onLand?: (answered: Answered, answers?: string | null, branch?: string | null) => void;
+  /** The branch name typed in the land ask (LANDNAME1b), so the frame asks the plan again with it; `''` when the ask is put down. */
+  onName?: (name: string) => void;
   /**
    * Its agent has accounts, so a record naming none ran on the tool's own sign-in, and the head says so where it shows an
    * account (D125 §3.7, TOOL4m's rest with UX6e).
@@ -268,7 +275,7 @@ export function SessionHead({
           its tree offers to land are the reader's to say (LAND4), keyed by the session for the same reason. */}
       {lands ? (
         <Lands
-          key={session.id} session={session} lands={lands} landing={landing} onReview={onReview} onLand={onLand} review={review}
+          key={session.id} session={session} lands={lands} landing={landing} planning={planning} onReview={onReview} onLand={onLand} onName={onName} review={review}
           opinion={opinion}
         />
       ) : discards ? (
@@ -441,17 +448,43 @@ export type HeadOpinion = {
  * refuses, and for a session that did not finish that only what it committed lands. The move is the review's Accept, in
  * the primary's hue: a landing destroys nothing. Open until the landing answers, a refusal said inside it (UXFIX2).
  */
-function Lands({ session, lands, landing, onReview, onLand, review, opinion }: {
+function Lands({ session, lands, landing, planning, onReview, onLand, onName, review, opinion }: {
+  /** The plan shown is the previous name's while the entered one is read (LANDNAME1b). */
+  planning?: boolean;
   session: Session;
   lands: LandOffer;
   landing?: LandingPlan | null;
   onReview?: () => void;
-  onLand?: (answered: Answered, answers?: string | null) => void;
+  onLand?: (answered: Answered, answers?: string | null, branch?: string | null) => void;
+  onName?: (name: string) => void;
   review?: HeadReview | null;
   opinion?: HeadOpinion | null;
 }) {
   const { t } = useTranslation();
   const [asking, setAsking] = useState(false);
+  // LANDNAME1b: a branch name entered here replaces the rule's whole name; the frame asks the plan again with it. The rule's own
+  // name is kept from the plan while none is entered, as the field's placeholder.
+  const [entered, setEntered] = useState('');
+  // The name the plan was last asked with: the plan reads git, so it is asked after a pause or on blur, not per keystroke. The
+  // press waits for the plan of exactly the typed name, so a refusal of it is never skipped by a fast press.
+  const [asked, setAsked] = useState('');
+  const typed = entered.trim();
+  const rule = useRef<string | null>(null);
+  if (!typed && landing?.form === 'branch' && landing.target) rule.current = landing.target;
+  const ask = (name: string) => {
+    setAsked(name);
+    onName?.(name);
+  };
+  useEffect(() => {
+    if (typed === asked) return undefined;
+    const pause = window.setTimeout(() => ask(typed), NAME_PAUSE);
+    return () => window.clearTimeout(pause);
+  }, [typed, asked]);
+  const putDown = () => {
+    setAsking(false);
+    setEntered('');
+    ask('');
+  };
   // While the review's gate holds the work (REVIEWENV1g, design §3.1), *Review in `<environment>`* stands where *Accept…*
   // would, in the gate's state, and no *Accept…* is offered: the landing door would refuse it.
   const waits = reviewHolds(landing);
@@ -534,9 +567,24 @@ function Lands({ session, lands, landing, onReview, onLand, review, opinion }: {
             </>
           )}
           meanIt={t('work.head.landMeanIt')}
-          onConfirm={(answered) => onLand?.(answered, answers)}
-          onClose={() => setAsking(false)}
-        />
+          ready={typed === asked && !planning}
+          onConfirm={(answered) => onLand?.(answered, answers, typed || null)}
+          onClose={putDown}
+        >
+          {rule.current && (
+            <label className="flex min-w-0 flex-1 basis-64 flex-col gap-1 text-small text-ink-soft">
+              <input
+                aria-label={t('work.head.landName')}
+                placeholder={rule.current}
+                value={entered}
+                onChange={(event) => setEntered(event.target.value)}
+                onBlur={() => { if (typed !== asked) ask(typed); }}
+                className="min-h-[1.9rem] min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
+              />
+              <span>{t('work.head.landNameHint', { branch: rule.current })}</span>
+            </label>
+          )}
+        </InlineConfirm>
       )}
     </>
   );

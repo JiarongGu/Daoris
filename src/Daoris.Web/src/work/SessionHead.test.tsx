@@ -489,7 +489,7 @@ describe('the attended session\'s head', () => {
       expect(ask).toHaveTextContent('Accepting answers what the second opinion left unsettled: 1 disputed finding.');
       fireEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
 
-      expect(onLand).toHaveBeenCalledWith(expect.objectContaining({ done: expect.any(Function) }), GATES.disputed.answers);
+      expect(onLand).toHaveBeenCalledWith(expect.objectContaining({ done: expect.any(Function) }), GATES.disputed.answers, null);
     });
 
     it('offers no Accept… while another agent still reads the work, nor while the rule requires one none could be had for', () => {

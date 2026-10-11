@@ -13278,3 +13278,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **QUESTCLOSE1b2 — the page words it** (web; after b1). Quest notes draw through `work/Note.tsx` (QuestPage ~:780, HowItCameToBe ~:357, SessionRelations ~:100, SessionTimeline ~:50-53); en/zh `note.quest.person-done`; a Chinese test (QuestPage.done.test.tsx).
 
 **Outcome** 2026-10-11: where a quest carries `noteParts`, its note draws through `Note` on the quest page, a session's timeline, its relations (the label and the note joined by `work.note.join`) and the trace's close; a note without parts draws as before. The person's done reads 「已由人标为完成。」 in 中文. The trace's link carries no parts yet (QUESTCLOSE1b5). Detail: D126's QUESTCLOSE1b2 note.
+
+
+## LANDNAME1b — the land ask takes a name (2026-10-11, D145)
+
+> - [ ] **LANDNAME1b — the land ask takes a name** (web; after or beside 1a: no `branch` sent keeps today's payload). The session head's land ask (SessionHead.tsx ~:509-540) gains the name field, blank keeping `{{branch}}`; `useLandSessionTree` sends `branch`; the review pane's one-press Accept stays one press. en/zh words in work.head.json and the glossary's section.
+
+**Outcome** 2026-10-11: the head's *Accept…* ask has a *Branch name* field (the rule's name its placeholder, shown only where the rule makes a branch); the plan is asked again with the name after a 300 ms pause or on blur, and Confirm is held until the plan of the typed name answers, so a refusal is never skipped; a press with no name sends `{ id }` as before; the review pane's Accept stays one press. Detail: D145's LANDNAME1b note.

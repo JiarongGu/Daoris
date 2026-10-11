@@ -1,5 +1,5 @@
 import { useEffect, useSyncExternalStore } from 'react';
-import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../queries';
 // The shape lives beside the components that render it, so a molecule can name it without
@@ -273,15 +273,19 @@ export type TreeAct = { session: string; done: boolean; message: string };
  * draws where *Accept…* would be (REVIEWENV1g); absent where nothing waits for a review, and from a shell older than it. And the
  * second opinion's gate before it (XAGENT1f), wherever a level asks one, which the page draws beside the review's (XAGENT1g).
  */
-export const useLanding = (id: string | null) => {
+export const useLanding = (id: string | null, branch?: string | null) => {
   const { isAvailable } = useShenora();
+  const named = branch?.trim() || null;
   return useQuery({
-    queryKey: keys.landing(id ?? ''),
+    // LANDNAME1b: the plan asked again with a name the person entered, so a refusal shows before the press. The rule's own plan
+    // keeps its key, and the previous answer stands while the next is read, so the ask's gates do not blink away as one types.
+    queryKey: named ? [...keys.landing(id ?? ''), named] : keys.landing(id ?? ''),
+    placeholderData: named ? keepPreviousData : undefined,
     queryFn: () => call<{
       session: string; form?: string; target?: string; source?: string; plugin?: string; problem?: string; review?: ReviewWaits | null;
       opinion?: OpinionGate | null;
       workflow?: import('../workflow/gate').WorkflowGateState | null;
-    }>('LANDING', { id }),
+    }>('LANDING', { id, ...(named ? { branch: named } : {}) }),
     enabled: isAvailable && id !== null,
   });
 };
@@ -381,10 +385,12 @@ export type PluginLanding = { id: string; pushed: boolean; pullRequest?: string;
 export const useLandSessionTree = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (land: string | { id: string; answers?: string | null }) => {
-      const { id, answers } = typeof land === 'string' ? { id: land, answers: null } : land;
+    mutationFn: (land: string | { id: string; answers?: string | null; branch?: string | null }) => {
+      const { id, answers, branch } = typeof land === 'string' ? { id: land, answers: null, branch: null } : land;
+      // LANDNAME1b: a name the person entered replaces the rule's whole name; blank sends none, so the payload is today's.
+      const named = branch?.trim();
       return call<TreeAct & { branch?: string; plugin?: PluginLanding }>(
-        'LAND_SESSION_TREE', { id, ...(answers ? { answers } : {}) }, { timeoutMs: pluginBound });
+        'LAND_SESSION_TREE', { id, ...(answers ? { answers } : {}), ...(named ? { branch: named } : {}) }, { timeoutMs: pluginBound });
     },
     onSettled: (_result, _error, land) => {
       // A press that answered the second opinion's gate, or was refused because it moved: every gate is read again (XAGENT1g).
