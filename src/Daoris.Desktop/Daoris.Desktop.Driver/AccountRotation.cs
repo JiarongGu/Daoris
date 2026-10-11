@@ -669,6 +669,30 @@ public static class RotationWords
     }
 
     /// <summary>
+    /// <see cref="Wait"/> by code (ROSTERREFUSE2), its English the same to the byte: the lead, a clause for each account by its id
+    /// (the page names it), the first reset, and the sign-in that would start it sooner. Null where an account the wait lists
+    /// has no id (the tool's own sign-in), which a clause cannot say: the sentence then keeps its words.
+    /// </summary>
+    public static Noted? WaitOf(
+        string agent, IReadOnlyList<AccountState> states, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null)
+    {
+        var first = states.Where(state => state.Cooling is not null).Select(state => state.Cooling!).MinBy(cooling => cooling.Until)!;
+        if (first.Account is not { } firstAccount) return null;
+
+        var every = states.All(state => state.Readiness == AccountReadiness.Cooling);
+        var lead = every
+            ? Noted.Of(NoteCodes.HeldWaitEvery, $"every `{agent}` account this start may use is cooling", ("agent", agent))
+            : ClausesOf(NoteCodes.HeldWaitSome, $"no `{agent}` account this start may use is ready:", agent, states, zone, names);
+        if (lead is null) return null;
+
+        var said = $"the first ready, `{AccountNames.Said(names, firstAccount)}`, at {CoolingWords.When(first.Until, zone)}, "
+                   + $"{CoolingWords.Why(first)}. Daoris starts nothing on them until then.";
+        var wait = lead.Then("; ", Noted.Of(
+            NoteCodes.HeldWaitFirst, said, ("account", firstAccount), ("until", NoteCodes.Moment(first.Until)), ("why", CoolingWhy.Of(first))));
+        return SignInOf(wait, agent, SignedOut(states), "A sign-in starts it sooner", NoteCodes.HeldSignInSooner);
+    }
+
+    /// <summary>
     /// No account a start may use is ready and none is cooling, over a list of more than one (TOOL6g): nothing comes ready
     /// by itself, so each account is named with why, and every one not signed in with its sign-in.
     /// </summary>
@@ -676,6 +700,43 @@ public static class RotationWords
     public static string NoneReady(string agent, IReadOnlyList<AccountState> states, IReadOnlyDictionary<string, string>? names = null) =>
         $"no `{agent}` account this start may use is ready: {string.Join(", ", states.Select(state => Clause(state, TimeZoneInfo.Utc, names)))}."
         + SignIn(agent, SignedOut(states), "A sign-in starts it");
+
+    /// <summary><see cref="NoneReady"/> by code (ROSTERREFUSE2), its English the same to the byte; null where an account has no id.</summary>
+    public static Noted? NoneReadyOf(string agent, IReadOnlyList<AccountState> states, IReadOnlyDictionary<string, string>? names = null)
+    {
+        var none = ClausesOf(NoteCodes.HeldWaitSome, $"no `{agent}` account this start may use is ready:", agent, states, TimeZoneInfo.Utc, names);
+        return none is null ? null : SignInOf(none.Then("."), agent, SignedOut(states), "A sign-in starts it", NoteCodes.HeldSignIn);
+    }
+
+    /// <summary>The lead, then each account's clause joined as the English joins them; null where an account has no id.</summary>
+    private static Noted? ClausesOf(
+        NoteCode lead, string text, string agent, IReadOnlyList<AccountState> states, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names)
+    {
+        var noted = Noted.Of(lead, text, ("agent", agent));
+        for (var at = 0; at < states.Count; at++)
+        {
+            if (states[at].Account is not { } id) return null;
+
+            var clause = Clause(states[at], zone, names);
+            var line = states[at].Readiness switch
+            {
+                AccountReadiness.Cooling => Noted.Of(NoteCodes.HeldClauseCooling, clause, ("account", id), ("until", NoteCodes.Moment(states[at].Cooling!.Until))),
+                AccountReadiness.Refused => Noted.Of(NoteCodes.HeldClauseRefused, clause, ("account", id)),
+                AccountReadiness.SignedOut => Noted.Of(NoteCodes.HeldClauseSignedOut, clause, ("account", id)),
+                _ => Noted.Of(NoteCodes.HeldClauseReady, clause, ("account", id)),
+            };
+            noted = noted.Then(at == 0 ? " " : ", ", line);
+        }
+
+        return noted;
+    }
+
+    /// <summary><see cref="SignIn"/> as a line after <paramref name="wait"/>: each command is a value of its list.</summary>
+    private static Noted SignInOf(Noted wait, string agent, IReadOnlyList<string> accounts, string lead, NoteCode code) => accounts.Count == 0
+        ? wait
+        : wait.Then(" ", Noted.Of(
+            code, SignIn(agent, accounts, lead)[1..],
+            ("logins", (IReadOnlyList<string>)[.. accounts.Select(account => $"daoris agent login {agent} --profile {ShellWord.Of(account, ShellWord.Account)}")])));
 
     /// <summary>The accounts of a walk not signed in, in the order it tried them.</summary>
     public static IReadOnlyList<string> SignedOut(IReadOnlyList<AccountState> states) =>
@@ -698,10 +759,16 @@ public static class RotationWords
     /// <param name="names">The owner's names by id, read as the refusal is said (ACCT2b); null says each by its id.</param>
     public static string Picked(
         CoolingEntry cooling, IReadOnlyList<string> ready, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null) =>
-        $"{CoolingWords.Hold(cooling, zone, names)} "
-        + (ready.Count == 0
-            ? $"No other `{cooling.Agent}` account is ready."
-            : $"Ready now: {string.Join(", ", ready.Select(name => $"`{AccountNames.Said(names, name)}`"))}.");
+        PickedOf(cooling, ready, zone, names).Note;
+
+    /// <summary><see cref="Picked"/> by code (ROSTERREFUSE2): the hold's own parts, then who is ready as a list the page names.</summary>
+    public static Noted PickedOf(
+        CoolingEntry cooling, IReadOnlyList<string> ready, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null) =>
+        CoolingWords.HoldOf(cooling, zone, names).Then(" ", ready.Count == 0
+            ? Noted.Of(NoteCodes.HeldPickedNone, $"No other `{cooling.Agent}` account is ready.", ("agent", cooling.Agent))
+            : Noted.Of(
+                NoteCodes.HeldPickedReady, $"Ready now: {string.Join(", ", ready.Select(name => $"`{AccountNames.Said(names, name)}`"))}.",
+                ("accounts", (IReadOnlyList<string>)[.. ready])));
 
     /// <summary>Why an account was not ready, as a clause: the account named, and the time where it waits for one.</summary>
     public static string Why(string agent, AccountState state, TimeZoneInfo zone) => state.Readiness switch
@@ -938,7 +1005,11 @@ public static class RotationWords
     /// </summary>
     /// <param name="names">The owner's names by id, read as the wait is said (ACCT2b); null says the id.</param>
     public static string KeptAside(string kept, IReadOnlyDictionary<string, string>? names = null) =>
-        $"`{AccountNames.Said(names, kept)}` is kept for conversations.";
+        KeptAsideOf(kept, names).Note;
+
+    /// <summary><see cref="KeptAside"/> by code (ROSTERREFUSE2): the account by its id, which the page names.</summary>
+    public static Noted KeptAsideOf(string kept, IReadOnlyDictionary<string, string>? names = null) =>
+        Noted.Of(NoteCodes.HeldKeptAside, $"`{AccountNames.Said(names, kept)}` is kept for conversations.", ("account", kept));
 
     /// <summary>
     /// What a wait adds where the scope names accounts of its own and others are ready (§3.3): the accounts it does not
@@ -953,13 +1024,26 @@ public static class RotationWords
     /// </param>
     public static string Outside(
         string agent, string? workspace, IReadOnlyList<string> listed, IReadOnlyList<string> outside,
+        IReadOnlyDictionary<string, string>? names = null) =>
+        OutsideOf(agent, workspace, listed, outside, names).Note;
+
+    /// <summary>
+    /// <see cref="Outside"/> by code (ROSTERREFUSE2), its English the same to the byte: the accounts a list the page names, the
+    /// first the one the door adds, and the door's command, composed of ids and a workspace's name as a shell spells them.
+    /// </summary>
+    public static Noted OutsideOf(
+        string agent, string? workspace, IReadOnlyList<string> listed, IReadOnlyList<string> outside,
         IReadOnlyDictionary<string, string>? names = null)
     {
         var who = workspace is { } name ? $"`{name}`" : "this machine's starts";
         var door = $"daoris agent profile order {agent} {ShellWord.Words([.. listed, outside[0]], ShellWord.Account)}"
                    + (workspace is { } scoped ? $" --workspace {ShellWord.Of(scoped, ShellWord.Workspace)}" : "");
-        return $"Not cooling, and not among the accounts {who} may use: {string.Join(", ", outside.Select(account => $"`{AccountNames.Said(names, account)}`"))} — "
-               + $"Daoris starts nothing on them unless a list names them; `{door}` adds `{AccountNames.Said(names, outside[0])}`.";
+        var said = $"Not cooling, and not among the accounts {who} may use: {string.Join(", ", outside.Select(account => $"`{AccountNames.Said(names, account)}`"))} — "
+                   + $"Daoris starts nothing on them unless a list names them; `{door}` adds `{AccountNames.Said(names, outside[0])}`.";
+        var accounts = (IReadOnlyList<string>)[.. outside];
+        return workspace is { } named
+            ? Noted.Of(NoteCodes.HeldOutsideWorkspace, said, ("workspace", named), ("accounts", accounts), ("first", outside[0]), ("door", door))
+            : Noted.Of(NoteCodes.HeldOutsideMachine, said, ("accounts", accounts), ("first", outside[0]), ("door", door));
     }
 
     /// <summary>One account in a wait's list: its name and why, short.</summary>

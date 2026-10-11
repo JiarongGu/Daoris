@@ -389,9 +389,14 @@ public sealed class AccountCoolingTests : IDisposable
         Assert.Equal("fake", own.RefusalNote.Parts[0].Value("owner"));
 
         Assert.True(roster.Ready("fake", null));
-        // An agent with its own tooling names that command, which may hold a path: its sentence keeps its words.
+        // An agent with its own tooling names that command, which may hold a path (ROSTERREFUSE2): the command is a words part of
+        // the program's, never a value, between the lead and the line that says Daoris never installs.
         var ownTooling = await roster.SelectAsync("fake", Config, null, null);
-        Assert.Equal((AgentAbsence.NotInstalled, (Noted?)null), (ownTooling.Absent, ownTooling.RefusalNote));
+        Assert.Equal(AgentAbsence.NotInstalled, ownTooling.Absent);
+        Assert.Equal(ownTooling.Refusal, ownTooling.RefusalNote!.Note);
+        Assert.Equal(["held.not-installed-own", null, "held.never-installs"], ownTooling.RefusalNote.Parts.Select(part => part.Code));
+        Assert.Equal(("fake", "program"), (ownTooling.RefusalNote.Parts[0].Value("agent"), ownTooling.RefusalNote.Parts[1].By));
+        Assert.Contains(ownTooling.RefusalNote.Parts[1].Words!, ownTooling.Refusal);
 
         var installing = Roster(new Adapter("fake", Present() with { Install = ["fake-install"] }));
         var absent = await installing.SelectAsync("fake", Config, null, null);

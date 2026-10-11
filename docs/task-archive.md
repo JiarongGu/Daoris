@@ -13425,3 +13425,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **GIT1d-b — the page's Git bridge** (web). Hooks over GIT1d-a's routes, shell-only, keyed by commit. D147's GIT1d-a note.
 
 **Outcome** 2026-10-11: `bridge/git.ts`'s `useGitBranches`, `useGitGraph`, `useGitCommit`, `useGitHistory`, `useGitBlame` and `useGitCompare`, each `{available, query}` enabled only in the shell and with what it reads named; `gitRefusal` gives a code the errors catalogue words; reads named by whole commit ids never go stale. With GIT1d-a, GIT1d is closed; UX6h's tabs can read them. Detail: D147's GIT1d-b note.
+
+
+## ROSTERREFUSE2 — the roster's other refusals by code (2026-10-11, D152)
+
+> - [ ] **ROSTERREFUSE2 — the roster's other refusals by code** (driver + web twin). A wait or a none-ready over a list of accounts, a pick refused, an account its provider refused, an agent with its own tooling not installed, and a single-account sentence with the kept-aside or outside-the-list clause. D152's ROSTERREFUSE1 note.
+
+**Outcome** 2026-10-11: every roster refusal carries a `RefusalNote`: the list wait and none-ready (`held.wait-every`/`-some`, a clause per account, `held.wait-first`, the sign-in line), a pick refused, a provider-refused account (`HarnessRoster.Refuse` keeps the note; `Driver.RefusedHold`), the own-tooling install (its command as program words), and the kept-aside and outside clauses as parts after the refusal's own; an `accounts` value kind names each id through NOTENAME1's map. The English is byte for byte. Detail: D152's ROSTERREFUSE2 note.

@@ -1715,7 +1715,8 @@ public sealed partial class Driver(
         // The hold a later start says names the account by the person's name, read now (ACCT2b); the note, which travels and
         // whose cleaner knows only the record's own id, keeps the id.
         var named = selection.Profile is { } profile ? AccountNames.Said(AccountNames.Of(_harnesses.Home, owner), profile) : null;
-        _harnesses.Refuse(adapter.Name, selection.Profile, $"an earlier session found that {RefusedReason(owner, named)}");
+        var hold = RefusedHold(owner, selection.Profile, named);
+        _harnesses.Refuse(adapter.Name, selection.Profile, hold.Note, hold);
         _harnesses.SignedOut(adapter.Name, selection.Profile);
         return conclusion.Then(" ", RefusedNote(owner, selection.Profile));
     }
@@ -1757,7 +1758,12 @@ public sealed partial class Driver(
 
         var owner = toolchain.Owner(adapter.Name);
         harnesses.SignedOut(adapter.Name, profile);
-        if (profile is null) harnesses.Refuse(adapter.Name, null, $"an earlier session found that {SignedOutReason(owner, null)}");
+        if (profile is null)
+        {
+            var hold = SignedOutHold(owner);
+            harnesses.Refuse(adapter.Name, null, hold.Note, hold);
+        }
+
         return SignedOutNote(owner, profile);
     }
 
@@ -1866,6 +1872,18 @@ public sealed partial class Driver(
         return $"its provider refused {account} (401). Replace the key or sign in again — "
             + $"on Settings, or `daoris agent` — and Daoris will start sessions on it again.";
     }
+
+    /// <summary>
+    /// What a later start held on a refused credential says (AGT3b, ROSTERREFUSE2), by code beside its English: the account by its
+    /// owner and id, never the name <paramref name="named"/> the English says, which the page words.
+    /// </summary>
+    internal static Noted RefusedHold(string owner, string? profile, string? named) => profile is { } account
+        ? Noted.Of(NoteCodes.HeldRefusedAccount, $"an earlier session found that {RefusedReason(owner, named)}", ("owner", owner), ("account", account))
+        : Noted.Of(NoteCodes.HeldRefusedOwn, $"an earlier session found that {RefusedReason(owner, named)}", ("owner", owner));
+
+    /// <summary>What a later start held on the tool's own sign-in, refused (ROSTER1b), says by code beside its English.</summary>
+    internal static Noted SignedOutHold(string owner) =>
+        Noted.Of(NoteCodes.HeldSignInRefusedOwn, $"an earlier session found that {SignedOutReason(owner, null)}", ("owner", owner));
 
     /// <summary>
     /// The refused credential's line on a record (LANG1a, the language design §4 rows 23–24): the English names the account,
