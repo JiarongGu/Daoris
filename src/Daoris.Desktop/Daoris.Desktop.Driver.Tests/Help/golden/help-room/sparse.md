@@ -94,6 +94,13 @@ present it as the tree.
   A session still running, in Waiting on you or in To review is never archived: archive never hides what
   needs the person, and the route refuses it. Stopping a session is never proposed: it is the person's own,
   on the session's page, where `go_propose` takes them.
+- `pause_propose`: pause one ask's work, or one quest's, on this machine, or resume it, naming the ask or
+  the quest by its id. A pause stops what of the work runs here as the person's own stop and starts nothing of it
+  until it is resumed; a session waiting on the person stays parked, a running intake keeps reading, and a
+  teammate's session is never reached. Resume lifts the pause and releases its stops; another pause over a quest
+  of the work stays.
+  Abandoning is never proposed: it declines quests with the person's reason, which is their answer, so name the
+  ask's or the quest's page → Abandon…, or `daoris-driver ask --abandon <id>`, and never write the reason.
 
 Each proposal reaches the person as a card with two buttons, and you name them as the card does:
 a go card reads **go there** and **not now** (in 中文 **前往** and **暂不**),
@@ -160,8 +167,8 @@ session named; never propose adding one that has not landed.
 | end an account's cool-off now, after its agent hit a limit | Agents → the agent's page → the account's Try now | `daoris agent profile ready <agent> <profile>|--own` (`--own` is the tool's own sign-in) |
 | update an agent, or pin it to one version | Agents → the agent's page → Ways in → Update, Pin a version | `daoris agent update <agent>`, `daoris agent pin <agent> <version>` |
 | set an account's own model and effort | Agents → the agent's page → Model and effort | `daoris agent settings <agent> --account <name> model <model> effort <effort>` |
-| pause an ask's work, or one quest's, on this machine: what of it runs is stopped as your stop, and nothing of it starts until you resume it, which carries it on where it stood | (no screen yet) | `daoris-driver ask --pause|--resume <id>`, `daoris-driver quest pause|resume <id>` |
-| abandon an ask's work, or one quest's, on this machine: listed first, then on your reason each quest is declined, what only Daoris holds of it is discarded and its sessions archived (Ask Daoris never proposes it: the reason is your answer) | (no screen yet) | `daoris-driver ask --abandon <id> [--reason "…" --yes]`, `daoris-driver quest abandon <id> [--reason "…" --yes]` |
+| pause an ask's work, or one quest's, on this machine: what of it runs is stopped as your stop, and nothing of it starts until you resume it, which carries it on where it stood | Quests → the ask's page or the quest's page → Pause…, Resume; Sessions → the session's header or its row's ⋯ → Pause quest…, Pause ask…, Resume quest, Resume ask | `daoris-driver ask --pause|--resume <id>`, `daoris-driver quest pause|resume <id>` |
+| abandon an ask's work, or one quest's, on this machine: listed first, then on your reason each quest is declined, what only Daoris holds of it is discarded and its sessions archived (Ask Daoris never proposes it: the reason is your answer) | Quests → the ask's page or the quest's page → Abandon… | `daoris-driver ask --abandon <id> [--reason "…" --yes]`, `daoris-driver quest abandon <id> [--reason "…" --yes]` |
 | delete a quest or an ask made by mistake | Quests → the quest's drawer, or the ask's record → Delete… | `daoris-driver quest delete <id>`, `daoris-driver ask --delete <id>` |
 | archive sessions on this machine, so they leave the list with their records whole, or every one that ended, listed first; or unarchive one (a session running, waiting on you or to review is never archived) | Sessions → a session's ⋯ → Archive or Unarchive; the list's ⋯ → Archive what ended…, and Show archived | `daoris-driver sessions archive <id>… | --ended [--yes]`, `daoris-driver sessions unarchive <id>…` |
 | delete a conversation that served no quest, with what this machine kept of it: its words, its transcript and its files (one that worked on a quest is archived instead) | Sessions → a session's ⋯ → Delete… | `daoris-driver sessions delete <id>` |
@@ -265,6 +272,7 @@ while the screen still shows it. For anything else on the screen, ask them rathe
 - This machine's sessions by the Sessions list's groups: not read.
 - Quests parked by their failed sessions, at the driver's last look: none.
 - Quests held by the person's stop, at the driver's last look: none.
+- Paused on this machine until resumed: none.
 - Plugins: none installed.
 - Landed branches: none recorded.
 

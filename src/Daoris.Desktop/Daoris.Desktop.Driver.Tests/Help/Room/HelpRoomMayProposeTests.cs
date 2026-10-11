@@ -90,6 +90,23 @@ public sealed class HelpRoomMayProposeTests
     }
 
     /// <summary>
+    /// PAUSE1f-b (D132 §7.4): an ask's work or one quest's is paused or resumed by its id, the room saying what a pause stops
+    /// and what it leaves (design §2.1); abandon is never proposed, since its reason is the person's answer (D37).
+    /// </summary>
+    [Fact]
+    public void The_room_says_how_a_pause_is_proposed_and_that_abandon_is_the_persons_own()
+    {
+        var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("- `pause_propose`: pause one ask's work, or one quest's, on this machine, or resume it, naming the ask or", proposes);
+        Assert.Contains("A pause stops what of the work runs here as the person's own stop and starts nothing of it", proposes);
+        Assert.Contains("a session waiting on the person stays parked, a running intake keeps reading, and a\n  teammate's session is never reached.", proposes);
+        Assert.Contains("Resume lifts the pause and releases its stops", proposes);
+        Assert.Contains("Abandoning is never proposed: it declines quests with the person's reason, which is their answer,", proposes);
+        Assert.Contains("`daoris-driver ask --abandon <id>`", proposes);
+    }
+
+    /// <summary>
     /// HELP6: every door built since HELP1c is a proposal too — an agent's update or pin, a delete of a
     /// record made by mistake, an account's model and effort, and a screen to open — each named with its
     /// tool and the rule its route judges it by, so the helper does not propose what would be refused.

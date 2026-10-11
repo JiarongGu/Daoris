@@ -86,6 +86,8 @@ public sealed class HelpRoomGoldenTests
         Parked = [new ParkedQuest("q5e6f7a8", "engine"), new ParkedQuest("q6b7c8d9", "tools")],
         // SESSUX1b: a quest the person's stop holds, with the session stopped.
         Held = [new HeldQuest("q7c8d9e0", "console-ui", "s8b9c0d1")],
+        // PAUSE1f-b: an ask's work paused, and one quest on its own.
+        Paused = [new PausedBy(WorkScope.Ask, "a1b2c3d4"), new PausedBy(WorkScope.Quest, "q6b7c8d9")],
         Browser = new HelpBrowser("edge", "daoris", "refuse", ["https://site.example/board", "https://docs.example/"]),
         Landed =
         [

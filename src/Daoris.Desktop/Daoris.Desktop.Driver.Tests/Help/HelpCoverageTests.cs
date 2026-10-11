@@ -106,16 +106,6 @@ public sealed partial class HelpCoverageTests
         + "line (D124 §4.5).");
 
     /// <summary>
-    /// PAUSE1b's <c>daoris-driver ask --pause|--resume</c> and <c>quest pause|resume</c> (D132 §7.2), verbs of the headless host:
-    /// doors Ask Daoris owes until PAUSE1f gives it the <c>pause</c> kind, its doors <c>pause</c> and <c>resume</c>, beside the
-    /// pages' and a session's acts PAUSE1e builds.
-    /// </summary>
-    private static readonly Owed PauseDoor = new(
-        "pausing stops what of an ask's or a quest's work runs on this machine and resuming carries it on, each a change the "
-        + "person applies as a card, so Ask Daoris should propose them; that is PAUSE1f's `pause` kind, its doors `pause` and "
-        + "`resume`, judged against this machine's pauses and each work's live sessions (D132 §7.4).");
-
-    /// <summary>
     /// PAUSE1d's <c>daoris-driver ask --abandon</c> and <c>quest abandon</c> (D132 §7.2), verbs of the headless host: exempt, since
     /// an abandon declines quests with the person's reason, which is their answer (D37), as D126 §7.3 exempted *Decline…*.
     /// </summary>
@@ -473,8 +463,9 @@ public sealed partial class HelpCoverageTests
         ("work", "useAcceptQuest", null, new Door("accept", "accept")),
         ("work", "useRetryQuest", null, new Door("setting", "retry")),
         ("work", "useHandOffPress", null, new Door("hand", "hand")),
-        ("work", "usePauseWork", null, PauseDoor),
-        ("work", "useResumeWork", null, PauseDoor),
+        // PAUSE1f-b (D132 §7.4): the pages' Pause… and a session's Pause ask… and Pause quest…, and every Resume.
+        ("work", "usePauseWork", null, new Door("pause", "pause")),
+        ("work", "useResumeWork", null, new Door("pause", "resume")),
         ("work", "useAbandonWork", null, AbandonDoor),
         ("work", "useArchiveSessions", null, SessionArchiveDoor),
         ("work", "useDeleteSession", null, SessionDeleteDoor),
@@ -921,17 +912,17 @@ public sealed partial class HelpCoverageTests
     }
 
     /// <summary>
-    /// PAUSE1b: the headless host's pause and resume are doors owed to PAUSE1f's <c>pause</c> kind (D132 §7.4) while the host's
-    /// usage spells them and no kind of that name is built; the room names them meanwhile, so the helper can point at them.
+    /// PAUSE1f-b: the headless host's pause and resume, owed since PAUSE1b, are the <c>pause</c> kind's doors (D132 §7.4) while
+    /// the host's usage spells them, and the room names the pages' and a session's presses beside the commands.
     /// </summary>
     [Fact]
-    public void The_headless_hosts_pause_and_resume_are_doors_owed_to_the_pause_kind()
+    public void The_headless_hosts_pause_and_resume_are_the_pause_kinds_doors()
     {
         Assert.Contains("ask --pause <id>  ·  ask --resume <id>  ·  quest pause <id>  ·  quest resume <id>", DriverCommand.Usage);
-        Assert.Null(HelpProposalKinds.Find("pause"));
+        Assert.Equal(["pause", "resume"], HelpProposalKinds.Find("pause")!.Doors);
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver ask --pause|--resume <id>`", StringComparison.Ordinal)
-            && door.Terminal.Contains("`daoris-driver quest pause|resume <id>`", StringComparison.Ordinal));
-        Assert.Contains("PAUSE1f", PauseDoor.Reason);
+            && door.Terminal.Contains("`daoris-driver quest pause|resume <id>`", StringComparison.Ordinal)
+            && door.Screen.Contains("Pause ask…", StringComparison.Ordinal));
     }
 
     /// <summary>
