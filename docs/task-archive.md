@@ -13327,3 +13327,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SESSUX1h3b — the room's session look, timed** (driver/modules; measure first). SESSUX1h3 reads `SessionGroups.LookAsync` (with the review count's git judgement) on every room write, a conversation's going on included (`HelpMachineNowAsync`). Time it on the installed machine against Ask Daoris's first-answer time (HELP5); if it shows, read it at a conversation's start only, or keep the last look. D161's SESSUX1h3 note.
 
 **Outcome** 2026-10-11: every room write logs `help.room.look` (`ms`, `slow` over 500 ms as a warn, `boundMs`, `read`) through `HelpRoomLookLog`; the skip on going on was not built, since a kept look shows the room stale groups. Reading the numbers on the install is SESSUX1h3c. Detail: D161's SESSUX1h3b note.
+
+
+## TOOL4l-a — the service writes the account doors (2026-10-11, D130)
+
+> - [ ] **TOOL4l-a — the service writes the account doors** (service). `agent_propose` writes `use` (fields `use`, `keep` (null = none), `early`, `near`, which the driver already reads), `order` (an `accounts` list, or `clear: true` with a workspace: back to the machine's accounts) and `ready` (an `account`, `own` for the tool's sign-in). Lands first: the kinds test lets the service write doors the driver does not list yet. D130 §9, §16.6; D130's TOOL4g note ~:311-352.
+
+**Outcome** 2026-10-11: `ProposeAgent` and `agent_propose` take `use`, `keep`/`noKeep`, `early`, `near` (50-99, the driver's bounds), `accounts`, `clear` and `account`; each door writes only its own fields, a field on a door that does not take it is refused, every refusal writes nothing. No card until TOOL4l-b lists the doors. Detail: D130's TOOL4l-a note.
