@@ -13723,3 +13723,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **NEW1c — add a repository from the picker, the draft kept** (web; after b). *Add a repository…* / *Import a folder…* at the picker's foot open Projects' drawers over Sessions; Add's `onAdded` chooses it and returns focus; Import gains the same. First run: *Add a repository…* is the primary press. Design §1.
 
 **Outcome** 2026-10-12: the picker's foot and the first run offer *Add repository…* and *Import a folder…* (the Workspace menu's words), opening Projects' two drawers over Sessions from `WorkFrame`'s own state with the words kept; Add chooses what it registered, one imported repository is chosen, several open the picker on their workspace, and the prompt takes the focus whenever a drawer closes. Detail: D162's NEW1c note.
+
+## ORIENT2h7 — stable count-independent ids (2026-10-12, D151)
+
+> - [ ] **ORIENT2h7 — stable count-independent ids** (service/CLI). Ignore heading/label trailing counts; correct fence fixture note. D151 notes; two-commit measurement.
+
+**Outcome** 2026-10-12: an index entry's id, in both readers, ignores a heading's trailing count (`IndexRows.Uncounted`); the fence table's `_why` names four readers. Over h5's two commits, 452 of the 457 ids that moved with a heading's count now keep theirs; the 5 left carry a label count (*· 8 notes*, the Decisions table), not done and proposed as a row. Detail: D151's ORIENT2h7 note.
