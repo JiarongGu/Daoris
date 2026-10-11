@@ -83,6 +83,12 @@ public sealed record TickReport(
     /// agent with no time (UX6d1): an ask's intake among them, which no consideration carries.
     /// </summary>
     public IReadOnlyList<AccountWait> Waits { get; init; } = [];
+
+    /// <summary>
+    /// Each owed landing opinion's gate as this look judged it (XAGENT1g3), oldest first and one per session, for the attention band's
+    /// route to read instead of running a gate per poll. <c>steps</c> opinions are not among them.
+    /// </summary>
+    public IReadOnlyList<OpinionJudged> JudgedOpinions { get; init; } = [];
 }
 
 /// <summary>
@@ -344,7 +350,8 @@ public sealed partial class Driver(
 
         // The second opinions owed (XAGENT1f, the second-agent design §2.1, §7, §8.1): asked and delivered beside the look, and the
         // starts they sit held. A pass finishes work already done, so it takes its slot before any quest's first start (D130).
-        var (opinionSits, passes) = await OpinionsAsync(snapshot, events, ct).ConfigureAwait(false);
+        var judgedOpinions = new List<OpinionJudged>();
+        var (opinionSits, passes) = await OpinionsAsync(snapshot, events, ct, judgedOpinions).ConfigureAwait(false);
         snapshot = snapshot with { Opinions = opinionSits };
 
         // Whether this loop carries Daoris's browser decides whether a local set-up step can be shown here (REVIEWENV1c).
@@ -466,6 +473,7 @@ public sealed partial class Driver(
         {
             Untrusted = untrusted,
             Waits = waits,
+            JudgedOpinions = judgedOpinions,
         };
 
         async Task<(Begun Started, StartRun? Came)> BeginAsync(Begun started, Func<Action, Task<StartRun>> start) =>

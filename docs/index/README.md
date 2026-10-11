@@ -70,7 +70,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/PlannerTests.cs` | 65 | 1304 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/PluginKitTests.cs` | 46 | 937 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/RemoteSyncTests.cs` | 68 | 1391 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/SessionGroupsTests.cs` | 51 | 870 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/SessionGroupsTests.cs` | 52 | 889 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/SessionsCommandTests.cs` | 42 | 836 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/SessionsOutliveTheirLookTests.cs` | 40 | 908 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/ToolInstallTests.cs` | 41 | 726 |
@@ -81,7 +81,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 112 | 1997 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 83 | 1565 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.Continue.cs` | 43 | 735 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 159 | 2713 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 159 | 2721 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 61 | 1106 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 204 | 3756 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 40 | 708 |
@@ -104,7 +104,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleSessionsTests.cs` | 47 | 781 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs` | 49 | 897 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs` | 51 | 921 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs` | 65 | 1189 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Help.cs` | 54 | 948 |
 

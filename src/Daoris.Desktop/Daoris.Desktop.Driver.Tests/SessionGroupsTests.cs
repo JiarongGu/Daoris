@@ -840,6 +840,25 @@ public sealed class SessionGroupsTests
         Assert.Equal(["q1"], Assert.Single(look.Waits).Quests);
     }
 
+    /// <summary>
+    /// XAGENT1g3: the opinion gates the last look judged are replaced whole each look, and are nothing before one, so the attention
+    /// band's route answers from them where it once ran a gate per poll.
+    /// </summary>
+    [Fact]
+    public void The_last_opinions_are_replaced_whole_and_are_nothing_before_a_look()
+    {
+        var kept = new LastOpinions();
+        Assert.Null(kept.Latest);
+
+        var gate = new OpinionGateState(OpinionGateStates.Disputed, "engine") { Session = "s1" };
+        kept.Record([new OpinionJudged("s1", "q1", "engine", "work", DateTimeOffset.UnixEpoch, Auto: true, gate)]);
+        var judged = Assert.Single(kept.Latest!);
+        Assert.Equal(("s1", true, OpinionGateStates.Disputed), (judged.Session, judged.Auto, judged.Gate.State));
+
+        kept.Record([]);
+        Assert.Empty(kept.Latest!);
+    }
+
     /// <summary>The records are asked of the service's own door, closed ones included; a refusal is the driver's sentence.</summary>
     [Fact]
     public async Task The_records_are_asked_of_the_services_door_with_the_closed_ones()

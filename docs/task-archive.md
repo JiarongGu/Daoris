@@ -13555,3 +13555,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **WORKFLOW1h — workflow proposal, whole versions** (service/driver/modules/web chain a → b → c). `workflow_propose` with whole `steps` (new, or edit on a base, stale when not newest) and an optional choice; judge validation, version, diff, the person's part, outward acts and needs; Apply saves by the `ask-daoris:` door, a draft shows only *Not now*. §8; kinds/coverage/goldens/card tests.
 
 **Outcome** 2026-10-12 (legs a–c, merged once): the service's `workflow_propose` box and tool; the driver's judge (a new workflow or an edit on the newest base, its diff in the CLI's words, the needs the gate itself names making a draft, Apply saving through `ask-daoris:` and choosing), the room's bullet, Workflow column and the workspace's kinds, coverage's `new`/`edit`/`use` doors; the modules' facts and the card's fields. The bespoke card is WORKFLOW1h-d; a proposal's name, WORKFLOW1h-name. Detail: D157's WORKFLOW1h-a, -b and -c notes.
+
+## XAGENT1g3 — attention reads kept facts (2026-10-12, D155)
+
+> - [ ] **XAGENT1g3 — attention reads kept facts** (driver/modules). Cache look judgments; OPINION_WAITS runs no git. §9/UX6c; query tests.
+
+**Outcome** 2026-10-12: the look keeps each owed landing opinion's gate and `auto` (`LastOpinions`, judged with the review as the route judged it), and `OPINION_WAITS` answers from it, running no git or service call; a judgment is at most a look old, the presses already nudge the loop, and the tick forwards a changed wait. The real-git equivalence tests were run at the merge, one fixture corrected. Detail: D155's XAGENT1g3 note.
