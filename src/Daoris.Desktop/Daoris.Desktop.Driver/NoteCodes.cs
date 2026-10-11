@@ -598,6 +598,31 @@ public static class NoteCodes
     public static readonly NoteCode HeldNotInstalled = new("held.not-installed", ["agent"]);
     public static readonly NoteCode HeldPinNotInstalled = new("held.pin-not-installed", ["agent", "version"]);
 
+    // ——— The roster's other refusals (ROSTERREFUSE2). A wait over a list: its lead, a clause for each account (the account by its id,
+    // the page names it), the first reset, then the sign-in that would start it sooner, `logins` each command into an account, its id spelled for any shell. A pick
+    // refused adds who is ready, `accounts` a list. An agent with its own tooling names that command as a program's words between
+    // `not-installed-own` and `never-installs`, never a value, since it may hold a path. An account its provider refused, and the
+    // clauses a wait adds (kept for conversations, and the accounts outside the list with the command that adds the first).
+    public static readonly NoteCode HeldWaitEvery = new("held.wait-every", ["agent"]);
+    public static readonly NoteCode HeldWaitSome = new("held.wait-some", ["agent"]);
+    public static readonly NoteCode HeldClauseCooling = new("held.clause-cooling", ["account", "until"]);
+    public static readonly NoteCode HeldClauseRefused = new("held.clause-refused", ["account"]);
+    public static readonly NoteCode HeldClauseSignedOut = new("held.clause-signed-out", ["account"]);
+    public static readonly NoteCode HeldClauseReady = new("held.clause-ready", ["account"]);
+    public static readonly NoteCode HeldWaitFirst = new("held.wait-first", ["account", "until", "why"]) { Why = Cooling };
+    public static readonly NoteCode HeldSignInSooner = new("held.sign-in-sooner", ["logins"]);
+    public static readonly NoteCode HeldSignIn = new("held.sign-in", ["logins"]);
+    public static readonly NoteCode HeldPickedReady = new("held.picked-ready", ["accounts"]);
+    public static readonly NoteCode HeldPickedNone = new("held.picked-none", ["agent"]);
+    public static readonly NoteCode HeldRefusedAccount = new("held.refused-account", ["owner", "account"]);
+    public static readonly NoteCode HeldRefusedOwn = new("held.refused-own", ["owner"]);
+    public static readonly NoteCode HeldSignInRefusedOwn = new("held.sign-in-refused-own", ["owner"]);
+    public static readonly NoteCode HeldNotInstalledOwn = new("held.not-installed-own", ["agent"]);
+    public static readonly NoteCode HeldNeverInstalls = new("held.never-installs", []);
+    public static readonly NoteCode HeldKeptAside = new("held.kept-aside", ["account"]);
+    public static readonly NoteCode HeldOutsideMachine = new("held.outside-machine", ["accounts", "first", "door"]);
+    public static readonly NoteCode HeldOutsideWorkspace = new("held.outside-workspace", ["workspace", "accounts", "first", "door"]);
+
     /// <summary>Every code above, read off the declarations so none escapes the catalogue test.</summary>
     public static IReadOnlyList<NoteCode> All { get; } =
         [.. typeof(NoteCodes).GetFields().Where(field => field.FieldType == typeof(NoteCode)).Select(field => (NoteCode)field.GetValue(null)!)];

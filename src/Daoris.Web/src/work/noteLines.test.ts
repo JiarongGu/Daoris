@@ -428,6 +428,73 @@ describe('noteLines', () => {
       }
     });
 
+    /** ROSTERREFUSE2: a wait over a list, a pick refused, a provider's refusal, an agent's own tooling, and a wait's added clauses. */
+    it('words the roster’s other refusals, each account named as the page knows it', () => {
+      const until = '2026-10-03T16:02:00Z';
+      const at = moment(until, 'en');
+      const names = new Map([['account-1', 'Work'], ['account-3', 'Spare']]);
+      const wait = [
+        coded('held.wait-some', '…', { agent: 'fake' }),
+        coded('held.clause-cooling', '…', { account: 'account-1', until }),
+        coded('held.clause-refused', '…', { account: 'account-2' }),
+        coded('held.clause-signed-out', '…', { account: 'account-3' }),
+        coded('held.clause-ready', '…', { account: 'account-4' }),
+        coded('held.wait-first', '…', { account: 'account-1', until, why: 'stated' }),
+        coded('held.sign-in-sooner', '…', { logins: ['daoris agent login fake --profile account-3', 'daoris agent login fake --profile "my team"'] }),
+      ];
+      expect(noteLines(t, { parts: wait }, 'en', names).map((line) => line.text)).toEqual([
+        'No `fake` account this start may use is ready.',
+        `\`Work\` is cooling until ${at}.`,
+        '`account-2` was refused by its provider.',
+        '`Spare` is not signed in.',
+        '`account-4` is ready.',
+        `The first to be ready is \`Work\`, at ${at} (the agent said so). Daoris starts nothing on them until then.`,
+        'A sign-in starts it sooner: `daoris agent login fake --profile account-3` and `daoris agent login fake --profile "my team"`, or Agents → the agent\'s page → Accounts.',
+      ]);
+      const every = [coded('held.wait-every', '…', { agent: 'fake' }), coded('held.sign-in', '…', { logins: ['daoris agent login fake --profile a'] })];
+      expect(noteLines(t, { parts: every }, 'en').map((line) => line.text)).toEqual([
+        'Every `fake` account this start may use is cooling.',
+        'A sign-in starts it: `daoris agent login fake --profile a`, or Agents → the agent\'s page → Accounts.',
+      ]);
+
+      const picked = [coded('held.picked-ready', '…', { accounts: ['account-1', 'account-2'] }), coded('held.picked-none', '…', { agent: 'fake' })];
+      expect(noteLines(t, { parts: picked }, 'en', names).map((line) => line.text)).toEqual([
+        'Ready now: `Work` and `account-2`.',
+        'No other `fake` account is ready.',
+      ]);
+
+      const refused = [
+        coded('held.refused-account', '…', { owner: 'fake', account: 'account-1' }),
+        coded('held.refused-own', '…', { owner: 'fake' }),
+        coded('held.sign-in-refused-own', '…', { owner: 'fake' }),
+      ];
+      expect(noteLines(t, { parts: refused }, 'en', names)[0].text).toMatch(/^An earlier session found that its provider refused the `fake` account `Work` \(401\)\./);
+
+      // An agent with its own tooling: its command is words, shown as written and never marked.
+      const own = [coded('held.not-installed-own', '…', { agent: 'fake' }), words('C:\\tools\\fake-install --yes', 'program'), coded('held.never-installs', '…')];
+      expect(noteLines(t, { parts: own }, 'en')).toEqual([
+        { kind: 'said', text: '`fake` is not installed on this machine, so there is nothing to spawn — install it with its own tooling:' },
+        { kind: 'words', text: 'C:\\tools\\fake-install --yes', by: 'program' },
+        { kind: 'said', text: 'Daoris never installs an agent unasked: a tool that changed under a running loop is a moving target.' },
+      ]);
+
+      const clauses = [
+        coded('held.kept-aside', '…', { account: 'account-3' }),
+        coded('held.outside-machine', '…', { accounts: ['account-3'], first: 'account-3', door: 'daoris agent profile order fake account-1 account-3' }),
+        coded('held.outside-workspace', '…', { workspace: 'work', accounts: ['account-3', 'account-4'], first: 'account-3', door: 'daoris agent profile order fake account-1 account-3 --workspace work' }),
+      ];
+      expect(noteLines(t, { parts: clauses }, 'en', names).map((line) => line.text)).toEqual([
+        '`Spare` is kept for conversations.',
+        'Not cooling, and not among the accounts this machine\'s starts may use: `Spare` — Daoris starts nothing on them unless a list names them; `daoris agent profile order fake account-1 account-3` adds `Spare`.',
+        'Not cooling, and not among the accounts `work` may use: `Spare` and `account-4` — Daoris starts nothing on them unless a list names them; `daoris agent profile order fake account-1 account-3 --workspace work` adds `Spare`.',
+      ]);
+      for (const parts of [wait, every, picked, refused, own, clauses]) {
+        expect(noteLines(zh, { parts }, 'zh', names).every((line) => line.kind !== 'recorded')).toBe(true);
+      }
+      // A list that is not one, or an account that is absent, is shown as recorded.
+      expect(noteLines(t, { parts: [coded('held.picked-ready', 'Ready now: `x`.', { accounts: [] })] }, 'en')[0].kind).toBe('recorded');
+    });
+
     it('shows a hold as recorded where its repository is absent', () => {
       const parts = [coded('held.no-checkout', '— it does not go on yet: …')];
       expect(noteLines(zh, { parts }, 'zh')[0].kind).toBe('recorded');
