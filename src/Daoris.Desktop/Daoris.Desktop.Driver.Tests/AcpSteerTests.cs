@@ -105,8 +105,17 @@ public sealed class AcpSteerTests
             get { lock (_lines) return [.. _lines]; }
         }
 
+        private readonly List<SessionEvent> _notes = [];
+
+        /// <summary>Every note event, whole: its parts are what CONVNOTE2d1 holds.</summary>
+        public IReadOnlyList<SessionEvent> Notes
+        {
+            get { lock (_lines) return [.. _notes]; }
+        }
+
         public void Event(SessionEvent e)
         {
+            if (e.Kind == SessionEventKind.Note) lock (_lines) _notes.Add(e);
             var line = e.Kind switch
             {
                 SessionEventKind.Turn => $"turn:{e.StopReason}",
@@ -344,6 +353,13 @@ public sealed class AcpSteerTests
         await Assert.ThrowsAsync<DriverException>(() => run.WaitAsync(TimeSpan.FromSeconds(10)));
         Assert.DoesNotContain(record.Lines, line => line.StartsWith("taken:", StringComparison.Ordinal));
         Assert.Contains(record.Lines, line => line.StartsWith("note:", StringComparison.Ordinal) && line.Contains("1 message(s)"));
+
+        // CONVNOTE2d1: the line is worded by its code, the reason a part of its own, the English unchanged.
+        var note = Assert.Single(record.Notes, e => e.Text!.Contains("message(s)"));
+        Assert.Equal("— 1 message(s) the person sent while it worked never reached it: it ended first.", note.Text);
+        var part = Assert.Single(note.Parts!);
+        Assert.Equal(("words.unreached", 1L, "ended-first"), (part.Code, Convert.ToInt64(part.Value("count")), part.Value("why")));
+        NoteAssert.Holds(note.Text, note.Parts);
     }
 
     /// <summary>
@@ -384,6 +400,13 @@ public sealed class AcpSteerTests
 
         Assert.Equal("end_turn", outcome.StopReason);
         Assert.Contains(record.Lines, line => line.StartsWith("note:", StringComparison.Ordinal) && line.Contains("Internal error: busy"));
+        // CONVNOTE2d1: Daoris's lead is coded, what the agent said rides as its words.
+        var note = Assert.Single(record.Notes, e => e.Text!.Contains("would not take"));
+        Assert.StartsWith("— the session would not take what the person added: ", note.Text);
+        Assert.Equal(["words.refused", null], NoteAssert.Codes(note.Parts));
+        Assert.Equal(NoteBy.Agent, note.Parts![1].By);
+        Assert.Contains("Internal error: busy", note.Parts[1].Words);
+        NoteAssert.Holds(note.Text, note.Parts);
         Assert.Equal("session/close", agent.Methods[^1]);
     }
 

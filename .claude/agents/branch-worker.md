@@ -77,7 +77,9 @@ the work, was most of what branches cost before D160 (`docs/2026-10-10-subagent-
   another language's escaping, and a pattern that stops matching changes nothing and says nothing. A hook
   refuses such a command before it runs (`tools/shell-edit-guard.mjs`, D161); reading, searching, gates,
   logs and `local/scratch` stay open.
-- **TDD.** Write the failing test first and watch it fail.
+- **TDD.** Write the failing test first and run it before the code: a test that cannot compile without the code
+  is a red too, so run it. Say in the hand-back which tests you saw fail (D160's fifth batch: told to run it, none of
+  eleven skipped the red; told only to watch it, nine had).
 - **Follow the brief's conventions** (`AGENTS.md`). Writes are atomic, BOM-less UTF-8 and LF. No machine
   path or private repository name goes in a tracked file or a commit message. A code comment gives the
   reason and names the task, never the owner's words. A `tools/` script whose helpers are imported guards
