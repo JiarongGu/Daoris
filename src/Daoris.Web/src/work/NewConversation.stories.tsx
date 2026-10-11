@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AddProjectDrawer } from '../ProjectManage';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../storyLanguage';
-import { NewConversation, type StartRepository } from './NewConversation';
+import { type CheckoutReader, NewConversation, type StartRepository } from './NewConversation';
 
 // *New conversation* (NEW1b, D162 point 1, the entry design §1): Sessions' main area while nothing is attended. Drawn in the
 // main area's own width: about 1,200 px of a 1546 px window with the list open, and about 630 px of a 680 px one, where the
@@ -51,6 +51,13 @@ function withAddDrawer(Story: () => ReactNode) {
     </QueryClientProvider>
   );
 }
+
+/**
+ * The checkout's branch as the shell would have answered (NEW1e-b). A story handing none is the read still pending, refused or
+ * unavailable: the checkout is said plain. Module-level, as the molecule's prop is a hook and must stay stable.
+ */
+const onMain: CheckoutReader = () => ({ read: { branch: 'main' }, refresh: () => {} });
+const detached: CheckoutReader = () => ({ read: { branch: null }, refresh: () => {} });
 
 const meta: Meta<typeof NewConversation> = {
   title: 'Work/New conversation',
@@ -153,5 +160,22 @@ export const OpenedByAGo: Story = {
 export const NarrowOpenedByAGo: Story = { args: OpenedByAGo.args, decorators: [narrow] };
 
 export const ChineseOpenedByAGo: Story = { args: { draft: '修复同步循环里不稳定的重试。', pick: { repository: 'game', n: 1 } }, decorators: [chinese] };
+
+/** The checkout chosen, on a branch (NEW1e-b): the chip says *The checkout · main*, and the menu's row says it too. */
+export const CheckoutOnABranch: Story = { args: { draft: DRAFT, openingTree: 'checkout', readCheckout: onMain } };
+
+/** The checkout chosen, HEAD detached. */
+export const CheckoutDetached: Story = { args: { ...CheckoutOnABranch.args, readCheckout: detached } };
+
+/** The checkout chosen, the read not answered (pending, refused or no shell): the checkout, plain. */
+export const CheckoutUnread: Story = { args: { draft: DRAFT, openingTree: 'checkout' } };
+
+export const NarrowCheckoutOnABranch: Story = { args: CheckoutOnABranch.args, decorators: [narrow] };
+
+export const NarrowCheckoutDetached: Story = { args: CheckoutDetached.args, decorators: [narrow] };
+
+export const ChineseCheckoutOnABranch: Story = { args: CheckoutOnABranch.args, decorators: [chinese] };
+
+export const ChineseCheckoutDetached: Story = { args: CheckoutDetached.args, decorators: [chinese] };
 
 export const ChineseBrowser: Story = { args: { attached: false }, decorators: [chinese] };

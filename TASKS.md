@@ -27,8 +27,6 @@ Contracts: platform UX §4/§6, `docs/2026-10-05-ux7-design.md` (D152), `docs/20
 `docs/2026-10-04-ux6-redesign.md` (D150, §12 proofs). UI work needs stories, behavior tests and
 installed-window evidence in both themes/languages; Storybook alone does not close an installed proof.
 
-- [ ] **NEW1e-b — the tree chip says the checkout's branch** (web; after NEW1f). `useCheckoutBranch` (NEW1e-a) feeds the tree chip: *the checkout · main*, or detached; unread or pending, plain *the checkout*; en and zh; Ask Daoris's coverage classifies the read. Design §1 (Tree); D162's NEW1e-a note; a story and the window.
-
 - [ ] **UXFIX2bi — installed confirmations look** (parent; after republish). Retire right on 2026-10-11's second look (its own question; focus back to the press with a pointer-like click); the rest need data the machine lacks: tool, plugin, pause, abandon, decline, close, finish, archive, discard, both themes/languages.
 - [ ] **UX7b — installed account UI** (web). Verify recovered account rows and add/name/join flow at 1546/680 px, both themes/languages. D152 §4.
 - [ ] **ACCTEDIT1b — installed refused edits** (parent; after republish). Verify rename, workspace use and add refusals retain drafts, including dark borders. D152 §4; dated shots.

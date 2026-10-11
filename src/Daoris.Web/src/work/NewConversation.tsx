@@ -33,6 +33,70 @@ export type NewStart = {
 const DEFAULT = '*';
 
 /**
+ * What the checkout's branch read answered: `read` is the answer once there is one (null `branch` is a detached HEAD), and
+ * absent while pending, refused or unavailable; `refresh` asks again. A hook handed in, as the molecule reaches no bridge
+ * (the presentational boundary): the frame owns the read, a story or a test hands a fixed one.
+ */
+export type CheckoutReader = (repository: string | null, workspace?: string) => {
+  read: { branch: string | null } | undefined;
+  refresh: () => void;
+};
+
+/** No reader handed in: the checkout is said plain. */
+const UNREAD: CheckoutReader = () => ({ read: undefined, refresh: () => {} });
+
+/**
+ * The tree chip and its menu (NEW1e-b, design §1). The person's checkout is never switched, so where *The checkout* is chosen
+ * the chip names the branch it is on: read for the chosen repository, again when the menu opens (a branch switched outside
+ * Daoris shows), never polled. While the read is pending, refused or unavailable the checkout is said plain; the driver's
+ * choice and its own tree name no branch.
+ */
+function TreeChip({ tree, onTree, repository, workspace, readCheckout }: {
+  tree: TreeChoice;
+  onTree: (next: TreeChoice) => void;
+  /** The chosen repository when it has a checkout here, else null: nothing is asked of one that has none. */
+  repository: string | null;
+  workspace?: string;
+  readCheckout: CheckoutReader;
+}) {
+  const { t } = useTranslation();
+  const { read, refresh } = readCheckout(repository, workspace);
+  const on = (key: 'tree.checkout' | 'tree.checkoutNote') => {
+    const plain = t(`work.start.${key}`);
+    if (!read) return plain;
+    const where = read.branch === null ? t('work.start.tree.detached') : read.branch;
+    return key === 'tree.checkout' ? `${plain} · ${where}` : t('work.start.tree.checkoutNoteOn', { where });
+  };
+  const named = (choice: TreeChoice) => (choice === 'checkout' ? on('tree.checkout') : t(`work.start.tree.${choice}`));
+  const treeName = named(tree);
+  return (
+    <Menu.Root onOpenChange={(open) => { if (open && repository) refresh(); }}>
+      <Menu.Trigger asChild>
+        <button type="button" aria-label={t('work.start.chip', { field: t('work.start.tree'), value: treeName })} className={CHIP}>
+          <Icon name="stepBranch" size={13} className="shrink-0 text-ink-faint" />
+          <span className="min-w-0 truncate">{treeName}</span>
+          <Icon name="chevronDown" size={12} className="shrink-0 text-ink-faint" />
+        </button>
+      </Menu.Trigger>
+      <Menu.Content align="start" className="w-72 max-w-[calc(100vw-2rem)]">
+        <Menu.RadioGroup aria-label={t('work.start.tree')} value={tree} onValueChange={(next) => onTree(next as TreeChoice)}>
+          {(['driver', 'checkout', 'own'] as const).map((choice) => (
+            <Menu.RadioItem key={choice} value={choice}>
+              <span className="grid min-w-0">
+                <span>{t(`work.start.tree.${choice}`)}</span>
+                <span className="text-meta text-ink-faint">
+                  {choice === 'checkout' ? on('tree.checkoutNote') : t(`work.start.tree.${choice}Note`)}
+                </span>
+              </span>
+            </Menu.RadioItem>
+          ))}
+        </Menu.RadioGroup>
+      </Menu.Content>
+    </Menu.Root>
+  );
+}
+
+/**
  * The repository a start opens on: where the person was when they pressed *New conversation* (NEW1f), busy or not, as the tree
  * chip says it is busy; else the one last chosen; each only where it can still be chosen. Else the newest recent one nothing
  * works in, else the first nothing works in, else the first with a checkout here (UX5 U68: it opened on a busy one and was refused).
@@ -78,7 +142,7 @@ export function openingRepository(
 export function NewConversation({
   attached = true, repositories, busy = {}, recent = [], remembered, attended, onChoose, harnesses, labels = {}, names = {},
   defaultHarness = '', accounts, scopeOf, draft, onDraft, carried, onCarry, pending = false, refusal, focus = 0, onFocused, onStart,
-  onOpenSession, onAdd, onImport, pick, reveal, pickerOpen = false, onMakeTask,
+  onOpenSession, onAdd, onImport, pick, reveal, pickerOpen = false, openingTree = 'driver', readCheckout = UNREAD, onMakeTask,
 }: {
   /** Whether a shell is here; false is a browser. */
   attached?: boolean;
@@ -141,6 +205,10 @@ export function NewConversation({
   reveal?: { workspace: string; n: number } | null;
   /** The repository picker drawn open, for a story. */
   pickerOpen?: boolean;
+  /** The tree the chip opens on, for a story: a person's own press is what chooses it. */
+  openingTree?: TreeChoice;
+  /** The checkout's branch for the chosen repository, for the tree chip (NEW1e-b). Absent, the checkout is said plain. A hook: keep it stable. */
+  readCheckout?: CheckoutReader;
   /**
    * *Make it a task with Daoris…* (NEW1d-b): hands the draft, with a line naming the repository chosen above it, to Ask Daoris as
    * a draft the person sends. Absent, the press is not offered. The composer keeps its own draft.
@@ -159,7 +227,7 @@ export function NewConversation({
   const attach = useCarry(carry, setCarry, attached);
   const chooser = useFileChooser(attach.attach, t('carry.choose'));
   const [chosen, setChosen] = useState<string | null>(null);
-  const [tree, setTree] = useState<TreeChoice>('driver');
+  const [tree, setTree] = useState<TreeChoice>(openingTree);
   const [adapter, setAdapter] = useState('');
   const [profile, setProfile] = useState('');
 
@@ -237,7 +305,6 @@ export function NewConversation({
   };
 
   const chip = (field: string, value: string) => t('work.start.chip', { field, value });
-  const treeName = t(`work.start.tree.${tree}`);
   const agentName = agent ? names[agent] ?? labels[agent] ?? agent : t('work.start.harness');
   const accountShown = account ? accountName(account) : t('work.start.accountDriver');
 
@@ -320,27 +387,13 @@ export function NewConversation({
           defaultOpen={pickerOpen}
         />
 
-        <Menu.Root>
-          <Menu.Trigger asChild>
-            <button type="button" aria-label={chip(t('work.start.tree'), treeName)} className={CHIP}>
-              <Icon name="stepBranch" size={13} className="shrink-0 text-ink-faint" />
-              <span className="min-w-0 truncate">{treeName}</span>
-              <Icon name="chevronDown" size={12} className="shrink-0 text-ink-faint" />
-            </button>
-          </Menu.Trigger>
-          <Menu.Content align="start" className="w-72 max-w-[calc(100vw-2rem)]">
-            <Menu.RadioGroup aria-label={t('work.start.tree')} value={tree} onValueChange={(next) => setTree(next as TreeChoice)}>
-              {(['driver', 'checkout', 'own'] as const).map((choice) => (
-                <Menu.RadioItem key={choice} value={choice}>
-                  <span className="grid min-w-0">
-                    <span>{t(`work.start.tree.${choice}`)}</span>
-                    <span className="text-meta text-ink-faint">{t(`work.start.tree.${choice}Note`)}</span>
-                  </span>
-                </Menu.RadioItem>
-              ))}
-            </Menu.RadioGroup>
-          </Menu.Content>
-        </Menu.Root>
+        <TreeChip
+          tree={tree}
+          onTree={setTree}
+          repository={repository && here.some((row) => row.name === repository) ? repository : null}
+          workspace={here.find((row) => row.name === repository)?.workspace}
+          readCheckout={readCheckout}
+        />
 
         <Menu.Root>
           <Menu.Trigger asChild>

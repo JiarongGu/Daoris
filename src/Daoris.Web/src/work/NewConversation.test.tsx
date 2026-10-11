@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import type { ComponentProps } from 'react';
+import { type ComponentProps, useState } from 'react';
 import i18n from '../i18n';
-import { NewConversation, type StartRepository } from './NewConversation';
+import { type CheckoutReader, NewConversation, type StartRepository } from './NewConversation';
 
 /**
  * *New conversation* (NEW1b, D162 point 1, the entry design §1): the prompt first, then the repository, the tree and the
@@ -119,6 +119,86 @@ describe('a new conversation', () => {
     if (ownTree === undefined) expect(sent).not.toHaveProperty('ownTree');
     else expect(sent.ownTree).toBe(ownTree);
     expect(screen.queryByText(/holds only what git tracks/) !== null).toBe(ownTree === true);
+  });
+
+  /**
+   * NEW1e-b (design §1): the checkout is never switched, so which branch a conversation in it starts on matters, and the chip says
+   * it, only where the checkout is chosen. Driver's choice and its own tree name no branch.
+   */
+  describe('the checkout\'s branch on the tree chip', () => {
+    const checkout = async () => {
+      const menu = await chipMenu(/^Tree:/);
+      await userEvent.click(within(menu).getByRole('menuitemradio', { name: /^The checkout/ }));
+    };
+    /** A reader fixed to `first`, which a refresh replaces with `next`; it keeps the repositories it was asked about. */
+    const reader = (first: { branch: string | null } | undefined, next = first) => {
+      const asked: Array<[string | null, string | undefined]> = [];
+      let refreshed = 0;
+      const readCheckout: CheckoutReader = (repository, workspace) => {
+        const [read, setRead] = useState(first);
+        asked.push([repository, workspace]);
+        return { read, refresh: () => { refreshed += 1; setRead(next); } };
+      };
+      return { readCheckout, asked, refreshed: () => refreshed };
+    };
+
+    it('names the branch the checkout is on, in the chip and the row\'s note', async () => {
+      const read = reader({ branch: 'main' });
+      show({ readCheckout: read.readCheckout });
+      // The chosen repository, with its workspace; and nothing is said until the checkout is chosen.
+      expect(read.asked.at(-1)).toEqual(['engine', 'aurora']);
+      expect(screen.getByRole('button', { name: "Tree: Driver's choice" })).toBeInTheDocument();
+      await checkout();
+
+      expect(screen.getByRole('button', { name: 'Tree: The checkout · main' })).toHaveTextContent('The checkout · main');
+      const menu = await chipMenu(/^Tree:/);
+      expect(within(menu).getByRole('menuitemradio', { name: /^The checkout.*main/ })).toBeInTheDocument();
+    });
+
+    it('says a detached HEAD, and in Chinese by the glossary\'s words', async () => {
+      show({ readCheckout: reader({ branch: null }).readCheckout });
+      await checkout();
+      expect(screen.getByRole('button', { name: 'Tree: The checkout · detached HEAD' })).toBeInTheDocument();
+
+      await i18n.changeLanguage('zh');
+      expect(await screen.findByRole('button', { name: '工作树：现有检出 · 分离的 HEAD' })).toBeInTheDocument();
+    });
+
+    it('asks again when the menu opens, so a branch switched outside Daoris shows', async () => {
+      const read = reader({ branch: 'main' }, { branch: 'release' });
+      show({ readCheckout: read.readCheckout });
+      await checkout();
+      const before = read.refreshed();
+
+      await chipMenu(/^Tree:/);
+
+      expect(read.refreshed()).toBeGreaterThan(before);
+      expect(await screen.findByRole('button', { name: 'Tree: The checkout · release' })).toBeInTheDocument();
+    });
+
+    it('says the checkout plain while the read has no answer, and names no branch on the other two', async () => {
+      show({ readCheckout: reader(undefined).readCheckout });
+      await checkout();
+      expect(screen.getByRole('button', { name: 'Tree: The checkout' })).toBeInTheDocument();
+      // No reader at all is the same: a browser, or a story that hands none.
+      cleanup();
+      show();
+      await checkout();
+      expect(screen.getByRole('button', { name: 'Tree: The checkout' })).toBeInTheDocument();
+
+      cleanup();
+      show({ readCheckout: reader({ branch: 'main' }).readCheckout });
+      const menu = await chipMenu(/^Tree:/);
+      await userEvent.click(within(menu).getByRole('menuitemradio', { name: /^Its own tree/ }));
+      expect(screen.getByRole('button', { name: 'Tree: Its own tree' })).toBeInTheDocument();
+    });
+
+    it('asks nothing of a repository with no checkout here', () => {
+      const read = reader({ branch: 'main' });
+      show({ readCheckout: read.readCheckout, repositories: [{ name: 'portal', workspace: 'default', checkout: false }] });
+
+      expect(read.asked.every(([repository]) => repository === null)).toBe(true);
+    });
   });
 
   it('lists the agents and their accounts, and a new agent clears an account it cannot use', async () => {

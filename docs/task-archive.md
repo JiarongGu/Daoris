@@ -13771,3 +13771,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **BRWHINT1 — an agent is told the browser it was handed** (driver). The same chat had Daoris's browser (`browser`, Playwright over CDP to the window the person signs in to) and reached for Codex's computer-use, which saw no browser: a handed browser is said to the agent only when it is left out. Say it to the agent when it is handed, on both doors. D78.
 
 **Outcome** 2026-10-12: the chat's half. A new chat's first message carries one line naming each handed server that drives Daoris's browser, before the person's words, on both doors, in `ChatMessage.Briefing` and kept as the note `chat.told-browser`; a going-on chat and a later message say nothing. Driven sessions are BRWHINT1b. Detail: D78's BRWHINT1a note.
+
+## NEW1e-b — the tree chip says the checkout's branch (2026-10-12, D162)
+
+> - [ ] **NEW1e-b — the tree chip says the checkout's branch** (web; after NEW1f). `useCheckoutBranch` (NEW1e-a) feeds the tree chip: *the checkout · main*, or detached; unread or pending, plain *the checkout*; en and zh; Ask Daoris's coverage classifies the read. Design §1 (Tree); D162's NEW1e-a note; a story and the window.
+
+**Outcome** 2026-10-12: where *The checkout* is chosen the chip reads *The checkout · main* (*· detached HEAD*; zh *现有检出 · 分离的 HEAD*), read for the chosen repository, refetched when the menu opens; unread, pending or refused it says the checkout plain. Detail: D162's NEW1e-b note.

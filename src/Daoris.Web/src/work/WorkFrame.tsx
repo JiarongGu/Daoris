@@ -58,7 +58,8 @@ import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import { type SessionDoors, useSessionActs } from './sessionActs';
 import { ListMore } from './ListPane';
 import { AddProjectDrawer, ImportFolderDrawer } from '../ProjectManage';
-import { NewConversation, type NewStart } from './NewConversation';
+import { useCheckoutBranch } from '../bridge/git';
+import { type CheckoutReader, NewConversation, type NewStart } from './NewConversation';
 import { keepChosen, keepRecent, mergeRecent, readChosen, readRecent } from './startRecent';
 import { type Carry, NO_CARRY } from '../compose/carry';
 import { OutputPanel, PANEL_MIN, StreamTabs } from './frame';
@@ -106,6 +107,15 @@ function rememberedWidth(key: string): number | null {
   const held = Number(stored(key));
   return Number.isFinite(held) && held > 0 ? held : null;
 }
+
+/**
+ * The composer's tree chip reads the checkout's branch through this (NEW1e-b): a refusal or a pending read is no answer, and
+ * the chip says the checkout plain. A module-level hook, so the molecule's prop is stable.
+ */
+const readCheckout: CheckoutReader = (repository, workspace) => {
+  const { query } = useCheckoutBranch({ repository, workspace });
+  return { read: query.isError ? undefined : query.data, refresh: () => { void query.refetch(); } };
+};
 
 /** Whether a door reports context, from the roster's word on it — undefined until the roster says. */
 const door = (structured?: boolean): 'structured' | 'text' | undefined =>
@@ -1380,6 +1390,7 @@ export function WorkFrame({
   const registered = registry.data ?? [];
   const newConversation = (
     <NewConversation
+      readCheckout={readCheckout}
       // A checkout on this machine is what makes a repository choosable: there is nowhere else to talk, and a teammate's
       // mirrored registration has no tree here (D48 §3/§7). One without is listed and says so.
       repositories={registered

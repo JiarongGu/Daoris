@@ -10,6 +10,8 @@ with the version and date at release.
 - A new conversation's agent is told it has Daoris's browser, and by which tool name, with its first message, so it uses
   that browser (and the sign-in you made in it) rather than reaching for a tool of its own; the conversation shows what
   it was told.
+- The tree chip on *New conversation* names the branch your checkout is on (*The checkout · main*), and says so when HEAD is
+  detached.
 - A question or task handed to Ask Daoris (*Make it a task with Daoris…*, *Ask Daoris about it*) opens on a new
   conversation when the last one has ended, instead of under its history.
 - *New conversation* opens on the repository you were just in, and *Recent* lists where you have been working, not only
