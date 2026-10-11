@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- *New conversation* opens on the repository you were just in, and *Recent* lists where you have been working, not only
+  what the composer started.
 - Cleaning up a landed branch keeps its commits recoverable: they stay on a ref under `refs/daoris/discarded/`, and the
   removal says where, as removing a session's branch already did.
 - Ask Daoris's go to *New conversation* opens the composer with the repository chosen and the words in (above any you had

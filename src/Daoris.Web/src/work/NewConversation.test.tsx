@@ -220,6 +220,15 @@ describe('a new conversation', () => {
     expect(screen.getByRole('button', { name: 'Repository: engine' })).toBeInTheDocument();
     cleanup();
 
+    // NEW1f: where the person just was comes ahead of the one last chosen, busy or not; one with no checkout here is passed over.
+    show({ attended: 'game', remembered: 'tools', busy: { game: 's1a2b3c4' } });
+    expect(screen.getByRole('button', { name: 'Repository: game' })).toBeInTheDocument();
+    cleanup();
+
+    show({ attended: 'portal', remembered: 'tools' });
+    expect(screen.getByRole('button', { name: 'Repository: tools' })).toBeInTheDocument();
+    cleanup();
+
     // A remembered one that has no checkout here any more is passed over.
     show({ remembered: 'portal', busy: { engine: 's1a2b3c4' } });
     expect(screen.getByRole('button', { name: 'Repository: game' })).toBeInTheDocument();

@@ -27,7 +27,6 @@ Contracts: platform UX §4/§6, `docs/2026-10-05-ux7-design.md` (D152), `docs/20
 `docs/2026-10-04-ux6-redesign.md` (D150, §12 proofs). UI work needs stories, behavior tests and
 installed-window evidence in both themes/languages; Storybook alone does not close an installed proof.
 
-- [ ] **NEW1f — the composer opens where the person was** (web). Seen on the window: it opened on the first free repository although a session in another was attended, because *Recent* counts only the composer's own starts. Open on the attended session's repository when *New conversation* is pressed from it, and seed *Recent* from the person's recent sessions. D162's window note; design §1.
 - [ ] **NEW1g — a task handed to Ask Daoris opens a new conversation** (web). *Make it a task with Daoris…* put its draft into the last Ask Daoris conversation, already ended, under its history; the hand-over opens a new conversation with the draft. D162's window note.
 - [ ] **NEW1e — the checkout's branch on the tree chip** (driver/web). The design's *the checkout · main* needs the checkout's current branch, which no route answers (`GitLine` is the landing line, not its head). Add the read, then the chip says it. Design §1 (Tree); a story and the window.
 

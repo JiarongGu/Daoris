@@ -33,13 +33,16 @@ export type NewStart = {
 const DEFAULT = '*';
 
 /**
- * The repository a start opens on: the one last chosen where it can still be chosen, else the newest recent one nothing works
- * in, else the first nothing works in, else the first with a checkout here (UX5 U68: it opened on a busy one and was refused).
+ * The repository a start opens on: where the person was when they pressed *New conversation* (NEW1f), busy or not, as the tree
+ * chip says it is busy; else the one last chosen; each only where it can still be chosen. Else the newest recent one nothing
+ * works in, else the first nothing works in, else the first with a checkout here (UX5 U68: it opened on a busy one and was refused).
  */
 export function openingRepository(
   repositories: readonly StartRepository[], busy: Readonly<Record<string, string>>, recent: readonly string[], remembered?: string | null,
+  attended?: string | null,
 ): string | null {
   const here = repositories.filter((row) => row.checkout).map((row) => row.name);
+  if (attended && here.includes(attended)) return attended;
   if (remembered && here.includes(remembered)) return remembered;
   return recent.find((name) => here.includes(name) && !busy[name])
     ?? here.find((name) => !busy[name])
@@ -73,7 +76,7 @@ export function openingRepository(
  * machine in that state.
  */
 export function NewConversation({
-  attached = true, repositories, busy = {}, recent = [], remembered, onChoose, harnesses, labels = {}, names = {},
+  attached = true, repositories, busy = {}, recent = [], remembered, attended, onChoose, harnesses, labels = {}, names = {},
   defaultHarness = '', accounts, scopeOf, draft, onDraft, carried, onCarry, pending = false, refusal, focus = 0, onFocused, onStart,
   onOpenSession, onAdd, onImport, pick, reveal, pickerOpen = false, onMakeTask,
 }: {
@@ -86,6 +89,8 @@ export function NewConversation({
   recent?: readonly string[];
   /** The repository last chosen on this machine. */
   remembered?: string | null;
+  /** The repository of the session attended when *New conversation* was pressed (NEW1f); it opens ahead of `remembered`. */
+  attended?: string | null;
   /** Told each repository the person chooses, to remember. */
   onChoose?: (repository: string) => void;
   /** The agents installed here; empty offers no choice. */
@@ -181,7 +186,7 @@ export function NewConversation({
   const here = repositories.filter((row) => row.checkout);
   const repository = chosen && here.some((row) => row.name === chosen)
     ? chosen
-    : openingRepository(repositories, busy, recent, remembered);
+    : openingRepository(repositories, busy, recent, remembered, attended);
   const holder = repository ? busy[repository] : undefined;
   const held = Boolean(holder) && tree !== 'own';
 

@@ -13741,3 +13741,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **NEW1d-b — the go fills the composer; *Make it a task with Daoris…*** (web; after NEW1d-a and NEW1c). `placeDoor` opens the composer with the go's repository and words; the composer's quiet press hands its draft and repository to Ask Daoris as a draft. Design §1.
 
 **Outcome** 2026-10-12: a go to `sessions`/`new` becomes a `compose` door that `WorkFrame` consumes once by id (repository chosen through NEW1c's `pick`, words above any already typed, nothing sent), and the composer's quiet *Make it a task with Daoris…* puts its draft, under a line naming the repository, in Quick Ask for the person to send; a browser has no composer. Detail: D162's NEW1d-b note.
+
+## NEW1f — the composer opens where the person was (2026-10-12, D162)
+
+> - [ ] **NEW1f — the composer opens where the person was** (web). Seen on the window: it opened on the first free repository although a session in another was attended, because *Recent* counts only the composer's own starts. Open on the attended session's repository when *New conversation* is pressed from it, and seed *Recent* from the person's recent sessions. D162's window note; design §1.
+
+**Outcome** 2026-10-12: *New conversation* opens on the repository of the session it was pressed from (captured at the press, ahead of the last one chosen), and *Recent* merges the composer's starts with this machine's own sessions' repositories (`mergeRecent`); `chosenStart` now follows the choice within a mount. Detail: D162's NEW1f note.
