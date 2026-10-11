@@ -290,7 +290,9 @@ Decision/trigger rows stay held; diagnostic captures are not permission to chang
 - [ ] **BGWAIT1b — resumed background wait** (driver). Apply start judgment to Driver.Continue. D83; AcpBackgroundTests case.
 - [ ] **BGWAIT1c — native background cutoff** (driver/web). Coded cutoff instead of park after harness-killed work. D83/D137/D142; stream fixture.
 - [ ] **LAND4b — failed automatic landing** (driver; decide). Unify Done+failed rule with person's press. D145/D102; rule case.
-- [ ] **QUESTCLOSE1b — bilingual person's done** (service/web/driver). Coded note and room door/exemption. D126/D142/D110; Chinese test.
+- [ ] **QUESTCLOSE1b1 — a quest's note carries parts** (service; a D126 amendment first). No quest note is coded: `note` is a bare string on the operation, the cache and the wire. Add `noteParts` beside it (the eleven places of quest-operations.md, the census `QuestOperationKindsTests`), a `LedgerNoteCodes` code for the person's done, written by `PersonDoneAsync` (QuestExchange.cs ~:1344-1408) as the lead plus the person's words; `note` byte for byte. Exemplar SessionLedger.cs ~:690-692. D142; D126 ~:550-582.
+- [ ] **QUESTCLOSE1b2 — the page words it** (web; after b1). Quest notes draw through `work/Note.tsx` (QuestPage ~:780, HowItCameToBe ~:357, SessionRelations ~:100, SessionTimeline ~:50-53); en/zh `note.quest.person-done`; a Chinese test (QuestPage.done.test.tsx).
+- [ ] **QUESTCLOSE1b3 — the room names `quest done`** (driver; after b1 and SESSUX1h2). A HelpRoomDoors row for `daoris-driver quest done <id> [--note]` and its coverage answer beside the page's `PersonDone` (already its own conversation, HelpCoverageTests ~:388); ServiceClient reads `noteParts`.
 - [ ] **FREEZE1b — capture next stalled bar** (modules/driver; trigger: ui.stalled). Move measured cause off UI thread; request runtime-owned changes. D56/log §4.
 - [ ] **ASKNAME1c — named-proposal twin** (service/driver/web). One case-sensitive fixture across tier/intake/page; register twin. D77; three-suite proof.
 - [ ] **GOAHEAD2c — rehearsal go-aheads** (tools). Stub asks twice; first answer stays parked, second resumes once naming both. D135/phase 17a.
