@@ -198,7 +198,7 @@ export function AskPage({
   const copyId = { id: 'copy', label: t('contextMenu.act.copyAsk'), icon: 'copy' as const, copy: ask.id };
   // The head draws the ask's next step, *Resume* while it is paused, and the rest are its ⋯'s with its id (HEAD2d, D162 §4;
   // the quest's head folds its own the same way): one list still, so the buttons, the ⋯ and the right-click never disagree.
-  const drawn = headActs.filter((act) => act === 'resume');
+  const drawn: AskAct[] = headActs.filter((act) => act === 'resume');
   const folded = headActs.filter((act) => !drawn.includes(act));
   const acts = (
     <>
