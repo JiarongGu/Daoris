@@ -863,13 +863,21 @@ public sealed partial class DriverModule
                 // Named where the person named it (ACCT2); who signed in is offered on the page, never written here (D66 §3).
                 var called = Kept(() => AccountNames.Rename(
                     _loop.Harnesses.Home, owner, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), fresh, name), name is not null, stream);
-                stream(account is { Length: > 0 }
-                    ? $"signed in as {account} — this machine lists it as `{called ?? fresh}`."
-                    : $"signed in — `{owner}` did not say who, so this machine lists it as `{called ?? fresh}`.");
+                stream(SignedInSentence(account, owner, called, fresh));
                 Placed(owner, fresh, joins, stream);
             }
         }
     }
+
+    /// <summary>
+    /// The sign-in's end sentence (ACCTNAME1): the email offered as the name is said once, as the terminal's twin says it.
+    /// </summary>
+    public static string SignedInSentence(string? account, string owner, string? called, string fresh) =>
+        account is { Length: > 0 }
+            ? called is not null && string.Equals(account, called, StringComparison.OrdinalIgnoreCase)
+                ? $"signed in as {account} — this machine lists it by that name."
+                : $"signed in as {account} — this machine lists it as `{called ?? fresh}`."
+            : $"signed in — `{owner}` did not say who, so this machine lists it as `{called ?? fresh}`.";
 
     /// <summary>
     /// Sign back in to an account that is here (ACCT1): the tool's own login flow into its folder, never a new one, and at

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { NotePart } from '../api';
 import { cn } from '../lib/cn';
 import { Inline } from '../ui';
+import type { AccountNames } from './accountNames';
 import { noteBlocks, noteLines } from './noteLines';
 
 const CLAMP = { 2: 'line-clamp-2', 3: 'line-clamp-3', 4: 'line-clamp-4' } as const;
@@ -23,7 +24,9 @@ const CLAMP = { 2: 'line-clamp-2', 3: 'line-clamp-3', 4: 'line-clamp-4' } as con
  *
  * A molecule: handed the record's note and parts, it reads the catalogue and nothing else.
  */
-export function Note({ note, parts, className, clamp, compact = false }: {
+export function Note({ note, parts, className, clamp, compact = false, names }: {
+  /** What the person calls each account, by id, for a note that names one (NOTENAME1); absent, an id is said as written. */
+  names?: AccountNames;
   /** The record's English, shown as kept where it has no parts. */
   note?: string | null;
   /** The note's lines, as the record answers them (LANG1a). */
@@ -36,7 +39,7 @@ export function Note({ note, parts, className, clamp, compact = false }: {
   compact?: boolean;
 }) {
   const { t, i18n } = useTranslation();
-  const lines = noteLines(t, { note, parts }, i18n.language);
+  const lines = noteLines(t, { note, parts }, i18n.language, names);
   if (lines.length === 0) return null;
 
   if (compact) {

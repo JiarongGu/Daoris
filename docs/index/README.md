@@ -43,7 +43,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 46 | 861 |
 | `src/Daoris.Web/src/ui.test.tsx` | 48 | 975 |
 | `src/Daoris.Web/src/ui.tsx` | 79 | 1683 |
-| `src/Daoris.Web/src/work/ConversationView.test.tsx` | 47 | 897 |
+| `src/Daoris.Web/src/work/ConversationView.test.tsx` | 48 | 912 |
 | `src/Daoris.Web/src/work/SessionHead.test.tsx` | 48 | 907 |
 | `src/Daoris.Web/src/work/SessionRail.test.tsx` | 45 | 897 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 213 | 4111 |
@@ -102,7 +102,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleSessionsTests.cs` | 47 | 781 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs` | 49 | 897 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs` | 63 | 1158 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs` | 64 | 1166 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Help.cs` | 45 | 789 |
 
 ### Service (`service`)
@@ -136,7 +136,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/src/driverconfig.ts` | 95 | 1753 |
 | `src/Daoris.Cli/src/materialize.ts` | 47 | 936 |
 | `src/Daoris.Cli/src/plugins.ts` | 69 | 1383 |
-| `src/Daoris.Cli/src/toolchain.ts` | 140 | 2738 |
+| `src/Daoris.Cli/src/toolchain.ts` | 141 | 2745 |
 | `src/Daoris.Cli/src/workflowdoor.ts` | 46 | 836 |
 | `src/Daoris.Cli/test/desktop-publish.test.ts` | 56 | 1006 |
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 43 | 826 |
@@ -145,7 +145,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/test/merge-branch.test.ts` | 179 | 2784 |
 | `src/Daoris.Cli/test/rotation-use.test.ts` | 44 | 550 |
 | `src/Daoris.Cli/test/setup-kit.test.ts` | 52 | 955 |
-| `src/Daoris.Cli/test/toolchain.test.ts` | 94 | 1834 |
+| `src/Daoris.Cli/test/toolchain.test.ts` | 97 | 1875 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 71 | 1226 |
 
 ### Tools (`tools`)

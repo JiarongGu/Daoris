@@ -8,6 +8,10 @@ with the version and date at release.
 - Ask Daoris can now propose an account's use, its order, *Try now* and the default cool-off: how an agent's list of accounts
   is used, the list itself (or a workspace sent back to this machine's accounts), an account's cool-off ended, and how long
   an account cools when its limit names no time. Each is a card you apply, judged as the Agents page and the terminal judge it.
+- A conversation's opening line and its wait for an account now name the account as you named it, not by its id, where
+  Daoris knows the name.
+- `daoris agent list` and a sign-in's end now say an account's email once when it is also the account's name, and
+  `agent list`'s name column grows to the longest name instead of cutting a long email short.
 - A conversation's note that your words wait for its account's cool-off (whose account, until when and why) and the way out
   of the wait now read in your language, in English and 中文. The account is named by its id there, and the command keeps
   its spelling.
