@@ -215,12 +215,30 @@ function usePagedGraph(repository: string, tips: readonly string[], options: { s
   return { graph, onMore };
 }
 
-/** The History tab's read: its line's graph, walked from the commit the list names its line's, its pages accumulated. */
+/** The most tips `GIT_GRAPH` carries (D147, `GraphTips`): past it the read refuses `GIT_TOO_MANY_TIPS`, so it is never asked more. */
+const GRAPH_TIPS = 256;
+
+/**
+ * The History tab's read: its line's graph, walked from the commit the list names its line's, its pages accumulated. With
+ * *All branches* ticked (UX6h3c, page state) the walk is over the repository's branches: the line's commit, then each local
+ * and origin branch's in the list's order, distinct, the first `GRAPH_TIPS` of them.
+ */
 function HistoryRead({ repository, workspace }: { repository: string; workspace: string }) {
   const list = useRepositoryBranches(repository, workspace);
+  const [allBranches, setAllBranches] = useState(false);
   const commit = list.state === 'read' ? list.value.line.commit : null;
+  const branches = list.state === 'read' ? list.value.branches : NO_BRANCHES;
   // The graph's tips are whole ids the list resolved (D147 §4.2): with none, the graph asks nothing.
-  const tips = useMemo(() => (commit ? [commit] : NO_TIPS), [commit]);
+  const { tips, limit } = useMemo(() => {
+    if (!commit) return { tips: NO_TIPS, limit: undefined };
+    if (!allBranches) return { tips: [commit], limit: undefined };
+    const carried = branches.filter((branch) => branch.commit);
+    const distinct = [...new Set([commit, ...carried.map((branch) => branch.commit as string)])];
+    return {
+      tips: distinct.slice(0, GRAPH_TIPS),
+      limit: distinct.length > GRAPH_TIPS ? { shown: GRAPH_TIPS, total: carried.length } : undefined,
+    };
+  }, [commit, branches, allBranches]);
   const { graph, onMore } = usePagedGraph(repository, tips, { workspace });
 
   const read = ((): HistoryRead => {
@@ -230,7 +248,8 @@ function HistoryRead({ repository, workspace }: { repository: string; workspace:
     if (graph.state !== 'read') return graph;
     return { state: 'read', value: { line: line.branch ?? '', tips, ...graph.value } };
   })();
-  return <HistoryTab repository={repository} read={read} onMore={onMore} />;
+  const all = { on: allBranches, onToggle: () => setAllBranches((on) => !on), limit };
+  return <HistoryTab repository={repository} read={read} onMore={onMore} all={list.state === 'read' && commit ? all : undefined} />;
 }
 
 /**

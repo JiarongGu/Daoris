@@ -13579,3 +13579,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **WORKFLOW1h-d — the workflow card** (web). `HelpWorkflowShown` drawn as §8.2 says: *Your part* first, the diff by step (+ − ~ ↕), *Without asking you each time*, *Needs first* for a draft (only *Not now*), *Applies to*, the choice; en and zh; `useSettleHelp` refreshes the workflows a saved card changed. D157's WORKFLOW1h-c note.
 
 **Outcome** 2026-10-12: Ask Daoris draws a workflow proposal as its own card: the version it makes, *Your part*, *Steps*, *Without asking you each time* (or that nothing new leaves this machine), *Needs first* with only *Not now* for a draft, *Applies to* and the choice, headings in en and zh, the lines the driver's. The design's *Checked* is not drawn (no field carries it). Apply's existing `driver` refresh already covers the workflow tabs. WORKFLOW1h is done but for its name and WORKFLOW1h2. Detail: D157's WORKFLOW1h-d note.
+
+## UX6h3c — All branches (2026-10-12, D150)
+
+> - [ ] **UX6h3c — All branches** (web; after b). History draws every local and origin branch's graph, within the graph's tip limit (`GIT_TOO_MANY_TIPS`). Design §2.3.
+
+**Outcome** 2026-10-12: History's ⋯ ticks *All branches*: the graph over the line and every local and origin branch, the line's lane leftmost, at most 256 tips in the list's order, the head saying *Drawn from the first 256 of {total} branches* past them; paged with History's foot; page state. Detail: D150's UX6h3c note.
