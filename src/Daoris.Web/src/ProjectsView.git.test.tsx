@@ -17,7 +17,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import type { GitBranchList, GitGraphPage } from './bridge/git';
-import { GIT_BRANCHES_ENGINE, GIT_BRANCHES_GAME, GIT_HISTORY_ENGINE } from './projects/fixtures';
+import { GIT_BRANCHES_ENGINE, GIT_BRANCHES_GAME, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES } from './projects/fixtures';
 import { DRIVER_STATE, respond, show, WIRING } from './test/shellHarness';
 import { chooseRepository, chooseWorkspace, ProjectsView, repositoryMain } from './test/projectsView';
 
@@ -52,7 +52,7 @@ describe("a repository's Branches and History tabs", () => {
 
   const answering = ({ branches = () => ENGINE_LIST, graph = () => answer(PAGE), log = () => ({ lines: [] }) }: {
     branches?: (payload: Record<string, unknown>) => unknown;
-    graph?: () => unknown;
+    graph?: (payload: Record<string, unknown>) => unknown;
     /** What the machine log answers `LINES` with (AUTOTIDY1a). */
     log?: () => unknown;
   } = {}) =>
@@ -124,6 +124,49 @@ describe("a repository's Branches and History tabs", () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_GRAPH', expect.objectContaining({ payload: { repository: 'engine', tips: [LINE_COMMIT], workspace: 'aurora' } }));
     expect(within(repositoryMain()).getByRole('tab', { name: 'History' })).toHaveAttribute('aria-selected', 'true');
     expect(window.localStorage.getItem('daoris.list.projects.tab')).toContain('history');
+  });
+
+  describe('paging its graph (UX6h3a)', () => {
+    const [firstPage, secondPage] = GIT_HISTORY_PAGES;
+    const paged = (payload: Record<string, unknown>) =>
+      payload.page === 1 ? answer({ ...PAGE, page: 1, commits: secondPage, more: false }) : answer({ ...PAGE, commits: firstPage, more: true });
+
+    it('lists the first page with its foot, asks the next with page 1 on Show more, and accumulates the rows', async () => {
+      answering({ graph: paged });
+      show(<ProjectsView notify={() => {}} />);
+      const page = await chooseRepository('engine');
+      await userEvent.click(within(page).getByRole('tab', { name: 'History' }));
+
+      const list = await within(repositoryMain()).findByRole('list', { name: "engine's history on main" });
+      expect(within(list).getAllByRole('listitem')).toHaveLength(firstPage.length);
+      expect(within(repositoryMain()).getByText('3 commits listed')).toBeInTheDocument();
+      expect(asked('GIT_GRAPH')).toHaveLength(1);
+
+      await userEvent.click(within(repositoryMain()).getByRole('button', { name: 'Show more' }));
+
+      await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(GIT_HISTORY_ENGINE.length));
+      expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_GRAPH', expect.objectContaining({ payload: { repository: 'engine', tips: [LINE_COMMIT], page: 1, workspace: 'aurora' } }));
+      // The last page took the foot, and the focus is on the first row it brought.
+      expect(within(repositoryMain()).queryByRole('button', { name: 'Show more' })).toBeNull();
+      expect(document.activeElement).toBe(within(list).getAllByRole('listitem')[firstPage.length]);
+    });
+
+    it("says the next page's refusal in the foot, keeps the rows, and asks the same page again on another press", async () => {
+      let refuse = true;
+      answering({ graph: (payload) => (payload.page === 1 && refuse ? answer(null, 'GIT_NOT_ANSWERED') : paged(payload)) });
+      show(<ProjectsView notify={() => {}} />);
+      const page = await chooseRepository('engine');
+      await userEvent.click(within(page).getByRole('tab', { name: 'History' }));
+      const list = await within(repositoryMain()).findByRole('list', { name: "engine's history on main" });
+      await userEvent.click(within(repositoryMain()).getByRole('button', { name: 'Show more' }));
+
+      expect(await within(repositoryMain()).findByText(/^Git could not answer for this\./)).toBeInTheDocument();
+      expect(within(list).getAllByRole('listitem')).toHaveLength(firstPage.length);
+
+      refuse = false;
+      await userEvent.click(within(repositoryMain()).getByRole('button', { name: 'Show more' }));
+      await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(GIT_HISTORY_ENGINE.length));
+    });
   });
 
   it('says a repository with no checkout here has none, and asks Git nothing', async () => {

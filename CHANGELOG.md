@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- A repository's History reads further back: *Show more* adds the line's next 200 commits under the last.
 - A workspace's Branches tab says which empty session branches Daoris cleaned up on its own in the last week, and which it
   left in place and why.
 - A workspace's Branches tab lists each of its repositories' branches above the clean-up, a group per repository holding a
