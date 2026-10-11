@@ -87,6 +87,20 @@ export const keys = {
   allDiffs: ['diff'] as const,
   /** How a session or a quest came to be (TRACE1b) — shell-only: it reads this machine's records of its sessions. */
   trace: (kind: string, id: string) => ['trace', kind, id] as const,
+  /**
+   * Git's reads (GIT1d-b, D147) — shell-only: they read this machine's checkouts. The branch list moves, so it is keyed by its
+   * scope alone; every other read is named by whole commit ids (D147 §4.2), so a commit is cached by its commit and never changes.
+   */
+  gitBranches: (all: boolean, repository: string, workspace: string) => ['git', 'branches', all, repository, workspace] as const,
+  allGitBranches: ['git', 'branches'] as const,
+  gitGraph: (repository: string, tips: readonly string[], page: number, sinceParted: boolean) =>
+    ['git', 'graph', repository, tips.join(','), page, sinceParted] as const,
+  gitCommit: (repository: string, commit: string) => ['git', 'commit', repository, commit] as const,
+  gitHistory: (repository: string, commit: string, path: string, page: number) =>
+    ['git', 'history', repository, commit, path, page] as const,
+  gitBlame: (repository: string, commit: string, path: string) => ['git', 'blame', repository, commit, path] as const,
+  gitCompare: (repository: string, left: string, right: string, everything: boolean) =>
+    ['git', 'compare', repository, left, right, everything] as const,
   /** The files in one session's tree, for `@` (CONV4d) — shell-only for the same reason. */
   treeFiles: (session: string) => ['tree-files', session] as const,
   /** One file in a session's tree, read for its preview (PREVIEW1) — shell-only for the same reason. */

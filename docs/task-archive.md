@@ -13418,3 +13418,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **WORKFLOW1c5 — shared run sentences** (driver/web; after c2). Hold terminal/catalogue words by a fixture or one English source. D157 note/twins; drift test.
 
 **Outcome** 2026-10-11: `Driver.Tests/fixtures/workflow-run-said.json` (about 94 rows: each detail of each kind, singular and plural, each held, opinion-why and try code, the fallbacks, the states and the added lines) is read row for row by `WorkflowRunSaidTwinTests` and the page's `runSaid.test.ts`; it found two page drifts, both fixed (`cannot-start` missing from `DETAILS.opinion`, the `waits-chain` sentence missing in en and zh). Titles stay apart on purpose. A twins.md row; the merge tool's reach table carries the fixture. Detail: D157's WORKFLOW1c5 note.
+
+
+## GIT1d-b — the page's Git bridge (2026-10-11, D147)
+
+> - [ ] **GIT1d-b — the page's Git bridge** (web). Hooks over GIT1d-a's routes, shell-only, keyed by commit. D147's GIT1d-a note.
+
+**Outcome** 2026-10-11: `bridge/git.ts`'s `useGitBranches`, `useGitGraph`, `useGitCommit`, `useGitHistory`, `useGitBlame` and `useGitCompare`, each `{available, query}` enabled only in the shell and with what it reads named; `gitRefusal` gives a code the errors catalogue words; reads named by whole commit ids never go stale. With GIT1d-a, GIT1d is closed; UX6h's tabs can read them. Detail: D147's GIT1d-b note.
