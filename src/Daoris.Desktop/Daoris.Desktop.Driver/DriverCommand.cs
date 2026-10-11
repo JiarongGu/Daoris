@@ -124,7 +124,7 @@ public static class DriverCommand
               in one with your words (it goes on in the window), name, pin or unpin one, or delete one, listed
               first and deleted with --yes.
           trees [list | remove <path|session|branch> [--repository <name>] [--force]
-                | clean [--workspace <name>] [--yes] | land <session> [--plan]
+                | clean [--workspace <name>] [--yes] | land <session> [--plan] [--branch <name>]
                 | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]
                 | state <session|branch> [--repository <name>]
                 | sync [--repository <name>] [--workspace <name>] [--all] [--yes]]

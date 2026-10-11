@@ -61,6 +61,15 @@ public sealed record LandingSubject(string Session, string? Quest, string? Title
     /// </summary>
     public string? Name { get; init; }
 
+    /// <summary>
+    /// The branch name the person entered (LANDNAME1a, D145): it replaces the rule's whole name, the pattern's <c>{slug}</c> and all,
+    /// and only where the rule makes a branch. Blank or null keeps the rule's. The automatic landing takes none.
+    /// </summary>
+    public string? Entered { get; init; }
+
+    /// <summary>The entered name trimmed, or null where none was entered.</summary>
+    public string? EnteredName => string.IsNullOrWhiteSpace(Entered) ? null : Entered.Trim();
+
     /// <summary>The branch pattern's <c>{slug}</c>: the quest's name in the words git takes, its title where it has no other.</summary>
     public string Slug => LandingRules.Slug(Name ?? Title);
 

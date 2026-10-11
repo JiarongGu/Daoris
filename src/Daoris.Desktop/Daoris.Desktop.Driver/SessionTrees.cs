@@ -381,8 +381,11 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         {
             // Who pushes it, said before the press, and what would refuse the press where something would (D100).
             var plugin = landing.Rule.Plugin;
-            return new(LandingForm.Branch, LandingRules.Expand(landing.Rule.Pattern!, NamesOf(subject, repository)), landing.Source,
-                plugin, plugin is null ? null : _plugins.Problem(plugin), landing.Rule.AutoAccept);
+            var name = BranchNamed(subject, landing.Rule.Pattern!, repository);
+            // A name the press would refuse is said before it (LANDNAME1a), where the plan keeps the sentence a press is refused with.
+            var problem = subject.EnteredName is not null && !BranchName.IsValid(name) ? EnteredInvalid(name)
+                : plugin is null ? null : _plugins.Problem(plugin);
+            return new(LandingForm.Branch, name, landing.Source, plugin, problem, landing.Rule.AutoAccept);
         }
 
         var (code, commonDir, _) = Directory.Exists(full)
@@ -391,7 +394,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         var line = code == 0
             ? (await LineAsync(Path.GetDirectoryName(commonDir.Trim())!, repository, workspace, ct).ConfigureAwait(false)).Branch
             : null;
-        return new(LandingForm.Merge, line ?? "", landing.Source);
+        return new(LandingForm.Merge, line ?? "", landing.Source, Problem: subject.EnteredName is not null ? EnteredMerge : null);
     }
 
     /// <summary>
@@ -479,6 +482,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         TreeLanding landed;
         if (landing.Rule.Form != LandingForm.Branch)
         {
+            // A name entered where nothing is branched is refused, not ignored (LANDNAME1a): the person would think it was used.
+            if (subject.EnteredName is not null) return new(false, EnteredMerge);
             var merged = await MergeAsync(path, ct).ConfigureAwait(false);
             landed = new(merged.Merged, merged.Message);
         }
@@ -493,7 +498,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             }
 
             var branched = await BranchAsync(full, workspace, repository,
-                LandingRules.Expand(landing.Rule.Pattern!, NamesOf(subject, repository)), handedOn: plugin is not null, ct).ConfigureAwait(false);
+                BranchNamed(subject, landing.Rule.Pattern!, repository), handedOn: plugin is not null, ct,
+                entered: subject.EnteredName is not null).ConfigureAwait(false);
             landed = branched.Landing;
             // Recorded the moment it exists (WSR5): the branch is Daoris's to judge and to hand on only
             // because this line wrote it down, at the commit it was made at.
@@ -941,7 +947,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     /// </remarks>
     /// <param name="handedOn">A plugin pushes it next (D100), so the sentence does not tell the person to.</param>
     private async Task<Branched> BranchAsync(
-        string full, string workspace, string repository, string name, bool handedOn, CancellationToken ct)
+        string full, string workspace, string repository, string name, bool handedOn, CancellationToken ct, bool entered = false)
     {
         if (!Holds(full))
         {
@@ -997,7 +1003,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
 
         if (!BranchName.IsValid(name))
         {
-            return new TreeLanding(false, $"the landing rule names `{name}` for this session, which is not a branch name git "
+            return new TreeLanding(false, entered ? EnteredInvalid(name)
+                : $"the landing rule names `{name}` for this session, which is not a branch name git "
                 + "would take. Change the pattern with `daoris driver landing`.");
         }
 
@@ -1008,6 +1015,13 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
 
         var (exists, standing, _) = await WorkingTree.GitAsync(
             root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{name}^{{commit}}"], ct).ConfigureAwait(false);
+        if (exists == 0 && entered && Recorded.Of(repository, name) is null)
+        {
+            return new TreeLanding(false, $"the branch name you entered, `{name}`, is already a branch in `{repository}`, and Daoris does "
+                + "not move a branch it did not make. Enter another name, or leave it blank for the rule's.")
+            { Refusal = AutoLandingCode.Exists };
+        }
+
         if (exists == 0)
         {
             // A chain's later done moves the chain's branch on (LAND2c, D149): only one Daoris made, as a fast-forward.
@@ -1136,6 +1150,16 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     private DriverConfig Config() => DriverConfig.Load(DriverConfig.ResolvePath(home));
 
     /// <summary>What a pattern is expanded from: the quest, or the session where there is none; the quest's name's words (LANDNAME1).</summary>
+    private static string EnteredInvalid(string name) =>
+        $"the branch name you entered, `{name}`, is not a branch name git would take. Enter another, or leave it blank for the rule's.";
+
+    private const string EnteredMerge = "the rule for this repository merges the work into its line and makes no branch, so there is no "
+        + "branch name to enter. Leave it blank, or change the rule with `daoris driver landing`.";
+
+    /// <summary>What names the branch: the person's entered name where there is one (LANDNAME1a), else the rule's pattern expanded.</summary>
+    private static string BranchNamed(LandingSubject subject, string pattern, string repository) =>
+        subject.EnteredName ?? LandingRules.Expand(pattern, NamesOf(subject, repository));
+
     private static LandingNames NamesOf(LandingSubject subject, string repository) =>
         new(subject.Quest ?? subject.Session, subject.Slug, repository, subject.Session);
 

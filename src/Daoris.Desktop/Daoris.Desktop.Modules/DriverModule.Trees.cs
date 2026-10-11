@@ -360,6 +360,13 @@ public sealed partial class DriverModule
         return new { Session = id, Done = removal.Removed, removal.Message };
     }
 
+    /// <summary>
+    /// The branch name the page entered (LANDNAME1a, D145), which the landing takes in place of the rule's; blank or absent is
+    /// the rule's, as before. The plan and the press both read it, so what the page shows is what the press does.
+    /// </summary>
+    public static LandingSubject Entering(LandingSubject subject, IpcRequest request) =>
+        subject with { Entered = Optional(request, "branch") };
+
     // How a reviewed session's work lands (WSR1, D87): what a press WOULD do, said before it —
     // merge into the line, or the branch the rule names for this session — and the press, which
     // applies the repository's rule. It is the one door that lands a session's work.
@@ -392,6 +399,7 @@ public sealed partial class DriverModule
         var subject = await LandingRules.SubjectAsync(
             id, questId, quest => service.FindQuestAsync(quest, cancellationToken),
             _loop.Events.Openings([id]).GetValueOrDefault(id));
+        subject = Entering(subject, request);
         // A rule's plugin says its lines on the console under its name, as a hook's do (D64 §4, D100); what the
         // landing did with it goes to the machine log and the loop's record of its health (PLUGUI1d).
         var trees = new SessionTrees(_loop.Home, new LandingPlugins(
