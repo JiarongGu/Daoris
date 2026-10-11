@@ -123,5 +123,6 @@
   "opinion.accept.answers": "采纳即回答第二意见未了结的部分：{{unsettled}}。",
   "opinion.said.sentBack": "你的话已作为会话 {{session}} 的下一轮送出。",
   "opinion.session.title": "第二意见",
-  "opinion.session.kind": "第二意见"
+  "opinion.session.kind": "第二意见",
+  "opinion.session.reads": "阅读「{{title}}」"
 }

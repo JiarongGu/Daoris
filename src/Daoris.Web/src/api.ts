@@ -449,6 +449,12 @@ async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+/**
+ * One second opinion as `GET /api/opinions` lists it (XAGENT1g4c), the fields the join reads: `working` is the session whose
+ * work was read, `session` the reviewer's own record. The wire carries more (findings, tier, state); the page asks no more here.
+ */
+export type OpinionRow = { id: string; working: string; session: string };
+
 /** Whether a read failed because the service holds nothing by that name: an answer, where any other failure is not. */
 export const notFound = (error: unknown): boolean => (error as { status?: unknown } | null)?.status === 404;
 
@@ -543,6 +549,9 @@ export const api = {
     get<SyncStanding>(`/api/sync${qs({ workspace })}`, signal),
   sessions: (repository: string | null, includeClosed: boolean, workspace: string | null, signal?: AbortSignal) =>
     get<Session[]>(`/api/sessions${qs({ includeClosed, repository, workspace })}`, signal),
+  // The second opinions this machine holds (XAGENT1g4c): which session read which, to say whose work a reviewer's row reads.
+  // This machine's own (D47 §4): another host answers 404.
+  opinions: (signal?: AbortSignal) => get<OpinionRow[]>('/api/opinions', signal),
   // The registration lifecycle (D48 §3/§7). Registration state only: no file is written, no doctrine
   // is touched, and adding a repository still needs the shell — a page may not name a machine path.
   registerRepository: (body: {

@@ -27,6 +27,8 @@ export type SessionRowFacts = {
   root?: string | null;
   /** Where its work is now (LOOK2b). */
   where?: SessionWhere | null;
+  /** Whose work a second opinion's reviewer reads, by that session's title (XAGENT1g4c). */
+  reads?: string | null;
 };
 
 /** A repository group's facts by repository (`RepositoryGroup`): what the driver and the registry answer of it. */

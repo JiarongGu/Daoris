@@ -23,6 +23,9 @@ stream never leaves its machine. **Map** is how a workspace's repositories are w
 The session's Workflow view names its bound saved version, or Current for live declarations.
 Unreadable bindings show a problem without a completed diagram. Both the head and diff pane
 show workflow holds before Accept, preserving the driver's explanation and available terminal doors.
+A second opinion's reviewer is a row of its own in Sessions' list, and says whose work it reads (XAGENT1g4c): the rail
+joins it to the working session through `GET /api/opinions`, asked only when the list holds a reviewer, and an unanswered
+read claims nothing.
 **Settings** is everywhere: Get started, Appearance and AI in a browser; the desktop also offers
 Driver, Tools, Browser and Logs. Plugins has its own view. Agent accounts live in Agents; workspace controls live in
 Repositories. The desktop's seven menus share one command table, with shortcuts and a command palette

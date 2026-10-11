@@ -141,6 +141,11 @@ export const keys = {
   asks: (includeClosed: boolean, workspace: string | null) => ['asks', includeClosed, workspace ?? '*'] as const,
   quests: (repository: string | null, includeClosed: boolean, workspace: string | null) =>
     ['quests', repository ?? 'all', includeClosed, workspace ?? '*'] as const,
+  /**
+   * The second opinions this machine holds (XAGENT1g4c): the service lists them, so not under the driver's key; under the
+   * sessions', so whatever asks the sessions again (a new reviewer's record) asks these again.
+   */
+  opinions: ['sessions', 'opinions'] as const,
   sessions: (repository: string | null, includeClosed: boolean, workspace: string | null) =>
     ['sessions', repository ?? 'all', includeClosed, workspace ?? '*'] as const,
 };
@@ -299,6 +304,17 @@ export const useSessions = (repository: string | null, includeClosed: boolean, e
     enabled,
   });
 };
+
+/**
+ * The second opinions on this machine (XAGENT1g4c), asked only where the sessions list holds a reviewer (`enabled`). A 404 (a
+ * host that is not this machine's) or any error answers nothing, and no join is claimed.
+ */
+export const useOpinions = (enabled: boolean) => useQuery({
+  queryKey: keys.opinions,
+  queryFn: ({ signal }) => api.opinions(signal),
+  enabled,
+  retry: false,
+});
 
 /**
  * Ask Daoris's conversations (HELP1a, D89), across every workspace: it belongs to none, so the scope a

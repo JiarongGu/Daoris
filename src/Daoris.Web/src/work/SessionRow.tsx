@@ -68,7 +68,7 @@ export type SessionWhere = {
 };
 
 export function SessionRow({
-  session, quest, opening, root, where, taking, lastTurn, grouping, place, archived = false, selected = false, onSelect,
+  session, quest, opening, root, where, reads, taking, lastTurn, grouping, place, archived = false, selected = false, onSelect,
   acts = [], onAct,
 }: {
   session: Session;
@@ -93,6 +93,11 @@ export function SessionRow({
    * the machine has not answered, and then the tree the record names stands, as before.
    */
   where?: SessionWhere | null;
+  /**
+   * The title of the session whose work a second opinion's reviewer reads (XAGENT1g4c, the second-agent design §9), where the
+   * rail joined the two through the opinions the service lists. Absent where it did not, and then nothing is claimed.
+   */
+  reads?: string | null;
   /**
    * Where the list's reader placed it (SESSUX1c, D126 §2.2): its derived word (*parked*, *awaiting reply*) and the
    * facts its line says for its group. Absent where no reader answered (a browser), and then the record speaks alone.
@@ -142,6 +147,7 @@ export function SessionRow({
     // marked as one (XAGENT1g, the second-agent design §9).
     t(isIntake(session) ? 'work.intake.kind' : isOpinion(session) ? 'opinion.session.kind'
       : session.kind === 'chat' ? 'work.kind.chat' : 'work.kind.driven'),
+    isOpinion(session) && reads ? t('opinion.session.reads', { title: reads }) : null,
     landed ? t(landed.state === 'gone' ? 'work.rail.landedGone' : 'work.rail.landedOn', { branch: landed.branch }) : null,
     tree ? t('work.rail.inTree', { tree }) : null,
     origin ? t('work.rail.on', { origin }) : null,

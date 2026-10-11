@@ -136,6 +136,17 @@ describe('a session row', () => {
     expect(screen.queryByText(/chat/)).toBeNull();
   });
 
+  /** XAGENT1g4c (§9): the reviewer's row says whose work it reads, where the rail joined it; nothing joined, nothing claimed. */
+  it('says whose work a second opinion’s reviewer reads, when it is told', () => {
+    const { rerender } = render(
+      <SessionRow session={session({ kind: 'chat', repository: 'engine', opinion: 'o1a2b3c4' })} reads="Expose a streaming budget" />,
+    );
+    expect(screen.getByText(/^second opinion · reads Expose a streaming budget · moved/)).toBeInTheDocument();
+
+    rerender(<SessionRow session={session({ kind: 'chat', repository: 'engine', opinion: 'o1a2b3c4' })} />);
+    expect(screen.queryByText(/reads/)).toBeNull();
+  });
+
   it('names a session with no quest by its derived identity rather than by nothing', () => {
     render(<SessionRow session={session({ kind: 'chat', quest: null })} />);
     expect(screen.getByText('Chat')).toBeInTheDocument();
