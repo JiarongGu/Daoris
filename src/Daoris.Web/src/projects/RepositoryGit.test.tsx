@@ -170,6 +170,47 @@ describe("a repository's Branches tab", () => {
     expect(screen.queryByRole('button', { name: "Show origin's branches" })).toBeNull();
   });
 
+  // UX6h3b (the built-in Git design §2.3): a branch's name opens its page; the line's page is the repository's history.
+  it("opens a branch's page from its name, origin's once shown, and History from the line's own row", async () => {
+    const onOpen = vi.fn();
+    const onOpenHistory = vi.fn();
+    render(<BranchesTab repository="engine" read={read()} onOpen={onOpen} onOpenHistory={onOpenHistory} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Open daoris/engine-physics-step' }));
+    expect(onOpen).toHaveBeenLastCalledWith('daoris/engine-physics-step');
+    await userEvent.click(screen.getByRole('button', { name: 'Open review/q4-input-map' }));
+    expect(onOpen).toHaveBeenLastCalledWith('review/q4-input-map');
+    await userEvent.click(screen.getByRole('button', { name: 'Open spike/renderer' }));
+    expect(onOpen).toHaveBeenLastCalledWith('spike/renderer');
+    // The name is still the row's whole name, its press a ghost button around it.
+    expect(names('Yours (7)')[0]).toBe('spike/renderer');
+
+    await opened(screen.getByRole('button', { name: "Show origin's branches" }));
+    await userEvent.click(screen.getByRole('menuitemcheckbox', { name: "Show origin's branches (1)" }));
+    await userEvent.click(screen.getByRole('button', { name: 'Open origin/release' }));
+    expect(onOpen).toHaveBeenLastCalledWith('origin/release');
+
+    await userEvent.click(within(screen.getByRole('group', { name: 'Line' })).getByRole('button', { name: "Open main's history" }));
+    expect(onOpenHistory).toHaveBeenCalledTimes(1);
+    expect(onOpen).toHaveBeenCalledTimes(4);
+  });
+
+  it('offers no press where none is handed, where a branch has no commit, or where its line has none here', () => {
+    const { rerender } = render(<BranchesTab repository="engine" read={read()} />);
+    expect(screen.queryAllByRole('button', { name: /^Open / })).toEqual([]);
+
+    // A branch with no commit of its own has nothing to draw; the others keep theirs.
+    const [line, physics, ...rest] = GIT_BRANCHES_ENGINE.branches;
+    const pressed = { onOpen: vi.fn(), onOpenHistory: vi.fn() };
+    rerender(<BranchesTab repository="engine" read={read({ branches: [line!, { ...physics!, commit: '' }, ...rest] })} {...pressed} />);
+    expect(screen.queryByRole('button', { name: 'Open daoris/engine-physics-step' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Open daoris/engine-audio-mix' })).toBeInTheDocument();
+
+    // A line with no commit here: no branch can be drawn beside it, so no row but the line's own opens.
+    rerender(<BranchesTab repository="engine" read={read({ line: { ...GIT_BRANCHES_ENGINE.line, commit: null } })} {...pressed} />);
+    expect(screen.queryAllByRole('button', { name: /^Open / }).map((button) => button.getAttribute('aria-label'))).toEqual(["Open main's history"]);
+  });
+
   it("says origin's branches in 中文", async () => {
     await i18n.changeLanguage('zh');
     render(<BranchesTab repository="engine" read={read()} />);
@@ -191,6 +232,9 @@ describe("a repository's Branches tab", () => {
     expect(screen.getByText('无法读取会话记录，所以这里没有分支以它的会话命名。')).toBeInTheDocument();
     expect(row('已落地（3）', 'review/q2-shader-cache')).toHaveTextContent('未推送。');
     expect(screen.getByRole('button', { name: '再显示 2 个' })).toBeInTheDocument();
+    rerender(<BranchesTab repository="engine" read={read()} onOpen={() => {}} onOpenHistory={() => {}} />);
+    expect(screen.getByRole('button', { name: '打开 daoris/engine-physics-step' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '打开 main 的历史' })).toBeInTheDocument();
   });
 });
 
