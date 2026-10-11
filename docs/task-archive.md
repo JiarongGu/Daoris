@@ -13306,3 +13306,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ACCTUX4d — the workspace's next start reads as one sentence** (web). On the installed window (2026-10-11, 中文, 1546 px) ACCTUX4c's line reads "在 `x` 中： 下一次启动使用 …：…", a space after a full-width colon and two colons in one line; the English is "In x: The next start takes …: …". Join the workspace into the sentence (en "In x, the next start takes …", zh "在 x 中，下一次启动使用 …") with keys of its own rather than prefixing `nextLine`'s sentence. D125's ACCTUX4c note.
 
 **Outcome** 2026-10-11: `harness.next.takesIn` says "In {{workspace}}, the next start takes {{account}}: {{why}}." / "在 {{workspace}} 中，下一次启动使用 {{account}}：{{why}}。" when the workspace's scope names an account; a wait in a workspace keeps the old lead-in (its sentences are the fold's); `nextWhy` exported from settings. Detail: D125's ACCTUX4d note.
+
+
+## QUESTCLOSE1b5 — the trace's quest link carries the note's parts (2026-10-11, D126)
+
+> - [ ] **QUESTCLOSE1b5 — the trace's quest link carries the note's parts** (driver or service: find who builds the trace). The page's trace close draws `noteParts` through `Note` (QUESTCLOSE1b2), but the trace's quest link (`TraceQuestLink`) is answered without them, so the trace shows the person's done in English. A trace answer test; HowItCameToBe on the window.
+
+**Outcome** 2026-10-11: the trace's own quest read (`TracedQuest`, Trace.cs `ParseQuests`) and its link (`TraceQuestLink`, Trace.Chain.cs) carry `NoteParts`; the TRACE route serializes them as they are; a quest from before parts carries none. With b1-b3, the person's done reads in the page's language everywhere it shows. Detail: D126's QUESTCLOSE1b5 note.

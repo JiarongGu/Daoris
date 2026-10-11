@@ -49,6 +49,29 @@ public sealed class DriverModuleTraceTests : DriverModuleBridge
          "words":[{"kind":"asked","text":"use the v3 bridge","at":"2026-10-03T09:00:00+00:00"}],"goAheads":[]}
         """;
 
+    /// <summary>QUESTCLOSE1b5: the quest link carries the note's coded parts beside its English, and a quest from before parts carries none.</summary>
+    [Fact]
+    public async Task A_quests_link_carries_the_notes_parts_only_where_the_record_has_them()
+    {
+        Machine();
+        var coded = (JsonObject)Quests()[0]!.DeepClone();
+        coded["note"] = "done.";
+        coded["noteParts"] = new JsonArray(new JsonObject { ["code"] = "quest.done", ["values"] = new JsonObject(), ["text"] = "done." });
+        var older = (JsonObject)Quests()[0]!.DeepClone();
+        older["id"] = "q2";
+        older["note"] = "done.";
+
+        var (module, _) = await UpAsync(new StandIn(Sessions(), [coded, older], id => id == "a1" ? AskJson : null));
+        var withParts = (await AnswerAsync(module, "TRACE", new { kind = "quest", id = "q1" }))
+            .GetProperty("chain").GetProperty("links").EnumerateArray().First(link => link.GetProperty("kind").GetString() == "quest").GetProperty("quest");
+        var without = (await AnswerAsync(module, "TRACE", new { kind = "quest", id = "q2" }))
+            .GetProperty("chain").GetProperty("links").EnumerateArray().First(link => link.GetProperty("kind").GetString() == "quest").GetProperty("quest");
+
+        Assert.Equal("done.", withParts.GetProperty("note").GetString());
+        Assert.Equal("quest.done", withParts.GetProperty("noteParts")[0].GetProperty("code").GetString());
+        Assert.True(!without.TryGetProperty("noteParts", out var none) || none.ValueKind == JsonValueKind.Null);
+    }
+
     /// <summary>This machine's half, by the driver's own writers: the events, a landing, a rules file that does not read, a standing answer.</summary>
     private void Machine()
     {

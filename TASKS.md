@@ -289,7 +289,6 @@ Decision/trigger rows stay held; diagnostic captures are not permission to chang
 - [ ] **BGWAIT1c — native background cutoff** (driver/web). Coded cutoff instead of park after harness-killed work. D83/D137/D142; stream fixture.
 - [ ] **LAND4b — failed automatic landing** (driver; decide). Unify Done+failed rule with person's press. D145/D102; rule case.
 - [ ] **QUESTCLOSE1b4 — a lost move's note keeps its parts** (service; consider). A quest's `conflicts` (`QuestConflict`) carry a lost move's note but not its parts, so a lost person's done reads in English. If the page should word it, `QuestConflict` and the answer gain parts. D142 point 2; a sync test.
-- [ ] **QUESTCLOSE1b5 — the trace's quest link carries the note's parts** (driver or service: find who builds the trace). The page's trace close draws `noteParts` through `Note` (QUESTCLOSE1b2), but the trace's quest link (`TraceQuestLink`) is answered without them, so the trace shows the person's done in English. A trace answer test; HowItCameToBe on the window.
 - [ ] **FREEZE1b — capture next stalled bar** (modules/driver; trigger: ui.stalled). Move measured cause off UI thread; request runtime-owned changes. D56/log §4.
 - [ ] **ASKNAME1c — named-proposal twin** (service/driver/web). One case-sensitive fixture across tier/intake/page; register twin. D77; three-suite proof.
 - [ ] **GOAHEAD2c — rehearsal go-aheads** (tools). Stub asks twice; first answer stays parked, second resumes once naming both. D135/phase 17a.
