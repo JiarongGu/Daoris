@@ -13299,3 +13299,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **QUESTCLOSE1b3 — the room names `quest done`** (driver; after b1 and SESSUX1h2). A HelpRoomDoors row for `daoris-driver quest done <id> [--note]` and its coverage answer beside the page's `PersonDone` (already its own conversation, HelpCoverageTests ~:388); ServiceClient reads `noteParts`.
 
 **Outcome** 2026-10-11: `QuestView` reads `NoteParts` (nothing prints them: the terminal stays English); the room's doors table names the person's done ("Quests → the quest's page → Mark done…" and `daoris-driver quest done <id> [--note "…"]`), Ask Daoris taking the person there and never writing it; a test holds both doors and no `done` proposal kind. Detail: D126's QUESTCLOSE1b3 note.
+
+
+## ACCTUX4d — the workspace's next start reads as one sentence (2026-10-11, D125)
+
+> - [ ] **ACCTUX4d — the workspace's next start reads as one sentence** (web). On the installed window (2026-10-11, 中文, 1546 px) ACCTUX4c's line reads "在 `x` 中： 下一次启动使用 …：…", a space after a full-width colon and two colons in one line; the English is "In x: The next start takes …: …". Join the workspace into the sentence (en "In x, the next start takes …", zh "在 x 中，下一次启动使用 …") with keys of its own rather than prefixing `nextLine`'s sentence. D125's ACCTUX4c note.
+
+**Outcome** 2026-10-11: `harness.next.takesIn` says "In {{workspace}}, the next start takes {{account}}: {{why}}." / "在 {{workspace}} 中，下一次启动使用 {{account}}：{{why}}。" when the workspace's scope names an account; a wait in a workspace keeps the old lead-in (its sentences are the fold's); `nextWhy` exported from settings. Detail: D125's ACCTUX4d note.

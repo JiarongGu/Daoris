@@ -44,7 +44,6 @@ installed-window evidence in both themes/languages; Storybook alone does not clo
 Contracts: toolchain (D57 §3), account rotation (D125), account use (D130), browser (D78/D84).
 Original row proofs remain in the frozen backlog; measurements precede declarations.
 
-- [ ] **ACCTUX4d — the workspace's next start reads as one sentence** (web). On the installed window (2026-10-11, 中文, 1546 px) ACCTUX4c's line reads "在 `x` 中： 下一次启动使用 …：…", a space after a full-width colon and two colons in one line; the English is "In x: The next start takes …: …". Join the workspace into the sentence (en "In x, the next start takes …", zh "在 x 中，下一次启动使用 …") with keys of its own rather than prefixing `nextLine`'s sentence. D125's ACCTUX4c note.
 - [ ] **ACCTUX4i — installed account cells, and the row budget** (parent). 中文 dark and light at 1546 and 680 seen 2026-10-11; English, a key and Codex rows remain. The *Now* header stands over an empty column, the cells starting under *Used for*. Settle D152's row budget against D125's ACCTUX4 measures.
 - [ ] **ACCTPLAN1 — plan, spend and reset credits** (driver/modules/web; design first). Nothing reads them yet (D125:898-899); show them in a fold, and never redeem a credit without `InlineConfirm`. Second-opinion review lines 132-133.
 - [ ] **ACCTNAME1 — email names read once** (CLI/driver/web). Avoid duplicate email/name; size roster columns. D125 notes; long-name and equal-email cases.

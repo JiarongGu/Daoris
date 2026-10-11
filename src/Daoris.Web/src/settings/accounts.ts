@@ -268,7 +268,7 @@ export function saidLine(said: AccountSaid | null | undefined): string {
  * Why the next start takes its account, as a clause (TOOL6e): the walk's step, naming the account it weighed it against as a
  * person calls it. The list's order says the default, the list's first, or the account it comes before.
  */
-function nextWhy(next: NextStart, scope: AccountScope, labelOf: (name: string) => string): string {
+export function nextWhy(next: NextStart, scope: AccountScope, labelOf: (name: string) => string): string {
   const over = next.over ? labelOf(next.over) : '';
   switch (next.reason) {
     case 'list':

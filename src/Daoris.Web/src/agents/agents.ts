@@ -3,7 +3,7 @@ import { ago, clockOf, moment } from '../format';
 import type { Account, AccountPlace, Tool } from '../tools';
 import {
   type AccountCooling, type AccountFacts, type AccountSaid, type AccountScope, type AccountsAnswer, type AgentAccounts, agentOf,
-  coolingLine, heldLine, machineScope, nextLine, offeredLine, orderedWindows, percent, type WindowSaid, windowName,
+  coolingLine, heldLine, machineScope, nextLine, nextWhy, offeredLine, orderedWindows, percent, type WindowSaid, windowName,
   workspaceScope,
 } from '../settings/accounts';
 import type { AgentRulesState } from '../settings/AgentRules';
@@ -369,7 +369,8 @@ export function nextStartSaid(
 /**
  * The next start of the workspace in view where it has a scope of its own that names one, else this machine's (ACCTUX4c).
  * On the install every account serves the workspace the window shows, and this machine's scope starts on the tool's own
- * sign-in, which says nothing: the sentence was never drawn. The workspace is named, since the sentence speaks for it.
+ * sign-in, which says nothing: the sentence was never drawn. The workspace is named, since the sentence speaks for it
+ * (joined into the sentence where it takes an account, a lead-in `workspace` where it waits).
  */
 export function nextStartSaidFor(
   use: AgentAccounts | null | undefined, workspace: string | null, labelOf: (name: string) => string,
@@ -379,7 +380,17 @@ export function nextStartSaidFor(
   const own = workspace ? workspaceScope(use, workspace) : null;
   if (workspace && own?.next) {
     const said = nextStartSaid(own, labelOf, isKey);
-    return said && { workspace, ...said };
+    if (!said) return null;
+    const next = own.next;
+    // ACCTUX4d: a start that takes an account is one sentence with the workspace joined in, by keys of its own; a wait
+    // keeps the workspace as a lead-in, since its sentences are the fold's own.
+    if (next.reason !== 'waits' && next.account) {
+      return {
+        ...said,
+        takes: i18n.t('harness.next.takesIn', { workspace, account: labelOf(next.account), why: nextWhy(next, own, labelOf) }),
+      };
+    }
+    return { workspace, ...said };
   }
   return nextStartSaid(machineScope(use), labelOf, isKey);
 }
