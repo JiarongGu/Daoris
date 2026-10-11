@@ -174,7 +174,7 @@ Contracts: session-management (D126 §9), session-messages (D137), answer-contin
 pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build rows.
 
 - [ ] **QUESTREBASE1 — pure rebase planner** (service; consider). Preserve operation identity, accepted-before-pending order and transaction. D69/D79; unchanged sync suite and loss tests.
-- [ ] **SESSUX1h3b — the room's session look, timed** (driver/modules; measure first). SESSUX1h3 reads `SessionGroups.LookAsync` (with the review count's git judgement) on every room write, a conversation's going on included (`HelpMachineNowAsync`). Time it on the installed machine against Ask Daoris's first-answer time (HELP5); if it shows, read it at a conversation's start only, or keep the last look. D161's SESSUX1h3 note.
+- [ ] **SESSUX1h3c — read the room's look time on the install** (parent; after a republish). SESSUX1h3b logs `help.room.look` (`ms`, `slow` over 500 ms, `read`) in the home's `logs/<date>.<source>.jsonl` on every room write. Read a day of it on the installed machine; if it is slow, propose keeping the last look for a short span (its groups then stale by that span). D161's SESSUX1h3 and SESSUX1h3b notes.
 - [ ] **MSG1d2 — queued chat survives restart** (driver/web; with MSG1c). Record ids/reach/withdrawals; take by id. Messages §3.1.
 - [ ] **MSG1g3 — cooling note and twins** (driver/web). Code held line; compare newSessionSaid with GoOnNew/WordsNever. D137/D142.
 - [ ] **MSG1h — Codex next-step words** (driver; after measured STEER3). Messages §8.

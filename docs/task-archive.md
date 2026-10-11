@@ -13320,3 +13320,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CONVNOTE2e–h — the conversation's other driver notes, by code** … (Group f: background work, Acp.cs ~:575-590.)
 
 **Outcome** 2026-10-11: `background.unread` (the error as program words), `background.waits` [works] (the `names` kind), one `background.work-ended` [work, state] per ended work and `background.goes-on`, built by `BackgroundNotes`, worded in en and zh (后台工作; 委托 for a quest); each English byte for byte. A state is a text value as the harness sent it (an open set). Detail: D152's CONVNOTE2f note.
+
+
+## SESSUX1h3b — the room's session look, timed (2026-10-11, D161)
+
+> - [ ] **SESSUX1h3b — the room's session look, timed** (driver/modules; measure first). SESSUX1h3 reads `SessionGroups.LookAsync` (with the review count's git judgement) on every room write, a conversation's going on included (`HelpMachineNowAsync`). Time it on the installed machine against Ask Daoris's first-answer time (HELP5); if it shows, read it at a conversation's start only, or keep the last look. D161's SESSUX1h3 note.
+
+**Outcome** 2026-10-11: every room write logs `help.room.look` (`ms`, `slow` over 500 ms as a warn, `boundMs`, `read`) through `HelpRoomLookLog`; the skip on going on was not built, since a kept look shows the room stale groups. Reading the numbers on the install is SESSUX1h3c. Detail: D161's SESSUX1h3b note.
