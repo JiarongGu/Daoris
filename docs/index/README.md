@@ -82,7 +82,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 61 | 1106 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 199 | 3671 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/NoteCodes.cs` | 46 | 817 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/NoteCodes.cs` | 46 | 818 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 64 | 1123 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 93 | 1694 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionEvents.cs` | 41 | 896 |
