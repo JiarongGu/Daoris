@@ -104,6 +104,18 @@ describe('bringing repositories up to date', () => {
       expect(onLook).toHaveBeenLastCalledWith(['beta', 'alpha']);
     });
 
+    // UX6h2b3: a workspace's Branches tab lists what is apart once, in its own fold, so the section draws no list of its own
+    // there; its look takes what the fold included, and its sentence counts them.
+    it("draws no list apart where the page's own fold holds it, and looks at what that fold included", async () => {
+      const { onLook } = draw({ plan: undefined, scope: SCOPE, included: ['beta'], apartFolded: true });
+
+      expect(screen.getByText(/A look fetches the 2 repositories that hold a branch of Daoris's, or that you included/)).toBeInTheDocument();
+      expect(screen.queryByText(/other repositor(y|ies) with a checkout here/)).toBeNull();
+      expect(screen.queryByRole('button', { name: /^Include and look/ })).toBeNull();
+      await userEvent.click(screen.getByRole('button', { name: 'Look for updates' }));
+      expect(onLook).toHaveBeenLastCalledWith(['beta']);
+    });
+
     it('says so when no repository holds a branch of Daoris\'s', () => {
       draw({ plan: { lines: [], rebases: [], deletes: [], looked: [], apart: [SCOPE[1]] } });
 

@@ -178,6 +178,8 @@ function Page({ tab: first, setup = DEFAULTS_DAORIS, browser = false, wired = tr
             sync={(
               <SyncSection
                 scope={REPOSITORIES.map((repository) => ({ repository, workspace: 'work', holds: held.includes(repository) }))}
+                // The groups' fold above is the one list apart (UX6h2b3): Updates says how many it fetches, and draws none.
+                apartFolded
                 onLook={nothing}
                 onSync={nothing}
               />
@@ -242,8 +244,8 @@ export const DetailsNothingKept: Story = { args: { kept: WORKSPACE_EMPTY } };
 /**
  * Branches: each of the three repositories holding a branch of Daoris's as a group headed by its door, its line and its
  * branches by kind (UX6h2b2); the four others with a checkout here folded apart, each drawn once ticked and included (the
- * game's list stands in for one); then the clean-up across its repositories, and bringing them up to date before anyone has
- * looked.
+ * game's list stands in for one), the one fold of them (UX6h2b3: *Updates* below draws no list apart of its own and says how
+ * many it will fetch); then the clean-up across its repositories, and bringing them up to date before anyone has looked.
  */
 export const Branches: Story = { args: { tab: 'branches' } };
 

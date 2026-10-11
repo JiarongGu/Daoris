@@ -732,17 +732,25 @@ describe("a workspace's page (UX6g)", () => {
       },
       TREES_SYNC_PLAN: looking,
       TREES_SYNC: { lines: [], rebases: [], deletes: [], changed: 1 },
+      // UX6h2b3: what is apart is the tab's one fold's, read by the groups, the machine's whole with each row's workspace.
+      GIT_BRANCHES: {
+        repositories: [],
+        apart: [none('game', 'aurora'), none('Daoris.Plugins', 'forge'), none('Daoris', 'default')],
+        sessionsUnread: false,
+      },
     });
     show(<ProjectsView notify={() => {}} />);
     await chooseWorkspace('aurora');
     await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
 
     // Before a look, the machine's reading counted as this workspace's own: one holds Daoris's branches, one other does not.
+    // The one other is the fold's alone: Updates says how many it fetches and no longer lists the rest (moved from Updates).
     const updates = within(await screen.findByRole('region', { name: 'Updates' }));
     expect(await updates.findByText(/A look fetches the 1 repository that holds a branch of Daoris's/)).toBeInTheDocument();
-    expect(updates.getByText("1 other repository with a checkout here holds no branch of Daoris's")).toBeInTheDocument();
-    expect(updates.queryByText('Daoris')).toBeNull();
-    expect(updates.queryByText('Daoris.Plugins')).toBeNull();
+    expect(await within(repositoryMain()).findByText("1 repository with a checkout here holds no branch of Daoris's, and is not listed")).toBeInTheDocument();
+    expect(updates.queryByText(/other repositor(y|ies) with a checkout here/)).toBeNull();
+    expect(within(repositoryMain()).queryByText('Daoris')).toBeNull();
+    expect(within(repositoryMain()).queryByText('Daoris.Plugins')).toBeNull();
 
     // The look is asked for this workspace, and says it fetches its own one.
     await userEvent.click(updates.getByRole('button', { name: 'Look for updates' }));
@@ -763,18 +771,21 @@ describe("a workspace's page (UX6g)", () => {
     expect(await updates.findByRole('group', { name: 'engine' })).toBeInTheDocument();
     expect(updates.queryByRole('group', { name: 'tools' })).toBeNull();
     expect(updates.queryByRole('group', { name: 'kiln' })).toBeNull();
-    expect(updates.getByText("1 other repository with a checkout here holds no branch of Daoris's")).toBeInTheDocument();
+    expect(within(repositoryMain()).getByText("1 repository with a checkout here holds no branch of Daoris's, and is not listed")).toBeInTheDocument();
+    expect(updates.queryByText(/other repositor(y|ies) with a checkout here/)).toBeNull();
 
-    // Including every one it left apart is every one of this workspace's, asked for it.
-    await userEvent.click(updates.getByText("1 other repository with a checkout here holds no branch of Daoris's"));
-    const apart = within(updates.getByRole('group', { name: 'Repositories not looked at' }));
+    // Including every one apart is the fold's press, and the next look takes them by name, asked for this workspace (moved
+    // from Updates' own *All 1* and *Include and look (1)*: two presses now, each saying what it does).
+    await userEvent.click(within(repositoryMain()).getByText("1 repository with a checkout here holds no branch of Daoris's, and is not listed"));
+    const apart = within(within(repositoryMain()).getByRole('group', { name: 'Repositories not listed' }));
     expect(apart.getByLabelText('game')).toBeInTheDocument();
     expect(apart.queryByLabelText('Daoris')).toBeNull();
     expect(apart.queryByLabelText('Daoris.Plugins')).toBeNull();
     await userEvent.click(apart.getByLabelText('All 1'));
-    await userEvent.click(apart.getByRole('button', { name: 'Include and look (1)' }));
+    await userEvent.click(apart.getByRole('button', { name: 'Include (1)' }));
+    await userEvent.click(updates.getByRole('button', { name: 'Look again' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC_PLAN',
-      expect.objectContaining({ payload: { all: true, workspace: 'aurora' } }));
+      expect.objectContaining({ payload: { also: ['game'], workspace: 'aurora' } }));
 
     // The press is asked for this workspace too, and names only its own rows.
     await userEvent.click(await updates.findByRole('button', { name: 'Bring up to date (1)' }));
@@ -787,7 +798,7 @@ describe("a workspace's page (UX6g)", () => {
     await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
     const forge = within(await screen.findByRole('region', { name: 'Updates' }));
     expect(await forge.findByText(/A look fetches the 1 repository that holds a branch of Daoris's/)).toBeInTheDocument();
-    expect(forge.getByText("1 other repository with a checkout here holds no branch of Daoris's")).toBeInTheDocument();
+    expect(await within(repositoryMain()).findByText("1 repository with a checkout here holds no branch of Daoris's, and is not listed")).toBeInTheDocument();
     expect(forge.getByRole('button', { name: 'Look for updates' })).toBeInTheDocument();
     expect(forge.queryByRole('group', { name: 'engine' })).toBeNull();
   });

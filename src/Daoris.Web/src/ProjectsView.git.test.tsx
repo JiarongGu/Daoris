@@ -352,6 +352,8 @@ describe("a repository's Branches and History tabs", () => {
     expect(engine.compareDocumentPosition(cleanUp) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
     // The game is apart, and the other workspace's row is not this tab's.
+    // Said once on the tab, not again under Updates (UX6h2b3).
+    expect(screen.getAllByText(/with a checkout here holds? no branch of Daoris's/)).toHaveLength(1);
     await userEvent.click(within(repositoryMain()).getByText("1 repository with a checkout here holds no branch of Daoris's, and is not listed"));
     const apart = within(within(repositoryMain()).getByRole('group', { name: 'Repositories not listed' }));
     expect(apart.queryByLabelText('kiln')).toBeNull();
@@ -361,6 +363,12 @@ describe("a repository's Branches and History tabs", () => {
     const game = await within(repositoryMain()).findByRole('region', { name: "game's branches" });
     expect(within(game).getByRole('list', { name: 'Yours (2)' })).toBeInTheDocument();
     expect(asked('GIT_BRANCHES').map(([, , request]) => request.payload)).toEqual([{ workspace: 'aurora' }, { repository: 'game', workspace: 'aurora' }]);
+
+    // One fold (UX6h2b3): Updates lists nothing apart of its own, and its look takes the game the fold included.
+    const updates = within(screen.getByRole('region', { name: 'Updates' }));
+    expect(updates.queryByText(/with a checkout here/)).toBeNull();
+    await userEvent.click(updates.getByRole('button', { name: 'Look for updates' }));
+    expect(asked('TREES_SYNC_PLAN').map(([, , request]) => request.payload)).toEqual([{ also: ['game'], workspace: 'aurora' }]);
 
     // Each group's heading is the door to its repository's page.
     await userEvent.click(within(repositoryMain()).getByRole('button', { name: 'Open engine' }));

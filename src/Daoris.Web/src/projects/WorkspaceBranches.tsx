@@ -1,10 +1,26 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, CheckField, Prose } from '../ui';
 import { type GitRead, Nothing, Waiting } from './RepositoryGit';
 
 /** Groups drawn before the rest are one press away, as a list's *Yours* are (the built-in Git design §2.2). */
 export const GROUPS_SHOWN = 5;
+
+/** The repositories apart that the person included, held by the page that draws the fold and the look (UX6h2b3). */
+export type Inclusion = { included: readonly string[]; include: (more: readonly string[]) => void };
+
+/**
+ * **The fold's include, held by the Branches part** (UX6h2b3, D150): the one place a workspace's repositories apart are
+ * included, so the same set draws their groups here and is taken by *Updates*' next look. A context, since the groups'
+ * holder sits between the part and the fold. Drawn with none, the fold keeps its own set.
+ */
+export const InclusionContext = createContext<Inclusion | null>(null);
+
+/** The Branches part's set of included repositories, in the order they were included. */
+export function useInclusion(): Inclusion {
+  const [included, setIncluded] = useState<readonly string[]>([]);
+  return { included, include: (more) => setIncluded((was) => [...new Set([...was, ...more])]) };
+}
 
 /**
  * A workspace's repositories as its Branches tab reads them (D112): those holding a branch of Daoris's, in the driver's order,
@@ -21,7 +37,8 @@ export type WorkspaceGroups = { held: readonly string[]; apart: readonly string[
  * @remarks
  * **A molecule**: the read arrives as a prop, and each group's list is drawn by its holder (`group`), called only for a group
  * that shows, so a hidden or apart repository asks nothing: not its branches, not its sessions' titles. What is included is
- * the page's state and not remembered; it is a local read, unlike the look below, which reaches origin.
+ * the page's state and not remembered. **It is the one include** (UX6h2b3): the Branches part holds it (`InclusionContext`),
+ * and *Updates*' next look takes the same repositories, so the page says its repositories apart once, not twice.
  */
 export function WorkspaceBranches({ workspace, read, group, onOpen }: {
   workspace: string;
@@ -33,7 +50,11 @@ export function WorkspaceBranches({ workspace, read, group, onOpen }: {
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const [included, setIncluded] = useState<readonly string[]>([]);
+  // The page's set where it holds one (UX6h2b3); its own where it does not, as a molecule drawn alone.
+  const own = useState<readonly string[]>([]);
+  const shared = useContext(InclusionContext);
+  const included = shared ? shared.included : own[0];
+  const include = (more: readonly string[]) => (shared ? shared.include(more) : own[1]((was) => [...was, ...more]));
   const groups = useRef<HTMLDivElement>(null);
   // The group whose door takes the focus once it is drawn: the first a press brought.
   const focusOn = useRef<string | null>(null);
@@ -74,7 +95,7 @@ export function WorkspaceBranches({ workspace, read, group, onOpen }: {
           apart={left}
           onInclude={(ticked) => {
             focusOn.current = left.find((repository) => ticked.includes(repository)) ?? null;
-            setIncluded((was) => [...was, ...ticked]);
+            include(ticked);
           }}
         />
       )}
@@ -104,8 +125,8 @@ function Group({ repository, onOpen, children }: { repository: string; onOpen: (
 
 /**
  * The repositories with a checkout here that hold no branch of Daoris's (D112): listed apart, folded, and drawn only once the
- * person ticks them, each or all, and includes them. The look's own list apart (`settings/Sync`) is the same shape, with its
- * own words, since including there reaches origin.
+ * person ticks them, each or all, and includes them. On a workspace's tab it is the only list apart (UX6h2b3): *Updates*
+ * draws none of its own there, and its look takes what is included here.
  */
 function ApartFold({ apart, onInclude }: { apart: readonly string[]; onInclude: (repositories: readonly string[]) => void }) {
   const { t } = useTranslation();

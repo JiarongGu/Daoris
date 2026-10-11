@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../i18n';
-import { WorkspaceBranches } from './WorkspaceBranches';
+import { InclusionContext, WorkspaceBranches } from './WorkspaceBranches';
 
 // The branch list in a workspace's Branches tab (UX6h2b2, the built-in Git design §2.2, D112): a molecule, each state reached
 // by its props. Each repository holding a branch of Daoris's is a group headed by its door, folded after five; the others
@@ -95,6 +95,35 @@ describe("a workspace's Branches tab's list", () => {
     expect(groups()).toEqual(['api', 'game', 'tools', 'site']);
     expect(screen.queryByRole('group', { name: 'Repositories not listed' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Open game' })).toHaveFocus();
+  });
+
+  /**
+   * UX6h2b3: the fold is the one place a workspace's repositories apart are included, so its include is held by the Branches
+   * part and handed up, where *Updates*' next look reads it. A held set draws its groups, and a press hands the ticked ones up.
+   */
+  it('hands what it includes to the page that holds it, and draws the groups that page says are included', async () => {
+    const { group } = holder();
+    const include = vi.fn();
+    const { rerender } = render(
+      <InclusionContext.Provider value={{ included: [], include }}>
+        <WorkspaceBranches workspace="work" read={read(['api'], ['game', 'tools'])} group={group} onOpen={() => {}} />
+      </InclusionContext.Provider>,
+    );
+    await userEvent.click(screen.getByText("2 repositories with a checkout here hold no branch of Daoris's, and are not listed"));
+    const apart = within(screen.getByRole('group', { name: 'Repositories not listed' }));
+    await userEvent.click(apart.getByLabelText('tools'));
+    await userEvent.click(apart.getByRole('button', { name: 'Include (1)' }));
+    expect(include).toHaveBeenCalledWith(['tools']);
+    // Nothing is drawn until the holder says so: the set is the holder's.
+    expect(groups()).toEqual(['api']);
+
+    rerender(
+      <InclusionContext.Provider value={{ included: ['tools'], include }}>
+        <WorkspaceBranches workspace="work" read={read(['api'], ['game', 'tools'])} group={group} onOpen={() => {}} />
+      </InclusionContext.Provider>,
+    );
+    expect(groups()).toEqual(['api', 'tools']);
+    expect(screen.getByText("tools's list, included")).toBeInTheDocument();
   });
 
   it('says it in 中文', async () => {
