@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- Ask Daoris can now take you to one plugin on the Plugins page, by its id, or to one of Daoris's own plugins you have not
+  installed; it says so when a plugin is not on this machine, naming the ones that are.
 - A session's notes about its own background work (its turn ending while it runs, the work ending, or a wait that could not
   be read) now read in your language; the work's names stay as they are.
 - A quest you marked done now reads in your language where its note is shown (the quest's page, a session's timeline and
