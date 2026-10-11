@@ -26,6 +26,9 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [InlineData("across", "game", null, "write-to engine --clear", "daoris driver across game write-to engine --clear", "no longer write into `engine`")]
     [InlineData("cap", null, null, "3", "daoris driver cap 3", "at most 3 sessions at once")]
     [InlineData("adapter", null, null, "claude-code-acp", "daoris driver adapter claude-code-acp", "`claude-code-acp`")]
+    // TOOL4l-b: how long an account cools when its limit names no time, as `daoris driver cooloff` takes it.
+    [InlineData("cooloff", null, null, "90", "daoris driver cooloff 90", "cools for 90 minutes")]
+    [InlineData("cooloff", null, null, "1", "daoris driver cooloff 1", "cools for 1 minute before")]
     // HELP10: a quest its strikes parked, started again as the drawer's Retry and `daoris driver retry` do, `#` or not.
     [InlineData("retry", "q1a2b3c4", null, null, "daoris driver retry q1a2b3c4", "`#q1a2b3c4` may be started again")]
     [InlineData("retry", "#q1a2b3c4", null, null, "daoris driver retry q1a2b3c4", "what already happened is still in the records")]
@@ -419,6 +422,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
             ("language", null, "work", "zh"), ("review", "engine", null, "none"), ("opinion", "engine", null, "none"), ("intake", null, null, "off"),
             ("helper", null, null, "claude-code"), ("strikes", null, null, "0"), ("retry", "q1a2b3c4", null, null),
             ("timeout", null, null, "30"), ("notify", null, null, "on"), ("cap", null, null, "1"), ("adapter", null, null, "claude-code"),
+            ("cooloff", null, null, "90"),
         ];
 
         Assert.Equal(new HelpSettingProposals().Doors, samples.Select(sample => sample.Door));
@@ -446,6 +450,8 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [InlineData("across", "engine", null, "peek", "`across` sets `read on|off|--clear` or `write-to <other> [--clear]`")]
     [InlineData("cap", null, null, "0", "`cap 0` is not a change the driver makes")]
     [InlineData("adapter", null, null, "gpt-agent", "no agent `gpt-agent`")]
+    [InlineData("cooloff", null, null, "0", "`cooloff 0` is not a change the driver makes")]
+    [InlineData("cooloff", null, null, "soon", "`cooloff soon` is not a change the driver makes")]
     // HELP10: a quest id a helper can invent, or one not parked, which forgiven would run past its strikes (D110).
     // SESSUX1b: or one no stop of the person's holds; the refusal names what the last look parked and what it held.
     [InlineData("retry", "q9none00", null, null, "`#q9none00` is neither parked nor held by your stop on this machine")]

@@ -15,12 +15,12 @@ public sealed partial class HelpProposalBox
     /// <summary>
     /// The doors a setting may name, as the CLI's verbs spell them, in the order the driver's <c>HelpSettingProposals</c>
     /// lists them — every <c>daoris driver</c> verb but <c>list</c> (HELP9, D110; <c>retry</c> since HELP10; <c>standing</c>
-    /// since KNOWUSE1b; <c>language</c> since LANG1c2; <c>review</c> since REVIEWENV1a; <c>opinion</c> since XAGENT1a).
+    /// since KNOWUSE1b; <c>language</c> since LANG1c2; <c>review</c> since REVIEWENV1a; <c>opinion</c> since XAGENT1a; <c>cooloff</c> since TOOL4l-b).
     /// </summary>
     public static readonly IReadOnlyList<string> Doors =
     [
         "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "standing", "language", "review", "opinion",
-        "intake", "helper", "strikes", "retry", "timeout", "notify", "cap", "adapter",
+        "intake", "helper", "strikes", "retry", "timeout", "notify", "cap", "adapter", "cooloff",
     ];
 
     /// <summary>The flags a review's words may carry, as <c>daoris driver review</c> takes them (REVIEWENV1a).</summary>
@@ -119,6 +119,11 @@ public sealed partial class HelpProposalBox
                 return int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var cap) && cap >= 1
                     ? null
                     : "`cap` is a whole number, 1 or more: how many sessions run at once.";
+            case "cooloff":
+                // TOOL4l-b (D125 §6): the default cool-off, as `daoris driver cooloff` takes it; under a minute would spin.
+                return int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var cool) && cool >= 1
+                    ? null
+                    : "`cooloff` is a whole number of minutes, 1 or more: how long an account cools when its limit names no time.";
             case "adapter":
                 return string.IsNullOrWhiteSpace(value) || Word(value, "an agent") is not null
                     ? "`adapter` is set to an agent, one word, as `daoris agent list` names it."
