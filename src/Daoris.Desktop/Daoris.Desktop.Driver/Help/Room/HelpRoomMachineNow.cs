@@ -20,6 +20,7 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
         Waiting = [.. sources.Snapshot.Active
             .Where(session => SessionGroups.WaitsOnYou(session.Id, session.State, session.Answer) && session.Repository != HelpRoom.Repository)
             .Select(session => new HelpWaitingSession(session.Id, session.Repository) { Ask = session.Ask })],
+        Sessions = sources.Sessions is { } look ? Placed(look) : null,
         Asks = sources.Asks,
         Plugins = [.. sources.Plugins.Plugins.Select(entry =>
             new HelpPlugin(entry.Manifest.Id, entry.Enabled, entry.Manifest.Hooks?.Points ?? [])
@@ -44,6 +45,30 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
         Browser = sources.Browser is { } files ? new HelpBrowser(files.Browser, files.Links, files.Extensions, files.Favorites) : null,
     };
 
+    /// <summary>
+    /// The most ended sessions the room lists by id (SESSUX1h3): enough to name one to archive or delete from the newest, short
+    /// enough that the room stays short for a machine with hundreds; the count says how many more.
+    /// </summary>
+    internal const int EndedListed = 10;
+
+    /// <summary>
+    /// This machine's sessions as the Sessions list places them (SESSUX1h3): one rule, <see cref="SessionGroups.Read"/>, less Ask
+    /// Daoris's own conversations and a teammate's, which this machine does not act on; archived ones are in the list's own
+    /// group, so in no count here. The ended come newest first, as the list orders them.
+    /// </summary>
+    private static HelpSessions Placed(SessionLook look)
+    {
+        var records = look.Records.GroupBy(record => record.Id, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
+        var rows = SessionGroups.Read(look)
+            .Where(row => !row.Teammate && records.TryGetValue(row.Session, out var record) && record.Repository != HelpRoom.Repository)
+            .ToList();
+        int In(string group) => rows.Count(row => row.Group == group);
+        var ended = rows.Where(row => row.Group == SessionGroup.Ended).ToList();
+        return new HelpSessions(
+            In(SessionGroup.You), In(SessionGroup.Review), In(SessionGroup.Working), In(SessionGroup.Later), ended.Count,
+            [.. ended.Take(EndedListed).Select(row => new HelpEndedSession(row.Session, records[row.Session].Repository))]);
+    }
+
     public string Render(HelpMachine machine)
     {
         var text = new StringBuilder();
@@ -61,6 +86,24 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
         text.Append("- Sessions waiting on the person: "
             + (machine.Waiting.Count > 0 ? string.Join(", ", machine.Waiting.Select(WaitingLine)) : "none")
             + ".\n");
+        // SESSUX1h3: the Sessions list's groups, and the ended by id, so an archive or a delete names one it was shown.
+        if (machine.Sessions is { } sessions)
+        {
+            text.Append("- This machine's sessions by the Sessions list's groups, archived ones and Ask Daoris's own not counted: "
+                + $"{sessions.You} waiting on you, {sessions.Review} to review, {sessions.Working} working, "
+                + $"{sessions.Later} resuming later, {sessions.Ended} ended.\n");
+            var more = sessions.Ended - sessions.Listed.Count;
+            text.Append("- Ended sessions, newest first: "
+                + (sessions.Listed.Count > 0
+                    ? string.Join(", ", sessions.Listed.Select(ended => $"`{ended.Id}` (in `{ended.Repository}`)")) + (more > 0 ? $", and {more} more" : "")
+                    : "none")
+                + ".\n");
+        }
+        else
+        {
+            text.Append("- This machine's sessions by the Sessions list's groups: not read.\n");
+        }
+
         // HELP10: by id and repository, so a retry names one the quest's page would offer Try again on.
         text.Append("- Quests parked by their failed sessions, at the driver's last look: "
             + (machine.Parked.Count > 0
@@ -165,6 +208,9 @@ public sealed partial record HelpMachine
     /// </summary>
     public IReadOnlyList<HelpWaitingSession> Waiting { get; init; } = [];
 
+    /// <summary>This machine's sessions by the Sessions list's groups, and the ended ones by id (SESSUX1h3); null where none was read.</summary>
+    public HelpSessions? Sessions { get; init; }
+
     /// <summary>How many asks wait for the person's answer.</summary>
     public int Asks { get; init; }
 
@@ -191,6 +237,14 @@ public sealed record HelpWaitingSession(string Id, string Repository)
     /// <summary>The ask an intake answers (D65 §1b), or null for every other session.</summary>
     public string? Ask { get; init; }
 }
+
+/// <summary>This machine's sessions counted by the Sessions list's groups (SESSUX1h3), archived ones and Ask Daoris's own aside.</summary>
+/// <param name="Ended">Every ended session counted, listed or not.</param>
+/// <param name="Listed">The newest ended ones, at most <see cref="HelpRoomMachineNow.EndedListed"/>, by id and where each ran.</param>
+public sealed record HelpSessions(int You, int Review, int Working, int Later, int Ended, IReadOnlyList<HelpEndedSession> Listed);
+
+/// <summary>An ended session, as the room lists it (SESSUX1h3): by id and repository, so an archive or a delete names one it was shown.</summary>
+public sealed record HelpEndedSession(string Id, string Repository);
 
 /// <summary>Daoris's browser as the room says it (HELP10): which one, where links open, extensions, and the pages it keeps.</summary>
 public sealed record HelpBrowser(string Browser, string Links, string Extensions, IReadOnlyList<string> Favorites);

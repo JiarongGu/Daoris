@@ -24,6 +24,8 @@ public sealed class HelpRoomGoldenTests
         Cap = 4,
         // ENTRY1f2: a session waiting on the person, by id and repository.
         Waiting = [new("s9c0d1e2", "console-ui")],
+        // SESSUX1h3: past the cap, so the golden shows the "and N more" too.
+        Sessions = new(1, 1, 2, 1, 12, [.. Enumerable.Range(1, 10).Select(n => new HelpEndedSession($"s{n}e0f1a2", n % 2 == 0 ? "engine" : "console-ui"))]),
         Asks = 2,
         Repositories =
         [

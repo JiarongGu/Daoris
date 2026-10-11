@@ -114,11 +114,11 @@ public static class HelpRoom
         IReadOnlyList<HarnessReport> roster, Func<string, string?> product, int asks,
         IReadOnlyList<AskView>? standing = null, PluginCatalog? plugins = null, IReadOnlyList<LandedBranch>? landed = null,
         IReadOnlyList<PluginOffer>? offers = null, IReadOnlyList<ParkedQuest>? parked = null, HelpBrowserFacts? browser = null,
-        IReadOnlyList<HeldQuest>? held = null)
+        IReadOnlyList<HeldQuest>? held = null, SessionLook? sessions = null)
     {
         var sources = new HelpMachineSources(
             config, snapshot, lines, roster, product, asks, standing ?? [], plugins ?? PluginCatalog.None, landed ?? [], offers ?? [],
-            parked ?? [], browser) { Held = held ?? [] };
+            parked ?? [], browser) { Held = held ?? [], Sessions = sessions };
         return HelpRoomSections.All.Aggregate(new HelpMachine(), (machine, section) => section.Describe(machine, sources));
     }
 
@@ -172,4 +172,7 @@ internal sealed record HelpMachineSources(
 {
     /// <summary>The quests the loop's last look held by the person's stop (SESSUX1b).</summary>
     public IReadOnlyList<HeldQuest> Held { get; init; } = [];
+
+    /// <summary>One look at the sessions as the Sessions list takes it (SESSUX1h3); null where none was read.</summary>
+    public SessionLook? Sessions { get; init; }
 }
