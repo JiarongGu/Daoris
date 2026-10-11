@@ -193,6 +193,38 @@ public sealed class BranchTidyingTests : IDisposable
         Assert.Contains($"\"why\":\"unread\",\"cause\":\"{cause}\"", Assert.Single(LogLines()), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A pass that threw is held unread with the code <c>pass</c> alone (AUTOTIDY1a3): the exception's message can carry a path, so
+    /// neither it nor the exception's type is logged.
+    /// </summary>
+    [Fact]
+    public void A_pass_that_threw_logs_the_pass_code_and_no_message()
+    {
+        using var log = new MachineLog(_home, "driver", () => _now);
+        var held = BranchTidying.Threw("engine", "default", new IOException($"cannot read {_home}"));
+
+        new BranchTidying(_home).Said([held], log);
+
+        var line = Assert.Single(LogLines());
+        Assert.Contains($"\"why\":\"unread\",\"cause\":\"{TidyCause.Pass}\"", line, StringComparison.Ordinal);
+        Assert.DoesNotContain(Path.GetFileName(_home), line, StringComparison.Ordinal);
+        Assert.DoesNotContain("IOException", line, StringComparison.Ordinal);
+    }
+
+    /// <summary>An item the judgement could not read (git gave no answer for its tree, tip or log) logs <c>judged</c> (AUTOTIDY1a3).</summary>
+    [Fact]
+    public void An_item_the_judgement_could_not_read_logs_the_judged_code()
+    {
+        using var log = new MachineLog(_home, "driver", () => _now);
+        var unread = Item("daoris/s-1a2b3c4d", HomeTree) with { Kind = SweepKind.Unlanded, Detail = $"git could not tell: {_home}", Unread = true };
+
+        new BranchTidying(_home).Said([Pass("engine", new SweepResult(unread, false, "it changed since the list, and is kept"))], log);
+
+        var line = Assert.Single(LogLines());
+        Assert.Contains($"\"why\":\"unread\",\"cause\":\"{TidyCause.Judged}\"", line, StringComparison.Ordinal);
+        Assert.DoesNotContain(Path.GetFileName(_home), line, StringComparison.Ordinal);
+    }
+
     /// <summary>A why that is not <c>unread</c> carries no cause, and a keep with none logs none (a field added, the old read kept).</summary>
     [Fact]
     public void Another_why_logs_no_cause()
