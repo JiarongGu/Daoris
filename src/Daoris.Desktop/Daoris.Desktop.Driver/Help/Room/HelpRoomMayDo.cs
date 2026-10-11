@@ -64,7 +64,8 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         }
 
         text.Append("`ask_propose`, so that repository's agent does it with its own\n");
-        text.Append("tools, or tell the person to open a conversation in that repository (Sessions → Start a session).\n");
+        text.Append("tools, or tell the person to open a conversation in that repository with New conversation (Ctrl+N),\n");
+        text.Append("or take them there with `go_propose`, the repository and their words filled.\n");
         text.Append("Where Daoris itself has a door for what they want, name it first: session branches whose work landed,\n");
         text.Append("and branches a landing made whose pull request's work reached the line (a squash merge included),\n");
         text.Append("are cleaned up under the workspace's page → Branches → Session branches. When the family's knowledge and quests\n");

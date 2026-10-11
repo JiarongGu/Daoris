@@ -97,7 +97,9 @@ const same = (one: HelpPlace, other: HelpPlace) =>
 export const PLACE_PARTS: readonly { within: string; part: string }[] = [
   // ENTRY1b (D161's ENTRY1 note): what waits on the person below Sessions and Quests, a group of the list (`GROUP_PARTS`).
   // Overview has no part, since what waits on the person leads it.
-  { within: 'sessions', part: 'waiting' }, { within: 'sessions', part: 'review' },
+  // NEW1d-a (D162's note): New conversation, the composer; `placeDoor` opens it from NEW1d-b, until when it is no group's
+  // part and a go to it is not opened.
+  { within: 'sessions', part: 'waiting' }, { within: 'sessions', part: 'review' }, { within: 'sessions', part: 'new' },
   { within: 'quests', part: 'asks' }, { within: 'quests', part: 'held' },
   // HELPSETUP1: a repository's Setup (UX6f, D150 §4.2), where its own values are set; a go names no repository.
   { within: 'projects', part: 'add' }, { within: 'projects', part: 'import' }, { within: 'projects', part: 'setup' },

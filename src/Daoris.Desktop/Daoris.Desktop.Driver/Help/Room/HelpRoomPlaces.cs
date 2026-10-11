@@ -38,6 +38,9 @@ internal sealed class HelpRoomPlaces : IHelpRoomSection
         // go opens the drawer with what Ask Daoris knows filled; the driver refuses a workspace anywhere else, or as a folder.
         text.Append("`add` and `import` may name the go's `workspace`, one this room lists or a new name:\n");
         text.Append("the drawer opens with it filled, and the person picks the folder there and registers it. Never name a folder.\n");
+        // NEW1d-a (D162's note): New conversation's composer opens with what Ask Daoris knows, the person reading and sending it.
+        text.Append("`sessions`'s `new` may name the go's `repository`, as this room's registry lists it with a checkout here, and its `sentence`:\n");
+        text.Append("the composer opens with them filled, and the person reads and sends them. With neither it opens empty.\n");
         // ENTRY1b (D161's ENTRY1 note): a quest or a session keeps its own conversation, so a go takes the person to the
         // group that waits on them there and leaves the one to open to them. ENTRY1f1 (its ENTRY1f note): a go on Quests may
         // name the one, as the room lists it, and the driver judges it against the machine's records. ENTRY1f2: on Sessions

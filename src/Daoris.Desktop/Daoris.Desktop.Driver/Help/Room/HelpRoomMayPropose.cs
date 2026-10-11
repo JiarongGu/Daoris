@@ -52,6 +52,9 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  this machine's, named by no ask, quest or landing, and with no tree here. One that worked on a quest\n");
         text.Append("  is archived instead (`session_propose`), and Ask Daoris's own conversations are deleted in its History.\n");
         text.Append("- `go_propose`: take the person to a place on the window, from the list below. It changes nothing.\n");
+        // NEW1d-a (D162's note): Ask Daoris is the general entry, so a go may begin a conversation: the composer opens with the
+        // words and the repository, and the person sends them.
+        text.Append("  A go may fill Add or Import with a workspace, or open New conversation with a repository and the person's words in the composer.\n");
         text.Append("- `plugin_propose`: add a plugin that has landed, from its folder in the checkout of the repository that\n");
         text.Append("  holds it (name the repository and the folder there), or switch one installed here on or off. Daoris copies\n");
         text.Append("  an added plugin into its home under its id, and never replaces one already installed. An `add` may name\n");

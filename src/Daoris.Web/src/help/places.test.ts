@@ -16,7 +16,7 @@ describe('the places a go may name', () => {
     expect(PLACE_VIEWS).toEqual(['overview', 'sessions', 'quests', 'projects', 'map', 'knowledge', 'agents', 'plugins', 'settings']);
     expect(PLACE_DOMAINS).toEqual(['start', 'appearance', 'ai', 'driver', 'browser', 'logs']);
     expect(PLACE_PARTS.map(({ within, part }) => `${within}/${part}`)).toEqual([
-      'sessions/waiting', 'sessions/review', 'quests/asks', 'quests/held',
+      'sessions/waiting', 'sessions/review', 'sessions/new', 'quests/asks', 'quests/held',
       'projects/add', 'projects/import', 'projects/setup', 'projects/branches', 'projects/history',
       'projects/workspace-details', 'projects/workspace-branches', 'projects/workspace-workflow',
       'projects/workspace-setup', 'projects/workspace-defaults', 'projects/workspace-remote',

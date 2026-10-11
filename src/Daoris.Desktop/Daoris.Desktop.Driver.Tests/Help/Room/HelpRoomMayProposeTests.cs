@@ -68,6 +68,8 @@ public sealed class HelpRoomMayProposeTests
         Assert.Contains("It changes one row of this machine's registry and touches no file.", proposes);
         Assert.Contains("Adding or importing a repository needs a folder, which stays the person's pick: `go_propose` opens", proposes);
         Assert.Contains("Repositories' `add` or `import` with the workspace filled, and the person picks the folder there.", proposes);
+        // NEW1d-a: a go may open New conversation with a repository and words.
+        Assert.Contains("or open New conversation with a repository and the person's words in the composer.", proposes);
         Assert.DoesNotContain("the person's pick in Repositories.", proposes);
     }
 

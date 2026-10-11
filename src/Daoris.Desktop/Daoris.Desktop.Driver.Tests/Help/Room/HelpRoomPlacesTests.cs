@@ -45,6 +45,10 @@ public sealed class HelpRoomPlacesTests
         Assert.Contains("`add` and `import` may name the go's `workspace`, one this room lists or a new name:", places);
         Assert.Contains("the drawer opens with it filled, and the person picks the folder there and registers it.", places);
         Assert.Contains("Never name a folder.", places);
+        // NEW1d-a (D162's note): New conversation is a part of `sessions`, which may carry a repository and words.
+        Assert.Contains("`new` (New conversation)", places);
+        Assert.Contains("`sessions`'s `new` may name the go's `repository`, as this room's registry lists it with a checkout here, and its `sentence`:", places);
+        Assert.Contains("the composer opens with them filled, and the person reads and sends them. With neither it opens empty.", places);
     }
 
     /// <summary>
@@ -84,7 +88,7 @@ public sealed class HelpRoomPlacesTests
     {
         var places = new HelpRoomPlaces().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("- Parts of `sessions`: `waiting` (Waiting on you), `review` (To review).", places);
+        Assert.Contains("- Parts of `sessions`: `waiting` (Waiting on you), `review` (To review), `new` (New conversation).", places);
         Assert.Contains("- Parts of `quests`: `asks` (Asks), `held` (Waiting on you).", places);
         Assert.Contains("A part of `sessions` or `quests` brings that group of its list into view and names no session or quest", places);
         Assert.Contains("`overview` has no part", places);
