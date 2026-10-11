@@ -147,7 +147,7 @@
   "projects.git.workspace.apart.summary": "{{count}} repository with a checkout here holds no branch of Daoris's, and is not listed",
   "projects.git.workspace.apart.summary_other": "{{count}} repositories with a checkout here hold no branch of Daoris's, and are not listed",
   "projects.git.workspace.apart.label": "Repositories not listed",
-  "projects.git.workspace.apart.body": "Their branches are read only once you include them: choose each one, or all of them.",
+  "projects.git.workspace.apart.body": "Their branches are read, and Updates looks at them, only once you include them: choose each one, or all of them.",
   "projects.git.workspace.apart.all": "All {{count}}",
   "projects.git.workspace.apart.include": "Include ({{count}})",
   "projects.git.history.list": "{{repository}}'s history on {{branch}}",

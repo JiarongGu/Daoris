@@ -147,7 +147,7 @@
   "projects.git.workspace.apart.summary": "{{count}} 个有检出的仓库不持有 Daoris 的分支，没有列出",
   "projects.git.workspace.apart.summary_other": "{{count}} 个有检出的仓库不持有 Daoris 的分支，没有列出",
   "projects.git.workspace.apart.label": "未列出的仓库",
-  "projects.git.workspace.apart.body": "只有纳入之后才会读取它们的分支：逐个勾选，或全部勾选。",
+  "projects.git.workspace.apart.body": "只有纳入之后才会读取它们的分支，“更新”也才会查看它们：逐个勾选，或全部勾选。",
   "projects.git.workspace.apart.all": "全部 {{count}} 个",
   "projects.git.workspace.apart.include": "纳入（{{count}}）",
   "projects.git.history.list": "{{repository}} 在 {{branch}} 上的历史",

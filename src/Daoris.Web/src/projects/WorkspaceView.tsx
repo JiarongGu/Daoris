@@ -21,6 +21,7 @@ import { useHistoryActs } from '../work/historyActs';
 import { WorkflowTab } from '../workflow/WorkflowTab';
 import { KeptHistory } from './KeptHistory';
 import { WorkspaceBranchGroups } from './RepositoryGitView';
+import { InclusionContext, useInclusion } from './WorkspaceBranches';
 import { WorkspaceTidied } from './WorkspaceTidied';
 import type { WorkspaceSection, WorkspaceTab } from './tabs';
 import { accountsHere, hostOf } from './workspace';
@@ -218,6 +219,9 @@ function DetailsPart({ workspace, repositories, notify, onOpenRepository, onOpen
  * **The groups are Git's reads** (`WorkspaceBranchGroups`): read while the tab shows, each heading the door to its
  * repository's page, as Details' names are.
  *
+ * **The repositories apart are said once** (UX6h2b3): the groups' fold is the one include, held here and handed to the groups
+ * and to *Updates*, which draws no list apart of its own; its look takes what holds Daoris's branches and what the fold included.
+ *
  * **Everything here is this workspace's** (BRSCOPE1, WSP5). The clean-up's list and the machine's reading of which
  * checkouts hold Daoris's branches are the machine's answers, read once for every page, and filtered to it. The look and
  * the press are asked for it, so the driver fetches and judges its checkouts alone, and what the look leaves apart is
@@ -251,8 +255,12 @@ function BranchesPart({ workspace, notify, onOpenRepository, onOpenBranch, onOpe
     : undefined;
   const answered = looked && Array.isArray(looked.lines) && Array.isArray(looked.rebases) && Array.isArray(looked.deletes);
 
+  // The groups' fold is the one include (UX6h2b3): what it included is drawn there and taken by the next look below.
+  const inclusion = useInclusion();
+  const included = [...inclusion.included];
+
   return (
-    <>
+    <InclusionContext.Provider value={inclusion}>
       <WorkspaceBranchGroups workspace={workspace} onOpenRepository={onOpenRepository} onOpenBranch={onOpenBranch} onOpenHistory={onOpenHistory} />
       <WorkspaceTidied lines={Array.isArray(tidied.data?.lines) ? tidied.data.lines : null} />
       <SweepList
@@ -282,7 +290,8 @@ function BranchesPart({ workspace, notify, onOpenRepository, onOpenBranch, onOpe
                 }
               : undefined}
             scope={Array.isArray(scope) ? mine(scope, workspace) : undefined}
-            included={syncPlan.asked?.include}
+            included={included}
+            apartFolded
             looking={syncPlan.isFetching}
             lookingAt={syncPlan.asked?.count}
             bringing={sync.isPending}
@@ -292,14 +301,14 @@ function BranchesPart({ workspace, notify, onOpenRepository, onOpenBranch, onOpe
               onSuccess: (done) => {
                 notify(t('settings.sync.done', { changed: done.changed, count: only.length }));
                 // Look again, so the list shows what is left, with why — taking what the person included.
-                void syncPlan.look(syncPlan.asked?.include ?? []);
+                void syncPlan.look(included);
               },
               onError: (error) => { if (!stoppedWaiting(error)) failure(notify)(error); },
             })}
           />
         )}
       />
-    </>
+    </InclusionContext.Provider>
   );
 }
 

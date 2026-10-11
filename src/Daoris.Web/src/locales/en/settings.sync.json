@@ -8,6 +8,8 @@
   "settings.sync.nothing": "Everything here is up to date.",
   "settings.sync.scope": "A look fetches the {{count}} repository that holds a branch of Daoris's: a session's, or one a landing made.",
   "settings.sync.scope_other": "A look fetches the {{count}} repositories that hold a branch of Daoris's: a session's, or one a landing made.",
+  "settings.sync.scopeIncluded": "A look fetches the {{count}} repository that holds a branch of Daoris's, or that you included.",
+  "settings.sync.scopeIncluded_other": "A look fetches the {{count}} repositories that hold a branch of Daoris's, or that you included.",
   "settings.sync.scopeNone": "No repository here holds a branch of Daoris's yet.",
   "settings.sync.noneHeld": "No repository here holds a branch of Daoris's, so there was nothing of Daoris's to look at. The others are listed below: choose one to include it.",
   "settings.sync.apart.summary": "{{count}} other repository with a checkout here holds no branch of Daoris's",

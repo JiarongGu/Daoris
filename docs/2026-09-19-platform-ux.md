@@ -465,7 +465,8 @@ controls are in the frame design's §3.
   holding a branch of Daoris's, each headed by a door to that repository's page, five shown and the rest behind *Show N
   more*; a fold of the repositories with a checkout here that hold none, each or all included as a group; what the look
   cleaned up on its own (AUTOTIDY1a, D88); then the clean-up and *Updates*, each over this workspace's checkouts alone.
-  The fold's count and *Updates*' own count of the same repositories are said twice on the window: UX6h2b3 owns it.
+  The fold is said once: its include lists a repository's branches and adds it to *Updates*' next look, which draws no
+  fold of its own on this tab (UX6h2b3).
 - **Knowledge: Search and Convergence** (on the frame since FRAME1f, D118 §2; one place since UX6i, D150 §2.2) — a list
   pane and a main area, the pane named *Knowledge* and headed by a two-way choice, *Search · Convergence*, remembered for
   the place and held above the rows as they scroll. Each mode keeps its list, its page and its memory as it had them as a
