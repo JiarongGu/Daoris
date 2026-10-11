@@ -143,6 +143,46 @@ describe("a page's header", () => {
     tall.mockRestore();
     fits.mockRestore();
   });
+
+  /**
+   * HEAD2a (D162 §3, the entry-and-heads design §2): the acts hold still. Above 640 px of the main area the head is a grid of
+   * the title's flexible column and the acts' own, the acts at the title's first line; at 640 px or less they take a row
+   * under the facts. jsdom lays nothing out, so the container-query classes and the order are what is read.
+   */
+  it('puts its acts after the title in order, in a column of their own at the wide main area and a row under it at the narrow', () => {
+    render(
+      <PageHead
+        title="A title long enough to wrap under itself and never move the buttons beside it"
+        facts={['to engine']}
+        acts={<><button type="button">Take</button><button type="button">Hand back</button></>}
+        more={<button type="button">More</button>}
+      />,
+    );
+    const header = screen.getByRole('banner');
+    expect(header).toHaveClass('grid', '@[40rem]/main:grid-cols-[minmax(0,1fr)_auto]', '@[40rem]/main:items-start');
+    const heading = screen.getByRole('heading', { level: 1 });
+    const buttons = screen.getAllByRole('button');
+    expect(buttons.map((b) => b.textContent)).toEqual(['Take', 'Hand back', 'More']);
+    for (const button of buttons) expect(heading.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const acts = buttons[0]!.parentElement!;
+    expect(acts).toContainElement(buttons[2]!);
+    expect(acts).toHaveClass('justify-end', '@[40rem]/main:self-start');
+    expect(acts).not.toHaveClass('flex-wrap');
+  });
+
+  it('keeps an act that folds only above the narrow line, for its caller to say again in the ⋯', () => {
+    render(
+      <PageHead
+        title="A quest"
+        acts={<button type="button">Take</button>}
+        fold={<button type="button">Decline…</button>}
+        more={<button type="button">More</button>}
+      />,
+    );
+    const folded = screen.getByRole('button', { name: 'Decline…' }).parentElement!;
+    expect(folded).toHaveClass('hidden', '@[40rem]/main:contents');
+    expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual(['Take', 'Decline…', 'More']);
+  });
 });
 
 describe("a page's tabs", () => {

@@ -13651,3 +13651,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **XAGENT1g4c — the reviewer's row says whose work it reads** (driver/web; design call first). A reviewer's Sessions row is its own, kind *Second opinion*; say which session's work it reads (the record holds only the opinion's id: the working id on the record or the detail). §9.
 
 **Outcome** 2026-10-12: the parent's call, a join with no record change: the rail asks `GET /api/opinions` only when it lists a reviewer and maps each reviewer to its working session's title; the row's line says *reads {title}* after its kind; off this machine, or with the working session unlisted, nothing is claimed. Grouping under the work is XAGENT1g4d. Detail: D155's XAGENT1g4c note.
+
+## HEAD2a — heads hold their buttons still (2026-10-12, D162)
+
+> - [ ] **HEAD2a — heads hold their buttons still** (web). `PageHead` lays out by the main area's width: a fixed acts column on the title's first line above 640 px, an acts row under the facts at or below it; primary, secondary, ⋯; a quest's *Decline…* folds first. Design §2.
+
+**Outcome** 2026-10-12: `PageHead` is a grid by the main area's container (`@[40rem]/main`): above 640 px the acts are a fixed column at the title's first line, at or below it a right-aligned row under the facts; it takes `acts`, `fold` (shown only above the line, said again in the caller's ⋯) and `more`. The heads' own use is HEAD2b-d. Detail: D162's HEAD2a note.

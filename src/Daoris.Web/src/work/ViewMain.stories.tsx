@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button, Card, Icon, PageHeader } from '../ui';
-import { ViewMain } from './ViewMain';
+import { PageHead, ViewMain } from './ViewMain';
 
 // A view's main area (D118 §3b, §5) in each of its four states, and as a container its page lays out by:
 // the two cards below sit side by side only where the main area itself is wide, whatever the window is.
@@ -64,6 +64,27 @@ export const Narrowed: Story = {
 export const ViewPage: Story = {
   args: { header: <PageHeader title="Overview" description="Is anything sitting, and for how long." /> },
 };
+
+const LONG = 'Make the world-streaming budget a per-frame cap read from the level file, and report each frame that went over it to the engine\'s log';
+
+function HeadAt({ width }: { width: string }) {
+  return (
+    <div className="@container/main max-w-full bg-page p-4" style={{ width }}>
+      <PageHead
+        title={LONG}
+        facts={['to engine', 'from ask #f6d947', 'filed 4h ago']}
+        acts={<><Button variant="primary">Take</Button><Button>Hand back</Button></>}
+        more={<Button aria-label="More">⋯</Button>}
+      />
+    </div>
+  );
+}
+
+/** HEAD2a (D162 §3): a long title wraps under itself and the acts hold still beside its first line (1546 px, the main area wide). */
+export const HeadHoldsStill: Story = { render: () => <HeadAt width="1200px" />, parameters: { layout: 'fullscreen' } };
+
+/** HEAD2a: at 680 px of window (about 596 of main area) the acts take their own right-aligned row under the facts. */
+export const HeadHoldsStillNarrow: Story = { render: () => <HeadAt width="596px" />, parameters: { layout: 'fullscreen' } };
 
 /** Sessions' main area: the tighter gutters its conversation keeps, and a column that follows its tail. */
 export const SessionGutters: Story = { args: { gutters: 'session', header: undefined } };
