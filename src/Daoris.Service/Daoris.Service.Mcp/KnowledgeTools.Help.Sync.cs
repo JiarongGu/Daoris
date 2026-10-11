@@ -17,9 +17,11 @@ public sealed partial class KnowledgeTools
         [Description("Why: what the person asked, such as a pull request that merged. The person decides on this.")]
         string why,
         [Description("The one repository to bring up to date, as Repositories lists it. Omit for every repository with a checkout here.")]
-        string? repository = null)
+        string? repository = null,
+        [Description("The one workspace to look at and bring up to date, as Repositories lists it. Omit for the whole machine.")]
+        string? workspace = null)
     {
         var box = help ?? HelpProposalBox.FromEnvironment();
-        return box.ProposeSync(repository, why, intake?.Session, DateTimeOffset.UtcNow).Message;
+        return box.ProposeSync(repository, why, intake?.Session, DateTimeOffset.UtcNow, workspace).Message;
     }
 }

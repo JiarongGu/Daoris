@@ -34,6 +34,7 @@ public sealed class HelpRoomMayProposeTests
         var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
 
         Assert.Contains("- `sync_propose`: bring repositories up to date after a pull request merged", proposes);
+        Assert.Contains("Name a repository, a workspace\n  to look within, or none for every one with a checkout here.", proposes);
         Assert.Contains("Its card asks the person to look first, which fetches each line as them", proposes);
         Assert.Contains("apply acts on those rows only. Daoris never pushes.", proposes);
     }

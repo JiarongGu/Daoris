@@ -35,6 +35,24 @@ public sealed class HelpSyncProposalTests : HelpProposalBoxFixture
         Assert.Equal(JsonValueKind.Null, Written(every!).GetProperty("target").ValueKind);
     }
 
+    /// <summary>BRSCOPE1b: the workspace the look and the press are scoped to is written; omitted it stays null.</summary>
+    [Fact]
+    public void A_workspace_is_written_trimmed_and_null_when_omitted()
+    {
+        var (named, _) = Box().ProposeSync("engine", "a pull request merged", "h1", Now, " games ");
+        var (none, _) = Box().ProposeSync(null, "a pull request merged", "h1", Now);
+
+        Assert.Equal("games", Written(named!).GetProperty("workspace").GetString());
+        Assert.Equal(JsonValueKind.Null, Written(none!).GetProperty("workspace").ValueKind);
+    }
+
+    [Fact]
+    public void A_workspace_that_is_not_one_word_is_refused_with_nothing_written()
+    {
+        Assert.Contains("A workspace is one word", Box().ProposeSync(null, "a reason", "h1", Now, "two words").Message);
+        Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
+    }
+
     [Fact]
     public void A_repository_that_is_not_one_word_or_no_reason_is_refused_with_nothing_written()
     {

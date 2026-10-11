@@ -12,18 +12,23 @@ public sealed partial class HelpProposalBox
     /// the person's press, and what the press does, are the driver's; here only the shape is checked.
     /// </summary>
     /// <param name="repository">The one repository to bring up to date; null for every one with a checkout here.</param>
-    public (string? Id, string Message) ProposeSync(string? repository, string why, string? session, DateTimeOffset at)
+    /// <param name="workspace">BRSCOPE1b: the one workspace the look and the press are scoped to; null for the whole machine.</param>
+    public (string? Id, string Message) ProposeSync(
+        string? repository, string why, string? session, DateTimeOffset at, string? workspace = null)
     {
         var named = Blank(repository);
+        var circle = Blank(workspace);
         if (string.IsNullOrWhiteSpace(why)) return NoReason;
         if (named is not null && Word(named, "a repository") is { } refused) return (null, $"{Capital(refused)} Nothing was proposed.");
+        if (circle is not null && Word(circle, "a workspace") is { } refusedWorkspace)
+            return (null, $"{Capital(refusedWorkspace)} Nothing was proposed.");
 
         return Write(writer =>
         {
             writer.WriteString("kind", "sync");
             writer.WriteString("door", "sync");
             Nullable(writer, "target", named);
-            writer.WriteNull("workspace");
+            Nullable(writer, "workspace", circle);
             writer.WriteNull("value");
             writer.WriteNull("sentence");
         }, why, session, at);

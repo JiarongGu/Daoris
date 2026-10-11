@@ -382,7 +382,7 @@ installed here switched on or off; since D103 also one of the install's own plug
 branch a landing made, handed to a landing plugin that pushes it and opens the pull request), and since
 HELP10 `browser_propose` (Daoris's browser's settings and favorites, as Settings → Browser sets them) and
 `sync_propose` (bringing repositories up to date after a pull request merged; the driver's card looks first, which
-fetches, and only then offers the press), and since DRIFT1d2 `accept_propose` (the person's yes to a quest a done's
+fetches, and only then offers the press; since BRSCOPE1b an optional one-word `workspace` scopes the look and the press), and since DRIFT1d2 `accept_propose` (the person's yes to a quest a done's
 departure holds, which the card shows with the words each departure relied on), and since ENTRY1d1
 `repository_propose` (a registered repository moved to a workspace by name, as its Manage drawer moves it; never a
 path, since a move needs none), and since SESSUX1h2a `session_propose` (sessions archived or unarchived by id, or every

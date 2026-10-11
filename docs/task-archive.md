@@ -13621,3 +13621,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **AUTOTIDY1a2 — one row per branch kept, and why by code** (driver/web). On the install one branch is kept `unread` seven times in a day: the driver's "once while the reason lasts" resets at each start, and the page lists every line. Show one row per branch and reason (the latest, and since when); log which `unread` cause as a code (no tree git lists, the index, the list, the toplevel, the folders), never the sentence's path. D88's window note of 2026-10-12.
 
 **Outcome** 2026-10-12: `branch.kept` carries a `cause` code (`toplevel`, `refs`, `list`, `folder`, `index`, `folders`) for six `unread` paths, never the sentence's path; the Branches tab groups kept lines by branch, repository, why and cause into one row with "since" and the cause's word (en and zh). `BranchTidyingProcessTests` passed 16/16 at the merge. Two paths are AUTOTIDY1a3's. Detail: D88's AUTOTIDY1a2 note.
+
+## BRSCOPE1b — checkout scope and sync workspace (2026-10-12, D150)
+
+> - [ ] **BRSCOPE1b — checkout scope and sync workspace** (modules/service/driver; after BRSCOPE1a). Share checkout-scope fixtures; carry workspace through sync proposals. D150 notes; three-door proof.
+
+**Outcome** 2026-10-12: `sync_propose` takes an optional one-word workspace; Ask Daoris's sync card refuses one this machine lacks, says its scope, adds `--workspace` to its terminal line and scopes its look and press by it, so the page, the terminal and Ask Daoris scope alike; the modules' test reads the driver tests' `checkout-scope.json`, routed to both gates. Detail: D150's BRSCOPE1b note.

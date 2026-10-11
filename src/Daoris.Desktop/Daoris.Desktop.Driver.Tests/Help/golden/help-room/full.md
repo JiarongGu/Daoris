@@ -83,8 +83,8 @@ present it as the tree.
   Each but `links` holds from the browser's next start.
 - `sync_propose`: bring repositories up to date after a pull request merged, as the workspace's page →
   Branches → Updates does: each line fast-forwarded from `origin`, the branches still at
-  work replayed onto it, the landed branches whose work reached it deleted. Name a repository, or none for
-  every one with a checkout here. Its card asks the person to look first, which fetches each line as them,
+  work replayed onto it, the landed branches whose work reached it deleted. Name a repository, a workspace
+  to look within, or none for every one with a checkout here. Its card asks the person to look first, which fetches each line as them,
   then lists what the press would do; apply acts on those rows only. Daoris never pushes.
 - `accept_propose`: the person's yes to a quest a done's departure holds: it closed done departing from what
   the person required, so the chain's next step and a quest waiting on it wait (`quest_list` marks it held for

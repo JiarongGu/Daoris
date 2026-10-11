@@ -333,28 +333,33 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     /// BRSCOPE1 (WSP5): a look or a press asked for a workspace takes that workspace's checkouts alone, its name matched
     /// without case and a row with none read as the default's, as every door reads a registry row's workspace. Asked for
     /// none, it is the machine's, as before. The install's work workspace looked at every checkout on the machine, another
-    /// circle's included. Read off the registry rows alone, since a look at a real checkout runs git.
+    /// circle's included. Read off the registry rows alone, since a look at a real checkout runs git. BRSCOPE1b: the rows
+    /// are the driver tests' one table, <c>fixtures/checkout-scope.json</c>, which TreesCommand.Checkouts is read against
+    /// too, so the two readers cannot drift apart unseen.
     /// </summary>
     [Fact]
     public void A_look_asked_for_a_workspace_takes_its_own_checkouts_alone()
     {
+        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(
+            WorkspaceRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "checkout-scope.json")));
+        static string? Text(JsonElement row, string name) => row.TryGetProperty(name, out var value) ? value.GetString() : null;
         RepoView[] registry =
         [
-            new("engine", true, "C:/somewhere/engine", "northwind"),
-            new("Daoris", true, "C:/somewhere/Daoris", "family"),
-            new("game", true, "C:/somewhere/game", "Northwind"),
-            new("unrooted", true, null, "northwind"),
-            new("Daoris.Plugins", true, "C:/somewhere/plugins"),
+            .. table.RootElement.GetProperty("registry").EnumerateArray().Select(row => row.TryGetProperty("workspace", out var space)
+                ? new RepoView(Text(row, "repository")!, true, Text(row, "root"), space.GetString()!)
+                : new RepoView(Text(row, "repository")!, true, Text(row, "root"))),
         ];
-        string[] Names(string? repository, string? workspace) =>
-            [.. DriverModule.Checkouts(registry, repository, workspace).Select(each => each.Repository)];
 
-        Assert.Equal(["engine", "game"], Names(null, "northwind"));
-        Assert.Equal(["Daoris"], Names(null, "FAMILY"));
-        Assert.Equal(["Daoris.Plugins"], Names(null, RemoteTarget.DefaultWorkspace));
-        Assert.Empty(Names("Daoris", "northwind"));
-        Assert.Equal(["Daoris", "Daoris.Plugins", "engine", "game"], Names(null, null));
-        Assert.Equal(["game"], Names("GAME", null));
+        var asks = table.RootElement.GetProperty("asks").EnumerateArray().ToList();
+        Assert.True(asks.Count >= 10, $"the table holds its rows: {asks.Count}");
+        foreach (var ask in asks)
+        {
+            var (repository, workspace) = (Text(ask, "repository"), Text(ask, "workspace"));
+            string[] takes = [.. ask.GetProperty("takes").EnumerateArray().Select(name => name.GetString()!)];
+            string[] took = [.. DriverModule.Checkouts(registry, repository, workspace).Select(each => each.Repository)];
+            Assert.True(takes.SequenceEqual(took),
+                $"repository `{repository}`, workspace `{workspace}`: the table takes [{string.Join(", ", takes)}], the modules [{string.Join(", ", took)}]");
+        }
     }
 
     /// <summary>

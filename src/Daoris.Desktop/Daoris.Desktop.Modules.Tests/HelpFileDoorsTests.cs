@@ -123,9 +123,9 @@ public sealed class HelpFileDoorsTests : Bridge
     {
         var doors = Module().HelpDoors(null);
 
-        Assert.Contains("still coming up", (await Assert.ThrowsAnyAsync<Exception>(() => doors.SyncPlanAsync(null, CancellationToken.None))).Message);
+        Assert.Contains("still coming up", (await Assert.ThrowsAnyAsync<Exception>(() => doors.SyncPlanAsync(null, null, CancellationToken.None))).Message);
         Assert.Contains("still coming up",
-            (await Assert.ThrowsAnyAsync<Exception>(() => doors.SyncAsync("engine", new HashSet<string> { "engine:main" }, CancellationToken.None))).Message);
+            (await Assert.ThrowsAnyAsync<Exception>(() => doors.SyncAsync("engine", null, new HashSet<string> { "engine:main" }, CancellationToken.None))).Message);
     }
 
     /// <summary>HELP10: what a browser proposal is judged against is the files as the Browser screen reads them, and the route's reader of an address.</summary>
