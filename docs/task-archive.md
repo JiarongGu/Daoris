@@ -13699,3 +13699,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **BGWAIT1b — resumed background wait** (driver). Apply start judgment to Driver.Continue. D83; AcpBackgroundTests case.
 
 **Outcome** 2026-10-12: a resumed run waits on its own background work as a start does, by one shared helper (`Driver.WaitsOnBackground`), and never where its quest was closed as planned. Detail: D83's BGWAIT1b note.
+
+## NEW1b — New conversation, the prompt first (2026-10-12, D162)
+
+> - [ ] **NEW1b — New conversation, the prompt first** (web; after a). Sessions' main area, when nothing is attended and from *New conversation* (Ctrl+N, File menu, the list head): the prompt, then the repository, tree and agent·account chips, *Start*; Enter starts with the words; a browser says to open Daoris on this machine. Replaces the *Start session* drawer. Design §1.
+
+**Outcome** 2026-10-12: `NewConversation` replaced the *Start session* drawer: the prompt, a repository combobox (recent first, then each workspace's), the three-way tree menu and the agent·account menu, *Start* on Enter with the words, files and a request id; Ctrl+N and Workspace › *New conversation…* open it, *New ask…* moved to Ctrl+Shift+N. The checkout's branch on the tree chip is NEW1e; the room's old place name rides with NEW1d. Detail: D162's NEW1b note.

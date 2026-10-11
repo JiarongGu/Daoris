@@ -302,9 +302,17 @@ const editAct = (act: EditAct, key: string, group: string, icon: IconName, appli
 export const COMMANDS: readonly CommandSpec[] = [
   // Workspace (File's place and job): new things, then the scope (a family), the repositories, the workspace's setup.
   {
+    // A conversation from its first words (NEW1b, D162 point 1): Sessions' composer, with the focus in its prompt. VS Code's
+    // *New Text File*: the new thing, so Ctrl+N; the terminal keeps it for a shell's next line. A shell's alone: a
+    // conversation is a process on this machine. It was Run's *Start a session…*, which opened the drawer it replaced.
+    id: 'workspace.newConversation', menu: 'workspace', group: 'new', label: 'menu.workspace.newConversation', icon: 'plus',
+    keys: [{ combo: 'Ctrl+N', browserKeeps: true }], reach: 'fields', shell: true,
+    keywords: 'new conversation chat session start prompt repository 对话 会话', run: (doors) => doors.frame('start'),
+  },
+  {
+    // Ctrl+N's until NEW1b, which gave it to a new conversation; a browser keeps Ctrl+Shift+N for its own window.
     id: 'workspace.newAsk', menu: 'workspace', group: 'new', label: 'menu.workspace.newAsk', icon: 'plus',
-    // VS Code's *New Text File*: the new thing. A browser keeps it for a new window; the terminal for a shell's next line.
-    keys: [{ combo: 'Ctrl+N', browserKeeps: true }], reach: 'fields',
+    keys: [{ combo: 'Ctrl+Shift+N', browserKeeps: true }], reach: 'fields',
     keywords: 'ask request ticket intake workspace new quest 需求 请求', run: (doors) => doors.ask(),
   },
   {
@@ -435,12 +443,8 @@ export const COMMANDS: readonly CommandSpec[] = [
     run: (doors) => doors.region(true),
   },
 
-  // Run: a new session, this session's acts and this quest's, by their owners; then archiving what ended.
-  {
-    id: 'run.start', menu: 'run', group: 'start', label: 'menu.run.start', icon: 'plus',
-    keys: [{ combo: 'Ctrl+Shift+N', browserKeeps: true }], shell: true, keywords: 'new session chat conversation start',
-    run: (doors) => doors.frame('start'),
-  },
+  // Run: this session's acts and this quest's, by their owners; then archiving what ended. A new conversation is Workspace's
+  // new thing since NEW1b.
   {
     // Answer… is its card's under the header (D126 §3.1), so it applies where its row's ⋯ offers it.
     id: 'run.session.answer', menu: 'run', group: 'run.session', label: 'work.act.answer', icon: 'answer', shell: true,

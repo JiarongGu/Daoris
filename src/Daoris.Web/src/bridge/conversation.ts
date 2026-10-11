@@ -313,14 +313,25 @@ export const useStartChat = () => {
     // §4); the adapter takes `driver.json`'s; and the tree falls back to the repository's standing
     // opt-in (D51). The same resolution a driven session gets, so a conversation is not a second
     // set of rules — which is why each is dropped from the payload rather than sent as a null.
-    mutationFn: (start: {
+    // The tree is said exactly where the person chose (D162 point 2): false is the checkout, whatever that opt-in says.
+    // The opening words (NEW1a) open it on its first message, their files as a message's go, and the request id makes a
+    // press the driver answers once however often it arrives. Its answer is *Start a conversation with these words*'s shape
+    // (`StartedFrom`); an empty start carries no `sent`, read as false.
+    mutationFn: async (start: {
       repository: string; profile?: string; adapter?: string; ownTree?: boolean;
-    }) => call<{ sessionId: string | null; message: string }>('START_CHAT', {
-      repository: start.repository,
-      ...(start.profile ? { profile: start.profile } : {}),
-      ...(start.adapter ? { adapter: start.adapter } : {}),
-      ...(start.ownTree ? { ownTree: true } : {}),
-    }),
+      text?: string; files?: File[]; requestId?: string;
+    }): Promise<StartedFrom> => {
+      const files = start.files?.length ? await Promise.all(start.files.map(toUpload)) : [];
+      return startedOf(await call<unknown>('START_CHAT', {
+        repository: start.repository,
+        ...(start.profile ? { profile: start.profile } : {}),
+        ...(start.adapter ? { adapter: start.adapter } : {}),
+        ...(start.ownTree !== undefined ? { ownTree: start.ownTree } : {}),
+        ...(start.text ? { text: start.text } : {}),
+        ...(files.length > 0 ? { files } : {}),
+        ...(start.requestId ? { requestId: start.requestId } : {}),
+      }));
+    },
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: keys.allSessions });
       void client.invalidateQueries({ queryKey: keys.driver });

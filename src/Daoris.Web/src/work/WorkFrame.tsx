@@ -36,7 +36,7 @@ import { PauseAsk } from './WorkAsks';
 import { FilePreview } from './FilePreview';
 import { type FileOpen, FileOpener, fileName } from './preview';
 import { TerminalView } from './TerminalView';
-import { Button, Drawer, failure, type Notify, SESSION_ACTIVE, useErrorNotify } from '../ui';
+import { failure, type Notify, SESSION_ACTIVE, useErrorNotify } from '../ui';
 import type { FrameIntent } from '../commands';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { SessionConversation } from './SessionConversation';
@@ -46,7 +46,7 @@ import { doorLabel } from '../tools';
 import type { QuestClose, Resolution } from './AwaitingPerson';
 import { Composer } from './Composer';
 import { DiffPane } from './DiffPane';
-import { useDraft } from './drafts';
+import { keepDraft, useDraft } from './drafts';
 import { dockOpensOn, type DockTab, followed, NothingFollowed, RightDock } from './RightDock';
 import { SessionTimeline } from './SessionTimeline';
 import { SessionRail } from './SessionRail';
@@ -57,7 +57,9 @@ import type { Answered } from './InlineConfirm';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import { type SessionDoors, useSessionActs } from './sessionActs';
 import { ListMore } from './ListPane';
-import { StartSession, type StartChoice } from './StartSession';
+import { NewConversation, type NewStart } from './NewConversation';
+import { keepChosen, keepRecent, readChosen, readRecent } from './startRecent';
+import { type Carry, NO_CARRY } from '../compose/carry';
 import { OutputPanel, PANEL_MIN, StreamTabs } from './frame';
 import { panelTabs } from './streams';
 import { DOCK, dockRange, frameLayout, type ListMode } from './layout';
@@ -217,9 +219,27 @@ export function WorkFrame({
   const [refusal, setRefusal] = useState<{ session: string; text: string } | null>(null);
   // What *Go on in a new session* came to (MSG1g2), the session's own, as a refusal is: said under its words alone.
   const [newSession, setNewSession] = useState<{ session: string; answer: NewSessionAnswer } | null>(null);
-  // Why the last start was refused, said in the start form until it closes or starts again (UX5 U68).
+  // *New conversation* (NEW1b, D162 point 1): bumped by each of its doors (the list's ＋, the menu, Ctrl+N, the palette),
+  // which puts the attended session down and the focus in the composer's prompt.
+  const [composing, setComposing] = useState(0);
+  // Whether that press's focus is still owed: met once the prompt took it, so a composer that comes back by another path
+  // (the attended session deleted) takes none.
+  const [focusOwed, setFocusOwed] = useState(false);
+  const newConversationPressed = () => {
+    setComposing((count) => count + 1);
+    setFocusOwed(true);
+  };
+  // The composer's words and files, held here so a visit to a session and back keeps them; a start that opened a
+  // conversation lets them go. Its last refusal is said under Start until the next press (UX5 U68).
+  const [newDraft, setNewDraft] = useState('');
+  const [newCarry, setNewCarry] = useState<Carry>(NO_CARRY);
   const [startRefusal, setStartRefusal] = useState<string | null>(null);
-  const [starting, setStarting] = useState(false);
+  // This machine's last starts and the repository last chosen (the entry design §1), read once and kept as they change.
+  const [recentStarts, setRecentStarts] = useState(readRecent);
+  const [chosenStart] = useState(readChosen);
+  // One press, one request id (NEW1a): a press again with the same words and choices after a failure carries the same id,
+  // so a start that did open is answered rather than repeated; an answer lets it go.
+  const pressed = useRef<{ key: string; id: string } | null>(null);
   // *Archive what ended…* pressed in the list's ⋯ (SESSUX1e): its first press stands under the list's header until it
   // archives or the person never minds. Not remembered: it is a question asked now.
   const [archivingEnded, setArchivingEnded] = useState(false);
@@ -447,19 +467,49 @@ export function WorkFrame({
 
   const toggle = () => closed.setPanel(!collapsed);
 
-  const onStart = (choice: StartChoice) => {
-    setRefusal(null);
+  // *New conversation* puts the attended session down, so the composer stands in the main area (NEW1b).
+  useEffect(() => {
+    if (composing > 0 && selected !== null) onSelect(null);
+    // Only a new press: the selection is read, not watched.
+  }, [composing]);
+
+  const onStart = (start: NewStart) => {
     setStartRefusal(null);
-    startChat.mutate(choice, {
+    const key = JSON.stringify([
+      start.repository, start.text, start.adapter ?? '', start.profile ?? '', start.ownTree ?? null,
+      start.files.map((file) => [file.name, file.size, file.lastModified]),
+    ]);
+    if (pressed.current?.key !== key) pressed.current = { key, id: crypto.randomUUID() };
+    const requestId = pressed.current.id;
+    startChat.mutate({ ...start, requestId }, {
       onSuccess: (result) => {
+        pressed.current = null;
         // The ledger's own sentence: the tree is busy, the repository has no checkout here, the
         // harness is missing, the chosen account is logged out. Each names the action that fixes
-        // it, which is why it is shown rather than summarised — in the form, whole, where start was
-        // pressed; it was a corner toast cut mid-sentence (UX5 U68).
-        if (!result.sessionId) setStartRefusal(result.message);
-        else { setStarting(false); attend(result.sessionId); }
+        // it, which is why it is shown rather than summarised — whole, under Start where it was
+        // pressed, with the words kept; it was a corner toast cut mid-sentence (UX5 U68).
+        if (!result.sessionId) {
+          setStartRefusal(result.message);
+          return;
+        }
+        const session = result.sessionId;
+        setRecentStarts(keepRecent(start.repository));
+        setNewDraft('');
+        setNewCarry(NO_CARRY);
+        // Opened without the words (NEW1a's `sent: false`): they wait in its box, put there before it is attended so its
+        // draft is read with them, and the driver's sentence stands beside them. The files are named, as a send handed
+        // back names them: the page no longer holds their bytes.
+        if (!result.sent) keepDraft(session, start.text);
+        attend(session);
+        if (!result.sent) {
+          setRefusal({ session, text: result.message });
+          if (start.files.length > 0) {
+            notify(t('work.composer.filesNotSent', { count: 1, names: start.files.map((file) => file.name).join(', ') }), 'error');
+          }
+        }
       },
-      onError: failure(notify),
+      // No answer came: the bridge's sentence where Start was pressed, and the press keeps its id for the next.
+      onError: (error: unknown) => setStartRefusal(sentence(error)),
     });
   };
 
@@ -777,7 +827,7 @@ export function WorkFrame({
   const [taken, setTaken] = useState<typeof intent>(null);
   if (intent && intent !== taken) {
     setTaken(intent);
-    if (intent === 'start') setStarting(true);
+    if (intent === 'start') newConversationPressed();
     else if (intent === 'review') openView('review');
     else if (intent === 'workflow') openView('workflow');
   }
@@ -1216,7 +1266,7 @@ export function WorkFrame({
     view: 'sessions',
     name: t('work.rail.label'),
     labels: { open: t('work.rail.open'), close: t('work.rail.close'), resize: t('work.rail.resize') },
-    make: { label: t('work.start.title'), onMake: () => setStarting(true) },
+    make: { label: t('work.start.title'), onMake: newConversationPressed },
     // The list's ⋯, which it never had (SESSUX1c): how it is grouped, a choice of two, and whether archived sessions
     // are shown, both remembered (D118 §3f); then, below a rule, *Archive what ended…*, which lists first (SESSUX1e).
     more: (
@@ -1284,6 +1334,52 @@ export function WorkFrame({
   });
   const spec = elsewhere ? viewLayout.list : sessionsList();
 
+  // *New conversation* (NEW1b, D162 point 1), the main area while nothing is attended: what the drawer it replaced knew is
+  // its chips'.
+  const registered = registry.data ?? [];
+  const newConversation = (
+    <NewConversation
+      // A checkout on this machine is what makes a repository choosable: there is nowhere else to talk, and a teammate's
+      // mirrored registration has no tree here (D48 §3/§7). One without is listed and says so.
+      repositories={registered
+        .map((row) => ({ name: row.repository, workspace: row.workspace || 'default', checkout: Boolean(row.root) }))
+        .sort((a, b) => a.name.localeCompare(b.name))}
+      // A checkout an active session on this machine holds refuses a second one (UX5 U68): with the session holding it.
+      busy={Object.fromEntries((sessions.data ?? [])
+        .filter((session) => SESSION_ACTIVE.has(session.state) && sessionOrigin(session) === null
+          && !ownTree(session, registered.find((row) => row.repository === session.repository)?.root))
+        .map((session) => [session.repository, session.id]))}
+      recent={recentStarts}
+      remembered={chosenStart}
+      onChoose={keepChosen}
+      harnesses={roster.filter((row) => row.present).map((row) => row.harness)}
+      labels={Object.fromEntries(roster.map((row) => [row.harness, doorLabel(t, row)]))}
+      names={Object.fromEntries(roster.map((row) => [row.harness, row.product || row.harness]))}
+      defaultHarness={spawning?.harness}
+      accounts={Object.fromEntries(roster.map((row) => [row.harness, Array.isArray(row.profiles) ? row.profiles : []]))}
+      // The list a start in that repository may run on (D130 §3.2): its workspace's own, else this machine's, by the
+      // accounts' owner (AGT7), from the files the frame already reads; the picker sets the rest apart.
+      scopeOf={(repository, harness) => {
+        const door = roster.find((row) => row.harness === harness);
+        const use = door ? agentOf(accounts.data, toolOf(door)) : null;
+        if (!use) return null;
+        const workspace = registered.find((row) => row.repository === repository)?.workspace || 'default';
+        const own = workspaceScope(use, workspace);
+        return own ? { workspace, list: own.list } : { workspace: null, list: machineScope(use).list };
+      }}
+      draft={newDraft}
+      onDraft={setNewDraft}
+      carried={newCarry}
+      onCarry={setNewCarry}
+      pending={startChat.isPending}
+      refusal={startRefusal}
+      focus={focusOwed ? composing : 0}
+      onFocused={() => setFocusOwed(false)}
+      onStart={onStart}
+      onOpenSession={attend}
+    />
+  );
+
   return (
     // Positioned, so a dock filling the frame (FRAME6) lies over exactly this and nothing more.
     // 🔴 `min-w-0` (USE1): a flex item is otherwise no narrower than its content, and every view but
@@ -1294,42 +1390,6 @@ export function WorkFrame({
     <div ref={root} className="relative isolate flex min-h-0 min-w-0 flex-1">
       {spec && list && <ViewListPane spec={spec} layout={list} lists={listed} onOver={go.setOver} />}
 
-      {/* D41's single detail-and-form surface (§4), rather than a popover built for one form. */}
-      {starting && (
-        <Drawer title={t('work.start.title')} onClose={() => { setStarting(false); setStartRefusal(null); }}>
-          <StartSession
-            // A checkout on this machine is the whole question: there is nowhere else to talk, and
-            // a teammate's mirrored registration has no tree here (D48 §3/§7).
-            repositories={(registry.data ?? [])
-              .filter((row) => Boolean(row.root))
-              .map((row) => row.repository)
-              .sort()}
-            // A checkout an active session on this machine holds refuses a second one (UX5 U68).
-            busy={(sessions.data ?? [])
-              .filter((session) => SESSION_ACTIVE.has(session.state) && sessionOrigin(session) === null
-                && !ownTree(session, (registry.data ?? []).find((row) => row.repository === session.repository)?.root))
-              .map((session) => session.repository)}
-            harnesses={roster.filter((row) => row.present).map((row) => row.harness)}
-            labels={Object.fromEntries(roster.map((row) => [row.harness, doorLabel(t, row)]))}
-            defaultHarness={spawning?.harness}
-            accounts={Object.fromEntries(roster.map((row) => [row.harness, Array.isArray(row.profiles) ? row.profiles : []]))}
-            // The list a start in that repository may run on (D130 §3.2): its workspace's own, else this machine's, by the
-            // accounts' owner (AGT7), from the files the frame already reads; the picker sets the rest apart.
-            scopeOf={(repository, harness) => {
-              const door = roster.find((row) => row.harness === harness);
-              const use = door ? agentOf(accounts.data, toolOf(door)) : null;
-              if (!use) return null;
-              const workspace = (registry.data ?? []).find((row) => row.repository === repository)?.workspace || 'default';
-              const own = workspaceScope(use, workspace);
-              return own ? { workspace, list: own.list } : { workspace: null, list: machineScope(use).list };
-            }}
-            pending={startChat.isPending}
-            refusal={startRefusal}
-            onStart={onStart}
-          />
-        </Drawer>
-      )}
-
       <div className="flex min-w-0 flex-1 flex-col">
         {elsewhere ? viewLayout.main : (<>
         <ViewMain
@@ -1339,15 +1399,12 @@ export function WorkFrame({
           header={pageHead || undefined}
           menu={pageMenu}
           // A remembered session is found in the list, so while the list first loads it is on its way, never
-          // *Nothing attended* (audit SE11).
+          // the composer (audit SE11). With nothing attended the main area is *New conversation* (NEW1b): no notice is
+          // handed, so the state's body is the composer.
           state={attended ? 'chosen' : selected && sessions.isPending ? 'loading' : 'none'}
-          none={{
-            headline: t('work.attended.none.headline'),
-            body: t('work.attended.none.body'),
-            action: <Button onClick={() => setStarting(true)}>{t('work.start.title')}</Button>,
-          }}
         >
-          <AttendedSession
+          {!attended && newConversation}
+          {attended && <AttendedSession
             session={attended}
             quest={quest}
             opening={attended ? openings[attended.id] : null}
@@ -1414,7 +1471,7 @@ export function WorkFrame({
               onQuest: onOpenQuest,
               onAsk: onAnswerAsk,
             } : undefined}
-          />
+          />}
           {/* The conversation (D76): below the record, in the same scroll, so the head is read once
               and the words are what the region follows. Only where the session ran: a teammate's
               record came without its transcript, which stays on their machine (D47 §4). */}

@@ -2,10 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { SessionConsole } from '../SessionConsole';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { OutputPanel, StatusBar } from './frame';
-import { StartSession } from './StartSession';
 
-// The window's furniture (D55) — regions the platform had nowhere to put, plus the control that
-// starts a session. The panel's console is absent here on purpose: a stream arrives over the shell's
+// The window's furniture (D55) — regions the platform had nowhere to put. Starting a conversation is
+// *New conversation*'s, with its own stories (NEW1b). The panel's console is absent here on purpose: a stream arrives over the shell's
 // bridge and Storybook has none, so what these stories are for is the CHROME around it.
 
 const meta: Meta = { title: 'Work/Frame' };
@@ -149,28 +148,4 @@ export const PanelInItsOwnWindow: StoryObj = {
       </div>
     );
   },
-};
-
-const PROFILES = [
-  { name: 'personal', login: 'in' as const },
-  { name: 'work', login: 'out' as const },
-];
-
-export const Starting: StoryObj = {
-  decorators: [(Story) => <Tooltip.Provider><Story /></Tooltip.Provider>],
-  render: () => (
-    <div className="grid w-[18rem] gap-6 border border-line">
-      <StartSession
-        repositories={['engine', 'game', '世界流式加载引擎']}
-        harnesses={['claude-code', 'codex']}
-        defaultHarness="claude-code"
-        accounts={{ 'claude-code': PROFILES }}
-        onStart={() => {}}
-      />
-      {/* One harness and no accounts: both choices are absent rather than offered as one option. */}
-      <StartSession repositories={['engine']} harnesses={['claude-code']} accounts={{}} onStart={() => {}} />
-      {/* Nothing on this machine to talk in. */}
-      <StartSession repositories={[]} harnesses={[]} accounts={{}} onStart={() => {}} />
-    </div>
-  ),
 };

@@ -8,6 +8,11 @@ with the version and date at release.
 - A session that goes on with your answer no longer stops to ask you again while its own background work (a build, the
   gates) still runs: it waits for that work to end and goes on, as a new session already did.
 
+- *New conversation* starts a conversation on your words. With nothing attended, Sessions asks what you would like to work
+  on: type it, choose the repository (your recent ones first, each workspace's after, one with no checkout here saying so),
+  where it works (the driver's choice, the checkout, or a tree of its own) and the agent with its account, and press Enter.
+  It replaces *Start a session*, which opened an empty conversation. Ctrl+N and Workspace › *New conversation…* open it;
+  *New ask…* is now Ctrl+Shift+N. A refused start says why under *Start* and keeps your words.
 - A quest's, an ask's and a session's title section no longer moves its buttons: a long title takes two lines at most
   (one for a session) beside a fixed column of actions, and on a narrow window the actions take their own row. An ask's
   long request is clamped with *View full request*; a session no longer repeats its quest's whole title above the

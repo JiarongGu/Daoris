@@ -61,6 +61,15 @@ export function forgetDraft(session: string): void {
   if (all.some(([held]) => held === session)) keep(withDraft(all, session, ''));
 }
 
+/**
+ * Put words into a session's draft before its page is shown (NEW1b): a conversation that opened without the words it was
+ * started on keeps them in its box. Words already in its draft stay, after a blank line, as a send handed back keeps them.
+ */
+export function keepDraft(session: string, text: string): void {
+  const all = readDrafts();
+  keep(withDraft(all, session, [text, draftOf(all, session).trim()].filter(Boolean).join('\n\n')));
+}
+
 function keep(all: Drafts): void {
   // Not keeping it across a reload is a lesser failure than not taking the keystroke.
   store(DRAFTS, JSON.stringify(all));
@@ -75,6 +84,13 @@ function keep(all: Drafts): void {
  */
 export function useDraft(session: string | null): [string, (next: string | ((was: string) => string)) => void] {
   const [all, setAll] = useState<Drafts>(readDrafts);
+  // Read again as another session is attended: `keepDraft` may have put words in its draft since (NEW1b), and every set here
+  // writes the store as it changes the list, so the store is never behind it.
+  const [reading, setReading] = useState(session);
+  if (reading !== session) {
+    setReading(session);
+    setAll(readDrafts());
+  }
 
   const set = useCallback((next: string | ((was: string) => string)) => {
     if (!session) return;

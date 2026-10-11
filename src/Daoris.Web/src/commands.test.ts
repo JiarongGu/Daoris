@@ -61,12 +61,14 @@ describe('the menu bar (D152 §1)', () => {
 });
 
 describe('each menu (the design §3.2)', () => {
+  /** NEW1b (D162 point 1): *New conversation* is the first new thing, on Ctrl+N; a new ask moved to Ctrl+Shift+N. */
   it('Workspace: the new things, the scope, the repositories, the workspace\'s setup, Settings', () => {
     expect(ids(inMenu(table(), 'workspace'))).toEqual([
-      'workspace.newAsk', 'workspace.newQuest', 'workspace.scope:*', 'workspace.scope:work', 'workspace.scope:forge',
-      'workspace.add', 'workspace.import', 'workspace.setup', 'workspace.sync', 'workspace.settings',
+      'workspace.newConversation', 'workspace.newAsk', 'workspace.newQuest', 'workspace.scope:*', 'workspace.scope:work',
+      'workspace.scope:forge', 'workspace.add', 'workspace.import', 'workspace.setup', 'workspace.sync', 'workspace.settings',
     ]);
-    expect(entry(table(), 'workspace.newAsk')?.keys.map((key) => key.combo)).toEqual(['Ctrl+N']);
+    expect(entry(table(), 'workspace.newConversation')?.keys.map((key) => key.combo)).toEqual(['Ctrl+N']);
+    expect(entry(table(), 'workspace.newAsk')?.keys.map((key) => key.combo)).toEqual(['Ctrl+Shift+N']);
     expect(entry(table(), 'workspace.settings')?.keys.map((key) => key.combo)).toEqual(['Ctrl+,']);
   });
 
@@ -101,9 +103,9 @@ describe('each menu (the design §3.2)', () => {
     expect(entry(table({ view: 'quests' }), 'go.quests')?.checked).toBe(true);
   });
 
-  it('Run: start, this session\'s acts, this quest\'s, archiving what ended', () => {
+  it('Run: this session\'s acts, this quest\'s, archiving what ended', () => {
     expect(ids(inMenu(table(), 'run'))).toEqual([
-      'run.start', 'run.session.answer', 'run.session.retry', 'run.session.review', 'run.session.stop', 'run.session.detach',
+      'run.session.answer', 'run.session.retry', 'run.session.review', 'run.session.stop', 'run.session.detach',
       'run.quest.take', 'run.quest.done', 'run.quest.retry', 'run.quest.pause', 'run.quest.resume', 'run.quest.decline',
       'run.archiveEnded',
     ]);
@@ -140,7 +142,9 @@ describe('in a browser (D152 §3.6, D47 §4)', () => {
   });
 
   /** A browser claims no key it keeps for itself, and shows none it does not answer (D152 §3.4). */
-  it('claims no key a browser keeps: Ctrl+N, Ctrl+1–8, Ctrl+F, Ctrl+Shift+P', () => {
+  it('claims no key a browser keeps: Ctrl+Shift+N, Ctrl+1–8, Ctrl+F, Ctrl+Shift+P', () => {
+    // A new conversation is the shell's alone; a new ask is offered, without the key a browser keeps for its own window.
+    expect(entry(browser, 'workspace.newConversation')).toBeUndefined();
     expect(entry(browser, 'workspace.newAsk')?.keys).toEqual([]);
     expect(entry(browser, 'go.quests')?.keys).toEqual([]);
     expect(entry(browser, 'edit.find')?.keys).toEqual([]);
@@ -425,15 +429,18 @@ describe('the keys (D152 §3)', () => {
     expect(keysOf('terminal.show')).toEqual(['Ctrl+`']);
     expect(keysOf('terminal.new')).toEqual(['Ctrl+Shift+`']);
     expect(keysOf('view.console')).toEqual(['Ctrl+Shift+U']);
-    expect(keysOf('run.start')).toEqual(['Ctrl+Shift+N']);
+    expect(keysOf('workspace.newConversation')).toEqual(['Ctrl+N']);
+    expect(keysOf('workspace.newAsk')).toEqual(['Ctrl+Shift+N']);
     expect(keysOf('help.ask')).toEqual(['F1', 'Ctrl+Alt+I']);
   });
 
   it('prints every key by menu for the Keyboard shortcuts drawer, in the reader\'s language', () => {
     const groups = shortcutGroups(table({ view: 'quests', list: { shown: true } }), t);
-    expect(groups.map((group) => group.menu)).toEqual(['menu.workspace', 'menu.edit', 'menu.view', 'menu.go', 'menu.run', 'menu.terminal', 'menu.help']);
+    // Run prints no key since its *Start a session…* became Workspace's *New conversation…* (NEW1b), so it lists none.
+    expect(groups.map((group) => group.menu)).toEqual(['menu.workspace', 'menu.edit', 'menu.view', 'menu.go', 'menu.terminal', 'menu.help']);
     expect(groups.flatMap((group) => group.rows).length).toBe(30);
-    expect(groups[0]!.rows[0]).toEqual({ label: 'menu.workspace.newAsk', keys: ['Ctrl+N'] });
+    expect(groups[0]!.rows[0]).toEqual({ label: 'menu.workspace.newConversation', keys: ['Ctrl+N'] });
+    expect(groups[0]!.rows[1]).toEqual({ label: 'menu.workspace.newAsk', keys: ['Ctrl+Shift+N'] });
   });
 });
 
@@ -446,7 +453,7 @@ describe('matching what was typed', () => {
     'nav.sessions': 'Sessions',
     'menu.edit.search': 'Search knowledge',
     'menu.settings': 'Settings',
-    'menu.run.start': 'Start a session…',
+    'menu.workspace.newConversation': 'New conversation…',
     'menu.refresh': 'Refresh the index',
     'command.language': 'Switch language',
   })[key] ?? key));
@@ -459,7 +466,7 @@ describe('matching what was typed', () => {
   it('matches a subsequence, not only a substring', () => {
     expect(matching(list, 'cnv').map((c) => c.id)).toContain('go.convergence');
     expect(matching(list, 'knw').map((c) => c.id)).toContain('go.knowledge');
-    expect(matching(list, 'sas').map((c) => c.id)).toContain('run.start');
+    expect(matching(list, 'ncv').map((c) => c.id)).toContain('workspace.newConversation');
   });
 
   it('finds a command by a keyword it does not show', () => {

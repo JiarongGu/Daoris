@@ -93,7 +93,7 @@
         "work.awaiting.yourAnswer", "work.group.archived", "work.group.ended", "work.group.later", "work.group.review", "work.group.working",
         "work.group.you", "work.head.waiting", "work.intake.waiting", "work.intakeRunning.title", "work.list.groupBy",
         "work.rail.ended",
-        "work.rail.label", "work.rail.search.byContent", "work.rail.search.byName", "work.relations.title",
+        "work.rail.label", "work.rail.search.byContent", "work.rail.search.byName", "work.relations.title", "work.start.recent",
         "work.sync.inConflict", "work.trace.title", "work.head.details",
         "review.title", "review.setUp.newest", "review.setUp.older", "asks.record.review", "asks.record.kind", "opinion.title", "opinion.recheckTitle",
         "workflow.head.title", "workflow.section.*", "workflow.finished", "workflow.step.work", "workflow.step.opinion",
@@ -151,7 +151,7 @@
         "work.head.tool", "work.head.account", "work.head.id", "quests.field.short",
         "work.intake.ask", "work.intake.room", "work.preview.show", "work.relations.asked",
         "work.relations.askedBy", "work.relations.resumed", "work.review.layout", "work.review.viewed",
-        "work.start.harness", "work.start.ownTree", "work.start.profile", "work.start.repository",
+        "work.start.harness", "work.start.tree", "work.start.agentAccount", "work.start.profile", "work.start.repository",
         "work.tool.input", "work.tool.output", "review.setUp.where", "review.setUp.again", "asks.compose.review",
         "opinion.read", "opinion.limits", "opinion.finding.consequence", "opinion.finding.reproduce", "opinion.finding.proposal"
       ]
@@ -175,7 +175,7 @@
         "settings.theme.dark", "settings.theme.light",
         "settings.theme.system", "settings.tools.use.*", "work.preview.changes", "work.preview.file", "work.review.split",
         "work.review.unified", "work.start.harnessDefault", "work.start.harnessDefaultNamed",
-        "work.start.profileDefault"
+        "work.start.profileDefault", "work.start.tree.driver", "work.start.tree.checkout", "work.start.tree.own"
       ]
     },
     "button": {
@@ -261,7 +261,8 @@
         "work.panel.stream.stopShort", "work.preview.close", "work.preview.reload", "work.rail.close",
         "work.rail.open", "work.review.accept", "work.review.accepting", "work.review.discard",
         "work.review.discardMeanIt", "work.review.hand", "work.review.handing", "work.review.pullRequest",
-        "work.review.readAgain", "work.review.sendBack", "work.say.goOnNew", "work.say.startChat", "work.start.go", "work.steer.now", "work.terminal.again", "work.terminal.close",
+        "work.review.readAgain", "work.review.sendBack", "work.say.goOnNew", "work.say.startChat", "work.start.go", "work.start.going",
+        "work.start.useOwnTree", "work.start.openHolder", "work.start.chooseRepository", "work.steer.now", "work.terminal.again", "work.terminal.close",
         "work.terminal.new", "work.terminal.open", "review.act.*", "review.ask.notYetMeanIt", "review.ask.skipMeanIt",
         "opinion.act.*", "opinion.ask.anywayMeanIt", "opinion.ask.myselfMeanIt", "opinion.ask.sendBackMeanIt", "opinion.ask.stopMeanIt",
         "opinion.findingsShow", "opinion.findingsHide",
@@ -313,7 +314,7 @@
         "review.state.*", "review.pill", "work.attention.set-up",
         "opinion.state.*", "opinion.weight.*", "opinion.sure.*", "opinion.disputed", "opinion.session.kind", "work.attention.opinion",
         "workflow.participation.*", "workflow.runtime.*", "workflow.repositories.follows", "workflow.repositories.own",
-        "workflow.run.state.*", "workflow.run.thisSession"
+        "workflow.run.state.*", "workflow.run.thisSession", "work.start.busyMark"
       ]
     },
     "menu": {
@@ -329,7 +330,7 @@
         "agents.account.removeFromMachine", "agents.head.pin",
         "agents.account.useDefaultIn",
         "map.when.open", "map.when.week", "map.zoomIn", "map.zoomOut", "menu.about", "menu.edit.*", "menu.go.*",
-        "menu.help.*", "menu.language", "menu.refresh", "menu.refreshing", "menu.run.start", "menu.settings", "menu.setup", "menu.terminal.*",
+        "menu.help.*", "menu.language", "menu.refresh", "menu.refreshing", "menu.settings", "menu.setup", "menu.terminal.*",
         "menu.view.*", "menu.workspace.*", "plugin.list.ask", "plugin.list.make", "plugin.list.tryFolder", "projects.list.import",
         "work.list.archiveEnded", "work.list.byRepository", "work.list.byState", "work.list.showArchived", "work.menu.*",
         "work.monitor.detach", "work.rail.menu.copy", "help.history.rename", "help.history.pin", "help.history.unpin",
@@ -363,7 +364,7 @@
         "search.emptyHeadline", "search.gone.headline", "search.none.headline", "search.nothingHeadline",
         "work.archived.none", "work.attended.none.headline", "work.detached.gone.headline",
         "work.monitor.empty.headline", "work.rail.empty.headline", "work.review.empty.headline",
-        "work.review.failed.headline.*", "work.review.none.headline"
+        "work.review.failed.headline.*", "work.review.none.headline", "work.start.prompt"
       ]
     },
     "placeholder": {
@@ -384,7 +385,7 @@
         "signin.codePlaceholder", "work.find.placeholder", "work.rail.search.placeholder", "work.say.placeholder",
         "review.ask.notYetWords", "review.ask.skipWords", "asks.compose.reviewWords", "asks.record.reviewChoose",
         "opinion.ask.words", "opinion.ask.sendBackWords",
-        "help.history.search.placeholder"
+        "help.history.search.placeholder", "work.start.find"
       ]
     },
     "toast": {
@@ -655,8 +656,8 @@
       { "key": "settings.browser.links.daoris", "zh": "Daoris 浏览器", "why": "The term's own name in a segment; Daoris is six Latin letters at half a unit each, so it reads within the segment's 90px." },
       { "key": "settings.browser.which.daoris", "zh": "Daoris 浏览器", "why": "The term's own name in a segment; Daoris is six Latin letters at half a unit each, so it reads within the segment's 90px." },
       { "key": "settings.landing.pluginNamed", "en": "Plugin {{plugin}}", "zh": "插件 {{plugin}}", "why": "A select's option carrying the plugin's id; its room is the field's." },
-      { "key": "work.start.harnessDefault", "en": "This machine's default", "why": "A select's option in the start form; its room is the field's." },
-      { "key": "work.start.harnessDefaultNamed", "en": "This machine's default: {{name}}", "zh": "本机默认：{{name}}", "why": "A select's option naming what a start runs on where the machine has a default (UX5 U67); its room is the field's." },
+      { "key": "work.start.harnessDefault", "en": "This machine's default", "why": "A row of the agent chip's menu in New conversation (NEW1b), 320px wide; its room is the menu's." },
+      { "key": "work.start.harnessDefaultNamed", "en": "This machine's default: {{name}}", "zh": "本机默认：{{name}}", "why": "A row of the agent chip's menu naming what a start runs on where the machine has a default (UX5 U67, NEW1b), 320px wide; its room is the menu's." },
       { "key": "asks.record.closeConfirm", "en": "Close with this reason", "why": "The confirming press in the ask page's close form, a row in the main area that wraps; not the side bar's two-button room." },
       { "key": "asks.record.publishTo", "en": "Publish to {{repository}}", "zh": "发布给 {{repository}}", "why": "A proposal row's press on the ask page, naming the repository it publishes to; the main area, not the side bar." },
       { "key": "browser.door.open", "en": "Open Daoris's browser", "zh": "打开 Daoris 浏览器", "why": "An icon control's tip and accessible name on the strip; nothing lays the words out." },

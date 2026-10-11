@@ -70,7 +70,8 @@ sessions take the same roles once the trial says which split works (MODELROLE1).
 1. **Orient with a scout.** Dispatch `branch-scout` with the row. Scouts read and build nothing, so they do
    not count toward the three workers below, and several may run at once. Read the pack it returns,
    open any pointer that looks wrong, and correct it before passing the pack on. A pack whose
-   *Size* says the row is more than one sitting is split first (step 3).
+   *Size* says the row is more than one sitting is split first (step 3). Never skip it, a design row least of all: NEW1b
+   went with the parent's pointers alone and ran 184 turns, 77 of them before its first edit (D160's twelfth batch).
 2. **Reserve the decision number** before dispatching. It is the next number after both the highest file
    in `docs/decisions/` and every number already reserved for a branch in flight. Name it in the prompt.
 3. **Size the branch to about a hundred turns.** Cost grows with the square of a branch's turns: in the

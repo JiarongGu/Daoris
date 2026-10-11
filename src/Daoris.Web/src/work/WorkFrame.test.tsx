@@ -545,20 +545,25 @@ describe('the Work frame', () => {
     expect(screen.queryByText('Nothing attended')).toBeNull();
   });
 
-  it('says Nothing attended where nothing is chosen, and offers the list\'s ＋', async () => {
+  /** NEW1b: nothing attended is where a new conversation is asked for; the list's ＋ puts the focus in its prompt. */
+  it('asks what to work on where nothing is chosen, and the list\'s ＋ puts the focus there', async () => {
     show(null);
     const main = await screen.findByRole('main');
-    expect(await within(main).findByText('Nothing attended')).toBeInTheDocument();
-    await userEvent.click(within(main).getByRole('button', { name: 'Start a session' }));
-    expect(await screen.findByRole('dialog', { name: 'Start a session' })).toBeInTheDocument();
+    const prompt = await within(main).findByRole('textbox', { name: 'What would you like to work on?' });
+    expect(prompt).not.toHaveFocus();
+    expect(within(main).queryByText('Nothing attended')).toBeNull();
+
+    await userEvent.click(screen.getByRole('button', { name: 'New conversation' }));
+    expect(prompt).toHaveFocus();
   });
 
   /**
    * D118 §3d, audit F10: a full side bar was `z-20` in the page's own stacking order, above the drawer's
    * `z-10`, so below 768 px a drawer could open under it. The frame is a stacking context of its own, so
-   * every overlay drawn at the page's root — a drawer, the palette, Quick Ask — lies above all of it.
+   * every overlay drawn at the page's root — a drawer, a menu, the palette, Quick Ask — lies above all of it. The main
+   * area's own drawer went with NEW1b; the composer's chip menus are drawn there the same way.
    */
-  it('opens a drawer above a full side bar: the frame keeps its layers to itself', async () => {
+  it('opens an overlay above a full side bar: the frame keeps its layers to itself', async () => {
     window.localStorage.setItem('daoris.dockClosed', '0');
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 700 });
     try {
@@ -568,10 +573,11 @@ describe('the Work frame', () => {
       expect(frame).toHaveClass('isolate');
       expect(side.className).toMatch(/\bz-20\b/);
 
-      await userEvent.click(within(await screen.findByRole('main')).getByRole('button', { name: 'Start a session' }));
-      const drawer = await screen.findByRole('dialog', { name: 'Start a session' });
+      within(await screen.findByRole('main')).getByRole('button', { name: /^Tree:/ }).focus();
+      await userEvent.keyboard('{Enter}');
+      const menu = await screen.findByRole('menu');
       // Drawn at the page's root, outside the frame's own layers.
-      expect(frame.contains(drawer)).toBe(false);
+      expect(frame.contains(menu)).toBe(false);
     } finally {
       Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
     }
@@ -784,9 +790,10 @@ describe('the Work frame', () => {
     expect(screen.getByRole('tab', { name: 'Review' })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('lands on a designed nothing, not on a session it chose for the person', async () => {
-    show(null);
-    expect(await screen.findByText('Nothing attended')).toBeInTheDocument();
+  it('lands on a new conversation, not on a session it chose for the person', async () => {
+    const { onSelect } = show(null);
+    expect(await screen.findByRole('textbox', { name: 'What would you like to work on?' })).toBeInTheDocument();
+    expect(onSelect).not.toHaveBeenCalled();
   });
 
   /**
@@ -1064,33 +1071,54 @@ describe('starting and holding a conversation', () => {
     vi.unstubAllGlobals();
     invoke.mockReset();
     eventHandlers.clear();
-    // A draft outlives its test the way it outlives a reload (CONV4b).
+    // A draft outlives its test the way it outlives a reload (CONV4b), and so do the starts this machine remembers (NEW1b).
     window.localStorage.removeItem('daoris.drafts');
+    window.localStorage.removeItem('daoris.start.recent');
+    window.localStorage.removeItem('daoris.start.chosen');
   });
 
-  /**
-   * New is behind one control (D56) — the form used to hold 287×200 of the rail permanently, for
-   * something a person does occasionally. Opening it is now a step, and every test that starts a
-   * session takes it.
-   */
-  const openStart = async () => {
-    // The list's ＋, which comes first; *Nothing attended* offers the same act in the main area (D118 §2).
-    await userEvent.click((await screen.findAllByRole('button', { name: 'Start a session' }))[0]!);
-    return screen.findByRole('dialog');
-  };
+  /** *New conversation*'s prompt (NEW1b, D162 point 1), which stands in the main area while nothing is attended. */
+  const promptBox = () => screen.findByRole('textbox', { name: 'What would you like to work on?' });
+
+  /** The frame with its selection held as `App` holds it, so attending a session shows it. */
+  function held(selected: string | null = null) {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const onSelect = vi.fn();
+    const notify = vi.fn();
+    function Held() {
+      const [chosen, setChosen] = useState<string | null>(selected);
+      return (
+        <WorkFrame selected={chosen} onSelect={(id) => { onSelect(id); setChosen(id); }} notify={notify} />
+      );
+    }
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider><Held /></Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+    return { onSelect, notify };
+  }
+
+  /** What each START_CHAT carried, in order. */
+  const starts = () => invoke.mock.calls
+    .filter(([, type]) => type === 'START_CHAT')
+    .map(([, , options]) => (options as { payload: Record<string, unknown> }).payload);
 
   /**
-   * 🔴 The palette's "start a session" arrives as an EVENT — `intent`, cleared by `onIntentTaken`
+   * 🔴 The palette's *New conversation* arrives as an EVENT — `intent`, cleared by `onIntentTaken`
    * the way `App` clears it. Consumed by setting state during render, React re-ran the frame with
    * the same prop on every pass: the quest composer's opening draft failed exactly this way and
-   * opened nothing on the window (FIX-LOG 2026-09-23). Held here as App holds it.
+   * opened nothing on the window (FIX-LOG 2026-09-23). Held here as App holds it, with a session
+   * attended, which *New conversation* puts down for the composer.
    */
-  it('opens the start form when the palette asks, once', async () => {
+  it('opens the composer when the palette asks, once, putting the attended session down', async () => {
+    const onSelect = vi.fn();
     function Held() {
       const [intent, setIntent] = useState<'start' | 'review' | null>('start');
+      const [selected, setSelected] = useState<string | null>('s1a2b3c4');
       return (
         <WorkFrame
-          selected={null} onSelect={() => {}} notify={() => {}}
+          selected={selected} onSelect={(id) => { onSelect(id); setSelected(id); }} notify={() => {}}
           intent={intent} onIntentTaken={() => setIntent(null)}
         />
       );
@@ -1102,114 +1130,158 @@ describe('starting and holding a conversation', () => {
       </QueryClientProvider>,
     );
 
-    expect(await screen.findByRole('dialog')).toBeTruthy();
-    expect(await screen.findByLabelText('Repository')).toBeTruthy();
+    await waitFor(async () => expect(await promptBox()).toHaveFocus());
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(onSelect).toHaveBeenCalledWith(null);
   });
 
-  it('keeps the form behind one control, and the rail a list of sessions', async () => {
-    show(null);
-    await screen.findByRole('navigation', { name: 'Sessions' });
+  /** The prompt takes the focus for a press, and not when nothing is attended again by another path. */
+  it('takes the focus for a press, and not when it comes back by another path', async () => {
+    SESSIONS = [DRIVEN, CHAT];
+    let put: (id: string | null) => void = () => {};
+    function Held() {
+      const [chosen, setChosen] = useState<string | null>('c0ffee11');
+      put = setChosen;
+      return <WorkFrame selected={chosen} onSelect={setChosen} notify={() => {}} />;
+    }
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider><Held /></Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+    await screen.findByLabelText('Message');
 
-    expect(screen.queryByLabelText('Repository')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Start' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'New conversation' }));
+    await waitFor(async () => expect(await promptBox()).toHaveFocus());
 
-    await openStart();
-    expect(screen.getByLabelText('Repository')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Start' })).toBeTruthy();
+    act(() => put('c0ffee11'));
+    await screen.findByLabelText('Message');
+    act(() => (document.activeElement as HTMLElement | null)?.blur());
+    act(() => put(null));
+    expect(await promptBox()).not.toHaveFocus();
   });
 
-  it('closes the form on the session it opened — and keeps it up on a refusal', async () => {
-    let refuse = true;
+  /**
+   * D162 point 2, NEW1a: the words go with the start, with a request id the driver never starts twice, and the page
+   * attends what comes back. The repository is remembered as a recent start on this machine.
+   */
+  it('starts on the words with a request id, attends what comes back, and remembers the repository', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'START_CHAT') {
-        return refuse ? { sessionId: null, message: 'busy' } : { sessionId: 'c0ffee11', message: 'ok' };
-      }
-      if (type === 'HARNESSES') return ROSTER;
-      return DRIVER_STATE;
-    });
-
-    show(null);
-    await openStart();
-    await userEvent.click(screen.getByRole('button', { name: 'Start' }));
-    // A refusal leaves the form open: the choices are still on screen to correct.
-    expect(screen.getByRole('dialog')).toBeTruthy();
-
-    refuse = false;
-    await userEvent.click(screen.getByRole('button', { name: 'Start' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-  });
-
-  it('starts one in a repository with a checkout here, and attends what comes back', async () => {
-    invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'START_CHAT') return { sessionId: 'c0ffee11', message: 'Chat `c0ffee11` opened in `engine`.' };
+      if (type === 'START_CHAT') return { sessionId: 'c0ffee11', sent: true, message: 'conversation `c0ffee11` starts with your words.' };
       if (type === 'HARNESSES') return ROSTER;
       return DRIVER_STATE;
     });
 
     const { onSelect } = show(null);
-    await openStart();
-    await userEvent.click(await screen.findByRole('button', { name: 'Start' }));
+    await userEvent.type(await promptBox(), 'what is this repository for?{Enter}');
 
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'START_CHAT', {
-      payload: { repository: 'engine' },
-    });
-    expect(onSelect).toHaveBeenCalledWith('c0ffee11');
+    await waitFor(() => expect(onSelect).toHaveBeenCalledWith('c0ffee11'));
+    expect(starts()).toEqual([
+      { repository: 'engine', text: 'what is this repository for?', requestId: expect.stringMatching(/^[A-Za-z0-9-]{1,64}$/) },
+    ]);
+    expect(JSON.parse(window.localStorage.getItem('daoris.start.recent') ?? '[]')).toEqual(['engine']);
   });
 
   /**
    * Every choice may be left alone, and silence means the driver's own resolution rather than a
-   * default this surface invented (D49 §4, D51): the omitted field IS the answer.
+   * default this surface invented (D49 §4, D51): the omitted field IS the answer. The checkout is said
+   * exactly, as false (D162 point 2).
    */
-  it('carries the account and the own-tree choice, and omits what was not chosen', async () => {
+  it('carries the account and the tree chosen, and omits what was not chosen', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
-      if (type === 'START_CHAT') return { sessionId: null, message: 'busy' };
+      if (type === 'START_CHAT') return { sessionId: null, sent: false, message: 'busy' };
       if (type === 'HARNESSES') return ROSTER;
       return DRIVER_STATE;
     });
 
     show(null);
-    await openStart();
-    // The platform's own select (UX5 U5), opened from the keyboard as StartSession's tests explain.
-    (await screen.findByRole('combobox', { name: 'Account' })).focus();
-    await userEvent.keyboard('{Enter}');
+    const box = await promptBox();
+    const pick = async (chip: RegExp, row: RegExp) => {
+      (await screen.findByRole('button', { name: chip })).focus();
+      await userEvent.keyboard('{Enter}');
+      await userEvent.click(await screen.findByRole('menuitemradio', { name: row }));
+    };
     // Signed out, so labelled so (the spawn's refusal then names the login action).
-    await userEvent.click(await screen.findByRole('option', { name: /^work/ }));
-    await userEvent.click(screen.getByRole('checkbox', { name: 'In a tree of its own' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Start' }));
+    await pick(/^Agent and account:/, /^work/);
+    await pick(/^Tree:/, /^The checkout/);
+    await userEvent.type(box, 'hello{Enter}');
 
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'START_CHAT', {
-      payload: { repository: 'engine', profile: 'work', ownTree: true },
+    await waitFor(() => expect(starts()).toHaveLength(1));
+    expect(starts()[0]).toEqual({
+      repository: 'engine', text: 'hello', requestId: expect.any(String), profile: 'work', ownTree: false,
     });
   });
 
   /**
    * A refusal is the ledger's own sentence, verbatim — and nothing is attended on one: a
    * conversation that was refused has no session to show. The fixture holds a live DRIVEN session
-   * in `engine`, which is the case worth pinning.
+   * in `engine`, which is the case worth pinning. The words and the choices stay (UX5 U68).
    */
-  it('says a refusal in the form it answers, whole, and attends nothing', async () => {
+  it('says a refusal under Start, whole, keeps the words, and attends nothing', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'START_CHAT'
-      ? { sessionId: null, message: '`engine` already has an active session — `s1a2b3c4` (working, quest `#abc123`).' }
+      ? { sessionId: null, sent: false, message: '`engine` already has an active session — `s1a2b3c4` (working, quest `#abc123`).' }
       : DRIVER_STATE));
-    const notify = vi.fn();
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const onSelect = vi.fn();
+    const { onSelect, notify } = held(null);
+    const box = await promptBox();
+    await userEvent.type(box, 'Keep these words{Enter}');
 
-    render(
-      <QueryClientProvider client={client}>
-        <Tooltip.Provider>
-          <WorkFrame selected={null} onSelect={onSelect} notify={notify} />
-        </Tooltip.Provider>
-      </QueryClientProvider>,
-    );
-    await openStart();
-    await userEvent.click(await screen.findByRole('button', { name: 'Start' }));
-
-    // UX5 U68: in the drawer, where start was pressed, not a corner toast cut mid-sentence.
-    expect(await within(screen.getByRole('dialog')).findByRole('alert'))
+    // UX5 U68: where Start was pressed, not a corner toast cut mid-sentence.
+    expect(await within(screen.getByRole('main')).findByRole('alert'))
       .toHaveTextContent('engine already has an active session — s1a2b3c4 (working, quest #abc123).');
-    expect(notify).not.toHaveBeenCalledWith(expect.stringContaining('already has an active session'), 'error');
+    expect(notify).not.toHaveBeenCalled();
     expect(onSelect).not.toHaveBeenCalled();
+    expect(box).toHaveValue('Keep these words');
+  });
+
+  /**
+   * NEW1a's `sent: false`: the conversation opened and the words did not reach it. The page attends it, and the words wait
+   * in its box, with the driver's sentence beside them: the person's paragraph is never lost to a start (REV3).
+   */
+  it('attends a conversation that opened without the words, and keeps them in its box with the driver’s sentence', async () => {
+    SESSIONS = [DRIVEN, CHAT];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'START_CHAT') {
+        return { sessionId: 'c0ffee11', sent: false, message: 'conversation `c0ffee11` opened, but your words did not reach it.' };
+      }
+      return DRIVER_STATE;
+    });
+    const { onSelect } = held(null);
+    await userEvent.type(await promptBox(), 'what is this repository for?{Enter}');
+
+    await waitFor(() => expect(onSelect).toHaveBeenCalledWith('c0ffee11'));
+    expect(await screen.findByLabelText('Message')).toHaveValue('what is this repository for?');
+    expect(screen.getByText(/your words did not reach it/)).toBeInTheDocument();
+  });
+
+  /**
+   * NEW1a: the same request id never starts twice. A press whose answer never came is pressed again with its id, so a start
+   * that did open is answered rather than repeated; a press after an answer is a new start.
+   */
+  it('presses again with the same request id after a failure, and a new one after an answer', async () => {
+    let answer = 0;
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'START_CHAT') {
+        answer += 1;
+        if (answer === 1) throw new Error('the bridge did not answer');
+        return { sessionId: null, sent: false, message: 'busy' };
+      }
+      return DRIVER_STATE;
+    });
+    held(null);
+    const box = await promptBox();
+    await userEvent.type(box, 'once{Enter}');
+    expect(await within(screen.getByRole('main')).findByRole('alert')).toHaveTextContent('the bridge did not answer');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Start' }));
+    await waitFor(() => expect(starts()).toHaveLength(2));
+    await within(screen.getByRole('main')).findByText('busy');
+    await userEvent.click(screen.getByRole('button', { name: 'Start' }));
+    await waitFor(() => expect(starts()).toHaveLength(3));
+
+    const [first, again, next] = starts().map((payload) => payload.requestId);
+    expect(again).toBe(first);
+    expect(next).not.toBe(first);
   });
 
   it('sends one message over the bridge and clears the box', async () => {

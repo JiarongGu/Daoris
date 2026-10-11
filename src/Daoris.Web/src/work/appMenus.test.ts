@@ -29,22 +29,24 @@ describe('the menus, row by row', () => {
 
   it('rules off each group, and names Run\'s two record groups with the tip that says what to open', () => {
     const run = menuRows(entries(), 'run');
+    // A new conversation is Workspace's new thing since NEW1b, so Run opens on This session.
     expect(labels(run)).toEqual([
-      'Start a session…', 'Answer…', 'Try again', 'Review', 'Stop…', 'Open in its own window',
+      'Answer…', 'Try again', 'Review', 'Stop…', 'Open in its own window',
       'Take', 'Mark done…', 'Try again', 'Pause…', 'Resume', 'Decline…', 'Archive what ended…',
     ]);
     expect(run.map((row) => Boolean(row.separated))).toEqual([
-      false, true, false, false, false, false, true, false, false, false, false, false, true,
+      false, false, false, false, false, true, false, false, false, false, false, true,
     ]);
-    expect(run[1]!.heading).toEqual({ label: 'This session', tip: 'Open a session on Sessions to act on it here' });
-    expect(run[6]!.heading).toEqual({ label: 'This quest', tip: 'Open a quest on Quests to act on it here' });
+    expect(run[0]!.heading).toEqual({ label: 'This session', tip: 'Open a session on Sessions to act on it here' });
+    expect(run[5]!.heading).toEqual({ label: 'This quest', tip: 'Open a quest on Quests to act on it here' });
     // Nothing in front: the acts are in their place, and off.
-    expect(run.slice(1, 12).every((row) => row.disabled)).toBe(true);
+    expect(run.slice(0, 11).every((row) => row.disabled)).toBe(true);
   });
 
   it('prints each item\'s key at its right, as VS Code\'s menus do', () => {
     const workspace = menuRows(entries(), 'workspace');
-    expect(workspace.find((row) => row.id === 'workspace.newAsk')).toMatchObject({ label: 'New ask…', shortcut: 'Ctrl+N' });
+    expect(workspace.find((row) => row.id === 'workspace.newConversation')).toMatchObject({ label: 'New conversation…', shortcut: 'Ctrl+N' });
+    expect(workspace.find((row) => row.id === 'workspace.newAsk')).toMatchObject({ label: 'New ask…', shortcut: 'Ctrl+Shift+N' });
     expect(workspace.find((row) => row.id === 'workspace.settings')).toMatchObject({ label: 'Settings', shortcut: 'Ctrl+,' });
     expect(workspace.find((row) => row.id === 'workspace.scope:work')).toMatchObject({ badge: 4 });
     expect(menuRows(entries(), 'view').find((row) => row.id === 'view.commands')).toMatchObject({ shortcut: 'Ctrl+K' });

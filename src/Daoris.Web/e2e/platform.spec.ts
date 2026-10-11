@@ -876,7 +876,7 @@ test('the palette offers a browser nothing that needs this machine (SURF9)', asy
   await expect(palette.getByRole('option', { name: /Sessions/ })).toHaveCount(0);
   // Plugins is this machine's (D119 §3.7), so its palette row is not offered here.
   await expect(palette.getByRole('option', { name: /Plugins/ })).toHaveCount(0);
-  await expect(palette.getByRole('option', { name: /Start a session/ })).toHaveCount(0);
+  await expect(palette.getByRole('option', { name: /New conversation/ })).toHaveCount(0);
   await expect(palette.getByRole('option', { name: /Review what/ })).toHaveCount(0);
   // A window is the shell's to open, so neither of SURF8's is offered here.
   await expect(palette.getByRole('option', { name: /monitor window/ })).toHaveCount(0);

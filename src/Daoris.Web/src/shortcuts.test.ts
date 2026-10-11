@@ -75,7 +75,9 @@ describe('which command a press runs', () => {
   const inTerminal = { field: true, terminal: true };
 
   it('runs the table\'s command for its key, outside a field', () => {
-    expect(commandForKey(entries(), press('n', { ctrl: true }, 'KeyN'), outside)?.id).toBe('workspace.newAsk');
+    // NEW1b: Ctrl+N is a new conversation, and a new ask Ctrl+Shift+N.
+    expect(commandForKey(entries(), press('n', { ctrl: true }, 'KeyN'), outside)?.id).toBe('workspace.newConversation');
+    expect(commandForKey(entries(), press('N', { ctrl: true, shift: true }, 'KeyN'), outside)?.id).toBe('workspace.newAsk');
     expect(commandForKey(entries(), press('P', { ctrl: true, shift: true }, 'KeyP'), outside)?.id).toBe('view.commands');
     expect(commandForKey(entries(), press('k', { ctrl: true }, 'KeyK'), outside)?.id).toBe('view.commands');
     expect(commandForKey(entries(), press('f', { ctrl: true }, 'KeyF'), outside)?.id).toBe('edit.find');
@@ -85,8 +87,9 @@ describe('which command a press runs', () => {
     expect(commandForKey(entries(), press('f', { ctrl: true }, 'KeyF'), inField)).toBeNull();
     expect(commandForKey(entries(), press('k', { ctrl: true }, 'KeyK'), inField)).toBeNull();
     expect(commandForKey(entries(), press('z', { ctrl: true }, 'KeyZ'), outside)).toBeNull();
-    expect(commandForKey(entries(), press('n', { ctrl: true }, 'KeyN'), inField)?.id).toBe('workspace.newAsk');
+    expect(commandForKey(entries(), press('n', { ctrl: true }, 'KeyN'), inField)?.id).toBe('workspace.newConversation');
     expect(commandForKey(entries(), press('n', { ctrl: true }, 'KeyN'), inTerminal)).toBeNull();
+    expect(commandForKey(entries(), press('N', { ctrl: true, shift: true }, 'KeyN'), inTerminal)).toBeNull();
     // The frame's own keys stay the frame's in both.
     expect(commandForKey(entries(), press('2', { ctrl: true }, 'Digit2'), inTerminal)?.id).toBe('go.sessions');
   });
@@ -99,6 +102,7 @@ describe('which command a press runs', () => {
   it('claims no key in a browser that a browser keeps for itself', () => {
     const browser = entries({ attached: false });
     expect(commandForKey(browser, press('n', { ctrl: true }, 'KeyN'), outside)).toBeNull();
+    expect(commandForKey(browser, press('N', { ctrl: true, shift: true }, 'KeyN'), outside)).toBeNull();
     expect(commandForKey(browser, press('1', { ctrl: true }, 'Digit1'), outside)).toBeNull();
     expect(commandForKey(browser, press('f', { ctrl: true }, 'KeyF'), outside)).toBeNull();
     expect(commandForKey(browser, press('k', { ctrl: true }, 'KeyK'), outside)?.id).toBe('view.commands');
