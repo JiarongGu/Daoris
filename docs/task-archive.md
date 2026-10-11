@@ -13348,3 +13348,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PLUGUI1h — Ask Daoris opens Plugins** (after c/FRAME1i-a). D119; matching coverage and screen proof. A plugin as a go's item (`ItemViews` gains plugins) is this row's.
 
 **Outcome** 2026-10-11: a go names a plugin by id or an offer as `offer:<id>` (`ItemViews` sessions, quests, plugins), judged against the machine's plugins and offers: an unknown one is refused naming those held, an installed one named as an offer is told its id; the page opens it. A go to the old Settings → Plugins still lands on Plugins (D150's kept place), not refused. Health on the card waits on PLUGUI1f. Detail: D119's PLUGUI1h note.
+
+
+## NOTENAME1 — a note names an account as the person named it (2026-10-11, D152)
+
+> - [ ] **NOTENAME1 — a note names an account as the person named it** (web). `opening.*` and `waits.*` carry account ids, so a renamed account reads as its id on the page. Word the id by the name the person gave it (the roster's names), as the English does. ACCT2b; D152's UX7d-1 note; a noteLines test with a names map, en and zh.
+
+**Outcome** 2026-10-11: an `account` value kind (`account`, `over`) is said through a names map (`accountNames`, built from the roster by `accountName`, an id left out when nobody named it or two tools name it differently); `SessionConversation` passes it down; an id the map lacks is said as written. Notes outside the conversation view pass no map (none carries these codes). Detail: D152's NOTENAME1 note.

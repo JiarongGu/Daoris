@@ -5,6 +5,7 @@ import { useDebounced } from '../lib/useDebounced';
 import { searchable } from '../searchable';
 import { useHarnesses, useSessionEvents, useSessionSearch } from '../shell';
 import { Icon } from '../ui';
+import { accountNames } from './accountNames';
 import { settle, toTurns, type Turn, type Usage } from './conversation';
 import { ConversationFind } from './ConversationFind';
 import { type Cooling, ConversationView } from './ConversationView';
@@ -92,6 +93,9 @@ export function SessionConversation({
   // as the console sentence: it claims least.
   const harnesses = useHarnesses();
   const structured = harnesses.data?.harnesses?.find((row) => row.harness === adapter)?.structured;
+  // What the person calls each account, so the opening line and a wait name one as the agents' page does (NOTENAME1).
+  const roster = harnesses.data?.harnesses;
+  const names = useMemo(() => accountNames(Array.isArray(roster) ? roster : []), [roster]);
   // Read from what was asked (SESS1 S1), and as an ended session leaves it: a turn it ended inside says
   // so, and its open calls read stopped rather than running for good (S4).
   const { turns, usage, where } = useMemo(() => {
@@ -186,6 +190,7 @@ export function SessionConversation({
         onStartFrom={onStartFrom}
         reasons={reasons}
         cooling={cooling}
+        names={names}
         toolbar={long ? (
           <ConversationFind
             hasFailure={firstFailure !== null}

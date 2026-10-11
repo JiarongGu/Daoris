@@ -646,6 +646,21 @@ describe('ConversationView', () => {
     expect(within(container).getByText('work').tagName).toBe('CODE');
   });
 
+  /** NOTENAME1: the opening line says an account by the name the roster gives it, and an id the roster lacks as it is. */
+  it('names the account in the opening line by the name the person gave it', () => {
+    const { container } = view([
+      ev({
+        kind: 'note', text: 'opened on `account-1`: …', parts: [
+          { code: 'opening.opened', values: { account: 'account-1', why: 'near', over: 'account-9' }, text: 'opened on `account-1`: …' },
+        ],
+      }),
+      ev({ kind: 'user', origin: 'person', text: 'hello' }),
+    ], { names: new Map([['account-1', 'personal']]) });
+    expect(container.textContent).toContain('Opened on personal:');
+    expect(container.textContent).toContain('account-9');
+    expect(container.textContent).not.toContain('account-1');
+  });
+
   /**
    * MSG1g2 (D137 §2.2, MSG1g's note): words a resume holds while the account its record ran on cools say so, naming its
    * reset, and offer *Go on in a new session*, saying the new session starts without this conversation's context. What the

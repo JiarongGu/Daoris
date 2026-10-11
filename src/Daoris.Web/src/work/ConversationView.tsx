@@ -5,6 +5,7 @@ import { cn } from '../lib/cn';
 import { Button, Dot, Icon, Inline, Tip } from '../ui';
 import type { NotePart } from '../api';
 import { type Ask, type Block, CONVERSATION_CODES, type PlanEntry, runCount, segments, type Turn } from './conversation';
+import type { AccountNames } from './accountNames';
 import { HandedAccount } from './HandedAccount';
 import { Markdown } from './Markdown';
 import { Note } from './Note';
@@ -40,6 +41,8 @@ type Said = {
   onStartFrom?: (words: string[]) => void;
   reasons: ReasonValues;
   cooling?: Cooling;
+  /** What the person calls each account (NOTENAME1), for a driver's note that names one. */
+  names?: AccountNames;
 };
 
 const SaidDoors = createContext<Said>({ chat: false, reasons: {} });
@@ -73,8 +76,10 @@ const SaidDoors = createContext<Said>({ chat: false, reasons: {} });
  */
 export function ConversationView({
   turns, tree, structured, chat = false, live = false, turnRunning, loaded = true, earlier = false, onLoadEarlier,
-  reveal, toolbar, onSession, onStartFrom, reasons = {}, cooling,
+  reveal, toolbar, onSession, onStartFrom, reasons = {}, cooling, names,
 }: {
+  /** What the person calls each account, by id (NOTENAME1): a driver's note that names one says the name, not the id. */
+  names?: AccountNames;
   /**
    * The account the person's words wait for cools (MSG1g2): until when, and *Go on in a new session* with what it came to.
    * Absent where nothing cools.
@@ -143,7 +148,7 @@ export function ConversationView({
     // own: the agent's words are content, shown at the width they are given (UX5 U16: a 768px
     // cap was half a maximized window).
     // A chat's words go on with the next word said to it, never by themselves at a reset (MSG1c), so its cool-off is not said.
-    <SaidDoors.Provider value={{ chat, onSession, onStartFrom, reasons, cooling: chat ? undefined : cooling }}>
+    <SaidDoors.Provider value={{ chat, onSession, onStartFrom, reasons, cooling: chat ? undefined : cooling, names }}>
       <section aria-label={t('work.conversation.label')} className="grid w-full grid-cols-[minmax(0,1fr)] gap-3">
         {/* Pinned beneath the session's page header where one is pinned above it (SESSUX1d, D126 §3.2): the header says its
             height on the main area as `--session-head`, and a window with none (a detached session) pins at the top. */}
@@ -614,14 +619,15 @@ const LONG_NOTE = 240;
  */
 function NoteLine({ text, parts }: { text: string; parts?: readonly NotePart[] }) {
   const { t, i18n } = useTranslation();
-  const worded = parts?.length ? noteText(t, { note: text, parts }, i18n.language) : text;
+  const { names } = useContext(SaidDoors);
+  const worded = parts?.length ? noteText(t, { note: text, parts }, i18n.language, names) : text;
   const long = worded.length > LONG_NOTE;
   const [open, setOpen] = useState(!long);
   return (
     <div className="text-small text-ink-soft">
       <p className={cn('m-0 wrap-anywhere', !open && 'line-clamp-2')}>
         <span className="mr-1.5 text-meta uppercase tracking-[0.06em] text-ink-faint">{t('work.conversation.driver')}</span>
-        {parts?.length ? <Note note={text} parts={parts} compact /> : <Inline text={text} />}
+        {parts?.length ? <Note note={text} parts={parts} names={names} compact /> : <Inline text={text} />}
       </p>
       {long && (
         <button
