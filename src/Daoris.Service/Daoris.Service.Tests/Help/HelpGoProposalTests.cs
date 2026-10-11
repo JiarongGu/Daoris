@@ -92,6 +92,9 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
         // ENTRY1f2: and one session under sessions, by its id, never Ask Daoris's own conversation.
         Assert.Contains("For sessions", item);
         Assert.Contains("a session by its id", item);
+        // PLUGUI1h: and under plugins, an installed plugin by its id or an offer as offer:<id>.
+        Assert.Contains("For plugins", item);
+        Assert.Contains("offer:<id>", item);
         Assert.Contains("Ask Daoris's own", item);
         var tool = method.GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
             .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
