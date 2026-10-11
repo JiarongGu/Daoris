@@ -299,6 +299,9 @@ internal static class TreesConsole
             // says where it would go and does nothing.
             case ["land", var session, ..]:
             {
+                // LANDNAME1a: the name the person enters replaces the rule's. A --branch with no name is the usage, not the rule's name.
+                var entered = Option(args, "--branch");
+                if (args.Contains("--branch") && entered is null) return Usage("`--branch` takes a branch name.");
                 using var service = ServiceClient.FromEnvironment();
                 var (tree, _) = await service.SessionGroundAsync(session).ConfigureAwait(false);
 
@@ -339,6 +342,7 @@ internal static class TreesConsole
                 var subject = await LandingRules.SubjectAsync(
                     session, questId, quest => service.FindQuestAsync(quest),
                     events.Openings([session]).GetValueOrDefault(session)).ConfigureAwait(false);
+                subject = subject with { Entered = entered };
                 // A plugin's own lines, said as they come, under its name — as the console says them (D64 §4).
                 var landing = new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => Console.WriteLine($"  plugin:{plugin}  {line}"), log: log));
 
@@ -483,7 +487,7 @@ internal static class TreesConsole
     {
         if (problem is not null) Console.Error.WriteLine($"trees: {problem}");
         Console.Error.WriteLine("usage: daoris-driver trees [list | remove <path|session|branch> [--repository <name>] [--force]");
-        Console.Error.WriteLine("                           | clean [--workspace <name>] [--yes] | land <session> [--plan]");
+        Console.Error.WriteLine("                           | clean [--workspace <name>] [--yes] | land <session> [--plan] [--branch <name>]");
         Console.Error.WriteLine("                           | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]");
         Console.Error.WriteLine("                           | state <session|branch> [--repository <name>]");
         Console.Error.WriteLine("                           | sync [--repository <name>] [--workspace <name>] [--all] [--yes]]");
@@ -497,7 +501,8 @@ internal static class TreesConsole
         Console.Error.WriteLine("  branch a landing made whose files read on the line as it left them (WSR5).");
         Console.Error.WriteLine("  land accepts a session's work as the review's Accept does, by the workspace's");
         Console.Error.WriteLine("  rule; --plan says where it would go and does nothing (D87). A rule that tidies");
-        Console.Error.WriteLine("  also removes every other session branch the landed work holds (LAND3). A rule naming a");
+        Console.Error.WriteLine("  also removes every other session branch the landed work holds (LAND3). --branch names the");
+        Console.Error.WriteLine("  branch itself, in place of the rule's name, where the rule makes a branch (LANDNAME1a). A rule naming a");
         Console.Error.WriteLine("  plugin hands the branch to it to push and open the pull request (D100). A session");
         Console.Error.WriteLine("  that already landed, while its branch stands or once its tree is gone, is said");
         Console.Error.WriteLine("  as its review says it, and lands nothing again (D113).");

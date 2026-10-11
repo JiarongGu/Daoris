@@ -164,6 +164,24 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
+    /// LANDNAME1a: `trees land` takes <c>--branch &lt;name&gt;</c> for the plan and the press alike, and the usage says so. A
+    /// <c>--branch</c> with no name is the usage, never the rule's name quietly: the person would think theirs was used.
+    /// <c>LandingTests</c> holds what the name does over real git.
+    /// </summary>
+    [Fact]
+    public void The_terminals_landing_takes_an_entered_branch_for_the_plan_and_the_press()
+    {
+        var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
+        var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
+
+        Assert.Contains("land <session> [--plan] [--branch <name>]", console);
+        Assert.Contains("land <session> [--plan] [--branch <name>]", program);
+        Assert.Contains("Option(args, \"--branch\")", console);
+        Assert.Contains("{ Entered = entered }", console);
+        Assert.Contains("`--branch` takes a branch name", console);
+    }
+
+    /// <summary>
     /// LAND3c: the terminal's `trees remove &lt;session|branch&gt;` is the driver's one discard, the call the screen's
     /// <c>DISCARD_SESSION_BRANCH</c> ends in, so it keeps a branch a live session's tree holds as the screen does. The host
     /// composes none of its pieces itself: no layout read, no removal by branch. <c>SessionBranchDiscardTests</c> holds the act.

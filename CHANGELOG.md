@@ -245,6 +245,9 @@ with the version and date at release.
 - Status words (open, taken, done) are easier to read in both themes, as danger words already were.
 - `daoris-driver trees clean` and `trees sync` take `--workspace <name>`, as a workspace's Branches tab
   does, and refuse a word they do not know instead of ignoring it.
+- `daoris-driver trees land <session>` takes `--branch <name>`, in `--plan` and the press alike: the name replaces
+  the landing rule's wholesale, a name git would not take or a branch Daoris did not make is refused in words about
+  that name, and a rule that merges, making no branch, refuses a name rather than ignoring it.
 - A quest sitting because another machine took it says so in Chinese too, naming that machine.
 - Codex accounts show how much of their five-hour and weekly limits they have used, read from Codex
   itself without spending usage, and rotation switches before their limits as it does for Claude Code.
