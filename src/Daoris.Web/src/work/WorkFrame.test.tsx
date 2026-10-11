@@ -3156,6 +3156,42 @@ describe('acting on what a session landed', () => {
   });
 
   /**
+   * LANDNAME1b (D145's LANDNAME1a note): a branch name entered in the head's ask asks the plan again with it, so the driver's
+   * refusal shows before the press, and the press sends it; a press with no name stays `{ id }` (the test above).
+   */
+  it('asks the plan again with an entered branch name, and the press sends it', async () => {
+    SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
+    invoke.mockImplementation(async (_module: string, type: string, args?: { payload?: { branch?: string } }) => {
+      if (type === 'SESSION_GROUPS') {
+        return { sessions: [{ session: 's1a2b3c4', group: 'review', shown: 'completed', archived: false, teammate: false,
+          lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] };
+      }
+      if (type === 'LANDING') {
+        return args?.payload?.branch === 'main'
+          ? { session: 's1a2b3c4', form: 'branch', target: 'main', problem: 'a branch named `main` stands, which Daoris did not make.' }
+          : { session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace' };
+      }
+      if (type === 'LAND_SESSION_TREE') return { session: 's1a2b3c4', done: true, message: 'put its work on `mine/x` — 1 commit(s).' };
+      if (type === 'SESSION_DIFF') return DIFF;
+      return DRIVER_STATE;
+    });
+
+    show('s1a2b3c4', vi.fn());
+    await userEvent.click(await screen.findByRole('button', { name: 'Accept…' }));
+    const ask = screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' });
+    const field = await within(ask).findByRole('textbox', { name: 'Branch name' });
+    expect(field).toHaveAttribute('placeholder', 'feature/delta');
+    await userEvent.type(field, 'main');
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LANDING', { payload: { id: 's1a2b3c4', branch: 'main' } });
+    expect(await within(ask).findByText(/which Daoris did not make/)).toBeTruthy();
+
+    await userEvent.clear(field);
+    await userEvent.type(field, 'mine/x');
+    await userEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', { payload: { id: 's1a2b3c4', branch: 'mine/x' }, timeoutMs: 6 * 60_000 });
+  });
+
+  /**
    * XAGENT1g (the second-agent design §7–§9): where a level asks a second opinion, the session's page draws it before *Accept…*
    * from the landing's plan, its findings read from the gate, and *Accept…*, which answers a dispute, sends the gate's token back.
    * *Ask again* is the driver's own press.

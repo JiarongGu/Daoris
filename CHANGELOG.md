@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session's *Accept…* where the repository's rule puts the work on a branch now has a *Branch name* field: a name you enter
+  replaces the rule's whole name, blank keeps it, and a name git would not take, a branch that already stands which Daoris did
+  not make, or a merge rule is said in the ask before you press Accept.
 - Ask Daoris can propose archiving or unarchiving sessions, by id or everything that ended, and deleting one. The card says
   what the list keeps and why, and nothing changes until you press Apply.
 - A conversation's notes that an agent would not take what you added, that messages you sent while it worked never reached

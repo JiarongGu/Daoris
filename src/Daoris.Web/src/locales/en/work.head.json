@@ -25,6 +25,8 @@
   "work.head.accept": "Accept…",
   "work.head.landTitle": "accept {{branch}}",
   "work.head.landMeanIt": "Accept",
+  "work.head.landName": "Branch name",
+  "work.head.landNameHint": "Leave it blank to keep {{branch}}.",
   "work.head.landReading": "Reading where accepting would put it…",
   "work.head.landUnfinished": "This session did not finish, so what lands is only what it committed before it ended. Its review shows it.",
   "work.head.landUncommitted": "Its tree has {{count}} uncommitted path, and a landing refuses the work it would leave behind: commit it in its tree first.",

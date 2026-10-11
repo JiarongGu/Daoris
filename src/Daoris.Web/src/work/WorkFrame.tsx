@@ -1068,7 +1068,11 @@ export function WorkFrame({
   // What its own tree offers to land, whatever its ending (LAND4), as the driver's reader said it, and where accepting would
   // put it: the review's own plan, asked only where there is something to land, under the review's key.
   const lands = attended && here && grouping?.lands ? grouping.lands : null;
-  const landing = useLanding(lands ? attended!.id : null);
+  // LANDNAME1b: the branch name typed in the head's land ask, so its plan is asked again with it and a refusal shows first.
+  const [landName, setLandName] = useState('');
+  const landing = useLanding(lands ? attended!.id : null, landName);
+  // Another session's page is another ask: a name typed for one is not carried to the next.
+  useEffect(() => setLandName(''), [attended?.id]);
   const land = useLandSessionTree();
   // The review's gate where it holds that work (REVIEWENV1g, design §3.1): the set-up step's record, whether Daoris still serves
   // its tab here, and the verdict's presses, each by the one owner; *Set it up* follows the session's own quest.
@@ -1384,7 +1388,7 @@ export function WorkFrame({
             opinion={headOpinion}
             landing={landing.data}
             // The second opinion's token rides with the press that answers what it showed (XAGENT1g).
-            onLand={lands && attended ? (answered, answers) => land.mutate({ id: attended.id, answers }, {
+            onLand={lands && attended ? (answered, answers, branch) => land.mutate({ id: attended.id, answers, branch }, {
               onSuccess: (result) => {
                 if (!result.done) {
                   answered.refused(result.message);
@@ -1395,6 +1399,7 @@ export function WorkFrame({
               },
               onError: (error) => answered.refused(sentence(error)),
             }) : undefined}
+            onName={lands && attended ? setLandName : undefined}
             // SQUASHTIDY1b: its discard, never forced from here (`discardHeld`).
             discards={discards}
             onDiscardTree={discardHeld}

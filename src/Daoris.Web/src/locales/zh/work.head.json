@@ -25,6 +25,8 @@
   "work.head.accept": "采纳…",
   "work.head.landTitle": "采纳 {{branch}}",
   "work.head.landMeanIt": "采纳",
+  "work.head.landName": "分支名",
+  "work.head.landNameHint": "留空则沿用 {{branch}}。",
   "work.head.landReading": "正在读取采纳后它会落在哪里…",
   "work.head.landUnfinished": "这个会话没有完成，所以落地的只是它已提交的内容，它的审阅中列有这些提交。",
   "work.head.landUncommitted": "它的工作树中有 {{count}} 个未提交的路径，落地会拒绝留下它们的工作：请先在工作树中提交。",
