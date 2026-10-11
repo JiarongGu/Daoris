@@ -172,6 +172,18 @@ public sealed class QuestReviewChoiceTests
         Assert.Contains("daoris-driver quest review <id> on|<environment>", QuestReviewCommand.Usage);
     }
 
+    /// <summary>The host's fallback <c>quest</c> usage names the choice beside the verdicts (REVIEWENV1j2); the host is read as text.</summary>
+    [Fact]
+    public void The_host_fallback_usage_names_the_choice()
+    {
+        var program = File.ReadAllText(Path.Combine(
+            Daoris.Driver.Tests.HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host", "Program.cs"));
+        // The usage string is built from joined literals, so each form is read where it ends its literal.
+        Assert.Contains("quest review <id> reviewed|not-yet|skip [\\\"…\\\"]  ·  \"", program);
+        Assert.Contains("+ \"quest review <id> off [\\\"…\\\"]  ·  quest review <id> on|<environment>\");", program);
+        Assert.Contains("//   quest review <id> off [\"…\"]  ·  quest review <id> on|<environment>", program);
+    }
+
     /// <summary>The console hands the world this machine's review rule, which the set-up's door reads.</summary>
     [Fact]
     public void The_console_hands_the_rule_to_the_door()

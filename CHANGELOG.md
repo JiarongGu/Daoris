@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- Where you choose how work is reviewed (the ask form, an ask's page, a quest's review gate), a quiet line now gives the
+  matching `daoris-driver` command, and the driver's usage for `quest` names that choice.
 - A conversation's notes of your acceptance of its work, of handing it on, of an option you set for it, of where you were
   told you are, and of a browser server held back now read in your language, in English and 中文. The agent's and a plugin's
   own words in them stay as written.
