@@ -125,7 +125,7 @@ public sealed partial class KnowledgeLinesToolTests : IAsyncLifetime
         Assert.DoesNotContain("CountAsync", item);
 
         // A row is one line, and its range reads it (ORIENT2h).
-        var row = await _tools.GetAsync("atlas:docs/index/routes.md#Bridge routes › DAORIS.DRIVER (2) › Route: SESSION_GO_ON_NEW", lines: "7");
+        var row = await _tools.GetAsync("atlas:docs/index/routes.md#Bridge routes › DAORIS.DRIVER › Route: SESSION_GO_ON_NEW", lines: "7");
         Assert.Contains("`docs/index/routes.md:7`", row);
         Assert.Contains("| `SESSION_GO_ON_NEW` | `DriverModule.Sessions.cs:97` |", row);
         Assert.DoesNotContain("STATE", row);

@@ -13729,3 +13729,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SQUASHTIDY1e — landed content recovery** (driver). Preserve aggregate commit messages in recovery ref. D102; CleanLandedAsync test.
 
 **Outcome** 2026-10-12: a landed branch's removal, any kind but a plain merge, keeps its judged tip at `refs/daoris/discarded/<branch>[-n]` and says where, so its commits and messages stay recoverable after a squash; a failed keep leaves the branch, a refused delete drops the ref. Detail: D102's SQUASHTIDY1e note.
+
+## ORIENT2h7 — stable count-independent ids (2026-10-12, D151)
+
+> - [ ] **ORIENT2h7 — stable count-independent ids** (service/CLI). Ignore heading/label trailing counts; correct fence fixture note. D151 notes; two-commit measurement.
+
+**Outcome** 2026-10-12: an index entry's id, in both readers, ignores a heading's trailing count (`IndexRows.Uncounted`); the fence table's `_why` names four readers. Over h5's two commits, 452 of the 457 ids that moved with a heading's count now keep theirs; the 5 left carry a label count (*· 8 notes*, the Decisions table), not done and proposed as a row. Detail: D151's ORIENT2h7 note.
