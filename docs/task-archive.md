@@ -13495,3 +13495,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6h2b1 — origin's branches behind the list's ⋯** (web). `BranchList` keeps `origin` rows and draws none; a ⋯ after Yours shows them, only where some exist (mirror `ListMore`, work/ListPane.tsx:304-364). Built-in-git design §2.2; D150's UX6h2a note.
 
 **Outcome** 2026-10-11: a ⋯ after Yours, drawn only where origin holds branches no local one names, ticks *Show origin's branches (N)* to draw *Origin's (N)* and unticks it again; hidden each time the tab opens, focus back on the ⋯. `ListMore` as it is; no wire change. Detail: D150's UX6h2b1 note.
+
+## WORKFLOW1e3 — clear run bindings with history (2026-10-11, D157)
+
+> - [ ] **WORKFLOW1e3 — clear run bindings with history** (driver; after e). Include binding in clear plan/count. D153/D157; clear test.
+
+**Outcome** 2026-10-11: a run's binding goes with its quest's cleared unit (planned, then taken after the service's yes), and a workspace's clear takes a binding no quest holds as a left-over; its size is in the bytes, with no new phrase or wire field, and an open quest's binding stays. Detail: D157's WORKFLOW1e3 note.
