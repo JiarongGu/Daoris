@@ -13519,3 +13519,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6h2b2 — the branch list in a workspace's Branches tab** (web; after b1). Each repository a group above the clean-up and sync (which stay workspace-only), `apart` folded and included by the person (D112) with a per-repository read; titles per group. BRSCOPE1's tests hold. Design §2.2; D150's UX6h2a and BRSCOPE1 notes.
 
 **Outcome** 2026-10-11: a workspace's Branches tab lists each repository holding Daoris's branches as a group headed by a door to its page (`WorkspaceBranches`), five shown and the rest a press away, the rest folded apart and each included with its own read; titles are asked only for groups shown; the clean-up and sync below are unchanged. UX6h2 is closed. Detail: D150's UX6h2b2 note.
+
+## PLUGUI1c2b — a harness's plugin chip is a door (2026-10-11, D119)
+
+> - [ ] **PLUGUI1c2b — a harness's plugin chip is a door** (web). `AgentPage.tsx:741`'s *declared by plugin* opens the plugin's page, threaded as `onOpenAgent` is (App.tsx:769-777). Design §5:677-691.
+
+**Outcome** 2026-10-11: an agent's *Ways in* draws *declared by plugin X* as a ghost button that opens X in Plugins, the opener threaded from App.tsx through `useAgentsView` and `AgentsMain`; without one it stays text. No new words. Detail: D119's PLUGUI1c2b note.

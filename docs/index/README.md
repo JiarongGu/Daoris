@@ -34,11 +34,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Web/e2e/platform.spec.ts` | 56 | 967 |
 | `src/Daoris.Web/src/App.test.tsx` | 50 | 966 |
-| `src/Daoris.Web/src/App.tsx` | 70 | 1282 |
+| `src/Daoris.Web/src/App.tsx` | 70 | 1283 |
 | `src/Daoris.Web/src/ProjectsView.test.tsx` | 76 | 1377 |
 | `src/Daoris.Web/src/QuestsView.test.tsx` | 70 | 1375 |
-| `src/Daoris.Web/src/agents/AgentPage.tsx` | 51 | 951 |
-| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 105 | 2026 |
+| `src/Daoris.Web/src/agents/AgentPage.tsx` | 51 | 956 |
+| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 105 | 2030 |
 | `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 57 | 1148 |
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 46 | 861 |
 | `src/Daoris.Web/src/ui.test.tsx` | 48 | 975 |

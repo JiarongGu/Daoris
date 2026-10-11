@@ -37,7 +37,7 @@ const DOOR_ACTIONS = ['install', 'update', 'pin', 'unpin'] as const;
  *
  * **Every act has its terminal twin** (D50): `daoris agent …`, named at the page's foot.
  */
-export function useAgentsView({ active, chosen, onChoose, notify, part = null, onAnchored }: {
+export function useAgentsView({ active, chosen, onChoose, notify, part = null, onAnchored, onOpenPlugin }: {
   /** The view is in front. */
   active: boolean;
   /** The list's chosen item: an agent's id, which the application remembers (`daoris.list.agents.chosen`). */
@@ -48,6 +48,8 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
   part?: AgentPart | null;
   /** Told once the part is open, so a later visit opens at the page's top again. */
   onAnchored?: () => void;
+  /** A door's *declared by plugin* opens that plugin in the Plugins place (PLUGUI1c2b). */
+  onOpenPlugin?: (plugin: string) => void;
 }): ViewLayout {
   const { t } = useTranslation();
   const roster = useHarnesses();
@@ -109,6 +111,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
                 notify={notify}
                 part={part}
                 onAnchored={onAnchored}
+                onOpenPlugin={onOpenPlugin}
                 install={installing === chosenTool.name}
                 onInstallTaken={() => setInstalling(null)}
               />
@@ -134,12 +137,13 @@ export function useAgentsWaiting(): number {
  * The chosen agent's page and every act on it (UX6e): the organism under the page, inside the application's running
  * action (SIGNIN1), so a sign-in started here outlives leaving the place and its end is said wherever the person is.
  */
-function AgentsMain({ tool, adapter, notify, part, onAnchored, install = false, onInstallTaken }: {
+function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, install = false, onInstallTaken }: {
   tool: Tool;
   adapter?: string;
   notify: Notify;
   part?: AgentPart | null;
   onAnchored?: () => void;
+  onOpenPlugin?: (plugin: string) => void;
   /** The list's Install was pressed on this agent (AGENTS2): its installer runs here, once. */
   install?: boolean;
   /** Told as the install is taken, so the request is spent. */
@@ -329,6 +333,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, install = false, 
       doorRunning={doorRunning}
       doorConsole={running && doorRunning ? <SessionConsole id={running} /> : null}
       acts={acts}
+      onOpenPlugin={onOpenPlugin}
       onAnchored={onAnchored}
     />
   );
