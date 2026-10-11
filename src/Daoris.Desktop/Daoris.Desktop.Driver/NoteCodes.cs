@@ -596,6 +596,12 @@ public static class NoteCodes
     public static readonly NoteCode OpinionUnanswered = new("opinion.unanswered", ["count"]);
     public static readonly NoteCode OpinionDisputed = new("opinion.disputed", ["count"]);
 
+    // ——— How the reviewer's own session ended (XAGENT1g4a, <see cref="OpinionAnswers.Concluded"/>): its turn failed (the failure
+    // follows as the program's words), it read the work and ended, or it exited otherwise. The opinion's id is a short id.
+    public static readonly NoteCode OpinionReviewerFailed = new("opinion.reviewer-failed", ["opinion"]);
+    public static readonly NoteCode OpinionReviewerRead = new("opinion.reviewer-read", ["opinion"]);
+    public static readonly NoteCode OpinionReviewerExited = new("opinion.reviewer-exited", ["opinion", "exit"]);
+
     // ——— A conversation's words waiting for its own account's reset (CONVNOTE2g, <see cref="ResumeWords"/>, MSG1g): the account
     // by its owner and its id, never by the name the person gave it, since a conversation's events never leave the machine (D152's
     // UX7d-1 note); until when a moment, why a cool-off's reason. The tool's own sign-in has a line of its own and its refresh

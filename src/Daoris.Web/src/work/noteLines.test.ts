@@ -619,6 +619,27 @@ describe('noteLines', () => {
     });
   });
 
+  /** XAGENT1g4a: the reviewer's own conclusion; the failure stays the program's words. */
+  describe('a second opinion’s reviewer ending', () => {
+    it('words each ending, the failure beneath as written', () => {
+      const failed = [coded('opinion.reviewer-failed', '…', { opinion: 'op1' }), words('no route to D:/x', 'program')];
+      expect(noteLines(t, { parts: failed }, 'en')).toEqual([
+        { kind: 'said', text: "The reviewer's turn failed as it read the work for second opinion `op1`:" },
+        { kind: 'words', text: 'no route to D:/x', by: 'program' },
+      ]);
+      expect(noteLines(zh, { parts: failed }, 'zh')[0].kind).toBe('said');
+      const read = [coded('opinion.reviewer-read', '…', { opinion: 'op1' })];
+      expect(noteLines(t, { parts: read }, 'en')[0].text).toBe("It read the work and ended; what it said is second opinion `op1`'s.");
+      expect(noteLines(zh, { parts: read }, 'zh')[0].kind).toBe('said');
+      const exited = [coded('opinion.reviewer-exited', '…', { opinion: 'op1', exit: 3 })];
+      expect(noteLines(t, { parts: exited }, 'en')[0].text).toBe(
+        "It ended with exit 3 as it read the work; what it said, if anything, is second opinion `op1`'s.",
+      );
+      expect(noteLines(zh, { parts: exited }, 'zh')[0].kind).toBe('said');
+      expect(noteLines(zh, { parts: [coded('opinion.reviewer-exited', '…', { opinion: 'op1' })] }, 'zh')[0].kind).toBe('recorded');
+    });
+  });
+
   /** CONVNOTE2e: a conversation's door that failed; a program's message and the agent's refusal stay as written. */
   describe('a door or a turn that failed', () => {
     it('words a session that could not open or failed, and a turn not taken, and leaves the program’s words as written', () => {

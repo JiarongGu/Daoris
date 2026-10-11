@@ -112,7 +112,8 @@ Contract: `docs/2026-10-08-second-agent-design.md` (D155), section proofs.
 - [ ] **XAGENT1f5 — answers under steps rules** (driver/modules; after f4). Judge correct occasion; refresh stale declared-only comments. §8.1/§8.5; Process gate/look cases.
 - [ ] **XAGENT1f3 — omitted gate behavior** (driver). Failure carry-on, safe verify commands, unfinished-work help and chain/ask choices. §8.4–§8.5; gate/look tests.
 - [ ] **XAGENT1g2 — quest/ask/struck doors** (web; after f3). Chain opinions and failure help through useOpinionActs. §9; bilingual tests.
-- [ ] **XAGENT1g4 — coded answers and reviewer row** (driver/web). Reviewer beside work with measured usage; bilingual note parts. §6.4/§9.
+- [ ] **XAGENT1g4b — the reviewer's measured use** (modules/web). The gate's pass shows what the reviewer used of its context, *not measured* where none was recorded. §6.3, §9; D57 §4.
+- [ ] **XAGENT1g4c — the reviewer's row says whose work it reads** (driver/web; design call first). A reviewer's Sessions row is its own, kind *Second opinion*; say which session's work it reads (the record holds only the opinion's id: the working id on the record or the detail). §9.
 - [ ] **XAGENT1h — intake reviewer choice** (driver/service; after c). Quoted choice or proposal only. §2.4; golden/refusal/stub proof.
 - [ ] **XAGENT1i — second-opinion rehearsal** (tools/examples; after f/plugin maker). Findings reach work; disputes/missing reviewer hold. §6/§8.
 - [ ] **XAGENT1j — measured reviewer posture** (driver; owner authorizes account spending). Try writing through each door; declare only observed refusal. §5.2/D53.
