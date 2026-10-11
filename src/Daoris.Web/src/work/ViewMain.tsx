@@ -25,8 +25,18 @@ import { usePublishedOffer } from '../menus/mainOffer';
  * whole in its tip and on *Show all* where it was cut; and `facts` is the line under it, the facts the state makes
  * matter, said once. Such a head has no id line: the id is its ⋯'s and its *Details*'.
  */
-export function PageHead({ title, version, pills, id, line, acts, icon, lead, clamp, facts, fact }: {
-  title: string; version?: string; pills?: ReactNode; id?: string; line?: string; acts?: ReactNode; icon?: ReactNode;
+export function PageHead({ title, version, pills, id, line, acts, fold, more, icon, lead, clamp, facts, fact }: {
+  title: string; version?: string; pills?: ReactNode; id?: string; line?: string; icon?: ReactNode;
+  /**
+   * The acts (HEAD2a, D162 §3, the entry-and-heads design §2): primary first, then the secondary. They hold still: above
+   * 640 px of the main area they sit in a column of their own at the title's first line, so a long title wraps under itself;
+   * at 640 px or less they take a right-aligned row under the facts.
+   */
+  acts?: ReactNode;
+  /** An act that folds into the ⋯ at the narrow width: shown only above 640 px, after `acts`; its caller says it again in the ⋯. */
+  fold?: ReactNode;
+  /** The ⋯, last. */
+  more?: ReactNode;
   /** What leads the title: a record's state, on its pill. */
   lead?: ReactNode;
   /** The title's lines at most; absent, it wraps whole. */
@@ -41,8 +51,8 @@ export function PageHead({ title, version, pills, id, line, acts, icon, lead, cl
 }) {
   const said = facts && facts.length > 0 ? facts.join(' · ') : null;
   return (
-    <header className="mb-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-      <div className="flex min-w-0 flex-1 basis-64 items-start gap-3">
+    <header className="mb-4 grid gap-x-4 gap-y-2 @[40rem]/main:grid-cols-[minmax(0,1fr)_auto] @[40rem]/main:items-start">
+      <div className="flex min-w-0 items-start gap-3">
         {icon && <span className="shrink-0">{icon}</span>}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
@@ -64,7 +74,13 @@ export function PageHead({ title, version, pills, id, line, acts, icon, lead, cl
           {line && <Prose className="mt-1 wrap-anywhere">{line}</Prose>}
         </div>
       </div>
-      {acts && <div className="flex flex-wrap items-center gap-2">{acts}</div>}
+      {(acts || fold || more) && (
+        <div className="flex items-center justify-end gap-2 @[40rem]/main:self-start">
+          {acts}
+          {fold && <div className="hidden @[40rem]/main:contents">{fold}</div>}
+          {more}
+        </div>
+      )}
     </header>
   );
 }
