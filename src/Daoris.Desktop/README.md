@@ -262,6 +262,13 @@ show real repository content, so it never enters a tracked file (`sensitive-info
 prunes afterwards — newest 25, at most 150 MB — because a full-resolution PNG is megabytes and a
 capture folder nobody measures grows until somebody does.
 
+**Regenerating Ask Daoris's room goldens (GOLDEN1, 2026-10-12).** `HelpRoomGoldenTests` compares the room's render
+with `Daoris.Desktop.Driver.Tests/Help/golden/help-room/`. After a deliberate change to the room, run
+`DAORIS_GOLDEN_WRITE=1 dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter "FullyQualifiedName~HelpRoomGoldenTests"`
+(PowerShell: set `$env:DAORIS_GOLDEN_WRITE = '1'` first) and read `git diff` on that folder: the switch writes
+`empty.md`, `full.md`, `sparse.md` and `settings.json` from the render and passes. Unset, as in every gate, the
+test compares. Never hand-edit a golden.
+
 ## The loop it exists to run (D45)
 
 A target becomes a quest → the driver starts (or wakes) the owning repository's agent session with that

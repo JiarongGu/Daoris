@@ -13567,3 +13567,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6h3b — the branch page** (web; after a). A branch row opens the branch as page state in Repositories with a way back to Branches in its header, its standing line and its graph by `sinceParted`, paged; the line's row opens History. A commit's press waits on GIT1f; create, fetch and push on GIT1g. Design §2.3.
 
 **Outcome** 2026-10-12: a branch's name in a repository's or a workspace's Branches opens its page (`BranchPage`): its kind, a session's state and title, where it stands in the list's own words (`branchStanding.ts`), *Back to Branches*, and its walk since it left its line beside the line's, paged with History's foot (`usePagedGraph`, shared); the line's row opens History; page state, not remembered. The focus after the way back is UX6h3d. Detail: D150's UX6h3b note.
+
+## GOLDEN1 — the room's goldens rewritten by their test (2026-10-12)
+
+> - [ ] **GOLDEN1 — the room's goldens rewritten by their test** (driver tests). An environment switch on `HelpRoomGoldenTests` writes the goldens from the room's render; unset, it compares. Today they are written by hand or a temporary test (WORKFLOW1h-b).
+
+**Outcome** 2026-10-12: `DAORIS_GOLDEN_WRITE=1` makes `HelpRoomGoldenTests` write the three room goldens and `settings.json` from the render (BOM-less UTF-8, atomically) and pass; unset, they compare as before, and no gate sets it. A switched run left them byte for byte. The command is in `src/Daoris.Desktop/README.md`.
