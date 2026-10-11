@@ -116,7 +116,7 @@ function ClampedTitle({ title, lines }: { title: string; lines: 1 | 2 }) {
 
 /**
  * **A page's tabs** (UX6f, D150 §4.2): several pages of one record under one header, each a tab, and the chosen one's
- * panel beneath, named by its tab. A repository's page has Details and Setup.
+ * panel beneath, named by its tab, as a repository's page and a workspace's hold theirs (`projects/tabs.ts`).
  *
  * @remarks
  * **The chosen tab is its holder's**, remembered per view (§4.2), so a door can open the page at a tab.

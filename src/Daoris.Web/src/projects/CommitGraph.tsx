@@ -1,7 +1,17 @@
 import { useMemo } from 'react';
-import type { GitLogCommit } from '../bridge/git';
 import { ago } from '../format';
-import { graphLanes } from './graphLanes';
+import { type GraphCommit, graphLanes } from './graphLanes';
+
+/**
+ * A commit as the graph draws it: what its row says, beside what its lanes are laid from. The bridge's `GitLogCommit` is
+ * one, so `GIT_GRAPH`'s commits are handed as they are answered, and the molecule imports nothing of the bridge (D52).
+ */
+export type GraphCommitRow = GraphCommit & {
+  subject: string;
+  author: string;
+  authoredAt: string | null;
+  committedAt: string | null;
+};
 
 /** A row's height, which the lanes are drawn against: every row is one line, so each commit's dot sits at its centre. */
 const ROW = 32;
@@ -22,12 +32,11 @@ const y = (row: number) => row * ROW + ROW / 2;
  * @remarks
  * **A molecule**: the commits arrive as a prop, as `GIT_GRAPH` answers them, the pages accumulated. The lanes are one drawing
  * beside the rows, hidden from a reader, which reads the rows; every row is one line at one height so a dot meets its row.
- * Opening a commit, paging and *All branches* are UX6h3's, beside it.
  */
 export function CommitGraph({ label, commits, tips = NO_TIPS }: {
   /** The list's accessible name: whose history, on which line. */
   label: string;
-  commits: readonly GitLogCommit[];
+  commits: readonly GraphCommitRow[];
   /** The tips the graph was walked from, in the order asked: the first keeps the first lane. */
   tips?: readonly string[];
 }) {

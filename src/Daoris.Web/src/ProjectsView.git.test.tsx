@@ -16,6 +16,7 @@ vi.mock('@shenora/react', () => ({
   useShenoraEvent: () => undefined,
 }));
 
+import type { GitBranchList, GitGraphPage } from './bridge/git';
 import { GIT_BRANCHES_ENGINE, GIT_HISTORY_ENGINE } from './projects/fixtures';
 import { DRIVER_STATE, respond, show, WIRING } from './test/shellHarness';
 import { chooseRepository, ProjectsView, repositoryMain } from './test/projectsView';
@@ -26,9 +27,10 @@ const REGISTRY = [
   { repository: 'game', adopted: true, registered: true, summary: 'the game', owns: [], accepts: [], packs: [], entries: 1, workspace: 'aurora' },
 ];
 
-const ENGINE_LIST = { repositories: [{ ...GIT_BRANCHES_ENGINE, workspace: 'aurora' }], apart: [], sessionsUnread: false };
-const LINE_COMMIT = GIT_BRANCHES_ENGINE.line.commit!;
-const PAGE = { tips: [LINE_COMMIT], sinceParted: false, page: 0, commits: GIT_HISTORY_ENGINE, more: false };
+// The fixtures held to the bridge's shapes, as the driver answers them.
+const ENGINE_LIST: GitBranchList = { repositories: [{ ...GIT_BRANCHES_ENGINE, workspace: 'aurora' }], apart: [], sessionsUnread: false };
+const LINE_COMMIT = GIT_BRANCHES_ENGINE.line.commit;
+const PAGE: GitGraphPage = { tips: [LINE_COMMIT], sinceParted: false, page: 0, commits: GIT_HISTORY_ENGINE, more: false };
 const answer = <T,>(value: T | null, refusal: string | null = null) => ({
   value, refusal, problem: refusal ? 'git said no' : null, commands: ['git log --graph --date-order main'], remembered: false,
 });

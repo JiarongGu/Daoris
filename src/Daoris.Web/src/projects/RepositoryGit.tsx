@@ -1,8 +1,13 @@
 import { useTranslation } from 'react-i18next';
-import type { GitLogCommit, GitRepositoryBranches } from '../bridge/git';
 import { ago } from '../format';
 import { Inline, Prose, SkeletonRows } from '../ui';
-import { CommitGraph } from './CommitGraph';
+import { CommitGraph, type GraphCommitRow } from './CommitGraph';
+
+/**
+ * A branch as Branches lists it: its name and its last commit. The bridge's `GitBranch` is one, so the list's answer is
+ * handed as it came (D52: the molecule imports nothing of the bridge).
+ */
+export type BranchRow = { name: string; subject: string; at: string | null };
 
 /**
  * What a Git tab shows (UX6h1): its answer on its way, no checkout of the repository on this machine, why Git did not answer
@@ -16,7 +21,7 @@ export type GitRead<T> =
 
 /** What History reads: its line's commits from the tips walked, or that its line holds no commit to walk from here. */
 export type HistoryRead =
-  | GitRead<{ line: string; tips: string[]; commits: GitLogCommit[] }>
+  | GitRead<{ line: string; tips: string[]; commits: GraphCommitRow[] }>
   | { state: 'noLine'; line: string | null };
 
 /**
@@ -52,7 +57,7 @@ function Waiting({ sentence, reading }: { sentence: string; reading: boolean }) 
  * line, sessions', landed, yours, origin's: the built-in Git design §2.2) is UX6h2's; here each branch is a row of its
  * name and its last commit, in the order the list answered.
  */
-export function BranchesTab({ repository, read }: { repository: string; read: GitRead<GitRepositoryBranches> }) {
+export function BranchesTab({ repository, read }: { repository: string; read: GitRead<{ branches: readonly BranchRow[] }> }) {
   const { t } = useTranslation();
   if (read.state === 'reading') return <Waiting reading sentence={t('projects.git.reading.branches', { repository })} />;
   if (read.state === 'refused') return <Waiting reading={false} sentence={read.sentence} />;

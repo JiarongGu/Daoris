@@ -1,6 +1,6 @@
 import type { Registration, Repository } from '../api';
-import type { GitLogCommit, GitRepositoryBranches } from '../bridge/git';
 import type { RepositoryLine } from '../settings/Lines';
+import type { GraphCommitRow } from './CommitGraph';
 import type { RepositorySetupProps } from './RepositorySetup';
 
 // Repositories as the registry and the index answer them (FRAME1e), for the list's and the page's stories: the
@@ -149,8 +149,11 @@ export const SETUP_OWN: RepositorySetupProps = {
 const id = (short: string) => short.padEnd(40, '0');
 const hoursAgo = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString();
 
-/** The engine's branches as `GIT_BRANCHES` answers them for its repository (GIT1d): its line, a session's and the person's. */
-export const GIT_BRANCHES_ENGINE: GitRepositoryBranches = {
+/**
+ * The engine's branches as `GIT_BRANCHES` answers them for its repository (GIT1d): its line, a session's and the person's.
+ * Its shape is the bridge's, which `ProjectsView.git.test.tsx` holds it to; a fixture beside the molecules imports none.
+ */
+export const GIT_BRANCHES_ENGINE = {
   repository: 'engine', workspace: 'default',
   line: { branch: 'main', source: 'workspace', commit: id('c4f1a2'), origin: id('c4f1a2'), ahead: 0, behind: 0 },
   fetch: { at: hoursAgo(3), heard: true }, holds: true, missing: [], commands: ['git for-each-ref refs/heads refs/remotes'], problem: null,
@@ -165,7 +168,7 @@ export const GIT_BRANCHES_ENGINE: GitRepositoryBranches = {
 };
 
 /** The engine's line's history as `GIT_GRAPH` answers its first page: a branch merged in, beside the line, to its root. */
-export const GIT_HISTORY_ENGINE: GitLogCommit[] = [
+export const GIT_HISTORY_ENGINE: LoggedCommit[] = [
   logged('c4f1a2', ['77a0e1', 'a19c5b'], 'Merge the asset cache', 'Mei Lin', 2),
   logged('a19c5b', ['3e88f0'], 'Cache assets by their content hash', 'Mei Lin', 5),
   logged('77a0e1', ['3e88f0'], 'Name the frame budget in the settings', 'Sam Ortiz', 7),
@@ -173,8 +176,11 @@ export const GIT_HISTORY_ENGINE: GitLogCommit[] = [
   logged('1b07c9', [], 'Begin the engine', 'Mei Lin', 400),
 ];
 
+/** A commit as `GIT_GRAPH` lists it: what the graph draws, with the author's address and the side of a two-sided walk. */
+type LoggedCommit = GraphCommitRow & { parents: string[]; authorEmail: string; side: string | null };
+
 /** A commit as a graph's page lists it, by short ids made whole, written by an author some hours ago. */
-function logged(commit: string, parents: string[], subject: string, author: string, hours: number): GitLogCommit {
+function logged(commit: string, parents: string[], subject: string, author: string, hours: number): LoggedCommit {
   const at = hoursAgo(hours);
   return {
     commit: id(commit), parents: parents.map(id), author, authorEmail: `${author.split(' ')[0]!.toLowerCase()}@example.invalid`,
