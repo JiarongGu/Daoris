@@ -118,6 +118,40 @@ public sealed class HelpGoOnTests : IDisposable
         lock (native.Asked) Assert.Empty(native.Asked);
     }
 
+    /// <summary>
+    /// MSG1g, CONVNOTE2g: its own account cooling holds its words for the reset, said in its conversation with Ask Daoris's door
+    /// out of the wait (no repository holds it, so a new conversation from its history), each line by code and the English as
+    /// it was written. Nothing moves and nothing is spawned.
+    /// </summary>
+    [Fact]
+    public async Task One_whose_account_is_cooling_waits_and_says_its_door_by_code()
+    {
+        var ledger = new ChatLedger();
+        ledger.Chat("h1", "completed", "acp-stub", Room, repository: HelpRoom.Repository, profile: "account-1").Say("w1", "and the remote?");
+        new HarnessConversations(_home).Keep("h1", "acp-stub", "conv-h1");
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "stub", "account-1"));
+        AccountCooling.Cool(
+            _home, new CoolingEntry("stub", "account-1", DateTimeOffset.UtcNow.AddHours(2), true, "session", DateTimeOffset.UtcNow, "s0"),
+            DateTimeOffset.UtcNow);
+        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["acp-stub"] = new AcpStubAdapter(),
+        });
+        var events = Events;
+        using var runner = new ChatRunner(
+            ledger.Client(), adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
+            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+
+        var answer = await runner.GoOnAsync("h1", DriverConfig.Empty);
+
+        Assert.Null(answer.SessionId);
+        var held = Assert.Single(events.After("h1", 0).Events, e => e.Kind == SessionEventKind.Note);
+        Assert.Equal($"{ResumeWords.NotYet}{answer.Message} {ResumeWords.HelpDoor}", held.Text);
+        Assert.Equal(["waits.account", "waits.door-help"], NoteAssert.Codes(held.Parts));
+        NoteAssert.Holds(held.Text, held.Parts);
+        Assert.Empty(ledger.Moves("h1"));
+    }
+
     /// <summary>The room is written again from the shell's reading where it hands one, as an open writes it (HELP1a).</summary>
     [Fact]
     public async Task The_room_is_written_again_from_the_machine_as_it_stands()
