@@ -129,6 +129,10 @@ sessions take the same roles once the trial says which split works (MODELROLE1).
      🔴 **Lock a worktree you make by hand** (`git worktree add --lock …`, or `git worktree lock` after):
      an integration worktree at main's tip before its first commit counts as merged and clean, and the
      next merge's prune would take it. Unlock it once it has landed, so the prune can clear it.
+   - **A hand-back that names `Process` tests it wrote and could not run** is run by the parent on the open merge before
+     the commit: `dotnet test <the test project> --settings src/Daoris.Desktop/process.runsettings --filter
+     "FullyQualifiedName~<class>"`. A merge never runs that half, so nothing else would until the full set. XAGENT1g3's
+     equivalence test failed on its first run there (a fixture seeded another state than the test named, 2026-10-12).
 7. **Commit the merge yourself.** The tool never commits. Read `git diff --cached` and write the
    records, as the `records` lane's steward: move the row from `TASKS.md` to the archive with the
    hand-back's one-line outcome and its pointer, add the changelog entry, and update the counts in
