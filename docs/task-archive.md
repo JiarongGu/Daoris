@@ -13222,3 +13222,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CONVNOTE2a–h — the conversation's other driver notes, by code** … (Group c: a press and a chat's settings: Landing.cs ~:399-420, ChatRunner.cs ~:470, ~:799, ~:825.)
 
 **Outcome** 2026-10-11: the person's acceptance and hand-on (`landing.person-accepted`/`-handed` with the message as program words, the English prefixes the trace reads kept), an option set (`chat.option-set` [option, chosen]), *told where the person is* (`chat.told-where` with the preface as program words) and the browser-withheld notice (`browser.withheld` [servers], with `browser.no-host`/`none-up`) are worded in en and zh; each English byte for byte. zh says 采纳 for accept (the glossary avoids 接受). Detail: D152's CONVNOTE2c note.
+
+
+## RAILPAGE1b — the rail's search foot (2026-10-11, D158)
+
+> - [ ] **RAILPAGE1b — the rail's search foot** (web; after 1a). `SearchResults` (SessionRail.tsx ~:314-389) takes Ask Daoris history's foot (AskHistory.tsx ~:109-132, ~:261-271) as an infinite query with words of its own (`work.rail.search.listed`, `.more`, `.loadingMore`, en and zh), retiring `work.rail.search.cut`. Platform UX §4's load-more rule; D158's RAILPAGE1 note.
+
+**Outcome** 2026-10-11: `useSessionSearch` reads 16 sessions a page as an infinite query; the rail's search foot says "{{shown}} of {{total}} sessions with a match are listed.", *Show more* moves focus to the first session it brought, a failed page keeps its press; `work.rail.search.cut` stays only for an older shell with no `total`. Stories under Work/SessionRail/Search. With RAILPAGE1a, RAILPAGE1 is closed. Detail: D158's RAILPAGE1b note.

@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { type InfiniteData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import type { Session } from '../api';
 import { keys } from '../queries';
@@ -250,19 +250,54 @@ export const useGoOnNew = () => {
 /** Where a search found its words: the session, the event it began at, whose words, and a window of them. */
 export type SessionHit = { session: string; seq: number; kind: string; snippet: string };
 
+/** How many sessions a page of a search holds, asked for by name (RAILPAGE1b): the driver's own default, so a page is the same either way. */
+export const SEARCH_PAGE = 16;
+
+/** A search's answer as the driver gave it: `total` and `next` are absent from a shell before pages (RAILPAGE1a). */
+type SearchAnswer = { query: string; hits: SessionHit[]; cut: boolean; total?: number; next?: number | null };
+
+/** A search's pages as the one answer the page reads: every hit in order, `total` and `next` the last page's, null where a shell sent none. */
+export type SessionSearchResult = { query: string; hits: SessionHit[]; cut: boolean; total: number | null; next: number | null };
+
+const countOf = (value: unknown): number | null =>
+  typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : null;
+
+const joinSearch = (data: InfiniteData<SearchAnswer, number>): SessionSearchResult => {
+  const last = data.pages.at(-1);
+  return {
+    query: last?.query ?? '',
+    hits: data.pages.flatMap((page) => (Array.isArray(page.hits) ? page.hits : [])),
+    cut: last?.cut ?? false,
+    total: countOf(last?.total),
+    next: countOf(last?.next),
+  };
+};
+
 /**
  * What sessions said, searched (RAIL1): the person's words and the agent's, on this machine's own
- * record, bounded by the host and saying so (`cut`). Asked from two letters on, or one Han character
- * (`searchable`, RAILSRCH1b) — one other letter matches everything — and the caller debounces, so a word typed is one question, not one per key.
+ * record, a page of sessions at a time (RAILPAGE1b): `fetchNextPage` asks for the one at the driver's `next`, and `data` is every
+ * page read, joined. Asked from two letters on, or one Han character (`searchable`, RAILSRCH1b) — one other letter matches
+ * everything — and the caller debounces, so a word typed is one question, not one per key.
+ *
+ * @remarks
+ * A shell before pages ignores `offset` and `limit` and answers no `total` or `next`: its answer is the one page, with the `cut`
+ * it always had, and `total` is null so the page knows to say that instead of counting.
  */
 export const useSessionSearch = (query: string, session?: string) => {
   const { isAvailable } = useShenora();
   const q = query.trim();
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: keys.sessionSearch(q, session),
     // Within one session, where one is named (SESS1 S9): its words and its calls by their titles.
-    queryFn: () => call<{ query: string; hits: SessionHit[]; cut: boolean }>(
-      'SESSION_SEARCH', { q, ...(session ? { session } : {}) }),
+    queryFn: ({ pageParam }) => call<SearchAnswer>('SESSION_SEARCH', {
+      q,
+      ...(session ? { session } : {}),
+      limit: SEARCH_PAGE,
+      ...(pageParam > 0 ? { offset: pageParam } : {}),
+    }),
+    initialPageParam: 0,
+    getNextPageParam: (page: SearchAnswer) => countOf(page.next),
+    select: joinSearch,
     enabled: isAvailable && searchable(q),
     staleTime: 10_000,
     refetchOnWindowFocus: false,

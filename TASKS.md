@@ -63,7 +63,6 @@ Contracts: `docs/2026-10-07-history-clearing-design.md` (D153), D158,
 D88/D102 cleanup notes, machine log §4. Installed clears require the owner's existing authorization.
 
 - [ ] **ASKHIST1di — installed history paging** (parent). Seen 2026-10-11 in 中文: a search's count and coverage, no match, a hit cut around its words, one Han character. Remaining: over 200 conversations (*Show more* and its focus; this machine has 7), English, the dock at 300 and 430 px. D158's ASKHIST1d2 note.
-- [ ] **RAILPAGE1b — the rail's search foot** (web; after 1a). `SearchResults` (SessionRail.tsx ~:314-389) takes Ask Daoris history's foot (AskHistory.tsx ~:109-132, ~:261-271) as an infinite query with words of its own (`work.rail.search.listed`, `.more`, `.loadingMore`, en and zh), retiring `work.rail.search.cut`. Platform UX §4's load-more rule; D158's RAILPAGE1 note.
 - [ ] **AUTOTIDY1a — show automatic cleanup** (modules/web). Branches lists recent tidied/kept log facts. D88; route and bilingual list tests.
 - [ ] **AUTOTIDY1b — measure strict cleanup guards** (parent; installed AUTOTIDY1, after one week). Count ignored-file/unmoved-branch holds before deciding relaxations. D88 evidence.
 - [ ] **AUTOTIDY1c — automatic squash cleanup** (driver; after AUTOTIDY1b; decide first). Consider content proof plus merged PR state, preserving recovery refs. D88/D102; Process guards.

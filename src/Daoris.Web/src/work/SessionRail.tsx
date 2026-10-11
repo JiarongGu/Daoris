@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode, useState } from 'react';
+import { Fragment, type ReactNode, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HELP_REPOSITORY, type Quest, type Session } from '../api';
 import { useQuests, useRegistry, useSessions } from '../queries';
@@ -6,7 +6,8 @@ import { searchable } from '../searchable';
 import {
   type SessionHit, useDriver, useSessionGroups, useSessionOpenings, useSessionSearch, useSessionWhere,
 } from '../shell';
-import { Icon, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
+import { sentence } from '../format';
+import { Button, Icon, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import { useDebounced } from '../lib/useDebounced';
@@ -15,6 +16,7 @@ import type { OpenGroup } from '../opener';
 import { endedToArchive, type SessionArrangement } from './groups';
 import { groupHeading, useBringGroup } from './ListPane';
 import { SessionRow } from './SessionRow';
+import { Refused } from './InlineConfirm';
 import { ArchiveEndedAsk, type RepositoryFacts, SessionList, type SessionRowFacts, SessionStrip } from './SessionList';
 import { isIntake, ownTree, sessionTitle } from './identity';
 import { byName, marked, readable } from './railSearch';
@@ -278,7 +280,13 @@ export function SessionRail({
           named={byName([...pool].sort((a, b) => b.updated.localeCompare(a.updated)), query, titleOf)}
           hits={said.data?.hits?.filter((hit) => pool.some((session) => session.id === hit.session))}
           cut={said.data?.cut ?? false}
-          asking={said.isFetching}
+          total={said.data?.total ?? null}
+          covered={new Set((said.data?.hits ?? []).map((hit) => hit.session)).size}
+          // The next page's wait is the foot's own to say, not the rail's search.
+          asking={said.isFetching && !said.isFetchingNextPage}
+          onMore={said.hasNextPage ? () => { void said.fetchNextPage(); } : undefined}
+          loadingMore={said.isFetchingNextPage}
+          moreError={said.isFetchNextPageError && !said.isFetching ? sentence(said.error) : null}
           sessionOf={(id) => pool.find((session) => session.id === id)}
           titleOf={titleOf}
           row={row}
@@ -311,14 +319,26 @@ export function SessionRail({
  * By name answers as the person types; by content answers once the typing settles, for the words it
  * was asked about — never a stale answer beside a newer query. The host's bounds are said, not hidden.
  */
-function SearchResults({ query, settled, named, hits, cut, asking, sessionOf, titleOf, row, selected, onSelect }: {
+export function SearchResults({
+  query, settled, named, hits, cut, total, covered, asking, onMore, loadingMore, moreError, sessionOf, titleOf, row, selected, onSelect,
+}: {
   query: string;
   /** The query the content answer is for — the typed one, once it stops changing. */
   settled: string;
   named: Session[];
   hits?: SessionHit[];
+  /** Whether the host left some out; said only by a shell that gives no `total`, which cannot page (the older line). */
   cut: boolean;
+  /** How many sessions the search found in what was said, as the host counts; null from a shell before pages. */
+  total: number | null;
+  /** How many of them the pages read so far hold. */
+  covered: number;
   asking: boolean;
+  /** Read the next page of sessions; absent on the last (RAILPAGE1b, UX §4's load-more rule). */
+  onMore?: () => void;
+  loadingMore?: boolean;
+  /** Why the next page could not be read, in the sentence the person reads; null when it was. */
+  moreError?: string | null;
   sessionOf: (id: string) => Session | undefined;
   titleOf: (session: Session) => string;
   row: (session: Session) => ReactNode;
@@ -337,9 +357,38 @@ function SearchResults({ query, settled, named, hits, cut, asking, sessionOf, ti
     found.set(hit.session, [...(found.get(hit.session) ?? []), hit]);
   }
 
+  // *Show more* pressed: how many sessions were listed and for which words, so the first one the next page brings takes the focus.
+  const pressed = useRef<{ words: string; at: number } | null>(null);
+  const root = useRef<HTMLDivElement>(null);
+  const foot = useRef<HTMLDivElement>(null);
+  const ids = [...found.keys()];
+  const idsKey = ids.join(' ');
+
+  // The next page arrived: the reader goes on from its first session, unless they went elsewhere meanwhile (the search changed,
+  // or the focus is on something outside the foot). The press leaves with the last page, so the focus may be nowhere.
+  useLayoutEffect(() => {
+    const was = pressed.current;
+    if (!was) return;
+    if (was.words !== settled) { pressed.current = null; return; }
+    if (ids.length <= was.at) return;
+    pressed.current = null;
+    const focused = document.activeElement;
+    if (focused && focused !== document.body && !foot.current?.contains(focused)) return;
+    const first = ids[was.at]!;
+    [...(root.current?.querySelectorAll<HTMLElement>('[data-found]') ?? [])].find((door) => door.dataset.found === first)?.focus();
+    // `idsKey` stands for `ids`, which is a new array every render.
+  }, [idsKey, settled]);
+
+  const more = () => {
+    // Pressed again while it reads, it asks nothing more: the press stays a press, and the focus is never taken from it.
+    if (loadingMore || !onMore) return;
+    pressed.current = { words: settled, at: ids.length };
+    onMore();
+  };
+
   const heading = 'px-3 py-1 text-meta font-semibold uppercase tracking-wide text-ink-faint';
   return (
-    <div>
+    <div ref={root}>
       {named.length > 0 && (
         <section aria-label={t('work.rail.search.byName')}>
           <h3 className={heading}>{t('work.rail.search.byName')}</h3>
@@ -355,6 +404,7 @@ function SearchResults({ query, settled, named, hits, cut, asking, sessionOf, ti
               <li key={id} data-list-row="">
                 <button
                   type="button"
+                  data-found={id}
                   aria-current={id === selected || undefined}
                   onClick={() => onSelect?.(id)}
                   className={cn(
@@ -383,7 +433,19 @@ function SearchResults({ query, settled, named, hits, cut, asking, sessionOf, ti
       {!asking && named.length === 0 && found.size === 0 && (current || !searchable(typed)) && (
         <p className="m-0 px-3 py-1.5 text-small text-ink-faint">{t('work.rail.search.none', { query: typed })}</p>
       )}
-      {current && cut && <p className="m-0 px-3 py-1.5 text-meta text-ink-faint">{t('work.rail.search.cut')}</p>}
+      {/* A shell before pages says only that it left some out; one that counts says how many, and reads the rest on a press. */}
+      {current && total === null && cut && <p className="m-0 px-3 py-1.5 text-meta text-ink-faint">{t('work.rail.search.cut')}</p>}
+      {current && onMore && total !== null && (
+        <div ref={foot} className="grid grid-cols-[minmax(0,1fr)] justify-items-start gap-1.5 px-3 py-1.5">
+          <p className="m-0 text-meta text-ink-faint">{t('work.rail.search.listed', { shown: covered, total })}</p>
+          {moreError && <Refused sentence={t('work.rail.search.moreFailed', { why: moreError })} />}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <Button className="px-2.5 text-small" onClick={more}>{t('work.rail.search.more')}</Button>
+            {/* There from the first, so a reader hears it speak when the wait begins. */}
+            <span role="status" className="text-small text-ink-soft">{loadingMore ? t('work.rail.search.loadingMore') : ''}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

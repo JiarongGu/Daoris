@@ -258,6 +258,72 @@ describe('the session rail', () => {
       expect(within(said).getByText('区').tagName).toBe('MARK');
     });
 
+    const hit = (session: string, seq = 4) => ({ session, seq, kind: 'message', snippet: `…the streamer of ${session}.` });
+
+    it('lists a search a page of sessions at a time, and Show more brings the next and focuses its first row (RAILPAGE1b)', async () => {
+      const pages: unknown[] = [];
+      answer((type, payload) => {
+        if (type === 'SESSION_OPENINGS') return { openings: {} };
+        if (type !== 'SESSION_SEARCH') return undefined;
+        pages.push(payload);
+        return payload.offset === 1
+          ? { query: 'streamer', cut: false, total: 2, next: null, hits: [hit('s1a2b3c4')] }
+          : { query: 'streamer', cut: true, total: 2, next: 1, hits: [hit('c3d4e5f6')] };
+      });
+      rail({});
+      await screen.findByText('Expose a streaming budget on the chunk API');
+      await userEvent.type(screen.getByRole('searchbox', { name: 'search sessions' }), 'streamer');
+
+      const said = await screen.findByRole('region', { name: 'In what was said' });
+      expect(within(said).getAllByRole('button')).toHaveLength(1);
+      expect(screen.getByText('1 of 2 sessions with a match are listed.')).toBeInTheDocument();
+      expect(screen.queryByText(/More matched than is shown/)).toBeNull();
+      expect(pages[0]).toMatchObject({ q: 'streamer', limit: 16 });
+
+      await userEvent.click(screen.getByRole('button', { name: 'Show more' }));
+      await waitFor(() => expect(within(screen.getByRole('region', { name: 'In what was said' })).getAllByRole('button')).toHaveLength(2));
+      expect(pages[1]).toMatchObject({ offset: 1, limit: 16 });
+      // The last page: no foot, no count.
+      expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+      expect(screen.queryByText(/sessions with a match are listed/)).toBeNull();
+      await waitFor(() => expect(screen.getByRole('button', { name: /the streamer of s1a2b3c4/ })).toHaveFocus());
+    });
+
+    it('keeps the foot and its press when a page could not be read', async () => {
+      let failing = true;
+      answer((type, payload) => {
+        if (type === 'SESSION_OPENINGS') return { openings: {} };
+        if (type !== 'SESSION_SEARCH') return undefined;
+        if (payload.offset === 1) {
+          if (failing) throw new Error('the driver stopped answering.');
+          return { query: 'streamer', cut: false, total: 2, next: null, hits: [hit('s1a2b3c4')] };
+        }
+        return { query: 'streamer', cut: true, total: 2, next: 1, hits: [hit('c3d4e5f6')] };
+      });
+      rail({});
+      await screen.findByText('Expose a streaming budget on the chunk API');
+      await userEvent.type(screen.getByRole('searchbox', { name: 'search sessions' }), 'streamer');
+      await userEvent.click(await screen.findByRole('button', { name: 'Show more' }));
+      expect(await screen.findByText(/The next sessions could not be read/)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /the streamer of c3d4e5f6/ })).toBeInTheDocument();
+      failing = false;
+      await userEvent.click(screen.getByRole('button', { name: 'Show more' }));
+      expect(await screen.findByRole('button', { name: /the streamer of s1a2b3c4/ })).toBeInTheDocument();
+    });
+
+    it('keeps the cut line for a shell that answers no total (RAILPAGE1b)', async () => {
+      answer((type) => {
+        if (type === 'SESSION_OPENINGS') return { openings: {} };
+        if (type === 'SESSION_SEARCH') return { query: 'streamer', cut: true, hits: [hit('c3d4e5f6')] };
+        return undefined;
+      });
+      rail({});
+      await screen.findByText('Expose a streaming budget on the chunk API');
+      await userEvent.type(screen.getByRole('searchbox', { name: 'search sessions' }), 'streamer');
+      expect(await screen.findByText(/More matched than is shown here/)).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+    });
+
     it('opens a session in its own window from its row\'s menu', async () => {
       answer(() => undefined);
       rail({ doors: { review: () => {} } });
