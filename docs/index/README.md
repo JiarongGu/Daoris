@@ -168,7 +168,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `.claude/knowledge/twins.md` | 67 | 128 |
-| `docs/2026-09-19-platform-ux.md` | 63 | 668 |
+| `docs/2026-09-19-platform-ux.md` | 64 | 672 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 53 | 353 |
 | `docs/2026-09-25-rev3-review.md` | 51 | 407 |

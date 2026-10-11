@@ -443,7 +443,11 @@ controls are in the frame design's §3.
   and for one not adopted the *Adoption steps*, led by one line with its reasoning on the info glyph (U36)
   and the join steps proposed as text. *Branches*: its branches by kind (the built-in Git design §2.2, D150's UX6h2a
   note), the line at the head with what set it, how it stands to origin and the last fetch, then *Sessions'*, *Landed*
-  and *Yours*, folded after five. *Setup*: every setting it holds on this machine in four sections
+  and *Yours*, folded after five. **A branch's name opens its page** in the repository's place (UX6h3b, the built-in Git
+  design §2.3): its name, its kind and where it stands against its line, origin and its pull request, in the list's words,
+  with *Back to Branches* in its header where the code map's way back sits; then its commits since it left its line beside
+  the line's since then, a page at a time with the load-more foot. The line's own name opens *History*. It is page state,
+  not remembered, and a workspace's Branches opens it on its repository's page. *Setup*: every setting it holds on this machine in four sections
   (*Driving*, *Line and landing*, *Sessions*, *Reach*), each folded to a line naming its values, a default
   marked as such, and open where it holds a value of its own with its *Clear*; a value from above offers
   *Set for this repository*, and each row's hint is its terminal twin. A browser's page is Details alone. The chosen repository is remembered, and adding, importing and
