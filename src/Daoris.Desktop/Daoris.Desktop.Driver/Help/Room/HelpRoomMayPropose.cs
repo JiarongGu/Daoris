@@ -69,8 +69,8 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // HELP10: WSR6's Bring up to date (D109), whose look fetches and so is the person's press, as on the screen.
         text.Append("- `sync_propose`: bring repositories up to date after a pull request merged, as the workspace's page →\n");
         text.Append("  Branches → Updates does: each line fast-forwarded from `origin`, the branches still at\n");
-        text.Append("  work replayed onto it, the landed branches whose work reached it deleted. Name a repository, or none for\n");
-        text.Append("  every one with a checkout here. Its card asks the person to look first, which fetches each line as them,\n");
+        text.Append("  work replayed onto it, the landed branches whose work reached it deleted. Name a repository, a workspace\n");
+        text.Append("  to look within, or none for every one with a checkout here. Its card asks the person to look first, which fetches each line as them,\n");
         text.Append("  then lists what the press would do; apply acts on those rows only. Daoris never pushes.\n");
         // DRIFT1d2 (D133 §4): the person's yes to a departure, as the quest page's *Accept the departure* gives it. The yes
         // is theirs, so the helper proposes it on their ask and never on its own reading of the departure.

@@ -9,8 +9,47 @@ namespace Daoris.Driver.Tests;
 /// </summary>
 public sealed class HelpSyncProposalsTests : HelpProposalsFixture
 {
-    private static HelpProposal Sync(string? repository = null) =>
-        new("p11", "sync", "sync", repository, null, null, null, "the person's pull request merged", "h1", "proposed");
+    private static HelpProposal Sync(string? repository = null, string? workspace = null) =>
+        new("p11", "sync", "sync", repository, workspace, null, null, "the person's pull request merged", "h1", "proposed");
+
+    /// <summary>BRSCOPE1b: a workspace is refused as the agent proposals refuse one, and said in the card and the terminal's line.</summary>
+    [Fact]
+    public void A_workspace_this_machine_does_not_have_is_refused_and_one_it_has_is_said()
+    {
+        Assert.Contains("there is no workspace `nowhere` on this machine", HelpProposals.Plan(Sync(null, "nowhere"), DriverConfig.Empty, Facts).Refusal);
+
+        var plan = HelpProposals.Plan(Sync("engine", "work"), DriverConfig.Empty, Facts);
+        Assert.Null(plan.Refusal);
+        Assert.Equal("daoris-driver trees sync --repository engine --workspace work", plan.Terminal);
+        Assert.Contains("workspace `work`", plan.Describe);
+        Assert.Equal("daoris-driver trees sync --workspace work", HelpProposals.Plan(Sync(null, "work"), DriverConfig.Empty, Facts).Terminal);
+    }
+
+    [Fact]
+    public async Task The_look_and_the_press_are_handed_the_workspace_and_the_press_line_keeps_it()
+    {
+        var doors = new HelpStandInDoors { Listed = Merged };
+
+        await ApplyAsync(Sync("engine", "work"), doors);
+        var kept = HelpProposals.Find(_home, "p11")!;
+        var plan = HelpProposals.Plan(kept, DriverConfig.Empty, Facts);
+        await HelpProposals.ApplyAsync(_home, kept, plan, doors, _ => { }, CancellationToken.None);
+
+        Assert.Equal("daoris-driver trees sync --repository engine --workspace work --yes", plan.Terminal);
+        Assert.Equal(2, doors.Calls.Count);
+        Assert.Equal("TREES_SYNC_PLAN engine in:work", doors.Calls[0]);
+        Assert.EndsWith(" in:work", doors.Calls[1]);
+    }
+
+    [Fact]
+    public async Task A_look_with_no_checkout_in_the_workspace_says_so_in_the_terminals_words()
+    {
+        var (looked, _, _) = await ApplyAsync(Sync(null, "work"), new HelpStandInDoors());
+        var (named, _, _) = await ApplyAsync(Sync("engine", "work"), new HelpStandInDoors());
+
+        Assert.Contains("no repository of workspace `work` has a checkout here", looked.Told);
+        Assert.Contains("`engine` has no checkout here in workspace `work`", named.Told);
+    }
 
     /// <summary>The owner's case after a squash merge (D109): the line pulls, a session branch replays, a landed branch goes.</summary>
     private static readonly SyncPlan Merged = new(
@@ -251,16 +290,17 @@ public sealed partial class HelpStandInDoors
     /// <summary>A replay the press stops at a conflict, in the tree layer's words; null for none.</summary>
     public string? Conflict { get; init; }
 
-    public Task<SyncPlan> SyncPlanAsync(string? repository, CancellationToken ct)
+    public Task<SyncPlan> SyncPlanAsync(string? repository, string? workspace, CancellationToken ct)
     {
         if (SyncRefusal is { } refused) throw new DriverException(refused);
-        Calls.Add($"TREES_SYNC_PLAN {repository}".TrimEnd());
+        // BRSCOPE1b: the workspace is recorded only where one is named, so a call without one reads as it always did.
+        Calls.Add($"TREES_SYNC_PLAN {repository}".TrimEnd() + (workspace is null ? "" : $" in:{workspace}"));
         return Task.FromResult(Listed);
     }
 
-    public Task<SyncDone> SyncAsync(string? repository, IReadOnlySet<string> only, CancellationToken ct)
+    public Task<SyncDone> SyncAsync(string? repository, string? workspace, IReadOnlySet<string> only, CancellationToken ct)
     {
-        Calls.Add($"TREES_SYNC {repository} {string.Join(' ', only.Order(StringComparer.Ordinal))}");
+        Calls.Add($"TREES_SYNC {repository} {string.Join(' ', only.Order(StringComparer.Ordinal))}" + (workspace is null ? "" : $" in:{workspace}"));
         return Task.FromResult(new SyncDone(
             [.. Listed.Lines.Where(pull => only.Contains($"{pull.Repository}:{pull.Line}")).Select(pull => new PullResult(pull, pull.Moves, "moved"))],
             [.. Listed.Rebases.Where(item => only.Contains($"{item.Repository}:{item.Branch}"))

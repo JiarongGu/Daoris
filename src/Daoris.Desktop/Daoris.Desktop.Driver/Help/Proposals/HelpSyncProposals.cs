@@ -80,8 +80,18 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
             return new HelpPlan($"`{repository}` is not registered on this machine — use a repository's name as Repositories lists it.", "", "", null);
         }
 
-        var scope = repository is null ? "every repository with a checkout here" : $"`{repository}`";
-        var terminal = "daoris-driver trees sync" + (repository is null ? "" : $" --repository {repository}");
+        // BRSCOPE1b: as the agent proposals refuse a workspace this machine does not have.
+        var workspace = Workspace(proposal);
+        if (workspace is not null && !facts.Workspaces.Contains(workspace, StringComparer.OrdinalIgnoreCase))
+        {
+            return new HelpPlan($"there is no workspace `{workspace}` on this machine — one of {Names(facts.Workspaces)}.", "", "", null);
+        }
+
+        var where = workspace is null ? "" : $" of workspace `{workspace}`";
+        var scope = (repository is null ? "every repository with a checkout here" : $"`{repository}`") + where;
+        var terminal = "daoris-driver trees sync" + (repository is null ? "" : $" --repository {repository}")
+            // The one spelling every shell keeps whole, as TreesCommand.Press says it (ACCTQUOTE1b).
+            + (workspace is null ? "" : $" --workspace {ShellWord.Of(workspace, ShellWord.Workspace)}");
         if (proposal.Listed is not { } rows)
         {
             return new HelpPlan(null,
@@ -100,23 +110,23 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
     public async Task<HelpApplied> ApplyAsync(HelpApplying applying, CancellationToken ct)
     {
         var proposal = applying.Proposal;
-        var repository = Repository(proposal);
+        var (repository, workspace) = (Repository(proposal), Workspace(proposal));
         return proposal.Listed is { } rows
-            ? await BringAsync(applying, repository, rows, ct).ConfigureAwait(false)
-            : await LookAsync(applying, repository, ct).ConfigureAwait(false);
+            ? await BringAsync(applying, repository, workspace, rows, ct).ConfigureAwait(false)
+            : await LookAsync(applying, repository, workspace, ct).ConfigureAwait(false);
     }
 
     /// <summary>
     /// The first press: <c>TREES_SYNC_PLAN</c>'s list, fetching each line as the person, its rows kept in the proposal's
     /// file so the card shows them and the second press acts on them. A list with nothing to do settles the card.
     /// </summary>
-    private static async Task<HelpApplied> LookAsync(HelpApplying applying, string? repository, CancellationToken ct)
+    private static async Task<HelpApplied> LookAsync(HelpApplying applying, string? repository, string? workspace, CancellationToken ct)
     {
         var id = applying.Id;
         SyncPlan listed;
         try
         {
-            listed = await applying.Doors.SyncPlanAsync(repository, ct).ConfigureAwait(false);
+            listed = await applying.Doors.SyncPlanAsync(repository, workspace, ct).ConfigureAwait(false);
         }
         catch (DriverException error)
         {
@@ -130,7 +140,9 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
             // As the terminal says it: a repository with no checkout here has nothing to bring up to date.
             var why = rows.Count > 0 ? string.Join("; ", rows.Select(row => row.Says))
                 : listed.Apart.Count > 0 ? "no repository with a checkout here holds a branch of Daoris's"
-                : repository is null ? "no repository has a checkout here" : $"`{repository}` has no checkout here";
+                // BRSCOPE1b: said as TreesCommand.NothingToSync says it, which a repository outside the workspace shares.
+                : repository is null ? $"no repository{(workspace is null ? "" : $" of workspace `{workspace}`")} has a checkout here"
+                : $"`{repository}` has no checkout here{(workspace is null ? "" : $" in workspace `{workspace}`")}";
             const string Nothing = "nothing to bring up to date";
             return applying.Settled(false, $"Looked for updates (`#{id}`): {Nothing} — {why}.{Besides(listed)}", Nothing);
         }
@@ -169,14 +181,15 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
     }
 
     /// <summary>The second press: <c>TREES_SYNC</c>'s own, on the listed rows that move, said as the terminal says what it did.</summary>
-    private static async Task<HelpApplied> BringAsync(HelpApplying applying, string? repository, IReadOnlyList<HelpSyncRow> rows, CancellationToken ct)
+    private static async Task<HelpApplied> BringAsync(
+        HelpApplying applying, string? repository, string? workspace, IReadOnlyList<HelpSyncRow> rows, CancellationToken ct)
     {
         var (plan, id) = (applying.Plan, applying.Id);
         var only = rows.Where(row => row.Moves).Select(row => row.Key).ToHashSet(StringComparer.Ordinal);
         SyncDone done;
         try
         {
-            done = await applying.Doors.SyncAsync(repository, only, ct).ConfigureAwait(false);
+            done = await applying.Doors.SyncAsync(repository, workspace, only, ct).ConfigureAwait(false);
         }
         catch (DriverException error)
         {
@@ -230,6 +243,9 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
     }
 
     private static string? Repository(HelpProposal proposal) => proposal.Target?.Trim() is { Length: > 0 } named ? named : null;
+
+    /// <summary>BRSCOPE1b: the workspace the look and the press are scoped to; none, and the whole machine.</summary>
+    private static string? Workspace(HelpProposal proposal) => proposal.Workspace?.Trim() is { Length: > 0 } named ? named : null;
 }
 
 /// <summary>One row a look listed (HELP10): its key as the press takes it, its step, whether the press moves it, and its sentence.</summary>
@@ -289,10 +305,11 @@ public partial interface IHelpDoors
 {
     /// <summary>
     /// <c>TREES_SYNC_PLAN</c>'s own list (WSR6, D109): each line fetched from <c>origin</c>, as the person, and what the
-    /// press would do — for <paramref name="repository"/> alone, or every repository with a checkout here.
+    /// press would do — for <paramref name="repository"/> alone, or every repository with a checkout here, within
+    /// <paramref name="workspace"/> alone where one is named (BRSCOPE1b).
     /// </summary>
-    Task<SyncPlan> SyncPlanAsync(string? repository, CancellationToken ct);
+    Task<SyncPlan> SyncPlanAsync(string? repository, string? workspace, CancellationToken ct);
 
     /// <summary><c>TREES_SYNC</c>'s own press: only the rows in <paramref name="only"/>, each judged again, fetching nothing.</summary>
-    Task<SyncDone> SyncAsync(string? repository, IReadOnlySet<string> only, CancellationToken ct);
+    Task<SyncDone> SyncAsync(string? repository, string? workspace, IReadOnlySet<string> only, CancellationToken ct);
 }

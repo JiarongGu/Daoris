@@ -483,18 +483,18 @@ public sealed partial class DriverModule
         // TREES_SYNC_PLAN's own list (HELP10, WSR6): the same checkouts and sessions, and each line fetched as the person,
         // whose press this is — the look on Ask Daoris's card, never its proposal (D109).
         // It takes what the screen's look takes (D112): the repositories holding Daoris's branches, and the one a card names.
-        public async Task<SyncPlan> SyncPlanAsync(string? repository, CancellationToken ct)
+        public async Task<SyncPlan> SyncPlanAsync(string? repository, string? workspace, CancellationToken ct)
         {
-            var (repositories, inUse) = await module.CheckoutsAndSessionsAsync(repository, ct).ConfigureAwait(false);
+            var (repositories, inUse) = await module.CheckoutsAndSessionsAsync(repository, ct, workspace).ConfigureAwait(false);
             return await new SessionTrees(module._loop.Home).SyncPlanAsync(repositories, inUse, fetch: true, ct, Named(repository))
                 .ConfigureAwait(false);
         }
 
         // TREES_SYNC's own press: only the rows the look listed, fetching nothing, then the loop asked to look. The
         // sessions in use are asked again inside each repository's hold, as the screen's press asks them (LEFT2, WSR7).
-        public async Task<SyncDone> SyncAsync(string? repository, IReadOnlySet<string> only, CancellationToken ct)
+        public async Task<SyncDone> SyncAsync(string? repository, string? workspace, IReadOnlySet<string> only, CancellationToken ct)
         {
-            var (repositories, inUse) = await module.CheckoutsAndSessionsAsync(repository, ct).ConfigureAwait(false);
+            var (repositories, inUse) = await module.CheckoutsAndSessionsAsync(repository, ct, workspace).ConfigureAwait(false);
             var ledger = module._loop.Service ?? throw NotReady();
             var done = await new SessionTrees(module._loop.Home).SyncAsync(repositories, inUse, only, fetch: false, ct,
                 inUseNow: async token => await InUseAsync(ledger, token).ConfigureAwait(false), scope: Named(repository)).ConfigureAwait(false);
