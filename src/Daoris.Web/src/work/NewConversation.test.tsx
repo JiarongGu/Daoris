@@ -194,7 +194,7 @@ describe('a new conversation', () => {
     show({ onChoose });
     await userEvent.click(screen.getByRole('button', { name: 'Repository: engine' }));
 
-    const find = screen.getByRole('combobox', { name: 'Find a repository' });
+    const find = screen.getByRole('combobox', { name: 'find a repository' });
     expect(find).toHaveFocus();
     await userEvent.type(find, 'ga');
     expect(within(screen.getByRole('listbox')).getAllByRole('option').map((row) => row.textContent)).toEqual(['game']);
@@ -204,7 +204,7 @@ describe('a new conversation', () => {
     expect(screen.getByRole('button', { name: 'Repository: game' })).toHaveFocus();
 
     await userEvent.click(screen.getByRole('button', { name: 'Repository: game' }));
-    await userEvent.type(screen.getByRole('combobox', { name: 'Find a repository' }), 'zz');
+    await userEvent.type(screen.getByRole('combobox', { name: 'find a repository' }), 'zz');
     expect(screen.getByText('No repository matches zz.')).toBeInTheDocument();
     await userEvent.keyboard('{Escape}');
     expect(screen.queryByRole('listbox')).toBeNull();

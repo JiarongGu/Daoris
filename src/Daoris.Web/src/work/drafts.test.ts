@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { DRAFTS, MAX_DRAFTS, type Drafts, draftOf, readDrafts, useDraft, withDraft } from './drafts';
+import { DRAFTS, MAX_DRAFTS, type Drafts, draftOf, keepDraft, readDrafts, useDraft, withDraft } from './drafts';
 
 describe('a draft per session (CONV4b)', () => {
   afterEach(() => {
@@ -73,6 +73,28 @@ describe('a draft per session (CONV4b)', () => {
     // A new window reads the same storage: the page was reloaded.
     const again = renderHook(() => useDraft('s2'));
     expect(again.result.current[0]).toBe('for the second');
+  });
+
+  /**
+   * NEW1b: a conversation that opened without the words it was started on keeps them in its box. They are put in its draft
+   * before it is attended, and read as it is; words already there stay, after a blank line.
+   */
+  it('gives a session the words a start put in its draft, read as it is attended', () => {
+    const { result, rerender } = renderHook(({ session }) => useDraft(session), {
+      initialProps: { session: 's1' as string | null },
+    });
+    act(() => result.current[1]('typed in the first'));
+
+    keepDraft('s3', 'the opening words');
+    rerender({ session: 's3' });
+    expect(result.current[0]).toBe('the opening words');
+    rerender({ session: 's1' });
+    expect(result.current[0]).toBe('typed in the first');
+
+    keepDraft('s1', 'started on these');
+    rerender({ session: 's3' });
+    rerender({ session: 's1' });
+    expect(result.current[0]).toBe('started on these\n\ntyped in the first');
   });
 
   it('keeps nothing for no session', () => {

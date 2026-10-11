@@ -4,7 +4,7 @@
   "work.start.chip": "{{field}}: {{value}}",
   "work.start.repository": "Repository",
   "work.start.chooseRepository": "Choose a repository",
-  "work.start.find": "Find a repository",
+  "work.start.find": "find a repository",
   "work.start.recent": "Recent",
   "work.start.noCheckout": "no checkout on this machine",
   "work.start.busyMark": "busy",
