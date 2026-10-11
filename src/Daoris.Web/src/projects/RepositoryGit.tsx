@@ -1,13 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import { ago } from '../format';
 import { Inline, Prose, SkeletonRows } from '../ui';
+import { BranchList, type BranchListValue } from './BranchList';
 import { CommitGraph, type GraphCommitRow } from './CommitGraph';
-
-/**
- * A branch as Branches lists it: its name and its last commit. The bridge's `GitBranch` is one, so the list's answer is
- * handed as it came (D52: the molecule imports nothing of the bridge).
- */
-export type BranchRow = { name: string; subject: string; at: string | null };
 
 /**
  * What a Git tab shows (UX6h1): its answer on its way, no checkout of the repository on this machine, why Git did not answer
@@ -53,11 +47,16 @@ function Waiting({ sentence, reading }: { sentence: string; reading: boolean }) 
  * here, or one Git did not answer for, says why in its place; a checkout with no commit has no branch yet.
  *
  * @remarks
- * **A molecule**: the read arrives as a prop, and its holder reads it only while the tab shows. The list by kind (the
- * line, sessions', landed, yours, origin's: the built-in Git design §2.2) is UX6h2's; here each branch is a row of its
- * name and its last commit, in the order the list answered.
+ * **A molecule**: the read arrives as a prop, and its holder reads it only while the tab shows. What it read is the list by
+ * kind (UX6h2a, `BranchList`): the line at its head, then sessions', landed and yours, each session's branch named by the
+ * title its holder joined.
  */
-export function BranchesTab({ repository, read }: { repository: string; read: GitRead<{ branches: readonly BranchRow[] }> }) {
+export function BranchesTab({ repository, read, titles }: {
+  repository: string;
+  read: GitRead<BranchListValue>;
+  /** Each session branch's session's title, by the branch's name. */
+  titles?: Readonly<Record<string, string>>;
+}) {
   const { t } = useTranslation();
   if (read.state === 'reading') return <Waiting reading sentence={t('projects.git.reading.branches', { repository })} />;
   if (read.state === 'refused') return <Waiting reading={false} sentence={read.sentence} />;
@@ -65,21 +64,10 @@ export function BranchesTab({ repository, read }: { repository: string; read: Gi
     return <Nothing headline={t('projects.git.noCheckout.headline')} body={t('projects.git.noCheckout.branches', { repository })} />;
   }
 
-  const { branches } = read.value;
-  if (branches.length === 0) {
+  if (read.value.branches.length === 0) {
     return <Nothing headline={t('projects.git.branches.none.headline')} body={t('projects.git.branches.none.body', { repository })} />;
   }
-  return (
-    <ul aria-label={t('projects.git.branches.list', { repository })} className="m-0 grid list-none p-0">
-      {branches.map((branch) => (
-        <li key={branch.name} className="flex min-w-0 items-baseline gap-2 border-b border-line py-1.5 last:border-b-0">
-          <code className="shrink-0 font-mono text-small text-ink">{branch.name}</code>
-          <span className="min-w-0 flex-1 truncate text-small text-ink-soft">{branch.subject}</span>
-          {branch.at && <span className="shrink-0 text-meta text-ink-faint tabular-nums">{ago(branch.at)}</span>}
-        </li>
-      ))}
-    </ul>
-  );
+  return <BranchList repository={repository} list={read.value} titles={titles} />;
 }
 
 /**

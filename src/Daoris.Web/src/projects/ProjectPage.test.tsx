@@ -189,7 +189,7 @@ describe("a repository's Branches and History tabs", () => {
         <ProjectPage registration={ENGINE} setup={SETUP_DEFAULTS} branches={branches} history={history} tab="branches" onTab={onTab} />
       </Tooltip.Provider>,
     );
-    expect(within(screen.getByRole('tabpanel', { name: 'Branches' })).getByRole('list', { name: "engine's branches" })).toBeInTheDocument();
+    expect(within(screen.getByRole('tabpanel', { name: 'Branches' })).getByRole('region', { name: "engine's branches" })).toBeInTheDocument();
 
     rerender(
       <Tooltip.Provider>

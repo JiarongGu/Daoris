@@ -1,6 +1,9 @@
 import { useMemo } from 'react';
-import { type GitRepositoryBranches, gitRefusal, useGitBranches, useGitGraph } from '../bridge/git';
+import { type GitBranch, type GitRepositoryBranches, gitRefusal, useGitBranches, useGitGraph } from '../bridge/git';
+import { useSessionOpenings } from '../bridge/sessions';
 import { sentence } from '../format';
+import { useQuests, useSessions } from '../queries';
+import { questName, sessionTitle } from '../work/identity';
 import { BranchesTab, type GitRead, HistoryTab, type HistoryRead } from './RepositoryGit';
 
 /** Matched without case, as the driver matches a repository's name. */
@@ -35,8 +38,35 @@ export function RepositoryHistory({ repository, workspace, here }: { repository:
     : <HistoryTab repository={repository} read={{ state: 'noCheckout' }} />;
 }
 
+const NO_BRANCHES: GitBranch[] = [];
+
 function BranchesRead({ repository, workspace }: { repository: string; workspace: string }) {
-  return <BranchesTab repository={repository} read={useRepositoryBranches(repository, workspace)} />;
+  const read = useRepositoryBranches(repository, workspace);
+  const titles = useSessionTitles(repository, read.state === 'read' ? read.value.branches : NO_BRANCHES);
+  return <BranchesTab repository={repository} read={read} titles={titles} />;
+}
+
+/**
+ * **Each session branch's session's title, by the branch's name** (UX6h2a, the built-in Git design §2.2): the rail's rule
+ * (`sessionTitle`: its quest's name, else its ask or its opening words), joined here from the session the driver named for
+ * the branch's tree and the records the service lists. Asked only where a session's branch names one. With no record listed,
+ * a quest the driver named still names it, by its name where the quest is listed and by its reference otherwise.
+ */
+function useSessionTitles(repository: string, branches: readonly GitBranch[]): Record<string, string> {
+  const named = branches.filter((branch) => branch.kind === 'session' && (branch.session?.session || branch.session?.quest));
+  const sessions = useSessions(repository, true, named.length > 0);
+  const quests = useQuests(null, true, named.length > 0);
+  const records = (sessions.data ?? []).filter((record) => named.some((branch) => branch.session?.session === record.id));
+  const openings = useSessionOpenings(records);
+
+  return Object.fromEntries(named.flatMap((branch): [string, string][] => {
+    const record = records.find((each) => each.id === branch.session?.session);
+    const questId = record?.quest ?? branch.session?.quest;
+    const quest = questId ? (quests.data ?? []).find((each) => each.id === questId) ?? null : null;
+    if (record) return [[branch.name, sessionTitle(record, quest, openings[record.id])]];
+    if (quest) return [[branch.name, questName(quest)]];
+    return questId ? [[branch.name, `#${questId}`]] : [];
+  }));
 }
 
 function HistoryRead({ repository, workspace }: { repository: string; workspace: string }) {
@@ -64,9 +94,10 @@ function HistoryRead({ repository, workspace }: { repository: string; workspace:
 
 /**
  * The list's read of one repository (`GIT_BRANCHES`, scoped to it): on its way, failed in the driver's words, absent where
- * it has no checkout here, or its entry. A list Git could not read at all says the driver's sentence in its place.
+ * it has no checkout here, or its entry, with the list's own fact beside it that the session records went unread. A list Git
+ * could not read at all says the driver's sentence in its place.
  */
-function useRepositoryBranches(repository: string, workspace: string): GitRead<GitRepositoryBranches> {
+function useRepositoryBranches(repository: string, workspace: string): GitRead<GitRepositoryBranches & { sessionsUnread: boolean }> {
   const { query } = useGitBranches({ repository, workspace });
   if (query.error) return { state: 'refused', sentence: sentence(query.error) };
   if (!query.data) return { state: 'reading' };
@@ -74,5 +105,5 @@ function useRepositoryBranches(repository: string, workspace: string): GitRead<G
   const entry = entries.find((each) => same(each.repository, repository));
   if (!entry) return { state: 'noCheckout' };
   if (entry.problem && entry.branches.length === 0) return { state: 'refused', sentence: entry.problem };
-  return { state: 'read', value: entry };
+  return { state: 'read', value: { ...entry, sessionsUnread: query.data.sessionsUnread === true } };
 }
