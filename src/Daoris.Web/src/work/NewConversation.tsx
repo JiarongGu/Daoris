@@ -75,7 +75,7 @@ export function openingRepository(
 export function NewConversation({
   attached = true, repositories, busy = {}, recent = [], remembered, onChoose, harnesses, labels = {}, names = {},
   defaultHarness = '', accounts, scopeOf, draft, onDraft, carried, onCarry, pending = false, refusal, focus = 0, onStart,
-  onOpenSession, pickerFoot,
+  onOpenSession, pickerFoot, pickerOpen = false,
 }: {
   /** Whether a shell is here; false is a browser. */
   attached?: boolean;
@@ -120,6 +120,8 @@ export function NewConversation({
   onOpenSession?: (session: string) => void;
   /** What the repository picker offers at its foot (NEW1c). */
   pickerFoot?: ReactNode;
+  /** The repository picker drawn open, for a story. */
+  pickerOpen?: boolean;
 }) {
   const { t } = useTranslation();
   const promptId = useId();
@@ -264,6 +266,7 @@ export function NewConversation({
           value={repository}
           onChoose={(next) => { setChosen(next); onChoose?.(next); }}
           foot={pickerFoot}
+          defaultOpen={pickerOpen}
         />
 
         <Menu.Root>

@@ -60,7 +60,7 @@ export function pickerGroups(repositories: readonly StartRepository[], recent: r
  * **Its foot is the caller's** (`foot`): NEW1c puts *Add a repository…* and *Import a folder…* there, which open the existing
  * drawers with the draft kept.
  */
-export function RepositoryPicker({ repositories, busy = {}, recent = [], value, onChoose, foot }: {
+export function RepositoryPicker({ repositories, busy = {}, recent = [], value, onChoose, foot, defaultOpen = false }: {
   repositories: readonly StartRepository[];
   /** Each repository whose checkout an active session holds, with that session. */
   busy?: Readonly<Record<string, string>>;
@@ -70,9 +70,11 @@ export function RepositoryPicker({ repositories, busy = {}, recent = [], value, 
   onChoose: (repository: string) => void;
   /** What the picker offers below its rows, after a rule (NEW1c). */
   foot?: ReactNode;
+  /** Drawn open, for a story. */
+  defaultOpen?: boolean;
 }) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [typed, setTyped] = useState('');
   const [active, setActive] = useState<string | null>(null);
   const root = useRef<HTMLDivElement>(null);
