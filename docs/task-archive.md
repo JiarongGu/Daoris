@@ -13507,3 +13507,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PLUGUI1c2 — plugin-page remainder** (web). Move kit/update types, fix agent/landing doors, put Update now first, remove doubled heading. D119; stories/tests/look.
 
 **Outcome** 2026-10-11 (the row's first part, split as PLUGUI1c2a): `PluginKit` and `PluginUpdate` with their tests and stories moved to `plugins/` (stories `Plugins/…`), `PluginOffers`' one type folded into `plugins/catalog.ts`; *Update now* is the plan's primary control and stays first; the kit's drawer says *Make a plugin* once. The doors are PLUGUI1c2b and c. Detail: D119's PLUGUI1c2a note.
+
+## MSG1g3 — cooling note and twins (2026-10-11, D137)
+
+> - [ ] **MSG1g3 — cooling note and twins** (driver/web). Code held line; compare newSessionSaid with GoOnNew/WordsNever. D137/D142.
+
+**Outcome** 2026-10-11: the held line was already coded (CONVNOTE2g/2g2). `locales/say.test.ts` holds the page's refusal tables (`NEVER`, `START_FROM`, `NEW_SESSION_REFUSED`, now exported) to the driver's `WordsNever`, `StartFrom` and `GoOnNew` codes key for key, the page's own named, and each to both catalogues; the merge tool's MOD9e row names the four driver files it reads. Detail: D137's MSG1g3 note.

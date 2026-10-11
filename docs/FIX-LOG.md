@@ -5,6 +5,17 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-11 — a page twin read driver files the merge tool did not route to the web gate (MSG1g3)
+
+- **Symptom:** MSG1g3's merge failed the CLI gate: `merge-branch.test.ts`'s SESSDEL1c case found four driver files
+  (`GoOnNew.cs`, `SessionSay.cs`, `Continuation.cs`, `ChatRunner.StartFrom.cs`) that the page's new `locales/say.test.ts`
+  reads and whose change would not run the web gate.
+- **Root cause:** the twin test reads the driver's code declarations from source, and the merge tool runs the web gate
+  for a driver change only where its MOD9e row names the file. The worker's brief and `twins.md` did not say so.
+- **Fix:** the MOD9e row names the four files, its reason the say twin; `twins.md` says a page test that reads a driver
+  source names that file there.
+- **Verify:** SESSDEL1c passed alone, and `--rerun cli` on the open merge passed with every gate after it.
+
 ## 2026-10-11 — History's rows ran past the tab on the installed window (UX6h1)
 
 - **Symptom:** on the installed window (1562 px), a repository's History tab scrolled sideways: each row was 948 px in a

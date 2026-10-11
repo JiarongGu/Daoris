@@ -38,6 +38,9 @@ map found this first (WSP3), and every twin since was built the same way for the
   the shape would delete what the other side wrote.
 - **A constant both sides need is duplicated deliberately**, with a comment naming the other copy,
   never imported across.
+- **A page test that reads a driver source names that file to the merge tool.** `tools/merge-branch.mjs`'s
+  MOD9e row lists each driver file a vitest parses, so a change to it runs the web gate; `merge-branch.test.ts`'s
+  SESSDEL1c case fails a merge whose page test reads one the row lacks (MSG1g3's say twin, 2026-10-11).
 
 ## The twins today
 

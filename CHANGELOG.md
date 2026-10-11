@@ -13,6 +13,7 @@ with the version and date at release.
 - Ask Daoris can now propose clearing finished history for a quest, an ask or a workspace, or a closed quest's failed
   sessions. The card lists what goes and what is kept and why, and Apply clears exactly what it listed.
 - Ask Daoris can take you to a repository's Branches or History tab.
+- A plugin's update plan shows *Update now* as its one main button, and *Make a plugin* no longer says its heading twice.
 - A conversation's notes that a review's set-up was or was not posted, and how a second opinion's findings were answered as
   its turn ended, now read in your language, in English and 中文. The service's message in them stays as written.
 - A note that a session's background work ended says how in your language: completed, failed, stopped or ended, in
