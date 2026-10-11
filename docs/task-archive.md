@@ -13765,3 +13765,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CONNECTOR2 — the knowledge server's entry carries the home** (driver). Seen 2026-10-12 on the install: a Codex chat's `daoris-knowledge` failed its handshake (*connection closed: initialize response*), since Codex hands an MCP server only its entry's variables and the entry (`KnowledgeConnector.Offer`) carries no `DAORIS_HOME`: the host exits 2, *no Daoris home*. Claude hands its whole environment, so it never showed. Carry the home in the entry; prove the host answers `initialize` under the entry's variables alone.
 
 **Outcome** 2026-10-12: `KnowledgeConnector.Offer` carries `DAORIS_HOME` (the scope's, else the environment's, else the resolved home), so Codex starts the host; `KnowledgeConnectorStartTests` starts the host with the entry's variables alone and answers, and pins the exit 2 without the home, both passing on the merge. Detail: the FIX-LOG's CONNECTOR2 entry and D93's note.
+
+## BRWHINT1a — a chat's agent is told the browser it was handed (2026-10-12, D78)
+
+> - [ ] **BRWHINT1 — an agent is told the browser it was handed** (driver). The same chat had Daoris's browser (`browser`, Playwright over CDP to the window the person signs in to) and reached for Codex's computer-use, which saw no browser: a handed browser is said to the agent only when it is left out. Say it to the agent when it is handed, on both doors. D78.
+
+**Outcome** 2026-10-12: the chat's half. A new chat's first message carries one line naming each handed server that drives Daoris's browser, before the person's words, on both doors, in `ChatMessage.Briefing` and kept as the note `chat.told-browser`; a going-on chat and a later message say nothing. Driven sessions are BRWHINT1b. Detail: D78's BRWHINT1a note.

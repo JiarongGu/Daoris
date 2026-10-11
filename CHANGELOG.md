@@ -7,6 +7,9 @@ with the version and date at release.
 
 - A Codex session is handed Daoris's knowledge tools again: they failed to start under Codex, which passes an MCP server
   only the variables its entry names, and the entry now names the Daoris home.
+- A new conversation's agent is told it has Daoris's browser, and by which tool name, with its first message, so it uses
+  that browser (and the sign-in you made in it) rather than reaching for a tool of its own; the conversation shows what
+  it was told.
 - A question or task handed to Ask Daoris (*Make it a task with Daoris…*, *Ask Daoris about it*) opens on a new
   conversation when the last one has ended, instead of under its history.
 - *New conversation* opens on the repository you were just in, and *Recent* lists where you have been working, not only

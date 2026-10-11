@@ -329,7 +329,7 @@ public sealed class HookSetLogTests : IDisposable
                 { "name": "browser", "command": ["node", "drive.mjs", "${browser}"] } ] }
             """);
 
-        var (servers, notice, drives) = await ChatRunner.HandServersAsync(
+        var (servers, notice, drives, _) = await ChatRunner.HandServersAsync(
             _home, shell ? new AnsweringBrowser("http://127.0.0.1:4810") : null,
             new PluginLog(_log), "s1a2b3c4", CancellationToken.None);
 

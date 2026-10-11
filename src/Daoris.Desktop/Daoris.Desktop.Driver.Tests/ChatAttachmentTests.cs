@@ -163,7 +163,70 @@ public sealed class ChatAttachmentTests : IDisposable
         }
     }
 
-    private async Task<Session> Chat(string adapter)
+    private sealed class AnsweringBrowser(string endpoint) : IInAppBrowser
+    {
+        public Task<string?> EnsureAsync(CancellationToken ct = default) => Task.FromResult<string?>(endpoint);
+
+        public void Show() { }
+
+        public void Open(string address) { }
+    }
+
+    /// <summary>A plugin whose server drives Daoris's browser, under the home the chat's runner reads (D78).</summary>
+    private void HandBrowserPlugin()
+    {
+        var plugin = Path.Combine(_home, "plugins", "in-app-browser");
+        Directory.CreateDirectory(plugin);
+        File.WriteAllText(Path.Combine(plugin, "plugin.json"), """
+            { "id": "in-app-browser", "servers": [
+                { "name": "browser", "command": ["npx", "-y", "@playwright/mcp@0.0.82", "--cdp-endpoint", "${browser}"] } ] }
+            """);
+    }
+
+    /// <summary>
+    /// BRWHINT1a: a new chat's agent is told the browser it was handed with its first message, ahead of the person's words, on
+    /// each door — and with no later one. The person's words stay as written in the record, beside a note of what was told.
+    /// </summary>
+    [Theory]
+    [InlineData("claude-code", "user: ")]
+    [InlineData("acp-stub", "prompt: ")]
+    public async Task A_new_chats_first_message_tells_the_agent_its_browser_once_on_each_door(string adapter, string said)
+    {
+        HandBrowserPlugin();
+        await using var session = await Chat(adapter, new AnsweringBrowser("http://127.0.0.1:4810"));
+
+        Assert.True(session.Runner.Say(session.Id, "open the board"));
+        await Until(() => Turns(session) == 1, () => HeardText());
+        Assert.True(session.Runner.Say(session.Id, "and the next page"));
+        await Until(() => Turns(session) == 2, () => HeardText());
+
+        var heard = HeardText();
+        var told = "Daoris has handed you its own browser as the MCP server `browser`";
+        Assert.Contains(told, heard);
+        Assert.True(heard.IndexOf(told, StringComparison.Ordinal) < heard.IndexOf("open the board", StringComparison.Ordinal));
+        Assert.Equal(heard.IndexOf(told, StringComparison.Ordinal), heard.LastIndexOf(told, StringComparison.Ordinal));
+        Assert.Contains($"{said}and the next page", heard);
+
+        var events = session.Events.Page(session.Id).Events;
+        Assert.Equal(["open the board", "and the next page"], events.Where(e => e.Kind == SessionEventKind.User).Select(e => e.Text));
+        var note = Assert.Single(events, e => e.Parts?.Any(part => part.Code == "chat.told-browser") == true);
+        Assert.Contains(told, note.Text);
+    }
+
+    /// <summary>Nothing that drives the browser handed, nothing said (BRWHINT1a).</summary>
+    [Fact]
+    public async Task A_chat_handed_no_browser_is_told_nothing_of_one()
+    {
+        await using var session = await Chat("claude-code");
+
+        Assert.True(session.Runner.Say(session.Id, "open the board"));
+        await Until(() => Turns(session) == 1, () => HeardText());
+
+        Assert.DoesNotContain("handed you its own browser", HeardText());
+        Assert.DoesNotContain(session.Events.Page(session.Id).Events, e => e.Parts?.Any(part => part.Code == "chat.told-browser") == true);
+    }
+
+    private async Task<Session> Chat(string adapter, IInAppBrowser? browser = null)
     {
         var service = StandInService.Start(Path.Combine(_home, "engine"));
         var command = adapter == "claude-code"
@@ -178,7 +241,7 @@ public sealed class ChatAttachmentTests : IDisposable
         var client = new ServiceClient(service.Url, null);
         var runner = new ChatRunner(
             client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")), browser: browser);
 
         var start = await runner.StartAsync("engine", adapter, config);
         var id = start.SessionId ?? throw new InvalidOperationException(start.Message);

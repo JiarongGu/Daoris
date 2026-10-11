@@ -26,6 +26,9 @@ public sealed partial class ChatRunner
     // What a conversation started from an earlier one is handed with the person's first words: that one's transcript as a file.
     private readonly ConcurrentDictionary<string, Handing> _handing = new(StringComparer.OrdinalIgnoreCase);
 
+    // The line a new conversation's agent is told of the browser it was handed, held for its first message (BRWHINT1a).
+    private readonly ConcurrentDictionary<string, string> _browsers = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>The earlier conversation's words, kept as this conversation's file, and the line its agent is told beside them.</summary>
     private sealed record Handing(IReadOnlyList<KeptFile> Files, string Preface);
 

@@ -71,7 +71,7 @@ public static class InAppBrowserServers
     public static async Task<(IReadOnlyList<AcpMcpServer> Handed, string? Notice, bool Drives)> HandAsync(
         IReadOnlyList<AcpMcpServer> servers, IInAppBrowser? browser, CancellationToken ct)
     {
-        var (handed, notice, drives) = await HandNotedAsync(servers, browser, ct).ConfigureAwait(false);
+        var (handed, notice, drives, _) = await HandNotedAsync(servers, browser, ct).ConfigureAwait(false);
         return (handed, notice?.Note, drives);
     }
 
@@ -79,10 +79,15 @@ public static class InAppBrowserServers
     /// <see cref="HandAsync"/> with its sentence as a note (CONVNOTE2c): the lead, the servers withheld a fact of it, and why as
     /// a code where the host knows it, or the exception's words as written; the English is what it always was.
     /// </summary>
-    public static async Task<(IReadOnlyList<AcpMcpServer> Handed, Noted? Notice, bool Drives)> HandNotedAsync(
+    /// <returns>
+    /// And <c>Drivers</c>: the names of the servers handed that drive Daoris's browser, found by <see cref="Needs"/> before the
+    /// endpoint was filled in (BRWHINT1a), for the line a chat's agent is told — never a literal name, which another plugin's
+    /// server may also carry.
+    /// </returns>
+    public static async Task<(IReadOnlyList<AcpMcpServer> Handed, Noted? Notice, bool Drives, IReadOnlyList<string> Drivers)> HandNotedAsync(
         IReadOnlyList<AcpMcpServer> servers, IInAppBrowser? browser, CancellationToken ct)
     {
-        if (!servers.Any(Needs)) return (servers, null, false);
+        if (!servers.Any(Needs)) return (servers, null, false, []);
 
         string? endpoint = null;
         Noted? why = null;
@@ -118,6 +123,19 @@ public static class InAppBrowserServers
                 .Then(" ", why ?? new Noted("", []))
                 .Then(" (D78).");
         // With an endpoint every server that needs it is handed; without one, none is.
-        return (handed, notice, endpoint is not null);
+        return (handed, notice, endpoint is not null, endpoint is null ? [] : [.. servers.Where(Needs).Select(server => server.Name)]);
+    }
+
+    /// <summary>
+    /// What a chat's agent is told of the browser it was handed (BRWHINT1a): each server that drives it by its own name, and
+    /// what the browser is. Daoris's one-copy English (D142 point 6). Null where none was handed, so nothing is said.
+    /// </summary>
+    public static string? Told(IReadOnlyList<string> drivers)
+    {
+        if (drivers.Count == 0) return null;
+        var quoted = drivers.Select(name => $"`{name}`").ToList();
+        var names = quoted.Count == 1 ? quoted[0] : $"{string.Join(", ", quoted.Take(quoted.Count - 1))} and {quoted[^1]}";
+        var servers = drivers.Count == 1 ? $"the MCP server {names}" : $"the MCP servers {names}";
+        return $"Daoris has handed you its own browser as {servers}: it drives the browser window the person signs in to and watches, so use its tools for any web page, including one behind the person's sign-in.";
     }
 }
