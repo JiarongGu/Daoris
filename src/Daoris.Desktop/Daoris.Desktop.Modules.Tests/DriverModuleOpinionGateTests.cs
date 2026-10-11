@@ -127,6 +127,31 @@ public sealed class DriverModuleOpinionGateTests : DriverModuleBridge
         Assert.Equal("o2", detail.GetProperty("recheck").GetProperty("id").GetString());
     }
 
+    /// <summary>
+    /// XAGENT1g4b (design §6.3, D57 §4): a pass carries the reviewer's measured use, read by the reviewer's own session (not the
+    /// working one), and null where none was measured: absent is never zero.
+    /// </summary>
+    [Fact]
+    public void A_pass_carries_the_reviewers_measured_use_and_null_where_none_was_recorded()
+    {
+        var first = new OpinionView("o1", "landing", "first", "s1", "r-o1", "web-app", "0000000000000000000000000000000000000000", Read,
+            "codex-acp", ReviewerLabels.AnotherMaker, "given") { Findings = [] };
+        var gate = new OpinionGateState(OpinionGateStates.Disputed, "web-app") { Session = "s1", Tip = Read, Opinion = first, Since = 0 };
+        var asked = new List<string>();
+
+        var measured = JsonSerializer.SerializeToElement(DriverModule.OpinionDetail(gate, session =>
+        {
+            asked.Add(session);
+            return session == "r-o1" ? new UsageEntry(session, "web-app", "codex-acp", null, 4200, 128000, DateTimeOffset.UnixEpoch) : null;
+        }), Camel);
+        var usage = measured.GetProperty("first").GetProperty("usage");
+        Assert.Equal((4200L, 128000L), (usage.GetProperty("used").GetInt64(), usage.GetProperty("size").GetInt64()));
+        Assert.Equal(["r-o1"], asked);
+
+        var none = JsonSerializer.SerializeToElement(DriverModule.OpinionDetail(gate, _ => null), Camel);
+        Assert.Equal(JsonValueKind.Null, none.GetProperty("first").GetProperty("usage").ValueKind);
+    }
+
     [Fact]
     public void The_detail_says_its_tier_none_where_no_agent_read_it_and_person_where_the_person_did_and_nothing_where_none_is_asked()
     {
