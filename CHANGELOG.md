@@ -9,8 +9,6 @@ with the version and date at release.
   when the checkout last fetched. Then sessions' branches, each named by its session's title and state; landed branches, each
   saying whether it is pushed and opening its pull request, with its state and when where a plugin answered; and yours, the
   first five shown and the rest a press away. Each says how far it stands from the line or from origin.
-- Ask Daoris can now propose clearing finished history for a quest, an ask or a workspace. The card lists what goes and what
-  is kept and why, and Apply clears exactly what it listed; a quest's failed sessions stay your own clear on its page.
 - Ask Daoris can now propose clearing finished history for a quest, an ask or a workspace, or a closed quest's failed
   sessions. The card lists what goes and what is kept and why, and Apply clears exactly what it listed.
 - A conversation's notes that a review's set-up was or was not posted, and how a second opinion's findings were answered as

@@ -437,11 +437,13 @@ controls are in the frame design's §3.
   repository* and its ⋯ holds *Import a folder…*, both a shell's, so a browser's list makes nothing.
   **Choosing a row opens its page in the main area**: its name, its standing (*not adopted* too), its
   summary as the header's line, and *Open code map* and *Manage* in its header, the map one level in
-  (MAP3a) and *Manage* an adopter's on a shell. Beneath, on a shell, two tabs remembered for the view (UX6f,
+  (MAP3a) and *Manage* an adopter's on a shell. Beneath, on a shell, its tabs remembered for the view (UX6f,
   D150 §4.2). *Details*: the index with the local/canonical split, the commit it was fed from, its
   workspace, its line read-only with a door to Setup, and its unlanded branches; its declaration as chips;
   and for one not adopted the *Adoption steps*, led by one line with its reasoning on the info glyph (U36)
-  and the join steps proposed as text. *Setup*: every setting it holds on this machine in four sections
+  and the join steps proposed as text. *Branches*: its branches by kind (the built-in Git design §2.2, D150's UX6h2a
+  note), the line at the head with what set it, how it stands to origin and the last fetch, then *Sessions'*, *Landed*
+  and *Yours*, folded after five. *Setup*: every setting it holds on this machine in four sections
   (*Driving*, *Line and landing*, *Sessions*, *Reach*), each folded to a line naming its values, a default
   marked as such, and open where it holds a value of its own with its *Clear*; a value from above offers
   *Set for this repository*, and each row's hint is its terminal twin. A browser's page is Details alone. The chosen repository is remembered, and adding, importing and
