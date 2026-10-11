@@ -45,7 +45,9 @@ export function CommitGraph({ label, commits, tips = NO_TIPS }: {
   const height = layout.rows.length * ROW;
 
   return (
-    <div className="relative">
+    // `min-w-0`: in a grid its width is the tab's, not its longest subject's, so a subject truncates and the row's last
+    // columns stay in view (the installed window, 2026-10-11).
+    <div className="relative min-w-0">
       <svg
         aria-hidden
         data-lanes={layout.lanes}

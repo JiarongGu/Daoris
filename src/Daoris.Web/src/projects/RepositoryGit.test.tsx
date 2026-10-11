@@ -213,6 +213,13 @@ describe("a repository's History tab", () => {
     expect(graph.querySelectorAll('circle[data-merge]')).toHaveLength(1);
   });
 
+  it('lets its rows give way to the tab\'s width, so a long subject truncates and the id, author and time stay in view', () => {
+    // jsdom lays nothing out: the class is what the window needed. Without it the graph, a grid item, grew to its longest
+    // subject and pushed the row's last columns past the tab (the installed window, 2026-10-11; FIX-LOG).
+    render(<HistoryTab repository="engine" read={{ state: 'read', value: { line: 'main', tips, commits: GIT_HISTORY_ENGINE } }} />);
+    expect(screen.getByRole('list', { name: "engine's history on main" }).parentElement).toHaveClass('min-w-0');
+  });
+
   it('says its states in 中文', async () => {
     await i18n.changeLanguage('zh');
     render(<HistoryTab repository="engine" read={{ state: 'noLine', line: 'main' }} />);

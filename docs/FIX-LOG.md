@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-11 — History's rows ran past the tab on the installed window (UX6h1)
+
+- **Symptom:** on the installed window (1562 px), a repository's History tab scrolled sideways: each row was 948 px in a
+  739 px tab, so the short id was cut at the edge and the author and time were out of view.
+- **Root cause:** `CommitGraph`'s wrapper is a grid item of the tab's `grid`, and a grid item's minimum width is its
+  content's by default (`min-width: auto`). Its rows hold `truncate` subjects that never wrap, so the wrapper grew to the
+  longest subject and the row's `flex-1 min-w-0` subject had no narrower box to give way to. The stories' frames, and
+  jsdom, lay out nothing that would show it.
+- **Fix:** the wrapper is `min-w-0` (`CommitGraph.tsx`), so its width is the tab's and the subject truncates.
+- **Verify:** on the window, the class added in place took the tab from 948/739 to 739/739, every cell's right edge inside
+  it; a page test holds the class (it failed first). The Branches tab measured 749/749 as it was. The window proof of the
+  built fix is the next republish's.
+
 ## 2026-10-11 — the modules' Git tests could not remove their home (GIT1d-a)
 
 - **Symptom:** the full set on `7a3004dd` failed `modules-process`: both `DriverModuleGitTests` failed, alone too, with
