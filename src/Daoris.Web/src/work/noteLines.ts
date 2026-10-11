@@ -172,6 +172,12 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'browser.withheld': { values: ['servers'] },
   'browser.no-host': { values: [] },
   'browser.none-up': { values: [] },
+  // A session's own background work (CONVNOTE2f): the work's names as code, a state as the harness said it; a program's words
+  // follow `unread`.
+  'background.unread': { values: [] },
+  'background.waits': { values: ['works'] },
+  'background.work-ended': { values: ['work', 'state'] },
+  'background.goes-on': { values: [] },
 };
 
 /**
@@ -236,8 +242,8 @@ export const NOTE_VALUES: Readonly<
 > = {
   awaits: 'id', answered: 'id', ask: 'id', quest: 'id', session: 'id',
   quests: 'ids',
-  servers: 'names',
-  option: 'text', chosen: 'text',
+  servers: 'names', works: 'names',
+  option: 'text', chosen: 'text', work: 'text', state: 'text',
   until: 'moment', at: 'moment', seen: 'moment',
   exit: 'number', minutes: 'number', paths: 'number', turn: 'number',
   tokens: 'count', count: 'count',

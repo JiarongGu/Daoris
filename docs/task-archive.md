@@ -13313,3 +13313,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **QUESTCLOSE1b5 — the trace's quest link carries the note's parts** (driver or service: find who builds the trace). The page's trace close draws `noteParts` through `Note` (QUESTCLOSE1b2), but the trace's quest link (`TraceQuestLink`) is answered without them, so the trace shows the person's done in English. A trace answer test; HowItCameToBe on the window.
 
 **Outcome** 2026-10-11: the trace's own quest read (`TracedQuest`, Trace.cs `ParseQuests`) and its link (`TraceQuestLink`, Trace.Chain.cs) carry `NoteParts`; the TRACE route serializes them as they are; a quest from before parts carries none. With b1-b3, the person's done reads in the page's language everywhere it shows. Detail: D126's QUESTCLOSE1b5 note.
+
+
+## CONVNOTE2f — background work, by code (2026-10-11, D152)
+
+> - [ ] **CONVNOTE2e–h — the conversation's other driver notes, by code** … (Group f: background work, Acp.cs ~:575-590.)
+
+**Outcome** 2026-10-11: `background.unread` (the error as program words), `background.waits` [works] (the `names` kind), one `background.work-ended` [work, state] per ended work and `background.goes-on`, built by `BackgroundNotes`, worded in en and zh (后台工作; 委托 for a quest); each English byte for byte. A state is a text value as the harness sent it (an open set). Detail: D152's CONVNOTE2f note.

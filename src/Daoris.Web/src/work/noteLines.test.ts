@@ -268,6 +268,41 @@ describe('noteLines', () => {
     });
   });
 
+  /** CONVNOTE2f: a session's own background work, its wait and its end, worded; a program's words as written. */
+  describe('background work', () => {
+    it('words a wait by the work it names', () => {
+      const waits = coded('background.waits', '— its turn ended while its own background work runs: `a`, `b`. …', { works: ['Run the gates', 'Build'] });
+      expect(noteLines(t, { parts: [waits] }, 'en')[0].text)
+        .toBe('Its turn ended while its own background work runs: `Run the gates` and `Build`. The session waits for that work, and goes on when it ends.');
+      expect(noteLines(zh, { parts: [waits] }, 'zh')[0].text)
+        .toBe('它的这一轮在它自己的后台工作仍在运行时结束了：`Run the gates`和`Build`。会话会等这些工作，结束后继续。');
+      expect(noteLines(zh, { parts: [coded('background.waits', '…', { works: [] })] }, 'zh')[0].kind).toBe('recorded');
+    });
+
+    it('words an end work by work, and the going on', () => {
+      const parts = [
+        coded('background.work-ended', '`Run the gates` (completed)', { work: 'Run the gates', state: 'completed' }),
+        coded('background.work-ended', '`Build` (failed)', { work: 'Build', state: 'failed' }),
+        coded('background.goes-on', 'The session goes on.'),
+      ];
+      expect(noteLines(t, { parts }, 'en').map((line) => line.text)).toEqual([
+        'Its background work `Run the gates` ended (completed).',
+        'Its background work `Build` ended (failed).',
+        'The session goes on.',
+      ]);
+      expect(noteLines(zh, { parts }, 'zh')[0].text).toBe('它的后台工作 `Run the gates` 已结束（completed）。');
+      expect(noteLines(zh, { parts: [coded('background.work-ended', '…', { work: 'x' })] }, 'zh')[0].kind).toBe('recorded');
+    });
+
+    it('words that a wait could not be read and leaves the program’s words as written', () => {
+      const parts = [coded('background.unread', '— its turn ended …:'), words('the agent said no', 'program')];
+      expect(noteLines(zh, { parts }, 'zh')).toEqual([
+        { kind: 'said', text: '它的这一轮在它自己的后台工作仍在运行时结束了，无法确定它的委托是否在等这些后台工作：' },
+        { kind: 'words', text: 'the agent said no', by: 'program' },
+      ]);
+    });
+  });
+
   /** CONVNOTE2d1: words the agent would not take, ones that never reached it, and ones not taken off the record, worded; others' words as written. */
   describe('words that did not reach an agent or were not taken', () => {
     it('words a refusal by its lead and leaves the agent’s words as written', () => {

@@ -559,6 +559,14 @@ public static class NoteCodes
     public static readonly NoteCode BrowserNoHost = new("browser.no-host", []);
     public static readonly NoteCode BrowserNoneUp = new("browser.none-up", []);
 
+    // ——— A session's own background work (CONVNOTE2f, <see cref="BackgroundNotes"/>, BGWAIT1): the work's names are the agent's own
+    // descriptions of it, said as code; a state is the harness's own word for how it ended, said as it came. Why a wait could not
+    // be read is a program's words, which may hold a path.
+    public static readonly NoteCode BackgroundUnread = new("background.unread", []);
+    public static readonly NoteCode BackgroundWaits = new("background.waits", ["works"]);
+    public static readonly NoteCode BackgroundWorkEnded = new("background.work-ended", ["work", "state"]);
+    public static readonly NoteCode BackgroundGoesOn = new("background.goes-on", []);
+
     /// <summary>Every code above, read off the declarations so none escapes the catalogue test.</summary>
     public static IReadOnlyList<NoteCode> All { get; } =
         [.. typeof(NoteCodes).GetFields().Where(field => field.FieldType == typeof(NoteCode)).Select(field => (NoteCode)field.GetValue(null)!)];
@@ -645,6 +653,45 @@ public static class WordsNotes
     public static Noted NotTaken(string message) =>
         Noted.Of(NoteCodes.WordsNotTaken, "— your words could not be taken off its record:")
             .Then(" ", Noted.Said(message, NoteBy.Program));
+}
+
+/// <summary>
+/// The notes for a turn that ended while the session's own background work runs (CONVNOTE2f, BGWAIT1): each English as its
+/// site always wrote it, byte for byte, with its parts.
+/// </summary>
+public static class BackgroundNotes
+{
+    /// <summary>Whether the quest waits on that work could not be read, the program's own message beneath (it may hold a path).</summary>
+    public static Noted Unread(string message) =>
+        Noted.Of(NoteCodes.BackgroundUnread,
+                "— its turn ended while its own background work runs, and whether its quest waits on that work could not be read:")
+            .Then(" ", Noted.Said(message, NoteBy.Program));
+
+    /// <summary>The session waits for the work it names.</summary>
+    public static Noted Waits(IReadOnlyList<string> works) =>
+        Noted.Of(
+            NoteCodes.BackgroundWaits,
+            $"— its turn ended while its own background work runs: {string.Join(", ", works.Select(name => $"`{name}`"))}. "
+            + "The session waits for that work, and goes on when it ends.",
+            ("works", works));
+
+    /// <summary>Each work and the state it ended in, as the English and the prompt to the agent both say them.</summary>
+    public static string EndedSaid(IEnumerable<(string Name, string State)> ended) =>
+        string.Join("; ", ended.Select(work => $"`{work.Name}` ({work.State})"));
+
+    /// <summary>The work ended and the session goes on, a part to each work.</summary>
+    public static Noted Ended(IReadOnlyList<(string Name, string State)> ended)
+    {
+        var noted = new Noted("— its background work ended: ", []);
+        for (var each = 0; each < ended.Count; each++)
+        {
+            var (name, state) = ended[each];
+            noted = noted.Then(each == 0 ? "" : "; ",
+                Noted.Of(NoteCodes.BackgroundWorkEnded, EndedSaid([ended[each]]), ("work", name), ("state", state)));
+        }
+
+        return noted.Then(". ", Noted.Of(NoteCodes.BackgroundGoesOn, "The session goes on."));
+    }
 }
 
 /// <summary>
