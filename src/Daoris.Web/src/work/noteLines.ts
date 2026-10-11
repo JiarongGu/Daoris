@@ -202,6 +202,27 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'held.signed-out': { values: ['owner', 'account', 'profile'] },
   'held.not-installed': { values: ['agent'] },
   'held.pin-not-installed': { values: ['agent', 'version'] },
+  // The roster's other refusals (ROSTERREFUSE2): a wait over a list is its lead, a clause for each account, the first reset and
+  // the sign-in; a pick refused adds who is ready; an agent with its own tooling has its command as words between its two lines.
+  'held.wait-every': { values: ['agent'] },
+  'held.wait-some': { values: ['agent'] },
+  'held.clause-cooling': { values: ['account', 'until'] },
+  'held.clause-refused': { values: ['account'] },
+  'held.clause-signed-out': { values: ['account'] },
+  'held.clause-ready': { values: ['account'] },
+  'held.wait-first': { values: ['account', 'until', 'why'], why: 'cooling' },
+  'held.sign-in-sooner': { values: ['logins'] },
+  'held.sign-in': { values: ['logins'] },
+  'held.picked-ready': { values: ['accounts'] },
+  'held.picked-none': { values: ['agent'] },
+  'held.refused-account': { values: ['owner', 'account'] },
+  'held.refused-own': { values: ['owner'] },
+  'held.sign-in-refused-own': { values: ['owner'] },
+  'held.not-installed-own': { values: ['agent'] },
+  'held.never-installs': { values: [] },
+  'held.kept-aside': { values: ['account'] },
+  'held.outside-machine': { values: ['accounts', 'first', 'door'] },
+  'held.outside-workspace': { values: ['workspace', 'accounts', 'first', 'door'] },
 };
 
 /**
@@ -262,7 +283,10 @@ export const OPENING_REASONS: Readonly<Record<string, { key: string; values: rea
  * cool-off's reason as a value of its own. `locales/note.test.ts` holds that every value a writer declares has a way here.
  */
 export const NOTE_VALUES: Readonly<
-  Record<string, 'id' | 'ids' | 'names' | 'moment' | 'number' | 'count' | 'percent' | 'text' | 'why' | 'cooling' | 'window' | 'account'>
+  Record<
+    string,
+    'id' | 'ids' | 'names' | 'moment' | 'number' | 'count' | 'percent' | 'text' | 'why' | 'cooling' | 'window' | 'account' | 'accounts'
+  >
 > = {
   awaits: 'id', answered: 'id', ask: 'id', quest: 'id', session: 'id',
   quests: 'ids',
@@ -274,8 +298,10 @@ export const NOTE_VALUES: Readonly<
   used: 'percent', near: 'percent', gone: 'percent',
   adapter: 'text', now: 'text', then: 'text',
   // An account id is worded by the name the person gave it where the page knows it (NOTENAME1); `owner` is the agent.
-  account: 'account', over: 'account',
-  profile: 'text', version: 'text',
+  account: 'account', over: 'account', first: 'account',
+  // A list of account ids, each named so and set as code (ROSTERREFUSE2); `logins` are the sign-in commands, each set as code.
+  accounts: 'accounts', logins: 'names',
+  profile: 'text', version: 'text', door: 'text',
   owner: 'text', branch: 'text', basedOn: 'text', plugin: 'text', agent: 'text', workspace: 'text',
   why: 'why',
   cooling: 'cooling',
@@ -312,6 +338,11 @@ function said(
     case 'account': {
       const id = text(value);
       return id === null ? null : names?.get(id) ?? id;
+    }
+    case 'accounts': {
+      if (!Array.isArray(value) || value.length === 0) return null;
+      const ids = value.map(text);
+      return ids.every((id): id is string => id !== null) ? list(ids.map((id) => `\`${names?.get(id) ?? id}\``), language) : null;
     }
     case 'ids': {
       if (!Array.isArray(value) || value.length === 0) return null;

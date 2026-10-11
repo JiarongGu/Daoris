@@ -378,6 +378,36 @@ public sealed class AccountRotationGoalTests : IDisposable
             selection.Refusal);
     }
 
+    /// <summary>
+    /// ROSTERREFUSE2: the kept-aside and outside-the-list clauses a wait adds are lines of their own after the refusal's, so its
+    /// code is kept and each clause is said by code, the doors' commands a value, the accounts a list the page names.
+    /// </summary>
+    [Fact]
+    public async Task A_wait_s_added_clauses_are_parts_by_code_after_the_refusal_s()
+    {
+        Accounts("account-1", "account-2", "account-3", "account-4");
+        Wire(s => s.WithRotation("fake", ["account-1", "account-2"]).WithUse("fake", new UseChange(Keep: "account-2")));
+        var cooling = Cool("account-1");
+
+        var held = await Present().SelectAsync("fake", Config, null, null);
+
+        Assert.Equal(held.Refusal, held.RefusalNote!.Note);
+        Assert.Equal(
+            ["held.cooling-account", "held.kept-aside", "held.outside-machine"], NoteAssert.Codes(held.RefusalNote.Parts));
+        Assert.Equal("account-2", held.RefusalNote.Parts[1].Value("account"));
+        var outside = held.RefusalNote.Parts[2];
+        Assert.Equal(["account-3", "account-4"], (IReadOnlyList<string>)outside.Value("accounts")!);
+        Assert.Equal(
+            ("account-3", "daoris agent profile order fake account-1 account-2 account-3"), (outside.Value("first"), outside.Value("door")));
+
+        Wire(s => s.WithRotation("fake", ["account-1"], "work"));
+        var scoped = await Present().SelectAsync("fake", Config, "work", null);
+        Assert.Equal(scoped.Refusal, scoped.RefusalNote!.Note);
+        Assert.Equal(["held.cooling-account", "held.outside-workspace"], NoteAssert.Codes(scoped.RefusalNote.Parts));
+        Assert.Equal("work", scoped.RefusalNote.Parts[1].Value("workspace"));
+        Assert.Equal(cooling, scoped.Cooling);
+    }
+
     [Fact]
     public async Task A_list_of_one_has_no_choice_to_say()
     {

@@ -382,6 +382,104 @@ public sealed class AccountRotationTests : IDisposable
         Assert.Equal(("the first was refused.", (CoolingEntry?)null), (selection.Refusal, selection.Cooling));
     }
 
+    // ——— ROSTERREFUSE2: the roster's other refusals carry their parts by code beside the English, unchanged to the byte.
+
+    [Fact]
+    public async Task A_wait_over_an_order_carries_its_parts_by_code_one_clause_each()
+    {
+        Accounts("account-1", "account-2");
+        Wire(s => s.WithDefault("fake", "account-1").WithRotation("fake", ["account-1", "account-2"]));
+        Cool("account-1");
+        var roster = Roster(Nowhere);
+        roster.Refuse("fake", "account-2", "refused (401).");
+
+        var some = await roster.SelectAsync("fake", Config, null, null);
+        Assert.Equal(some.Refusal, some.RefusalNote!.Note);
+        Assert.Equal(["held.wait-some", "held.clause-cooling", "held.clause-refused", "held.wait-first"], NoteAssert.Codes(some.RefusalNote.Parts));
+        Assert.Equal("fake", some.RefusalNote.Parts[0].Value("agent"));
+        Assert.Equal(("account-1", NoteCodes.Moment(Until)), (some.RefusalNote.Parts[1].Value("account"), some.RefusalNote.Parts[1].Value("until")));
+        Assert.Equal("account-2", some.RefusalNote.Parts[2].Value("account"));
+        Assert.Equal(("account-1", NoteCodes.Moment(Until), "stated"), (
+            some.RefusalNote.Parts[3].Value("account"), some.RefusalNote.Parts[3].Value("until"), some.RefusalNote.Parts[3].Value("why")));
+
+        Cool("account-2");
+        var every = await Roster(Nowhere).SelectAsync("fake", Config, null, null);
+        Assert.Equal(every.Refusal, every.RefusalNote!.Note);
+        Assert.Equal(["held.wait-every", "held.wait-first"], NoteAssert.Codes(every.RefusalNote.Parts));
+    }
+
+    [Fact]
+    public void A_wait_and_a_none_ready_name_each_sign_in_as_a_line_whose_commands_are_a_list()
+    {
+        var cooling = new CoolingEntry("fake", "account-2", Until, false, null, Seen, "s1");
+        var wait = RotationWords.WaitOf("fake", [new("account-1", AccountReadiness.SignedOut), new("account-2", AccountReadiness.Cooling, cooling)], Zone)!;
+
+        Assert.Equal(RotationWords.Wait("fake", [new("account-1", AccountReadiness.SignedOut), new("account-2", AccountReadiness.Cooling, cooling)], Zone), wait.Note);
+        Assert.Equal(
+            ["held.wait-some", "held.clause-signed-out", "held.clause-cooling", "held.wait-first", "held.sign-in-sooner"], NoteAssert.Codes(wait.Parts));
+        Assert.Equal("default", wait.Parts[3].Value("why"));
+        Assert.Equal(["daoris agent login fake --profile account-1"], (IReadOnlyList<string>)wait.Parts[4].Value("logins")!);
+
+        var states = new List<AccountState>
+        {
+            new("account-1", AccountReadiness.SignedOut), new("account-2", AccountReadiness.Refused), new("my team", AccountReadiness.SignedOut),
+        };
+        var none = RotationWords.NoneReadyOf("fake", states)!;
+        Assert.Equal(RotationWords.NoneReady("fake", states), none.Note);
+        Assert.Equal(
+            ["held.wait-some", "held.clause-signed-out", "held.clause-refused", "held.clause-signed-out", "held.sign-in"], NoteAssert.Codes(none.Parts));
+        Assert.Equal(
+            ["daoris agent login fake --profile account-1", "daoris agent login fake --profile \"my team\""],
+            (IReadOnlyList<string>)none.Parts[4].Value("logins")!);
+
+        // A state that names no account cannot be said by code, so its sentence keeps its words.
+        Assert.Null(RotationWords.NoneReadyOf("fake", [new(null, AccountReadiness.Refused), new("account-2", AccountReadiness.Refused)]));
+    }
+
+    [Fact]
+    public async Task A_pick_refused_carries_the_hold_and_who_is_ready_by_code()
+    {
+        Accounts("account-1", "account-2", "account-3");
+        Wire(s => s.WithDefault("fake", "account-1"));
+        Cool("account-1");
+
+        var ready = await Present().SelectAsync("fake", Config, null, chosen: "account-1");
+        Assert.Equal(ready.Refusal, ready.RefusalNote!.Note);
+        Assert.Equal(["held.cooling-account", "held.picked-ready"], NoteAssert.Codes(ready.RefusalNote.Parts));
+        Assert.Equal(["account-2", "account-3"], (IReadOnlyList<string>)ready.RefusalNote.Parts[1].Value("accounts")!);
+
+        Cool("account-2");
+        Cool("account-3");
+        var none = await Present().SelectAsync("fake", Config, null, chosen: "account-1");
+        Assert.Equal(none.Refusal, none.RefusalNote!.Note);
+        Assert.Equal(["held.cooling-account", "held.picked-none"], NoteAssert.Codes(none.RefusalNote.Parts));
+        Assert.Equal("fake", none.RefusalNote.Parts[1].Value("agent"));
+    }
+
+    [Fact]
+    public async Task An_account_its_provider_refused_carries_the_code_its_writer_gave_it()
+    {
+        Accounts("account-1");
+        Wire(s => s.WithDefault("fake", "account-1"));
+        var roster = Present();
+        var held = Daoris.Driver.Driver.RefusedHold("fake", "account-1", "Work");
+        roster.Refuse("fake", "account-1", held.Note, held);
+
+        var selection = await roster.SelectAsync("fake", Config, null, null);
+
+        Assert.Equal(selection.Refusal, selection.RefusalNote!.Note);
+        Assert.Contains("the `fake` account `Work`", selection.Refusal);
+        var part = Assert.Single(selection.RefusalNote.Parts);
+        Assert.Equal(("held.refused-account", "fake", "account-1"), (part.Code, part.Value("owner"), part.Value("account")));
+        Assert.Equal(["held.refused-own"], NoteAssert.Codes(Daoris.Driver.Driver.RefusedHold("fake", null, null).Parts));
+        Assert.Equal(["held.sign-in-refused-own"], NoteAssert.Codes(Daoris.Driver.Driver.SignedOutHold("fake").Parts));
+
+        // A reason told without its code keeps its sentence only.
+        roster.Refuse("fake", "account-1", "refused (401).");
+        var plain = await roster.SelectAsync("fake", Config, null, null);
+        Assert.Equal(("refused (401).", (Noted?)null), (plain.Refusal, plain.RefusalNote));
+    }
+
     // ——— The wiring panel (MAP1b): it never shows an account a start would not take.
 
     [Fact]
