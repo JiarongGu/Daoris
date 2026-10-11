@@ -90,6 +90,18 @@ public static class KnowledgeConnector
             if (value is { Length: > 0 }) carried[name] = value;
         }
 
+        // 🔴 CONNECTOR2. Codex hands an MCP server only its entry's own variables, and the host refuses to start
+        // with no home (exit 2, before it answers `initialize`); Claude hands its whole environment, which hid it.
+        // The scope's value wins (set above), then the environment's (read here), then the home this driver resolved.
+        if (!carried.ContainsKey(DaorisHome.Variable))
+        {
+            var named = environment is not null
+                ? (environment.TryGetValue(DaorisHome.Variable, out var held) ? held : null)
+                : Environment.GetEnvironmentVariable(DaorisHome.Variable);
+            var chosen = named is { Length: > 0 } ? named : home;
+            if (chosen is { Length: > 0 }) carried[DaorisHome.Variable] = chosen;
+        }
+
         return new AcpMcpServer(ServerName, located, [], carried);
     }
 

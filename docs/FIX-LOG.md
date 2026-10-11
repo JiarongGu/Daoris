@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-12 — a Codex chat's `daoris-knowledge` failed its handshake (CONNECTOR2)
+
+- **Symptom:** on the installed window a Codex chat showed *MCP startup failed: handshaking with MCP server failed:
+  connection closed: initialize response*. The install's `daoris-knowledge.exe`, started by hand with no variables or only
+  PATH and SYSTEMROOT, exits 2 (*no Daoris home: set DAORIS_HOME…*) and answers nothing; with only `DAORIS_HOME` it answers
+  `initialize` at once.
+- **Root cause:** Codex hands an MCP server only its entry's own variables; `KnowledgeConnector.Offer` carried the store
+  overrides and the scope's, never the home. The host's index path defaults from `DAORIS_HOME` and refuses to start without
+  it. Claude hands its whole environment, so Claude sessions never showed it. The host reads no other variable it cannot
+  start without (the rest default from the home or the binary's place).
+- **Fix:** `Offer` carries `DaorisHome.Variable`: the scope's value if it has one, else the environment's, else the `home`
+  the caller resolved. Order kept so a scratch run's own home (scope, then environment) is never replaced by the machine's.
+  No home anywhere carries none, as before.
+- **Verify:** `KnowledgeConnectorTests` (entry carries the home; none when there is none; scope then environment win), red
+  first. `KnowledgeConnectorStartTests` (Process half) starts the development host with the entry's variables only and
+  expects an `initialize` answer, and pins exit 2 without the home.
+
 ## 2026-10-12 — Ask Daoris's history test lost "Today" across midnight
 
 - **Symptom:** UX6h3a's merge failed the web gate in `AskHistory.test.tsx` (a file it does not touch), en and zh: *Unable to

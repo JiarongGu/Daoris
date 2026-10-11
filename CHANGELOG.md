@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- A Codex session is handed Daoris's knowledge tools again: they failed to start under Codex, which passes an MCP server
+  only the variables its entry names, and the entry now names the Daoris home.
 - A question or task handed to Ask Daoris (*Make it a task with Daoris…*, *Ask Daoris about it*) opens on a new
   conversation when the last one has ended, instead of under its history.
 - Cleaning up a landed branch keeps its commits recoverable: they stay on a ref under `refs/daoris/discarded/`, and the
