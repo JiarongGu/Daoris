@@ -205,6 +205,23 @@ public sealed class HelpRoomMayProposeTests
         Assert.DoesNotContain("Clearing a quest's failed sessions alone is never proposed", proposes);
     }
 
+    /// <summary>
+    /// WORKFLOW1h-b (D157 point 13, design §8): a workflow is proposed as a whole version, new or on its newest, with its choice
+    /// optional; a stale base is refused, what a step needs first makes a draft, and a merge with nobody is never proposed (§8.3).
+    /// </summary>
+    [Fact]
+    public void The_room_says_how_a_workflow_is_proposed_and_what_makes_it_a_draft()
+    {
+        var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("- `workflow_propose`: a named workflow's whole version for a repository or a workspace (`scope`): a new\n", proposes);
+        Assert.Contains("`choose` to make it the scope's workflow too.", proposes);
+        Assert.Contains("A base that is not the newest is refused as stale.", proposes);
+        Assert.Contains("makes the card a draft with no apply until it is.", proposes);
+        Assert.Contains("Changes against a base, a kind and an import are not\n  proposed yet.", proposes);
+        Assert.Contains("Merging with nobody is never proposed:", proposes);
+    }
+
     /// <summary>MOD6: every kind registered is a tool the room teaches, so a kind cannot be added that the helper never hears of.</summary>
     [Fact]
     public void Every_kinds_tool_is_named_in_what_it_may_propose()

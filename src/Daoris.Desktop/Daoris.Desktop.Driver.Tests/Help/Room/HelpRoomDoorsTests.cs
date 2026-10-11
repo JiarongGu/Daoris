@@ -128,6 +128,21 @@ public sealed class HelpRoomDoorsTests
     }
 
     /// <summary>
+    /// WORKFLOW1h-b (D157 point 13, design §8.4): a named workflow's whole version and its choice are Ask Daoris's `workflow` kind's
+    /// `new`, `edit` and `use` doors, which the person applies; an import and a kind are WORKFLOW1h2's, which the rows say too.
+    /// </summary>
+    [Fact]
+    public void The_room_says_ask_daoris_proposes_a_workflow_s_version_and_its_choice()
+    {
+        var named = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris driver workflow new <id>", StringComparison.Ordinal));
+        Assert.Contains("(Ask Daoris proposes a whole version, new or after the newest, which you apply; not an import yet)", named.To);
+
+        var chosen = HelpRoomDoors.Doors.Single(door => door.Terminal.StartsWith("`daoris driver workflow use <id>", StringComparison.Ordinal));
+        Assert.Contains("(Ask Daoris proposes the choice with a version it proposes, as a repository's or a workspace's default; not a "
+            + "kind yet)", chosen.To);
+    }
+
+    /// <summary>
     /// WORKFLOW1c4 (D157 point 12; the workflow design §6.1, §7): the room named none of the places how work moves is drawn, so
     /// asked how a repository's work lands, or where a quest's work stands, the helper could not send the person there. Current
     /// is a repository's and a workspace's *Workflow* tab, with `daoris driver workflow show` its twin (WORKFLOW1a, WORKFLOW1b);
