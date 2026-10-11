@@ -33,6 +33,9 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     [InlineData("projects", null, "import", "Open Repositories → Import a folder.")]
     // HELPSETUP1: a repository's own values are on its Setup.
     [InlineData("projects", null, "setup", "Open Repositories → a repository's Setup.")]
+    // UX6h4: a repository's Branches and History tabs (UX6h1), named apart from a workspace's Branches.
+    [InlineData("projects", null, "branches", "Open Repositories → a repository's Branches.")]
+    [InlineData("projects", null, "history", "Open Repositories → a repository's History.")]
     // UX6i2a: Knowledge is a place since UX6i, its parts its two modes; Knowledge alone opens as it was left.
     [InlineData("knowledge", null, null, "Open Knowledge.")]
     [InlineData("knowledge", null, "convergence", "Open Knowledge → Convergence.")]
@@ -366,7 +369,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
         Assert.Equal(
             [
                 "sessions/waiting", "sessions/review", "quests/asks", "quests/held",
-                "projects/add", "projects/import", "projects/setup",
+                "projects/add", "projects/import", "projects/setup", "projects/branches", "projects/history",
                 "projects/workspace-details", "projects/workspace-branches", "projects/workspace-workflow",
                 "projects/workspace-setup", "projects/workspace-defaults", "projects/workspace-remote",
                 "knowledge/search", "knowledge/convergence",

@@ -39,6 +39,7 @@ public sealed class HelpRoomPlacesTests
         Assert.Contains("A go names no repository or agent:", places);
         Assert.DoesNotContain("A go names no repository, agent or workspace", places);
         Assert.Contains("`setup` opens the Setup of the repository Repositories has chosen", places);
+        Assert.Contains("`branches` and `history` open its Branches and History tabs", places);
         Assert.Contains("a part of `agents` opens the agent that has it", places);
         Assert.Contains("A `workspace-` part opens that tab or section on the page of the workspace in view", places);
         Assert.Contains("`add` and `import` may name the go's `workspace`, one this room lists or a new name:", places);
@@ -58,6 +59,7 @@ public sealed class HelpRoomPlacesTests
 
         Assert.Contains(
             "- Parts of `projects`: `add` (Add repository), `import` (Import a folder), `setup` (a repository's Setup), "
+            + "`branches` (a repository's Branches), `history` (a repository's History), "
             + "`workspace-details` (a workspace's Details), `workspace-branches` (a workspace's Branches), "
             + "`workspace-workflow` (a workspace's Workflow), `workspace-setup` (a workspace's Setup), "
             + "`workspace-defaults` (a workspace's Defaults), `workspace-remote` (a workspace's Remote and reach).",

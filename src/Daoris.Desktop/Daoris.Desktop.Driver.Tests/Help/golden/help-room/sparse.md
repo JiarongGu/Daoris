@@ -219,13 +219,14 @@ view, for Settings its domain, and a part where the place has one.
 - Settings domains: `start` (Get started), `appearance` (Appearance), `ai` (AI features), `driver` (Driver), `browser` (Browser), `logs` (Machine log).
 - Parts of `sessions`: `waiting` (Waiting on you), `review` (To review).
 - Parts of `quests`: `asks` (Asks), `held` (Waiting on you).
-- Parts of `projects`: `add` (Add repository), `import` (Import a folder), `setup` (a repository's Setup), `workspace-details` (a workspace's Details), `workspace-branches` (a workspace's Branches), `workspace-workflow` (a workspace's Workflow), `workspace-setup` (a workspace's Setup), `workspace-defaults` (a workspace's Defaults), `workspace-remote` (a workspace's Remote and reach).
+- Parts of `projects`: `add` (Add repository), `import` (Import a folder), `setup` (a repository's Setup), `branches` (a repository's Branches), `history` (a repository's History), `workspace-details` (a workspace's Details), `workspace-branches` (a workspace's Branches), `workspace-workflow` (a workspace's Workflow), `workspace-setup` (a workspace's Setup), `workspace-defaults` (a workspace's Defaults), `workspace-remote` (a workspace's Remote and reach).
 - Parts of `knowledge`: `search` (Search), `convergence` (Convergence).
 - Parts of `start`, the setup guide's steps: `agent` (step 1, an agent), `helper` (step 2, Ask Daoris's agent), `repositories` (step 3, a workspace and its repositories), `driven` (step 4, what is driven), `landing` (step 5, how work lands), `rules` (step 6, what agents may do).
 - Parts of `agents`: `accounts` (Accounts), `rules` (What it may do), `usage` (Usage).
 
 A go names no repository or agent: `setup` opens the Setup of the repository Repositories has chosen,
-where the person picks the one they mean, and a part of `agents` opens the agent that has it.
+where the person picks the one they mean; `branches` and `history` open its Branches and History tabs, likewise;
+and a part of `agents` opens the agent that has it.
 A `workspace-` part opens that tab or section on the page of the workspace in view, the scope or the only one;
 with none in view it opens Repositories, where the person picks the workspace they mean.
 `add` and `import` may name the go's `workspace`, one this room lists or a new name:

@@ -17,7 +17,7 @@ describe('the places a go may name', () => {
     expect(PLACE_DOMAINS).toEqual(['start', 'appearance', 'ai', 'driver', 'browser', 'logs']);
     expect(PLACE_PARTS.map(({ within, part }) => `${within}/${part}`)).toEqual([
       'sessions/waiting', 'sessions/review', 'quests/asks', 'quests/held',
-      'projects/add', 'projects/import', 'projects/setup',
+      'projects/add', 'projects/import', 'projects/setup', 'projects/branches', 'projects/history',
       'projects/workspace-details', 'projects/workspace-branches', 'projects/workspace-workflow',
       'projects/workspace-setup', 'projects/workspace-defaults', 'projects/workspace-remote',
       'knowledge/search', 'knowledge/convergence',
@@ -79,6 +79,10 @@ describe('the places a go may name', () => {
     expect(placeDoor({ view: 'projects', part: 'workspace-defaults' })).toEqual({ view: 'projects', workspaceSection: 'defaults' });
     expect(placeDoor({ view: 'projects', part: 'workspace-remote' })).toEqual({ view: 'projects', workspaceSection: 'remote' });
     expect(placeDoor({ view: 'projects', part: 'setup' })).toEqual({ view: 'projects', tab: 'setup' });
+    // UX6h4: a repository's Branches and History tabs (UX6h1), named apart from a workspace's Branches.
+    expect(placeDoor({ view: 'projects', part: 'branches' })).toEqual({ view: 'projects', tab: 'branches' });
+    expect(placeDoor({ view: 'projects', part: 'history' })).toEqual({ view: 'projects', tab: 'history' });
+    expect(placeDoor({ view: 'projects', part: 'branches', workspace: 'work' })).toEqual({ view: 'projects', tab: 'branches' });
     expect(placeDoor({ view: 'projects', part: 'defaults' })).toBeNull();
     expect(placeDoor({ view: 'projects', part: 'workspace-colours' })).toBeNull();
   });
