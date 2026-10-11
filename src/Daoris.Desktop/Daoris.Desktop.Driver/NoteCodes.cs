@@ -568,6 +568,16 @@ public static class NoteCodes
     public static readonly NoteCode BackgroundWorkEnded = new("background.work-ended", ["work", "state"]);
     public static readonly NoteCode BackgroundGoesOn = new("background.goes-on", []);
 
+    // ——— A conversation's door that failed (CONVNOTE2e, <see cref="DoorNotes"/>): the protocol session that could not open or failed,
+    // and a turn that could not be taken, each a lead with a program's message after it (it may hold a path). A resume the agent
+    // refused is Daoris's own sentence from its `ContinueReason`, so `why` is the `Continue` family's, then the agent's words where it
+    // said any; the driver's door adds that the answer is carried on in a new session.
+    public static readonly NoteCode DoorNotOpen = new("door.not-open", []);
+    public static readonly NoteCode DoorTurnNotTaken = new("door.turn-not-taken", []);
+    public static readonly NoteCode DoorFailed = new("door.failed", []);
+    public static readonly NoteCode DoorResumeRefused = new("door.resume-refused", ["why"]) { Why = Continue };
+    public static readonly NoteCode DoorAnswerCarriedOn = new("door.answer-carried-on", []);
+
     // ——— A conversation's words waiting for its own account's reset (CONVNOTE2g, <see cref="ResumeWords"/>, MSG1g): the account
     // by its owner and its id, never by the name the person gave it, since a conversation's events never leave the machine (D152's
     // UX7d-1 note); until when a moment, why a cool-off's reason. The tool's own sign-in has a line of its own and its refresh
@@ -747,6 +757,46 @@ public static class BackgroundNotes
         }
 
         return noted.Then(". ", Noted.Of(NoteCodes.BackgroundGoesOn, "The session goes on."));
+    }
+}
+
+/// <summary>
+/// The notes for a conversation's door that failed (CONVNOTE2e): each English as its site always wrote it, byte for byte, with
+/// its parts. An exception's message is a program's words, never a value, since it may hold a path.
+/// </summary>
+public static class DoorNotes
+{
+    /// <summary>The protocol session could not open, the program's own message beneath (the chat runner's record).</summary>
+    public static Noted NotOpen(string message) =>
+        Noted.Of(NoteCodes.DoorNotOpen, "the ACP session could not open:").Then(" ", Noted.Said(message, NoteBy.Program));
+
+    /// <summary>A conversation's turn that could not be taken, the program's own message beneath (the chat runner's record).</summary>
+    public static Noted TurnNotTaken(string message) =>
+        Noted.Of(NoteCodes.DoorTurnNotTaken, "the turn could not be taken:").Then(" ", Noted.Said(message, NoteBy.Program));
+
+    /// <summary>A driven session's protocol session that failed, the program's own message beneath.</summary>
+    public static Noted Failed(string message) =>
+        Noted.Of(NoteCodes.DoorFailed, "— the ACP session failed:").Then(" ", Noted.Said(message, NoteBy.Program));
+
+    /// <summary>A conversation the agent would not resume (MSG1c): its refusal, as the chat runner has always said it.</summary>
+    /// <param name="ranOn">The adapter it ran on, which <c>elsewhere</c>'s line names; null where none is known.</param>
+    public static Noted ResumeRefused(AcpResumeRefused refused, string? ranOn) => Refusal(refused, ranOn).Then(".");
+
+    /// <summary>An answer the agent would not resume its conversation for (ANSWER1a): its refusal, then that it is carried on.</summary>
+    /// <param name="ranOn">The adapter it ran on, which <c>elsewhere</c>'s line names; null where none is known.</param>
+    public static Noted AnswerCarriedOn(AcpResumeRefused refused, string? ranOn) =>
+        Refusal(refused, ranOn)
+            .Then("; ", Noted.Of(NoteCodes.DoorAnswerCarriedOn, "your answer is carried on in a new session"))
+            .Then(".");
+
+    /// <summary>
+    /// The refusal's message after the lead's dash: its reason's sentence, coded by its reason, then the agent's words where it
+    /// refused in any, as <see cref="AcpResumeRefused"/> composes its message.
+    /// </summary>
+    private static Noted Refusal(AcpResumeRefused refused, string? ranOn)
+    {
+        var said = new Noted("— ", []).Then("", Noted.Of(NoteCodes.DoorResumeRefused, refused.Why.Sentence, NoteCodes.Reason(refused.Why, ranOn)));
+        return refused.Words is { Length: > 0 } words ? said.Then(": ", Noted.Said(words, NoteBy.Agent)) : said;
     }
 }
 

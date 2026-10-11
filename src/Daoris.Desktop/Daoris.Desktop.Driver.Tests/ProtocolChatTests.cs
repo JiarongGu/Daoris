@@ -356,6 +356,8 @@ public sealed class ProtocolChatTests : IDisposable
 
         await Until(() => service.State(id) == "failed", Seen);
         Assert.Contains(events.Page(id).Events, e => e.Kind == SessionEventKind.Note && e.Text!.Contains("could not open"));
+        // Its lead by code and the program's message its own words (CONVNOTE2e), so the page words it in either language.
+        Assert.Contains(events.Page(id).Events, e => e.Kind == SessionEventKind.Note && e.Parts is [{ Code: "door.not-open" }, { By: NoteBy.Program }]);
     }
 
     /// <summary>

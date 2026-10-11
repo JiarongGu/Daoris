@@ -561,6 +561,53 @@ describe('noteLines', () => {
     });
   });
 
+  /** CONVNOTE2e: a conversation's door that failed; a program's message and the agent's refusal stay as written. */
+  describe('a door or a turn that failed', () => {
+    it('words a session that could not open or failed, and a turn not taken, and leaves the program’s words as written', () => {
+      const open = [coded('door.not-open', 'the ACP session could not open:'), words('could not read D:/x', 'program')];
+      expect(noteLines(t, { parts: open }, 'en')).toEqual([
+        { kind: 'said', text: 'The session could not open:' },
+        { kind: 'words', text: 'could not read D:/x', by: 'program' },
+      ]);
+      expect(noteLines(zh, { parts: open }, 'zh')[0]).toEqual({ kind: 'said', text: '会话无法打开：' });
+
+      const turn = [coded('door.turn-not-taken', 'the turn could not be taken:'), words('Authentication required', 'program')];
+      expect(noteLines(t, { parts: turn }, 'en')[0]).toEqual({ kind: 'said', text: 'This turn could not be taken:' });
+      expect(noteLines(zh, { parts: turn }, 'zh')[0]).toEqual({ kind: 'said', text: '这一轮无法进行：' });
+
+      const failed = [coded('door.failed', '— the ACP session failed:'), words('the stream ended', 'program')];
+      expect(noteLines(t, { parts: failed }, 'en')[0]).toEqual({ kind: 'said', text: 'The session failed:' });
+      expect(noteLines(zh, { parts: failed }, 'zh')[0]).toEqual({ kind: 'said', text: '会话失败了：' });
+    });
+
+    it('words a refused resume by its reason, the agent’s words beneath, and an answer carried on', () => {
+      const refused = (why: string, values: Record<string, unknown> = {}) =>
+        coded('door.resume-refused', 'the agent no longer has its conversation', { why, ...values });
+      expect(noteLines(t, { parts: [refused('gone')] }, 'en')).toEqual([
+        { kind: 'said', text: 'It did not go on in its own conversation: the agent no longer has its conversation.' },
+      ]);
+      expect(noteLines(zh, { parts: [refused('gone')] }, 'zh')[0].text).toBe('它没有在自己的对话中继续：智能体已没有它的对话。');
+      expect(noteLines(t, { parts: [refused('elsewhere', { agent: 'codex-acp' })] }, 'en')[0].text)
+        .toBe('It did not go on in its own conversation: its conversation is open in another client of codex-acp.');
+
+      const answer = [
+        refused('refused'),
+        words('Internal error', 'agent'),
+        coded('door.answer-carried-on', 'your answer is carried on in a new session'),
+      ];
+      expect(noteLines(t, { parts: answer }, 'en')).toEqual([
+        { kind: 'said', text: 'It did not go on in its own conversation: its conversation could not be continued.' },
+        { kind: 'words', text: 'Internal error', by: 'agent' },
+        { kind: 'said', text: 'Your answer is carried on in a new session.' },
+      ]);
+      expect(noteLines(zh, { parts: answer }, 'zh')[2]).toEqual({ kind: 'said', text: '你的回答已在新会话中接续。' });
+
+      // A reason this build does not know, or elsewhere without the agent its line names, shows as recorded.
+      expect(noteLines(zh, { parts: [refused('newer')] }, 'zh')[0].kind).toBe('recorded');
+      expect(noteLines(zh, { parts: [refused('elsewhere')] }, 'zh')[0].kind).toBe('recorded');
+    });
+  });
+
   /**
    * AGT3d (D125's AGT3c note): a limit's line says the kind of limit, its window worded as the agents' screens word it
    * (`harness.window.*`), and whose accounts, in either language; a window this build does not know is said as named.

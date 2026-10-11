@@ -13439,3 +13439,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **HIST1f — Ask Daoris clear proposal** (driver/service/web; after HIST1e/SESSUX1h2). Listed plan is confirmed on Apply. D153 §6.4; kinds, coverage, room/card tests.
 
 **Outcome** 2026-10-11: Ask Daoris proposes clearing a quest's, an ask's or a workspace's finished history (`clear_propose`, the `clear` kind); drawing the card writes the units it listed into the proposal's own file (`HelpProposals.Drawn`), and Apply sends exactly those, counting and keeping any that changed since; a card never drawn refuses at Apply; the card lists what goes and what is kept and why; the room names the door and what each workspace keeps; the coverage table's clears are doors. A quest's failed sessions alone is HIST1f-d. Built as a chain of three workers merged once. Detail: D153's HIST1f-a, b and c notes.
+
+
+## CONVNOTE2e — a failed door or turn, by code (2026-10-11, D152)
+
+> - [ ] **CONVNOTE2e–h — the conversation's other driver notes, by code** … (Group e: a failed door: ChatRunner.cs ~:1112, ~:1130, ~:1366; Driver.cs ~:2356, ~:2367.)
+
+**Outcome** 2026-10-11: `DoorNotes` builds `door.not-open`, `door.turn-not-taken` and `door.failed` (each the exception's message as program words), `door.resume-refused` [why] (the `Continue` reason family the page already words, the agent's refusal words after) and `door.answer-carried-on`; each English byte for byte. The site's wiring is held by one Process test. Detail: D152's CONVNOTE2e note.

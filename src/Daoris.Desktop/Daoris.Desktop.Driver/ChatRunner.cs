@@ -943,7 +943,7 @@ public sealed partial class ChatRunner : IDisposable
         {
             // The conversation's messages are recorded as the person sends them (`Say`), so the
             // capture opens with no composed prompt of its own.
-            var protocol = chat is not null ? CaptureProtocolAsync(sessionId, process, transcript, chat, said, keep) : null;
+            var protocol = chat is not null ? CaptureProtocolAsync(sessionId, process, transcript, chat, said, keep, watched.Adapter) : null;
             Task capture = protocol
                 ?? (mapper is not null
                     ? Driver.CaptureStructuredAsync(
@@ -1058,10 +1058,11 @@ public sealed partial class ChatRunner : IDisposable
     /// failure is what the record concludes with — the driver saw it, and it is not the person's.
     /// </remarks>
     /// <param name="keep">Told the id <c>session/new</c>'s answer names, kept for the record (MSG1c); null keeps none.</param>
+    /// <param name="ranOn">The adapter it runs on, which a refused resume's <c>elsewhere</c> names (CONVNOTE2e).</param>
     /// <returns>The session's high-water context, or null when it reported none.</returns>
     private async Task<AcpUsage?> CaptureProtocolAsync(
         string sessionId, Process process, string transcript, ProtocolChat chat, Action<JsonElement>? said,
-        Action<string>? keep)
+        Action<string>? keep, string ranOn)
     {
         // A conversation going on appends to the transcript of the run before it (MSG1c).
         await using var file = TranscriptFile.Open(transcript, append: chat.GoOn is not null);
@@ -1116,8 +1117,10 @@ public sealed partial class ChatRunner : IDisposable
             failed = refused;
             goOn.Refused = refused.Why;
             chat.Opened(null, Line, Record);
-            Line($"— {refused.Message}.");
-            Record(new SessionEvent { Kind = SessionEventKind.Note, Text = $"— {refused.Message}." });
+            // Its reason by code, the agent's words its own (CONVNOTE2e); the English as it always was.
+            var refusal = DoorNotes.ResumeRefused(refused, ranOn);
+            Line(refusal.Note);
+            Record(new SessionEvent { Kind = SessionEventKind.Note, Text = refusal.Note, Parts = refusal.Parts });
             try
             {
                 process.Kill(entireProcessTree: true);
@@ -1134,8 +1137,9 @@ public sealed partial class ChatRunner : IDisposable
             // the wait below, so the transcript closed under a stderr pump still writing to it.
             failed = error;
             chat.Opened(null, Line, Record);
-            Line($"— the ACP session could not open: {error.Message}");
-            Record(new SessionEvent { Kind = SessionEventKind.Note, Text = $"the ACP session could not open: {error.Message}" });
+            var notOpen = DoorNotes.NotOpen(error.Message);
+            Line($"— {notOpen.Note}");
+            Record(new SessionEvent { Kind = SessionEventKind.Note, Text = notOpen.Note, Parts = notOpen.Parts });
             // A refused sign-in may come at `session/new` as well as at a prompt: which one Claude Code's adapter answers with
             // was not seen (D125 ROSTER1b), so both are read (SIGNIN1b).
             chat.ReadSignIn(error);
@@ -1373,8 +1377,9 @@ public sealed partial class ChatRunner : IDisposable
                     return;
                 }
 
-                _line($"— the turn could not be taken: {error.Message}");
-                _record(new SessionEvent { Kind = SessionEventKind.Note, Text = $"the turn could not be taken: {error.Message}" });
+                var notTaken = DoorNotes.TurnNotTaken(error.Message);
+                _line($"— {notTaken.Note}");
+                _record(new SessionEvent { Kind = SessionEventKind.Note, Text = notTaken.Note, Parts = notTaken.Parts });
 
                 // A refusal the door carried, read for an account's limit (TOOL4d) before the turn's end is recorded, so
                 // the refused turn is counted after the turns that ended. Never the transcript's words (D125 §1.4). Its English
