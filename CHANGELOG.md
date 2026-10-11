@@ -7,6 +7,7 @@ with the version and date at release.
 
 - Ask Daoris can now propose clearing finished history for a quest, an ask or a workspace, or a closed quest's failed
   sessions. The card lists what goes and what is kept and why, and Apply clears exactly what it listed.
+- Ask Daoris can take you to a repository's Branches or History tab.
 - A conversation's notes that a review's set-up was or was not posted, and how a second opinion's findings were answered as
   its turn ended, now read in your language, in English and 中文. The service's message in them stays as written.
 

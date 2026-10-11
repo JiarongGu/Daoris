@@ -79,6 +79,9 @@ public sealed class HelpGoProposalTests : HelpProposalBoxFixture
         // UX6g2c: the workspace page's six parts are named under projects.
         foreach (var name in new[] { "workspace-details", "workspace-branches", "workspace-workflow", "workspace-setup", "workspace-defaults", "workspace-remote" })
             Assert.Contains(name, part);
+        // UX6h4: a repository's Branches and History tabs, named apart from a workspace's Branches.
+        Assert.Contains("branches (a repository's Branches)", part);
+        Assert.Contains("history (a repository's History)", part);
         // ENTRY1h: the four parts ENTRY1b added, and that a part names no session or quest.
         foreach (var name in new[] { "waiting", "review", "asks", "held" })
             Assert.Contains(name, part);

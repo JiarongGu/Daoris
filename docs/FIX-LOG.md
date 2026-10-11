@@ -1313,6 +1313,13 @@ The second, at ACCTUX4b's merge the same day, with a branch-worker building besi
 first, its cause is in its shape: one test imports every story module (93), so its time grows with each story, and
 ACCTUX4b added some. *Fixed:* that test carries its own 60 s limit, with the reason beside it; the suite's 20 s stays the
 hang detector for everything else (vite.config.ts).
+The family rehearsal died at UX6h4's merge, 2026-10-11 (Ask Daoris's place names only), with two branch-workers building
+beside it, 1 m 20 s in: section 8's *the host restarts over the same store* passed, then the next `api()` call
+(`GET /api/quests`, family-rehearsal.mjs:1595) threw an uncaught `fetch failed … ECONNRESET`, and the run ended with no
+failed check. `startServer` waits for the port to be free before it spawns, so the old host did not answer; the new one
+answered `/api/status` and then reset the next connection. Its output is not kept (`stdio: 'ignore'`), so why was not
+captured. `--rerun rehearse-family` passed (5 m 54 s). Two gaps to close if it comes back: `api()` rethrows anything but
+a timeout, so a reset ends the run instead of failing the check with its words; and the host's output is not kept.
 `setup-kit.test.ts:531` (*a set-up quest is done as its body says*) failed once at SWEEPCARRIED1's merge, 2026-10-08, a
 web-only change: *the stub never answered 3 (session/prompt) within 30000 ms* after it had run all four commands, with
 a Codex review and two subagents building beside the gate. The same file's stub bound as STUB3's, after its command

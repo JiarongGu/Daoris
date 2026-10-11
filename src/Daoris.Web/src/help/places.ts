@@ -19,7 +19,7 @@ export type HelpPlace = {
 /**
  * The places Ask Daoris's go may name (HELP6): the views, Settings' domains, and the parts of them a door
  * already opens — the groups of Sessions' and Quests' lists that wait on the person, the setup guide's steps, a domain's
- * cards, Repositories' drawers, a repository's Setup and a workspace's page's tabs and sections, Knowledge's two modes, an
+ * cards, Repositories' drawers, a repository's Setup, Branches and History and a workspace's page's tabs and sections, Knowledge's two modes, an
  * agent's page's sections — and the places a go named before they moved.
  *
  * @remarks
@@ -101,6 +101,8 @@ export const PLACE_PARTS: readonly { within: string; part: string }[] = [
   { within: 'quests', part: 'asks' }, { within: 'quests', part: 'held' },
   // HELPSETUP1: a repository's Setup (UX6f, D150 §4.2), where its own values are set; a go names no repository.
   { within: 'projects', part: 'add' }, { within: 'projects', part: 'import' }, { within: 'projects', part: 'setup' },
+  // UX6h4: a repository's Branches and History tabs (UX6h1), likewise on the repository Repositories has chosen.
+  { within: 'projects', part: 'branches' }, { within: 'projects', part: 'history' },
   // UX6g2b (D161 §3, D150 §4.3): a workspace's page's four tabs and its Setup's two sections (`WORKSPACE_PARTS`).
   { within: 'projects', part: 'workspace-details' }, { within: 'projects', part: 'workspace-branches' },
   { within: 'projects', part: 'workspace-workflow' }, { within: 'projects', part: 'workspace-setup' },
@@ -116,11 +118,11 @@ export const PLACE_PARTS: readonly { within: string; part: string }[] = [
 /**
  * Where a go takes the person, as a starter's door (HELP6): a domain of Settings at the card or the setup
  * step it names, a view, Sessions or Quests with a group of its list brought into view, one of Repositories' drawers, a
- * repository's Setup or a workspace's page at a tab or a section, Knowledge in a mode, or a section of an agent's page — or
+ * repository's Setup, Branches or History tab or a workspace's page at a tab or a section, Knowledge in a mode, or a section of an agent's page — or
  * null for a place this window does not have, which is never guessed at. Pure, so every place is an argument.
  *
  * @remarks
- * A go opens no repository's, agent's or workspace's page by name: Repositories' Setup opens on the repository its list
+ * A go opens no repository's, agent's or workspace's page by name: Repositories' Setup, Branches and History open on the repository its list
  * has chosen, an agent's part on the agent that has it (UX6e), a workspace's part on the workspace in view's page (UX6g2b),
  * and a group of Sessions or Quests with no session or quest in it chosen (ENTRY1b), as the room tells the helper. On
  * Quests it may name the one quest or ask instead of a part (ENTRY1f1), and on Sessions the one session (ENTRY1f2), which
@@ -171,7 +173,7 @@ export function placeDoor(asked: HelpPlace): StarterDoor | null {
     // The page opens the workspace in view at the tab or section, as a door naming one does (`doorOpening`).
     const workspace = WORKSPACE_PARTS[part];
     if (workspace) return { view, ...workspace };
-    if (part === 'setup') return { view, tab: 'setup' };
+    if (part === 'setup' || part === 'branches' || part === 'history') return { view, tab: part };
     // ENTRY1d2b: Add or Import opens with the go's workspace filled; the folder stays the person's pick (D48 §3/§7).
     const filled = asked.workspace?.trim();
     return { view, drawer: part as 'add' | 'import', ...(filled ? { drawerWorkspace: filled } : {}) };

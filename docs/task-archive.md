@@ -13471,3 +13471,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CONVNOTE2h — review records by code** (driver + web twin; rarely seen). The last English-only conversation notes: ReviewSetUps.cs ~:116 (a set-up not posted or shown, a composed sentence) and Driver.OpinionDelivery.cs ~:263 (`OpinionAnswers.Line`: counts and clauses). The other groups are archived. Background work's states (`completed`, `failed`, `stopped`) are shown as sent: wording them is a small follow-up. Each a branch; the table, the sites and the tests that read their English are the language design §9's CONVNOTE2. D142 points 2-4; D152's UX7d-1 note.
 
 **Outcome** 2026-10-11: a review set-up's record is `review.no-rule`, `review.no-commit`, `review.posted`, `review.not-posted` and `review.posts-next`, the service's message and the served sentence program words; a second opinion's answers are `opinion.answers` and six count clauses, the page saying "(N in all)". The English is the same to the byte. CONVNOTE2's groups are all coded; background work's states are CONVNOTE2i. Detail: D152's CONVNOTE2h amendment.
+
+## UX6h4 — Ask Daoris's go to Branches and History (2026-10-11, D161)
+
+> - [ ] **UX6h4 — Ask Daoris's go to Branches and History** (driver/service/web twin; after HIST1f, which holds the goldens). `projects` parts `branches` and `history` in `HelpPlaces` and `help/places.ts` together, the room's places line and goldens.
+
+**Outcome** 2026-10-11: `projects` gains the parts `branches` ("a repository's Branches") and `history` ("a repository's History") in both twins, opening those tabs on the repository Repositories has chosen as `setup` does; the room's paragraph, its goldens and the go tool's `part` description name them. Detail: D161's UX6h4 note.

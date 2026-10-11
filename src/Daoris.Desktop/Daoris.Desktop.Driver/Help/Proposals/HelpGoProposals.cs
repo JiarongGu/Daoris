@@ -249,7 +249,7 @@ public sealed record HelpPlace(string View, string? Domain, string? Part)
 /// <summary>
 /// The places on the window a go may name (HELP6): the views, Settings' domains, and the parts of them a
 /// door already opens — the groups of Sessions' and Quests' lists that wait on the person, the setup guide's steps, a
-/// domain's cards, Repositories' drawers, a repository's Setup and a workspace's page's tabs and sections, Knowledge's two
+/// domain's cards, Repositories' drawers, a repository's Setup, Branches and History and a workspace's page's tabs and sections, Knowledge's two
 /// modes, an agent's page's sections — and the places a go named before they moved.
 /// </summary>
 /// <remarks>
@@ -287,6 +287,8 @@ public static class HelpPlaces
         ("quests", "asks", "Asks"), ("quests", "held", "Waiting on you"),
         // HELPSETUP1: a repository's Setup (UX6f, D150 §4.2), where its own values are set; a go names no repository.
         ("projects", "add", "Add repository"), ("projects", "import", "Import a folder"), ("projects", "setup", "a repository's Setup"),
+        // UX6h4: a repository's Branches and History tabs (UX6h1), named apart from a workspace's Branches; likewise no repository.
+        ("projects", "branches", "a repository's Branches"), ("projects", "history", "a repository's History"),
         // UX6g2b (D161 §3, D150 §4.3): a workspace's page's four tabs and its Setup's two sections, prefixed since a
         // repository's page has three of the tabs' names; a go to one names no workspace, so the one in view opens.
         ("projects", "workspace-details", "a workspace's Details"), ("projects", "workspace-branches", "a workspace's Branches"),
