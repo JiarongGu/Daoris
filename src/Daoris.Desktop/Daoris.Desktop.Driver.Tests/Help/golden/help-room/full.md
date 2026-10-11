@@ -232,9 +232,10 @@ with none in view it opens Repositories, where the person picks the workspace th
 `add` and `import` may name the go's `workspace`, one this room lists or a new name:
 the drawer opens with it filled, and the person picks the folder there and registers it. Never name a folder.
 A part of `sessions` or `quests` brings that group of its list into view and names no session or quest in it:
-the person opens the one they mean there. To open one session, quest or ask, name it as the go's item on its view, with no part:
+the person opens the one they mean there. To open one session, quest, ask or plugin, name it as the go's item on its view, with no part:
 on `sessions` a session by its id, one this room lists as waiting on the person or another the person names,
-never Ask Daoris's own conversation; on `quests` a quest by its id, an ask as `ask:<id>`, each one this room lists.
+never Ask Daoris's own conversation; on `quests` a quest by its id, an ask as `ask:<id>`, each one this room lists;
+on `plugins` an installed plugin by its id, or one of Daoris's own not installed as `offer:<id>`, by the ids this room lists.
 `overview` has no part: what waits on the person leads it.
 `knowledge` alone opens Knowledge as the person left it; name its part for Search or Convergence.
 

@@ -104,10 +104,15 @@ internal sealed class HelpGoProposals : IHelpProposalKind
             // machine's own records, since only the desktop knows its sessions.
             if (!HelpPlaces.ItemViews.Contains(view)) return Refused(
                 $"a go names an item only on {Names(HelpPlaces.ItemViews)} — on Sessions a session by its id; on Quests a quest by its "
-                + $"id, or an ask as `{HelpPlaces.AskItem}<id>`.");
+                + $"id, or an ask as `{HelpPlaces.AskItem}<id>`; on Plugins a plugin by its id, or an offer as `{HelpPlaces.OfferItem}<id>`.");
             if (domain is not null || part is not null) return Refused(
                 $"a go names a part of `{view}` or an item in it, not both — the item opens on its own.");
-            var (named, refusal) = view == "sessions" ? Session(item, facts) : Item(item, facts);
+            var (named, refusal) = view switch
+            {
+                "sessions" => Session(item, facts),
+                "plugins" => Plugin(item, facts),
+                _ => Item(item, facts),
+            };
             if (refusal is not null) return Refused(refusal);
             describe += named!.Value.Said;
             item = named.Value.Item;
@@ -180,6 +185,44 @@ internal sealed class HelpGoProposals : IHelpProposalKind
             : record.Live ? ""
             : $", {record.State}";
         return ((record.Id, $" → session `{record.Id}`{where}{stands}"), null);
+    }
+
+    /// <summary>
+    /// PLUGUI1h: an item on Plugins as the machine holds it — an installed plugin by its id, or one of the install's offers as
+    /// <c>offer:&lt;id&gt;</c>, a <c>#</c> before the id stripped and the id matched without case — with the words the card says.
+    /// An unknown id is refused naming those the machine holds. Health waits on PLUGUI1f, so the card says only on or off.
+    /// </summary>
+    private static ((string Item, string Said)? Named, string? Refusal) Plugin(string item, HelpMachineFacts facts)
+    {
+        var spelled = item.Trim().TrimStart('#');
+        var offered = spelled.StartsWith(HelpPlaces.OfferItem, StringComparison.OrdinalIgnoreCase);
+        var id = (offered ? spelled[HelpPlaces.OfferItem.Length..] : spelled).Trim().TrimStart('#');
+        if (id.Length == 0 || id.Contains(':'))
+        {
+            return (null, $"`{item}` is no item of `plugins` — a plugin by its id, or an offer as `{HelpPlaces.OfferItem}<id>`.");
+        }
+
+        static bool Is(string held, string id) => string.Equals(held, id, StringComparison.OrdinalIgnoreCase);
+        var installed = facts.Plugins.Plugins.FirstOrDefault(each => Is(each.Manifest.Id, id));
+        var offer = facts.Offers.FirstOrDefault(each => Is(each.Id, id));
+        if (offered)
+        {
+            if (offer is null)
+            {
+                return (null, $"this install offers no plugin `{id}` — "
+                    + (facts.Offers.Count > 0 ? $"it offers {Names(facts.Offers.Select(each => each.Id))}." : "it offers none."));
+            }
+
+            return installed is not null || offer.Installed
+                ? (null, $"plugin `{offer.Id}` is installed already: name it by its id, `{installed?.Manifest.Id ?? offer.Id}`.")
+                : (($"{HelpPlaces.OfferItem}{offer.Id}", $" → Daoris's own plugin `{offer.Id}`, not installed"), null);
+        }
+
+        if (installed is not null) return ((installed.Manifest.Id, $" → plugin `{installed.Manifest.Id}`{(installed.Enabled ? "" : ", off")}"), null);
+        var held = facts.Plugins.Plugins.Count > 0 ? $"it holds {Names(facts.Plugins.Plugins.Select(each => each.Manifest.Id))}." : "it holds none.";
+        return (null, offer is not null && !offer.Installed
+            ? $"there is no plugin `{id}` on this machine — `{offer.Id}` is an offer: name it as `{HelpPlaces.OfferItem}{offer.Id}`."
+            : $"there is no plugin `{id}` on this machine — {held}");
     }
 
     public Task<HelpApplied> ApplyAsync(HelpApplying applying, CancellationToken ct) =>
@@ -281,9 +324,13 @@ public static class HelpPlaces
 
     /// <summary>
     /// The views a go may name one item in (ENTRY1f1, D161's ENTRY1f note): Quests, whose list holds quests and asks, and
-    /// since ENTRY1f2 Sessions, whose list holds this machine's sessions, in the bar's order.
+    /// since ENTRY1f2 Sessions, whose list holds this machine's sessions, and since PLUGUI1h Plugins, whose catalogue holds
+    /// its plugins and the install's offers, in the bar's order.
     /// </summary>
-    public static readonly IReadOnlyList<string> ItemViews = ["sessions", "quests"];
+    public static readonly IReadOnlyList<string> ItemViews = ["sessions", "quests", "plugins"];
+
+    /// <summary>How an offer's item is told from an installed plugin's on Plugins, the page's <c>offerItem</c> (<c>plugins/catalog.ts</c>).</summary>
+    public const string OfferItem = "offer:";
 
     /// <summary>
     /// How an ask's item is told from a quest's on Quests, the page's <c>askItem</c> (<c>opener.ts</c>): duplicated

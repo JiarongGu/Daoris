@@ -130,7 +130,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     [InlineData("quests", null, "session:s1", "`session:s1` is no item of `quests` — a quest by its id, or an ask as `ask:<id>`.")]
     [InlineData("quests", "held", "q1a2b3c4", "a go names a part of `quests` or an item in it, not both")]
     // ENTRY1f2: an item is named on Sessions too, and on no other view.
-    [InlineData("overview", null, "ask:a2none00", "a go names an item only on `quests`, `sessions` — on Sessions a session by its id")]
+    [InlineData("overview", null, "ask:a2none00", "a go names an item only on `plugins`, `quests`, `sessions` — on Sessions a session by its id")]
     public void An_item_the_machine_does_not_hold_or_cannot_be_is_refused(string view, string? part, string item, string says)
     {
         var plan = HelpProposals.Plan(Go(view, part: part, item: item), DriverConfig.Empty, Machine);
@@ -199,6 +199,72 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
 
         Assert.Contains(says, plan.Refusal);
         Assert.Null(plan.Go);
+    }
+
+    /// <summary>
+    /// The machine's plugins and the install's offers (PLUGUI1h): `example.lands` on, `example.off` off, an offer
+    /// `github-pull-request` not installed and one, `example.lands`, installed already.
+    /// </summary>
+    private HelpMachineFacts WithPlugins()
+    {
+        WithPlugin("example.lands");
+        var facts = WithPlugin("example.off", enabled: false);
+        var offers = Beside("-go-offers");
+        foreach (var id in new[] { "github-pull-request", "example.lands" })
+        {
+            Directory.CreateDirectory(Path.Combine(offers, id));
+            System.IO.File.WriteAllText(Path.Combine(offers, id, PluginCatalog.ManifestName), $$"""{ "id": "{{id}}" }""");
+        }
+
+        return facts with { OffersFolder = offers, Offers = PluginOffers.Load(offers, _home, AdapterSet.Built().Names) };
+    }
+
+    /// <summary>
+    /// PLUGUI1h (D119's note): a go on Plugins may name an installed plugin by its id, or an offer as <c>offer:&lt;id&gt;</c>,
+    /// judged against the machine's plugins and the install's offers; a <c>#</c> before it is stripped, the id matched
+    /// without case, and the page handed the one's own spelling. The card says whether the plugin is on or off.
+    /// </summary>
+    [Theory]
+    [InlineData("example.lands", "example.lands", "Open Plugins → plugin `example.lands`.")]
+    [InlineData(" #EXAMPLE.OFF ", "example.off", "Open Plugins → plugin `example.off`, off.")]
+    [InlineData("offer:github-pull-request", "offer:github-pull-request",
+        "Open Plugins → Daoris's own plugin `github-pull-request`, not installed.")]
+    [InlineData("offer:#GitHub-Pull-Request", "offer:github-pull-request",
+        "Open Plugins → Daoris's own plugin `github-pull-request`, not installed.")]
+    public void A_go_may_name_one_plugin_or_offer_the_machine_holds(string item, string handed, string says)
+    {
+        var plan = HelpProposals.Plan(Go("plugins", item: item), DriverConfig.Empty, WithPlugins());
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal(says, plan.Describe);
+        Assert.Equal(new HelpPlace("plugins", null, null) { Item = handed }, plan.Go);
+    }
+
+    /// <summary>
+    /// PLUGUI1h: an id the machine does not hold is refused naming the ones it does; an offer already installed is named by
+    /// its id; and an item of another shape, or beside a part, is said so.
+    /// </summary>
+    [Theory]
+    [InlineData("nope", "there is no plugin `nope` on this machine — it holds `example.lands`, `example.off`.")]
+    [InlineData("offer:nope", "this install offers no plugin `nope` — it offers `example.lands`, `github-pull-request`.")]
+    [InlineData("offer:example.lands", "plugin `example.lands` is installed already: name it by its id, `example.lands`.")]
+    [InlineData("github-pull-request", "there is no plugin `github-pull-request` on this machine — `github-pull-request` is an offer: name it as `offer:github-pull-request`.")]
+    [InlineData("#", "`#` is no item of `plugins` — a plugin by its id, or an offer as `offer:<id>`.")]
+    [InlineData("offer:", "`offer:` is no item of `plugins` — a plugin by its id, or an offer as `offer:<id>`.")]
+    [InlineData("ask:a1", "`ask:a1` is no item of `plugins` — a plugin by its id, or an offer as `offer:<id>`.")]
+    public void A_plugin_the_machine_does_not_hold_is_refused_naming_the_ones_it_does(string item, string says)
+    {
+        var plan = HelpProposals.Plan(Go("plugins", item: item), DriverConfig.Empty, WithPlugins());
+
+        Assert.Contains(says, plan.Refusal);
+        Assert.Null(plan.Go);
+    }
+
+    /// <summary>PLUGUI1h: a machine with no plugin says it holds none.</summary>
+    [Fact]
+    public void A_machine_with_no_plugin_says_it_holds_none()
+    {
+        Assert.Contains("it holds none", HelpProposals.Plan(Go("plugins", item: "x"), DriverConfig.Empty, Machine).Refusal);
     }
 
     /// <summary>The registry as Repositories lists it (ENTRY1d2a): `engine` in `work`, and `game` in none, so the default.</summary>
@@ -319,7 +385,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
             ],
             HelpPlaces.Kept.Select(kept => $"{Spelled(kept.Was)} → {Spelled(kept.Now)}"));
         // ENTRY1f1: the views a go may name an item in, and how an ask's item is told from a quest's. ENTRY1f2: Sessions too.
-        Assert.Equal(["sessions", "quests"], HelpPlaces.ItemViews);
+        Assert.Equal(["sessions", "quests", "plugins"], HelpPlaces.ItemViews);
         Assert.Equal("ask:", HelpPlaces.AskItem);
     }
 
