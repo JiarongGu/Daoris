@@ -32,6 +32,11 @@ its machine cannot read a page that holds one, so a remote and its machines take
 **Work test first.** Add the value and its sample in the census, watch it fail, then place the kind one row at a time
 until the census is green. The verb's own tests come after.
 
+**A field an existing kind gains** goes through rows 3, 4, 6, 7, 9 and 10 and the verb's parameter, and its census
+sample is the kind's own sample with the field set. Check too the places that carry a note or a payload without being a
+row: `KeepAsync` and `RewriteAsync` (a lost move rewritten as a conflict), and any note rewrite on the way (QUESTCLOSE1b1's
+`noteParts` is the worked example, D126's note).
+
 ### The places
 
 Rows 1 to 8 are the eight `evidenced` needed, and every kind needs them. Rows 9 to 11 come with what the kind carries and who
