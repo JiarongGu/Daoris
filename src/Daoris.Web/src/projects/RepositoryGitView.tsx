@@ -5,8 +5,9 @@ import { sentence } from '../format';
 import { useQuests, useSessions } from '../queries';
 import { questName, sessionTitle } from '../work/identity';
 import { BranchesTab, type GitRead, HistoryTab, type HistoryRead } from './RepositoryGit';
+import { WorkspaceBranches, type WorkspaceGroups } from './WorkspaceBranches';
 
-/** Matched without case, as the driver matches a repository's name. */
+/** Matched without case, as the driver matches a repository's name and a workspace's. */
 const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 
 const NO_TIPS: string[] = [];
@@ -39,6 +40,53 @@ export function RepositoryHistory({ repository, workspace, here }: { repository:
 }
 
 const NO_BRANCHES: GitBranch[] = [];
+
+/**
+ * **A workspace's branch list, with its data** (UX6h2b2, the built-in Git design §2.2, D112): drawn by its Branches tab above
+ * the clean-up and the look. One `GIT_BRANCHES` for the workspace answers its repositories holding a branch of Daoris's,
+ * each a group, and the rest apart. A group asks its sessions' titles only once it shows, so a tab of many repositories asks
+ * for five; one apart is read alone, as its own page's Branches reads it, once the person includes it, never by an `all`
+ * read, which would read every checkout here again.
+ *
+ * @remarks
+ * The rows are filtered to the workspace again, as BRSCOPE1's are, so a row of another workspace's is never this tab's.
+ */
+export function WorkspaceBranchGroups({ workspace, onOpenRepository }: {
+  workspace: string;
+  onOpenRepository: (repository: string) => void;
+}) {
+  const { query } = useGitBranches({ workspace });
+  const answer = query.data;
+  const entries = answer && Array.isArray(answer.repositories) ? answer.repositories.filter((each) => same(each.workspace, workspace)) : [];
+  const apart = answer && Array.isArray(answer.apart) ? answer.apart.filter((each) => same(each.workspace, workspace)) : [];
+  const read: GitRead<WorkspaceGroups> = query.error ? { state: 'refused', sentence: sentence(query.error) }
+    : !answer ? { state: 'reading' }
+    : { state: 'read', value: { held: entries.map((each) => each.repository), apart: apart.map((each) => each.repository) } };
+  const sessionsUnread = answer?.sessionsUnread === true;
+
+  return (
+    <WorkspaceBranches
+      workspace={workspace}
+      read={read}
+      onOpen={onOpenRepository}
+      group={(repository, included) => {
+        if (included) return <BranchesRead repository={repository} workspace={workspace} />;
+        const entry = entries.find((each) => each.repository === repository);
+        return entry ? <HeldGroup entry={entry} sessionsUnread={sessionsUnread} /> : null;
+      }}
+    />
+  );
+}
+
+/** A group the workspace's read already holds: its list as read, its sessions' titles joined while it shows. */
+function HeldGroup({ entry, sessionsUnread }: { entry: GitRepositoryBranches; sessionsUnread: boolean }) {
+  const titles = useSessionTitles(entry.repository, entry.branches);
+  // A list Git could not read at all says the driver's sentence in its place, as a repository's own tab does.
+  const read: GitRead<GitRepositoryBranches & { sessionsUnread: boolean }> = entry.problem && entry.branches.length === 0
+    ? { state: 'refused', sentence: entry.problem }
+    : { state: 'read', value: { ...entry, sessionsUnread } };
+  return <BranchesTab repository={entry.repository} read={read} titles={titles} />;
+}
 
 function BranchesRead({ repository, workspace }: { repository: string; workspace: string }) {
   const read = useRepositoryBranches(repository, workspace);

@@ -223,6 +223,26 @@ export const GIT_BRANCHES_ENGINE = {
   ],
 };
 
+/**
+ * The game's branches as `GIT_BRANCHES` answers them for it alone (UX6h2b2): a checkout holding no branch of Daoris's, so a
+ * workspace's read lists it apart and its tab draws it once the person includes it. Its line, set for the repository, is
+ * behind origin's copy and was last fetched days ago; then two of the person's.
+ */
+export const GIT_BRANCHES_GAME = {
+  repository: 'game', workspace: 'default',
+  line: {
+    branch: 'develop' as string | null, source: 'repository', commit: id('6b20fd') as string | null, origin: id('e3a7c1') as string | null,
+    ahead: 0 as number | null, behind: 2 as number | null,
+  },
+  fetch: { at: hoursAgo(80), heard: true } as { at: string; heard: boolean } | null,
+  holds: false, missing: [], commands: ['git for-each-ref refs/heads refs/remotes'], problem: null,
+  branches: [
+    branchOf('develop', 'line', '6b20fd', 72, 'Tune the jump arc'),
+    branchOf('level/forest', 'yours', '1c5e88', 30, 'Block out the forest level', { ahead: 3, behind: 0 }),
+    branchOf('try/coyote-time', 'yours', 'f02b9a', 200, 'Try coyote time on ledges', { ahead: 1, behind: 6 }),
+  ],
+};
+
 /** The engine's line's history as `GIT_GRAPH` answers its first page: a branch merged in, beside the line, to its root. */
 export const GIT_HISTORY_ENGINE: LoggedCommit[] = [
   logged('c4f1a2', ['77a0e1', 'a19c5b'], 'Merge the asset cache', 'Mei Lin', 2),

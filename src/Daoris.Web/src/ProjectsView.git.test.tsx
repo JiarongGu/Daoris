@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // A repository's Branches and History tabs in SHELL mode (UX6h1, D150 §4.2, §4.4): Git inside Repositories. Each tab asks
@@ -17,9 +17,9 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import type { GitBranchList, GitGraphPage } from './bridge/git';
-import { GIT_BRANCHES_ENGINE, GIT_HISTORY_ENGINE } from './projects/fixtures';
+import { GIT_BRANCHES_ENGINE, GIT_BRANCHES_GAME, GIT_HISTORY_ENGINE } from './projects/fixtures';
 import { DRIVER_STATE, respond, show, WIRING } from './test/shellHarness';
-import { chooseRepository, ProjectsView, repositoryMain } from './test/projectsView';
+import { chooseRepository, chooseWorkspace, ProjectsView, repositoryMain } from './test/projectsView';
 
 // The engine has a checkout here; the game is a teammate's, with none.
 const REGISTRY = [
@@ -51,14 +51,14 @@ describe("a repository's Branches and History tabs", () => {
   });
 
   const answering = ({ branches = () => ENGINE_LIST, graph = () => answer(PAGE) }: {
-    branches?: () => unknown;
+    branches?: (payload: Record<string, unknown>) => unknown;
     graph?: () => unknown;
   } = {}) =>
-    invoke.mockImplementation(async (module: string, type: string) => {
+    invoke.mockImplementation(async (module: string, type: string, request?: { payload?: Record<string, unknown> }) => {
       if (module === 'DAORIS.REMOTES') return WIRING;
       const read = type === 'GIT_BRANCHES' ? branches : type === 'GIT_GRAPH' ? graph : null;
       if (read) {
-        const answered = read();
+        const answered = read(request?.payload ?? {});
         if (answered instanceof Error) throw answered;
         return answered;
       }
@@ -186,5 +186,50 @@ describe("a repository's Branches and History tabs", () => {
 
     expect(await within(repositoryMain()).findByText('the driver is still coming up — try again in a moment.')).toBeInTheDocument();
     await waitFor(() => expect(asked('GIT_BRANCHES').length).toBeGreaterThan(0));
+  });
+
+  /**
+   * UX6h2b2 (the built-in Git design §2.2, D112): a workspace's Branches tab lists each of its repositories' branches as a
+   * group above the clean-up and the look, read once for the workspace, a session's branch named by its title in its group.
+   * The game holds no branch of Daoris's: it is apart and folded, read alone once the person includes it. A row of another
+   * workspace's is filtered out again, as BRSCOPE1's rows are.
+   */
+  it("lists each repository's branches as a group above the clean-up, and reads one apart only once it is included", async () => {
+    const [line, physics, ...rest] = GIT_BRANCHES_ENGINE.branches;
+    const named = { ...physics!, session: { ...physics!.session!, session: 's1a2b3c4', quest: 'abc123' } };
+    answering({
+      branches: (payload) => (payload.repository === 'game'
+        ? { repositories: [{ ...GIT_BRANCHES_GAME, workspace: 'aurora' }], apart: [], sessionsUnread: false }
+        : {
+            repositories: [{ ...GIT_BRANCHES_ENGINE, workspace: 'aurora', branches: [line!, named, ...rest] }],
+            apart: [{ repository: 'game', workspace: 'aurora', holds: false }, { repository: 'kiln', workspace: 'forge', holds: false }],
+            sessionsUnread: false,
+          }),
+    });
+    show(<ProjectsView notify={() => {}} />);
+    await chooseWorkspace('aurora');
+    await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
+
+    const engine = await within(repositoryMain()).findByRole('region', { name: "engine's branches" });
+    expect(asked('GIT_BRANCHES').map(([, , request]) => request.payload)).toEqual([{ workspace: 'aurora' }]);
+    await waitFor(() => expect(within(engine).getByRole('list', { name: "Sessions' (2)" })).toHaveTextContent('Expose a streaming budget'));
+    // Above the clean-up and the look, which keep their place.
+    const cleanUp = within(repositoryMain()).getByRole('heading', { name: 'Session branches' });
+    expect(engine.compareDocumentPosition(cleanUp) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    // The game is apart, and the other workspace's row is not this tab's.
+    await userEvent.click(within(repositoryMain()).getByText("1 repository with a checkout here holds no branch of Daoris's, and is not listed"));
+    const apart = within(within(repositoryMain()).getByRole('group', { name: 'Repositories not listed' }));
+    expect(apart.queryByLabelText('kiln')).toBeNull();
+    await userEvent.click(apart.getByLabelText('game'));
+    await userEvent.click(apart.getByRole('button', { name: 'Include (1)' }));
+
+    const game = await within(repositoryMain()).findByRole('region', { name: "game's branches" });
+    expect(within(game).getByRole('list', { name: 'Yours (2)' })).toBeInTheDocument();
+    expect(asked('GIT_BRANCHES').map(([, , request]) => request.payload)).toEqual([{ workspace: 'aurora' }, { repository: 'game', workspace: 'aurora' }]);
+
+    // Each group's heading is the door to its repository's page.
+    await userEvent.click(within(repositoryMain()).getByRole('button', { name: 'Open engine' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'engine' })).toBeInTheDocument();
   });
 });
