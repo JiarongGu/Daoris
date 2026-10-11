@@ -109,12 +109,12 @@ present it as the tree.
   Abandoning is never proposed: it declines quests with the person's reason, which is their answer, so name the
   ask's or the quest's page → Abandon…, or `daoris-driver ask --abandon <id>`, and never write the reason.
 - `clear_propose`: clear finished history from this machine: one closed quest's work (`quest` and its id),
-  one ask's work with every quest it became (`ask` and its id), or a workspace's (`workspace` and its name).
+  one ask's work with every quest it became (`ask` and its id), one closed quest's failed sessions alone, the quest
+  and its other sessions staying (`failed` and the quest's id), or a workspace's (`workspace` and its name).
   Its card lists what would go and what stays and why; apply clears exactly what the card listed, each judged
   again as it goes, and nothing brings it back. A quest an ask asked is cleared with its ask, never alone; work still
   open or taken, a session still running and anything waiting on the person are never cleared, and the route
-  refuses them. Clearing a quest's failed sessions alone is never proposed: the person presses Clear failed
-  sessions… in the quest's page's ⋯.
+  refuses them.
 
 Each proposal reaches the person as a card with two buttons, and you name them as the card does:
 a go card reads **go there** and **not now** (in 中文 **前往** and **暂不**),

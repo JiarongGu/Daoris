@@ -55,6 +55,20 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
         Quests = ["q7done00"], Sessions = ["s7ended0"], Bytes = new HistoryBytes(1024, 0, 0, 0, 0),
     };
 
+    /// <summary>HIST1f-d: a closed quest's failed sessions of this machine's, and a teammate's kept (§4).</summary>
+    private static readonly HistoryUnitPlan FailedDone = new(HistoryKinds.Failed, "q1done00", "work")
+    {
+        Sessions = ["f1fail00", "f2fail00"], Bytes = new HistoryBytes(512, 512, 0, 0, 0),
+        Kept = [new HistoryKeep(HistoryWords.Live, "session `t1team00` ran on north and stays there.") { Session = "t1team00" }],
+    };
+
+    private static readonly HistoryUnitPlan FailedNone = new(HistoryKinds.Failed, "q8done00", "work");
+
+    private static readonly HistoryUnitPlan FailedOpen = new(HistoryKinds.Failed, "q2open00", "work")
+    {
+        Keep = new HistoryKeep(HistoryWords.Open, "`#q2open00` is still open: its failed sessions count its strikes.") { Context = HistoryContexts.Failed },
+    };
+
     private static HistoryPlan One(HistoryScope scope, string id, HistoryUnitPlan unit) => new(scope, id, [unit]);
 
     private static HistoryPlan Work(HistoryReading reading, params HistoryUnitPlan[] units) =>
@@ -74,6 +88,14 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
         One(HistoryScope.Quest, "q3asked0", QuestAsked),
         One(HistoryScope.Quest, "zz000000", QuestUnknown),
         One(HistoryScope.Ask, "a1done00", AskDone),
+        One(HistoryScope.Failed, "q1done00", FailedDone),
+        One(HistoryScope.Failed, "q8done00", FailedNone),
+        One(HistoryScope.Failed, "q2open00", FailedOpen),
+        // As the service answers an unknown quest of the failed door: a failed-kind unit holding the unknown keep.
+        One(HistoryScope.Failed, "zz000000", new HistoryUnitPlan(HistoryKinds.Failed, "zz000000", null)
+        {
+            Keep = new HistoryKeep(HistoryWords.Unknown, "No quest `#zz000000` on this machine."),
+        }),
         Work(WorkKeeps, QuestDone, QuestForgotten, AskDone, QuestOpen, AskNeedsYou),
         new(HistoryScope.Workspace, "default", []) { Reading = new HistoryReading("default") },
     ]);
@@ -138,15 +160,72 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
     [InlineData("ask", "a9none00", "there is no ask `#a9none00` on this machine.")]
     [InlineData("workspace", "nowhere", "there is no workspace `nowhere` on this machine — use a workspace's name as Repositories lists it.")]
     [InlineData("quest", " # ", "a clear proposal names one quest or one ask by its id, or one workspace by its name.")]
-    [InlineData("failed", "q1done00", "`failed` is not a clear's door — `quest`, `ask` or `workspace`; a quest's failed sessions are the "
-        + "person's own clear, on the quest's page → ⋯ → Clear failed sessions…, or `daoris-driver quest clear <id> --failed`.")]
-    [InlineData("delete", "q1done00", "`delete` is not a clear's door — `quest`, `ask` or `workspace`; nothing else clears history.")]
+    [InlineData("failed", "q2open00", "`#q2open00`'s failed sessions stay on this machine: `#q2open00` is still open: its failed sessions count its strikes.")]
+    [InlineData("failed", "zz000000", "No quest `#zz000000` on this machine.")]
+    [InlineData("failed", "q9none00", "there is no quest `#q9none00` on this machine.")]
+    [InlineData("failed", " # ", "a clear proposal names one quest or one ask by its id, or one workspace by its name.")]
+    [InlineData("delete", "q1done00", "`delete` is not a clear's door — `quest`, `ask`, `failed` or `workspace`; nothing else clears history.")]
     public void What_the_clear_would_keep_or_cannot_name_is_refused_in_its_words(string door, string target, string refusal)
     {
         var plan = Planned(Clear(door, target));
 
         Assert.Equal(refusal, plan.Refusal);
         Assert.Null(plan.Clear);
+    }
+
+    /// <summary>
+    /// HIST1f-d, §1.1, §4: a closed quest's failed sessions are the quest page's *Clear failed sessions…*, and the card names them,
+    /// not the quest, says the quest and its other sessions stay, and keeps a teammate's failed session in its keep's sentence.
+    /// </summary>
+    [Fact]
+    public void A_closed_quests_failed_sessions_are_listed_and_the_quest_stays()
+    {
+        var plan = Planned(Clear("failed", "#Q1DONE00"));
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal(
+            "Clears `#q1done00`'s failed sessions from this machine: 2 sessions, with what this machine kept of them (1 KB): their "
+            + "words, transcripts and files. Nothing brings it back. It keeps `t1team00`: session `t1team00` ran on north and stays there.",
+            plan.Describe);
+        Assert.Equal("daoris-driver quest clear q1done00 --failed --yes", plan.Terminal);
+        Assert.Equal(new HistoryUnitName(HistoryKinds.Failed, "q1done00"), Assert.Single(plan.Clear!.Units));
+        Assert.Equal(HistoryScope.Failed, plan.Clear.Scope);
+    }
+
+    /// <summary>D48 §6: a closed quest with none of this machine's failed sessions is said, never refused, and its Apply calls no door.</summary>
+    [Fact]
+    public async Task A_quest_with_no_failed_session_of_this_machines_says_so_and_changes_nothing()
+    {
+        var plan = Planned(Clear("failed", "q8done00"));
+        var (applied, doors, _) = await ApplyAsync(Clear("failed", "q8done00"), facts: Kept);
+
+        Assert.Null(plan.Refusal);
+        Assert.Null(plan.Clear);
+        Assert.Equal("`#q8done00`'s failed sessions: this machine keeps none of them, so applying changes nothing.", plan.Describe);
+        Assert.True(applied.Applied);
+        Assert.Empty(doors.Calls);
+    }
+
+    /// <summary>§5, §6.4: Apply sends exactly the failed unit the card listed, through the screen's own clear.</summary>
+    [Fact]
+    public async Task A_failed_sessions_clear_goes_through_the_screens_door_and_says_what_went()
+    {
+        var doors = new HelpStandInDoors
+        {
+            HistoryCleared = new HistoryOutcome(HistoryScope.Failed, "q1done00")
+            {
+                Listed = 1, Cleared = [FailedDone with { Kept = [] }], Bytes = 1024,
+            },
+        };
+
+        var (applied, _) = await DrawThenApplyAsync(Clear("failed", "q1done00"), Kept, Kept, doors);
+
+        Assert.Equal(["HISTORY_CLEAR failed q1done00 failed:q1done00"], doors.Calls);
+        Assert.True(applied.Applied);
+        Assert.Equal(
+            "Applied: `#p6` (`daoris-driver quest clear q1done00 --failed --yes`) — cleared `#q1done00`'s failed sessions from this "
+            + "machine: 2 sessions, 1 KB.",
+            applied.Told);
     }
 
     /// <summary>

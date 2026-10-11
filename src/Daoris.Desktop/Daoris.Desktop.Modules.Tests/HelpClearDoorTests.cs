@@ -12,6 +12,7 @@ public sealed class HelpClearDoorTests : DriverModuleBridge
 {
     [Theory]
     [InlineData("clear", "quest", true)]
+    [InlineData("clear", "failed", true)]
     [InlineData("clear", "workspace", true)]
     [InlineData("pause", "pause", false)]
     [InlineData("delete", "quest", false)]
@@ -70,6 +71,24 @@ public sealed class HelpClearDoorTests : DriverModuleBridge
         Assert.False(File.Exists(Path.Combine(Home, "sessions", "s1.log")));
     }
 
+    /// <summary>HIST1f-d: the <c>failed</c> door is read as the quest's failed sessions, so its card lists that unit, not the quest.</summary>
+    [Fact]
+    public async Task A_failed_sessions_clear_is_drawn_with_the_failed_unit_read_for_its_quest()
+    {
+        Kept("s1");
+        using var ledger = Ledger();
+        var module = await UpAsync(ledger);
+        var folder = HelpProposals.FolderOf(Home);
+        Directory.CreateDirectory(folder);
+        var path = Path.Combine(folder, "p1a2b3c4.json");
+        File.WriteAllText(path,
+            """{"id":"p1a2b3c4","kind":"clear","door":"failed","target":"#q1","why":"done","state":"proposed","by":{"session":"h1"}}""");
+
+        await AnswerAsync(module, "HELP_PROPOSALS", new { session = "h1" });
+
+        Assert.Contains("\"kind\": \"failed\"", File.ReadAllText(path));
+    }
+
     /// <summary>A card never drawn has listed nothing, so Apply sends nothing and the proposal stands.</summary>
     [Fact]
     public async Task Apply_before_the_card_was_drawn_clears_nothing()
@@ -124,6 +143,8 @@ public sealed class HelpClearDoorTests : DriverModuleBridge
         host.Serve("/api/asks", Bytes("[]"));
         host.Serve("/api/registry", Bytes("[]"));
         host.Serve("/api/history?quest=q1", Bytes($$"""{"units":[{{unit}}]}"""));
+        host.Serve("/api/history?quest=q1&failed=true", Bytes(
+            """{"units":[{"kind":"failed","id":"q1","workspace":"aurora","clearable":true,"quests":[],"forgotten":[],"asks":[],"sessions":["s1"],"teammates":[],"kept":[]}]}"""));
         host.Serve("/api/history?workspace=aurora", Bytes($$"""{"units":[{{unit}}]}"""));
         host.Serve("/api/history/clear", Bytes($$"""{"units":[{"unit":{{unit}},"cleared":true,"message":"Cleared `#q1` from this machine."}]}"""));
         return host;

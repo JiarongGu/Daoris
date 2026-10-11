@@ -308,7 +308,7 @@ in two artefacts and would read these same codes; it is a later question, with n
   | 2e | A failed door or turn: ChatRunner.cs ~:1112, ~:1130, ~:1366; Driver.cs ~:2356, ~:2367 (the resume refusal is Daoris's own sentence from a `ContinueReason`: decide first) | none found |
   | 2f | Background work: Acp.cs ~:575-590 (names and states as a list value) | AcpBackgroundTests, ObservationTests |
   | 2g | A wait for an account: `ResumeWords.NotYet` + `Waits` (ResumeAccount.cs ~:91-100) at ChatRunner.GoOn.cs ~:278, ~:425, ChatRunner.Help.cs ~:54, Driver.Continue.cs ~:153-165; `SessionGroups.cs` ~:807-815 and Driver.Continue.cs ~:156 read its English prefix; called from Harnesses.cs ~:2500, ~:2514 | ChatGoOnTests, SessionWordsWaitingTests, AskWordsHandedTests, AccountRotationTickTests (Process) |
-  | 2h | Review and opinion records: ReviewSetUps.cs ~:116; Driver.OpinionDelivery.cs ~:263 (`OpinionAnswers.Line`); rarely seen, last or left | — |
+  | 2h | Review and opinion records: ReviewSetUps.cs ~:116; Driver.OpinionDelivery.cs ~:263 (`OpinionAnswers.Line`); rarely seen, last or left. **Done** (D152's CONVNOTE2h note): `review.*` and `opinion.*`; the terminal lines stay English | ReviewLandingTests, OpinionDeliveryTests |
 
   Already coded, not in scope: the opening on an account, the automatic landing, a refused sign-in, cooling, *went* and
   *cannot*, and a chat's `lost`.

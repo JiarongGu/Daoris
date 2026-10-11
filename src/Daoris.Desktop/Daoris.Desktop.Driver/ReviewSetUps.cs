@@ -78,24 +78,21 @@ public static class ReviewSetUps
         DateTimeOffset started, CancellationToken ct, ReviewDesk? showing = null)
     {
         if (quest?.SetUpIn is not { } named) return null;
-        string said;
+        Noted said;
         try
         {
             if (Environment(config, quest, workspace) is not { } environment)
             {
-                said = $"its set-up was not posted: no review rule here names `{named}` for `{quest.To}` any more, so its kind is not "
-                    + "known. Declare it, and its next end posts it.";
+                said = ReviewNotes.NoRule(named, quest.To);
             }
             else if (await WorkingTree.HeadAsync(tree, ct).ConfigureAwait(false) is not { } commit || !EvidenceCodes.IsObjectId(commit))
             {
-                said = "its set-up was not posted: its tree's commit could not be read.";
+                said = ReviewNotes.NoCommit();
             }
             else
             {
                 var (ok, message) = await service.PostSetUpAsync(quest.Id, session, commit, environment.Kind, ct).ConfigureAwait(false);
-                said = ok
-                    ? $"Daoris read `{commit[..8]}` from its tree and posted what it showed in `{named}`: {message}"
-                    : $"its set-up was not posted: {message}";
+                said = ok ? ReviewNotes.Posted(commit, named, message, served: null) : ReviewNotes.NotPosted(message, next: false);
                 if (ok)
                 {
                     var after = await service.FindQuestAsync(quest.Id, ct).ConfigureAwait(false);
@@ -105,7 +102,7 @@ public static class ReviewSetUps
                         seconds: newest?.At is { } at ? (long)Math.Max(0, (at - started).TotalSeconds) : null));
                     if (showing is not null && await showing.ServeSetUpAsync(after, session, tree, environment, ct).ConfigureAwait(false) is { } served)
                     {
-                        said += $" {char.ToUpperInvariant(served[0])}{served[1..]}";
+                        said = ReviewNotes.Posted(commit, named, message, served);
                     }
                 }
             }
@@ -113,11 +110,14 @@ public static class ReviewSetUps
         catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or IOException
                                           || (error is OperationCanceledException && !ct.IsCancellationRequested))
         {
-            said = $"its set-up was not posted: {error.Message.TrimEnd().TrimEnd('.')}. Its next end posts it.";
+            said = ReviewNotes.NotPosted(error.Message.TrimEnd().TrimEnd('.'), next: true);
         }
 
-        events.Keep(session, new SessionEvent { Kind = SessionEventKind.Note, Text = $"— {said}" }, say: null);
-        return said;
+        events.Keep(
+            session,
+            new SessionEvent { Kind = SessionEventKind.Note, Text = $"— {said.Note}", Parts = said.Parts.Count > 0 ? said.Parts : null },
+            say: null);
+        return said.Note;
     }
 }
 
