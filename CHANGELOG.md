@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A new conversation's agent is told it has Daoris's browser, and by which tool name, with its first message, so it uses
+  that browser (and the sign-in you made in it) rather than reaching for a tool of its own; the conversation shows what
+  it was told.
 - A question or task handed to Ask Daoris (*Make it a task with Daoris…*, *Ask Daoris about it*) opens on a new
   conversation when the last one has ended, instead of under its history.
 - Cleaning up a landed branch keeps its commits recoverable: they stay on a ref under `refs/daoris/discarded/`, and the

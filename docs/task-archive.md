@@ -13753,3 +13753,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **NEW1e — the checkout's branch on the tree chip** (driver/web). The design's *the checkout · main* needs the checkout's current branch, which no route answers (`GitLine` is the landing line, not its head). Add the read, then the chip says it. Design §1 (Tree); a story and the window.
 
 **Outcome** 2026-10-12: the read's half. `WorkingTree.BranchAsync` (one `symbolic-ref`, null where detached), the shell-only `CHECKOUT_BRANCH` route (`GIT_NO_CHECKOUT` where none, no path in any answer) and the page's `useCheckoutBranch`; the real-git cases passed on the merge. The chip is NEW1e-b. Detail: D162's NEW1e-a note.
+
+## BRWHINT1a — a chat's agent is told the browser it was handed (2026-10-12, D78)
+
+> - [ ] **BRWHINT1 — an agent is told the browser it was handed** (driver). The same chat had Daoris's browser (`browser`, Playwright over CDP to the window the person signs in to) and reached for Codex's computer-use, which saw no browser: a handed browser is said to the agent only when it is left out. Say it to the agent when it is handed, on both doors. D78.
+
+**Outcome** 2026-10-12: the chat's half. A new chat's first message carries one line naming each handed server that drives Daoris's browser, before the person's words, on both doors, in `ChatMessage.Briefing` and kept as the note `chat.told-browser`; a going-on chat and a later message say nothing. Driven sessions are BRWHINT1b. Detail: D78's BRWHINT1a note.
