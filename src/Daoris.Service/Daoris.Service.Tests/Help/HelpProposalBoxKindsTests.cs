@@ -27,6 +27,7 @@ public sealed class HelpProposalBoxKindsTests
         ("sync", "sync_propose"),
         ("accept", "accept_propose"),
         ("repository", "repository_propose"),
+        ("session", "session_propose"),
     ];
 
     private static string RepositoryRoot()

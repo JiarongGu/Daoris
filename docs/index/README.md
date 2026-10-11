@@ -119,11 +119,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs` | 49 | 861 |
 | `src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs` | 44 | 839 |
 | `src/Daoris.Service/Daoris.Service.Tests/IndexEntriesTests.cs` | 45 | 855 |
-| `src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.cs` | 49 | 869 |
+| `src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.cs` | 49 | 873 |
 | `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 82 | 1691 |
 | `src/Daoris.Service/Daoris.Service.Tests/ReviewStepTests.cs` | 41 | 734 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 70 | 1420 |
-| `src/Daoris.Service/README.md` | 76 | 733 |
+| `src/Daoris.Service/README.md` | 77 | 734 |
 
 ### CLI (`cli`)
 

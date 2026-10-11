@@ -385,7 +385,8 @@ HELP10 `browser_propose` (Daoris's browser's settings and favorites, as Settings
 fetches, and only then offers the press), and since DRIFT1d2 `accept_propose` (the person's yes to a quest a done's
 departure holds, which the card shows with the words each departure relied on), and since ENTRY1d1
 `repository_propose` (a registered repository moved to a workspace by name, as its Manage drawer moves it; never a
-path, since a move needs none). Each writes
+path, since a move needs none), and since SESSUX1h2a `session_propose` (sessions archived or unarchived by id, or every
+ended one archived; and `delete_propose` takes a `session`, one bare id). Each writes
 one file under
 `<home>/help/proposals/`, the same home as the rules proposals, checked here for its shape only:
 whether the route would take it is the driver's, which judges it with the route's own rules before
