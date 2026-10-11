@@ -281,5 +281,7 @@
   "projects.tidied.cause.list": "tree list",
   "projects.tidied.cause.folder": "stray folder",
   "projects.tidied.cause.index": "tree's index",
-  "projects.tidied.cause.folders": "folders unread"
+  "projects.tidied.cause.folders": "folders unread",
+  "projects.tidied.cause.pass": "pass failed",
+  "projects.tidied.cause.judged": "item unread"
 }
