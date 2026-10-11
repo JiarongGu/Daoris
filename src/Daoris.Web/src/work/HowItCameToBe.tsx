@@ -6,6 +6,7 @@ import { ExternalLink } from '../links';
 import type { AccountNamer } from '../tools';
 import { Icon, type IconName, Inline, Pill, QUEST_TONE, SESSION_TONE } from '../ui';
 import { HandedAccount } from './HandedAccount';
+import { Note } from './Note';
 import {
   short, type TraceAnswer, type TraceAskLink, type TraceBranch, type TraceDue, type TraceKind, type TraceQuestLink,
   type TraceSessionLink, type TraceState, traceStory,
@@ -354,7 +355,14 @@ function QuestStep({ quest, doors }: { quest: TraceQuestLink; doors: Doors }) {
       {quest.then.length > 0 && (
         <Facts parts={[t('work.trace.quest.then', { steps: list(quest.then.map((step) => `${step.to} “${step.title}”`), i18n.language) })]} />
       )}
-      {quest.note && <Part title={t('work.trace.quest.close')}><Said>{quest.note}</Said></Part>}
+      {/* A close with parts is worded in the reader's language; one without is its closer's words as written (QUESTCLOSE1b2). */}
+      {quest.note && (
+        <Part title={t('work.trace.quest.close')}>
+          {quest.noteParts?.length
+            ? <Note note={quest.note} parts={quest.noteParts} className="text-body text-ink" />
+            : <Said>{quest.note}</Said>}
+        </Part>
+      )}
       <Records quest={quest} doors={doors} />
     </Step>
   );

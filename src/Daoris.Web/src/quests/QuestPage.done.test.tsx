@@ -155,3 +155,30 @@ describe('the person’s done on a quest’s page (QUESTCLOSE1)', () => {
     expect(onRespond).toHaveBeenCalledWith('done', '已放在共享文件夹。', ANSWERED);
   });
 });
+
+// QUESTCLOSE1b2: the quest's note is drawn through the note component, so the person's done reads in the window's language
+// and their words stay theirs.
+describe('a closed quest’s note (QUESTCLOSE1b2)', () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+  const closed = {
+    ...TAKEN,
+    status: 'Done' as const,
+    note: 'The person marked this done: It is in the shared folder.',
+    noteParts: [{ code: 'quest.person-done', values: {} }, { words: 'It is in the shared folder.', by: 'person' }],
+  };
+
+  it('words the person’s done in 中文 and shows their words as theirs', async () => {
+    await i18n.changeLanguage('zh');
+    page({ quest: closed });
+
+    expect(screen.getByText('已由人标为完成。')).toBeInTheDocument();
+    expect(screen.getByText('It is in the shared folder.')).toBeInTheDocument();
+    expect(screen.queryByText(/The person marked this done/)).toBeNull();
+  });
+
+  it('draws a note from a host older than parts as it is kept', () => {
+    page({ quest: { ...closed, noteParts: undefined } });
+
+    expect(screen.getByText('The person marked this done: It is in the shared folder.')).toBeInTheDocument();
+  });
+});

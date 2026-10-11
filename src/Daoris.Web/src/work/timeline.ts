@@ -19,7 +19,7 @@ import type { NotePart, Quest, Session, SessionState } from '../api';
 export type TimelineEvent =
   | { kind: 'opened'; at: string }
   | { kind: 'state'; at: string; state: SessionState; note?: string | null; noteParts?: NotePart[] | null }
-  | { kind: 'quest'; at: string; status: Quest['status']; note?: string | null }
+  | { kind: 'quest'; at: string; status: Quest['status']; note?: string | null; noteParts?: NotePart[] | null }
   | { kind: 'evidence'; at: string; text: string; commits: Commit[] };
 
 export type Commit = { sha: string; subject: string };
@@ -70,7 +70,7 @@ export function sessionTimeline(session: Session, quest?: Quest | null): Timelin
   }
 
   if (quest && quest.updated > session.created) {
-    events.push({ kind: 'quest', at: quest.updated, status: quest.status, note: quest.note });
+    events.push({ kind: 'quest', at: quest.updated, status: quest.status, note: quest.note, noteParts: quest.noteParts });
   }
 
   if (session.evidence) {

@@ -1,3 +1,4 @@
+import type { NotePart } from '../api';
 import type { InstructionAccount } from './conversation';
 
 /**
@@ -100,6 +101,8 @@ export type TraceQuestLink = {
   held?: boolean;
   accepted?: string | null;
   note?: string | null;
+  /** The note's parts, where the answer carries them (QUESTCLOSE1b2): worded in the reader's language; absent, the note as written. */
+  noteParts?: NotePart[] | null;
   requirements: TraceRequirement[];
   then: { to: string; title: string }[];
   /** Null where the session records could not be read. */
