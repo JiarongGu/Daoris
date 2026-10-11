@@ -561,6 +561,59 @@ describe('noteLines', () => {
     });
   });
 
+  /** CONVNOTE2h: a review set-up's record and a second opinion's answers, worded; a program's words as written. */
+  describe('a review set-up and a second opinion’s answers', () => {
+    it('words a set-up that could not be posted, and a post the next end retries', () => {
+      const noRule = coded('review.no-rule', 'its set-up was not posted: no review rule …', { named: 'browser', to: 'web' });
+      expect(noteLines(t, { parts: [noRule] }, 'en')[0].text)
+        .toBe('Its set-up was not posted: no review rule here names `browser` for `web` any more, so its kind is not known. Declare it, and its next end posts it.');
+      expect(noteLines(zh, { parts: [noRule] }, 'zh')[0].kind).toBe('said');
+      expect(noteLines(zh, { parts: [coded('review.no-rule', '…', { named: 'browser' })] }, 'zh')[0].kind).toBe('recorded');
+
+      expect(noteLines(t, { parts: [coded('review.no-commit', '…')] }, 'en')[0]).toEqual({
+        kind: 'said',
+        text: "Its set-up was not posted: its tree's commit could not be read.",
+      });
+
+      const failed = [coded('review.not-posted', '…'), words('connection lost', 'program'), coded('review.posts-next', 'Its next end posts it.')];
+      expect(noteLines(t, { parts: failed }, 'en')).toEqual([
+        { kind: 'said', text: 'Its set-up was not posted:' },
+        { kind: 'words', text: 'connection lost', by: 'program' },
+        { kind: 'said', text: 'Its next end posts it.' },
+      ]);
+      expect(noteLines(zh, { parts: failed }, 'zh').map((line) => line.kind)).toEqual(['said', 'words', 'said']);
+    });
+
+    it('words a set-up posted by its commit and the environment, the service’s words beneath', () => {
+      const posted = [coded('review.posted', '…', { commit: '01234567', named: 'browser' }), words('Kept as set-up 1.', 'program')];
+      expect(noteLines(t, { parts: posted }, 'en')).toEqual([
+        { kind: 'said', text: 'Daoris read `01234567` from its tree and posted what it showed in `browser`:' },
+        { kind: 'words', text: 'Kept as set-up 1.', by: 'program' },
+      ]);
+      expect(noteLines(zh, { parts: posted }, 'zh')[0].kind).toBe('said');
+      expect(noteLines(zh, { parts: [coded('review.posted', '…', { commit: '01234567' })] }, 'zh')[0].kind).toBe('recorded');
+    });
+
+    it('words the answers to a second opinion and each count, the person as you', () => {
+      const parts = [
+        coded('opinion.answers', '…', { who: 'Codex (OpenAI)', count: 7 }),
+        coded('opinion.fixed', '…', { count: 1 }),
+        coded('opinion.unproven', '…', { count: 3 }),
+        coded('opinion.rejected', '…', { count: 1 }),
+        coded('opinion.unresolved', '…', { count: 1 }),
+        coded('opinion.unanswered', '…', { count: 1 }),
+        coded('opinion.disputed', '…', { count: 4 }),
+      ];
+      const en = noteLines(t, { parts }, 'en');
+      expect(en.map((line) => line.kind)).toEqual(Array(7).fill('said'));
+      expect(en[0].text).toBe("The answers to Codex (OpenAI)'s findings (7 in all), as its turn ended:");
+      expect(en[6].text).toBe('Findings marked `must` and not fixed wait for you (4 in all).');
+      expect(noteLines(zh, { parts }, 'zh').map((line) => line.kind)).toEqual(Array(7).fill('said'));
+      expect(noteLines(zh, { parts: [coded('opinion.fixed', '…', {})] }, 'zh')[0].kind).toBe('recorded');
+      expect(noteLines(zh, { parts: [coded('opinion.answers', '…', { who: 'x' })] }, 'zh')[0].kind).toBe('recorded');
+    });
+  });
+
   /** CONVNOTE2e: a conversation's door that failed; a program's message and the agent's refusal stay as written. */
   describe('a door or a turn that failed', () => {
     it('words a session that could not open or failed, and a turn not taken, and leaves the program’s words as written', () => {

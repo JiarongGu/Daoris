@@ -258,9 +258,12 @@ public sealed partial class Driver
         Deliveries.Answered(view.Id, reading);
         // The machine log's line for it (XAGENT1f, design §8.6): counts only.
         service.LandingSaid(OpinionLines.Answered(view.Id, reading));
-        var line = OpinionAnswers.Line(view, reading);
-        output?.Append(session, line);
-        _events.Keep(session, new SessionEvent { Kind = SessionEventKind.Note, Text = line, Opinion = view.Id }, say: null);
+        var noted = OpinionAnswers.Told(view, reading);
+        output?.Append(session, noted.Note);
+        _events.Keep(
+            session,
+            new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts, Opinion = view.Id },
+            say: null);
         return reading;
     }
 
