@@ -13777,3 +13777,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **NEW1e-b — the tree chip says the checkout's branch** (web; after NEW1f). `useCheckoutBranch` (NEW1e-a) feeds the tree chip: *the checkout · main*, or detached; unread or pending, plain *the checkout*; en and zh; Ask Daoris's coverage classifies the read. Design §1 (Tree); D162's NEW1e-a note; a story and the window.
 
 **Outcome** 2026-10-12: where *The checkout* is chosen the chip reads *The checkout · main* (*· detached HEAD*; zh *现有检出 · 分离的 HEAD*), read for the chosen repository, refetched when the menu opens; unread, pending or refused it says the checkout plain. Detail: D162's NEW1e-b note.
+
+## BRWHINT1b — a driven session's agent is told the browser it was handed (2026-10-12, D78)
+
+> - [ ] **BRWHINT1b — a driven session's agent is told the browser it was handed** (driver). A chat's is told (BRWHINT1a); a driven session's is not, since its prompt composers (the quest's target prompt, `Adapters.cs` ~770-830, `Intake.cs` ~400) and their goldens say nothing of a handed browser. Say it there as the chat's line says it (`InAppBrowserServers.Told`), and only where a server that drives Daoris's browser was handed. D78's BRWHINT1a note; the goldens, and a driven session's prompt in a test.
+
+**Outcome** 2026-10-12: a quest's session and an intake read BRWHINT1a's line as a block of their own in their prompt, only where a browser-driving server was handed; a resumed run says nothing, the transcript preamble is unchanged, and the goldens did not move. Detail: D78's BRWHINT1b note.

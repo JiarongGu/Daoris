@@ -193,6 +193,13 @@ public sealed record SessionTarget(
     public string? SetUpFrom { get; init; }
 
     /// <summary>
+    /// What this session's agent is told of the browser it was handed (BRWHINT1b, D78): BRWHINT1a's one line
+    /// (<see cref="InAppBrowserServers.Told"/>), set after the hand-over and only where a server that drives Daoris's browser was
+    /// handed. Null says nothing, and the instruction reads as it did. A resumed run in its own conversation is never given it again.
+    /// </summary>
+    public string? Browser { get; init; }
+
+    /// <summary>
     /// The target a quest's session is handed: the quest as the service answered it, run in
     /// <paramref name="workTree"/> — the repository's own tree where it opted in (D51), its root
     /// otherwise — naming the code map that tree keeps.
@@ -284,6 +291,8 @@ public static class TargetPrompt
         new(HandedSections.Close, "\n"),
         new(HandedSections.Map, Mapped(target)),
         new(HandedSections.Landing, Landing(target)),
+        // The browser handed, a block of its own (BRWHINT1b); the driver's own words, so counted with the close.
+        new(HandedSections.Close, target.Browser is { } browser ? $"\n{browser}\n" : ""),
         new(HandedSections.Reading, Reading(target)),
         .. AskingPieces(target, lead: "\n"),
         new(HandedSections.Proposing, "\n\n" + Proposing),

@@ -1383,6 +1383,11 @@ test's assertion but its stand-in service's teardown, `HttpListenerException: An
 network connection` thrown from `StandInService.ServeAsync` (`OrphanedSessionTests.cs:333`) as `DisposeAsync` (:427)
 stopped the listener under a request. The disposal racing the serve loop is the shape: a stopped listener's exception
 belongs to the stop, not to the test.
+`DrivenSessionInputTests.A_driven_sessions_first_prompt_tells_it_the_browser_it_was_handed(shell: True)` (driver, Process,
+new with BRWHINT1b) failed on its first run on the open merge, 2026-10-12, in 455 ms where its passes take about 2 s, with
+no worker building beside it, and then passed seven runs in a row (the `shell: False` case passed each time). Its message
+was not kept: the run's logger printed the line alone. An early failure in the case that brings Daoris's browser up for
+the stand-in (`AnsweringBrowser`) is the shape to look at; the next sighting is run with the detailed logger.
 `setup-kit.test.ts:531` (*a set-up quest is done as its body says*) failed once at SWEEPCARRIED1's merge, 2026-10-08, a
 web-only change: *the stub never answered 3 (session/prompt) within 30000 ms* after it had run all four commands, with
 a Codex review and two subagents building beside the gate. The same file's stub bound as STUB3's, after its command

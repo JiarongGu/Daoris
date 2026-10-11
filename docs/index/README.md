@@ -79,10 +79,10 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/TraceTests.cs` | 41 | 691 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/AccountRotation.cs` | 64 | 1064 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Acp.cs` | 91 | 1854 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 112 | 1997 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 112 | 2006 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 85 | 1586 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.Continue.cs` | 43 | 738 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 160 | 2735 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 160 | 2738 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 61 | 1106 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 204 | 3756 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 40 | 708 |
