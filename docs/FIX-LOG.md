@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-11 — the modules' Git tests could not remove their home (GIT1d-a)
+
+- **Symptom:** the full set on `7a3004dd` failed `modules-process`: both `DriverModuleGitTests` failed, alone too, with
+  *UnauthorizedAccessException: Access to the path '<object id>' is denied* from `Bridge.Dispose`.
+- **Root cause:** GIT1d-a's tests make a git tree under the bridge's fixture home, and git's object files are read-only on
+  Windows, so `Directory.Delete(Home, recursive: true)` refuses them. `DriverModuleWorkflowRunTests` already cleared the
+  flag in its own `finally`; the new class did not. A merge never runs the modules' Process half (GATE5), so the tests
+  were first run there by the full set, three merges later.
+- **Fix:** `Bridge.Dispose` clears the read-only flag under the home before removing it, for every test that makes a tree
+  there.
+- **Verify:** both tests failed in the full set and passed after the fix (`dotnet test … --filter DriverModuleGitTests`
+  with the process settings).
+
 ## 2026-10-11 — a private workspace name committed to TASKS.md (the parent's window look)
 
 - **Symptom:** AGENTMARK1's merge failed the universal gate: *sensitive TASKS.md: private pattern*. The ACCTUX4c row,

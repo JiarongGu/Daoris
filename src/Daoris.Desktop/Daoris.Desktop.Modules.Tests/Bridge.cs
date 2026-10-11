@@ -155,7 +155,13 @@ public abstract class Bridge : IDisposable
     public void Dispose()
     {
         foreach (var (name, value) in _restore) Environment.SetEnvironmentVariable(name, value);
-        if (Directory.Exists(Home)) Directory.Delete(Home, recursive: true);
+        if (Directory.Exists(Home))
+        {
+            // Git's object files are read-only on Windows, and a test may make a tree under the home (GIT1d-a).
+            foreach (var file in Directory.EnumerateFiles(Home, "*", SearchOption.AllDirectories))
+                File.SetAttributes(file, File.GetAttributes(file) & ~FileAttributes.ReadOnly);
+            Directory.Delete(Home, recursive: true);
+        }
         GC.SuppressFinalize(this);
     }
 }
