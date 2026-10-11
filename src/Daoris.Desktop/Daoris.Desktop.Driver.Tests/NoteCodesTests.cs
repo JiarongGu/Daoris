@@ -364,6 +364,42 @@ public sealed class WordsNotesTests
     }
 }
 
+/// <summary>CONVNOTE2f: a session's own background work (BGWAIT1), by code; the English as it was written.</summary>
+public sealed class BackgroundNotesTests
+{
+    [Fact]
+    public void A_wait_names_its_work_as_a_list_and_keeps_the_english()
+    {
+        var waits = BackgroundNotes.Waits(["Run the gates", "Build"]);
+        Assert.Equal("— its turn ended while its own background work runs: `Run the gates`, `Build`. The session waits for that work, and goes on when it ends.", waits.Note);
+        var part = Assert.Single(waits.Parts);
+        Assert.Equal("background.waits", part.Code);
+        Assert.Equal(["Run the gates", "Build"], Assert.IsAssignableFrom<IReadOnlyList<string>>(part.Value("works")));
+        NoteAssert.Holds(waits);
+    }
+
+    [Fact]
+    public void Unread_leaves_the_programs_words_as_theirs()
+    {
+        var unread = BackgroundNotes.Unread("the agent said no");
+        Assert.Equal("— its turn ended while its own background work runs, and whether its quest waits on that work could not be read: the agent said no", unread.Note);
+        Assert.Equal(["background.unread", null], NoteAssert.Codes(unread.Parts));
+        Assert.Equal((NoteBy.Program, "the agent said no"), (unread.Parts[1].By, unread.Parts[1].Words));
+        NoteAssert.Holds(unread);
+    }
+
+    [Fact]
+    public void An_end_codes_each_work_and_its_state_and_the_going_on_and_keeps_the_english()
+    {
+        var ended = BackgroundNotes.Ended([("Run the gates", "completed"), ("Build", "failed")]);
+        Assert.Equal("— its background work ended: `Run the gates` (completed); `Build` (failed). The session goes on.", ended.Note);
+        Assert.Equal(["background.work-ended", "background.work-ended", "background.goes-on"], NoteAssert.Codes(ended.Parts));
+        Assert.Equal(("Build", "failed"), (ended.Parts[1].Value("work"), ended.Parts[1].Value("state")));
+        NoteAssert.Holds(ended);
+        Assert.Equal("`Run the gates` (completed); `Build` (failed)", BackgroundNotes.EndedSaid([("Run the gates", "completed"), ("Build", "failed")]));
+    }
+}
+
 /// <summary>AGT3c: a words part a coded line will say as facts leaves the note, its space with it, and nothing else does.</summary>
 public sealed class NoteUnsaidTests
 {

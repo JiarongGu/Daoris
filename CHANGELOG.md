@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session's notes about its own background work (its turn ending while it runs, the work ending, or a wait that could not
+  be read) now read in your language; the work's names stay as they are.
 - A quest you marked done now reads in your language where its note is shown (the quest's page, a session's timeline and
   relations): in 中文 it says 已由人标为完成。, and the words you wrote stay as you wrote them.
 - A session's *Accept…* where the repository's rule puts the work on a branch now has a *Branch name* field: a name you enter

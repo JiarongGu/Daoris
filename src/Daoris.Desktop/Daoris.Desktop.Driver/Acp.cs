@@ -578,22 +578,20 @@ public sealed partial class AcpSession(
         catch (Exception error) when (error is not OperationCanceledException)
         {
             // Unread is not a yes: the work ends with the session, as it always did (D105 §3), and the reason is said.
-            Note($"— its turn ended while its own background work runs, and whether its quest waits on that work could not "
-                 + $"be read: {error.Message}");
+            Note(BackgroundNotes.Unread(error.Message));
             return null;
         }
 
         if (!waiting) return null;
 
-        Note($"— its turn ended while its own background work runs: {string.Join(", ", running.Select(name => $"`{name}`"))}. "
-             + "The session waits for that work, and goes on when it ends.");
+        Note(BackgroundNotes.Waits(running));
         var ended = await _background.EndedAsync(Ended, ct).ConfigureAwait(false)
             ?? throw new DriverException(
                 "the ACP agent's stream ended while the session waited for its own background work — the agent exited, or it "
                 + "was ended.");
 
-        var said = string.Join("; ", ended.Select(work => $"`{work.Name}` ({work.State})"));
-        Note($"— its background work ended: {said}. The session goes on.");
+        var said = BackgroundNotes.EndedSaid(ended);
+        Note(BackgroundNotes.Ended(ended));
         return await SendPromptAsync(
                 $"Your background work has ended: {said}. Go on with your quest from where you left off.",
                 files: null, ct, sent: null, words: null)
