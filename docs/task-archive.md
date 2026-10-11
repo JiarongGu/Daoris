@@ -13376,3 +13376,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CONVNOTE2g2 — the chat runner's other holds, by code** (driver + web twin). `ChatRunner.Held` (ChatRunner.GoOn.cs ~:425) says "it does not go on yet" for six whys: code each. ChatGoOnTests ~:137, ~:214 keep their English; both twins. D152's CONVNOTE2g note.
 
 **Outcome** 2026-10-11: `HeldWords` gives each hold its `(Why, Line)`: `held.no-checkout`, `held.replaying` [repository] and `held.answering` [session] as Daoris's own sentences, and driver.json unread, the ledger's and the roster's refusals as a lead, the program's words and `held.tail`; each English byte for byte, at the chat's and Ask Daoris's sites. The roster's refusal itself is ROSTERREFUSE1. Detail: D152's CONVNOTE2g2 note.
+
+
+## KEYREPLACE1a — replace a refused key in place, the doors' half (2026-10-11, D125)
+
+> - [ ] **KEYREPLACE1a — replace a refused key in place, the doors' half** (cli/driver/modules). `daoris agent key <agent> --account <id|name>` and a `key-replace` route action write the new key into the same account, clearing its `out` read, cool-off and refusal; name, lists, defaults and order kept. D67 point 1; D125 ~:921.
+
+**Outcome** 2026-10-11: `daoris agent key <agent> --account <id|name>` (`replaceKeyAccount`) and the driver's twin `HarnessKeys.Replace` write the key into the same account id and clear its read, cool-off and signed-out mark; the `key-replace` route answers by handle only and clears the roster's refusal at once (the terminal says a running desktop reads it again at its next press). Without `--account` the verb adds as before. The coverage row came with the page (KEYREPLACE1b). Detail: D125's KEYREPLACE1a note.

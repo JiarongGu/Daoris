@@ -52,6 +52,10 @@ daoris <command> [options]
                                                    says which lists hold it
                          key <agent>               an account that is an API key,
                                                    read from stdin; Daoris keeps it
+                         key <agent> --account <id|name>
+                                                   a new key for that key account,
+                                                   from stdin: its name, lists and
+                                                   defaults stay, a refusal clears
                          profile list|add|remove <agent> <profile>
                                                    remove deletes the account,
                                                    sign-in and all
