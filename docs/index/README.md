@@ -43,7 +43,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 46 | 861 |
 | `src/Daoris.Web/src/ui.test.tsx` | 48 | 975 |
 | `src/Daoris.Web/src/ui.tsx` | 79 | 1683 |
-| `src/Daoris.Web/src/work/ConversationView.test.tsx` | 47 | 897 |
+| `src/Daoris.Web/src/work/ConversationView.test.tsx` | 48 | 912 |
 | `src/Daoris.Web/src/work/SessionHead.test.tsx` | 48 | 907 |
 | `src/Daoris.Web/src/work/SessionRail.test.tsx` | 45 | 897 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 213 | 4111 |

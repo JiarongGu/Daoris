@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- A conversation's opening line and its wait for an account now name the account as you named it, not by its id, where
+  Daoris knows the name.
 - A conversation's note that your words wait for its account's cool-off (whose account, until when and why) and the way out
   of the wait now read in your language, in English and 中文. The account is named by its id there, and the command keeps
   its spelling.
