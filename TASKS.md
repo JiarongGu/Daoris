@@ -177,7 +177,6 @@ pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build 
 
 - [ ] **QUESTREBASE1 — pure rebase planner** (service; consider). Preserve operation identity, accepted-before-pending order and transaction. D69/D79; unchanged sync suite and loss tests.
 - [ ] **SESSUX1h3b — the room's session look, timed** (driver/modules; measure first). SESSUX1h3 reads `SessionGroups.LookAsync` (with the review count's git judgement) on every room write, a conversation's going on included (`HelpMachineNowAsync`). Time it on the installed machine against Ask Daoris's first-answer time (HELP5); if it shows, read it at a conversation's start only, or keep the last look. D161's SESSUX1h3 note.
-- [ ] **SESSUX1h3 — the room counts sessions by group and lists the ended by id** (driver). The helper learns session ids only from the person or `ended`, so it cannot name one to archive or delete. *The machine now* counts sessions by group (§7.3's room bullet) and lists the ended ones by id, as ENTRY1f2 lists the waiting. HelpRoomMachineNowTests and the goldens.
 - [ ] **MSG1d2 — queued chat survives restart** (driver/web; with MSG1c). Record ids/reach/withdrawals; take by id. Messages §3.1.
 - [ ] **MSG1g3 — cooling note and twins** (driver/web). Code held line; compare newSessionSaid with GoOnNew/WordsNever. D137/D142.
 - [ ] **MSG1h — Codex next-step words** (driver; after measured STEER3). Messages §8.

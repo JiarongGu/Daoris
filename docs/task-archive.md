@@ -13264,3 +13264,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **LANDNAME1a — an entered landing branch, the driver's half** (driver/modules). `LandingSubject` takes an entered name (Landing.cs ~:56-70) that replaces the rule's branch wholesale (blank keeps it), only where the rule makes a branch; a standing branch Daoris did not make is refused in its own words (SessionTrees.cs ~:998-1015); the landed record keeps it (D143). `trees land <session> --branch <name>` (TreesConsole.cs ~:300-380, usage ~:486, Program.cs ~:151) and the route's optional `branch` (DriverModule.Trees.cs ~:374-424, as `answers` ~:417). D145/D149; D126 ~:492.
 
 **Outcome** 2026-10-11: `LandingSubject.Entered` replaces the rule's whole name in the plan and the press; an invalid name, a standing branch Daoris did not make and a merge rule are refused in words about the entered name (the plan says so before the press); a Daoris-made branch entered again advances. `trees land <session> [--plan] [--branch <name>]` and the LANDING/LAND_SESSION_TREE routes' optional `branch`; with none, everything is as before. Detail: D145's LANDNAME1a note.
+
+
+## SESSUX1h3 — the room counts sessions by group and lists the ended by id (2026-10-11, D161)
+
+> - [ ] **SESSUX1h3 — the room counts sessions by group and lists the ended by id** (driver). The helper learns session ids only from the person or `ended`, so it cannot name one to archive or delete. *The machine now* counts sessions by group (§7.3's room bullet) and lists the ended ones by id, as ENTRY1f2 lists the waiting. HelpRoomMachineNowTests and the goldens.
+
+**Outcome** 2026-10-11: the room's *The machine now* counts this machine's sessions by the Sessions list's groups (waiting on you, to review, working, resuming later, ended; archived ones, teammates' and Ask Daoris's own not counted) from the list's own look (`SessionGroups.LookAsync`, read by the modules' room builder; "not read" if it fails), and lists up to ten ended ones newest first by id and repository. Its cost on every room write is SESSUX1h3b's to time. Detail: D161's SESSUX1h3 note.

@@ -60,6 +60,19 @@ public sealed partial class DriverModule
         var roster = await _loop.Harnesses.RosterAsync(config, ct: cancellationToken).ConfigureAwait(false);
         var standing = await service.AsksAsync(cancellationToken).ConfigureAwait(false);
         var asks = standing.Count(ask => ask.State == "Proposed");
+        // This machine's sessions as the Sessions list places them (SESSUX1h3), so an archive or a delete names one it was shown;
+        // the room still opens where the look cannot be taken, saying the sessions were not read.
+        SessionLook? sessions = null;
+        try
+        {
+            sessions = await SessionGroups.LookAsync(service, config, Door(config), _loop.Look.Latest, _loop.Home, null, cancellationToken).ConfigureAwait(false);
+            sessions = sessions with { Waits = _loop.Look.Waits };
+        }
+        catch (DriverException)
+        {
+            // Left null: the room says `not read`, and a go still names a session the person names.
+        }
+
         // The asks by id too (HELP6), so a delete of one made by mistake can name it.
         // And the branches landings made here (WSR5b), so a hand-off names one the record holds.
         return HelpRoom.Describe(
@@ -72,7 +85,8 @@ public sealed partial class DriverModule
             // Daoris's browser as its files hold it (HELP10), so a favorite removed is one kept.
             BrowserModule.HelpFacts(BrowserModule.Home),
             // And what its last look held by the person's stop (SESSUX1b), so a retry names a stop Try again releases.
-            HeldQuest.From(_loop.Look.Latest));
+            HeldQuest.From(_loop.Look.Latest),
+            sessions);
     }
 
     /// <summary>

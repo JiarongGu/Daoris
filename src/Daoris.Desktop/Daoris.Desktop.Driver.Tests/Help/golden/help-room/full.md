@@ -277,6 +277,8 @@ while the screen still shows it. For anything else on the screen, ask them rathe
 - Ask Daoris: you, on `claude-code-acp`.
 - 1 session waits on the person; 2 asks wait for an answer.
 - Sessions waiting on the person: `s9c0d1e2` (in `console-ui`).
+- This machine's sessions by the Sessions list's groups, archived ones and Ask Daoris's own not counted: 1 waiting on you, 1 to review, 2 working, 1 resuming later, 12 ended.
+- Ended sessions, newest first: `s1e0f1a2` (in `console-ui`), `s2e0f1a2` (in `engine`), `s3e0f1a2` (in `console-ui`), `s4e0f1a2` (in `engine`), `s5e0f1a2` (in `console-ui`), `s6e0f1a2` (in `engine`), `s7e0f1a2` (in `console-ui`), `s8e0f1a2` (in `engine`), `s9e0f1a2` (in `console-ui`), `s10e0f1a2` (in `engine`), and 2 more.
 - Quests parked by their failed sessions, at the driver's last look: `#q5e6f7a8` (to `engine`), `#q6b7c8d9` (to `tools`).
 - Quests held by the person's stop, at the driver's last look: `#q7c8d9e0` (to `console-ui`, session `s8b9c0d1` stopped).
 - Daoris's browser: your Edge; links on the page open in Daoris's browser; other software's extensions refused; favorites https://site.example/board, https://docs.example/.

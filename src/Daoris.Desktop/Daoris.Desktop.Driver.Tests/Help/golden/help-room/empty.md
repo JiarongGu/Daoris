@@ -258,6 +258,7 @@ while the screen still shows it. For anything else on the screen, ask them rathe
 - The intake: no agent answers asks, so an ask the declarations do not settle waits for the person.
 - 0 sessions wait on the person; 0 asks wait for an answer.
 - Sessions waiting on the person: none.
+- This machine's sessions by the Sessions list's groups: not read.
 - Quests parked by their failed sessions, at the driver's last look: none.
 - Quests held by the person's stop, at the driver's last look: none.
 - Plugins: none installed.

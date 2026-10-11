@@ -175,6 +175,61 @@ public sealed class HelpRoomMachineNowTests
             machine.Waiting);
     }
 
+    /// <summary>
+    /// SESSUX1h3: this machine's sessions counted by the Sessions list's groups, and the ended ones by id and repository,
+    /// newest first, so Ask Daoris can name one to archive or delete; past the cap, how many more; unread, said so.
+    /// </summary>
+    [Fact]
+    public void The_room_counts_the_sessions_by_the_lists_groups_and_lists_the_ended_ones()
+    {
+        var some = HelpRoom.Render(HelpRoomFixture.Machine with
+        {
+            Sessions = new HelpSessions(1, 2, 3, 4, 12, [new("s9a", "engine"), new("s8b", "console-ui")]),
+        });
+
+        Assert.Contains("- This machine's sessions by the Sessions list's groups, archived ones and Ask Daoris's own not counted: "
+            + "1 waiting on you, 2 to review, 3 working, 4 resuming later, 12 ended.", some);
+        Assert.Contains("- Ended sessions, newest first: `s9a` (in `engine`), `s8b` (in `console-ui`), and 10 more.", some);
+        var none = HelpRoom.Render(HelpRoomFixture.Machine with { Sessions = new HelpSessions(0, 0, 0, 0, 0, []) });
+        Assert.Contains("- Ended sessions, newest first: none.", none);
+        Assert.Contains("- This machine's sessions by the Sessions list's groups: not read.", HelpRoom.Render(HelpRoomFixture.Machine with { Sessions = null }));
+    }
+
+    /// <summary>
+    /// SESSUX1h3: the counts are the list's (SessionGroups.Read) over this machine's records, less a teammate's and Ask
+    /// Daoris's own; an archived one is in no count and no list; the ended are the newest first, ten at most.
+    /// </summary>
+    [Fact]
+    public void The_sessions_are_counted_as_the_sessions_list_places_them()
+    {
+        var records = new System.Text.StringBuilder("[");
+        records.Append("""{ "id": "w1", "repository": "engine", "state": "working" },""");
+        records.Append("""{ "id": "p1", "repository": "engine", "state": "awaiting-person" },""");
+        records.Append("""{ "id": "h1", "repository": "daoris:help", "state": "completed", "updated": "2026-10-10T00:00:00Z" },""");
+        records.Append("""{ "id": "laptop/t1", "repository": "engine", "state": "completed", "updated": "2026-10-10T00:00:00Z" },""");
+        records.Append("""{ "id": "a1", "repository": "engine", "state": "completed", "updated": "2026-10-10T00:00:00Z" },""");
+        for (var n = 1; n <= 12; n++)
+        {
+            records.Append($$"""{ "id": "e{{n:00}}", "repository": "game", "state": "completed", "updated": "2026-10-{{n:00}}T00:00:00Z" },""");
+        }
+
+        records.Append("""{ "id": "z", "repository": "game", "state": "failed", "updated": "2026-09-01T00:00:00Z" }]""");
+        var look = new SessionLook(SessionRecords.Parse(records.ToString()), [], [])
+        {
+            Archived = new Dictionary<string, DateTimeOffset> { ["a1"] = DateTimeOffset.UtcNow },
+        };
+
+        var machine = HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, sessions: look);
+
+        var sessions = machine.Sessions!;
+        Assert.Equal((1, 0, 1, 0, 13), (sessions.You, sessions.Review, sessions.Working, sessions.Later, sessions.Ended));
+        Assert.Equal(10, sessions.Listed.Count);
+        Assert.Equal(new HelpEndedSession("e12", "game"), sessions.Listed[0]);
+        Assert.Equal(3, sessions.Ended - sessions.Listed.Count);
+        Assert.DoesNotContain(sessions.Listed, each => each.Id is "h1" or "laptop/t1" or "a1");
+        Assert.Null(HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0).Sessions);
+    }
+
     [Fact]
     public void The_held_quests_are_described_from_the_loops_last_look()
     {
