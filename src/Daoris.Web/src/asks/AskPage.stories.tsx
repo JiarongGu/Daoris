@@ -58,6 +58,21 @@ export const ReviewChosen: Story = {
 
 /** The same in 中文. */
 export const ReviewChosenChinese: Story = { ...ReviewChosen, decorators: [chinese] };
+
+/** WORKFLOW1i-c: the kind of its work, the person's choice standing with its workflow, an intake's proposal beside it with *Apply*. */
+export const KindProposed: Story = {
+  args: {
+    ask: {
+      ...PROPOSED,
+      workflowChoices: [{ kind: 'bug', workflow: 'fix-flow', at: '2026-10-09T09:00:00Z' }],
+      workflowProposals: [{ kind: 'docs', reason: 'Only the README changes.', at: '2026-10-09T09:05:00Z' }],
+    },
+    onChooseKind: nothing,
+  },
+};
+
+/** The same in 中文. */
+export const KindProposedChinese: Story = { ...KindProposed, decorators: [chinese] };
 /** Its sentence names a repository (ASKNAME1b): that one first, *named in the ask*, then a word match with its words. */
 export const NamesItsRepository: Story = { args: { ask: NAMES_ITS_REPOSITORY } };
 /** Nothing in the circle's declarations shares its words, and the page says so. */

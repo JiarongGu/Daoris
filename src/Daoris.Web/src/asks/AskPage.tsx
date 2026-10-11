@@ -17,6 +17,7 @@ import type { RunLineDoor } from '../workflow/run';
 import { WorkflowLine } from '../workflow/WorkflowLine';
 import { ASK_TONE, firstLine, tierWords } from './AskRow';
 import { AskReview } from './AskReview';
+import { AskWorkflowKind } from './AskWorkflowKind';
 import { AskWork } from './AskWork';
 import { workTree } from './workTree';
 import { type GoAheadAnswer, GoAheadList } from './GoAheadList';
@@ -93,8 +94,13 @@ const ASK_ACT: Record<AskAct, { label: string; variant: 'primary' | 'default' | 
  */
 export function AskPage({
   ask, receivers, questTitles, intake = null, onAttend, busy = false, onPublish, onClose, onDelete, onOpenQuest, onAnswerGoAhead,
-  work, history, considered = [], nameOf, environments, onChooseReview, workflow,
+  work, history, considered = [], nameOf, environments, onChooseReview, onChooseKind, workflow,
 }: {
+  /**
+   * An intake's kind proposal applied on the person's press (WORKFLOW1i-c, design §4.3), with the workflow the latest choice
+   * already has. Absent where there is no door to set it through.
+   */
+  onChooseKind?: (kind: string, workflow?: string | null) => void;
   /**
    * Where its work stands in its workflow (WORKFLOW1c, the workflow design §3.8, §7): each run, one per chain and repository, said
    * in one line among the head's facts whose door opens it. Absent in a browser, which has no driver to read one.
@@ -372,6 +378,14 @@ export function AskPage({
            choice is theirs alone, and a proposal applies only on their press. */
         <PageSection title={t('asks.record.review')}>
           <AskReview ask={ask} environments={environments} busy={busy} onChoose={onChooseReview} />
+        </PageSection>
+      )}
+
+      {(live || (ask.workflowChoices?.length ?? 0) > 0 || (ask.workflowProposals?.length ?? 0) > 0) && (
+        /* The kind of its work the person chose, and what its intake proposed (WORKFLOW1i-c, design §4.3): a proposal applies
+           only on their press. */
+        <PageSection title={t('asks.record.kind')}>
+          <AskWorkflowKind ask={ask} busy={busy} onChoose={onChooseKind} />
         </PageSection>
       )}
 

@@ -6,7 +6,7 @@ import { NO_CARRY } from '../compose/carry';
 import { sentence } from '../format';
 import { askItem } from '../opener';
 import {
-  useAnswerGoAhead, useAsk, useAsks, useChooseAskReview, useCloseAsk, useDeleteAsk, usePublishAsk, useRegistry, useSessions,
+  useAnswerGoAhead, useAsk, useAsks, useChooseAskReview, useChooseAskWorkflow, useCloseAsk, useDeleteAsk, usePublishAsk, useRegistry, useSessions,
 } from '../queries';
 import { useScope } from '../scope';
 import { namer } from '../settings/namer';
@@ -116,6 +116,8 @@ export function useAsksPart({
   const answerGoAhead = useAnswerGoAhead();
   // The person's review choice for an ask's work (REVIEWENV1g, design §1.5): the service's door, the latest standing.
   const chooseReview = useChooseAskReview();
+  // An intake's kind proposal applied on the person's press (WORKFLOW1i-c, design §4.3).
+  const chooseKind = useChooseAskWorkflow();
   useErrorNotify(active ? asks.error : null, notify);
 
   const [draft, setDraft] = useState<AskDraft>(EMPTY_DRAFT);
@@ -163,7 +165,7 @@ export function useAsksPart({
   // Each quest the page holds by its name (SESSUX1j): the short title, else the title.
   const questTitles = Object.fromEntries((quests ?? []).map((quest) => [quest.id, questName(quest)]));
   const busy = ask.isPending || publish.isPending || close.isPending || remove.isPending || answerGoAhead.isPending
-    || chooseReview.isPending || reading;
+    || chooseReview.isPending || chooseKind.isPending || reading;
   const intakeOf = (item: Ask) => (item.intake ? sessions.data?.find((session) => session.id === item.intake) ?? null : null);
 
   const onAsk = async () => {
@@ -288,6 +290,10 @@ export function useAsksPart({
           // The record as the door answers it, so the page shows the choice before the list catches up; a refusal (a
           // repository that declares no environment) is the service's sentence.
           onChooseReview={(choice, words) => chooseReview.mutate({ id: shown.id, choice, words }, {
+            onSuccess: (result) => { notify(result.message); setHeld(result.ask); },
+            onError: failure(notify),
+          })}
+          onChooseKind={(kind, workflow) => chooseKind.mutate({ id: shown.id, kind, workflow }, {
             onSuccess: (result) => { notify(result.message); setHeld(result.ask); },
             onError: failure(notify),
           })}

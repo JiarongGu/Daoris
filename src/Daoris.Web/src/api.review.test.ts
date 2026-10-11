@@ -74,6 +74,19 @@ describe("the review's doors", () => {
     expect(sent(fetcher)).toEqual({ path: '/api/asks/a1/review', method: 'POST', body: { choice: 'off', words: 'only the docs change' } });
   });
 
+  it("applies an intake's kind proposal, carrying the workflow the latest choice has, and no words", async () => {
+    const fetcher = vi.fn(async () => Response.json({ ask: { id: 'a1' }, message: 'kept' }));
+    vi.stubGlobal('fetch', fetcher);
+
+    await api.chooseAskWorkflow('a1', 'bug', 'fix-flow');
+    expect(sent(fetcher)).toEqual({ path: '/api/asks/a1/workflow', method: 'POST', body: { kind: 'bug', workflow: 'fix-flow' } });
+
+    const second = vi.fn(async () => Response.json({ ask: { id: 'a1' }, message: 'kept' }));
+    vi.stubGlobal('fetch', second);
+    await api.chooseAskWorkflow('a1', 'bug');
+    expect(sent(second).body).toEqual({ kind: 'bug' });
+  });
+
   it("carries the composer's review choice on the ask itself", async () => {
     const fetcher = vi.fn(async () => Response.json({ ask: { id: 'a1' }, message: 'kept' }));
     vi.stubGlobal('fetch', fetcher);

@@ -438,6 +438,8 @@ export const usePublishSetUpStep = () => useReviewChange(
   ({ id, environment }: { id: string; environment: string }) => api.setUpStep(id, environment));
 
 /** The person's review choice on an ask, or its intake's proposal applied (REVIEWENV1b, design §1.5). */
+export const useChooseAskWorkflow = () =>
+  useAskChange(({ id, kind, workflow }: { id: string; kind: string; workflow?: string | null }) => api.chooseAskWorkflow(id, kind, workflow));
 export const useChooseAskReview = () =>
   useAskChange(({ id, choice, words }: { id: string; choice: string; words?: string }) => api.chooseAskReview(id, choice, words));
 

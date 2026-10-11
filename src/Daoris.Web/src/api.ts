@@ -249,6 +249,16 @@ export type Ask = {
    * person's press applies one. Absent where there is none.
    */
   reviewProposals?: { choice: string; reason: string; at: string; session?: string | null; quest?: string | null }[];
+  /**
+   * The person's kind choices on it (WORKFLOW1i-c, workflow design §4.3), oldest first, the latest standing: a kind, a workflow,
+   * or both. Absent where they made none.
+   */
+  workflowChoices?: { kind?: string | null; workflow?: string | null; at: string; words?: string | null }[];
+  /**
+   * Its intake's kind proposals (WORKFLOW1i-c), each with its reason, the person's words as quoted: only the person's press
+   * applies one. Absent where there is none.
+   */
+  workflowProposals?: { kind: string; reason: string; at: string; session?: string | null; quest?: string | null }[];
 };
 /** One session's request for a go-ahead: who asked, on which quest, when, and why, in its words. */
 export type GoAheadRequest = { session: string; quest?: string | null; at: string; why: string };
@@ -519,6 +529,10 @@ export const api = {
   // The person's review choice on an ask's page, or its intake's proposal applied (REVIEWENV1b, design §1.5): the latest stands.
   chooseAskReview: (id: string, choice: string, words?: string) =>
     asThePerson<AskAction>(`/api/asks/${encodeURIComponent(id)}/review`, { choice, ...(words ? { words } : {}) }),
+  // An intake's kind proposal applied (WORKFLOW1i-c, design §4.3): a post replaces the latest choice whole, so the workflow it
+  // has is sent again. No words: the reason is the agent's quoting, not the person's act.
+  chooseAskWorkflow: (id: string, kind: string, workflow?: string | null) =>
+    asThePerson<AskAction>(`/api/asks/${encodeURIComponent(id)}/workflow`, { kind, ...(workflow ? { workflow } : {}) }),
   publishAsk: (id: string, to: string) =>
     post<AskAction>(`/api/asks/${encodeURIComponent(id)}/publish`, { to }),
   closeAsk: (id: string, reason: string) =>
