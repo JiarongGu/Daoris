@@ -13341,3 +13341,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CONVNOTE2e–h — the conversation's other driver notes, by code** … (Group g: a wait for an account, ResumeAccount.cs ~:91-100 and its sites.)
 
 **Outcome** 2026-10-11: `ResumeWords.Waiting` composes the wait once (`Waits` is its `.Note`); `waits.account` [owner, account, until, why] or `waits.own` + `waits.read-again`, the `Cooling` reasons, and the three doors `waits.door-new-session`/`-chat`/`-help` carry it at the chat, Ask Daoris and the driver's hold; each English byte for byte, still read by `SessionGroups` and `HeldForAccount`. `ChatRunner.Held`'s other holds are CONVNOTE2g2; a note naming an account by its name is NOTENAME1. Detail: D152's CONVNOTE2g note.
+
+
+## PLUGUI1h — Ask Daoris opens Plugins (2026-10-11, D119)
+
+> - [ ] **PLUGUI1h — Ask Daoris opens Plugins** (after c/FRAME1i-a). D119; matching coverage and screen proof. A plugin as a go's item (`ItemViews` gains plugins) is this row's.
+
+**Outcome** 2026-10-11: a go names a plugin by id or an offer as `offer:<id>` (`ItemViews` sessions, quests, plugins), judged against the machine's plugins and offers: an unknown one is refused naming those held, an installed one named as an offer is told its id; the page opens it. A go to the old Settings → Plugins still lands on Plugins (D150's kept place), not refused. Health on the card waits on PLUGUI1f. Detail: D119's PLUGUI1h note.

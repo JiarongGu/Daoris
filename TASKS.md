@@ -81,7 +81,6 @@ FRAME1i precedes PLUGUI1h. Installed looks cover both themes/languages.
 - [ ] **PLUGUI1c2 — plugin-page remainder** (web). Move kit/update types, fix agent/landing doors, put Update now first, remove doubled heading. D119; stories/tests/look.
 - [ ] **PLUGUI1f — complete plugin page** (after c/e). Health, Points, Agents, Servers, Activity, Data, Source and folder install. D119.
 - [ ] **PLUGUI1g — plugin checks** (after f). Keep trial and run tests in a home copy. D119.
-- [ ] **PLUGUI1h — Ask Daoris opens Plugins** (after c/FRAME1i-a). D119; matching coverage and screen proof. A plugin as a go's item (`ItemViews` gains plugins) is this row's.
 - [ ] **FRAME2b — maximized restore under pointer** (owner sends request). Wait for runtime position support, then update handler. D56/D32; owner response and handler proof.
 
 ## Workflows

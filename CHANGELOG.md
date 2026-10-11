@@ -8,6 +8,8 @@ with the version and date at release.
 - A conversation's note that your words wait for its account's cool-off (whose account, until when and why) and the way out
   of the wait now read in your language, in English and 中文. The account is named by its id there, and the command keeps
   its spelling.
+- Ask Daoris can now take you to one plugin on the Plugins page, by its id, or to one of Daoris's own plugins you have not
+  installed; it says so when a plugin is not on this machine, naming the ones that are.
 - A session's notes about its own background work (its turn ending while it runs, the work ending, or a wait that could not
   be read) now read in your language; the work's names stay as they are.
 - A quest you marked done now reads in your language where its note is shown (the quest's page, a session's timeline and

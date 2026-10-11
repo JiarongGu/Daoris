@@ -103,9 +103,11 @@ public sealed class HelpRoomPlacesTests
     {
         var places = new HelpRoomPlaces().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("To open one session, quest or ask, name it as the go's item on its view, with no part:", places);
+        Assert.Contains("To open one session, quest, ask or plugin, name it as the go's item on its view, with no part:", places);
         Assert.Contains("on `sessions` a session by its id, one this room lists as waiting on the person or another the person names,", places);
-        Assert.Contains("never Ask Daoris's own conversation; on `quests` a quest by its id, an ask as `ask:<id>`, each one this room lists.", places);
+        Assert.Contains("never Ask Daoris's own conversation; on `quests` a quest by its id, an ask as `ask:<id>`, each one this room lists;", places);
+        // PLUGUI1h: and a plugin by its id, an offer as `offer:<id>`.
+        Assert.Contains("on `plugins` an installed plugin by its id, or one of Daoris's own not installed as `offer:<id>`, by the ids this room lists.", places);
     }
 
     /// <summary>

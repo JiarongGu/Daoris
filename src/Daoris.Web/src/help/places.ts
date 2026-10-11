@@ -2,6 +2,7 @@ import type { AgentPart } from '../agents/agents';
 import type { View } from '../commands';
 import type { KnowledgeMode } from '../knowledge/modes';
 import { askItem, questsItem, type OpenGroup } from '../opener';
+import { offerItem } from '../plugins/catalog';
 import type { SettingsAnchor, SettingsSection } from '../SettingsView';
 import type { StarterDoor } from './starters';
 
@@ -41,9 +42,9 @@ export const PLACE_DOMAINS: readonly SettingsSection[] = ['start', 'appearance',
 /**
  * The views a go may name one item in (ENTRY1f1, D161's ENTRY1f note): Quests, whose list holds quests and asks, an ask
  * named as `askItem` names it, and since ENTRY1f2 Sessions, whose list holds this machine's sessions by id; in the bar's
- * order. The driver's `HelpPlaces.ItemViews`.
+ * order. The driver's `HelpPlaces.ItemViews`. Since PLUGUI1h Plugins too: a plugin by its id, an offer as `offerItem`.
  */
-export const PLACE_ITEM_VIEWS: readonly View[] = ['sessions', 'quests'];
+export const PLACE_ITEM_VIEWS: readonly View[] = ['sessions', 'quests', 'plugins'];
 
 /**
  * The places a go named before they moved, each with the place it is now (UX6i2a, D150 §2): Search and Convergence
@@ -142,6 +143,12 @@ export function placeDoor(asked: HelpPlace): StarterDoor | null {
     if (!PLACE_ITEM_VIEWS.includes(view) || domain !== null || part !== null) return null;
     // ENTRY1f2: the one session, by the id Sessions' list names it by; Quests' prefixes name no session.
     if (view === 'sessions') return item.includes(':') ? null : { view, item };
+    // PLUGUI1h: an installed plugin by its id, or an offer as the catalogue names one; no other prefix names a plugin.
+    if (view === 'plugins') {
+      const offered = item.startsWith(offerItem(''));
+      const id = (offered ? item.slice(offerItem('').length) : item).trim();
+      return !id || id.includes(':') ? null : { view, item: offered ? offerItem(id) : id };
+    }
     const named = questsItem(item);
     const id = 'ask' in named ? named.ask : named.quest;
     if (!id) return null;
