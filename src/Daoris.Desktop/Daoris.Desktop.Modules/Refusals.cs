@@ -381,6 +381,30 @@ public static class Refusals
     /// <summary>A download, or a use that downloads, started while that tool already has one running (TOOLS7, §3.6).</summary>
     public const string ToolBusy = "TOOL_BUSY";
 
+    // GIT1d-a (D147): a Git read the driver did not answer. Carried in the answer's `refusal`, not raised, so a page that asks
+    // for a commit this repository lacks words it beside what it drew. One code for each `GitReadRefusal`, and the checkout.
+
+    /// <summary>A Git read of a repository with no checkout on this machine.</summary>
+    public const string GitNoCheckout = "GIT_NO_CHECKOUT";
+
+    /// <summary>The checkout is not the top of a repository of its own, so git is not asked (it would walk up).</summary>
+    public const string GitNotTop = "GIT_NOT_TOP";
+
+    /// <summary>A commit not named by its whole id: a ref moves, so the page resolves it first.</summary>
+    public const string GitNotACommit = "GIT_NOT_A_COMMIT";
+
+    /// <summary>A path that is empty, rooted, or climbs out of the repository.</summary>
+    public const string GitNotAPath = "GIT_NOT_A_PATH";
+
+    /// <summary>A page before the first or past the last the reads page through.</summary>
+    public const string GitNotAPage = "GIT_NOT_A_PAGE";
+
+    /// <summary>More tips than one graph call carries.</summary>
+    public const string GitTooManyTips = "GIT_TOO_MANY_TIPS";
+
+    /// <summary>git did not answer: a commit this repository lacks, a path the commit lacks, or git not starting.</summary>
+    public const string GitNotAnswered = "GIT_NOT_ANSWERED";
+
     /// <summary>
     /// Every code a module here can raise — what the catalogue test enumerates. Read off the
     /// declarations above (REFUSE1): a list kept by hand let a code left out of it escape the check.
