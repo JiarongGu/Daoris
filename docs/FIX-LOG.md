@@ -1360,6 +1360,12 @@ a timeout, so a reset ends the run instead of failing the check with its words; 
 NEW1a's merge, 2026-10-12 (a driver and modules change; no CLI file), with three branch-workers building beside it: its
 fixture's `git checkout --quiet main` exited -1 (4294967295), a spawn failure, the same file's git-spawn shape as UXFIX5b's
 and WORKFLOW1a's sightings above.
+`OrphanedSessionTests.A_torn_driver_json_is_said_and_watched_never_the_end_of_the_loop` (driver, Process) failed in the
+full set on `19f72d0`, 2026-10-12 (819/820, 27 m 43 s), with no worker building beside it, and passed alone: not the
+test's assertion but its stand-in service's teardown, `HttpListenerException: An operation was attempted on a nonexistent
+network connection` thrown from `StandInService.ServeAsync` (`OrphanedSessionTests.cs:333`) as `DisposeAsync` (:427)
+stopped the listener under a request. The disposal racing the serve loop is the shape: a stopped listener's exception
+belongs to the stop, not to the test.
 `setup-kit.test.ts:531` (*a set-up quest is done as its body says*) failed once at SWEEPCARRIED1's merge, 2026-10-08, a
 web-only change: *the stub never answered 3 (session/prompt) within 30000 ms* after it had run all four commands, with
 a Codex review and two subagents building beside the gate. The same file's stub bound as STUB3's, after its command
