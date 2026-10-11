@@ -57,7 +57,9 @@ const LANDED_OTHERWISE = (() => {
   ];
 })();
 const historyRead = (read: HistoryRead) => <HistoryTab repository="engine" read={read} />;
-const lineHistory = (commits: GitLogCommit[], tips = [commits[0]!.commit]) => historyRead({ state: 'read', value: { line: 'main', tips, commits } });
+const lineHistory = (commits: GitLogCommit[], more: Partial<Extract<HistoryRead, { state: 'read' }>['value']> = {}, tips = [commits[0]!.commit]) =>
+  // `onMore` is the page's: a story draws the foot, and its press is the holder's.
+  <HistoryTab repository="engine" read={{ state: 'read', value: { line: 'main', tips, commits, more: false, ...more } }} onMore={nothing} />;
 
 /** A line three branches were merged into, one still open beside it: four lanes at their widest. */
 const SEVERAL: GitLogCommit[] = (() => {

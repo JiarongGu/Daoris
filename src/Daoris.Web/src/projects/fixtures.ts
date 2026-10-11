@@ -252,6 +252,9 @@ export const GIT_HISTORY_ENGINE: LoggedCommit[] = [
   logged('1b07c9', [], 'Begin the engine', 'Mei Lin', 400),
 ];
 
+/** The same history as two pages of `GIT_GRAPH`: the first answers `more`, and its tail's parents are the second's (UX6h3a). */
+export const GIT_HISTORY_PAGES: [LoggedCommit[], LoggedCommit[]] = [GIT_HISTORY_ENGINE.slice(0, 3), GIT_HISTORY_ENGINE.slice(3)];
+
 /** A commit as `GIT_GRAPH` lists it: what the graph draws, with the author's address and the side of a two-sided walk. */
 type LoggedCommit = GraphCommitRow & { parents: string[]; authorEmail: string; side: string | null };
 

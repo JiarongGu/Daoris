@@ -1,11 +1,11 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render as renderPlain, screen, within, type RenderOptions } from '@testing-library/react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { ReactElement, ReactNode } from 'react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../i18n';
-import { GIT_BRANCHES_ENGINE, GIT_HISTORY_ENGINE } from './fixtures';
-import { BranchesTab, HistoryTab } from './RepositoryGit';
+import { GIT_BRANCHES_ENGINE, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES } from './fixtures';
+import { BranchesTab, HistoryTab, type HistoryRead } from './RepositoryGit';
 
 // A repository's Branches and History tabs (UX6h1, D150 §4.2, §4.4): molecules, each state reached by its props. The reads
 // are this machine's (D147 §6): a tab says its answer is on its way, that this machine has no checkout, or why Git did not
@@ -243,7 +243,7 @@ describe("a repository's History tab", () => {
   });
 
   it('lists its line\'s commits newest first, with a lane drawn for each and a dot per commit', () => {
-    const { container } = render(<HistoryTab repository="engine" read={{ state: 'read', value: { line: 'main', tips, commits: GIT_HISTORY_ENGINE } }} />);
+    const { container } = render(<HistoryTab repository="engine" read={{ state: 'read', value: { line: 'main', tips, commits: GIT_HISTORY_ENGINE, more: false } }} />);
     const list = screen.getByRole('list', { name: "engine's history on main" });
     const rows = within(list).getAllByRole('listitem');
     expect(rows.map((row) => row.getAttribute('data-commit'))).toEqual(GIT_HISTORY_ENGINE.map((commit) => commit.commit));
@@ -260,7 +260,7 @@ describe("a repository's History tab", () => {
   it('lets its rows give way to the tab\'s width, so a long subject truncates and the id, author and time stay in view', () => {
     // jsdom lays nothing out: the class is what the window needed. Without it the graph, a grid item, grew to its longest
     // subject and pushed the row's last columns past the tab (the installed window, 2026-10-11; FIX-LOG).
-    render(<HistoryTab repository="engine" read={{ state: 'read', value: { line: 'main', tips, commits: GIT_HISTORY_ENGINE } }} />);
+    render(<HistoryTab repository="engine" read={{ state: 'read', value: { line: 'main', tips, commits: GIT_HISTORY_ENGINE, more: false } }} />);
     expect(screen.getByRole('list', { name: "engine's history on main" }).parentElement).toHaveClass('min-w-0');
   });
 
@@ -268,5 +268,83 @@ describe("a repository's History tab", () => {
     await i18n.changeLanguage('zh');
     render(<HistoryTab repository="engine" read={{ state: 'noLine', line: 'main' }} />);
     expect(screen.getByText('还没有历史')).toBeInTheDocument();
+  });
+});
+
+// The graph's pages (UX6h3a, the built-in Git design §2.3; UXLOADMORE1): the count of what is listed and *Show more* while the
+// graph answers `more`, with no total, as Ask Daoris's history foots its own.
+describe("a repository's History tab, a page at a time", () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  const [first, second] = GIT_HISTORY_PAGES;
+  const paged = (value: Partial<Extract<HistoryRead, { state: 'read' }>['value']> = {}): HistoryRead =>
+    ({ state: 'read', value: { line: 'main', tips, commits: first!, more: true, ...value } });
+
+  it('counts what is listed, with no total, and offers Show more while the graph has another page', () => {
+    render(<HistoryTab repository="engine" read={paged()} onMore={() => {}} />);
+    expect(screen.getByText('3 commits listed')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Show more' })).toBeEnabled();
+  });
+
+  it('says one commit in the singular', () => {
+    render(<HistoryTab repository="engine" read={paged({ commits: first!.slice(0, 1) })} onMore={() => {}} />);
+    expect(screen.getByText('1 commit listed')).toBeInTheDocument();
+  });
+
+  it('keeps the foot only while a next page exists', () => {
+    render(<HistoryTab repository="engine" read={paged({ commits: [...first!, ...second!], more: false })} onMore={() => {}} />);
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+    expect(screen.queryByText(/commits listed/)).toBeNull();
+  });
+
+  it('has its status from the first and empty, and says the wait in it', () => {
+    const { rerender } = render(<HistoryTab repository="engine" read={paged()} onMore={() => {}} />);
+    const status = screen.getByRole('status');
+    expect(status).toBeEmptyDOMElement();
+    rerender(<HistoryTab repository="engine" read={paged({ loadingMore: true })} onMore={() => {}} />);
+    expect(screen.getByRole('status')).toBe(status);
+    expect(status).toHaveTextContent('Reading more commits…');
+  });
+
+  it('says why the next page did not come, in the foot, and keeps the commits it has', () => {
+    render(<HistoryTab repository="engine" read={paged({ moreError: 'Git could not answer for this.' })} onMore={() => {}} />);
+    expect(within(screen.getByRole('button', { name: 'Show more' }).closest('div')!.parentElement!).getByText('Git could not answer for this.')).toBeInTheDocument();
+    expect(screen.getAllByRole('listitem')).toHaveLength(first!.length);
+  });
+
+  it('asks for the next page on a press', async () => {
+    const onMore = vi.fn();
+    render(<HistoryTab repository="engine" read={paged()} onMore={onMore} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Show more' }));
+    expect(onMore).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks nothing more while it reads', async () => {
+    const onMore = vi.fn();
+    render(<HistoryTab repository="engine" read={paged({ loadingMore: true })} onMore={onMore} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Show more' }));
+    expect(onMore).not.toHaveBeenCalled();
+  });
+
+  it('brings the focus to the first commit the press brought', async () => {
+    const { rerender } = render(<HistoryTab repository="engine" read={paged()} onMore={() => {}} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Show more' }));
+    rerender(<HistoryTab repository="engine" read={paged({ commits: [...first!, ...second!], more: false })} onMore={() => {}} />);
+    expect(document.activeElement).toBe(document.querySelector(`[data-commit="${second![0]!.commit}"]`));
+  });
+
+  it('leaves the focus where the reader went meanwhile', async () => {
+    const { rerender } = render(<><input aria-label="elsewhere" /><HistoryTab repository="engine" read={paged()} onMore={() => {}} /></>);
+    await userEvent.click(screen.getByRole('button', { name: 'Show more' }));
+    screen.getByLabelText('elsewhere').focus();
+    rerender(<><input aria-label="elsewhere" /><HistoryTab repository="engine" read={paged({ commits: [...first!, ...second!], more: false })} onMore={() => {}} /></>);
+    expect(document.activeElement).toBe(screen.getByLabelText('elsewhere'));
+  });
+
+  it('says its foot in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    render(<HistoryTab repository="engine" read={paged()} onMore={() => {}} />);
+    expect(screen.getByText('已列出 3 个提交')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '显示更多' })).toBeInTheDocument();
   });
 });
