@@ -193,6 +193,19 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText(/the same at a terminal/)).toBeInTheDocument();
   });
 
+  // PAUSE1f-a: pausing or resuming is the generic card, its sentence the driver's describe.
+  it('a pause card is the generic one, with Apply and Not now', async () => {
+    const pause: HelpProposal = {
+      id: 'p16', kind: 'pause', terminal: 'daoris quests pause q1', why: 'the person asked to stop it',
+      describe: 'Pause quest `q1`: its running sessions stop, and nothing starts until it is resumed.',
+    };
+
+    await press(pause, 'Apply');
+
+    expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
+    expect(screen.getByText(code('q1'))).toBeInTheDocument();
+  });
+
   it('a session delete card is the delete kind\'s, naming the session', async () => {
     const remove: HelpProposal = {
       id: 'p15', kind: 'delete', terminal: 'daoris sessions delete s9', why: 'a test run',
