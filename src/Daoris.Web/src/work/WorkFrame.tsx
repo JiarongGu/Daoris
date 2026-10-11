@@ -59,7 +59,7 @@ import { type SessionDoors, useSessionActs } from './sessionActs';
 import { ListMore } from './ListPane';
 import { AddProjectDrawer, ImportFolderDrawer } from '../ProjectManage';
 import { NewConversation, type NewStart } from './NewConversation';
-import { keepChosen, keepRecent, readChosen, readRecent } from './startRecent';
+import { keepChosen, keepRecent, mergeRecent, readChosen, readRecent } from './startRecent';
 import { type Carry, NO_CARRY } from '../compose/carry';
 import { OutputPanel, PANEL_MIN, StreamTabs } from './frame';
 import { panelTabs } from './streams';
@@ -234,7 +234,11 @@ export function WorkFrame({
   // Whether that press's focus is still owed: met once the prompt took it, so a composer that comes back by another path
   // (the attended session deleted) takes none.
   const [focusOwed, setFocusOwed] = useState(false);
+  // The repository of the session attended at the press (NEW1f): the press puts the selection down, so the composer is told
+  // where the person was. Each press sets it afresh, to null where nothing was attended.
+  const [pressedFrom, setPressedFrom] = useState<string | null>(null);
   const newConversationPressed = () => {
+    setPressedFrom(attended && sessionOrigin(attended) === null ? attended.repository : null);
     setComposing((count) => count + 1);
     setFocusOwed(true);
   };
@@ -255,7 +259,12 @@ export function WorkFrame({
   const [startRefusal, setStartRefusal] = useState<string | null>(null);
   // This machine's last starts and the repository last chosen (the entry design §1), read once and kept as they change.
   const [recentStarts, setRecentStarts] = useState(readRecent);
-  const [chosenStart] = useState(readChosen);
+  const [chosenStart, setChosenStart] = useState(readChosen);
+  // Kept in step with the storage, which `chosenStart` alone would leave stale within a mount (NEW1f).
+  const chooseStart = (repository: string) => {
+    setChosenStart(repository);
+    keepChosen(repository);
+  };
   // One press, one request id (NEW1a): a press again with the same words and choices after a failure carries the same id,
   // so a start that did open is answered rather than repeated; an answer lets it go.
   const pressed = useRef<{ key: string; id: string } | null>(null);
@@ -1381,9 +1390,10 @@ export function WorkFrame({
         .filter((session) => SESSION_ACTIVE.has(session.state) && sessionOrigin(session) === null
           && !ownTree(session, registered.find((row) => row.repository === session.repository)?.root))
         .map((session) => [session.repository, session.id]))}
-      recent={recentStarts}
+      recent={mergeRecent(recentStarts, sessions.data ?? [])}
       remembered={chosenStart}
-      onChoose={keepChosen}
+      attended={pressedFrom}
+      onChoose={chooseStart}
       harnesses={roster.filter((row) => row.present).map((row) => row.harness)}
       labels={Object.fromEntries(roster.map((row) => [row.harness, doorLabel(t, row)]))}
       names={Object.fromEntries(roster.map((row) => [row.harness, row.product || row.harness]))}

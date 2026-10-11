@@ -1239,6 +1239,50 @@ describe('starting and holding a conversation', () => {
   });
 
   /**
+   * NEW1f (D162's window note): pressed from a session in another repository, the composer opens on that repository, though
+   * the press puts the session down; and *Recent* lists where the person has been working, not only what the composer started.
+   */
+  it('opens the composer on the repository of the session it was pressed from, and lists the sessions’ repositories as Recent', async () => {
+    const game = { ...REGISTRY[0]!, repository: 'game', root: 'C:/somewhere/game' };
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => (String(input).startsWith('/api/registry')
+      ? Response.json([...REGISTRY, game])
+      : respond(String(input)))));
+    const ELSEWHERE = { ...CHAT, id: 'decaf222', repository: 'game', updated: '2026-09-02T02:00:00Z' };
+    const ASK = { ...CHAT, id: 'a5k0a5k0', repository: 'daoris:help', updated: '2026-09-02T00:20:00Z' };
+    SESSIONS = [DRIVEN, ELSEWHERE, ASK];
+    const onSelect = vi.fn();
+    function Held() {
+      const [intent, setIntent] = useState<'start' | 'review' | null>(null);
+      const [selected, setSelected] = useState<string | null>('decaf222');
+      press = () => setIntent('start');
+      return (
+        <WorkFrame
+          selected={selected} onSelect={(id) => { onSelect(id); setSelected(id); }} notify={() => {}}
+          intent={intent} onIntentTaken={() => setIntent(null)}
+        />
+      );
+    }
+    let press: () => void = () => {};
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider><Held /></Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+    await screen.findByLabelText('Message');
+
+    act(() => press());
+
+    expect(await screen.findByRole('button', { name: 'Repository: game' })).toBeInTheDocument();
+    expect(onSelect).toHaveBeenCalledWith(null);
+    await userEvent.click(screen.getByRole('button', { name: 'Repository: game' }));
+    const groups = within(screen.getByRole('listbox', { name: 'Repository' })).getAllByRole('group');
+    expect(groups[0]).toHaveAttribute('aria-label', 'Recent');
+    // Newest first by the session's own update: game, then engine; Ask Daoris's chat is not a repository.
+    expect(within(groups[0]!).getAllByRole('option').map((row) => row.textContent?.split(' ')[0])).toEqual(['game', 'engine']);
+  });
+
+  /**
    * NEW1d-b (D162): Ask Daoris's go to New conversation arrives as an EVENT too, a `compose` with an id, consumed once by that
    * id (FIX-LOG 2026-09-23): the attended session is put down, the repository chosen, the words put in above any already there,
    * and the prompt owes the focus. Nothing is sent.

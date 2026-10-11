@@ -27,7 +27,6 @@ Contracts: platform UX §4/§6, `docs/2026-10-05-ux7-design.md` (D152), `docs/20
 `docs/2026-10-04-ux6-redesign.md` (D150, §12 proofs). UI work needs stories, behavior tests and
 installed-window evidence in both themes/languages; Storybook alone does not close an installed proof.
 
-- [ ] **NEW1f — the composer opens where the person was** (web). Seen on the window: it opened on the first free repository although a session in another was attended, because *Recent* counts only the composer's own starts. Open on the attended session's repository when *New conversation* is pressed from it, and seed *Recent* from the person's recent sessions. D162's window note; design §1.
 - [ ] **NEW1e-b — the tree chip says the checkout's branch** (web; after NEW1f). `useCheckoutBranch` (NEW1e-a) feeds the tree chip: *the checkout · main*, or detached; unread or pending, plain *the checkout*; en and zh; Ask Daoris's coverage classifies the read. Design §1 (Tree); D162's NEW1e-a note; a story and the window.
 
 - [ ] **UXFIX2bi — installed confirmations look** (parent; after republish). Retire right on 2026-10-11's second look (its own question; focus back to the press with a pointer-like click); the rest need data the machine lacks: tool, plugin, pause, abandon, decline, close, finish, archive, discard, both themes/languages.

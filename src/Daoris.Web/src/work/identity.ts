@@ -86,7 +86,7 @@ export const isHelp = (session: Session): boolean => session.repository === HELP
  * this machine's name would spend the rail's scarcest space saying the unsurprising thing. What is
  * worth a person's attention is the session that is somewhere else.
  */
-export function sessionOrigin(session: Session): string | null {
+export function sessionOrigin(session: Pick<Session, 'id'>): string | null {
   const separator = session.id.indexOf('/');
   return separator > 0 ? session.id.slice(0, separator) : null;
 }

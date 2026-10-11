@@ -7,6 +7,8 @@ with the version and date at release.
 
 - A question or task handed to Ask Daoris (*Make it a task with Daoris…*, *Ask Daoris about it*) opens on a new
   conversation when the last one has ended, instead of under its history.
+- *New conversation* opens on the repository you were just in, and *Recent* lists where you have been working, not only
+  what the composer started.
 - Cleaning up a landed branch keeps its commits recoverable: they stay on a ref under `refs/daoris/discarded/`, and the
   removal says where, as removing a session's branch already did.
 - Ask Daoris's go to *New conversation* opens the composer with the repository chosen and the words in (above any you had

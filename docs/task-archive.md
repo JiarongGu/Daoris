@@ -13753,3 +13753,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **NEW1e — the checkout's branch on the tree chip** (driver/web). The design's *the checkout · main* needs the checkout's current branch, which no route answers (`GitLine` is the landing line, not its head). Add the read, then the chip says it. Design §1 (Tree); a story and the window.
 
 **Outcome** 2026-10-12: the read's half. `WorkingTree.BranchAsync` (one `symbolic-ref`, null where detached), the shell-only `CHECKOUT_BRANCH` route (`GIT_NO_CHECKOUT` where none, no path in any answer) and the page's `useCheckoutBranch`; the real-git cases passed on the merge. The chip is NEW1e-b. Detail: D162's NEW1e-a note.
+
+## NEW1f — the composer opens where the person was (2026-10-12, D162)
+
+> - [ ] **NEW1f — the composer opens where the person was** (web). Seen on the window: it opened on the first free repository although a session in another was attended, because *Recent* counts only the composer's own starts. Open on the attended session's repository when *New conversation* is pressed from it, and seed *Recent* from the person's recent sessions. D162's window note; design §1.
+
+**Outcome** 2026-10-12: *New conversation* opens on the repository of the session it was pressed from (captured at the press, ahead of the last one chosen), and *Recent* merges the composer's starts with this machine's own sessions' repositories (`mergeRecent`); `chosenStart` now follows the choice within a mount. Detail: D162's NEW1f note.
