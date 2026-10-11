@@ -239,6 +239,10 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, install = false, 
       const result = await act.mutateAsync({ harness: door, action: 'key-add', key });
       if (result.profile) setKeyAdded({ profile: result.profile, key: result.key ?? null });
     })(), answered),
+    // KEYREPLACE1b: the key goes into the same account, which keeps its name and lists, so no add flow follows.
+    onReplaceKey: (account, key, answered) => told(
+      act.mutateAsync({ harness: door, action: 'key-replace', profile: account, key }), answered,
+    ),
     onSignIn: (account) => run(door, 'login', account),
     onTryNow: (account, label) => accountUse.mutate(
       { harness: door, action: 'ready', ...(account ? { profile: account } : { own: true }) },

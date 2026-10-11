@@ -112,7 +112,7 @@ export const useHarnessAction = () => {
   return useMutation({
     mutationFn: (action: {
       harness: string;
-      action: 'install' | 'update' | 'login' | 'login-new' | 'key-add' | 'pin' | 'unpin'
+      action: 'install' | 'update' | 'login' | 'login-new' | 'key-add' | 'key-replace' | 'pin' | 'unpin'
       | 'profile-add' | 'profile-remove' | 'profile-default' | 'profile-rename' | 'profile-join';
       profile?: string;
       /** An account's name (ACCT2) — `profile-rename` only; its own id, or none, clears it. */
@@ -123,7 +123,7 @@ export const useHarnessAction = () => {
        */
       join?: (string | null)[];
       /**
-       * An API key — `key-add` only (AGT3, D67 §1). It crosses the bridge once, inward; the answer
+       * An API key — `key-add`, and `key-replace` into `profile` (KEYREPLACE1b) (AGT3, D67 §1). It crosses the bridge once, inward; the answer
        * and the roster name it only by its last four characters.
        */
       key?: string;

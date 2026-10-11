@@ -46,7 +46,6 @@ Original row proofs remain in the frozen backlog; measurements precede declarati
 
 - [ ] **ACCTUX4i — installed account cells, and the row budget** (parent). 中文 dark and light at 1546 and 680 seen 2026-10-11; English, a key and Codex rows remain. The *Now* header stands over an empty column, the cells starting under *Used for*. Settle D152's row budget against D125's ACCTUX4 measures.
 - [ ] **ACCTPLAN1 — plan, spend and reset credits** (driver/modules/web; design first). Nothing reads them yet (D125:898-899); show them in a fold, and never redeem a credit without `InlineConfirm`. Second-opinion review lines 132-133.
-- [ ] **KEYREPLACE1b — the page replaces a key on its row** (web; after a). A refused key row's act opens the key field for that account and sends `key-replace`; the words that say "nothing puts a new key into this account" change, en and zh (harness.json ~:55, agents.json ~:59, work.attention.json ~:74, harness.next.json ~:32, settings/accounts.ts ~:323 and its test).
 - [ ] **CODEXUSE2 — installed Codex reading** (parent/owner). Pins are verified; account sign-in remains unavailable. Use CODEXUSE3's own-sign-in reading meanwhile. D57/D63/D125.
 - [ ] **CODEXKEY1 — Codex API-key account** (measure first; owner supplies throwaway key). Determine spawn variable for both tools before declaring support. D67/D125; real variable-start proof.
 - [ ] **TOOL6d — continue on another account** (driver/modules/web; after TOOL6b). Offer last plan/words to selected account. D130 §8–§9; both-door tests/look.

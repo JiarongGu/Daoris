@@ -37,8 +37,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/App.tsx` | 70 | 1282 |
 | `src/Daoris.Web/src/ProjectsView.test.tsx` | 76 | 1377 |
 | `src/Daoris.Web/src/QuestsView.test.tsx` | 70 | 1375 |
-| `src/Daoris.Web/src/agents/AgentPage.tsx` | 49 | 911 |
-| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 103 | 1975 |
+| `src/Daoris.Web/src/agents/AgentPage.tsx` | 51 | 951 |
+| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 105 | 2026 |
 | `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 57 | 1148 |
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 46 | 861 |
 | `src/Daoris.Web/src/ui.test.tsx` | 48 | 975 |
@@ -61,7 +61,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/AbandonTests.cs` | 43 | 786 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/AcpTests.cs` | 111 | 2071 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/HarnessTests.cs` | 48 | 1089 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 97 | 1586 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 97 | 1587 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/golden/help-room/full.md` | 41 | 318 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/HistoryClearingTests.cs` | 45 | 809 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/IntakeTests.cs` | 46 | 967 |

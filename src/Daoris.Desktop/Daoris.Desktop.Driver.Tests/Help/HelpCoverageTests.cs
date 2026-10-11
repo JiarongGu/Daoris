@@ -570,6 +570,7 @@ public sealed partial class HelpCoverageTests
         ("agents", "useHarnessAction", "login", new Exempt(SignIn)),
         ("agents", "useHarnessAction", "login-new", new Exempt(SignIn)),
         ("agents", "useHarnessAction", "key-add", new Exempt(Key)),
+        ("agents", "useHarnessAction", "key-replace", new Exempt(Key)),
         ("agents", "useHarnessAction", "profile-add", new Exempt("an account is made by its own sign-in; " + SignIn)),
         ("agents", "useHarnessAction", "profile-remove", new Exempt(
             "it deletes an account with its sign-in, which only the person can make again (D89).")),

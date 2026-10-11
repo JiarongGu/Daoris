@@ -1185,6 +1185,57 @@ describe('the Agents place', () => {
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', expect.anything());
   });
 
+  /**
+   * KEYREPLACE1b: a refused key's own act puts a new key into that account (`key-replace`, the account named), not a new
+   * account: its field is on the row, a refusal is said in it with the key kept, and a landed key closes it with no add
+   * flow asking a name.
+   */
+  it('puts a new key into a refused key’s own account from its row, and says a refusal in that field', async () => {
+    const key = 'sk-ant-api03-page-test-newk';
+    let refuse = true;
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESS_ACTION') {
+        if (refuse) {
+          throw Object.assign(new Error('refused'), {
+            code: 'DRIVER_REFUSED', parameters: { message: '`claude-code` takes no key while a sign-in runs.' },
+          });
+        }
+        return { harness: 'claude-code', action: 'key-replace', exitCode: 0, profile: 'account-1', key: '…newk' };
+      }
+      return type === 'HARNESSES'
+        ? {
+          ...ROSTER,
+          harnesses: [{
+            ...ROSTER.harnesses[0],
+            takesKey: true,
+            profiles: [{ name: 'account-1', home: 'C:/somewhere/.daoris/harnesses/claude-code/account-1', login: 'out', key: '…wxyz' }],
+          }, ROSTER.harnesses[1]],
+        }
+        : WIRING;
+    });
+    const notify = vi.fn();
+    const { container } = place(notify);
+
+    const row = await screen.findByRole('listitem', { name: 'API key …wxyz' });
+    await userEvent.click(within(row).getByRole('button', { name: 'Put a new API key into API key …wxyz' }));
+    const field = within(row).getByLabelText('New API key for API key …wxyz');
+    expect(field.getAttribute('type')).toBe('password');
+    fireEvent.change(field, { target: { value: key } });
+    await userEvent.click(within(row).getByRole('button', { name: 'Save key' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'claude-code', action: 'key-replace', profile: 'account-1', key },
+    });
+    expect(await within(row).findByRole('alert')).toHaveProperty('textContent', 'claude-code takes no key while a sign-in runs.');
+    expect(within(row).getByLabelText('New API key for API key …wxyz')).toHaveProperty('value', key);
+
+    refuse = false;
+    await userEvent.click(within(row).getByRole('button', { name: 'Save key' }));
+    await waitFor(() => expect(screen.queryByLabelText('New API key for API key …wxyz')).toBeNull());
+    expect(screen.queryByRole('region', { name: 'Add an API key' })).toBeNull();
+    expect(container.innerHTML).not.toContain(key);
+  });
+
   /** AGT6 (D98): an account's own model and effort, from the choices the tool offers, under *Model and effort*. */
   it("sets an account's own model over the bridge, from the choices the tool offers", async () => {
     const CHOICES = { models: ['default', 'sonnet', 'opus'], efforts: ['low', 'medium', 'high', 'xhigh'] };

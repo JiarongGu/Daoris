@@ -373,7 +373,7 @@ describe('a signed-out account a list holds', () => {
     expect(rows.map(({ id }) => id)).toEqual(['signed-out:claude-code/account-1', 'signed-out:claude-code/account-3']);
     expect(rows[1]).toMatchObject({
       kind: 'signed-out', title: 'API key …abcd', where: 'Claude Code', since: null, read: READ,
-      detail: "Key refused: add a new API key on Claude Code's page in its place. It runs work in work.",
+      detail: "Key refused: put a new API key into it on Claude Code's page. It runs work in work.",
     });
     expect(rows[1]!.account!.named).toEqual([expect.objectContaining({ id: 'account-3', state: 'refused' })]);
     expect(attentionOffers(rows[1]!)).toEqual([]);

@@ -21,7 +21,7 @@ import {
 
 const nothing = () => {};
 const ACTS: AgentActs = {
-  onReadAgain: nothing, onReadOne: nothing, onSignInNew: nothing, onAddKey: nothing, onSignIn: nothing, onTryNow: nothing, onDefault: nothing,
+  onReadAgain: nothing, onReadOne: nothing, onSignInNew: nothing, onAddKey: nothing, onReplaceKey: nothing, onSignIn: nothing, onTryNow: nothing, onDefault: nothing,
   onRemove: nothing, onRename: nothing, onJoin: nothing, onAddedAnswer: nothing, onSaveSettings: nothing, onDoor: nothing, onPin: nothing,
   scope: { onOrder: nothing, onUse: nothing, onInherit: nothing },
   rules: { onSwitchDefault: nothing, onRemove: nothing, onAdd: nothing, onAnswer: nothing },
@@ -133,7 +133,7 @@ export const ApiKey: Story = {
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 /**
- * What each row knows (ACCTUX1): a key its provider refused says *key refused* with *Add an API key*; *reserve*, cooling for
+ * What each row knows (ACCTUX1): a key its provider refused says *key refused* with *New API key*, which opens a field on its row (KEYREPLACE1b); *reserve*, cooling for
  * Daoris's default because its agent named no reset, says until when and *reset unknown*; *team*, cooling until the reset its
  * agent named, says each window's share in the ink and its reset beside it in the soft ink; and an account named for its
  * email says it once.

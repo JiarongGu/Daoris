@@ -13383,3 +13383,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **KEYREPLACE1a — replace a refused key in place, the doors' half** (cli/driver/modules). `daoris agent key <agent> --account <id|name>` and a `key-replace` route action write the new key into the same account, clearing its `out` read, cool-off and refusal; name, lists, defaults and order kept. D67 point 1; D125 ~:921.
 
 **Outcome** 2026-10-11: `daoris agent key <agent> --account <id|name>` (`replaceKeyAccount`) and the driver's twin `HarnessKeys.Replace` write the key into the same account id and clear its read, cool-off and signed-out mark; the `key-replace` route answers by handle only and clears the roster's refusal at once (the terminal says a running desktop reads it again at its next press). Without `--account` the verb adds as before. The coverage row came with the page (KEYREPLACE1b). Detail: D125's KEYREPLACE1a note.
+
+
+## KEYREPLACE1b — the page replaces a key on its row (2026-10-11, D125)
+
+> - [ ] **KEYREPLACE1b — the page replaces a key on its row** (web; after a). A refused key row's act opens the key field for that account and sends `key-replace`; the words that say "nothing puts a new key into this account" change, en and zh.
+
+**Outcome** 2026-10-11: a refused key's row act *New API key* opens a password field inside that row ("New API key for <account>"), sends `key-replace` and says a refusal there, keeping the typed key; the header's add field and the row's close each other. The tip, the attention row and the held line now say a new key goes into the account, keeping its name and lists, en and zh. The coverage table answers `key-replace` Exempt (a key is the person's own, D89). Detail: D125's KEYREPLACE1b note.

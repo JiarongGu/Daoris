@@ -18,7 +18,7 @@ import { CLAUDE_USE, DOORS, READ } from './agentsFixtures';
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 const nothing = () => {};
 const ACTS: AgentActs = {
-  onReadAgain: nothing, onReadOne: nothing, onSignInNew: nothing, onAddKey: nothing, onSignIn: nothing, onTryNow: nothing, onDefault: nothing,
+  onReadAgain: nothing, onReadOne: nothing, onSignInNew: nothing, onAddKey: nothing, onReplaceKey: nothing, onSignIn: nothing, onTryNow: nothing, onDefault: nothing,
   onRemove: nothing, onRename: nothing, onJoin: nothing, onAddedAnswer: nothing, onSaveSettings: nothing, onDoor: nothing, onPin: nothing,
   scope: { onOrder: nothing, onUse: nothing, onInherit: nothing },
   rules: { onSwitchDefault: nothing, onRemove: nothing, onAdd: nothing, onAnswer: nothing },
@@ -77,15 +77,16 @@ describe('an account’s row (ACCTUX1)', () => {
     expect(screen.getByText('resets 15:00').className).toContain('text-ink-soft');
   });
 
-  it('says a key its provider refused as Key refused, with Add an API key, which opens the key’s field', async () => {
+  it('says a key its provider refused as Key refused, with New API key, which opens a field on that row (KEYREPLACE1b)', async () => {
     page([{ name: 'acct-0000abcd', home: `${HOME}acct-0000abcd`, login: 'out', key: '…abcd', read: READ }]);
 
     const row = screen.getByRole('listitem', { name: 'API key …abcd' });
     expect(within(row).getByText('key refused')).toBeTruthy();
     expect(within(row).queryByText('unchecked')).toBeNull();
     expect(within(row).queryByRole('button', { name: /Sign in/ })).toBeNull();
-    await userEvent.click(within(row).getByRole('button', { name: 'Add an API key in place of API key …abcd' }));
-    expect(screen.getByLabelText('API key for Claude Code')).toBeTruthy();
+    await userEvent.click(within(row).getByRole('button', { name: 'Put a new API key into API key …abcd' }));
+    expect(within(row).getByLabelText('New API key for API key …abcd')).toBeTruthy();
+    expect(screen.queryByLabelText('API key for Claude Code')).toBeNull();
   });
 
   /** ACCTNAME1's page half: the owner named each account by its email, so the row says that email once. */

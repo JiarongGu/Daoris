@@ -29,7 +29,7 @@
   "harness.next.held.line": "{{clauses}}。",
   "harness.next.held.cooling": "{{account}} 冷却至 {{when}}",
   "harness.next.held.refused": "{{account}} 被其服务商拒绝",
-  "harness.next.held.keyRefused": "{{account}} 的密钥被拒绝，只有新的 API 密钥能修复它",
+  "harness.next.held.keyRefused": "{{account}} 的密钥被拒绝，需要换上新的 API 密钥",
   "harness.next.held.signedOut": "{{account}} 未登录",
   "harness.next.held.kept": "{{account}} 留作对话",
   "harness.next.held.near": "{{account}} 接近上限",
