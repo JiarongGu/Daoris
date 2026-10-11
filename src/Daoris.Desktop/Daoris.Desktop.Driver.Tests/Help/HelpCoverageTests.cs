@@ -424,6 +424,10 @@ public sealed partial class HelpCoverageTests
             "an ask's review choice says how its work is shown to the person before it lands, a choice the person applies, so "
             + "Ask Daoris should carry it when it proposes the ask; the `ask` door takes the sentence, workspace and why only, "
             + "which ENTRY1c widens with the review and the kind, and until then the ask's page is its door (REVIEWENV1b).")),
+        ("asks", "useChooseAskWorkflow", null, new Owed(
+            "an ask's kind choice says which workflow its work follows (D157), a choice the person applies, here an intake's "
+            + "proposal applied from the ask's page (WORKFLOW1i-c); Ask Daoris should carry the kind when it proposes the ask, "
+            + "as the review choice is owed, and until then the ask's page is its door.")),
 
         // Ask Daoris's own panel.
         ("help", "useStartHelp", null, HelpConversation),

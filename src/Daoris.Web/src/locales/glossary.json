@@ -95,7 +95,7 @@
         "work.rail.ended",
         "work.rail.label", "work.rail.search.byContent", "work.rail.search.byName", "work.relations.title",
         "work.sync.inConflict", "work.trace.title", "work.head.details",
-        "review.title", "review.setUp.newest", "review.setUp.older", "asks.record.review", "opinion.title", "opinion.recheckTitle",
+        "review.title", "review.setUp.newest", "review.setUp.older", "asks.record.review", "asks.record.kind", "opinion.title", "opinion.recheckTitle",
         "workflow.head.title", "workflow.section.*", "workflow.finished", "workflow.step.work", "workflow.step.opinion",
         "workflow.step.look", "workflow.step.lookAnywhere", "workflow.step.landingMerge", "workflow.step.landingBranch",
         "workflow.step.pullRequest", "workflow.repositories.title"
@@ -265,7 +265,7 @@
         "work.terminal.new", "work.terminal.open", "review.act.*", "review.ask.notYetMeanIt", "review.ask.skipMeanIt",
         "opinion.act.*", "opinion.ask.anywayMeanIt", "opinion.ask.myselfMeanIt", "opinion.ask.sendBackMeanIt", "opinion.ask.stopMeanIt",
         "opinion.findingsShow", "opinion.findingsHide",
-        "asks.record.reviewApply", "asks.record.reviewSet",
+        "asks.record.reviewApply", "asks.record.reviewSet", "asks.record.kindApply",
         "workflow.door.setup", "workflow.door.workspaceSetup", "workflow.run.door.*"
       ]
     },

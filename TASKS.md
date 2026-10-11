@@ -22,10 +22,20 @@ Historical installation receipts and adoption mechanics remain in their evidence
 
 ## UI/UX first
 
-Start with UXFIX2b3, ASKHIST1d2, ACCTUX1b and the remaining place-name inconsistencies (UX6i2a/b, UX6i3).
-Contracts: platform UX §4/§6, `docs/2026-10-05-ux7-design.md` (D152),
+Start with NEW1 and HEAD2 (the owner's, 2026-10-12), then the place-name inconsistencies (UX6i2a/b, UX6i3).
+Contracts: platform UX §4/§6, `docs/2026-10-05-ux7-design.md` (D152), `docs/2026-10-12-entry-and-heads-design.md` (D162),
 `docs/2026-10-04-ux6-redesign.md` (D150, §12 proofs). UI work needs stories, behavior tests and
 installed-window evidence in both themes/languages; Storybook alone does not close an installed proof.
+
+- [ ] **NEW1a — a conversation starts on its first words** (driver/modules). `START_CHAT` takes the opening words, their files and a request id; the driver opens the conversation and sends the words as its first message through *Start a conversation with these words*' machinery; the same id never starts twice; *the checkout* means the checkout (today OR'd with the standing opt-in, ChatRunner.cs ~:192-206). D162 §2; design §1.
+- [ ] **NEW1b — New conversation, the prompt first** (web; after a). Sessions' main area, when nothing is attended and from *New conversation* (Ctrl+N, File menu, the list head): the prompt, then the repository, tree and agent·account chips, *Start*; Enter starts with the words; a browser says to open Daoris on this machine. Replaces the *Start session* drawer. Design §1.
+- [ ] **NEW1c — add a repository from the picker, the draft kept** (web; after b). *Add a repository…* / *Import a folder…* at the picker's foot open Projects' drawers over Sessions; Add's `onAdded` chooses it and returns focus; Import gains the same. First run: *Add a repository…* is the primary press. Design §1.
+- [ ] **NEW1d — Ask Daoris and the composer** (driver/web; after b). A go part opens the composer with its repository and words filled; *Make it a task with Daoris…* hands the draft and repository to Ask Daoris. Coverage and goldens move with the go. D162 §1; design §1.
+- [ ] **HEAD2a — heads hold their buttons still** (web). `PageHead` lays out by the main area's width: a fixed acts column on the title's first line above 640 px, an acts row under the facts at or below it; primary, secondary, ⋯; a quest's *Decline…* folds first. Design §2.
+- [ ] **HEAD2b — a quest's head** (web; after a). Title two lines, *View full request* moves focus to the request in the body; *Held*/*Unreviewed* to the facts line; facts: where, age, one live fact, the rest in *Details*. Design §2.
+- [ ] **HEAD2c — a session's head** (web; after a). One line; `WholeTitle` goes, the request as written is a *Details* row with the quest's door; facts: repository, age, one state fact. Design §2.
+- [ ] **HEAD2d — an ask's head as a quest's** (web; after a). `AskPage`'s head: the state pill leads, two lines, a facts line, the id to the ⋯ and *Details* (asks on the install run 200 to 1,715 characters, unclamped). Design §0, §2.
+- [ ] **HEAD2e — an ask's short title** (service/driver/web). An ask carries `short` (at most 40, the asker's words): the composer offers it, `ask_propose` writes it, lists and heads show it as a quest's. Design §2; SESSUX1j's rule.
 
 - [ ] **UXFIX2bi — installed confirmations look** (parent; after republish). Retire right on 2026-10-11's second look (its own question; focus back to the press with a pointer-like click); the rest need data the machine lacks: tool, plugin, pause, abandon, decline, close, finish, archive, discard, both themes/languages.
 - [ ] **UX7b — installed account UI** (web). Verify recovered account rows and add/name/join flow at 1546/680 px, both themes/languages. D152 §4.
@@ -80,7 +90,6 @@ Foundation precedes editor/proposals/intake; waits/checks/stages follow the gate
 - [ ] **WORKFLOW1e2 — quest-specific choice** (service/driver; after e). Field, census, person's door and selection for quests without asks. §4.1/D156.
 - [ ] **WORKFLOW1g — workflow editor** (web/modules; after d/e). Presets, save, insert/failure/move/remove, drawer, selection, terminal twins and keys; then Ask Daoris's workflow card gains *Open in the editor*. §6; 680 px/bilingual proof.
 - [ ] **WORKFLOW1h2 — workflow proposal, changes and kinds** (after h). `changes` against a base (the CLI's change language twinned in C#), `kind` and `import`. §8.1, §4.7.
-- [ ] **WORKFLOW1i-c — the intake's kind proposal on the ask's page** (web). `AskResponse.workflowProposals` shown beside the ask's choice: the kind, its reason (the person's quoted words), and a press that makes it the ask's choice through its existing door. §4.3; D157's WORKFLOW1i-a/b notes.
 - [ ] **WORKFLOW1i2 — the intake sets a kind that lowers nothing** (driver/service; design first). §4.3 lets an agent set a kind on quoted words where `Involvement.Lowers` is empty in every repository the work reaches; the service cannot judge that, so it needs an agent-facing driver door. D157's WORKFLOW1i-a note.
 - [ ] **WORKFLOW1j — wait on pull request** (driver/examples; after f/PLUGHOOK1b). Backoff work/state only for awaited runs. §3.2/§5.4; wait/occasion/plugin tests.
 - [ ] **WORKFLOW1k — outside checks** (driver/examples; after j). Commit-specific checks, unknown/stale distinctions, failure policy and all-member joins. §3.3/§3.5/§3.7; fake-tool tests.

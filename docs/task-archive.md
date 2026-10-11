@@ -13639,3 +13639,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **WORKFLOW1i — intake kind proposal** (driver/service; after e). Set only from quoted requirements without lowering involvement. §4.3; prompt/table/refusal proof.
 
 **Outcome** 2026-10-12 (v1, merged once at b): `quest_publish` takes `workflowProposal { kind, reason }`, the reason quoted from the ask (`NotQuoted`, `BadWorkflow`), kept on the ask and answered as `workflowProposals`, applied only by the person's own door; the intake's room lists each repository's kinds, their workflows and which lower the person's part, and its prompt says it may only propose. `IntakeTests` and `LaneReadingTests` (Process) passed at the merge. Setting a kind is WORKFLOW1i2; the page's card WORKFLOW1i-c. Detail: D157's WORKFLOW1i-a and -b notes.
+
+## WORKFLOW1i-c — the intake's kind proposal on the ask's page (2026-10-12, D157)
+
+> - [ ] **WORKFLOW1i-c — the intake's kind proposal on the ask's page** (web). `AskResponse.workflowProposals` shown beside the ask's choice: the kind, its reason (the person's quoted words), and a press that makes it the ask's choice through its existing door. §4.3; D157's WORKFLOW1i-a/b notes.
+
+**Outcome** 2026-10-12: the ask's page has a *Kind of work* section: the person's latest choice (with its workflow), each intake proposal with its quoted reason, and *Apply*, which posts the kind with the latest choice's workflow carried; an applied proposal is hidden. The press is owed an Ask Daoris door in coverage, as the review choice's is. Detail: D157's WORKFLOW1i-c note.
