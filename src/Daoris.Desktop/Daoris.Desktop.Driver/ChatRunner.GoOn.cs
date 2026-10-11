@@ -197,7 +197,7 @@ public sealed partial class ChatRunner
                                                    or UnauthorizedAccessException)
             {
                 // The words wait, said: the next word tries again, and a torn driver.json is the person's to mend.
-                return Held(sessionId, $"this machine's driver.json could not be read: {unreadable.Message}");
+                return Held(sessionId, HeldWords.ConfigUnread(unreadable.Message));
             }
 
             return await GoingOnAsync(sessionId, choices, onEnded, ct).ConfigureAwait(false);
@@ -263,7 +263,7 @@ public sealed partial class ChatRunner
             .FirstOrDefault(r => string.Equals(r.Repository, record.Repository, StringComparison.OrdinalIgnoreCase));
         if (known is null || string.IsNullOrWhiteSpace(known.Root))
         {
-            return Held(sessionId, $"`{record.Repository}` has no checkout on this machine any more");
+            return Held(sessionId, HeldWords.NoCheckout(record.Repository));
         }
 
         // The account it ran on, asked for by name, as a chat's picker names one (D137 §2.2, MSG1g): its conversation lives in
@@ -281,7 +281,7 @@ public sealed partial class ChatRunner
 
         if (resume.Elsewhere is { } elsewhere) return CannotGoOn(record, elsewhere, adapter.Name);
         var selection = resume.Selection;
-        if (!selection.Allowed) return Held(sessionId, selection.Refusal!);
+        if (!selection.Allowed) return Held(sessionId, HeldWords.Program(selection.Refusal!));
         if (Continuations.Judge(record, adapter.Name, adapter.Resumes, selection.Profile, kept) is { } account)
         {
             return CannotGoOn(record, account, adapter.Name);
@@ -291,7 +291,7 @@ public sealed partial class ChatRunner
         // so bringing the repository up to date does not rebase it under the conversation.
         var own = !SamePath(record.Tree!, known.Root!);
         using var starting = own ? TreeLock.TryStarting(_home, known.Workspace, known.Repository) : null;
-        if (own && starting is null) return Held(sessionId, TreeLock.Replaying(known.Repository));
+        if (own && starting is null) return Held(sessionId, HeldWords.Replaying(known.Repository));
 
         // 🔴 The ledger's one move out of an ended state, with the person's words waiting (MSG1a, D137 §2.3), before anything
         // is spawned: it holds the tree again, and refuses where another session holds it (D51).
@@ -301,7 +301,7 @@ public sealed partial class ChatRunner
         }
         catch (DriverException refused)
         {
-            return Held(sessionId, refused.Message);
+            return Held(sessionId, HeldWords.Program(refused.Message));
         }
 
         starting?.Dispose();
@@ -420,10 +420,10 @@ public sealed partial class ChatRunner
     /// What holds a chat's words rather than refusing them (MSG1c): said in its conversation, the words left waiting and
     /// unmarked, so the next word said to it tries again.
     /// </summary>
-    private ChatStart Held(string sessionId, string why)
+    private ChatStart Held(string sessionId, (string Why, Noted Line) held)
     {
-        Note(sessionId, $"{ResumeWords.NotYet}{why.TrimEnd('.', ' ')}. Your words wait on it.");
-        return new(null, why);
+        Note(sessionId, held.Line);
+        return new(null, held.Why);
     }
 
     /// <summary>A driver's line in a conversation: its console and its record.</summary>

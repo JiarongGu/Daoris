@@ -13369,3 +13369,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **TOOL4l-b — the driver judges and applies the account doors** (driver/modules). The service writes `use`, `order` and `ready` (TOOL4l-a). `HelpAgentProposals` lists `use`, `order`, `ready`; judges `order` (as `OrderEdited`) and `ready`; two `IHelpDoors` methods in ScreenDoors; the room's text and goldens; the coverage rows become doors. And `setting`'s `cooloff` on both sides.
 
 **Outcome** 2026-10-11: Ask Daoris proposes an account's use, its order (or a workspace back to the machine's accounts, its own default cleared too), *Try now* (judged against a new `Cooling` fact) and the default cool-off; the driver judges each as the page's route does and applies through the same types; the coverage table's account rows, the join and the cool-off are doors (`AccountDoorOwed`, `CoolOffOwed` gone). Detail: D130's TOOL4l-b note.
+
+
+## CONVNOTE2g2 — the chat runner's other holds, by code (2026-10-11, D152)
+
+> - [ ] **CONVNOTE2g2 — the chat runner's other holds, by code** (driver + web twin). `ChatRunner.Held` (ChatRunner.GoOn.cs ~:425) says "it does not go on yet" for six whys: code each. ChatGoOnTests ~:137, ~:214 keep their English; both twins. D152's CONVNOTE2g note.
+
+**Outcome** 2026-10-11: `HeldWords` gives each hold its `(Why, Line)`: `held.no-checkout`, `held.replaying` [repository] and `held.answering` [session] as Daoris's own sentences, and driver.json unread, the ledger's and the roster's refusals as a lead, the program's words and `held.tail`; each English byte for byte, at the chat's and Ask Daoris's sites. The roster's refusal itself is ROSTERREFUSE1. Detail: D152's CONVNOTE2g2 note.

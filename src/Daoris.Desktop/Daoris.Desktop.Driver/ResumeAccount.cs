@@ -84,6 +84,61 @@ public sealed record ResumeChoice(HarnessSelection Selection, NextHold Own)
 }
 
 /// <summary>
+/// The chat runner's holds for a reason other than an account's cool-off (CONVNOTE2g2): each the reason's English, as the runner
+/// returns it, and the conversation's line, <see cref="ResumeWords.NotYet"/>, why and that the words wait, by code, its English
+/// the line the runner always wrote.
+/// </summary>
+public static class HeldWords
+{
+    private const string Tail = "Your words wait on it.";
+
+    /// <summary>The repository has no checkout here any more.</summary>
+    public static (string Why, Noted Line) NoCheckout(string repository)
+    {
+        var why = $"`{repository}` has no checkout on this machine any more";
+        return (why, Whole(NoteCodes.HeldNoCheckout, why, ("repository", repository)));
+    }
+
+    /// <summary>A replay holds the repository's trees.</summary>
+    public static (string Why, Noted Line) Replaying(string repository)
+    {
+        var why = TreeLock.Replaying(repository);
+        return (why, Whole(NoteCodes.HeldReplaying, why, ("repository", repository)));
+    }
+
+    /// <summary>Ask Daoris is answering in another conversation of its room.</summary>
+    public static (string Why, Noted Line) Answering(string session)
+    {
+        var why = AnsweringWhy(session);
+        return (why, Whole(NoteCodes.HeldAnswering, why, ("session", session)));
+    }
+
+    /// <summary>The reason <see cref="Answering"/> says, which a new conversation's refusal says too.</summary>
+    public static string AnsweringWhy(string session) =>
+        $"Ask Daoris is answering in conversation `{session}`; once its turn ends, a word said here takes these with it";
+
+    /// <summary>This machine's driver.json could not be read, the program's message after it as its words (it may hold a path).</summary>
+    public static (string Why, Noted Line) ConfigUnread(string message)
+    {
+        var why = $"this machine's driver.json could not be read: {message}";
+        var lead = $"{ResumeWords.NotYet}this machine's driver.json could not be read:";
+        return (why, Noted.Of(NoteCodes.HeldConfigUnread, lead).Then(" ", Noted.Said(Trimmed(message), NoteBy.Program)).Then(". ", TailLine()));
+    }
+
+    /// <summary>A reason that is a program's message alone (the roster's refusal, the ledger's): its words, between lead and tail.</summary>
+    public static (string Why, Noted Line) Program(string message) =>
+        (message, Noted.Of(NoteCodes.HeldLead, ResumeWords.NotYet.TrimEnd())
+            .Then(" ", Noted.Said(Trimmed(message), NoteBy.Program)).Then(". ", TailLine()));
+
+    private static string Trimmed(string message) => message.TrimEnd('.', ' ');
+
+    private static Noted TailLine() => Noted.Of(NoteCodes.HeldTail, Tail);
+
+    private static Noted Whole(NoteCode code, string why, params (string Name, object? Value)[] values) =>
+        Noted.Of(code, $"{ResumeWords.NotYet}{Trimmed(why)}. {Tail}", values);
+}
+
+/// <summary>
 /// What a resume's account says (MSG1g): the hold's sentence and its doors, on this machine only, since they name the account
 /// and a command; and the coded line a note adds after the reason <c>account</c>, which names no account, since the note
 /// travels (D125 §3.6).

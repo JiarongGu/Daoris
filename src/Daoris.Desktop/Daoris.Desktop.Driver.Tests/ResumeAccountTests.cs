@@ -266,6 +266,54 @@ public sealed class ResumeAccountTests : IDisposable
         Assert.Empty(uncoded.Parts);
     }
 
+    /// <summary>
+    /// CONVNOTE2g2: the chat runner's other holds, each by code, its English the line it always wrote: a reason of Daoris's own
+    /// sentence is one coded line; a program's message is a words part between a lead and the tail.
+    /// </summary>
+    [Fact]
+    public void The_runner_s_other_holds_are_coded_with_their_english_unchanged()
+    {
+        const string tail = " Your words wait on it.";
+
+        var checkout = HeldWords.NoCheckout("engine");
+        Assert.Equal("`engine` has no checkout on this machine any more", checkout.Why);
+        Assert.Equal($"{ResumeWords.NotYet}`engine` has no checkout on this machine any more.{tail}", checkout.Line.Note);
+        Assert.Equal(["held.no-checkout"], NoteAssert.Codes(checkout.Line.Parts));
+        Assert.Equal("engine", checkout.Line.Parts[0].Value("repository"));
+        NoteAssert.Holds(checkout.Line);
+
+        var replaying = HeldWords.Replaying("engine");
+        Assert.Equal(TreeLock.Replaying("engine"), replaying.Why);
+        Assert.Equal($"{ResumeWords.NotYet}{TreeLock.Replaying("engine").TrimEnd('.', ' ')}.{tail}", replaying.Line.Note);
+        Assert.Equal(["held.replaying"], NoteAssert.Codes(replaying.Line.Parts));
+        Assert.Equal("engine", replaying.Line.Parts[0].Value("repository"));
+        NoteAssert.Holds(replaying.Line);
+
+        var answering = HeldWords.Answering("h2");
+        Assert.Equal(
+            $"Ask Daoris is answering in conversation `h2`; once its turn ends, a word said here takes these with it", answering.Why);
+        Assert.Equal($"{ResumeWords.NotYet}{answering.Why}.{tail}", answering.Line.Note);
+        Assert.Equal(["held.answering"], NoteAssert.Codes(answering.Line.Parts));
+        Assert.Equal("h2", answering.Line.Parts[0].Value("session"));
+        NoteAssert.Holds(answering.Line);
+
+        // A program's message rides as its words, trimmed as the line always trimmed it, never a value.
+        var unread = HeldWords.ConfigUnread("bad json at D:/x/driver.json.");
+        Assert.Equal("this machine's driver.json could not be read: bad json at D:/x/driver.json.", unread.Why);
+        Assert.Equal(
+            $"{ResumeWords.NotYet}this machine's driver.json could not be read: bad json at D:/x/driver.json.{tail}", unread.Line.Note);
+        Assert.Equal(["held.config-unread", null, "held.tail"], NoteAssert.Codes(unread.Line.Parts));
+        Assert.Equal("bad json at D:/x/driver.json", unread.Line.Parts[1].Words);
+        NoteAssert.Holds(unread.Line);
+
+        var refused = HeldWords.Program("the ledger will not move it");
+        Assert.Equal("the ledger will not move it", refused.Why);
+        Assert.Equal($"{ResumeWords.NotYet}the ledger will not move it.{tail}", refused.Line.Note);
+        Assert.Equal(["held.lead", null, "held.tail"], NoteAssert.Codes(refused.Line.Parts));
+        Assert.Equal(("the ledger will not move it", "program"), (refused.Line.Parts[1].Words, refused.Line.Parts[1].By));
+        NoteAssert.Holds(refused.Line);
+    }
+
     // ——— Through the roster: the same judgement, with what it knows of each account.
 
     private static readonly DateTimeOffset Seen = new(2026, 10, 3, 15, 0, 0, TimeSpan.Zero);
