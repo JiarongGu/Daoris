@@ -984,7 +984,7 @@ public sealed partial class Driver(
             // says the wait once and a screen shows the quest waiting for an account; the record's conversation says why, with
             // the door out of the wait. Nothing was spawned or probed to learn it.
             var why = WaitsFor(quest, start.Resumes!, resume.Selection);
-            HeldForAccount(start.Resumes!, why);
+            HeldForAccount(start.Resumes!, ResumeWords.NotYetOn(resume, DoorOf(quest, start.Resumes!)));
             return Hold(why) with { Cooling = resume.Selection.Cooling };
         }
 

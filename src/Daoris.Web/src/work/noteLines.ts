@@ -178,6 +178,14 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'background.waits': { values: ['works'] },
   'background.work-ended': { values: ['work', 'state'] },
   'background.goes-on': { values: [] },
+  // A conversation's words waiting for its own account's reset (CONVNOTE2g): the account by its owner and its id, why by a
+  // cool-off's reason; the tool's own sign-in and its refresh; each door out, the session its command names a value.
+  'waits.account': { values: ['owner', 'account', 'until', 'why'], why: 'cooling' },
+  'waits.own': { values: ['owner', 'until', 'why'], why: 'cooling' },
+  'waits.read-again': { values: [] },
+  'waits.door-new-session': { values: ['session'] },
+  'waits.door-chat': { values: ['session'] },
+  'waits.door-help': { values: [] },
 };
 
 /**

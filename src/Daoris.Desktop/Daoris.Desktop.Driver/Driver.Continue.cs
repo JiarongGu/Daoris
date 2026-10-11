@@ -149,20 +149,23 @@ public sealed partial class Driver
     /// on by itself, so its door is a conversation with the words (D137 §2.2). Machine-local: it names the account.
     /// </summary>
     private static string WaitsFor(QuestView quest, PriorSession record, HarnessSelection held) =>
-        $"{held.Refusal} "
-        + (quest.Status is "Open" or "Taken" ? ResumeWords.NewSessionDoor(record.Session) : ResumeWords.ChatDoor(record.Session));
+        $"{held.Refusal} {DoorOf(quest, record).Note}";
+
+    /// <summary>The door out of the wait <see cref="WaitsFor"/> says, by code (CONVNOTE2g).</summary>
+    private static Noted DoorOf(QuestView quest, PriorSession record) =>
+        quest.Status is "Open" or "Taken" ? ResumeWords.NewSessionDoorOf(record.Session) : ResumeWords.ChatDoorOf(record.Session);
 
     /// <summary>
     /// The record's conversation says why its words wait (MSG1g, D143 point 1), once for each wait: a look that finds it saying
     /// the same as its last event writes nothing more, and a word said since is answered again. The person wrote to it, so it
-    /// stays in view while it waits (D137 §2.3). The words stay waiting and unmarked: the reset lets them go on.
+    /// stays in view while it waits (D137 §2.3). The words stay waiting and unmarked: the reset lets them go on. Its line is
+    /// <see cref="ResumeWords.NotYetOn"/>'s, by code (CONVNOTE2g); the last event is compared by its English, as it always was.
     /// </summary>
-    private void HeldForAccount(PriorSession record, string why)
+    private void HeldForAccount(PriorSession record, Noted line)
     {
-        var line = $"{ResumeWords.NotYet}{why}";
         try
         {
-            if (_events.Page(record.Session, limit: 1).Events is [{ Kind: SessionEventKind.Note, Text: var last }] && last == line) return;
+            if (_events.Page(record.Session, limit: 1).Events is [{ Kind: SessionEventKind.Note, Text: var last }] && last == line.Note) return;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {
@@ -170,8 +173,11 @@ public sealed partial class Driver
         }
 
         if (!record.Parked) new SessionArchive(home).Unarchive([record.Session]);
-        output?.Append(record.Session, line);
-        _events.Keep(record.Session, new SessionEvent { Kind = SessionEventKind.Note, Text = line }, say: null);
+        output?.Append(record.Session, line.Note);
+        _events.Keep(
+            record.Session,
+            new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts.Count > 0 ? line.Parts : null },
+            say: null);
     }
 
     /// <summary>

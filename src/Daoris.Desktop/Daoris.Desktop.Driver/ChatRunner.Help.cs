@@ -51,7 +51,7 @@ public sealed partial class ChatRunner
             .ConfigureAwait(false);
         if (resume.Waits)
         {
-            Note(sessionId, $"{ResumeWords.NotYet}{resume.Selection.Refusal} {ResumeWords.HelpDoor}");
+            Note(sessionId, ResumeWords.NotYetOn(resume, ResumeWords.HelpDoorOf()));
             return new(null, resume.Selection.Refusal ?? ResumeWords.HelpDoor);
         }
 

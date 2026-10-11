@@ -74,6 +74,13 @@ public sealed record ResumeChoice(HarnessSelection Selection, NextHold Own)
     /// where the resume runs on its own account or waits for it.
     /// </summary>
     public ContinueReason? Elsewhere => Own is NextHold.Ready or NextHold.Near || Waits ? null : ContinueWhy.AccountHeld(Own, NewSession);
+
+    /// <summary>
+    /// The conversation's line while its words wait (CONVNOTE2g): <see cref="ResumeWords.NotYet"/> and why, by code
+    /// (<see cref="ResumeWords.Waiting"/>), composed where the roster reads the names its English says; the site adds the door
+    /// out of the wait (<see cref="ResumeWords.NotYetOn"/>). Null where the words do not wait, and where nothing composed it.
+    /// </summary>
+    public Noted? Waiting { get; init; }
 }
 
 /// <summary>
@@ -88,16 +95,41 @@ public static class ResumeWords
     /// and that the conversation is there. The tool's own sign-in ends its cool-off on a refresh (D125 §3.7), said as a hold says it.
     /// </summary>
     /// <param name="names">The owner's names by id, read as the wait is said (ACCT2b); null says the id.</param>
-    public static string Waits(CoolingEntry cooling, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null)
+    public static string Waits(CoolingEntry cooling, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null) =>
+        Waiting(cooling, zone, names).Note;
+
+    /// <summary>
+    /// <see cref="Waits"/> by code (CONVNOTE2g), its English the same to the byte: the account by its owner and its id, never by
+    /// the name the person gave it, which only the English says (D152's UX7d-1 note: a conversation's events never leave the
+    /// machine); until when as a moment the page writes in the reader's zone; why by a cool-off's reason. The tool's own
+    /// sign-in is a line of its own, and its refresh another.
+    /// </summary>
+    /// <param name="lead">What leads the first line's English, part of its text: a conversation's line leads with <see cref="NotYet"/>.</param>
+    public static Noted Waiting(
+        CoolingEntry cooling, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null, string lead = "")
     {
-        var said = $"{CoolingWords.Who(cooling, names)} is cooling until {CoolingWords.When(cooling.Until, zone)}, {CoolingWords.Why(cooling)}, "
-                   + "and its conversation is on that account, so your words wait to go on in it then.";
+        var said = $"{lead}{CoolingWords.Who(cooling, names)} is cooling until {CoolingWords.When(cooling.Until, zone)}, "
+                   + $"{CoolingWords.Why(cooling)}, and its conversation is on that account, so your words wait to go on in it then.";
+        (string Name, object? Value)[] facts =
+            [("owner", cooling.Agent), ("until", NoteCodes.Moment(cooling.Until)), ("why", CoolingWhy.Of(cooling))];
+        if (cooling.Account is { } account) return Noted.Of(NoteCodes.WaitsAccount, said, [("account", account), .. facts]);
+
         // UX6e2: the refresh is the Agents place's Read again, since opening it asks nothing (D150 §5.3).
-        return cooling.Account is null
-            ? $"{said} If you have signed in to another account at your own terminal since, press Read again under Agents → "
-              + "the agent's page → Accounts."
-            : said;
+        return Noted.Of(NoteCodes.WaitsOwn, said, facts).Then(" ", Noted.Of(
+            NoteCodes.WaitsReadAgain,
+            "If you have signed in to another account at your own terminal since, press Read again under Agents → the agent's page → Accounts."));
     }
+
+    /// <summary>
+    /// The conversation's line while its words wait for its account (CONVNOTE2g, MSG1g): <see cref="NotYet"/>, why, and the door
+    /// out of the wait, each a line by code and the English as it was always written, which the sessions listing and the driver
+    /// read by its prefix and whole. A wait nothing coded keeps its English with no parts, never half of it worded (D152's UX7d-1
+    /// note).
+    /// </summary>
+    public static Noted NotYetOn(ResumeChoice resume, Noted door) =>
+        resume.Waiting is { } waiting
+            ? waiting.Then(" ", door)
+            : new($"{NotYet}{resume.Selection.Refusal} {door.Note}", []);
 
     /// <summary>
     /// How a conversation's line begins where something holds the person's words rather than refusing them (MSG1c, MSG1g):
@@ -110,6 +142,10 @@ public static class ResumeWords
     public static string NewSessionDoor(string session) =>
         $"To go on now in a new session instead, without that conversation: `daoris-driver sessions go-on-new {session}`.";
 
+    /// <summary><see cref="NewSessionDoor"/> by code (CONVNOTE2g): the session a value, the command the catalogue's.</summary>
+    public static Noted NewSessionDoorOf(string session) =>
+        Noted.Of(NoteCodes.WaitsDoorNewSession, NewSessionDoor(session), ("session", session));
+
     /// <summary>
     /// The door out of the wait where nothing carries the words on by itself: a conversation, or a closed quest's session. The
     /// terminal's *Start a conversation with these words* (MSG1f3), which takes them off the session they were said to.
@@ -117,12 +153,18 @@ public static class ResumeWords
     public static string ChatDoor(string session) =>
         $"To start a conversation with these words now instead, without that one: `daoris-driver sessions start-from {session}`.";
 
+    /// <summary><see cref="ChatDoor"/> by code (CONVNOTE2g): the session a value, the command the catalogue's.</summary>
+    public static Noted ChatDoorOf(string session) => Noted.Of(NoteCodes.WaitsDoorChat, ChatDoor(session), ("session", session));
+
     /// <summary>
     /// The door out of the wait for Ask Daoris's own conversation (ASKHIST1): no repository holds it, so a new conversation starts
     /// from its words in Ask Daoris's history, handed its transcript.
     /// </summary>
     public const string HelpDoor =
         "To go on now instead, start a new conversation from this one in Ask Daoris's history: it is handed this one's words.";
+
+    /// <summary><see cref="HelpDoor"/> by code (CONVNOTE2g).</summary>
+    public static Noted HelpDoorOf() => Noted.Of(NoteCodes.WaitsDoorHelp, HelpDoor);
 
     /// <summary>
     /// The line a note adds after the reason <c>account</c>: why the record's own account could not carry the words, coded

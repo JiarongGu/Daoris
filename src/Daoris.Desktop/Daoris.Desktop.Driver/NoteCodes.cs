@@ -31,8 +31,9 @@ public static class NoteBy
 /// <remarks>
 /// <b>Values are facts, never sentences, and never a path or an account's name</b>: the note travels (D125 §3.6). A value is
 /// text, a whole number, or a list of texts; one read back that is none of them is kept as it was read, so a newer writer's
-/// part passes through this one unchanged. The one exception is a conversation's first line (<c>opening.*</c>, UX7d-1): it is
-/// kept only in the conversation's record, which never leaves the machine (D76 §2), so its values name accounts by id.
+/// part passes through this one unchanged. The one exception is a conversation's own lines, its first (<c>opening.*</c>, UX7d-1)
+/// and a wait for its account (<c>waits.*</c>, CONVNOTE2g): they are kept only in the conversation's record, which never leaves
+/// the machine (D76 §2), so their values name accounts by id.
 /// </remarks>
 [JsonConverter(typeof(NotePartJson))]
 public sealed record NotePart
@@ -566,6 +567,17 @@ public static class NoteCodes
     public static readonly NoteCode BackgroundWaits = new("background.waits", ["works"]);
     public static readonly NoteCode BackgroundWorkEnded = new("background.work-ended", ["work", "state"]);
     public static readonly NoteCode BackgroundGoesOn = new("background.goes-on", []);
+
+    // ——— A conversation's words waiting for its own account's reset (CONVNOTE2g, <see cref="ResumeWords"/>, MSG1g): the account
+    // by its owner and its id, never by the name the person gave it, since a conversation's events never leave the machine (D152's
+    // UX7d-1 note); until when a moment, why a cool-off's reason. The tool's own sign-in has a line of its own and its refresh
+    // another. Each door out of the wait is a line, the session its command names a value; the command itself is the catalogue's.
+    public static readonly NoteCode WaitsAccount = new("waits.account", ["owner", "account", "until", "why"]) { Why = Cooling };
+    public static readonly NoteCode WaitsOwn = new("waits.own", ["owner", "until", "why"]) { Why = Cooling };
+    public static readonly NoteCode WaitsReadAgain = new("waits.read-again", []);
+    public static readonly NoteCode WaitsDoorNewSession = new("waits.door-new-session", ["session"]);
+    public static readonly NoteCode WaitsDoorChat = new("waits.door-chat", ["session"]);
+    public static readonly NoteCode WaitsDoorHelp = new("waits.door-help", []);
 
     /// <summary>Every code above, read off the declarations so none escapes the catalogue test.</summary>
     public static IReadOnlyList<NoteCode> All { get; } =

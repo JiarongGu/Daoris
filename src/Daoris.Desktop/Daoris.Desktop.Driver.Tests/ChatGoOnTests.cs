@@ -166,6 +166,10 @@ public sealed class ChatGoOnTests : IDisposable
         Assert.Contains("its conversation is on that account, so your words wait to go on in it then.", held.Text);
         Assert.EndsWith("`daoris-driver sessions start-from c1`.", held.Text);
         Assert.StartsWith(ResumeWords.NotYet, held.Text);
+        // CONVNOTE2g: the wait and its door by code, the account by its id, the session its command names a value.
+        Assert.Equal(["waits.account", "waits.door-chat"], NoteAssert.Codes(held.Parts));
+        Assert.Equal(("account-1", "c1"), (held.Parts![0].Value("account"), held.Parts[1].Value("session")));
+        NoteAssert.Holds(held.Text, held.Parts);
         Assert.Null(held.Words);
         Assert.Equal(("completed", 0), (ledger.State("c1"), ledger.Moves("c1").Count));
         Assert.Equal(["w1"], ledger.Said("c1"));

@@ -275,7 +275,7 @@ public sealed partial class ChatRunner
             .ConfigureAwait(false);
         if (resume.Waits)
         {
-            Note(sessionId, $"{ResumeWords.NotYet}{resume.Selection.Refusal} {ResumeWords.ChatDoor(sessionId)}");
+            Note(sessionId, ResumeWords.NotYetOn(resume, ResumeWords.ChatDoorOf(sessionId)));
             return new(null, resume.Selection.Refusal);
         }
 
@@ -427,10 +427,16 @@ public sealed partial class ChatRunner
     }
 
     /// <summary>A driver's line in a conversation: its console and its record.</summary>
-    private void Note(string sessionId, string text)
+    private void Note(string sessionId, string text) => Note(sessionId, new Noted(text, []));
+
+    /// <summary>A driver's line in a conversation with its parts, where its writer coded it (CONVNOTE2g).</summary>
+    private void Note(string sessionId, Noted line)
     {
-        _output?.Append(sessionId, text);
-        _events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = text }, say: null);
+        _output?.Append(sessionId, line.Note);
+        _events.Keep(
+            sessionId,
+            new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts.Count > 0 ? line.Parts : null },
+            say: null);
     }
 
     /// <summary>Whether two paths name one folder, whatever their separators or a trailing one.</summary>

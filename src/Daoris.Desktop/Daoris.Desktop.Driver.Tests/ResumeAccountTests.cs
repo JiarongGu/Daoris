@@ -190,6 +190,82 @@ public sealed class ResumeAccountTests : IDisposable
             ResumeWords.Waits(cooling with { Account = null }, TimeZoneInfo.Utc));
     }
 
+    /// <summary>
+    /// CONVNOTE2g: the wait's line by code, its English the same to the byte, since the sessions listing and the driver read it
+    /// by its prefix: the account by its owner and its id, never by the name the person gave it (D152's UX7d-1 note), until
+    /// when as a moment, why by a cool-off's reason; the tool's own sign-in a line of its own, its refresh another.
+    /// </summary>
+    [Fact]
+    public void The_wait_s_line_says_the_account_its_reset_and_why_by_code_with_the_english_unchanged()
+    {
+        var cooling = new CoolingEntry("claude-code", "account-1", new DateTimeOffset(2026, 10, 3, 16, 2, 0, TimeSpan.Zero), true, "session", Now, "s0");
+        var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["account-1"] = "work" };
+
+        var line = ResumeWords.Waiting(cooling, TimeZoneInfo.Utc, names, ResumeWords.NotYet);
+        Assert.Equal(
+            $"— it does not go on yet: the `claude-code` account `work` is cooling until {CoolingWords.When(cooling.Until, TimeZoneInfo.Utc)}, "
+            + "as the agent said, and its conversation is on that account, so your words wait to go on in it then.",
+            line.Note);
+        Assert.Equal(ResumeWords.NotYet + ResumeWords.Waits(cooling, TimeZoneInfo.Utc, names), line.Note);
+        var part = Assert.Single(line.Parts);
+        Assert.Equal("waits.account", part.Code);
+        Assert.Equal(
+            ("claude-code", "account-1", "2026-10-03T16:02:00Z", CoolingWhy.Stated),
+            (part.Value("owner"), part.Value("account"), part.Value("until"), part.Value("why")));
+        Assert.Equal(line.Note, part.Text);
+
+        var own = ResumeWords.Waiting(cooling with { Account = null, Stated = false }, TimeZoneInfo.Utc, lead: ResumeWords.NotYet);
+        Assert.Equal(ResumeWords.NotYet + ResumeWords.Waits(cooling with { Account = null, Stated = false }, TimeZoneInfo.Utc), own.Note);
+        Assert.StartsWith("— it does not go on yet: `claude-code`'s own sign-in is cooling until", own.Note);
+        Assert.Equal(["waits.own", "waits.read-again"], NoteAssert.Codes(own.Parts));
+        Assert.Equal(("claude-code", null, CoolingWhy.Default), (own.Parts[0].Value("owner"), own.Parts[0].Value("account"), own.Parts[0].Value("why")));
+        Assert.EndsWith(own.Parts[1].Text!, own.Note);
+        NoteAssert.Holds(own);
+
+        // The roster's hold says the same sentence with no lead.
+        Assert.Equal(ResumeWords.Waits(cooling, TimeZoneInfo.Utc, names), ResumeWords.Waiting(cooling, TimeZoneInfo.Utc, names).Note);
+    }
+
+    /// <summary>CONVNOTE2g: each door out of the wait is a line of its own, by code, the session its command names a value.</summary>
+    [Fact]
+    public void Each_door_out_of_the_wait_is_coded_with_its_english_unchanged()
+    {
+        var doors = new[] { ResumeWords.NewSessionDoorOf("s1"), ResumeWords.ChatDoorOf("s1"), ResumeWords.HelpDoorOf() };
+
+        Assert.Equal(
+            [ResumeWords.NewSessionDoor("s1"), ResumeWords.ChatDoor("s1"), ResumeWords.HelpDoor],
+            doors.Select(door => door.Note));
+        Assert.Equal(
+            ["waits.door-new-session", "waits.door-chat", "waits.door-help"],
+            doors.Select(door => Assert.Single(door.Parts).Code));
+        Assert.Equal(["s1", "s1", null], doors.Select(door => door.Parts[0].Value("session")));
+        Assert.All(doors, door => NoteAssert.Holds(door));
+    }
+
+    /// <summary>
+    /// CONVNOTE2g: the conversation's line while its words wait is its wait's line, then its door, as it was always written; a
+    /// wait nothing coded keeps that English with no parts, never half of it worded (D152's UX7d-1 note).
+    /// </summary>
+    [Fact]
+    public void The_line_while_the_words_wait_is_the_wait_then_the_door_or_the_english_alone()
+    {
+        var cooling = new CoolingEntry("claude-code", "account-1", new DateTimeOffset(2026, 10, 3, 16, 2, 0, TimeSpan.Zero), true, "session", Now, "s0");
+        var refusal = ResumeWords.Waits(cooling, TimeZoneInfo.Utc);
+        var waits = new ResumeChoice(new HarnessSelection(refusal) { Cooling = cooling }, NextHold.Cooling)
+        {
+            Waiting = ResumeWords.Waiting(cooling, TimeZoneInfo.Utc, lead: ResumeWords.NotYet),
+        };
+
+        var line = ResumeWords.NotYetOn(waits, ResumeWords.ChatDoorOf("c1"));
+        Assert.Equal($"{ResumeWords.NotYet}{refusal} {ResumeWords.ChatDoor("c1")}", line.Note);
+        Assert.Equal(["waits.account", "waits.door-chat"], NoteAssert.Codes(line.Parts));
+        NoteAssert.Holds(line);
+
+        var uncoded = ResumeWords.NotYetOn(waits with { Waiting = null }, ResumeWords.HelpDoorOf());
+        Assert.Equal($"{ResumeWords.NotYet}{refusal} {ResumeWords.HelpDoor}", uncoded.Note);
+        Assert.Empty(uncoded.Parts);
+    }
+
     // ——— Through the roster: the same judgement, with what it knows of each account.
 
     private static readonly DateTimeOffset Seen = new(2026, 10, 3, 15, 0, 0, TimeSpan.Zero);
@@ -289,6 +365,9 @@ public sealed class ResumeAccountTests : IDisposable
             $"the `fake` account `account-1` is cooling until {CoolingWords.When(Seen.AddHours(2), TimeZoneInfo.Utc)}, as the agent said",
             resume.Selection.Refusal);
         Assert.Null(resume.Elsewhere);
+        // CONVNOTE2g: and the conversation's line while it waits, by code, its English the hold's after *it does not go on yet*.
+        Assert.Equal(ResumeWords.NotYet + resume.Selection.Refusal, resume.Waiting!.Note);
+        Assert.Equal(("waits.account", "account-1"), (resume.Waiting.Parts[0].Code, resume.Waiting.Parts[0].Value("account")));
     }
 
     /// <summary>
@@ -306,6 +385,7 @@ public sealed class ResumeAccountTests : IDisposable
 
         Assert.Equal((NextHold.Cooling, false, "account-2"), (resume.Own, resume.Waits, resume.Selection.Profile));
         Assert.Equal("account.resume-new-session", resume.Elsewhere!.Detail!.Parts.Single().Code);
+        Assert.Null(resume.Waiting);
     }
 
     /// <summary>

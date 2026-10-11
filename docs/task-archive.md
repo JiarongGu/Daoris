@@ -13334,3 +13334,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **TOOL4l-a — the service writes the account doors** (service). `agent_propose` writes `use` (fields `use`, `keep` (null = none), `early`, `near`, which the driver already reads), `order` (an `accounts` list, or `clear: true` with a workspace: back to the machine's accounts) and `ready` (an `account`, `own` for the tool's sign-in). Lands first: the kinds test lets the service write doors the driver does not list yet. D130 §9, §16.6; D130's TOOL4g note ~:311-352.
 
 **Outcome** 2026-10-11: `ProposeAgent` and `agent_propose` take `use`, `keep`/`noKeep`, `early`, `near` (50-99, the driver's bounds), `accounts`, `clear` and `account`; each door writes only its own fields, a field on a door that does not take it is refused, every refusal writes nothing. No card until TOOL4l-b lists the doors. Detail: D130's TOOL4l-a note.
+
+
+## CONVNOTE2g — a wait for an account, by code (2026-10-11, D152)
+
+> - [ ] **CONVNOTE2e–h — the conversation's other driver notes, by code** … (Group g: a wait for an account, ResumeAccount.cs ~:91-100 and its sites.)
+
+**Outcome** 2026-10-11: `ResumeWords.Waiting` composes the wait once (`Waits` is its `.Note`); `waits.account` [owner, account, until, why] or `waits.own` + `waits.read-again`, the `Cooling` reasons, and the three doors `waits.door-new-session`/`-chat`/`-help` carry it at the chat, Ask Daoris and the driver's hold; each English byte for byte, still read by `SessionGroups` and `HeldForAccount`. `ChatRunner.Held`'s other holds are CONVNOTE2g2; a note naming an account by its name is NOTENAME1. Detail: D152's CONVNOTE2g note.
