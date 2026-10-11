@@ -2501,7 +2501,12 @@ public sealed partial class HarnessRoster(AdapterSet adapters, string? settingsP
         var own = ResumeAccount.Judge(named, scope, kind, before, present);
         if (own == NextHold.Cooling && !newSession)
         {
-            return new ResumeChoice(new HarnessSelection(ResumeWords.Waits(before.Cooling!, Zone, names)) { Cooling = before.Cooling }, own);
+            // CONVNOTE2g: the conversation's line by code beside the hold's English, composed here, where the names it says are read.
+            var cooling = before.Cooling!;
+            return new ResumeChoice(new HarnessSelection(ResumeWords.Waits(cooling, Zone, names)) { Cooling = cooling }, own)
+            {
+                Waiting = ResumeWords.Waiting(cooling, Zone, names, ResumeWords.NotYet),
+            };
         }
 
         if (own != NextHold.Ready) return await ElsewhereAsync(own).ConfigureAwait(false);

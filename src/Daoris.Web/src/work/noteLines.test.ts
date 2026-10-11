@@ -303,6 +303,50 @@ describe('noteLines', () => {
     });
   });
 
+  /** CONVNOTE2g: a conversation's words waiting for its own account's reset, the account by its id, and the door out, worded. */
+  describe('a wait for an account', () => {
+    const until = '2026-10-03T16:02:00Z';
+
+    it('words the wait and its door, the command as code with its session', () => {
+      const parts = [
+        coded('waits.account', '— it does not go on yet: the `claude-code` account `work` is cooling until …', {
+          owner: 'claude-code', account: 'account-1', until, why: 'stated',
+        }),
+        coded('waits.door-chat', 'To start a conversation with these words now instead, …', { session: 'c1' }),
+      ];
+      expect(noteLines(t, { parts }, 'en').map((line) => line.text)).toEqual([
+        `It does not go on yet: the \`claude-code\` account \`account-1\` is cooling until ${moment(until, 'en')} (the agent said so), and its conversation is on that account, so your words wait to go on in it then.`,
+        'To start a conversation with these words now instead, without that one: `daoris-driver sessions start-from c1`.',
+      ]);
+      expect(noteLines(zh, { parts }, 'zh').map((line) => line.text)).toEqual([
+        `还不能继续：\`claude-code\` 账户 \`account-1\` 冷却至 ${moment(until, 'zh')}（智能体如此说明），而它的对话在那个账户上，所以你的话会等到那时再在其中继续。`,
+        '要现在改用这些话开始一段对话、不带那一段：`daoris-driver sessions start-from c1`。',
+      ]);
+    });
+
+    it('words the tool’s own sign-in, its refresh, and each other door', () => {
+      const parts = [
+        coded('waits.own', '— it does not go on yet: `codex`’s own sign-in is cooling until …', { owner: 'codex', until, why: 'default' }),
+        coded('waits.read-again', 'If you have signed in to another account at your own terminal since, …'),
+        coded('waits.door-new-session', 'To go on now in a new session instead, …', { session: 's1' }),
+        coded('waits.door-help', 'To go on now instead, …'),
+      ];
+      const lines = noteLines(t, { parts }, 'en').map((line) => line.text);
+      expect(lines[0]).toMatch(/^It does not go on yet: `codex`'s own sign-in is cooling until .+ \(Daoris's default: the agent named no time\), /);
+      expect(lines.slice(1)).toEqual([
+        "If you have signed in to another account at your own terminal since, press Read again under Agents → the agent's page → Accounts.",
+        'To go on now in a new session instead, without that conversation: `daoris-driver sessions go-on-new s1`.',
+        "To go on now instead, start a new conversation from this one in Ask Daoris's history: it is handed this one's words.",
+      ]);
+      expect(noteLines(zh, { parts }, 'zh').every((line) => line.kind === 'said')).toBe(true);
+    });
+
+    it('shows a wait as recorded where a value its sentence says is absent', () => {
+      const parts = [coded('waits.account', '— it does not go on yet: …', { owner: 'claude-code', until, why: 'stated' })];
+      expect(noteLines(zh, { parts }, 'zh')).toEqual([{ kind: 'recorded', text: '— it does not go on yet: …' }]);
+    });
+  });
+
   /** CONVNOTE2d1: words the agent would not take, ones that never reached it, and ones not taken off the record, worded; others' words as written. */
   describe('words that did not reach an agent or were not taken', () => {
     it('words a refusal by its lead and leaves the agent’s words as written', () => {
