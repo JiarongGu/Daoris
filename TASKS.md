@@ -85,7 +85,6 @@ Contract: `docs/2026-10-09-workflow-design.md` (D157), §14 order/proofs.
 Foundation precedes editor/proposals/intake; waits/checks/stages follow the gate; installation last.
 
 - [ ] **WORKFLOW1e2 — quest-specific choice** (service/driver; after e). Field, census, person's door and selection for quests without asks. §4.1/D156.
-- [ ] **WORKFLOW1e3 — clear run bindings with history** (driver; after e). Include binding in clear plan/count. D153/D157; clear test.
 - [ ] **WORKFLOW1g — workflow editor** (web/modules; after d/e). Presets, save, insert/failure/move/remove, drawer, selection, terminal twins and keys. §6; 680 px/bilingual proof.
 - [ ] **WORKFLOW1h — workflow proposal** (service/driver/web; after d/e). Judge validation/version/diff/person/outward needs; Apply/editor/Not now. §8; kinds/coverage/goldens/card tests.
 - [ ] **WORKFLOW1i — intake kind proposal** (driver/service; after e). Set only from quoted requirements without lowering involvement. §4.3; prompt/table/refusal proof.
