@@ -4,6 +4,7 @@ import type { Quest, QuestSetUp, SetUpRef } from '../api';
 import { ago } from '../format';
 import { cn } from '../lib/cn';
 import { ExternalLink } from '../links';
+import { shellWord } from '../shellWord';
 import { Button, CodeText, Inline, Pill } from '../ui';
 import { type Answered, InlineConfirm, Refused } from './InlineConfirm';
 import {
@@ -196,6 +197,12 @@ export function ReviewGate({
             <Button variant="ghost" onClick={acts.open}>{t('review.act.open', { quest })}</Button>
           )}
         </div>
+      )}
+      {/* The terminal's way to the two choices the page presses here (D50, REVIEWENV1j2): needs the quest to name. */}
+      {quest && (offered.includes('skip') || offered.includes('setUp')) && asking === null && (
+        <p className="m-0 text-meta text-ink-faint [overflow-wrap:anywhere]">
+          <Inline text={t('review.choiceTwin', { quest: shellWord(quest, '<quest>') })} />
+        </p>
       )}
       {refusal && <Refused sentence={refusal} />}
 

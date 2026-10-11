@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { Ask } from '../api';
 import { ago } from '../format';
 import { Button, Inline, SelectField } from '../ui';
+import { shellWord } from '../shellWord';
 import { choiceWords } from '../work/ReviewGate';
 
 /**
@@ -86,6 +87,11 @@ export function AskReview({ ask, environments = [], busy = false, onChoose }: {
             {t('asks.record.reviewSet')}
           </Button>
         </div>
+      )}
+      {live && onChoose && (
+        <p className="m-0 text-meta text-ink-faint [overflow-wrap:anywhere]">
+          <Inline text={t('asks.record.reviewTwin', { id: shellWord(ask.id, '<id>') })} />
+        </p>
       )}
     </div>
   );
