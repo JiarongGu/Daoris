@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- A conversation held because its account is cooling or signed out, or its agent is not installed or its pin has nothing
+  installed, now says so in the page's language, not in English only.
 - `daoris agent key <agent> --account <id|name>` writes a new key, read from stdin, into an account that is already an API
   key, so a key its provider refused is repaired without losing the account's name, lists, defaults or order; what marked it
   refused is cleared. Without `--account` the verb adds a new account as before.

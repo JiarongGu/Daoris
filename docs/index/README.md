@@ -51,7 +51,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/attention.test.ts` | 42 | 857 |
 | `src/Daoris.Web/src/work/conversation.test.ts` | 44 | 871 |
 | `src/Daoris.Web/src/work/frame.tsx` | 40 | 877 |
-| `src/Daoris.Web/src/work/noteLines.test.ts` | 42 | 661 |
+| `src/Daoris.Web/src/work/noteLines.test.ts` | 44 | 685 |
 
 ### Driver library (`driver`)
 
@@ -74,17 +74,17 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/ToolInstallTests.cs` | 41 | 726 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/ToolResourcesTests.cs` | 40 | 559 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/TraceTests.cs` | 41 | 691 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/AccountRotation.cs` | 58 | 977 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/AccountRotation.cs` | 58 | 980 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Acp.cs` | 91 | 1854 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 112 | 1997 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 83 | 1560 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.Continue.cs` | 43 | 735 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 158 | 2693 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 61 | 1106 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 201 | 3715 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 203 | 3735 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 40 | 708 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/NoteCodes.cs` | 47 | 828 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/NoteCodes.cs` | 48 | 837 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 64 | 1123 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 93 | 1694 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionEvents.cs` | 41 | 896 |
