@@ -12,6 +12,8 @@ with the version and date at release.
 - A branch's name in a repository's or a workspace's Branches tab opens the branch's own page: its kind and where it stands
   against its line, origin and its pull request, then its commits since it left its line beside the line's since then, 200
   at a time, with *Back to Branches* in its header. The line's own name opens History.
+- The intake can propose which kind of work an ask is, quoting your words, from the kinds its workspace declares; it never
+  sets one, and the ask keeps the proposal for you to apply.
 - A second opinion's gate says how much of its context the reviewer used, or that it was not measured; the reviewer's own
   session's last note reads in your language.
 - A repository's History reads further back: *Show more* adds the line's next 200 commits under the last. Its ⋯ draws

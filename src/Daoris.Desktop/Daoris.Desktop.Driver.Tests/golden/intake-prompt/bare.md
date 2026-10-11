@@ -30,6 +30,11 @@ documents give it a meaning, quote the word and say in the check what it require
 reading of their words belongs in the body, never in a requirement; a quote they did not say is
 refused, naming it. A `then` step carries the quest's requirements with it.
 
+Where the room lists kinds of work and the ask plainly is one, you may propose it on the quest as
+`workflowProposal`: `{ "kind": "docs", "reason": "…" }`, a `kind` its workspace declares, and its `reason` the
+person's own words, copied exactly. You never set a kind; the person's press applies a proposal. Propose
+a kind the room says lowers the person's part only where the person's words say so.
+
 Where a requirement's check plainly turns on a file or folder the work leaves, one the person
 can name, name it as that requirement's `evidence`: `{ "path": "docs/report.md" }`, relative to
 that repository's root with forward slashes, at most five. Daoris reads each in the work's last

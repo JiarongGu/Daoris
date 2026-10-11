@@ -10,8 +10,17 @@ namespace Daoris.Driver;
 /// <param name="Workflow">A workflow's id, <c>current</c>, or null for none.</param>
 public sealed record AskWorkflowChoiceView(string? Kind, string? Workflow, DateTimeOffset At, string? Words = null);
 
+/// <summary>
+/// An intake's kind proposal on an ask (WORKFLOW1i; the workflow design §4.3): a kind with the person's words as its reason, which
+/// only the person's press applies, the intake session that made it and the quest it was published with.
+/// </summary>
+public sealed record AskWorkflowProposalView(string Kind, string Reason, DateTimeOffset At, string? Session = null, string? Quest = null);
+
 public sealed partial record AskView
 {
+    /// <summary>Its intake's kind proposals, oldest first (WORKFLOW1i); empty where it proposed none. Nothing here applies one.</summary>
+    public IReadOnlyList<AskWorkflowProposalView> WorkflowProposals { get; init; } = [];
+
     /// <summary>The person's kind and workflow choices on it, oldest first, the latest standing (WORKFLOW1e); empty where they made none.</summary>
     public IReadOnlyList<AskWorkflowChoiceView> WorkflowChoices { get; init; } = [];
 }
@@ -24,6 +33,17 @@ public sealed partial class ServiceClient
         .. Items(ask, "workflowChoices")
             .Where(chosen => Moment(chosen, "at") is not null)
             .Select(chosen => new AskWorkflowChoiceView(Text(chosen, "kind"), Text(chosen, "workflow"), Moment(chosen, "at")!.Value, Text(chosen, "words"))),
+    ];
+
+    /// <summary>An ask's intake's kind proposals (<c>workflowProposals</c>), each a kind with its reason and when; one without is half of one.</summary>
+    private static IReadOnlyList<AskWorkflowProposalView> ReadWorkflowProposals(JsonElement ask) =>
+    [
+        .. Items(ask, "workflowProposals")
+            .Where(proposed => Text(proposed, "kind") is { Length: > 0 } && Text(proposed, "reason") is { Length: > 0 }
+                               && Moment(proposed, "at") is not null)
+            .Select(proposed => new AskWorkflowProposalView(
+                Text(proposed, "kind")!, Text(proposed, "reason")!, Moment(proposed, "at")!.Value,
+                Text(proposed, "session"), Text(proposed, "quest"))),
     ];
 
     /// <summary>

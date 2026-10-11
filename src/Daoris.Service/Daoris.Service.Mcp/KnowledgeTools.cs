@@ -455,6 +455,11 @@ public sealed partial class KnowledgeTools(
             "For an intake, where the person said nothing on it: the review you propose for this chain and your reason, kept on "
             + "the ask beside their choice. Only their press applies it; compose no set-up step for a chain you propose off.")]
         ReviewProposal? reviewProposal = null,
+        [Description(
+            "For an intake: the kind of work you read this ask to be, proposed on the person's own words, which you quote exactly "
+            + "(at most 300 characters) as the reason. It is kept on the ask beside their choice and only their press applies it; "
+            + "you never set a kind or a workflow, and the workspace's own kinds decide which are real.")]
+        WorkflowProposal? workflowProposal = null,
         CancellationToken ct = default)
     {
         // A path becomes bytes at the door, on the machine that has the file (D65 §2): the exchange
@@ -494,6 +499,7 @@ public sealed partial class KnowledgeTools(
                         Links = links ?? [], Uploads = uploads, Then = steps, Requirements = required, Short = shortTitle,
                         Review = chosen,
                         ReviewProposal = reviewProposal is null ? null : new ReviewProposed(reviewProposal.Choice, reviewProposal.Reason),
+                        WorkflowProposal = workflowProposal is null ? null : new WorkflowProposed(workflowProposal.Kind, workflowProposal.Reason),
                     },
                     intake.Session, byAgent: true)
                 .ConfigureAwait(false);
@@ -507,6 +513,12 @@ public sealed partial class KnowledgeTools(
         {
             return "A review proposal is an intake's, kept on its ask for the person's press, and this connector speaks for no "
                    + "intake. Say the review you would propose in the body. Nothing was published.";
+        }
+
+        if (workflowProposal is not null)
+        {
+            return "A kind proposal is an intake's, kept on its ask for the person's press, and this connector speaks for no "
+                   + "intake. Say the kind you would propose in the body. Nothing was published.";
         }
 
         // The judgement — who may be addressed, what a refusal says — lives in the exchange, shared

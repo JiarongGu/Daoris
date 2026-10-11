@@ -88,7 +88,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/NoteCodes.cs` | 59 | 996 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 64 | 1123 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 93 | 1694 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 93 | 1696 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionEvents.cs` | 41 | 896 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionGroups.cs` | 60 | 1073 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.Sync.cs` | 68 | 1146 |
@@ -113,25 +113,25 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Service/Daoris.Service.Core/Asks.cs` | 63 | 1195 |
+| `src/Daoris.Service/Daoris.Service.Core/Asks.cs` | 68 | 1268 |
 | `src/Daoris.Service/Daoris.Service.Core/History.cs` | 40 | 824 |
 | `src/Daoris.Service/Daoris.Service.Core/KnowledgeService.cs` | 53 | 1055 |
-| `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 102 | 1911 |
+| `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 103 | 1929 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 149 | 2688 |
 | `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 65 | 1255 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 66 | 1179 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 52 | 913 |
-| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 96 | 1692 |
-| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 45 | 561 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 124 | 2157 |
-| `src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs` | 49 | 861 |
+| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 98 | 1730 |
+| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 46 | 566 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 125 | 2163 |
+| `src/Daoris.Service/Daoris.Service.Mcp/KnowledgeTools.cs` | 50 | 873 |
 | `src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs` | 44 | 839 |
 | `src/Daoris.Service/Daoris.Service.Tests/IndexEntriesTests.cs` | 45 | 855 |
-| `src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.cs` | 49 | 873 |
+| `src/Daoris.Service/Daoris.Service.Tests/McpToolsTests.cs` | 50 | 890 |
 | `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 85 | 1745 |
 | `src/Daoris.Service/Daoris.Service.Tests/ReviewStepTests.cs` | 41 | 734 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 70 | 1420 |
-| `src/Daoris.Service/README.md` | 77 | 735 |
+| `src/Daoris.Service/README.md` | 78 | 739 |
 
 ### CLI (`cli`)
 

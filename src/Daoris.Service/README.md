@@ -209,7 +209,11 @@ as a requirement's quote is (`quest_publish`'s `review`). Every connector is an 
 it names a session, and an agent's `off`, quoted or not, is kept as a proposal, never as the choice
 (REVIEWENV1b3). An ask keeps the person's choices, the latest
 standing, and its intake's proposals with their reasons (`reviewProposal`), which only the person's press
-applies. A **set-up step** is a chain step whose `setUpIn` names its environment: the exchange judges it
+applies. The same ask keeps an intake's **kind proposal** (`quest_publish`'s `workflowProposal`, WORKFLOW1i-a): a kind's
+id and a reason that is the person's own words, at most 300 characters, quoted as a review's words are (a reason they
+never said is refused `NotQuoted`, a bad kind `BadWorkflow`). It is answered as `workflowProposals` beside
+`workflowChoices` and applied only by the person's press at `POST /api/asks/{id}/workflow`; an agent never sets a kind
+in this version. A **set-up step** is a chain step whose `setUpIn` names its environment: the exchange judges it
 when the chain is composed (a name that never reads as production, the repository of the step before it
 and none of that repository's steps after it, and no set-up step on a chain whose choice is `off`), and
 the person's *Set it up* door publishes one following that repository's last done work in the whole

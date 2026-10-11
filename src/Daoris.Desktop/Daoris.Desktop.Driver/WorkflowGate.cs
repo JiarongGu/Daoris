@@ -294,9 +294,11 @@ public static class WorkflowProcesses
     /// the choices stand now. A named workflow's newest version that reads, or Current drawn; null where the named one does not read.
     /// </summary>
     /// <returns>Its name as said, and its steps, or null steps where they could not be read.</returns>
-    public static (string Name, IReadOnlyList<NamedStep>? Steps) Otherwise(string home, DriverConfig config, string repository, string? workspace)
+    /// <param name="kind">A kind its workspace declares, to read what a task of that kind would follow (WORKFLOW1i-b's room); null for none.</param>
+    public static (string Name, IReadOnlyList<NamedStep>? Steps) Otherwise(
+        string home, DriverConfig config, string repository, string? workspace, string? kind = null)
     {
-        var selected = WorkflowSelection.Resolve(config, repository, workspace, null);
+        var selected = WorkflowSelection.Resolve(config, repository, workspace, kind is null ? null : new WorkflowTaskChoice(kind, null));
         if (selected.Workflow == WorkflowSelection.Current)
         {
             return ("Current", Involvement.StepsOf(WorkflowCurrent.Derive(config, repository, workspace, [])));

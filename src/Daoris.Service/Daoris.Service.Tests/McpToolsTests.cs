@@ -620,6 +620,23 @@ public sealed partial class McpToolsTests : IAsyncLifetime
             "Asker", "Owner", "Another", "b", reviewProposal: new ReviewProposal("off", "Why."));
         Assert.Contains("speaks for no intake", refused);
         Assert.DoesNotContain(await _quests.ListAsync(receiver: "Owner"), each => each.Title == "Another");
+
+        // WORKFLOW1i-a: a kind proposal quotes the person, as the review's words do, and is kept on the ask, never applied.
+        var unquoted = await tools.PublishQuestAsync(
+            "intake", "Owner", "Write the guide", "b", workflowProposal: new WorkflowProposal("docs", "it only changes a document"));
+        Assert.Contains("never said", unquoted);
+        Assert.Empty((await desk.FindAsync(ask.Id))!.WorkflowProposals);
+        var kind = await tools.PublishQuestAsync(
+            "intake", "Owner", "Write the guide", "The guide is written.", workflowProposal: new WorkflowProposal("docs", "add the setting"));
+        Assert.Contains("Proposed kind `docs`", kind);
+        var keptKind = Assert.Single((await desk.FindAsync(ask.Id))!.WorkflowProposals);
+        Assert.Equal(("docs", "add the setting"), (keptKind.Kind, keptKind.Reason));
+        Assert.Empty((await desk.FindAsync(ask.Id))!.WorkflowChoices);
+
+        var stranger = await nobody.PublishQuestAsync(
+            "Asker", "Owner", "Another one", "b", workflowProposal: new WorkflowProposal("docs", "Why."));
+        Assert.Contains("speaks for no intake", stranger);
+        Assert.DoesNotContain(await _quests.ListAsync(receiver: "Owner"), each => each.Title == "Another one");
     }
 
     /// <summary>

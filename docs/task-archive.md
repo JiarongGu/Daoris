@@ -13633,3 +13633,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **AUTOTIDY1a3 — the last two unread paths by code** (driver). A whole pass that throws (BranchTidying.cs ~:97) and a judgement that could not read an item (`SweepItem.Unread`) still log `unread` with no `cause`. Name each, as AUTOTIDY1a2 did the six. D88's AUTOTIDY1a2 note.
 
 **Outcome** 2026-10-12: a thrown pass logs `cause: pass` (the code alone, no message) and an item the judgement could not read logs `judged`; the page words both in en and zh. Every `unread` now names a cause. Detail: D88's AUTOTIDY1a3 note.
+
+## WORKFLOW1i a–b — the intake proposes a kind (2026-10-12, D157)
+
+> - [ ] **WORKFLOW1i — intake kind proposal** (driver/service; after e). Set only from quoted requirements without lowering involvement. §4.3; prompt/table/refusal proof.
+
+**Outcome** 2026-10-12 (v1, merged once at b): `quest_publish` takes `workflowProposal { kind, reason }`, the reason quoted from the ask (`NotQuoted`, `BadWorkflow`), kept on the ask and answered as `workflowProposals`, applied only by the person's own door; the intake's room lists each repository's kinds, their workflows and which lower the person's part, and its prompt says it may only propose. `IntakeTests` and `LaneReadingTests` (Process) passed at the merge. Setting a kind is WORKFLOW1i2; the page's card WORKFLOW1i-c. Detail: D157's WORKFLOW1i-a and -b notes.
