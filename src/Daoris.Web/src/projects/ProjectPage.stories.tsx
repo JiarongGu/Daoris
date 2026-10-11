@@ -377,7 +377,7 @@ export const SetupReach: Story = { args: { start: 'setup', setup: opened('reach'
  * language, a standing answer, read by nobody outside it, writing into the game and two rules. Each section holding one
  * opens on its own, with its *Clear*; Driving folds.
  */
-export const SetupOwn: Story = { args: { start: 'setup', setup: SETUP_OWN } };
+export const SetupOwn: Story = { args: { start: 'setup', setup: { ...SETUP_OWN, onOpenPlugin: () => {} } } };
 
 /** Setup folded, narrow: the list a strip and the side bar closed, a section's line wrapping under its name. */
 export const SetupNarrow: Story = {

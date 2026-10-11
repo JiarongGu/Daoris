@@ -71,6 +71,23 @@ describe("a workspace's Setup", () => {
     expect(acts.read).toHaveBeenLastCalledWith(undefined);
   });
 
+  /** PLUGUI1c2c: the landing plugin is a door to that plugin's page. */
+  it("opens the plugin's page from its name in the landing sentence", async () => {
+    const onOpenPlugin = vi.fn();
+    at({
+      onOpenPlugin,
+      defaults: {
+        line: { onSet: vi.fn() },
+        landing: { set: { form: 'branch', pattern: 'feature/{quest}-{slug}', plugin: 'github-pull-request' }, landers: [], onSet: vi.fn() },
+        language: { table: LANGUAGES, onSet: vi.fn() },
+        read: { onSet: vi.fn() },
+      },
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: 'github-pull-request' }));
+    expect(onOpenPlugin).toHaveBeenCalledWith('github-pull-request');
+  });
+
   /** Each row's hint is its terminal twin (D41 §4, D50): `daoris driver <verb> --workspace <name>`. */
   it('names each row\'s terminal twin', async () => {
     at();

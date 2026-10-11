@@ -59,7 +59,7 @@ const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] :
  */
 export function useProjectsView({
   active, chosen, onChoose, tab = 'details', onTab, workspaceTab = 'details', onWorkspaceTab, workspaceSection = null, notify,
-  onOpenCode, onOpenAgent, onSyncNow, syncing = false, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
+  onOpenCode, onOpenAgent, onOpenPlugin, onSyncNow, syncing = false, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
   drawerWorkspace = null, onOpenQuest, onOpenAsk, onAttend,
 }: {
   /** The view is in front: only then are its errors said. */
@@ -82,6 +82,8 @@ export function useProjectsView({
   notify: Notify;
   /** Open an agent's page, where a workspace's accounts are set (UX6e): a workspace's Details names each agent's. */
   onOpenAgent?: (agent: string) => void;
+  /** Open a plugin's page, from the plugin a landing rule names in a Setup (PLUGUI1c2c). */
+  onOpenPlugin?: (plugin: string) => void;
   /** Sync a workspace with its remote, the status bar's pass (SYNC6b), which the application says. */
   onSyncNow?: (workspace: string) => void;
   syncing?: boolean;
@@ -384,6 +386,7 @@ export function useProjectsView({
       work,
       sessions,
       reach,
+      onOpenPlugin,
       busy: setLine.isPending || setLanding.isPending || setReview.isPending || setOpinion.isPending || setLanguage.isPending
         || setStanding.isPending || setRead.isPending || setWrite.isPending || ruleAction.isPending,
     };
@@ -432,6 +435,7 @@ export function useProjectsView({
           // A repository that sets rules of its own opens at its own workflow (WORKFLOW1b).
           onOpenRepositoryWorkflow={(repository) => { onChoose(repository); onTab?.('workflow'); }}
           onOpenAgent={onOpenAgent}
+          onOpenPlugin={onOpenPlugin}
           onSyncNow={onSyncNow}
           syncing={syncing}
           onOpenQuest={onOpenQuest}

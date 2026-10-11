@@ -281,7 +281,7 @@ export const WorkflowAtTheFloor: Story = { args: { tab: 'workflow' }, decorators
 export const SetupFolded: Story = { args: { tab: 'setup', wired: false } };
 
 /** Setup with the workspace's own values: a line, a branch rule a plugin pushes and accepts, 中文 sessions, no reading, a remote and two rules. */
-export const SetupOwn: Story = { args: { tab: 'setup', setup: DEFAULTS_OWN } };
+export const SetupOwn: Story = { args: { tab: 'setup', setup: { ...DEFAULTS_OWN, onOpenPlugin: nothing } } };
 
 /** The header's *Wire to a remote…*: Setup at its remote, the form open. */
 export const Wiring: Story = { args: { tab: 'setup', wired: false, setup: { ...DEFAULTS_DAORIS, wiring: true } } };
