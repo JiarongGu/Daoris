@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A conversation's notes that an agent would not take what you added, that messages you sent while it worked never reached
+  it (and why), and that your words could not be taken off its record now read in your language, in English and 中文. The
+  agent's own words and the service's message in them stay as written.
 - A conversation's notes of your acceptance of its work, of handing it on, of an option you set for it, of where you were
   told you are, and of a browser server held back now read in your language, in English and 中文. The agent's and a plugin's
   own words in them stay as written.

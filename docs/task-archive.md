@@ -13229,3 +13229,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **RAILPAGE1b — the rail's search foot** (web; after 1a). `SearchResults` (SessionRail.tsx ~:314-389) takes Ask Daoris history's foot (AskHistory.tsx ~:109-132, ~:261-271) as an infinite query with words of its own (`work.rail.search.listed`, `.more`, `.loadingMore`, en and zh), retiring `work.rail.search.cut`. Platform UX §4's load-more rule; D158's RAILPAGE1 note.
 
 **Outcome** 2026-10-11: `useSessionSearch` reads 16 sessions a page as an infinite query; the rail's search foot says "{{shown}} of {{total}} sessions with a match are listed.", *Show more* moves focus to the first session it brought, a failed page keeps its press; `work.rail.search.cut` stays only for an older shell with no `total`. Stories under Work/SessionRail/Search. With RAILPAGE1a, RAILPAGE1 is closed. Detail: D158's RAILPAGE1b note.
+
+
+## CONVNOTE2d1 — words not taken, at Acp and Driver, by code (2026-10-11, D152)
+
+> - [ ] **CONVNOTE2d–h — the conversation's other driver notes, by code** … (Group d's first half: Acp.cs ~:515, ~:527, Driver.cs ~:2375, Driver.Continue.cs ~:446, ~:683.)
+
+**Outcome** 2026-10-11: the five notes are `words.refused` (the agent's words after), `words.unreached` [count, why] (the `NoteCodes.Unreached` reasons `ended-first`, `unkept`) and `words.not-taken` (the service's message after), built by `WordsNotes`; each English byte for byte ("message(s)" kept for AcpSteerTests; the page says "({{count}} in all)", since its i18n gate forbids "(s)"). Detail: D152's CONVNOTE2d1 note.

@@ -512,7 +512,7 @@ public sealed partial class AcpSession(
                 catch (AcpRefusal refused)
                 {
                     // A word the agent would not take costs that word, said in its own words, never the session's work.
-                    Note($"— the session would not take what the person added: {refused.Words}");
+                    Note(WordsNotes.Refused(refused.Words));
                 }
             }
 
@@ -524,7 +524,7 @@ public sealed partial class AcpSession(
             // Words sent while it worked that it never took (STEER1): said, never shown for ever as on their way.
             if (Untaken() is > 0 and var untaken)
             {
-                Note($"— {untaken} message(s) the person sent while it worked never reached it: it ended first.");
+                Note(WordsNotes.Unreached(untaken, "while it worked never reached it", UnreachedWhy.EndedFirst));
             }
 
             // A driven session's end is its last turn's (CONSOLE2, BGWAIT1): what it left running ends with it, and
@@ -535,11 +535,17 @@ public sealed partial class AcpSession(
     }
 
     /// <summary>The driver's own sentence, on the console and in the record.</summary>
-    private void Note(string text)
+    private void Note(string text) => Note(new Noted(text, []));
+
+    /// <summary>The driver's own sentence by its code (CONVNOTE2d1): the console and the record keep the English as written.</summary>
+    private void Note(Noted noted)
     {
         _console.End();
-        onLine(text);
-        Emit(new SessionEvent { Kind = SessionEventKind.Note, Text = text });
+        onLine(noted.Note);
+        Emit(new SessionEvent
+        {
+            Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts.Count > 0 ? noted.Parts : null,
+        });
     }
 
     /// <summary>Whether the person's words are held for the turn's end: those go before anything else.</summary>

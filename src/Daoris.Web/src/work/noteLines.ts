@@ -12,9 +12,9 @@ type Translate = (key: string, options?: Record<string, unknown>) => string;
 /**
  * A family of reasons a `why` names: MSG1f's (`work.say.why.*`, by `reasonOf`), a cool-off's (`harness.cooling.why.*`), or
  * the step that chose a conversation's account (`note.opening.why.*`, UX7d-1), or whose words a resumed conversation goes on
- * with (`note.resumed.why.*`, CONVNOTE2a).
+ * with (`note.resumed.why.*`, CONVNOTE2a), or why the person's words never reached it (`note.words.why.*`, CONVNOTE2d1).
  */
-type Why = 'continue' | 'cooling' | 'opening' | 'resumed';
+type Why = 'continue' | 'cooling' | 'opening' | 'resumed' | 'unreached';
 
 /** A code the page words: the values its sentence says, its key where it is not `note.<code>`, and the reasons a `why` names. */
 export type NoteCode = { values: readonly string[]; key?: string; why?: Why };
@@ -157,6 +157,10 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'landing.person-handed': { values: [] },
   'chat.option-set': { values: ['option', 'chosen'] },
   'chat.told-where': { values: [] },
+  // Words that did not reach an agent or were not taken (CONVNOTE2d1): the agent's or the service's words follow a lead.
+  'words.refused': { values: [] },
+  'words.unreached': { values: ['count', 'why'], why: 'unreached' },
+  'words.not-taken': { values: [] },
   // A server that drives Daoris's own browser, withheld: why follows as a code of the host's or an exception's words.
   'browser.withheld': { values: ['servers'] },
   'browser.no-host': { values: [] },
@@ -173,6 +177,15 @@ export const RESUMED_REASONS: Readonly<Record<string, { key: string; values: rea
   findings: { key: 'note.resumed.why.findings', values: [] },
   'answer-and-findings': { key: 'note.resumed.why.answer-and-findings', values: [] },
   'words-and-findings': { key: 'note.resumed.why.words-and-findings', values: [] },
+};
+
+/**
+ * Why the person's words never reached the session (CONVNOTE2d1; the driver's `NoteCodes.Unreached`), each its entry; none
+ * carries a value of its own. `locales/note.test.ts` holds this map to the driver's declaration key for key.
+ */
+export const UNREACHED_REASONS: Readonly<Record<string, { key: string; values: readonly string[] }>> = {
+  'ended-first': { key: 'note.words.why.ended-first', values: [] },
+  unkept: { key: 'note.words.why.unkept', values: [] },
 };
 
 /**
@@ -220,7 +233,7 @@ export const NOTE_VALUES: Readonly<
   option: 'text', chosen: 'text',
   until: 'moment', at: 'moment', seen: 'moment',
   exit: 'number', minutes: 'number', paths: 'number', turn: 'number',
-  tokens: 'count',
+  tokens: 'count', count: 'count',
   used: 'percent', near: 'percent', gone: 'percent',
   adapter: 'text', now: 'text', then: 'text',
   owner: 'text', branch: 'text', basedOn: 'text', plugin: 'text', account: 'text', over: 'text', agent: 'text', workspace: 'text',
@@ -286,6 +299,7 @@ function said(t: Translate, name: string, values: Record<string, unknown>, code:
       if (code.why === 'cooling') return COOLING.has(why) ? t(`harness.cooling.why.${why}`) : null;
       if (code.why === 'opening') return opening(t, why, values, code, language);
       if (code.why === 'resumed') return RESUMED_REASONS[why] ? t(RESUMED_REASONS[why].key) : null;
+      if (code.why === 'unreached') return UNREACHED_REASONS[why] ? t(UNREACHED_REASONS[why].key) : null;
       return reasonOf(t, why, {
         from: text(values.from), to: text(values.to), adapter: text(values.adapter), agent: text(values.agent),
       });

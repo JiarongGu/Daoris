@@ -68,7 +68,7 @@ public sealed class NoteCodesTests
     public void Every_reason_a_why_may_name_has_an_entry_that_says_its_own_values(string language)
     {
         var catalogue = Catalogue(language);
-        foreach (var reasons in new[] { NoteCodes.Continue, NoteCodes.Cooling, NoteCodes.Opening, NoteCodes.Resumed })
+        foreach (var reasons in new[] { NoteCodes.Continue, NoteCodes.Cooling, NoteCodes.Opening, NoteCodes.Resumed, NoteCodes.Unreached })
         {
             foreach (var reason in reasons.All)
             {
@@ -274,6 +274,60 @@ public sealed class NoteCodesTests
             .Also(NoteCodes.EndedExit.Part("exit 1", ("exit", 1)));
         NoteAssert.Holds(declined);
         Assert.Equal(["ended.declined", "ended.exit"], declined.Parts.Select(part => part.Code));
+    }
+}
+
+/// <summary>CONVNOTE2d1: words that did not reach an agent, or were not taken, by code; the English as it was written.</summary>
+public sealed class WordsNotesTests
+{
+    [Fact]
+    public void Unreached_words_say_their_count_and_why_by_code_with_the_english_unchanged()
+    {
+        var ended = WordsNotes.Unreached(2, "while it worked never reached it", UnreachedWhy.EndedFirst);
+        Assert.Equal("— 2 message(s) the person sent while it worked never reached it: it ended first.", ended.Note);
+        var part = Assert.Single(ended.Parts);
+        Assert.Equal("words.unreached", part.Code);
+        Assert.Equal(2, part.Value("count"));
+        Assert.Equal(UnreachedWhy.EndedFirst, part.Value("why"));
+        NoteAssert.Holds(ended);
+
+        var unkept = WordsNotes.Unreached(1, "while it worked never reached it", UnreachedWhy.Unkept);
+        Assert.Equal("— 1 message(s) the person sent while it worked never reached it: Daoris kept no id for its conversation.", unkept.Note);
+
+        var session = WordsNotes.Unreached(3, "never reached the session", UnreachedWhy.EndedFirst);
+        Assert.Equal("— 3 message(s) the person sent never reached the session: it ended first.", session.Note);
+        NoteAssert.Holds(session);
+    }
+
+    [Fact]
+    public void Words_refused_and_words_not_taken_carry_the_others_words_as_theirs()
+    {
+        var refused = WordsNotes.Refused("Internal error: busy");
+        Assert.Equal("— the session would not take what the person added: Internal error: busy", refused.Note);
+        Assert.Equal(["words.refused", null], NoteAssert.Codes(refused.Parts));
+        Assert.Equal((NoteBy.Agent, "Internal error: busy"), (refused.Parts[1].By, refused.Parts[1].Words));
+        NoteAssert.Holds(refused);
+
+        var kept = WordsNotes.NotTaken("the service did not answer");
+        Assert.Equal("— your words could not be taken off its record: the service did not answer", kept.Note);
+        Assert.Equal(["words.not-taken", null], NoteAssert.Codes(kept.Parts));
+        Assert.Equal(NoteBy.Program, kept.Parts[1].By);
+        NoteAssert.Holds(kept);
+    }
+
+    [Fact]
+    public void Every_unreached_reason_is_declared_once_and_none_shadows_its_line_s_values()
+    {
+        var reasons = typeof(UnreachedWhy).GetFields()
+            .Where(field => field.IsLiteral && field.FieldType == typeof(string))
+            .Select(field => (string)field.GetRawConstantValue()!)
+            .Order(StringComparer.Ordinal);
+
+        Assert.Equal(reasons, NoteCodes.Unreached.All.Select(reason => reason.Code).Order(StringComparer.Ordinal));
+        foreach (var code in NoteCodes.All.Where(code => code.Why == NoteCodes.Unreached))
+        {
+            Assert.All(code.Values.Where(value => value != "why"), value => Assert.False(NoteCodes.Unreached.Carries(value), $"`{code.Code}`'s `{value}` is a reason's too"));
+        }
     }
 }
 

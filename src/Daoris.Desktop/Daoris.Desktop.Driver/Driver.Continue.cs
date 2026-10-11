@@ -452,7 +452,12 @@ public sealed partial class Driver
         if (resume.Prompted && resume.Ids.Count > 0)
         {
             var (taken, message) = await service.TakenAsync(sessionId, resume.Ids, by: null, ct).ConfigureAwait(false);
-            if (!taken) _events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = $"— your words could not be taken off its record: {message}" }, say: null);
+            if (!taken)
+            {
+                var untaken = WordsNotes.NotTaken(message);
+                _events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = untaken.Note, Parts = untaken.Parts }, say: null);
+            }
+
             // Its own account carried them, so a choice of a new session made while it cooled is spent with them (MSG1g).
             _newSessions.Clear(sessionId);
         }
@@ -658,7 +663,7 @@ public sealed partial class Driver
             var info = conversation is null ? null : goOn(conversation, NativeWords.Prompt(words));
             if (info is null)
             {
-                Untaken(sessionId, held.Close().Count + words.Count, "Daoris kept no id for its conversation");
+                Untaken(sessionId, held.Close().Count + words.Count, UnreachedWhy.Unkept);
                 return (exitCode, used);
             }
 
@@ -680,16 +685,16 @@ public sealed partial class Driver
         }
 
         // Words held when it could go on no more: a stop, a timeout. Said, never dropped without a trace.
-        if (held.Close() is { Count: > 0 } left) Untaken(sessionId, left.Count, "it ended first");
+        if (held.Close() is { Count: > 0 } left) Untaken(sessionId, left.Count, UnreachedWhy.EndedFirst);
         return (exitCode, used);
     }
 
     /// <summary>The driver's line in the record for words the person said that never reached the session, and why.</summary>
     private void Untaken(string sessionId, int count, string why)
     {
-        var line = $"— {count} message(s) the person sent while it worked never reached it: {why}.";
-        output?.Append(sessionId, line);
-        _events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line }, say: null);
+        var line = WordsNotes.Unreached(count, "while it worked never reached it", why);
+        output?.Append(sessionId, line.Note);
+        _events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
     }
 }
 
