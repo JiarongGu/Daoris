@@ -91,7 +91,11 @@ public sealed class HelpClearProposalsTests : HelpProposalsFixture
         One(HistoryScope.Failed, "q1done00", FailedDone),
         One(HistoryScope.Failed, "q8done00", FailedNone),
         One(HistoryScope.Failed, "q2open00", FailedOpen),
-        One(HistoryScope.Failed, "zz000000", QuestUnknown),
+        // As the service answers an unknown quest of the failed door: a failed-kind unit holding the unknown keep.
+        One(HistoryScope.Failed, "zz000000", new HistoryUnitPlan(HistoryKinds.Failed, "zz000000", null)
+        {
+            Keep = new HistoryKeep(HistoryWords.Unknown, "No quest `#zz000000` on this machine."),
+        }),
         Work(WorkKeeps, QuestDone, QuestForgotten, AskDone, QuestOpen, AskNeedsYou),
         new(HistoryScope.Workspace, "default", []) { Reading = new HistoryReading("default") },
     ]);

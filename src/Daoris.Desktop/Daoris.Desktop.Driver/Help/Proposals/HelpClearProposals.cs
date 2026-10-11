@@ -112,9 +112,7 @@ internal sealed class HelpClearProposals : IHelpProposalKind
     private static HelpPlan OnePlan(HistoryScope scope, string id, HistoryPlan? read, IReadOnlyList<HistoryUnitName>? held)
     {
         var kind = scope switch { HistoryScope.Ask => HistoryKinds.Ask, HistoryScope.Failed => HistoryKinds.Failed, _ => HistoryKinds.Quest };
-        var unit = read?.Units.FirstOrDefault(each => each.Kind == kind && string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase))
-            // A quest this machine has no record of comes back as the quest's own unknown, whichever door asked.
-            ?? read?.Units.FirstOrDefault(each => each.Keep is { Word: HistoryWords.Unknown } && string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase));
+        var unit = read?.Units.FirstOrDefault(each => each.Kind == kind && string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase));
         if (unit is null) return Refused($"there is no {(scope == HistoryScope.Ask ? "ask" : "quest")} `#{id}` on this machine.");
         if (unit.Keep is { Word: HistoryWords.Unknown } unknown) return Refused(unknown.Message);
         if (unit.Keep is { } keep) return Refused($"{Name(unit)} stay{(scope == HistoryScope.Failed ? "" : "s")} on this machine: {keep.Message}");
