@@ -13705,3 +13705,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **NEW1b — New conversation, the prompt first** (web; after a). Sessions' main area, when nothing is attended and from *New conversation* (Ctrl+N, File menu, the list head): the prompt, then the repository, tree and agent·account chips, *Start*; Enter starts with the words; a browser says to open Daoris on this machine. Replaces the *Start session* drawer. Design §1.
 
 **Outcome** 2026-10-12: `NewConversation` replaced the *Start session* drawer: the prompt, a repository combobox (recent first, then each workspace's), the three-way tree menu and the agent·account menu, *Start* on Enter with the words, files and a request id; Ctrl+N and Workspace › *New conversation…* open it, *New ask…* moved to Ctrl+Shift+N. The checkout's branch on the tree chip is NEW1e; the room's old place name rides with NEW1d. Detail: D162's NEW1b note.
+
+## NEW1c — add a repository from the picker, the draft kept (2026-10-12, D162)
+
+> - [ ] **NEW1c — add a repository from the picker, the draft kept** (web; after b). *Add a repository…* / *Import a folder…* at the picker's foot open Projects' drawers over Sessions; Add's `onAdded` chooses it and returns focus; Import gains the same. First run: *Add a repository…* is the primary press. Design §1.
+
+**Outcome** 2026-10-12: the picker's foot and the first run offer *Add repository…* and *Import a folder…* (the Workspace menu's words), opening Projects' two drawers over Sessions from `WorkFrame`'s own state with the words kept; Add chooses what it registered, one imported repository is chosen, several open the picker on their workspace, and the prompt takes the focus whenever a drawer closes. Detail: D162's NEW1c note.
