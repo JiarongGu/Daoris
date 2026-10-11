@@ -168,6 +168,12 @@ public sealed partial class Driver
         try
         {
             var scope = IntakeRoom.Scope(ask.Id, sessionId);
+            // The plugins' servers — a ticket behind a sign-in is read through Daoris's own browser, brought up here for a server
+            // that drives it (D78), or that server left out and the transcript told why. Handed before the instruction is
+            // composed, which tells the intake the browser it was handed (BRWHINT1b).
+            var (servers, browserNoted, drivesBrowser, browserDrivers) =
+                await InAppBrowserServers.HandNotedAsync(_servers, browser, ct).ConfigureAwait(false);
+            var browserNotice = browserNoted?.Note;
             var target = new SessionTarget(
                 QuestId: "", ask.Sentence.Split('\n', 2)[0].Trim(), ask.Sentence, ask.Asker ?? "the person",
                 $"ask #{ask.Id}", room, service.BaseUrl)
@@ -177,7 +183,8 @@ public sealed partial class Driver
                 Ask = ask.Id,
                 Session = sessionId,
                 // Its workspace's session language (LANG1c): an intake answers a workspace's ask, in no repository.
-                Prompt = IntakePrompt.Compose(ask, SessionLanguages.OfWorkspace(config, ask.Workspace)),
+                Prompt = IntakePrompt.Compose(
+                    ask, SessionLanguages.OfWorkspace(config, ask.Workspace), InAppBrowserServers.Told(browserDrivers)),
             };
             var (info, harnessNotice) = Prepare(adapter, target, selection);
 
@@ -192,9 +199,6 @@ public sealed partial class Driver
             // this session in its environment so what it publishes is asked by the ask.
             string? handed = null;
             string? preamble = null;
-            // The plugins' servers — a ticket behind a sign-in is read through Daoris's own browser, brought
-            // up here for a server that drives it (D78), or that server left out and the transcript told why.
-            var (servers, browserNotice, drivesBrowser) = await InAppBrowserServers.HandAsync(_servers, browser, ct).ConfigureAwait(false);
             hooks?.Log.Served(_catalog, sessionId, servers);
             if (adapter.Wire == SessionWire.Pipe)
             {

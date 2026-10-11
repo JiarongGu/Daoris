@@ -1217,10 +1217,17 @@ public sealed partial class Driver(
             // The person's words on the ask the quest was asked by (DRIFT1b, D133 §2), read for this start whatever kind it is;
             // their standing answer for its repository (KNOWUSE1b), and the work's session language (LANG1c), from this
             // machine's config.
+            // The servers the plugins hand this session (D65 §1f), handed before its instruction is composed, which tells it the
+            // browser it was handed (BRWHINT1b, D78). With Daoris's own browser brought up for a server that drives it, or that server
+            // left out and the transcript told why.
+            var (servers, browserNoted, drivesBrowser, browserDrivers) =
+                await InAppBrowserServers.HandNotedAsync(_servers, browser, ct).ConfigureAwait(false);
+            var browserNotice = browserNoted?.Note;
             var target = WithLanguage(WithStanding(
                 await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), service, ct).ConfigureAwait(false),
                 config), config, start.Workspace) with
             {
+                Browser = InAppBrowserServers.Told(browserDrivers),
                 ReadsAcross = across.Reads,
                 WritesAcross = across.Writes,
                 // Named on its spawn as on its connector, so what it publishes says it did (SESS1).
@@ -1274,12 +1281,8 @@ public sealed partial class Driver(
             var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
             Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
 
-            // The servers the plugins hand this session (D65 §1f). The protocol door carries them on
-            // the wire below; a pipe-door harness that takes a file at spawn is handed one under
-            // Daoris's home, and the file goes when the session does.
-            // With Daoris's own browser brought up for a server that drives it (D78), or that server left
-            // out and the transcript told why.
-            var (servers, browserNotice, drivesBrowser) = await InAppBrowserServers.HandAsync(_servers, browser, ct).ConfigureAwait(false);
+            // The protocol door carries the servers on the wire below; a pipe-door harness that takes a file at spawn is handed
+            // one under Daoris's home, and the file goes when the session does.
             hooks?.Log.Served(_catalog, sessionId, servers);
             var handed = SpawnServers.Hand(adapter, info, home, sessionId, servers);
 

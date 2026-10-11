@@ -287,6 +287,34 @@ public sealed class DrivenSessionInputTests : IDisposable
         Assert.Empty(processes.DrivingBrowser);
     }
 
+    /// <summary>
+    /// BRWHINT1b (Process: it runs a stand-in harness): a driven session's first prompt carries the line telling it the
+    /// browser it was handed, by the server's own name; where the server was withheld, none says so.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_driven_sessions_first_prompt_tells_it_the_browser_it_was_handed(bool shell)
+    {
+        var plugin = Path.Combine(_home, "plugins", "in-app-browser");
+        Directory.CreateDirectory(plugin);
+        File.WriteAllText(Path.Combine(plugin, "plugin.json"), """
+            { "id": "in-app-browser", "servers": [
+                { "name": "browser", "command": ["npx", "-y", "@playwright/mcp@0.0.82", "--cdp-endpoint", "${browser}"] } ] }
+            """);
+        await using var service = StandInService.Start(_repository);
+        var processes = new SessionProcesses();
+        var prompts = Path.Combine(_home, "prompts.txt");
+        var driver = Driver(
+            "acp-turns", prompts, service, processes,
+            browser: shell ? new AnsweringBrowser("http://127.0.0.1:4810") : null);
+
+        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+
+        var first = System.Text.Json.JsonSerializer.Deserialize<string>(File.ReadAllLines(prompts)[0])!;
+        Assert.Equal(shell, first.Contains(InAppBrowserServers.Told(["browser"])!, StringComparison.Ordinal));
+    }
+
     private sealed class AnsweringBrowser(string endpoint) : IInAppBrowser
     {
         public Task<string?> EnsureAsync(CancellationToken ct = default) => Task.FromResult<string?>(endpoint);

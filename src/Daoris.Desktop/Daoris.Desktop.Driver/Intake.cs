@@ -370,7 +370,10 @@ public static class IntakePrompt
     /// Its workspace's session language (LANG1c, D142 point 7), named in one line after the close; null where none is set,
     /// and the instruction reads as it did.
     /// </param>
-    public static string Compose(AskView ask, SessionLanguage? language = null)
+    /// <param name="browser">
+    /// The line telling it the browser it was handed (<see cref="InAppBrowserServers.Told"/>, BRWHINT1b); null where none was.
+    /// </param>
+    public static string Compose(AskView ask, SessionLanguage? language = null, string? browser = null)
     {
         var text = new StringBuilder();
         text.Append($"You are the intake for workspace `{ask.Workspace}`. You are not any repository's agent: this\n");
@@ -484,6 +487,9 @@ public static class IntakePrompt
         text.Append("When they do not settle it — nothing points at one repository, or more than one could —\n");
         text.Append("do not guess, and publish nothing. End by saying plainly what you would need to know; the\n");
         text.Append("person decides.\n\n");
+
+        // BRWHINT1b (D78): the browser it was handed, in a block of its own; nothing where none was.
+        if (browser is not null) text.Append(browser).Append("\n\n");
 
         // LANG1c: what it says to the person in the workspace's language, beside the close it governs; nothing where none is set.
         if (language is not null) text.Append(SessionLanguageText.Line(language)).Append("\n\n");
