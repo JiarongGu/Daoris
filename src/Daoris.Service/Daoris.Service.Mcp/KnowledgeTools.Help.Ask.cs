@@ -28,9 +28,13 @@ public sealed partial class KnowledgeTools
             + "out, or `rule`, and each repository's rule decides, as the ask composer's default does.")]
         string? review = null,
         [Description("The person's own words with that review choice, why they chose it; only with a choice.")]
-        string? reviewWords = null)
+        string? reviewWords = null,
+        [Description(
+            "The ask's short title: at most 40 characters, the few words that tell the ask apart in a list, the person's own where "
+            + "they gave one. Leave it out and the page heads the ask with the first line of its words.")]
+        string? shortTitle = null)
     {
         var box = help ?? HelpProposalBox.FromEnvironment();
-        return box.ProposeAsk(sentence, workspace, why, intake?.Session, DateTimeOffset.UtcNow, review, reviewWords).Message;
+        return box.ProposeAsk(sentence, workspace, why, intake?.Session, DateTimeOffset.UtcNow, review, reviewWords, shortTitle).Message;
     }
 }

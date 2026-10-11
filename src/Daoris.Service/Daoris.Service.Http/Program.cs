@@ -912,6 +912,8 @@ if (mode == ServiceMode.Local)
                 Kind = body.Kind,
                 Workflow = body.Workflow,
                 WorkflowWords = body.WorkflowWords,
+                // The asker's short title (HEAD2e), judged by the desk with the quest's rule.
+                Short = body.Short,
             },
             DateTimeOffset.UtcNow, ct);
         return AskAnswer(outcome, s, http);
@@ -2029,7 +2031,8 @@ static AskResponse ToAsk(Ask a, QuestFiles? files, bool machineLocal)
         // The intake's kind proposals (WORKFLOW1i), absent where there is none.
         WorkflowProposals: a.WorkflowProposals.Count == 0
             ? null
-            : a.WorkflowProposals.Select(p => new AskWorkflowProposalResponse(p.Kind, p.Reason, p.At, p.Session, p.Quest)).ToList());
+            : a.WorkflowProposals.Select(p => new AskWorkflowProposalResponse(p.Kind, p.Reason, p.At, p.Session, p.Quest)).ToList(),
+        Short: a.Short);
 }
 
 // A chain's steps as a door hands them to the exchange (D65 §4, REVIEWENV1b): a set-up step's environment rides with its words.

@@ -204,6 +204,30 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Contains("0000000000", missing.Error);
     }
 
+    /// <summary>HEAD2e: an ask's short title is kept and answered as `short`; too long is 400 in the rule's sentence; none is null.</summary>
+    [Fact]
+    public async Task An_asks_short_title_is_kept_and_answered_and_one_too_long_is_refused()
+    {
+        var titled = await host.PostAsync("/api/asks", new
+        {
+            workspace = "default", sentence = "Somebody should look at the short titles.", @short = "Short titles",
+        });
+        var plain = await host.PostAsync("/api/asks", new { workspace = "default", sentence = "Somebody should look at the plain ones." });
+        var long_ = await host.PostAsync("/api/asks", new
+        {
+            workspace = "default", sentence = "Somebody should look at the long ones.", @short = new string('x', 41),
+        });
+
+        Assert.Equal(200, titled.Status);
+        Assert.Equal("Short titles", titled.Json.GetProperty("ask").GetProperty("short").GetString());
+        var id = titled.Json.GetProperty("ask").GetProperty("id").GetString();
+        Assert.Equal("Short titles", (await host.GetAsync($"/api/asks/{id}")).Json.GetProperty("short").GetString());
+        // Null is left out of the answer, as every optional field is: the page reads absent as none.
+        Assert.False(plain.Json.GetProperty("ask").TryGetProperty("short", out var none) && none.ValueKind != System.Text.Json.JsonValueKind.Null);
+        Assert.Equal(400, long_.Status);
+        Assert.Contains("at most 40 characters", long_.Error);
+    }
+
     /// <summary>An ask made by mistake goes, and so does the one quest it became (D95).</summary>
     [Fact]
     public async Task An_ask_made_by_mistake_is_deleted_with_its_quest()

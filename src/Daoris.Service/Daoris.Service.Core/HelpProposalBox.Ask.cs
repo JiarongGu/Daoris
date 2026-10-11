@@ -15,6 +15,7 @@ public sealed partial class HelpProposalBox
     /// <c>on</c>, an environment's name or <c>off</c>; null, blank or <c>rule</c> writes none, and each repository's rule decides.
     /// </param>
     /// <param name="reviewWords">The person's words with the choice, written only with one.</param>
+    /// <param name="shortTitle">HEAD2e: the ask's short title (at most 40, the person's own where they gave one); null or blank writes none.</param>
     /// <remarks>
     /// ENTRY1c: the shape only, as the setting kind's <c>review</c> door judges its words: words go with a choice, and a choice is
     /// one word. Whether a name is an environment's, and one the ask's workspace declares, is the driver's, with the rule's own
@@ -22,11 +23,14 @@ public sealed partial class HelpProposalBox
     /// </remarks>
     public (string? Id, string Message) ProposeAsk(
         string sentence, string workspace, string why, string? session, DateTimeOffset at,
-        string? review = null, string? reviewWords = null)
+        string? review = null, string? reviewWords = null, string? shortTitle = null)
     {
         if (string.IsNullOrWhiteSpace(why)) return (null, "A proposal needs its reason: what the person asked, and what the change would do. Nothing was proposed.");
         if (string.IsNullOrWhiteSpace(sentence)) return (null, "An ask needs its words: what is to be done, as the person would say it. Nothing was proposed.");
         if (string.IsNullOrWhiteSpace(workspace)) return (null, "An ask is made at a workspace — name it. Nothing was proposed.");
+        // HEAD2e: the short title is judged by the quest's rule, as the ask door judges it, so Apply never meets a refusal for it.
+        var (shortKept, unfitShort) = QuestTitles.Judge(shortTitle);
+        if (unfitShort is not null) return (null, $"{unfitShort} Nothing was proposed.");
         var choice = Blank(review) is { } said && said != ReviewByRule ? said : null;
         var words = Blank(reviewWords);
         if (words is not null && choice is null)
@@ -48,6 +52,7 @@ public sealed partial class HelpProposalBox
             writer.WriteString("workspace", workspace.Trim());
             writer.WriteNull("value");
             writer.WriteString("sentence", sentence.Trim());
+            Nullable(writer, "short", shortKept);
             Nullable(writer, "review", choice);
             Nullable(writer, "reviewWords", words);
         }, why, session, at);
