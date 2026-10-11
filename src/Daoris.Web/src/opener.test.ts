@@ -55,6 +55,14 @@ describe('the opener', () => {
     expect(opening('sessions', null, { drawer: 'add', drawerWorkspace: 'work' })).toEqual({ view: 'sessions' });
   });
 
+  /** NEW1d-b: a door to the composer carries its repository and words, on Sessions alone. */
+  it('opens the composer with the repository and words a door carries, on Sessions alone', () => {
+    expect(opening('sessions', null, { compose: { repository: 'engine', sentence: 'fix it' } }))
+      .toEqual({ view: 'sessions', compose: { repository: 'engine', sentence: 'fix it' } });
+    expect(opening('sessions', null, { compose: {} })).toEqual({ view: 'sessions', compose: {} });
+    expect(opening('projects', null, { compose: { sentence: 'x' } })).toEqual({ view: 'projects' });
+  });
+
   /** PLUGUI1b (D119 §3.1): a plugin by its id, and one of Daoris's own plugins as an offer, since the two may share an id. */
   it('chooses the plugin or the offer a door names, in Plugins\' list', () => {
     expect(opening('plugins', 'acme.gate')).toEqual({ view: 'plugins', chosen: { view: 'plugins', item: 'acme.gate' } });

@@ -674,6 +674,29 @@ describe('Ask Daoris, with an agent named', () => {
     APPLIED = APPLIED_SETTING;
   });
 
+  /** NEW1d-b: a go to New conversation names the repository and the words, and the door carries both to the composer. */
+  it('takes the person to the composer with the repository and words a go names', async () => {
+    SESSIONS = [HELP];
+    PROPOSALS = [{
+      id: 'n5e6w7c8', kind: 'go', describe: 'Open Sessions → New conversation in `engine`: fix the build.', terminal: '',
+      why: 'the person asked to start a conversation',
+    }];
+    APPLIED = {
+      message: 'Applied: `#n5e6w7c8` — Open New conversation. Nothing else changed.',
+      applied: true, go: { view: 'sessions', domain: null, part: 'new', item: null, workspace: null, repository: 'engine', sentence: 'fix the build' },
+    };
+    bridge();
+    const onGo = vi.fn();
+    show(undefined, null, onGo);
+
+    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
+    await userEvent.click(within(cards).getByRole('button', { name: 'Go there' }));
+
+    await waitFor(() => expect(onGo).toHaveBeenCalledWith({ view: 'sessions', compose: { repository: 'engine', sentence: 'fix the build' } }));
+    PROPOSALS = [];
+    APPLIED = APPLIED_SETTING;
+  });
+
   /** HELP6: a delete is applied through the driver's Apply, like every card, and opens nothing. */
   it('deletes a record made by mistake on the person\'s press, and goes nowhere', async () => {
     SESSIONS = [HELP];

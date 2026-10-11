@@ -1,7 +1,7 @@
 import type { AgentPart } from '../agents/agents';
 import type { View } from '../commands';
 import type { KnowledgeMode } from '../knowledge/modes';
-import type { OpenGroup } from '../opener';
+import type { Compose, OpenGroup } from '../opener';
 import type { ProjectTab, WorkspaceSection, WorkspaceTab } from '../projects/tabs';
 import type { SettingsAnchor, SettingsSection } from '../SettingsView';
 import type { Machine } from './machine';
@@ -18,6 +18,8 @@ export type StarterDoor = {
   view: View; item?: string; section?: SettingsSection; anchor?: SettingsAnchor; drawer?: 'add' | 'import';
   /** The workspace the drawer opens filled with (ENTRY1d2b): Ask Daoris's go's. The folder is never a door's. */
   drawerWorkspace?: string;
+  /** The composer opened by a go to New conversation (NEW1d-b), with the repository it chooses and the words it opens with. */
+  compose?: Compose;
   /** A repository page's tab (UX6f): a door into a repository's own value opens its Setup. */
   tab?: ProjectTab;
   agentPart?: AgentPart;

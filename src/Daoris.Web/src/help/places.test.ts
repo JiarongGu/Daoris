@@ -164,6 +164,18 @@ describe('the places a go may name', () => {
   });
 
   /**
+   * NEW1d-b (D162's NEW1d-a note): a go to New conversation opens the composer, with the repository and the words the
+   * driver judged; with neither it opens the composer empty, and no other place takes them.
+   */
+  it('open the composer with the repository and words a go to New conversation names', () => {
+    expect(placeDoor({ view: 'sessions', part: 'new', repository: 'engine', sentence: ' fix the build ' }))
+      .toEqual({ view: 'sessions', compose: { repository: 'engine', sentence: 'fix the build' } });
+    expect(placeDoor({ view: 'sessions', part: 'new', repository: null, sentence: '  ' })).toEqual({ view: 'sessions', compose: {} });
+    expect(placeDoor({ view: 'sessions', part: 'new' })).toEqual({ view: 'sessions', compose: {} });
+    expect(placeDoor({ view: 'sessions', part: 'review', repository: 'engine', sentence: 'x' })).toEqual({ view: 'sessions', group: 'review' });
+  });
+
+  /**
    * UX6g (D150 §3.1): Settings → Workspace and Permissions retired into a workspace's page, and a go naming one opens the
    * workspace in view's page where its part went: its remote, its defaults (a line, a landing rule, reading across), its
    * Branches; Permissions alone opens what agents may do, on the agent that takes the rules. UX6g2b: each is a kept row of
