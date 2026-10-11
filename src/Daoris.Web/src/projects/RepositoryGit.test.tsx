@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import i18n from '../i18n';
 import { GIT_BRANCHES_ENGINE, GIT_HISTORY_ENGINE } from './fixtures';
 import { BranchesTab, HistoryTab } from './RepositoryGit';
@@ -34,11 +35,110 @@ describe("a repository's Branches tab", () => {
     expect(screen.getByText('No branches yet')).toBeInTheDocument();
   });
 
-  it('lists its branches, each by its name and its last commit', () => {
-    render(<BranchesTab repository="engine" read={{ state: 'read', value: GIT_BRANCHES_ENGINE }} />);
-    const rows = within(screen.getByRole('list', { name: "engine's branches" })).getAllByRole('listitem');
-    expect(rows.map((row) => row.querySelector('code')?.textContent)).toEqual(['main', 'daoris/engine-physics-step', 'spike/renderer']);
-    expect(rows[1]).toHaveTextContent('Fix the physics step on a slow frame');
+  it("lists its branches by kind: its line at the head, then sessions', landed and yours, and none only origin holds", () => {
+    render(<BranchesTab repository="engine" read={read()} />);
+    const list = screen.getByRole('region', { name: "engine's branches" });
+    expect(within(list).getAllByRole('heading').map((heading) => heading.textContent)).toEqual(['Line', "Sessions' (2)", 'Landed (3)', 'Yours (7)']);
+    expect(names("Sessions' (2)")).toEqual(['daoris/engine-physics-step', 'daoris/engine-audio-mix']);
+    expect(names('Landed (3)')).toEqual(['review/q6-asset-cache', 'review/q4-input-map', 'review/q2-shader-cache']);
+    // Each row is its name, its last commit and when, whole.
+    expect(row("Sessions' (2)", 'daoris/engine-physics-step')).toHaveTextContent('Fix the physics step on a slow frame');
+    expect(row("Sessions' (2)", 'daoris/engine-physics-step')).toHaveTextContent('1h ago');
+    // Origin's are on the wire, and shown from the list's ⋯ (UX6h2b): not here.
+    expect(list).not.toHaveTextContent('origin/release');
+  });
+
+  it('heads the list with its line: what set it, how it stands to origin, and when it was last fetched', () => {
+    const { rerender } = render(<BranchesTab repository="engine" read={read()} />);
+    const head = () => screen.getByRole('group', { name: 'Line' });
+    expect(head()).toHaveTextContent('main');
+    expect(head()).toHaveTextContent('Merge the asset cache');
+    expect(head()).toHaveTextContent('main, set for the workspace default. In step with origin/main. Fetched 3h ago.');
+
+    const line = (more: Partial<typeof GIT_BRANCHES_ENGINE.line>, fetch = GIT_BRANCHES_ENGINE.fetch) =>
+      rerender(<BranchesTab repository="engine" read={read({ line: { ...GIT_BRANCHES_ENGINE.line, ...more }, fetch })} />);
+    line({ ahead: 2 });
+    expect(head()).toHaveTextContent('2 commits ahead of origin/main.');
+    line({ behind: 1 });
+    expect(head()).toHaveTextContent('1 commit behind origin/main.');
+    line({ ahead: 1, behind: 3 });
+    expect(head()).toHaveTextContent('1 commit ahead of origin/main, and 3 behind.');
+    line({ ahead: null, behind: null, origin: 'd'.repeat(40) });
+    expect(head()).toHaveTextContent('Differs from origin/main, and git could not count how.');
+    line({ origin: null, ahead: null, behind: null });
+    expect(head()).toHaveTextContent('No origin/main here.');
+    line({ commit: null, ahead: null, behind: null });
+    expect(head()).toHaveTextContent('This checkout holds no main.');
+    // Git's own FETCH_HEAD time, or never fetched here, never a guess (the built-in Git design §2.2).
+    line({}, null);
+    expect(head()).toHaveTextContent('Never fetched here.');
+    line({}, { at: new Date(Date.now() - 3 * 3_600_000).toISOString(), heard: false });
+    expect(head()).toHaveTextContent('A fetch was tried 3h ago and heard nothing.');
+  });
+
+  it("names a session's branch by its session's title and state, with how far it stands from its line", () => {
+    const titles = { 'daoris/engine-physics-step': 'Fix the slow frame' };
+    const { rerender } = render(<BranchesTab repository="engine" read={read()} titles={titles} />);
+    const named = row("Sessions' (2)", 'daoris/engine-physics-step');
+    expect(named).toHaveTextContent('Fix the slow frame');
+    expect(within(named).getByText('working')).toBeInTheDocument();
+    expect(named).toHaveTextContent('2 commits ahead of main, and 1 behind.');
+    // One no record names says so, and is still a session's by its namespace (D88).
+    expect(row("Sessions' (2)", 'daoris/engine-audio-mix')).toHaveTextContent('No session record names it. 3 commits ahead of main.');
+
+    // Where the records could not be read, the list says so once, beside the sessions'.
+    rerender(<BranchesTab repository="engine" read={read({ sessionsUnread: true })} titles={titles} />);
+    expect(screen.getByText('The session records could not be read, so no branch here is named by its session.')).toBeInTheDocument();
+    expect(row("Sessions' (2)", 'daoris/engine-audio-mix')).not.toHaveTextContent('No session record names it.');
+  });
+
+  it('says whether each landed branch is pushed, and its pull request with its state and when', () => {
+    const { rerender } = render(<BranchesTab repository="engine" read={read()} />);
+    const open = row('Landed (3)', 'review/q6-asset-cache');
+    expect(open).toHaveTextContent('In step with origin/review/q6-asset-cache.');
+    expect(within(open).getByRole('link', { name: 'Open the pull request' })).toHaveAttribute('href', 'https://code.example.invalid/engine/pull/12');
+    expect(open).toHaveTextContent('Open: waits for you to merge it on the platform.');
+    expect(within(open).getByText('2h ago')).toBeInTheDocument();
+    const merged = row('Landed (3)', 'review/q4-input-map');
+    expect(merged).toHaveTextContent('Pushed, and gone from origin since.');
+    expect(merged).toHaveTextContent('Merged on the platform.');
+    expect(within(merged).getByText('1d ago')).toBeInTheDocument();
+    const kept = row('Landed (3)', 'review/q2-shader-cache');
+    expect(kept).toHaveTextContent('Not pushed.');
+    expect(within(kept).queryByRole('link')).toBeNull();
+
+    // Each other standing, and the plugin's other answers: abandoned, no state, and an ask that failed since.
+    const landed = GIT_BRANCHES_ENGINE.branches[3]!;
+    const as = (more: Partial<NonNullable<typeof landed.landed>>) => rerender(
+      <BranchesTab repository="engine" read={read({ branches: [{ ...landed, landed: { ...landed.landed!, ...more } }] })} />,
+    );
+    const shown = () => row('Landed (1)', 'review/q6-asset-cache');
+    as({ origin: 'ahead', originAhead: 2, originBehind: 0 });
+    expect(shown()).toHaveTextContent('2 commits ahead of origin/review/q6-asset-cache.');
+    as({ origin: 'behind', originAhead: 0, originBehind: 1 });
+    expect(shown()).toHaveTextContent('1 commit behind origin/review/q6-asset-cache.');
+    as({ origin: 'diverged', originAhead: 2, originBehind: 5 });
+    expect(shown()).toHaveTextContent('2 commits ahead of origin/review/q6-asset-cache, and 5 behind.');
+    as({ origin: 'unknown' });
+    expect(shown()).toHaveTextContent('Differs from origin/review/q6-asset-cache, and git could not count how.');
+    as({ pullRequestState: { ...landed.landed!.pullRequestState!, state: 'abandoned' } });
+    expect(shown()).toHaveTextContent('Abandoned on the platform.');
+    as({ pullRequestState: { ...landed.landed!.pullRequestState!, state: 'unknown' } });
+    expect(shown()).toHaveTextContent('Waits for you to merge it on the platform; azure last answered no state for it.');
+    as({ pullRequestAskFailed: { code: 'timeout', plugin: 'azure', at: new Date(Date.now() - 60 * 60_000).toISOString() } });
+    expect(shown()).toHaveTextContent('Could not read azure: timeout.');
+    expect(within(shown()).getByText('1h ago')).toBeInTheDocument();
+  });
+
+  it('folds yours after five, and the press shows the rest with the focus on the first it brought', async () => {
+    render(<BranchesTab repository="engine" read={read()} />);
+    expect(names('Yours (7)')).toEqual(['spike/renderer', 'try/ecs', 'notes/frame-budget', 'spike/vulkan', 'fix/readme']);
+    expect(row('Yours (7)', 'spike/renderer')).toHaveTextContent('4 commits ahead of main, and 9 behind.');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Show 2 more' }));
+    expect(names('Yours (7)')).toHaveLength(7);
+    expect(screen.queryByRole('button', { name: /^Show \d+ more$/ })).toBeNull();
+    expect(row('Yours (7)', 'experiment/jobs')).toHaveFocus();
   });
 
   it('says its states in 中文', async () => {
@@ -47,8 +147,28 @@ describe("a repository's Branches tab", () => {
     expect(screen.getByText('本机没有检出')).toBeInTheDocument();
     rerender(<BranchesTab repository="engine" read={{ state: 'read', value: { ...GIT_BRANCHES_ENGINE, branches: [] } }} />);
     expect(screen.getByText('还没有分支')).toBeInTheDocument();
+    rerender(<BranchesTab repository="engine" read={read({ sessionsUnread: true })} />);
+    const list = screen.getByRole('region', { name: 'engine 的分支' });
+    expect(within(list).getAllByRole('heading').map((heading) => heading.textContent)).toEqual(['主线', '会话分支（2）', '已落地（3）', '你的（7）']);
+    expect(screen.getByRole('group', { name: '主线' })).toHaveTextContent('与 origin/main 一致。上次获取：3 小时前。');
+    expect(screen.getByText('无法读取会话记录，所以这里没有分支以它的会话命名。')).toBeInTheDocument();
+    expect(row('已落地（3）', 'review/q2-shader-cache')).toHaveTextContent('未推送。');
+    expect(screen.getByRole('button', { name: '再显示 2 个' })).toBeInTheDocument();
   });
 });
+
+/** The engine's list as read, with what a case changes. */
+function read(more: Partial<typeof GIT_BRANCHES_ENGINE> & { sessionsUnread?: boolean } = {}) {
+  return { state: 'read' as const, value: { ...GIT_BRANCHES_ENGINE, ...more } };
+}
+
+/** The names a kind's list shows, in its order. */
+const names = (kind: string) =>
+  within(screen.getByRole('list', { name: kind })).getAllByRole('listitem').map((each) => each.querySelector('code')?.textContent);
+
+/** A kind's row, found by its branch's name. */
+const row = (kind: string, name: string) =>
+  within(screen.getByRole('list', { name: kind })).getAllByRole('listitem').find((each) => each.querySelector('code')?.textContent === name)!;
 
 describe("a repository's History tab", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });

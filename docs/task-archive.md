@@ -13483,3 +13483,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CONVNOTE2i — background work's states, worded** (driver + web twin; small). `background.work-ended` [work, state] shows the state as the harness sent it (`completed`, `failed`, `stopped`, or `ended` where none was kept; an open set). Word the known four as a family the page translates, an unknown state still shown as sent; NoteCodesTests and noteLines.test.ts read the code's shape. D152's CONVNOTE2f note (:381-383).
 
 **Outcome** 2026-10-11: the record is unchanged; the driver declares the four known states (`BackgroundState`), the page's `BACKGROUND_STATES` holds them key for key and words each from `note.background.state.*` (已完成, 失败, 已停止, 已结束), an unknown state still shown as sent. Detail: D152's CONVNOTE2i amendment.
+
+## UX6h2a — a repository's branches by kind (2026-10-11, D150)
+
+> - [ ] **UX6h2 — the branch list by kind** (web; after 1). The list by repository and kind (the line, sessions', landed, yours folded after five, origin's from ⋯; D112 order, `apart`, `sessionsUnread`) in the repository's Branches tab and above the workspace's clean-up and sync (which stay workspace-only for now). Built-in-git design §2.2.
+
+**Outcome** 2026-10-11 (the row's first half): a repository's Branches tab lists the line at the head (what set it, its origin standing, its last fetch), then sessions' (title and state, joined on the page), landed (pushed state, pull request and its state) and yours folded after five, each with its distance; `BranchList` imports nothing of the bridge. Origin's ⋯ and the workspace's tab are UX6h2b1 and b2. Detail: D150's UX6h2a note.

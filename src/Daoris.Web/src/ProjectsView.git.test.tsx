@@ -29,7 +29,7 @@ const REGISTRY = [
 
 // The fixtures held to the bridge's shapes, as the driver answers them.
 const ENGINE_LIST: GitBranchList = { repositories: [{ ...GIT_BRANCHES_ENGINE, workspace: 'aurora' }], apart: [], sessionsUnread: false };
-const LINE_COMMIT = GIT_BRANCHES_ENGINE.line.commit;
+const LINE_COMMIT = GIT_BRANCHES_ENGINE.line.commit!;
 const PAGE: GitGraphPage = { tips: [LINE_COMMIT], sinceParted: false, page: 0, commits: GIT_HISTORY_ENGINE, more: false };
 const answer = <T,>(value: T | null, refusal: string | null = null) => ({
   value, refusal, problem: refusal ? 'git said no' : null, commands: ['git log --graph --date-order main'], remembered: false,
@@ -79,10 +79,35 @@ describe("a repository's Branches and History tabs", () => {
 
     await userEvent.click(within(page).getByRole('tab', { name: 'Branches' }));
 
-    const list = await within(repositoryMain()).findByRole('list', { name: "engine's branches" });
-    expect(within(list).getAllByRole('listitem')).toHaveLength(3);
+    const list = await within(repositoryMain()).findByRole('region', { name: "engine's branches" });
+    // Two sessions', three landed and the first five of yours (UX6h2a); the line is the list's head.
+    expect(within(list).getAllByRole('listitem')).toHaveLength(10);
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_BRANCHES', expect.objectContaining({ payload: { repository: 'engine', workspace: 'aurora' } }));
     expect(asked('GIT_GRAPH')).toEqual([]);
+  });
+
+  it("names a session's branch by its session's title, joined on the page", async () => {
+    // The branch's session is one the service lists, on a quest it lists: the rail's rule names it by the quest.
+    const [line, physics, ...rest] = GIT_BRANCHES_ENGINE.branches;
+    const named = { ...physics!, session: { ...physics!.session!, session: 's1a2b3c4', quest: 'abc123' } };
+    const repositories = [{ ...ENGINE_LIST.repositories[0]!, branches: [line!, named, ...rest] }];
+    answering({ branches: () => ({ ...ENGINE_LIST, repositories }) });
+    show(<ProjectsView notify={() => {}} />);
+    const page = await chooseRepository('engine');
+    await userEvent.click(within(page).getByRole('tab', { name: 'Branches' }));
+
+    const sessions = await within(repositoryMain()).findByRole('list', { name: "Sessions' (2)" });
+    await waitFor(() => expect(within(sessions).getAllByRole('listitem')[0]).toHaveTextContent('Expose a streaming budget'));
+    expect(within(repositoryMain()).queryByText(/The session records could not be read/)).toBeNull();
+  });
+
+  it('says where the session records went unread: the list says it beside the entries, and the tab reaches it', async () => {
+    answering({ branches: () => ({ ...ENGINE_LIST, sessionsUnread: true }) });
+    show(<ProjectsView notify={() => {}} />);
+    const page = await chooseRepository('engine');
+    await userEvent.click(within(page).getByRole('tab', { name: 'Branches' }));
+    expect(await within(repositoryMain()).findByText('The session records could not be read, so no branch here is named by its session.'))
+      .toBeInTheDocument();
   });
 
   it("draws its line's history from the line's commit, and remembers the tab for the view", async () => {

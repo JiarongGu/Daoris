@@ -41,10 +41,32 @@ export type GitSessionBranch = {
   from: string | null;
 };
 
+/**
+ * What a plugin last answered about a landed branch's pull request (PLUGHOOK1c, D148 point 6): the driver's `PullRequestState`
+ * as the landing record keeps it, read and never asked.
+ */
+export type GitPullRequestState = {
+  /** `open` · `completed` · `abandoned` · `unknown`. */
+  state: string;
+  /** The pull request it answered for, a web address. */
+  pullRequest: string | null;
+  mergeCommit: string | null;
+  sourceCommit: string | null;
+  target: string | null;
+  how: string | null;
+  /** When it completed or was abandoned. */
+  at: string | null;
+  /** The plugin's own sentence: content. */
+  message: string | null;
+  plugin: string | null;
+  /** When Daoris asked; the year 1 where a record did not keep it. */
+  askedAt: string;
+};
+
 export type GitLandedBranch = {
   session: string;
   landedAt: string;
-  /** One of the driver's `GitOrigin`. */
+  /** One of the driver's `GitOrigin`: `in-step` · `ahead` · `behind` · `diverged` · `gone` · `not-pushed` · `unknown`. */
   origin: string;
   quest: string | null;
   title: string | null;
@@ -55,7 +77,7 @@ export type GitLandedBranch = {
   originCommit: string | null;
   originAhead: number | null;
   originBehind: number | null;
-  pullRequestState: Record<string, unknown> | null;
+  pullRequestState: GitPullRequestState | null;
   pullRequestAskFailed: { code: string; plugin: string; at: string } | null;
 };
 

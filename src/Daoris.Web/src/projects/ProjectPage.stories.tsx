@@ -19,8 +19,9 @@ import type { ProjectTab } from './tabs';
 // each section folded to what Daoris decides and open: Driving, Line and landing, Sessions, Reach, the person's own values, narrow and
 // in 中文; since WORKFLOW1b its Workflow tab, with everything at once, nothing set, a limit, in 中文, narrow and in a browser;
 // since UX6h1 (§4.4) its Branches and History tabs, each reading, with no checkout here, refused, with nothing yet and read,
-// History's lanes for a merged branch and for several, dark, in 中文 and narrow; and the main area with no page: nothing
-// chosen, gone, loading, an error with no answer ever.
+// History's lanes for a merged branch and for several, dark, in 中文 and narrow; since UX6h2a Branches by kind, its line's
+// and its landed branches' other standings with origin, its session records unread, dark and narrow; and the main area with
+// no page: nothing chosen, gone, loading, an error with no answer ever.
 
 const nothing = () => {};
 
@@ -29,7 +30,32 @@ const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 /** The list beside the main area a strip and the side bar closed: the main area at 34 rem. */
 const narrow: Decorator = (Story) => <div className="flex h-[44rem] w-[34rem] max-w-full border border-line bg-page"><Story /></div>;
 
-const branchesRead = (read: GitRead<GitRepositoryBranches>) => <BranchesTab repository="engine" read={read} />;
+/** The title its holder joins for the session branch a record names (the rail's rule): its quest's name. */
+const TITLES = { 'daoris/engine-physics-step': 'Expose a streaming budget' };
+
+type BranchesValue = GitRepositoryBranches & { sessionsUnread?: boolean };
+const branchesRead = (read: GitRead<BranchesValue>) => <BranchesTab repository="engine" read={read} titles={TITLES} />;
+const branchesAs = (more: Partial<BranchesValue>) => branchesRead({ state: 'read', value: { ...GIT_BRANCHES_ENGINE, ...more } });
+
+/** The engine's landed branches in their other standings, as `GIT_BRANCHES` answers them. */
+const LANDED_OTHERWISE = (() => {
+  const [, , , open, merged] = GIT_BRANCHES_ENGINE.branches;
+  const asked = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString();
+  const as = (name: string, landed: Partial<NonNullable<NonNullable<typeof open>['landed']>>) =>
+    ({ ...open!, name, landed: { ...open!.landed!, ...landed } });
+  return [
+    as('review/q9-level-streaming', {
+      origin: 'diverged', originAhead: 2, originBehind: 3,
+      pullRequestAskFailed: { code: 'timeout', plugin: 'azure', at: asked(1) },
+    }),
+    as('review/q8-audio-bus', { origin: 'ahead', originAhead: 1, originBehind: 0, pullRequestState: { ...open!.landed!.pullRequestState!, state: 'unknown' } }),
+    as('review/q7-save-slots', {
+      origin: 'behind', originAhead: 0, originBehind: 4,
+      pullRequestState: { ...open!.landed!.pullRequestState!, state: 'abandoned', at: asked(20) },
+    }),
+    { ...merged!, landed: { ...merged!.landed!, origin: 'unknown', pullRequestState: null, pullRequest: null } },
+  ];
+})();
 const historyRead = (read: HistoryRead) => <HistoryTab repository="engine" read={read} />;
 const lineHistory = (commits: GitLogCommit[], tips = [commits[0]!.commit]) => historyRead({ state: 'read', value: { line: 'main', tips, commits } });
 
@@ -185,10 +211,50 @@ export const WorkflowNarrow: Story = {
 export const WorkflowInABrowser: Story = { args: { ...InABrowser.args, start: 'workflow' } };
 
 /**
- * **Branches** (UX6h1, D150 §4.2, §4.4): its branches as `GIT_BRANCHES` reads them for it, each by its name and its last
- * commit, in the list's order. The list by kind is UX6h2's.
+ * **Branches** (UX6h1, D150 §4.2, §4.4; by kind since UX6h2a, the built-in Git design §2.2): its line at the head, set for
+ * the workspace, in step with origin and fetched three hours ago; *Sessions'*, one named by its session's title and state and
+ * one no record names, each ahead of and behind the line; *Landed*, in step with an open pull request, gone from origin after
+ * it merged, and never pushed; and *Yours*, five of seven with *Show 2 more*. The branch only origin holds is not drawn.
  */
 export const Branches: Story = { args: { start: 'branches' } };
+
+/**
+ * Branches where the line has gone its own way from origin and the last fetch heard nothing, and the landed branches stand
+ * otherwise: diverged with an ask that failed since, ahead with no state answered, behind with its pull request abandoned,
+ * and one git could not count.
+ */
+export const BranchesOriginStates: Story = {
+  args: {
+    start: 'branches',
+    branches: branchesAs({
+      line: { ...GIT_BRANCHES_ENGINE.line, ahead: 2, behind: 5 },
+      fetch: { at: new Date(Date.now() - 26 * 3_600_000).toISOString(), heard: false },
+      branches: [GIT_BRANCHES_ENGINE.branches[0]!, ...LANDED_OTHERWISE],
+    }),
+  },
+};
+
+/** Branches of a checkout never fetched, whose line origin holds no copy of. */
+export const BranchesNeverFetched: Story = {
+  args: { start: 'branches', branches: branchesAs({ line: { ...GIT_BRANCHES_ENGINE.line, origin: null, ahead: null, behind: null }, fetch: null }) },
+};
+
+/** Branches where the session records could not be read: said once beside the sessions', and none is named. */
+export const BranchesSessionsUnread: Story = {
+  args: {
+    start: 'branches',
+    branches: branchesAs({
+      sessionsUnread: true,
+      branches: GIT_BRANCHES_ENGINE.branches.map((branch) => (branch.kind === 'session' ? { ...branch, session: null } : branch)),
+    }),
+  },
+};
+
+/** Branches by kind, dark. */
+export const BranchesDark: Story = { args: { start: 'branches' }, decorators: [dark] };
+
+/** Branches by kind with the main area at 34 rem: a long name and a commit's subject wrap, never cut. */
+export const BranchesNarrow: Story = { args: { start: 'branches' }, decorators: [narrow] };
 
 /** Branches on their way: said, with rows drawn in their place. */
 export const BranchesReading: Story = { args: { start: 'branches', branches: branchesRead({ state: 'reading' }) } };
@@ -212,7 +278,10 @@ export const BranchesNone: Story = {
   args: { start: 'branches', branches: branchesRead({ state: 'read', value: { ...GIT_BRANCHES_ENGINE, branches: [] } }) },
 };
 
-/** Branches in 中文: the tab's name and its states; a branch's name and its commit are content, shown as they are. */
+/**
+ * Branches in 中文: the tab's name, its kinds and their facts; a branch's name, its commit and a session's title are content,
+ * shown as they are.
+ */
 export const BranchesChinese: Story = { args: { start: 'branches' }, decorators: [chinese] };
 
 /** Branches with no checkout here, in 中文. */

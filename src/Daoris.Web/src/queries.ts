@@ -277,11 +277,13 @@ export const useAnswerGoAhead = () =>
   useAskChange(({ id, number, approved, words }: { id: string; number: number; approved: boolean; words?: string }) =>
     api.answerGoAhead(id, number, approved, words));
 
-export const useQuests = (repository: string | null, includeClosed: boolean) => {
+/** The quests in scope; `enabled` false asks nothing, for a reader that needs them only sometimes (a session branch's title, UX6h2a). */
+export const useQuests = (repository: string | null, includeClosed: boolean, enabled = true) => {
   const { workspace } = useScope();
   return useQuery({
     queryKey: keys.quests(repository, includeClosed, workspace),
     queryFn: ({ signal }) => api.quests(repository, includeClosed, workspace, signal),
+    enabled,
   });
 };
 

@@ -149,21 +149,77 @@ export const SETUP_OWN: RepositorySetupProps = {
 const id = (short: string) => short.padEnd(40, '0');
 const hoursAgo = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString();
 
+/** What names a session's branch, as `GIT_BRANCHES` reads it: the newest session record on its tree. */
+const sessionOf = (session: string, state: string, quest: string | null) =>
+  ({ session: session as string | null, state: state as string | null, quest, grewFrom: null as string | null, from: null as string | null });
+
+/** What a plugin last answered about a landed branch's pull request, asked some hours ago (PLUGHOOK1c). */
+const pullRequestOf = (state: string, asked: number, done: number | null = null) => ({
+  state, pullRequest: 'https://code.example.invalid/engine/pull/12' as string | null, mergeCommit: null as string | null,
+  sourceCommit: null as string | null, target: 'main' as string | null, how: null as string | null,
+  at: done === null ? null : hoursAgo(done), message: null as string | null, plugin: 'azure' as string | null, askedAt: hoursAgo(asked),
+});
+
+/** A landed branch's record (D102) and how it stands to its own name on origin, one of the driver's `GitOrigin`. */
+const landedOf = (origin: string, { pushed = true, pullRequest = null, ahead = null, behind = null, state = null, failed = null }: {
+  pushed?: boolean;
+  pullRequest?: string | null;
+  ahead?: number | null;
+  behind?: number | null;
+  state?: ReturnType<typeof pullRequestOf> | null;
+  failed?: { code: string; plugin: string; at: string } | null;
+} = {}) => ({
+  session: 's-21', landedAt: hoursAgo(30), origin, quest: null as string | null, title: null as string | null, plugin: 'azure' as string | null,
+  pushed, pullRequest, pushedTip: null as string | null, originCommit: null as string | null, originAhead: ahead, originBehind: behind,
+  pullRequestState: state, pullRequestAskFailed: failed,
+});
+
+/** A branch as `GIT_BRANCHES` lists it: its kind, and its last commit some hours ago. */
+const branchOf = (name: string, kind: string, short: string, hours: number, subject: string, {
+  ahead = null, behind = null, tree = null, session = null, landed = null,
+}: {
+  ahead?: number | null;
+  behind?: number | null;
+  tree?: string | null;
+  session?: ReturnType<typeof sessionOf> | null;
+  landed?: ReturnType<typeof landedOf> | null;
+} = {}) => ({ name, kind, commit: id(short), at: hoursAgo(hours) as string | null, subject, ahead, behind, tree, session, landed });
+
 /**
- * The engine's branches as `GIT_BRANCHES` answers them for its repository (GIT1d): its line, a session's and the person's.
- * Its shape is the bridge's, which `ProjectsView.git.test.tsx` holds it to; a fixture beside the molecules imports none.
+ * The engine's branches as `GIT_BRANCHES` answers them for its repository (GIT1d), in the driver's order (the line, then each
+ * kind newest first): its line, two sessions' (one no record names), three landed (in step with an open pull request, gone
+ * from origin after it merged, never pushed), seven of the person's and one only origin holds. Its shape is the bridge's,
+ * which `ProjectsView.git.test.tsx` holds it to; a fixture beside the molecules imports none.
  */
 export const GIT_BRANCHES_ENGINE = {
   repository: 'engine', workspace: 'default',
-  line: { branch: 'main', source: 'workspace', commit: id('c4f1a2'), origin: id('c4f1a2'), ahead: 0, behind: 0 },
-  fetch: { at: hoursAgo(3), heard: true }, holds: true, missing: [], commands: ['git for-each-ref refs/heads refs/remotes'], problem: null,
+  line: {
+    branch: 'main' as string | null, source: 'workspace', commit: id('c4f1a2') as string | null, origin: id('c4f1a2') as string | null,
+    ahead: 0 as number | null, behind: 0 as number | null,
+  },
+  fetch: { at: hoursAgo(3), heard: true } as { at: string; heard: boolean } | null,
+  holds: true, missing: [], commands: ['git for-each-ref refs/heads refs/remotes'], problem: null,
   branches: [
-    { name: 'main', kind: 'line', commit: id('c4f1a2'), at: hoursAgo(2), subject: 'Merge the asset cache', ahead: null, behind: null, tree: null, session: null, landed: null },
-    {
-      name: 'daoris/engine-physics-step', kind: 'session', commit: id('9be03d'), at: hoursAgo(1), subject: 'Fix the physics step on a slow frame',
-      ahead: 2, behind: 1, tree: 'engine-physics-step', session: null, landed: null,
-    },
-    { name: 'spike/renderer', kind: 'yours', commit: id('5d2e77'), at: hoursAgo(80), subject: 'Try a forward renderer', ahead: 4, behind: 9, tree: null, session: null, landed: null },
+    branchOf('main', 'line', 'c4f1a2', 2, 'Merge the asset cache'),
+    branchOf('daoris/engine-physics-step', 'session', '9be03d', 1, 'Fix the physics step on a slow frame', {
+      ahead: 2, behind: 1, tree: 'engine-physics-step', session: sessionOf('s-41', 'working', 'q7'),
+    }),
+    branchOf('daoris/engine-audio-mix', 'session', '61c0aa', 26, 'Mix the music under the effects', { ahead: 3, behind: 0 }),
+    branchOf('review/q6-asset-cache', 'landed', 'a19c5b', 5, 'Cache assets by their content hash', {
+      landed: landedOf('in-step', { pullRequest: 'https://code.example.invalid/engine/pull/12', state: pullRequestOf('open', 2) }),
+    }),
+    branchOf('review/q4-input-map', 'landed', '2f7d10', 50, "Map the gamepad's inputs", {
+      landed: landedOf('gone', { pullRequest: 'https://code.example.invalid/engine/pull/9', state: pullRequestOf('completed', 29, 30) }),
+    }),
+    branchOf('review/q2-shader-cache', 'landed', '0e4b9c', 90, 'Warm the shader cache', { landed: landedOf('not-pushed', { pushed: false }) }),
+    branchOf('spike/renderer', 'yours', '5d2e77', 80, 'Try a forward renderer', { ahead: 4, behind: 9 }),
+    branchOf('try/ecs', 'yours', '7a1e02', 100, 'Try an entity system', { ahead: 6, behind: 12 }),
+    branchOf('notes/frame-budget', 'yours', '33d9e1', 120, 'Note the frame budget', { ahead: 1, behind: 14 }),
+    branchOf('spike/vulkan', 'yours', 'b80c4f', 150, 'Draw a triangle on Vulkan', { ahead: 9, behind: 20 }),
+    branchOf('fix/readme', 'yours', '4c2a90', 200, 'Fix the readme', { ahead: 0, behind: 22 }),
+    branchOf('experiment/jobs', 'yours', 'e51f37', 300, 'Run the physics on jobs', { ahead: 5, behind: 30 }),
+    branchOf('old/menu', 'yours', '90ad6e', 400, 'Draw the old menu', { ahead: 2, behind: 41 }),
+    branchOf('origin/release', 'origin', 'd04c11', 10, 'Cut the release'),
   ],
 };
 
