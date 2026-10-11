@@ -1161,6 +1161,7 @@ public sealed partial class ServiceClient : IDisposable
                 // Absent is a person's publish or a chain's step: a host from before SESS1 answers without it.
                 PublishedBy = Text(quest, "publishedBy") is { Length: > 0 } by ? by : null,
                 Note = Text(quest, "note"),
+                NoteParts = NotePart.Read(quest),
                 Workspace = RemoteTarget.Workspace(Text(quest, "workspace")),
                 Deletable = Flag(quest, "deletable"),
                 // The lanes of `to` it addresses (D115 §2.2). Absent is none: the whole repository.

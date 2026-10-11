@@ -13292,3 +13292,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CONVNOTE2d2–h — the conversation's other driver notes, by code** … (Group d's second half: ChatRunner.cs ~:1302, ~:1306, ~:1474, ChatRunner.StartFrom.cs ~:159-161, SessionWords.cs ~:686-690.)
 
 **Outcome** 2026-10-11: `words.refused` reused (its noun a parameter), and `words.not-reached`, `words.not-sent`, `words.start-not-taken` [session] and `words.not-kept` added, each English byte for byte; SessionWords' lost words keep their `Why` and gain parts (the page reads the `Why` first; `CannotLine`'s fallback now passes the parts). Driver.Continue's console lines stay the terminal's English (D142 point 9). With 2d1, group d is closed. Detail: D152's CONVNOTE2d2 note.
+
+
+## QUESTCLOSE1b3 — the room names `quest done` (2026-10-11, D126)
+
+> - [ ] **QUESTCLOSE1b3 — the room names `quest done`** (driver; after b1 and SESSUX1h2). A HelpRoomDoors row for `daoris-driver quest done <id> [--note]` and its coverage answer beside the page's `PersonDone` (already its own conversation, HelpCoverageTests ~:388); ServiceClient reads `noteParts`.
+
+**Outcome** 2026-10-11: `QuestView` reads `NoteParts` (nothing prints them: the terminal stays English); the room's doors table names the person's done ("Quests → the quest's page → Mark done…" and `daoris-driver quest done <id> [--note "…"]`), Ask Daoris taking the person there and never writing it; a test holds both doors and no `done` proposal kind. Detail: D126's QUESTCLOSE1b3 note.

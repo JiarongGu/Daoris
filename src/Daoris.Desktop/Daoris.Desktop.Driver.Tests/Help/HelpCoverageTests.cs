@@ -930,6 +930,20 @@ public sealed partial class HelpCoverageTests
     }
 
     /// <summary>
+    /// QUESTCLOSE1b3: the headless host's <c>quest done</c> is the person's own word on a quest (D126's QUESTCLOSE1), its page
+    /// press an own conversation (<see cref="PersonDone"/>); the room names both doors, so Ask Daoris takes the person there.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_quest_done_is_the_persons_own_and_the_room_names_both_doors()
+    {
+        Assert.Contains("quest done <id> [--note \"…\"]", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("done"));
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver quest done <id> [--note \"…\"]`", StringComparison.Ordinal)
+            && door.Screen.Contains("Mark done…", StringComparison.Ordinal));
+        Assert.Contains("QUESTCLOSE1", PersonDone.Reason);
+    }
+
+    /// <summary>
     /// PAUSE1b: the headless host's pause and resume are doors owed to PAUSE1f's <c>pause</c> kind (D132 §7.4) while the host's
     /// usage spells them and no kind of that name is built; the room names them meanwhile, so the helper can point at them.
     /// </summary>

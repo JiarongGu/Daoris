@@ -40,6 +40,12 @@ public sealed partial record QuestView(string Id, string From, string To, string
     public string? Note { get; init; }
 
     /// <summary>
+    /// Its note's coded parts as the service answered them (QUESTCLOSE1b1), or null from a host before them; the terminal
+    /// stays English (D142 point 9), so a reader that words a close in the person's language takes them, as a session's do.
+    /// </summary>
+    public IReadOnlyList<NotePart>? NoteParts { get; init; }
+
+    /// <summary>
     /// The circle it is held in (D48), as the service answered it, or the default where a host answers none: which
     /// workspace's pass carries an abandon's decline of it (PAUSE1d, D132 §3.4 step 4).
     /// </summary>
