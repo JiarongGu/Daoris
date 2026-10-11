@@ -76,6 +76,12 @@ public static class TidyCause
 
     /// <summary>A tree's folders could not be read.</summary>
     public const string Folders = "folders";
+
+    /// <summary>A whole repository's pass threw (AUTOTIDY1a3); the exception is neither logged nor typed, its message may hold a path.</summary>
+    public const string Pass = "pass";
+
+    /// <summary>The judgement could not read an item: git gave no answer for its tree's contents, its tip or its unlanded log (AUTOTIDY1a3).</summary>
+    public const string Judged = "judged";
 }
 
 public sealed partial class SessionTrees

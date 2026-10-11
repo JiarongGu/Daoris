@@ -281,5 +281,7 @@
   "projects.tidied.cause.list": "工作树列表",
   "projects.tidied.cause.folder": "多出文件夹",
   "projects.tidied.cause.index": "工作树索引",
-  "projects.tidied.cause.folders": "文件夹读取"
+  "projects.tidied.cause.folders": "文件夹读取",
+  "projects.tidied.cause.pass": "整理出错",
+  "projects.tidied.cause.judged": "未能判断"
 }

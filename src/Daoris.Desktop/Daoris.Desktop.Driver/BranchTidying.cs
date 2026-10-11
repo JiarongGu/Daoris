@@ -94,10 +94,7 @@ public sealed class BranchTidying(string home)
                 }
                 catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
                 {
-                    pass = new TidyPass([], TidyKept.Unread, error.Message)
-                    {
-                        Repository = row.Repository, Workspace = RemoteTarget.Workspace(row.Workspace),
-                    };
+                    pass = Threw(row.Repository, row.Workspace, error);
                 }
 
                 // Said as each repository is done: a removal is written though the look is closed before the next.
@@ -197,6 +194,10 @@ public sealed class BranchTidying(string home)
         return lines;
     }
 
+    /// <summary>A repository whose pass threw, held unread with the code <see cref="TidyCause.Pass"/> (AUTOTIDY1a3); the console keeps the message.</summary>
+    internal static TidyPass Threw(string repository, string? workspace, Exception error) =>
+        new([], TidyKept.Unread, error.Message) { Repository = repository, Workspace = RemoteTarget.Workspace(workspace), Cause = TidyCause.Pass };
+
     /// <summary><see cref="Said"/>'s lines and log for some passes, each reason met added to <paramref name="met"/>.</summary>
     private IReadOnlyList<string> Say(IReadOnlyList<TidyPass> passes, MachineLog? log, HashSet<string> met)
     {
@@ -235,7 +236,7 @@ public sealed class BranchTidying(string home)
                         : result.Message == "kept" ? (null, null) : (TidyKept.Refused, result.Message);
                     if (why is null || !First(met, pass.Repository, item.Branch, why)) continue;
                     lines.Add($"tidy  {pass.Repository}: `{item.Branch}` stays, since {Clause(clause!)}.");
-                    log?.Warn("branch.kept", Kept(pass.Repository, pass.Workspace, item.Branch, why, why == TidyKept.Unread ? result.Cause : null));
+                    log?.Warn("branch.kept", Kept(pass.Repository, pass.Workspace, item.Branch, why, why == TidyKept.Unread ? result.Cause ?? (item.Unread ? TidyCause.Judged : null) : null));
                 }
             }
         }

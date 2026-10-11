@@ -14,7 +14,7 @@ export const TIDIED_EVENTS = ['branch.tidied', 'branch.kept'] as const;
 const WHY = ['unread', 'refused', 'busy', 'hidden', 'nested', 'linked', 'starting', 'sessions'] as const;
 
 /** Which `unread` it was (AUTOTIDY1a2): a code from the driver, never the sentence with its path (D47 §4); any other is left unworded. */
-const CAUSE = ['toplevel', 'refs', 'list', 'folder', 'index', 'folders'] as const;
+const CAUSE = ['toplevel', 'refs', 'list', 'folder', 'index', 'folders', 'pass', 'judged'] as const;
 
 const text = (value: unknown) => (typeof value === 'string' && value ? value : null);
 

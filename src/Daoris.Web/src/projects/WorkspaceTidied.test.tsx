@@ -101,6 +101,8 @@ describe('what was cleaned up on its own', () => {
     ['folder', 'stray folder', '多出文件夹'],
     ['index', "tree's index", '工作树索引'],
     ['folders', 'folders unread', '文件夹读取'],
+    ['pass', 'pass failed', '整理出错'],
+    ['judged', 'item unread', '未能判断'],
   ])('words the cause %s after the reason, in English and Chinese', async (cause, en, zh) => {
     const { unmount } = render(<WorkspaceTidied lines={[kept('unread', 2, { cause })]} />);
     expect(screen.getByRole('listitem')).toHaveTextContent(`unreadable · ${en}`);

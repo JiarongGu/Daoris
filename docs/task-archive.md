@@ -13627,3 +13627,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **BRSCOPE1b — checkout scope and sync workspace** (modules/service/driver; after BRSCOPE1a). Share checkout-scope fixtures; carry workspace through sync proposals. D150 notes; three-door proof.
 
 **Outcome** 2026-10-12: `sync_propose` takes an optional one-word workspace; Ask Daoris's sync card refuses one this machine lacks, says its scope, adds `--workspace` to its terminal line and scopes its look and press by it, so the page, the terminal and Ask Daoris scope alike; the modules' test reads the driver tests' `checkout-scope.json`, routed to both gates. Detail: D150's BRSCOPE1b note.
+
+## AUTOTIDY1a3 — the last two unread paths by code (2026-10-12, D88)
+
+> - [ ] **AUTOTIDY1a3 — the last two unread paths by code** (driver). A whole pass that throws (BranchTidying.cs ~:97) and a judgement that could not read an item (`SweepItem.Unread`) still log `unread` with no `cause`. Name each, as AUTOTIDY1a2 did the six. D88's AUTOTIDY1a2 note.
+
+**Outcome** 2026-10-12: a thrown pass logs `cause: pass` (the code alone, no message) and an item the judgement could not read logs `judged`; the page words both in en and zh. Every `unread` now names a cause. Detail: D88's AUTOTIDY1a3 note.
