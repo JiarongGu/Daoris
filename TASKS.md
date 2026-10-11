@@ -27,7 +27,6 @@ Contracts: platform UX §4/§6, `docs/2026-10-05-ux7-design.md` (D152), `docs/20
 `docs/2026-10-04-ux6-redesign.md` (D150, §12 proofs). UI work needs stories, behavior tests and
 installed-window evidence in both themes/languages; Storybook alone does not close an installed proof.
 
-- [ ] **NEW1c — add a repository from the picker, the draft kept** (web; after b). *Add a repository…* / *Import a folder…* at the picker's foot open Projects' drawers over Sessions; Add's `onAdded` chooses it and returns focus; Import gains the same. First run: *Add a repository…* is the primary press. Design §1.
 - [ ] **NEW1d-b — the go fills the composer; *Make it a task with Daoris…*** (web; after NEW1d-a and NEW1c). `placeDoor` opens the composer with the go's repository and words; the composer's quiet press hands its draft and repository to Ask Daoris as a draft. Design §1.
 - [ ] **NEW1e — the checkout's branch on the tree chip** (driver/web). The design's *the checkout · main* needs the checkout's current branch, which no route answers (`GitLine` is the landing line, not its head). Add the read, then the chip says it. Design §1 (Tree); a story and the window.
 

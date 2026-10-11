@@ -1,6 +1,8 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import * as Tooltip from '@radix-ui/react-tooltip';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AddProjectDrawer } from '../ProjectManage';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../storyLanguage';
 import { NewConversation, type StartRepository } from './NewConversation';
@@ -39,6 +41,17 @@ const inMain = (width: number) => (Story: () => ReactNode) => (
 const wide = inMain(1200);
 const narrow = inMain(632);
 
+/** The composer's *Add repository…* drawer drawn over it: Projects' own, which reads the registry through a client. */
+function withAddDrawer(Story: () => ReactNode) {
+  const [client] = useState(() => new QueryClient());
+  return (
+    <QueryClientProvider client={client}>
+      <Story />
+      <AddProjectDrawer onClose={() => {}} notify={() => {}} />
+    </QueryClientProvider>
+  );
+}
+
 const meta: Meta<typeof NewConversation> = {
   title: 'Work/New conversation',
   component: NewConversation,
@@ -53,6 +66,8 @@ const meta: Meta<typeof NewConversation> = {
     recent: ['tools', 'engine'],
     onStart: () => {},
     onOpenSession: () => {},
+    onAdd: () => {},
+    onImport: () => {},
   },
 };
 export default meta;
@@ -88,9 +103,15 @@ export const Refused: Story = {
 /** A start on its way: Start presses once. */
 export const Starting: Story = { args: { draft: DRAFT, pending: true } };
 
-/** No repository with a checkout here: the prompt takes words, Start waits, and the place says how to add one. */
+/** No repository with a checkout here: the prompt takes words, Start waits, and *Add repository…* is the primary press (NEW1c). */
 export const FirstRun: Story = {
   args: { repositories: [{ name: 'website', workspace: 'default', checkout: false }], recent: [], draft: 'Look around' },
+};
+
+/** One drawer over Sessions with the words still in the prompt (NEW1c): the composer's own, opened from the picker's foot. */
+export const AddOver: Story = {
+  args: { draft: DRAFT },
+  decorators: [withAddDrawer],
 };
 
 /** A browser has no shell: no composer, and the place says where a conversation starts. */
@@ -100,6 +121,16 @@ export const Browser: Story = { args: { attached: false } };
 export const Narrow: Story = { args: Typed.args, decorators: [narrow] };
 
 export const NarrowPickerOpen: Story = { args: PickerOpen.args, decorators: [narrow] };
+
+export const NarrowFirstRun: Story = { args: FirstRun.args, decorators: [narrow] };
+
+export const NarrowAddOver: Story = { args: AddOver.args, decorators: [narrow, withAddDrawer] };
+
+export const ChineseFirstRun: Story = { args: FirstRun.args, decorators: [chinese] };
+
+export const ChinesePickerOpen: Story = { args: PickerOpen.args, decorators: [chinese] };
+
+export const ChineseAddOver: Story = { args: AddOver.args, decorators: [chinese, withAddDrawer] };
 
 export const Dark: Story = {
   args: Typed.args,

@@ -28,6 +28,8 @@ joins it to the working session through `GET /api/opinions`, asked only when the
 read claims nothing.
 With nothing attended, Sessions asks what to work on (NEW1b, D162): *New conversation* takes the words, a repository, a
 tree and an agent with its account, and opens the conversation on them. Ctrl+N and Workspace › *New conversation…* open it.
+The repository list's foot adds one or imports a folder (NEW1c) through Repositories' own drawers, opened over Sessions with the
+words kept; what is added is chosen, and the prompt takes the focus back when a drawer closes.
 **Settings** is everywhere: Get started, Appearance and AI in a browser; the desktop also offers
 Driver, Tools, Browser and Logs. Plugins has its own view. Agent accounts live in Agents; workspace controls live in
 Repositories. The desktop's seven menus share one command table, with shortcuts and a command palette

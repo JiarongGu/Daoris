@@ -16,6 +16,9 @@ with the version and date at release.
   where it works (the driver's choice, the checkout, or a tree of its own) and the agent with its account, and press Enter.
   It replaces *Start a session*, which opened an empty conversation. Ctrl+N and Workspace › *New conversation…* open it;
   *New ask…* is now Ctrl+Shift+N. A refused start says why under *Start* and keeps your words.
+- *New conversation* adds a repository without leaving Sessions: *Add repository…* and *Import a folder…* sit at the foot of
+  the repository list and open their drawers over the prompt, which keeps your words. What you add is chosen; an import of
+  several opens the list on their workspace. With no repository to work in yet, *Add repository…* is the first press.
 - A quest's, an ask's and a session's title section no longer moves its buttons: a long title takes two lines at most
   (one for a session) beside a fixed column of actions, and on a narrow window the actions take their own row. An ask's
   long request is clamped with *View full request*; a session no longer repeats its quest's whole title above the

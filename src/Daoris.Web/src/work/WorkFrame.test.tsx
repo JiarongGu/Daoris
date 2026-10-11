@@ -558,6 +558,109 @@ describe('the Work frame', () => {
   });
 
   /**
+   * NEW1c, the entry design §1: a repository is added, or a folder imported, from the picker's foot without leaving Sessions,
+   * and the words typed before are kept. The drawers are Projects' own, mounted here; registering starts nothing.
+   */
+  describe('adding a repository from the composer', () => {
+    const PICKED = {
+      path: 'D:/repos/borealis', name: 'borealis', exists: true, adopted: false, git: true,
+      owns: [], accepts: [], packs: [], join: false, shareKnowledge: false, uses: [],
+    };
+    let registry: unknown[];
+    let imported: { folder: string; imported: number; repositories: string[]; message: string; workspace?: string };
+
+    const listed = (name: string, workspace: string) => ({
+      repository: name, adopted: false, registered: true, owns: [], accepts: [], packs: [], entries: 0,
+      root: `D:/repos/${name}`, workspace,
+    });
+
+    beforeEach(() => {
+      registry = [...REGISTRY];
+      imported = { folder: 'D:/repos', imported: 0, repositories: [], message: 'Nothing imported.' };
+      vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url === '/api/registry/import' && init?.method === 'POST') {
+          registry = [...registry, ...imported.repositories.map((name) => listed(name, imported.workspace ?? 'default'))];
+          return Response.json(imported);
+        }
+        if (url === '/api/registry' && init?.method === 'POST') {
+          registry = [...registry, listed('borealis', 'default')];
+          return Response.json({ repository: 'borealis', workspace: 'default' });
+        }
+        if (url.startsWith('/api/registry')) return Response.json(registry);
+        return respond(url);
+      }));
+      invoke.mockImplementation(async (_module: string, type: string) => (type === 'PICK_FOLDER' ? PICKED : DRIVER_STATE));
+    });
+
+    const promptBox = () => screen.findByRole('textbox', { name: 'What would you like to work on?' });
+    const openFoot = async (name: string) => {
+      await userEvent.click(await screen.findByRole('button', { name: /^Repository: / }));
+      await userEvent.click(await screen.findByRole('button', { name }));
+    };
+
+    it('adds from the picker, keeps the words, chooses the repository and puts the focus back in the prompt', async () => {
+      show(null);
+      const prompt = await promptBox();
+      await userEvent.type(prompt, 'Fix the cursor');
+
+      await openFoot('Add repository…');
+      expect(screen.queryByRole('listbox')).toBeNull();
+      const drawer = await screen.findByRole('dialog', { name: 'Add a repository to this machine' });
+      expect(prompt).toHaveValue('Fix the cursor');
+      await userEvent.click(within(drawer).getByRole('button', { name: 'Choose a folder…' }));
+      await userEvent.click(await within(drawer).findByRole('button', { name: 'Register' }));
+
+      expect(await screen.findByRole('button', { name: 'Repository: borealis' })).toBeInTheDocument();
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      expect(prompt).toHaveValue('Fix the cursor');
+      expect(prompt).toHaveFocus();
+      expect(window.localStorage.getItem('daoris.start.chosen')).toBe('borealis');
+      // Registering starts nothing.
+      expect(invoke.mock.calls.some(([, type]) => type === 'START_CHAT')).toBe(false);
+    });
+
+    it('puts the focus back in the prompt when the drawer is cancelled', async () => {
+      show(null);
+      const prompt = await promptBox();
+      await userEvent.type(prompt, 'Words');
+
+      await openFoot('Import a folder…');
+      const drawer = await screen.findByRole('dialog', { name: 'Import a folder as a workspace' });
+      await userEvent.click(within(drawer).getByRole('button', { name: 'Never mind' }));
+
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      expect(prompt).toHaveFocus();
+      expect(prompt).toHaveValue('Words');
+    });
+
+    it('chooses the one repository an import registered', async () => {
+      imported = { folder: 'D:/repos', imported: 1, repositories: ['borealis'], message: 'Imported borealis.', workspace: 'repos' };
+      show(null);
+      await openFoot('Import a folder…');
+      const drawer = await screen.findByRole('dialog', { name: 'Import a folder as a workspace' });
+      await userEvent.click(within(drawer).getByRole('button', { name: 'Choose a folder…' }));
+      await userEvent.click(await within(drawer).findByRole('button', { name: 'Import' }));
+
+      expect(await screen.findByRole('button', { name: 'Repository: borealis' })).toBeInTheDocument();
+      expect(await promptBox()).toHaveFocus();
+    });
+
+    it('opens the picker on the workspace an import of several registered', async () => {
+      imported = { folder: 'D:/repos', imported: 2, repositories: ['borealis', 'cirrus'], message: 'Imported 2.', workspace: 'repos' };
+      show(null);
+      await openFoot('Import a folder…');
+      const drawer = await screen.findByRole('dialog', { name: 'Import a folder as a workspace' });
+      await userEvent.click(within(drawer).getByRole('button', { name: 'Choose a folder…' }));
+      await userEvent.click(await within(drawer).findByRole('button', { name: 'Import' }));
+
+      const list = await screen.findByRole('listbox', { name: 'Repository' });
+      expect(screen.getByRole('combobox', { name: 'find a repository' })).toHaveValue('repos');
+      await waitFor(() => expect(within(list).getAllByRole('option').map((row) => row.textContent)).toEqual(['borealis', 'cirrus']));
+    });
+  });
+
+  /**
    * D118 §3d, audit F10: a full side bar was `z-20` in the page's own stacking order, above the drawer's
    * `z-10`, so below 768 px a drawer could open under it. The frame is a stacking context of its own, so
    * every overlay drawn at the page's root — a drawer, a menu, the palette, Quick Ask — lies above all of it. The main

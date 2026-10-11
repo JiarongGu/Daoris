@@ -13717,3 +13717,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **NEW1d-a — a go to New conversation carries a repository and words** (service/driver/modules). `go_propose` takes the common `repository` and `sentence` for `sessions` with the part `new`, judged as ENTRY1d2a's workspace is; `ApplyAnswer`'s go carries them. The room names the part, and says *New conversation* where it still says *Sessions → Start a session* (`HelpRoomMayDo.cs:67`). D162 §1; D161 ENTRY1d2a's shape.
 
 **Outcome** 2026-10-12: `go_propose`, the judge and the Apply answer carry `repository` and `sentence` for `sessions`/`new` (a registered repository with a checkout here, the words as written); the room names the part and says *New conversation*. The page opens it from NEW1d-b. Detail: D162's NEW1d-a note.
+
+## NEW1c — add a repository from the picker, the draft kept (2026-10-12, D162)
+
+> - [ ] **NEW1c — add a repository from the picker, the draft kept** (web; after b). *Add a repository…* / *Import a folder…* at the picker's foot open Projects' drawers over Sessions; Add's `onAdded` chooses it and returns focus; Import gains the same. First run: *Add a repository…* is the primary press. Design §1.
+
+**Outcome** 2026-10-12: the picker's foot and the first run offer *Add repository…* and *Import a folder…* (the Workspace menu's words), opening Projects' two drawers over Sessions from `WorkFrame`'s own state with the words kept; Add chooses what it registered, one imported repository is chosen, several open the picker on their workspace, and the prompt takes the focus whenever a drawer closes. Detail: D162's NEW1c note.
