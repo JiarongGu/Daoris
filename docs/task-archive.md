@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## NEW1d-a — a go to New conversation carries a repository and words (2026-10-12)
+
+> - [ ] **NEW1d-a — a go to New conversation carries a repository and words** (service/driver/modules). `go_propose` takes the common `repository` and `sentence` for `sessions` with the part `new`, judged as ENTRY1d2a's workspace is; `ApplyAnswer`'s go carries them. The room names the part, and says *New conversation* where it still says *Sessions → Start a session* (`HelpRoomMayDo.cs:67`). D162 §1; D161 ENTRY1d2a's shape.
+
+**Outcome.** `go_propose`, the judge and the Apply answer carry `repository` and `sentence` for `sessions`/`new`, and the room says *New conversation*; the page's press waits on NEW1d-b. Detail: D162's NEW1d-a note.
+
 ## MAINT2 — close review findings (2026-10-10)
 
 > - [ ] **MAINT2 — close review findings** (review follow-up). Reconcile fixed findings and resolve the remaining integration defects within the owner's requested scope. Contract: D157/D159; proof: defect regressions, reached gates and explicit cleanup outcomes. Closure ledger: `docs/2026-10-10-code-and-docs-review.md`.
