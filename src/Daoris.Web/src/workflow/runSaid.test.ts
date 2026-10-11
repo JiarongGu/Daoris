@@ -1,0 +1,53 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import i18n from '../i18n';
+import type { RunStep } from './run';
+import { addedSaid, runSaid, stateSaid } from './runSaid';
+
+// WORKFLOW1c5 (D157's WORKFLOW1c5 note, `.claude/knowledge/twins.md`): the English a run says is one table with the driver, its
+// tests' `fixtures/workflow-run-said.json`, which `WorkflowRunSaidTwinTests` holds `WorkflowRunWords` to. Each row is said here
+// through the real English catalogue, word for word, so a sentence changed on one side alone fails the other's suite.
+
+type Row = Record<string, string | number | null> & { kind: string; detail: string; said: string | null };
+const TABLE = JSON.parse(readFileSync(
+  join(process.cwd(), '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'fixtures', 'workflow-run-said.json'), 'utf8')) as {
+  states: Record<string, string>;
+  added: Record<string, string>;
+  rows: Row[];
+};
+
+const t = i18n.getFixedT('en');
+
+const stepOf = (row: Row): RunStep => ({
+  step: { id: row.kind, kind: row.kind, participation: 'agent', executor: 'agent', press: null, limit: null, source: { rule: null, level: 'default' }, settings: {}, runtime: 'built' },
+  state: (row.state as string | undefined) ?? 'working',
+  detail: row.detail,
+  quest: row.quest as string | undefined,
+  agent: row.agent as string | undefined,
+  environment: row.environment as string | undefined,
+  commit: row.commit as string | undefined,
+  branch: row.branch as string | undefined,
+  plugin: row.plugin as string | undefined,
+  count: row.count as number | undefined,
+  goAhead: row.goAhead as number | undefined,
+  words: row.words as string | undefined,
+  code: row.code as string | undefined,
+} as RunStep);
+
+describe("a run's English, as the driver's table holds it", () => {
+  it.each(TABLE.rows.map((row, index) => [`${index} ${row.kind}.${row.detail || '(none)'} ${row.state ?? ''} ${row.code ?? ''}`, row] as const))(
+    'says row %s in the table’s words',
+    (_name, row) => {
+      expect(runSaid(t, stepOf(row))).toBe(row.said);
+    },
+  );
+
+  it('words each state and each look added as the table has it', () => {
+    for (const [state, word] of Object.entries(TABLE.states)) expect(stateSaid(t, state)).toBe(word);
+    for (const [level, said] of Object.entries(TABLE.added)) {
+      expect(addedSaid(t, { ...stepOf({ kind: 'look', detail: '', said: null }), added: level })).toBe(said);
+    }
+    expect(addedSaid(t, stepOf({ kind: 'look', detail: '', said: null }))).toBeNull();
+  });
+});

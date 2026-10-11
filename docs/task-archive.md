@@ -13411,3 +13411,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **GIT1d — bridge Git routes** (modules/web; after b). Branch/log/commit/history/blame/compare, shell-only with coded refusals. Git design §4/§6. (The modules' half.)
 
 **Outcome** 2026-10-11: `GIT_BRANCHES`, `GIT_GRAPH`, `GIT_COMMIT`, `GIT_HISTORY`, `GIT_BLAME` and `GIT_COMPARE` read a repository by name through one long-lived `GitReads`; a refusal is an answer's code (`GIT_NOT_TOP`, `GIT_NOT_A_COMMIT`, `GIT_NOT_A_PATH`, `GIT_NOT_A_PAGE`, `GIT_TOO_MANY_TIPS`, `GIT_NOT_ANSWERED`, `GIT_NO_CHECKOUT`, worded in en and zh); no machine path crosses (a tree by its folder's name, a problem's root scrubbed). The answering git's version is GIT1j's. The page's bridge is GIT1d-b. Detail: D147's GIT1d-a note.
+
+
+## WORKFLOW1c5 — shared run sentences (2026-10-11, D157)
+
+> - [ ] **WORKFLOW1c5 — shared run sentences** (driver/web; after c2). Hold terminal/catalogue words by a fixture or one English source. D157 note/twins; drift test.
+
+**Outcome** 2026-10-11: `Driver.Tests/fixtures/workflow-run-said.json` (about 94 rows: each detail of each kind, singular and plural, each held, opinion-why and try code, the fallbacks, the states and the added lines) is read row for row by `WorkflowRunSaidTwinTests` and the page's `runSaid.test.ts`; it found two page drifts, both fixed (`cannot-start` missing from `DETAILS.opinion`, the `waits-chain` sentence missing in en and zh). Titles stay apart on purpose. A twins.md row; the merge tool's reach table carries the fixture. Detail: D157's WORKFLOW1c5 note.
