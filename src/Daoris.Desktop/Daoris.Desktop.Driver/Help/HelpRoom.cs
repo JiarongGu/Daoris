@@ -109,16 +109,17 @@ public static class HelpRoom
     /// <param name="parked">The quests the loop's last tick parked by their failed sessions (HELP10), which a retry names.</param>
     /// <param name="browser">What Daoris's browser's files hold, as the desktop read them (HELP10); null where none was read.</param>
     /// <param name="held">The quests the loop's last look held by the person's stop (SESSUX1b), which a retry releases.</param>
+    /// <param name="history">What each workspace keeps of finished work (HIST1f-b), as <c>HISTORY_PLAN</c> reads it; null where none was read.</param>
     public static HelpMachine Describe(
         DriverConfig config, Snapshot snapshot, IReadOnlyList<RepositoryLine> lines,
         IReadOnlyList<HarnessReport> roster, Func<string, string?> product, int asks,
         IReadOnlyList<AskView>? standing = null, PluginCatalog? plugins = null, IReadOnlyList<LandedBranch>? landed = null,
         IReadOnlyList<PluginOffer>? offers = null, IReadOnlyList<ParkedQuest>? parked = null, HelpBrowserFacts? browser = null,
-        IReadOnlyList<HeldQuest>? held = null, SessionLook? sessions = null)
+        IReadOnlyList<HeldQuest>? held = null, SessionLook? sessions = null, IReadOnlyList<HistoryReading>? history = null)
     {
         var sources = new HelpMachineSources(
             config, snapshot, lines, roster, product, asks, standing ?? [], plugins ?? PluginCatalog.None, landed ?? [], offers ?? [],
-            parked ?? [], browser) { Held = held ?? [], Sessions = sessions };
+            parked ?? [], browser) { Held = held ?? [], Sessions = sessions, History = history };
         return HelpRoomSections.All.Aggregate(new HelpMachine(), (machine, section) => section.Describe(machine, sources));
     }
 
@@ -175,4 +176,7 @@ internal sealed record HelpMachineSources(
 
     /// <summary>One look at the sessions as the Sessions list takes it (SESSUX1h3); null where none was read.</summary>
     public SessionLook? Sessions { get; init; }
+
+    /// <summary>What each workspace keeps of finished work (HIST1f-b, design §2.4); null where none was read.</summary>
+    public IReadOnlyList<HistoryReading>? History { get; init; }
 }

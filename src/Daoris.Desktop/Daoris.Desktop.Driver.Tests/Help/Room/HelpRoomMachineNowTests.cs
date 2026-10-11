@@ -263,6 +263,51 @@ public sealed class HelpRoomMachineNowTests
             machine.Paused);
     }
 
+    /// <summary>
+    /// HIST1f-b (design §2.4, §6.4): what each workspace keeps of finished work, what a clear would take now and how many units
+    /// stay by the word that keeps them, so a clear names a workspace that keeps something; the home's left-over files once, and
+    /// a room written without the readings says so.
+    /// </summary>
+    [Fact]
+    public void The_room_says_what_each_workspace_keeps_of_finished_work()
+    {
+        var some = HelpRoom.Render(HelpRoomFixture.Machine with
+        {
+            History =
+            [
+                new HistoryReading("work")
+                {
+                    Quests = 3, Asks = 1, Sessions = 7, Teammates = 1, Bytes = new HistoryBytes(1024 * 1024, 0, 0, 0, 0),
+                    Takes = new HistoryTakes(2, 0, 5, 0, 800 * 1024),
+                    KeptBy = new Dictionary<string, int> { [HistoryWords.Open] = 1, [HistoryWords.NeedsYou] = 1 },
+                    LeftOver = 2, LeftOverBytes = 4096,
+                },
+                new HistoryReading("default") { LeftOver = 2, LeftOverBytes = 4096 },
+            ],
+        });
+
+        Assert.Contains(
+            "- Finished history this machine keeps, by workspace:\n"
+            + "  - `work`: 3 closed quests and 1 ask, with 7 sessions and 1 teammate's copy, 1 MB; a clear would take 2 quests and 5 "
+            + "sessions, 800 KB, and keep 2: 1 `needs-you`, 1 `open`.\n"
+            + "  - `default`: none.\n"
+            + "  - Left over from records already gone: 2 files, 4 KB, which a workspace's clear takes.\n",
+            some);
+        Assert.Contains("- Finished history this machine keeps, by workspace: not read.\n", HelpRoom.Render(HelpRoomFixture.Machine));
+        Assert.Contains("- Finished history this machine keeps, by workspace: none.\n", HelpRoom.Render(HelpRoomFixture.Machine with { History = [] }));
+    }
+
+    [Fact]
+    public void What_each_workspace_keeps_is_described_from_the_readings_the_desktop_took()
+    {
+        var reading = new HistoryReading("work") { Quests = 1 };
+
+        var machine = HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, history: [reading]);
+
+        Assert.Same(reading, Assert.Single(machine.History!));
+        Assert.Null(HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0).History);
+    }
+
     [Fact]
     public void The_held_quests_are_described_from_the_loops_last_look()
     {

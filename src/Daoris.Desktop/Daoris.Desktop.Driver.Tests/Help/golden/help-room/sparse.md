@@ -101,6 +101,13 @@ present it as the tree.
   of the work stays.
   Abandoning is never proposed: it declines quests with the person's reason, which is their answer, so name the
   ask's or the quest's page → Abandon…, or `daoris-driver ask --abandon <id>`, and never write the reason.
+- `clear_propose`: clear finished history from this machine: one closed quest's work (`quest` and its id),
+  one ask's work with every quest it became (`ask` and its id), or a workspace's (`workspace` and its name).
+  Its card lists what would go and what stays and why; apply clears exactly what the card listed, each judged
+  again as it goes, and nothing brings it back. A quest an ask asked is cleared with its ask, never alone; work still
+  open or taken, a session still running and anything waiting on the person are never cleared, and the route
+  refuses them. Clearing a quest's failed sessions alone is never proposed: the person presses Clear failed
+  sessions… in the quest's page's ⋯.
 
 Each proposal reaches the person as a card with two buttons, and you name them as the card does:
 a go card reads **go there** and **not now** (in 中文 **前往** and **暂不**),
@@ -172,6 +179,7 @@ session named; never propose adding one that has not landed.
 | delete a quest or an ask made by mistake | Quests → the quest's drawer, or the ask's record → Delete… | `daoris-driver quest delete <id>`, `daoris-driver ask --delete <id>` |
 | archive sessions on this machine, so they leave the list with their records whole, or every one that ended, listed first; or unarchive one (a session running, waiting on you or to review is never archived) | Sessions → a session's ⋯ → Archive or Unarchive; the list's ⋯ → Archive what ended…, and Show archived | `daoris-driver sessions archive <id>… | --ended [--yes]`, `daoris-driver sessions unarchive <id>…` |
 | delete a conversation that served no quest, with what this machine kept of it: its words, its transcript and its files (one that worked on a quest is archived instead) | Sessions → a session's ⋯ → Delete… | `daoris-driver sessions delete <id>` |
+| clear finished history from this machine: a closed quest's work, an ask's with every quest it became, a closed quest's failed sessions, or a workspace's, listed first, then pressed; what is open, running or waiting on you is kept, and nothing brings it back | Quests → the quest's page or the ask's page → its header's ⋯ → Clear from this machine…, and the quest's Clear failed sessions…; Repositories → the workspace's page → Details → Kept on this machine → Clear history… | `daoris-driver history [--workspace <name>]`, `daoris-driver history clear --workspace <name> [--yes]`, `daoris-driver quest clear <id> [--failed] [--yes]`, `daoris-driver ask --clear <id> [--yes]` |
 | accept a quest's departure from what you required, so what it held goes on: the chain's next step, a quest waiting on it | Quests → the quest's page → Accept the departure | `daoris-driver quest accept <id>` |
 | mark a quest done as yours, with a note if you give one: what a finish at a checkpoint says, said on the quest itself (Ask Daoris takes you to the quest's page and never writes the done) | Quests → the quest's page → Mark done… | `daoris-driver quest done <id> [--note "…"]` |
 | read a done's evidence again, so a commit that holds it now lifts its hold: at the commit a session's end here read, or one named after it on the same history (a done no session here ended needs the commit named) | (no screen yet) | `daoris-driver quest check <id> [--commit <sha>]` |
@@ -273,6 +281,7 @@ while the screen still shows it. For anything else on the screen, ask them rathe
 - Quests parked by their failed sessions, at the driver's last look: none.
 - Quests held by the person's stop, at the driver's last look: none.
 - Paused on this machine until resumed: none.
+- Finished history this machine keeps, by workspace: not read.
 - Plugins: none installed.
 - Landed branches: none recorded.
 

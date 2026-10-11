@@ -188,6 +188,22 @@ public sealed class HelpRoomMayProposeTests
         Assert.Contains("Each but `links` holds from the browser's next start.", proposes);
     }
 
+    /// <summary>
+    /// HIST1f-b (D153, design §6.4): a clear names one quest, one ask or one workspace; its card lists and Apply clears exactly
+    /// that, what runs or waits on the person is never cleared, and a quest's failed sessions alone stay the person's press.
+    /// </summary>
+    [Fact]
+    public void The_room_says_how_a_clear_is_proposed_and_what_it_never_takes()
+    {
+        var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("- `clear_propose`: clear finished history from this machine: one closed quest's work (`quest` and its id),\n", proposes);
+        Assert.Contains("one ask's work with every quest it became (`ask` and its id), or a workspace's (`workspace` and its name)", proposes);
+        Assert.Contains("Its card lists what would go and what stays and why; apply clears exactly what the card listed", proposes);
+        Assert.Contains("A quest an ask asked is cleared with its ask, never alone", proposes);
+        Assert.Contains("Clearing a quest's failed sessions alone is never proposed", proposes);
+    }
+
     /// <summary>MOD6: every kind registered is a tool the room teaches, so a kind cannot be added that the helper never hears of.</summary>
     [Fact]
     public void Every_kinds_tool_is_named_in_what_it_may_propose()
