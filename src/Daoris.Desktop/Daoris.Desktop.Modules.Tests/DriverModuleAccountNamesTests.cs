@@ -55,6 +55,23 @@ public sealed class DriverModuleAccountNamesTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// ACCTNAME1: the sign-in's end says who signed in and what the machine lists it as; where the name is the email (the
+    /// screen offers it), the email is said once, folded as the page and the terminal fold it.
+    /// </summary>
+    [Fact]
+    public void The_sign_in_end_says_an_email_offered_as_the_name_once()
+    {
+        var same = DriverModule.SignedInSentence("Seat@Work.example", "claude-code", "seat@work.example", "acct-1");
+        Assert.Equal("signed in as Seat@Work.example — this machine lists it by that name.", same);
+        Assert.Equal("signed in as seat@work.example — this machine lists it as `seat`.",
+            DriverModule.SignedInSentence("seat@work.example", "claude-code", "seat", "acct-1"));
+        Assert.Equal("signed in as seat@work.example — this machine lists it as `acct-1`.",
+            DriverModule.SignedInSentence("seat@work.example", "claude-code", null, "acct-1"));
+        Assert.Equal("signed in — `claude-code` did not say who, so this machine lists it as `seat`.",
+            DriverModule.SignedInSentence(null, "claude-code", "seat", "acct-1"));
+    }
+
+    /// <summary>
     /// ACCT2: Daoris's session records name an account by its id, so the sessions running on it are counted for it across a
     /// rename, beside its new name.
     /// </summary>

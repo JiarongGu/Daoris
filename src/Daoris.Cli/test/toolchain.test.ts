@@ -824,10 +824,10 @@ test('`agent list` says an account\'s email once when it is the name, and sizes 
   const report = {
     harness: 'claude-code', present: true, version: '1', problem: null, machineDefault: 'account-1',
     profiles: [
-      { name: 'account-1', home: '', login: 'in', account: long.toUpperCase(), key: null },
-      { name: 'account-2', home: '', login: 'in', account: 'other@work.example', key: null },
+      { name: 'account-1', home: '', login: 'in' as const, account: long.toUpperCase(), key: null },
+      { name: 'account-2', home: '', login: 'in' as const, account: 'other@work.example', key: null },
     ],
-  } as const;
+  };
   writeFileSync(join(fx.root, 'accounts.json'), JSON.stringify({ 'claude-code': { 'account-1': { name: long } } }), 'utf8');
   const lines = accountLines('claude-code', TOOLCHAINS['claude-code']!, report, readHarnessSettings(at(fx)), fx.root, new Date(), 'UTC');
   const first = lines.find((line) => line.includes(long))!;
