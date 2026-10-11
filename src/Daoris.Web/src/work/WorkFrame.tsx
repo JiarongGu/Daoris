@@ -222,6 +222,13 @@ export function WorkFrame({
   // *New conversation* (NEW1b, D162 point 1): bumped by each of its doors (the list's ＋, the menu, Ctrl+N, the palette),
   // which puts the attended session down and the focus in the composer's prompt.
   const [composing, setComposing] = useState(0);
+  // Whether that press's focus is still owed: met once the prompt took it, so a composer that comes back by another path
+  // (the attended session deleted) takes none.
+  const [focusOwed, setFocusOwed] = useState(false);
+  const newConversationPressed = () => {
+    setComposing((count) => count + 1);
+    setFocusOwed(true);
+  };
   // The composer's words and files, held here so a visit to a session and back keeps them; a start that opened a
   // conversation lets them go. Its last refusal is said under Start until the next press (UX5 U68).
   const [newDraft, setNewDraft] = useState('');
@@ -820,7 +827,7 @@ export function WorkFrame({
   const [taken, setTaken] = useState<typeof intent>(null);
   if (intent && intent !== taken) {
     setTaken(intent);
-    if (intent === 'start') setComposing((count) => count + 1);
+    if (intent === 'start') newConversationPressed();
     else if (intent === 'review') openView('review');
     else if (intent === 'workflow') openView('workflow');
   }
@@ -1259,7 +1266,7 @@ export function WorkFrame({
     view: 'sessions',
     name: t('work.rail.label'),
     labels: { open: t('work.rail.open'), close: t('work.rail.close'), resize: t('work.rail.resize') },
-    make: { label: t('work.start.title'), onMake: () => setComposing((count) => count + 1) },
+    make: { label: t('work.start.title'), onMake: newConversationPressed },
     // The list's ⋯, which it never had (SESSUX1c): how it is grouped, a choice of two, and whether archived sessions
     // are shown, both remembered (D118 §3f); then, below a rule, *Archive what ended…*, which lists first (SESSUX1e).
     more: (
@@ -1366,7 +1373,8 @@ export function WorkFrame({
       onCarry={setNewCarry}
       pending={startChat.isPending}
       refusal={startRefusal}
-      focus={composing}
+      focus={focusOwed ? composing : 0}
+      onFocused={() => setFocusOwed(false)}
       onStart={onStart}
       onOpenSession={attend}
     />

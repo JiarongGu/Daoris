@@ -74,7 +74,7 @@ export function openingRepository(
  */
 export function NewConversation({
   attached = true, repositories, busy = {}, recent = [], remembered, onChoose, harnesses, labels = {}, names = {},
-  defaultHarness = '', accounts, scopeOf, draft, onDraft, carried, onCarry, pending = false, refusal, focus = 0, onStart,
+  defaultHarness = '', accounts, scopeOf, draft, onDraft, carried, onCarry, pending = false, refusal, focus = 0, onFocused, onStart,
   onOpenSession, pickerFoot, pickerOpen = false,
 }: {
   /** Whether a shell is here; false is a browser. */
@@ -113,8 +113,13 @@ export function NewConversation({
   pending?: boolean;
   /** Why the last start opened nothing, in the driver's own words. */
   refusal?: string | null;
-  /** Bumped to put the focus in the prompt: each *New conversation* pressed. Zero is no ask. */
+  /**
+   * Bumped to put the focus in the prompt: each *New conversation* pressed, including the press that mounts it. Zero is no
+   * ask, and `onFocused` says the ask was met, so its holder can put it down: a composer mounted later by another path (the
+   * attended session deleted) takes no focus it was not asked for.
+   */
   focus?: number;
+  onFocused?: () => void;
   onStart: (start: NewStart) => void;
   /** Attend a session: the one holding a busy checkout. Absent, none is offered. */
   onOpenSession?: (session: string) => void;
@@ -140,7 +145,10 @@ export function NewConversation({
   const [profile, setProfile] = useState('');
 
   useEffect(() => {
-    if (focus > 0) field.current?.focus();
+    if (focus <= 0) return;
+    field.current?.focus();
+    onFocused?.();
+    // Only a new ask: the callback is read, not watched.
   }, [focus]);
 
   if (!attached) {

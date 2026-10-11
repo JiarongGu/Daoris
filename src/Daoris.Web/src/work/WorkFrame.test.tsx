@@ -1135,6 +1135,33 @@ describe('starting and holding a conversation', () => {
     expect(onSelect).toHaveBeenCalledWith(null);
   });
 
+  /** The prompt takes the focus for a press, and not when nothing is attended again by another path. */
+  it('takes the focus for a press, and not when it comes back by another path', async () => {
+    SESSIONS = [DRIVEN, CHAT];
+    let put: (id: string | null) => void = () => {};
+    function Held() {
+      const [chosen, setChosen] = useState<string | null>('c0ffee11');
+      put = setChosen;
+      return <WorkFrame selected={chosen} onSelect={setChosen} notify={() => {}} />;
+    }
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider><Held /></Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+    await screen.findByLabelText('Message');
+
+    await userEvent.click(screen.getByRole('button', { name: 'New conversation' }));
+    await waitFor(async () => expect(await promptBox()).toHaveFocus());
+
+    act(() => put('c0ffee11'));
+    await screen.findByLabelText('Message');
+    act(() => (document.activeElement as HTMLElement | null)?.blur());
+    act(() => put(null));
+    expect(await promptBox()).not.toHaveFocus();
+  });
+
   /**
    * D162 point 2, NEW1a: the words go with the start, with a request id the driver never starts twice, and the page
    * attends what comes back. The repository is remembered as a recent start on this machine.
