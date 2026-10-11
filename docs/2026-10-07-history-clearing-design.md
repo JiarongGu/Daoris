@@ -436,6 +436,11 @@ person asks, and Apply is still their press, so it is a door rather than an exem
 session's *Delete…* one. `HelpCoverageTests` reads the three presses on the screen as answered by the kind's doors. The
 room's doors table gains *clear finished history*, and *The machine now* says what each workspace keeps (§2.4).
 
+*Amended 2026-10-11 (HIST1f-d, D153's note): the kind has a fourth door, `failed`, naming a closed quest by its id, for the
+quest page's *Clear failed sessions…* and `quest clear --failed` (§1.1, §4). Its card names the quest's failed sessions and says
+the quest and its other sessions stay; only a closed quest's go, so an open or taken one is refused in the keep's sentence, and
+a closed one with none of this machine's is said, not refused. The four presses on the screen are answered by the four doors.*
+
 ### 6.5 The machine log
 
 One event joins D94's catalogue, names and counts only (D94 §5): **`history.cleared`**: `scope` (`quest`, `ask`,

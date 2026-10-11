@@ -5,8 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
-- Ask Daoris can now propose clearing finished history for a quest, an ask or a workspace. The card lists what goes and what
-  is kept and why, and Apply clears exactly what it listed; a quest's failed sessions stay your own clear on its page.
+- Ask Daoris can now propose clearing finished history for a quest, an ask or a workspace, or a closed quest's failed
+  sessions. The card lists what goes and what is kept and why, and Apply clears exactly what it listed.
 
 - A conversation's notes that its agent's session could not open or failed, that a turn could not be taken, and that the
   agent would not go on in its own conversation (and why, and that your answer is carried on in a new session) now read in

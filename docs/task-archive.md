@@ -13459,3 +13459,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **GIT1d-c — the Git bridge's workspace and enabled** (web). `useGitGraph` (and the other one-repository reads) send no `workspace`, so two same-named repositories in two workspaces resolve to the first checkout; `useGitBranches` has no `enabled`, which forced UX6h1's part-per-tab shape. A bridge/git.test.tsx case each. D147's GIT1d-b note; D150's UX6h1 note.
 
 **Outcome** 2026-10-11: `useGitGraph`, `useGitCommit`, `useGitHistory`, `useGitBlame` and `useGitCompare` send `workspace` when given and key their cache by it; `useGitBranches` takes `enabled`; the History tab passes its workspace. UX6h1's tabs keep their part-per-tab shape. Detail: D147's GIT1d-c note.
+
+## HIST1f-d — Ask Daoris clears a quest's failed sessions (2026-10-11, D153)
+
+> - [ ] **HIST1f-d — Ask Daoris clears a quest's failed sessions** (service/driver). The quest page's *Clear failed sessions…* and `quest clear --failed` are owed in coverage (`ClearFailedOwed`): `clear_propose` names only a quest, an ask or a workspace. The box and tool name a quest's failed sessions; the judge plans `HistoryScope.Failed`. History-clearing design §1.1, §6.4; D153's HIST1f-b note.
+
+**Outcome** 2026-10-11: `clear_propose` takes the `failed` door, its target a quest's id; the judge plans `HistoryScope.Failed`, so the card names a closed quest's failed sessions, keeps a teammate's, refuses an open or taken quest in its keep's sentence and says a quest with none here; Apply sends the held list. `ClearFailedOwed` is gone and `ClearFailedDoor` is held. Detail: D153's HIST1f-d note; design §6.4's amendment.
