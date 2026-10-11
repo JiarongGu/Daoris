@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Inline, Prose, SkeletonRows } from '../ui';
 import { BranchList, type BranchListValue } from './BranchList';
 import { CommitGraph, type GraphCommitRow } from './CommitGraph';
+import { ListMore } from '../work/ListPane';
 import { GraphFoot, useGraphPaging } from './GraphFoot';
 
 const noop = () => {};
@@ -94,19 +95,48 @@ export function BranchesTab({ repository, read, titles, onOpen, onOpenHistory }:
  * the pages accumulated, with the load-more foot while the graph answers `more` (UX6h3a); a commit opened beside the graph and
  * *All branches* are UX6h3's.
  */
-export function HistoryTab({ repository, read, onMore }: {
+export function HistoryTab({ repository, read, onMore, all }: {
   repository: string;
   read: HistoryRead;
   /** The next page, asked: the holder reads it and hands the commits back accumulated. */
   onMore?: () => void;
+  /**
+   * *All branches* (UX6h3c): the ⋯'s one checked item, page state its holder keeps. `limit` says the graph drew only the
+   * first `shown` of `total` branches, the read's own limit (D147). Absent, History has no ⋯.
+   */
+  all?: { on: boolean; onToggle: () => void; limit?: { shown: number; total: number } };
 }) {
   const { t } = useTranslation();
   const body = useRef<HTMLDivElement>(null);
   const rowAt = useCallback((index: number) => body.current?.querySelectorAll<HTMLElement>('[data-commit]')[index] ?? null, []);
   const loaded = read.state === 'read' ? read.value : null;
   const paging = useGraphPaging({ shown: loaded?.commits.length ?? 0, loadingMore: Boolean(loaded?.loadingMore), onMore: onMore ?? noop, rowAt });
-  if (read.state === 'reading') return <Waiting reading sentence={t('projects.git.reading.history', { repository })} />;
-  if (read.state === 'refused') return <Waiting reading={false} sentence={read.sentence} />;
+  // The ⋯ stays while the graph is on its way or refused with it ticked, so it can always be unticked.
+  const options = all && (
+    <div className="flex">
+      <ListMore
+        label={t('projects.git.history.all.more')}
+        items={[{ id: 'all', label: t('projects.git.history.all.show'), checked: all.on }]}
+        onChoose={all.onToggle}
+      />
+    </div>
+  );
+  if (read.state === 'reading') {
+    return (
+      <div className="grid gap-2">
+        {all?.on && options}
+        <Waiting reading sentence={t('projects.git.reading.history', { repository })} />
+      </div>
+    );
+  }
+  if (read.state === 'refused') {
+    return (
+      <div className="grid gap-2">
+        {all?.on && options}
+        <Waiting reading={false} sentence={read.sentence} />
+      </div>
+    );
+  }
   if (read.state === 'noCheckout') {
     return <Nothing headline={t('projects.git.noCheckout.headline')} body={t('projects.git.noCheckout.history', { repository })} />;
   }
@@ -124,8 +154,18 @@ export function HistoryTab({ repository, read, onMore }: {
   const { line, tips, commits, more, loadingMore, moreError } = read.value;
   return (
     <div ref={body} className="grid gap-2">
-      <Prose className="text-small text-ink-soft"><Inline text={t('projects.git.history.head', { repository, branch: line })} /></Prose>
-      <CommitGraph label={t('projects.git.history.list', { repository, branch: line })} commits={commits} tips={tips} />
+      <div className="flex items-start justify-between gap-2">
+        <Prose className="text-small text-ink-soft">
+          <Inline text={all?.on ? t('projects.git.history.all.head', { repository, branch: line }) : t('projects.git.history.head', { repository, branch: line })} />
+          {all?.on && all.limit && <> <Inline text={t('projects.git.history.all.limit', all.limit)} /></>}
+        </Prose>
+        {options}
+      </div>
+      <CommitGraph
+        label={all?.on ? t('projects.git.history.all.list', { repository }) : t('projects.git.history.list', { repository, branch: line })}
+        commits={commits}
+        tips={tips}
+      />
       {more && onMore && <GraphFoot shown={commits.length} loadingMore={Boolean(loadingMore)} error={moreError} paging={paging} />}
     </div>
   );

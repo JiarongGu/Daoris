@@ -392,3 +392,55 @@ describe("a repository's History tab, a page at a time", () => {
     expect(screen.getByRole('button', { name: '显示更多' })).toBeInTheDocument();
   });
 });
+
+// *All branches* (UX6h3c, the built-in Git design §2.3): the ⋯ in History's head, one checked item, the page's state; ticked,
+// the head says the graph is the repository's over its branches, and past the read's limit how many it drew.
+describe("a repository's History tab, over all its branches", () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  const read: HistoryRead = { state: 'read', value: { line: 'main', tips, commits: GIT_HISTORY_ENGINE, more: false } };
+
+  it('offers *All branches* from a ⋯ in its head, ticked while shown, and tells its holder when it is pressed', async () => {
+    const onToggle = vi.fn();
+    const { rerender } = render(<HistoryTab repository="engine" read={read} all={{ on: false, onToggle }} />);
+    expect(screen.getByText(/newest first\.$/)).toHaveTextContent("engine's line, main, newest first.");
+    await opened(screen.getByRole('button', { name: 'History options' }));
+    const item = screen.getByRole('menuitemcheckbox', { name: 'All branches' });
+    expect(item).toHaveAttribute('aria-checked', 'false');
+    await userEvent.click(item);
+    expect(onToggle).toHaveBeenCalledTimes(1);
+
+    rerender(<HistoryTab repository="engine" read={read} all={{ on: true, onToggle }} />);
+    expect(screen.getByText(/every local branch and origin's/)).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: "engine's history over all its branches" })).toBeInTheDocument();
+    await userEvent.keyboard('{Escape}');
+    await opened(screen.getByRole('button', { name: 'History options' }));
+    expect(screen.getByRole('menuitemcheckbox', { name: 'All branches' })).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('draws no ⋯ where it is not handed', () => {
+    render(<HistoryTab repository="engine" read={read} />);
+    expect(screen.queryByRole('button', { name: 'History options' })).toBeNull();
+  });
+
+  it('keeps the ⋯ while ticked and the graph is on its way or refused, so it can be unticked', () => {
+    const all = { on: true, onToggle: () => {} };
+    const { rerender } = render(<HistoryTab repository="engine" read={{ state: 'reading' }} all={all} />);
+    expect(screen.getByRole('button', { name: 'History options' })).toBeInTheDocument();
+    rerender(<HistoryTab repository="engine" read={{ state: 'refused', sentence: 'Git could not answer for this.' }} all={all} />);
+    expect(screen.getByRole('button', { name: 'History options' })).toBeInTheDocument();
+  });
+
+  it('says past the limit that it drew the first of the branches', () => {
+    render(<HistoryTab repository="engine" read={read} all={{ on: true, onToggle: () => {}, limit: { shown: 256, total: 300 } }} />);
+    expect(screen.getByText(/the first 256 of 300 branches/)).toBeInTheDocument();
+  });
+
+  it('says it in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    render(<HistoryTab repository="engine" read={read} all={{ on: true, onToggle: () => {}, limit: { shown: 256, total: 300 } }} />);
+    expect(screen.getByText(/300 个分支中的前 256 个/)).toBeInTheDocument();
+    await opened(screen.getByRole('button', { name: '历史选项' }));
+    expect(screen.getByRole('menuitemcheckbox', { name: '所有分支' })).toBeInTheDocument();
+  });
+});
