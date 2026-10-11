@@ -75,7 +75,7 @@ export function openingRepository(
 export function NewConversation({
   attached = true, repositories, busy = {}, recent = [], remembered, onChoose, harnesses, labels = {}, names = {},
   defaultHarness = '', accounts, scopeOf, draft, onDraft, carried, onCarry, pending = false, refusal, focus = 0, onFocused, onStart,
-  onOpenSession, onAdd, onImport, pick, reveal, pickerOpen = false,
+  onOpenSession, onAdd, onImport, pick, reveal, pickerOpen = false, onMakeTask,
 }: {
   /** Whether a shell is here; false is a browser. */
   attached?: boolean;
@@ -136,6 +136,11 @@ export function NewConversation({
   reveal?: { workspace: string; n: number } | null;
   /** The repository picker drawn open, for a story. */
   pickerOpen?: boolean;
+  /**
+   * *Make it a task with Daoris…* (NEW1d-b): hands the draft, with a line naming the repository chosen above it, to Ask Daoris as
+   * a draft the person sends. Absent, the press is not offered. The composer keeps its own draft.
+   */
+  onMakeTask?: (text: string) => void;
 }) {
   const { t } = useTranslation();
   const promptId = useId();
@@ -393,7 +398,15 @@ export function NewConversation({
         </Tip>
         {chooser.input}
 
-        <Button type="submit" variant="primary" disabled={!ready} aria-busy={pending || undefined} className="ml-auto">
+        {onMakeTask && (
+          <Button
+            variant="ghost" disabled={!words} className="ml-auto"
+            onClick={() => onMakeTask(repository ? `${t('work.start.taskIn', { repository })}\n\n${words}` : words)}
+          >
+            {t('work.start.task')}
+          </Button>
+        )}
+        <Button type="submit" variant="primary" disabled={!ready} aria-busy={pending || undefined} className={onMakeTask ? undefined : 'ml-auto'}>
           {pending ? t('work.start.going') : t('work.start.go')}
         </Button>
       </div>

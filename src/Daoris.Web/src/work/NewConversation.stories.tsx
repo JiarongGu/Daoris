@@ -68,6 +68,7 @@ const meta: Meta<typeof NewConversation> = {
     onOpenSession: () => {},
     onAdd: () => {},
     onImport: () => {},
+    onMakeTask: () => {},
   },
 };
 export default meta;
@@ -140,5 +141,17 @@ export const Dark: Story = {
 export const Chinese: Story = { args: Typed.args, decorators: [chinese] };
 
 export const ChineseNarrow: Story = { args: Refused.args, decorators: [narrow, chinese] };
+
+/**
+ * Opened by Ask Daoris's go (NEW1d-b): the repository chosen and the words in, nothing sent; *Make it a task with Daoris…* sits
+ * quiet beside *Start* and hands the draft back, with a line naming the repository.
+ */
+export const OpenedByAGo: Story = {
+  args: { draft: 'Fix the flaky retry in the sync loop.', pick: { repository: 'game', n: 1 } },
+};
+
+export const NarrowOpenedByAGo: Story = { args: OpenedByAGo.args, decorators: [narrow] };
+
+export const ChineseOpenedByAGo: Story = { args: { draft: '修复同步循环里不稳定的重试。', pick: { repository: 'game', n: 1 } }, decorators: [chinese] };
 
 export const ChineseBrowser: Story = { args: { attached: false }, decorators: [chinese] };

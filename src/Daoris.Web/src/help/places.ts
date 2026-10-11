@@ -14,6 +14,8 @@ import type { StarterDoor } from './starters';
  */
 export type HelpPlace = {
   view: string; domain?: string | null; part?: string | null; item?: string | null; workspace?: string | null;
+  /** NEW1d-a: on a go to Sessions → New conversation, the repository the composer chooses and the words it opens with. */
+  repository?: string | null; sentence?: string | null;
 };
 
 /**
@@ -182,6 +184,12 @@ export function placeDoor(asked: HelpPlace): StarterDoor | null {
   }
   if (view === 'agents') return { view, agentPart: part as AgentPart };
   if (view === 'knowledge') return { view, knowledge: part as KnowledgeMode };
+  // NEW1d-b: the composer opens, with the repository chosen and the words in where the go named them; neither is sent.
+  if (view === 'sessions' && part === 'new') {
+    const repository = asked.repository?.trim();
+    const sentence = asked.sentence?.trim();
+    return { view, compose: { ...(repository ? { repository } : {}), ...(sentence ? { sentence } : {}) } };
+  }
   // The list brings the group into view (ENTRY1b); the person opens the session or quest in it they mean.
   const group = GROUP_PARTS[`${view}/${part}`];
   return group ? { view, group } : null;

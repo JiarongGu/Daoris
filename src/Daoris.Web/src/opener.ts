@@ -41,6 +41,12 @@ export type OpenGroup = 'you' | 'review' | 'asks' | 'held';
 const GROUP_VIEW: Readonly<Record<OpenGroup, View>> = { you: 'sessions', review: 'sessions', asks: 'quests', held: 'quests' };
 
 /**
+ * The composer opened by a go to New conversation (NEW1d-b, D162): the repository it chooses and the words it opens with,
+ * each only where the go named one. Neither is sent; the person presses *Start*.
+ */
+export type Compose = { repository?: string; sentence?: string };
+
+/**
  * What a door names besides its item: the part of a Settings domain, one of Repositories' forms, a repository page's tab
  * or a workspace page's tab and Setup section, the repository whose code map the Map opens on, Knowledge's mode, or a group of
  * Sessions' or Quests' list.
@@ -48,6 +54,7 @@ const GROUP_VIEW: Readonly<Record<OpenGroup, View>> = { you: 'sessions', review:
 export type OpenPart = {
   anchor?: SettingsAnchor; drawer?: 'add' | 'import'; drawerWorkspace?: string; tab?: ProjectTab; code?: string; agentPart?: AgentPart;
   workspaceTab?: WorkspaceTab; workspaceSection?: WorkspaceSection; knowledge?: KnowledgeMode; group?: OpenGroup;
+  compose?: Compose;
 };
 
 /** What opening a view does, as a value. */
@@ -98,6 +105,8 @@ export type Opening = {
    * with no item in it chosen. The list brings it once it has answered, then lets it go (`useBringGroup`).
    */
   group?: OpenGroup;
+  /** The composer opened with these (NEW1d-b): Sessions' main area, the repository chosen and the words in. */
+  compose?: Compose;
 };
 
 const listed =(view: View): view is View & ListView => Object.hasOwn(LIST_BOUNDS, view);
@@ -133,6 +142,7 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}, h
   if (view === 'map' && part.code) plan.code = part.code;
   if (view === 'agents' && part.agentPart) plan.agentPart = part.agentPart;
   if (part.group && GROUP_VIEW[part.group] === view) plan.group = part.group;
+  if (view === 'sessions' && part.compose) plan.compose = part.compose;
   return plan;
 }
 

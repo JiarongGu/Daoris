@@ -13735,3 +13735,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ORIENT2h7 — stable count-independent ids** (service/CLI). Ignore heading/label trailing counts; correct fence fixture note. D151 notes; two-commit measurement.
 
 **Outcome** 2026-10-12: an index entry's id, in both readers, ignores a heading's trailing count (`IndexRows.Uncounted`); the fence table's `_why` names four readers. Over h5's two commits, 452 of the 457 ids that moved with a heading's count now keep theirs; the 5 left carry a label count (*· 8 notes*, the Decisions table), not done and proposed as a row. Detail: D151's ORIENT2h7 note.
+
+## NEW1d-b — the go fills the composer; *Make it a task with Daoris…* (2026-10-12, D162)
+
+> - [ ] **NEW1d-b — the go fills the composer; *Make it a task with Daoris…*** (web; after NEW1d-a and NEW1c). `placeDoor` opens the composer with the go's repository and words; the composer's quiet press hands its draft and repository to Ask Daoris as a draft. Design §1.
+
+**Outcome** 2026-10-12: a go to `sessions`/`new` becomes a `compose` door that `WorkFrame` consumes once by id (repository chosen through NEW1c's `pick`, words above any already typed, nothing sent), and the composer's quiet *Make it a task with Daoris…* puts its draft, under a line naming the repository, in Quick Ask for the person to send; a browser has no composer. Detail: D162's NEW1d-b note.

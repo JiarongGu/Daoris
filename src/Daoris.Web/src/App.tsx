@@ -25,7 +25,7 @@ import { commandForKey } from './shortcuts';
 import { focusRegion } from './work/regions';
 import type { StarterDoor } from './help/starters';
 import {
-  askItem, doorOpening, type OpenGroup, type Opening, type OpenPart, opening as plannedOpening, questsItem, workspaceItem,
+  askItem, type Compose, doorOpening, type OpenGroup, type Opening, type OpenPart, opening as plannedOpening, questsItem, workspaceItem,
 } from './opener';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { Drawer, failure, Prose, SESSION_ACTIVE, Toasts, useToasts } from './ui';
@@ -172,6 +172,9 @@ export function App() {
   const [importRequested, setImportRequested] = useState(false);
   // And the workspace either opens filled with, where Ask Daoris's go named one (ENTRY1d2b): consumed with the event.
   const [drawerWorkspace, setDrawerWorkspace] = useState<string | null>(null);
+  // The composer a go to New conversation opens filled (NEW1d-b): an event the frame consumes once by its id, as it does `workIntent`.
+  const [compose, setCompose] = useState<(Compose & { id: number }) | null>(null);
+  const composes = useRef(0);
   // A repository's page's tab (UX6f, D150 §4.2), remembered for the view: a door into a repository's own value names
   // Setup, so it is held here, where every door is applied.
   const [projectTab, setProjectTab] = useState<ProjectTab>(readProjectTab);
@@ -489,6 +492,10 @@ export function App() {
     setAgentPart(plan.agentPart ?? null);
     setListGroup(plan.group ?? null);
     if (plan.drawer) setDrawerWorkspace(plan.drawerWorkspace ?? null);
+    if (plan.compose) {
+      composes.current += 1;
+      setCompose({ ...plan.compose, id: composes.current });
+    }
     if (plan.drawer === 'add') setAddRequested(true);
     if (plan.drawer === 'import') setImportRequested(true);
     if (plan.tab) chooseProjectTab(plan.tab);
@@ -1100,6 +1107,9 @@ export function App() {
               notify={notify}
               intent={workIntent}
               onIntentTaken={() => setWorkIntent(null)}
+              compose={compose}
+              // The composer's quiet press: its draft in Quick Ask, for the person to send (NEW1d-b, CTX1's draft door).
+              onMakeTask={(text) => askQuickly(text, true)}
               // Sending work back is publishing a request, which is the platform's own door — so
               // this goes to the composer rather than growing a second one here.
               onSendBack={(repository) => {

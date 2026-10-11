@@ -29,7 +29,10 @@ read claims nothing.
 With nothing attended, Sessions asks what to work on (NEW1b, D162): *New conversation* takes the words, a repository, a
 tree and an agent with its account, and opens the conversation on them. Ctrl+N and Workspace › *New conversation…* open it.
 The repository list's foot adds one or imports a folder (NEW1c) through Repositories' own drawers, opened over Sessions with the
-words kept; what is added is chosen, and the prompt takes the focus back when a drawer closes.
+words kept; what is added is chosen, and the prompt takes the focus back when a drawer closes. Ask Daoris's go to *New
+conversation* opens it with the repository chosen and the words in, above any already typed, sending nothing (NEW1d-b); the
+composer's quiet *Make it a task with Daoris…* hands its draft, under a line naming the repository, to Quick Ask as a draft
+the person sends. A browser has no composer: Ask Daoris is its door.
 **Settings** is everywhere: Get started, Appearance and AI in a browser; the desktop also offers
 Driver, Tools, Browser and Logs. Plugins has its own view. Agent accounts live in Agents; workspace controls live in
 Repositories. The desktop's seven menus share one command table, with shortcuts and a command palette

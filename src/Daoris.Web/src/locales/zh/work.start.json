@@ -31,6 +31,8 @@
   "work.start.outsideMachine": "不在本机的列表中",
   "work.start.go": "开启",
   "work.start.going": "正在开启…",
+  "work.start.task": "请道衍把它整理成任务…",
+  "work.start.taskIn": "在仓库 {{repository}} 中：",
   "work.start.none": "本机还没有可供对话的检出仓库。",
   "work.start.add": "添加仓库…",
   "work.start.import": "导入文件夹…",

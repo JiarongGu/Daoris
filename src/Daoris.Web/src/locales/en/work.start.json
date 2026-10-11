@@ -31,6 +31,8 @@
   "work.start.outsideMachine": "Not in this machine's list",
   "work.start.go": "Start",
   "work.start.going": "Starting…",
+  "work.start.task": "Make it a task with Daoris…",
+  "work.start.taskIn": "In {{repository}}:",
   "work.start.none": "No repository on this machine has a checkout to talk in yet.",
   "work.start.add": "Add repository…",
   "work.start.import": "Import a folder…",
