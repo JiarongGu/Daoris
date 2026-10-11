@@ -110,16 +110,18 @@ public static class HelpRoom
     /// <param name="browser">What Daoris's browser's files hold, as the desktop read them (HELP10); null where none was read.</param>
     /// <param name="held">The quests the loop's last look held by the person's stop (SESSUX1b), which a retry releases.</param>
     /// <param name="history">What each workspace keeps of finished work (HIST1f-b), as <c>HISTORY_PLAN</c> reads it; null where none was read.</param>
+    /// <param name="workflows">The named workflows under the home (WORKFLOW1h-b, <see cref="WorkflowStore.List"/>), which name the version each repository follows; null where none were read.</param>
     public static HelpMachine Describe(
         DriverConfig config, Snapshot snapshot, IReadOnlyList<RepositoryLine> lines,
         IReadOnlyList<HarnessReport> roster, Func<string, string?> product, int asks,
         IReadOnlyList<AskView>? standing = null, PluginCatalog? plugins = null, IReadOnlyList<LandedBranch>? landed = null,
         IReadOnlyList<PluginOffer>? offers = null, IReadOnlyList<ParkedQuest>? parked = null, HelpBrowserFacts? browser = null,
-        IReadOnlyList<HeldQuest>? held = null, SessionLook? sessions = null, IReadOnlyList<HistoryReading>? history = null)
+        IReadOnlyList<HeldQuest>? held = null, SessionLook? sessions = null, IReadOnlyList<HistoryReading>? history = null,
+        IReadOnlyList<WorkflowFileFound>? workflows = null)
     {
         var sources = new HelpMachineSources(
             config, snapshot, lines, roster, product, asks, standing ?? [], plugins ?? PluginCatalog.None, landed ?? [], offers ?? [],
-            parked ?? [], browser) { Held = held ?? [], Sessions = sessions, History = history };
+            parked ?? [], browser) { Held = held ?? [], Sessions = sessions, History = history, Workflows = workflows };
         return HelpRoomSections.All.Aggregate(new HelpMachine(), (machine, section) => section.Describe(machine, sources));
     }
 
@@ -179,4 +181,7 @@ internal sealed record HelpMachineSources(
 
     /// <summary>What each workspace keeps of finished work (HIST1f-b, design §2.4); null where none was read.</summary>
     public IReadOnlyList<HistoryReading>? History { get; init; }
+
+    /// <summary>The named workflows under the home (WORKFLOW1h-b, the workflow design §8.4); null where none were read.</summary>
+    public IReadOnlyList<WorkflowFileFound>? Workflows { get; init; }
 }

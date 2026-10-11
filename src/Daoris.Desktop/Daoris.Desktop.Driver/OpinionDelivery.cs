@@ -441,6 +441,22 @@ public static class OpinionAnswers
             : noted;
     }
 
+    /// <summary>
+    /// How the reviewer's own run ended, by code (XAGENT1g4a, D142): the English as <c>Driver.Read</c> has always worded it, a
+    /// failed turn's own message beneath as the program's words (it may hold a path).
+    /// </summary>
+    public static Noted Concluded(string opinion, int exitCode, string? turnFailed) =>
+        turnFailed is { Length: > 0 } failed
+            ? Noted.Of(
+                    NoteCodes.OpinionReviewerFailed, $"the reviewer's turn failed as it read the work for second opinion `{opinion}`:", ("opinion", opinion))
+                .Then(" ", Noted.Said(failed, NoteBy.Program))
+            : exitCode == 0
+                ? Noted.Of(NoteCodes.OpinionReviewerRead, $"it read the work and ended; what it said is second opinion `{opinion}`'s.", ("opinion", opinion))
+                : Noted.Of(
+                    NoteCodes.OpinionReviewerExited,
+                    $"it ended with exit {exitCode} as it read the work; what it said, if anything, is second opinion `{opinion}`'s.",
+                    ("opinion", opinion), ("exit", exitCode));
+
     private static string Plural(int count, string noun) => count == 1 ? $"1 {noun}" : $"{count} {noun}s";
 
     /// <summary>A commit's full id as <paramref name="tree"/>'s git names it, or null.</summary>

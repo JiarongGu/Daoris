@@ -12,7 +12,23 @@ public static class WorkflowChange
 public sealed record WorkflowDiffEntry(string Id, string Kind, string Change, IReadOnlyList<string> Fields, bool Moved);
 
 /// <summary>A diff's entries, and the lines it is said in.</summary>
-public sealed record WorkflowDiffSaid(IReadOnlyList<WorkflowDiffEntry> Entries, IReadOnlyList<string> Said);
+public sealed record WorkflowDiffSaid(IReadOnlyList<WorkflowDiffEntry> Entries, IReadOnlyList<string> Said)
+{
+    /// <summary>
+    /// The person's part, a line each as <see cref="Said"/> says it under <i>Your part</i>, without its indent; empty where nothing in
+    /// either version is theirs. Ask Daoris's card carries it apart (WORKFLOW1h-b, design §8.2).
+    /// </summary>
+    public IReadOnlyList<string> Part { get; init; } = [];
+
+    /// <summary>Each step's line as <see cref="Said"/> says it under <i>Steps, by id</i>, without its indent.</summary>
+    public IReadOnlyList<string> Steps { get; init; } = [];
+
+    /// <summary>
+    /// What leaves this machine with no press that did not before, as <see cref="Said"/> says it under <i>Without asking you each
+    /// time</i>, without its indent; empty where nothing new does.
+    /// </summary>
+    public IReadOnlyList<string> Outward { get; init; } = [];
+}
 
 /// <summary>
 /// Two versions of a workflow compared by step id (WORKFLOW1d, the workflow design §2.5, §8.2): each entry in the newer one's
@@ -21,7 +37,9 @@ public sealed record WorkflowDiffSaid(IReadOnlyList<WorkflowDiffEntry> Entries, 
 /// </summary>
 /// <remarks>
 /// A TWIN with the CLI's <c>workflowDiff</c> (<c>namedworkflows.ts</c>): both hold this suite's tests'
-/// <c>fixtures/workflow-named.json</c> <c>diffs</c>, cell for cell, every line said included.
+/// <c>fixtures/workflow-named.json</c> <c>diffs</c>, cell for cell, every line said included. The lists said apart
+/// (<see cref="WorkflowDiffSaid.Part"/>, <see cref="WorkflowDiffSaid.Steps"/>, <see cref="WorkflowDiffSaid.Outward"/>) are this
+/// side's alone, the same lines unindented, for Ask Daoris's card (WORKFLOW1h-b).
 /// </remarks>
 public static class WorkflowDiff
 {
@@ -125,7 +143,7 @@ public static class WorkflowDiff
             }
 
             return $"  {mark} {entry.Id} · {entry.Kind}{detail}";
-        });
+        }).ToList();
 
         var standingBefore = StandingOf(old);
         var standing = StandingOf(after).Where(sentence => !standingBefore.Contains(sentence, StringComparer.Ordinal)).ToList();
@@ -141,7 +159,11 @@ public static class WorkflowDiff
             "Without asking you each time:",
             .. outward,
         ];
-        return new WorkflowDiffSaid(entries, said);
+        static string Unindented(string line) => line[2..];
+        return new WorkflowDiffSaid(entries, said)
+        {
+            Part = [.. part.Select(Unindented)], Steps = [.. steps.Select(Unindented)], Outward = [.. standing],
+        };
     }
 
     /// <summary>

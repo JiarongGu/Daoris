@@ -36,16 +36,17 @@ import type { AgentPart } from './agents';
 import { useAgentsView } from './AgentsView';
 
 /** The place as the application holds it: its list and its main area in a frame, the list's memory its own. */
-function Place({ notify, first = 'claude-code', part = null, onAnchored }: {
+function Place({ notify, first = 'claude-code', part = null, onAnchored, onOpenPlugin }: {
   notify: (message: string, tone?: 'ok' | 'error') => void;
   first?: string | null;
   part?: AgentPart | null;
   onAnchored?: () => void;
+  onOpenPlugin?: (plugin: string) => void;
 }) {
   const lists = useListPanes();
   const [chosen, setChosen] = useState<string | null>(first);
   const [over, setOver] = useState(false);
-  const layout = useAgentsView({ active: true, chosen, onChoose: setChosen, notify, part, onAnchored });
+  const layout = useAgentsView({ active: true, chosen, onChoose: setChosen, notify, part, onAnchored, onOpenPlugin });
   return <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />;
 }
 
@@ -1374,11 +1375,14 @@ describe('the Agents place', () => {
         ],
       }
       : WIRING));
-    place(() => {}, { first: 'acme-agent' });
+    const onOpenPlugin = vi.fn();
+    place(() => {}, { first: 'acme-agent', onOpenPlugin });
 
     await unfold('Ways in');
-    expect(screen.getByText('declared by plugin acme.gate')).toBeTruthy();
     expect(screen.getAllByText(/declared by plugin/)).toHaveLength(1);
+    // PLUGUI1c2b: the name is a door to the plugin's page, not text.
+    await userEvent.click(screen.getByRole('button', { name: 'declared by plugin acme.gate' }));
+    expect(onOpenPlugin).toHaveBeenCalledWith('acme.gate');
   });
 
   /** A shell older than this place answers something else; the page lists nothing and stands. */

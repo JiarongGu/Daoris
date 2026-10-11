@@ -89,7 +89,7 @@ export function CommitGraph({ label, commits, tips = NO_TIPS }: {
         {commits.map((commit) => {
           const at = commit.committedAt ?? commit.authoredAt;
           return (
-            <li key={commit.commit} data-commit={commit.commit} className="flex min-w-0 items-center gap-2" style={{ height: ROW }}>
+            <li key={commit.commit} data-commit={commit.commit} tabIndex={-1} className="flex min-w-0 items-center gap-2" style={{ height: ROW }}>
               <span className="min-w-0 flex-1 truncate text-body text-ink">{commit.subject}</span>
               <code className="shrink-0 font-mono text-small text-ink-soft">{commit.commit.slice(0, 7)}</code>
               {/* The author is a column of its own, and gives way first, by the main area's width, never the window's

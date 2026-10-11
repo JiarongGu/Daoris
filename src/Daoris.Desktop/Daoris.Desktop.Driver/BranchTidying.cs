@@ -209,7 +209,7 @@ public sealed class BranchTidying(string home)
                 {
                     if (!First(met, pass.Repository, "", held)) continue;
                     lines.Add($"tidy  {Held(pass)}");
-                    log?.Warn("branch.kept", ("repository", Name(pass.Repository)), ("workspace", Name(pass.Workspace)), ("branch", null), ("why", held));
+                    log?.Warn("branch.kept", Kept(Name(pass.Repository), Name(pass.Workspace), null, held, pass.Cause));
                     continue;
                 }
 
@@ -235,12 +235,22 @@ public sealed class BranchTidying(string home)
                         : result.Message == "kept" ? (null, null) : (TidyKept.Refused, result.Message);
                     if (why is null || !First(met, pass.Repository, item.Branch, why)) continue;
                     lines.Add($"tidy  {pass.Repository}: `{item.Branch}` stays, since {Clause(clause!)}.");
-                    log?.Warn("branch.kept", ("repository", pass.Repository), ("workspace", pass.Workspace), ("branch", item.Branch), ("why", why));
+                    log?.Warn("branch.kept", Kept(pass.Repository, pass.Workspace, item.Branch, why, why == TidyKept.Unread ? result.Cause : null));
                 }
             }
         }
 
         return lines;
+    }
+
+    /// <summary>
+    /// <c>branch.kept</c>'s data: the cause (AUTOTIDY1a2) is a field only where there is one, so what was read before it reads the same.
+    /// The code only, never the sentence's path (D47 §4).
+    /// </summary>
+    private static (string Key, object? Value)[] Kept(string repository, string workspace, string? branch, string why, string? cause)
+    {
+        (string Key, object? Value)[] data = [("repository", repository), ("workspace", workspace), ("branch", branch), ("why", why)];
+        return cause is null ? data : [.. data, ("cause", cause)];
     }
 
     /// <summary>What the purge of the folders moved aside says: each deleted, and each kept for a reason met the first time.</summary>

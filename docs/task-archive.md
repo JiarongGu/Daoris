@@ -13489,3 +13489,135 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6h2 — the branch list by kind** (web; after 1). The list by repository and kind (the line, sessions', landed, yours folded after five, origin's from ⋯; D112 order, `apart`, `sessionsUnread`) in the repository's Branches tab and above the workspace's clean-up and sync (which stay workspace-only for now). Built-in-git design §2.2.
 
 **Outcome** 2026-10-11 (the row's first half): a repository's Branches tab lists the line at the head (what set it, its origin standing, its last fetch), then sessions' (title and state, joined on the page), landed (pushed state, pull request and its state) and yours folded after five, each with its distance; `BranchList` imports nothing of the bridge. Origin's ⋯ and the workspace's tab are UX6h2b1 and b2. Detail: D150's UX6h2a note.
+
+## UX6h2b1 — origin's branches behind the list's ⋯ (2026-10-11, D150)
+
+> - [ ] **UX6h2b1 — origin's branches behind the list's ⋯** (web). `BranchList` keeps `origin` rows and draws none; a ⋯ after Yours shows them, only where some exist (mirror `ListMore`, work/ListPane.tsx:304-364). Built-in-git design §2.2; D150's UX6h2a note.
+
+**Outcome** 2026-10-11: a ⋯ after Yours, drawn only where origin holds branches no local one names, ticks *Show origin's branches (N)* to draw *Origin's (N)* and unticks it again; hidden each time the tab opens, focus back on the ⋯. `ListMore` as it is; no wire change. Detail: D150's UX6h2b1 note.
+
+## WORKFLOW1e3 — clear run bindings with history (2026-10-11, D157)
+
+> - [ ] **WORKFLOW1e3 — clear run bindings with history** (driver; after e). Include binding in clear plan/count. D153/D157; clear test.
+
+**Outcome** 2026-10-11: a run's binding goes with its quest's cleared unit (planned, then taken after the service's yes), and a workspace's clear takes a binding no quest holds as a left-over; its size is in the bytes, with no new phrase or wire field, and an open quest's binding stays. Detail: D157's WORKFLOW1e3 note.
+
+## PLUGUI1c2a — the plugin files leave Settings (2026-10-11, D119)
+
+> - [ ] **PLUGUI1c2 — plugin-page remainder** (web). Move kit/update types, fix agent/landing doors, put Update now first, remove doubled heading. D119; stories/tests/look.
+
+**Outcome** 2026-10-11 (the row's first part, split as PLUGUI1c2a): `PluginKit` and `PluginUpdate` with their tests and stories moved to `plugins/` (stories `Plugins/…`), `PluginOffers`' one type folded into `plugins/catalog.ts`; *Update now* is the plan's primary control and stays first; the kit's drawer says *Make a plugin* once. The doors are PLUGUI1c2b and c. Detail: D119's PLUGUI1c2a note.
+
+## MSG1g3 — cooling note and twins (2026-10-11, D137)
+
+> - [ ] **MSG1g3 — cooling note and twins** (driver/web). Code held line; compare newSessionSaid with GoOnNew/WordsNever. D137/D142.
+
+**Outcome** 2026-10-11: the held line was already coded (CONVNOTE2g/2g2). `locales/say.test.ts` holds the page's refusal tables (`NEVER`, `START_FROM`, `NEW_SESSION_REFUSED`, now exported) to the driver's `WordsNever`, `StartFrom` and `GoOnNew` codes key for key, the page's own named, and each to both catalogues; the merge tool's MOD9e row names the four driver files it reads. Detail: D137's MSG1g3 note.
+
+## UX6h2b2 — the branch list in a workspace's Branches tab (2026-10-11, D150)
+
+> - [ ] **UX6h2b2 — the branch list in a workspace's Branches tab** (web; after b1). Each repository a group above the clean-up and sync (which stay workspace-only), `apart` folded and included by the person (D112) with a per-repository read; titles per group. BRSCOPE1's tests hold. Design §2.2; D150's UX6h2a and BRSCOPE1 notes.
+
+**Outcome** 2026-10-11: a workspace's Branches tab lists each repository holding Daoris's branches as a group headed by a door to its page (`WorkspaceBranches`), five shown and the rest a press away, the rest folded apart and each included with its own read; titles are asked only for groups shown; the clean-up and sync below are unchanged. UX6h2 is closed. Detail: D150's UX6h2b2 note.
+
+## PLUGUI1c2b — a harness's plugin chip is a door (2026-10-11, D119)
+
+> - [ ] **PLUGUI1c2b — a harness's plugin chip is a door** (web). `AgentPage.tsx:741`'s *declared by plugin* opens the plugin's page, threaded as `onOpenAgent` is (App.tsx:769-777). Design §5:677-691.
+
+**Outcome** 2026-10-11: an agent's *Ways in* draws *declared by plugin X* as a ghost button that opens X in Plugins, the opener threaded from App.tsx through `useAgentsView` and `AgentsMain`; without one it stays text. No new words. Detail: D119's PLUGUI1c2b note.
+
+## PLUGUI1c2c — a landing rule's plugin is a door (2026-10-11, D119)
+
+> - [ ] **PLUGUI1c2c — a landing rule's plugin is a door** (web; after UX6h2b2, which holds `projects/`). `RepositorySetup.tsx:447` and `WorkspaceSetup.tsx:298` name the plugin as a door to its page; the chooser stays. Design §5:688.
+
+**Outcome** 2026-10-11: a repository's and a workspace's Setup draw the landing sentence's plugin as a ghost button that opens it in Plugins (`landingRowSays` in SetupParts.tsx, the sentence's words unchanged, plain where no opener or the sentence's shape differs); the chooser stays an option. PLUGUI1c2 is closed. Detail: D119's PLUGUI1c2c note.
+
+## AUTOTIDY1a — show automatic cleanup (2026-10-11, D88)
+
+> - [ ] **AUTOTIDY1a — show automatic cleanup** (modules/web). Branches lists recent tidied/kept log facts. D88; route and bilingual list tests.
+
+**Outcome** 2026-10-11: the log's `LINES` takes `events` (any of a list) and `workspace`; a workspace's Branches tab lists, above the clean-up, the last week's branches the look cleaned up on its own and those it left in place with a word for why (en and zh), five shown, from the shell only. Detail: D88's AUTOTIDY1a note.
+
+## UX6h3a — History pages (2026-10-12, D150)
+
+> - [ ] **UX6h3a — History pages** (web). History accumulates its graph's pages with the load-more foot ("{shown} commits listed", *Show more* while `more`: the graph answers no total), as Ask Daoris's history does. Design §2.3; platform UX :231-246.
+
+**Outcome** 2026-10-12: History asks its graph a page at a time (`useGitGraphPages`, one cached query each) and draws the pages together beside one set of lanes; `GraphFoot` and `useGraphPaging` (exported for the branch page) say the count, *Show more* while `more`, a later page's refusal in the foot and the focus on the first row brought. Detail: D150's UX6h3a note.
+
+## UXDOC2 — the platform contract names a workspace's page (2026-10-12, D150)
+
+> - [ ] **UXDOC2 — the platform contract names a workspace's page** (docs). Its Repositories bullet (~:432-454) names only a repository's page; a workspace's header, four tabs and Branches' groups above the clean-up live only in D150's notes (UX6g, UX6h2b2). D150 §4.3; the doc gates.
+
+**Outcome** 2026-10-12: the platform contract's Repositories part has a paragraph for a workspace's page: what opens it, its header (*Sync now* or *Wire to a remote…*), its four tabs, a browser's Details alone, and Branches in order, the 28-twice reading named as UX6h2b3's; the detail stays in D150's and D88's notes.
+
+## WORKFLOW1h a–c — Ask Daoris proposes a workflow version (2026-10-12, D157)
+
+> - [ ] **WORKFLOW1h — workflow proposal, whole versions** (service/driver/modules/web chain a → b → c). `workflow_propose` with whole `steps` (new, or edit on a base, stale when not newest) and an optional choice; judge validation, version, diff, the person's part, outward acts and needs; Apply saves by the `ask-daoris:` door, a draft shows only *Not now*. §8; kinds/coverage/goldens/card tests.
+
+**Outcome** 2026-10-12 (legs a–c, merged once): the service's `workflow_propose` box and tool; the driver's judge (a new workflow or an edit on the newest base, its diff in the CLI's words, the needs the gate itself names making a draft, Apply saving through `ask-daoris:` and choosing), the room's bullet, Workflow column and the workspace's kinds, coverage's `new`/`edit`/`use` doors; the modules' facts and the card's fields. The bespoke card is WORKFLOW1h-d; a proposal's name, WORKFLOW1h-name. Detail: D157's WORKFLOW1h-a, -b and -c notes.
+
+## XAGENT1g3 — attention reads kept facts (2026-10-12, D155)
+
+> - [ ] **XAGENT1g3 — attention reads kept facts** (driver/modules). Cache look judgments; OPINION_WAITS runs no git. §9/UX6c; query tests.
+
+**Outcome** 2026-10-12: the look keeps each owed landing opinion's gate and `auto` (`LastOpinions`, judged with the review as the route judged it), and `OPINION_WAITS` answers from it, running no git or service call; a judgment is at most a look old, the presses already nudge the loop, and the tick forwards a changed wait. The real-git equivalence tests were run at the merge, one fixture corrected. Detail: D155's XAGENT1g3 note.
+
+## UX6h3b — the branch page (2026-10-12, D150)
+
+> - [ ] **UX6h3b — the branch page** (web; after a). A branch row opens the branch as page state in Repositories with a way back to Branches in its header, its standing line and its graph by `sinceParted`, paged; the line's row opens History. A commit's press waits on GIT1f; create, fetch and push on GIT1g. Design §2.3.
+
+**Outcome** 2026-10-12: a branch's name in a repository's or a workspace's Branches opens its page (`BranchPage`): its kind, a session's state and title, where it stands in the list's own words (`branchStanding.ts`), *Back to Branches*, and its walk since it left its line beside the line's, paged with History's foot (`usePagedGraph`, shared); the line's row opens History; page state, not remembered. The focus after the way back is UX6h3d. Detail: D150's UX6h3b note.
+
+## GOLDEN1 — the room's goldens rewritten by their test (2026-10-12)
+
+> - [ ] **GOLDEN1 — the room's goldens rewritten by their test** (driver tests). An environment switch on `HelpRoomGoldenTests` writes the goldens from the room's render; unset, it compares. Today they are written by hand or a temporary test (WORKFLOW1h-b).
+
+**Outcome** 2026-10-12: `DAORIS_GOLDEN_WRITE=1` makes `HelpRoomGoldenTests` write the three room goldens and `settings.json` from the render (BOM-less UTF-8, atomically) and pass; unset, they compare as before, and no gate sets it. A switched run left them byte for byte. The command is in `src/Daoris.Desktop/README.md`.
+
+## WORKFLOW1h-d — the workflow card (2026-10-12, D157)
+
+> - [ ] **WORKFLOW1h-d — the workflow card** (web). `HelpWorkflowShown` drawn as §8.2 says: *Your part* first, the diff by step (+ − ~ ↕), *Without asking you each time*, *Needs first* for a draft (only *Not now*), *Applies to*, the choice; en and zh; `useSettleHelp` refreshes the workflows a saved card changed. D157's WORKFLOW1h-c note.
+
+**Outcome** 2026-10-12: Ask Daoris draws a workflow proposal as its own card: the version it makes, *Your part*, *Steps*, *Without asking you each time* (or that nothing new leaves this machine), *Needs first* with only *Not now* for a draft, *Applies to* and the choice, headings in en and zh, the lines the driver's. The design's *Checked* is not drawn (no field carries it). Apply's existing `driver` refresh already covers the workflow tabs. WORKFLOW1h is done but for its name and WORKFLOW1h2. Detail: D157's WORKFLOW1h-d note.
+
+## UX6h3c — All branches (2026-10-12, D150)
+
+> - [ ] **UX6h3c — All branches** (web; after b). History draws every local and origin branch's graph, within the graph's tip limit (`GIT_TOO_MANY_TIPS`). Design §2.3.
+
+**Outcome** 2026-10-12: History's ⋯ ticks *All branches*: the graph over the line and every local and origin branch, the line's lane leftmost, at most 256 tips in the list's order, the head saying *Drawn from the first 256 of {total} branches* past them; paged with History's foot; page state. Detail: D150's UX6h3c note.
+
+## UX6h2b3 — one fold for a workspace's repositories apart (2026-10-12, D150)
+
+> - [ ] **UX6h2b3 — one fold for a workspace's repositories apart** (web; design call first). A workspace's Branches says its repositories holding no Daoris branch twice: the groups' fold, then *Updates*' (each its own include). Decide one fold whose include serves both, or say why two. D150's window note of 2026-10-11.
+
+**Outcome** 2026-10-12: the parent's call, one fold (D112's one concept): the groups' fold is the only one on a workspace's Branches; its include lists the repository's branches and adds it to *Updates*' next look, which asks the included by name (`also`) and draws no fold of its own there; elsewhere `SyncSection` keeps its own. BRSCOPE1's expectations moved to the fold, none dropped. Detail: D150's UX6h2b3 note.
+
+## UX6h3d — the way back returns the focus (2026-10-12, D150)
+
+> - [ ] **UX6h3d — the way back returns the focus** (web). After *Back to Branches* (and the code map's *Back to the workspace*) the focus goes to the row whose press opened the page, not the body. Platform UX :240-242; D150's UX6h3b note; a ProjectsView.git.test.tsx case.
+
+**Outcome** 2026-10-12: `returnFocus` (src/Daoris.Web/src/returnFocus.ts) puts the focus back on the press that opened a branch's page or the code map once the page has drawn again, else on its heading, standing down if the reader moved and after five seconds. Detail: D150's UX6h3d note.
+
+## WORKFLOW1h-name — a proposed workflow's name (2026-10-12, D157)
+
+> - [ ] **WORKFLOW1h-name — a proposed workflow's name** (service/driver). The box carries an optional `name` for a new workflow, read by the judge, so it is not named by its id. Design §2.5, §8.1; the box's and judge's tests.
+
+**Outcome** 2026-10-12: `workflow_propose` takes an optional `name` (at most 60, the store's limit); a new workflow is saved under it, else its id; a name on an edit is refused, since an edit keeps its workflow's name. Detail: D157's WORKFLOW1h-name note.
+
+## XAGENT1g4a — the reviewer's conclusion notes by code (2026-10-12, D152)
+
+> - [ ] **XAGENT1g4 — coded answers and reviewer row** (driver/web). Reviewer beside work with measured usage; bilingual note parts. §6.4/§9.
+
+**Outcome** 2026-10-12 (the row's first part): the reviewer's three conclusion notes are `opinion.reviewer-failed` (the failure as the program's words), `opinion.reviewer-read` and `opinion.reviewer-exited`, worded in en and zh (阅读者, the glossary's), the English unchanged; the answers note was CONVNOTE2h's; transcript and console lines stay English. The measured use is XAGENT1g4b, the row's placement XAGENT1g4c. Detail: D152's XAGENT1g4a amendment.
+
+## XAGENT1g4b — the reviewer's measured use (2026-10-12, D155)
+
+> - [ ] **XAGENT1g4b — the reviewer's measured use** (modules/web). The gate's pass shows what the reviewer used of its context, *not measured* where none was recorded. §6.3, §9; D57 §4.
+
+**Outcome** 2026-10-12: each pass of `OPINION_GATE` answers `usage {used, size}` read by its reviewer session, or null; the gate's *What it used* row says "{used} of {size} of its context", *not measured* where none (never a zero), en and zh. Detail: D155's XAGENT1g4b note.
+
+## AUTOTIDY1a2 — one row per branch kept, and why by code (2026-10-12, D88)
+
+> - [ ] **AUTOTIDY1a2 — one row per branch kept, and why by code** (driver/web). On the install one branch is kept `unread` seven times in a day: the driver's "once while the reason lasts" resets at each start, and the page lists every line. Show one row per branch and reason (the latest, and since when); log which `unread` cause as a code (no tree git lists, the index, the list, the toplevel, the folders), never the sentence's path. D88's window note of 2026-10-12.
+
+**Outcome** 2026-10-12: `branch.kept` carries a `cause` code (`toplevel`, `refs`, `list`, `folder`, `index`, `folders`) for six `unread` paths, never the sentence's path; the Branches tab groups kept lines by branch, repository, why and cause into one row with "since" and the cause's word (en and zh). `BranchTidyingProcessTests` passed 16/16 at the merge. Two paths are AUTOTIDY1a3's. Detail: D88's AUTOTIDY1a2 note.

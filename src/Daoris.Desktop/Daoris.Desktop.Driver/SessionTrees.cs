@@ -738,7 +738,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             var root = known.First(r => string.Equals(r.Repository, item.Repository, StringComparison.OrdinalIgnoreCase)).Root!;
             if (await ReadWorktreesAsync(root, ct).ConfigureAwait(false) is not { } worktrees)
             {
-                results.Add(new(item with { Unread = true, Detail = ListUnread }, false, $"{ListUnread}, so it is kept") { Kept = TidyKept.Unread });
+                results.Add(new(item with { Unread = true, Detail = ListUnread }, false, $"{ListUnread}, so it is kept") { Kept = TidyKept.Unread, Cause = TidyCause.List });
                 continue;
             }
 
@@ -757,7 +757,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
 
             if (byItself && await LastLookAsync(root, now, ct).ConfigureAwait(false) is { } last)
             {
-                results.Add(new(now, false, last.Sentence) { Kept = last.Code });
+                results.Add(new(now, false, last.Sentence) { Kept = last.Code, Cause = last.Cause });
                 continue;
             }
 

@@ -2,6 +2,7 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import type { StartWiring } from '../map/wiring';
 import { InTheme } from '../plugins/storyIcons';
+import type { LogRow } from '../settings/Logs';
 import type { LandedBranch, SweepBranch } from '../settings/Sweep';
 import { SweepList } from '../settings/Sweep';
 import { SyncSection } from '../settings/Sync';
@@ -10,14 +11,19 @@ import type { HistoryPlan } from '../work/history';
 import { WORKSPACE_EMPTY, WORKSPACE_PLAN } from '../work/historyFixtures';
 import { WORKSPACE } from '../workflow/fixtures';
 import { WorkflowTab } from '../workflow/WorkflowTab';
-import { LANGUAGES } from './fixtures';
+import type { BranchListValue } from './BranchList';
+import { GIT_BRANCHES_ENGINE, GIT_BRANCHES_GAME, LANGUAGES } from './fixtures';
 import { KeptHistory } from './KeptHistory';
+import { BranchesTab } from './RepositoryGit';
 import type { WorkspaceTab } from './tabs';
+import { WorkspaceBranches } from './WorkspaceBranches';
 import { WorkspaceDetails, WorkspacePage } from './WorkspacePage';
+import { WorkspaceTidied } from './WorkspaceTidied';
 import { WorkspaceSetup, type WorkspaceSetupProps } from './WorkspaceSetup';
 
 // A workspace's page (UX6g, D150 §4.3) in Repositories' main area, every tab and the states the design names: Details
-// with its repositories, what a start runs on and its accounts; Branches with the clean-up and bringing up to date; Setup
+// with its repositories, what a start runs on and its accounts; Branches with each repository's branches (UX6h2b2), the
+// clean-up and bringing up to date; Setup
 // at Daoris's defaults, with the workspace's own values, with the wiring form open, and with the environment naming the
 // remote; a browser's page; and the header wired and local. Drawn as `WorkspaceView` draws them, from props.
 
@@ -36,6 +42,36 @@ const branch = (over: Partial<SweepBranch> & Pick<SweepBranch, 'branch' | 'kind'
 const landed = (over: Partial<LandedBranch> & Pick<LandedBranch, 'branch' | 'kind'>): LandedBranch => ({
   repository: 'api', workspace: 'work', files: [], commits: 1, removable: false, ...over,
 });
+
+/**
+ * Each repository's list as `GIT_BRANCHES` answers it for the workspace (UX6h2b2): the engine's whole list, then lists of one
+ * or two kinds; one apart, once included, is the game's (no branch of Daoris's).
+ */
+const [LINE_BRANCH, ...ENGINE_REST] = GIT_BRANCHES_ENGINE.branches;
+const kinds = (...these: string[]) => [LINE_BRANCH!, ...ENGINE_REST.filter((each) => these.includes(each.kind))];
+const LISTS: Record<string, BranchListValue> = {
+  api: GIT_BRANCHES_ENGINE,
+  billing: { ...GIT_BRANCHES_ENGINE, branches: kinds('session') },
+  gateway: { ...GIT_BRANCHES_ENGINE, line: { ...GIT_BRANCHES_ENGINE.line, ahead: 0, behind: 3 }, branches: kinds('landed') },
+  portal: { ...GIT_BRANCHES_ENGINE, fetch: null, branches: kinds('session', 'yours') },
+  reports: { ...GIT_BRANCHES_ENGINE, branches: kinds('landed', 'origin') },
+  search: { ...GIT_BRANCHES_ENGINE, branches: kinds('session') },
+};
+const TITLES = { 'daoris/engine-physics-step': 'Expose a streaming budget' };
+
+/**
+ * A group's list as its holder draws it: the read list, or the game's for one the person included; each branch's name opens
+ * its page and the line's opens History, as the window's do (UX6h3b).
+ */
+const group = (repository: string, included: boolean) => (
+  <BranchesTab
+    repository={repository}
+    read={{ state: 'read', value: { ...(included ? GIT_BRANCHES_GAME : LISTS[repository] ?? GIT_BRANCHES_ENGINE), workspace: 'work' } }}
+    titles={TITLES}
+    onOpen={nothing}
+    onOpenHistory={nothing}
+  />
+);
 
 const DEFAULTS_DAORIS: WorkspaceSetupProps = {
   workspace: 'work',
@@ -78,10 +114,14 @@ type Args = {
   wired?: boolean;
   /** What this machine keeps of its finished work (HIST1e), as `HISTORY_PLAN` answers it. */
   kept?: HistoryPlan;
+  /** The repositories holding a branch of Daoris's, each a group on Branches (UX6h2b2); the rest are apart. */
+  held?: string[];
+  /** What the look cleaned up on its own, from the machine log (AUTOTIDY1a). */
+  tidied?: LogRow[];
 };
 
 /** The page as `WorkspaceView` draws it, its tab chosen here so a story can move between them. */
-function Page({ tab: first, setup = DEFAULTS_DAORIS, browser = false, wired = true, kept = WORKSPACE_PLAN }: Args) {
+function Page({ tab: first, setup = DEFAULTS_DAORIS, browser = false, wired = true, kept = WORKSPACE_PLAN, held = REPOSITORIES.slice(0, 3), tidied }: Args) {
   const [tab, setTab] = useState<WorkspaceTab>(first);
   const details = (
     <>
@@ -113,27 +153,39 @@ function Page({ tab: first, setup = DEFAULTS_DAORIS, browser = false, wired = tr
     ? details
     : tab === 'branches'
       ? (
-        <SweepList
-          branches={[
-            branch({ branch: 'daoris/s-1f2e3d4c', kind: 'empty', where: 'develop', removable: true }),
-            branch({ repository: 'billing', branch: 'daoris/s-9e0f1a2b', kind: 'unlanded', commits: 2 }),
-            branch({ repository: 'reports', branch: 'daoris/s-7a8b9c0d', kind: 'in-use' }),
-          ]}
-          landed={[
-            landed({ branch: 'feature/report-totals-0fda18', kind: 'on-line', where: 'origin/develop', removable: true }),
-            // A long name, as a branch rule's slug makes one: whole at every width (UXFIX4).
-            landed({ branch: 'feature/report-totals-by-region-for-the-quarter-close-0fda19', kind: 'inside', where: 'feature/report-totals-0fda18', removable: true }),
-          ]}
-          onLook={nothing}
-          onClean={nothing}
-          sync={(
-            <SyncSection
-              scope={REPOSITORIES.map((repository, at) => ({ repository, workspace: 'work', holds: at < 3 }))}
-              onLook={nothing}
-              onSync={nothing}
-            />
-          )}
-        />
+        <>
+          {/* Each repository's branches, a group per repository (UX6h2b2), above the clean-up and the look. */}
+          <WorkspaceBranches
+            workspace="work"
+            read={{ state: 'read', value: { held, apart: REPOSITORIES.filter((repository) => !held.includes(repository)) } }}
+            group={group}
+            onOpen={nothing}
+          />
+          <WorkspaceTidied lines={tidied ?? null} />
+          <SweepList
+            branches={[
+              branch({ branch: 'daoris/s-1f2e3d4c', kind: 'empty', where: 'develop', removable: true }),
+              branch({ repository: 'billing', branch: 'daoris/s-9e0f1a2b', kind: 'unlanded', commits: 2 }),
+              branch({ repository: 'reports', branch: 'daoris/s-7a8b9c0d', kind: 'in-use' }),
+            ]}
+            landed={[
+              landed({ branch: 'feature/report-totals-0fda18', kind: 'on-line', where: 'origin/develop', removable: true }),
+              // A long name, as a branch rule's slug makes one: whole at every width (UXFIX4).
+              landed({ branch: 'feature/report-totals-by-region-for-the-quarter-close-0fda19', kind: 'inside', where: 'feature/report-totals-0fda18', removable: true }),
+            ]}
+            onLook={nothing}
+            onClean={nothing}
+            sync={(
+              <SyncSection
+                scope={REPOSITORIES.map((repository) => ({ repository, workspace: 'work', holds: held.includes(repository) }))}
+                // The groups' fold above is the one list apart (UX6h2b3): Updates says how many it fetches, and draws none.
+                apartFolded
+                onLook={nothing}
+                onSync={nothing}
+              />
+            )}
+          />
+        </>
       )
       : tab === 'workflow'
         ? (
@@ -189,8 +241,45 @@ export const DetailsChinese: Story = { decorators: [chinese] };
 /** Details on a workspace with nothing finished: the reading says so, and no press is offered. */
 export const DetailsNothingKept: Story = { args: { kept: WORKSPACE_EMPTY } };
 
-/** Branches: the clean-up across its repositories, and bringing them up to date before anyone has looked. */
+/**
+ * Branches: each of the three repositories holding a branch of Daoris's as a group headed by its door, its line and its
+ * branches by kind (UX6h2b2); the four others with a checkout here folded apart, each drawn once ticked and included (the
+ * game's list stands in for one), the one fold of them (UX6h2b3: *Updates* below draws no list apart of its own and says how
+ * many it will fetch); then the clean-up across its repositories, and bringing them up to date before anyone has looked.
+ */
 export const Branches: Story = { args: { tab: 'branches' } };
+
+const HOURS = 3_600_000;
+const tidiedLine = (event: 'branch.tidied' | 'branch.kept', hoursAgo: number, data: LogRow['data']): LogRow => ({
+  time: new Date(Date.now() - hoursAgo * HOURS).toISOString(), source: 'driver', level: event === 'branch.kept' ? 'warn' : 'info', event,
+  data: { workspace: 'work', ...data },
+});
+
+/** What the look cleaned up on its own, newest first (AUTOTIDY1a): seven rows, five shown and *Show 2 more*; one has a tree set aside. */
+const TIDIED: LogRow[] = [
+  tidiedLine('branch.tidied', 1, { repository: 'billing', branch: 'daoris/s-1f2e3d4c', tree: true, folder: 'trees/.tidied/work/billing/s-1' }),
+  tidiedLine('branch.kept', 2, { repository: 'api', branch: 'daoris/s-9e0f1a2b', why: 'busy' }),
+  tidiedLine('branch.tidied', 5, { repository: 'reports', branch: 'daoris/s-7a8b9c0d', tree: false, folder: null }),
+  tidiedLine('branch.kept', 9, { repository: 'billing', branch: null, why: 'starting' }),
+  tidiedLine('branch.tidied', 26, { repository: 'api', branch: 'daoris/s-3c4d5e6f', tree: true, folder: 'trees/.tidied/work/api/s-3' }),
+  tidiedLine('branch.kept', 30, { repository: 'reports', branch: 'daoris/s-2b3c4d5e', why: 'hidden' }),
+  tidiedLine('branch.tidied', 50, { repository: 'billing', branch: 'daoris/s-0a1b2c3d', tree: false, folder: null }),
+];
+
+/** Branches with what the look cleaned up on its own, and left, after the groups and above the clean-up (AUTOTIDY1a). */
+export const BranchesCleanedUp: Story = { args: { tab: 'branches', tidied: TIDIED } };
+
+/** The installed window's case (AUTOTIDY1a2): one branch kept `unread` and logged at each of seven starts is one row, with its cause and since. */
+const KEPT_EVERY_START: LogRow[] = Array.from({ length: 7 }, (_, index) =>
+  tidiedLine('branch.kept', 3 + index * 24, { repository: 'api', branch: 'daoris/s-9e0f1a2b', why: 'unread', cause: 'folder' }));
+
+export const BranchesKeptEveryStart: Story = { args: { tab: 'branches', tidied: KEPT_EVERY_START } };
+
+/** Branches of six repositories holding Daoris's: five groups, the sixth one press away (*Show 1 more*), and one apart. */
+export const BranchesManyRepositories: Story = { args: { tab: 'branches', held: REPOSITORIES.slice(0, 6) } };
+
+/** Branches in 中文: the groups' words, the fold apart and its *纳入*. */
+export const BranchesChinese: Story = { args: { tab: 'branches' }, decorators: [chinese] };
 
 /** The main area at a width: 600 px at a 680 px window, the list a strip beside it, and 400 px, its floor. */
 const mainAt = (width: number): Decorator => (Story) => <div className="flex" style={{ width }}><Story /></div>;
@@ -202,7 +291,10 @@ export const BranchesAt680: Story = { args: { tab: 'branches' }, decorators: [ma
 /** The same, in dark. */
 export const BranchesAt680Dark: Story = { args: { tab: 'branches' }, decorators: [mainAt(600), dark] };
 
-/** Branches at the main area's 400 px floor (UXFIX4): each row's sentence under its name, every name whole. */
+/**
+ * Branches at the main area's 400 px floor (UXFIX4): each row's sentence under its name, every name whole; each group's
+ * branch names and subjects wrap rather than widen the tab, and the fold apart lays its boxes one to a line (UX6h2b2).
+ */
 export const BranchesAtTheFloor: Story = { args: { tab: 'branches' }, decorators: [mainAt(400)] };
 
 /** The same, in dark. */
@@ -227,7 +319,7 @@ export const WorkflowAtTheFloor: Story = { args: { tab: 'workflow' }, decorators
 export const SetupFolded: Story = { args: { tab: 'setup', wired: false } };
 
 /** Setup with the workspace's own values: a line, a branch rule a plugin pushes and accepts, 中文 sessions, no reading, a remote and two rules. */
-export const SetupOwn: Story = { args: { tab: 'setup', setup: DEFAULTS_OWN } };
+export const SetupOwn: Story = { args: { tab: 'setup', setup: { ...DEFAULTS_OWN, onOpenPlugin: nothing } } };
 
 /** The header's *Wire to a remote…*: Setup at its remote, the form open. */
 export const Wiring: Story = { args: { tab: 'setup', wired: false, setup: { ...DEFAULTS_DAORIS, wiring: true } } };

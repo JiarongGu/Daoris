@@ -8,6 +8,8 @@
   "settings.sync.nothing": "这里的一切都已是最新。",
   "settings.sync.scope": "查看时会获取持有 Daoris 分支的 {{count}} 个仓库：会话的分支，或落地产生的分支。",
   "settings.sync.scope_other": "查看时会获取持有 Daoris 分支的 {{count}} 个仓库：会话的分支，或落地产生的分支。",
+  "settings.sync.scopeIncluded": "查看时会获取持有 Daoris 分支的仓库，以及你纳入的仓库，共 {{count}} 个。",
+  "settings.sync.scopeIncluded_other": "查看时会获取持有 Daoris 分支的仓库，以及你纳入的仓库，共 {{count}} 个。",
   "settings.sync.scopeNone": "这里还没有仓库持有 Daoris 的分支。",
   "settings.sync.noneHeld": "这里没有仓库持有 Daoris 的分支，因此没有属于 Daoris 的东西可查看。其他仓库列在下面：勾选即可纳入。",
   "settings.sync.apart.summary": "另有 {{count}} 个有检出的仓库不持有 Daoris 的分支",

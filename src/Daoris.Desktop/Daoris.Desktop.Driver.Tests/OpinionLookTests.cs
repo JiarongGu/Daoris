@@ -96,6 +96,55 @@ public sealed class OpinionLookTests : IDisposable
         Assert.Equal((false, "there is no second opinion `nothing1` on this machine."), (stop.Done, stop.Message));
     }
 
+    /// <summary>
+    /// XAGENT1g3: the look keeps each owed landing opinion's gate for the attention band's route, as that route judged it before
+    /// (<see cref="OpinionPresses.GateAsync"/>): a required opinion none could be had for, and commits nobody read where the work
+    /// lands by itself, each with its <c>auto</c>. A <c>steps</c> opinion is not kept.
+    /// </summary>
+    [Fact]
+    public async Task The_look_keeps_a_landing_opinions_gate_as_the_route_judged_it_and_not_a_steps_one()
+    {
+        var (host, tree, _) = await DoneAsync(required: true, on: [OpinionRules.Landing, OpinionRules.Steps]);
+        new OpinionGates(_home).Asked("q1", "reports", new OpinionAskKept(DateTimeOffset.UtcNow, OpinionRules.Landing, "s1", await HeadAsync(tree))
+        {
+            Code = ReviewerUnavailable.NoReviewer, By = OpinionAskers.Look,
+        });
+        var driver = Driver(host);
+        var judged = new List<OpinionJudged>();
+
+        await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None, judged);
+        await driver.Running.SettledAsync();
+
+        var kept = Assert.Single(judged);
+        var route = (await new OpinionPresses(_home, host.Client()).GateAsync("s1")).Gate!;
+        Assert.Equal((route.Opinion.State, route.Opinion.Required, route.Opinion.Says), (kept.Gate.State, kept.Gate.Required, kept.Gate.Says));
+        Assert.Equal((OpinionGateStates.Unavailable, true), (kept.Gate.State, kept.Gate.Required));
+        Assert.Equal((route.Process?.Landing ?? LandingRules.Choose(Config(), "reports", "work")).Rule.AutoAccept, kept.Auto);
+        Assert.Equal(("s1", "q1", "reports"), (kept.Session, kept.Quest, kept.Repository));
+    }
+
+    /// <summary>
+    /// XAGENT1g3: commits made after the opinion read are kept as the route says them, the count and the sentence the same.
+    /// </summary>
+    [Fact]
+    public async Task The_kept_gate_of_commits_since_the_opinion_read_says_what_the_route_says()
+    {
+        var (host, tree, _) = await DoneAsync(required: false);
+        var driver = Driver(host);
+        await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None);
+        await driver.Running.SettledAsync();
+        await CommitAsync(tree, "later.ts", "more", "a commit nobody read");
+        var judged = new List<OpinionJudged>();
+
+        await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None, judged);
+        await driver.Running.SettledAsync();
+
+        var kept = Assert.Single(judged);
+        var route = (await new OpinionPresses(_home, host.Client()).GateAsync("s1")).Gate!;
+        Assert.Equal(OpinionGateStates.CommitsSince, kept.Gate.State);
+        Assert.Equal((route.Opinion.State, route.Opinion.Since, route.Opinion.Says), (kept.Gate.State, kept.Gate.Since, kept.Gate.Says));
+    }
+
     // ——— the machine and the fixtures
 
     private string Command => Path.Combine(_home, "agent-here");
@@ -141,14 +190,14 @@ public sealed class OpinionLookTests : IDisposable
     /// A session that worked in its own tree on `reports` and concluded on its quest's done, owed an opinion as the conclusion makes
     /// it, under a rule naming Codex: the host standing in, the tree, and where the work left the line.
     /// </summary>
-    private async Task<(OpinionStandIn Host, string Tree, string Line)> DoneAsync(bool required)
+    private async Task<(OpinionStandIn Host, string Tree, string Line)> DoneAsync(bool required, string[]? on = null)
     {
         (DriverConfig.Empty with
         {
             Adapter = "claude-code-acp",
             Opinions = new Dictionary<string, OpinionRule>(StringComparer.OrdinalIgnoreCase)
             {
-                ["reports"] = new OpinionRule(["codex-acp"], [OpinionRules.Landing], required),
+                ["reports"] = new OpinionRule(["codex-acp"], on ?? [OpinionRules.Landing], required),
             },
         }).Save(Path.Combine(_home, "driver.json"));
 
@@ -161,7 +210,7 @@ public sealed class OpinionLookTests : IDisposable
         await CommitAsync(tree, "report.ts", "the work", "the work of s1");
 
         var host = new OpinionStandIn().Session("s1", "completed", tree: tree).Quest("q1");
-        Assert.Equal([OpinionRules.Landing], OpinionLook.Concluded(_home, Config(), "s1",
+        Assert.Equal(on ?? [OpinionRules.Landing], OpinionLook.Concluded(_home, Config(), "s1",
             new QuestView("q1", "ask #a1", "reports", "Work q1", "", "Done"), "Done", "completed", tree));
         return (host, tree, line);
     }

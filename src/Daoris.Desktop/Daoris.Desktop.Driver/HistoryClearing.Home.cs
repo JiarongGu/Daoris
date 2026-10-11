@@ -19,9 +19,14 @@ public static partial class HistoryClearing
     {
         var home = files.Home;
         var kept = quests.Where(Plain).Sum(quest => HistoryBytes.Of(Path.Combine(home, QuestFolder, quest)))
-                   + asks.Where(Plain).Sum(ask => HistoryBytes.Of(Path.Combine(home, AskFolder, ask)));
+                   + asks.Where(Plain).Sum(ask => HistoryBytes.Of(Path.Combine(home, AskFolder, ask)))
+                   + BoundRuns(home, quests).Sum(run => HistoryBytes.Of(WorkflowRunBindings.PathOf(home, run)));
         return new HistoryBytes(0, 0, 0, kept, 0);
     }
+
+    /// <summary>The runs among these quests that are bound here: a run's id is its chain's first quest, and its binding goes with that quest (WORKFLOW1e3).</summary>
+    private static IReadOnlyList<string> BoundRuns(string home, IEnumerable<string> quests) =>
+        [.. quests.Where(quest => WorkflowRunBindings.Bound(home, quest)).Distinct(StringComparer.Ordinal)];
 
     /// <summary>An id that names one folder under its parent and nothing else.</summary>
     private static bool Plain(string id) =>
@@ -135,6 +140,17 @@ public static partial class HistoryClearing
         {
             var id = Path.GetFileName(folder);
             if (Plain(id) && !asks.Contains(id)) Add(folder, folder: true);
+        }
+
+        // A run's binding no quest here holds any more (WORKFLOW1e3): a hand purge or an earlier clear left it.
+        foreach (var file in Files(WorkflowRunBindings.FolderOf(world.Home)))
+        {
+            if (string.Equals(Path.GetExtension(file), ".json", StringComparison.Ordinal)
+                && WorkflowRunBindings.IsRunId(Path.GetFileNameWithoutExtension(file))
+                && !quests.Contains(Path.GetFileNameWithoutExtension(file)))
+            {
+                Add(file, folder: false);
+            }
         }
 
         return found;

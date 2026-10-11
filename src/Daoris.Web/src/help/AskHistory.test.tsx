@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -11,6 +11,14 @@ import { ROW_LINE } from './preview';
 
 // ASKHIST1, as ASKHIST1c made it: Ask Daoris's history, a molecule. Its head (what it is, kept on this machine, a new
 // conversation, the search), its rows grouped by day, each row's acts, and its states, in both catalogues.
+
+// The rows are dated from the clock as the file loads, and their groups by day are read from it as they draw: a run across
+// midnight moved "today" between the two (the web gate, 2026-10-12, FIX-LOG). The file's clock is held at midday.
+vi.useFakeTimers({ toFake: ['Date'] });
+vi.setSystemTime(new Date(2026, 9, 11, 12, 0, 0));
+afterAll(() => {
+  vi.useRealTimers();
+});
 
 const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
 const daysAgo = (days: number) => {

@@ -189,6 +189,9 @@ public sealed record HistoryUnitPlan(string Kind, string Id, string? Workspace)
     /// <summary>This machine's copies of a teammate's records it takes, keyed <c>origin/id</c>.</summary>
     public IReadOnlyList<string> Teammates { get; init; } = [];
 
+    /// <summary>The runs among <see cref="Quests"/> that are bound here, whose bindings go with the unit (WORKFLOW1e3); never on the wire.</summary>
+    public IReadOnlyList<string> Bindings { get; init; } = [];
+
     /// <summary>Why the whole unit stays, the first piece a person meets; null when it may go.</summary>
     public HistoryKeep? Keep { get; init; }
 
@@ -406,10 +409,20 @@ public static partial class HistoryClearing
         var gone = answered.SelectMany(unit => unit.Sessions.Concat(unit.Teammates)).Distinct(StringComparer.Ordinal).ToList();
         var removed = machine.Files.Remove(gone, world.Events);
         failed.AddRange(removed.Failed);
+
+        // And its quests' run bindings beside them (WORKFLOW1e3), by the same rule: only what went is counted.
+        var bound = new HashSet<string>(StringComparer.Ordinal);
         var cleared = answered
-            .Select(unit => unit with
+            .Select(unit =>
             {
-                Bytes = unit.Sessions.Aggregate(unit.Bytes, (sum, session) => sum + removed.Bytes.GetValueOrDefault(session, HistoryBytes.None)),
+                var bytes = unit.Sessions.Aggregate(unit.Bytes, (sum, session) => sum + removed.Bytes.GetValueOrDefault(session, HistoryBytes.None));
+                var took = 0L;
+                foreach (var run in unit.Bindings.Where(bound.Add))
+                {
+                    took += machine.Files.Take(WorkflowRunBindings.PathOf(world.Home, run), folder: false, failed).Bytes;
+                }
+
+                return unit with { Bytes = bytes with { Kept = bytes.Kept + took } };
             })
             .ToList();
 
@@ -539,6 +552,7 @@ public static partial class HistoryClearing
             Asks = unit.Asks,
             Sessions = unit.Sessions,
             Teammates = unit.Teammates,
+            Bindings = BoundRuns(files.Home, unit.Quests),
             Keep = keep,
             Kept = [.. unit.Kept.Select(piece => Said(piece, unit.Kind, facts))],
             Bytes = unit.Sessions.Aggregate(HistoryBytes.None, (sum, session) => sum + files.Size(session))

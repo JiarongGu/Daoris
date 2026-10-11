@@ -4,7 +4,8 @@ import type { Session } from '../api';
 import type { AccountsAnswer, AgentAccounts } from '../settings/accounts';
 import type { ToolDoor } from '../tools';
 import {
-  boxOf, coolingFor, NATIVE_WORDS_LIMIT, neverSentence, newSessionSaid, reasonOf, startFromRefusal, takesWords, tooLong,
+  boxOf, coolingFor, NATIVE_WORDS_LIMIT, NEVER, neverSentence, NEW_SESSION_REFUSED, newSessionSaid, reasonOf, startFromRefusal,
+  takesWords, tooLong,
 } from './say';
 
 // The box on a session's page (MSG1f, D137 §5.1), as one pure answer: which box a session is offered, by what its record
@@ -263,10 +264,10 @@ describe('newSessionSaid', () => {
 
   /** Every code the route refuses by has a sentence of the page's own, in each catalogue. */
   it('has a sentence of its own for every code the route refuses by, in both languages', () => {
-    const codes = [
-      'not-found', 'teammate', 'help', 'intake', 'stood-down', 'superseded',
-      'running', 'no-words', 'conversation', 'closed', 'not-cooling',
-    ];
+    // The page's own tables (held to the driver's by locales/say.test.ts, MSG1g3), bar `opinion`, which a session's route never refuses by.
+    const codes = [...new Set([
+      ...Object.keys(NEVER).filter((code) => code !== 'opinion'), ...Object.keys(NEW_SESSION_REFUSED),
+    ])];
     for (const language of [t, zh]) {
       const sentences = codes.map((why) => said(why, false, language).sentence);
       expect(sentences.filter((sentence) => sentence === 'the driver’s own sentence' || /[a-z]+\.[a-z]+\./.test(sentence))).toEqual([]);

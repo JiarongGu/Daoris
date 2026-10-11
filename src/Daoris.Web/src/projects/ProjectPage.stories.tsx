@@ -5,7 +5,7 @@ import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../storyLanguage';
 import { FULL, NOTHING_SET, PLUGIN_UNREADY } from '../workflow/fixtures';
 import {
-  CJK, COUNTS, ELSEWHERE, ENGINE, GAME, GIT_BRANCHES_ENGINE, GIT_HISTORY_ENGINE, LINE, MIRRORED, NEWBIE, SETUP_DEFAULTS, SETUP_OWN,
+  CJK, COUNTS, ELSEWHERE, ENGINE, GAME, GIT_BRANCHES_ENGINE, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES, LINE, MIRRORED, NEWBIE, SETUP_DEFAULTS, SETUP_OWN,
   UNDECLARED,
 } from './fixtures';
 import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
@@ -34,7 +34,9 @@ const narrow: Decorator = (Story) => <div className="flex h-[44rem] w-[34rem] ma
 const TITLES = { 'daoris/engine-physics-step': 'Expose a streaming budget' };
 
 type BranchesValue = GitRepositoryBranches & { sessionsUnread?: boolean };
-const branchesRead = (read: GitRead<BranchesValue>) => <BranchesTab repository="engine" read={read} titles={TITLES} />;
+// Each branch's name opens its page and the line's opens History, as the window's do (UX6h3b): `BranchPage`'s stories.
+const branchesRead = (read: GitRead<BranchesValue>) =>
+  <BranchesTab repository="engine" read={read} titles={TITLES} onOpen={nothing} onOpenHistory={nothing} />;
 const branchesAs = (more: Partial<BranchesValue>) => branchesRead({ state: 'read', value: { ...GIT_BRANCHES_ENGINE, ...more } });
 
 /** The engine's landed branches in their other standings, as `GIT_BRANCHES` answers them. */
@@ -57,7 +59,18 @@ const LANDED_OTHERWISE = (() => {
   ];
 })();
 const historyRead = (read: HistoryRead) => <HistoryTab repository="engine" read={read} />;
-const lineHistory = (commits: GitLogCommit[], tips = [commits[0]!.commit]) => historyRead({ state: 'read', value: { line: 'main', tips, commits } });
+const lineHistory = (commits: GitLogCommit[], more: Partial<Extract<HistoryRead, { state: 'read' }>['value']> = {}, tips = [commits[0]!.commit]) =>
+  // `onMore` is the page's: a story draws the foot, and its press is the holder's.
+  <HistoryTab repository="engine" read={{ state: 'read', value: { line: 'main', tips, commits, more: false, ...more } }} onMore={nothing} />;
+// *All branches* ticked (UX6h3c): the ⋯ is the page's, so a story draws it ticked, with the limit's sentence where given.
+const allBranchesHistory = (commits: GitLogCommit[], limit?: { shown: number; total: number }) => (
+  <HistoryTab
+    repository="engine"
+    read={{ state: 'read', value: { line: 'main', tips: [commits[0]!.commit], commits, more: false } }}
+    onMore={nothing}
+    all={{ on: true, onToggle: nothing, limit }}
+  />
+);
 
 /** A line three branches were merged into, one still open beside it: four lanes at their widest. */
 const SEVERAL: GitLogCommit[] = (() => {
@@ -215,8 +228,28 @@ export const WorkflowInABrowser: Story = { args: { ...InABrowser.args, start: 'w
  * the workspace, in step with origin and fetched three hours ago; *Sessions'*, one named by its session's title and state and
  * one no record names, each ahead of and behind the line; *Landed*, in step with an open pull request, gone from origin after
  * it merged, and never pushed; and *Yours*, five of seven with *Show 2 more*. The branch only origin holds is not drawn.
+ * Each name is a press (UX6h3b): a branch's opens its page, the line's History.
  */
 export const Branches: Story = { args: { start: 'branches' } };
+
+/** Branches with origin's shown (UX6h2b1): the ⋯ after Yours pressed and its ticked item chosen, *Origin's (1)* under Yours. */
+export const BranchesOriginShown: Story = {
+  args: Branches.args,
+  play: async ({ canvasElement }) => {
+    const more = canvasElement.querySelector<HTMLButtonElement>('button[aria-haspopup="menu"][aria-label^="Show origin"]');
+    more?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, ctrlKey: false }));
+    const item = await new Promise<HTMLElement | null>((resolve) => {
+      const started = Date.now();
+      const look = () => {
+        const found = document.querySelector<HTMLElement>('[role="menuitemcheckbox"]');
+        if (found || Date.now() - started > 2000) resolve(found);
+        else requestAnimationFrame(look);
+      };
+      look();
+    });
+    item?.click();
+  },
+};
 
 /**
  * Branches where the line has gone its own way from origin and the last fetch heard nothing, and the landed branches stand
@@ -296,6 +329,45 @@ export const History: Story = { args: { start: 'history' } };
 /** History with several branches merged in, one beside another: four lanes at their widest. */
 export const HistorySeveralLanes: Story = { args: { start: 'history', history: lineHistory(SEVERAL) } };
 
+/** History over *All branches* (UX6h3c): the ⋯ ticked in the head, whose sentence says the graph is over every local branch and origin's. */
+export const AllBranches: Story = { args: { start: 'history', history: allBranchesHistory(SEVERAL) } };
+
+/** *All branches* past the read's 256 tips: the head says it drew the first 256 of the branches. */
+export const AllBranchesPastTheLimit: Story = { args: { start: 'history', history: allBranchesHistory(SEVERAL, { shown: 256, total: 300 }) } };
+export const AllBranchesDark: Story = { args: AllBranches.args, decorators: [dark] };
+export const AllBranchesChinese: Story = { args: AllBranchesPastTheLimit.args, decorators: [chinese] };
+export const AllBranchesNarrow: Story = { args: AllBranchesPastTheLimit.args, decorators: [narrow] };
+
+/**
+ * **History, a page at a time** (UX6h3a, UXLOADMORE1): the first page's commits with the load-more foot: "{n} commits listed",
+ * with no total, since the graph answers none, and *Show more* while it answers `more`. The foot is this story's, and its
+ * twins': HistoryMoreLoading, HistoryMoreFailed, and the dark, 中文 and narrow ones.
+ */
+export const HistoryMore: Story = { args: { start: 'history', history: lineHistory(GIT_HISTORY_PAGES[0], { more: true }) } };
+
+/** History's next page on its way: the status beside *Show more* says so, and the commits listed stay. */
+export const HistoryMoreLoading: Story = { args: { start: 'history', history: lineHistory(GIT_HISTORY_PAGES[0], { more: true, loadingMore: true }) } };
+
+/** History's next page refused: the sentence in the foot, the commits kept, *Show more* asking it again. */
+export const HistoryMoreFailed: Story = {
+  args: {
+    start: 'history',
+    history: lineHistory(GIT_HISTORY_PAGES[0], {
+      more: true,
+      moreError: 'Git could not answer for this. This repository may not hold that commit or file yet (a fetch may bring it), or Git did not start.',
+    }),
+  },
+};
+
+/** The foot, dark. */
+export const HistoryMoreDark: Story = { args: HistoryMore.args, decorators: [dark] };
+
+/** The foot in 中文. */
+export const HistoryMoreChinese: Story = { args: HistoryMore.args, decorators: [chinese] };
+
+/** The foot, narrow: its count, its button and its status wrap in the tab's width. */
+export const HistoryMoreNarrow: Story = { args: HistoryMoreFailed.args, decorators: [narrow] };
+
 /** History on its way. */
 export const HistoryReading: Story = { args: { start: 'history', history: historyRead({ state: 'reading' }) } };
 
@@ -358,7 +430,7 @@ export const SetupReach: Story = { args: { start: 'setup', setup: opened('reach'
  * language, a standing answer, read by nobody outside it, writing into the game and two rules. Each section holding one
  * opens on its own, with its *Clear*; Driving folds.
  */
-export const SetupOwn: Story = { args: { start: 'setup', setup: SETUP_OWN } };
+export const SetupOwn: Story = { args: { start: 'setup', setup: { ...SETUP_OWN, onOpenPlugin: () => {} } } };
 
 /** Setup folded, narrow: the list a strip and the side bar closed, a section's line wrapping under its name. */
 export const SetupNarrow: Story = {

@@ -12,7 +12,7 @@ One activity bar (D66), landing on management (D40). The views that read the fam
 |---|---|
 | **Overview** | the landing: is anything sitting and for how long, the family's health as tiles, the repositories by what the index holds |
 | **Quests** | what has been asked of whom, grouped by where it is in its life; publish, take, done, decline — and, beside a driven quest, its session **record** (D46): state, adapter, note and evidence, read-only in a browser, with stop offered only where a shell's driver actually holds the process |
-| **Repositories** | repositories and workspaces, their ownership, setup and driver controls; workspace pages carry wiring, lines, landing and permissions (D150) |
+| **Repositories** | repositories and workspaces, their ownership, setup and driver controls; workspace pages carry wiring, lines, landing and permissions (D150). In the desktop a repository's Branches lists its branches by kind and History draws its line's graph a page of 200 at a time (*Show more*), or over every local branch and origin's from its ⋯ *All branches* (page state; at most 256 tips, the head says when it drew the first of more); a workspace's Branches groups its repositories' branches above the clean-up, its repositories holding none folded apart once, the include serving the groups and *Updates*' look (D147, D150) |
 | **Knowledge** | Search and Convergence are two modes of one view: find entries or compare independently learned lessons |
 | **Agents** | installed agents and accounts: names, sign-in state, each usage window as a cell in the same place on every row (its share, reset and reading's age, or *unknown*), workspace lists and actions; desktop only |
 | **Plugins** | this machine's plugins and offers; desktop only |
@@ -43,7 +43,9 @@ status pill never appears without its text label.
 runs, says a refusal inside itself rather than in a toast, and returns focus to the press. A question the agent
 asks in the page (the trust question, a go-ahead) holds its own wait the same way and says a refusal beside what
 was pressed (UXFIX2b3b). A search gate asks
-`src/searchable.ts`: two characters, or one Han character, as the driver's own rule does (D158).
+`src/searchable.ts`: two characters, or one Han character, as the driver's own rule does (D158). A page opened from a
+press (a branch's page from its name, the code map from *Open code map*) goes back with the focus on that press, waited
+for until it is drawn, else on the page's heading: `src/returnFocus.ts` (UX6h3d).
 
 ## Built on (D42, `docs/2026-09-19-frontend-architecture.md`)
 

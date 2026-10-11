@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The workspaces and their repositories (HELP1a): each repository with how it is driven, its line and how
 /// its work lands, from the driver's own answers, and its standing answer where it keeps one (KNOWUSE1b) — or, with none
-/// registered, where to begin.
+/// registered, where to begin. Since WORKFLOW1h-b, the workflow each one's work follows and each workspace's kinds (§8.4).
 /// </summary>
 internal sealed class HelpRoomWorkspaces : IHelpRoomSection
 {
@@ -31,7 +31,37 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
                 Review = ReviewRules.Resolve(config, known.Repository, known.Workspace),
                 // XAGENT1a: which other agent reads its work before it lands, and where that was set.
                 Opinion = OpinionRules.Resolve(config, known.Repository, known.Workspace),
+                // WORKFLOW1h-b (design §8.4): the workflow its new work follows, and what chose it.
+                Workflow = Followed(config, sources.Workflows, known.Repository, known.Workspace),
             })],
+            WorkflowKinds =
+            [
+                .. config.WorkspaceWorkflows.OrderBy(pair => pair.Key, StringComparer.Ordinal).SelectMany(pair => pair.Value.Kinds
+                    .Select(kind => new HelpWorkflowKind(pair.Key, kind.Key, kind.Value.Label, kind.Value.Paths, kind.Value.Workflow))),
+            ],
+        };
+    }
+
+    /// <summary>
+    /// The workflow a repository's work follows with no task's kind (design §4.1, rows 3, 5 and 6), Current where nothing chooses
+    /// one, its newest version where it is saved here, and a repository's own kinds.
+    /// </summary>
+    private static HelpWorkflowFollowed Followed(DriverConfig config, IReadOnlyList<WorkflowFileFound>? saved, string repository, string workspace)
+    {
+        var selected = WorkflowSelection.Resolve(config, repository, workspace, null);
+        var own = config.Workflows.FirstOrDefault(pair => string.Equals(pair.Key, repository, StringComparison.OrdinalIgnoreCase)).Value;
+        var followed = new HelpWorkflowFollowed(selected.Workflow, selected.Level)
+        {
+            Kinds = [.. own?.Kinds.Select(kind => (kind.Key, kind.Value.Workflow)) ?? []],
+        };
+        if (selected.Workflow == WorkflowSelection.Current || saved is null) return followed;
+
+        var found = saved.FirstOrDefault(each => each.Id == selected.Workflow);
+        return found switch
+        {
+            null => followed with { Problem = "not saved here" },
+            { Read.Problem: not null } => followed with { Problem = "which cannot be read here" },
+            _ => followed with { Name = found.Read.Name, Version = found.Read.Versions[^1].Version },
         };
     }
 
@@ -53,15 +83,30 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
             // REVIEWENV1a (design §1.7–§1.8): the room's table names each repository's review rule, and *no review
             // environment* where nothing is set, which is today's behaviour. XAGENT1a (design §2.5–§2.6) adds each one's second
             // opinion, and *no second opinion* where nothing is set.
-            text.Append("| Repository | Driven | Line | Work lands | Reviewed before landing | Second opinion before landing |\n");
-            text.Append("|---|---|---|---|---|---|\n");
+            // WORKFLOW1h-b (the workflow design §8.4) adds the workflow each one's new work follows, Current where nothing chooses one.
+            text.Append("| Repository | Driven | Line | Work lands | Reviewed before landing | Second opinion before landing | Workflow |\n");
+            text.Append("|---|---|---|---|---|---|---|\n");
             foreach (var repository in circle.OrderBy(repository => repository.Name, StringComparer.Ordinal))
             {
                 text.Append($"| `{repository.Name}` | {Driven(repository)} | {LineOf(repository.Line)} | {Lands(repository.Landing)} | "
-                    + $"{ReviewRules.RoomCell(repository.Review)} | {OpinionRules.RoomCell(repository.Opinion)} |\n");
+                    + $"{ReviewRules.RoomCell(repository.Review)} | {OpinionRules.RoomCell(repository.Opinion)} | {Follows(repository.Workflow)} |\n");
             }
 
             text.Append('\n');
+
+            // WORKFLOW1h-b (§8.4): the kinds of work the workspace declares, each with the workflow it maps to.
+            var kinds = machine.WorkflowKinds.Where(kind => string.Equals(kind.Workspace, circle.Key, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (kinds.Count > 0)
+            {
+                text.Append($"Kinds of work `{circle.Key}` declares (`daoris driver workflow kind <workspace> <kind> --label \"…\" [--paths …]`):\n\n");
+                foreach (var kind in kinds)
+                {
+                    var paths = kind.Paths.Count == 0 ? "" : ", paths " + string.Join(", ", kind.Paths.Select(path => $"`{path}`"));
+                    text.Append($"- `{kind.Kind}`{(kind.Label is { } label ? $" ({label})" : "")}{paths}: {Mapped(kind.Workflow, "the level's default")}\n");
+                }
+
+                text.Append('\n');
+            }
 
             // KNOWUSE1b: each standing answer in the person's words, after the table, only where one is kept.
             var standing = circle.Where(repository => repository.Standing is not null).OrderBy(repository => repository.Name, StringComparer.Ordinal).ToList();
@@ -76,6 +121,33 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
 
         return text.ToString();
     }
+
+    /// <summary>The table's workflow cell: the workflow, its newest version and name where saved here, and what chose it.</summary>
+    private static string Follows(HelpWorkflowFollowed? followed)
+    {
+        if (followed is null) return "Current (the default)";
+        var source = followed.Level switch
+        {
+            WorkflowLevels.Repository => "set for it",
+            WorkflowLevels.Workspace => "its workspace's",
+            _ => "the default",
+        };
+        var what = followed.Workflow == WorkflowSelection.Current ? "Current"
+            : followed.Problem is { } problem ? $"`{followed.Workflow}`, {problem}"
+            : followed.Version is { } version ? $"`{followed.Workflow}` v{version}, {followed.Name}"
+            : $"`{followed.Workflow}`";
+        var kinds = followed.Kinds.Count == 0 ? ""
+            : "; by kind: " + string.Join(", ", followed.Kinds.Select(kind => $"`{kind.Kind}` → {Mapped(kind.Workflow, "its default")}"));
+        return $"{what} ({source}){kinds}";
+    }
+
+    /// <summary>What a kind maps to: a workflow's id, Current, or, for none, the words given.</summary>
+    private static string Mapped(string? workflow, string none) => workflow switch
+    {
+        null => none,
+        WorkflowSelection.Current => "Current",
+        _ => $"`{workflow}`",
+    };
 
     private static string Driven(HelpRepository repository)
     {
@@ -140,9 +212,36 @@ public sealed record HelpRepository(string Name, string Workspace)
 
     /// <summary>The second-opinion rule standing for it and where it was set (XAGENT1a); null where nothing is set anywhere.</summary>
     public ResolvedOpinion? Opinion { get; init; }
+
+    /// <summary>The workflow its new work follows and what chose it (WORKFLOW1h-b, the workflow design §8.4); null reads as Current.</summary>
+    public HelpWorkflowFollowed? Workflow { get; init; }
 }
+
+/// <summary>
+/// The workflow a repository's work follows with no task's kind (WORKFLOW1h-b, design §4.1, §8.4): its id or <c>current</c>, the level
+/// that chose it, its name and newest version where it is saved here, or why it is not, and the repository's own kinds.
+/// </summary>
+/// <param name="Level">One of <see cref="WorkflowLevels"/>.</param>
+public sealed record HelpWorkflowFollowed(string Workflow, string Level)
+{
+    public string? Name { get; init; }
+
+    public int? Version { get; init; }
+
+    /// <summary>Why the chosen workflow's version is not named: not saved here, or unreadable; null where it is, or none was read.</summary>
+    public string? Problem { get; init; }
+
+    /// <summary>The repository's own kinds, each with the workflow it maps to, null for its default.</summary>
+    public IReadOnlyList<(string Kind, string? Workflow)> Kinds { get; init; } = [];
+}
+
+/// <summary>A kind of work a workspace declares (WORKFLOW1e, design §4.2), its label, paths and the workflow it maps to, null for none.</summary>
+public sealed record HelpWorkflowKind(string Workspace, string Kind, string? Label, IReadOnlyList<string> Paths, string? Workflow);
 
 public sealed partial record HelpMachine
 {
     public IReadOnlyList<HelpRepository> Repositories { get; init; } = [];
+
+    /// <summary>The kinds of work each workspace declares (WORKFLOW1h-b, the workflow design §8.4), by workspace.</summary>
+    public IReadOnlyList<HelpWorkflowKind> WorkflowKinds { get; init; } = [];
 }

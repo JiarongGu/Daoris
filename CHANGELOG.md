@@ -5,13 +5,33 @@ with the version and date at release.
 
 ## Unreleased
 
+- Ask Daoris can propose a workflow: a new one, or a new version of one on its newest, and optionally choose it for a
+  repository or workspace. It is judged as the editor would, said with your part first and what it does without asking
+  you, held as a draft while something it needs is missing, and saved only on your Apply. Its room names each
+  repository's workflow.
+- A branch's name in a repository's or a workspace's Branches tab opens the branch's own page: its kind and where it stands
+  against its line, origin and its pull request, then its commits since it left its line beside the line's since then, 200
+  at a time, with *Back to Branches* in its header. The line's own name opens History.
+- A second opinion's gate says how much of its context the reviewer used, or that it was not measured; the reviewer's own
+  session's last note reads in your language.
+- A repository's History reads further back: *Show more* adds the line's next 200 commits under the last. Its ⋯ draws
+  *All branches*: the graph over every local branch and origin's beside the line.
+- A workspace's Branches tab says which empty session branches Daoris cleaned up on its own in the last week, and which it
+  left in place and why.
+- A workspace's Branches tab lists each of its repositories' branches above the clean-up, a group per repository holding a
+  branch of Daoris's, headed by a door to the repository's page; the first five are shown and the rest a press away. The
+  repositories holding none are folded apart, and each one you include is listed too.
 - A repository's Branches tab lists its branches by kind. Its line heads the list: what set it, how it stands to origin and
   when the checkout last fetched. Then sessions' branches, each named by its session's title and state; landed branches, each
   saying whether it is pushed and opening its pull request, with its state and when where a plugin answered; and yours, the
-  first five shown and the rest a press away. Each says how far it stands from the line or from origin.
+  first five shown and the rest a press away. Each says how far it stands from the line or from origin. Branches only
+  origin holds are behind the list's ⋯.
 - Ask Daoris can now propose clearing finished history for a quest, an ask or a workspace, or a closed quest's failed
   sessions. The card lists what goes and what is kept and why, and Apply clears exactly what it listed.
 - Ask Daoris can take you to a repository's Branches or History tab.
+- A plugin's update plan shows *Update now* as its one main button, and *Make a plugin* no longer says its heading twice.
+- The plugin an agent was declared by, and the plugin a repository's or workspace's work lands through, open that plugin's
+  page in Plugins.
 - A conversation's notes that a review's set-up was or was not posted, and how a second opinion's findings were answered as
   its turn ended, now read in your language, in English and 中文. The service's message in them stays as written.
 - A note that a session's background work ended says how in your language: completed, failed, stopped or ended, in

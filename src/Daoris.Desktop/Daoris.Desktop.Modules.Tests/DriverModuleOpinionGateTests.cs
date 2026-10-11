@@ -127,6 +127,31 @@ public sealed class DriverModuleOpinionGateTests : DriverModuleBridge
         Assert.Equal("o2", detail.GetProperty("recheck").GetProperty("id").GetString());
     }
 
+    /// <summary>
+    /// XAGENT1g4b (design §6.3, D57 §4): a pass carries the reviewer's measured use, read by the reviewer's own session (not the
+    /// working one), and null where none was measured: absent is never zero.
+    /// </summary>
+    [Fact]
+    public void A_pass_carries_the_reviewers_measured_use_and_null_where_none_was_recorded()
+    {
+        var first = new OpinionView("o1", "landing", "first", "s1", "r-o1", "web-app", "0000000000000000000000000000000000000000", Read,
+            "codex-acp", ReviewerLabels.AnotherMaker, "given") { Findings = [] };
+        var gate = new OpinionGateState(OpinionGateStates.Disputed, "web-app") { Session = "s1", Tip = Read, Opinion = first, Since = 0 };
+        var asked = new List<string>();
+
+        var measured = JsonSerializer.SerializeToElement(DriverModule.OpinionDetail(gate, session =>
+        {
+            asked.Add(session);
+            return session == "r-o1" ? new UsageEntry(session, "web-app", "codex-acp", null, 4200, 128000, DateTimeOffset.UnixEpoch) : null;
+        }), Camel);
+        var usage = measured.GetProperty("first").GetProperty("usage");
+        Assert.Equal((4200L, 128000L), (usage.GetProperty("used").GetInt64(), usage.GetProperty("size").GetInt64()));
+        Assert.Equal(["r-o1"], asked);
+
+        var none = JsonSerializer.SerializeToElement(DriverModule.OpinionDetail(gate, _ => null), Camel);
+        Assert.Equal(JsonValueKind.Null, none.GetProperty("first").GetProperty("usage").ValueKind);
+    }
+
     [Fact]
     public void The_detail_says_its_tier_none_where_no_agent_read_it_and_person_where_the_person_did_and_nothing_where_none_is_asked()
     {
@@ -168,6 +193,83 @@ public sealed class DriverModuleOpinionGateTests : DriverModuleBridge
         };
 
         Assert.Equal(waits, DriverModule.WaitsOnPerson(gate, auto));
+    }
+
+    /// <summary>
+    /// XAGENT1g3 (the second-agent design §9, D155): *What needs you* reads the gates the last look judged, as of that look, and
+    /// runs no gate itself: no git, no service. Where the look kept a dispute, a required opinion none could be had for and
+    /// commits nobody read at a work that lands by itself, those wait, oldest first, in the shape the page reads; a gate that
+    /// waits on no one is left out; and before any look it answers none.
+    /// </summary>
+    [Fact]
+    public async Task What_waits_on_the_person_is_read_from_the_gates_the_last_look_kept_and_runs_none()
+    {
+        var served = new Counting();
+        var loop = Loop();
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(served)));
+        var module = new DriverModule(Bus, loop);
+        Assert.Empty((await AnswerAsync(module, "OPINION_WAITS", new { })).GetProperty("waits").EnumerateArray());
+
+        var at = new DateTimeOffset(2026, 10, 12, 9, 0, 0, TimeSpan.Zero);
+        loop.Judged.Record(
+        [
+            new OpinionJudged("s1", "q1", "web-app", "work", at, Auto: false, Gate(OpinionGateStates.Disputed, "s1")),
+            new OpinionJudged("s2", "q2", "web-app", "work", at.AddMinutes(1), Auto: false, Gate(OpinionGateStates.CommitsSince, "s2")),
+            new OpinionJudged("s3", "q3", "web-app", "work", at.AddMinutes(2), Auto: true, Gate(OpinionGateStates.CommitsSince, "s3")),
+            new OpinionJudged("s4", "q4", "web-app", "work", at.AddMinutes(3), Auto: false, Gate(OpinionGateStates.Unavailable, "s4")),
+        ]);
+        var before = served.Count;
+
+        var waits = (await AnswerAsync(module, "OPINION_WAITS", new { })).GetProperty("waits").EnumerateArray().ToList();
+
+        Assert.Equal(["s1", "s3", "s4"], waits.Select(wait => wait.GetProperty("session").GetString()));
+        var first = waits[0];
+        Assert.Equal(("q1", "web-app", "work", false, "disputed"),
+            (first.GetProperty("quest").GetString(), first.GetProperty("repository").GetString(), first.GetProperty("workspace").GetString(),
+             first.GetProperty("auto").GetBoolean(), first.GetProperty("opinion").GetProperty("state").GetString()));
+        Assert.Equal(at.ToString("O", System.Globalization.CultureInfo.InvariantCulture), first.GetProperty("since").GetString());
+        Assert.True(waits[1].GetProperty("auto").GetBoolean());
+        Assert.Equal(before, served.Count);
+    }
+
+    /// <summary>XAGENT1g3: a change in what waits is a change the tick forwards, and a quiet look is not.</summary>
+    [Fact]
+    public void A_changed_judgment_changes_the_ticks_signature_and_a_gate_that_waits_on_no_one_does_not()
+    {
+        var disputed = Gate(OpinionGateStates.Disputed, "s1");
+        var settled = Gate(OpinionGateStates.Settled, "s2");
+        OpinionJudged Of(OpinionGateState gate, bool auto = false) => new(gate.Session!, "q1", "web-app", "work", DateTimeOffset.UnixEpoch, auto, gate);
+
+        var one = DriverLoop.JudgedSignature([Of(disputed)]);
+
+        Assert.Equal(one, DriverLoop.JudgedSignature([Of(disputed), Of(settled)]));
+        Assert.NotEqual(one, DriverLoop.JudgedSignature([]));
+        Assert.NotEqual(one, DriverLoop.JudgedSignature([Of(disputed, auto: true)]));
+    }
+
+    /// <summary>A gate in a state, over a given opinion, as the look keeps it: a required rule, an opinion with a finding disputed, two commits since.</summary>
+    private static OpinionGateState Gate(string state, string session) => new(state, "web-app")
+    {
+        Session = session, Tip = Read, Disputes = new([1], []), Since = 2, Code = ReviewerUnavailable.NoReviewer,
+        Rule = new ResolvedOpinion(new OpinionRule(["codex-acp"], [OpinionRules.Landing], Required: true), OpinionSource.Repository),
+        Opinion = new OpinionView("o1", "landing", "first", session, "r-o1", "web-app", "0000000000000000000000000000000000000000", Read,
+            "codex-acp", ReviewerLabels.AnotherMaker, "given")
+        {
+            Product = "Codex", Maker = "OpenAI", Findings = [new OpinionFindingView(1, "must", "src/a.ts:1", "claim", "", "", "sure")],
+        },
+    };
+
+    private sealed class Counting : HttpMessageHandler
+    {
+        private int _count;
+
+        public int Count => Volatile.Read(ref _count);
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            Interlocked.Increment(ref _count);
+            return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = new StringContent("[]") });
+        }
     }
 
     [Fact]

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useTidiedBranches } from '../bridge/log';
 import { sentence } from '../format';
 import { useSyncStanding } from '../queries';
 import type { LandingRule } from '../settings/Landings';
@@ -19,6 +20,9 @@ import type { KeptDoors } from '../work/ClearAsk';
 import { useHistoryActs } from '../work/historyActs';
 import { WorkflowTab } from '../workflow/WorkflowTab';
 import { KeptHistory } from './KeptHistory';
+import { WorkspaceBranchGroups } from './RepositoryGitView';
+import { InclusionContext, useInclusion } from './WorkspaceBranches';
+import { WorkspaceTidied } from './WorkspaceTidied';
 import type { WorkspaceSection, WorkspaceTab } from './tabs';
 import { accountsHere, hostOf } from './workspace';
 import { WorkspaceDetails, WorkspacePage } from './WorkspacePage';
@@ -56,8 +60,8 @@ const ruleOf = ({ form, pattern, tidy, plugin, autoAccept }: LandingRule): Landi
  * opens its Branches, *Sync now*, or the quest's, the ask's or the session's page where the application hands those doors.
  */
 export function WorkspaceView({
-  workspace, repositories, attached, tab, onTab, asked = null, notify, onOpenRepository, onOpenRepositoryWorkflow, onOpenAgent,
-  onSyncNow, syncing = false, onOpenQuest, onOpenAsk, onAttend,
+  workspace, repositories, attached, tab, onTab, asked = null, notify, onOpenRepository, onOpenRepositoryWorkflow, onOpenBranch,
+  onOpenRepositoryHistory, onOpenAgent, onOpenPlugin, onSyncNow, syncing = false, onOpenQuest, onOpenAsk, onAttend,
 }: {
   workspace: string;
   /** Its repositories in the list's registry, by name. */
@@ -72,8 +76,14 @@ export function WorkspaceView({
   onOpenRepository: (repository: string) => void;
   /** Open a repository's page at its Workflow tab: the door from a repository that sets rules of its own (WORKFLOW1b). */
   onOpenRepositoryWorkflow?: (repository: string) => void;
+  /** Open a branch's page on its repository's, whose way back is its Branches (UX6h3b): a branch's name in Branches. */
+  onOpenBranch?: (repository: string, branch: string) => void;
+  /** Open a repository's page at its History: its line's row in Branches. */
+  onOpenRepositoryHistory?: (repository: string) => void;
   /** Open an agent's page, where a workspace's accounts are set (D130 §3.2, UX6e). */
   onOpenAgent?: (agent: string) => void;
+  /** Open a plugin's page, from the plugin a landing rule names (PLUGUI1c2c). */
+  onOpenPlugin?: (plugin: string) => void;
   /** The status bar's *Sync now* (SYNC6b), the application's, which says the pass's own words. */
   onSyncNow?: (workspace: string) => void;
   syncing?: boolean;
@@ -105,7 +115,15 @@ export function WorkspaceView({
   const body = !attached
     ? <WorkspaceDetails repositories={repositories} onOpen={onOpenRepository} />
     : tab === 'branches'
-      ? <BranchesPart workspace={workspace} notify={notify} />
+      ? (
+        <BranchesPart
+          workspace={workspace}
+          notify={notify}
+          onOpenRepository={onOpenRepository}
+          onOpenBranch={onOpenBranch}
+          onOpenHistory={onOpenRepositoryHistory}
+        />
+      )
       : tab === 'workflow'
         ? (
           <WorkflowPart
@@ -115,7 +133,7 @@ export function WorkspaceView({
           />
         )
       : tab === 'setup'
-        ? <SetupPart workspace={workspace} notify={notify} open={wiring ? 'remote' : askedHere ?? asked ?? undefined} wiring={wiring} />
+        ? <SetupPart workspace={workspace} notify={notify} open={wiring ? 'remote' : askedHere ?? asked ?? undefined} wiring={wiring} onOpenPlugin={onOpenPlugin} />
         : (
           <DetailsPart
             workspace={workspace}
@@ -192,17 +210,30 @@ function DetailsPart({ workspace, repositories, notify, onOpenRepository, onOpen
 }
 
 /**
- * Branches: the clean-up (WSR3, D88) and bringing up to date (WSR6), moved from Settings → Workspace. The clean-up lists
- * this workspace's session branches, and its press removes only what it listed. A look reaches the network as the person,
- * so it is asked by its own press.
+ * Branches: each repository's branches by kind, a group per repository (UX6h2b2, the built-in Git design §2.2), then the
+ * clean-up (WSR3, D88) and bringing up to date (WSR6), moved from Settings → Workspace. The clean-up lists this workspace's
+ * session branches, and its press removes only what it listed. A look reaches the network as the person, so it is asked by
+ * its own press.
  *
  * @remarks
+ * **The groups are Git's reads** (`WorkspaceBranchGroups`): read while the tab shows, each heading the door to its
+ * repository's page, as Details' names are.
+ *
+ * **The repositories apart are said once** (UX6h2b3): the groups' fold is the one include, held here and handed to the groups
+ * and to *Updates*, which draws no list apart of its own; its look takes what holds Daoris's branches and what the fold included.
+ *
  * **Everything here is this workspace's** (BRSCOPE1, WSP5). The clean-up's list and the machine's reading of which
  * checkouts hold Daoris's branches are the machine's answers, read once for every page, and filtered to it. The look and
  * the press are asked for it, so the driver fetches and judges its checkouts alone, and what the look leaves apart is
  * its own. The rows are filtered again, so a host before BRSCOPE1, whose look is the machine's, still shows only its own.
  */
-function BranchesPart({ workspace, notify }: { workspace: string; notify: Notify }) {
+function BranchesPart({ workspace, notify, onOpenRepository, onOpenBranch, onOpenHistory }: {
+  workspace: string;
+  notify: Notify;
+  onOpenRepository: (repository: string) => void;
+  onOpenBranch?: (repository: string, branch: string) => void;
+  onOpenHistory?: (repository: string) => void;
+}) {
   const { t } = useTranslation();
   const plan = useSweepPlan();
   const sweep = useSweep();
@@ -211,6 +242,8 @@ function BranchesPart({ workspace, notify }: { workspace: string; notify: Notify
   const syncScope = useTreesSyncScope();
   const syncPlan = useTreesSyncPlan(workspace);
   const sync = useTreesSync(workspace);
+  // What the look cleaned up on its own (AUTOTIDY1a): the machine log's, so a browser has none; a failed read draws nothing.
+  const tidied = useTidiedBranches(workspace);
   useErrorNotify(plan.error, notify);
   // A look the page stopped waiting for is said in the section, where it was asked (WSR7); every other failure is the
   // driver's own sentence, in a toast.
@@ -222,51 +255,60 @@ function BranchesPart({ workspace, notify }: { workspace: string; notify: Notify
     : undefined;
   const answered = looked && Array.isArray(looked.lines) && Array.isArray(looked.rebases) && Array.isArray(looked.deletes);
 
+  // The groups' fold is the one include (UX6h2b3): what it included is drawn there and taken by the next look below.
+  const inclusion = useInclusion();
+  const included = [...inclusion.included];
+
   return (
-    <SweepList
-      branches={Array.isArray(plan.data?.branches) ? mine(plan.data.branches, workspace) : undefined}
-      landed={Array.isArray(plan.data?.landed) ? mine(plan.data.landed, workspace) : undefined}
-      busy={sweep.isPending || plan.isFetching}
-      onLook={() => void plan.refetch()}
-      onClean={(only) => sweep.mutate(only, {
-        onSuccess: (done) => notify(t('settings.sweep.done', { removed: done.removed, count: only.length })),
-        onError: failure(notify),
-      })}
-      // Told back to its ask (UXFIX2): a branch kept, or a refusal, is said inside it.
-      onDiscard={(branch, answered) => discard.mutate(branch, {
-        onSuccess: sayDiscard(notify, t, answered),
-        onError: (error) => answered.refused(sentence(error)),
-      })}
-      discarding={discard.isPending && discard.variables ? sweepKey(discard.variables) : null}
-      sync={(
-        <SyncSection
-          plan={answered
-            ? {
-                lines: mine(looked.lines, workspace),
-                rebases: mine(looked.rebases, workspace),
-                deletes: mine(looked.deletes, workspace),
-                ...(Array.isArray(looked.looked) ? { looked: mine(looked.looked, workspace) } : {}),
-                ...(Array.isArray(looked.apart) ? { apart: mine(looked.apart, workspace) } : {}),
-              }
-            : undefined}
-          scope={Array.isArray(scope) ? mine(scope, workspace) : undefined}
-          included={syncPlan.asked?.include}
-          looking={syncPlan.isFetching}
-          lookingAt={syncPlan.asked?.count}
-          bringing={sync.isPending}
-          stopped={stopped}
-          onLook={(include) => { sync.reset(); void syncPlan.look(include); }}
-          onSync={(only) => sync.mutate(only, {
-            onSuccess: (done) => {
-              notify(t('settings.sync.done', { changed: done.changed, count: only.length }));
-              // Look again, so the list shows what is left, with why — taking what the person included.
-              void syncPlan.look(syncPlan.asked?.include ?? []);
-            },
-            onError: (error) => { if (!stoppedWaiting(error)) failure(notify)(error); },
-          })}
-        />
-      )}
-    />
+    <InclusionContext.Provider value={inclusion}>
+      <WorkspaceBranchGroups workspace={workspace} onOpenRepository={onOpenRepository} onOpenBranch={onOpenBranch} onOpenHistory={onOpenHistory} />
+      <WorkspaceTidied lines={Array.isArray(tidied.data?.lines) ? tidied.data.lines : null} />
+      <SweepList
+        branches={Array.isArray(plan.data?.branches) ? mine(plan.data.branches, workspace) : undefined}
+        landed={Array.isArray(plan.data?.landed) ? mine(plan.data.landed, workspace) : undefined}
+        busy={sweep.isPending || plan.isFetching}
+        onLook={() => void plan.refetch()}
+        onClean={(only) => sweep.mutate(only, {
+          onSuccess: (done) => notify(t('settings.sweep.done', { removed: done.removed, count: only.length })),
+          onError: failure(notify),
+        })}
+        // Told back to its ask (UXFIX2): a branch kept, or a refusal, is said inside it.
+        onDiscard={(branch, answered) => discard.mutate(branch, {
+          onSuccess: sayDiscard(notify, t, answered),
+          onError: (error) => answered.refused(sentence(error)),
+        })}
+        discarding={discard.isPending && discard.variables ? sweepKey(discard.variables) : null}
+        sync={(
+          <SyncSection
+            plan={answered
+              ? {
+                  lines: mine(looked.lines, workspace),
+                  rebases: mine(looked.rebases, workspace),
+                  deletes: mine(looked.deletes, workspace),
+                  ...(Array.isArray(looked.looked) ? { looked: mine(looked.looked, workspace) } : {}),
+                  ...(Array.isArray(looked.apart) ? { apart: mine(looked.apart, workspace) } : {}),
+                }
+              : undefined}
+            scope={Array.isArray(scope) ? mine(scope, workspace) : undefined}
+            included={included}
+            apartFolded
+            looking={syncPlan.isFetching}
+            lookingAt={syncPlan.asked?.count}
+            bringing={sync.isPending}
+            stopped={stopped}
+            onLook={(include) => { sync.reset(); void syncPlan.look(include); }}
+            onSync={(only) => sync.mutate(only, {
+              onSuccess: (done) => {
+                notify(t('settings.sync.done', { changed: done.changed, count: only.length }));
+                // Look again, so the list shows what is left, with why — taking what the person included.
+                void syncPlan.look(included);
+              },
+              onError: (error) => { if (!stoppedWaiting(error)) failure(notify)(error); },
+            })}
+          />
+        )}
+      />
+    </InclusionContext.Provider>
   );
 }
 
@@ -297,8 +339,9 @@ function WorkflowPart({ workspace, onSetup, onOpenRepository }: {
  * Setup: its defaults (WSR1, WSR2, LANG1c, READ1) and its remote and rules (D48 §5, PERM1), each from the answer the driver
  * gives every door and each change said as the toast Settings' cards said it.
  */
-function SetupPart({ workspace, notify, open, wiring }: {
+function SetupPart({ workspace, notify, open, wiring, onOpenPlugin }: {
   workspace: string;
+  onOpenPlugin?: (plugin: string) => void;
   notify: Notify;
   open?: WorkspaceSection;
   wiring: boolean;
@@ -449,5 +492,5 @@ function SetupPart({ workspace, notify, open, wiring }: {
     },
   };
 
-  return <WorkspaceSetup {...setup} />;
+  return <WorkspaceSetup {...setup} onOpenPlugin={onOpenPlugin} />;
 }

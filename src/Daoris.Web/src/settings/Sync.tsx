@@ -192,19 +192,26 @@ export const syncKeys = (plan: SyncPlan) => [
  * `daoris-driver trees sync` is the terminal's door (D50). A section of the session branches card, drawn above them.
  *
  * **It takes the repositories that hold Daoris's branches** (D112). Every other one with a checkout is listed apart,
- * collapsed, and looked at only once the person ticks it — or all of them — and asks; looking again keeps it.
+ * collapsed, and looked at only once the person ticks it — or all of them — and asks; looking again keeps it. A workspace's
+ * Branches tab lists them once, in its groups' fold, and passes `apartFolded` (UX6h2b3): the section then draws no list, and
+ * its look takes what that fold included.
  *
  * **A look takes a while, and says so** (WSR7): a sentence naming how many repositories it is fetching, and a button
  * that reads as busy, since a dimmed one read as nothing happening. A look or a press the page stopped waiting for is
  * said here, where it was asked, not only in a toast that goes.
  */
-export function SyncSection({ plan, scope, included, looking, lookingAt, bringing, stopped, onLook, onSync }: {
+export function SyncSection({ plan, scope, included, apartFolded, looking, lookingAt, bringing, stopped, onLook, onSync }: {
   /** Undefined until the person looks. */
   plan?: SyncPlan;
   /** Every repository with a checkout here, and whether each holds a branch of Daoris's; undefined until known. */
   scope?: SyncRepository[];
   /** What the last look was asked to take beside the default. */
   included?: SyncInclude;
+  /**
+   * The page lists what is apart in a fold of its own, whose include is `included` (UX6h2b3): the section draws no list
+   * apart, and its look takes what the fold included.
+   */
+  apartFolded?: boolean;
   /** A look is under way. */
   looking?: boolean;
   /** How many repositories it fetches, where known. */
@@ -225,6 +232,8 @@ export function SyncSection({ plan, scope, included, looking, lookingAt, bringin
   // What the look left apart; before one, what it would, from the machine's own reading.
   const apart = plan?.apart ?? (scope ?? []).filter((each) => !each.holds && !includes(included, each.repository));
   const holding = (scope ?? []).filter((each) => each.holds).length;
+  // With the page's fold, what it included is taken beside them, and said (UX6h2b3).
+  const taken = apartFolded ? (scope ?? []).filter((each) => each.holds || includes(included, each.repository)).length : holding;
   const lookedAtNone = plan !== undefined && Array.isArray(plan.looked) && plan.looked.length === 0;
 
   const pulls = (pull: LinePull) => {
@@ -282,7 +291,9 @@ export function SyncSection({ plan, scope, included, looking, lookingAt, bringin
       <Prose className="mt-1 text-small text-ink-soft">{t('settings.sync.body')}</Prose>
       {!plan && scope && (
         <Prose className="mt-1 text-small text-ink-soft">
-          {holding === 0 ? t('settings.sync.scopeNone') : t('settings.sync.scope', { count: holding })}
+          {taken > holding
+            ? t('settings.sync.scopeIncluded', { count: taken })
+            : holding === 0 ? t('settings.sync.scopeNone') : t('settings.sync.scope', { count: holding })}
         </Prose>
       )}
 
@@ -353,7 +364,7 @@ export function SyncSection({ plan, scope, included, looking, lookingAt, bringin
         </Button>
       </div>
 
-      {apart.length > 0 && (
+      {apart.length > 0 && !apartFolded && (
         <ApartList apart={apart} busy={busy} onInclude={(more) => onLook(together(included, more))} />
       )}
     </section>

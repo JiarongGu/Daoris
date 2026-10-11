@@ -41,7 +41,9 @@ Decision number: D<n>, reserved for this branch: write docs/decisions/D<n>.md. (
 How you work: edit files only with Edit and Write, never through python, sed, perl, cat/printf redirection or any
 shell redirect (a hook refuses them; that includes appending a decision note); write
 each failing test first and RUN it to watch it fail before writing the code (a compile failure is a red: run it),
-and say which you saw fail; commit each piece once its tests pass.
+and say which you saw fail; commit each piece once its tests pass. A component's sources changed on a later day than
+its README asks the README to describe the change (the docs gate). New words on the page run `src/locales`' tests too:
+`names:check --strict` does not hold a sentence's glossary words, `names.test.ts` does (WORKFLOW1h-d's 这台机器).
 Orientation pack:
 <the scout's pack, as it came back, with any pointer you corrected marked>
 ```
@@ -128,6 +130,10 @@ sessions take the same roles once the trial says which split works (MODELROLE1).
      🔴 **Lock a worktree you make by hand** (`git worktree add --lock …`, or `git worktree lock` after):
      an integration worktree at main's tip before its first commit counts as merged and clean, and the
      next merge's prune would take it. Unlock it once it has landed, so the prune can clear it.
+   - **A hand-back that names `Process` tests it wrote and could not run** is run by the parent on the open merge before
+     the commit: `dotnet test <the test project> --settings src/Daoris.Desktop/process.runsettings --filter
+     "FullyQualifiedName~<class>"`. A merge never runs that half, so nothing else would until the full set. XAGENT1g3's
+     equivalence test failed on its first run there (a fixture seeded another state than the test named, 2026-10-12).
 7. **Commit the merge yourself.** The tool never commits. Read `git diff --cached` and write the
    records, as the `records` lane's steward: move the row from `TASKS.md` to the archive with the
    hand-back's one-line outcome and its pointer, add the changelog entry, and update the counts in

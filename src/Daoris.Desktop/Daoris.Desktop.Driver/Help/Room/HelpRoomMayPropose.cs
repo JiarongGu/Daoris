@@ -110,7 +110,20 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  Its card lists what would go and what stays and why; apply clears exactly what the card listed, each judged\n");
         text.Append("  again as it goes, and nothing brings it back. A quest an ask asked is cleared with its ask, never alone; work still\n");
         text.Append("  open or taken, a session still running and anything waiting on the person are never cleared, and the route\n");
-        text.Append("  refuses them.\n\n");
+        text.Append("  refuses them.\n");
+        // WORKFLOW1h-b (D157 point 13, design §8): a whole version judged as the editor judges it; changes, kinds and imports are
+        // WORKFLOW1h2's, and a merge with nobody is a decision of its own (§8.3, §12.1).
+        text.Append("- `workflow_propose`: a named workflow's whole version for a repository or a workspace (`scope`): a new\n");
+        text.Append("  workflow (an id no workflow here has, and no `base`) or an edit of one (`base` its newest version, as\n");
+        text.Append("  `daoris driver workflow show <id>` says it), every step in `steps` as the workflow's own list, and\n");
+        text.Append("  `choose` to make it the scope's workflow too. Its card says the person's part first, then each step by id,\n");
+        text.Append("  what leaves this machine with no press of theirs, what is needed first, and that it applies to new work only.\n");
+        text.Append("  A base that is not the newest is refused as stale. A declaration a step needs that is missing where it\n");
+        text.Append("  applies, a landing plugin that cannot land here, or a kind this build does not run\n");
+        text.Append("  makes the card a draft with no apply until it is. Changes against a base, a kind and an import are not\n");
+        text.Append("  proposed yet.\n");
+        text.Append("  Merging with nobody is never proposed: *land without my review* is a pull request opened with no press, which\n");
+        text.Append("  the person still merges, and a merge at done is a decision of its own, which you say rather than propose.\n\n");
         // HELP7: the real helper said *press Apply* of a card whose button reads *go there*. HELP10: a delete's
         // press was *delete* all along, and a bring-up-to-date card's first is the look.
         text.Append("Each proposal reaches the person as a card with two buttons, and you name them as the card does:\n");

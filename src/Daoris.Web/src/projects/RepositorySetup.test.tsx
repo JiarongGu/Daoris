@@ -160,6 +160,18 @@ describe("Setup's Work", () => {
     expect(within(landing).getByText(/without asking you each time/)).toBeInTheDocument();
   });
 
+  /** PLUGUI1c2c: the landing plugin is a door to that plugin's page; absent the opener, its name stays words. */
+  it("opens the plugin's page from its name in the landing sentence, and keeps the sentence whole", async () => {
+    const onOpenPlugin = vi.fn();
+    draw({ ...SETUP_OWN, onOpenPlugin });
+
+    const landing = row(section('Line and landing'), 'How work lands');
+    expect(within(landing).getByText(/On a branch/)).toHaveTextContent(
+      'On a branch feature/{quest}-{slug}, set for this repository. Then plugin github-pull-request pushes it and opens the pull request. Accepted automatically when its quest is done.');
+    await userEvent.click(within(landing).getByRole('button', { name: 'github-pull-request' }));
+    expect(onOpenPlugin).toHaveBeenCalledWith('github-pull-request');
+  });
+
   it('names a rule of its own in the folded line, unmarked, beside a line from its workspace', async () => {
     draw({ ...SETUP_OWN, work: { ...SETUP_OWN.work, line: SETUP_DEFAULTS.work!.line } });
     // Its own rule opened the section; folded, the line names it.
