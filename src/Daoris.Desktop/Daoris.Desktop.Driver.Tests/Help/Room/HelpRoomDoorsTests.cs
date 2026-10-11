@@ -271,4 +271,27 @@ public sealed class HelpRoomDoorsTests
         Assert.Equal("Quests → the ask's page or the quest's page → Abandon…", abandon.Screen);
         Assert.Contains("Ask Daoris never proposes it: the reason is your answer", abandon.To);
     }
+
+    /// <summary>
+    /// HIST1f-b (design §6.1, §6.2, §6.4): the room names where finished history is cleared, the workspace's reading first, and
+    /// the terminal's history verbs as <c>daoris-driver</c>'s usage spells them, after a conversation's delete.
+    /// </summary>
+    [Fact]
+    public void The_rooms_row_names_where_finished_history_is_cleared_with_its_twins()
+    {
+        var order = HelpRoomDoors.Doors.Select(door => door.To).ToList();
+        var clear = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris-driver history clear", StringComparison.Ordinal));
+        var delete = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris-driver sessions delete", StringComparison.Ordinal));
+
+        Assert.StartsWith("clear finished history from this machine: a closed quest's work, an ask's with every quest it became", clear.To);
+        Assert.Equal(
+            "Quests → the quest's page or the ask's page → its header's ⋯ → Clear from this machine…, and the quest's Clear failed "
+            + "sessions…; Repositories → the workspace's page → Details → Kept on this machine → Clear history…",
+            clear.Screen);
+        Assert.Equal(
+            "`daoris-driver history [--workspace <name>]`, `daoris-driver history clear --workspace <name> [--yes]`, "
+            + "`daoris-driver quest clear <id> [--failed] [--yes]`, `daoris-driver ask --clear <id> [--yes]`",
+            clear.Terminal);
+        Assert.Equal(order.IndexOf(delete.To) + 1, order.IndexOf(clear.To));
+    }
 }

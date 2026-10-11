@@ -34,6 +34,7 @@ public sealed partial class HelpProposalKindsTests
         ("repository", "repository_propose"),
         ("session", "session_propose"),
         ("pause", "pause_propose"),
+        ("clear", "clear_propose"),
     ];
 
     internal static string RepositoryRoot()

@@ -39,6 +39,14 @@ internal interface IHelpProposalKind
     /// <summary>Judge a proposal with the route's own code, against the machine as it stands.</summary>
     HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts);
 
+    /// <summary>
+    /// Its card drawn for the person, judged as <paramref name="plan"/> (HIST1f-b): a kind whose Apply sends exactly what its
+    /// card listed keeps that now, in the proposal's file, for <see cref="Read"/> to hand its next judge. Nothing for every other.
+    /// </summary>
+    void Drawn(string home, HelpProposal proposal, HelpPlan plan)
+    {
+    }
+
     /// <summary>The person's Apply of a plan the route takes, through the screen's own door, settled either way.</summary>
     /// <remarks>A refusal a door raises before anything happened is let through, unsettled (<see cref="HelpProposals.ApplyAsync"/>).</remarks>
     Task<HelpApplied> ApplyAsync(HelpApplying applying, CancellationToken ct);
@@ -91,6 +99,7 @@ internal static class HelpProposalKinds
         new HelpRepositoryProposals(),
         new HelpSessionProposals(),
         new HelpPauseProposals(),
+        new HelpClearProposals(),
     ];
 
     /// <summary>The class that judges a kind, matched exactly as the file spells it; null for a kind none judges.</summary>

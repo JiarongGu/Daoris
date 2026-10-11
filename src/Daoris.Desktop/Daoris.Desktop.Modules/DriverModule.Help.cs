@@ -76,6 +76,34 @@ public sealed partial class DriverModule
 
         HelpRoomLookLog.Said(_loop.Log, looking.Elapsed, sessions is not null);
 
+        // What each workspace keeps of finished work (HIST1f-c), the workspaces `daoris-driver history` reads; null where the
+        // service could not be read, and the room says so.
+        IReadOnlyList<HistoryReading>? history = null;
+        try
+        {
+            var records = await service.SessionRecordsAsync(cancellationToken).ConfigureAwait(false);
+            var quests = await service.EveryQuestAsync(cancellationToken).ConfigureAwait(false);
+            var everyAsk = await service.EveryAskAsync(cancellationToken).ConfigureAwait(false);
+            var world = HistoryWorldOf();
+            var readings = new List<HistoryReading>();
+            foreach (var workspace in records.Select(record => record.Workspace)
+                         .Concat(quests.Select(quest => quest.Workspace))
+                         .Concat(everyAsk.Select(each => each.Workspace))
+                         .Select(RemoteTarget.Workspace)
+                         .Distinct(StringComparer.OrdinalIgnoreCase)
+                         .Order(StringComparer.OrdinalIgnoreCase))
+            {
+                var plan = await HistoryClearing.PlanAsync(world, HistoryScope.Workspace, workspace, cancellationToken).ConfigureAwait(false);
+                if (plan.Reading is { } reading) readings.Add(reading);
+            }
+
+            history = readings;
+        }
+        catch (DriverException)
+        {
+            // Left null: the room says `not read`.
+        }
+
         // The asks by id too (HELP6), so a delete of one made by mistake can name it.
         // And the branches landings made here (WSR5b), so a hand-off names one the record holds.
         return HelpRoom.Describe(
@@ -89,7 +117,7 @@ public sealed partial class DriverModule
             BrowserModule.HelpFacts(BrowserModule.Home),
             // And what its last look held by the person's stop (SESSUX1b), so a retry names a stop Try again releases.
             HeldQuest.From(_loop.Look.Latest),
-            sessions);
+            sessions, history);
     }
 
     /// <summary>
@@ -125,6 +153,8 @@ public sealed partial class DriverModule
                 continue;
             }
 
+            // A clear's card holds the units it listed, once, so its Apply sends exactly those (HIST1f-c, design §5).
+            HelpProposals.Drawn(_loop.Home, proposal, plan);
             shown.Add(new
             {
                 proposal.Id, proposal.Kind, plan.Describe, plan.Terminal, proposal.Why,
@@ -206,7 +236,7 @@ public sealed partial class DriverModule
         var applied = await HelpProposals.ApplyAsync(
             _loop.Home, proposal, plan, HelpDoors(service), Say, cancellationToken).ConfigureAwait(false);
         // An accept publishes the step a departure held and lets a quest waiting on it go on (DRIFT1d2), as a delete or an ask moves the work.
-        if (proposal.Kind is "ask" or "delete" or "accept" or "session" or "pause") _loop.Nudge();
+        if (proposal.Kind is "ask" or "delete" or "accept" or "session" or "pause" or "clear") _loop.Nudge();
 
         return ApplyAnswer(proposal, applied);
     }
@@ -338,6 +368,11 @@ public sealed partial class DriverModule
             module._loop.Nudge();
             return (true, string.Join(' ', WorkPausing.Lines(outcome).Select(line => line.Trim())));
         }
+
+        // HISTORY_CLEAR's own clear of exactly the units the card listed (HIST1f-c): the driver library's one owner, each unit judged
+        // again as it goes; the outcome comes back whole, and a service that did not answer throws before anything was removed.
+        public Task<HistoryOutcome> ClearHistoryAsync(HistoryScope scope, string id, IReadOnlyList<HistoryUnitName> units, CancellationToken ct) =>
+            HistoryClearing.ClearAsync(module.HistoryWorldOf(), scope, id, units, PluginEvents.Screen, ct);
 
         // SESSION_DELETE's own delete: the driver library's one owner, then the loop asked to look (SESSUX1h2c).
         public async Task<(bool Ok, string Message)> DeleteSessionAsync(string id, CancellationToken ct)
@@ -558,6 +593,12 @@ public sealed partial class DriverModule
     /// </summary>
     public static bool JudgedAgainstWork(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => proposal.Kind == "pause");
 
+    /// <summary>
+    /// Whether a pending proposal is a clear (HIST1f-c), judged by what this machine keeps of the quest, ask or workspace it names,
+    /// so the service is asked for that only then. Public so the fast half holds the gate without a service.
+    /// </summary>
+    public static bool JudgedAgainstHistory(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => proposal.Kind == "clear");
+
     // A go naming an item on the view, read as the judge reads its view (`HelpGoProposals.Plan`); an item on any other view
     // is refused unread.
     private static bool ItemOn(HelpProposal proposal, string view) =>
@@ -698,6 +739,25 @@ public sealed partial class DriverModule
                 Work = plans,
                 Wired = fromEnvironment ? facts.Workspaces : [.. RemoteTarget.Load().Keys],
             };
+        }
+
+        // A clear proposal is judged by what this machine keeps of the work it names, as HISTORY_PLAN reads it (HIST1f-c, design
+        // §6.4). A service that cannot be read throws, and the proposal stays unsettled.
+        if (JudgedAgainstHistory(proposals))
+        {
+            var world = HistoryWorldOf();
+            var plans = new List<HistoryPlan>();
+            foreach (var proposal in proposals.Where(each => each.Kind == "clear"))
+            {
+                var scope = proposal.Door switch { "quest" => HistoryScope.Quest, "ask" => HistoryScope.Ask, "workspace" => HistoryScope.Workspace, _ => (HistoryScope?)null };
+                if (scope is not { } named) continue;
+                var target = proposal.Target?.Trim() ?? "";
+                if (named != HistoryScope.Workspace) target = target.TrimStart('#').Trim();
+                if (target.Length == 0) continue;
+                plans.Add(await HistoryClearing.PlanAsync(world, named, target, ct).ConfigureAwait(false));
+            }
+
+            facts = facts with { History = plans };
         }
 
         // Every quest as the service answers it, its requirements, answers and hold with it (DRIFT1d2), read only when an

@@ -427,17 +427,17 @@ public static class HistoryCommand
     /// left-over files' and the room's where no ask of the workspace is kept (<see cref="HistoryReading.Takes"/>), so what is left
     /// once the units' and the left-over files' are taken away is the room or nothing.
     /// </summary>
-    private static bool TakesRoom(HistoryPlan plan) =>
+    internal static bool TakesRoom(HistoryPlan plan) =>
         plan.Reading is { Intake: > 0 } reading
         && reading.Takes.Bytes - reading.LeftOverBytes - plan.Units.Where(unit => unit.Clearable).Sum(unit => unit.Bytes.Total) >= reading.Intake;
 
-    // ——— The words.
+    // ——— The words. Ask Daoris's clear card says what it takes in these too (HIST1f-b), so they are the library's.
 
     /// <summary>Whether a unit takes anything: a failed-sessions unit of a quest with none of this machine's takes nothing.</summary>
-    private static bool Takes(HistoryUnitPlan unit) => unit.Quests.Count + unit.Asks.Count + unit.Sessions.Count + unit.Teammates.Count > 0;
+    internal static bool Takes(HistoryUnitPlan unit) => unit.Quests.Count + unit.Asks.Count + unit.Sessions.Count + unit.Teammates.Count > 0;
 
     /// <summary>What a unit takes, counted: <c>1 ask, 3 quests and 5 sessions</c>.</summary>
-    private static string Contents(HistoryUnitPlan unit) => Join(
+    internal static string Contents(HistoryUnitPlan unit) => Join(
     [
         Count(unit.Asks.Count, "ask"), Count(unit.Quests.Count, "quest"), Count(unit.Sessions.Count, "session"), Copies(unit.Teammates.Count),
     ]);
@@ -478,7 +478,7 @@ public static class HistoryCommand
     /// <c>my team</c> printed bare is two arguments, <c>R&amp;D</c> a second command. A quest's or an ask's id needs none: it is
     /// the store's hex (<c>QuestStore.MakeId</c>, <c>AskStore.MakeId</c>), and a unit is found only by it, in any case.
     /// </summary>
-    private static string Door(HistoryScope scope, string id) => scope switch
+    internal static string Door(HistoryScope scope, string id) => scope switch
     {
         HistoryScope.Ask => $"daoris-driver ask --clear {id} --yes",
         HistoryScope.Failed => $"daoris-driver quest clear {id} --failed --yes",
@@ -486,19 +486,19 @@ public static class HistoryCommand
         _ => $"daoris-driver quest clear {id} --yes",
     };
 
-    private static string? Count(int count, string noun, string? nouns = null) => count switch
+    internal static string? Count(int count, string noun, string? nouns = null) => count switch
     {
         0 => null,
         1 => $"1 {noun}",
         _ => $"{count.ToString(CultureInfo.InvariantCulture)} {nouns ?? noun + "s"}",
     };
 
-    private static string? Copies(int count) => Count(count, "teammate's copy", "teammate's copies");
+    internal static string? Copies(int count) => Count(count, "teammate's copy", "teammate's copies");
 
     private static string? Of(long bytes, string what) => bytes > 0 ? $"{Size(bytes)} of {what}" : null;
 
     /// <summary>The parts said, in English: <c>a</c>, <c>a and b</c>, <c>a, b and c</c>; empty for none.</summary>
-    private static string Join(IEnumerable<string?> parts)
+    internal static string Join(IEnumerable<string?> parts)
     {
         var said = parts.OfType<string>().Where(part => part.Length > 0).ToList();
         return said.Count switch

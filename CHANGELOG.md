@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- Ask Daoris can now propose clearing finished history for a quest, an ask or a workspace. The card lists what goes and what
+  is kept and why, and Apply clears exactly what it listed; a quest's failed sessions stay your own clear on its page.
+
 - Ask Daoris can now propose pausing or resuming an ask's or a quest's work on this machine. The card says what stops (the
   running sessions), what it adds where another machine may still take an open quest, and what is left as it is; Apply makes
   the same pause or resume the pages' buttons do. Abandoning stays yours: it takes your reason, so Ask Daoris never proposes it.

@@ -6,6 +6,7 @@ import type { HelpProposal } from '../help/ProposalCard';
 import type { HelpPlace } from '../help/places';
 import { call, pressBound } from './call';
 import { syncLookBound } from './lines';
+import { ALL_HISTORY } from './history';
 import { logEvent } from './log';
 
 // Ask Daoris (MOD3): its conversation, the one readied ahead, and what it proposes (D89).
@@ -208,6 +209,8 @@ export const useSettleHelp = () => {
       // …and a repository moved to a workspace (ENTRY1d1), read again as the Manage drawer's own move reads it.
       void client.invalidateQueries({ queryKey: keys.allRegistry });
       void client.invalidateQueries({ queryKey: keys.allRepositories });
+      // …and finished history it cleared (HIST1f-a), read again as the Clear history press reads it.
+      void client.invalidateQueries({ queryKey: ALL_HISTORY });
     },
   });
 };

@@ -101,7 +101,16 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  teammate's session is never reached. Resume lifts the pause and releases its stops; another pause over a quest\n");
         text.Append("  of the work stays.\n");
         text.Append("  Abandoning is never proposed: it declines quests with the person's reason, which is their answer, so name the\n");
-        text.Append("  ask's or the quest's page → Abandon…, or `daoris-driver ask --abandon <id>`, and never write the reason.\n\n");
+        text.Append("  ask's or the quest's page → Abandon…, or `daoris-driver ask --abandon <id>`, and never write the reason.\n");
+        // HIST1f-b (D153, design §6.4): the pages' clears, judged by their first press. A quest's failed sessions alone are no
+        // door the box writes, so they stay the person's press on the quest's page.
+        text.Append("- `clear_propose`: clear finished history from this machine: one closed quest's work (`quest` and its id),\n");
+        text.Append("  one ask's work with every quest it became (`ask` and its id), or a workspace's (`workspace` and its name).\n");
+        text.Append("  Its card lists what would go and what stays and why; apply clears exactly what the card listed, each judged\n");
+        text.Append("  again as it goes, and nothing brings it back. A quest an ask asked is cleared with its ask, never alone; work still\n");
+        text.Append("  open or taken, a session still running and anything waiting on the person are never cleared, and the route\n");
+        text.Append("  refuses them. Clearing a quest's failed sessions alone is never proposed: the person presses Clear failed\n");
+        text.Append("  sessions… in the quest's page's ⋯.\n\n");
         // HELP7: the real helper said *press Apply* of a card whose button reads *go there*. HELP10: a delete's
         // press was *delete* all along, and a bring-up-to-date card's first is the look.
         text.Append("Each proposal reaches the person as a card with two buttons, and you name them as the card does:\n");

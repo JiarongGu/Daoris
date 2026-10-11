@@ -4,9 +4,9 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// This machine, now (HELP1a): the agents quests, asks and the helper run on, what waits on the person, the
-/// quests its strikes parked (HELP10) and the person's stop holds (SESSUX1b), what is paused (PAUSE1f-b), the plugins
-/// installed here (PLUG9) and the branches landings made (WSR5b) — each by name and state, so a proposal names one this
-/// machine holds.
+/// quests its strikes parked (HELP10) and the person's stop holds (SESSUX1b), what is paused (PAUSE1f-b), what each workspace
+/// keeps of finished work (HIST1f-b), the plugins installed here (PLUG9) and the branches landings made (WSR5b) — each by name
+/// and state, so a proposal names one this machine holds.
 /// </summary>
 internal sealed class HelpRoomMachineNow : IHelpRoomSection
 {
@@ -47,6 +47,7 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
         Paused = [.. sources.Config.PausedAsks.Keys.Order(StringComparer.Ordinal).Select(ask => new PausedBy(WorkScope.Ask, ask)),
             .. sources.Config.PausedQuests.Keys.Order(StringComparer.Ordinal).Select(quest => new PausedBy(WorkScope.Quest, quest))],
         Browser = sources.Browser is { } files ? new HelpBrowser(files.Browser, files.Links, files.Extensions, files.Favorites) : null,
+        History = sources.History,
     };
 
     /// <summary>
@@ -124,6 +125,8 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
         text.Append("- Paused on this machine until resumed: "
             + (machine.Paused.Count > 0 ? string.Join(", ", machine.Paused.Select(paused => $"{paused.Word} `#{paused.Id}`")) : "none")
             + ".\n");
+        // HIST1f-b (design §2.4, §6.4): what each workspace keeps, so a clear names one that keeps something.
+        text.Append(HistoryLines(machine.History));
         // HELP10: as its two files hold it, so a browser proposal names a favorite kept; only where the desktop read them.
         if (machine.Browser is { } browser)
         {
@@ -174,6 +177,49 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
     }
 
     private static string Count(int count, string one, string many) => $"{count} {(count == 1 ? one : many)}";
+
+    /// <summary>
+    /// What each workspace keeps of finished work (HIST1f-b), in the terminal's words (<c>daoris-driver history</c>): its closed
+    /// work and sessions with their size, what a clear would take now, and how many units stay by the word that keeps them; the
+    /// home's left-over files once, since every workspace's clear takes them.
+    /// </summary>
+    private static string HistoryLines(IReadOnlyList<HistoryReading>? readings)
+    {
+        const string Head = "- Finished history this machine keeps, by workspace";
+        if (readings is null) return $"{Head}: not read.\n";
+        if (readings.Count == 0) return $"{Head}: none.\n";
+
+        var text = new StringBuilder($"{Head}:\n");
+        foreach (var reading in readings) text.Append($"  - `{reading.Workspace}`: {Keeps(reading)}.\n");
+        if (readings.FirstOrDefault(reading => reading.LeftOver > 0) is { } home)
+        {
+            text.Append($"  - Left over from records already gone: {HistoryCommand.Count(home.LeftOver, "file")}, "
+                + $"{HistoryCommand.Size(home.LeftOverBytes)}, which a workspace's clear takes.\n");
+        }
+
+        return text.ToString();
+    }
+
+    private static string Keeps(HistoryReading reading)
+    {
+        if (reading.Quests + reading.Asks + reading.Sessions + reading.Teammates == 0) return "none";
+        var work = HistoryCommand.Join([HistoryCommand.Count(reading.Quests, "closed quest"), HistoryCommand.Count(reading.Asks, "ask")]);
+        var sessions = HistoryCommand.Join([HistoryCommand.Count(reading.Sessions, "session"), HistoryCommand.Copies(reading.Teammates)]);
+        var takes = HistoryCommand.Join(
+        [
+            HistoryCommand.Count(reading.Takes.Quests, "quest"), HistoryCommand.Count(reading.Takes.Asks, "ask"),
+            HistoryCommand.Count(reading.Takes.Sessions, "session"), HistoryCommand.Copies(reading.Takes.Teammates),
+        ]);
+        var kept = reading.KeptBy.Values.Sum();
+        return $"{(work.Length == 0 ? "no closed quest or ask" : work)}, with {(sessions.Length == 0 ? "no session" : sessions)}, "
+            + $"{HistoryCommand.Size(reading.Bytes.Total + reading.Intake)}; "
+            + (takes.Length > 0 ? $"a clear would take {takes}, {HistoryCommand.Size(reading.Takes.Bytes)}"
+                : reading.Takes.Bytes > 0 ? $"a clear would take files alone, {HistoryCommand.Size(reading.Takes.Bytes)}"
+                : "a clear would take nothing now")
+            + (kept == 0 ? "" : $", and keep {kept}: " + string.Join(", ", reading.KeptBy
+                .OrderByDescending(each => each.Value).ThenBy(each => each.Key, StringComparer.Ordinal)
+                .Select(each => $"{each.Value} `{each.Key}`")));
+    }
 }
 
 /// <summary>A plugin installed here, as the room lists it (PLUG9): by id and state, so a switch names one the catalogue holds.</summary>
@@ -242,6 +288,13 @@ public sealed partial record HelpMachine
 
     /// <summary>Daoris's browser as its files hold it (HELP10), or null where the desktop read none.</summary>
     public HelpBrowser? Browser { get; init; }
+
+    /// <summary>
+    /// What each workspace keeps of finished work, what a clear would take now and what stays by the word that keeps it
+    /// (HIST1f-b, design §2.4): counts and bytes, never a path or a title, so a clear names a workspace that keeps something.
+    /// Null where none was read.
+    /// </summary>
+    public IReadOnlyList<HistoryReading>? History { get; init; }
 }
 
 /// <summary>A session waiting on the person, as the room lists it (ENTRY1f2): by id and where it runs, so a go names one it was shown.</summary>

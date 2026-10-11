@@ -13432,3 +13432,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ROSTERREFUSE2 — the roster's other refusals by code** (driver + web twin). A wait or a none-ready over a list of accounts, a pick refused, an account its provider refused, an agent with its own tooling not installed, and a single-account sentence with the kept-aside or outside-the-list clause. D152's ROSTERREFUSE1 note.
 
 **Outcome** 2026-10-11: every roster refusal carries a `RefusalNote`: the list wait and none-ready (`held.wait-every`/`-some`, a clause per account, `held.wait-first`, the sign-in line), a pick refused, a provider-refused account (`HarnessRoster.Refuse` keeps the note; `Driver.RefusedHold`), the own-tooling install (its command as program words), and the kept-aside and outside clauses as parts after the refusal's own; an `accounts` value kind names each id through NOTENAME1's map. The English is byte for byte. Detail: D152's ROSTERREFUSE2 note.
+
+
+## HIST1f — Ask Daoris clear proposal (2026-10-11, D153)
+
+> - [ ] **HIST1f — Ask Daoris clear proposal** (driver/service/web; after HIST1e/SESSUX1h2). Listed plan is confirmed on Apply. D153 §6.4; kinds, coverage, room/card tests.
+
+**Outcome** 2026-10-11: Ask Daoris proposes clearing a quest's, an ask's or a workspace's finished history (`clear_propose`, the `clear` kind); drawing the card writes the units it listed into the proposal's own file (`HelpProposals.Drawn`), and Apply sends exactly those, counting and keeping any that changed since; a card never drawn refuses at Apply; the card lists what goes and what is kept and why; the room names the door and what each workspace keeps; the coverage table's clears are doors. A quest's failed sessions alone is HIST1f-d. Built as a chain of three workers merged once. Detail: D153's HIST1f-a, b and c notes.

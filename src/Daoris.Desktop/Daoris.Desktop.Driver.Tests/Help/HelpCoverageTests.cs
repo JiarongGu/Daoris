@@ -150,15 +150,29 @@ public sealed partial class HelpCoverageTests
         + "holds its quest until the person tries again");
 
     /// <summary>
-    /// HIST1d's <c>daoris-driver history clear --workspace</c>, <c>quest clear [--failed]</c> and <c>ask --clear</c> (D153 point 7,
-    /// the history-clearing design §6.4), verbs of the headless host: doors Ask Daoris owes until HIST1f builds the <c>clear</c>
-    /// kind, its doors <c>quest</c>, <c>ask</c> and <c>workspace</c>. The reading, <c>history</c>, changes nothing.
+    /// HIST1e's <c>useClearHistory</c> and HIST1d's <c>daoris-driver history clear --workspace</c> (D153 point 7, the
+    /// history-clearing design §6.4): the <c>clear</c> kind's <c>workspace</c> door since HIST1f-b, its card the first press and
+    /// its Apply the second. The same hook's quest and ask clears are its <c>quest</c> and <c>ask</c> doors
+    /// (<see cref="ClearQuestDoor"/>, <see cref="ClearAskDoor"/>), carried as the payload's scope rather than an action.
     /// </summary>
-    private static readonly Owed ClearDoor = new(
-        "clearing a closed quest's work, an ask's or a workspace's finished history removes records and what this machine kept "
-        + "of them, a press the person makes on a list, so Ask Daoris should propose it as a card whose Apply is that press and "
-        + "never clear itself; that is HIST1f's `clear` kind, its doors `quest`, `ask` and `workspace` (D153, design §6.4), while "
-        + "`daoris-driver history` reads and changes nothing.");
+    private static readonly Door ClearWorkspaceDoor = new("clear", "workspace");
+
+    /// <summary>A quest's page's *Clear from this machine…* and <c>daoris-driver quest clear</c>: the <c>clear</c> kind's <c>quest</c> door.</summary>
+    private static readonly Door ClearQuestDoor = new("clear", "quest");
+
+    /// <summary>An ask's page's *Clear from this machine…* and <c>daoris-driver ask --clear</c>: the <c>clear</c> kind's <c>ask</c> door.</summary>
+    private static readonly Door ClearAskDoor = new("clear", "ask");
+
+    /// <summary>
+    /// The same hook's and <c>quest clear --failed</c>'s fourth scope, a closed quest's failed sessions (§1.1): owed, since the
+    /// service's <c>clear_propose</c> names a quest, an ask or a workspace only (HIST1f-a), so the card cannot name it.
+    /// </summary>
+    private static readonly Owed ClearFailedOwed = new(
+        "clearing a closed quest's failed sessions alone removes records and what this machine kept of them, a press the person "
+        + "makes on a list, so Ask Daoris should propose it as the `clear` kind's card; that waits on the service's "
+        + "`clear_propose` naming a quest's failed sessions and the driver's judge planning that scope (HIST1f-b's hand-back), "
+        + "and until then the quest's page → ⋯ → Clear failed sessions… and `daoris-driver quest clear <id> --failed` are the "
+        + "person's own.");
 
     /// <summary>
     /// MSG1e's <c>daoris-driver sessions say</c> (D137 §5.4), a verb of the headless host: exempt, since the words said to a
@@ -636,8 +650,9 @@ public sealed partial class HelpCoverageTests
             "it removes session trees and branches whose work landed, a discard, which stays the person's own press "
             + "(D89); its screen is a workspace's page → Branches → *Clean up…* since UX6g.")),
         // LAND3b (D102): a failed attempt's branch, discarded from a Branches row or a session whose tree is gone.
-        // HIST1e (D153): a workspace's *Clear history…*, and a quest's and an ask's clears pressed through the same owner.
-        ("projects", "useClearHistory", null, ClearDoor),
+        // HIST1e (D153): a workspace's *Clear history…*, and a quest's and an ask's clears pressed through the same owner; the
+        // `clear` kind's doors since HIST1f-b, the hook's scope telling them apart (The_history_clear_is_the_clear_kinds_door…).
+        ("projects", "useClearHistory", null, ClearWorkspaceDoor),
         ("projects", "useDiscardSessionBranch", null, new Exempt(
             "it discards a failed attempt's branch and its commits for good, a discard, which stays the person's own press "
             + "(D89), as the clean-up beside it does.")),
@@ -776,7 +791,7 @@ public sealed partial class HelpCoverageTests
             .Append(RegisterDoor)
             .Append(WorkspaceDoor)
             .Append(SessionsStopVerb)
-            .Append(ClearDoor)
+            .Append(ClearFailedOwed)
             .Append(AbandonDoor)
             .Append(SayDoor)
             .Append(GoOnNewDoor)
@@ -1263,17 +1278,43 @@ public sealed partial class HelpCoverageTests
     }
 
     /// <summary>
-    /// HIST1d: the headless host's history clears are doors owed to HIST1f's <c>clear</c> kind (D153, design §6.4) while the
-    /// host's usage spells them and no kind of that name is built. When the kind lands, this owed door becomes its doors.
+    /// HIST1d, HIST1f-b: the headless host's history clears are the <c>clear</c> kind's doors (D153, design §6.4) while the host's
+    /// usage spells them, and the room names each beside its press; a quest's failed sessions alone are a door owed
+    /// (<see cref="ClearFailedOwed"/>), and the reading, <c>history</c>, changes nothing.
     /// </summary>
     [Fact]
-    public void The_headless_hosts_history_clears_are_doors_owed_to_the_clear_kind()
+    public void The_headless_hosts_history_clears_are_the_clear_kinds_doors()
     {
+        var room = string.Join("\n", HelpRoomDoors.Doors.Select(door => door.Terminal));
+
         Assert.Contains("history clear --workspace <name> [--yes]", DriverCommand.Usage);
         Assert.Contains("quest clear <id> [--failed] [--yes]  ·  ask --clear <id> [--yes]", DriverCommand.Usage);
-        Assert.Null(HelpProposalKinds.Find("clear"));
-        Assert.Contains("HIST1f", ClearDoor.Reason);
-        Assert.Contains("§6.4", ClearDoor.Reason);
+        Assert.Equal(
+            [ClearQuestDoor.Name, ClearAskDoor.Name, ClearWorkspaceDoor.Name],
+            HelpProposalKinds.Find(ClearWorkspaceDoor.Kind)!.Doors);
+        Assert.Equal(ClearWorkspaceDoor.Kind, ClearQuestDoor.Kind);
+        Assert.Equal(ClearWorkspaceDoor.Kind, ClearAskDoor.Kind);
+        Assert.Contains("`daoris-driver history clear --workspace <name> [--yes]`", room);
+        Assert.Contains("`daoris-driver quest clear <id> [--failed] [--yes]`, `daoris-driver ask --clear <id> [--yes]`", room);
+        Assert.DoesNotContain("failed", HelpProposalKinds.Find("clear")!.Doors);
+        Assert.Contains("Clear failed sessions…", ClearFailedOwed.Reason);
+    }
+
+    /// <summary>
+    /// HIST1e, HIST1f-b: the clear's bridge hook changes something, and is the <c>clear</c> kind's door (design §6.4): the
+    /// workspace's <c>Clear history…</c>, and with a quest's or an ask's scope its <c>quest</c> and <c>ask</c> doors, which the
+    /// hook carries as its payload's scope rather than an action, so they are answered here.
+    /// </summary>
+    [Fact]
+    public void The_history_clear_is_the_clear_kinds_door_for_each_scope()
+    {
+        var hooks = BridgeHooks();
+
+        Assert.True(hooks.TryGetValue("useClearHistory", out var clear) && clear.Changes);
+        Assert.Empty(clear.Actions);
+        Assert.Same(ClearWorkspaceDoor, Controls.Single(row => row.Domain == "projects" && row.Hook == "useClearHistory").Answer);
+        Assert.Contains(ClearQuestDoor.Name, HelpProposalKinds.Find(ClearQuestDoor.Kind)!.Doors);
+        Assert.Contains(ClearAskDoor.Name, HelpProposalKinds.Find(ClearAskDoor.Kind)!.Doors);
     }
 
     /// <summary>

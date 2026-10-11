@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>One of Ask Daoris's proposals, as the connector wrote it (HELP1c, D89; HELP6; PLUG9; WSR5b; HELP10).</summary>
-/// <param name="Kind">Which kind it is, one <see cref="HelpProposalKinds"/> registers: `setting`, `ask`, `agent`, `delete`, `account`, `go`, `plugin`, `hand`, `browser`, `sync`, `accept`, `repository`, `session` or `pause`.</param>
+/// <param name="Kind">Which kind it is, one <see cref="HelpProposalKinds"/> registers: `setting`, `ask`, `agent`, `delete`, `account`, `go`, `plugin`, `hand`, `browser`, `sync`, `accept`, `repository`, `session`, `pause` or `clear`.</param>
 /// <param name="Door">Which of its kind's changes it is, as that kind's class says: a `daoris driver` verb for a setting, `update` or `pin` for an agent, and so on.</param>
 /// <param name="Target">What the change is for, as its kind's class says: a repository, an agent, a record's id, a view, a plugin, a session or a branch.</param>
 /// <param name="Value">What it is set to, where its kind takes one: a setting's value, a pin's version, a hand-off's plugin, a move's workspace.</param>
@@ -177,6 +177,16 @@ public static partial class HelpProposals
         HelpProposalKinds.Find(proposal.Kind) is { } kind
             ? kind.Plan(proposal, config, facts)
             : new HelpPlan(Unknown(proposal.Kind), "", "", null);
+
+    /// <summary>
+    /// A card drawn for the person (HIST1f-b): <c>HELP_PROPOSALS</c> calls this for each proposal it shows, with the plan it
+    /// showed, so a kind whose Apply sends exactly what its card listed holds that in the proposal's file. A refused plan is
+    /// never shown, and holds nothing.
+    /// </summary>
+    public static void Drawn(string home, HelpProposal proposal, HelpPlan plan)
+    {
+        if (plan.Refusal is null) HelpProposalKinds.Find(proposal.Kind)?.Drawn(home, proposal, plan);
+    }
 
     /// <summary>
     /// The person's Apply (HELP6): the plan made through the door the screen's own route uses, the

@@ -50,6 +50,7 @@ public sealed partial class HelpProposalBox(string? home)
         ("repository", "repository_propose"),
         ("session", "session_propose"),
         ("pause", "pause_propose"),
+        ("clear", "clear_propose"),
     ];
 
     public string? Home { get; } = home;

@@ -225,6 +225,15 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("delete a conversation that served no quest, with what this machine kept of it: its words, its transcript and its "
             + "files (one that worked on a quest is archived instead)",
             "Sessions → a session's ⋯ → Delete…", "`daoris-driver sessions delete <id>`"),
+        // HIST1f-b (D153, design §6.1, §6.2, §6.4): the pages' clears, a workspace's reading first, and the terminal's history
+        // verbs; the `clear` kind's `quest`, `ask` and `workspace` doors. A quest's failed sessions alone stay the person's press.
+        ("clear finished history from this machine: a closed quest's work, an ask's with every quest it became, a closed quest's "
+            + "failed sessions, or a workspace's, listed first, then pressed; what is open, running or waiting on you is kept, and "
+            + "nothing brings it back",
+            "Quests → the quest's page or the ask's page → its header's ⋯ → Clear from this machine…, and the quest's Clear failed "
+            + "sessions…; " + Ws + "Details → Kept on this machine → Clear history…",
+            "`daoris-driver history [--workspace <name>]`, `daoris-driver history clear --workspace <name> [--yes]`, "
+            + "`daoris-driver quest clear <id> [--failed] [--yes]`, `daoris-driver ask --clear <id> [--yes]`"),
         // DRIFT1d: the person's yes to a done's departure, the terminal's door; DRIFT1d2 gave it the quest page's yes and
         // Ask Daoris's `accept` kind.
         ("accept a quest's departure from what you required, so what it held goes on: the chain's next step, a quest "

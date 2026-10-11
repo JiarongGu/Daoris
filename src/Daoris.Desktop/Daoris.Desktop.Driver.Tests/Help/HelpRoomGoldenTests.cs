@@ -88,6 +88,18 @@ public sealed class HelpRoomGoldenTests
         Held = [new HeldQuest("q7c8d9e0", "console-ui", "s8b9c0d1")],
         // PAUSE1f-b: an ask's work paused, and one quest on its own.
         Paused = [new PausedBy(WorkScope.Ask, "a1b2c3d4"), new PausedBy(WorkScope.Quest, "q6b7c8d9")],
+        // HIST1f-b: a workspace keeping finished work, some of it kept, and one keeping none; the home's left-over files once.
+        History =
+        [
+            new HistoryReading("work")
+            {
+                Quests = 3, Asks = 1, Sessions = 7, Teammates = 1, Bytes = new HistoryBytes(1024 * 1024, 0, 0, 0, 0),
+                Takes = new HistoryTakes(2, 0, 5, 0, 800 * 1024),
+                KeptBy = new Dictionary<string, int> { [HistoryWords.Open] = 1, [HistoryWords.NeedsYou] = 1 },
+                LeftOver = 2, LeftOverBytes = 4096,
+            },
+            new HistoryReading("default") { LeftOver = 2, LeftOverBytes = 4096 },
+        ],
         Browser = new HelpBrowser("edge", "daoris", "refuse", ["https://site.example/board", "https://docs.example/"]),
         Landed =
         [
