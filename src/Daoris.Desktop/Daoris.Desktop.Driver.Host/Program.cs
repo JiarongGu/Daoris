@@ -98,6 +98,9 @@ using Daoris.Driver;
 //                 the person's verdict on a review (REVIEWENV1c, D154 point 8): prints what the set-up step showed and how to
 //                 show it again, sends the verdict with that set-up, and says what the gate now says. not-yet needs your words,
 //                 which go to the step's session as its next turn; skip lets the work land without a review.
+//   quest review <id> off ["…"]  ·  quest review <id> on|<environment>
+//                 the person's choice at the gate (REVIEWENV1j): off is the skip; on, or an environment the repository
+//                 declares, publishes a set-up step to show the work there.
 //
 //   history [--workspace <name>] [--json]
 //   history clear --workspace <name> [--yes]
@@ -367,7 +370,8 @@ try
                 "usage: daoris-driver quest delete <id>  ·  quest accept <id>  ·  quest done <id> [--note \"…\"]  ·  "
                 + "quest pause <id>  ·  quest resume <id>  ·  "
                 + "quest abandon <id> [--reason \"…\" --yes]  ·  quest clear <id> [--failed] [--yes]  ·  "
-                + "quest check <id> [--commit <sha>]  ·  quest review <id> reviewed|not-yet|skip [\"…\"]");
+                + "quest check <id> [--commit <sha>]  ·  quest review <id> reviewed|not-yet|skip [\"…\"]  ·  "
+                + "quest review <id> off [\"…\"]  ·  quest review <id> on|<environment>");
             return 2;
         }
 

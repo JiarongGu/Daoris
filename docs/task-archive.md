@@ -13236,3 +13236,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CONVNOTE2d–h — the conversation's other driver notes, by code** … (Group d's first half: Acp.cs ~:515, ~:527, Driver.cs ~:2375, Driver.Continue.cs ~:446, ~:683.)
 
 **Outcome** 2026-10-11: the five notes are `words.refused` (the agent's words after), `words.unreached` [count, why] (the `NoteCodes.Unreached` reasons `ended-first`, `unkept`) and `words.not-taken` (the service's message after), built by `WordsNotes`; each English byte for byte ("message(s)" kept for AcpSteerTests; the page says "({{count}} in all)", since its i18n gate forbids "(s)"). Detail: D152's CONVNOTE2d1 note.
+
+
+## REVIEWENV1j2 — visible terminal twins (2026-10-11, D154)
+
+> - [ ] **REVIEWENV1j2 — visible terminal twins** (web/driver). Draw existing choice twins in AskComposer/AskReview/ReviewGate; fix usage fallback. D50/D154; bilingual tests.
+
+**Outcome** 2026-10-11: the ask composer, a live ask's review section and a quest's review gate (where Skip or Set it up is offered) each draw their terminal twin as one quiet line, the command as code; the driver host's fallback `quest` usage names `quest review <id> off` and `on|<environment>`. Detail: D154's REVIEWENV1j2 note.
