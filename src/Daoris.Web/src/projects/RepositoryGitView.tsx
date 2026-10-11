@@ -44,7 +44,7 @@ function HistoryRead({ repository, workspace }: { repository: string; workspace:
   const commit = list.state === 'read' ? list.value.line.commit : null;
   // The graph's tips are whole ids the list resolved (D147 §4.2): with none, the graph asks nothing.
   const tips = useMemo(() => (commit ? [commit] : NO_TIPS), [commit]);
-  const { query } = useGitGraph(repository, tips);
+  const { query } = useGitGraph(repository, tips, { workspace });
 
   const read = ((): HistoryRead => {
     if (list.state !== 'read') return list;

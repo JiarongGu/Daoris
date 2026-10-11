@@ -65,6 +65,47 @@ describe('the git domain', () => {
     expect(sent('GIT_COMPARE')).toEqual({ payload: { repository: 'daoris', left: whole, right: other, everything: true } });
   });
 
+  it('sends the workspace with each one-repository read when given (GIT1d-c)', async () => {
+    invoke.mockImplementation(async () => answered({}));
+    const client = fresh();
+
+    const graph = renderHook(() => useGitGraph('daoris', [whole], { workspace: 'aurora' }), { wrapper: wrapper(client) });
+    const commit = renderHook(() => useGitCommit('daoris', whole, 'aurora'), { wrapper: wrapper(client) });
+    const history = renderHook(() => useGitHistory('daoris', whole, 'a/b.ts', 0, 'aurora'), { wrapper: wrapper(client) });
+    const blame = renderHook(() => useGitBlame('daoris', whole, 'a/b.ts', 'aurora'), { wrapper: wrapper(client) });
+    const compare = renderHook(() => useGitCompare('daoris', whole, other, false, 'aurora'), { wrapper: wrapper(client) });
+
+    await waitFor(() => {
+      for (const each of [graph, commit, history, blame, compare]) expect(each.result.current.query.data).toBeDefined();
+    });
+    for (const route of ['GIT_GRAPH', 'GIT_COMMIT', 'GIT_HISTORY', 'GIT_BLAME', 'GIT_COMPARE']) {
+      const call = invoke.mock.calls.find((c) => c[1] === route);
+      expect(call?.[2].payload.workspace, route).toBe('aurora');
+    }
+  });
+
+  it('keeps one repository name in two workspaces apart', async () => {
+    invoke.mockImplementation(async () => answered({}));
+    const client = fresh();
+
+    const a = renderHook(() => useGitCommit('engine', whole, 'aurora'), { wrapper: wrapper(client) });
+    const b = renderHook(() => useGitCommit('engine', whole, 'borealis'), { wrapper: wrapper(client) });
+    await waitFor(() => {
+      expect(a.result.current.query.data).toBeDefined();
+      expect(b.result.current.query.data).toBeDefined();
+    });
+
+    expect(invoke).toHaveBeenCalledTimes(2);
+    expect(client.getQueryData(keys.gitCommit('engine', whole, 'aurora'))).toBeDefined();
+    expect(client.getQueryData(keys.gitCommit('engine', whole, 'borealis'))).toBeDefined();
+  });
+
+  it('asks no branch list while it is switched off', () => {
+    renderHook(() => useGitBranches({ repository: 'daoris', enabled: false }), { wrapper: wrapper(fresh()) });
+
+    expect(invoke).not.toHaveBeenCalled();
+  });
+
   it('keeps a commit by its commit, so a second look asks nothing', async () => {
     const detail = { commit: whole, parents: [], subject: 's', message: 'm' } as unknown as GitCommitDetail;
     invoke.mockImplementation(async () => answered(detail));
@@ -76,7 +117,7 @@ describe('the git domain', () => {
 
     expect(again.result.current.query.data?.value).toEqual(detail);
     expect(invoke).toHaveBeenCalledTimes(1);
-    expect(client.getQueryData(keys.gitCommit('daoris', whole))).toBeDefined();
+    expect(client.getQueryData(keys.gitCommit('daoris', whole, ''))).toBeDefined();
   });
 
   it('asks nothing until what it reads is named', () => {

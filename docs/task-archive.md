@@ -13453,3 +13453,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6h1 — Branches and History tabs, and the graph's lanes** (web). A repository's page gains Branches and History tabs, their empty, no-checkout and refusal states; a pure `graphLanes.ts` lays lanes from commits' parents. No separate Git place exists to retire. UX6 §4.4, §4.2; built-in-git design §2.2-§2.3, §6; D150 ~:86.
 
 **Outcome** 2026-10-11: a repository's page has Details, Branches, History, Workflow and Setup when a shell answers (a browser keeps Details alone); each Git tab says reading, no checkout, a refusal (`errors.{code}`) or nothing yet, read by a part that mounts only while its tab shows; Branches lists names, last subjects and times; History draws its line's first page beside lanes `graphLanes.ts` lays from parents (tips first, merges hollow). Glossary: history 历史, graph 提交图. Bridge follow-ups are GIT1d-c. Detail: D150's UX6h1 note.
+
+## GIT1d-c — the Git bridge's workspace and enabled (2026-10-11, D147)
+
+> - [ ] **GIT1d-c — the Git bridge's workspace and enabled** (web). `useGitGraph` (and the other one-repository reads) send no `workspace`, so two same-named repositories in two workspaces resolve to the first checkout; `useGitBranches` has no `enabled`, which forced UX6h1's part-per-tab shape. A bridge/git.test.tsx case each. D147's GIT1d-b note; D150's UX6h1 note.
+
+**Outcome** 2026-10-11: `useGitGraph`, `useGitCommit`, `useGitHistory`, `useGitBlame` and `useGitCompare` send `workspace` when given and key their cache by it; `useGitBranches` takes `enabled`; the History tab passes its workspace. UX6h1's tabs keep their part-per-tab shape. Detail: D147's GIT1d-c note.
