@@ -62,6 +62,15 @@ const historyRead = (read: HistoryRead) => <HistoryTab repository="engine" read=
 const lineHistory = (commits: GitLogCommit[], more: Partial<Extract<HistoryRead, { state: 'read' }>['value']> = {}, tips = [commits[0]!.commit]) =>
   // `onMore` is the page's: a story draws the foot, and its press is the holder's.
   <HistoryTab repository="engine" read={{ state: 'read', value: { line: 'main', tips, commits, more: false, ...more } }} onMore={nothing} />;
+// *All branches* ticked (UX6h3c): the ⋯ is the page's, so a story draws it ticked, with the limit's sentence where given.
+const allBranchesHistory = (commits: GitLogCommit[], limit?: { shown: number; total: number }) => (
+  <HistoryTab
+    repository="engine"
+    read={{ state: 'read', value: { line: 'main', tips: [commits[0]!.commit], commits, more: false } }}
+    onMore={nothing}
+    all={{ on: true, onToggle: nothing, limit }}
+  />
+);
 
 /** A line three branches were merged into, one still open beside it: four lanes at their widest. */
 const SEVERAL: GitLogCommit[] = (() => {
@@ -319,6 +328,15 @@ export const History: Story = { args: { start: 'history' } };
 
 /** History with several branches merged in, one beside another: four lanes at their widest. */
 export const HistorySeveralLanes: Story = { args: { start: 'history', history: lineHistory(SEVERAL) } };
+
+/** History over *All branches* (UX6h3c): the ⋯ ticked in the head, whose sentence says the graph is over every local branch and origin's. */
+export const AllBranches: Story = { args: { start: 'history', history: allBranchesHistory(SEVERAL) } };
+
+/** *All branches* past the read's 256 tips: the head says it drew the first 256 of the branches. */
+export const AllBranchesPastTheLimit: Story = { args: { start: 'history', history: allBranchesHistory(SEVERAL, { shown: 256, total: 300 }) } };
+export const AllBranchesDark: Story = { args: AllBranches.args, decorators: [dark] };
+export const AllBranchesChinese: Story = { args: AllBranchesPastTheLimit.args, decorators: [chinese] };
+export const AllBranchesNarrow: Story = { args: AllBranchesPastTheLimit.args, decorators: [narrow] };
 
 /**
  * **History, a page at a time** (UX6h3a, UXLOADMORE1): the first page's commits with the load-more foot: "{n} commits listed",

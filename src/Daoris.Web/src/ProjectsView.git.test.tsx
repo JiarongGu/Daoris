@@ -128,6 +128,64 @@ describe("a repository's Branches and History tabs", () => {
     expect(window.localStorage.getItem('daoris.list.projects.tab')).toContain('history');
   });
 
+  describe('over all its branches (UX6h3c)', () => {
+    const tick = async () => {
+      const options = within(repositoryMain()).getByRole('button', { name: 'History options' });
+      options.focus();
+      await userEvent.keyboard('{Enter}');
+      await userEvent.click(await screen.findByRole('menuitemcheckbox', { name: 'All branches' }));
+    };
+    const tipsOf = (call: unknown[]) => ((call[2] as { payload: { tips: string[] } }).payload.tips);
+
+    it("asks the graph for the line's commit then each branch's, once and in the list's order, and pages it", async () => {
+      const everyCommit = [...new Set([LINE_COMMIT, ...GIT_BRANCHES_ENGINE.branches.map((branch) => branch.commit!)])];
+      answering({ graph: (payload) => answer({ ...PAGE, tips: payload.tips as string[], commits: firstOf(payload), more: payload.page !== 1 }) });
+      function firstOf(payload: Record<string, unknown>) { return payload.page === 1 ? GIT_HISTORY_PAGES[1] : GIT_HISTORY_PAGES[0]; }
+      show(<ProjectsView notify={() => {}} />);
+      const page = await chooseRepository('engine');
+      await userEvent.click(within(page).getByRole('tab', { name: 'History' }));
+      await within(repositoryMain()).findByRole('list', { name: "engine's history on main" });
+
+      await tick();
+
+      const list = await within(repositoryMain()).findByRole('list', { name: "engine's history over all its branches" });
+      expect(within(list).getAllByRole('listitem')).toHaveLength(GIT_HISTORY_PAGES[0].length);
+      const call = asked('GIT_GRAPH').at(-1)!;
+      expect(tipsOf(call)).toEqual(everyCommit);
+      expect(tipsOf(call)[0]).toBe(LINE_COMMIT);
+      expect(everyCommit.length).toBe(GIT_BRANCHES_ENGINE.branches.length);
+
+      await userEvent.click(within(repositoryMain()).getByRole('button', { name: 'Show more' }));
+      await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(GIT_HISTORY_ENGINE.length));
+      expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_GRAPH', expect.objectContaining({ payload: { repository: 'engine', tips: everyCommit, page: 1, workspace: 'aurora' } }));
+
+      // Unticked, it is the line's graph again.
+      await tick();
+      await within(repositoryMain()).findByRole('list', { name: "engine's history on main" });
+      expect(tipsOf(asked('GIT_GRAPH').at(-1)!)).toEqual([LINE_COMMIT]);
+    });
+
+    it('never asks with more than the read carries, and says it drew the first 256 of the branches', async () => {
+      const many = Array.from({ length: 300 }, (_, index) => ({ ...GIT_BRANCHES_ENGINE.branches[6]!, name: `bulk/b${index}`, commit: `${String(index).padStart(40, '0')}` }));
+      const crowded: GitBranchList = {
+        repositories: [{ ...GIT_BRANCHES_ENGINE, workspace: 'aurora', branches: [...GIT_BRANCHES_ENGINE.branches, ...many] }], apart: [], sessionsUnread: false,
+      };
+      answering({ branches: () => crowded });
+      show(<ProjectsView notify={() => {}} />);
+      const page = await chooseRepository('engine');
+      await userEvent.click(within(page).getByRole('tab', { name: 'History' }));
+      await within(repositoryMain()).findByRole('list', { name: "engine's history on main" });
+
+      await tick();
+
+      await within(repositoryMain()).findByRole('list', { name: "engine's history over all its branches" });
+      const tips = tipsOf(asked('GIT_GRAPH').at(-1)!);
+      expect(tips).toHaveLength(256);
+      expect(tips[0]).toBe(LINE_COMMIT);
+      expect(within(repositoryMain()).getByText(/the first 256 of 314 branches/)).toBeInTheDocument();
+    });
+  });
+
   describe('paging its graph (UX6h3a)', () => {
     const [firstPage, secondPage] = GIT_HISTORY_PAGES;
     const paged = (payload: Record<string, unknown>) =>
