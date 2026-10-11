@@ -16,7 +16,7 @@ vi.mock('@shenora/react', () => ({
 
 import { keys } from '../queries';
 import {
-  gitRefusal, useGitBlame, useGitBranches, useGitCommit, useGitCompare, useGitGraph, useGitHistory,
+  gitRefusal, useCheckoutBranch, useGitBlame, useGitBranches, useGitCommit, useGitCompare, useGitGraph, useGitHistory,
   type GitAnswer, type GitCommitDetail,
 } from './git';
 
@@ -98,6 +98,30 @@ describe('the git domain', () => {
     expect(invoke).toHaveBeenCalledTimes(2);
     expect(client.getQueryData(keys.gitCommit('engine', whole, 'aurora'))).toBeDefined();
     expect(client.getQueryData(keys.gitCommit('engine', whole, 'borealis'))).toBeDefined();
+  });
+
+  it('asks the checkout its branch, fresh each time, and null where it is detached (NEW1e-a)', async () => {
+    invoke.mockImplementation(async () => ({ branch: 'main' }));
+    const client = fresh();
+
+    const { result } = renderHook(() => useCheckoutBranch({ repository: 'daoris', workspace: 'aurora' }), { wrapper: wrapper(client) });
+
+    await waitFor(() => expect(result.current.query.data).toEqual({ branch: 'main' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CHECKOUT_BRANCH', { payload: { repository: 'daoris', workspace: 'aurora' } });
+    expect(client.getQueryData(keys.checkoutBranch('daoris', 'aurora'))).toEqual({ branch: 'main' });
+    expect(client.getQueryState(keys.checkoutBranch('daoris', 'aurora'))?.isInvalidated).toBe(false);
+    // staleTime 0: a second mount asks again, which is how the chip follows a branch the person switched elsewhere.
+    renderHook(() => useCheckoutBranch({ repository: 'daoris', workspace: 'aurora' }), { wrapper: wrapper(client) });
+    await waitFor(() => expect(invoke).toHaveBeenCalledTimes(2));
+  });
+
+  it('asks no checkout branch without a repository, or in a browser', () => {
+    renderHook(() => useCheckoutBranch({ repository: null }), { wrapper: wrapper(fresh()) });
+    shell.available = false;
+    const { result } = renderHook(() => useCheckoutBranch({ repository: 'daoris' }), { wrapper: wrapper(fresh()) });
+
+    expect(result.current.available).toBe(false);
+    expect(invoke).not.toHaveBeenCalled();
   });
 
   it('asks no branch list while it is switched off', () => {

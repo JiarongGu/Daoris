@@ -196,6 +196,28 @@ export const useGitBranches = (scope: GitBranchScope = {}) => {
   return { available: isAvailable, query };
 };
 
+/** What `CHECKOUT_BRANCH` answers: the checkout's branch by its short name, or null where HEAD is detached. */
+export type CheckoutBranch = { branch: string | null };
+
+/**
+ * The branch a repository's checkout stands on here (NEW1e-a), for the composer's tree chip. Shell-only; asks nothing without a
+ * repository. Always stale, so a window focus asks again and a branch switched elsewhere shows; no polling. A repository with no
+ * checkout here is the driver's refusal, which the query holds as its error.
+ */
+export const useCheckoutBranch = ({ repository, workspace }: { repository: string | null; workspace?: string }) => {
+  const { isAvailable } = useShenora();
+  const query = useQuery({
+    queryKey: keys.checkoutBranch(repository ?? '', workspace ?? ''),
+    queryFn: () => call<CheckoutBranch>('CHECKOUT_BRANCH', {
+      repository: repository!,
+      ...(workspace ? { workspace } : {}),
+    }),
+    enabled: isAvailable && Boolean(repository),
+    staleTime: 0,
+  });
+  return { available: isAvailable, query };
+};
+
 /** A page of the graph from tips named by their whole ids (the list's `commit`); asks nothing with no tip. */
 export const useGitGraph = (repository: string | null, tips: readonly string[], options: { page?: number; sinceParted?: boolean; workspace?: string } = {}) => {
   const { isAvailable } = useShenora();

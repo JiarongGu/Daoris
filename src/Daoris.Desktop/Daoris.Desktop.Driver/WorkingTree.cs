@@ -78,6 +78,20 @@ public static class WorkingTree
     }
 
     /// <summary>
+    /// The branch this checkout stands on, by its short name: what the composer's tree chip says (NEW1e-a). Null where HEAD is
+    /// detached, which is no branch at all; a branch with no commit yet answers its name. A git that fails is thrown, because a
+    /// tree git cannot read has no head to name, and "detached" would be a claim about it.
+    /// </summary>
+    public static async Task<string?> BranchAsync(string root, CancellationToken ct = default)
+    {
+        // `-q` makes a detached HEAD exit 1 with nothing said, which is told apart from a real failure by its silence.
+        var (code, stdout, stderr) = await GitAsync(root, ["symbolic-ref", "--short", "-q", "HEAD"], ct).ConfigureAwait(false);
+        if (code == 0 && stdout.Trim() is { Length: > 0 } branch) return branch;
+        if (code == 1 && string.IsNullOrWhiteSpace(stderr)) return null;
+        throw new DriverException($"git could not name this checkout's branch: {stderr.Trim()}");
+    }
+
+    /// <summary>
     /// Which line this repository treats as canonical, as far as this checkout knows (D48 §6).
     /// </summary>
     /// <remarks>

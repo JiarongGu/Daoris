@@ -38,6 +38,7 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
     [InlineData("GIT_HISTORY")]
     [InlineData("GIT_BLAME")]
     [InlineData("GIT_COMPARE")]
+    [InlineData("CHECKOUT_BRANCH")]
     public async Task Before_the_driver_is_up_each_read_is_the_cold_start_sentence(string route)
     {
         var payload = new { repository = "engine", tips = new[] { Whole }, commit = Whole, left = Whole, right = Whole, path = "a.txt" };
@@ -61,6 +62,39 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
 
         Assert.Equal(Refusals.GitNoCheckout, answer.GetProperty("refusal").GetString());
         Assert.Equal(JsonValueKind.Null, answer.GetProperty("value").ValueKind);
+    }
+
+    [Fact]
+    public async Task The_checkouts_branch_read_names_its_repository()
+    {
+        var module = await UpAsync(null);
+
+        Assert.Contains(Refusals.DriverRefused, await RefusalAsync(module, "CHECKOUT_BRANCH", new { }));
+    }
+
+    [Fact]
+    public async Task The_checkouts_branch_of_a_repository_with_no_checkout_is_refused_with_its_code()
+    {
+        var module = await UpAsync(null);
+
+        Assert.Contains(Refusals.GitNoCheckout, await RefusalAsync(module, "CHECKOUT_BRANCH", new { repository = "engine" }));
+    }
+
+    /// <summary>The checkout's head: its branch's short name, or null where detached; no path in the answer (D47 §4).</summary>
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task The_checkouts_branch_is_its_name_or_null_where_detached()
+    {
+        var root = await InitAsync();
+        var module = await UpAsync(root);
+
+        var onBranch = await AnswerAsync(module, "CHECKOUT_BRANCH", new { repository = "engine", workspace = "aurora" });
+        Assert.Equal("main", onBranch.GetProperty("branch").GetString());
+        Assert.DoesNotContain("checkouts", onBranch.GetRawText());
+
+        await GitAsync(root, "checkout", "--quiet", "--detach", "HEAD");
+        var detached = await AnswerAsync(module, "CHECKOUT_BRANCH", new { repository = "engine" });
+        Assert.Equal(JsonValueKind.Null, detached.GetProperty("branch").ValueKind);
     }
 
     /// <summary>A commit named by anything but its whole id is the driver's refusal, coded; git is not asked.</summary>

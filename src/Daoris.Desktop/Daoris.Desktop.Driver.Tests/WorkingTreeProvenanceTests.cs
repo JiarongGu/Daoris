@@ -56,6 +56,52 @@ public sealed class WorkingTreeProvenanceTests : IDisposable
         Assert.Equal("(detached)", (await WorkingTree.ProvenanceAsync(_tree.Root))!.Branch);
     }
 
+    // ——— The checkout's current branch, for the composer's tree chip (NEW1e-a).
+
+    [Fact]
+    public async Task The_branch_is_the_short_name_checked_out()
+    {
+        Assert.Equal("main", await WorkingTree.BranchAsync(_tree.Root));
+
+        _tree.Git("checkout -q -b feature/streaming");
+
+        Assert.Equal("feature/streaming", await WorkingTree.BranchAsync(_tree.Root));
+    }
+
+    /// <summary>A detached HEAD is on no branch: null, which the page words, rather than a sentinel to compare against.</summary>
+    [Fact]
+    public async Task A_detached_head_has_no_branch()
+    {
+        _tree.Git("checkout -q --detach HEAD");
+
+        Assert.Null(await WorkingTree.BranchAsync(_tree.Root));
+    }
+
+    /// <summary>An unborn branch (no commit yet) is still the checkout's branch, and is named.</summary>
+    [Fact]
+    public async Task An_unborn_branch_answers_its_name()
+    {
+        _tree.Git("checkout -q --orphan fresh");
+
+        Assert.Equal("fresh", await WorkingTree.BranchAsync(_tree.Root));
+    }
+
+    /// <summary>A folder git cannot read is git's failure, thrown: not "detached", which would be a claim about a tree.</summary>
+    [Fact]
+    public async Task A_folder_that_is_not_a_repository_throws()
+    {
+        var plain = Path.Combine(Path.GetTempPath(), "daoris-plain-" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(plain);
+        try
+        {
+            await Assert.ThrowsAsync<DriverException>(() => WorkingTree.BranchAsync(plain));
+        }
+        finally
+        {
+            Directory.Delete(plain, recursive: true);
+        }
+    }
+
     /// <summary>
     /// A tree git cannot answer for feeds nothing — null rather than an invented commit, because an
     /// invented one is a claim about a point in the history that does not exist.
