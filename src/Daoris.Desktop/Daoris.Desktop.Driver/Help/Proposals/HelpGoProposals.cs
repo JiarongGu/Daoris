@@ -308,7 +308,7 @@ public sealed partial record HelpMachineFacts
 {
     /// <summary>
     /// This machine's own session records, closed ones included, as the Sessions list reads them: what a go naming a session
-    /// is judged against (ENTRY1f2), read only then.
+    /// is judged against (ENTRY1f2), and since SESSUX1h2b a session proposal and a session's delete; read only for those.
     /// </summary>
     public IReadOnlyList<SessionRecord> Sessions { get; init; } = [];
 }

@@ -97,6 +97,50 @@ public abstract class HelpProposalsFixture : IDisposable
         ],
     };
 
+    /// <summary>
+    /// This machine's sessions as Sessions' list reads them (SESSUX1h2b): each record, where the list places it with its
+    /// archive mark, the one a tree or a landing keeps, and the ledger's judgement of a delete one names.
+    /// </summary>
+    protected static readonly HelpMachineFacts SessionsHere = Machine with
+    {
+        Sessions =
+        [
+            new SessionRecord("s1ended0", "engine", "completed") { Quest = "q3done00" },
+            new SessionRecord("s2ended0", "game", "failed") { Quest = "q3done00" },
+            new SessionRecord("s3live00", "engine", "working") { Quest = "q2taken0" },
+            new SessionRecord("s4parked", "engine", "awaiting-person") { Quest = "q1a2b3c4" },
+            new SessionRecord("s5review", "game", "completed") { Quest = "q5start0", Tree = "/trees/s5review" },
+            new SessionRecord("s6archiv", "engine", "completed") { Quest = "q4declin" },
+            new SessionRecord("h1helper", HelpRoom.Repository, "completed") { Kind = "chat", Deletable = true },
+            new SessionRecord("north/s7team0", "engine", "completed") { Kind = "chat" },
+            new SessionRecord("c1chat00", "engine", "completed") { Kind = "chat", Deletable = true },
+            new SessionRecord("c2tree00", "engine", "completed") { Kind = "chat", Deletable = true, Tree = "/trees/c2tree00" },
+            new SessionRecord("c3named0", "engine", "completed") { Kind = "chat" },
+            new SessionRecord("c4remote", "game", "stopped") { Kind = "chat" },
+        ],
+        Placed =
+        [
+            new SessionGrouping("s4parked", SessionGroup.You, "parked"),
+            new SessionGrouping("s5review", SessionGroup.Review, "completed"),
+            new SessionGrouping("s3live00", SessionGroup.Working, "working"),
+            new SessionGrouping("s1ended0", SessionGroup.Ended, "completed"),
+            new SessionGrouping("s2ended0", SessionGroup.Ended, "failed"),
+            new SessionGrouping("h1helper", SessionGroup.Ended, "completed"),
+            new SessionGrouping("north/s7team0", SessionGroup.Ended, "completed") { Teammate = true },
+            new SessionGrouping("c1chat00", SessionGroup.Ended, "completed"),
+            new SessionGrouping("c2tree00", SessionGroup.Ended, "completed"),
+            new SessionGrouping("c3named0", SessionGroup.Ended, "completed"),
+            new SessionGrouping("c4remote", SessionGroup.Ended, "stopped"),
+            new SessionGrouping("s6archiv", SessionGroup.Archived, "completed") { Archived = true },
+        ],
+        Kept = new HashSet<string>(["c2tree00"], StringComparer.Ordinal),
+        SessionDeletes = new Dictionary<string, SessionDeleteAnswer>(StringComparer.Ordinal)
+        {
+            ["c1chat00"] = new(true, "Session `c1chat00` may be deleted."),
+            ["c3named0"] = new(false, "Session `c3named0` is named by ask `#a1b2c3d4` as its intake.") { Refusal = "named", Ask = "a1b2c3d4" },
+        },
+    };
+
     protected static HelpProposal Of(string kind, string door, string? target = null, string? value = null) =>
         new("p6", kind, door, target, null, value, null, "the person asked", "h1", "proposed");
 

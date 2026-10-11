@@ -71,6 +71,25 @@ public sealed class HelpRoomMayProposeTests
     }
 
     /// <summary>
+    /// SESSUX1h2b (D126 §5.2–§5.4, §7.3): sessions are archived or unarchived by id, or every one that ended archived, and a
+    /// conversation that served no quest deleted, each judged as Sessions' own press is; a stop is no proposal, since a session's
+    /// stop is its own conversation (D161's SESSUX1h1 note).
+    /// </summary>
+    [Fact]
+    public void The_room_says_how_sessions_are_archived_and_a_conversation_deleted()
+    {
+        var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("- `delete_propose`: a quest or an ask made by mistake (a duplicate, a test), as the quest's drawer and the", proposes);
+        Assert.Contains("  A session goes only where Sessions offers Delete…: a conversation that served no quest, ended,", proposes);
+        Assert.Contains("- `session_propose`: archive sessions on this machine, or unarchive them, by id as Sessions lists them,", proposes);
+        Assert.Contains("or `ended` to archive every session that ended, as the list's ⋯ → Archive what ended… does.", proposes);
+        Assert.Contains("A session still running, in Waiting on you or in To review is never archived: archive never hides what", proposes);
+        Assert.Contains("Stopping a session is never proposed: it is the person's own,\n  on the session's page, where `go_propose` takes them.", proposes);
+        Assert.Contains("is archived instead (`session_propose`), and Ask Daoris's own conversations are deleted in its History.", proposes);
+    }
+
+    /// <summary>
     /// HELP6: every door built since HELP1c is a proposal too — an agent's update or pin, a delete of a
     /// record made by mistake, an account's model and effort, and a screen to open — each named with its
     /// tool and the rule its route judges it by, so the helper does not propose what would be refused.
