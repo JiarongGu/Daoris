@@ -71,6 +71,53 @@ describe('what was cleaned up on its own', () => {
     expect(unknown).not.toHaveTextContent('some-new-code');
   });
 
+  // The driver logs a kept branch once at each start of the window, so one branch kept for a week is a line a start (AUTOTIDY1a2).
+  it('draws the lines of one branch kept for the same reason as one row: the newest time, and since the oldest', () => {
+    const lines = Array.from({ length: 7 }, (_, index) => kept('unread', 2 + index * 24, { cause: 'folder' }));
+    render(<WorkspaceTidied lines={lines} />);
+    const row = screen.getByRole('listitem');
+    expect(row).toHaveTextContent('Left in place 2h ago');
+    expect(row).toHaveTextContent('since 6d ago');
+    expect(row).toHaveTextContent('unreadable');
+  });
+
+  it('draws one row where a group is one line, with no since; and keeps apart another branch, repository, why or cause', () => {
+    render(<WorkspaceTidied lines={[
+      kept('unread', 1, { cause: 'folder' }),
+      kept('unread', 2, { cause: 'index' }),
+      kept('refused', 3, { cause: undefined }),
+      kept('unread', 4, { cause: 'folder', branch: 'daoris/s-bbbb2222' }),
+      kept('unread', 5, { cause: 'folder', repository: 'web' }),
+    ]} />);
+    const rows = screen.getAllByRole('listitem');
+    expect(rows).toHaveLength(5);
+    rows.forEach((row) => expect(row).not.toHaveTextContent('since'));
+  });
+
+  it.each([
+    ['toplevel', 'checkout path', '检出位置'],
+    ['refs', 'branch list', '分支列表'],
+    ['list', 'tree list', '工作树列表'],
+    ['folder', 'stray folder', '多出文件夹'],
+    ['index', "tree's index", '工作树索引'],
+    ['folders', 'folders unread', '文件夹读取'],
+  ])('words the cause %s after the reason, in English and Chinese', async (cause, en, zh) => {
+    const { unmount } = render(<WorkspaceTidied lines={[kept('unread', 2, { cause })]} />);
+    expect(screen.getByRole('listitem')).toHaveTextContent(`unreadable · ${en}`);
+    unmount();
+    await i18n.changeLanguage('zh');
+    render(<WorkspaceTidied lines={[kept('unread', 2, { cause })]} />);
+    expect(screen.getByRole('listitem')).toHaveTextContent(`读取不了 · ${zh}`);
+  });
+
+  it('shows the reason alone where the cause is one this page does not know, or none', () => {
+    render(<WorkspaceTidied lines={[kept('unread', 2, { cause: 'some-new-cause' }), kept('unread', 3, { branch: 'daoris/s-cccc3333' })]} />);
+    const [unknown, none] = screen.getAllByRole('listitem');
+    expect(unknown).toHaveTextContent(/unreadable$/);
+    expect(unknown).not.toHaveTextContent('some-new-cause');
+    expect(none).toHaveTextContent(/unreadable$/);
+  });
+
   it('shows five, and the rest behind Show N more', async () => {
     const lines = Array.from({ length: 7 }, (_, index) => tidied(`daoris/s-${index}`, index + 1));
     render(<WorkspaceTidied lines={lines} />);

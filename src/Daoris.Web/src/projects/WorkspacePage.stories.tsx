@@ -269,6 +269,12 @@ const TIDIED: LogRow[] = [
 /** Branches with what the look cleaned up on its own, and left, after the groups and above the clean-up (AUTOTIDY1a). */
 export const BranchesCleanedUp: Story = { args: { tab: 'branches', tidied: TIDIED } };
 
+/** The installed window's case (AUTOTIDY1a2): one branch kept `unread` and logged at each of seven starts is one row, with its cause and since. */
+const KEPT_EVERY_START: LogRow[] = Array.from({ length: 7 }, (_, index) =>
+  tidiedLine('branch.kept', 3 + index * 24, { repository: 'api', branch: 'daoris/s-9e0f1a2b', why: 'unread', cause: 'folder' }));
+
+export const BranchesKeptEveryStart: Story = { args: { tab: 'branches', tidied: KEPT_EVERY_START } };
+
 /** Branches of six repositories holding Daoris's: five groups, the sixth one press away (*Show 1 more*), and one apart. */
 export const BranchesManyRepositories: Story = { args: { tab: 'branches', held: REPOSITORIES.slice(0, 6) } };
 

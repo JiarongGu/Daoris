@@ -276,7 +276,7 @@
       "case": "lower",
       "keys": [
         "agents.read.at", "agents.read.never", "help.history.current", "help.history.saving", "agents.state.*", "agents.runs.machine", "agents.runs.first", "agents.runs.none",
-        "agents.now.sessions", "projects.tidied.why.*", "projects.git.branch.kind.*",
+        "agents.now.sessions", "projects.tidied.why.*", "projects.tidied.cause.*", "projects.git.branch.kind.*",
         "asks.goAhead.state.*", "asks.record.paused", "asks.state.*", "chain.ask", "chain.attempt", "chain.current", "chain.thisSession",
         "work.head.copied",
         "console.live", "harness.absent",

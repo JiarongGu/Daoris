@@ -274,5 +274,12 @@
   "projects.tidied.why.nested": "含嵌套仓库",
   "projects.tidied.why.linked": "含链接",
   "projects.tidied.why.starting": "正在启动",
-  "projects.tidied.why.sessions": "会话未知"
+  "projects.tidied.why.sessions": "会话未知",
+  "projects.tidied.since": "自{{when}}起",
+  "projects.tidied.cause.toplevel": "检出位置",
+  "projects.tidied.cause.refs": "分支列表",
+  "projects.tidied.cause.list": "工作树列表",
+  "projects.tidied.cause.folder": "多出文件夹",
+  "projects.tidied.cause.index": "工作树索引",
+  "projects.tidied.cause.folders": "文件夹读取"
 }
