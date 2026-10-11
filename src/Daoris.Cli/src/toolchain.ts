@@ -1100,8 +1100,11 @@ export function signInNew(
         }
       }
       const settings = options.path ? joinedAfterSignIn(options.path, before, harness, id, joins, write) : before;
+      // ACCTNAME1: the email offered as the name is said once.
       write(said.account
-        ? `daoris: signed in as ${said.account} — this machine lists it as \`${called ?? id}\`.`
+        ? (called !== null && sameName(said.account, called)
+          ? `daoris: signed in as ${said.account} — this machine lists it by that name.`
+          : `daoris: signed in as ${said.account} — this machine lists it as \`${called ?? id}\`.`)
         : `daoris: signed in — \`${harness}\` did not say who, so this machine lists it as \`${called ?? id}\`.`);
       for (const line of endLines(harness, id, called, said.account, settings, home, Boolean(options.path))) write(line);
     }
@@ -1338,6 +1341,9 @@ export function accountLines(
   // Each account by the person's name for it, else its id (ACCT2); the id is said beside a name, as records name it.
   const names = accountNames(home, owner);
   const shown = (account: string) => shownAs(names, account);
+  // ACCTNAME1: the name column fits the longest name shown (floor 16, so short lists keep their look).
+  const col = Math.max(16, ...report.profiles.map((profile) => shown(profile.name).length));
+  const gap = ''.padEnd(col);
 
   if (report.profiles.length === 0) lines.push(`${indent}no accounts — sessions run in the agent's own configuration home`);
 
@@ -1352,20 +1358,21 @@ export function accountLines(
 
     // 🔴 A key account is never "in": the tool says so for any key, a wrong one included (AGT3).
     lines.push(
-      `${indent}${shown(profile.name).padEnd(16)} ${(profile.key ? 'unchecked' : profile.login).padEnd(9)}`
-      + `${profile.account ? ` ${profile.account}` : ''}`
+      `${indent}${shown(profile.name).padEnd(col)} ${(profile.key ? 'unchecked' : profile.login).padEnd(9)}`
+      // Who signed in is dropped where it is the name already (ACCTNAME1, as the page's accountWho does).
+      + `${profile.account && !sameName(profile.account, shown(profile.name)) ? ` ${profile.account}` : ''}`
       + `${profile.key ? ` API key ${profile.key}` : ''}`
       + `${marks.length ? ` (${marks.join(', ')})` : ''}`);
 
     const cooled = coolingOf(home, owner, profile.name, now);
-    if (cooled) lines.push(`${indent}${''.padEnd(16)} ${coolingLine(cooled, now, zone)}`);
+    if (cooled) lines.push(`${indent}${gap} ${coolingLine(cooled, now, zone)}`);
     // What its agent last said about its windows, and how long ago (TOOL6c, D130 §3.2): a reading, never a judgement.
     const said = saidOf(home, owner, profile.name, now);
-    if (said) lines.push(`${indent}${''.padEnd(16)} ${saidLine(said, now, zone)}`);
+    if (said) lines.push(`${indent}${gap} ${saidLine(said, now, zone)}`);
     // ACCT1: an account no list and no default holds runs nowhere, and says so where it is listed — the install's new
     // account sat in no list while the work kept starting on an empty one.
     if (placesOf(settings, owner, profile.name).length === 0) {
-      lines.push(`${indent}${''.padEnd(16)} no workspace: no list and no default holds it, so no start runs on it — `
+      lines.push(`${indent}${gap} no workspace: no list and no default holds it, so no start runs on it — `
         + `\`daoris agent profile join ${owner} ${accountWord(shown(profile.name), profile.name)} <workspace>…|--machine\` puts it in one`);
     }
   }
@@ -1382,25 +1389,25 @@ export function accountLines(
   const product = TOOLCHAINS[owner]?.product ?? owner;
   const beneath = (scope: Scope) => {
     const { rows, notes } = useLines(scope, product, TOOLCHAINS[owner]?.windows === true, shown);
-    for (const [label, value] of rows) lines.push(`${indent}${''.padEnd(16)} ${label}: ${value}`);
-    for (const note of notes) lines.push(`${indent}${''.padEnd(16)} ${note}`);
-    for (const line of nextStartBeneath(scope, owner, home, now, zone, shown)) lines.push(`${indent}${''.padEnd(16)} ${line}`);
+    for (const [label, value] of rows) lines.push(`${indent}${gap} ${label}: ${value}`);
+    for (const note of notes) lines.push(`${indent}${gap} ${note}`);
+    for (const line of nextStartBeneath(scope, owner, home, now, zone, shown)) lines.push(`${indent}${gap} ${line}`);
   };
   const order = resolveRotation(settings, owner, null);
   if (order.from === 'machine') {
-    lines.push(`${indent}rotation         ${order.order.map(shown).join(', then ')}`);
+    lines.push(`${indent}${'rotation'.padEnd(col)} ${order.order.map(shown).join(', then ')}`);
     beneath(resolveScope(settings, owner, null));
   } else {
     const machine = resolveScope(settings, owner, null);
     if (machine.default !== null) {
-      lines.push(`${indent}next start       \`${shown(machine.default)}\`, this machine's default — with no list, the one account its `
+      lines.push(`${indent}${'next start'.padEnd(col)} \`${shown(machine.default)}\`, this machine's default — with no list, the one account its `
         + 'starts run on');
-      for (const line of nextStartBeneath(machine, owner, home, now, zone, shown)) lines.push(`${indent}${''.padEnd(16)} ${line}`);
+      for (const line of nextStartBeneath(machine, owner, home, now, zone, shown)) lines.push(`${indent}${gap} ${line}`);
     }
   }
   for (const [circle, orders] of Object.entries(settings.workspaceRotation)) {
     if (!orders[owner]) continue;
-    lines.push(`${indent}rotation in ${circle.padEnd(4)} ${orders[owner].map(shown).join(', then ')}`);
+    lines.push(`${indent}${`rotation in ${circle}`.padEnd(col)} ${orders[owner].map(shown).join(', then ')}`);
     beneath(resolveScope(settings, owner, circle));
   }
 
