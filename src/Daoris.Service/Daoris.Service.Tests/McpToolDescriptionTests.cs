@@ -58,6 +58,17 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains("Not proposed yet", text);
     }
 
+    /// <summary>WORKFLOW1h-name: the workflow tool says a new workflow is named by the person's words, and an edit keeps its name.</summary>
+    [Fact]
+    public void The_workflow_tool_says_a_new_workflow_takes_the_persons_name()
+    {
+        var text = string.Join(" ", Descriptions().Where(d => d.Tool == "workflow_propose").Select(d => d.Text));
+
+        Assert.Contains("name", text);
+        Assert.Contains("at most 60", text);
+        Assert.Contains("keeps its name", text);
+    }
+
     /// <summary>
     /// A server over one checkout says what it reads and that it matches words (ORIENT1c), in the words a
     /// session reads before it searches the files: the checkout's name, the folders it was given, the tier.

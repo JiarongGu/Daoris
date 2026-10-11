@@ -18,14 +18,17 @@ public sealed partial class HelpProposalBox
     /// <summary>
     /// Write one proposal of a workflow's whole version. <paramref name="steps"/> is the design's JSON list of step objects;
     /// <paramref name="baseVersion"/> the version an edit is made on, absent for a new workflow; <paramref name="choose"/> asks
-    /// that the scope also use this workflow.
+    /// that the scope also use this workflow. <paramref name="name"/> (WORKFLOW1h-name) is the person's words for a new workflow,
+    /// trimmed and written only when given; the workflow store keeps a name to 60 characters (the driver's
+    /// <c>WorkflowNamed.NameProblem</c>), and an edit keeps its workflow's name, so a name beside a base is refused.
     /// </summary>
     public (string? Id, string Message) ProposeWorkflow(
         string? scope, string? workflow, int? baseVersion, string? steps, bool choose,
-        string? changes, string? kind, string? import, string why, string? session, DateTimeOffset at)
+        string? changes, string? kind, string? import, string why, string? session, DateTimeOffset at, string? name = null)
     {
         var scopeName = Blank(scope);
         var workflowId = Blank(workflow);
+        var workflowName = Blank(name);
         if (string.IsNullOrWhiteSpace(why)) return NoReason;
         var notYet = new (string Name, string? Value)[] { ("changes", changes), ("kind", kind), ("import", import) }
             .FirstOrDefault(field => Blank(field.Value) is not null).Name;
@@ -40,6 +43,8 @@ public sealed partial class HelpProposalBox
                     ? $"`{workflowId}` is not a workflow's id — lower-case letters, digits and dashes, at most 40, such as `docs-to-pr`."
                  : workflowId == "current" ? "`current` names Current, the workflow drawn from the rules as they stand, so no saved workflow takes it."
                  : baseVersion is < 1 ? "the base version is a whole number from 1."
+                 : workflowName is not null && baseVersion is not null ? "an edit keeps its workflow's name, so `name` is left out: renaming is not proposed."
+                 : workflowName is { Length: > 60 } ? "`name` is a short line, at most 60 characters."
                  : Steps(steps, out stepList));
         if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
 
@@ -48,6 +53,7 @@ public sealed partial class HelpProposalBox
             writer.WriteString("kind", "workflow");
             writer.WriteString("scope", scopeName);
             writer.WriteString("workflow", workflowId);
+            if (workflowName is not null) writer.WriteString("name", workflowName);
             if (baseVersion is { } baseNumber) writer.WriteNumber("base", baseNumber);
             else writer.WriteNull("base");
             writer.WriteBoolean("choose", choose);
