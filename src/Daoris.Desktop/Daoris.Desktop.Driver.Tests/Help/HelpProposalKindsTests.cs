@@ -35,7 +35,19 @@ public sealed partial class HelpProposalKindsTests
         ("session", "session_propose"),
         ("pause", "pause_propose"),
         ("clear", "clear_propose"),
+        ("workflow", "workflow_propose"),
     ];
+
+    /// <summary>
+    /// WORKFLOW1h-b: the workflow kind's file names no door. Its judge reads <c>new</c> from a <c>base</c> written null, <c>edit</c>
+    /// from one written as a number, and <c>use</c> from <c>choose</c>, so its twin is held to writing those.
+    /// </summary>
+    private static readonly IReadOnlyDictionary<string, string> WorkflowDoorsWritten = new Dictionary<string, string>
+    {
+        ["new"] = """WriteNull("base")""",
+        ["edit"] = """WriteNumber("base",""",
+        ["use"] = """WriteBoolean("choose",""",
+    };
 
     internal static string RepositoryRoot()
     {
@@ -104,7 +116,10 @@ public sealed partial class HelpProposalKindsTests
         {
             Assert.NotEmpty(kind.Doors);
             var writer = File.ReadAllText(Path.Combine(core, $"HelpProposalBox.{Pascal(kind.Kind)}.cs"));
-            foreach (var door in kind.Doors) Assert.Contains($"\"{door}\"", writer);
+            foreach (var door in kind.Doors)
+            {
+                Assert.Contains(kind.Kind == "workflow" ? WorkflowDoorsWritten[door] : $"\"{door}\"", writer);
+            }
         }
 
         var listed = ServiceSettingDoors().Match(File.ReadAllText(Path.Combine(core, "HelpProposalBox.Setting.cs")));
