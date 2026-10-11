@@ -9,7 +9,7 @@ namespace Daoris.Knowledge;
 /// <param name="Lines">The lines of the file the body is: line <c>i</c> of the body is line <c>First + i</c>.</param>
 /// <param name="Opening">Whether it is prose before any heading: the file's own, which no heading names.</param>
 /// <param name="Label">A row's label, its first cell with text, or an item's, each without its code marks; null for prose.</param>
-/// <param name="Anchored">What an item is anchored by: its title with the lines its label and its parents' lead with taken out (<see cref="IndexRows.Unnumbered"/>, ORIENT2h5); null for prose and a row, anchored by their title.</param>
+/// <param name="Anchored">What an entry is anchored by: its title with each heading's trailing count taken out (<see cref="IndexRows.Uncounted"/>, ORIENT2h7), and an item's with the lines its label and its parents' lead with taken out too (<see cref="IndexRows.Unnumbered"/>, ORIENT2h5); null where it is its title as it is.</param>
 public readonly record struct IndexSection(
     string Title, string Body, LineSpan Lines, bool Opening = false, string? Label = null, string? Anchored = null);
 
@@ -68,6 +68,8 @@ public static class IndexSections
         var sections = new List<IndexSection>();
         var above = new List<(int Level, string Text)>();
         var title = fallbackTitle;
+        // The title as an id is made of it, each heading without the count a generator ends it with (ORIENT2h7).
+        var anchorTitle = fallbackTitle;
         var opening = true;
         var body = new List<(int Line, string Text)>();
         // The list's open items, outermost first; only the innermost has lines not yet an entry (ORIENT2h2).
@@ -102,6 +104,8 @@ public static class IndexSections
                 above.Add(heading);
                 title = string.Join(" › ", above.Select(h => h.Text).Where(text => text.Length > 0));
                 if (title.Length == 0) title = fallbackTitle;
+                anchorTitle = string.Join(" › ", above.Select(h => IndexRows.Uncounted(h.Text)).Where(text => text.Length > 0));
+                if (anchorTitle.Length == 0) anchorTitle = fallbackTitle;
                 continue;
             }
             if (TableAt(lines, at))
@@ -117,7 +121,8 @@ public static class IndexSections
                     var column = label.Column < columns.Count ? columns[label.Column] : string.Empty;
                     var named = column.Length > 0 ? $"{column}: {label.Text}" : label.Text;
                     var row = firstLine + at;
-                    sections.Add(new IndexSection($"{title} › {named}", lines[at].Trim(), new LineSpan(row, row), Label: label.Text));
+                    sections.Add(new IndexSection(
+                        $"{title} › {named}", lines[at].Trim(), new LineSpan(row, row), Label: label.Text, Anchored: $"{anchorTitle} › {named}"));
                 }
                 at--;   // the line that ended the table is read by the loop's own step
                 continue;
@@ -135,7 +140,7 @@ public static class IndexSections
                 var label = ItemLabel(item.Text);
                 items.Add(new OpenItem(
                     item.Content, $"{parent?.Title ?? title} › {label}", label,
-                    $"{parent?.Anchored ?? title} › {IndexRows.Unnumbered(label)}", [(line, raw)]));
+                    $"{parent?.Anchored ?? anchorTitle} › {IndexRows.Unnumbered(label)}", [(line, raw)]));
                 continue;
             }
 
@@ -169,7 +174,7 @@ public static class IndexSections
         void Flush()
         {
             var built = MarkdownSections.Build(title, body);
-            if (built.Body.Length > 0) sections.Add(new IndexSection(title, built.Body, new LineSpan(built.First, built.Last), opening));
+            if (built.Body.Length > 0) sections.Add(new IndexSection(title, built.Body, new LineSpan(built.First, built.Last), opening, Anchored: anchorTitle));
             body.Clear();
         }
 

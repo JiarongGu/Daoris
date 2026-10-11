@@ -53,7 +53,7 @@ public static class IndexRows
             var where = Where();
             rows.Add(new IndexRow(
                 rowTitle, where.Length == 0 ? line : $"{line}\n\nIn {where}",
-                anchors.Next($"{heading ?? title ?? fallbackTitle}: {anchored ?? rowTitle}")));
+                anchors.Next($"{Uncounted(heading ?? title ?? fallbackTitle)}: {anchored ?? rowTitle}")));
         }
 
         foreach (var raw in (markdown ?? string.Empty).Replace("\r\n", "\n").Split('\n'))
@@ -227,6 +227,29 @@ public static class IndexRows
         var rest = end < 0 ? string.Empty : label[(end + 1)..].TrimStart();
         var anchored = place.Length == 0 ? rest : rest.Length == 0 ? place : $"{place} {rest}";
         return anchored.Length > 0 ? anchored : label;
+    }
+
+    /// <summary>
+    /// What a heading is anchored by (ORIENT2h7): its text without the count a generator ends it with, <c>Notes (552)</c>
+    /// as <c>Notes</c>; a space, a parenthesis, ASCII digits and the closing parenthesis, at the end and nowhere else.
+    /// The text as it is where nothing else would be left.
+    /// </summary>
+    /// <remarks>
+    /// A generated heading counts what is under it, so one new note moved every id beneath it: between two commits of
+    /// this repository's index, 457 of the 1,259 ids that moved (D151's ORIENT2h5 note). The title keeps the count,
+    /// since a person reads it. Taken out before <see cref="EntryAnchors"/> counts repeats, which keep their own
+    /// <c> (n)</c>.
+    /// </remarks>
+    internal static string Uncounted(string heading)
+    {
+        var text = heading.TrimEnd();
+        if (!text.EndsWith(')')) return heading;
+        var open = text.LastIndexOf(" (", StringComparison.Ordinal);
+        if (open < 0) return heading;
+        var digits = text[(open + 2)..^1];
+        if (digits.Length == 0 || !digits.All(char.IsAsciiDigit)) return heading;
+        var rest = text[..open].TrimEnd();
+        return rest.Length > 0 ? rest : heading;
     }
 
     /// <summary>A line's number or a range of them: ASCII digits, then optionally a dash and more.</summary>

@@ -729,6 +729,87 @@ public sealed class IndexEntriesTests : IDisposable
     }
 
     /// <summary>
+    /// ORIENT2h7's proof: a generated heading ends in a count of what is under it, and one new note moved the id of
+    /// every entry beneath it. Two indexes that differ only in those counts give every entry, prose, row and item, the
+    /// id it had, in both readers; the title keeps the count a person reads.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void An_entry_keeps_its_id_when_only_its_heading_s_count_changes(bool deployment)
+    {
+        Declare("""{"index":"docs/index/README.md"}""");
+        Write("docs/index/README.md", Readme);
+        void Counted(int count) =>
+            Write("docs/index/notes.md",
+                "# Notes digest\n\n"
+                + $"## Notes ({count})\n\nThe notes, newest last.\n\n"
+                + "| Note | Where |\n|---|---|\n| first | a.md:3 |\n\n"
+                + "- 3-9 an item\n"
+                + $"  - 4-5 nested\n\n### Kept ({count + 1})\n\n- 12-14 deeper\n");
+        List<KnowledgeEntry> Read() =>
+            Index(new RepositoryScanner(index: deployment ? "docs/index" : null).Scan(_root))
+                .Where(e => e.RelativePath == "docs/index/notes.md").ToList();
+
+        Counted(5);
+        var before = Read();
+        Counted(6);
+        var after = Read();
+
+        Assert.True(before.Count >= 5);
+        Assert.Equal(before.Select(e => e.Id).Order().ToList(), after.Select(e => e.Id).Order().ToList());
+        // The count is still what a person reads: in the title, or in the line a row says it sits under.
+        Assert.DoesNotContain(after, e => (e.Title + e.Body).Contains("Notes (5)", StringComparison.Ordinal));
+        Assert.Contains(after, e => (e.Title + e.Body).Contains("Notes (6)", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// ORIENT2h7: only a heading's trailing count is taken out of its anchor: a space, a parenthesis, digits and the
+    /// parenthesis, at the end. Anything else in a heading is its name.
+    /// </summary>
+    [Theory]
+    [InlineData("Notes (552)", "Notes")]
+    [InlineData("Files over 40 KB (138)", "Files over 40 KB")]
+    [InlineData("DAORIS.DRIVER (102)", "DAORIS.DRIVER")]
+    [InlineData("Notes (2) ", "Notes")]
+    [InlineData("Notes", "Notes")]
+    [InlineData("Notes (all)", "Notes (all)")]
+    [InlineData("Notes (2) more", "Notes (2) more")]
+    [InlineData("Notes(2)", "Notes(2)")]
+    [InlineData("Notes ()", "Notes ()")]
+    [InlineData("(2)", "(2)")]
+    [InlineData(" (2)", " (2)")]
+    [InlineData("Notes (٢)", "Notes (٢)")]
+    [InlineData("A (3) (5)", "A (3)")]
+    public void A_heading_s_trailing_count_is_taken_out_of_its_anchor(string heading, string anchored)
+    {
+        Assert.Equal(anchored, IndexRows.Uncounted(heading));
+    }
+
+    /// <summary>
+    /// ORIENT2h7: the count comes out before repeats are counted, so two headings alike past their counts are told
+    /// apart as two titles alike always were, and a heading that is literally the repeat's name still gets a free one.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Headings_alike_past_their_counts_are_told_apart_by_the_repeat_count(bool deployment)
+    {
+        Declare("""{"index":"docs/index/README.md"}""");
+        Write("docs/index/README.md", Readme);
+        Write("docs/index/twins.md", "# A (3)\n\n- x\n\n# A (5)\n\n- x\n\n# A (2)\n\n- x\n");
+
+        var ids = Index(new RepositoryScanner(index: deployment ? "docs/index" : null).Scan(_root))
+            .Where(e => e.RelativePath == "docs/index/twins.md").ToList();
+
+        Assert.Equal(3, ids.Count);
+        Assert.Equal(3, ids.Select(e => e.Id).Distinct().Count());
+        Assert.Equal(
+            deployment ? ["A: x", "A: x (2)", "A: x (3)"] : ["A › x", "A › x (2)", "A › x (3)"],
+            ids.Select(e => e.Anchor).ToList());
+    }
+
+    /// <summary>
     /// ORIENT2h5: an item is anchored by its title with the lines each label leads with taken out, its parents'
     /// included, since a class's range moves with every edit inside it; two that are then alike are told apart by
     /// their count, as two titles alike always were. An item that leads with no lines is anchored by its title, as it
@@ -746,9 +827,9 @@ public sealed class IndexEntriesTests : IDisposable
         Assert.Equal(
             [
                 "Decisions digest › Notes (2) › D151:195-239 ORIENT2h, built 2026-10-07: a declared index's tables are read a row at a time. "
-                + "#Decisions digest › Notes (2) › D151 ORIENT2h, built 2026-10-07: a declared index's tables are read a row at a time.",
+                + "#Decisions digest › Notes › D151 ORIENT2h, built 2026-10-07: a declared index's tables are read a row at a time.",
                 "Decisions digest › Notes (2) › D151:241-253 ORIENT2e2, built 2026-10-07: the lines travel. "
-                + "#Decisions digest › Notes (2) › D151 ORIENT2e2, built 2026-10-07: the lines travel.",
+                + "#Decisions digest › Notes › D151 ORIENT2e2, built 2026-10-07: the lines travel.",
                 "Test fixtures › `src/Driver.Tests/` › AnswerContinuesTickTests.cs:284 #Test fixtures › `src/Driver.Tests/` › AnswerContinuesTickTests.cs",
                 "Test fixtures › `src/Driver.Tests/` › ChatGoOnTests.cs:401 #Test fixtures › `src/Driver.Tests/` › ChatGoOnTests.cs",
                 "Test fixtures › `src/Driver.Tests/` › ChatGoOnTests.cs:485 #Test fixtures › `src/Driver.Tests/` › ChatGoOnTests.cs (2)",
@@ -808,7 +889,7 @@ public sealed class IndexEntriesTests : IDisposable
 
             var stored = Index(await store.AllAsync()).OrderBy(e => e.Lines?.First).ToList();
             Assert.Equal(
-                ["A @ 3 #A", "A @ 7 #A (2)", "A (2) @ 11 #A (2) (2)"],
+                ["A @ 3 #A", "A @ 7 #A (2)", "A (2) @ 11 #A (3)"],
                 stored.Select(e => $"{e.Title} @ {e.Lines} #{e.Anchor}").ToList());
             Assert.Equal(3, stored.Select(e => e.Id).Distinct().Count());
         }
