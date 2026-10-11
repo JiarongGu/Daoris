@@ -26,18 +26,20 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
  * **A repository's page** (FRAME1e, D118 §2): in Repositories' main area beside the list. Its header holds its name, its
  * standing, its summary as its one line, and its acts: the door to its code map (MAP3a) and *Manage*. Beneath, its tabs
  * (UX6f, D150 §4.2): **Details**, its facts (what the index holds, the commit it was fed from, its workspace, its line, its
- * unlanded branches), its declaration and for one not adopted the steps to adopt; **Workflow**, how its work moves, drawn
- * read-only from its rules as they stand (WORKFLOW1b, the workflow design §6.1), each step's door opening the Setup row that
- * sets it; and **Setup**, every setting it holds on this machine (`RepositorySetup`).
+ * unlanded branches), its declaration and for one not adopted the steps to adopt; **Branches** and **History**, its branches
+ * and its line's graph as Git reads them here (UX6h1, §4.4: Git inside Repositories, D147 §2.2-§2.3); **Workflow**, how its
+ * work moves, drawn read-only from its rules as they stand (WORKFLOW1b, the workflow design §6.1), each step's door opening
+ * the Setup row that sets it; and **Setup**, every setting it holds on this machine (`RepositorySetup`).
  *
  * @remarks
  * **A molecule**: every state is reached by its props, and every press goes out. The tab shown is its holder's,
- * remembered per view, so a door can open the page at Setup.
+ * remembered per view, so a door can open the page at Setup. Branches' and History's bodies are their holder's too, each
+ * drawn only while its tab shows, so neither asks Git anything until it is open.
  *
  * - **A setting has one home, its Setup** (§1 rule 1): Details shows its line read-only, with a door to Setup at *Line
  *   and landing*.
- * - **A browser gets Details alone** (D47 §4): setup is this machine's, and so are its workflows (design §2.4, §6.1); one
- *   tab is no tabs, so it has no tab row.
+ * - **A browser gets Details alone** (D47 §4): setup is this machine's, and so are its workflows (design §2.4, §6.1) and
+ *   its branches and history (D147 §6); one tab is no tabs, so it has no tab row.
  * - **Adoption is the repository's own act** (D31, D32): one not adopted is offered the steps as text, never a button,
  *   and none of adoption's own acts, like *Manage*, which writes its declaration into it.
  * - **An absent act is absent, never disabled**: *Manage* and Setup only where a shell answers (D48 §7), Setup's
@@ -45,7 +47,8 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
  * - **A page never prints a machine path it was answered** (D47 §4): a checkout here is a mark, never its folder.
  */
 export function ProjectPage({
-  registration, counts, line, unlanded = 0, here, drivable, held, setup, workflow, tab = 'details', onTab, onManage, onOpenCode,
+  registration, counts, line, unlanded = 0, here, drivable, held, setup, workflow, branches, history, tab = 'details', onTab, onManage,
+  onOpenCode,
 }: {
   registration: Registration;
   /** What the index holds of it: absent where it holds nothing. */
@@ -67,6 +70,13 @@ export function ProjectPage({
    * door to its own Setup is the page's, which opens the section that sets the step.
    */
   workflow?: WorkflowTabProps | null;
+  /**
+   * Its Branches tab's body (UX6h1): a shell's, since a checkout is this machine's (D147 §6). Its holder reads the list only
+   * once the page draws it, while the tab shows. Absent, there is no Branches tab.
+   */
+  branches?: ReactNode;
+  /** Its History tab's body, its line's graph (UX6h1): a shell's, read only while it shows. Absent, there is no History tab. */
+  history?: ReactNode;
   /** The tab shown, its holder's to remember; Details where it is not handed. */
   tab?: ProjectTab;
   onTab?: (tab: ProjectTab) => void;
@@ -217,8 +227,10 @@ export function ProjectPage({
     </>
   );
 
-  // A remembered Workflow tab on a page handed no workflow (an older shell) shows Details, never a tab with no panel.
-  const shown: ProjectTab = tab === 'workflow' && !workflow ? 'details' : tab;
+  // A remembered tab on a page handed no body for it (a Workflow an older shell has none of, Branches or History where no
+  // shell answers) shows Details, never a tab with no panel.
+  const bodiless = (tab === 'workflow' && !workflow) || (tab === 'branches' && !branches) || (tab === 'history' && !history);
+  const shown: ProjectTab = bodiless ? 'details' : tab;
   // A step's door into its own Setup opens the section that sets it, as the line's door opens Line and landing.
   const toSection = (section: 'work' | 'sessions' | 'defaults') => {
     if (section === 'defaults' || !onTab) return;
@@ -234,6 +246,8 @@ export function ProjectPage({
             label={t('projects.tab.list', { repository })}
             tabs={[
               { id: 'details', label: t('projects.tab.details') },
+              ...(branches ? [{ id: 'branches' as const, label: t('projects.tab.branches') }] : []),
+              ...(history ? [{ id: 'history' as const, label: t('projects.tab.history') }] : []),
               ...(workflow ? [{ id: 'workflow' as const, label: t('projects.tab.workflow') }] : []),
               { id: 'setup', label: t('projects.tab.setup') },
             ]}
@@ -245,7 +259,11 @@ export function ProjectPage({
               ? <RepositorySetup {...setup} open={asked ?? setup.open} />
               : shown === 'workflow' && workflow
                 ? <WorkflowTab page="repository" name={repository} {...workflow} doors={{ ...workflow.doors, setup: toSection }} />
-                : details}
+                : shown === 'branches'
+                  ? branches
+                  : shown === 'history'
+                    ? history
+                    : details}
           </PageTabs>
         )
         : details}

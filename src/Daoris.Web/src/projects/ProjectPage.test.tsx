@@ -7,8 +7,9 @@ import i18n from '../i18n';
 import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
 import { FULL } from '../workflow/fixtures';
-import { COUNTS, ENGINE, LINE, NEWBIE, SETUP_DEFAULTS } from './fixtures';
+import { COUNTS, ENGINE, GIT_BRANCHES_ENGINE, LINE, NEWBIE, SETUP_DEFAULTS } from './fixtures';
 import { ProjectPage } from './ProjectPage';
+import { BranchesTab, HistoryTab } from './RepositoryGit';
 
 // CTX1 (D138, design §4): a repository's page on a right-click offers its header's acts, *Open code map* and *Manage*, as
 // its buttons press them, then its name. A molecule, so each is reached by passing it.
@@ -162,5 +163,62 @@ describe("a repository's Workflow tab", () => {
     expect(screen.queryByRole('tab')).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Current workflow' })).toBeNull();
     expect(screen.getByText('Owns')).toBeInTheDocument();
+  });
+});
+
+// UX6h1 (D150 §4.2, §4.4): Git is inside Repositories, as a repository's Branches and History tabs after Details, a shell's
+// like Setup (D147 §6). Each tab's body is its holder's, which reads only while the tab shows.
+describe("a repository's Branches and History tabs", () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  const branches = <BranchesTab repository="engine" read={{ state: 'read', value: GIT_BRANCHES_ENGINE }} />;
+  const history = <HistoryTab repository="engine" read={{ state: 'noCheckout' }} />;
+
+  it('sit after Details, before Workflow and Setup, and show what their holder hands each', async () => {
+    const onTab = vi.fn();
+    const { rerender } = render(
+      <ProjectPage registration={ENGINE} setup={SETUP_DEFAULTS} workflow={{ current: FULL }} branches={branches} history={history} tab="details" onTab={onTab} />,
+    );
+    const tabs = screen.getByRole('tablist', { name: "engine's pages" });
+    expect(within(tabs).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Details', 'Branches', 'History', 'Workflow', 'Setup']);
+    await userEvent.click(within(tabs).getByRole('tab', { name: 'History' }));
+    expect(onTab).toHaveBeenLastCalledWith('history');
+
+    rerender(
+      <Tooltip.Provider>
+        <ProjectPage registration={ENGINE} setup={SETUP_DEFAULTS} branches={branches} history={history} tab="branches" onTab={onTab} />
+      </Tooltip.Provider>,
+    );
+    expect(within(screen.getByRole('tabpanel', { name: 'Branches' })).getByRole('list', { name: "engine's branches" })).toBeInTheDocument();
+
+    rerender(
+      <Tooltip.Provider>
+        <ProjectPage registration={ENGINE} setup={SETUP_DEFAULTS} branches={branches} history={history} tab="history" onTab={onTab} />
+      </Tooltip.Provider>,
+    );
+    expect(screen.getByRole('tabpanel', { name: 'History' })).toHaveTextContent('No checkout on this machine');
+  });
+
+  it('shows Details for a remembered Branches or History tab on a page handed none, and has neither tab there', () => {
+    const { rerender } = render(<ProjectPage registration={ENGINE} setup={SETUP_DEFAULTS} tab="branches" onTab={vi.fn()} />);
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Details', 'Setup']);
+    expect(screen.getByRole('tabpanel', { name: 'Details' })).toBeInTheDocument();
+    rerender(<Tooltip.Provider><ProjectPage registration={ENGINE} setup={SETUP_DEFAULTS} tab="history" onTab={vi.fn()} /></Tooltip.Provider>);
+    expect(screen.getByRole('tabpanel', { name: 'Details' })).toBeInTheDocument();
+  });
+
+  it('are absent in a browser, which gets Details alone, wherever the view was left', () => {
+    render(<ProjectPage registration={ENGINE} counts={COUNTS.engine} tab="history" />);
+    expect(screen.queryByRole('tab')).toBeNull();
+    expect(screen.queryByText('No checkout on this machine')).toBeNull();
+    expect(screen.getByText('Owns')).toBeInTheDocument();
+  });
+
+  it('name the five tabs in 中文, each a short word', async () => {
+    await i18n.changeLanguage('zh');
+    render(
+      <ProjectPage registration={ENGINE} setup={SETUP_DEFAULTS} workflow={{ current: FULL }} branches={branches} history={history} tab="details" onTab={vi.fn()} />,
+    );
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['详情', '分支', '历史', '工作流', '配置']);
   });
 });

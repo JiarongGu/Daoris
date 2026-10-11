@@ -1,11 +1,12 @@
 import { store, stored } from '../lib/stored';
 
 /**
- * A repository's page's tabs (UX6f, D150 §4.2), in the order the page draws them: what the page holds, how its work moves
- * (WORKFLOW1b, the workflow design §6.1), and every setting the repository holds on this machine. The workflow comes before
- * Setup, since its doors open the rows there that set each step. Branches and History join with UX6h.
+ * A repository's page's tabs (UX6f, D150 §4.2), in the order the page draws them: what the page holds, its branches and its
+ * line's history (UX6h1, §4.4: Git inside Repositories), how its work moves (WORKFLOW1b, the workflow design §6.1), and every
+ * setting the repository holds on this machine. The workflow comes before Setup, since its doors open the rows there that
+ * set each step.
  */
-export const PROJECT_TABS = ['details', 'workflow', 'setup'] as const;
+export const PROJECT_TABS = ['details', 'branches', 'history', 'workflow', 'setup'] as const;
 
 export type ProjectTab = (typeof PROJECT_TABS)[number];
 
