@@ -13531,3 +13531,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PLUGUI1c2c — a landing rule's plugin is a door** (web; after UX6h2b2, which holds `projects/`). `RepositorySetup.tsx:447` and `WorkspaceSetup.tsx:298` name the plugin as a door to its page; the chooser stays. Design §5:688.
 
 **Outcome** 2026-10-11: a repository's and a workspace's Setup draw the landing sentence's plugin as a ghost button that opens it in Plugins (`landingRowSays` in SetupParts.tsx, the sentence's words unchanged, plain where no opener or the sentence's shape differs); the chooser stays an option. PLUGUI1c2 is closed. Detail: D119's PLUGUI1c2c note.
+
+## AUTOTIDY1a — show automatic cleanup (2026-10-11, D88)
+
+> - [ ] **AUTOTIDY1a — show automatic cleanup** (modules/web). Branches lists recent tidied/kept log facts. D88; route and bilingual list tests.
+
+**Outcome** 2026-10-11: the log's `LINES` takes `events` (any of a list) and `workspace`; a workspace's Branches tab lists, above the clean-up, the last week's branches the look cleaned up on its own and those it left in place with a word for why (en and zh), five shown, from the shell only. Detail: D88's AUTOTIDY1a note.

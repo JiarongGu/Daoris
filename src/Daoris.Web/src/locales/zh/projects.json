@@ -240,5 +240,17 @@
   "projects.workspace.gone.body": "这里注册的仓库都已不在其中，或者本窗口没有显示它。请在列表中另选一个。",
   "projects.workspace.kept": "本机保留的记录",
   "projects.workspace.clear": "清除记录…",
-  "projects.workspace.clearMeanIt": "清除 {{count}} 项"
+  "projects.workspace.clearMeanIt": "清除 {{count}} 项",
+  "projects.tidied.title": "自动清理的分支",
+  "projects.tidied.done": "{{when}}已清理",
+  "projects.tidied.kept": "{{when}}已保留",
+  "projects.tidied.aside": "它的工作树文件夹已另行存放",
+  "projects.tidied.why.unread": "读取不了",
+  "projects.tidied.why.refused": "被拒绝",
+  "projects.tidied.why.busy": "占用中",
+  "projects.tidied.why.hidden": "有隐藏改动",
+  "projects.tidied.why.nested": "含嵌套仓库",
+  "projects.tidied.why.linked": "含链接",
+  "projects.tidied.why.starting": "正在启动",
+  "projects.tidied.why.sessions": "会话未知"
 }

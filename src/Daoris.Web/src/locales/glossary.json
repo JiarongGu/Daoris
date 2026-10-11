@@ -76,7 +76,7 @@
         "map.asks", "map.when.title", "overview.outstanding.title",
         "overview.repositories.title", "menu.run.quest", "menu.run.session", "palette.title", "plugin.group.*",
         "plugin.section.*", "plugin.tests.trial", "plugin.update.title", "projects.group.*",
-        "projects.git.branches.kind.*", "projects.git.workspace.apart.label",
+        "projects.git.branches.kind.*", "projects.git.workspace.apart.label", "projects.tidied.title",
         "projects.manage.declaration", "projects.manage.wiring", "projects.page.adopt", "projects.page.declaration",
         "projects.setup.section.*", "projects.workspace.section.*", "quests.compose.stepLegend",
         "quests.detail.conflicts", "quests.detail.files", "quests.detail.links", "quests.groups.*",
@@ -276,7 +276,7 @@
       "case": "lower",
       "keys": [
         "agents.read.at", "agents.read.never", "help.history.current", "help.history.saving", "agents.state.*", "agents.runs.machine", "agents.runs.first", "agents.runs.none",
-        "agents.now.sessions",
+        "agents.now.sessions", "projects.tidied.why.*",
         "asks.goAhead.state.*", "asks.record.paused", "asks.state.*", "chain.ask", "chain.attempt", "chain.current", "chain.thisSession",
         "work.head.copied",
         "console.live", "harness.absent",

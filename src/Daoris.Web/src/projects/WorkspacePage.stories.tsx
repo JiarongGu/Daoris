@@ -2,6 +2,7 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import type { StartWiring } from '../map/wiring';
 import { InTheme } from '../plugins/storyIcons';
+import type { LogRow } from '../settings/Logs';
 import type { LandedBranch, SweepBranch } from '../settings/Sweep';
 import { SweepList } from '../settings/Sweep';
 import { SyncSection } from '../settings/Sync';
@@ -17,6 +18,7 @@ import { BranchesTab } from './RepositoryGit';
 import type { WorkspaceTab } from './tabs';
 import { WorkspaceBranches } from './WorkspaceBranches';
 import { WorkspaceDetails, WorkspacePage } from './WorkspacePage';
+import { WorkspaceTidied } from './WorkspaceTidied';
 import { WorkspaceSetup, type WorkspaceSetupProps } from './WorkspaceSetup';
 
 // A workspace's page (UX6g, D150 §4.3) in Repositories' main area, every tab and the states the design names: Details
@@ -109,10 +111,12 @@ type Args = {
   kept?: HistoryPlan;
   /** The repositories holding a branch of Daoris's, each a group on Branches (UX6h2b2); the rest are apart. */
   held?: string[];
+  /** What the look cleaned up on its own, from the machine log (AUTOTIDY1a). */
+  tidied?: LogRow[];
 };
 
 /** The page as `WorkspaceView` draws it, its tab chosen here so a story can move between them. */
-function Page({ tab: first, setup = DEFAULTS_DAORIS, browser = false, wired = true, kept = WORKSPACE_PLAN, held = REPOSITORIES.slice(0, 3) }: Args) {
+function Page({ tab: first, setup = DEFAULTS_DAORIS, browser = false, wired = true, kept = WORKSPACE_PLAN, held = REPOSITORIES.slice(0, 3), tidied }: Args) {
   const [tab, setTab] = useState<WorkspaceTab>(first);
   const details = (
     <>
@@ -152,6 +156,7 @@ function Page({ tab: first, setup = DEFAULTS_DAORIS, browser = false, wired = tr
             group={group}
             onOpen={nothing}
           />
+          <WorkspaceTidied lines={tidied ?? null} />
           <SweepList
             branches={[
               branch({ branch: 'daoris/s-1f2e3d4c', kind: 'empty', where: 'develop', removable: true }),
@@ -236,6 +241,26 @@ export const DetailsNothingKept: Story = { args: { kept: WORKSPACE_EMPTY } };
  * looked.
  */
 export const Branches: Story = { args: { tab: 'branches' } };
+
+const HOURS = 3_600_000;
+const tidiedLine = (event: 'branch.tidied' | 'branch.kept', hoursAgo: number, data: LogRow['data']): LogRow => ({
+  time: new Date(Date.now() - hoursAgo * HOURS).toISOString(), source: 'driver', level: event === 'branch.kept' ? 'warn' : 'info', event,
+  data: { workspace: 'work', ...data },
+});
+
+/** What the look cleaned up on its own, newest first (AUTOTIDY1a): seven rows, five shown and *Show 2 more*; one has a tree set aside. */
+const TIDIED: LogRow[] = [
+  tidiedLine('branch.tidied', 1, { repository: 'billing', branch: 'daoris/s-1f2e3d4c', tree: true, folder: 'trees/.tidied/work/billing/s-1' }),
+  tidiedLine('branch.kept', 2, { repository: 'api', branch: 'daoris/s-9e0f1a2b', why: 'busy' }),
+  tidiedLine('branch.tidied', 5, { repository: 'reports', branch: 'daoris/s-7a8b9c0d', tree: false, folder: null }),
+  tidiedLine('branch.kept', 9, { repository: 'billing', branch: null, why: 'starting' }),
+  tidiedLine('branch.tidied', 26, { repository: 'api', branch: 'daoris/s-3c4d5e6f', tree: true, folder: 'trees/.tidied/work/api/s-3' }),
+  tidiedLine('branch.kept', 30, { repository: 'reports', branch: 'daoris/s-2b3c4d5e', why: 'hidden' }),
+  tidiedLine('branch.tidied', 50, { repository: 'billing', branch: 'daoris/s-0a1b2c3d', tree: false, folder: null }),
+];
+
+/** Branches with what the look cleaned up on its own, and left, after the groups and above the clean-up (AUTOTIDY1a). */
+export const BranchesCleanedUp: Story = { args: { tab: 'branches', tidied: TIDIED } };
 
 /** Branches of six repositories holding Daoris's: five groups, the sixth one press away (*Show 1 more*), and one apart. */
 export const BranchesManyRepositories: Story = { args: { tab: 'branches', held: REPOSITORIES.slice(0, 6) } };

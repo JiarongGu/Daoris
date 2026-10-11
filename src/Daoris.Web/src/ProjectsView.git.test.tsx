@@ -50,12 +50,15 @@ describe("a repository's Branches and History tabs", () => {
     window.localStorage.clear();
   });
 
-  const answering = ({ branches = () => ENGINE_LIST, graph = () => answer(PAGE) }: {
+  const answering = ({ branches = () => ENGINE_LIST, graph = () => answer(PAGE), log = () => ({ lines: [] }) }: {
     branches?: (payload: Record<string, unknown>) => unknown;
     graph?: () => unknown;
+    /** What the machine log answers `LINES` with (AUTOTIDY1a). */
+    log?: () => unknown;
   } = {}) =>
     invoke.mockImplementation(async (module: string, type: string, request?: { payload?: Record<string, unknown> }) => {
       if (module === 'DAORIS.REMOTES') return WIRING;
+      if (module === 'DAORIS.LOG') return log();
       const read = type === 'GIT_BRANCHES' ? branches : type === 'GIT_GRAPH' ? graph : null;
       if (read) {
         const answered = read(request?.payload ?? {});
@@ -231,5 +234,44 @@ describe("a repository's Branches and History tabs", () => {
     // Each group's heading is the door to its repository's page.
     await userEvent.click(within(repositoryMain()).getByRole('button', { name: 'Open engine' }));
     expect(await screen.findByRole('heading', { level: 1, name: 'engine' })).toBeInTheDocument();
+  });
+
+  /**
+   * AUTOTIDY1a (D88): the tab shows what the look cleaned up in this workspace, read from the machine log with the two events,
+   * the workspace and a week, and drawn after the repositories' groups and before the clean-up.
+   */
+  it("draws what was cleaned up on its own after the groups and before the clean-up, asked of the log for this workspace", async () => {
+    const stamp = new Date(Date.now() - 2 * 3_600_000).toISOString();
+    answering({
+      log: () => ({
+        lines: [
+          { time: stamp, source: 'driver', level: 'info', event: 'branch.tidied', data: { repository: 'engine', workspace: 'aurora', branch: 'daoris/s-1f2e3d4c', tree: true, folder: 'trees/.tidied/aurora/engine/s-1' } },
+          { time: stamp, source: 'driver', level: 'warn', event: 'branch.kept', data: { repository: 'engine', workspace: 'aurora', branch: 'daoris/s-9e0f1a2b', why: 'busy' } },
+        ],
+      }),
+    });
+    show(<ProjectsView notify={() => {}} />);
+    await chooseWorkspace('aurora');
+    await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
+
+    const tidied = await within(repositoryMain()).findByRole('heading', { name: 'Cleaned up on its own' });
+    const rows = within(tidied.closest('section')!).getAllByRole('listitem');
+    expect(rows[0]).toHaveTextContent('daoris/s-1f2e3d4c');
+    expect(rows[0]).toHaveTextContent("Its tree's folder was set aside");
+    expect(rows[1]).toHaveTextContent('in use');
+    expect(invoke).toHaveBeenCalledWith('DAORIS.LOG', 'LINES', {
+      payload: { events: ['branch.tidied', 'branch.kept'], workspace: 'aurora', since: '7d', limit: 50 },
+    });
+    const cleanUp = within(repositoryMain()).getByRole('heading', { name: 'Session branches' });
+    expect(tidied.compareDocumentPosition(cleanUp) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('draws nothing of it where the log holds nothing', async () => {
+    answering();
+    show(<ProjectsView notify={() => {}} />);
+    await chooseWorkspace('aurora');
+    await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
+    await within(repositoryMain()).findByRole('heading', { name: 'Session branches' });
+    expect(within(repositoryMain()).queryByRole('heading', { name: 'Cleaned up on its own' })).toBeNull();
   });
 });
