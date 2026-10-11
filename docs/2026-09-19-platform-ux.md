@@ -452,6 +452,16 @@ controls are in the frame design's §3.
   outlives the door is offered with the door said beside it: on a machine whose adapter rides the
   direct door, a quest there sits, and the page says so under the control. The steps' paragraph claims
   only what is proven. *Manage* edits the declaration in the face it is read in (U37).
+  **A workspace has a page of its own** (D150 §4.3, UX6g), opened by its row at the head of its group in the list. Its
+  header names the workspace, how many repositories it holds and where it syncs, with *Sync now* where it is wired and
+  *Wire to a remote…* where it is not, which opens Setup at its remote. Its four tabs, remembered apart from a
+  repository's, are *Details* (its repositories as doors, *What a start runs on* for it alone, the accounts each agent may
+  run here), *Branches*, *Workflow* and *Setup* (*Defaults*, and *Remote and reach*, folded as a repository's are). A
+  browser's page is Details alone. *Branches* reads in order (UX6h2b2, BRSCOPE1; D150's notes): a group per repository
+  holding a branch of Daoris's, each headed by a door to that repository's page, five shown and the rest behind *Show N
+  more*; a fold of the repositories with a checkout here that hold none, each or all included as a group; what the look
+  cleaned up on its own (AUTOTIDY1a, D88); then the clean-up and *Updates*, each over this workspace's checkouts alone.
+  The fold's count and *Updates*' own count of the same repositories are said twice on the window: UX6h2b3 owns it.
 - **Knowledge: Search and Convergence** (on the frame since FRAME1f, D118 §2; one place since UX6i, D150 §2.2) — a list
   pane and a main area, the pane named *Knowledge* and headed by a two-way choice, *Search · Convergence*, remembered for
   the place and held above the rows as they scroll. Each mode keeps its list, its page and its memory as it had them as a
