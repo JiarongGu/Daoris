@@ -115,6 +115,18 @@ public sealed partial record HelpMachineFacts
 
     /// <summary>The asks, closed ones included, each with the service's own reading of whether it may be deleted.</summary>
     public IReadOnlyList<HelpAskFacts> Asks { get; init; } = [];
+
+    /// <summary>
+    /// The sessions the ledger would delete whose tree or landing this machine still holds (SESSUX1h2b, D126 §5.4): the
+    /// machine's half, as <see cref="SessionDeletion.Kept"/> reads it. Read only for a session's delete.
+    /// </summary>
+    public IReadOnlySet<string> Kept { get; init; } = new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The ledger's judgement of deleting each session a delete names (SESSUX1h2b, D126 §5.4), by id: the record's half, its
+    /// refusal in its own sentence, as <see cref="ServiceClient.JudgeSessionDeleteAsync"/> answers it. Read only for one.
+    /// </summary>
+    public IReadOnlyDictionary<string, SessionDeleteAnswer> SessionDeletes { get; init; } = new Dictionary<string, SessionDeleteAnswer>(StringComparer.Ordinal);
 }
 
 public static partial class HelpProposals
