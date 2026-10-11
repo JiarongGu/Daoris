@@ -300,6 +300,32 @@ describe('noteLines', () => {
         { kind: 'words', text: 'no record at D:/x', by: 'program' },
       ]);
     });
+
+    /** CONVNOTE2d2: the chat runner's and the modules' sites. */
+    it('words words that never reached a conversation, a send that found the agent gone, and held words not kept', () => {
+      const never = [coded('words.not-reached', '— what the person added never reached it:'), words('pipe closed at D:/x', 'program')];
+      expect(noteLines(t, { parts: never }, 'en')).toEqual([
+        { kind: 'said', text: 'What you added never reached it:' },
+        { kind: 'words', text: 'pipe closed at D:/x', by: 'program' },
+      ]);
+      expect(noteLines(zh, { parts: never }, 'zh')[0].kind).toBe('said');
+
+      expect(noteLines(t, { parts: [coded('words.not-sent', 'the message could not be sent: the agent had gone.')] }, 'en')).toEqual([
+        { kind: 'said', text: 'The message could not be sent: the agent had gone.' },
+      ]);
+
+      const kept = [coded('words.not-kept', '— what you said as it wound up was not kept for it to go on with:'), words('ended', 'program')];
+      expect(noteLines(t, { parts: kept }, 'en')[0]).toEqual({ kind: 'said', text: 'What you said as it wound up was not kept for it to go on with:' });
+    });
+
+    it('words a start’s words not taken off their session, the session as a value', () => {
+      const parts = [
+        coded('words.start-not-taken', '— the words this conversation started with could not be taken off session `s-1`:', { session: 's-1' }),
+        words('no record', 'program'),
+      ];
+      expect(noteLines(t, { parts }, 'en')[0].text).toBe('The words this conversation started with could not be taken off session s-1:');
+      expect(noteLines(zh, { parts }, 'zh')[0].kind).toBe('said');
+    });
   });
 
   /**

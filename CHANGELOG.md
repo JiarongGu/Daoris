@@ -13,8 +13,9 @@ with the version and date at release.
 - Ask Daoris can propose archiving or unarchiving sessions, by id or everything that ended, and deleting one. The card says
   what the list keeps and why, and nothing changes until you press Apply.
 - A conversation's notes that an agent would not take what you added, that messages you sent while it worked never reached
-  it (and why), and that your words could not be taken off its record now read in your language, in English and 中文. The
-  agent's own words and the service's message in them stay as written.
+  it (and why), that a message found the agent gone, and that your words could not be taken off its record or kept for it
+  to go on with now read in your language, in English and 中文. The agent's own words and the service's message in them
+  stay as written.
 - Where you choose how work is reviewed (the ask form, an ask's page, a quest's review gate), a quiet line now gives the
   matching `daoris-driver` command, and the driver's usage for `quest` names that choice.
 - A conversation's notes of your acceptance of its work, of handing it on, of an option you set for it, of where you were

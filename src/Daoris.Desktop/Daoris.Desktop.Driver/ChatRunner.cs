@@ -1293,7 +1293,10 @@ public sealed partial class ChatRunner : IDisposable
         private async Task AnsweredAsync(ChatMessage words, Task<string> answered)
         {
             // The words' id beside each line, so the page settles any it still shows waiting (MSG1f).
-            SessionEvent Said(string why) => new() { Kind = SessionEventKind.Note, Text = why, Words = [words.Id!] };
+            SessionEvent Said(Noted why) => new()
+            {
+                Kind = SessionEventKind.Note, Text = why.Note, Parts = why.Parts.Count > 0 ? why.Parts : null, Words = [words.Id!],
+            };
 
             SessionEvent? said = null;
             try
@@ -1307,11 +1310,11 @@ public sealed partial class ChatRunner : IDisposable
             catch (AcpRefusal refused)
             {
                 // A word the agent would not take costs that word, in its own words, never the conversation.
-                said = Said($"— the conversation would not take what the person added: {refused.Words}");
+                said = Said(WordsNotes.Refused(refused.Words, "conversation"));
             }
             catch (Exception error) when (error is DriverException or IOException or ObjectDisposedException or InvalidOperationException)
             {
-                said = Said($"— what the person added never reached it: {error.Message}");
+                said = Said(WordsNotes.NeverReached(error.Message));
             }
             finally
             {
@@ -1479,7 +1482,8 @@ public sealed partial class ChatRunner : IDisposable
                     if (!processes.Send(sessionId, line))
                     {
                         // Nothing is listening: the process is going, and its watch concludes the record.
-                        record(new SessionEvent { Kind = SessionEventKind.Note, Text = "the message could not be sent: the agent had gone." });
+                        var gone = WordsNotes.NotSent();
+                        record(new SessionEvent { Kind = SessionEventKind.Note, Text = gone.Note, Parts = gone.Parts });
                         Gone();
                         return Task.CompletedTask;
                     }

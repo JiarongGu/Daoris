@@ -156,9 +156,9 @@ public static class StartFrom
         }
 
         if (failed is null) return true;
-        var line = $"— the words this conversation started with could not be taken off session `{id}`: {failed}";
-        output?.Append(to, line);
-        events.Keep(to, new SessionEvent { Kind = SessionEventKind.Note, Text = line }, say: null);
+        var line = WordsNotes.StartNotTaken(id, failed);
+        output?.Append(to, line.Note);
+        events.Keep(to, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
         return false;
     }
 

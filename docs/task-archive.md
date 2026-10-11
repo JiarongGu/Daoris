@@ -13285,3 +13285,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **LANDNAME1b — the land ask takes a name** (web; after or beside 1a: no `branch` sent keeps today's payload). The session head's land ask (SessionHead.tsx ~:509-540) gains the name field, blank keeping `{{branch}}`; `useLandSessionTree` sends `branch`; the review pane's one-press Accept stays one press. en/zh words in work.head.json and the glossary's section.
 
 **Outcome** 2026-10-11: the head's *Accept…* ask has a *Branch name* field (the rule's name its placeholder, shown only where the rule makes a branch); the plan is asked again with the name after a 300 ms pause or on blur, and Confirm is held until the plan of the typed name answers, so a refusal is never skipped; a press with no name sends `{ id }` as before; the review pane's Accept stays one press. Detail: D145's LANDNAME1b note.
+
+
+## CONVNOTE2d2 — words not taken, at ChatRunner and the modules, by code (2026-10-11, D152)
+
+> - [ ] **CONVNOTE2d2–h — the conversation's other driver notes, by code** … (Group d's second half: ChatRunner.cs ~:1302, ~:1306, ~:1474, ChatRunner.StartFrom.cs ~:159-161, SessionWords.cs ~:686-690.)
+
+**Outcome** 2026-10-11: `words.refused` reused (its noun a parameter), and `words.not-reached`, `words.not-sent`, `words.start-not-taken` [session] and `words.not-kept` added, each English byte for byte; SessionWords' lost words keep their `Why` and gain parts (the page reads the `Why` first; `CannotLine`'s fallback now passes the parts). Driver.Continue's console lines stay the terminal's English (D142 point 9). With 2d1, group d is closed. Detail: D152's CONVNOTE2d2 note.

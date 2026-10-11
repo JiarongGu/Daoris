@@ -315,6 +315,39 @@ public sealed class WordsNotesTests
         NoteAssert.Holds(kept);
     }
 
+    /// <summary>CONVNOTE2d2: the chat runner's and the modules' sites, each English as written, the others' words as theirs.</summary>
+    [Fact]
+    public void The_chat_runner_s_and_the_modules_words_notes_code_their_lead_and_keep_the_english()
+    {
+        var refused = WordsNotes.Refused("busy", "conversation");
+        Assert.Equal("— the conversation would not take what the person added: busy", refused.Note);
+        Assert.Equal(["words.refused", null], NoteAssert.Codes(refused.Parts));
+        NoteAssert.Holds(refused);
+
+        var never = WordsNotes.NeverReached("pipe closed");
+        Assert.Equal("— what the person added never reached it: pipe closed", never.Note);
+        Assert.Equal(["words.not-reached", null], NoteAssert.Codes(never.Parts));
+        Assert.Equal(NoteBy.Program, never.Parts[1].By);
+        NoteAssert.Holds(never);
+
+        var gone = WordsNotes.NotSent();
+        Assert.Equal("the message could not be sent: the agent had gone.", gone.Note);
+        Assert.Equal(["words.not-sent"], NoteAssert.Codes(gone.Parts));
+        NoteAssert.Holds(gone);
+
+        var start = WordsNotes.StartNotTaken("s-1", "no record");
+        Assert.Equal("— the words this conversation started with could not be taken off session `s-1`: no record", start.Note);
+        Assert.Equal(["words.start-not-taken", null], NoteAssert.Codes(start.Parts));
+        Assert.Equal("s-1", start.Parts[0].Value("session"));
+        Assert.Equal(NoteBy.Program, start.Parts[1].By);
+        NoteAssert.Holds(start);
+
+        var kept = WordsNotes.NotKept("the record ended");
+        Assert.Equal("— what you said as it wound up was not kept for it to go on with: the record ended", kept.Note);
+        Assert.Equal(["words.not-kept", null], NoteAssert.Codes(kept.Parts));
+        NoteAssert.Holds(kept);
+    }
+
     [Fact]
     public void Every_unreached_reason_is_declared_once_and_none_shadows_its_line_s_values()
     {

@@ -411,7 +411,7 @@ function CannotLine({ block }: { block: Block }) {
   const { t } = useTranslation();
   const { onStartFrom, reasons } = useContext(SaidDoors);
   const why = block.why ? reasonOf(t, block.why, reasons) : null;
-  if (!why) return <NoteLine text={block.text ?? ''} />;
+  if (!why) return <NoteLine text={block.text ?? ''} parts={block.parts} />;
   const said = block.said;
 
   return (

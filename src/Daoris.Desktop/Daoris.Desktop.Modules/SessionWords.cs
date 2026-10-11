@@ -683,11 +683,14 @@ public sealed class SessionWords : IDisposable
     /// <summary>Held words the record would not keep once it ended, said where the person wrote them, never dropped silently.</summary>
     private void Lost(string id, SayAnswer said)
     {
-        var line = $"— what you said as it wound up was not kept for it to go on with: {said.Message}";
-        _loop.Output.Append(id, line);
+        // Both ways: the `Why` makes the page say it cannot go on here (it wins where it reads), and the parts word the line
+        // by code where there is none or the page does not know it (CONVNOTE2d2).
+        var line = WordsNotes.NotKept(said.Message);
+        _loop.Output.Append(id, line.Note);
         _loop.Events.Keep(id, new SessionEvent
         {
-            Kind = SessionEventKind.Note, Text = line, Why = said.Refusal is { } refusal ? WordsNever.Code(refusal) : null,
+            Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts,
+            Why = said.Refusal is { } refusal ? WordsNever.Code(refusal) : null,
         }, null);
     }
 
