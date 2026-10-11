@@ -194,7 +194,8 @@ export const useSettleHelp = () => {
       // proposal. A sync card's look settles nothing, and its card stands for the press that does (LEFT3).
       if (!answer?.stands) logEvent('proposal.settled', { applied: settle.apply });
       void client.invalidateQueries({ queryKey: ['help-proposals'] });
-      // What an Apply changed: the driver's file, and an ask it made…
+      // What an Apply changed: the driver's file (and under its key the workflow tabs' Current and runs, which a saved
+      // workflow version changes, WORKFLOW1h-d), and an ask it made…
       void client.invalidateQueries({ queryKey: keys.driver });
       void client.invalidateQueries({ queryKey: keys.allSessions });
       // …an account's settings or an agent's pin (HELP6), and a record it deleted.
