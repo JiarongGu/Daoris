@@ -625,7 +625,9 @@ describe('QuestsView', () => {
       const notify = view();
 
       const page = await chooseRow('Cap the hydration per frame.');
-      await userEvent.click(within(page).getByRole('button', { name: 'Delete…' }));
+      within(page).getByRole('button', { name: 'More actions' }).focus();
+      await userEvent.keyboard('{Enter}');
+      await userEvent.click(await screen.findByRole('menuitem', { name: 'Delete…' }));
       await userEvent.click(within(page).getByRole('button', { name: 'Delete ask' }));
       const confirm = within(page).getByRole('group', { name: 'delete this ask' });
       expect(await within(confirm).findByRole('alert')).toHaveTextContent(refusal.replaceAll('`', ''));

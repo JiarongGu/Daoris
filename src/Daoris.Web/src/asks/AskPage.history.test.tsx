@@ -45,7 +45,7 @@ describe('an ask’s clear (design §6.1)', () => {
     const history = door({ plan: of(ASK_PLAN, DONE.id) });
     page(DONE, history);
 
-    expect(await more()).toEqual(['Clear from this machine…']);
+    expect(await more()).toEqual(['Close ask', 'Clear from this machine…', 'Copy ask ID']);
     await userEvent.click(screen.getByRole('menuitem', { name: 'Clear from this machine…' }));
     const ask = screen.getByRole('group', { name: 'clear from this machine' });
     expect(ask).toHaveTextContent(`Clears ask #${DONE.id}, the 2 quests it became, their 5 sessions`);
@@ -56,26 +56,27 @@ describe('an ask’s clear (design §6.1)', () => {
 
   it('offers it on an ask closed by the person, as its plan says', async () => {
     page(CLOSED, door({ plan: of(ASK_PLAN, CLOSED.id) }));
-    expect(await more()).toEqual(['Clear from this machine…']);
+    expect(await more()).toEqual(['Clear from this machine…', 'Copy ask ID']);
   });
 
-  it('offers nothing, and draws no ⋯, where the plan keeps it, while it is asked, on a live ask, or in a browser', () => {
+  it('offers no clear where the plan keeps it, while it is asked, on a live ask, or in a browser', async () => {
+    // The ⋯ is always drawn since HEAD2d (it holds the ask's id), so its items say what is offered.
     const { unmount } = page(DONE, door({ plan: of(ASK_OPEN, DONE.id) }));
-    expect(screen.queryByRole('button', { name: 'More actions' })).toBeNull();
+    expect(await more()).not.toContain('Clear from this machine…');
     unmount();
     const asked = page(DONE, door());
-    expect(screen.queryByRole('button', { name: 'More actions' })).toBeNull();
+    expect(await more()).not.toContain('Clear from this machine…');
     asked.unmount();
     const live = page(PUBLISHED, door({ plan: of(ASK_PLAN, PUBLISHED.id) }));
-    expect(screen.queryByRole('button', { name: 'More actions' })).toBeNull();
+    expect(await more()).not.toContain('Clear from this machine…');
     live.unmount();
     page(DONE);
-    expect(screen.queryByRole('button', { name: 'More actions' })).toBeNull();
+    expect(await more()).not.toContain('Clear from this machine…');
   });
 
   /**
-   * UXFIX2: the ⋯ is drawn only while the clear is offered, so it goes while the clear asks; *Never mind* gives the focus to
-   * the ⋯ drawn again. What goes takes the focus on opening; the ask stays open until the clear answers, a refusal said in it.
+   * UXFIX2: *Never mind* gives the focus back to the ⋯. What goes takes the focus on opening; the ask stays open until the
+   * clear answers, a refusal said in it.
    */
   it('gives the focus back to the ⋯ drawn again, and says a refused clear inside its ask', async () => {
     let answered: Answered | undefined;
@@ -88,7 +89,6 @@ describe('an ask’s clear (design §6.1)', () => {
     const says = ask.querySelector<HTMLElement>('[tabindex="-1"]')!;
     expect(says).toHaveTextContent(`Clears ask #${DONE.id}`);
     await waitFor(() => expect(says).toHaveFocus());
-    expect(screen.queryByRole('button', { name: 'More actions' })).toBeNull();
     await user.keyboard('{Escape}');
     expect(screen.getByRole('button', { name: 'More actions' })).toHaveFocus();
 

@@ -37,5 +37,6 @@
   "work.head.account": "Account",
   "work.head.id": "ID",
   "work.head.copyId": "Copy",
-  "work.head.copied": "copied"
+  "work.head.copied": "copied",
+  "work.head.viewRequest": "View full request"
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Ask, DeclarationMatch, Session } from '../api';
 import { ago, sessionTool, size, stamp } from '../format';
@@ -15,6 +15,7 @@ import { PageHead, PageSection, ViewMain } from '../work/ViewMain';
 import { AbandonAsk, AbandonedWork, PauseAsk } from '../work/WorkAsks';
 import type { RunLineDoor } from '../workflow/run';
 import { WorkflowLine } from '../workflow/WorkflowLine';
+import { askFacts, LONG_TITLE } from './askFacts';
 import { ASK_TONE, firstLine, tierWords } from './AskRow';
 import { AskReview } from './AskReview';
 import { AskWorkflowKind } from './AskWorkflowKind';
@@ -194,26 +195,37 @@ export function AskPage({
   };
   // The clear, in the header's ⋯ (§6.1): drawn only where it is offered, so a page with nothing to clear keeps its header.
   const clearAct = { id: 'clear', label: t('asks.record.clear'), disabled: waiting, onSelect: () => setAsking('clear') };
-  const acts = (headActs.length > 0 || clearable) && (
+  const copyId = { id: 'copy', label: t('contextMenu.act.copyAsk'), icon: 'copy' as const, copy: ask.id };
+  // The head draws the ask's next step, *Resume* while it is paused, and the rest are its ⋯'s with its id (HEAD2d, D162 §4;
+  // the quest's head folds its own the same way): one list still, so the buttons, the ⋯ and the right-click never disagree.
+  const drawn = headActs.filter((act) => act === 'resume');
+  const folded = headActs.filter((act) => !drawn.includes(act));
+  const acts = (
     <>
-      {headActs.map((act) => (
+      {drawn.map((act) => (
         <Button key={act} variant={ASK_ACT[act].variant} disabled={waiting} onClick={() => press(act)}>
-          {act === 'delete' && <Icon name="remove" size={13} />}
           {t(ASK_ACT[act].label)}
         </Button>
       ))}
-      {clearable && (
-        <Menu.Root>
-          <Menu.Trigger asChild>
-            <Button variant="ghost" aria-label={t('work.head.more')} className="h-[1.9rem] w-[1.9rem] justify-center px-0">
-              <Icon name="more" size={15} />
-            </Button>
-          </Menu.Trigger>
-          <Menu.Content side="bottom" align="end" className="min-w-48">
-            <Menu.Acts acts={[clearAct]} />
-          </Menu.Content>
-        </Menu.Root>
-      )}
+      <Menu.Root>
+        <Menu.Trigger asChild>
+          <Button variant="ghost" aria-label={t('work.head.more')} className="h-[1.9rem] w-[1.9rem] justify-center px-0">
+            <Icon name="more" size={15} />
+          </Button>
+        </Menu.Trigger>
+        <Menu.Content side="bottom" align="end" className="min-w-48">
+          <Menu.Acts
+            acts={[
+              ...folded.map((act) => ({
+                id: act, label: t(ASK_ACT[act].label), icon: ASK_ACT[act].icon, disabled: waiting, onSelect: () => press(act),
+              })),
+              ...(clearable ? [clearAct] : []),
+              copyId,
+            ]}
+            onCopy={(text) => { void navigator.clipboard?.writeText(text).catch(() => {}); }}
+          />
+        </Menu.Content>
+      </Menu.Root>
     </>
   );
   const menu = {
@@ -223,23 +235,38 @@ export function AskPage({
         id: act, label: t(ASK_ACT[act].label), icon: ASK_ACT[act].icon, disabled: waiting, onSelect: () => press(act),
       })),
       ...(clearable ? [clearAct] : []),
-      { id: 'copy', label: t('contextMenu.act.copyAsk'), icon: 'copy' as const, copy: ask.id },
+      copyId,
     ],
   };
 
+  // The title is the request's first line on two lines at most; a long one is read whole, as written, in the body's first
+  // block, which *View full request* moves the focus to (HEAD2d, D162 §4). Content is shown as it is: nothing is rewritten.
+  const title = firstLine(ask.sentence);
+  const long = title.length > LONG_TITLE;
+  const request = useRef<HTMLParagraphElement>(null);
   const head = (
     <PageHead
-      title={firstLine(ask.sentence)}
-      pills={(
+      lead={(
         <>
           <Pill tone={ASK_TONE[ask.state]}>{t(`asks.state.${ask.state}`)}</Pill>
           {/* The ask keeps its state, and says it is paused beside it (§2.2): a pause is this machine's, never a state. */}
           {offers.paused && <span title={t('asks.record.pausedTip')}><Pill tone="neutral">{t('asks.record.paused')}</Pill></span>}
         </>
       )}
-      id={`#${ask.id}`}
-      acts={acts || undefined}
-      fact={workflow && workflow.runs.length > 0 ? <WorkflowLine runs={workflow.runs} onOpen={workflow.onOpen} /> : undefined}
+      title={title}
+      clamp={2}
+      facts={askFacts(t, ask)}
+      acts={acts}
+      fact={(
+        <>
+          {workflow && workflow.runs.length > 0 && <WorkflowLine runs={workflow.runs} onOpen={workflow.onOpen} />}
+          {long && (
+            <Button variant="ghost" className="ml-1 px-0 py-0 text-small" onClick={() => request.current?.focus()}>
+              {t('work.head.viewRequest')}
+            </Button>
+          )}
+        </>
+      )}
     />
   );
 
@@ -323,9 +350,19 @@ export function AskPage({
 
       {/* The first line is the page's title, so the body is what follows it — a one-line ask was its title
           and then its body, word for word (POLISH4). The title wraps, so nothing is lost. */}
-      {rest && <p className="m-0 mb-4 whitespace-pre-wrap text-body leading-relaxed">{rest}</p>}
+      {(long || rest) && (
+        <p
+          ref={request}
+          id={`request-${ask.id}`}
+          tabIndex={-1}
+          className="m-0 mb-4 whitespace-pre-wrap text-body leading-relaxed wrap-anywhere focus-visible:outline-none"
+        >
+          {long ? ask.sentence : rest}
+        </p>
+      )}
 
       <dl className="m-0 mb-4 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1.5 text-body">
+        <dt className="text-ink-faint">{t('work.head.id')}</dt><dd className="m-0 font-mono text-meta">#{ask.id}</dd>
         <dt className="text-ink-faint">{t('asks.record.circle')}</dt><dd className="m-0">{ask.workspace}</dd>
         <dt className="text-ink-faint">{t('asks.record.asked')}</dt>
         <dd className="m-0">{stamp(ask.asked)} · {ago(ask.asked)}</dd>

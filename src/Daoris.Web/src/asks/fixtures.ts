@@ -113,6 +113,15 @@ export const WITH_GO_AHEADS: Ask = {
 };
 
 /** A CJK sentence, long, so the card's one line and the record's title are both tried. */
+/** A request of about a thousand characters on one line, as the install's longest were (HEAD2d). */
+export const LONG_ASK: Ask = {
+  ...PROPOSED, id: '3f4e5d6c7b8a',
+  sentence: Array.from(
+    { length: 14 },
+    (_, step) => `Step ${step + 1}: the chunk streamer stalls on a cold cache, so cap what it hydrates per frame and keep the rest queued.`,
+  ).join(' '),
+};
+
 export const LONG_CJK: Ask = {
   ...PROPOSED, id: '8e7d6c5b4a39', workspace: '工作区',
   sentence: '流式加载在冷缓存时卡顿，需要按帧限制加载量，并在测试机上复现后附上完整的跟踪日志与截图，以便引擎仓库的代理判断是否要改动分块接口。',
