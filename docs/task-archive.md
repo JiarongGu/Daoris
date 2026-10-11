@@ -13669,3 +13669,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **HEAD2d — an ask's head as a quest's** (web; after a). `AskPage`'s head: the state pill leads, two lines, a facts line, the id to the ⋯ and *Details* (asks on the install run 200 to 1,715 characters, unclamped). Design §0, §2.
 
 **Outcome** 2026-10-12: the ask's head leads with its state pill, clamps its first line to two, says where, its age and one live fact (`askFacts`), offers *View full request* (`work.head.viewRequest`) past 90 characters, and keeps only *Resume* as a button, every other act and *Copy ask ID* in the ⋯; the id is a *Details* row. Two QuestsView tests that pressed the head's *Pause…*/*Abandon…* moved to the ⋯ at the merge. Detail: D162's HEAD2d note.
+
+## HEAD2b — a quest's head (2026-10-12, D162)
+
+> - [ ] **HEAD2b — a quest's head** (web; after a). Title two lines, *View full request* moves focus to the request in the body; *Held*/*Unreviewed* to the facts line; facts: where, age, one live fact, the rest in *Details*. Design §2.
+
+**Outcome** 2026-10-12: the quest's state pill alone leads; *Awaits your yes* and *awaits review* open the facts line, then where, its age and one live fact (the requester in *Details*); *Take*/*Mark done* in `acts`, *Decline…* in `fold` and, at 640 px or less (measured as the ⋯ opens, since the menu is a portal), in the ⋯; *View full request* past 80 characters focuses the request block. Detail: D162's HEAD2b note.

@@ -62,7 +62,7 @@ describe("a quest's requirements and how its done answered them", () => {
   it('says in its header that it awaits the person’s yes', () => {
     page({ quest: HELD, onAccept: vi.fn() });
 
-    expect(within(screen.getByRole('main').querySelector('header')!).getByText('awaits your yes')).toBeInTheDocument();
+    expect(within(screen.getByRole('main').querySelector('header')!).getByText(/^awaits your yes · /)).toBeInTheDocument();
   });
 
   it('waits while the yes is on its way, and offers none where there is no door', () => {

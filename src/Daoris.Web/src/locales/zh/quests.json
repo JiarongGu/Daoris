@@ -137,7 +137,6 @@
   "quests.field.shortPlaceholder": "在列表里区分这条委托的几个字",
   "quests.field.shortTooLong": "短标题最多 {{count}} 个字符，中文约 20 个字。",
   "quests.facts.to": "致 {{repository}}",
-  "quests.facts.from": "来自 {{from}}",
   "quests.facts.filed": "{{ago}}发起",
   "quests.facts.filedAt": "{{at}} 发起",
   "quests.facts.movedAt": "{{at}} 变更",

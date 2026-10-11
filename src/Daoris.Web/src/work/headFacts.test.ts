@@ -93,9 +93,14 @@ describe('a quest’s facts line', () => {
   beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(NOW); });
   afterEach(async () => { vi.useRealTimers(); await i18n.changeLanguage('en'); });
 
-  it('says whom it asks, who asked and when, and that a session is starting for it here', () => {
+  it('says where it goes, its age, and that a session is starting for it here; the requester is its Details’', () => {
     expect(questFacts(t, { quest: quest(), session: session({ state: 'starting' }) }))
-      .toEqual(['to engine', 'from ask #f6d947', 'filed 4h ago', 'a session is starting here']);
+      .toEqual(['to engine', 'filed 4h ago', 'a session is starting here']);
+  });
+
+  it('opens on a hold the person lifts: a departure awaiting their yes, or a review (HEAD2b)', () => {
+    expect(questFacts(t, { quest: quest({ held: true }) })).toEqual(['awaits your yes', 'to engine', 'filed 4h ago']);
+    expect(questFacts(t, { quest: quest({ held: true, hold: 'unreviewed' }) })).toEqual(['awaits review', 'to engine', 'filed 4h ago']);
   });
 
   it('says its session working, its park, a take with nothing running, and when it closed', () => {
@@ -108,6 +113,6 @@ describe('a quest’s facts line', () => {
   });
 
   it('says nothing more of an open quest nothing is running for', () => {
-    expect(questFacts(t, { quest: quest() })).toEqual(['to engine', 'from ask #f6d947', 'filed 4h ago']);
+    expect(questFacts(t, { quest: quest() })).toEqual(['to engine', 'filed 4h ago']);
   });
 });

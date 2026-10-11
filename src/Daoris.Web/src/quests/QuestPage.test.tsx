@@ -1,7 +1,8 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import i18n from '../i18n';
-import { OPEN, REFILED, REFILED_NAMED, REFILED_UNNAMED, STARTING } from './fixtures';
+import { HELD, OPEN, REFILED, REFILED_NAMED, REFILED_UNNAMED, STARTING } from './fixtures';
 import { bodyUnderHead, QuestPage } from './QuestPage';
 
 // A quest's head, titles first (UX7c, D152 §7; the UX7 design §5.3), as a molecule: its state leads, its name follows on
@@ -26,7 +27,8 @@ describe('a quest’s head', () => {
     const state = within(header).getByText('open');
     expect(state.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(state).toHaveAttribute('title', 'published — nobody has taken it');
-    expect(within(header).getByText('to engine · from ask #f6d947 · filed 4h ago · a session is starting here')).toBeInTheDocument();
+    expect(within(header).getByText('to engine · filed 4h ago · a session is starting here')).toBeInTheDocument();
+    expect(within(header).queryByText(/· from ask/)).toBeNull();
     expect(within(header).queryByText('published — nobody has taken it')).toBeNull();
     expect(within(header).queryByText('#e67690366b56')).toBeNull();
   });
@@ -69,6 +71,80 @@ describe('a quest’s head', () => {
       .toEqual(['Take', 'Decline…', 'More actions']);
   });
 
+  /** HEAD2b: the primary holds still in `acts`, Decline… in the fold (shown above 640 px), the ⋯ last. */
+  it('puts the primary in the acts, Decline… in the fold and the ⋯ last', () => {
+    page();
+    const take = screen.getByRole('button', { name: 'Take' });
+    const decline = screen.getByRole('button', { name: 'Decline…' });
+    expect(decline.parentElement).toHaveClass('hidden');
+    const more = screen.getByRole('button', { name: 'More actions' });
+    expect(take.compareDocumentPosition(decline) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(decline.compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  /** The ⋯ is a portal, outside the main area's container query, so the page reads the width itself. */
+  it('says Decline… again in the ⋯ at the narrow width', async () => {
+    const width = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(600);
+    try {
+      page();
+      await userEvent.click(screen.getByRole('button', { name: 'More actions' }));
+      expect(await screen.findByRole('menuitem', { name: 'Decline…' })).toBeInTheDocument();
+      // Closed, so the open menu's body lock does not reach the next test.
+      await userEvent.keyboard('{Escape}');
+    } finally {
+      width.mockRestore();
+    }
+  });
+
+  it('leaves Decline… to the fold above 640 px', async () => {
+    const width = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(900);
+    try {
+      page();
+      screen.getByRole('button', { name: 'More actions' }).focus();
+      await userEvent.keyboard('{Enter}');
+      await screen.findByRole('menuitem', { name: 'Copy quest ID' });
+      expect(screen.queryByRole('menuitem', { name: 'Decline…' })).toBeNull();
+    } finally {
+      width.mockRestore();
+    }
+  });
+
+  it('moves the focus to the request as written on View full request, where the title is long', async () => {
+    page({ quest: REFILED_UNNAMED });
+    await userEvent.click(screen.getByRole('button', { name: 'View full request' }));
+    const request = document.getElementById('quest-request')!;
+    expect(request).toHaveAttribute('tabindex', '-1');
+    expect(request).toHaveFocus();
+    expect(request.textContent).toMatch(/^continue the prod half of the ticket/);
+  });
+
+  it('offers no View full request for a short title', () => {
+    page({ quest: { ...OPEN, title: 'Fix it', body: 'Fix it\n\nBecause.' } });
+    expect(screen.queryByRole('button', { name: 'View full request' })).toBeNull();
+  });
+
+  it('puts Held and Unreviewed on the facts line, not beside the state', () => {
+    const { unmount } = page({ quest: HELD });
+    const header = screen.getByRole('heading', { level: 1 }).closest('header')!;
+    expect(within(header).getByText(/^awaits your yes · to /)).toBeInTheDocument();
+    unmount();
+    page({ quest: { ...OPEN, held: true, hold: 'unreviewed' } });
+    expect(within(screen.getByRole('heading', { level: 1 }).closest('header')!).getByText(/^awaits review · to /)).toBeInTheDocument();
+  });
+
+  it('keeps who asked in Details, with the rest', () => {
+    page({ quest: REFILED });
+    fireEvent.click(screen.getByRole('button', { name: /^Details/ }));
+    const details = screen.getByRole('region', { name: 'Details' });
+    expect(within(details).getByText('ask #f6d947')).toBeInTheDocument();
+  });
+
+  it('says View full request in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    page({ quest: REFILED_UNNAMED });
+    expect(screen.getByRole('button', { name: '查看完整需求' })).toBeInTheDocument();
+  });
+
   it('keeps a ⋯ with its id on a quest that has closed, and nothing else', () => {
     page({ quest: { ...OPEN, status: 'Done' } });
     const header = screen.getByRole('heading', { level: 1 }).closest('header')!;
@@ -78,7 +154,7 @@ describe('a quest’s head', () => {
   it('says its facts in 中文', async () => {
     await i18n.changeLanguage('zh');
     page({ quest: REFILED_UNNAMED, session: STARTING });
-    expect(screen.getByText('致 engine · 来自 ask #f6d947 · 4 小时前发起 · 一个会话正在这里启动')).toBeInTheDocument();
+    expect(screen.getByText('致 engine · 4 小时前发起 · 一个会话正在这里启动')).toBeInTheDocument();
   });
 });
 
