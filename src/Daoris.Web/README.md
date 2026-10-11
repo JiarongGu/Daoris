@@ -12,7 +12,7 @@ One activity bar (D66), landing on management (D40). The views that read the fam
 |---|---|
 | **Overview** | the landing: is anything sitting and for how long, the family's health as tiles, the repositories by what the index holds |
 | **Quests** | what has been asked of whom, grouped by where it is in its life; publish, take, done, decline — and, beside a driven quest, its session **record** (D46): state, adapter, note and evidence, read-only in a browser, with stop offered only where a shell's driver actually holds the process |
-| **Repositories** | repositories and workspaces, their ownership, setup and driver controls; workspace pages carry wiring, lines, landing and permissions (D150) |
+| **Repositories** | repositories and workspaces, their ownership, setup and driver controls; workspace pages carry wiring, lines, landing and permissions (D150). In the desktop a repository's Branches lists its branches by kind and History draws its line's graph a page of 200 at a time (*Show more*); a workspace's Branches groups its repositories' branches above the clean-up (D147, D150) |
 | **Knowledge** | Search and Convergence are two modes of one view: find entries or compare independently learned lessons |
 | **Agents** | installed agents and accounts: names, sign-in state, each usage window as a cell in the same place on every row (its share, reset and reading's age, or *unknown*), workspace lists and actions; desktop only |
 | **Plugins** | this machine's plugins and offers; desktop only |

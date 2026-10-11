@@ -1,7 +1,8 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { getBridge, useShenora } from '@shenora/react';
 import { keys } from '../queries';
-import type { LogFilters, LogReading } from '../settings/Logs';
+import { TIDIED_EVENTS } from '../projects/WorkspaceTidied';
+import type { LogFilters, LogReading, LogSince } from '../settings/Logs';
 
 // The machine log (MOD3): what the page reports into it, and Settings → Logs reading it back (D94).
 
@@ -58,6 +59,26 @@ export const useMachineLog = (filters: LogFilters) => {
     enabled: isAvailable,
     // A filter changed keeps the last lines on the screen until the new ones land, rather than a blank.
     placeholderData: (previous) => previous,
+  });
+};
+
+/** How many cleaned-up lines a workspace's Branches tab reads, and how far back (AUTOTIDY1a): a week's, at most fifty. */
+export const TIDIED_LINES = 50;
+export const TIDIED_SINCE: LogSince = '7d';
+
+/**
+ * What the look cleaned up in a workspace on its own, and could not (AUTOTIDY1a, D88): the log's `branch.tidied` and
+ * `branch.kept` lines of the last week for this workspace, newest first. Desktop only, for `useMachineLog`'s reason: a
+ * browser asks nothing and has no waiting state to show.
+ */
+export const useTidiedBranches = (workspace: string) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.tidiedBranches(workspace),
+    queryFn: () => getBridge().invoke<LogReading>('DAORIS.LOG', 'LINES', {
+      payload: { events: [...TIDIED_EVENTS], workspace, since: TIDIED_SINCE, limit: TIDIED_LINES },
+    }),
+    enabled: isAvailable,
   });
 };
 

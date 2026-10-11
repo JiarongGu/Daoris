@@ -149,6 +149,11 @@ public sealed class LogModule(
             $"one of {string.Join(", ", MachineLogReader.Sources)}");
         var level = Filter(payload, "level", MachineLogReader.Floors.Contains, "warn or error");
         var named = PayloadHelper.GetOptionalValue<string>(payload, "event") is { Length: > 0 } wanted ? wanted : null;
+        // AUTOTIDY1a (D88): a list of events, and one workspace as the driver writes it (trimmed) and the page holds it (without case).
+        var ofEvents = payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("events", out var list) && list.ValueKind == JsonValueKind.Array
+            ? list.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!).ToHashSet(StringComparer.Ordinal)
+            : null;
+        var workspace = PayloadHelper.GetOptionalValue<string>(payload, "workspace") is { Length: > 0 } space ? space.Trim() : null;
         var limit = PayloadHelper.GetOptionalValue<int>(payload, "limit") is > 0 and var asked
             ? Math.Min(asked, MaxLines)
             : DefaultLines;
@@ -168,7 +173,11 @@ public sealed class LogModule(
             Since: since is null ? null : now - MachineLogReader.ParseSince(since)!.Value,
             Source: source));
         var events = read.Lines.Select(line => line.Event).Distinct().Order(StringComparer.Ordinal).ToArray();
-        var ofEvent = named is null ? read.Lines : read.Lines.Where(line => line.Event == named).ToList();
+        var ofEvent = read.Lines
+            .Where(line => named is null || line.Event == named)
+            .Where(line => ofEvents is null || ofEvents.Contains(line.Event))
+            .Where(line => workspace is null || InWorkspace(line, workspace))
+            .ToList();
         var shown = level is null
             ? ofEvent
             : ofEvent.Where(line => MachineLogReader.Rank(line.Level) >= MachineLogReader.Rank(level)).ToList();
@@ -185,6 +194,11 @@ public sealed class LogModule(
             read.Skipped,
         };
     }
+
+    private static bool InWorkspace(LogLine line, string workspace) =>
+        line.Data is { ValueKind: JsonValueKind.Object } data
+        && data.TryGetProperty("workspace", out var held) && held.ValueKind == JsonValueKind.String
+        && string.Equals(held.GetString()?.Trim(), workspace, StringComparison.OrdinalIgnoreCase);
 
     private static object Count(IReadOnlyList<LogLine> lines) => new
     {

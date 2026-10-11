@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { type GitBranch, type GitRepositoryBranches, gitRefusal, useGitBranches, useGitGraph } from '../bridge/git';
+import { useMemo, useState } from 'react';
+import { type GitAnswer, type GitBranch, type GitGraphPage, type GitRepositoryBranches, gitRefusal, useGitBranches, useGitGraphPages } from '../bridge/git';
 import { useSessionOpenings } from '../bridge/sessions';
 import { sentence } from '../format';
 import { useQuests, useSessions } from '../queries';
@@ -117,27 +117,66 @@ function useSessionTitles(repository: string, branches: readonly GitBranch[]): R
   }));
 }
 
+/** One page of the graph as its query holds it: the page, a refusal's code with its sentence, or still on its way. */
+type PageOutcome = { page: GitGraphPage } | { code: string | null; sentence: string } | null;
+
+function pageOutcome(query: { error: unknown; data?: GitAnswer<GitGraphPage> }): PageOutcome {
+  if (query.error) return { code: null, sentence: sentence(query.error) };
+  if (!query.data) return null;
+  // A refusal is a code the page words (`errors.{code}`), never git's own sentence (GIT1d).
+  const refusal = gitRefusal(query.data);
+  if (refusal) return { code: refusal.code, sentence: sentence(refusal) };
+  const page = query.data.value;
+  if (!page || !Array.isArray(page.commits)) return { code: null, sentence: sentence({ code: 'UNKNOWN' }) };
+  return { page };
+}
+
+/**
+ * The History tab's read, the graph's pages accumulated (UX6h3a): one `GIT_GRAPH` per page asked, `useGitGraphPages`, each
+ * cached by its page, and the count asked a state of the holder's, reset with the tip it counts for. The commits are the
+ * leading pages that arrived, in order, so the lanes are laid over the whole list; the next page on its way, or refused, is
+ * said in the foot beside them, which a press asks again.
+ */
 function HistoryRead({ repository, workspace }: { repository: string; workspace: string }) {
   const list = useRepositoryBranches(repository, workspace);
   const commit = list.state === 'read' ? list.value.line.commit : null;
   // The graph's tips are whole ids the list resolved (D147 §4.2): with none, the graph asks nothing.
   const tips = useMemo(() => (commit ? [commit] : NO_TIPS), [commit]);
-  const { query } = useGitGraph(repository, tips, { workspace });
+  const [asked, setAsked] = useState({ tip: '', pages: 1 });
+  const pages = asked.tip === (commit ?? '') ? asked.pages : 1;
+  const { queries } = useGitGraphPages(repository, tips, pages, { workspace });
+  const outcomes = queries.map(pageOutcome);
+
+  const loaded: GitGraphPage[] = [];
+  for (const outcome of outcomes) {
+    if (!outcome || !('page' in outcome)) break;
+    loaded.push(outcome.page);
+  }
+  const next = queries[loaded.length];
+  const failed = outcomes[loaded.length];
+  const onMore = () => {
+    // The page that failed is asked again; otherwise the next is asked.
+    if (next) void next.refetch();
+    else setAsked({ tip: commit ?? '', pages: pages + 1 });
+  };
 
   const read = ((): HistoryRead => {
     if (list.state !== 'read') return list;
     const { line } = list.value;
     if (!line.commit) return { state: 'noLine', line: line.branch };
-    if (query.error) return { state: 'refused', sentence: sentence(query.error) };
-    if (!query.data) return { state: 'reading' };
-    // A refusal is a code the page words (`errors.{code}`), never git's own sentence (GIT1d).
-    const refusal = gitRefusal(query.data);
-    if (refusal) return refusal.code === 'GIT_NO_CHECKOUT' ? { state: 'noCheckout' } : { state: 'refused', sentence: sentence(refusal) };
-    const page = query.data.value;
-    if (!page || !Array.isArray(page.commits)) return { state: 'refused', sentence: sentence({ code: 'UNKNOWN' }) };
-    return { state: 'read', value: { line: line.branch ?? '', tips, commits: page.commits } };
+    const first = outcomes[0];
+    if (!first) return { state: 'reading' };
+    if (!('page' in first)) return first.code === 'GIT_NO_CHECKOUT' ? { state: 'noCheckout' } : { state: 'refused', sentence: first.sentence };
+    const loadingMore = Boolean(next?.isFetching);
+    return {
+      state: 'read',
+      value: {
+        line: line.branch ?? '', tips, commits: loaded.flatMap((page) => page.commits), more: loaded[loaded.length - 1]!.more,
+        loadingMore, moreError: !loadingMore && failed && !('page' in failed) ? failed.sentence : null,
+      },
+    };
   })();
-  return <HistoryTab repository={repository} read={read} />;
+  return <HistoryTab repository={repository} read={read} onMore={onMore} />;
 }
 
 /**

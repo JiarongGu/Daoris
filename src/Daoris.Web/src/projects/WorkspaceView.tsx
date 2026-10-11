@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useTidiedBranches } from '../bridge/log';
 import { sentence } from '../format';
 import { useSyncStanding } from '../queries';
 import type { LandingRule } from '../settings/Landings';
@@ -20,6 +21,7 @@ import { useHistoryActs } from '../work/historyActs';
 import { WorkflowTab } from '../workflow/WorkflowTab';
 import { KeptHistory } from './KeptHistory';
 import { WorkspaceBranchGroups } from './RepositoryGitView';
+import { WorkspaceTidied } from './WorkspaceTidied';
 import type { WorkspaceSection, WorkspaceTab } from './tabs';
 import { accountsHere, hostOf } from './workspace';
 import { WorkspaceDetails, WorkspacePage } from './WorkspacePage';
@@ -222,6 +224,8 @@ function BranchesPart({ workspace, notify, onOpenRepository }: {
   const syncScope = useTreesSyncScope();
   const syncPlan = useTreesSyncPlan(workspace);
   const sync = useTreesSync(workspace);
+  // What the look cleaned up on its own (AUTOTIDY1a): the machine log's, so a browser has none; a failed read draws nothing.
+  const tidied = useTidiedBranches(workspace);
   useErrorNotify(plan.error, notify);
   // A look the page stopped waiting for is said in the section, where it was asked (WSR7); every other failure is the
   // driver's own sentence, in a toast.
@@ -236,6 +240,7 @@ function BranchesPart({ workspace, notify, onOpenRepository }: {
   return (
     <>
       <WorkspaceBranchGroups workspace={workspace} onOpenRepository={onOpenRepository} />
+      <WorkspaceTidied lines={Array.isArray(tidied.data?.lines) ? tidied.data.lines : null} />
       <SweepList
         branches={Array.isArray(plan.data?.branches) ? mine(plan.data.branches, workspace) : undefined}
         landed={Array.isArray(plan.data?.landed) ? mine(plan.data.landed, workspace) : undefined}

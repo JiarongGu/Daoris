@@ -1,7 +1,11 @@
+import { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Inline, Prose, SkeletonRows } from '../ui';
 import { BranchList, type BranchListValue } from './BranchList';
 import { CommitGraph, type GraphCommitRow } from './CommitGraph';
+import { GraphFoot, useGraphPaging } from './GraphFoot';
+
+const noop = () => {};
 
 /**
  * What a Git tab shows (UX6h1): its answer on its way, no checkout of the repository on this machine, why Git did not answer
@@ -13,9 +17,13 @@ export type GitRead<T> =
   | { state: 'refused'; sentence: string }
   | { state: 'read'; value: T };
 
-/** What History reads: its line's commits from the tips walked, or that its line holds no commit to walk from here. */
+/**
+ * What History reads: its line's commits from the tips walked, the pages so far accumulated, with whether the graph answers
+ * another (`more`), the next page on its way (`loadingMore`) or refused in words (`moreError`); or that its line holds no
+ * commit to walk from here.
+ */
 export type HistoryRead =
-  | GitRead<{ line: string; tips: string[]; commits: GraphCommitRow[] }>
+  | GitRead<{ line: string; tips: string[]; commits: GraphCommitRow[]; more: boolean; loadingMore?: boolean; moreError?: string | null }>
   | { state: 'noLine'; line: string | null };
 
 /**
@@ -78,10 +86,20 @@ export function BranchesTab({ repository, read, titles }: {
  *
  * @remarks
  * **A molecule**: the read arrives as a prop, and its holder reads it only while the tab shows. It draws the first page;
- * paging, a commit opened beside the graph and *All branches* are UX6h3's.
+ * the pages accumulated, with the load-more foot while the graph answers `more` (UX6h3a); a commit opened beside the graph and
+ * *All branches* are UX6h3's.
  */
-export function HistoryTab({ repository, read }: { repository: string; read: HistoryRead }) {
+export function HistoryTab({ repository, read, onMore }: {
+  repository: string;
+  read: HistoryRead;
+  /** The next page, asked: the holder reads it and hands the commits back accumulated. */
+  onMore?: () => void;
+}) {
   const { t } = useTranslation();
+  const body = useRef<HTMLDivElement>(null);
+  const rowAt = useCallback((index: number) => body.current?.querySelectorAll<HTMLElement>('[data-commit]')[index] ?? null, []);
+  const loaded = read.state === 'read' ? read.value : null;
+  const paging = useGraphPaging({ shown: loaded?.commits.length ?? 0, loadingMore: Boolean(loaded?.loadingMore), onMore: onMore ?? noop, rowAt });
   if (read.state === 'reading') return <Waiting reading sentence={t('projects.git.reading.history', { repository })} />;
   if (read.state === 'refused') return <Waiting reading={false} sentence={read.sentence} />;
   if (read.state === 'noCheckout') {
@@ -98,11 +116,12 @@ export function HistoryTab({ repository, read }: { repository: string; read: His
     );
   }
 
-  const { line, tips, commits } = read.value;
+  const { line, tips, commits, more, loadingMore, moreError } = read.value;
   return (
-    <div className="grid gap-2">
+    <div ref={body} className="grid gap-2">
       <Prose className="text-small text-ink-soft"><Inline text={t('projects.git.history.head', { repository, branch: line })} /></Prose>
       <CommitGraph label={t('projects.git.history.list', { repository, branch: line })} commits={commits} tips={tips} />
+      {more && onMore && <GraphFoot shown={commits.length} loadingMore={Boolean(loadingMore)} error={moreError} paging={paging} />}
     </div>
   );
 }

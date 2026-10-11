@@ -5,6 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-12 — Ask Daoris's history test lost "Today" across midnight
+
+- **Symptom:** UX6h3a's merge failed the web gate in `AskHistory.test.tsx` (a file it does not touch), en and zh: *Unable to
+  find … role "list" and name "Today"*. The gate ran from about 23:58 to 00:00 local time.
+- **Root cause:** the file's rows are dated from the real clock as it loads (`minutesAgo`, `daysAgo`), and `AskHistory`
+  groups them by day from the clock as it draws. A run that loads before midnight and draws after it puts the open row in
+  *Yesterday*.
+- **Fix:** the file holds `Date` at midday (`vi.useFakeTimers({ toFake: ['Date'] })`, as `AttentionRow.test.tsx` does), set
+  before the rows are built, and restores it after.
+- **Verify:** the file passed 61/61 with the clock held, and the web gate on the open merge passed on its rerun. The
+  date's turn also asked the web README to describe the day's change (the docs gate), which it now does.
+
 ## 2026-10-11 — a page twin read driver files the merge tool did not route to the web gate (MSG1g3)
 
 - **Symptom:** MSG1g3's merge failed the CLI gate: `merge-branch.test.ts`'s SESSDEL1c case found four driver files

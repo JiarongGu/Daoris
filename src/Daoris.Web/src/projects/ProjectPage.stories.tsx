@@ -5,7 +5,7 @@ import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../storyLanguage';
 import { FULL, NOTHING_SET, PLUGIN_UNREADY } from '../workflow/fixtures';
 import {
-  CJK, COUNTS, ELSEWHERE, ENGINE, GAME, GIT_BRANCHES_ENGINE, GIT_HISTORY_ENGINE, LINE, MIRRORED, NEWBIE, SETUP_DEFAULTS, SETUP_OWN,
+  CJK, COUNTS, ELSEWHERE, ENGINE, GAME, GIT_BRANCHES_ENGINE, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES, LINE, MIRRORED, NEWBIE, SETUP_DEFAULTS, SETUP_OWN,
   UNDECLARED,
 } from './fixtures';
 import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
@@ -57,7 +57,9 @@ const LANDED_OTHERWISE = (() => {
   ];
 })();
 const historyRead = (read: HistoryRead) => <HistoryTab repository="engine" read={read} />;
-const lineHistory = (commits: GitLogCommit[], tips = [commits[0]!.commit]) => historyRead({ state: 'read', value: { line: 'main', tips, commits } });
+const lineHistory = (commits: GitLogCommit[], more: Partial<Extract<HistoryRead, { state: 'read' }>['value']> = {}, tips = [commits[0]!.commit]) =>
+  // `onMore` is the page's: a story draws the foot, and its press is the holder's.
+  <HistoryTab repository="engine" read={{ state: 'read', value: { line: 'main', tips, commits, more: false, ...more } }} onMore={nothing} />;
 
 /** A line three branches were merged into, one still open beside it: four lanes at their widest. */
 const SEVERAL: GitLogCommit[] = (() => {
@@ -314,6 +316,36 @@ export const History: Story = { args: { start: 'history' } };
 
 /** History with several branches merged in, one beside another: four lanes at their widest. */
 export const HistorySeveralLanes: Story = { args: { start: 'history', history: lineHistory(SEVERAL) } };
+
+/**
+ * **History, a page at a time** (UX6h3a, UXLOADMORE1): the first page's commits with the load-more foot: "{n} commits listed",
+ * with no total, since the graph answers none, and *Show more* while it answers `more`. The foot is this story's, and its
+ * twins': HistoryMoreLoading, HistoryMoreFailed, and the dark, 中文 and narrow ones.
+ */
+export const HistoryMore: Story = { args: { start: 'history', history: lineHistory(GIT_HISTORY_PAGES[0], { more: true }) } };
+
+/** History's next page on its way: the status beside *Show more* says so, and the commits listed stay. */
+export const HistoryMoreLoading: Story = { args: { start: 'history', history: lineHistory(GIT_HISTORY_PAGES[0], { more: true, loadingMore: true }) } };
+
+/** History's next page refused: the sentence in the foot, the commits kept, *Show more* asking it again. */
+export const HistoryMoreFailed: Story = {
+  args: {
+    start: 'history',
+    history: lineHistory(GIT_HISTORY_PAGES[0], {
+      more: true,
+      moreError: 'Git could not answer for this. This repository may not hold that commit or file yet (a fetch may bring it), or Git did not start.',
+    }),
+  },
+};
+
+/** The foot, dark. */
+export const HistoryMoreDark: Story = { args: HistoryMore.args, decorators: [dark] };
+
+/** The foot in 中文. */
+export const HistoryMoreChinese: Story = { args: HistoryMore.args, decorators: [chinese] };
+
+/** The foot, narrow: its count, its button and its status wrap in the tab's width. */
+export const HistoryMoreNarrow: Story = { args: HistoryMoreFailed.args, decorators: [narrow] };
 
 /** History on its way. */
 export const HistoryReading: Story = { args: { start: 'history', history: historyRead({ state: 'reading' }) } };

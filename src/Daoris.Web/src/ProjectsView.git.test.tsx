@@ -17,7 +17,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import type { GitBranchList, GitGraphPage } from './bridge/git';
-import { GIT_BRANCHES_ENGINE, GIT_BRANCHES_GAME, GIT_HISTORY_ENGINE } from './projects/fixtures';
+import { GIT_BRANCHES_ENGINE, GIT_BRANCHES_GAME, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES } from './projects/fixtures';
 import { DRIVER_STATE, respond, show, WIRING } from './test/shellHarness';
 import { chooseRepository, chooseWorkspace, ProjectsView, repositoryMain } from './test/projectsView';
 
@@ -50,12 +50,15 @@ describe("a repository's Branches and History tabs", () => {
     window.localStorage.clear();
   });
 
-  const answering = ({ branches = () => ENGINE_LIST, graph = () => answer(PAGE) }: {
+  const answering = ({ branches = () => ENGINE_LIST, graph = () => answer(PAGE), log = () => ({ lines: [] }) }: {
     branches?: (payload: Record<string, unknown>) => unknown;
-    graph?: () => unknown;
+    graph?: (payload: Record<string, unknown>) => unknown;
+    /** What the machine log answers `LINES` with (AUTOTIDY1a). */
+    log?: () => unknown;
   } = {}) =>
     invoke.mockImplementation(async (module: string, type: string, request?: { payload?: Record<string, unknown> }) => {
       if (module === 'DAORIS.REMOTES') return WIRING;
+      if (module === 'DAORIS.LOG') return log();
       const read = type === 'GIT_BRANCHES' ? branches : type === 'GIT_GRAPH' ? graph : null;
       if (read) {
         const answered = read(request?.payload ?? {});
@@ -121,6 +124,49 @@ describe("a repository's Branches and History tabs", () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_GRAPH', expect.objectContaining({ payload: { repository: 'engine', tips: [LINE_COMMIT], workspace: 'aurora' } }));
     expect(within(repositoryMain()).getByRole('tab', { name: 'History' })).toHaveAttribute('aria-selected', 'true');
     expect(window.localStorage.getItem('daoris.list.projects.tab')).toContain('history');
+  });
+
+  describe('paging its graph (UX6h3a)', () => {
+    const [firstPage, secondPage] = GIT_HISTORY_PAGES;
+    const paged = (payload: Record<string, unknown>) =>
+      payload.page === 1 ? answer({ ...PAGE, page: 1, commits: secondPage, more: false }) : answer({ ...PAGE, commits: firstPage, more: true });
+
+    it('lists the first page with its foot, asks the next with page 1 on Show more, and accumulates the rows', async () => {
+      answering({ graph: paged });
+      show(<ProjectsView notify={() => {}} />);
+      const page = await chooseRepository('engine');
+      await userEvent.click(within(page).getByRole('tab', { name: 'History' }));
+
+      const list = await within(repositoryMain()).findByRole('list', { name: "engine's history on main" });
+      expect(within(list).getAllByRole('listitem')).toHaveLength(firstPage.length);
+      expect(within(repositoryMain()).getByText('3 commits listed')).toBeInTheDocument();
+      expect(asked('GIT_GRAPH')).toHaveLength(1);
+
+      await userEvent.click(within(repositoryMain()).getByRole('button', { name: 'Show more' }));
+
+      await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(GIT_HISTORY_ENGINE.length));
+      expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_GRAPH', expect.objectContaining({ payload: { repository: 'engine', tips: [LINE_COMMIT], page: 1, workspace: 'aurora' } }));
+      // The last page took the foot, and the focus is on the first row it brought.
+      expect(within(repositoryMain()).queryByRole('button', { name: 'Show more' })).toBeNull();
+      expect(document.activeElement).toBe(within(list).getAllByRole('listitem')[firstPage.length]);
+    });
+
+    it("says the next page's refusal in the foot, keeps the rows, and asks the same page again on another press", async () => {
+      let refuse = true;
+      answering({ graph: (payload) => (payload.page === 1 && refuse ? answer(null, 'GIT_NOT_ANSWERED') : paged(payload)) });
+      show(<ProjectsView notify={() => {}} />);
+      const page = await chooseRepository('engine');
+      await userEvent.click(within(page).getByRole('tab', { name: 'History' }));
+      const list = await within(repositoryMain()).findByRole('list', { name: "engine's history on main" });
+      await userEvent.click(within(repositoryMain()).getByRole('button', { name: 'Show more' }));
+
+      expect(await within(repositoryMain()).findByText(/^Git could not answer for this\./)).toBeInTheDocument();
+      expect(within(list).getAllByRole('listitem')).toHaveLength(firstPage.length);
+
+      refuse = false;
+      await userEvent.click(within(repositoryMain()).getByRole('button', { name: 'Show more' }));
+      await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(GIT_HISTORY_ENGINE.length));
+    });
   });
 
   it('says a repository with no checkout here has none, and asks Git nothing', async () => {
@@ -231,5 +277,44 @@ describe("a repository's Branches and History tabs", () => {
     // Each group's heading is the door to its repository's page.
     await userEvent.click(within(repositoryMain()).getByRole('button', { name: 'Open engine' }));
     expect(await screen.findByRole('heading', { level: 1, name: 'engine' })).toBeInTheDocument();
+  });
+
+  /**
+   * AUTOTIDY1a (D88): the tab shows what the look cleaned up in this workspace, read from the machine log with the two events,
+   * the workspace and a week, and drawn after the repositories' groups and before the clean-up.
+   */
+  it("draws what was cleaned up on its own after the groups and before the clean-up, asked of the log for this workspace", async () => {
+    const stamp = new Date(Date.now() - 2 * 3_600_000).toISOString();
+    answering({
+      log: () => ({
+        lines: [
+          { time: stamp, source: 'driver', level: 'info', event: 'branch.tidied', data: { repository: 'engine', workspace: 'aurora', branch: 'daoris/s-1f2e3d4c', tree: true, folder: 'trees/.tidied/aurora/engine/s-1' } },
+          { time: stamp, source: 'driver', level: 'warn', event: 'branch.kept', data: { repository: 'engine', workspace: 'aurora', branch: 'daoris/s-9e0f1a2b', why: 'busy' } },
+        ],
+      }),
+    });
+    show(<ProjectsView notify={() => {}} />);
+    await chooseWorkspace('aurora');
+    await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
+
+    const tidied = await within(repositoryMain()).findByRole('heading', { name: 'Cleaned up on its own' });
+    const rows = within(tidied.closest('section')!).getAllByRole('listitem');
+    expect(rows[0]).toHaveTextContent('daoris/s-1f2e3d4c');
+    expect(rows[0]).toHaveTextContent("Its tree's folder was set aside");
+    expect(rows[1]).toHaveTextContent('in use');
+    expect(invoke).toHaveBeenCalledWith('DAORIS.LOG', 'LINES', {
+      payload: { events: ['branch.tidied', 'branch.kept'], workspace: 'aurora', since: '7d', limit: 50 },
+    });
+    const cleanUp = within(repositoryMain()).getByRole('heading', { name: 'Session branches' });
+    expect(tidied.compareDocumentPosition(cleanUp) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('draws nothing of it where the log holds nothing', async () => {
+    answering();
+    show(<ProjectsView notify={() => {}} />);
+    await chooseWorkspace('aurora');
+    await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
+    await within(repositoryMain()).findByRole('heading', { name: 'Session branches' });
+    expect(within(repositoryMain()).queryByRole('heading', { name: 'Cleaned up on its own' })).toBeNull();
   });
 });

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQueries, useQuery } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../queries';
 import { call } from './call';
@@ -199,17 +199,30 @@ export const useGitBranches = (scope: GitBranchScope = {}) => {
 /** A page of the graph from tips named by their whole ids (the list's `commit`); asks nothing with no tip. */
 export const useGitGraph = (repository: string | null, tips: readonly string[], options: { page?: number; sinceParted?: boolean; workspace?: string } = {}) => {
   const { isAvailable } = useShenora();
-  const page = options.page ?? 0;
+  const query = useQuery(graphPage(isAvailable, repository, tips, options.page ?? 0, options));
+  return { available: isAvailable, query };
+};
+
+/**
+ * Pages `0..count-1` of the graph from the same tips, each its own cached read, in order (UX6h3a): a person reading further back
+ * asks one more, and the pages already read are kept. The holder accumulates their commits.
+ */
+export const useGitGraphPages = (repository: string | null, tips: readonly string[], count: number, options: { sinceParted?: boolean; workspace?: string } = {}) => {
+  const { isAvailable } = useShenora();
+  const queries = useQueries({ queries: Array.from({ length: Math.max(1, count) }, (_, page) => graphPage(isAvailable, repository, tips, page, options)) });
+  return { available: isAvailable, queries };
+};
+
+const graphPage = (isAvailable: boolean, repository: string | null, tips: readonly string[], page: number, options: { sinceParted?: boolean; workspace?: string }) => {
   const sinceParted = Boolean(options.sinceParted);
   const workspace = options.workspace ?? '';
-  const query = useQuery({
+  return {
     queryKey: keys.gitGraph(repository ?? '', tips, page, sinceParted, workspace),
     queryFn: () => call<GitAnswer<GitGraphPage>>('GIT_GRAPH', {
       repository, tips, ...(page ? { page } : {}), ...(sinceParted ? { sinceParted: true } : {}), ...(workspace ? { workspace } : {}),
     }),
     enabled: isAvailable && Boolean(repository) && tips.length > 0,
-  });
-  return { available: isAvailable, query };
+  };
 };
 
 /** A commit's page by its whole id. Its answer cannot change, so it is kept. */
