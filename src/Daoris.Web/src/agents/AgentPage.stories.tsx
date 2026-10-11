@@ -130,7 +130,18 @@ export const ApiKey: Story = {
   },
 };
 
-const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
+/** A way in a plugin declared (PLUGUI1c2b), *Ways in* opened: *declared by plugin …* is a button, a door to that plugin. */
+export const DeclaredByPlugin: Story = {
+  args: {
+    tool: { ...CLAUDE_TOOL, doors: CLAUDE_TOOL.doors.map((door) => ({ ...door, plugin: 'acme.gate' })) },
+    onOpenPlugin: nothing,
+  },
+  play: async ({ canvasElement }) => {
+    canvasElement.querySelector<HTMLButtonElement>('button[aria-label="Show Ways in"]')?.click();
+  },
+};
+
+const dark: Decorator =(Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 /**
  * What each row knows (ACCTUX1): a key its provider refused says *key refused* with *New API key*, which opens a field on its row (KEYREPLACE1b); *reserve*, cooling for

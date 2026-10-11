@@ -110,7 +110,7 @@ export type AgentActs = {
  */
 export function AgentPage({
   tool, use, rules, usage, workspaces, inView = null, adapter, part, reading = false, busy = false, settingsBusy = false, signingIn = null,
-  signInPanel, signInNewPanel, added = null, doorRunning = null, doorConsole, acts, onAnchored, now,
+  signInPanel, signInNewPanel, added = null, doorRunning = null, doorConsole, acts, onOpenPlugin, onAnchored, now,
 }: {
   tool: Tool;
   /** How its accounts are used (TOOL4g): null from a shell older than that, and the sections it feeds are absent. */
@@ -146,6 +146,8 @@ export function AgentPage({
   doorRunning?: string | null;
   doorConsole?: ReactNode;
   acts: AgentActs;
+  /** Opens the Plugins place at a plugin (PLUGUI1c2b): a door's *declared by plugin* is a door to it; without it, text. */
+  onOpenPlugin?: (plugin: string) => void;
   /** Told once the part a door named is in view. */
   onAnchored?: () => void;
   /** The moment the spans are measured to; now, unless a story's. */
@@ -738,7 +740,10 @@ export function AgentPage({
                 ? <span className="font-mono text-small text-ink-faint">{versionOnly(each.version ?? '')}</span>
                 : <span className="text-small text-ink-faint">{t('harness.absent')}</span>}
               {each.harness === adapter && <Chip accent>{t('harness.spawns')}</Chip>}
-              {each.plugin && <Chip>{t('harness.declaredBy', { plugin: each.plugin })}</Chip>}
+              {each.plugin && (onOpenPlugin
+                // A door to the plugin's page (PLUGUI1c2b, the Plugins design §5): a control, so a button, not a chip.
+                ? <Button variant="ghost" onClick={() => onOpenPlugin(each.plugin!)}>{t('harness.declaredBy', { plugin: each.plugin })}</Button>
+                : <Chip>{t('harness.declaredBy', { plugin: each.plugin })}</Chip>)}
               <span className="ml-auto flex gap-2">
                 {!each.present && each.installs !== false && <Button disabled={busy} onClick={() => acts.onDoor(each.harness, 'install')}>{t('harness.install')}</Button>}
                 {each.present && (each.updates === 'pin' || each.updates === 'tool') && (
