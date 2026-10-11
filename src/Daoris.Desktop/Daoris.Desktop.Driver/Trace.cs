@@ -86,6 +86,9 @@ public sealed record TracedQuest(string Id, string From, string To, string Title
 
     public string? Note { get; init; }
 
+    /// <summary>Its note's lines by code (QUESTCLOSE1b5), or null for a quest from before parts.</summary>
+    public IReadOnlyList<NotePart>? NoteParts { get; init; }
+
     public DateTimeOffset? Filed { get; init; }
 
     public DateTimeOffset? Updated { get; init; }
@@ -387,6 +390,7 @@ public static class Trace
             {
                 Lanes = Strings(quest, "lanes"),
                 Note = Filled(quest, "note"),
+                NoteParts = NotePart.Read(quest),
                 Filed = Moment(quest, "filed"),
                 Updated = Moment(quest, "updated"),
                 Parent = Filled(quest, "parent"),

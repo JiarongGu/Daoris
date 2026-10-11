@@ -387,6 +387,9 @@ public sealed record TraceQuestLink(string Id)
     /// <summary>What its close said, as written.</summary>
     public string? Note { get; init; }
 
+    /// <summary>Its close's lines by code, which the page words in its own language (QUESTCLOSE1b5); null for a quest from before parts.</summary>
+    public IReadOnlyList<NotePart>? NoteParts { get; init; }
+
     public IReadOnlyList<TraceRequirement> Requirements { get; init; } = [];
 
     /// <summary>The steps its close will publish, as written.</summary>
@@ -915,6 +918,7 @@ internal static partial class TraceChains
                 : null,
             Accepted = quest.Accepted,
             Note = quest.Note,
+            NoteParts = quest.NoteParts,
             Requirements =
             [
                 .. quest.Requirements.Select((requirement, index) =>
