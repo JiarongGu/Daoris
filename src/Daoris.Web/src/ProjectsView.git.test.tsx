@@ -17,7 +17,9 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import type { GitBranchList, GitGraphPage } from './bridge/git';
-import { GIT_BRANCHES_ENGINE, GIT_BRANCHES_GAME, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES } from './projects/fixtures';
+import {
+  GIT_BRANCH_PARTED, GIT_BRANCH_PARTED_PAGES, GIT_BRANCHES_ENGINE, GIT_BRANCHES_GAME, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES,
+} from './projects/fixtures';
 import { DRIVER_STATE, respond, show, WIRING } from './test/shellHarness';
 import { chooseRepository, chooseWorkspace, ProjectsView, repositoryMain } from './test/projectsView';
 
@@ -166,6 +168,92 @@ describe("a repository's Branches and History tabs", () => {
       refuse = false;
       await userEvent.click(within(repositoryMain()).getByRole('button', { name: 'Show more' }));
       await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(GIT_HISTORY_ENGINE.length));
+    });
+  });
+
+  /**
+   * UX6h3b (the built-in Git design §2.3): a branch's name in Branches opens its page in the main area, page state of the
+   * view's. The page asks `GIT_GRAPH` since the branch parted from its line, its two tips the branch's then the line's, pages
+   * it with the load-more foot, and goes back to the repository's Branches. The line's own row opens History.
+   */
+  describe('a branch opened from Branches (UX6h3b)', () => {
+    const PHYSICS = 'daoris/engine-physics-step';
+    const PHYSICS_COMMIT = GIT_BRANCHES_ENGINE.branches.find((branch) => branch.name === PHYSICS)!.commit;
+    const PARTED: GitGraphPage = { tips: [PHYSICS_COMMIT, LINE_COMMIT], sinceParted: true, page: 0, commits: GIT_BRANCH_PARTED_PAGES[0], more: true };
+    const graph = (payload: Record<string, unknown>) => (!payload.sinceParted
+      ? answer(PAGE)
+      : payload.page === 1
+        ? answer({ ...PARTED, page: 1, commits: GIT_BRANCH_PARTED_PAGES[1], more: false })
+        : answer(PARTED));
+
+    it('opens its page, asks its graph since it parted from its line, pages it, and goes back to Branches', async () => {
+      answering({ graph });
+      show(<ProjectsView notify={() => {}} />);
+      const page = await chooseRepository('engine');
+      await userEvent.click(within(page).getByRole('tab', { name: 'Branches' }));
+      await userEvent.click(await within(repositoryMain()).findByRole('button', { name: `Open ${PHYSICS}` }));
+
+      expect(await within(repositoryMain()).findByRole('heading', { level: 1, name: PHYSICS })).toBeInTheDocument();
+      const list = await within(repositoryMain()).findByRole('list', { name: `${PHYSICS} beside main since they parted` });
+      expect(within(list).getAllByRole('listitem')).toHaveLength(GIT_BRANCH_PARTED_PAGES[0].length);
+      expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_GRAPH', expect.objectContaining({
+        payload: { repository: 'engine', tips: [PHYSICS_COMMIT, LINE_COMMIT], sinceParted: true, workspace: 'aurora' },
+      }));
+      // Its standing, in the list's words.
+      expect(within(repositoryMain()).getByRole('heading', { level: 1 }).closest('header')).toHaveTextContent('2 commits ahead of main, and 2 behind.');
+
+      await userEvent.click(within(repositoryMain()).getByRole('button', { name: 'Show more' }));
+      await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(GIT_BRANCH_PARTED.length));
+      expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_GRAPH', expect.objectContaining({
+        payload: { repository: 'engine', tips: [PHYSICS_COMMIT, LINE_COMMIT], page: 1, sinceParted: true, workspace: 'aurora' },
+      }));
+
+      await userEvent.click(within(repositoryMain()).getByRole('button', { name: 'Back to Branches' }));
+      expect(await within(repositoryMain()).findByRole('region', { name: "engine's branches" })).toBeInTheDocument();
+      expect(within(repositoryMain()).getByRole('tab', { name: 'Branches' })).toHaveAttribute('aria-selected', 'true');
+      expect(within(repositoryMain()).getByRole('heading', { level: 1, name: 'engine' })).toBeInTheDocument();
+    });
+
+    it("opens History from the line's own row", async () => {
+      answering({ graph });
+      show(<ProjectsView notify={() => {}} />);
+      const page = await chooseRepository('engine');
+      await userEvent.click(within(page).getByRole('tab', { name: 'Branches' }));
+      await userEvent.click(await within(repositoryMain()).findByRole('button', { name: "Open main's history" }));
+
+      expect(await within(repositoryMain()).findByRole('list', { name: "engine's history on main" })).toBeInTheDocument();
+      expect(within(repositoryMain()).getByRole('tab', { name: 'History' })).toHaveAttribute('aria-selected', 'true');
+    });
+
+    it("opens from a workspace's Branches on the repository's page, whose way back is its Branches", async () => {
+      answering({ graph });
+      show(<ProjectsView notify={() => {}} />);
+      await chooseWorkspace('aurora');
+      await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
+      const engine = await within(repositoryMain()).findByRole('region', { name: "engine's branches" });
+      await userEvent.click(within(engine).getByRole('button', { name: `Open ${PHYSICS}` }));
+
+      expect(await within(repositoryMain()).findByRole('heading', { level: 1, name: PHYSICS })).toBeInTheDocument();
+      await within(repositoryMain()).findByRole('list', { name: `${PHYSICS} beside main since they parted` });
+
+      await userEvent.click(within(repositoryMain()).getByRole('button', { name: 'Back to Branches' }));
+      expect(await within(repositoryMain()).findByRole('heading', { level: 1, name: 'engine' })).toBeInTheDocument();
+      expect(within(repositoryMain()).getByRole('tab', { name: 'Branches' })).toHaveAttribute('aria-selected', 'true');
+    });
+
+    it('says a branch its repository no longer lists, with the way back', async () => {
+      // The workspace's read lists it; the repository's own, read for the page, no longer does.
+      const without = { ...ENGINE_LIST, repositories: [{ ...ENGINE_LIST.repositories[0]!, branches: GIT_BRANCHES_ENGINE.branches.filter((branch) => branch.name !== PHYSICS) }] };
+      answering({ graph, branches: (payload) => (payload.repository ? without : ENGINE_LIST) });
+      show(<ProjectsView notify={() => {}} />);
+      await chooseWorkspace('aurora');
+      await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
+      const engine = await within(repositoryMain()).findByRole('region', { name: "engine's branches" });
+      await userEvent.click(within(engine).getByRole('button', { name: `Open ${PHYSICS}` }));
+
+      expect(await within(repositoryMain()).findByText('No such branch here')).toBeInTheDocument();
+      expect(asked('GIT_GRAPH').filter(([, , request]) => request.payload.sinceParted)).toEqual([]);
+      expect(within(repositoryMain()).getByRole('button', { name: 'Back to Branches' })).toBeInTheDocument();
     });
   });
 

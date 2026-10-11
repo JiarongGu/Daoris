@@ -59,8 +59,8 @@ const ruleOf = ({ form, pattern, tidy, plugin, autoAccept }: LandingRule): Landi
  * opens its Branches, *Sync now*, or the quest's, the ask's or the session's page where the application hands those doors.
  */
 export function WorkspaceView({
-  workspace, repositories, attached, tab, onTab, asked = null, notify, onOpenRepository, onOpenRepositoryWorkflow, onOpenAgent,
-  onOpenPlugin, onSyncNow, syncing = false, onOpenQuest, onOpenAsk, onAttend,
+  workspace, repositories, attached, tab, onTab, asked = null, notify, onOpenRepository, onOpenRepositoryWorkflow, onOpenBranch,
+  onOpenRepositoryHistory, onOpenAgent, onOpenPlugin, onSyncNow, syncing = false, onOpenQuest, onOpenAsk, onAttend,
 }: {
   workspace: string;
   /** Its repositories in the list's registry, by name. */
@@ -75,6 +75,10 @@ export function WorkspaceView({
   onOpenRepository: (repository: string) => void;
   /** Open a repository's page at its Workflow tab: the door from a repository that sets rules of its own (WORKFLOW1b). */
   onOpenRepositoryWorkflow?: (repository: string) => void;
+  /** Open a branch's page on its repository's, whose way back is its Branches (UX6h3b): a branch's name in Branches. */
+  onOpenBranch?: (repository: string, branch: string) => void;
+  /** Open a repository's page at its History: its line's row in Branches. */
+  onOpenRepositoryHistory?: (repository: string) => void;
   /** Open an agent's page, where a workspace's accounts are set (D130 §3.2, UX6e). */
   onOpenAgent?: (agent: string) => void;
   /** Open a plugin's page, from the plugin a landing rule names (PLUGUI1c2c). */
@@ -110,7 +114,15 @@ export function WorkspaceView({
   const body = !attached
     ? <WorkspaceDetails repositories={repositories} onOpen={onOpenRepository} />
     : tab === 'branches'
-      ? <BranchesPart workspace={workspace} notify={notify} onOpenRepository={onOpenRepository} />
+      ? (
+        <BranchesPart
+          workspace={workspace}
+          notify={notify}
+          onOpenRepository={onOpenRepository}
+          onOpenBranch={onOpenBranch}
+          onOpenHistory={onOpenRepositoryHistory}
+        />
+      )
       : tab === 'workflow'
         ? (
           <WorkflowPart
@@ -211,10 +223,12 @@ function DetailsPart({ workspace, repositories, notify, onOpenRepository, onOpen
  * the press are asked for it, so the driver fetches and judges its checkouts alone, and what the look leaves apart is
  * its own. The rows are filtered again, so a host before BRSCOPE1, whose look is the machine's, still shows only its own.
  */
-function BranchesPart({ workspace, notify, onOpenRepository }: {
+function BranchesPart({ workspace, notify, onOpenRepository, onOpenBranch, onOpenHistory }: {
   workspace: string;
   notify: Notify;
   onOpenRepository: (repository: string) => void;
+  onOpenBranch?: (repository: string, branch: string) => void;
+  onOpenHistory?: (repository: string) => void;
 }) {
   const { t } = useTranslation();
   const plan = useSweepPlan();
@@ -239,7 +253,7 @@ function BranchesPart({ workspace, notify, onOpenRepository }: {
 
   return (
     <>
-      <WorkspaceBranchGroups workspace={workspace} onOpenRepository={onOpenRepository} />
+      <WorkspaceBranchGroups workspace={workspace} onOpenRepository={onOpenRepository} onOpenBranch={onOpenBranch} onOpenHistory={onOpenHistory} />
       <WorkspaceTidied lines={Array.isArray(tidied.data?.lines) ? tidied.data.lines : null} />
       <SweepList
         branches={Array.isArray(plan.data?.branches) ? mine(plan.data.branches, workspace) : undefined}
