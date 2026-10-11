@@ -120,6 +120,12 @@ public sealed record Ask(
     /// oldest first, each with when and any words they gave. The latest stands; one naming neither clears it.
     /// </summary>
     public IReadOnlyList<AskWorkflowChoice> WorkflowChoices { get; init; } = [];
+
+    /// <summary>
+    /// Its intake's kind proposals (WORKFLOW1i, the workflow design §4.3), oldest first, each with its reason quoting the person: a
+    /// reading, kept beside the person's choice and applied only by their press.
+    /// </summary>
+    public IReadOnlyList<AskWorkflowProposal> WorkflowProposals { get; init; } = [];
 }
 
 /// <summary>A review choice the person set on an ask (REVIEWENV1b, design §1.5): <c>off</c>, <c>on</c> or an environment's name.</summary>
@@ -138,6 +144,17 @@ public sealed record AskReviewChoice(string Choice, DateTimeOffset At, string? W
 /// <param name="Session">The intake session that proposed it: the record that names the tier.</param>
 /// <param name="Quest">The quest it published the proposal with, the chain's first; null for none.</param>
 public sealed record AskReviewProposal(string Choice, string Reason, DateTimeOffset At, string? Session = null, string? Quest = null);
+
+/// <summary>
+/// A kind an intake proposed for the chains it published (WORKFLOW1i, design §4.3), with its reason: a reading the person may
+/// apply, never a choice. A kind only: the workflow a kind gives is the driving machine's.
+/// </summary>
+/// <param name="Kind">The kind it proposes, by a kind's id shape.</param>
+/// <param name="Reason">Why, in at most <see cref="WorkflowChoices.ReasonLimit"/> characters: the person's own words it quotes.</param>
+/// <param name="At">When it proposed it.</param>
+/// <param name="Session">The intake session that proposed it: the record that names the tier.</param>
+/// <param name="Quest">The quest it published the proposal with, the chain's first; null for none.</param>
+public sealed record AskWorkflowProposal(string Kind, string Reason, DateTimeOffset At, string? Session = null, string? Quest = null);
 
 /// <summary>How the person gave a word on an ask (DRIFT1a, D133 §1).</summary>
 public enum AskWordKind
@@ -253,6 +270,10 @@ public sealed class AskStore
         await SchemaColumns.EnsureAsync(_db, "asks", "workflow_choices", "workflow_choices TEXT NOT NULL DEFAULT '[]'", ct)
             .ConfigureAwait(false);
 
+        // WORKFLOW1i (D157): the intake's kind proposals, appended as the review's are, beside the person's choices.
+        await SchemaColumns.EnsureAsync(_db, "asks", "workflow_proposals", "workflow_proposals TEXT NOT NULL DEFAULT '[]'", ct)
+            .ConfigureAwait(false);
+
         return this;
     }
 
@@ -294,6 +315,19 @@ public sealed class AskStore
         {
             writer.WriteStartObject();
             writer.WriteString("choice", proposal.Choice);
+            writer.WriteString("reason", proposal.Reason);
+            writer.WriteString("at", proposal.At.ToString("O"));
+            if (proposal.Session is { } session) writer.WriteString("session", session);
+            if (proposal.Quest is { } quest) writer.WriteString("quest", quest);
+            writer.WriteEndObject();
+        }), now, ct);
+
+    /// <summary>Keep an intake's kind proposal on the ask (WORKFLOW1i), appended as a review proposal is. False when no ask has that id.</summary>
+    public Task<bool> RecordWorkflowProposalAsync(string id, AskWorkflowProposal proposal, DateTimeOffset now, CancellationToken ct = default) =>
+        AppendAsync(id, "workflow_proposals", JsonFields.Written(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("kind", proposal.Kind);
             writer.WriteString("reason", proposal.Reason);
             writer.WriteString("at", proposal.At.ToString("O"));
             if (proposal.Session is { } session) writer.WriteString("session", session);
@@ -554,7 +588,23 @@ public sealed class AskStore
             ReviewChoices = ReviewChoicesOf(Text("review_choices")),
             ReviewProposals = ReviewProposalsOf(Text("review_proposals")),
             WorkflowChoices = WorkflowChoicesOf(Text("workflow_choices")),
+            WorkflowProposals = WorkflowProposalsOf(Text("workflow_proposals")),
         };
+    }
+
+    /// <summary>The kind proposals kept, oldest first; one this build cannot read is passed over, as a choice is.</summary>
+    private static IReadOnlyList<AskWorkflowProposal> WorkflowProposalsOf(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var proposals = new List<AskWorkflowProposal>();
+        foreach (var element in document.RootElement.EnumerateArray())
+        {
+            if (JsonFields.Text(element, "kind") is not { } kind || !WorkflowChoices.IsKind(kind)) continue;
+            if (JsonFields.Text(element, "reason") is not { } reason || Moment(element, "at") is not { } at) continue;
+            proposals.Add(new AskWorkflowProposal(kind, reason, at, JsonFields.Text(element, "session"), JsonFields.Text(element, "quest")));
+        }
+
+        return proposals;
     }
 
     /// <summary>
@@ -740,7 +790,18 @@ public sealed record AskDraft(string? Title, string? Body)
     /// kept on the ask, beside the choice, for the person's press. Null for none.
     /// </summary>
     public ReviewProposed? ReviewProposal { get; init; }
+
+    /// <summary>
+    /// The intake's kind proposal for this chain (WORKFLOW1i, design §4.3): its reason must quote the person's words on the ask,
+    /// which the exchange checks. Kept on the ask for the person's press; the service never applies it. Null for none.
+    /// </summary>
+    public WorkflowProposed? WorkflowProposal { get; init; }
 }
+
+/// <summary>An intake's kind proposal for the chain it publishes (WORKFLOW1i, design §4.3): a kind and its reason.</summary>
+/// <param name="Kind">A kind's id, which the ask's workspace declares on the machine that drives it.</param>
+/// <param name="Reason">The person's own words it rests on, copied exactly, in at most <see cref="WorkflowChoices.ReasonLimit"/> characters.</param>
+public sealed record WorkflowProposed(string? Kind, string? Reason);
 
 /// <summary>Why an ask did not do what was asked of it — or <see cref="None"/> when it did.</summary>
 public enum AskRefusal
@@ -1072,6 +1133,9 @@ public sealed partial class AskDesk(KnowledgeService service, AskStore asks, Que
         var (proposed, unfitProposal) = JudgeProposal(draft, session, agent, now);
         if (unfitProposal is not null) return new(AskRefusal.BadReview, unfitProposal, ask);
 
+        var (kindProposed, unfitKind) = JudgeWorkflowProposal(draft, session, agent, now);
+        if (unfitKind is not null) return new(AskRefusal.BadWorkflow, unfitKind, ask);
+
         var published = await PublishQuestAsync(ask, to, now, ct, draft, session, agent).ConfigureAwait(false);
         if (published.Quest is null) return new(AskRefusal.QuestRefused, published.Message, ask);
 
@@ -1083,6 +1147,13 @@ public sealed partial class AskDesk(KnowledgeService service, AskStore asks, Que
         {
             await asks.RecordReviewProposalAsync(ask.Id, proposed with { Quest = published.Quest.Id }, now, ct).ConfigureAwait(false);
             message += $"\n\nProposed review `{proposed.Choice}` for this chain, kept on ask `#{ask.Id}` with your reason: a proposal, which "
+                       + "only the person's press applies.";
+        }
+
+        if (kindProposed is not null)
+        {
+            await asks.RecordWorkflowProposalAsync(ask.Id, kindProposed with { Quest = published.Quest.Id }, now, ct).ConfigureAwait(false);
+            message += $"\n\nProposed kind `{kindProposed.Kind}` for this chain, kept on ask `#{ask.Id}` with your reason: a proposal, which "
                        + "only the person's press applies.";
         }
 
@@ -1142,6 +1213,8 @@ public sealed partial class AskDesk(KnowledgeService service, AskStore asks, Que
                 Short = draft?.Short,
                 // The chain's review choice (REVIEWENV1b): the exchange checks a session's quote against this ask's words.
                 Review = draft?.Review,
+                // The intake's kind proposal (WORKFLOW1i): the exchange checks its reason quotes this ask's words.
+                WorkflowProposal = draft?.WorkflowProposal,
                 Workspace = ask.Workspace,
                 // The session publishing, as its connector names it (SESS1): the intake that read the ask.
                 PublishedBy = session,

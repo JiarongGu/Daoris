@@ -66,6 +66,12 @@ public enum QuestPublishRefusal
     /// past their bound, or a session setting one without the person's words, or on no ask whose words it could quote.
     /// </summary>
     BadReview,
+
+    /// <summary>
+    /// A kind proposal that is not one (WORKFLOW1i): a kind that is not a kind's id, a reason that is missing or past its bound, or
+    /// one on no ask whose words it could quote. A reason that does not quote the ask's words is <see cref="NotQuoted"/>.
+    /// </summary>
+    BadWorkflow,
 }
 
 /// <summary>
@@ -124,6 +130,12 @@ public sealed record QuestAsk(string From, string To, string Title, string Body)
     /// <c>off</c> is kept on the ask as a proposal instead, never as the choice (REVIEWENV1b3). Null for none.
     /// </summary>
     public QuestReview? Review { get; init; }
+
+    /// <summary>
+    /// An intake's kind proposal (WORKFLOW1i, design §4.3), whose reason is judged here against the ask's words. The exchange keeps
+    /// nothing of it: the ask's desk does, and the person's press applies it. Null for none.
+    /// </summary>
+    public WorkflowProposed? WorkflowProposal { get; init; }
 }
 
 /// <param name="Refusal"><see cref="QuestPublishRefusal.None"/> when the quest was published.</param>
@@ -434,6 +446,12 @@ public sealed partial class QuestExchange(
         if (unfitReview is { } refusedReview)
         {
             return new(refusedReview.Refusal, refusedReview.Message, Quest: null, addressable);
+        }
+
+        // An intake's kind proposal (WORKFLOW1i): its reason must quote the person's words on the ask. It is kept by the desk.
+        if (await JudgeWorkflowProposalAsync(from, ask, ct).ConfigureAwait(false) is { } unfitKind)
+        {
+            return new(unfitKind.Refusal, unfitKind.Message, Quest: null, addressable);
         }
 
         // What the person requires is judged against what they said (DRIFT1c, D133 §3), here, so every door

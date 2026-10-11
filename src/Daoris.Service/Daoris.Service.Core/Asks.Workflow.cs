@@ -28,6 +28,19 @@ public static partial class WorkflowChoices
     /// <summary>The most characters the person's words with a choice hold, as a review choice's do.</summary>
     public const int WordsLimit = Reviews.WordsLimit;
 
+    /// <summary>The most characters an intake's reason for a proposed kind holds, as a review proposal's does (design §4.3).</summary>
+    public const int ReasonLimit = Reviews.ReasonLimit;
+
+    /// <summary>
+    /// What is wrong with a kind proposal's own words, as a clause the sentence closes, or null (WORKFLOW1i): the kind's shape, a
+    /// reason said, and at most <see cref="ReasonLimit"/> characters. Whether the reason quotes the person is the exchange's.
+    /// </summary>
+    public static string? JudgeProposal(string? kind, string? reason) =>
+        Judge(kind ?? "", null) is { } shape ? shape
+        : string.IsNullOrWhiteSpace(reason) ? "A kind proposal says why, in the person's own words: they decide on it"
+        : reason.Trim().Length > ReasonLimit ? $"A kind proposal's reason is at most {ReasonLimit} characters; this is {reason.Trim().Length}"
+        : null;
+
     /// <summary>A kind's id: lower-case letters, digits and dashes, at most 24.</summary>
     public static bool IsKind(string? value) => value is { Length: > 0 and <= KindLimit } && Shape().IsMatch(value);
 
@@ -87,6 +100,23 @@ public sealed partial class AskDesk
         return said is { Length: > WorkflowChoices.WordsLimit }
             ? (null, $"Your words with a kind or a workflow are at most {WorkflowChoices.WordsLimit} characters; these are {said.Length}. Nothing was kept.")
             : (new AskWorkflowChoice(namedKind, named, now, said), null);
+    }
+
+    /// <summary>
+    /// An intake's kind proposal as the ask keeps it, or why not (WORKFLOW1i, design §4.3): from an agent only, a kind's shape, a
+    /// reason of at most <see cref="WorkflowChoices.ReasonLimit"/> characters. Null for none. Whether the reason quotes the person is
+    /// the exchange's, which holds the ask's words; the session that made it is kept where the agent named one.
+    /// </summary>
+    private static (AskWorkflowProposal? Proposal, string? Refusal) JudgeWorkflowProposal(AskDraft? draft, string? session, bool agent, DateTimeOffset now)
+    {
+        if (draft?.WorkflowProposal is not { } proposed) return (null, null);
+
+        var unfit = !agent
+            ? "A kind proposal is an intake's reading, kept for the person's press: the person sets their own kind instead"
+            : WorkflowChoices.JudgeProposal(proposed.Kind, proposed.Reason);
+        return unfit is not null
+            ? (null, unfit + ". Nothing was published.")
+            : (new AskWorkflowProposal(proposed.Kind!.Trim(), proposed.Reason!.Trim(), now, string.IsNullOrWhiteSpace(session) ? null : session.Trim()), null);
     }
 
     /// <summary>What a choice kept says: the kind, the workflow, both, or neither, for the chains the ask publishes.</summary>
