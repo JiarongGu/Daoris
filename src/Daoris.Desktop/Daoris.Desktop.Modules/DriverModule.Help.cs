@@ -206,7 +206,7 @@ public sealed partial class DriverModule
         var applied = await HelpProposals.ApplyAsync(
             _loop.Home, proposal, plan, HelpDoors(service), Say, cancellationToken).ConfigureAwait(false);
         // An accept publishes the step a departure held and lets a quest waiting on it go on (DRIFT1d2), as a delete or an ask moves the work.
-        if (proposal.Kind is "ask" or "delete" or "accept" or "session") _loop.Nudge();
+        if (proposal.Kind is "ask" or "delete" or "accept" or "session" or "pause") _loop.Nudge();
 
         return ApplyAnswer(proposal, applied);
     }
@@ -316,6 +316,27 @@ public sealed partial class DriverModule
             return done.Count == 0
                 ? (false, $"Nothing was archived.{left}")
                 : (true, $"Archived {Count(done.Count)}: {Listed(done)}.{left}");
+        }
+
+        // WORK_PAUSE's own pause as the screen's, then the loop asked to look (PAUSE1f-c): only an id this machine does not
+        // have is not applied; a pause that finds nothing to hold is said, as the route says it (D48 §6).
+        public async Task<(bool Ok, string Message)> PauseWorkAsync(WorkScope scope, string id, CancellationToken ct)
+        {
+            var outcome = await WorkPausing.PauseAsync(module.WorkWorldOf(), scope, id, PluginEvents.Screen, ct).ConfigureAwait(false);
+            if (outcome.Verdict == PauseVerdict.Unknown) return (false, WorkPausing.Unknown(scope, id));
+
+            module._loop.Nudge();
+            return (true, string.Join(' ', WorkPausing.Lines(outcome).Select(line => line.Trim())));
+        }
+
+        // WORK_RESUME's own resume, the same way.
+        public async Task<(bool Ok, string Message)> ResumeWorkAsync(WorkScope scope, string id, CancellationToken ct)
+        {
+            var outcome = await WorkPausing.ResumeAsync(module.WorkWorldOf(), scope, id, PluginEvents.Screen, ct).ConfigureAwait(false);
+            if (outcome.Verdict == ResumeVerdict.Unknown) return (false, WorkPausing.Unknown(scope, id));
+
+            module._loop.Nudge();
+            return (true, string.Join(' ', WorkPausing.Lines(outcome).Select(line => line.Trim())));
         }
 
         // SESSION_DELETE's own delete: the driver library's one owner, then the loop asked to look (SESSUX1h2c).
@@ -531,6 +552,12 @@ public sealed partial class DriverModule
     private static bool SessionKind(HelpProposal proposal) =>
         proposal.Kind == "session" || (proposal.Kind == "delete" && proposal.Door == "session");
 
+    /// <summary>
+    /// Whether a pending proposal is a pause or a resume (PAUSE1f-c), judged by the work of the ask and the quest it names, so
+    /// the service is asked for that only then. Public so the fast half holds the gate without a service.
+    /// </summary>
+    public static bool JudgedAgainstWork(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => proposal.Kind == "pause");
+
     // A go naming an item on the view, read as the judge reads its view (`HelpGoProposals.Plan`); an item on any other view
     // is refused unread.
     private static bool ItemOn(HelpProposal proposal, string view) =>
@@ -644,6 +671,32 @@ public sealed partial class DriverModule
                 Placed = SessionGroups.Read(look, null),
                 Kept = new SessionDeletion(_loop.Home).Kept(facts.Sessions),
                 SessionDeletes = judged,
+            };
+        }
+
+        // A pause proposal is judged by what a pause would do with each piece of the work, read as the pages' plan reads it for
+        // the id as an ask's and as a quest's, and by which workspaces sync with a remote (PAUSE1f-c, D132 §7.4, §5.1).
+        if (JudgedAgainstWork(proposals))
+        {
+            var world = WorkWorldOf();
+            var plans = new List<WorkPlan>();
+            foreach (var proposal in proposals.Where(each => each.Kind == "pause"))
+            {
+                var target = proposal.Target?.Trim().TrimStart('#').Trim() ?? "";
+                if (target.Length == 0) continue;
+                foreach (var scope in new[] { WorkScope.Ask, WorkScope.Quest })
+                {
+                    if (await WorkPausing.PlanAsync(world, scope, target, ct).ConfigureAwait(false) is { } plan) plans.Add(plan);
+                }
+            }
+
+            // As the REMOTES module reads the wiring: the environment names the machine's remote whole, else the file's workspaces.
+            var fromEnvironment = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(RemoteTarget.UrlVariable))
+                || !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(RemoteTarget.KeyVariable));
+            facts = facts with
+            {
+                Work = plans,
+                Wired = fromEnvironment ? facts.Workspaces : [.. RemoteTarget.Load().Keys],
             };
         }
 

@@ -230,6 +230,39 @@ public sealed class HelpRoomMachineNowTests
         Assert.Null(HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0).Sessions);
     }
 
+    /// <summary>
+    /// PAUSE1f-b (D132 §7.4): what is paused on this machine, each ask and quest by its id, so a resume names one the room was
+    /// shown; and none said as none, so the helper does not guess one paused.
+    /// </summary>
+    [Fact]
+    public void The_room_lists_what_is_paused_on_this_machine()
+    {
+        var some = HelpRoom.Render(HelpRoomFixture.Machine with
+        {
+            Paused = [new PausedBy(WorkScope.Ask, "a1b2c3d4"), new PausedBy(WorkScope.Quest, "q5e6f7a8")],
+        });
+
+        Assert.Contains("- Paused on this machine until resumed: ask `#a1b2c3d4`, quest `#q5e6f7a8`.", some);
+        Assert.Contains("- Paused on this machine until resumed: none.", HelpRoom.Render(HelpRoomFixture.Machine));
+    }
+
+    /// <summary>PAUSE1f-b: read from <c>driver.json</c>'s pauses, where the pause and the resume write them (design §2.5), asks first.</summary>
+    [Fact]
+    public void The_paused_work_is_described_from_the_drivers_file()
+    {
+        var none = new Dictionary<string, string>();
+        var config = DriverConfig.Empty
+            .WithPausedQuest("q9d0aa00", new WorkPause(null, none))
+            .WithPausedAsk("a2none00", new WorkPause(null, none))
+            .WithPausedAsk("a1b2c3d4", new WorkPause(null, none));
+
+        var machine = HelpRoom.Describe(config, new Snapshot([], [], []), [], [], _ => null, asks: 0);
+
+        Assert.Equal(
+            [new PausedBy(WorkScope.Ask, "a1b2c3d4"), new PausedBy(WorkScope.Ask, "a2none00"), new PausedBy(WorkScope.Quest, "q9d0aa00")],
+            machine.Paused);
+    }
+
     [Fact]
     public void The_held_quests_are_described_from_the_loops_last_look()
     {

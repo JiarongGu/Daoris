@@ -4,8 +4,9 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// This machine, now (HELP1a): the agents quests, asks and the helper run on, what waits on the person, the
-/// quests its strikes parked (HELP10) and the person's stop holds (SESSUX1b), the plugins installed here (PLUG9) and the
-/// branches landings made (WSR5b) — each by name and state, so a proposal names one this machine holds.
+/// quests its strikes parked (HELP10) and the person's stop holds (SESSUX1b), what is paused (PAUSE1f-b), the plugins
+/// installed here (PLUG9) and the branches landings made (WSR5b) — each by name and state, so a proposal names one this
+/// machine holds.
 /// </summary>
 internal sealed class HelpRoomMachineNow : IHelpRoomSection
 {
@@ -42,6 +43,9 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
         })],
         Parked = sources.Parked,
         Held = sources.Held,
+        // PAUSE1f-b: the pauses the pause and the resume write (design §2.5), asks first, each in its ids' order.
+        Paused = [.. sources.Config.PausedAsks.Keys.Order(StringComparer.Ordinal).Select(ask => new PausedBy(WorkScope.Ask, ask)),
+            .. sources.Config.PausedQuests.Keys.Order(StringComparer.Ordinal).Select(quest => new PausedBy(WorkScope.Quest, quest))],
         Browser = sources.Browser is { } files ? new HelpBrowser(files.Browser, files.Links, files.Extensions, files.Favorites) : null,
     };
 
@@ -115,6 +119,10 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
             + (machine.Held.Count > 0
                 ? string.Join(", ", machine.Held.Select(held => $"`#{held.Quest}` (to `{held.Repository}`, session `{held.Session}` stopped)"))
                 : "none")
+            + ".\n");
+        // PAUSE1f-b (D132 §7.4): by scope and id, so a resume names a pause this machine keeps.
+        text.Append("- Paused on this machine until resumed: "
+            + (machine.Paused.Count > 0 ? string.Join(", ", machine.Paused.Select(paused => $"{paused.Word} `#{paused.Id}`")) : "none")
             + ".\n");
         // HELP10: as its two files hold it, so a browser proposal names a favorite kept; only where the desktop read them.
         if (machine.Browser is { } browser)
@@ -225,6 +233,12 @@ public sealed partial record HelpMachine
 
     /// <summary>The quests the loop's last look held by the person's stop, as the room was written (SESSUX1b).</summary>
     public IReadOnlyList<HeldQuest> Held { get; init; } = [];
+
+    /// <summary>
+    /// The asks and quests paused on this machine, as <c>driver.json</c> keeps them (PAUSE1f-b, D132 §7.4): asks first, each
+    /// by its id, so a resume names one the room was shown.
+    /// </summary>
+    public IReadOnlyList<PausedBy> Paused { get; init; } = [];
 
     /// <summary>Daoris's browser as its files hold it (HELP10), or null where the desktop read none.</summary>
     public HelpBrowser? Browser { get; init; }

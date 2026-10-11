@@ -92,7 +92,16 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  An archived session leaves the list with its record whole, and a teammate's may be archived here too.\n");
         text.Append("  A session still running, in Waiting on you or in To review is never archived: archive never hides what\n");
         text.Append("  needs the person, and the route refuses it. Stopping a session is never proposed: it is the person's own,\n");
-        text.Append("  on the session's page, where `go_propose` takes them.\n\n");
+        text.Append("  on the session's page, where `go_propose` takes them.\n");
+        // PAUSE1f-b (D132 §7.4, design §2.1): the pages' Pause… and Resume, judged by what a pause does with each piece of the
+        // work. Abandon is exempt: it declines quests with the person's reason, which is their answer (D37).
+        text.Append("- `pause_propose`: pause one ask's work, or one quest's, on this machine, or resume it, naming the ask or\n");
+        text.Append("  the quest by its id. A pause stops what of the work runs here as the person's own stop and starts nothing of it\n");
+        text.Append("  until it is resumed; a session waiting on the person stays parked, a running intake keeps reading, and a\n");
+        text.Append("  teammate's session is never reached. Resume lifts the pause and releases its stops; another pause over a quest\n");
+        text.Append("  of the work stays.\n");
+        text.Append("  Abandoning is never proposed: it declines quests with the person's reason, which is their answer, so name the\n");
+        text.Append("  ask's or the quest's page → Abandon…, or `daoris-driver ask --abandon <id>`, and never write the reason.\n\n");
         // HELP7: the real helper said *press Apply* of a card whose button reads *go there*. HELP10: a delete's
         // press was *delete* all along, and a bring-up-to-date card's first is the look.
         text.Append("Each proposal reaches the person as a card with two buttons, and you name them as the card does:\n");

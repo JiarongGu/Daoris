@@ -13390,3 +13390,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **KEYREPLACE1b — the page replaces a key on its row** (web; after a). A refused key row's act opens the key field for that account and sends `key-replace`; the words that say "nothing puts a new key into this account" change, en and zh.
 
 **Outcome** 2026-10-11: a refused key's row act *New API key* opens a password field inside that row ("New API key for <account>"), sends `key-replace` and says a refusal there, keeping the typed key; the header's add field and the row's close each other. The tip, the attention row and the held line now say a new key goes into the account, keeping its name and lists, en and zh. The coverage table answers `key-replace` Exempt (a key is the person's own, D89). Detail: D125's KEYREPLACE1b note.
+
+
+## PAUSE1f — pause proposal (2026-10-11, D132)
+
+> - [ ] **PAUSE1f — pause proposal** (driver/service/web; after b/SESSUX1h2). Abandon remains person's act. D132 §7.4.
+
+**Outcome** 2026-10-11: Ask Daoris proposes pausing or resuming an ask's or a quest's work (`pause_propose`, doors `pause`/`resume`, the box writing which one it names); the driver's card says §2.6's sentence (what stops, another machine may still take it, its intake keeps reading) and what §2.1 leaves (a waiting session, a teammate's, a take with no session here), says the no-change cases, and names the pauses a resume does not lift; Apply pauses or resumes through `WorkPausing` and nudges the loop; the room lists what is paused; the coverage table's pause and resume are doors, abandon stays exempt. Built as a chain of three workers merged once (SESSUX1h2's shape). Detail: D132's PAUSE1f-a, b and c notes.

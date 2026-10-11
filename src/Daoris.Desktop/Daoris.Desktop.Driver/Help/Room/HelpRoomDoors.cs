@@ -200,16 +200,18 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "`daoris agent update <agent>`, `daoris agent pin <agent> <version>`"),
         ("set an account's own model and effort", Agent + "Model and effort",
             "`daoris agent settings <agent> --account <name> model <model> effort <effort>`"),
-        // PAUSE1b (D132 §7.2): the terminal's doors; the pages' and a session's acts are PAUSE1e's, and Ask Daoris's `pause` kind
-        // PAUSE1f's, owed meanwhile (HelpCoverageTests).
+        // PAUSE1b (D132 §7.2): the terminal's doors; PAUSE1e's pages' and a session's acts (§7.1), and Ask Daoris's `pause` kind,
+        // its `pause` and `resume` doors, since PAUSE1f-b (HelpCoverageTests).
         ("pause an ask's work, or one quest's, on this machine: what of it runs is stopped as your stop, and nothing of it "
-            + "starts until you resume it, which carries it on where it stood", "(no screen yet)",
+            + "starts until you resume it, which carries it on where it stood",
+            "Quests → the ask's page or the quest's page → Pause…, Resume; Sessions → the session's header or its row's ⋯ → "
+            + "Pause quest…, Pause ask…, Resume quest, Resume ask",
             "`daoris-driver ask --pause|--resume <id>`, `daoris-driver quest pause|resume <id>`"),
         // PAUSE1d (D132 §7.4): exempt from Ask Daoris, since its reason is the person's answer (D37), as Decline… is; the pages'
-        // acts are PAUSE1e's.
+        // acts are PAUSE1e's, on the ask's and the quest's pages alone (§7.1).
         ("abandon an ask's work, or one quest's, on this machine: listed first, then on your reason each quest is declined, what "
             + "only Daoris holds of it is discarded and its sessions archived (Ask Daoris never proposes it: the reason is your answer)",
-            "(no screen yet)",
+            "Quests → the ask's page or the quest's page → Abandon…",
             "`daoris-driver ask --abandon <id> [--reason \"…\" --yes]`, `daoris-driver quest abandon <id> [--reason \"…\" --yes]`"),
         ("delete a quest or an ask made by mistake", "Quests → the quest's drawer, or the ask's record → Delete…",
             "`daoris-driver quest delete <id>`, `daoris-driver ask --delete <id>`"),

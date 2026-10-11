@@ -253,4 +253,22 @@ public sealed class HelpRoomDoorsTests
         Assert.Equal(order.IndexOf("delete a quest or an ask made by mistake") + 1, order.IndexOf(archive.To));
         Assert.Equal(order.IndexOf(archive.To) + 1, order.IndexOf(delete.To));
     }
+
+    /// <summary>
+    /// PAUSE1f-b (D132 §7.1, §7.4): pause and resume are pressed on the ask's and the quest's pages and on a session, which the
+    /// `pause` kind proposes; abandon is on the pages alone, and marked as the person's own.
+    /// </summary>
+    [Fact]
+    public void The_rooms_rows_name_where_pause_resume_and_abandon_are_pressed()
+    {
+        var pause = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris-driver ask --pause|--resume", StringComparison.Ordinal));
+        var abandon = HelpRoomDoors.Doors.Single(door => door.Terminal.Contains("daoris-driver ask --abandon", StringComparison.Ordinal));
+
+        Assert.Equal(
+            "Quests → the ask's page or the quest's page → Pause…, Resume; Sessions → the session's header or its row's ⋯ → "
+            + "Pause quest…, Pause ask…, Resume quest, Resume ask",
+            pause.Screen);
+        Assert.Equal("Quests → the ask's page or the quest's page → Abandon…", abandon.Screen);
+        Assert.Contains("Ask Daoris never proposes it: the reason is your answer", abandon.To);
+    }
 }
