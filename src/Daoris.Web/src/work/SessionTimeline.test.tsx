@@ -215,3 +215,21 @@ describe('the timeline', () => {
     await i18n.changeLanguage('en');
   });
 });
+
+describe('a quest event’s coded note (QUESTCLOSE1b2)', () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  it('words the person’s done in 中文, and shows a note without parts as kept', async () => {
+    await i18n.changeLanguage('zh');
+    const noteParts = [{ code: 'quest.person-done', values: {} }, { words: 'In the folder.', by: 'person' }];
+    const { unmount } = render(
+      <TimelineEntry event={{ kind: 'quest', at: '2026-09-21T10:30:00Z', status: 'Done', note: 'The person marked this done: In the folder.', noteParts }} />,
+    );
+    expect(screen.getByText('已由人标为完成。')).toBeInTheDocument();
+    expect(screen.getByText('In the folder.')).toBeInTheDocument();
+    unmount();
+
+    render(<TimelineEntry event={{ kind: 'quest', at: '2026-09-21T10:30:00Z', status: 'Done', note: 'Plain English.' }} />);
+    expect(screen.getByText('Plain English.')).toBeInTheDocument();
+  });
+});

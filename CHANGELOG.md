@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- A quest you marked done now reads in your language where its note is shown (the quest's page, a session's timeline and
+  relations): in 中文 it says 已由人标为完成。, and the words you wrote stay as you wrote them.
 - Ask Daoris can propose archiving or unarchiving sessions, by id or everything that ended, and deleting one. The card says
   what the list keeps and why, and nothing changes until you press Apply.
 - A conversation's notes that an agent would not take what you added, that messages you sent while it worked never reached

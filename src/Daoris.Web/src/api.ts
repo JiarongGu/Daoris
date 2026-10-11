@@ -58,6 +58,11 @@ export type Quest = {
   id: string; from: string; to: string; title: string; body: string;
   status: 'Open' | 'Taken' | 'Done' | 'Declined';
   note?: string; filed: string; updated: string; workspace?: string;
+  /**
+   * The note's lines beside its English (QUESTCLOSE1b1, D142 point 2), which the page words in the reader's language
+   * (QUESTCLOSE1b2). Absent from a host older than the field, and from a note written before parts: shown as kept.
+   */
+  noteParts?: NotePart[] | null;
   /** Absent from a host older than D65 — the same as carrying nothing. */
   links?: string[];
   attachments?: QuestAttachment[];

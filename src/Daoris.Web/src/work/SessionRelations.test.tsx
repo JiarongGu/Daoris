@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import '../i18n';
+import i18n from '../i18n';
 import type { Quest, Session } from '../api';
 import { SessionRelations } from './SessionRelations';
 
@@ -65,5 +65,20 @@ describe('who a session worked with', () => {
 
     expect(screen.getByText('Carried on once #q9 was answered')).toBeTruthy();
     expect(screen.getByText('Declined: Not ours: ask report-db.')).toBeTruthy();
+  });
+
+  // QUESTCLOSE1b2: a coded note is worded in the reader's language beside the answer's label.
+  it('words the person’s done in 中文 beside the answer’s label', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      const question = quest({
+        id: 'q9', status: 'Done', note: 'The person marked this done.',
+        noteParts: [{ code: 'quest.person-done', values: {} }],
+      });
+      render(<SessionRelations relations={{ askedBy: null, resumedAfter: null, asked: [{ quest: question, question: true }] }} />);
+      expect(screen.getByText(/答复：/)).toHaveTextContent('答复：已由人标为完成。');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 });

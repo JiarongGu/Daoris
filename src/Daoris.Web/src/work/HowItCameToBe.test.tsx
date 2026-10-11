@@ -4,8 +4,9 @@ import userEvent from '@testing-library/user-event';
 import i18n from '../i18n';
 import { moment } from '../format';
 import { HowItCameToBe } from './HowItCameToBe';
+import type { TraceLink } from './trace';
 import {
-  answer, MISSING_CHAIN, NO_ASK_CHAIN, NOTHING, OLD_CHAIN, QUEST_CHAIN, SESSION_CHAIN, UNREAD_ANSWER, WAITING_CHAIN,
+  answer, MISSING_CHAIN, NO_ASK_CHAIN, NOTHING, OLD_CHAIN, QUEST, QUEST_CHAIN, SESSION_CHAIN, UNREAD_ANSWER, WAITING_CHAIN,
 } from './traceFixtures';
 
 // Props-only, like every molecule here (TRACE1b, D143): how a session or a quest came to be, worded from the chain's codes in
@@ -220,5 +221,22 @@ describe('how this came to be', () => {
     expect(screen.getByText('本机没有它的记录。')).toBeInTheDocument();
     // A requirement's quote is the person's, never translated.
     expect(screen.getByText('keep the colours').tagName).toBe('BLOCKQUOTE');
+  });
+
+  // QUESTCLOSE1b2: the quest's close is worded from its parts where the record carries them, and as written where not.
+  it('words a quest’s coded close in 中文, and keeps a close without parts as written', async () => {
+    await i18n.changeLanguage('zh');
+    const coded: typeof QUEST_CHAIN = {
+      ...QUEST_CHAIN,
+      links: QUEST_CHAIN.links.map((link): TraceLink => link.kind === 'quest'
+        ? { kind: 'quest', quest: { ...QUEST, note: 'The person marked this done.', noteParts: [{ code: 'quest.person-done', values: {} }] } }
+        : link),
+    };
+    const { unmount } = render(<HowItCameToBe kind="quest" id="q1" open onToggle={() => {}} answer={answer(coded)} />);
+    expect(screen.getByText('已由人标为完成。')).toBeInTheDocument();
+    unmount();
+
+    render(<HowItCameToBe kind="quest" id="q1" open onToggle={() => {}} answer={answer(QUEST_CHAIN)} />);
+    expect(screen.getByText('the figure reads through v3').tagName).toBe('BLOCKQUOTE');
   });
 });

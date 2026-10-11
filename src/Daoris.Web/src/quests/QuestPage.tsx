@@ -777,7 +777,10 @@ export function QuestPage({
         </div>
       )}
 
-      {quest.note && <p className="mt-4 rounded-control bg-accent-soft px-3 py-2.5 text-body italic">{quest.note}</p>}
+      {quest.note && (quest.noteParts?.length
+        // Daoris's lines in the reader's language, the person's words as theirs; a note without parts as kept (QUESTCLOSE1b2).
+        ? <Note note={quest.note} parts={quest.noteParts} className="mt-4 rounded-control bg-accent-soft px-3 py-2.5 text-body italic" />
+        : <p className="mt-4 rounded-control bg-accent-soft px-3 py-2.5 text-body italic">{quest.note}</p>)}
 
       {session && (
         /* The driven session's RECORD (D46 §4) — read-only here: a quest is decided on its page, and its sessions

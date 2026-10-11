@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
 import { Pill, QUEST_TONE, SectionTitle } from '../ui';
 import { questName } from './identity';
+import { Note } from './Note';
 import type { Relations } from './relations';
 
 /** How much of an answer the head carries: enough to know what was said, and the quest holds the rest. */
@@ -96,6 +97,15 @@ function Answer({ quest }: { quest: Quest }) {
   const { t } = useTranslation();
   if (quest.status !== 'Done' && quest.status !== 'Declined') {
     return <p className="m-0 text-meta text-ink-faint">{t('work.relations.waiting')}</p>;
+  }
+  // A coded note is worded in the reader's language beside the label, one run (QUESTCLOSE1b2).
+  if (quest.noteParts?.length) {
+    const label = t(quest.status === 'Done' ? 'work.relations.answer' : 'work.relations.declined', { note: '' }).trimEnd();
+    return (
+      <p className="m-0 text-small text-ink-soft">
+        {label}{t('work.note.join', { first: '', second: '' })}<Note note={quest.note} parts={quest.noteParts} compact clamp={2} />
+      </p>
+    );
   }
   const note = quest.note?.replace(/\s+/g, ' ').trim();
   if (!note) return null;

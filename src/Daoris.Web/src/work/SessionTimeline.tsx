@@ -47,9 +47,11 @@ export function TimelineEntry({ event }: { event: TimelineEvent }) {
         : t('work.timeline.evidence');
 
   // A quest's note is its closer's words, shown as written; a session's is its record's, Daoris's lines worded (LANG1b).
-  const note = event.kind === 'quest' ? event.note : null;
+  // A quest's note with parts is drawn by `Note` as well, so the person's done reads in the reader's language (QUESTCLOSE1b2).
+  const coded = event.kind === 'state' || (event.kind === 'quest' && !!event.noteParts?.length);
+  const note = event.kind === 'quest' && !coded ? event.note : null;
   // Long is judged on what is shown: the note's blocks as `Note` draws them, or the closer's words.
-  const shown = event.kind === 'state'
+  const shown = coded && (event.kind === 'state' || event.kind === 'quest')
     ? noteBlocks(t, noteLines(t, { note: event.note, parts: event.noteParts }, i18n.language)).map((block) => block.text)
     : note ? [note] : [];
   const long = linesTaken(shown, MEASURE) > NOTE_LINES;
@@ -69,7 +71,7 @@ export function TimelineEntry({ event }: { event: TimelineEvent }) {
       {note && (
         <p className={cn('m-0 mt-0.5 whitespace-pre-wrap text-small italic text-ink-soft', folded && 'line-clamp-4')}>{note}</p>
       )}
-      {event.kind === 'state' && (
+      {coded && (event.kind === 'state' || event.kind === 'quest') && (
         <Note
           note={event.note}
           parts={event.noteParts}

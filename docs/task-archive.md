@@ -13271,3 +13271,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **SESSUX1h3 — the room counts sessions by group and lists the ended by id** (driver). The helper learns session ids only from the person or `ended`, so it cannot name one to archive or delete. *The machine now* counts sessions by group (§7.3's room bullet) and lists the ended ones by id, as ENTRY1f2 lists the waiting. HelpRoomMachineNowTests and the goldens.
 
 **Outcome** 2026-10-11: the room's *The machine now* counts this machine's sessions by the Sessions list's groups (waiting on you, to review, working, resuming later, ended; archived ones, teammates' and Ask Daoris's own not counted) from the list's own look (`SessionGroups.LookAsync`, read by the modules' room builder; "not read" if it fails), and lists up to ten ended ones newest first by id and repository. Its cost on every room write is SESSUX1h3b's to time. Detail: D161's SESSUX1h3 note.
+
+
+## QUESTCLOSE1b2 — the page words it (2026-10-11, D126)
+
+> - [ ] **QUESTCLOSE1b2 — the page words it** (web; after b1). Quest notes draw through `work/Note.tsx` (QuestPage ~:780, HowItCameToBe ~:357, SessionRelations ~:100, SessionTimeline ~:50-53); en/zh `note.quest.person-done`; a Chinese test (QuestPage.done.test.tsx).
+
+**Outcome** 2026-10-11: where a quest carries `noteParts`, its note draws through `Note` on the quest page, a session's timeline, its relations (the label and the note joined by `work.note.join`) and the trace's close; a note without parts draws as before. The person's done reads 「已由人标为完成。」 in 中文. The trace's link carries no parts yet (QUESTCLOSE1b5). Detail: D126's QUESTCLOSE1b2 note.
