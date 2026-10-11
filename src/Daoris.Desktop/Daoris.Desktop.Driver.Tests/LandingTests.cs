@@ -282,6 +282,102 @@ public sealed class LandingTests : IDisposable
         Assert.Equal(new LandingPlan(LandingForm.Branch, "feature/0fda18-fix-the-api-gap", LandingSource.Workspace), plan);
     }
 
+    // ——— LANDNAME1a: an entered branch name replaces the rule's wholesale
+
+    [Fact]
+    public async Task An_entered_name_replaces_the_rules_whole_name_and_the_record_keeps_it()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        var trees = new SessionTrees(_home);
+        var opened = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
+        var subject = new LandingSubject("s1a2b3c4", "0fda18", "Fix the API gap") { Entered = "  my/own-name  " };
+
+        var plan = await trees.PlanAsync(opened.Path, subject);
+        Assert.Equal("my/own-name", plan.Target);
+        Assert.Null(plan.Problem);
+
+        var landed = await trees.LandAsync(opened.Path, subject);
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Equal("my/own-name", landed.Branch);
+        Assert.Contains("the work", await GitAsync(root, "log", "my/own-name", "--oneline"));
+        Assert.Empty((await GitAsync(root, "branch", "--list", "feature/*")).Trim());
+        Assert.Equal("my/own-name", new LandedBranches(_home).All().Single().Branch);
+    }
+
+    [Fact]
+    public async Task A_blank_entered_name_keeps_the_rules()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        var trees = new SessionTrees(_home);
+        var opened = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
+
+        var landed = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix") { Entered = "   " });
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Equal("feature/0fda18-fix", landed.Branch);
+    }
+
+    [Fact]
+    public async Task An_entered_name_git_would_not_take_is_refused_in_words_about_the_name()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        var trees = new SessionTrees(_home);
+        var opened = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
+        var subject = new LandingSubject("s1a2b3c4", "0fda18", "Fix") { Entered = "no good..name" };
+
+        Assert.NotNull((await trees.PlanAsync(opened.Path, subject)).Problem);
+        var landed = await trees.LandAsync(opened.Path, subject);
+
+        Assert.False(landed.Landed);
+        Assert.Contains("`no good..name`", landed.Message);
+        Assert.Contains("entered", landed.Message);
+        Assert.DoesNotContain("pattern", landed.Message);
+    }
+
+    [Fact]
+    public async Task An_entered_name_that_is_a_branch_Daoris_did_not_make_is_refused_and_never_moved()
+    {
+        var root = await RepositoryAsync("engine");
+        await GitAsync(root, "branch", "theirs");
+        var before = (await GitAsync(root, "rev-parse", "theirs")).Trim();
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        var trees = new SessionTrees(_home);
+        var opened = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
+
+        var landed = await trees.LandAsync(opened.Path, new LandingSubject("s1a2b3c4", "0fda18", "Fix") { Entered = "theirs" });
+
+        Assert.False(landed.Landed);
+        Assert.Contains("`theirs`", landed.Message);
+        Assert.Contains("entered", landed.Message);
+        Assert.DoesNotContain("pattern", landed.Message);
+        Assert.Equal(before, (await GitAsync(root, "rev-parse", "theirs")).Trim());
+    }
+
+    [Fact]
+    public async Task A_merge_rule_refuses_an_entered_name_in_words_and_merges_nothing()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        var opened = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(opened.Path, "work.txt", "the session's work", "the work");
+        var subject = new LandingSubject("s1a2b3c4", "0fda18", "Fix") { Entered = "my/own-name" };
+
+        Assert.Contains("merge", (await trees.PlanAsync(opened.Path, subject)).Problem);
+        var landed = await trees.LandAsync(opened.Path, subject);
+
+        Assert.False(landed.Landed);
+        Assert.Contains("makes no branch", landed.Message);
+        Assert.DoesNotContain("the work", await GitAsync(root, "log", "main", "--oneline"));
+    }
+
     /// <summary>A session under the branch form is told its work goes through review, and is not to merge or push it.</summary>
     [Fact]
     public void The_instruction_says_how_the_work_will_land_and_says_nothing_under_merge()
