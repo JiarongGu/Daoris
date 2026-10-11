@@ -307,6 +307,8 @@ describe('the Plugins view', () => {
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Make a plugin…' }));
     const drawer = await screen.findByRole('dialog', { name: 'Make a plugin' });
     expect(within(drawer).getByRole('textbox', { name: 'Plugin ID' })).toBeInTheDocument();
+    // The drawer's title says it once; the card does not repeat it as a heading of its own.
+    expect(within(drawer).getAllByText('Make a plugin')).toHaveLength(1);
     await userEvent.click(within(drawer).getByRole('button', { name: 'Close' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
 
@@ -314,6 +316,7 @@ describe('the Plugins view', () => {
     await userEvent.keyboard('{Enter}');
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Try a folder…' }));
     const trying = await screen.findByRole('dialog', { name: 'Try a folder' });
+    expect(within(trying).queryByText('Make a plugin')).toBeNull();
     await waitFor(() => expect(within(trying).getByRole('textbox', { name: 'Folder to try' })).toHaveFocus());
   });
 

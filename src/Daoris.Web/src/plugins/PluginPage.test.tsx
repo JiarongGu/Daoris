@@ -259,6 +259,17 @@ describe("a plugin's page", () => {
     expect(onCancelUpdate).toHaveBeenCalled();
   });
 
+  it("makes the plan's Update now the one primary control, first among the plan's buttons", () => {
+    page({
+      plan: { id: 'acme.gate', applied: false, changes: [{ what: 'version', was: '1.2.0', now: '1.3.0' }] },
+    });
+
+    const buttons = within(screen.getByRole('region', { name: 'What an update changes' })).getAllByRole('button');
+    expect(buttons.map((button) => button.textContent)).toEqual(['Update now', 'Not now']);
+    expect(buttons[0].className).toMatch(/\bbg-accent\b/);
+    expect(buttons[1].className).not.toMatch(/\bbg-accent\b/);
+  });
+
   it('lists each declared point with what kind of question it is, and each agent by name', () => {
     page();
 

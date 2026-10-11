@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, CheckField, Inline, MonoWell, Pill, Prose, SectionTitle } from '../ui';
+import { Button, Card, CheckField, Inline, MonoWell, Pill, Prose } from '../ui';
 
 /** A point a new plugin may speak on (PLUG8): the driver's, with what kind of question it is. */
 export type KitPoint = { name: string; kind: string };
@@ -70,9 +70,8 @@ export function PluginKitCard({ points, busy, made, trial, onPick, onMake, onTry
   const ordered = points.map((point) => point.name).filter((name) => chosen.includes(name));
 
   return (
-    <Card id="settings-plugin-kit" className="mt-3.5 scroll-mt-3">
-      <SectionTitle>{t('plugin.kit.title')}</SectionTitle>
-      <Prose className="mt-1 text-small text-ink-soft"><Inline text={t('plugin.kit.body')} /></Prose>
+    <Card className="mt-3.5 scroll-mt-3">
+      <Prose className="text-small text-ink-soft"><Inline text={t('plugin.kit.body')} /></Prose>
 
       <fieldset aria-label={t('plugin.kit.new')} className="m-0 mt-3 border-0 border-t border-line p-0 pt-3">
         <form

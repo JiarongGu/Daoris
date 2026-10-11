@@ -80,7 +80,7 @@ export function PluginUpdatePlan({ plan, busy = false, onApply, onCancel }: {
       {!plan.refusal && <p className="m-0 mt-2 text-meta text-ink-faint">{t('plugin.update.note')}</p>}
       <div className="mt-2 flex flex-wrap gap-2">
         {!plan.refusal && (
-          <Button disabled={busy} aria-busy={busy || undefined} onClick={() => onApply(plan.id)}>{t('plugin.update.apply')}</Button>
+          <Button variant="primary" disabled={busy} aria-busy={busy || undefined} onClick={() => onApply(plan.id)}>{t('plugin.update.apply')}</Button>
         )}
         <Button variant="ghost" disabled={busy} onClick={onCancel}>{t('plugin.update.cancel')}</Button>
       </div>
