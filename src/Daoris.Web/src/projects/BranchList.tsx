@@ -5,7 +5,7 @@ import { ago, stamp } from '../format';
 import { ExternalLink } from '../links';
 import { ListMore } from '../work/ListPane';
 import { Button, Inline, Pill, Prose, SESSION_TONE, type ShownState } from '../ui';
-import { landedStanding, pullRequestSaid, standing } from './branchStanding';
+import { kindOf, landedStanding, pullRequestSaid, standing } from './branchStanding';
 
 /** Yours are folded after five (the built-in Git design §2.2): the rest are one press away. */
 export const YOURS_SHOWN = 5;
@@ -51,11 +51,6 @@ export type BranchListValue = {
   /** The session records could not be read, so no branch is named a session's. */
   sessionsUnread?: boolean;
 };
-
-const KINDS = new Set(['line', 'session', 'landed', 'origin']);
-
-/** A branch's kind: a kind the page has no word for is the person's, as a branch the record no longer matches is (D113). */
-const kindOf = (branch: ListedBranch) => (KINDS.has(branch.kind) ? branch.kind : 'yours');
 
 /** What set the line, as Setup says it (D86); a source the page has no word for is the checkout's own guess. */
 const SOURCES = new Set(['repository', 'workspace', 'checkout']);

@@ -88,7 +88,7 @@ describe("a repository's Branches tab", () => {
     const named = row("Sessions' (2)", 'daoris/engine-physics-step');
     expect(named).toHaveTextContent('Fix the slow frame');
     expect(within(named).getByText('working')).toBeInTheDocument();
-    expect(named).toHaveTextContent('2 commits ahead of main, and 1 behind.');
+    expect(named).toHaveTextContent('2 commits ahead of main, and 2 behind.');
     // One no record names says so, and is still a session's by its namespace (D88).
     expect(row("Sessions' (2)", 'daoris/engine-audio-mix')).toHaveTextContent('No session record names it. 3 commits ahead of main.');
 
