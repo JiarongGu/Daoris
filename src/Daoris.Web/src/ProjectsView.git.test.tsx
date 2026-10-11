@@ -93,7 +93,7 @@ describe("a repository's Branches and History tabs", () => {
 
     const list = await within(repositoryMain()).findByRole('list', { name: "engine's history on main" });
     expect(within(list).getAllByRole('listitem')).toHaveLength(GIT_HISTORY_ENGINE.length);
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_GRAPH', expect.objectContaining({ payload: { repository: 'engine', tips: [LINE_COMMIT] } }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'GIT_GRAPH', expect.objectContaining({ payload: { repository: 'engine', tips: [LINE_COMMIT], workspace: 'aurora' } }));
     expect(within(repositoryMain()).getByRole('tab', { name: 'History' })).toHaveAttribute('aria-selected', 'true');
     expect(window.localStorage.getItem('daoris.list.projects.tab')).toContain('history');
   });

@@ -93,14 +93,16 @@ export const keys = {
    */
   gitBranches: (all: boolean, repository: string, workspace: string) => ['git', 'branches', all, repository, workspace] as const,
   allGitBranches: ['git', 'branches'] as const,
-  gitGraph: (repository: string, tips: readonly string[], page: number, sinceParted: boolean) =>
-    ['git', 'graph', repository, tips.join(','), page, sinceParted] as const,
-  gitCommit: (repository: string, commit: string) => ['git', 'commit', repository, commit] as const,
-  gitHistory: (repository: string, commit: string, path: string, page: number) =>
-    ['git', 'history', repository, commit, path, page] as const,
-  gitBlame: (repository: string, commit: string, path: string) => ['git', 'blame', repository, commit, path] as const,
-  gitCompare: (repository: string, left: string, right: string, everything: boolean) =>
-    ['git', 'compare', repository, left, right, everything] as const,
+  // Each one-repository read carries its workspace: two workspaces may each hold a repository of one name (GIT1d-c).
+  gitGraph: (repository: string, tips: readonly string[], page: number, sinceParted: boolean, workspace: string) =>
+    ['git', 'graph', repository, tips.join(','), page, sinceParted, workspace] as const,
+  gitCommit: (repository: string, commit: string, workspace: string) => ['git', 'commit', repository, commit, workspace] as const,
+  gitHistory: (repository: string, commit: string, path: string, page: number, workspace: string) =>
+    ['git', 'history', repository, commit, path, page, workspace] as const,
+  gitBlame: (repository: string, commit: string, path: string, workspace: string) =>
+    ['git', 'blame', repository, commit, path, workspace] as const,
+  gitCompare: (repository: string, left: string, right: string, everything: boolean, workspace: string) =>
+    ['git', 'compare', repository, left, right, everything, workspace] as const,
   /** The files in one session's tree, for `@` (CONV4d) — shell-only for the same reason. */
   treeFiles: (session: string) => ['tree-files', session] as const,
   /** One file in a session's tree, read for its preview (PREVIEW1) — shell-only for the same reason. */

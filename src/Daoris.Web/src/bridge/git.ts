@@ -157,7 +157,7 @@ export type GitCompare = {
 };
 
 /** The scope a branch list is read for (D112): the held repositories by default, every one, or one by name. */
-export type GitBranchScope = { all?: boolean; repository?: string; workspace?: string };
+export type GitBranchScope = { all?: boolean; repository?: string; workspace?: string; enabled?: boolean };
 
 /** The branches of every repository in a scope, with the repositories apart from it. */
 export const useGitBranches = (scope: GitBranchScope = {}) => {
@@ -169,20 +169,21 @@ export const useGitBranches = (scope: GitBranchScope = {}) => {
       ...(scope.repository ? { repository: scope.repository } : {}),
       ...(scope.workspace ? { workspace: scope.workspace } : {}),
     }),
-    enabled: isAvailable,
+    enabled: isAvailable && scope.enabled !== false,
   });
   return { available: isAvailable, query };
 };
 
 /** A page of the graph from tips named by their whole ids (the list's `commit`); asks nothing with no tip. */
-export const useGitGraph = (repository: string | null, tips: readonly string[], options: { page?: number; sinceParted?: boolean } = {}) => {
+export const useGitGraph = (repository: string | null, tips: readonly string[], options: { page?: number; sinceParted?: boolean; workspace?: string } = {}) => {
   const { isAvailable } = useShenora();
   const page = options.page ?? 0;
   const sinceParted = Boolean(options.sinceParted);
+  const workspace = options.workspace ?? '';
   const query = useQuery({
-    queryKey: keys.gitGraph(repository ?? '', tips, page, sinceParted),
+    queryKey: keys.gitGraph(repository ?? '', tips, page, sinceParted, workspace),
     queryFn: () => call<GitAnswer<GitGraphPage>>('GIT_GRAPH', {
-      repository, tips, ...(page ? { page } : {}), ...(sinceParted ? { sinceParted: true } : {}),
+      repository, tips, ...(page ? { page } : {}), ...(sinceParted ? { sinceParted: true } : {}), ...(workspace ? { workspace } : {}),
     }),
     enabled: isAvailable && Boolean(repository) && tips.length > 0,
   });
@@ -190,11 +191,11 @@ export const useGitGraph = (repository: string | null, tips: readonly string[], 
 };
 
 /** A commit's page by its whole id. Its answer cannot change, so it is kept. */
-export const useGitCommit = (repository: string | null, commit: string | null) => {
+export const useGitCommit = (repository: string | null, commit: string | null, workspace = '') => {
   const { isAvailable } = useShenora();
   const query = useQuery({
-    queryKey: keys.gitCommit(repository ?? '', commit ?? ''),
-    queryFn: () => call<GitAnswer<GitCommitDetail>>('GIT_COMMIT', { repository, commit }),
+    queryKey: keys.gitCommit(repository ?? '', commit ?? '', workspace),
+    queryFn: () => call<GitAnswer<GitCommitDetail>>('GIT_COMMIT', { repository, commit, ...(workspace ? { workspace } : {}) }),
     enabled: isAvailable && Boolean(repository) && Boolean(commit),
     staleTime: Infinity,
   });
@@ -202,11 +203,13 @@ export const useGitCommit = (repository: string | null, commit: string | null) =
 };
 
 /** A file's history at a commit, following renames, a page at a time. */
-export const useGitHistory = (repository: string | null, commit: string | null, path: string | null, page = 0) => {
+export const useGitHistory = (repository: string | null, commit: string | null, path: string | null, page = 0, workspace = '') => {
   const { isAvailable } = useShenora();
   const query = useQuery({
-    queryKey: keys.gitHistory(repository ?? '', commit ?? '', path ?? '', page),
-    queryFn: () => call<GitAnswer<GitFileHistory>>('GIT_HISTORY', { repository, commit, path, ...(page ? { page } : {}) }),
+    queryKey: keys.gitHistory(repository ?? '', commit ?? '', path ?? '', page, workspace),
+    queryFn: () => call<GitAnswer<GitFileHistory>>('GIT_HISTORY', {
+      repository, commit, path, ...(page ? { page } : {}), ...(workspace ? { workspace } : {}),
+    }),
     enabled: isAvailable && Boolean(repository) && Boolean(commit) && Boolean(path),
     staleTime: Infinity,
   });
@@ -214,11 +217,11 @@ export const useGitHistory = (repository: string | null, commit: string | null, 
 };
 
 /** A file as a commit holds it, each line with the commit that last changed it. */
-export const useGitBlame = (repository: string | null, commit: string | null, path: string | null) => {
+export const useGitBlame = (repository: string | null, commit: string | null, path: string | null, workspace = '') => {
   const { isAvailable } = useShenora();
   const query = useQuery({
-    queryKey: keys.gitBlame(repository ?? '', commit ?? '', path ?? ''),
-    queryFn: () => call<GitAnswer<GitBlame>>('GIT_BLAME', { repository, commit, path }),
+    queryKey: keys.gitBlame(repository ?? '', commit ?? '', path ?? '', workspace),
+    queryFn: () => call<GitAnswer<GitBlame>>('GIT_BLAME', { repository, commit, path, ...(workspace ? { workspace } : {}) }),
     enabled: isAvailable && Boolean(repository) && Boolean(commit) && Boolean(path),
     staleTime: Infinity,
   });
@@ -226,11 +229,13 @@ export const useGitBlame = (repository: string | null, commit: string | null, pa
 };
 
 /** Two commits compared: the commits only one side holds, and the changes (`everything` reads A..B, not A...B). */
-export const useGitCompare = (repository: string | null, left: string | null, right: string | null, everything = false) => {
+export const useGitCompare = (repository: string | null, left: string | null, right: string | null, everything = false, workspace = '') => {
   const { isAvailable } = useShenora();
   const query = useQuery({
-    queryKey: keys.gitCompare(repository ?? '', left ?? '', right ?? '', everything),
-    queryFn: () => call<GitAnswer<GitCompare>>('GIT_COMPARE', { repository, left, right, ...(everything ? { everything: true } : {}) }),
+    queryKey: keys.gitCompare(repository ?? '', left ?? '', right ?? '', everything, workspace),
+    queryFn: () => call<GitAnswer<GitCompare>>('GIT_COMPARE', {
+      repository, left, right, ...(everything ? { everything: true } : {}), ...(workspace ? { workspace } : {}),
+    }),
     enabled: isAvailable && Boolean(repository) && Boolean(left) && Boolean(right),
     staleTime: Infinity,
   });
