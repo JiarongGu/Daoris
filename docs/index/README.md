@@ -40,7 +40,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/agents/AgentPage.tsx` | 51 | 956 |
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 105 | 2030 |
 | `src/Daoris.Web/src/commands.ts` | 40 | 793 |
-| `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 59 | 1171 |
+| `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 61 | 1225 |
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 48 | 900 |
 | `src/Daoris.Web/src/ui.test.tsx` | 48 | 975 |
 | `src/Daoris.Web/src/ui.tsx` | 79 | 1683 |

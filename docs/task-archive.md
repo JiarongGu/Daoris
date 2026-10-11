@@ -13741,3 +13741,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **NEW1d-b — the go fills the composer; *Make it a task with Daoris…*** (web; after NEW1d-a and NEW1c). `placeDoor` opens the composer with the go's repository and words; the composer's quiet press hands its draft and repository to Ask Daoris as a draft. Design §1.
 
 **Outcome** 2026-10-12: a go to `sessions`/`new` becomes a `compose` door that `WorkFrame` consumes once by id (repository chosen through NEW1c's `pick`, words above any already typed, nothing sent), and the composer's quiet *Make it a task with Daoris…* puts its draft, under a line naming the repository, in Quick Ask for the person to send; a browser has no composer. Detail: D162's NEW1d-b note.
+
+## NEW1g — a task handed to Ask Daoris opens a new conversation (2026-10-12, D162)
+
+> - [ ] **NEW1g — a task handed to Ask Daoris opens a new conversation** (web). *Make it a task with Daoris…* put its draft into the last Ask Daoris conversation, already ended, under its history; the hand-over opens a new conversation with the draft. D162's window note.
+
+**Outcome** 2026-10-12: a draft handed to Ask Daoris, by either door, clears the panel to a new conversation first when the one shown is not live, and waits for the session list so it lands in the right box. Detail: D162's NEW1g note.

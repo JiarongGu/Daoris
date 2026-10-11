@@ -403,6 +403,60 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
+   * NEW1g (D162): a draft that will start a new conversation shows one. With the newest ended, the panel clears to a blank one
+   * first (as *New conversation* does, without ending anything), and the draft goes in the box, not under the ended transcript.
+   */
+  describe('a draft handed to it', () => {
+    const ENDED_NOTICE = 'This conversation has ended. A message starts a new one.';
+    const sent = () => invoke.mock.calls.filter(([, type]) => type === 'SESSION_INPUT');
+    const offer = (readied: string | null = null, text = '> a per-frame budget\n\n') => {
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      if (readied) client.setQueryData(keys.helpReadied, { readied, spoken: [] });
+      return render(
+        <QueryClientProvider client={client}>
+          <Tooltip.Provider>
+            <AskDaoris opening={{ text, id: 1, draft: true }} onOpened={vi.fn()} onGo={vi.fn()} onClose={vi.fn()} />
+          </Tooltip.Provider>
+        </QueryClientProvider>,
+      );
+    };
+
+    it('opens a new conversation when the newest has ended: no ended transcript, the draft in the box, nothing sent', async () => {
+      SESSIONS = [{ ...HELP, state: 'completed' }];
+      bridge({ sessionId: 'n3xt0000', message: 'opened' });
+      offer();
+
+      await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue('> a per-frame budget\n\n'));
+      await act(async () => {});
+      expect(screen.queryByText(ENDED_NOTICE)).not.toBeInTheDocument();
+      expect(sent()).toEqual([]);
+      expect(invoke.mock.calls.filter(([, type]) => type === 'END_CHAT')).toEqual([]);
+    });
+
+    it('keeps the live conversation shown, the draft in its box, and ends nothing', async () => {
+      SESSIONS = [HELP];
+      bridge();
+      offer();
+
+      await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue('> a per-frame budget\n\n'));
+      await act(async () => {});
+      expect(sent()).toEqual([]);
+      expect(invoke.mock.calls.filter(([, type]) => type === 'END_CHAT')).toEqual([]);
+    });
+
+    it('is not held back by a conversation opened ahead, which is not the newest', async () => {
+      SESSIONS = [{ ...HELP, state: 'completed' }, { ...HELP, id: 'n3xt0000', created: '2026-09-30T00:00:00Z' }];
+      bridge({ sessionId: 'n3xt0000', message: 'opened' });
+      offer('n3xt0000');
+
+      await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue('> a per-frame budget\n\n'));
+      await act(async () => {});
+      expect(screen.queryByText(ENDED_NOTICE)).not.toBeInTheDocument();
+      expect(sent()).toEqual([]);
+    });
+  });
+
+  /**
    * SETUP1b: the side bar's AskDaoris is drawn again whenever its tab is, and a Quick Ask box each time it
    * opens, so a question still held by the application would be asked again by every new drawing. It
    * says when it has sent one, and the holder, told, lets it go (frontend-architecture §4b): held the way
