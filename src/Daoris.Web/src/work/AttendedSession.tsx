@@ -49,7 +49,7 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
 export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, onDiscardBranch, discardingBranch,
-  headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, onLand, onName, discards, onDiscardTree, review,
+  headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, planning, onLand, onName, discards, onDiscardTree, review,
   opinion,
 }: {
   /** Passed straight through to the head: what its own tree offers to land, as the driver's reader said it (LAND4). */
@@ -66,6 +66,8 @@ export function AttendedSession({
   landing?: LandingPlan | null;
   /** And its press, the review's Accept, told back to its ask, with the second opinion's token where it answers it (XAGENT1g). */
   onLand?: (answered: Answered, answers?: string | null, branch?: string | null) => void;
+  /** The plan shown is the previous name's while the entered one is read (LANDNAME1b). */
+  planning?: boolean;
   /** The branch name typed in the land ask (LANDNAME1b). */
   onName?: (name: string) => void;
   /** Its agent has accounts, so a record naming none ran on the tool's own sign-in (D125 §3.7), said in its head. */
@@ -172,6 +174,7 @@ export function AttendedSession({
         lands={lands}
         landing={landing}
         onLand={onLand}
+        planning={planning}
         onName={onName}
         review={review}
         opinion={opinion}

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../i18n';
 import type { Session } from '../api';
@@ -30,15 +30,46 @@ describe("the head's land ask names a branch", () => {
     expect(onLand).toHaveBeenCalledWith(expect.anything(), null, null);
   });
 
-  it('asks the plan again with the name as it is typed, and sends it on the press', async () => {
-    const onLand = vi.fn();
-    const onName = vi.fn();
-    render(<SessionHead session={session()} lands={LANDS} onLand={onLand} onName={onName} landing={BRANCH} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Accept…' }));
-    await userEvent.type(within(ask()).getByRole('textbox', { name: 'Branch name' }), ' my/name ');
-    expect(onName).toHaveBeenLastCalledWith('my/name');
-    await userEvent.click(within(ask()).getByRole('button', { name: 'Accept' }));
-    expect(onLand).toHaveBeenCalledWith(expect.anything(), null, 'my/name');
+  describe('the plan is asked once after a pause, not per keystroke', () => {
+    afterEach(() => { vi.useRealTimers(); });
+    const field = () => within(ask()).getByRole('textbox', { name: 'Branch name' });
+    const accept = () => within(ask()).getByRole('button', { name: 'Accept' });
+
+    it('asks once after the pause, and Confirm is held until the plan of that name has answered', () => {
+      vi.useFakeTimers();
+      const onLand = vi.fn();
+      const onName = vi.fn();
+      const props = { session: session(), lands: LANDS, onLand, onName };
+      const { rerender } = render(<SessionHead {...props} landing={BRANCH} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Accept…' }));
+      for (const value of ['m', 'my', ' my/name ']) {
+        fireEvent.change(field(), { target: { value } });
+        act(() => { vi.advanceTimersByTime(100); });
+      }
+      expect(onName).not.toHaveBeenCalled();
+      // Pressed before the pause: held, so a refusal of that exact name is never skipped.
+      expect(accept()).toBeDisabled();
+      act(() => { vi.advanceTimersByTime(300); });
+      expect(onName).toHaveBeenCalledTimes(1);
+      expect(onName).toHaveBeenLastCalledWith('my/name');
+      // Asked, not yet answered: still held.
+      rerender(<SessionHead {...props} landing={BRANCH} planning />);
+      expect(accept()).toBeDisabled();
+      rerender(<SessionHead {...props} landing={{ ...BRANCH, target: 'my/name' }} />);
+      fireEvent.click(accept());
+      expect(onLand).toHaveBeenCalledWith(expect.anything(), null, 'my/name');
+    });
+
+    it('asks at once when the field loses its focus', () => {
+      vi.useFakeTimers();
+      const onName = vi.fn();
+      render(<SessionHead session={session()} lands={LANDS} onLand={vi.fn()} onName={onName} landing={BRANCH} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Accept…' }));
+      fireEvent.change(field(), { target: { value: 'a/b' } });
+      fireEvent.blur(field());
+      expect(onName).toHaveBeenCalledTimes(1);
+      expect(onName).toHaveBeenLastCalledWith('a/b');
+    });
   });
 
   it('keeps the rule’s name in the placeholder once the plan answers with the entered one, and shows its refusal', async () => {

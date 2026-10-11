@@ -1387,6 +1387,7 @@ export function WorkFrame({
             review={headReview}
             opinion={headOpinion}
             landing={landing.data}
+            planning={landing.isPlaceholderData}
             // The second opinion's token rides with the press that answers what it showed (XAGENT1g).
             onLand={lands && attended ? (answered, answers, branch) => land.mutate({ id: attended.id, answers, branch }, {
               onSuccess: (result) => {

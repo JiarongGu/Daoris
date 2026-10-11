@@ -1,4 +1,7 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
+/** How long a typed branch name rests before the landing plan is asked with it (LANDNAME1b). */
+const NAME_PAUSE = 300;
 import { useTranslation } from 'react-i18next';
 import { workflowHolds } from '../workflow/gate';
 import { WorkflowHold } from '../workflow/WorkflowHold';
@@ -93,8 +96,10 @@ import { RunningIntake } from './RunningIntake';
 export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
   onAnswerSession, branch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
-  ownSignIn = false, nameOf, lands, landing, onLand, onName, discards, onDiscardTree, review, opinion,
+  ownSignIn = false, nameOf, lands, landing, planning, onLand, onName, discards, onDiscardTree, review, opinion,
 }: {
+  /** The landing plan shown is the previous one while the entered name's is read (LANDNAME1b); the press waits. */
+  planning?: boolean;
   /**
    * The second opinion's gate where a level asks one (XAGENT1g): its findings beside their answers, where the frame read them,
    * and its presses. Drawn from the landing's plan's own `opinion`.
@@ -270,7 +275,7 @@ export function SessionHead({
           its tree offers to land are the reader's to say (LAND4), keyed by the session for the same reason. */}
       {lands ? (
         <Lands
-          key={session.id} session={session} lands={lands} landing={landing} onReview={onReview} onLand={onLand} onName={onName} review={review}
+          key={session.id} session={session} lands={lands} landing={landing} planning={planning} onReview={onReview} onLand={onLand} onName={onName} review={review}
           opinion={opinion}
         />
       ) : discards ? (
@@ -443,7 +448,9 @@ export type HeadOpinion = {
  * refuses, and for a session that did not finish that only what it committed lands. The move is the review's Accept, in
  * the primary's hue: a landing destroys nothing. Open until the landing answers, a refusal said inside it (UXFIX2).
  */
-function Lands({ session, lands, landing, onReview, onLand, onName, review, opinion }: {
+function Lands({ session, lands, landing, planning, onReview, onLand, onName, review, opinion }: {
+  /** The plan shown is the previous name's while the entered one is read (LANDNAME1b). */
+  planning?: boolean;
   session: Session;
   lands: LandOffer;
   landing?: LandingPlan | null;
@@ -458,12 +465,25 @@ function Lands({ session, lands, landing, onReview, onLand, onName, review, opin
   // LANDNAME1b: a branch name entered here replaces the rule's whole name; the frame asks the plan again with it. The rule's own
   // name is kept from the plan while none is entered, as the field's placeholder.
   const [entered, setEntered] = useState('');
+  // The name the plan was last asked with: the plan reads git, so it is asked after a pause or on blur, not per keystroke. The
+  // press waits for the plan of exactly the typed name, so a refusal of it is never skipped by a fast press.
+  const [asked, setAsked] = useState('');
+  const typed = entered.trim();
   const rule = useRef<string | null>(null);
-  if (!entered.trim() && landing?.form === 'branch' && landing.target) rule.current = landing.target;
+  if (!typed && landing?.form === 'branch' && landing.target) rule.current = landing.target;
+  const ask = (name: string) => {
+    setAsked(name);
+    onName?.(name);
+  };
+  useEffect(() => {
+    if (typed === asked) return undefined;
+    const pause = window.setTimeout(() => ask(typed), NAME_PAUSE);
+    return () => window.clearTimeout(pause);
+  }, [typed, asked]);
   const putDown = () => {
     setAsking(false);
     setEntered('');
-    onName?.('');
+    ask('');
   };
   // While the review's gate holds the work (REVIEWENV1g, design §3.1), *Review in `<environment>`* stands where *Accept…*
   // would, in the gate's state, and no *Accept…* is offered: the landing door would refuse it.
@@ -547,7 +567,8 @@ function Lands({ session, lands, landing, onReview, onLand, onName, review, opin
             </>
           )}
           meanIt={t('work.head.landMeanIt')}
-          onConfirm={(answered) => onLand?.(answered, answers, entered.trim() || null)}
+          ready={typed === asked && !planning}
+          onConfirm={(answered) => onLand?.(answered, answers, typed || null)}
           onClose={putDown}
         >
           {rule.current && (
@@ -556,10 +577,8 @@ function Lands({ session, lands, landing, onReview, onLand, onName, review, opin
                 aria-label={t('work.head.landName')}
                 placeholder={rule.current}
                 value={entered}
-                onChange={(event) => {
-                  setEntered(event.target.value);
-                  onName?.(event.target.value.trim());
-                }}
+                onChange={(event) => setEntered(event.target.value)}
+                onBlur={() => { if (typed !== asked) ask(typed); }}
                 className="min-h-[1.9rem] min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
               />
               <span>{t('work.head.landNameHint', { branch: rule.current })}</span>

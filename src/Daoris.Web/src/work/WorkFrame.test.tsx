@@ -3182,11 +3182,16 @@ describe('acting on what a session landed', () => {
     const field = await within(ask).findByRole('textbox', { name: 'Branch name' });
     expect(field).toHaveAttribute('placeholder', 'feature/delta');
     await userEvent.type(field, 'main');
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LANDING', { payload: { id: 's1a2b3c4', branch: 'main' } });
+    // Asked once after the pause, not per letter (the driver's plan reads git).
     expect(await within(ask).findByText(/which Daoris did not make/)).toBeTruthy();
+    expect(invoke.mock.calls.filter(([, type, args]) => type === 'LANDING' && args?.payload?.branch)).toEqual([
+      ['DAORIS.DRIVER', 'LANDING', { payload: { id: 's1a2b3c4', branch: 'main' } }],
+    ]);
 
     await userEvent.clear(field);
     await userEvent.type(field, 'mine/x');
+    // Held until the plan of that exact name has answered.
+    await vi.waitFor(() => expect(within(ask).getByRole('button', { name: 'Accept' })).toBeEnabled());
     await userEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', { payload: { id: 's1a2b3c4', branch: 'mine/x' }, timeoutMs: 6 * 60_000 });
   });
