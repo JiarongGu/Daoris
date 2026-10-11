@@ -201,6 +201,10 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'opinion.unresolved': { values: ['count'] },
   'opinion.unanswered': { values: ['count'] },
   'opinion.disputed': { values: ['count'] },
+  // How the reviewer's own session ended (XAGENT1g4a); a failed turn's words follow as the program's.
+  'opinion.reviewer-failed': { values: ['opinion'] },
+  'opinion.reviewer-read': { values: ['opinion'] },
+  'opinion.reviewer-exited': { values: ['opinion', 'exit'] },
   // A conversation's words waiting for its own account's reset (CONVNOTE2g): the account by its owner and its id, why by a
   // cool-off's reason; the tool's own sign-in and its refresh; each door out, the session its command names a value.
   'waits.account': { values: ['owner', 'account', 'until', 'why'], why: 'cooling' },
@@ -321,7 +325,7 @@ export const NOTE_VALUES: Readonly<
     'id' | 'ids' | 'names' | 'moment' | 'number' | 'count' | 'percent' | 'text' | 'why' | 'cooling' | 'window' | 'account' | 'accounts' | 'bgstate'
   >
 > = {
-  awaits: 'id', answered: 'id', ask: 'id', quest: 'id', session: 'id',
+  awaits: 'id', answered: 'id', ask: 'id', quest: 'id', session: 'id', opinion: 'id',
   quests: 'ids',
   servers: 'names', works: 'names',
   option: 'text', chosen: 'text', work: 'text', state: 'bgstate', repository: 'text',

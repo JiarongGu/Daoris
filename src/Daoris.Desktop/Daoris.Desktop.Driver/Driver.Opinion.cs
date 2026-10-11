@@ -245,9 +245,7 @@ public sealed partial class Driver
     /// refused turn or another exit is <c>failed</c>. Whether it gave its opinion is the opinion's, which the host derives.
     /// </summary>
     internal static SessionConclusion Read(string opinion, int exitCode, string? turnFailed) =>
-        turnFailed is { Length: > 0 } failed
-            ? new SessionConclusion("failed", $"the reviewer's turn failed as it read the work for second opinion `{opinion}`: {failed}")
-            : exitCode == 0
-                ? new SessionConclusion("completed", $"it read the work and ended; what it said is second opinion `{opinion}`'s.")
-                : new SessionConclusion("failed", $"it ended with exit {exitCode} as it read the work; what it said, if anything, is second opinion `{opinion}`'s.");
+        SessionConclusion.Of(
+            turnFailed is { Length: > 0 } || exitCode != 0 ? "failed" : "completed",
+            OpinionAnswers.Concluded(opinion, exitCode, turnFailed));
 }
