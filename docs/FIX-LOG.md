@@ -5,6 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-12 — a task handed to Ask Daoris ran into the words already in its box (NEW1d-b)
+
+- **Symptom:** found reading NEW1g's change: a draft handed to Ask Daoris is put above the words already in the box with
+  `join('')`, so the composer's *Make it a task with Daoris…* draft (`In engine:\n\nCheck the idle line`) and words the
+  person had typed there ran together: *…the idle linewhat I was asking*.
+- **Root cause:** the join was written for CTX1's draft, a quote that ends on a blank line for the person's question, so no
+  separator was needed. NEW1d-b's hand-over ends on its own words, and reused the door without a separator of its own.
+- **Fix:** `AskConversation.tsx`'s opening effect joins with a blank line where the draft does not already end on one, and
+  with nothing where it does, so CTX1's draft reads as before.
+- **Verify:** a new `AskDaoris.test.tsx` case (a second draft over a first, in a live conversation's box) failed first with
+  the words run together, and passes; the folder's 236 tests pass, CTX1's included; `tsc` clean.
+
 ## 2026-10-12 — a Codex chat's `daoris-knowledge` failed its handshake (CONNECTOR2)
 
 - **Symptom:** on the installed window a Codex chat showed *MCP startup failed: handshaking with MCP server failed:

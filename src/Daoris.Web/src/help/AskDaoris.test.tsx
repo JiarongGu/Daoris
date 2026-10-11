@@ -454,6 +454,29 @@ describe('Ask Daoris, with an agent named', () => {
       expect(screen.queryByText(ENDED_NOTICE)).not.toBeInTheDocument();
       expect(sent()).toEqual([]);
     });
+
+    // The composer's *Make it a task with Daoris…* hands a draft that ends on its words (NEW1d-b), unlike CTX1's quote, which
+    // ends on a blank line for the person's question: put above words already in the box, a blank line keeps them apart.
+    it('keeps a blank line between a draft that ends on its words and the words already in the box', async () => {
+      SESSIONS = [HELP];
+      bridge();
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      const tree = (opening: { text: string; id: number; draft: boolean }) => (
+        <QueryClientProvider client={client}>
+          <Tooltip.Provider>
+            <AskDaoris opening={opening} onOpened={vi.fn()} onGo={vi.fn()} onClose={vi.fn()} />
+          </Tooltip.Provider>
+        </QueryClientProvider>
+      );
+      const view = render(tree({ text: 'what I was asking', id: 1, draft: true }));
+      await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue('what I was asking'));
+
+      view.rerender(tree({ text: 'In engine:\n\nCheck the idle line', id: 2, draft: true }));
+
+      await waitFor(() =>
+        expect(screen.getByLabelText('Message')).toHaveValue('In engine:\n\nCheck the idle line\n\nwhat I was asking'));
+      expect(sent()).toEqual([]);
+    });
   });
 
   /**

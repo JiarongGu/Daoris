@@ -352,7 +352,10 @@ export function useAskConversation(
       // blank one first, ending nothing, and the draft goes in the new conversation's box.
       const key = shown && live ? shown.id : NEW_DRAFT;
       if (key === NEW_DRAFT && shown) clear();
-      editDraft(key, (was) => ({ ...was, text: [opening.text, was.text.trim()].filter(Boolean).join('') }));
+      // Above the words already there: CTX1's quote ends on a blank line for the person's question; a draft that ends on
+      // its own words (the composer's hand-over, NEW1d-b) is kept apart from them by one.
+      const apart = /\n\s*$/.test(opening.text) ? '' : '\n\n';
+      editDraft(key, (was) => ({ ...was, text: [opening.text, was.text.trim()].filter(Boolean).join(apart) }));
     } else onSend(opening.text, []);
     // From the effect, never the render (frontend-architecture §4b): the holder clears what was sent.
     onOpened?.();
