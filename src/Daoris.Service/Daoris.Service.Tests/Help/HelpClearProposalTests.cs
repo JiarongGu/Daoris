@@ -8,6 +8,7 @@ public sealed class HelpClearProposalTests : HelpProposalBoxFixture
 {
     [Theory]
     [InlineData("quest", "q1", null, null, "q1")]
+    [InlineData("failed", " #q1 ", null, null, "q1")]
     [InlineData("ask", null, " #a1 ", null, "a1")]
     [InlineData("workspace", null, null, " Main ", "Main")]
     public void A_clear_is_written_with_its_one_target(string door, string? quest, string? ask, string? workspace, string target)
@@ -26,7 +27,9 @@ public sealed class HelpClearProposalTests : HelpProposalBoxFixture
     }
 
     [Theory]
-    [InlineData("history", "q1", null, null, "a reason", "quest, ask or workspace")]
+    [InlineData("history", "q1", null, null, "a reason", "quest, ask, failed or workspace")]
+    [InlineData("failed", null, "a1", null, "a reason", "failed door names a quest")]
+    [InlineData("failed", "q 1", null, null, "a reason", "one word")]
     [InlineData("quest", null, null, null, "a reason", "name exactly one")]
     [InlineData("quest", "q1", "a1", null, "a reason", "name exactly one")]
     [InlineData("quest", null, "a1", null, "a reason", "door names")]

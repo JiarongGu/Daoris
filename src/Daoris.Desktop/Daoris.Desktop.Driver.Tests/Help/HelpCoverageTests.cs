@@ -164,15 +164,10 @@ public sealed partial class HelpCoverageTests
     private static readonly Door ClearAskDoor = new("clear", "ask");
 
     /// <summary>
-    /// The same hook's and <c>quest clear --failed</c>'s fourth scope, a closed quest's failed sessions (§1.1): owed, since the
-    /// service's <c>clear_propose</c> names a quest, an ask or a workspace only (HIST1f-a), so the card cannot name it.
+    /// The same hook's and <c>quest clear --failed</c>'s fourth scope, a closed quest's failed sessions (§1.1), the quest page's
+    /// *Clear failed sessions…*: the <c>clear</c> kind's <c>failed</c> door since HIST1f-d, its target the quest's id.
     /// </summary>
-    private static readonly Owed ClearFailedOwed = new(
-        "clearing a closed quest's failed sessions alone removes records and what this machine kept of them, a press the person "
-        + "makes on a list, so Ask Daoris should propose it as the `clear` kind's card; that waits on the service's "
-        + "`clear_propose` naming a quest's failed sessions and the driver's judge planning that scope (HIST1f-b's hand-back), "
-        + "and until then the quest's page → ⋯ → Clear failed sessions… and `daoris-driver quest clear <id> --failed` are the "
-        + "person's own.");
+    private static readonly Door ClearFailedDoor = new("clear", "failed");
 
     /// <summary>
     /// MSG1e's <c>daoris-driver sessions say</c> (D137 §5.4), a verb of the headless host: exempt, since the words said to a
@@ -791,7 +786,6 @@ public sealed partial class HelpCoverageTests
             .Append(RegisterDoor)
             .Append(WorkspaceDoor)
             .Append(SessionsStopVerb)
-            .Append(ClearFailedOwed)
             .Append(AbandonDoor)
             .Append(SayDoor)
             .Append(GoOnNewDoor)
@@ -1279,8 +1273,8 @@ public sealed partial class HelpCoverageTests
 
     /// <summary>
     /// HIST1d, HIST1f-b: the headless host's history clears are the <c>clear</c> kind's doors (D153, design §6.4) while the host's
-    /// usage spells them, and the room names each beside its press; a quest's failed sessions alone are a door owed
-    /// (<see cref="ClearFailedOwed"/>), and the reading, <c>history</c>, changes nothing.
+    /// usage spells them, and the room names each beside its press, a quest's failed sessions alone being the <c>failed</c> door
+    /// (<see cref="ClearFailedDoor"/>, HIST1f-d); the reading, <c>history</c>, changes nothing.
     /// </summary>
     [Fact]
     public void The_headless_hosts_history_clears_are_the_clear_kinds_doors()
@@ -1290,14 +1284,13 @@ public sealed partial class HelpCoverageTests
         Assert.Contains("history clear --workspace <name> [--yes]", DriverCommand.Usage);
         Assert.Contains("quest clear <id> [--failed] [--yes]  ·  ask --clear <id> [--yes]", DriverCommand.Usage);
         Assert.Equal(
-            [ClearQuestDoor.Name, ClearAskDoor.Name, ClearWorkspaceDoor.Name],
+            [ClearQuestDoor.Name, ClearAskDoor.Name, ClearFailedDoor.Name, ClearWorkspaceDoor.Name],
             HelpProposalKinds.Find(ClearWorkspaceDoor.Kind)!.Doors);
         Assert.Equal(ClearWorkspaceDoor.Kind, ClearQuestDoor.Kind);
         Assert.Equal(ClearWorkspaceDoor.Kind, ClearAskDoor.Kind);
+        Assert.Equal(ClearWorkspaceDoor.Kind, ClearFailedDoor.Kind);
         Assert.Contains("`daoris-driver history clear --workspace <name> [--yes]`", room);
         Assert.Contains("`daoris-driver quest clear <id> [--failed] [--yes]`, `daoris-driver ask --clear <id> [--yes]`", room);
-        Assert.DoesNotContain("failed", HelpProposalKinds.Find("clear")!.Doors);
-        Assert.Contains("Clear failed sessions…", ClearFailedOwed.Reason);
     }
 
     /// <summary>
@@ -1315,6 +1308,7 @@ public sealed partial class HelpCoverageTests
         Assert.Same(ClearWorkspaceDoor, Controls.Single(row => row.Domain == "projects" && row.Hook == "useClearHistory").Answer);
         Assert.Contains(ClearQuestDoor.Name, HelpProposalKinds.Find(ClearQuestDoor.Kind)!.Doors);
         Assert.Contains(ClearAskDoor.Name, HelpProposalKinds.Find(ClearAskDoor.Kind)!.Doors);
+        Assert.Contains(ClearFailedDoor.Name, HelpProposalKinds.Find(ClearFailedDoor.Kind)!.Doors);
     }
 
     /// <summary>

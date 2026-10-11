@@ -226,7 +226,7 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "files (one that worked on a quest is archived instead)",
             "Sessions → a session's ⋯ → Delete…", "`daoris-driver sessions delete <id>`"),
         // HIST1f-b (D153, design §6.1, §6.2, §6.4): the pages' clears, a workspace's reading first, and the terminal's history
-        // verbs; the `clear` kind's `quest`, `ask` and `workspace` doors. A quest's failed sessions alone stay the person's press.
+        // verbs; the `clear` kind's `quest`, `ask`, `failed` (HIST1f-d) and `workspace` doors.
         ("clear finished history from this machine: a closed quest's work, an ask's with every quest it became, a closed quest's "
             + "failed sessions, or a workspace's, listed first, then pressed; what is open, running or waiting on you is kept, and "
             + "nothing brings it back",

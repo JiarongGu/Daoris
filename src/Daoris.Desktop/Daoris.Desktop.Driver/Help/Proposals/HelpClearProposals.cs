@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// Ask Daoris's <c>clear</c> proposal (HIST1f-b, D153, the history-clearing design §6.4): what this machine kept of finished work
 /// cleared from it, as the pages' *Clear from this machine…* and *Clear history…* and the terminal's history clears do. Its doors
-/// are <c>quest</c>, <c>ask</c> and <c>workspace</c>, its target the quest's id, the ask's id or the workspace's name, as the
+/// are <c>quest</c>, <c>ask</c>, <c>failed</c> and <c>workspace</c>, its target the quest's id, the ask's id or the workspace's name, as the
 /// service's box writes it. It is judged by what <see cref="HistoryClearing.PlanAsync"/> answers, the screen's first press, and
 /// applied through its second, <see cref="HistoryClearing.ClearAsync"/>.
 /// </summary>
@@ -23,17 +23,18 @@ namespace Daoris.Driver;
 /// (§6.1); a quest an ask asked names the ask, which clears it with every quest it became (§1.1). A workspace with nothing that
 /// may go is said, never refused (D48 §6), and its Apply calls no door.</para>
 ///
-/// <para><b>A quest's failed sessions are not proposed</b>: the box writes no door for them, so the quest's page and
-/// <c>quest clear --failed</c> stay the person's own until one is built (HelpCoverageTests).</para>
+/// <para><b>A closed quest's failed sessions</b> (HIST1f-d, §1.1, §4) are the <c>failed</c> door, its target the quest's id: the
+/// card names them, and the quest and its other sessions stay. A quest still open or taken is refused in the keep's sentence; a
+/// closed one with none of this machine's failed sessions is said, and its Apply calls no door.</para>
 /// </remarks>
 internal sealed class HelpClearProposals : IHelpProposalKind
 {
     public string Kind => "clear";
 
-    // HIST1f-b: a closed quest's work, an ask's and a workspace's; a quest's failed sessions are the page's and the terminal's alone.
+    // HIST1f-b, HIST1f-d: a closed quest's work, an ask's, a closed quest's failed sessions and a workspace's.
     public string Tool => "clear_propose";
 
-    public IReadOnlyList<string> Doors { get; } = ["quest", "ask", "workspace"];
+    public IReadOnlyList<string> Doors { get; } = ["quest", "ask", "failed", "workspace"];
 
     public HelpProposal Read(HelpProposal proposal, JsonElement file)
     {
@@ -50,15 +51,15 @@ internal sealed class HelpClearProposals : IHelpProposalKind
 
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
-        if (proposal.Door is not ("quest" or "ask" or "workspace"))
+        if (proposal.Door is not ("quest" or "ask" or "failed" or "workspace"))
         {
-            return Refused($"`{proposal.Door}` is not a clear's door — `quest`, `ask` or `workspace`; " + (proposal.Door == HistoryKinds.Failed
-                ? "a quest's failed sessions are the person's own clear, on the quest's page → ⋯ → Clear failed sessions…, or "
-                  + "`daoris-driver quest clear <id> --failed`."
-                : "nothing else clears history."));
+            return Refused($"`{proposal.Door}` is not a clear's door — `quest`, `ask`, `failed` or `workspace`; nothing else clears history.");
         }
 
-        var scope = proposal.Door switch { "ask" => HistoryScope.Ask, "workspace" => HistoryScope.Workspace, _ => HistoryScope.Quest };
+        var scope = proposal.Door switch
+        {
+            "ask" => HistoryScope.Ask, "failed" => HistoryScope.Failed, "workspace" => HistoryScope.Workspace, _ => HistoryScope.Quest,
+        };
         var target = scope == HistoryScope.Workspace ? proposal.Target?.Trim() ?? "" : proposal.Target?.Trim().TrimStart('#').Trim() ?? "";
         if (target.Length == 0) return Refused("a clear proposal names one quest or one ask by its id, or one workspace by its name.");
 
@@ -104,14 +105,24 @@ internal sealed class HelpClearProposals : IHelpProposalKind
         return clear.Scope == HistoryScope.Workspace ? WorkspaceCleared(applying, outcome) : OneCleared(applying, clear, outcome);
     }
 
-    /// <summary>A quest's work or an ask's, one unit: refused where it would be kept, else what it takes (§6.1's ask).</summary>
+    /// <summary>
+    /// A quest's work, an ask's or a quest's failed sessions, one unit: refused where it would be kept, else what it takes (§6.1's
+    /// ask). A failed-sessions unit that takes nothing is said, never refused (HIST1f-d, D48 §6).
+    /// </summary>
     private static HelpPlan OnePlan(HistoryScope scope, string id, HistoryPlan? read, IReadOnlyList<HistoryUnitName>? held)
     {
-        var kind = scope == HistoryScope.Ask ? HistoryKinds.Ask : HistoryKinds.Quest;
-        var unit = read?.Units.FirstOrDefault(each => each.Kind == kind && string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase));
-        if (unit is null) return Refused($"there is no {kind} `#{id}` on this machine.");
+        var kind = scope switch { HistoryScope.Ask => HistoryKinds.Ask, HistoryScope.Failed => HistoryKinds.Failed, _ => HistoryKinds.Quest };
+        var unit = read?.Units.FirstOrDefault(each => each.Kind == kind && string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase))
+            // A quest this machine has no record of comes back as the quest's own unknown, whichever door asked.
+            ?? read?.Units.FirstOrDefault(each => each.Keep is { Word: HistoryWords.Unknown } && string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase));
+        if (unit is null) return Refused($"there is no {(scope == HistoryScope.Ask ? "ask" : "quest")} `#{id}` on this machine.");
         if (unit.Keep is { Word: HistoryWords.Unknown } unknown) return Refused(unknown.Message);
-        if (unit.Keep is { } keep) return Refused($"{Name(unit)} stays on this machine: {keep.Message}");
+        if (unit.Keep is { } keep) return Refused($"{Name(unit)} stay{(scope == HistoryScope.Failed ? "" : "s")} on this machine: {keep.Message}");
+        if (scope == HistoryScope.Failed && !HistoryCommand.Takes(unit))
+        {
+            return new HelpPlan(null, $"{Capital(Name(unit))}: this machine keeps none of them, so applying changes nothing.",
+                HistoryCommand.Door(scope, unit.Id).Replace(" --yes", "", StringComparison.Ordinal), null);
+        }
 
         var said = new List<string>
         {
@@ -203,7 +214,8 @@ internal sealed class HelpClearProposals : IHelpProposalKind
     /// <summary>The press's answer for one quest's or one ask's work, as the terminal says it: what went, or why it stayed.</summary>
     private static HelpApplied OneCleared(HelpApplying applying, HelpClearPlan clear, HistoryOutcome outcome)
     {
-        var named = Name(new HistoryUnitName(clear.Scope == HistoryScope.Ask ? HistoryKinds.Ask : HistoryKinds.Quest, clear.Id));
+        var named = Name(new HistoryUnitName(
+            clear.Scope switch { HistoryScope.Ask => HistoryKinds.Ask, HistoryScope.Failed => HistoryKinds.Failed, _ => HistoryKinds.Quest }, clear.Id));
         var (id, terminal) = (applying.Id, applying.Plan.Terminal);
         if (outcome.Cleared is [var cleared])
         {

@@ -749,7 +749,7 @@ public sealed partial class DriverModule
             var plans = new List<HistoryPlan>();
             foreach (var proposal in proposals.Where(each => each.Kind == "clear"))
             {
-                var scope = proposal.Door switch { "quest" => HistoryScope.Quest, "ask" => HistoryScope.Ask, "workspace" => HistoryScope.Workspace, _ => (HistoryScope?)null };
+                var scope = proposal.Door switch { "quest" => HistoryScope.Quest, "ask" => HistoryScope.Ask, "failed" => HistoryScope.Failed, "workspace" => HistoryScope.Workspace, _ => (HistoryScope?)null };
                 if (scope is not { } named) continue;
                 var target = proposal.Target?.Trim() ?? "";
                 if (named != HistoryScope.Workspace) target = target.TrimStart('#').Trim();
