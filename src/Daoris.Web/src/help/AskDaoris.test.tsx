@@ -625,6 +625,29 @@ describe('Ask Daoris, with an agent named', () => {
     APPLIED = APPLIED_SETTING;
   });
 
+  /** PLUGUI1h (D119's note): a go may name an offer, as `offer:<id>`; the page opens Plugins with it chosen. */
+  it('takes the person to the one offer a go names', async () => {
+    SESSIONS = [HELP];
+    PROPOSALS = [{
+      id: 'g4o5t6o7', kind: 'go', describe: 'Open Plugins → Daoris\'s own plugin `github-pull-request`, not installed.', terminal: '',
+      why: 'the person asked about pull requests',
+    }];
+    APPLIED = {
+      message: 'Applied: `#g4o5t6o7` — Open Plugins. Nothing else changed.',
+      applied: true, go: { view: 'plugins', domain: null, part: null, item: 'offer:github-pull-request' },
+    };
+    bridge();
+    const onGo = vi.fn();
+    show(undefined, null, onGo);
+
+    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
+    await userEvent.click(within(cards).getByRole('button', { name: 'Go there' }));
+
+    await waitFor(() => expect(onGo).toHaveBeenCalledWith({ view: 'plugins', item: 'offer:github-pull-request' }));
+    PROPOSALS = [];
+    APPLIED = APPLIED_SETTING;
+  });
+
   /**
    * ENTRY1d2b (D161's ENTRY1d note): a go to Add repository or Import a folder may carry the workspace the driver judged; the
    * page opens the drawer with it filled, and the folder stays the person's pick, so no path is in the go.

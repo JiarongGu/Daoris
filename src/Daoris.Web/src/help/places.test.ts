@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { VIEWS } from '../commands';
 import { askItem } from '../opener';
+import { offerItem } from '../plugins/catalog';
 import { SETTINGS_SECTIONS } from '../SettingsView';
 import { PLACE_DOMAINS, PLACE_ITEM_VIEWS, PLACE_KEPT, PLACE_PARTS, PLACE_VIEWS, placeDoor, type HelpPlace } from './places';
 
@@ -32,7 +33,8 @@ describe('the places a go may name', () => {
     ]);
     // ENTRY1f1: the views a go may name an item in, and how an ask's item is told from a quest's (the driver's `AskItem`).
     // ENTRY1f2: Sessions too.
-    expect(PLACE_ITEM_VIEWS).toEqual(['sessions', 'quests']);
+    expect(PLACE_ITEM_VIEWS).toEqual(['sessions', 'quests', 'plugins']);
+    expect(offerItem('')).toBe('offer:');
     expect(askItem('')).toBe('ask:');
   });
 
@@ -111,6 +113,19 @@ describe('the places a go may name', () => {
     expect(placeDoor({ view: 'settings', domain: 'start', item: 'q1a2b3c4' })).toBeNull();
     expect(placeDoor({ view: 'overview', item: 'q1a2b3c4' })).toBeNull();
     expect(placeDoor({ view: 'quests', item: 'ask:' })).toBeNull();
+  });
+
+  /**
+   * PLUGUI1h (D119's note): a go on Plugins may name one installed plugin by its id, or an offer as `offerItem` names it,
+   * as the driver judged it against the machine's plugins and offers; the one opener chooses it in the catalogue.
+   */
+  it('open the one plugin or offer a go names on Plugins, as its catalogue names it', () => {
+    expect(placeDoor({ view: 'plugins', item: 'example.lands' })).toEqual({ view: 'plugins', item: 'example.lands' });
+    expect(placeDoor({ view: 'plugins', item: ' offer:github-pull-request ' })).toEqual({ view: 'plugins', item: offerItem('github-pull-request') });
+    expect(placeDoor({ view: 'plugins', item: null })).toEqual({ view: 'plugins' });
+    expect(placeDoor({ view: 'plugins', item: 'offer:' })).toBeNull();
+    expect(placeDoor({ view: 'plugins', item: 'ask:a1b2c3d4' })).toBeNull();
+    expect(placeDoor({ view: 'plugins', part: 'x', item: 'example.lands' })).toBeNull();
   });
 
   /**
