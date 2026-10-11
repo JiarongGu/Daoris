@@ -2378,7 +2378,9 @@ public sealed partial class Driver(
             // Not a turn that failed (ANSWER1a): nothing was prompted. The agent's own words stay in this machine's record of
             // the conversation, and the reason goes to the resume, which ends the park and carries the answer on.
             resume.Refused = refused.Why;
-            Said($"— {refused.Message}; your answer is carried on in a new session.");
+            // Its reason by code, the agent's words its own (CONVNOTE2e). A resume keeps its conversation under the adapter it
+            // runs on, which is the one it ran on, so that is the agent `elsewhere` names.
+            SaidByCode(DoorNotes.AnswerCarriedOn(refused, keepAs));
             return (null, null);
         }
         catch (DriverException error)
@@ -2389,7 +2391,7 @@ public sealed partial class Driver(
             // so an account limit that refused the turn mid-edit read as a clean exit, and a taken
             // quest as a stand-down. A failed call is not the session describing its work, which is
             // the self-report D46 §4 keeps out; it is the door saying the work was cut off.
-            Said($"— the ACP session failed: {error.Message}");
+            SaidByCode(DoorNotes.Failed(error.Message));
             return (null, error.Message);
         }
         finally
