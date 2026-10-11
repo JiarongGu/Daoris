@@ -67,7 +67,8 @@ export type AskOpening = { text: string; id: number; draft?: boolean };
  * **Its conversations are kept** (ASKHIST1): the history lists them, kept on this machine only, and the one the person
  * picks is shown in the newest's place. One that ended goes on in itself with the person's next words where its own
  * conversation was kept (D137 §2.2), so its knowledge carries; one that cannot is offered a new conversation from its words.
- * The newest that ended still starts a new one by default, as it did; *Go on in it* chooses it.
+ * The newest that ended still starts a new one by default, as it did; *Go on in it* chooses it. A draft handed in
+ * (CTX1, the composer's *Make it a task with Daoris…*) shows that new conversation: the panel clears first, ending nothing (NEW1g).
  */
 export function useAskConversation(
   scroller: RefObject<HTMLElement | null>,
@@ -340,33 +341,44 @@ export function useAskConversation(
   // Each opening once: a re-render, or React mounting an effect twice in development, must not ask twice. A draft (CTX1's
   // *Ask Daoris about it*) goes into the box for the person's question instead, and sends nothing.
   const opened = useRef<number | null>(null);
+  // Until the list has answered, which conversation is shown is not known, and a draft put in the wrong box stays there (NEW1g).
+  const listed0 = !sessions.isPending;
   useEffect(() => {
     if (!opening || opened.current === opening.id) return;
+    if (opening.draft && !listed0) return;
     opened.current = opening.id;
-    if (opening.draft) editDraft(draftKey, (was) => ({ ...was, text: [opening.text, was.text.trim()].filter(Boolean).join('') }));
-    else onSend(opening.text, []);
+    if (opening.draft) {
+      // A draft that will start a new conversation shows one (NEW1g): where the one shown is not live, the panel clears to a
+      // blank one first, ending nothing, and the draft goes in the new conversation's box.
+      const key = shown && live ? shown.id : NEW_DRAFT;
+      if (key === NEW_DRAFT && shown) clear();
+      editDraft(key, (was) => ({ ...was, text: [opening.text, was.text.trim()].filter(Boolean).join('') }));
+    } else onSend(opening.text, []);
     // From the effect, never the render (frontend-architecture §4b): the holder clears what was sent.
     onOpened?.();
     // Only a new opening asks; `onSend` reads this render's session and is not a reason to ask again.
-  }, [opening?.id]);
+  }, [opening?.id, listed0]);
+
+  // The panel cleared to a blank new conversation, ending nothing: the one shown and the newest are set aside, the next opens
+  // ahead, and the box takes the focus, since writing is what comes next.
+  const clear = () => {
+    if (shown) {
+      // Set aside the newest too, so clearing an older conversation opens a blank panel.
+      setCleared(newest?.id ?? shown.id);
+      // The next opens ahead too (HELP5), once the one finished here has gone.
+      setRound((was) => was + 1);
+    }
+    setChosen(null);
+    setStartedFrom(null);
+    setHistoryOpen(false);
+    setRefusal(null);
+    setFocusBox((was) => was + 1);
+  };
 
   // A blank new conversation: the one running is finished and the panel cleared, from the conversation's head, the history's,
-  // or the line under one that cannot go on. The box takes the focus, since writing is what comes next.
+  // or the line under one that cannot go on.
   const onNew = () => {
     if (end.isPending) return;
-    const clear = () => {
-      if (shown) {
-        // Set aside the newest too, so clearing an older conversation opens a blank panel.
-        setCleared(newest?.id ?? shown.id);
-        // The next opens ahead too (HELP5), once the one finished here has gone.
-        setRound((was) => was + 1);
-      }
-      setChosen(null);
-      setStartedFrom(null);
-      setHistoryOpen(false);
-      setRefusal(null);
-      setFocusBox((was) => was + 1);
-    };
     if (shown && live) {
       // The host owns the ending. Keep its conversation and draft until it accepts the request.
       end.mutate(shown.id, {
