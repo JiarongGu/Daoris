@@ -402,8 +402,8 @@ export type AccountAct = { act: 'signIn' | 'read' | 'tryNow' | 'place' | 'newKey
  * An account's one act by its state (D152 §4.2): *Sign in* when signed out, *Read* (that account alone) when unknown, *Try
  * now* when cooling, *Use in a workspace…* when nothing runs on it; none once a workspace runs on it. Unknown gets an act:
  * on the install the account a list held read unknown, offered nothing, and the person reached for the header instead.
- * A key its provider refused is repaired by a key (ACCTUX1): the page's own *Add an API key*, where the agent takes one,
- * since no door yet puts a new key into the same account.
+ * A key its provider refused is repaired by a key (ACCTUX1): *New API key*, where the agent takes one, which puts it
+ * into the same account (`key-replace`, KEYREPLACE1b).
  */
 export function accountAct(
   state: AccountState, agent: { signsIn: boolean; present: boolean; runs: number; takesKey?: boolean },

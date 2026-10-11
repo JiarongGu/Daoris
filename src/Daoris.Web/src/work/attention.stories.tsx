@@ -344,7 +344,7 @@ export const BandSignedOutWaitDark: StoryObj = { ...BandSignedOutWait, decorator
  */
 const KEY_REFUSED: Attention = {
   id: 'signed-out:claude-code/acct-0a1b2c3d', kind: 'signed-out', title: 'API key …k3y9', where: 'Claude Code', since: null,
-  read: READ, detail: "Key refused: add a new API key on Claude Code's page in its place. It runs work in this machine.",
+  read: READ, detail: "Key refused: put a new API key into it on Claude Code's page. It runs work in this machine.",
   account: { ...CLAUDE, outside: null, named: [{ id: 'acct-0a1b2c3d', label: 'API key …k3y9', state: 'refused', read: READ, until: null }] },
 };
 

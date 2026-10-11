@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- A key its provider refused now has *New API key* on its own row, which puts a new key into that same account, keeping its
+  name, its lists and its place in them, where *Add an API key* made a second account.
 - A conversation's opening line and its wait for an account now name the account as you named it, not by its id, where
   Daoris knows the name.
 - `daoris agent list` and a sign-in's end now say an account's email once when it is also the account's name, and

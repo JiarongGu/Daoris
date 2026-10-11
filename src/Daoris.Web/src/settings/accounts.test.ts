@@ -208,12 +208,12 @@ describe('what is said', () => {
     expect(nextLine(waits('2026-10-06T09:00:00Z', others.slice(0, 1)), list, labelOf, isKey)).toMatch(
       /A new API key in place of key-1 starts it sooner\.$/);
     expect(heldLine({ account: 'account-3', reason: 'fewest', over: null, others }, labelOf, isKey))
-      .toBe('key-1 was refused, so only a new API key repairs it; account-2 is not signed in.');
+      .toBe('key-1 was refused, so it needs a new API key put into it; account-2 is not signed in.');
 
     await i18n.changeLanguage('zh');
     expect(nextLine(waits(null, others.slice(0, 1)), list, labelOf, isKey)).toContain('用新的 API 密钥替换 key-1');
     expect(heldLine({ account: 'account-3', reason: 'fewest', over: null, others: others.slice(0, 1) }, labelOf, isKey))
-      .toBe('key-1 的密钥被拒绝，只有新的 API 密钥能修复它。');
+      .toBe('key-1 的密钥被拒绝，需要换上新的 API 密钥。');
   });
 
   /** TOOL6e: what holds every other account, cooling with until when, and the accounts a scope does not use, together. */

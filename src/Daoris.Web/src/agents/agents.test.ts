@@ -425,10 +425,10 @@ describe('the one act an account’s state asks for (D152 §4)', () => {
   });
 
   /**
-   * ACCTUX1: a refused key is repaired by a key, never a sign-in: the page's own *Add an API key*, loud where it holds work.
-   * Nothing puts a new key into the same account yet, so where the agent takes no key from Daoris there is no act to offer.
+   * ACCTUX1: a refused key is repaired by a key, never a sign-in: *New API key* into the same account (KEYREPLACE1b), loud
+   * where it holds work. Where the agent takes no key from Daoris there is no act to offer.
    */
-  it('is Add an API key when its key was refused, and none where the agent takes no key', () => {
+  it('is New API key when its key was refused, and none where the agent takes no key', () => {
     expect(accountAct(state('refused'), { signsIn: false, present: true, runs: 1, takesKey: true })).toEqual({ act: 'newKey', loud: true });
     expect(accountAct(state('refused', false), { signsIn: false, present: true, runs: 1, takesKey: true }))
       .toEqual({ act: 'newKey', loud: false });

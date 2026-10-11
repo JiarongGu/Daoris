@@ -61,6 +61,8 @@ export type AgentActs = {
   onSignInNew: () => void;
   /** A key added as a new account (AGT3), told back to its field (ACCTUX3): it closes once the key is kept. */
   onAddKey: (key: string, answered: Answered) => void;
+  /** A new key put into the account a refused key's row names, keeping its name and lists (KEYREPLACE1b), told back to its field. */
+  onReplaceKey: (account: string, key: string, answered: Answered) => void;
   /** A sign-in to the account a row names, by its id (ACCT1). */
   onSignIn: (account: string) => void;
   /** *Try now*: an account's cool-off ended early, or the tool's own sign-in's with null. */
@@ -207,6 +209,8 @@ export function AgentPage({
   const [removing, setRemoving] = useState<string | null>(null);
   const [tuning, setTuning] = useState<string | null>(null);
   const [keying, setKeying] = useState(false);
+  // KEYREPLACE1b: the account whose refused key a new one is being typed for; the one key draft serves it and the header's field.
+  const [replacing, setReplacing] = useState<string | null>(null);
   const [keyDraft, setKeyDraft] = useState('');
   const [pinning, setPinning] = useState<Record<string, string>>({});
   const [pinOpen, setPinOpen] = useState<string | null>(null);
@@ -228,7 +232,14 @@ export function AgentPage({
   const askKey = (open: boolean) => {
     setRefused(null);
     setKeying(open);
+    setReplacing(null);
     if (!open) setKeyDraft('');
+  };
+  const askReplace = (account: string | null) => {
+    setRefused(null);
+    setKeying(false);
+    setReplacing(account);
+    setKeyDraft('');
   };
   const askSettings = (account: string | null) => {
     setRefused(null);
@@ -268,6 +279,16 @@ export function AgentPage({
     if (!key) return;
     acts.onAddKey(key, answered('key', '', () => {
       setKeying(false);
+      setKeyDraft('');
+    }));
+  };
+
+  // KEYREPLACE1b: the same discipline for a replacement: closed and forgotten once kept, a refusal said in the row's field.
+  const replaceKey = (account: string) => {
+    const key = keyDraft.trim();
+    if (!key) return;
+    acts.onReplaceKey(account, key, answered('key', account, () => {
+      setReplacing((was) => (was === account ? null : was));
       setKeyDraft('');
     }));
   };
@@ -426,12 +447,12 @@ export function AgentPage({
           label: t('harness.cooling.tryNow'), ariaLabel: t('harness.cooling.tryNowFor', { account: label }),
           onPress: () => acts.onTryNow(id, label), disabled: busy,
         };
-      // A key its provider refused (ACCTUX1): the header's own key field, opened under the list, since no door yet puts a
-      // new key into the same account; the pill's tip says the rest of the repair.
+      // A key its provider refused (ACCTUX1): a key field on its own row, which puts the new key into the same account
+      // (`key-replace`, KEYREPLACE1b), keeping its name, lists and order.
       case 'newKey':
         return {
-          label: t('harness.profile.addKey'), ariaLabel: t('agents.act.newKeyFor', { account: label }), loud: act.loud,
-          onPress: () => askKey(true), disabled: busy,
+          label: t('agents.act.newKey'), ariaLabel: t('agents.act.newKeyFor', { account: label }), loud: act.loud,
+          onPress: () => askReplace(id), disabled: busy,
         };
       default:
         return {
@@ -510,6 +531,25 @@ export function AgentPage({
             }))}
             onCancel={() => ask('rename', null)}
           />
+        )}
+        {replacing === account.name && (
+          <form className="flex flex-wrap items-center gap-2" onSubmit={(event) => { event.preventDefault(); replaceKey(account.name); }}>
+            <input
+              autoFocus
+              type="password"
+              autoComplete="off"
+              spellCheck={false}
+              value={keyDraft}
+              onChange={(event) => setKeyDraft(event.target.value)}
+              aria-label={t('agents.key.replaceLabel', { account: name })}
+              placeholder={t('harness.profile.keyPlaceholder')}
+              className="min-w-72 flex-1 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
+            />
+            <Button type="submit" variant="primary" disabled={busy || !keyDraft.trim()}>{t('harness.profile.keySave')}</Button>
+            <Button variant="ghost" disabled={busy} onClick={() => askReplace(null)}>{t('common.cancel')}</Button>
+            {refusalOf('key', account.name) && <Refused sentence={refusalOf('key', account.name)!} />}
+            <span className="basis-full text-meta text-ink-faint">{t('harness.profile.keyHint')}</span>
+          </form>
         )}
         {signingIn === account.name && signInPanel}
       </AccountRow>
