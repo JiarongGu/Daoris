@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 /** How long a typed branch name rests before the landing plan is asked with it (LANDNAME1b). */
 const NAME_PAUSE = 300;
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { workflowHolds } from '../workflow/gate';
 import { WorkflowHold } from '../workflow/WorkflowHold';
 import { DiscardBranchAsk, type SweepBranch } from '../settings/Sweep';
@@ -13,16 +14,14 @@ import { ago, elapsed, sessionTool, stamp } from '../format';
 import {
   answeredPark, Button, Inline, PathText, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
 } from '../ui';
-import { cn } from '../lib/cn';
 import { AnsweredPark } from './AnsweredPark';
 import { AwaitingIntake } from './AwaitingIntake';
 import { AwaitingPerson, type QuestClose, type Resolution } from './AwaitingPerson';
-import { DetailsFold } from './DetailsFold';
+import { type DetailRow, DetailsFold } from './DetailsFold';
 import { type Answered, InlineConfirm } from './InlineConfirm';
-import { useCut } from './ViewMain';
 import type { DiscardOffer, LandOffer } from './groups';
 import { HeldDiscardAsk, HeldDiscardButton, heldDiscardable } from './HeldDiscard';
-import { isIntake, sessionOrigin, sessionTitle, shortened } from './identity';
+import { isIntake, sessionOrigin, sessionTitle } from './identity';
 import { Note } from './Note';
 import { hasNote, noteBlocks, noteLines } from './noteLines';
 import {
@@ -96,8 +95,13 @@ import { RunningIntake } from './RunningIntake';
 export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
   onAnswerSession, branch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
-  ownSignIn = false, nameOf, lands, landing, planning, onLand, onName, discards, onDiscardTree, review, opinion,
+  ownSignIn = false, nameOf, lands, landing, planning, onLand, onName, discards, onDiscardTree, review, opinion, onOpenQuest,
 }: {
+  /**
+   * Open the quest it serves (HEAD2c): the door beside the request as written in *Details*. Absent where nothing can open
+   * it, and then the request is shown with no door.
+   */
+  onOpenQuest?: (quest: Quest) => void;
   /** The landing plan shown is the previous one while the entered name's is read (LANDNAME1b); the press waits. */
   planning?: boolean;
   /**
@@ -150,7 +154,7 @@ export function SessionHead({
   onGoAhead?: GoAheadAnswer;
   /**
    * A page header above carries its state, its title and its facts (SESSUX1d, D126 §3.2; UX7c, D152 §7): the head says
-   * none again, and the quest's whole title only where the header showed its short title. Absent, a window with no header
+   * none again, the quest's whole title included: that is a row of *Details* (HEAD2c). Absent, a window with no header
    * (a detached session), the head keeps the title, its word and its id.
    */
   headed?: boolean;
@@ -247,11 +251,7 @@ export function SessionHead({
         </section>
       )}
 
-      {headed ? (
-        /* Under a page header (UX7c, D152 §7): the header says the title, so the record says it again only where the
-           header's was not all of it, the quest's short title (SESSUX1j): then the whole title, once, at body size. */
-        shortened(quest) && <WholeTitle title={quest!.title} />
-      ) : (
+      {!headed && (
         /* A window with no header (a detached session): the title and its word are said here; its id is its *Details*'
            (UX7c), as on the page. The state follows the title rather than the far edge (§4: status leads), two lines at
            most, whole on hover (SESS2). */
@@ -297,6 +297,7 @@ export function SessionHead({
           intake
             ? { label: t('work.intake.ask'), value: `#${session.ask}`, mono: true }
             : { label: t('work.head.repository'), value: <span title={session.tree ?? undefined}>{session.repository}</span> },
+          requestRow(t, quest, session.kind === 'chat' ? opening : null, session.quest ?? session.ask, onOpenQuest),
           { label: t('work.head.quest'), value: session.quest ? `#${session.quest}` : null, mono: true },
           { label: t('work.head.tool'), value: sessionTool({ adapter: session.adapter, harnessVersion: session.harnessVersion }) },
           {
@@ -326,30 +327,41 @@ export function SessionHead({
 const NOTE_LINES = 3;
 
 /**
- * The quest's whole title, once, under a head that showed its short title (UX7c, D152 §7): body size, two lines, the rest
- * a press away. Content, shown as it is (platform language §4).
+ * A conversation's opening is the header's title (`sessionTitle`), which holds one line: past this many characters the
+ * header may have cut it, and *Details* holds it whole (HEAD2c). A long line is never wrongly said twice; it is said in the
+ * fold, which is closed.
  */
-export function WholeTitle({ title }: { title: string }) {
-  const { t } = useTranslation();
-  const own = useRef<HTMLParagraphElement>(null);
-  const [whole, setWhole] = useState(false);
-  const cut = useCut(own, title);
-  return (
-    <div className="grid justify-items-start gap-1">
-      <p
-        ref={own}
-        className={cn('m-0 w-full text-body leading-relaxed text-ink [overflow-wrap:anywhere]', !whole && 'line-clamp-2')}
-        title={title}
-      >
-        {title}
-      </p>
-      {(cut || whole) && (
-        <Button variant="ghost" className="px-0 py-0 text-small" onClick={() => setWhole((was) => !was)}>
-          {t(whole ? 'work.head.noteLess' : 'work.head.noteMore')}
-        </Button>
-      )}
-    </div>
-  );
+const ONE_LINE = 60;
+
+/**
+ * The request as written, a row of *Details* (HEAD2c, D162 point 3): the quest's whole title with the quest's door, or, for
+ * a conversation with no quest, its opening where the header's one line may have cut it. Content, shown as it is.
+ */
+function requestRow(
+  t: TFunction, quest: Quest | null | undefined, opening: string | null | undefined, id: string | null | undefined,
+  onOpenQuest: ((quest: Quest) => void) | undefined,
+): DetailRow {
+  const label = t('work.head.request');
+  if (quest?.title) {
+    return {
+      label,
+      value: (
+        <>
+          <span>{quest.title}</span>
+          {onOpenQuest && (
+            <button
+              type="button"
+              onClick={() => onOpenQuest(quest)}
+              className="ml-2 cursor-pointer border-0 bg-transparent p-0 font-sans text-small text-accent hover:underline"
+            >
+              {t('work.head.openQuest', { id: quest.id })}
+            </button>
+          )}
+        </>
+      ),
+    };
+  }
+  return { label, value: !id && opening && opening.length > ONE_LINE ? opening : null };
 }
 
 /**
