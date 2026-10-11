@@ -51,6 +51,7 @@ public sealed partial class HelpProposalBox(string? home)
         ("session", "session_propose"),
         ("pause", "pause_propose"),
         ("clear", "clear_propose"),
+        ("workflow", "workflow_propose"),
     ];
 
     public string? Home { get; } = home;
