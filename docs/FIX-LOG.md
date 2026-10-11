@@ -1356,6 +1356,10 @@ failed check. `startServer` waits for the port to be free before it spawns, so t
 answered `/api/status` and then reset the next connection. Its output is not kept (`stdio: 'ignore'`), so why was not
 captured. `--rerun rehearse-family` passed (5 m 54 s). Two gaps to close if it comes back: `api()` rethrows anything but
 a timeout, so a reset ends the run instead of failing the check with its words; and the host's output is not kept.
+`landing-plugins.test.ts:246` (*at an advance the github-pull-request plugin pushes to the open pull request …*) failed at
+NEW1a's merge, 2026-10-12 (a driver and modules change; no CLI file), with three branch-workers building beside it: its
+fixture's `git checkout --quiet main` exited -1 (4294967295), a spawn failure, the same file's git-spawn shape as UXFIX5b's
+and WORKFLOW1a's sightings above.
 `setup-kit.test.ts:531` (*a set-up quest is done as its body says*) failed once at SWEEPCARRIED1's merge, 2026-10-08, a
 web-only change: *the stub never answered 3 (session/prompt) within 30000 ms* after it had run all four commands, with
 a Codex review and two subagents building beside the gate. The same file's stub bound as STUB3's, after its command

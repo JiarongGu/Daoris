@@ -13657,3 +13657,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **HEAD2a — heads hold their buttons still** (web). `PageHead` lays out by the main area's width: a fixed acts column on the title's first line above 640 px, an acts row under the facts at or below it; primary, secondary, ⋯; a quest's *Decline…* folds first. Design §2.
 
 **Outcome** 2026-10-12: `PageHead` is a grid by the main area's container (`@[40rem]/main`): above 640 px the acts are a fixed column at the title's first line, at or below it a right-aligned row under the facts; it takes `acts`, `fold` (shown only above the line, said again in the caller's ⋯) and `more`. The heads' own use is HEAD2b-d. Detail: D162's HEAD2a note.
+
+## NEW1a — a conversation starts on its first words (2026-10-12, D162)
+
+> - [ ] **NEW1a — a conversation starts on its first words** (driver/modules). `START_CHAT` takes the opening words, their files and a request id; the driver opens the conversation and sends the words as its first message through *Start a conversation with these words*' machinery; the same id never starts twice; *the checkout* means the checkout (today OR'd with the standing opt-in, ChatRunner.cs ~:192-206). D162 §2; design §1.
+
+**Outcome** 2026-10-12: `START_CHAT` with words opens the conversation and hands them as its first message (files over a message's limit as words alone), answering `{sessionId, sent, why, message}` beside the old fields; a request id shares a running start and answers a finished one for 24 h (`<home>/starts/`), a refused start not kept; `ownTree` is three-way (absent the driver's choice, true its own tree, false the checkout). The real-process `sent: true` route test passed at the merge. Detail: D162's NEW1a note.

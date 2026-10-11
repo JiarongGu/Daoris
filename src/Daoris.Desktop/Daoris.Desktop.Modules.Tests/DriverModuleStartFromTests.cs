@@ -60,6 +60,48 @@ public sealed class DriverModuleStartFromTests : DriverModuleBridge
         Assert.True(loop.Nudges >= 1);
     }
 
+    /// <summary>
+    /// NEW1a (D162): <c>START_CHAT</c> with opening words answers <c>{sessionId, sent, why, message}</c>, the two fields older
+    /// callers read kept. Here the adapter spawns nothing, so the conversation ends at its spawn and the answer says why.
+    /// </summary>
+    [Fact]
+    public async Task A_start_on_words_answers_sent_and_why_beside_the_old_fields()
+    {
+        var (_, module, _) = await UpAsync(words: false);
+
+        var started = await AnswerAsync(
+            module, "START_CHAT", new { repository = "engine", text = "Fix the build.", requestId = "req-1", ownTree = false });
+
+        Assert.Equal(JsonValueKind.Null, started.GetProperty("sessionId").ValueKind);
+        Assert.False(started.GetProperty("sent").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, started.GetProperty("why").ValueKind);
+        Assert.Contains("this test spawns nothing", started.GetProperty("message").GetString());
+    }
+
+    /// <summary>An empty start is the old one, unchanged: its answer carries no <c>sent</c>.</summary>
+    [Fact]
+    public async Task A_start_without_words_is_the_old_empty_start()
+    {
+        var (_, module, _) = await UpAsync(words: false);
+
+        var started = await AnswerAsync(module, "START_CHAT", new { repository = "engine", text = "  " });
+
+        Assert.False(started.TryGetProperty("sent", out _));
+        Assert.Contains("this test spawns nothing", started.GetProperty("message").GetString());
+    }
+
+    /// <summary>A request id that is not one word of letters, digits and dashes is refused in a sentence, before anything starts.</summary>
+    [Fact]
+    public async Task A_malformed_request_id_is_refused()
+    {
+        var (_, module, service) = await UpAsync(words: false);
+
+        var refusal = await RefusalAsync(module, "START_CHAT", new { repository = "engine", text = "Hi.", requestId = "not an id" });
+
+        Assert.Contains("request id", refusal);
+        Assert.Equal(1, service.Count);
+    }
+
     private async Task<(DriverLoop Loop, DriverModule Module, StandIn Service)> UpAsync(bool words)
     {
         var root = Path.Combine(Home, "engine");
@@ -98,7 +140,7 @@ public sealed class DriverModuleStartFromTests : DriverModuleBridge
     }
 
     /// <summary>The service's doors a start crosses, standing in: the records, the registry, no quests, a chat's open and its moves.</summary>
-    private sealed class StandIn(string root) : HttpMessageHandler
+    internal sealed class StandIn(string root) : HttpMessageHandler
     {
         private readonly object _gate = new();
         private readonly List<JsonObject> _sessions = [];

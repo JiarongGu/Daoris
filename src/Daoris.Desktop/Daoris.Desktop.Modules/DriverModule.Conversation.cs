@@ -39,17 +39,30 @@ public sealed partial class DriverModule
         // blank one as a name (REV3 CLEAN1); the page happens never to send one.
         var adapter = Optional(request, "adapter") ?? config.Adapter;
 
+        // The end of a conversation is news the page wants without asking: the drawer is
+        // probably open, and a record that moved silently reads as one that hung.
+        Task OnEnded(string session, string state) => DriverLoop.Ended(_events, session, state);
+        // The per-session picker (D49 §4). Absent takes the workspace's default, then the
+        // machine's, then the harness's own configuration home.
+        var profile = Optional(request, "profile");
+
+        // The opening words (NEW1a, D162): the conversation opens on them. Absent, blank or whitespace is the old empty start.
+        var text = Optional(request, "text");
+        if (!string.IsNullOrWhiteSpace(text))
+        {
+            var files = request.Payload is { } payload ? FilesOf(payload) : [];
+            var started = await chat.StartWithAsync(
+                repository, adapter, config, text, files, Optional(request, "requestId"),
+                ownTree: TreeChoice(request), profile: profile, onEnded: OnEnded, ct: cancellationToken);
+            _loop.Nudge();
+            return new { started.SessionId, started.Sent, started.Why, started.Message };
+        }
+
         var start = await chat.StartAsync(
-            repository, adapter, config,
-            // The end of a conversation is news the page wants without asking: the drawer is
-            // probably open, and a record that moved silently reads as one that hung.
-            onEnded: (session, state) => DriverLoop.Ended(_events, session, state),
-            // The per-session picker (D49 §4). Absent takes the workspace's default, then the
-            // machine's, then the harness's own configuration home.
-            profile: Optional(request, "profile"),
+            repository, adapter, config, OnEnded, profile,
             // The per-conversation tree choice (D51). Absent falls back to the repository's
             // standing opt-in, which the runner reads from the same config.
-            ownTree: Flag(request, "ownTree"),
+            ownTree: TreeChoice(request),
             ct: cancellationToken);
 
         _loop.Nudge();

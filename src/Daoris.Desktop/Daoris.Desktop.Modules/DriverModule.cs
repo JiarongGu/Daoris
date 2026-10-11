@@ -141,6 +141,15 @@ public sealed partial class DriverModule : ModuleBase
         && payload.TryGetProperty(name, out var value)
         && value.ValueKind == JsonValueKind.True;
 
+    /// <summary>
+    /// A conversation's tree choice (D51, NEW1a): absent is the driver's own, true a tree of its own, false the checkout.
+    /// <see cref="Flag"/> cannot tell absent from false.
+    /// </summary>
+    public static bool? TreeChoice(IpcRequest request) =>
+        request.Payload is { } payload && payload.TryGetProperty("ownTree", out var value)
+            ? value.ValueKind switch { JsonValueKind.True => true, JsonValueKind.False => false, _ => null }
+            : null;
+
     /// <summary>A whole number the page may send, or null.</summary>
     private static long? Number(IpcRequest request, string name) =>
         request.Payload is { } payload
