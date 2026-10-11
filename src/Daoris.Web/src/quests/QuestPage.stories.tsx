@@ -180,8 +180,17 @@ export const LongTitleNamedFromItsWords: Story = { args: { quest: REFILED, sessi
 /** Named by its intake's short title, with a ticket key leading it. */
 export const LongTitleWithAShortTitle: Story = { args: { quest: REFILED_NAMED, session: STARTING } };
 
-/** From a host before short titles: the title, two lines at most and whole on *Show all*; the body drops its first line. */
+/**
+ * From a host before short titles (HEAD2b): the title, two lines at most, with *View full request* moving the focus to the
+ * request below, whose first line the body drops; *Take* holds still beside the title, *Decline…* in the fold and the ⋯.
+ */
 export const LongTitleWithNoShortTitle: Story = { args: { quest: REFILED_UNNAMED, session: STARTING } };
+
+/** The same at 680 px of window (a main area of about 596 px): the acts take a row under the facts, *Decline…* in the ⋯ only. */
+export const LongTitleNarrow: Story = {
+  args: { quest: REFILED_UNNAMED, session: STARTING },
+  decorators: [(Story) => <div className="flex h-[44rem] w-[37.25rem] max-w-full border border-line bg-page"><Story /></div>],
+};
 
 /** The same in 中文, in dark. */
 export const LongTitleChineseDark: Story = { args: { quest: REFILED_UNNAMED, session: STARTING }, decorators: [chinese, dark] };

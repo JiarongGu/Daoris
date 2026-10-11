@@ -92,14 +92,16 @@ export type QuestFactsOf = {
 };
 
 /**
- * A quest's facts line (the UX7 design §5.3): whom it asks, who asked it and when it was filed, then the one live fact
- * where there is one: a session starting or working on it here, its park after its failed sessions, or when it closed.
- * The id, the full times and the lanes are its *Details*.
+ * A quest's facts line (HEAD2b, D162; the entry-and-heads design §2, amending the UX7 design §5.3): a hold the person lifts
+ * first where there is one (*awaits your yes*, *awaits review*: their sentences stay in their cards), then where it goes
+ * and its age, then the one live fact where there is one: a session starting or working on it here, its park after its
+ * failed sessions, or when it closed. The requester, the id, the full times and the lanes are its *Details*.
  */
 export function questFacts(t: TFunction, { quest, session, sitting }: QuestFactsOf): string[] {
+  const unreviewed = quest.held === true && quest.hold === 'unreviewed';
   const facts = [
+    ...(unreviewed ? [t('review.pill')] : quest.held === true ? [t('quests.card.held')] : []),
     t('quests.facts.to', { repository: quest.to }),
-    t('quests.facts.from', { from: quest.from }),
     t('quests.facts.filed', { ago: ago(quest.filed) }),
   ];
 

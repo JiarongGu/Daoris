@@ -56,7 +56,8 @@ describe('pausing and abandoning a quest', () => {
   it('offers Pause… and Abandon… in its ⋯ beside Decline…, where the plan says they apply', async () => {
     page({ work: door() });
     expect(headerActs()).toEqual(['Take', 'Decline…', 'More actions']);
-    expect(await foldedActs()).toEqual(['Mark done…', 'Pause…', 'Abandon…', 'Copy quest ID']);
+    // Decline… is said again here at the narrow width, which a measureless test area is (HEAD2b).
+    expect(await foldedActs()).toEqual(['Mark done…', 'Pause…', 'Decline…', 'Abandon…', 'Copy quest ID']);
   });
 
   it('says a refused pause inside its ask, and closes the ask once it lands (UXFIX2b2a)', async () => {
@@ -157,7 +158,7 @@ describe('pausing and abandoning a quest', () => {
     await i18n.changeLanguage('zh');
     page({ work: door() });
     expect(headerActs()).toEqual(['接下', '谢绝…', '更多操作']);
-    expect(await foldedActs()).toEqual(['标为完成…', '暂缓…', '放弃…', '复制委托 ID']);
+    expect(await foldedActs()).toEqual(['标为完成…', '暂缓…', '谢绝…', '放弃…', '复制委托 ID']);
   });
 });
 
