@@ -148,11 +148,12 @@ public sealed partial class ChatRunner : IDisposable
     /// <param name="ownTree">
     /// Open the conversation in a session tree of its own (D51) — the per-conversation choice, beside
     /// the repository's standing opt-in in the config. Either says yes; a chat is exactly the case the
-    /// decision was made for, since the person is usually IN the root it would otherwise hold.
+    /// decision was made for, since the person is usually IN the root it would otherwise hold. Null leaves it to those two;
+    /// false (NEW1a) is the checkout, whatever the repository's standing choice.
     /// </param>
     public async Task<ChatStart> StartAsync(
         string repository, string adapter, DriverConfig config,
-        Func<string, string, Task>? onEnded = null, string? profile = null, bool ownTree = false,
+        Func<string, string, Task>? onEnded = null, string? profile = null, bool? ownTree = null,
         CancellationToken ct = default)
     {
         // Through the roster's LIVE set, not the one this runner was built with: the driver's tick
@@ -193,7 +194,7 @@ public sealed partial class ChatRunner : IDisposable
         // standing choice (D51). Grown before the record, like every refusal above this line. Its
         // repository's trees are held from here until the record is open, as a driven start holds them
         // (LEFT2), so bringing the repository up to date does not rebase the tree under it.
-        var isolated = ownTree || config.OpensOwnTree(repository);
+        var isolated = Isolates(ownTree, config, repository);
         using var starting = isolated ? TreeLock.TryStarting(_home, known.Workspace, known.Repository) : null;
         if (isolated && starting is null) return new(null, TreeLock.Replaying(known.Repository));
 
