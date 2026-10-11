@@ -393,6 +393,7 @@ export function QuestPage({
       title={named}
       lead={<Pill tone={QUEST_TONE[quest.status]} title={t(`statusHint.${quest.status}`)}>{t(`status.${quest.status}`)}</Pill>}
       clamp={2}
+      wholeElsewhere={!!body && named.length > LONG_TITLE}
       facts={questFacts(t, { quest, session, sitting })}
       // *View full request* (HEAD2b, as the ask's HEAD2d): a long title is read whole, as written, in the request below, where
       // the focus goes; on the facts line, since the head has no door slot. Where the body holds nothing more, nothing to go to.

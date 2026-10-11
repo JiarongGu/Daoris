@@ -13681,3 +13681,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **HEAD2c — a session's head** (web; after a). One line; `WholeTitle` goes, the request as written is a *Details* row with the quest's door; facts: repository, age, one state fact. Design §2.
 
 **Outcome** 2026-10-12: `SessionPageHead` draws `PageHead` in its sticky box: the title on one line, the state pill leading, the loud act and *Stop…* never folded; `WholeTitle` is gone and *Details* gains *Request* (the quest's whole title and *Open quest #id*, or a long opening); the facts are the repository, its age and one state fact, the account in *Details*. Detail: D162's HEAD2c note.
+
+## HEAD2f — one way to the whole request (2026-10-12, D162)
+
+> - [ ] **HEAD2f — one way to the whole request** (web). Where a head offers *View full request* (the quest's and the ask's, HEAD2b/d), its clamped title still shows `PageHead`'s own *Show all*: give `PageHead` a way to drop it there, so the design's "*Show all* becomes *View full request*" holds. Design §2.
+
+**Outcome** 2026-10-12: `PageHead` takes `wholeElsewhere`; the quest's and the ask's heads pass it when they show *View full request*, and their clamped title drops *Show all* but keeps its tip; other heads keep *Show all*. Detail: D162's HEAD2f note.

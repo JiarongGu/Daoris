@@ -118,6 +118,19 @@ describe('a quest’s head', () => {
     expect(request.textContent).toMatch(/^continue the prod half of the ticket/);
   });
 
+  it('offers one way to the whole request: View full request, and no Show all beside it (HEAD2f)', () => {
+    const tall = vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(120);
+    const fits = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(60);
+    try {
+      page({ quest: REFILED_UNNAMED });
+      expect(screen.getByRole('button', { name: 'View full request' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Show all' })).toBeNull();
+    } finally {
+      tall.mockRestore();
+      fits.mockRestore();
+    }
+  });
+
   it('offers no View full request for a short title', () => {
     page({ quest: { ...OPEN, title: 'Fix it', body: 'Fix it\n\nBecause.' } });
     expect(screen.queryByRole('button', { name: 'View full request' })).toBeNull();

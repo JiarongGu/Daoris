@@ -255,6 +255,7 @@ export function AskPage({
       )}
       title={title}
       clamp={2}
+      wholeElsewhere={long}
       facts={askFacts(t, ask)}
       acts={acts}
       fact={(
