@@ -6,7 +6,7 @@ import { PluginUpdatePlan } from './PluginUpdate';
 // Plugins retired into it (UX6j, D150 §2.3), so their card went with the domain.
 
 const meta = {
-  title: 'Settings/PluginUpdate',
+  title: 'Plugins/PluginUpdate',
   component: PluginUpdatePlan,
 } satisfies Meta<typeof PluginUpdatePlan>;
 

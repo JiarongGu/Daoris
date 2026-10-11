@@ -32,7 +32,7 @@ const FAILED: PluginTrialResult = {
 };
 
 const meta = {
-  title: 'Settings/PluginKit',
+  title: 'Plugins/PluginKit',
   component: PluginKitCard,
   args: { points: POINTS, onPick: async () => 'C:/work/plugins', onMake: () => {}, onTry: () => {} },
 } satisfies Meta<typeof PluginKitCard>;

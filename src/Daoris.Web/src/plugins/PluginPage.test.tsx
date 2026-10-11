@@ -77,7 +77,7 @@ describe("a plugin's page", () => {
   /**
    * D140 §2, from the install (LAYOUT11, D141): the detail's blocks share one width, the pane's. A paragraph capped at
    * 65ch beside a line that ran the pane's width wrapped the page at two edges, and in 中文 held about 32 glyphs. An
-   * update's refused plan, drawn by Settings' `PluginUpdatePlan`, kept the cap after the page's own went.
+   * update's refused plan, drawn by `PluginUpdatePlan`, kept the cap after the page's own went.
    */
   it('lets every block of its detail take the pane\'s width: no paragraph keeps a measure of its own', () => {
     const { container } = page({
