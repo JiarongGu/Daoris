@@ -697,11 +697,15 @@ public sealed partial class McpToolsTests : IAsyncLifetime
         // ENTRY1d2a: and the workspace Add repository opens with.
         Assert.Contains("Proposed", tools.ProposeGo("projects", "the person asked to add a repository to it", part: "add", workspace: "work"));
         Assert.Contains("Nothing was proposed", tools.ProposeDelete("no id at all"));
+        // SESSUX1h2a: the session kind's tool, and delete's session door.
+        Assert.Contains("Proposed", tools.ProposeSession("archive", "the person is done with them", sessions: "s1,s2"));
+        Assert.Contains("Proposed", tools.ProposeSession("archive", "tidy up", ended: true));
+        Assert.Contains("Proposed", tools.ProposeDelete("made by mistake", session: "s9"));
 
         var written = Directory.GetFiles(HelpProposalBox.FolderOf(home))
             .Select(path => JsonDocument.Parse(File.ReadAllText(path)).RootElement)
             .ToList();
-        Assert.Equal(["account", "agent", "delete", "go", "go", "go"], written.Select(file => file.GetProperty("kind").GetString()).Order());
+        Assert.Equal(["account", "agent", "delete", "delete", "go", "go", "go", "session", "session"], written.Select(file => file.GetProperty("kind").GetString()).Order());
         Assert.Contains(written, file => file.GetProperty("kind").GetString() == "go"
             && file.GetProperty("workspace").ValueKind == JsonValueKind.String && file.GetProperty("workspace").GetString() == "work");
         Assert.All(written, file => Assert.Equal("h1e1p000", file.GetProperty("by").GetProperty("session").GetString()));
