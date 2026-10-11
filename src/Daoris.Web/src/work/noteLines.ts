@@ -186,6 +186,21 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'door.failed': { values: [] },
   'door.resume-refused': { values: ['why'], why: 'continue' },
   'door.answer-carried-on': { values: [] },
+  // A review set-up's record (CONVNOTE2h): the environment's name and repository, the commit's short id as facts; the service's
+  // message and the served sentence are a program's words after `posted` and `not-posted`.
+  'review.no-rule': { values: ['named', 'to'] },
+  'review.no-commit': { values: [] },
+  'review.posted': { values: ['commit', 'named'] },
+  'review.not-posted': { values: [] },
+  'review.posts-next': { values: [] },
+  // A second opinion's answers as the working session's turn ended (CONVNOTE2h): whose findings and how many, then each count.
+  'opinion.answers': { values: ['who', 'count'] },
+  'opinion.fixed': { values: ['count'] },
+  'opinion.unproven': { values: ['count'] },
+  'opinion.rejected': { values: ['count'] },
+  'opinion.unresolved': { values: ['count'] },
+  'opinion.unanswered': { values: ['count'] },
+  'opinion.disputed': { values: ['count'] },
   // A conversation's words waiting for its own account's reset (CONVNOTE2g): the account by its owner and its id, why by a
   // cool-off's reason; the tool's own sign-in and its refresh; each door out, the session its command names a value.
   'waits.account': { values: ['owner', 'account', 'until', 'why'], why: 'cooling' },
@@ -309,6 +324,8 @@ export const NOTE_VALUES: Readonly<
   // A list of account ids, each named so and set as code (ROSTERREFUSE2); `logins` are the sign-in commands, each set as code.
   accounts: 'accounts', logins: 'names',
   profile: 'text', version: 'text', door: 'text',
+  // A review set-up's environment and repository, its commit's short id, and whose findings a second opinion's answers are (CONVNOTE2h).
+  named: 'text', to: 'text', commit: 'text', who: 'text',
   owner: 'text', branch: 'text', basedOn: 'text', plugin: 'text', agent: 'text', workspace: 'text',
   why: 'why',
   cooling: 'cooling',

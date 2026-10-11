@@ -397,23 +397,48 @@ public static class OpinionAnswers
     /// The driver's line in the working session's conversation once its answers are read: whose findings they were, and how
     /// each counts. The person's view of the answers beside the claims is the page's (XAGENT1g); this is the record's.
     /// </summary>
-    public static string Line(OpinionView opinion, OpinionReading reading)
+    public static string Line(OpinionView opinion, OpinionReading reading) => Told(opinion, reading).Note;
+
+    /// <summary>
+    /// <see cref="Line"/> by code (CONVNOTE2h), the English byte for byte: a lead for whose findings and how many, then a part for
+    /// each way they count that is above nought, in the English's order, and the disputed <c>must</c> findings last.
+    /// </summary>
+    public static Noted Told(OpinionView opinion, OpinionReading reading)
     {
-        var parts = new List<string>();
         int Count(Func<OpinionAnswerRead, bool> which) => reading.Findings.Count(which);
         var fixedCount = Count(row => row.Counts == OpinionViews.Fixed);
         var rejected = Count(row => row.Counts == OpinionViews.Rejected);
         var unresolved = Count(row => row.Counts == OpinionViews.Unresolved && row.Why is null);
         var unanswered = Count(row => row.Why == OpinionAnswerWhy.NotAnswered);
         var notMade = Count(row => row.Said == OpinionViews.Fixed && row.Fix is null);
-        if (fixedCount > 0) parts.Add($"{fixedCount} fixed, each commit read from git as one this turn made");
-        if (notMade > 0) parts.Add($"{notMade} said fixed whose commit git did not read as one this turn made, read as unresolved");
-        if (rejected > 0) parts.Add($"{rejected} rejected with its evidence");
-        if (unresolved > 0) parts.Add($"{unresolved} unresolved");
-        if (unanswered > 0) parts.Add($"{unanswered} not answered, read as unresolved");
-        var disputed = reading.Findings.Count(row => row.Disputed);
-        return $"— the answers to {opinion.Who}'s {Plural(reading.Findings.Count, "finding")}, as its turn ended: {string.Join("; ", parts)}."
-               + (disputed > 0 ? $" {Plural(disputed, "`must` finding")} not fixed {(disputed == 1 ? "waits" : "wait")} for the person." : "");
+        var disputed = Count(row => row.Disputed);
+        var counts = new List<Noted>();
+        void Add(NoteCode code, int count, string text)
+        {
+            if (count > 0) counts.Add(Noted.Of(code, text, ("count", count)));
+        }
+
+        Add(NoteCodes.OpinionFixed, fixedCount, $"{fixedCount} fixed, each commit read from git as one this turn made");
+        Add(NoteCodes.OpinionUnproven, notMade, $"{notMade} said fixed whose commit git did not read as one this turn made, read as unresolved");
+        Add(NoteCodes.OpinionRejected, rejected, $"{rejected} rejected with its evidence");
+        Add(NoteCodes.OpinionUnresolved, unresolved, $"{unresolved} unresolved");
+        Add(NoteCodes.OpinionUnanswered, unanswered, $"{unanswered} not answered, read as unresolved");
+
+        var noted = new Noted("— ", []).Then(
+            "",
+            Noted.Of(
+                NoteCodes.OpinionAnswersLead, $"the answers to {opinion.Who}'s {Plural(reading.Findings.Count, "finding")}, as its turn ended:",
+                ("who", opinion.Who), ("count", reading.Findings.Count)));
+        for (var each = 0; each < counts.Count; each++) noted = noted.Then(each == 0 ? " " : "; ", counts[each]);
+        // The English has always closed an empty list as ": ." (a space with nothing after it).
+        noted = noted.Then(counts.Count == 0 ? " ." : ".");
+        return disputed > 0
+            ? noted.Then(
+                " ",
+                Noted.Of(
+                    NoteCodes.OpinionDisputed, $"{Plural(disputed, "`must` finding")} not fixed {(disputed == 1 ? "waits" : "wait")} for the person",
+                    ("count", disputed))).Then(".")
+            : noted;
     }
 
     private static string Plural(int count, string noun) => count == 1 ? $"1 {noun}" : $"{count} {noun}s";

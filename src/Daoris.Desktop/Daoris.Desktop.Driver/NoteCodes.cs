@@ -578,6 +578,24 @@ public static class NoteCodes
     public static readonly NoteCode DoorResumeRefused = new("door.resume-refused", ["why"]) { Why = Continue };
     public static readonly NoteCode DoorAnswerCarriedOn = new("door.answer-carried-on", []);
 
+    // ——— A review set-up's record (CONVNOTE2h, <see cref="ReviewNotes"/>): the environment's name and the repository a fact; the
+    // commit is the 8-character short id. The service's message and the served sentence are a program's words, which may hold a path.
+    public static readonly NoteCode ReviewNoRule = new("review.no-rule", ["named", "to"]);
+    public static readonly NoteCode ReviewNoCommit = new("review.no-commit", []);
+    public static readonly NoteCode ReviewPosted = new("review.posted", ["commit", "named"]);
+    public static readonly NoteCode ReviewNotPosted = new("review.not-posted", []);
+    public static readonly NoteCode ReviewPostsNext = new("review.posts-next", []);
+
+    // ——— A second opinion's answers as the working session's turn ended (CONVNOTE2h, <see cref="OpinionAnswers.Told"/>): whose
+    // findings and how many, then how many each way, each only above nought; a count the page says "(N in all)".
+    public static readonly NoteCode OpinionAnswersLead = new("opinion.answers", ["who", "count"]);
+    public static readonly NoteCode OpinionFixed = new("opinion.fixed", ["count"]);
+    public static readonly NoteCode OpinionUnproven = new("opinion.unproven", ["count"]);
+    public static readonly NoteCode OpinionRejected = new("opinion.rejected", ["count"]);
+    public static readonly NoteCode OpinionUnresolved = new("opinion.unresolved", ["count"]);
+    public static readonly NoteCode OpinionUnanswered = new("opinion.unanswered", ["count"]);
+    public static readonly NoteCode OpinionDisputed = new("opinion.disputed", ["count"]);
+
     // ——— A conversation's words waiting for its own account's reset (CONVNOTE2g, <see cref="ResumeWords"/>, MSG1g): the account
     // by its owner and its id, never by the name the person gave it, since a conversation's events never leave the machine (D152's
     // UX7d-1 note); until when a moment, why a cool-off's reason. The tool's own sign-in has a line of its own and its refresh
@@ -797,6 +815,44 @@ public static class DoorNotes
     {
         var said = new Noted("— ", []).Then("", Noted.Of(NoteCodes.DoorResumeRefused, refused.Why.Sentence, NoteCodes.Reason(refused.Why, ranOn)));
         return refused.Words is { Length: > 0 } words ? said.Then(": ", Noted.Said(words, NoteBy.Agent)) : said;
+    }
+}
+
+/// <summary>
+/// The notes for a review set-up's record (CONVNOTE2h): each English as its site always wrote it, byte for byte, without the
+/// "— " lead the conversation's event adds, with its parts. The service's message and the served sentence are a program's words.
+/// </summary>
+public static class ReviewNotes
+{
+    /// <summary>No review rule names the environment any more, so its kind is not known.</summary>
+    public static Noted NoRule(string named, string to) =>
+        Noted.Of(
+            NoteCodes.ReviewNoRule,
+            $"its set-up was not posted: no review rule here names `{named}` for `{to}` any more, so its kind is not known. "
+            + "Declare it, and its next end posts it.",
+            ("named", named), ("to", to));
+
+    /// <summary>The tree's commit could not be read.</summary>
+    public static Noted NoCommit() => Noted.Of(NoteCodes.ReviewNoCommit, "its set-up was not posted: its tree's commit could not be read.");
+
+    /// <summary>Posted with the commit Daoris read, the service's message and then what was served, each as its own words.</summary>
+    /// <param name="commit">The full commit id; the 8-character short id is the value.</param>
+    public static Noted Posted(string commit, string named, string message, string? served)
+    {
+        var noted = Noted.Of(
+                NoteCodes.ReviewPosted, $"Daoris read `{commit[..8]}` from its tree and posted what it showed in `{named}`:",
+                ("commit", commit[..8]), ("named", named))
+            .Then(" ", Noted.Said(message, NoteBy.Program));
+        return served is { Length: > 0 }
+            ? noted.Then(" ", Noted.Said($"{char.ToUpperInvariant(served[0])}{served[1..]}", NoteBy.Program))
+            : noted;
+    }
+
+    /// <summary>Not posted, the program's message beneath; <paramref name="next"/> where it is the failure the next end retries.</summary>
+    public static Noted NotPosted(string message, bool next)
+    {
+        var noted = Noted.Of(NoteCodes.ReviewNotPosted, "its set-up was not posted:").Then(" ", Noted.Said(message, NoteBy.Program));
+        return next ? noted.Then(". ", Noted.Of(NoteCodes.ReviewPostsNext, "Its next end posts it.")) : noted;
     }
 }
 

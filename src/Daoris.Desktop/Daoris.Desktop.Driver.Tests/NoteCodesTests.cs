@@ -400,6 +400,86 @@ public sealed class BackgroundNotesTests
     }
 }
 
+/// <summary>CONVNOTE2h: a review set-up's record and a second opinion's answers, by code; the English as it was written.</summary>
+public sealed class ReviewAndOpinionNotesTests
+{
+    [Fact]
+    public void A_set_up_not_posted_codes_each_reason_and_leaves_the_programs_words_as_theirs()
+    {
+        var noRule = ReviewNotes.NoRule("browser", "web");
+        Assert.Equal(
+            "its set-up was not posted: no review rule here names `browser` for `web` any more, so its kind is not known. Declare it, and its next end posts it.",
+            noRule.Note);
+        Assert.Equal(["review.no-rule"], NoteAssert.Codes(noRule.Parts));
+        Assert.Equal(("browser", "web"), (noRule.Parts[0].Value("named"), noRule.Parts[0].Value("to")));
+        NoteAssert.Holds(noRule);
+
+        var none = ReviewNotes.NoCommit();
+        Assert.Equal("its set-up was not posted: its tree's commit could not be read.", none.Note);
+        Assert.Equal(["review.no-commit"], NoteAssert.Codes(none.Parts));
+
+        var refused = ReviewNotes.NotPosted("the service said no at D:/x", next: false);
+        Assert.Equal("its set-up was not posted: the service said no at D:/x", refused.Note);
+        Assert.Equal(["review.not-posted", null], NoteAssert.Codes(refused.Parts));
+        Assert.Equal((NoteBy.Program, "the service said no at D:/x"), (refused.Parts[1].By, refused.Parts[1].Words));
+        NoteAssert.Holds(refused);
+
+        var failed = ReviewNotes.NotPosted("connection lost", next: true);
+        Assert.Equal("its set-up was not posted: connection lost. Its next end posts it.", failed.Note);
+        Assert.Equal(["review.not-posted", null, "review.posts-next"], NoteAssert.Codes(failed.Parts));
+        NoteAssert.Holds(failed);
+    }
+
+    [Fact]
+    public void A_set_up_posted_codes_its_commit_and_leaves_the_services_and_the_served_words_as_theirs()
+    {
+        var posted = ReviewNotes.Posted("0123456789abcdef", "browser", "Kept as set-up 1.", "served `D:/x`.");
+        Assert.Equal("Daoris read `01234567` from its tree and posted what it showed in `browser`: Kept as set-up 1. Served `D:/x`.", posted.Note);
+        Assert.Equal(["review.posted", null, null], NoteAssert.Codes(posted.Parts));
+        Assert.Equal(("01234567", "browser"), (posted.Parts[0].Value("commit"), posted.Parts[0].Value("named")));
+        Assert.Equal([NoteBy.Program, NoteBy.Program], [posted.Parts[1].By, posted.Parts[2].By]);
+        NoteAssert.Holds(posted);
+
+        Assert.Equal("Daoris read `01234567` from its tree and posted what it showed in `browser`: Kept.", ReviewNotes.Posted("0123456789abcdef", "browser", "Kept.", null).Note);
+    }
+
+    private static OpinionView View() =>
+        new("op1", "occ", "first", "w", "s1", "repo", "b", "t", "codex-acp", "Label", "given") { Product = "Codex", Maker = "OpenAI" };
+
+    private static OpinionReading Reading(params (string Weight, string Counts, string? Said, string? Fix, string? Why)[] rows) =>
+        new("s1", null, DateTimeOffset.UnixEpoch,
+            [.. rows.Select((row, each) => new OpinionAnswerRead(each + 1, row.Weight, row.Counts) { Said = row.Said, Fix = row.Fix, Why = row.Why })]);
+
+    [Fact]
+    public void Answers_code_the_lead_and_each_count_above_nought_in_the_englishs_order()
+    {
+        var reading = Reading(
+            ("must", "fixed", "fixed", "a".PadRight(40, 'a'), null),
+            ("must", "unresolved", "fixed", null, OpinionAnswerWhy.FixUnknown),
+            ("should", "rejected", "rejected", null, null),
+            ("must", "unresolved", "unresolved", null, null),
+            ("note", "unresolved", null, null, OpinionAnswerWhy.NotAnswered));
+        var noted = OpinionAnswers.Told(View(), reading);
+        Assert.Equal(OpinionAnswers.Line(View(), reading), noted.Note);
+        Assert.Equal(
+            ["opinion.answers", "opinion.fixed", "opinion.unproven", "opinion.rejected", "opinion.unresolved", "opinion.unanswered", "opinion.disputed"],
+            NoteAssert.Codes(noted.Parts));
+        Assert.Equal(("Codex (OpenAI)", 5), (noted.Parts[0].Value("who"), noted.Parts[0].Value("count")));
+        Assert.Equal(1, noted.Parts[1].Value("count"));
+        Assert.Equal(2, noted.Parts[6].Value("count"));
+        NoteAssert.Holds(noted);
+    }
+
+    [Fact]
+    public void Answers_with_one_kind_code_that_kind_alone()
+    {
+        var noted = OpinionAnswers.Told(View(), Reading(("should", "rejected", "rejected", null, null)));
+        Assert.Equal(["opinion.answers", "opinion.rejected"], NoteAssert.Codes(noted.Parts));
+        Assert.Equal("— the answers to Codex (OpenAI)'s 1 finding, as its turn ended: 1 rejected with its evidence.", noted.Note);
+        NoteAssert.Holds(noted);
+    }
+}
+
 /// <summary>CONVNOTE2e: a conversation's door that failed, by code; the English as it was written.</summary>
 public sealed class DoorNotesTests
 {
