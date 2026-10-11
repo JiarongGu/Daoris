@@ -206,6 +206,19 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText(code('q1'))).toBeInTheDocument();
   });
 
+  // HIST1f-a: clearing finished history is the generic card too, its sentence the driver's describe.
+  it('a clear card is the generic one, with Apply and Not now', async () => {
+    const clear: HelpProposal = {
+      id: 'p17', kind: 'clear', terminal: 'daoris quests clear q1', why: 'the person asked to clear it',
+      describe: 'Clear quest `q1`: 2 units cleared, 1 kept.',
+    };
+
+    await press(clear, 'Apply');
+
+    expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
+    expect(screen.getByText(code('q1'))).toBeInTheDocument();
+  });
+
   it('a session delete card is the delete kind\'s, naming the session', async () => {
     const remove: HelpProposal = {
       id: 'p15', kind: 'delete', terminal: 'daoris sessions delete s9', why: 'a test run',

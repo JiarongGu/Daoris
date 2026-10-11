@@ -26,7 +26,7 @@ export type {
 export const historyKey = (target: HistoryTarget) => ['history', target.scope, target.id] as const;
 
 /** The plans, every scope, which a clear makes stale. */
-const ALL_HISTORY = ['history'] as const;
+export const ALL_HISTORY =['history'] as const;
 
 /**
  * The reading walks the home's files and the second press removes them, each after asking the service (§2.4, §5): either may
