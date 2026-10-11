@@ -117,7 +117,9 @@ public sealed partial class DriverModule
             BrowserModule.HelpFacts(BrowserModule.Home),
             // And what its last look held by the person's stop (SESSUX1b), so a retry names a stop Try again releases.
             HeldQuest.From(_loop.Look.Latest),
-            sessions, history);
+            sessions, history,
+            // The named workflows saved here, so each repository's Workflow column names the version it follows (WORKFLOW1h-c).
+            WorkflowStore.List(_loop.Home));
     }
 
     /// <summary>
@@ -174,6 +176,8 @@ public sealed partial class DriverModule
                 Sync = SyncShown(plan.Sync),
                 // An accept's departures (DRIFT1d2), for the card to show the person's words before the yes.
                 Accept = AcceptShown(plan.Accept),
+                // A workflow's version, as the card shows it (WORKFLOW1h-c), never the steps or the choice Apply carries.
+                Workflow = WorkflowShown(plan.Workflow),
             });
         }
 
@@ -599,6 +603,41 @@ public sealed partial class DriverModule
     /// </summary>
     public static bool JudgedAgainstHistory(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => proposal.Kind == "clear");
 
+    /// <summary>
+    /// Whether a pending proposal is a workflow (WORKFLOW1h-c), judged by the named workflows saved here and the runs bound to
+    /// them, so the home is read for those only then. Public so the fast half holds the gate without a service.
+    /// </summary>
+    public static bool JudgedAgainstWorkflows(IEnumerable<HelpProposal> proposals) => proposals.Any(proposal => proposal.Kind == "workflow");
+
+    /// <summary>
+    /// The runs bound on this machine, each as its file under the bindings folder reads (WORKFLOW1h-c): a card says how many keep the
+    /// version they started on. A file that is not a binding is skipped, as the run's own reading skips it.
+    /// </summary>
+    public static IReadOnlyList<WorkflowRunBinding> BoundRuns(string home)
+    {
+        var folder = WorkflowRunBindings.FolderOf(home);
+        if (!Directory.Exists(folder)) return [];
+        var runs = new List<WorkflowRunBinding>();
+        foreach (var file in Directory.EnumerateFiles(folder, "*.json").Order(StringComparer.Ordinal))
+        {
+            var run = Path.GetFileNameWithoutExtension(file);
+            if (WorkflowRunBindings.Read(home, run) is { } binding) runs.Add(binding);
+        }
+
+        return runs;
+    }
+
+    /// <summary>
+    /// What a workflow card shows (WORKFLOW1h-c, design §8.2), the page's <c>HelpWorkflowShown</c>: the card's own fields only. The
+    /// steps Apply saves and the choice it makes stay with the driver, which sends exactly those when the person presses it.
+    /// Null for every other kind.
+    /// </summary>
+    public static object? WorkflowShown(HelpWorkflowCard? card) => card is null ? null : new
+    {
+        card.Id, card.Name, card.Base, card.Version, card.Scope,
+        card.Diff, card.YourPart, card.Outward, card.Needs, card.AppliesTo, card.Choose,
+    };
+
     // A go naming an item on the view, read as the judge reads its view (`HelpGoProposals.Plan`); an item on any other view
     // is refused unread.
     private static bool ItemOn(HelpProposal proposal, string view) =>
@@ -765,6 +804,13 @@ public sealed partial class DriverModule
         if (proposals.Any(proposal => proposal.Kind == "accept"))
         {
             facts = facts with { QuestRecords = await service.EveryQuestAsync(ct).ConfigureAwait(false) };
+        }
+
+        // A workflow proposal is judged by the named workflows here and the runs bound to them (WORKFLOW1h-c, design §8.1, §8.2); the
+        // registered repositories and plugins it also reads are in the facts already.
+        if (JudgedAgainstWorkflows(proposals))
+        {
+            facts = facts with { Workflows = WorkflowStore.List(_loop.Home), WorkflowRuns = BoundRuns(_loop.Home) };
         }
 
         // Daoris's browser's files as the Browser screen reads them (HELP10), read only when a browser change is pending.
