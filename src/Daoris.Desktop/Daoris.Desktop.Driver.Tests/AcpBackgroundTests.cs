@@ -223,6 +223,62 @@ public sealed class AcpBackgroundTests
     }
 
     /// <summary>
+    /// 🔴 BGWAIT1b: the answered park's resumed run waits on its own background work as a start does. The agent offers
+    /// <c>session/resume</c>, the resumed conversation's turn backgrounds the gates and ends, and the run waits for them and
+    /// goes on with the turn that says they ended.
+    /// </summary>
+    [Fact]
+    public async Task A_resumed_run_waits_on_its_own_background_work_as_a_start_does()
+    {
+        var ended = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize":
+                    return Ok(frame, """{"protocolVersion":1,"agentCapabilities":{"sessionCapabilities":{"resume":{}}}}""");
+                case "session/resume":
+                    return Ok(frame, "{}");
+                case "session/prompt" when self.Prompts.Count == 1:
+                    BackgroundsTheGates(self);
+                    return Ok(frame, """{"stopReason":"end_turn"}""");
+                case "session/prompt":
+                    ended.SetResult(frame.GetProperty("id").GetInt32());
+                    return null;
+                default:
+                    return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var record = new Record();
+        var asked = 0;
+
+        var run = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event)
+            .RunAsync(
+                "D:/fam/Game", "Port 8080.", CancellationToken.None, resume: "s-1",
+                waitsOnBackground: _ =>
+                {
+                    Interlocked.Increment(ref asked);
+                    return Task.FromResult(true);
+                });
+
+        await Poll.Until(
+            () => record.Lines.Any(line => line.StartsWith("note:", StringComparison.Ordinal) && line.Contains("Run the gates")),
+            () => string.Join(" | ", record.Lines), TimeSpan.FromSeconds(10));
+        await Task.Delay(300);
+        Assert.False(run.IsCompleted);
+        Assert.Equal(1, Volatile.Read(ref asked));
+
+        GatesEnd(agent);
+        var id = await ended.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        agent.Push(Answer(id, "end_turn"));
+        var outcome = await run.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Equal(["initialize", "session/resume", "session/prompt", "session/prompt", "session/close"], agent.Methods);
+        Assert.Contains("`Run the gates` (completed)", agent.Prompts[1]);
+    }
+
+    /// <summary>
     /// 🔴 A real question still parks: a turn that ends with no background work running ends the run as before, one prompt
     /// and the close, and nothing asks whether to wait. A task that ended inside the turn is not running (CONSOLE2a's second
     /// run: the ticker finished while an async subagent held the turn open).

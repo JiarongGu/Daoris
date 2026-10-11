@@ -1306,14 +1306,7 @@ public sealed partial class Driver(
                 stopMade: stop => stoppedFirst = stop,
                 // BGWAIT1: a turn that ends on the session's own background work, holding its quest as a park would, is not
                 // a question. Read from the quest as the conclusion reads it, by the conclusion's own rule.
-                waitsOnBackground: async token =>
-                {
-                    var now = await service.FindQuestAsync(quest.Id, token).ConfigureAwait(false);
-                    var status = now?.Status ?? "Open";
-                    return Observation.Parks(
-                        status, quest.Awaits, now?.Awaits, resumed: start.Resumes is not null,
-                        took: status == "Taken" && await service.TookAsync(sessionId, token).ConfigureAwait(false));
-                },
+                waitsOnBackground: WaitsOnBackground(service, quest, sessionId, resumed: start.Resumes is not null),
                 conclude: async (exitCode, used, turnFailed, ended) =>
                 {
                     if (used is not null)
@@ -1903,6 +1896,27 @@ public sealed partial class Driver(
         return Noted.Of(
             profile is null ? NoteCodes.AccountRefusedOwn : NoteCodes.AccountRefused,
             $"{char.ToUpperInvariant(reason[0])}{reason[1..]}", ("owner", owner));
+    }
+
+    /// <summary>
+    /// The judgement a turn that ends on the session's own background work is asked (BGWAIT1, BGWAIT1b), one for a start and a
+    /// resumed run: the quest read again, by the conclusion's own rule. Null for a resumed run whose quest was closed as the look
+    /// planned it, which never waits (D83, D105 §3, D137 §2.3). A start asks the ledger whether it took its quest; a resumed
+    /// run carried on a take of this machine's, so it asks nothing.
+    /// </summary>
+    internal static Func<CancellationToken, Task<bool>>? WaitsOnBackground(
+        ServiceClient service, QuestView planned, string sessionId, bool resumed)
+    {
+        if (resumed && planned.Status is not ("Open" or "Taken")) return null;
+
+        return async token =>
+        {
+            var now = await service.FindQuestAsync(planned.Id, token).ConfigureAwait(false);
+            var status = now?.Status ?? "Open";
+            return Observation.Parks(
+                status, planned.Awaits, now?.Awaits, resumed,
+                took: !resumed && status == "Taken" && await service.TookAsync(sessionId, token).ConfigureAwait(false));
+        };
     }
 
     /// <summary>

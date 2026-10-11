@@ -13687,3 +13687,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **HEAD2f — one way to the whole request** (web). Where a head offers *View full request* (the quest's and the ask's, HEAD2b/d), its clamped title still shows `PageHead`'s own *Show all*: give `PageHead` a way to drop it there, so the design's "*Show all* becomes *View full request*" holds. Design §2.
 
 **Outcome** 2026-10-12: `PageHead` takes `wholeElsewhere`; the quest's and the ask's heads pass it when they show *View full request*, and their clamped title drops *Show all* but keeps its tip; other heads keep *Show all*. Detail: D162's HEAD2f note.
+
+### BGWAIT1b — resumed background wait (2026-10-12, D83)
+
+> - [ ] **BGWAIT1b — resumed background wait** (driver). Apply start judgment to Driver.Continue. D83; AcpBackgroundTests case.
+
+**Outcome** 2026-10-12: a resumed run waits on its own background work as a start does, by one shared helper (`Driver.WaitsOnBackground`), and never where its quest was closed as planned. Detail: D83's BGWAIT1b note.

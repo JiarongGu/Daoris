@@ -274,7 +274,6 @@ Decision/trigger rows stay held; diagnostic captures are not permission to chang
 
 - [ ] **REALCASE1 — complete installed real case** (parent/owner). Remaining Codex device sign-in belongs to owner; preserve prior seven-step outcomes in frozen row. D62.
 - [ ] **ANSWER2b — resumed run through second look** (driver Process). One resume/record while next look runs. D131 note.
-- [ ] **BGWAIT1b — resumed background wait** (driver). Apply start judgment to Driver.Continue. D83; AcpBackgroundTests case.
 - [ ] **BGWAIT1c — native background cutoff** (driver/web). Coded cutoff instead of park after harness-killed work. D83/D137/D142; stream fixture.
 - [ ] **LAND4b — failed automatic landing** (driver; decide). Unify Done+failed rule with person's press. D145/D102; rule case.
 - [ ] **QUESTCLOSE1b4 — a lost move's note keeps its parts** (service; consider). A quest's `conflicts` (`QuestConflict`) carry a lost move's note but not its parts, so a lost person's done reads in English. If the page should word it, `QuestConflict` and the answer gain parts. D142 point 2; a sync test.

@@ -188,6 +188,12 @@ internal sealed class StandInLedger : HttpMessageHandler
         }
     }
 
+    /// <summary>A quest now waiting on another repository's answer (D79), as the service lists it.</summary>
+    public void Awaiting(string id, string repository)
+    {
+        lock (_gate) _quests.Single(q => q["id"]!.GetValue<string>() == id)["awaits"] = repository;
+    }
+
     /// <summary>Move a quest, as its session's own connector would.</summary>
     public void Move(string id, string status)
     {

@@ -297,6 +297,9 @@ public sealed partial class Driver
                     : findings && !persons ? Continuations.GoingOnWithFindingsNoted
                     : Continuations.GoingOnNoted,
                 goOn: GoOnWith(adapter, target, selection, rules.File, handed),
+                // BGWAIT1b: a resumed run waits on its own background work as a start does, by the same judgement; where its
+                // quest was closed as the look planned it, never (D83, D105 §3, D137 §2.3).
+                waitsOnBackground: WaitsOnBackground(service, quest, sessionId, resumed: true),
                 working: () => starting?.Dispose(),
                 stopMade: stop => stoppedFirst = stop,
                 conclude: (exitCode, used, turnFailed, ended) =>
