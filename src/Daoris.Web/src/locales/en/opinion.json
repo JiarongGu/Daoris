@@ -123,5 +123,6 @@
   "opinion.accept.answers": "Accepting answers what the second opinion left unsettled: {{unsettled}}.",
   "opinion.said.sentBack": "Your words went to session {{session}} as its next turn.",
   "opinion.session.title": "Second opinion",
-  "opinion.session.kind": "second opinion"
+  "opinion.session.kind": "second opinion",
+  "opinion.session.reads": "reads {{title}}"
 }

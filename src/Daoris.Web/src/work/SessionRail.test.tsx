@@ -72,7 +72,15 @@ const LIVE_GROUPS = [
 /** The bridge's answer to each call: the reader's groups, and the driver's state for everything else. */
 const drive = async (_module: string, type: string) => (type === 'SESSION_GROUPS' ? { sessions: GROUPS } : DRIVER_STATE);
 
+/** What `/api/opinions` answers (XAGENT1g4c): a list, or a status where the service holds none (a teammate's host answers 404). */
+let OPINIONS: unknown[] | number = [];
+const opinionsAsked = vi.fn();
+
 function respond(url: string): Response {
+  if (url.startsWith('/api/opinions')) {
+    opinionsAsked(url);
+    return typeof OPINIONS === 'number' ? Response.json({ error: 'none' }, { status: OPINIONS }) : Response.json(OPINIONS);
+  }
   if (url.startsWith('/api/sessions')) return Response.json(SESSIONS);
   if (url.startsWith('/api/quests')) return Response.json(QUESTS);
   if (url.startsWith('/api/registry')) return Response.json(REGISTRY);
@@ -893,5 +901,50 @@ describe('a group a door brings into view', () => {
     show(<Tooltip.Provider><SessionRail notify={() => {}} compact group="you" onGroupBrought={strip} /></Tooltip.Provider>);
     await waitFor(() => expect(strip).toHaveBeenCalledTimes(1));
     expect(document.activeElement).toBe(document.body);
+  });
+
+  /**
+   * XAGENT1g4c (the second-agent design §9): a reviewer's row says whose work it reads, joined through the opinions the
+   * service lists; a service that holds none (404) makes no claim, and a list with no reviewer asks nothing.
+   */
+  describe('a second opinion’s reviewer says whose work it reads (XAGENT1g4c)', () => {
+    const reviewer = { ...base, id: 'e5f6a7b8', quest: null, kind: 'chat', repository: 'engine', state: 'working', opinion: 'o1a2b3c4', created: at(20), updated: at(10) };
+    const opinion = { id: 'o1a2b3c4', working: 's1a2b3c4', session: 'e5f6a7b8' };
+
+    beforeEach(() => {
+      SESSIONS = [...LIVE, reviewer];
+      GROUPS = [...LIVE_GROUPS, { session: 'e5f6a7b8', group: 'working', shown: 'working', archived: false, teammate: false }];
+      opinionsAsked.mockReset();
+    });
+    afterEach(() => { OPINIONS = []; });
+
+    it('names the working session by its title, beside the kind', async () => {
+      OPINIONS = [opinion];
+      show(<SessionRail notify={() => {}} />);
+
+      expect(await screen.findByText(/ · second opinion · reads Expose a streaming budget on the chunk API · moved/)).toBeInTheDocument();
+    });
+
+    it('makes no claim where the service answers 404, or the working session is not listed', async () => {
+      OPINIONS = 404;
+      const first = show(<SessionRail notify={() => {}} />);
+      expect(await screen.findByText(/ · second opinion · moved/)).toBeInTheDocument();
+      await waitFor(() => expect(opinionsAsked).toHaveBeenCalled());
+      expect(screen.queryByText(/reads/)).toBeNull();
+      first.unmount();
+
+      OPINIONS = [{ ...opinion, working: 'zzzzzzzz' }];
+      show(<SessionRail notify={() => {}} />);
+      expect(await screen.findByText(/ · second opinion · moved/)).toBeInTheDocument();
+      expect(screen.queryByText(/reads/)).toBeNull();
+    });
+
+    it('asks no opinions where the list holds no reviewer', async () => {
+      SESSIONS = LIVE;
+      show(<SessionRail notify={() => {}} />);
+
+      await screen.findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+      expect(opinionsAsked).not.toHaveBeenCalled();
+    });
   });
 });

@@ -1,7 +1,7 @@
 import { Fragment, type ReactNode, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HELP_REPOSITORY, type Quest, type Session } from '../api';
-import { useQuests, useRegistry, useSessions } from '../queries';
+import { useOpinions, useQuests, useRegistry, useSessions } from '../queries';
 import { searchable } from '../searchable';
 import {
   type SessionHit, useDriver, useSessionGroups, useSessionOpenings, useSessionSearch, useSessionWhere,
@@ -18,7 +18,7 @@ import { groupHeading, useBringGroup } from './ListPane';
 import { SessionRow } from './SessionRow';
 import { Refused } from './InlineConfirm';
 import { ArchiveEndedAsk, type RepositoryFacts, SessionList, type SessionRowFacts, SessionStrip } from './SessionList';
-import { isIntake, ownTree, sessionTitle } from './identity';
+import { isIntake, isOpinion, ownTree, sessionTitle } from './identity';
 import { byName, marked, readable } from './railSearch';
 import { type SessionDoors, useSessionActs } from './sessionActs';
 
@@ -139,6 +139,16 @@ export function SessionRail({
   const titleOf = (session: Session) =>
     sessionTitle(session, session.quest ? questFor.get(session.quest) : null, openings[session.id]);
 
+  // Whose work each second opinion's reviewer reads (XAGENT1g4c): the opinions the service lists, asked only when the list holds
+  // a reviewer, joined to the sessions it already has. A 404 or an error leaves the map empty and no row claims anything.
+  const opinions = useOpinions((sessions.data ?? []).some(isOpinion));
+  const byId = new Map((sessions.data ?? []).map((session): [string, Session] => [session.id, session]));
+  const reads: Record<string, string> = {};
+  for (const opinion of opinions.data ?? []) {
+    const working = byId.get(opinion.working);
+    if (working) reads[opinion.session] = titleOf(working);
+  }
+
   // What a search may find: everything the list holds, or only what is running where the rail is live.
   const pool = live ? (sessions.data ?? []).filter((session) => SESSION_ACTIVE.has(session.state)) : (sessions.data ?? []);
   // Each row the list holds, with what it is drawn from besides its record.
@@ -150,6 +160,7 @@ export function SessionRail({
     lastTurn: lastTurns[session.id],
     root: registered.get(session.repository)?.root,
     where: where[session.id],
+    reads: reads[session.id],
   }));
   const placed = new Map((groupings ?? []).map((row) => [row.session, row]));
 
@@ -227,6 +238,7 @@ export function SessionRail({
       lastTurn={lastTurns[session.id]}
       root={registered.get(session.repository)?.root}
       where={where[session.id]}
+      reads={reads[session.id]}
       grouping={live ? null : placed.get(session.id)}
       // A search finds archived sessions too, marked, since it is how one is found without the tick (D126 §4.5).
       archived={!live && Boolean(placed.get(session.id)?.archived)}

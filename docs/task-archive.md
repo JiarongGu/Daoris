@@ -13645,3 +13645,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **WORKFLOW1i-c — the intake's kind proposal on the ask's page** (web). `AskResponse.workflowProposals` shown beside the ask's choice: the kind, its reason (the person's quoted words), and a press that makes it the ask's choice through its existing door. §4.3; D157's WORKFLOW1i-a/b notes.
 
 **Outcome** 2026-10-12: the ask's page has a *Kind of work* section: the person's latest choice (with its workflow), each intake proposal with its quoted reason, and *Apply*, which posts the kind with the latest choice's workflow carried; an applied proposal is hidden. The press is owed an Ask Daoris door in coverage, as the review choice's is. Detail: D157's WORKFLOW1i-c note.
+
+## XAGENT1g4c — the reviewer's row says whose work it reads (2026-10-12, D155)
+
+> - [ ] **XAGENT1g4c — the reviewer's row says whose work it reads** (driver/web; design call first). A reviewer's Sessions row is its own, kind *Second opinion*; say which session's work it reads (the record holds only the opinion's id: the working id on the record or the detail). §9.
+
+**Outcome** 2026-10-12: the parent's call, a join with no record change: the rail asks `GET /api/opinions` only when it lists a reviewer and maps each reviewer to its working session's title; the row's line says *reads {title}* after its kind; off this machine, or with the working session unlisted, nothing is claimed. Grouping under the work is XAGENT1g4d. Detail: D155's XAGENT1g4c note.
