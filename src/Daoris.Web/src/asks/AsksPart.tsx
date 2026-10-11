@@ -27,7 +27,7 @@ import { AskComposer, type AskDraft } from './AskComposer';
 import { AskPage } from './AskPage';
 import { asksInOrder } from './AskRow';
 
-const EMPTY_DRAFT: AskDraft = { circle: '', sentence: '', to: '', review: '', reviewWords: '', ...NO_CARRY };
+const EMPTY_DRAFT: AskDraft = { circle: '', sentence: '', to: '', review: '', reviewWords: '', short: '', ...NO_CARRY };
 
 /** What the asks hand Quests' view: their rows, the chosen ask's page, and the composer while it is open. */
 export type AsksPart = {
@@ -185,6 +185,8 @@ export function useAsksPart({
     ask.mutate({
       workspace,
       sentence: draft.sentence.trim(),
+      // The person's short title (HEAD2e): sent only where they gave one, so an ask without it reads as it always did.
+      ...(draft.short?.trim() ? { short: draft.short.trim() } : {}),
       links: linksOf(draft.links),
       attachments,
       // Unnamed, the declarations propose and nothing is published; named, it is published at once.

@@ -5,7 +5,7 @@ import { NO_CARRY } from '../compose/carry';
 import { AskRow } from './AskRow';
 import { AskComposer, type AskDraft } from './AskComposer';
 import {
-  BY_INTAKE, CLOSED, DONE, INTAKE_ASKED, LONG_CJK, NAMED, PROPOSED, PUBLISHED, REFUSED, UNKNOWN_TIER, UNMATCHED,
+  BY_INTAKE, CLOSED, DONE, INTAKE_ASKED, LONG_CJK, NAMED, PROPOSED, PUBLISHED, REFUSED, SHORT_TITLED, UNKNOWN_TIER, UNMATCHED,
 } from './fixtures';
 
 // An ask (D65 §1a), made at a workspace and read back as a record (INT4c): its row in Quests' list and the composer
@@ -28,7 +28,7 @@ const Rows = ({ children }: { children: ReactNode }) => (
 export const RowsInEveryState: StoryObj = {
   render: () => (
     <Rows>
-      {[PROPOSED, UNMATCHED, PUBLISHED, NAMED, BY_INTAKE, REFUSED, DONE, CLOSED, UNKNOWN_TIER, LONG_CJK].map((ask, index) => (
+      {[PROPOSED, UNMATCHED, PUBLISHED, NAMED, BY_INTAKE, REFUSED, DONE, CLOSED, UNKNOWN_TIER, LONG_CJK, SHORT_TITLED].map((ask, index) => (
         <AskRow key={ask.id} ask={ask} chosen={index === 0} onOpen={noop} />
       ))}
     </Rows>

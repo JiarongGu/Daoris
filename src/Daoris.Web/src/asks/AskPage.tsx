@@ -9,6 +9,7 @@ import { Button, Icon, type IconName, Inline, Menu, Pill, Prose, SelectField, SE
 import { ClearAsk } from '../work/ClearAsk';
 import { clearOffered, type HistoryDoor } from '../work/history';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
+import { askName } from '../work/identity';
 import { Note } from '../work/Note';
 import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing';
 import { PageHead, PageSection, ViewMain } from '../work/ViewMain';
@@ -229,7 +230,7 @@ export function AskPage({
     </>
   );
   const menu = {
-    label: firstLine(ask.sentence),
+    label: askName(ask),
     acts: [
       ...headActs.map((act) => ({
         id: act, label: t(ASK_ACT[act].label), icon: ASK_ACT[act].icon, disabled: waiting, onSelect: () => press(act),
@@ -241,8 +242,11 @@ export function AskPage({
 
   // The title is the request's first line on two lines at most; a long one is read whole, as written, in the body's first
   // block, which *View full request* moves the focus to (HEAD2d, D162 §4). Content is shown as it is: nothing is rewritten.
-  const title = firstLine(ask.sentence);
-  const long = title.length > LONG_TITLE;
+  // HEAD2e (D162 point 4): where the asker gave a short title the head says it, as a quest's does, and the body opens on the
+  // whole request once; the head then cuts nothing, so *View full request* has nothing to move to.
+  const title = askName(ask);
+  const titled = title !== firstLine(ask.sentence);
+  const long = !titled && title.length > LONG_TITLE;
   const request = useRef<HTMLParagraphElement>(null);
   const head = (
     <PageHead
@@ -351,14 +355,14 @@ export function AskPage({
 
       {/* The first line is the page's title, so the body is what follows it — a one-line ask was its title
           and then its body, word for word (POLISH4). The title wraps, so nothing is lost. */}
-      {(long || rest) && (
+      {(titled || long || rest) && (
         <p
           ref={request}
           id={`request-${ask.id}`}
           tabIndex={-1}
           className="m-0 mb-4 whitespace-pre-wrap text-body leading-relaxed wrap-anywhere focus-visible:outline-none"
         >
-          {long ? ask.sentence : rest}
+          {titled || long ? ask.sentence : rest}
         </p>
       )}
 

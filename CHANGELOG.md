@@ -9,6 +9,8 @@ with the version and date at release.
   (one for a session) beside a fixed column of actions, and on a narrow window the actions take their own row. An ask's
   long request is clamped with *View full request*; a session no longer repeats its quest's whole title above the
   conversation, which moved into its *Details*.
+- An ask can carry a short title of up to 40 characters, given in its composer or by Ask Daoris when it proposes the ask.
+  Lists and the ask's page call it by that title, and the page shows the whole request under it.
 
 - Ask Daoris can propose a workflow: a new one, or a new version of one on its newest, and optionally choose it for a
   repository or workspace. It is judged as the editor would, said with your part first and what it does without asking

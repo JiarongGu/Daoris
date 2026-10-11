@@ -4,6 +4,7 @@ import { ago } from '../format';
 import { Dot, Pill } from '../ui';
 import { CarriedCount } from '../compose/carry';
 import { contextOffer } from '../menus/press';
+import { askName } from '../work/identity';
 import { ListRowDoor } from '../work/ListPane';
 
 /**
@@ -22,7 +23,7 @@ export const ASK_TONE: Record<AskState, 'open' | 'done' | 'neutral'> = {
 /** Whether an ask is finished with — closed by the person, or done with every quest it became (USE1c). */
 export const askEnded = (ask: Ask) => ask.state === 'Closed' || ask.state === 'Done';
 
-/** The ask's first line — what a row and a page's title show; the whole sentence is the record's. */
+/** The ask's first line — what a row and a page's title show where it has no short title (`askName`); the whole sentence is the record's. */
 export const firstLine = (sentence: string) => sentence.split('\n', 1)[0].trim();
 
 /**
@@ -70,7 +71,8 @@ export function AskRow({ ask, intake = null, chosen = false, onOpen }: {
   onOpen: (ask: Ask) => void;
 }) {
   const { t } = useTranslation();
-  const title = firstLine(ask.sentence);
+  // HEAD2e: its short title where it has one, as a quest's row says its own; else the sentence's first line.
+  const title = askName(ask);
   const became = ask.quests.map((id) => `#${id.slice(0, 6)}`).join(', ');
   const proposed = ask.proposal.map((match) => match.repository).join(', ');
   const live = ask.state === 'Open' || ask.state === 'Proposed';

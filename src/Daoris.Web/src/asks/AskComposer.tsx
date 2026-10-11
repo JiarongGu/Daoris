@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { type Carry, CarryFields, useCarry } from '../compose/carry';
+import { SHORT_TITLE_MAX } from '../quests/QuestComposer';
 import { Button, Drawer, EmptyState, Inline, SelectField } from '../ui';
 
 /** An ask being written: its circle, its words, a receiver if the person names one, and what it carries. */
@@ -16,7 +17,19 @@ export type AskDraft = Carry & {
   review?: string;
   /** Their words with the choice, kept with it. */
   reviewWords?: string;
+  /**
+   * Its short title (HEAD2e), optional: the person's few words that tell it apart in a list, at most 40 characters. Empty sends
+   * none, and the ask is named by its first line.
+   */
+  short?: string;
 };
+
+/** A short title's length as the service counts it: by character, a Chinese one counted once (SESSUX1j's rule). */
+const characters = (text: string) => [...text.trim()].length;
+
+/** Whether a draft is whole enough to send: its circle and words, and a short title the service would keep. */
+export const askReady = (draft: AskDraft, circle: string, busy = false) =>
+  !busy && Boolean(circle) && Boolean(draft.sentence.trim()) && characters(draft.short ?? '') <= SHORT_TITLE_MAX;
 
 /** Radix Select cannot carry an empty value, so "let the declarations propose" travels as a sentinel. */
 const NOBODY = '*';
@@ -69,7 +82,8 @@ export function AskComposer({
   const { t } = useTranslation();
   const carry = useCarry(draft, (next) => onChange({ ...draft, ...next }), true);
   const circle = fixed ?? draft.circle;
-  const ready = !busy && Boolean(circle) && Boolean(draft.sentence.trim());
+  const ready = askReady(draft, circle, busy);
+  const used = characters(draft.short ?? '');
   const meta = <span className="font-mono text-meta text-ink-faint">{t('asks.compose.meta')}</span>;
 
   // 🔴 A machine with no repository holds no circle. The form offered an empty choice of one, and a
@@ -128,6 +142,27 @@ export function AskComposer({
             onChange={(e) => onChange({ ...draft, sentence: e.target.value })}
             className="min-h-28 resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
           />
+        </label>
+        {/* Its short title (HEAD2e), optional and the person's own, as a quest's is (SESSUX1j): what a list and its head show for
+            it. Counted as it is typed, and past the service's limit it says so and holds the ask back, not sends one refused. */}
+        <label className="grid gap-1 text-small text-ink-soft">
+          <span className="flex items-baseline justify-between gap-2">
+            {t('quests.field.short')}
+            <span className={used > SHORT_TITLE_MAX ? 'font-mono text-meta text-ink-danger' : 'font-mono text-meta text-ink-faint'}>
+              {t('asks.compose.shortCount', { used, max: SHORT_TITLE_MAX })}
+            </span>
+          </span>
+          <input
+            aria-label={t('quests.field.short')}
+            value={draft.short ?? ''}
+            placeholder={t('quests.field.shortPlaceholder')}
+            aria-invalid={used > SHORT_TITLE_MAX || undefined}
+            onChange={(e) => onChange({ ...draft, short: e.target.value })}
+            className="min-h-[1.9rem] rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink aria-[invalid=true]:border-st-declined"
+          />
+          {used > SHORT_TITLE_MAX && (
+            <span className="text-small text-ink-danger">{t('quests.field.shortTooLong', { count: SHORT_TITLE_MAX })}</span>
+          )}
         </label>
         <label className="grid gap-1 text-small text-ink-soft">
           {t('asks.compose.to')}

@@ -48,6 +48,13 @@ public sealed record Ask(
     /// <summary>Addresses it carries, judged as a quest's are — they travel to every quest it becomes.</summary>
     public IReadOnlyList<string> Links { get; init; } = [];
 
+    /// <summary>
+    /// The short title its asker gave (HEAD2e, D162 point 4), as a quest's is (SESSUX1j): at most <see cref="QuestTitles.MaxShort"/>
+    /// characters on one line, as written. Null where none was given, which is every ask from before: a page then heads it with
+    /// the sentence's first line.
+    /// </summary>
+    public string? Short { get; init; }
+
     /// <summary>Files it carries, by name — the bytes are kept under this machine's home until it becomes quests.</summary>
     public IReadOnlyList<QuestAttachment> Attachments { get; init; } = [];
 
@@ -274,6 +281,10 @@ public sealed class AskStore
         await SchemaColumns.EnsureAsync(_db, "asks", "workflow_proposals", "workflow_proposals TEXT NOT NULL DEFAULT '[]'", ct)
             .ConfigureAwait(false);
 
+        // HEAD2e (D162 point 4): the asker's short title, as a quest's (SESSUX1j). A store from before keeps every ask it had,
+        // each holding none, so a page heads it with its sentence's first line as it did.
+        await SchemaColumns.EnsureAsync(_db, "asks", "short_title", "short_title TEXT NULL", ct).ConfigureAwait(false);
+
         return this;
     }
 
@@ -365,8 +376,8 @@ public sealed class AskStore
         // The review choices are written with a new ask, from its composer (REVIEWENV1b), and only appended after: a later save
         // of the whole record never drops one a door appended meanwhile (REV3). The kind and workflow choices likewise (WORKFLOW1e).
         command.CommandText = """
-            INSERT INTO asks (id, workspace, sentence, state, tier, asked, updated, asker, note, links, attachments, proposal, quests, intake, review_choices, workflow_choices)
-            VALUES ($id, $workspace, $sentence, $state, $tier, $asked, $updated, $asker, $note, $links, $attachments, $proposal, $quests, $intake, $reviewChoices, $workflowChoices)
+            INSERT INTO asks (id, workspace, sentence, state, tier, asked, updated, asker, note, links, attachments, proposal, quests, intake, review_choices, workflow_choices, short_title)
+            VALUES ($id, $workspace, $sentence, $state, $tier, $asked, $updated, $asker, $note, $links, $attachments, $proposal, $quests, $intake, $reviewChoices, $workflowChoices, $short)
             ON CONFLICT (id) DO UPDATE SET
               state = $state, tier = $tier, updated = $updated, note = $note,
               links = $links, attachments = $attachments, proposal = $proposal, quests = $quests, intake = $intake
@@ -381,6 +392,7 @@ public sealed class AskStore
         }));
         command.Parameters.AddWithValue("$workflowChoices", Json(ask.WorkflowChoices, WriteWorkflowChoice));
         command.Parameters.AddWithValue("$intake", (object?)ask.Intake ?? DBNull.Value);
+        command.Parameters.AddWithValue("$short", (object?)ask.Short ?? DBNull.Value);
         command.Parameters.AddWithValue("$id", ask.Id);
         command.Parameters.AddWithValue("$workspace", ask.Workspace);
         command.Parameters.AddWithValue("$sentence", ask.Sentence);
@@ -582,6 +594,7 @@ public sealed class AskStore
                 e.GetProperty("matched").EnumerateArray().Select(w => w.GetString() ?? "").ToList())),
             Quests = Items(Text("quests"), e => e.GetString() ?? ""),
             Intake = Maybe("intake"),
+            Short = Maybe("short_title"),
             Later = LaterWords(Text("words")),
             WordsKeptFrom = Maybe("words_kept_from") is { } from ? DateTimeOffset.Parse(from) : null,
             GoAheads = GoAheads.Read(Text("go_aheads")),
@@ -720,6 +733,12 @@ public sealed record AskRequest(string Workspace, string Sentence)
     /// <summary>The receiver, when the asker already knows whose problem it is — published at once.</summary>
     public string? To { get; init; }
 
+    /// <summary>
+    /// The asker's short title (HEAD2e): the few words that tell the ask apart in a list, judged as a quest's is
+    /// (<see cref="QuestTitles.Judge"/>) and refused past its bound. Null or blank for none.
+    /// </summary>
+    public string? Short { get; init; }
+
     /// <summary>Who asked, when the door knows.</summary>
     public string? Asker { get; init; }
 
@@ -840,6 +859,9 @@ public enum AskRefusal
 
     /// <summary>A kind or a workflow that is not one by its shape, or words past their bound (WORKFLOW1e).</summary>
     BadWorkflow,
+
+    /// <summary>A short title past <see cref="QuestTitles.MaxShort"/> characters, or over a line break (HEAD2e).</summary>
+    BadShort,
 }
 
 /// <param name="Refusal"><see cref="AskRefusal.None"/> when it did what was asked.</param>
@@ -1025,6 +1047,10 @@ public sealed partial class AskDesk(KnowledgeService service, AskStore asks, Que
         var (unfit, why, links) = exchange.JudgeCarry(request.Links, request.Uploads);
         if (unfit is not null) return new(AskRefusal.BadCarry, why, Ask: null);
 
+        // The asker's short title (HEAD2e), judged by the quest's own rule so every door refuses the same, before anything is kept.
+        var (shortTitle, unfitShort) = QuestTitles.Judge(request.Short);
+        if (unfitShort is not null) return new(AskRefusal.BadShort, unfitShort, Ask: null);
+
         // The person's review choice from the composer (REVIEWENV1b), judged before anything is kept.
         AskReviewChoice? chosen = null;
         if (request.Review is not null)
@@ -1068,6 +1094,7 @@ public sealed partial class AskDesk(KnowledgeService service, AskStore asks, Que
         var ask = new Ask(id, workspace, sentence, AskState.Open, ByDeclarations, now, now, request.Asker)
         {
             Links = links,
+            Short = shortTitle,
             Attachments = attachments.DistinctBy(a => a.Sha256).ToList(),
             Proposal = DeclarationsTier.Rank(sentence, registered, workspace),
             ReviewChoices = chosen is null ? [] : [chosen],

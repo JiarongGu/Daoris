@@ -26,6 +26,7 @@
   "asks.compose.circle": "Workspace",
   "asks.compose.circlePlaceholder": "which workspace to ask",
   "asks.compose.sentence": "What is wanted, and why",
+  "asks.compose.shortCount": "{{used}} / {{max}}",
   "asks.compose.to": "Receiver",
   "asks.compose.toNobody": "Nobody yet — let the declarations propose",
   "asks.compose.review": "Review before it lands",

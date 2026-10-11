@@ -19,6 +19,21 @@ public sealed class HelpAskProposalTests : HelpProposalBoxFixture
         Assert.Equal(JsonValueKind.Null, file.GetProperty("reviewWords").ValueKind);
     }
 
+    /// <summary>HEAD2e: the short title is written trimmed, null where none is given, and judged by the quest's rule.</summary>
+    [Fact]
+    public void An_ask_carries_a_short_title_judged_as_a_quests_is()
+    {
+        var (id, _) = Box().ProposeAsk("fix the stall", "work", "why", "h1", Now, shortTitle: "  Cold-cache stall ");
+        var (plain, _) = Box().ProposeAsk("fix the stall", "work", "why", "h1", Now);
+        var (none, message) = Box().ProposeAsk("fix the stall", "work", "why", "h1", Now, shortTitle: new string('x', 41));
+
+        Assert.Equal("Cold-cache stall", Written(id!).GetProperty("short").GetString());
+        Assert.Equal(JsonValueKind.Null, Written(plain!).GetProperty("short").ValueKind);
+        Assert.Null(none);
+        Assert.Contains("at most 40 characters", message);
+        Assert.EndsWith("Nothing was proposed.", message);
+    }
+
     /// <summary>
     /// ENTRY1c: the composer's choices, as the box writes them. Each row but the last is one the driver's
     /// <c>AskReviewCommand.Compose</c> takes (its <c>Composed</c> table, and <c>HelpAskProposalsTests</c>), so the box never refuses

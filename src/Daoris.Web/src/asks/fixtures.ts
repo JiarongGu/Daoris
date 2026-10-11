@@ -122,6 +122,9 @@ export const LONG_ASK: Ask = {
   ).join(' '),
 };
 
+/** A long request its asker gave a short title (HEAD2e): the head and the row say the short title, the body the whole request. */
+export const SHORT_TITLED: Ask = { ...LONG_ASK, id: '5a6b7c8d9e0f', short: 'Cold-cache stall' };
+
 export const LONG_CJK: Ask = {
   ...PROPOSED, id: '8e7d6c5b4a39', workspace: '工作区',
   sentence: '流式加载在冷缓存时卡顿，需要按帧限制加载量，并在测试机上复现后附上完整的跟踪日志与截图，以便引擎仓库的代理判断是否要改动分块接口。',

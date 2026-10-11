@@ -298,7 +298,7 @@ public sealed partial class DriverModule
         // The ask composer's door, the local host's `POST /api/asks`, with its review choice and words (ENTRY1c). A named
         // environment the workspace does not declare is refused before anything is sent, as `daoris-driver ask --review` refuses
         // it: the service holds no rule, and the proposal's plan holds no repositories per workspace.
-        public async Task<AskAnswer> AskAsync(string workspace, string sentence, string? review, string? reviewWords, CancellationToken ct)
+        public async Task<AskAnswer> AskAsync(string workspace, string sentence, string? review, string? reviewWords, CancellationToken ct, string? shortTitle = null)
         {
             var asks = service ?? throw NotReady();
             if (review is not null
@@ -308,7 +308,7 @@ public sealed partial class DriverModule
                 return new AskAnswer(false, undeclared, null, null);
             }
 
-            return await asks.AskAsync(workspace, sentence, [], [], null, ct, review, reviewWords).ConfigureAwait(false);
+            return await asks.AskAsync(workspace, sentence, [], [], null, ct, review, reviewWords, shortTitle: shortTitle).ConfigureAwait(false);
         }
 
         // The quest drawer's Delete: the local host's `DELETE /api/quests/{id}`.

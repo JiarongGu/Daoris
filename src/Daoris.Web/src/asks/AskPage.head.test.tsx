@@ -8,7 +8,7 @@ import i18n from '../i18n';
 import type { WorkDoor } from '../work/pausing';
 import { PAUSABLE_ASK, PAUSED_ASK } from '../work/pausingFixtures';
 import { AskPage } from './AskPage';
-import { LONG_ASK, PUBLISHED, WITH_GO_AHEADS } from './fixtures';
+import { LONG_ASK, PUBLISHED, SHORT_TITLED, WITH_GO_AHEADS } from './fixtures';
 
 // An ask's head as a quest's (HEAD2d, D162 §4, the entry-and-heads design §0 and §2): its state leads, its title is
 // the request's first line on two lines at most, one line of facts says where it goes, its age and the live fact, its
@@ -43,6 +43,22 @@ describe('an ask’s head (HEAD2d)', () => {
     const text = head.textContent!;
     expect(text.indexOf('proposed')).toBeLessThan(text.indexOf('paused'));
     expect(text.indexOf('paused')).toBeLessThan(text.indexOf(title.textContent!.slice(0, 20)));
+  });
+
+  // HEAD2e: an ask heads with its short title where it has one, as a quest does, and the body opens on the whole request once.
+  it('heads with its short title, and the body is the whole request, said once', () => {
+    const head = page(SHORT_TITLED);
+    expect(within(head).getByRole('heading', { level: 1 })).toHaveTextContent(/^Cold-cache stall$/);
+    expect(within(head).queryByRole('button', { name: i18n.t('work.head.viewRequest') })).toBeNull();
+    const body = screen.getByRole('main').querySelector(`#request-${SHORT_TITLED.id}`)!;
+    expect(body.textContent).toBe(SHORT_TITLED.sentence);
+    expect(screen.getByRole('main').textContent!.split(SHORT_TITLED.sentence).length).toBe(2);
+  });
+
+  it('keeps a multi-line request whole under a short title, its first line included', () => {
+    page({ ...PUBLISHED, short: 'Streamer stall' });
+    const body = screen.getByRole('main').querySelector(`#request-${PUBLISHED.id}`)!;
+    expect(body.textContent).toBe(PUBLISHED.sentence);
   });
 
   it('says its id only in its ⋯ and its details, never in the head', async () => {

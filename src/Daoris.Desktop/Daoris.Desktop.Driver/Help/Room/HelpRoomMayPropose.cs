@@ -24,7 +24,9 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  `across` takes `read on|off|--clear` for a repository or a whole workspace,\n");
         text.Append("  or `write-to <other> [--clear]` for a repository, to let its sessions write into the other's checkout, one way.\n");
         text.Append("  Applying a write-to is the person's standing say-so for writing across, and its card says so.\n");
-        text.Append("- `ask_propose`: something to start, as an ask at a workspace.\n");
+        // HEAD2e: an ask's short title, at most 40, the person's own where they gave one (the card says it).
+        text.Append("- `ask_propose`: something to start, as an ask at a workspace, with an optional short title (at most 40 characters,\n");
+        text.Append("  the few words that tell it apart in a list, the person's own where they gave one).\n");
         // HELP10: an agent's default account, which HELP9 left owed. UX6e2: each is on the agent's page since UX6e.
         text.Append("- `agent_propose`: an agent's Update or a pin to one version, as Agents → the agent's page → Ways in offers them,\n");
         text.Append("  or which of its accounts it runs as by default, for the machine or one workspace (`default`,\n");

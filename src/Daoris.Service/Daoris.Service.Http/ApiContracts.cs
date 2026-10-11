@@ -146,10 +146,11 @@ public sealed record DismissConflictRequest(string? Machine, long? Sequence);
 // and `To` is the asker naming the receiver, which publishes at once.
 // `Review` and `ReviewWords` (REVIEWENV1b, design §1.5): the person's review choice from the composer, and their words with it.
 // `Kind`, `Workflow` and `WorkflowWords` (WORKFLOW1e, the workflow design §4.3): the person's kind and workflow for its work.
+// `Short` (HEAD2e): the asker's short title, at most 40 characters, judged as a quest's is; absent for none.
 public sealed record AskRequestBody(
     string? Workspace, string? Sentence, IReadOnlyList<string>? Links,
     IReadOnlyList<QuestAttachmentRequest>? Attachments, string? To, string? Review = null, string? ReviewWords = null,
-    string? Kind = null, string? Workflow = null, string? WorkflowWords = null);
+    string? Kind = null, string? Workflow = null, string? WorkflowWords = null, string? Short = null);
 // A publish is a person's `To` alone; an intake (D65 §1b) adds its own words, carry and chain, and
 // names its `Session` — which moves the ask's tier to `intake` only when it is the ask's own. Its
 // `Requirements` quote the person (DRIFT1c), judged against the ask's words. `Review` is the chain's choice, an intake's only on
@@ -182,7 +183,7 @@ public sealed record DeclarationMatchResponse(string Repository, int Score, IRea
 // `WorkflowChoices` (WORKFLOW1e, the workflow design §4.3) is the person's kind and workflow choices on it, oldest first, the
 // latest standing, one naming neither a choice cleared; absent where there is none. `WorkflowProposals` (WORKFLOW1i) is its intake's
 // kind proposals, each with its reason and the quest it came with, kept beside the choices and applied only by the person's press;
-// absent where there is none.
+// absent where there is none. `Short` (HEAD2e) is the asker's short title, null for none (every ask from before).
 public sealed record AskResponse(
     string Id, string Workspace, string Sentence, string State, string Tier, DateTimeOffset Asked,
     DateTimeOffset Updated, string? Asker, string? Note, IReadOnlyList<string> Links,
@@ -191,7 +192,8 @@ public sealed record AskResponse(
     IReadOnlyList<AskWordResponse>? Words = null, DateTimeOffset? WordsKeptFrom = null,
     IReadOnlyList<GoAheadResponse>? GoAheads = null,
     IReadOnlyList<AskReviewChoiceResponse>? ReviewChoices = null, IReadOnlyList<AskReviewProposalResponse>? ReviewProposals = null,
-    IReadOnlyList<AskWorkflowChoiceResponse>? WorkflowChoices = null, IReadOnlyList<AskWorkflowProposalResponse>? WorkflowProposals = null);
+    IReadOnlyList<AskWorkflowChoiceResponse>? WorkflowChoices = null, IReadOnlyList<AskWorkflowProposalResponse>? WorkflowProposals = null,
+    string? Short = null);
 public sealed record AskWorkflowProposalResponse(string Kind, string Reason, DateTimeOffset At, string? Session, string? Quest);
 public sealed record AskReviewChoiceResponse(string Choice, DateTimeOffset At, string? Words);
 public sealed record AskWorkflowChoiceResponse(string? Kind, string? Workflow, DateTimeOffset At, string? Words);

@@ -13687,3 +13687,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **HEAD2f — one way to the whole request** (web). Where a head offers *View full request* (the quest's and the ask's, HEAD2b/d), its clamped title still shows `PageHead`'s own *Show all*: give `PageHead` a way to drop it there, so the design's "*Show all* becomes *View full request*" holds. Design §2.
 
 **Outcome** 2026-10-12: `PageHead` takes `wholeElsewhere`; the quest's and the ask's heads pass it when they show *View full request*, and their clamped title drops *Show all* but keeps its tip; other heads keep *Show all*. Detail: D162's HEAD2f note.
+
+## HEAD2e — an ask's short title (2026-10-12, D162)
+
+> - [ ] **HEAD2e — an ask's short title** (service/driver/web). An ask carries `short` (at most 40, the asker's words): the composer offers it, `ask_propose` writes it, lists and heads show it as a quest's. Design §2; SESSUX1j's rule.
+
+**Outcome** 2026-10-12: an ask carries an optional short title judged by `QuestTitles.Judge`, set from the composer (with its `n / 40` count), `POST /api/asks` and `ask_propose`'s `shortTitle`; `askName` heads and rows an ask by it, else its first line, and the page then says the whole request once. The ask command's `--short` is HEAD2e2. Detail: D162's HEAD2e note.

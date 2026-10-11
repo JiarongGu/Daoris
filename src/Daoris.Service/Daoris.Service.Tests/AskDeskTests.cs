@@ -106,6 +106,34 @@ public sealed class AskDeskTests : IAsyncLifetime
             kept.Proposal.Select(match => (match.Repository, match.Score, string.Join(" ", match.Matched))));
     }
 
+    /// <summary>
+    /// HEAD2e (D162 point 4): an ask carries the asker's short title, as a quest does (SESSUX1j) — trimmed, kept on the
+    /// record, and null where none was given, which every ask from before is.
+    /// </summary>
+    [Fact]
+    public async Task A_short_title_is_kept_trimmed_on_the_ask_and_none_is_null()
+    {
+        var titled = await _desk.AskAsync(new AskRequest("work", Sentence) { Short = "  Media field names  " }, Now);
+        var plain = await _desk.AskAsync(new AskRequest("work", "rotate the office wifi password"), Now);
+
+        Assert.Equal("Media field names", titled.Ask!.Short);
+        Assert.Equal("Media field names", (await _desk.FindAsync(titled.Ask.Id))!.Short);
+        Assert.Null(plain.Ask!.Short);
+        Assert.Null((await _desk.FindAsync(plain.Ask.Id))!.Short);
+    }
+
+    /// <summary>HEAD2e: a short title past the quest's bound is refused in the quest's own sentence and nothing is kept.</summary>
+    [Fact]
+    public async Task A_short_title_past_forty_characters_is_refused_and_no_ask_is_kept()
+    {
+        var outcome = await _desk.AskAsync(new AskRequest("work", Sentence) { Short = new string('x', 41) }, Now);
+
+        Assert.Equal(AskRefusal.BadShort, outcome.Refusal);
+        Assert.Equal(QuestTitles.Judge(new string('x', 41)).Refusal, outcome.Message);
+        Assert.Null(outcome.Ask);
+        Assert.Empty(await _desk.ListAsync(null, true));
+    }
+
     [Fact]
     public async Task A_sentence_nobody_declared_is_proposed_to_nobody_and_says_so()
     {

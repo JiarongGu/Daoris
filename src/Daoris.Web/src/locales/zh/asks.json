@@ -26,6 +26,7 @@
   "asks.compose.circle": "工作区",
   "asks.compose.circlePlaceholder": "选择工作区",
   "asks.compose.sentence": "需要什么，以及为什么",
+  "asks.compose.shortCount": "{{used}} / {{max}}",
   "asks.compose.to": "受托方",
   "asks.compose.toNobody": "暂不指定——由声明来提议",
   "asks.compose.review": "落地前审阅",
