@@ -51,7 +51,8 @@ Original row proofs remain in the frozen backlog; measurements precede declarati
 - [ ] **CODEXUSE2 — installed Codex reading** (parent/owner). Pins are verified; account sign-in remains unavailable. Use CODEXUSE3's own-sign-in reading meanwhile. D57/D63/D125.
 - [ ] **CODEXKEY1 — Codex API-key account** (measure first; owner supplies throwaway key). Determine spawn variable for both tools before declaring support. D67/D125; real variable-start proof.
 - [ ] **TOOL6d — continue on another account** (driver/modules/web; after TOOL6b). Offer last plan/words to selected account. D130 §8–§9; both-door tests/look.
-- [ ] **TOOL4l — account proposal doors** (service/driver). Use/keep/early/near, order, ready/cooloff. D125 §6/D130 §9/§16.6; kinds/coverage.
+- [ ] **TOOL4l-a — the service writes the account doors** (service). `agent_propose` writes `use` (fields `use`, `keep` (null = none), `early`, `near`, which the driver already reads), `order` (an `accounts` list, or `clear: true` with a workspace: back to the machine's accounts) and `ready` (an `account`, `own` for the tool's sign-in). Lands first: the kinds test lets the service write doors the driver does not list yet. D130 §9, §16.6; D130's TOOL4g note ~:311-352.
+- [ ] **TOOL4l-b — the driver judges and applies them** (driver/modules; after a). `HelpAgentProposals` lists `use`, `order`, `ready`; judges `order` (as `OrderEdited`) and `ready` (a cool-off, an account in the list or `own`); two `IHelpDoors` methods in ScreenDoors; the room's text and goldens; the coverage rows (`AccountDoorOwed`, `JoinDoor`) become doors. And `setting`'s `cooloff` on both sides in this one branch (the kinds test holds `setting`'s two lists equal).
 - [ ] **TOOL4h — account rehearsal/report** (tools; after TOOL4j). Stub window limits labelled Daoris-only; parallel account run. Rotation §8/D130 §5.4.
 - [ ] **TOOL4i — installed rotation** (owner). Parallel every-account run and interruption proof remain. D130 §11; preserve sequential evidence.
 - [ ] **AGT2c — vendor pins** (owner; two downloads). Verify update controls and native layout. D67/channel evidence; observed pins.
@@ -174,7 +175,7 @@ Contracts: session-management (D126 §9), session-messages (D137), answer-contin
 pause-and-clean-up (D132), D133/D136. Installed canaries follow completed build rows.
 
 - [ ] **QUESTREBASE1 — pure rebase planner** (service; consider). Preserve operation identity, accepted-before-pending order and transaction. D69/D79; unchanged sync suite and loss tests.
-- [ ] **SESSUX1h3b — the room's session look, timed** (driver/modules; measure first). SESSUX1h3 reads `SessionGroups.LookAsync` (with the review count's git judgement) on every room write, a conversation's going on included (`HelpMachineNowAsync`). Time it on the installed machine against Ask Daoris's first-answer time (HELP5); if it shows, read it at a conversation's start only, or keep the last look. D161's SESSUX1h3 note.
+- [ ] **SESSUX1h3c — read the room's look time on the install** (parent; after a republish). SESSUX1h3b logs `help.room.look` (`ms`, `slow` over 500 ms, `read`) in the home's `logs/<date>.<source>.jsonl` on every room write. Read a day of it on the installed machine; if it is slow, propose keeping the last look for a short span (its groups then stale by that span). D161's SESSUX1h3 and SESSUX1h3b notes.
 - [ ] **MSG1d2 — queued chat survives restart** (driver/web; with MSG1c). Record ids/reach/withdrawals; take by id. Messages §3.1.
 - [ ] **MSG1g3 — cooling note and twins** (driver/web). Code held line; compare newSessionSaid with GoOnNew/WordsNever. D137/D142.
 - [ ] **MSG1h — Codex next-step words** (driver; after measured STEER3). Messages §8.
