@@ -104,7 +104,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleSessionsTests.cs` | 47 | 781 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs` | 49 | 897 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs` | 65 | 1189 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Help.cs` | 48 | 842 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Help.cs` | 52 | 902 |
 
 ### Service (`service`)
 
