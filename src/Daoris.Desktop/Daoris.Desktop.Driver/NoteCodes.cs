@@ -31,8 +31,9 @@ public static class NoteBy
 /// <remarks>
 /// <b>Values are facts, never sentences, and never a path or an account's name</b>: the note travels (D125 §3.6). A value is
 /// text, a whole number, or a list of texts; one read back that is none of them is kept as it was read, so a newer writer's
-/// part passes through this one unchanged. The one exception is a conversation's first line (<c>opening.*</c>, UX7d-1): it is
-/// kept only in the conversation's record, which never leaves the machine (D76 §2), so its values name accounts by id.
+/// part passes through this one unchanged. The one exception is a conversation's own lines, its first (<c>opening.*</c>, UX7d-1)
+/// and a wait for its account (<c>waits.*</c>, CONVNOTE2g): they are kept only in the conversation's record, which never leaves
+/// the machine (D76 §2), so their values name accounts by id.
 /// </remarks>
 [JsonConverter(typeof(NotePartJson))]
 public sealed record NotePart
