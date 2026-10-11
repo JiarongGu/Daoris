@@ -13404,3 +13404,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ROSTERREFUSE1 — the roster's refusal by code** (driver + web twin). A start the roster refuses is one English string, so the held note carries it as program words. Give `HarnessSelection` a coded refusal and word it on the page. D152's CONVNOTE2g2 note.
 
 **Outcome** 2026-10-11: `HarnessSelection` and `AccountState` carry `RefusalNote` beside the byte-equal `Refusal`; a cooling account (`held.cooling-account`, or the own sign-in with `waits.read-again`), a signed-out account (`held.signed-out`), a pin not installed and an agent not installed reach the held note by code (`HeldWords.Refused`, falling back to words when the English differs); the account is its id, named on the page by NOTENAME1. The other kinds are ROSTERREFUSE2. Detail: D152's ROSTERREFUSE1 note.
+
+
+## GIT1d-a — the bridge's Git read routes, the modules' half (2026-10-11, D147)
+
+> - [ ] **GIT1d — bridge Git routes** (modules/web; after b). Branch/log/commit/history/blame/compare, shell-only with coded refusals. Git design §4/§6. (The modules' half.)
+
+**Outcome** 2026-10-11: `GIT_BRANCHES`, `GIT_GRAPH`, `GIT_COMMIT`, `GIT_HISTORY`, `GIT_BLAME` and `GIT_COMPARE` read a repository by name through one long-lived `GitReads`; a refusal is an answer's code (`GIT_NOT_TOP`, `GIT_NOT_A_COMMIT`, `GIT_NOT_A_PATH`, `GIT_NOT_A_PAGE`, `GIT_TOO_MANY_TIPS`, `GIT_NOT_ANSWERED`, `GIT_NO_CHECKOUT`, worded in en and zh); no machine path crosses (a tree by its folder's name, a problem's root scrubbed). The answering git's version is GIT1j's. The page's bridge is GIT1d-b. Detail: D147's GIT1d-a note.

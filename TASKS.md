@@ -146,7 +146,7 @@ Contracts: D143/D145/D148/D149; plugin-hooks design;
 - [ ] **PLUGHOOK1d — refresh PR state** (modules/web; after c). Ask again, branch/sync codes, sweep/query words and failure cost. Hooks §2.4–§2.5.
 - [ ] **LAND2d — automatic acceptance UI/rehearsal** (web/tools). Show acceptedBy/events; stub plugin and bare-origin proof. D145 note.
 - [ ] **TRACE1c — missing trace links** (driver/service/web). Late rules, local operations, merges, carry-ons, advances, detached section and commit kinds. D143 note.
-- [ ] **GIT1d — bridge Git routes** (modules/web; after b). Branch/log/commit/history/blame/compare, shell-only with coded refusals. Git design §4/§6.
+- [ ] **GIT1d-b — the page's Git bridge** (web; building). Hooks over GIT1d-a's routes (`GIT_BRANCHES`, `GIT_GRAPH`, `GIT_COMMIT`, `GIT_HISTORY`, `GIT_BLAME`, `GIT_COMPARE`), shell-only, keyed by commit. D147's GIT1d-a note.
 - [ ] **GIT1f — commit/history/blame/compare tabs** (web; after UX6h). Existing patch/trace views, blame gutter, compare sides. §2.4–§2.6.
 - [ ] **GIT1g — fetch/create/delete** (driver/modules/web; after UX6h). One plan/apply judge at commit, console and log. §3.1/§3.3–§3.4; bare-origin tests.
 - [ ] **GIT1h — explicit push/PR** (after g). Person's commit/ref press, guarded branches and fast-forward; preserve handoff. §3.1–§3.2; pre-push tests.
