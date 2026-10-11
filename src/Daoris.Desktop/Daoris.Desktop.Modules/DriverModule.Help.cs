@@ -383,6 +383,43 @@ public sealed partial class DriverModule
             return Task.CompletedTask;
         }
 
+        // ACCOUNT_USE's own `order` and `inherit` (TOOL4l-b): the list written whole through the screen's own edit, or a workspace
+        // returned to the machine's accounts with its default and list cleared at once (D130 §3.2), then the loop asked to look.
+        public Task SetAccountOrderAsync(string harness, IReadOnlyList<string> accounts, bool clear, string? workspace, CancellationToken ct)
+        {
+            var owner = module.OwnerOf(harness);
+            var settings = module._loop.Harnesses.Settings;
+            try
+            {
+                if (clear)
+                {
+                    var circle = workspace ?? throw new DriverException("returning to this machine's accounts names the workspace that returns.");
+                    settings.WithWorkspaceDefault(circle, owner, null).WithRotation(owner, null, circle).Save(module._loop.Harnesses.SettingsPath);
+                }
+                else
+                {
+                    OrderEdited(settings, HarnessSettings.Profiles(module._loop.Harnesses.Home, owner), owner, accounts, workspace)
+                        .Save(module._loop.Harnesses.SettingsPath);
+                }
+            }
+            catch (ShenoraException refused)
+            {
+                throw new DriverException(refused.Message);
+            }
+
+            module._loop.Nudge();
+            return Task.CompletedTask;
+        }
+
+        // ACCOUNT_USE's own `ready` (TOOL4l-b): *Try now*, the loop's own end of a cool-off, then the loop asked to look so an account
+        // offered again takes a waiting start now, not at the next poll.
+        public Task<bool> ReadyAccountAsync(string harness, string? account, CancellationToken ct)
+        {
+            var ended = module._loop.Harnesses.Ready(harness, account);
+            module._loop.Nudge();
+            return Task.FromResult(ended);
+        }
+
         // TREES_SYNC_PLAN's own list (HELP10, WSR6): the same checkouts and sessions, and each line fetched as the person,
         // whose press this is — the look on Ask Daoris's card, never its proposal (D109).
         // It takes what the screen's look takes (D112): the repositories holding Daoris's branches, and the one a card names.
@@ -567,6 +604,8 @@ public sealed partial class DriverModule
                 })],
                 // A default's scope and a use's list, as ACCOUNT_USE and profile-default read them (TOOL4g).
                 Wiring = settings,
+                // The cool-offs a ready's judge reads, as the account rows show them (TOOL4l-b).
+                Cooling = AccountCooling.Read(_loop.Home, DateTimeOffset.UtcNow),
             };
         }
 

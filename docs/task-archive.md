@@ -13362,3 +13362,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ACCTNAME1 — email names read once** (CLI/modules). The page half is built (`accountWho`, D125 ~:931). `agent list` (toolchain.ts ~:1354-1391) prints the email twice when it is the name and pads names to 16; the sign-in end (toolchain.ts ~:1103-1105, DriverModule.Agents.cs ~:866-868) repeats it. Skip the who where `sameName` folds equal; size the column to the longest name. The driver's sentences naming accounts by id (D125 ~:490) are a larger row of their own. Long-name and equal-email cases.
 
 **Outcome** 2026-10-11: `agent list` drops the who where it folds equal to the name and sizes its name column to the longest name (floor 16, so short lists look as before, continuation lines aligned); both doors' sign-in end say "signed in as X — this machine lists it by that name." where the two are one (`DriverModule.SignedInSentence`). Detail: D125's ACCTNAME1 note.
+
+
+## TOOL4l-b — the driver judges and applies the account doors (2026-10-11, D130)
+
+> - [ ] **TOOL4l-b — the driver judges and applies the account doors** (driver/modules). The service writes `use`, `order` and `ready` (TOOL4l-a). `HelpAgentProposals` lists `use`, `order`, `ready`; judges `order` (as `OrderEdited`) and `ready`; two `IHelpDoors` methods in ScreenDoors; the room's text and goldens; the coverage rows become doors. And `setting`'s `cooloff` on both sides.
+
+**Outcome** 2026-10-11: Ask Daoris proposes an account's use, its order (or a workspace back to the machine's accounts, its own default cleared too), *Try now* (judged against a new `Cooling` fact) and the default cool-off; the driver judges each as the page's route does and applies through the same types; the coverage table's account rows, the join and the cool-off are doors (`AccountDoorOwed`, `CoolOffOwed` gone). Detail: D130's TOOL4l-b note.

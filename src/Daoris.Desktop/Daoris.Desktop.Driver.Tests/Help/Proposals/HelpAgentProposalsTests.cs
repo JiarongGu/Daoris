@@ -234,6 +234,214 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
         Assert.Null(HelpProposals.Find(_home, "u2")!.AccountUse);
     }
 
+    /// <summary>TOOL4l-b: the use, order and ready doors are listed, since the service's <c>agent_propose</c> writes them.</summary>
+    [Fact]
+    public void The_account_doors_are_listed_beside_update_pin_and_default()
+    {
+        Assert.Equal(["update", "pin", "default", "use", "order", "ready"], new HelpAgentProposals().Doors);
+    }
+
+    /// <summary>
+    /// The machine of an <c>order</c> (TOOL4l-b): <c>claude-code</c> has three accounts, a list of its own on the machine and a
+    /// default and a kept account in it, and <c>lab</c> a list and a default of its own, <c>trial</c> a default only.
+    /// </summary>
+    private static readonly HelpMachineFacts Walked = Machine with
+    {
+        Workspaces = ["default", "work", "lab", "trial", "quiet"],
+        Doors =
+        [
+            new HelpDoorFacts("claude-code") { Present = true, Owner = "claude-code", Accounts = ["work", "play", "spare"] },
+            new HelpDoorFacts("claude-code-acp") { Present = true, Owner = "claude-code", Accounts = ["work", "play", "spare"] },
+        ],
+        Wiring = new HarnessSettings
+        {
+            Rotation = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase) { ["claude-code"] = ["work", "play"] },
+            Defaults = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["claude-code"] = "work" },
+            WorkspaceRotation = new Dictionary<string, IReadOnlyDictionary<string, IReadOnlyList<string>>>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["lab"] = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase) { ["claude-code"] = ["play", "spare"] },
+            },
+            Workspaces = new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["lab"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["claude-code"] = "play" },
+                ["trial"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["claude-code"] = "spare" },
+            },
+        }.WithUse("claude-code", new UseChange(Keep: "play")).WithUse("claude-code", new UseChange(Keep: "play"), "lab"),
+    };
+
+    private static HelpProposal Order(string agent, string[] accounts, string? workspace = null, bool clear = false) =>
+        new("p11", "agent", "order", agent, workspace, null, null, "the person asked", "h1", "proposed")
+        {
+            AccountOrder = new AccountOrder(accounts, clear),
+        };
+
+    /// <summary>
+    /// TOOL4l-b (D130 §9): an account list written whole, or a workspace sent back to the machine's accounts, as
+    /// <c>daoris agent profile order</c> takes it, said in its words; a door's accounts are its owner's (AGT7).
+    /// </summary>
+    [Fact]
+    public void An_order_is_judged_and_said_as_the_terminal_says_it()
+    {
+        var machine = HelpProposals.Plan(Order("claude-code-acp", ["work", "spare", "play"]), DriverConfig.Empty, Walked);
+        var lab = HelpProposals.Plan(Order("claude-code", ["spare", "play"], "lab"), DriverConfig.Empty, Walked);
+        var back = HelpProposals.Plan(Order("claude-code", [], "lab", clear: true), DriverConfig.Empty, Walked);
+        var defaulted = HelpProposals.Plan(Order("claude-code", [], "trial", clear: true), DriverConfig.Empty, Walked);
+
+        Assert.Null(machine.Refusal);
+        Assert.Equal("daoris agent profile order claude-code work spare play", machine.Terminal);
+        Assert.Equal("On this machine, `claude-code`'s list is `work`, then `spare`, then `play`: its starts may run on those accounts, "
+            + "in that order.", machine.Describe);
+        Assert.Null(lab.Refusal);
+        Assert.Equal("daoris agent profile order claude-code spare play --workspace lab", lab.Terminal);
+        Assert.StartsWith("In `lab`, `claude-code`'s list is", lab.Describe);
+        Assert.Null(back.Refusal);
+        Assert.Equal("daoris agent profile order claude-code --clear --workspace lab; daoris agent profile default claude-code --clear --workspace lab", back.Terminal);
+        Assert.Equal("`lab` goes back to this machine's accounts for `claude-code`: its own list and default are cleared.", back.Describe);
+        Assert.Null(defaulted.Refusal);
+        Assert.Equal("daoris agent profile default claude-code --clear --workspace trial", defaulted.Terminal);
+    }
+
+    /// <summary><c>profile order</c>'s refusals, and what the scope binds, in its words, before the person ever sees a card.</summary>
+    [Theory]
+    [InlineData("claude-code", new string[0], null, false, "names the accounts in walk order, or clears")]
+    [InlineData("claude-code", new string[0], null, true, "names the workspace")]
+    [InlineData("claude-code", new[] { "work" }, null, true, "never both")]
+    [InlineData("claude-code", new[] { "work", "gone" }, null, false, "has no account `gone` on this machine")]
+    [InlineData("claude-code", new[] { "work", "work" }, null, false, "`work` is named twice")]
+    [InlineData("claude-code", new[] { "play", "spare" }, null, false, "default for `claude-code` is `work`, and the list would not hold it")]
+    [InlineData("claude-code", new[] { "work", "spare" }, null, false, "`play` is kept for conversations, and the list does not hold it")]
+    [InlineData("claude-code", new[] { "play" }, "lab", false, "`play` is kept for conversations, and the list would hold no other account")]
+    [InlineData("claude-code", new[] { "work" }, "elsewhere", false, "there is no workspace `elsewhere`")]
+    [InlineData("claude-code", new string[0], "quiet", true, "has no list or default of its own for `claude-code`, so there is nothing to clear")]
+    [InlineData("gpt-agent", new[] { "work" }, null, false, "no agent `gpt-agent`")]
+    public void An_order_the_route_would_refuse_is_refused(string agent, string[] accounts, string? workspace, bool clear, string says)
+    {
+        var plan = HelpProposals.Plan(Order(agent, accounts, workspace, clear), DriverConfig.Empty, Walked);
+
+        Assert.Contains(says, plan.Refusal);
+    }
+
+    [Fact]
+    public async Task An_order_is_applied_through_the_screens_own_door_and_a_refusal_there_settles_it_refused()
+    {
+        var (applied, doors, later) = await ApplyAsync(Order("claude-code-acp", ["work", "play", "spare"]), facts: Walked);
+        var (back, backDoors, _) = await ApplyAsync(Order("claude-code", [], "lab", clear: true) with { Id = "p12" }, facts: Walked);
+        var (refused, _, _) = await ApplyAsync(
+            Order("claude-code", ["work", "play"]) with { Id = "p13" }, new HelpStandInDoors { OrderRefusal = "the list moved." }, Walked);
+
+        Assert.True(applied.Applied);
+        Assert.Equal(["ACCOUNT_USE claude-code-acp order work,play,spare clear=False"], doors.Calls);
+        Assert.Equal([applied.Told], later);
+        Assert.Equal(["ACCOUNT_USE claude-code order  clear=True lab"], backDoors.Calls);
+        Assert.True(back.Applied);
+        Assert.False(refused.Applied);
+        Assert.Contains("the list moved.", refused.Told);
+        Assert.Equal("refused", HelpProposals.Find(_home, "p13")!.State);
+    }
+
+    /// <summary>The order door's fields from the service's file (TOOL4l-a): the list in order, or <c>clear</c>; no other door reads them.</summary>
+    [Fact]
+    public void The_order_doors_fields_are_read_from_its_file()
+    {
+        System.IO.File.WriteAllText(Path.Combine(HelpProposals.FolderOf(_home), "o1.json"), """
+            { "id": "o1", "kind": "agent", "door": "order", "target": "claude-code", "workspace": null, "value": null,
+              "accounts": ["work", "play"], "why": "the person asked", "state": "proposed", "by": { "session": "h1" } }
+            """);
+        System.IO.File.WriteAllText(Path.Combine(HelpProposals.FolderOf(_home), "o2.json"), """
+            { "id": "o2", "kind": "agent", "door": "order", "target": "claude-code", "workspace": "lab", "value": null,
+              "clear": true, "why": "the person asked", "state": "proposed", "by": { "session": "h1" } }
+            """);
+        File("o3", "agent", "default", "claude-code", value: "work");
+
+        Assert.Equal(["work", "play"], HelpProposals.Find(_home, "o1")!.AccountOrder!.Accounts);
+        Assert.False(HelpProposals.Find(_home, "o1")!.AccountOrder!.Clear);
+        Assert.True(HelpProposals.Find(_home, "o2")!.AccountOrder!.Clear);
+        Assert.Null(HelpProposals.Find(_home, "o3")!.AccountOrder);
+    }
+
+    /// <summary>The <c>Walked</c> machine with <c>play</c> and the tool's own sign-in cooling (TOOL4l-b), as the cool-off file holds them.</summary>
+    private static readonly HelpMachineFacts Cooling = Walked with
+    {
+        Cooling =
+        [
+            new CoolingEntry("claude-code", "play", DateTimeOffset.UtcNow.AddHours(2), true, "weekly", DateTimeOffset.UtcNow, "s1a2b3c4"),
+            new CoolingEntry("claude-code", null, DateTimeOffset.UtcNow.AddHours(1), false, null, DateTimeOffset.UtcNow, null),
+        ],
+    };
+
+    private static HelpProposal Ready(string agent, string? account) =>
+        new("p14", "agent", "ready", agent, null, null, null, "the person asked", "h1", "proposed") { ReadyAccount = account };
+
+    /// <summary>
+    /// TOOL4l-b (D125 §2.3): <i>Try now</i>, an account's cool-off ended early as <c>daoris agent profile ready</c> ends it, for an
+    /// account of the door's owner that is cooling, or for the tool's own sign-in; said in its words.
+    /// </summary>
+    [Fact]
+    public void A_ready_is_judged_and_said_as_the_terminal_says_it()
+    {
+        var account = HelpProposals.Plan(Ready("claude-code-acp", "play"), DriverConfig.Empty, Cooling);
+        var own = HelpProposals.Plan(Ready("claude-code", "own"), DriverConfig.Empty, Cooling);
+
+        Assert.Null(account.Refusal);
+        Assert.Equal("daoris agent profile ready claude-code play", account.Terminal);
+        Assert.StartsWith("Try `play` now: its cool-off ends", account.Describe);
+        Assert.Contains("cools again", account.Describe);
+        Assert.Null(own.Refusal);
+        Assert.Equal("daoris agent profile ready claude-code --own", own.Terminal);
+        Assert.StartsWith("Try `claude-code`'s own sign-in now", own.Describe);
+    }
+
+    [Theory]
+    [InlineData("claude-code", null, "names the account whose cool-off ends, or `own`")]
+    [InlineData("claude-code", "gone", "has no account `gone` on this machine")]
+    [InlineData("claude-code", "spare", "`spare` is not cooling, so there is nothing to end — cooling now: `play`, its own sign-in")]
+    [InlineData("gpt-agent", "play", "no agent `gpt-agent`")]
+    public void A_ready_the_route_would_refuse_is_refused(string agent, string? account, string says)
+    {
+        var plan = HelpProposals.Plan(Ready(agent, account), DriverConfig.Empty, Cooling);
+
+        Assert.Contains(says, plan.Refusal);
+    }
+
+    [Fact]
+    public void Nothing_cooling_is_nothing_to_end()
+    {
+        var plan = HelpProposals.Plan(Ready("claude-code", "own"), DriverConfig.Empty, Walked);
+
+        Assert.Contains("no account of `claude-code` is cooling", plan.Refusal);
+    }
+
+    [Fact]
+    public async Task A_ready_is_applied_through_the_screens_own_door_and_one_no_longer_cooling_settles_refused()
+    {
+        var (applied, doors, later) = await ApplyAsync(Ready("claude-code-acp", "play"), facts: Cooling);
+        var (own, ownDoors, _) = await ApplyAsync(Ready("claude-code", "own") with { Id = "p15" }, facts: Cooling);
+        var (gone, _, _) = await ApplyAsync(Ready("claude-code", "play") with { Id = "p16" }, new HelpStandInDoors { ReadyEnded = false }, Cooling);
+
+        Assert.True(applied.Applied);
+        Assert.Equal(["ACCOUNT_USE claude-code-acp ready play"], doors.Calls);
+        Assert.Equal([applied.Told], later);
+        Assert.Equal(["ACCOUNT_USE claude-code ready own"], ownDoors.Calls);
+        Assert.True(own.Applied);
+        Assert.False(gone.Applied);
+        Assert.Contains("is not cooling any more", gone.Told);
+        Assert.Equal("refused", HelpProposals.Find(_home, "p16")!.State);
+    }
+
+    /// <summary>The ready door's account from the service's file (TOOL4l-a): an id, or <c>own</c>.</summary>
+    [Fact]
+    public void The_ready_doors_account_is_read_from_its_file()
+    {
+        System.IO.File.WriteAllText(Path.Combine(HelpProposals.FolderOf(_home), "r1.json"), """
+            { "id": "r1", "kind": "agent", "door": "ready", "target": "claude-code", "workspace": null, "value": null,
+              "account": "own", "why": "the person asked", "state": "proposed", "by": { "session": "h1" } }
+            """);
+        File("r2", "agent", "default", "claude-code", value: "work");
+
+        Assert.Equal("own", HelpProposals.Find(_home, "r1")!.ReadyAccount);
+        Assert.Null(HelpProposals.Find(_home, "r2")!.ReadyAccount);
+    }
+
     /// <summary>A pin already installed ends before its start is answered: its end is still said second.</summary>
     [Fact]
     public async Task An_action_that_ends_at_once_is_said_after_what_the_Apply_did()
@@ -278,6 +486,25 @@ public sealed partial class HelpStandInDoors
     {
         if (UseRefusal is { } refused) throw new DriverException(refused);
         Calls.Add($"ACCOUNT_USE {harness} use={change.Use} keep={change.Keep} noKeep={change.NoKeep} early={change.Early} near={change.Near} {workspace}".TrimEnd());
+        return Task.CompletedTask;
+    }
+
+    /// <summary>What the order's door refuses with, as `ACCOUNT_USE` would; null to make it (TOOL4l-b).</summary>
+    public string? OrderRefusal { get; init; }
+
+    /// <summary>Whether the account was still cooling when the ready's door ended it (TOOL4l-b).</summary>
+    public bool ReadyEnded { get; init; } = true;
+
+    public Task<bool> ReadyAccountAsync(string harness, string? account, CancellationToken ct)
+    {
+        Calls.Add($"ACCOUNT_USE {harness} ready {account ?? "own"}");
+        return Task.FromResult(ReadyEnded);
+    }
+
+    public Task SetAccountOrderAsync(string harness, IReadOnlyList<string> accounts, bool clear, string? workspace, CancellationToken ct)
+    {
+        if (OrderRefusal is { } refused) throw new DriverException(refused);
+        Calls.Add($"ACCOUNT_USE {harness} order {string.Join(",", accounts)} clear={clear} {workspace}".TrimEnd());
         return Task.CompletedTask;
     }
 }

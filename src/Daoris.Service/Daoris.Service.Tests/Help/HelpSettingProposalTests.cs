@@ -86,6 +86,7 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("across", "plugins", null, "write-to engine --clear")]
     [InlineData("cap", null, null, "3")]
     [InlineData("adapter", null, null, "claude-code-acp")]
+    [InlineData("cooloff", null, null, "90")]
     // KNOWUSE1b: a standing answer for a repository, in the person's words, or cleared.
     [InlineData("standing", "engine", null, "dev writes allowed; test locally against dev; prod only on a yes")]
     [InlineData("standing", "engine", null, "--clear")]
@@ -315,6 +316,8 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("across", "plugins", null, "write-to two words", "`write-to <other>`")]
     [InlineData("across", "engine", null, "peek", "`read on|off|--clear` or `write-to <other> [--clear]`")]
     [InlineData("cap", null, null, "0", "a whole number, 1 or more")]
+    [InlineData("cooloff", null, null, "0", "a whole number of minutes, 1 or more")]
+    [InlineData("cooloff", null, null, "soon", "a whole number of minutes, 1 or more")]
     [InlineData("adapter", null, null, null, "an agent")]
     [InlineData("adapter", null, null, "two words", "an agent")]
     [InlineData("standing", null, null, "dev only", "names the repository it holds for")]

@@ -28,12 +28,12 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     /// <remarks>
     /// HELP9 added <c>across</c> (D107), and <c>cap</c> and <c>adapter</c>, which only a terminal set before; HELP10
     /// <c>retry</c>, once the facts carried the parked quests; LANG1c2 <c>language</c>, once the service's writer listed it;
-    /// REVIEWENV1a <c>review</c>, with the service's writer in the same change; XAGENT1a <c>opinion</c>, the same way.
+    /// REVIEWENV1a <c>review</c>, with the service's writer in the same change; XAGENT1a <c>opinion</c>, the same way; TOOL4l-b <c>cooloff</c>, the same way.
     /// </remarks>
     public IReadOnlyList<string> Doors { get; } =
     [
         "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "standing", "language", "review", "opinion",
-        "intake", "helper", "strikes", "retry", "timeout", "notify", "cap", "adapter",
+        "intake", "helper", "strikes", "retry", "timeout", "notify", "cap", "adapter", "cooloff",
     ];
 
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
@@ -243,6 +243,12 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                 planned = (cap == 1 ? "Run one session at a time on this machine, across every repository."
                         : $"Run at most {cap} sessions at once on this machine, across every repository.",
                     $"daoris driver cap {cap}", c => c with { Cap = cap });
+                break;
+            // TOOL4l-b (D125 §6): how long an account cools when its limit names no time, as `daoris driver cooloff` takes it;
+            // a zero would start a spent account again at every look, so less than a minute falls to the refusal below.
+            case "cooloff" when int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var cool) && cool >= 1:
+                planned = ($"An account whose limit names no time cools for {cool} minute{(cool == 1 ? "" : "s")} before it is offered again.",
+                    $"daoris driver cooloff {cool}", c => c.WithCoolOff(cool));
                 break;
             case "adapter":
                 // The CLI leaves the name to the driver, which knows its adapters: the same names an intake is judged by.

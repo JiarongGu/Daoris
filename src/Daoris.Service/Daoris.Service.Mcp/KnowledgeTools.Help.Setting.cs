@@ -42,7 +42,7 @@ public sealed partial class KnowledgeTools
         + "apply. It becomes a card saying what it changes and the terminal command that does the same, with "
         + "Apply and Not now; nothing changes until the person presses Apply, and their answer comes back as "
         + "their next message. Each door is a `daoris driver` verb: drive, undrive, hold, resume, trees, line, "
-        + "landing, across, standing, language, review, opinion, intake, helper, strikes, retry, timeout, notify, cap, adapter. An `across` "
+        + "landing, across, standing, language, review, opinion, intake, helper, strikes, retry, timeout, notify, cap, adapter, cooloff. An `across`"
         + "write-to is the person's standing say-so for one repository's sessions to write into another; `standing` keeps what "
         + "the person says holds for every session in one repository (which writes are allowed, where to test), in their words; "
         + "`language` sets the language a repository's or a workspace's sessions write to the person in, the work's and never "
@@ -66,7 +66,7 @@ public sealed partial class KnowledgeTools
         + "for a push, a merge, a discard, a sign-in or a key: those "
         + "stay the person's own presses.")]
     public string ProposeSetting(
-        [Description("The door, as `daoris driver` spells it: drive, undrive, hold, resume, trees, line, landing, across, standing, language, review, opinion, intake, helper, strikes, retry, timeout, notify, cap or adapter.")]
+        [Description("The door, as `daoris driver` spells it: drive, undrive, hold, resume, trees, line, landing, across, standing, language, review, opinion, intake, helper, strikes, retry, timeout, notify, cap, adapter or cooloff.")]
         string door,
         [Description("Why: what the person asked, and what the change would do. The person decides on this.")]
         string why,
@@ -74,7 +74,7 @@ public sealed partial class KnowledgeTools
         string? target = null,
         [Description("The workspace, for a line, a landing, a language, a review, a second opinion or `across … read` set for every repository in it. Name this or target, not both.")]
         string? workspace = null,
-        [Description("What it is set to, as the CLI takes it: `on`/`off` (trees, notify), a branch or `--clear` (line), `merge`, `branch <pattern>` with `--tidy`, `--plugin <id>` and `--auto-accept` if wanted, or `--clear` (landing), `read on|off|--clear` or `write-to <other> [--clear]` (across), the person's own words or `--clear` (standing), `en` or `zh`, or `--clear` (language), `<environment> --kind local|deployed --procedure <path> [--address <url>] [--run \"<command>\"] [--required|--not-required]`, `none`, `--drop <environment>`, `--required|--not-required` or `--clear` (review), `--reviewers <adapter,adapter> [--on landing,steps] [--required|--not-required] [--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck]`, `none` or `--clear` (opinion), an agent or `off` (intake, helper), an agent (adapter), a number (strikes, timeout minutes, cap).")]
+        [Description("What it is set to, as the CLI takes it: `on`/`off` (trees, notify), a branch or `--clear` (line), `merge`, `branch <pattern>` with `--tidy`, `--plugin <id>` and `--auto-accept` if wanted, or `--clear` (landing), `read on|off|--clear` or `write-to <other> [--clear]` (across), the person's own words or `--clear` (standing), `en` or `zh`, or `--clear` (language), `<environment> --kind local|deployed --procedure <path> [--address <url>] [--run \"<command>\"] [--required|--not-required]`, `none`, `--drop <environment>`, `--required|--not-required` or `--clear` (review), `--reviewers <adapter,adapter> [--on landing,steps] [--required|--not-required] [--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck]`, `none` or `--clear` (opinion), an agent or `off` (intake, helper), an agent (adapter), a number (strikes, timeout minutes, cap, cooloff minutes).")]
         string? value = null)
     {
         var box = help ?? HelpProposalBox.FromEnvironment();

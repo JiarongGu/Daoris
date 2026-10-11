@@ -42,6 +42,9 @@ present it as the tree.
 - `agent_propose`: an agent's Update or a pin to one version, as Agents → the agent's page → Ways in offers them,
   or which of its accounts it runs as by default, for the machine or one workspace (`default`,
   the account one the room lists under that agent).
+  `use` sets how an agent's list of accounts is used (`use` goal or order, `keep` one account of the list or none,
+  `early`, and `near` from 50 to 99); `order` writes the list in walk order, or with `clear` sends a workspace back
+  to this machine's accounts; `ready` ends an account's cool-off, as *Try now* does (`own` is the tool's own sign-in).
   Update moves a pinned agent's pin to its newest release, or runs an unpinned one's own updater, and is
   offered only where that screen shows Update; a pin names one exact release, like 2.1.300, never `latest`.
 - `agent_settings_propose`: an account's own model and effort, as Agents → the agent's page → Model and

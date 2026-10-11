@@ -26,6 +26,58 @@ public sealed class HelpFileDoorsTests : Bridge
     }
 
     /// <summary>
+    /// TOOL4l-b: an order is <c>ACCOUNT_USE</c>'s own <c>order</c> and <c>inherit</c> — the list written whole as its owner's (AGT7),
+    /// refused in the screen's words where an account is none or the list would drop the scope's default, and a workspace sent
+    /// back to the machine's accounts with its list and default cleared.
+    /// </summary>
+    [Fact]
+    public async Task An_order_is_written_and_refused_as_the_accounts_screens_route_writes_and_refuses_it()
+    {
+        foreach (var account in new[] { "work", "play", "spare" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "claude-code", account));
+        var doors = Module().HelpDoors(null);
+
+        await doors.SetAccountOrderAsync("claude-code-acp", ["work", "play"], false, null, CancellationToken.None);
+        await doors.SetAccountOrderAsync("claude-code", ["spare", "play"], false, "lab", CancellationToken.None);
+        HarnessSettings.Load(HarnessSettingsPath).WithWorkspaceDefault("lab", "claude-code", "play").Save(HarnessSettingsPath);
+
+        var settings = HarnessSettings.Load(HarnessSettingsPath);
+        Assert.Equal(["work", "play"], settings.Rotation["claude-code"]);
+        Assert.Equal(["spare", "play"], settings.WorkspaceRotation["lab"]["claude-code"]);
+        Assert.Contains("no account `gone`", (await Assert.ThrowsAsync<DriverException>(() =>
+            doors.SetAccountOrderAsync("claude-code", ["work", "gone"], false, null, CancellationToken.None))).Message);
+        Assert.Contains("would not hold it", (await Assert.ThrowsAsync<DriverException>(() =>
+            doors.SetAccountOrderAsync("claude-code", ["spare"], false, "lab", CancellationToken.None))).Message);
+
+        await doors.SetAccountOrderAsync("claude-code", [], true, "lab", CancellationToken.None);
+
+        var back = HarnessSettings.Load(HarnessSettingsPath);
+        Assert.False(back.WorkspaceRotation.ContainsKey("lab"));
+        Assert.False(back.Workspaces.ContainsKey("lab"));
+        Assert.Equal(["work", "play"], back.Rotation["claude-code"]);
+        Assert.Contains("names the workspace", (await Assert.ThrowsAsync<DriverException>(() =>
+            doors.SetAccountOrderAsync("claude-code", [], true, null, CancellationToken.None))).Message);
+    }
+
+    /// <summary>
+    /// TOOL4l-b: a ready is <c>ACCOUNT_USE</c>'s own <c>ready</c> — <i>Try now</i>, an account's cool-off ended as its owner's
+    /// (AGT7), the tool's own sign-in's where none is named; one that was not cooling is told so and nothing changes.
+    /// </summary>
+    [Fact]
+    public async Task A_ready_ends_the_cool_off_as_the_accounts_screens_try_now_does()
+    {
+        var now = DateTimeOffset.UtcNow;
+        AccountCooling.Cool(Home, new CoolingEntry("claude-code", "play", now.AddHours(2), true, "weekly", now, "s1a2b3c4"), now);
+        AccountCooling.Cool(Home, new CoolingEntry("claude-code", null, now.AddHours(1), false, null, now, null), now);
+        var doors = Module().HelpDoors(null);
+
+        Assert.True(await doors.ReadyAccountAsync("claude-code-acp", "play", CancellationToken.None));
+        Assert.False(await doors.ReadyAccountAsync("claude-code-acp", "play", CancellationToken.None));
+        Assert.Equal([null], AccountCooling.Read(Home, now).Select(entry => entry.Account));
+        Assert.True(await doors.ReadyAccountAsync("claude-code", null, CancellationToken.None));
+        Assert.Empty(AccountCooling.Read(Home, now));
+    }
+
+    /// <summary>
     /// HELP10: the browser's settings are <c>BrowserModule</c>'s own edits, written to the files the Browser screen and
     /// <c>daoris browser</c> write, and read by <c>daoris-browser</c> at its next start.
     /// </summary>
