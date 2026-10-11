@@ -41,7 +41,8 @@ Decision number: D<n>, reserved for this branch: write docs/decisions/D<n>.md. (
 How you work: edit files only with Edit and Write, never through python, sed, perl, cat/printf redirection or any
 shell redirect (a hook refuses them; that includes appending a decision note); write
 each failing test first and RUN it to watch it fail before writing the code (a compile failure is a red: run it),
-and say which you saw fail; commit each piece once its tests pass.
+and say which you saw fail; commit each piece once its tests pass. A component's sources changed on a later day than
+its README asks the README to describe the change (the docs gate).
 Orientation pack:
 <the scout's pack, as it came back, with any pointer you corrected marked>
 ```

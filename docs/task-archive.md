@@ -13543,3 +13543,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6h3a — History pages** (web). History accumulates its graph's pages with the load-more foot ("{shown} commits listed", *Show more* while `more`: the graph answers no total), as Ask Daoris's history does. Design §2.3; platform UX :231-246.
 
 **Outcome** 2026-10-12: History asks its graph a page at a time (`useGitGraphPages`, one cached query each) and draws the pages together beside one set of lanes; `GraphFoot` and `useGraphPaging` (exported for the branch page) say the count, *Show more* while `more`, a later page's refusal in the foot and the focus on the first row brought. Detail: D150's UX6h3a note.
+
+## UXDOC2 — the platform contract names a workspace's page (2026-10-12, D150)
+
+> - [ ] **UXDOC2 — the platform contract names a workspace's page** (docs). Its Repositories bullet (~:432-454) names only a repository's page; a workspace's header, four tabs and Branches' groups above the clean-up live only in D150's notes (UX6g, UX6h2b2). D150 §4.3; the doc gates.
+
+**Outcome** 2026-10-12: the platform contract's Repositories part has a paragraph for a workspace's page: what opens it, its header (*Sync now* or *Wire to a remote…*), its four tabs, a browser's Details alone, and Branches in order, the 28-twice reading named as UX6h2b3's; the detail stays in D150's and D88's notes.
