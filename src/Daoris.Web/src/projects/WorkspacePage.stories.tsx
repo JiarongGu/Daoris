@@ -59,12 +59,17 @@ const LISTS: Record<string, BranchListValue> = {
 };
 const TITLES = { 'daoris/engine-physics-step': 'Expose a streaming budget' };
 
-/** A group's list as its holder draws it: the read list, or the game's for one the person included. */
+/**
+ * A group's list as its holder draws it: the read list, or the game's for one the person included; each branch's name opens
+ * its page and the line's opens History, as the window's do (UX6h3b).
+ */
 const group = (repository: string, included: boolean) => (
   <BranchesTab
     repository={repository}
     read={{ state: 'read', value: { ...(included ? GIT_BRANCHES_GAME : LISTS[repository] ?? GIT_BRANCHES_ENGINE), workspace: 'work' } }}
     titles={TITLES}
+    onOpen={nothing}
+    onOpenHistory={nothing}
   />
 );
 

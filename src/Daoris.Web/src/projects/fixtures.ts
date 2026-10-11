@@ -202,7 +202,7 @@ export const GIT_BRANCHES_ENGINE = {
   branches: [
     branchOf('main', 'line', 'c4f1a2', 2, 'Merge the asset cache'),
     branchOf('daoris/engine-physics-step', 'session', '9be03d', 1, 'Fix the physics step on a slow frame', {
-      ahead: 2, behind: 1, tree: 'engine-physics-step', session: sessionOf('s-41', 'working', 'q7'),
+      ahead: 2, behind: 2, tree: 'engine-physics-step', session: sessionOf('s-41', 'working', 'q7'),
     }),
     branchOf('daoris/engine-audio-mix', 'session', '61c0aa', 26, 'Mix the music under the effects', { ahead: 3, behind: 0 }),
     branchOf('review/q6-asset-cache', 'landed', 'a19c5b', 5, 'Cache assets by their content hash', {
@@ -254,6 +254,21 @@ export const GIT_HISTORY_ENGINE: LoggedCommit[] = [
 
 /** The same history as two pages of `GIT_GRAPH`: the first answers `more`, and its tail's parents are the second's (UX6h3a). */
 export const GIT_HISTORY_PAGES: [LoggedCommit[], LoggedCommit[]] = [GIT_HISTORY_ENGINE.slice(0, 3), GIT_HISTORY_ENGINE.slice(3)];
+
+/**
+ * The physics session's branch beside the engine's line since they parted, as `GIT_GRAPH` answers `sinceParted` with the two
+ * tips, the branch then the line (UX6h3b): its two commits (`left`) and the line's two since it grew from `77a0e1` (`right`),
+ * the asset cache's merge among them, in date order.
+ */
+export const GIT_BRANCH_PARTED: LoggedCommit[] = [
+  { ...logged('9be03d', ['4d1e7b'], 'Fix the physics step on a slow frame', 'Sam Ortiz', 1), side: 'left' },
+  { ...logged('c4f1a2', ['77a0e1', 'a19c5b'], 'Merge the asset cache', 'Mei Lin', 2), side: 'right' },
+  { ...logged('4d1e7b', ['77a0e1'], 'Step the physics at a fixed rate', 'Sam Ortiz', 4), side: 'left' },
+  { ...logged('a19c5b', ['3e88f0'], 'Cache assets by their content hash', 'Mei Lin', 5), side: 'right' },
+];
+
+/** The same walk as two pages: the first answers `more`. */
+export const GIT_BRANCH_PARTED_PAGES: [LoggedCommit[], LoggedCommit[]] = [GIT_BRANCH_PARTED.slice(0, 2), GIT_BRANCH_PARTED.slice(2)];
 
 /** A commit as `GIT_GRAPH` lists it: what the graph draws, with the author's address and the side of a two-sided walk. */
 type LoggedCommit = GraphCommitRow & { parents: string[]; authorEmail: string; side: string | null };

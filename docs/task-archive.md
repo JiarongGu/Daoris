@@ -13561,3 +13561,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **XAGENT1g3 — attention reads kept facts** (driver/modules). Cache look judgments; OPINION_WAITS runs no git. §9/UX6c; query tests.
 
 **Outcome** 2026-10-12: the look keeps each owed landing opinion's gate and `auto` (`LastOpinions`, judged with the review as the route judged it), and `OPINION_WAITS` answers from it, running no git or service call; a judgment is at most a look old, the presses already nudge the loop, and the tick forwards a changed wait. The real-git equivalence tests were run at the merge, one fixture corrected. Detail: D155's XAGENT1g3 note.
+
+## UX6h3b — the branch page (2026-10-12, D150)
+
+> - [ ] **UX6h3b — the branch page** (web; after a). A branch row opens the branch as page state in Repositories with a way back to Branches in its header, its standing line and its graph by `sinceParted`, paged; the line's row opens History. A commit's press waits on GIT1f; create, fetch and push on GIT1g. Design §2.3.
+
+**Outcome** 2026-10-12: a branch's name in a repository's or a workspace's Branches opens its page (`BranchPage`): its kind, a session's state and title, where it stands in the list's own words (`branchStanding.ts`), *Back to Branches*, and its walk since it left its line beside the line's, paged with History's foot (`usePagedGraph`, shared); the line's row opens History; page state, not remembered. The focus after the way back is UX6h3d. Detail: D150's UX6h3b note.

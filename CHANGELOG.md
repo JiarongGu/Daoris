@@ -9,6 +9,9 @@ with the version and date at release.
   repository or workspace. It is judged as the editor would, said with your part first and what it does without asking
   you, held as a draft while something it needs is missing, and saved only on your Apply. Its room names each
   repository's workflow.
+- A branch's name in a repository's or a workspace's Branches tab opens the branch's own page: its kind and where it stands
+  against its line, origin and its pull request, then its commits since it left its line beside the line's since then, 200
+  at a time, with *Back to Branches* in its header. The line's own name opens History.
 - A repository's History reads further back: *Show more* adds the line's next 200 commits under the last.
 - A workspace's Branches tab says which empty session branches Daoris cleaned up on its own in the last week, and which it
   left in place and why.

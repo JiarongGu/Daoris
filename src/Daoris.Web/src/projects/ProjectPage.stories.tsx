@@ -34,7 +34,9 @@ const narrow: Decorator = (Story) => <div className="flex h-[44rem] w-[34rem] ma
 const TITLES = { 'daoris/engine-physics-step': 'Expose a streaming budget' };
 
 type BranchesValue = GitRepositoryBranches & { sessionsUnread?: boolean };
-const branchesRead = (read: GitRead<BranchesValue>) => <BranchesTab repository="engine" read={read} titles={TITLES} />;
+// Each branch's name opens its page and the line's opens History, as the window's do (UX6h3b): `BranchPage`'s stories.
+const branchesRead = (read: GitRead<BranchesValue>) =>
+  <BranchesTab repository="engine" read={read} titles={TITLES} onOpen={nothing} onOpenHistory={nothing} />;
 const branchesAs = (more: Partial<BranchesValue>) => branchesRead({ state: 'read', value: { ...GIT_BRANCHES_ENGINE, ...more } });
 
 /** The engine's landed branches in their other standings, as `GIT_BRANCHES` answers them. */
@@ -217,6 +219,7 @@ export const WorkflowInABrowser: Story = { args: { ...InABrowser.args, start: 'w
  * the workspace, in step with origin and fetched three hours ago; *Sessions'*, one named by its session's title and state and
  * one no record names, each ahead of and behind the line; *Landed*, in step with an open pull request, gone from origin after
  * it merged, and never pushed; and *Yours*, five of seven with *Show 2 more*. The branch only origin holds is not drawn.
+ * Each name is a press (UX6h3b): a branch's opens its page, the line's History.
  */
 export const Branches: Story = { args: { start: 'branches' } };
 

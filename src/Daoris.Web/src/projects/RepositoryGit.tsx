@@ -58,13 +58,18 @@ export function Waiting({ sentence, reading }: { sentence: string; reading: bool
  * @remarks
  * **A molecule**: the read arrives as a prop, and its holder reads it only while the tab shows. What it read is the list by
  * kind (UX6h2a, `BranchList`): the line at its head, then sessions', landed and yours, each session's branch named by the
- * title its holder joined.
+ * title its holder joined. A branch's name opens its page, and the line's opens History, where its holder hands the presses
+ * (UX6h3b).
  */
-export function BranchesTab({ repository, read, titles }: {
+export function BranchesTab({ repository, read, titles, onOpen, onOpenHistory }: {
   repository: string;
   read: GitRead<BranchListValue>;
   /** Each session branch's session's title, by the branch's name. */
   titles?: Readonly<Record<string, string>>;
+  /** Open a branch's page, by its name. */
+  onOpen?: (branch: string) => void;
+  /** Open the repository's History, from its line's row. */
+  onOpenHistory?: () => void;
 }) {
   const { t } = useTranslation();
   if (read.state === 'reading') return <Waiting reading sentence={t('projects.git.reading.branches', { repository })} />;
@@ -76,7 +81,7 @@ export function BranchesTab({ repository, read, titles }: {
   if (read.value.branches.length === 0) {
     return <Nothing headline={t('projects.git.branches.none.headline')} body={t('projects.git.branches.none.body', { repository })} />;
   }
-  return <BranchList repository={repository} list={read.value} titles={titles} />;
+  return <BranchList repository={repository} list={read.value} titles={titles} onOpen={onOpen} onOpenHistory={onOpenHistory} />;
 }
 
 /**
