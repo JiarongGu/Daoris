@@ -4,7 +4,10 @@ using static Daoris.Knowledge.JsonFields;
 
 namespace Daoris.Knowledge;
 
-/// <summary>A code the ledger words a line of a session's note by (LANG1a, D142 points 3–4; the language design §4).</summary>
+/// <summary>
+/// A code the service words a line of a session's note by (LANG1a, D142 points 3–4; the language design §4), or of a quest's
+/// (QUESTCLOSE1b1).
+/// </summary>
 /// <param name="Code">The code, as the record and the page spell it.</param>
 /// <param name="Values">The facts its line carries, each a placeholder in its entry in both catalogues.</param>
 public sealed record LedgerNoteCode(string Code, IReadOnlyList<string> Values)
@@ -14,11 +17,11 @@ public sealed record LedgerNoteCode(string Code, IReadOnlyList<string> Values)
 }
 
 /// <summary>
-/// Every code the ledger writes a line of a session's note by (LANG1a, the language design §4, the service's own lines). A
-/// twin (<c>.claude/knowledge/twins.md</c>): the driver's <c>NoteCodes</c> declares the driver's, the page's <c>note.json</c> in
-/// both languages words each, and the web's <c>locales/note.test.ts</c> parses these declarations, one per line as written
-/// here, to hold the catalogue to them. <c>LedgerNoteCodesTests</c> reads both catalogues, so a new line fails until both
-/// languages word it.
+/// Every code the service writes a line of a note by (LANG1a, the language design §4, the service's own lines): the ledger's on
+/// a session's note, and the exchange's on a quest's (QUESTCLOSE1b1). A twin (<c>.claude/knowledge/twins.md</c>): the driver's
+/// <c>NoteCodes</c> declares the driver's, the page's <c>note.json</c> in both languages words each, and the web's
+/// <c>locales/note.test.ts</c> parses these declarations, one per line as written here, to hold the catalogue to them.
+/// <c>LedgerNoteCodesTests</c> reads both catalogues, so a new line fails until both languages word it.
 /// </summary>
 public static class LedgerNoteCodes
 {
@@ -28,6 +31,8 @@ public static class LedgerNoteCodes
     // Another agent's findings alone, or beside the person's words (XAGENT1e2), coded once the page words them (XAGENT1g).
     public static readonly LedgerNoteCode WentOnFindings = new("ledger.went-on-findings", ["at"]);
     public static readonly LedgerNoteCode WentOnBoth = new("ledger.went-on-both", ["at"]);
+    // A quest's note (QUESTCLOSE1b1): the person marked it done, their words, where they gave any, a part beneath it.
+    public static readonly LedgerNoteCode PersonDone = new("quest.person-done", []);
 
     /// <summary>Every code above, read off the declarations so none escapes the catalogue test.</summary>
     public static IReadOnlyList<LedgerNoteCode> All { get; } =

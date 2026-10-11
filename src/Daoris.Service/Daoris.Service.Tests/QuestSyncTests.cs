@@ -89,6 +89,60 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Empty(await _a.PendingAsync(Workspaces.Default, _ => true));
     }
 
+    private const string PersonDoneParts =
+        """[{"code":"quest.person-done","values":{},"text":"The person marked this done:"},{"words":"Landed.","by":"person"}]""";
+
+    /// <summary>
+    /// 🔴 QUESTCLOSE1b1 (D126's and D142's notes): a done's note parts travel with its note, kept in the remote's log and on
+    /// the other machine's quest as they were written, so each machine's page words Daoris's lead in its own language. A move
+    /// that writes a note without parts clears them, as a session's does (D142 point 2).
+    /// </summary>
+    [Fact]
+    public async Task A_done_s_note_parts_travel_with_its_note_and_reach_the_other_machine_as_written()
+    {
+        var quest = await Publish(_a);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        await _b.MoveAsync(quest.Id, QuestStatus.Done, "The person marked this done: Landed.", Now.AddHours(1), noteParts: PersonDoneParts);
+        await SyncAsync(_b);
+        await SyncAsync(_a);
+
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var done = (await store.FindAsync(quest.Id))!;
+            Assert.Equal(("The person marked this done: Landed.", PersonDoneParts), (done.Note, done.NoteParts));
+            Assert.Equal(PersonDoneParts, (await store.HistoryAsync(quest.Id)).Single(o => o.Kind == QuestOperationKind.Done).NoteParts);
+        }
+
+        var plain = await Publish(_a, "Closed by an agent");
+        await _a.MoveAsync(plain.Id, QuestStatus.Done, "Built.", Now.AddHours(2));
+        Assert.Null((await _a.FindAsync(plain.Id))!.NoteParts);
+        Assert.DoesNotContain("noteParts", QuestWire.Push(0, await _a.HistoryAsync(plain.Id)));
+    }
+
+    /// <summary>
+    /// An operation from a build before note parts, or one an older remote kept without them, reads as one with none: its
+    /// note is the whole of it, as it always was, and the page shows it as recorded.
+    /// </summary>
+    [Fact]
+    public void An_operation_from_before_note_parts_reads_as_one_with_none()
+    {
+        var older = """
+            { "base": 0, "operations": [{ "machine": "m1", "sequence": 2, "quest": "abcdefabcdef", "kind": "done",
+              "at": "2026-10-08T09:00:00Z", "note": "The person marked this done: Landed." }] }
+            """;
+
+        var read = Assert.Single(QuestWire.ReadPush(older)!.Value.Operations);
+
+        Assert.Equal(("The person marked this done: Landed.", (string?)null), (read.Note, read.NoteParts));
+        Assert.Equal(PersonDoneParts, Assert.Single(QuestWire.ReadPush(QuestWire.Push(0, [read with { NoteParts = PersonDoneParts }]))!.Value.Operations).NoteParts);
+
+        // Parts that are not a list are no parts, never half an operation: the note is the record, and it is whole.
+        var garbled = Assert.Single(QuestWire.ReadPush(older.Replace("\"note\":", "\"noteParts\": \"lead\", \"note\":"))!.Value.Operations);
+        Assert.Equal(("The person marked this done: Landed.", (string?)null), (garbled.Note, garbled.NoteParts));
+    }
+
     /// <summary>
     /// 🔴 The race (design §5): both machines take one quest before either pushes. The remote's order
     /// decides — the first push wins, and the second machine's take is REBASED into a conflict on the

@@ -13243,3 +13243,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **REVIEWENV1j2 — visible terminal twins** (web/driver). Draw existing choice twins in AskComposer/AskReview/ReviewGate; fix usage fallback. D50/D154; bilingual tests.
 
 **Outcome** 2026-10-11: the ask composer, a live ask's review section and a quest's review gate (where Skip or Set it up is offered) each draw their terminal twin as one quiet line, the command as code; the driver host's fallback `quest` usage names `quest review <id> off` and `on|<environment>`. Detail: D154's REVIEWENV1j2 note.
+
+
+## QUESTCLOSE1b1 — a quest's note carries parts (2026-10-11, D126)
+
+> - [ ] **QUESTCLOSE1b1 — a quest's note carries parts** (service; a D126 amendment first). No quest note is coded: `note` is a bare string on the operation, the cache and the wire. Add `noteParts` beside it (the eleven places of quest-operations.md, the census `QuestOperationKindsTests`), a `LedgerNoteCodes` code for the person's done, written by `PersonDoneAsync` (QuestExchange.cs ~:1344-1408) as the lead plus the person's words; `note` byte for byte. Exemplar SessionLedger.cs ~:690-692. D142; D126 ~:550-582.
+
+**Outcome** 2026-10-11: a quest operation carries `noteParts` beside `note` through the log, the wire, the cache and the answer (written only when set, so older rows and hosts read as before); every move sets the quest's parts from its own. The person's done writes `quest.person-done` and their words as a person's part, worded in en and zh. No cleaner for another machine: the parts hold no account or path. Nothing on screen changes until QUESTCLOSE1b2. Detail: D126's QUESTCLOSE1b1 note (D142's points to it).

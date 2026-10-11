@@ -130,6 +130,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // Another agent's findings alone, or beside the person's words (XAGENT1e2), worded since XAGENT1g.
   'ledger.went-on-findings': { values: ['at'] },
   'ledger.went-on-both': { values: ['at'] },
+  // A quest's note (QUESTCLOSE1b1): the person marked it done, their words a part beneath it.
+  'quest.person-done': { values: [] },
   // A conversation's first line (UX7d-1): the account it opened on and the step that chose it, then what each account said.
   'opening.opened': { values: ['account', 'why'], why: 'opening' },
   'opening.carried-on': { values: ['session', 'account', 'why'], why: 'opening' },

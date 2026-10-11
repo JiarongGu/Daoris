@@ -145,5 +145,6 @@
   "note.ledger.parked": "它停下来问人；问题在它的记录中。",
   "note.ledger.went-on": "于 {{at}} 带着你的话继续。",
   "note.ledger.went-on-findings": "于 {{at}} 带着另一个智能体的发现继续。",
-  "note.ledger.went-on-both": "于 {{at}} 带着你的话和另一个智能体的发现继续。"
+  "note.ledger.went-on-both": "于 {{at}} 带着你的话和另一个智能体的发现继续。",
+  "note.quest.person-done": "已由人标为完成。"
 }

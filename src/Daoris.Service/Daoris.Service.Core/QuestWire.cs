@@ -139,6 +139,9 @@ public static class QuestWire
         writer.WriteString("kind", operation.Kind.ToString().ToLowerInvariant());
         writer.WriteString("at", operation.At.ToString("O"));
         if (operation.Note is not null) writer.WriteString("note", operation.Note);
+        // Only beside a note written with them (QUESTCLOSE1b1): an operation without crosses exactly as it did, and an older
+        // build reads the note alone, as it always did.
+        QuestStore.WriteNoteParts(writer, operation.Note, operation.NoteParts);
         // Only when set, and only on a decline (PAUSE1c): a plain decline crosses exactly as it did, and an older
         // build reads a flagged one as a plain one.
         if (operation is { WhileOpen: true, Kind: QuestOperationKind.Declined }) writer.WriteBoolean("whileOpen", true);
@@ -442,9 +445,14 @@ public static class QuestWire
             return null;
         }
 
+        // A note's parts (QUESTCLOSE1b1) are only how it is worded, so parts that are not a list are none, never half an
+        // operation: the note is the record, and it crossed whole.
+        var note = Text(item, "note");
+        var parts = note is not null && item.TryGetProperty("noteParts", out var given) ? NoteParts.Normalize(given) : null;
+
         return new QuestOperation(
-            quest, kind, machine, sequence, at, Text(item, "note"), published, attempted, numbered ? number : null,
-            dismisses, answers is { Count: > 0 } ? answers : null, whileOpen, verdict, setUp, review);
+            quest, kind, machine, sequence, at, note, published, attempted, numbered ? number : null,
+            dismisses, answers is { Count: > 0 } ? answers : null, whileOpen, verdict, setUp, review, parts);
     }
 
 }

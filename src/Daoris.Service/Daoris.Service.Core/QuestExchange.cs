@@ -1343,16 +1343,27 @@ public sealed partial class QuestExchange(
 
     /// <summary>
     /// The sentence a person's done writes on its quest (QUESTCLOSE1, D126's note): theirs, with their words after it where
-    /// they gave any. Never translated: it is data, as a session's <i>The person finished this at a checkpoint.</i> is.
+    /// they gave any. The record's English, byte for byte: the page words its lead from <see cref="PersonDoneParts"/>.
     /// </summary>
     public static string PersonDoneNote(string? words) =>
         Blank(words) is { } said ? $"The person marked this done: {said}" : "The person marked this done.";
 
     /// <summary>
+    /// The note's parts beside <see cref="PersonDoneNote"/> (QUESTCLOSE1b1, D142 point 1): Daoris's lead by its code, which a
+    /// page words in its reader's language, then the person's words as a part of their own, as written. Each part's English is
+    /// the note's own, so the lead's ends on the colon where words follow it.
+    /// </summary>
+    internal static string PersonDoneParts(string? words) =>
+        NoteParts.After(null, null, Blank(words) is { } said
+            ? [NoteLine.Coded(LedgerNoteCodes.PersonDone, "The person marked this done:"), NoteLine.Said(said, "person")]
+            : [NoteLine.Coded(LedgerNoteCodes.PersonDone, "The person marked this done.")]);
+
+    /// <summary>
     /// The person marks a quest done (QUESTCLOSE1, D126's note), open or taken: what the quest page's *Mark done…* and
     /// <c>daoris-driver quest done</c> say, after a session finished at a checkpoint left its quest taken, or whenever they
     /// decide its work is done. It is the person's done, so it answers none of their requirements one by one: they are the
-    /// person's own words, and the done is their word on them. Its note says it was theirs (<see cref="PersonDoneNote"/>).
+    /// person's own words, and the done is their word on them. Its note says it was theirs (<see cref="PersonDoneNote"/>), its
+    /// parts beside it (<see cref="PersonDoneParts"/>, QUESTCLOSE1b1).
     /// </summary>
     /// <remarks>
     /// <para><b>The person's door, never an agent's</b>, as a yes is: no connector tool reaches it, and an agent's done still
@@ -1373,7 +1384,8 @@ public sealed partial class QuestExchange(
             return new(QuestRespondRefusal.NotShown, unshown, Quest: null);
         }
 
-        var move = await quests.MoveAsync(quest, QuestStatus.Done, PersonDoneNote(words), now, ct).ConfigureAwait(false);
+        var move = await quests.MoveAsync(
+            quest, QuestStatus.Done, PersonDoneNote(words), now, ct, noteParts: PersonDoneParts(words)).ConfigureAwait(false);
         if (move.Quest is null)
         {
             return new(QuestRespondRefusal.NotFound, $"No quest `#{quest}`. Ids come from `quest_list`.", Quest: null);

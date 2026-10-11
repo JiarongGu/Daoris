@@ -51,6 +51,14 @@ public sealed record Quest(
     public string? Short { get; init; }
 
     /// <summary>
+    /// Its note's parts beside <see cref="Note"/> (QUESTCLOSE1b1, D142 point 2), as <see cref="Knowledge.NoteParts"/> keeps
+    /// them: Daoris's lead by its code, worded in the reader's language, then someone's words as written. Set by the move that
+    /// wrote the note, and cleared by one that wrote a note without them. Null for every quest from before, and for a note
+    /// that is all its closer's words.
+    /// </summary>
+    public string? NoteParts { get; init; }
+
+    /// <summary>
     /// What a list calls it (SESSUX1j): its publisher's short title, else a name read from its own words
     /// (<see cref="QuestTitles.Derive"/>), never written into the record.
     /// </summary>
@@ -492,7 +500,8 @@ public sealed class QuestStore
                   review      TEXT NULL,
                   set_up_in   TEXT NULL,
                   set_ups     TEXT NOT NULL DEFAULT '[]',
-                  verdicts    TEXT NOT NULL DEFAULT '[]'
+                  verdicts    TEXT NOT NULL DEFAULT '[]',
+                  note_parts  TEXT NULL
                 );
                 CREATE INDEX IF NOT EXISTS quests_receiver ON quests (receiver, status);
                 """;
@@ -535,6 +544,8 @@ public sealed class QuestStore
             ("quests", "set_up_in", "set_up_in TEXT NULL"),
             ("quests", "set_ups", "set_ups TEXT NOT NULL DEFAULT '[]'"),
             ("quests", "verdicts", "verdicts TEXT NOT NULL DEFAULT '[]'"),
+            // The note's parts (QUESTCLOSE1b1); a quest from before has a note with none, which the page shows as recorded.
+            ("quests", "note_parts", "note_parts TEXT NULL"),
             ("quest_log", "remote", "remote INTEGER NULL"),
         })
         {
@@ -652,7 +663,7 @@ public sealed class QuestStore
 
         if (QuestTransitions.KindFor(quest.Status) is { } moved)
         {
-            history.Add(await AppendAsync(quest.Id, moved, quest.Updated, quest.Note, null, transaction, ct)
+            history.Add(await AppendAsync(quest.Id, moved, quest.Updated, quest.Note, null, transaction, ct, noteParts: quest.NoteParts)
                 .ConfigureAwait(false));
         }
 
@@ -808,7 +819,7 @@ public sealed class QuestStore
         string quest, QuestOperationKind kind, DateTimeOffset at, string? note, Quest? published,
         SqliteTransaction transaction, CancellationToken ct, QuestOperationRef? dismisses = null,
         IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, QuestEvidenceVerdict? evidence = null,
-        QuestSetUp? setUp = null, QuestReviewVerdict? review = null)
+        QuestSetUp? setUp = null, QuestReviewVerdict? review = null, string? noteParts = null)
     {
         await using var command = _db.Command();
         command.Transaction = transaction;
@@ -829,20 +840,25 @@ public sealed class QuestStore
         var verdict = kind == QuestOperationKind.Evidenced ? evidence : null;
         var shown = kind == QuestOperationKind.SetUp ? setUp : null;
         var said = kind == QuestOperationKind.Verdict ? review : null;
+        // Parts only beside a note, as the store keeps them (QUESTCLOSE1b1): what it reads back is what it wrote.
+        var parts = note is null ? null : NoteParts.Normalize(NoteParts.Element(noteParts));
         command.Parameters.AddWithValue(
-            "$payload", PayloadJson(note, published, attempted: null, dismisses, answers, flagged, verdict, shown, said));
+            "$payload", PayloadJson(note, published, attempted: null, dismisses, answers, flagged, verdict, shown, said, parts));
         var sequence = Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
 
         // Handed back as it will read back: a publish carries the quest as asked, open from this moment.
         return new QuestOperation(
             quest, kind, Machine, sequence, at, note,
-            published is null ? null : published with { Status = QuestStatus.Open, Note = null, Filed = at, Updated = at, Conflicts = [] },
+            published is null
+                ? null
+                : published with { Status = QuestStatus.Open, Note = null, NoteParts = null, Filed = at, Updated = at, Conflicts = [] },
             Dismisses: dismisses,
             Answers: answers is { Count: > 0 } ? answers : null,
             WhileOpen: flagged,
             Evidence: verdict,
             SetUp: shown,
-            Verdict: said);
+            Verdict: said,
+            NoteParts: parts);
     }
 
     /// <summary>
@@ -872,7 +888,8 @@ public sealed class QuestStore
                 operation.WhileOpen && operation.Kind == QuestOperationKind.Declined,
                 operation.Kind == QuestOperationKind.Evidenced ? operation.Evidence : null,
                 operation.Kind == QuestOperationKind.SetUp ? operation.SetUp : null,
-                operation.Kind == QuestOperationKind.Verdict ? operation.Verdict : null));
+                operation.Kind == QuestOperationKind.Verdict ? operation.Verdict : null,
+                operation.NoteParts));
         command.Parameters.AddWithValue("$remote", (object?)number ?? DBNull.Value);
         return Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
     }
@@ -900,11 +917,11 @@ public sealed class QuestStore
         await using var command = _db.Command();
         command.Transaction = transaction;
         command.CommandText = """
-            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by, lanes, requirements, answers, accepted, held, short_title, evidence, review, set_up_in, set_ups, verdicts)
-            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy, $lanes, $requirements, $answers, $accepted, $held, $short, $evidence, $review, $setUpIn, $setUps, $verdicts)
+            INSERT INTO quests (id, sender, receiver, title, body, status, note, note_parts, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by, lanes, requirements, answers, accepted, held, short_title, evidence, review, set_up_in, set_ups, verdicts)
+            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $noteParts, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy, $lanes, $requirements, $answers, $accepted, $held, $short, $evidence, $review, $setUpIn, $setUps, $verdicts)
             ON CONFLICT (id) DO UPDATE SET
               sender = excluded.sender, receiver = excluded.receiver, title = excluded.title, body = excluded.body,
-              status = excluded.status, note = excluded.note, filed = excluded.filed, updated = excluded.updated,
+              status = excluded.status, note = excluded.note, note_parts = excluded.note_parts, filed = excluded.filed, updated = excluded.updated,
               workspace = excluded.workspace, links = excluded.links, attachments = excluded.attachments,
               then_steps = excluded.then_steps, parent = excluded.parent, conflicts = excluded.conflicts,
               awaits = excluded.awaits, published_by = excluded.published_by, lanes = excluded.lanes,
@@ -950,6 +967,7 @@ public sealed class QuestStore
         command.Parameters.AddWithValue("$body", quest.Body);
         command.Parameters.AddWithValue("$status", quest.Status.ToString());
         command.Parameters.AddWithValue("$note", (object?)quest.Note ?? DBNull.Value);
+        command.Parameters.AddWithValue("$noteParts", (object?)quest.NoteParts ?? DBNull.Value);
         command.Parameters.AddWithValue("$filed", quest.Filed.ToString("O"));
         command.Parameters.AddWithValue("$updated", quest.Updated.ToString("O"));
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
@@ -1043,9 +1061,13 @@ public sealed class QuestStore
     /// A decline that applies only while the quest is open (PAUSE1c, D132 point 10): refused here on a quest no longer
     /// open, and kept with the flag, so a rebase or a remote judges it by the same rule. Ignored on any other move.
     /// </param>
+    /// <param name="noteParts">
+    /// The note's parts beside it (QUESTCLOSE1b1, D142 point 2), as <see cref="NoteParts"/> keeps them: Daoris's lead by its
+    /// code, then someone's words. Only with a note; a move that writes its note without them clears the quest's.
+    /// </param>
     public Task<QuestMove> MoveAsync(
         string id, QuestStatus status, string? note, DateTimeOffset now, CancellationToken ct = default,
-        IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false) =>
+        IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, string? noteParts = null) =>
         InTransactionAsync(async (transaction, inside) =>
         {
             var held = await FindAsync(id, transaction, inside).ConfigureAwait(false);
@@ -1081,7 +1103,7 @@ public sealed class QuestStore
 
             var operation = await AppendAsync(
                 id, kind, now, note, null, transaction, inside,
-                answers: status == QuestStatus.Done ? answers : null, whileOpen: open).ConfigureAwait(false);
+                answers: status == QuestStatus.Done ? answers : null, whileOpen: open, noteParts: noteParts).ConfigureAwait(false);
             var moved = QuestLog.Replay([.. history, operation])!;
             await WriteCacheAsync(moved, transaction, inside).ConfigureAwait(false);
 
@@ -1704,7 +1726,11 @@ public sealed class QuestStore
         // it is pushed, so every machine keeps the one note.
         if (lostTake is { } take && waitsLost.Count > 0)
         {
-            var named = conflicts[take.Reported] with { Note = WaitsWentWith(conflicts[take.Reported].Note, waitsLost) };
+            // A note rewritten here has no parts of its own, so it keeps none: a stale lead would word a note it no longer is.
+            var named = conflicts[take.Reported] with
+            {
+                Note = WaitsWentWith(conflicts[take.Reported].Note, waitsLost), NoteParts = null,
+            };
             await RewriteAsync(take.Position, named, transaction, ct).ConfigureAwait(false);
             conflicts[take.Reported] = named;
             quest = quest is null ? null : quest with
@@ -1838,8 +1864,9 @@ public sealed class QuestStore
         command.CommandText =
             "UPDATE quest_log SET kind = $kind, payload = $payload WHERE position = $position AND remote IS NULL";
         command.Parameters.AddWithValue("$kind", KindText(operation.Kind));
+        // A move rewritten as a conflict keeps its note's parts beside the note (QUESTCLOSE1b1).
         command.Parameters.AddWithValue(
-            "$payload", PayloadJson(operation.Note, operation.Published, operation.Attempted));
+            "$payload", PayloadJson(operation.Note, operation.Published, operation.Attempted, noteParts: operation.NoteParts));
         command.Parameters.AddWithValue("$position", position);
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
@@ -2250,6 +2277,7 @@ public sealed class QuestStore
             ? null
             : DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("accepted")), System.Globalization.CultureInfo.InvariantCulture),
         Short = reader.IsDBNull(reader.GetOrdinal("short_title")) ? null : reader.GetString(reader.GetOrdinal("short_title")),
+        NoteParts = reader.IsDBNull(reader.GetOrdinal("note_parts")) ? null : reader.GetString(reader.GetOrdinal("note_parts")),
         Evidence = reader.IsDBNull(reader.GetOrdinal("evidence")) ? null : ReadVerdict(reader.GetString(reader.GetOrdinal("evidence"))),
         Review = reader.IsDBNull(reader.GetOrdinal("review")) ? null : ReadColumn(reader.GetString(reader.GetOrdinal("review")), Reviews.JudgedReview),
         SetUpIn = reader.IsDBNull(reader.GetOrdinal("set_up_in")) ? null : reader.GetString(reader.GetOrdinal("set_up_in")),
@@ -2337,7 +2365,9 @@ public sealed class QuestStore
                 : null,
             // A set-up and a review's verdict (REVIEWENV1b), each written only after the exchange judged it.
             kind == QuestOperationKind.SetUp && payload.TryGetProperty("setUp", out var shown) ? Reviews.JudgedSetUp(shown) : null,
-            kind == QuestOperationKind.Verdict && payload.TryGetProperty("verdict", out var given) ? Reviews.JudgedVerdict(given) : null);
+            kind == QuestOperationKind.Verdict && payload.TryGetProperty("verdict", out var given) ? Reviews.JudgedVerdict(given) : null,
+            // Absent from every operation before note parts, and from every note written without them (QUESTCLOSE1b1).
+            note is not null && payload.TryGetProperty("noteParts", out var parts) ? NoteParts.Normalize(parts) : null);
     }
 
     /// <summary>How a kind is written in the log: its name in lowercase, as the design names it.</summary>
@@ -2350,7 +2380,7 @@ public sealed class QuestStore
     private static string PayloadJson(
         string? note, Quest? published, QuestStatus? attempted, QuestOperationRef? dismisses = null,
         IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false, QuestEvidenceVerdict? evidence = null,
-        QuestSetUp? setUp = null, QuestReviewVerdict? review = null) => JsonFields.Written(writer =>
+        QuestSetUp? setUp = null, QuestReviewVerdict? review = null, string? noteParts = null) => JsonFields.Written(writer =>
     {
         if (dismisses is not null)
         {
@@ -2369,6 +2399,7 @@ public sealed class QuestStore
             writer.WriteStartObject();
             writer.WriteString("attempted", lost.ToString());
             if (note is not null) writer.WriteString("note", note);
+            WriteNoteParts(writer, note, noteParts);
             writer.WriteEndObject();
             return;
         }
@@ -2417,6 +2448,7 @@ public sealed class QuestStore
         }
 
         if (note is not null) writer.WriteString("note", note);
+        WriteNoteParts(writer, note, noteParts);
 
         // Only when set (PAUSE1c), for the lanes' reason: a plain decline is recorded exactly as before it.
         if (whileOpen) writer.WriteBoolean("whileOpen", true);
@@ -2450,6 +2482,17 @@ public sealed class QuestStore
 
         writer.WriteEndObject();
     });
+
+    /// <summary>
+    /// A note's parts beside it (QUESTCLOSE1b1, D142 point 2): a list, only where the note was written with some, so an
+    /// operation without them is recorded exactly as before, and a reader from before ignores the field.
+    /// </summary>
+    internal static void WriteNoteParts(System.Text.Json.Utf8JsonWriter writer, string? note, string? noteParts)
+    {
+        if (note is null || NoteParts.Element(noteParts) is not { } parts) return;
+        writer.WritePropertyName("noteParts");
+        parts.WriteTo(writer);
+    }
 
     private static string AnswersJson(IReadOnlyList<QuestAnswer> answers) =>
         JsonFields.Written(writer => WriteAnswers(writer, answers));

@@ -48,6 +48,13 @@ public sealed class QuestOperationKindsTests
     private static QuestOperation Op(QuestOperationKind kind, long sequence, string machine = "m1") =>
         new(Id, kind, machine, sequence, At(sequence));
 
+    /// <summary>
+    /// A note's parts beside its English (QUESTCLOSE1b1, D142 point 2), as the store keeps them: Daoris's coded lead, then the
+    /// person's words, the shape the person's done writes.
+    /// </summary>
+    private const string DoneParts =
+        """[{"code":"quest.person-done","values":{},"text":"The person marked this done:"},{"words":"Built.","by":"person"}]""";
+
     /// <summary>One operation of each kind, as its verb makes it: every field the kind carries, set.</summary>
     private static readonly Dictionary<QuestOperationKind, Func<long, QuestOperation>> Samples = new()
     {
@@ -58,12 +65,14 @@ public sealed class QuestOperationKindsTests
         [QuestOperationKind.Taken] = s => Op(QuestOperationKind.Taken, s) with { Note = "The owner's session." },
         [QuestOperationKind.Done] = s => Op(QuestOperationKind.Done, s) with
         {
-            Note = "Built.", Answers = [new QuestAnswer(1, Met: "It is in docs/report.md.")],
+            Note = "The person marked this done: Built.", NoteParts = DoneParts,
+            Answers = [new QuestAnswer(1, Met: "It is in docs/report.md.")],
         },
         [QuestOperationKind.Declined] = s => Op(QuestOperationKind.Declined, s) with { Note = "Abandoned.", WhileOpen = true },
+        // A move that lost keeps its note's parts in the log, as a rebase rewrites it (QUESTCLOSE1b1).
         [QuestOperationKind.Conflict] = s => Op(QuestOperationKind.Conflict, s, "m2") with
         {
-            Note = "Another machine's take.", Attempted = QuestStatus.Taken,
+            Note = "The person marked this done: Built.", NoteParts = DoneParts, Attempted = QuestStatus.Done,
         },
         [QuestOperationKind.Dismissed] = s => Op(QuestOperationKind.Dismissed, s) with { Dismisses = new QuestOperationRef("m2", 7) },
         [QuestOperationKind.Waited] = s => Op(QuestOperationKind.Waited, s) with { Note = "fedcbafedcba" },

@@ -108,6 +108,11 @@ public sealed record QuestOperationRef(string Machine, long Sequence);
 /// <param name="Evidence">For a <see cref="QuestOperationKind.Evidenced"/>: what was read (EVID1a). Null on every other kind.</param>
 /// <param name="SetUp">For a <see cref="QuestOperationKind.SetUp"/>: the set-up said (REVIEWENV1b). Null on every other kind.</param>
 /// <param name="Verdict">For a <see cref="QuestOperationKind.Verdict"/>: the person's verdict (REVIEWENV1b). Null on every other kind.</param>
+/// <param name="NoteParts">
+/// Its note's parts beside the note (QUESTCLOSE1b1, D142 point 2), as <see cref="Knowledge.NoteParts"/> keeps them: Daoris's
+/// lead by its code, then someone's words. Only with a note, and null where its writer gave none, which is every operation
+/// from before and every note that is all someone's words. <see cref="Note"/> stays byte for byte.
+/// </param>
 public sealed record QuestOperation(
     string Quest,
     QuestOperationKind Kind,
@@ -123,7 +128,8 @@ public sealed record QuestOperation(
     bool WhileOpen = false,
     QuestEvidenceVerdict? Evidence = null,
     QuestSetUp? SetUp = null,
-    QuestReviewVerdict? Verdict = null);
+    QuestReviewVerdict? Verdict = null,
+    string? NoteParts = null);
 
 /// <summary>Where this machine's claim on a quest stands (D68 §4, D69).</summary>
 public enum QuestClaim
@@ -321,7 +327,7 @@ public static class QuestLog
         QuestOperationKind.Deleted => null,
         QuestOperationKind.Published => operation.Published! with
         {
-            Status = QuestStatus.Open, Note = null, Filed = operation.At, Updated = operation.At, Conflicts = [],
+            Status = QuestStatus.Open, Note = null, NoteParts = null, Filed = operation.At, Updated = operation.At, Conflicts = [],
         },
         QuestOperationKind.Conflict => quest! with
         {
@@ -357,11 +363,12 @@ public static class QuestLog
             Verdicts = [.. quest.Verdicts, operation.Verdict! with { At = operation.At, Machine = operation.Machine }],
             Updated = operation.At,
         },
-        // A done carries how it answered each requirement (DRIFT1d); a take or a decline answers none.
+        // A done carries how it answered each requirement (DRIFT1d); a take or a decline answers none. The note's parts are the
+        // move's own, so a note written without them clears the last one's (QUESTCLOSE1b1, D142 point 2).
         _ => quest! with
         {
-            Status = QuestTransitions.Target(operation.Kind)!.Value, Note = operation.Note, Updated = operation.At,
-            Answers = operation.Answers ?? [],
+            Status = QuestTransitions.Target(operation.Kind)!.Value, Note = operation.Note, NoteParts = operation.NoteParts,
+            Updated = operation.At, Answers = operation.Answers ?? [],
         },
     };
 
