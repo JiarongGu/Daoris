@@ -13759,3 +13759,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **NEW1f — the composer opens where the person was** (web). Seen on the window: it opened on the first free repository although a session in another was attended, because *Recent* counts only the composer's own starts. Open on the attended session's repository when *New conversation* is pressed from it, and seed *Recent* from the person's recent sessions. D162's window note; design §1.
 
 **Outcome** 2026-10-12: *New conversation* opens on the repository of the session it was pressed from (captured at the press, ahead of the last one chosen), and *Recent* merges the composer's starts with this machine's own sessions' repositories (`mergeRecent`); `chosenStart` now follows the choice within a mount. Detail: D162's NEW1f note.
+
+## CONNECTOR2 — the knowledge server's entry carries the home (2026-10-12, D93)
+
+> - [ ] **CONNECTOR2 — the knowledge server's entry carries the home** (driver). Seen 2026-10-12 on the install: a Codex chat's `daoris-knowledge` failed its handshake (*connection closed: initialize response*), since Codex hands an MCP server only its entry's variables and the entry (`KnowledgeConnector.Offer`) carries no `DAORIS_HOME`: the host exits 2, *no Daoris home*. Claude hands its whole environment, so it never showed. Carry the home in the entry; prove the host answers `initialize` under the entry's variables alone.
+
+**Outcome** 2026-10-12: `KnowledgeConnector.Offer` carries `DAORIS_HOME` (the scope's, else the environment's, else the resolved home), so Codex starts the host; `KnowledgeConnectorStartTests` starts the host with the entry's variables alone and answers, and pins the exit 2 without the home, both passing on the merge. Detail: the FIX-LOG's CONNECTOR2 entry and D93's note.

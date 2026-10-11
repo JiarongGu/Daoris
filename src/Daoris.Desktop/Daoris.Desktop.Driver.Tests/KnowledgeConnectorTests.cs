@@ -128,6 +128,47 @@ public sealed class KnowledgeConnectorTests : IDisposable
         Assert.True(scripts.TryGetProperty("publish:service", out _), "no publish:service script");
     }
 
+    /// <summary>
+    /// 🔴 CONNECTOR2: Codex hands an MCP server only its entry's own variables, so the entry carries the home or the host
+    /// exits 2 before it answers `initialize`.
+    /// </summary>
+    [Fact]
+    public void The_offered_entry_carries_the_daoris_home()
+    {
+        Touch(OwnCopy);
+
+        var offered = KnowledgeConnector.Offer(null, Home, Application, new Dictionary<string, string?>());
+
+        Assert.NotNull(offered);
+        Assert.Equal(Home, offered.Environment[DaorisHome.Variable]);
+    }
+
+    [Fact]
+    public void The_offered_entry_carries_no_home_when_the_machine_has_none()
+    {
+        Touch(OwnCopy);
+
+        var offered = KnowledgeConnector.Offer(null, null, Application, new Dictionary<string, string?>());
+
+        Assert.NotNull(offered);
+        Assert.False(offered.Environment.ContainsKey(DaorisHome.Variable));
+    }
+
+    /// <summary>A value the scope carries wins, then the environment's, then the resolved home.</summary>
+    [Fact]
+    public void A_home_the_scope_or_the_environment_carries_is_not_overridden()
+    {
+        Touch(OwnCopy);
+        var environment = new Dictionary<string, string?> { [DaorisHome.Variable] = "env-home" };
+
+        var fromEnvironment = KnowledgeConnector.Offer(null, Home, Application, environment);
+        var fromScope = KnowledgeConnector.Offer(
+            null, Home, Application, environment, new Dictionary<string, string> { [DaorisHome.Variable] = "scope-home" });
+
+        Assert.Equal("env-home", fromEnvironment!.Environment[DaorisHome.Variable]);
+        Assert.Equal("scope-home", fromScope!.Environment[DaorisHome.Variable]);
+    }
+
     /// <summary>Development: the workspace build after every installed place, found by walking up to the manifest.</summary>
     [Fact]
     public void The_workspace_build_comes_after_the_shells_own_copy_and_the_homes()
