@@ -106,6 +106,41 @@ public sealed class QuestPersonDoneTests : IAsyncLifetime
         Assert.Equal(done.Note, QuestLog.Replay(await _quests.HistoryAsync(quest.Id))!.Note);
     }
 
+    /// <summary>
+    /// 🔴 QUESTCLOSE1b1 (D126's and D142's notes): the note's lead is Daoris's line, so it is coded, and a 中文 page words it;
+    /// the person's words beneath it are theirs, a part of their own, as written. The English note is unchanged, byte for byte,
+    /// and the parts travel with it in the log, so every machine that replays the quest words the same lead.
+    /// </summary>
+    [Fact]
+    public async Task The_persons_done_writes_its_lead_by_code_and_their_words_as_theirs_beside_the_note()
+    {
+        var (_, quest) = await Taken();
+
+        await _exchange.PersonDoneAsync(quest.Id, "  The write-up is in the shared folder.  ", Now);
+
+        var done = (await _quests.FindAsync(quest.Id))!;
+        Assert.Equal("The person marked this done: The write-up is in the shared folder.", done.Note);
+        Assert.Equal(
+            """[{"code":"quest.person-done","values":{},"text":"The person marked this done:"},{"words":"The write-up is in the shared folder.","by":"person"}]""",
+            done.NoteParts);
+        Assert.Equal(done.NoteParts, QuestLog.Replay(await _quests.HistoryAsync(quest.Id))!.NoteParts);
+    }
+
+    /// <summary>With no words of theirs, the parts are the lead alone, its English the note's whole sentence.</summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("   ")]
+    public async Task Without_words_the_parts_are_the_lead_alone(string? words)
+    {
+        var (_, quest) = await Taken();
+
+        await _exchange.PersonDoneAsync(quest.Id, words, Now);
+
+        Assert.Equal(
+            """[{"code":"quest.person-done","values":{},"text":"The person marked this done."}]""",
+            (await _quests.FindAsync(quest.Id))!.NoteParts);
+    }
+
     /// <summary>With no words of theirs, the note is the sentence alone: still theirs, never blank, never the agent's.</summary>
     [Theory]
     [InlineData(null)]

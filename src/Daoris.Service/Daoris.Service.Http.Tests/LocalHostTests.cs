@@ -588,6 +588,8 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
             requirements = new[] { new { quote = "through the v3 bridge", check = "The write-up names the bridge's route." } },
         });
         var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
+        // A quest with no note parts is answered as it was, with no field for them (QUESTCLOSE1b1).
+        Assert.False(published.Json.GetProperty("quest").TryGetProperty("noteParts", out _));
         Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
 
         Assert.Contains(("POST", "/api/quests/{id}/done"), host.Routes());
@@ -597,6 +599,10 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         var closed = done.Json.GetProperty("quest");
         Assert.Equal("Done", closed.GetProperty("status").GetString());
         Assert.Equal("The person marked this done: It is in the shared folder.", closed.GetProperty("note").GetString());
+        // The note's parts beside it (QUESTCLOSE1b1): Daoris's lead by its code, then the person's words, as theirs.
+        var parts = closed.GetProperty("noteParts");
+        Assert.Equal("quest.person-done", parts[0].GetProperty("code").GetString());
+        Assert.Equal(("It is in the shared folder.", "person"), (parts[1].GetProperty("words").GetString(), parts[1].GetProperty("by").GetString()));
         Assert.Equal(0, closed.GetProperty("answers").GetArrayLength());
         Assert.False(closed.GetProperty("held").GetBoolean());
         Assert.Contains("you marked it done", done.Json.GetProperty("message").GetString());
