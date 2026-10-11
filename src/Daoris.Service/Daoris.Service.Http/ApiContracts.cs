@@ -111,7 +111,10 @@ public sealed record QuestResponse(
     // said on it and the person's verdicts, oldest first. Each absent where there is none, so a quest no review touches is
     // answered as it was, and a host from before answers none.
     QuestReviewWire? Review = null, string? SetUpIn = null, IReadOnlyList<QuestSetUpWire>? SetUps = null,
-    IReadOnlyList<QuestReviewVerdictWire>? Verdicts = null);
+    IReadOnlyList<QuestReviewVerdictWire>? Verdicts = null,
+    // The note's parts beside `Note` (QUESTCLOSE1b1, D142 point 2): Daoris's lead by its code, then someone's words. Absent
+    // for a note written without them, which is every quest from before, and from a host from before; `Note` is unchanged.
+    JsonElement? NoteParts = null);
 // An attachment arrives with its CONTENT at a local host — base64 on the wire, which is what a byte
 // array is in JSON — and by NAME at a shared one, which keeps names and never bytes (D65 §2). The door
 // decides which shape its mode takes and refuses the other; the exchange never sees the wrong one.

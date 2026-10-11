@@ -1968,7 +1968,9 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal, bool
     q.Verdicts.Count == 0
         ? null
         : q.Verdicts.Select(v => new QuestReviewVerdictWire(
-            v.Said, v.SetUp is { } named ? new QuestSetUpRefWire(named.Machine, named.Sequence) : null, v.Commit, v.Words, v.At, v.Machine)).ToList());
+            v.Said, v.SetUp is { } named ? new QuestSetUpRefWire(named.Machine, named.Sequence) : null, v.Commit, v.Words, v.At, v.Machine)).ToList(),
+    // The note's parts (QUESTCLOSE1b1): a code and someone's words, as the note already travels to every door, uncleaned.
+    NoteParts.Element(q.NoteParts));
 
 // Requirements as a door hands them to the exchange (DRIFT1c): a half left out, or a whole one, arrives
 // blank and is refused there naming which — the same sentence every door gives. So does an evidence item
