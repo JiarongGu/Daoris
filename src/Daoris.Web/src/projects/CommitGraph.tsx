@@ -81,8 +81,9 @@ export function CommitGraph({ label, commits, tips = NO_TIPS }: {
             <li key={commit.commit} data-commit={commit.commit} className="flex min-w-0 items-center gap-2" style={{ height: ROW }}>
               <span className="min-w-0 flex-1 truncate text-body text-ink">{commit.subject}</span>
               <code className="shrink-0 font-mono text-small text-ink-soft">{commit.commit.slice(0, 7)}</code>
-              {/* The author gives way first, by the main area's width, never the window's (D118 §3b). */}
-              <span className="hidden max-w-[10rem] shrink-0 truncate text-small text-ink-soft @xl/main:inline">{commit.author}</span>
+              {/* The author is a column of its own, and gives way first, by the main area's width, never the window's
+                  (D118 §3b). */}
+              <span className="hidden w-32 shrink-0 truncate text-small text-ink-soft @xl/main:inline">{commit.author}</span>
               {at && <span className="shrink-0 text-meta text-ink-faint tabular-nums">{ago(at)}</span>}
             </li>
           );

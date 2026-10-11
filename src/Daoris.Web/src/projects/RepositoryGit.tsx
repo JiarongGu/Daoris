@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { GitLogCommit, GitRepositoryBranches } from '../bridge/git';
 import { ago } from '../format';
-import { EmptyState, Inline, Prose, SkeletonRows } from '../ui';
+import { Inline, Prose, SkeletonRows } from '../ui';
 import { CommitGraph } from './CommitGraph';
 
 /**
@@ -18,6 +18,19 @@ export type GitRead<T> =
 export type HistoryRead =
   | GitRead<{ line: string; tips: string[]; commits: GitLogCommit[] }>
   | { state: 'noLine'; line: string | null };
+
+/**
+ * What a Git tab has nothing to show for: its fact as a headline and why beneath it. A block of the page, so it wraps at the
+ * pane's edge as every block of a record page does (D141), where the main area's own empty state keeps a narrow body.
+ */
+function Nothing({ headline, body }: { headline: string; body: string }) {
+  return (
+    <div className="grid gap-1">
+      <p className="m-0 text-body font-semibold text-ink">{headline}</p>
+      <Prose className="text-small text-ink-soft"><Inline text={body} /></Prose>
+    </div>
+  );
+}
 
 /** A Git tab's answer on its way, said and drawn as rows, or why it did not come: never a blank tab. */
 function Waiting({ sentence, reading }: { sentence: string; reading: boolean }) {
@@ -44,16 +57,12 @@ export function BranchesTab({ repository, read }: { repository: string; read: Gi
   if (read.state === 'reading') return <Waiting reading sentence={t('projects.git.reading.branches', { repository })} />;
   if (read.state === 'refused') return <Waiting reading={false} sentence={read.sentence} />;
   if (read.state === 'noCheckout') {
-    return (
-      <EmptyState icon="folder" headline={t('projects.git.noCheckout.headline')} body={t('projects.git.noCheckout.branches', { repository })} />
-    );
+    return <Nothing headline={t('projects.git.noCheckout.headline')} body={t('projects.git.noCheckout.branches', { repository })} />;
   }
 
   const { branches } = read.value;
   if (branches.length === 0) {
-    return (
-      <EmptyState icon="stepBranch" headline={t('projects.git.branches.none.headline')} body={t('projects.git.branches.none.body', { repository })} />
-    );
+    return <Nothing headline={t('projects.git.branches.none.headline')} body={t('projects.git.branches.none.body', { repository })} />;
   }
   return (
     <ul aria-label={t('projects.git.branches.list', { repository })} className="m-0 grid list-none p-0">
@@ -82,14 +91,11 @@ export function HistoryTab({ repository, read }: { repository: string; read: His
   if (read.state === 'reading') return <Waiting reading sentence={t('projects.git.reading.history', { repository })} />;
   if (read.state === 'refused') return <Waiting reading={false} sentence={read.sentence} />;
   if (read.state === 'noCheckout') {
-    return (
-      <EmptyState icon="folder" headline={t('projects.git.noCheckout.headline')} body={t('projects.git.noCheckout.history', { repository })} />
-    );
+    return <Nothing headline={t('projects.git.noCheckout.headline')} body={t('projects.git.noCheckout.history', { repository })} />;
   }
   if (read.state === 'noLine') {
     return (
-      <EmptyState
-        icon="stepBranch"
+      <Nothing
         headline={t('projects.git.history.none.headline')}
         body={read.line
           ? t('projects.git.history.none.line', { repository, branch: read.line })
