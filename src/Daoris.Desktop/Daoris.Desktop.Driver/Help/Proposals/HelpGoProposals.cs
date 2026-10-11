@@ -97,6 +97,30 @@ internal sealed class HelpGoProposals : IHelpProposalKind
             describe += $", in workspace `{workspace}`" + (held is null ? ", which no repository is in yet" : "");
         }
 
+        var repository = proposal.Repository?.Trim() is { Length: > 0 } r ? r : null;
+        var sentence = proposal.Sentence?.Trim() is { Length: > 0 } s ? s : null;
+        if (repository is not null || sentence is not null)
+        {
+            // NEW1d-a (D162's note): the composer of Sessions' New conversation opens with the repository and the words Ask Daoris
+            // knows; the person still reads and sends them (D162 §1), so a go starts nothing.
+            if (item is not null) return Refused(
+                "a go names a repository or words, or an item, not both — New conversation takes the first, and an item opens on its own.");
+            if (view != "sessions" || part != "new") return Refused(
+                "a go names a repository or words only with `sessions` and its part `new`, whose composer opens with them filled.");
+            if (repository is not null)
+            {
+                if (Folder(repository)) return Refused(
+                    $"`{repository}` is a folder, never a repository's name — name it as Repositories lists it.");
+                var row = facts.Registered.FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase));
+                if (row.Repository is null) return Refused($"no repository `{repository}` is registered on this machine.");
+                if (string.IsNullOrWhiteSpace(row.Root)) return Refused($"`{row.Repository}` has no checkout on this machine, so a conversation cannot start in it.");
+                repository = row.Repository;
+                describe += $", in `{repository}`";
+            }
+
+            if (sentence is not null) describe += $", with “{sentence}”";
+        }
+
         if (item is not null)
         {
             // ENTRY1f1 (D161's ENTRY1f note): the one that waits is a record of the view's list, judged as the delete kind
@@ -118,7 +142,7 @@ internal sealed class HelpGoProposals : IHelpProposalKind
             item = named.Value.Item;
         }
 
-        return new HelpPlan(null, describe + ".", "", null) { Go = new HelpPlace(view, domain, part) { Item = item, Workspace = workspace } };
+        return new HelpPlan(null, describe + ".", "", null) { Go = new HelpPlace(view, domain, part) { Item = item, Workspace = workspace, Repository = repository, Sentence = sentence } };
     }
 
     // ENTRY1d2a: a separator, a rooted path, or a drive (`D:`, rooted on Windows alone) is a folder, never a workspace's name;
@@ -244,6 +268,15 @@ public sealed record HelpPlace(string View, string? Domain, string? Part)
     /// registry holds, in its spelling, or a new name as the route stores one; null for any other go, and for those with none.
     /// </summary>
     public string? Workspace { get; init; }
+
+    /// <summary>
+    /// The registered repository Sessions' New conversation opens with (NEW1d-a, D162's note), in the registry's spelling and
+    /// one with a checkout here; null for any other go, and for one that names none.
+    /// </summary>
+    public string? Repository { get; init; }
+
+    /// <summary>The words New conversation's composer opens with (NEW1d-a), as written, trimmed; null for any other go, and none.</summary>
+    public string? Sentence { get; init; }
 }
 
 /// <summary>
@@ -283,7 +316,8 @@ public static class HelpPlaces
         // `review`), Quests' asks and the quests held for the person's yes or review. A part names no session or quest in it
         // (a go's item names one, on Quests since ENTRY1f1 and Sessions since ENTRY1f2); Overview has no part, since what
         // waits on the person leads it.
-        ("sessions", "waiting", "Waiting on you"), ("sessions", "review", "To review"),
+        // NEW1d-a (D162's note): New conversation, the composer; a go to it may carry a repository and words.
+        ("sessions", "waiting", "Waiting on you"), ("sessions", "review", "To review"), ("sessions", "new", "New conversation"),
         ("quests", "asks", "Asks"), ("quests", "held", "Waiting on you"),
         // HELPSETUP1: a repository's Setup (UX6f, D150 §4.2), where its own values are set; a go names no repository.
         ("projects", "add", "Add repository"), ("projects", "import", "Import a folder"), ("projects", "setup", "a repository's Setup"),

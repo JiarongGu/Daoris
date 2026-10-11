@@ -6,8 +6,47 @@ namespace Daoris.Driver.Tests;
 /// <summary>Ask Daoris's <c>go</c> proposal (HELP6): a place the window has, which changes nothing.</summary>
 public sealed class HelpGoProposalsTests : HelpProposalsFixture
 {
-    private static HelpProposal Go(string view, string? domain = null, string? part = null, string? item = null, string? workspace = null) =>
-        Of("go", "go", view) with { Domain = domain, Part = part, Item = item, Workspace = workspace };
+    private static HelpProposal Go(
+        string view, string? domain = null, string? part = null, string? item = null, string? workspace = null,
+        string? repository = null, string? sentence = null) =>
+        Of("go", "go", view) with { Domain = domain, Part = part, Item = item, Workspace = workspace, Repository = repository, Sentence = sentence };
+
+    /// <summary>
+    /// NEW1d-a (D162's note): a go to Sessions' New conversation may carry the repository, as the registry spells it, and the
+    /// words the composer opens with; either may be absent, and with neither the composer opens empty.
+    /// </summary>
+    [Theory]
+    [InlineData(null, null, "Open Sessions → New conversation.", null, null)]
+    [InlineData(" ENGINE ", null, "Open Sessions → New conversation, in `engine`.", "engine", null)]
+    [InlineData(null, "  fix the build ", "Open Sessions → New conversation, with “fix the build”.", null, "fix the build")]
+    [InlineData("engine", "fix the build", "Open Sessions → New conversation, in `engine`, with “fix the build”.", "engine", "fix the build")]
+    public void A_go_to_new_conversation_may_carry_a_repository_and_words(
+        string? repository, string? sentence, string says, string? handed, string? words)
+    {
+        var plan = HelpProposals.Plan(Go("sessions", part: "new", repository: repository, sentence: sentence), DriverConfig.Empty, WithRegistry);
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal(says, plan.Describe);
+        Assert.Equal(new HelpPlace("sessions", null, "new") { Repository = handed, Sentence = words }, plan.Go);
+    }
+
+    [Theory]
+    [InlineData("sessions", null, "waiting", null, "engine", null, "a go names a repository or words only with `sessions` and its part `new`")]
+    [InlineData("sessions", null, null, null, null, "hello", "a go names a repository or words only with `sessions` and its part `new`")]
+    [InlineData("projects", null, "add", null, "engine", null, "a go names a repository or words only with `sessions` and its part `new`")]
+    [InlineData("quests", null, null, "q1a2b3c4", "engine", null, "a go names a repository or words, or an item, not both")]
+    [InlineData("sessions", null, "new", null, "ghost", null, "no repository `ghost` is registered on this machine")]
+    [InlineData("sessions", null, "new", null, "game", null, "`game` has no checkout on this machine")]
+    [InlineData("sessions", null, "new", null, "C:\\work\\engine", null, "`C:\\work\\engine` is a folder, never a repository's name")]
+    [InlineData("sessions", null, "new", null, "work/engine", null, "`work/engine` is a folder, never a repository's name")]
+    public void A_repository_or_words_anywhere_but_new_conversation_or_unregistered_is_refused(
+        string view, string? domain, string? part, string? item, string? repository, string? sentence, string says)
+    {
+        var plan = HelpProposals.Plan(Go(view, domain, part, item, repository: repository, sentence: sentence), DriverConfig.Empty, WithRegistry);
+
+        Assert.Contains(says, plan.Refusal);
+        Assert.Null(plan.Go);
+    }
 
     [Theory]
     [InlineData("quests", null, null, "Open Quests.")]
@@ -74,7 +113,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     [InlineData("projects", null, "workspace-colours", "no part `workspace-colours` of `projects`")]
     // ENTRY1b: a part is the group's go name, not the reader's (`you`); a group that waits on nobody is no part; and
     // Overview stays the view alone, since what waits leads it.
-    [InlineData("sessions", null, "you", "no part `you` of `sessions` — one of `review`, `waiting`.")]
+    [InlineData("sessions", null, "you", "no part `you` of `sessions` — one of `new`, `review`, `waiting`.")]
     [InlineData("sessions", null, "working", "no part `working` of `sessions`")]
     [InlineData("quests", null, "open", "no part `open` of `quests` — one of `asks`, `held`.")]
     [InlineData("overview", null, "waiting", "no part `waiting` of `overview`.")]
@@ -368,7 +407,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
         Assert.Equal(["start", "appearance", "ai", "driver", "browser", "logs"], HelpPlaces.Domains.Select(domain => domain.Id));
         Assert.Equal(
             [
-                "sessions/waiting", "sessions/review", "quests/asks", "quests/held",
+                "sessions/waiting", "sessions/review", "sessions/new", "quests/asks", "quests/held",
                 "projects/add", "projects/import", "projects/setup", "projects/branches", "projects/history",
                 "projects/workspace-details", "projects/workspace-branches", "projects/workspace-workflow",
                 "projects/workspace-setup", "projects/workspace-defaults", "projects/workspace-remote",

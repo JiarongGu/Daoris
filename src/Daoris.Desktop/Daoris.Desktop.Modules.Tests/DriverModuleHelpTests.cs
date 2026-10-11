@@ -172,6 +172,38 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// NEW1d-a (D162's note): a go to Sessions' New conversation answers the repository and the words the composer opens with,
+    /// the page's <c>HelpSettled.go.repository</c> and <c>sentence</c>; either may be none, and every other go answers both null.
+    /// </summary>
+    [Theory]
+    [InlineData("engine", "fix the build")]
+    [InlineData("engine", null)]
+    [InlineData(null, "fix the build")]
+    [InlineData(null, null)]
+    public void A_gos_answer_names_its_repository_and_words(string? repository, string? sentence)
+    {
+        var proposal = new HelpProposal("g3", "go", "go", "sessions", null, null, sentence, "why", "h1", "proposed") { Part = "new", Repository = repository };
+
+        var answer = JsonSerializer.SerializeToElement(
+            DriverModule.ApplyAnswer(proposal, new HelpApplied(true, "told") { Go = new HelpPlace("sessions", null, "new") { Repository = repository, Sentence = sentence } }),
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+        var go = answer.GetProperty("go");
+        string? Of(string name) => go.GetProperty(name).ValueKind == JsonValueKind.Null ? null : go.GetProperty(name).GetString();
+        Assert.Equal(("sessions", "new"), (go.GetProperty("view").GetString(), go.GetProperty("part").GetString()));
+        Assert.Equal((repository, sentence), (Of("repository"), Of("sentence")));
+        Assert.Null(Of("workspace"));
+        Assert.Null(Of("item"));
+
+        // Any other go answers neither.
+        var other = JsonSerializer.SerializeToElement(
+            DriverModule.ApplyAnswer(proposal, new HelpApplied(true, "told") { Go = new HelpPlace("quests", null, null) }),
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }).GetProperty("go");
+        Assert.Equal(JsonValueKind.Null, other.GetProperty("repository").ValueKind);
+        Assert.Equal(JsonValueKind.Null, other.GetProperty("sentence").ValueKind);
+    }
+
+    /// <summary>
     /// ENTRY1f1: the quests and asks are read from the service only while a proposal is judged against them, a delete as
     /// before or a go naming an item on Quests; a go to a place alone, or any other kind, asks the service for none.
     /// ENTRY1f2: a go naming an item on Sessions reads this machine's session records instead, and a go naming one on a view

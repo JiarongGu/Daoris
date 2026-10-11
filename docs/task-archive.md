@@ -13711,3 +13711,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **HEAD2e2 — the ask command takes a short title** (driver). `daoris-driver ask` has no `--short`, so Ask Daoris's ask card says its short title on the page and not in its terminal line (HEAD2e). Add `--short "…"`, judged by `QuestTitles.Judge`, and the card's twin. D162's HEAD2e note; CLI and twin tests.
 
 **Outcome** 2026-10-12: `daoris-driver ask … --short "…"` sends the title as typed and prints the service's refusal (`AskRefusal.BadShort`), so the driver holds no second judge; beside another verb it is a usage problem. The ask card's terminal line and the room's ask door name it. Detail: D162's HEAD2e2 note.
+
+## NEW1d-a — a go to New conversation carries a repository and words (2026-10-12, D162)
+
+> - [ ] **NEW1d-a — a go to New conversation carries a repository and words** (service/driver/modules). `go_propose` takes the common `repository` and `sentence` for `sessions` with the part `new`, judged as ENTRY1d2a's workspace is; `ApplyAnswer`'s go carries them. The room names the part, and says *New conversation* where it still says *Sessions → Start a session* (`HelpRoomMayDo.cs:67`). D162 §1; D161 ENTRY1d2a's shape.
+
+**Outcome** 2026-10-12: `go_propose`, the judge and the Apply answer carry `repository` and `sentence` for `sessions`/`new` (a registered repository with a checkout here, the words as written); the room names the part and says *New conversation*. The page opens it from NEW1d-b. Detail: D162's NEW1d-a note.

@@ -26,7 +26,9 @@ public sealed class HelpRoomMayDoTests
             Assert.Contains("never try one", agents);
             Assert.Contains("a repository's own work", agents);
             Assert.Contains("`ask_propose`", agents);
-            Assert.Contains("Sessions → Start a session", agents);
+            // NEW1d-a: NEW1b removed Start a session; a conversation is begun with New conversation.
+            Assert.Contains("New conversation (Ctrl+N)", agents);
+            Assert.DoesNotContain("Start a session", agents);
             Assert.Contains("say what you could not see", agents);
             Assert.Contains("Session branches", agents);
         }
