@@ -3,11 +3,13 @@ namespace Daoris.Driver;
 /// <summary>
 /// Ask Daoris's <c>delete</c> proposal (HELP6): a quest or an ask made by mistake — its door <c>quest</c> or
 /// <c>ask</c>, its target the record's id — judged by the service's own reading of whether the record may go
-/// (D95), the one the drawer's and the record's Delete are shown by. The card says what goes.
+/// (D95), the one the drawer's and the record's Delete are shown by. The card says what goes. Since SESSUX1h2b a
+/// <c>session</c> door too (D126 §5.4): a conversation that served no quest, judged by both halves as Sessions' *Delete…* is.
 /// </summary>
 /// <remarks>
 /// Not D95's rejected <i>delete over MCP</i>: the tool only proposes, and the delete is the person's press,
-/// applied through the local host's <c>DELETE /api/quests/{id}</c> and <c>DELETE /api/asks/{id}</c>.
+/// applied through the local host's <c>DELETE /api/quests/{id}</c> and <c>DELETE /api/asks/{id}</c>, and a session's
+/// through Sessions' own delete.
 /// </remarks>
 internal sealed class HelpDeleteProposals : IHelpProposalKind
 {
@@ -15,7 +17,8 @@ internal sealed class HelpDeleteProposals : IHelpProposalKind
 
     public string Tool => "delete_propose";
 
-    public IReadOnlyList<string> Doors { get; } = ["quest", "ask"];
+    // SESSUX1h2b: a session's delete, which D126 §7.3 gave this kind rather than the `session` kind.
+    public IReadOnlyList<string> Doors { get; } = ["quest", "ask", "session"];
 
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
@@ -71,17 +74,77 @@ internal sealed class HelpDeleteProposals : IHelpProposalKind
             return new HelpPlan(null, $"Delete ask `#{ask.Id}` “{ask.Sentence}”{goes}", terminal, null);
         }
 
-        return Refused($"`{proposal.Door}` is not a record Daoris deletes — a `quest` or an `ask`.", "");
+        if (proposal.Door == "session") return Session(id, facts);
+
+        return Refused($"`{proposal.Door}` is not a record Daoris deletes — a `quest`, an `ask` or a `session`.", "");
     }
 
     public async Task<HelpApplied> ApplyAsync(HelpApplying applying, CancellationToken ct)
     {
         var proposal = applying.Proposal;
         var target = proposal.Target!.Trim().TrimStart('#');
-        var (ok, message) = proposal.Door == "quest"
-            ? await applying.Doors.DeleteQuestAsync(target, ct).ConfigureAwait(false)
-            : await applying.Doors.DeleteAskAsync(target, ct).ConfigureAwait(false);
+        var (ok, message) = proposal.Door switch
+        {
+            "quest" => await applying.Doors.DeleteQuestAsync(target, ct).ConfigureAwait(false),
+            "ask" => await applying.Doors.DeleteAskAsync(target, ct).ConfigureAwait(false),
+            // SESSUX1h2b: the record's own spelling, as the plan resolved it.
+            _ => await applying.Doors.DeleteSessionAsync(applying.Plan.Sessions![0], ct).ConfigureAwait(false),
+        };
         return applying.Settled(ok, $"{(ok ? "Applied" : "Not applied")}: `#{applying.Id}` (`{applying.Plan.Terminal}`) — {message}", message);
+    }
+
+    /// <summary>
+    /// SESSUX1h2b (D126 §5.4): a session's delete, judged in the order <see cref="SessionDeletion.DeleteAsync"/> judges it and
+    /// in its words — no such session here, a teammate's, then the record's half as the ledger answers it, then the machine's
+    /// half — with Ask Daoris's own conversation refused before either, since its History deletes it (ASKHIST1).
+    /// </summary>
+    private static HelpPlan Session(string id, HelpMachineFacts facts)
+    {
+        var terminal = $"daoris-driver sessions delete {id}";
+        HelpPlan Refused(string why) => new(why, "", terminal, null);
+        if (id.Length == 0) return Refused("a delete names the session by its id, as Sessions lists it.");
+        if (facts.Sessions.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase)) is not { } record)
+        {
+            return Refused($"there is no session `{id}` on this machine.");
+        }
+
+        id = record.Id;
+        terminal = $"daoris-driver sessions delete {id}";
+        if (record.Teammate)
+        {
+            return Refused($"Session `{id}` ran on `{id[..id.IndexOf('/')]}`; its record is theirs — archive it here instead.");
+        }
+
+        if (WordsNever.IsHelp(record))
+        {
+            return Refused($"`{id}` is Ask Daoris's own conversation: Ask Daoris → History deletes it, as `daoris-driver help delete {id}` does.");
+        }
+
+        if (record.Live) return Refused($"Session `{id}` is still running; stop it first.");
+
+        // The ledger's own sentence where it was asked for this one; else what its record's answer says.
+        if (facts.SessionDeletes.GetValueOrDefault(id) is { Taken: false } judged) return Refused(judged.Message);
+        if (!facts.SessionDeletes.ContainsKey(id) && !record.Deletable)
+        {
+            return Refused(record.Quest is { } quest ? $"Session `{id}` worked on `#{quest}`, and its record is that work's; archive it instead."
+                : record.Took ? $"Session `{id}` took a quest, and its record is that work's; archive it instead."
+                : $"Session `{id}`'s record stays, as the service judges it; archive it instead.");
+        }
+
+        if (facts.Kept.Contains(id))
+        {
+            return Refused($"Session `{id}` is still held on this machine: its tree is here, or a landing names it. Discard the tree or "
+                           + "clean it up first; a session a landing names stays with that landing.");
+        }
+
+        var where = record.Ask is { } ask ? $", the intake of ask `#{ask}`" : $", a conversation in `{record.Repository}`";
+        return new HelpPlan(null,
+            $"Delete session `{id}`{where}: its record goes, with what this machine kept of it (its words, its transcript and its "
+            + "files), and nothing brings it back.",
+            terminal, null)
+        {
+            Sessions = [id],
+        };
     }
 
     /// <summary>Why a quest's record stays, with what to do instead — said as the service's refusal says it (D95).</summary>
@@ -153,4 +216,10 @@ public partial interface IHelpDoors
 
     /// <summary>The local host's <c>DELETE /api/asks/{id}</c>, the ask's record's route.</summary>
     Task<(bool Ok, string Message)> DeleteAskAsync(string id, CancellationToken ct);
+
+    /// <summary>
+    /// Sessions' own *Delete…* (SESSUX1f, D126 §5.4): <see cref="SessionDeletion.DeleteAsync"/>, which judges both halves again
+    /// and removes what this machine kept after the ledger's yes. Its answer comes back as its sentence, a refusal included.
+    /// </summary>
+    Task<(bool Ok, string Message)> DeleteSessionAsync(string id, CancellationToken ct);
 }

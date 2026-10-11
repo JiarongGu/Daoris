@@ -50,6 +50,64 @@ public sealed class HelpDeleteProposalsTests : HelpProposalsFixture
         Assert.Contains("no ask `#a9`", HelpProposals.Plan(Of("delete", "ask", "a9"), DriverConfig.Empty, Machine).Refusal);
     }
 
+    /// <summary>
+    /// SESSUX1h2b (D126 §5.4): a conversation that served no quest, ended, this machine's, named by nothing and holding no tree
+    /// here, goes with what this machine kept of it, and the card says so in the words Sessions' *Delete…* asks with.
+    /// </summary>
+    [Fact]
+    public void A_conversation_that_served_no_quest_is_deleted_and_the_card_says_what_goes()
+    {
+        var plan = HelpProposals.Plan(Of("delete", "session", "C1CHAT00"), DriverConfig.Empty, SessionsHere);
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal(
+            "Delete session `c1chat00`, a conversation in `engine`: its record goes, with what this machine kept of it (its "
+            + "words, its transcript and its files), and nothing brings it back.",
+            plan.Describe);
+        Assert.Equal("daoris-driver sessions delete c1chat00", plan.Terminal);
+        Assert.Equal(["c1chat00"], plan.Sessions);
+    }
+
+    /// <summary>
+    /// §5.4's refusals in its order, each in the words the delete itself refuses with: no such session here, a teammate's, Ask
+    /// Daoris's own (its History deletes it), a live one, the ledger's own sentence, and the machine's half last.
+    /// </summary>
+    [Theory]
+    [InlineData("zz000000", "there is no session `zz000000` on this machine.")]
+    [InlineData("north/s7team0", "Session `north/s7team0` ran on `north`; its record is theirs — archive it here instead.")]
+    [InlineData("h1helper", "`h1helper` is Ask Daoris's own conversation: Ask Daoris → History deletes it, as `daoris-driver help delete h1helper` does.")]
+    [InlineData("s3live00", "Session `s3live00` is still running; stop it first.")]
+    [InlineData("c3named0", "Session `c3named0` is named by ask `#a1b2c3d4` as its intake.")]
+    [InlineData("s2ended0", "Session `s2ended0` worked on `#q3done00`, and its record is that work's; archive it instead.")]
+    [InlineData("c4remote", "Session `c4remote`'s record stays, as the service judges it; archive it instead.")]
+    [InlineData("c2tree00", "Session `c2tree00` is still held on this machine: its tree is here, or a landing names it. "
+        + "Discard the tree or clean it up first; a session a landing names stays with that landing.")]
+    public void A_session_the_delete_would_keep_is_refused_in_its_words(string session, string refusal)
+    {
+        var plan = HelpProposals.Plan(Of("delete", "session", session), DriverConfig.Empty, SessionsHere);
+
+        Assert.Equal(refusal, plan.Refusal);
+        Assert.Null(plan.Sessions);
+    }
+
+    [Fact]
+    public void A_door_that_names_no_record_daoris_deletes_is_refused()
+    {
+        var plan = HelpProposals.Plan(Of("delete", "branch", "feature/x"), DriverConfig.Empty, SessionsHere);
+
+        Assert.Equal("`branch` is not a record Daoris deletes — a `quest`, an `ask` or a `session`.", plan.Refusal);
+    }
+
+    [Fact]
+    public async Task A_sessions_delete_goes_through_sessions_own_door_by_the_records_spelling()
+    {
+        var (applied, doors, _) = await ApplyAsync(Of("delete", "session", "C1CHAT00"), facts: SessionsHere);
+
+        Assert.True(applied.Applied);
+        Assert.Equal(["SESSION_DELETE c1chat00"], doors.Calls);
+        Assert.Equal("Applied: `#p6` (`daoris-driver sessions delete c1chat00`) — Deleted it.", applied.Told);
+    }
+
     [Fact]
     public async Task A_delete_goes_through_the_hosts_own_route_and_its_refusal_is_said_in_the_services_words()
     {
@@ -121,6 +179,12 @@ public sealed partial class HelpStandInDoors
     public Task<(bool Ok, string Message)> DeleteAskAsync(string id, CancellationToken ct)
     {
         Calls.Add($"DELETE /api/asks/{id}");
+        return Task.FromResult(Deleted);
+    }
+
+    public Task<(bool Ok, string Message)> DeleteSessionAsync(string id, CancellationToken ct)
+    {
+        Calls.Add($"SESSION_DELETE {id}");
         return Task.FromResult(Deleted);
     }
 }
