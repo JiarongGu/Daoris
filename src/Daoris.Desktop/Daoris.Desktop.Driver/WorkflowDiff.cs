@@ -37,7 +37,9 @@ public sealed record WorkflowDiffSaid(IReadOnlyList<WorkflowDiffEntry> Entries, 
 /// </summary>
 /// <remarks>
 /// A TWIN with the CLI's <c>workflowDiff</c> (<c>namedworkflows.ts</c>): both hold this suite's tests'
-/// <c>fixtures/workflow-named.json</c> <c>diffs</c>, cell for cell, every line said included.
+/// <c>fixtures/workflow-named.json</c> <c>diffs</c>, cell for cell, every line said included. The lists said apart
+/// (<see cref="WorkflowDiffSaid.Part"/>, <see cref="WorkflowDiffSaid.Steps"/>, <see cref="WorkflowDiffSaid.Outward"/>) are this
+/// side's alone, the same lines unindented, for Ask Daoris's card (WORKFLOW1h-b).
 /// </remarks>
 public static class WorkflowDiff
 {
