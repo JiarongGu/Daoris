@@ -589,6 +589,15 @@ public static class NoteCodes
     public static readonly NoteCode HeldLead = new("held.lead", []);
     public static readonly NoteCode HeldTail = new("held.tail", []);
 
+    // ——— The roster's refusal as a held note's reason (ROSTERREFUSE1, <see cref="HeldWords.Refused"/>): an account by its owner and its
+    // id, never the name the person gave it (the page names it), until when a moment, why a cool-off's reason; the tool's own sign-in
+    // is a line of its own, its refresh `waits.read-again`. `profile` is the id as a shell spells it in the sign-in command.
+    public static readonly NoteCode HeldCoolingAccount = new("held.cooling-account", ["owner", "account", "until", "why"]) { Why = Cooling };
+    public static readonly NoteCode HeldCoolingOwn = new("held.cooling-own", ["owner", "until", "why"]) { Why = Cooling };
+    public static readonly NoteCode HeldSignedOut = new("held.signed-out", ["owner", "account", "profile"]);
+    public static readonly NoteCode HeldNotInstalled = new("held.not-installed", ["agent"]);
+    public static readonly NoteCode HeldPinNotInstalled = new("held.pin-not-installed", ["agent", "version"]);
+
     /// <summary>Every code above, read off the declarations so none escapes the catalogue test.</summary>
     public static IReadOnlyList<NoteCode> All { get; } =
         [.. typeof(NoteCodes).GetFields().Where(field => field.FieldType == typeof(NoteCode)).Select(field => (NoteCode)field.GetValue(null)!)];

@@ -314,6 +314,28 @@ public sealed class ResumeAccountTests : IDisposable
         NoteAssert.Holds(refused.Line);
     }
 
+    /// <summary>
+    /// ROSTERREFUSE1: the roster's refusal is the held note's reason by code where the selection carries its parts, between the lead
+    /// and the tail, its English the line it always was; where it carries none, or its parts say something else, its words.
+    /// </summary>
+    [Fact]
+    public void The_roster_s_refusal_is_the_held_note_by_code_where_the_selection_has_its_parts()
+    {
+        const string sentence = "`codex` is not installed on this machine, so there is nothing to spawn.";
+        var coded = Noted.Of(NoteCodes.HeldNotInstalled, sentence, ("agent", "codex"));
+        var held = HeldWords.Refused(new HarnessSelection(sentence) { RefusalNote = coded });
+
+        Assert.Equal(HeldWords.Program(sentence).Line.Note, held.Line.Note);
+        Assert.Equal(sentence, held.Why);
+        Assert.Equal(["held.lead", "held.not-installed", "held.tail"], NoteAssert.Codes(held.Line.Parts));
+        NoteAssert.Holds(held.Line);
+
+        var stale = HeldWords.Refused(new HarnessSelection(sentence + " More.") { RefusalNote = coded });
+        Assert.Equal(["held.lead", null, "held.tail"], NoteAssert.Codes(stale.Line.Parts));
+        var bare = HeldWords.Refused(new HarnessSelection(sentence));
+        Assert.Equal(["held.lead", null, "held.tail"], NoteAssert.Codes(bare.Line.Parts));
+    }
+
     // ——— Through the roster: the same judgement, with what it knows of each account.
 
     private static readonly DateTimeOffset Seen = new(2026, 10, 3, 15, 0, 0, TimeSpan.Zero);

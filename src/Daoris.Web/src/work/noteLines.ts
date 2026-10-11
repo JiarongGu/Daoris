@@ -195,6 +195,13 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'held.config-unread': { values: [] },
   'held.lead': { values: [] },
   'held.tail': { values: [] },
+  // The roster's refusal as a held note's reason (ROSTERREFUSE1): an account by its owner and its id, the sign-in's profile the
+  // id as a shell spells it, the tool's own sign-in's refresh `waits.read-again`.
+  'held.cooling-account': { values: ['owner', 'account', 'until', 'why'], why: 'cooling' },
+  'held.cooling-own': { values: ['owner', 'until', 'why'], why: 'cooling' },
+  'held.signed-out': { values: ['owner', 'account', 'profile'] },
+  'held.not-installed': { values: ['agent'] },
+  'held.pin-not-installed': { values: ['agent', 'version'] },
 };
 
 /**
@@ -268,6 +275,7 @@ export const NOTE_VALUES: Readonly<
   adapter: 'text', now: 'text', then: 'text',
   // An account id is worded by the name the person gave it where the page knows it (NOTENAME1); `owner` is the agent.
   account: 'account', over: 'account',
+  profile: 'text', version: 'text',
   owner: 'text', branch: 'text', basedOn: 'text', plugin: 'text', agent: 'text', workspace: 'text',
   why: 'why',
   cooling: 'cooling',

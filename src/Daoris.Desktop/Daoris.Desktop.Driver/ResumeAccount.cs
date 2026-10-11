@@ -130,6 +130,19 @@ public static class HeldWords
         (message, Noted.Of(NoteCodes.HeldLead, ResumeWords.NotYet.TrimEnd())
             .Then(" ", Noted.Said(Trimmed(message), NoteBy.Program)).Then(". ", TailLine()));
 
+    /// <summary>
+    /// The roster's refusal as the reason (ROSTERREFUSE1): its coded parts between lead and tail where the selection carries them
+    /// and they say the refusal to the byte, otherwise <see cref="Program"/>'s words.
+    /// </summary>
+    public static (string Why, Noted Line) Refused(HarnessSelection selection)
+    {
+        var words = Program(selection.Refusal!);
+        if (selection.RefusalNote is not { } coded) return words;
+
+        var line = Noted.Of(NoteCodes.HeldLead, ResumeWords.NotYet.TrimEnd()).Then(" ", coded).Then(" ", TailLine());
+        return line.Note == words.Line.Note ? (words.Why, line) : words;
+    }
+
     private static string Trimmed(string message) => message.TrimEnd('.', ' ');
 
     private static Noted TailLine() => Noted.Of(NoteCodes.HeldTail, Tail);
