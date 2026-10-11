@@ -7,6 +7,7 @@ import { projectsItem, workspaceItem } from './opener';
 import type { WorkflowTabProps } from './workflow/WorkflowTab';
 import { ProjectList, type RepositoryRowFacts, type WorkspaceGroup } from './projects/ProjectList';
 import { ProjectPage, ProjectsMainNotice } from './projects/ProjectPage';
+import { RepositoryBranches, RepositoryHistory } from './projects/RepositoryGitView';
 import type { Driving, RepositorySetupProps } from './projects/RepositorySetup';
 import type { ProjectTab, WorkspaceSection, WorkspaceTab } from './projects/tabs';
 import { WorkspaceView } from './projects/WorkspaceView';
@@ -41,8 +42,11 @@ const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] :
  * while it is in front. Every query it holds the frame already holds, so holding it everywhere asks nothing more.
  *
  * **What it remembers is its list's** (`listPanes.ts`, §3f): the chosen repository, by name, which a door into the view
- * names through the opener (§3i); and its page's tab, Details, Workflow or Setup, one for the view (UX6f, D150 §4.2), which its
- * holder keeps so a door can open a repository at Setup.
+ * names through the opener (§3i); and its page's tab, Details, Branches, History, Workflow or Setup, one for the view (UX6f,
+ * UX6h1, D150 §4.2), which its holder keeps so a door can open a repository at Setup.
+ *
+ * **Git is inside Repositories** (UX6h1, D150 §4.4): a repository's Branches and History are parts of their own
+ * (`RepositoryGitView`), handed to its page and drawn only while their tab shows, so Git's reads are asked only then.
  *
  * **A repository's Setup is every setting it holds on this machine** (UX6f), each the screen's half of `daoris driver
  * <verb> <repository>` or `daoris agent rules … --repository` (D50), from the answers the driver gives every door: the
@@ -450,6 +454,13 @@ export function useProjectsView({
           held={driver.data ? named(driver.data.holds, shown.repository) : undefined}
           setup={setupOf(shown)}
           workflow={workflowOf(shown)}
+          // Its branches and its line's history (UX6h1): a shell's, each read only while its tab shows (D147 §6).
+          branches={attached
+            ? <RepositoryBranches repository={shown.repository} workspace={workspaceOf(shown)} here={Boolean(shown.root)} />
+            : undefined}
+          history={attached
+            ? <RepositoryHistory repository={shown.repository} workspace={workspaceOf(shown)} here={Boolean(shown.root)} />
+            : undefined}
           tab={tab}
           onTab={onTab}
           // Adoption's own acts are an adopter's (INT3c): managing writes its declaration into it.

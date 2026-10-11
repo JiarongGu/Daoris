@@ -32,7 +32,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Web/e2e/platform.spec.ts` | 56 | 965 |
+| `src/Daoris.Web/e2e/platform.spec.ts` | 56 | 967 |
 | `src/Daoris.Web/src/App.test.tsx` | 50 | 966 |
 | `src/Daoris.Web/src/App.tsx` | 70 | 1282 |
 | `src/Daoris.Web/src/ProjectsView.test.tsx` | 76 | 1377 |

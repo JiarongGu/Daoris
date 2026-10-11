@@ -11,6 +11,10 @@ with the version and date at release.
 - A conversation's notes that its agent's session could not open or failed, that a turn could not be taken, and that the
   agent would not go on in its own conversation (and why, and that your answer is carried on in a new session) now read in
   your language, in English and 中文. The program's message and the agent's own words in them stay as written.
+- A repository's page in Repositories has Branches and History tabs. Branches lists its branches, each with its last commit;
+  History draws its line's commits newest first, each beside its lane, a merged branch in a lane of its own until the commit
+  it grew from. Both read this machine's checkout: a browser shows Details alone, and a repository with no checkout here
+  says so.
 - Ask Daoris can now propose pausing or resuming an ask's or a quest's work on this machine. The card says what stops (the
   running sessions), what it adds where another machine may still take an open quest, and what is left as it is; Apply makes
   the same pause or resume the pages' buttons do. Abandoning stays yours: it takes your reason, so Ask Daoris never proposes it.

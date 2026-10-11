@@ -13446,3 +13446,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CONVNOTE2e–h — the conversation's other driver notes, by code** … (Group e: a failed door: ChatRunner.cs ~:1112, ~:1130, ~:1366; Driver.cs ~:2356, ~:2367.)
 
 **Outcome** 2026-10-11: `DoorNotes` builds `door.not-open`, `door.turn-not-taken` and `door.failed` (each the exception's message as program words), `door.resume-refused` [why] (the `Continue` reason family the page already words, the agent's refusal words after) and `door.answer-carried-on`; each English byte for byte. The site's wiring is held by one Process test. Detail: D152's CONVNOTE2e note.
+
+
+## UX6h1 — Branches and History tabs, and the graph's lanes (2026-10-11, D150)
+
+> - [ ] **UX6h1 — Branches and History tabs, and the graph's lanes** (web). A repository's page gains Branches and History tabs, their empty, no-checkout and refusal states; a pure `graphLanes.ts` lays lanes from commits' parents. No separate Git place exists to retire. UX6 §4.4, §4.2; built-in-git design §2.2-§2.3, §6; D150 ~:86.
+
+**Outcome** 2026-10-11: a repository's page has Details, Branches, History, Workflow and Setup when a shell answers (a browser keeps Details alone); each Git tab says reading, no checkout, a refusal (`errors.{code}`) or nothing yet, read by a part that mounts only while its tab shows; Branches lists names, last subjects and times; History draws its line's first page beside lanes `graphLanes.ts` lays from parents (tips first, merges hollow). Glossary: history 历史, graph 提交图. Bridge follow-ups are GIT1d-c. Detail: D150's UX6h1 note.

@@ -1,9 +1,15 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
+import type { GitLogCommit, GitRepositoryBranches } from '../bridge/git';
+import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../storyLanguage';
 import { FULL, NOTHING_SET, PLUGIN_UNREADY } from '../workflow/fixtures';
-import { CJK, COUNTS, ELSEWHERE, ENGINE, GAME, LINE, MIRRORED, NEWBIE, SETUP_DEFAULTS, SETUP_OWN, UNDECLARED } from './fixtures';
+import {
+  CJK, COUNTS, ELSEWHERE, ENGINE, GAME, GIT_BRANCHES_ENGINE, GIT_HISTORY_ENGINE, LINE, MIRRORED, NEWBIE, SETUP_DEFAULTS, SETUP_OWN,
+  UNDECLARED,
+} from './fixtures';
 import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
+import { BranchesTab, type GitRead, HistoryTab, type HistoryRead } from './RepositoryGit';
 import type { RepositorySetupProps } from './RepositorySetup';
 import type { ProjectTab } from './tabs';
 
@@ -12,9 +18,43 @@ import type { ProjectTab } from './tabs';
 // here and on a direct door, one not adopted with none, a browser's, a 中文 name) and since UX6f (D150 §4.2) its Setup tab,
 // each section folded to what Daoris decides and open: Driving, Line and landing, Sessions, Reach, the person's own values, narrow and
 // in 中文; since WORKFLOW1b its Workflow tab, with everything at once, nothing set, a limit, in 中文, narrow and in a browser;
-// and the main area with no page: nothing chosen, gone, loading, an error with no answer ever.
+// since UX6h1 (§4.4) its Branches and History tabs, each reading, with no checkout here, refused, with nothing yet and read,
+// History's lanes for a merged branch and for several, dark, in 中文 and narrow; and the main area with no page: nothing
+// chosen, gone, loading, an error with no answer ever.
 
 const nothing = () => {};
+
+const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
+
+/** The list beside the main area a strip and the side bar closed: the main area at 34 rem. */
+const narrow: Decorator = (Story) => <div className="flex h-[44rem] w-[34rem] max-w-full border border-line bg-page"><Story /></div>;
+
+const branchesRead = (read: GitRead<GitRepositoryBranches>) => <BranchesTab repository="engine" read={read} />;
+const historyRead = (read: HistoryRead) => <HistoryTab repository="engine" read={read} />;
+const lineHistory = (commits: GitLogCommit[], tips = [commits[0]!.commit]) => historyRead({ state: 'read', value: { line: 'main', tips, commits } });
+
+/** A line three branches were merged into, one still open beside it: four lanes at their widest. */
+const SEVERAL: GitLogCommit[] = (() => {
+  const at = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString();
+  const row = (commit: string, parents: string[], subject: string, hours: number): GitLogCommit => ({
+    commit: commit.padEnd(40, '0'), parents: parents.map((parent) => parent.padEnd(40, '0')), author: 'Mei Lin',
+    authorEmail: 'mei@example.invalid', subject, authoredAt: at(hours), committedAt: at(hours), side: null,
+  });
+  return [
+    row('f10', ['f09', 'e03'], 'Merge the audio mixer', 1),
+    row('e03', ['e02'], 'Mix the music under the effects', 2),
+    row('f09', ['f08', 'd02'], 'Merge the input remapping', 3),
+    row('e02', ['f05'], 'Add an audio bus per channel', 4),
+    row('d02', ['d01'], 'Save remapped keys per player', 5),
+    row('f08', ['f07', 'c02'], 'Merge the shader cache', 6),
+    row('c02', ['c01'], 'Key the cache by the driver version', 7),
+    row('d01', ['f05'], 'Read the keys from the settings', 8),
+    row('f07', ['f05'], 'Name the frame budget', 9),
+    row('c01', ['f05'], 'Cache compiled shaders on disk', 10),
+    row('f05', ['f04'], 'Load assets on a worker', 30),
+    row('f04', [], 'Begin the engine', 400),
+  ];
+})();
 
 /** The page with its tab held, as Repositories holds it, so a story's tabs press as the window's do. */
 function Tabbed({ start = 'details', ...props }: Parameters<typeof ProjectPage>[0] & { start?: ProjectTab }) {
@@ -34,6 +74,9 @@ const meta: Meta<typeof Tabbed> = {
     setup: SETUP_DEFAULTS,
     // How its work moves (WORKFLOW1b): a shell's, beside its Setup.
     workflow: { current: FULL, doors: { workspaceSetup: nothing } },
+    // Its branches and its line's history (UX6h1): a shell's, as Git's reads answer them.
+    branches: branchesRead({ state: 'read', value: GIT_BRANCHES_ENGINE }),
+    history: lineHistory(GIT_HISTORY_ENGINE),
     onManage: nothing,
     onOpenCode: nothing,
   },
@@ -107,7 +150,10 @@ export const NotAdoptedNoRoot: Story = {
 
 /** A browser's page: Details alone, no tab row, no *Manage* and no setting, which only a shell's driver says (D47 §4). */
 export const InABrowser: Story = {
-  args: { here: undefined, drivable: undefined, line: undefined, setup: null, workflow: null, onManage: undefined },
+  args: {
+    here: undefined, drivable: undefined, line: undefined, setup: null, workflow: null, branches: undefined, history: undefined,
+    onManage: undefined,
+  },
 };
 
 /**
@@ -137,6 +183,85 @@ export const WorkflowNarrow: Story = {
  * alone, with no tab row, since a repository's workflows are this machine's.
  */
 export const WorkflowInABrowser: Story = { args: { ...InABrowser.args, start: 'workflow' } };
+
+/**
+ * **Branches** (UX6h1, D150 §4.2, §4.4): its branches as `GIT_BRANCHES` reads them for it, each by its name and its last
+ * commit, in the list's order. The list by kind is UX6h2's.
+ */
+export const Branches: Story = { args: { start: 'branches' } };
+
+/** Branches on their way: said, with rows drawn in their place. */
+export const BranchesReading: Story = { args: { start: 'branches', branches: branchesRead({ state: 'reading' }) } };
+
+/** Branches of a repository with no checkout on this machine: said at once, and Git is asked nothing. */
+export const BranchesNoCheckout: Story = { args: { start: 'branches', branches: branchesRead({ state: 'noCheckout' }) } };
+
+/** Branches Git could not read: the driver's sentence in the tab's place. */
+export const BranchesRefused: Story = {
+  args: {
+    start: 'branches',
+    branches: branchesRead({
+      state: 'refused',
+      sentence: "engine's checkout is not the top of a repository of its own, so git is not asked: it would answer for whichever repository holds it.",
+    }),
+  },
+};
+
+/** Branches of a checkout with no commit yet: none to list. */
+export const BranchesNone: Story = {
+  args: { start: 'branches', branches: branchesRead({ state: 'read', value: { ...GIT_BRANCHES_ENGINE, branches: [] } }) },
+};
+
+/** Branches in 中文: the tab's name and its states; a branch's name and its commit are content, shown as they are. */
+export const BranchesChinese: Story = { args: { start: 'branches' }, decorators: [chinese] };
+
+/** Branches with no checkout here, in 中文. */
+export const BranchesNoCheckoutChinese: Story = { args: BranchesNoCheckout.args, decorators: [chinese] };
+
+/**
+ * **History** (UX6h1, the built-in Git design §2.3): its line's commits newest first, each beside the lanes laid from its
+ * parents: a branch merged into the line has a lane of its own until the commit it grew from, and the merge's dot is hollow.
+ */
+export const History: Story = { args: { start: 'history' } };
+
+/** History with several branches merged in, one beside another: four lanes at their widest. */
+export const HistorySeveralLanes: Story = { args: { start: 'history', history: lineHistory(SEVERAL) } };
+
+/** History on its way. */
+export const HistoryReading: Story = { args: { start: 'history', history: historyRead({ state: 'reading' }) } };
+
+/** History of a repository with no checkout on this machine. */
+export const HistoryNoCheckout: Story = { args: { start: 'history', history: historyRead({ state: 'noCheckout' }) } };
+
+/** History Git did not answer: the refusal's code worded, never git's own sentence. */
+export const HistoryRefused: Story = {
+  args: {
+    start: 'history',
+    history: historyRead({
+      state: 'refused',
+      sentence: 'Git could not answer for this. This repository may not hold that commit or file yet (a fetch may bring it), or Git did not start.',
+    }),
+  },
+};
+
+/** History of a line with no commit in this checkout yet, and of a repository nothing names a line for. */
+export const HistoryNoLine: Story = { args: { start: 'history', history: historyRead({ state: 'noLine', line: 'main' }) } };
+export const HistoryNoLineNamed: Story = { args: { start: 'history', history: historyRead({ state: 'noLine', line: null }) } };
+
+/** History, dark: the lanes in the theme's faint ink, the dots in its accent. */
+export const HistoryDark: Story = { args: HistorySeveralLanes.args, decorators: [dark] };
+
+/** History in 中文: the tab's name, its head and its states; the commits are content. */
+export const HistoryChinese: Story = { args: HistorySeveralLanes.args, decorators: [chinese] };
+
+/** History, narrow: the author gives way, the subject truncates, and each row stays one line beside its dot. */
+export const HistoryNarrow: Story = { args: HistorySeveralLanes.args, decorators: [narrow] };
+
+/** History, narrow and dark, in 中文. */
+export const HistoryNarrowDarkChinese: Story = { args: HistorySeveralLanes.args, decorators: [narrow, dark, chinese] };
+
+/** A browser's page remembered at History: Details alone, since a repository's branches and history are this machine's. */
+export const HistoryInABrowser: Story = { args: { ...InABrowser.args, start: 'history' } };
 
 /** A name in 中文: the title and the summary are content, shown as they are. */
 export const ChineseName: Story = { args: { registration: CJK, counts: COUNTS['渲染管线'] } };

@@ -1,10 +1,12 @@
 import type { Registration, Repository } from '../api';
 import type { RepositoryLine } from '../settings/Lines';
+import type { GraphCommitRow } from './CommitGraph';
 import type { RepositorySetupProps } from './RepositorySetup';
 
 // Repositories as the registry and the index answer them (FRAME1e), for the list's and the page's stories: the
 // example family's two adopters, a teammate's registration with no checkout here, one that declared nothing, two not
-// adopted (one with a root here, one without), and a name in 中文.
+// adopted (one with a root here, one without), and a name in 中文. Since UX6h1, the engine's branches and its line's history
+// as Git's reads answer them.
 
 export const ENGINE: Registration = {
   repository: 'engine', adopted: true, registered: true, workspace: 'default', root: 'C:/somewhere/engine',
@@ -142,3 +144,46 @@ export const SETUP_OWN: RepositorySetupProps = {
     rules: { allow: ['Bash(npm run test:*)'], ask: [], deny: ['Bash(git push:*)'] },
   },
 };
+
+/** A whole commit id from a short one, as git answers them: forty hex digits. */
+const id = (short: string) => short.padEnd(40, '0');
+const hoursAgo = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString();
+
+/**
+ * The engine's branches as `GIT_BRANCHES` answers them for its repository (GIT1d): its line, a session's and the person's.
+ * Its shape is the bridge's, which `ProjectsView.git.test.tsx` holds it to; a fixture beside the molecules imports none.
+ */
+export const GIT_BRANCHES_ENGINE = {
+  repository: 'engine', workspace: 'default',
+  line: { branch: 'main', source: 'workspace', commit: id('c4f1a2'), origin: id('c4f1a2'), ahead: 0, behind: 0 },
+  fetch: { at: hoursAgo(3), heard: true }, holds: true, missing: [], commands: ['git for-each-ref refs/heads refs/remotes'], problem: null,
+  branches: [
+    { name: 'main', kind: 'line', commit: id('c4f1a2'), at: hoursAgo(2), subject: 'Merge the asset cache', ahead: null, behind: null, tree: null, session: null, landed: null },
+    {
+      name: 'daoris/engine-physics-step', kind: 'session', commit: id('9be03d'), at: hoursAgo(1), subject: 'Fix the physics step on a slow frame',
+      ahead: 2, behind: 1, tree: 'engine-physics-step', session: null, landed: null,
+    },
+    { name: 'spike/renderer', kind: 'yours', commit: id('5d2e77'), at: hoursAgo(80), subject: 'Try a forward renderer', ahead: 4, behind: 9, tree: null, session: null, landed: null },
+  ],
+};
+
+/** The engine's line's history as `GIT_GRAPH` answers its first page: a branch merged in, beside the line, to its root. */
+export const GIT_HISTORY_ENGINE: LoggedCommit[] = [
+  logged('c4f1a2', ['77a0e1', 'a19c5b'], 'Merge the asset cache', 'Mei Lin', 2),
+  logged('a19c5b', ['3e88f0'], 'Cache assets by their content hash', 'Mei Lin', 5),
+  logged('77a0e1', ['3e88f0'], 'Name the frame budget in the settings', 'Sam Ortiz', 7),
+  logged('3e88f0', ['1b07c9'], 'Load assets on a worker', 'Sam Ortiz', 30),
+  logged('1b07c9', [], 'Begin the engine', 'Mei Lin', 400),
+];
+
+/** A commit as `GIT_GRAPH` lists it: what the graph draws, with the author's address and the side of a two-sided walk. */
+type LoggedCommit = GraphCommitRow & { parents: string[]; authorEmail: string; side: string | null };
+
+/** A commit as a graph's page lists it, by short ids made whole, written by an author some hours ago. */
+function logged(commit: string, parents: string[], subject: string, author: string, hours: number): LoggedCommit {
+  const at = hoursAgo(hours);
+  return {
+    commit: id(commit), parents: parents.map(id), author, authorEmail: `${author.split(' ')[0]!.toLowerCase()}@example.invalid`,
+    subject, authoredAt: at, committedAt: at, side: null,
+  };
+}
