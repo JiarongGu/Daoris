@@ -1,4 +1,4 @@
-import { type KeyboardEvent, type ReactNode, useEffect, useId, useRef, useState } from 'react';
+import { type KeyboardEvent, useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { accountName, accountWho } from '../agents/agents';
 import { MAX_FILE_BYTES, MAX_FILES } from '../attachments';
@@ -75,7 +75,7 @@ export function openingRepository(
 export function NewConversation({
   attached = true, repositories, busy = {}, recent = [], remembered, onChoose, harnesses, labels = {}, names = {},
   defaultHarness = '', accounts, scopeOf, draft, onDraft, carried, onCarry, pending = false, refusal, focus = 0, onFocused, onStart,
-  onOpenSession, pickerFoot, pickerOpen = false,
+  onOpenSession, onAdd, onImport, pick, reveal, pickerOpen = false,
 }: {
   /** Whether a shell is here; false is a browser. */
   attached?: boolean;
@@ -123,8 +123,17 @@ export function NewConversation({
   onStart: (start: NewStart) => void;
   /** Attend a session: the one holding a busy checkout. Absent, none is offered. */
   onOpenSession?: (session: string) => void;
-  /** What the repository picker offers at its foot (NEW1c). */
-  pickerFoot?: ReactNode;
+  /** *Add repository…* pressed, at the picker's foot or in the first run: the holder opens its drawer over this (NEW1c). */
+  onAdd?: () => void;
+  /** *Import a folder…*, the same. */
+  onImport?: () => void;
+  /**
+   * A repository the holder just registered, to choose (NEW1c): each new `n` is one ask. It is kept until the registry lists it
+   * with a checkout, which a refetch may do a render later, so the choice is not lost to the order of the two.
+   */
+  pick?: { repository: string; n: number } | null;
+  /** Opens the picker on a workspace's group, after an import that registered several (NEW1c). */
+  reveal?: { workspace: string; n: number } | null;
   /** The repository picker drawn open, for a story. */
   pickerOpen?: boolean;
 }) {
@@ -150,6 +159,15 @@ export function NewConversation({
     onFocused?.();
     // Only a new ask: the callback is read, not watched.
   }, [focus]);
+
+  // A repository the holder registered is chosen, recorded as a press of the picker is, and waits in `chosen` until the
+  // registry lists it: `repository` below falls back to the opening choice for as long as it is not there.
+  useEffect(() => {
+    if (!pick) return;
+    setChosen(pick.repository);
+    onChoose?.(pick.repository);
+    // Only a new ask.
+  }, [pick?.n]);
 
   if (!attached) {
     return <p className="m-0 px-4 py-7 text-center text-body text-ink-soft">{t('work.start.browser')}</p>;
@@ -273,7 +291,22 @@ export function NewConversation({
           recent={recent}
           value={repository}
           onChoose={(next) => { setChosen(next); onChoose?.(next); }}
-          foot={pickerFoot}
+          foot={onAdd || onImport ? (close) => (
+            // Registering is not choosing, and it starts nothing (the design §1): the list goes down, then the drawer comes up.
+            <>
+              {onAdd && (
+                <Button variant="ghost" onClick={() => { close(); onAdd(); }} className="w-full justify-start">
+                  {t('work.start.add')}
+                </Button>
+              )}
+              {onImport && (
+                <Button variant="ghost" onClick={() => { close(); onImport(); }} className="w-full justify-start">
+                  {t('work.start.import')}
+                </Button>
+              )}
+            </>
+          ) : undefined}
+          reveal={reveal}
           defaultOpen={pickerOpen}
         />
 
@@ -365,7 +398,14 @@ export function NewConversation({
         </Button>
       </div>
 
-      {here.length === 0 && <p className="m-0 text-small text-ink-soft">{t('work.start.none')}</p>}
+      {/* A first run (the design §1): Start waits, and the way out is here, not on another page, so the words are kept. */}
+      {here.length === 0 && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <p className="m-0 text-small text-ink-soft">{t('work.start.none')}</p>
+          {onAdd && <Button variant="primary" onClick={onAdd}>{t('work.start.add')}</Button>}
+          {onImport && <Button onClick={onImport}>{t('work.start.import')}</Button>}
+        </div>
+      )}
       {/* What lets a busy checkout start after all, said where it is chosen (UX5 U68): its own tree, or the session holding it.
           Nothing is stopped for it. */}
       {held && repository && (

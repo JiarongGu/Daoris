@@ -31,6 +31,8 @@
   "work.start.outsideMachine": "Not in this machine's list",
   "work.start.go": "Start",
   "work.start.going": "Starting…",
-  "work.start.none": "No repository on this machine has a checkout to talk in. Add one from Repositories.",
+  "work.start.none": "No repository on this machine has a checkout to talk in yet.",
+  "work.start.add": "Add repository…",
+  "work.start.import": "Import a folder…",
   "work.start.browser": "Open Daoris on this machine to start a conversation."
 }

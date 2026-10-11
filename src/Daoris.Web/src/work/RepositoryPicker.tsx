@@ -57,10 +57,11 @@ export function pickerGroups(repositories: readonly StartRepository[], recent: r
  * stays in the field, the arrows move the active row (`aria-activedescendant`), Enter takes it and Escape puts the list down
  * and the focus back on the chip. A menu would take every letter typed as its own type-ahead.
  *
- * **Its foot is the caller's** (`foot`): NEW1c puts *Add a repository…* and *Import a folder…* there, which open the existing
- * drawers with the draft kept.
+ * **Its foot is the caller's** (`foot`): NEW1c puts *Add repository…* and *Import a folder…* there, which open the existing
+ * drawers with the draft kept. A press there closes the list first (`foot` is handed what closes it), so the drawer opens over
+ * a composer with nothing floating. An import that registered several asks the list open on their workspace (`reveal`).
  */
-export function RepositoryPicker({ repositories, busy = {}, recent = [], value, onChoose, foot, defaultOpen = false }: {
+export function RepositoryPicker({ repositories, busy = {}, recent = [], value, onChoose, foot, reveal, defaultOpen = false }: {
   repositories: readonly StartRepository[];
   /** Each repository whose checkout an active session holds, with that session. */
   busy?: Readonly<Record<string, string>>;
@@ -68,8 +69,13 @@ export function RepositoryPicker({ repositories, busy = {}, recent = [], value, 
   recent?: readonly string[];
   value: string | null;
   onChoose: (repository: string) => void;
-  /** What the picker offers below its rows, after a rule (NEW1c). */
-  foot?: ReactNode;
+  /** What the picker offers below its rows, after a rule (NEW1c), given what puts the list down: a press there closes it first. */
+  foot?: (close: () => void) => ReactNode;
+  /**
+   * Opens the list filtered to a workspace's group (NEW1c, an import that registered several): each new `n` is one ask, and an
+   * empty workspace opens it whole.
+   */
+  reveal?: { workspace: string; n: number } | null;
   /** Drawn open, for a story. */
   defaultOpen?: boolean;
 }) {
@@ -117,6 +123,14 @@ export function RepositoryPicker({ repositories, busy = {}, recent = [], value, 
     return () => document.removeEventListener('pointerdown', away);
     // Only opening and closing arm it.
   }, [open]);
+
+  useEffect(() => {
+    if (!reveal) return;
+    setTyped(reveal.workspace);
+    setActive(value);
+    setOpen(true);
+    // Only a new ask: the list is read, not watched.
+  }, [reveal?.n]);
 
   useEffect(() => {
     if (!open || !current) return;
@@ -214,7 +228,7 @@ export function RepositoryPicker({ repositories, busy = {}, recent = [], value, 
               </div>
             ))}
           </div>
-          {foot && <div className="shrink-0 border-t border-line p-1">{foot}</div>}
+          {foot && <div className="shrink-0 border-t border-line p-1">{foot(() => close(false))}</div>}
         </div>
       )}
     </div>

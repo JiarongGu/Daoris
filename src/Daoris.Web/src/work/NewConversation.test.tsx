@@ -263,13 +263,73 @@ describe('a new conversation', () => {
     expect(onStart).not.toHaveBeenCalled();
   });
 
-  it('takes words with no repository to start in, and says how to add one', async () => {
-    const onStart = show({ repositories: [{ name: 'portal', workspace: 'default', checkout: false }] });
+  /** NEW1c, the design's first run: Start waits, and *Add repository…* is the primary press, with *Import a folder…* beside it. */
+  it('takes words with no repository to start in, and offers to add one where it stands', async () => {
+    const onAdd = vi.fn();
+    const onImport = vi.fn();
+    const onStart = show({ repositories: [{ name: 'portal', workspace: 'default', checkout: false }], onAdd, onImport });
     await userEvent.type(prompt(), 'Somewhere{Enter}');
 
     expect(onStart).not.toHaveBeenCalled();
     expect(start()).toBeDisabled();
-    expect(screen.getByText(/No repository on this machine has a checkout to talk in/)).toBeInTheDocument();
+    expect(screen.getByText(/No repository on this machine has a checkout to talk in yet/)).toBeInTheDocument();
+    expect(screen.queryByText(/Add one from Repositories/)).toBeNull();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Import a folder…' }));
+    expect(onImport).toHaveBeenCalledTimes(1);
+    await userEvent.click(screen.getByRole('button', { name: 'Add repository…' }));
+    expect(onAdd).toHaveBeenCalledTimes(1);
+    // The words stay for the registering.
+    expect(prompt()).toHaveValue('Somewhere');
+  });
+
+  /** NEW1c: the picker's foot holds the two presses, and a press puts the list down before its drawer opens. */
+  it('offers Add repository… and Import a folder… at the picker’s foot, closing the list first', async () => {
+    const onAdd = vi.fn();
+    const onImport = vi.fn();
+    show({ onAdd, onImport });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Repository: engine' }));
+    await userEvent.click(within(screen.getByRole('listbox').parentElement!).getByRole('button', { name: 'Add repository…' }));
+    expect(onAdd).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('listbox')).toBeNull();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Repository: engine' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Import a folder…' }));
+    expect(onImport).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
+  /** NEW1c: a registered repository is chosen once the registry lists it, and not before: the choice is kept pending. */
+  it('chooses the repository just added once it is listed', () => {
+    const onChoose = vi.fn();
+    const view = (over: Partial<ComponentProps<typeof NewConversation>>) => (
+      <Tooltip.Provider>
+        <NewConversation
+          repositories={REPOSITORIES} harnesses={['claude-code']} defaultHarness="claude-code" accounts={ACCOUNTS}
+          onStart={vi.fn()} onChoose={onChoose} {...over}
+        />
+      </Tooltip.Provider>
+    );
+    const { rerender } = render(view({ pick: { repository: 'borealis', n: 1 } }));
+    // Not listed yet: the opening choice stands.
+    expect(screen.getByRole('button', { name: 'Repository: engine' })).toBeInTheDocument();
+
+    rerender(view({
+      pick: { repository: 'borealis', n: 1 },
+      repositories: [...REPOSITORIES, { name: 'borealis', workspace: 'default', checkout: true }],
+    }));
+    expect(screen.getByRole('button', { name: 'Repository: borealis' })).toBeInTheDocument();
+    expect(onChoose).toHaveBeenCalledWith('borealis');
+  });
+
+  /** NEW1c: several imported, none chosen for the person: the picker opens on the imported workspace's group. */
+  it('opens the picker on a workspace’s group when asked to reveal it', () => {
+    show({ reveal: { workspace: 'aurora', n: 1 } });
+
+    const list = screen.getByRole('listbox', { name: 'Repository' });
+    expect(within(list).getAllByRole('group').map((group) => group.getAttribute('aria-label'))).toEqual(['aurora']);
+    expect(screen.getByRole('combobox', { name: 'find a repository' })).toHaveValue('aurora');
   });
 
   /** A browser has no shell (D46 §7): no composer, and the place says where a conversation starts. */
