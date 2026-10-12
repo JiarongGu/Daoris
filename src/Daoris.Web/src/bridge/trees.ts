@@ -283,6 +283,8 @@ export const useLanding = (id: string | null, branch?: string | null) => {
     placeholderData: named ? keepPreviousData : undefined,
     queryFn: () => call<{
       session: string; form?: string; target?: string; source?: string; plugin?: string; problem?: string; review?: ReviewWaits | null;
+      /** How many paths the tree holds uncommitted (REVIEWDIRTY1): 0 where clean, absent from an older host. */
+      uncommitted?: number;
       opinion?: OpinionGate | null;
       workflow?: import('../workflow/gate').WorkflowGateState | null;
     }>('LANDING', { id, ...(named ? { branch: named } : {}) }),

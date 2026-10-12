@@ -149,3 +149,75 @@ describe('the review’s forced discard', () => {
     expect(discards()).toEqual([{ id: 's1a2b3c4' }]);
   });
 });
+
+/**
+ * REVIEWDIRTY1-b (D164 point 4): a session tree's uncommitted work is read beside what it committed, under its own heading;
+ * "Nothing landed" is said only where both are empty, and Accept's refusal is said before the press.
+ */
+describe('the review of a tree holding uncommitted work', () => {
+  afterEach(() => { invoke.mockReset(); });
+
+  const UNCOMMITTED = {
+    files: [
+      { path: 'src/report/draft.ts', status: 'modified', added: 2, removed: 1, patch: '@@ -1 +1,2 @@\n-x\n+y\n+z' },
+      { path: 'assets/dump.bin', status: 'A', added: null, removed: null, patch: '' },
+    ],
+    truncated: false,
+  };
+
+  function drive(diff: Record<string, unknown>, plan: Record<string, unknown> = PLAN) {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_DIFF') return { ...DIFF, ...diff };
+      if (type === 'HANDOFF_PLAN') return { session: 's1a2b3c4', branch: null };
+      if (type === 'LANDING') return plan;
+      return {};
+    });
+  }
+
+  it('lists them under their own heading after the committed files, with the same rows and patch', async () => {
+    drive({ uncommitted: UNCOMMITTED });
+    pane();
+
+    expect(await screen.findByText('src/report/compare.ts')).toBeInTheDocument();
+    expect(screen.getByText('Not committed yet · 2 files')).toBeInTheDocument();
+    const draft = screen.getByText('src/report/draft.ts');
+    expect(screen.getByText('src/report/compare.ts').compareDocumentPosition(draft) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    await userEvent.click(draft);
+    expect(await screen.findByText('z')).toBeInTheDocument();
+  });
+
+  it('says why an uncommitted file has no patch, and its truncated line', async () => {
+    drive({ uncommitted: { ...UNCOMMITTED, truncated: true } });
+    pane();
+
+    await userEvent.click(await screen.findByText('assets/dump.bin'));
+    expect(await screen.findByText(/too large, or not text/)).toBeInTheDocument();
+    expect(screen.getByText(/More uncommitted files than are listed/)).toBeInTheDocument();
+  });
+
+  it('says the session committed nothing yet, and never "Nothing landed", where only uncommitted work exists', async () => {
+    drive({ files: [], uncommitted: UNCOMMITTED });
+    pane();
+
+    expect(await screen.findByText('Not committed yet · 2 files')).toBeInTheDocument();
+    expect(screen.getByText(/committed nothing yet/)).toBeInTheDocument();
+    expect(screen.queryByText('Nothing landed')).toBeNull();
+  });
+
+  it('says before the press that Accept will refuse until the files are committed, and leaves Accept pressable', async () => {
+    drive({ uncommitted: UNCOMMITTED }, { ...PLAN, uncommitted: 5 });
+    pane();
+
+    expect(await screen.findByText(/Accept will refuse until the 5 uncommitted files are committed/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Accept' })).toBeEnabled();
+  });
+
+  it('says nothing of it where the plan counts none', async () => {
+    drive({}, { ...PLAN, uncommitted: 0 });
+    pane();
+    expect(await screen.findByRole('button', { name: 'Accept' })).toBeInTheDocument();
+    expect(screen.queryByText(/uncommitted files are committed/)).toBeNull();
+    expect(screen.queryByText(/Not committed yet/)).toBeNull();
+  });
+});
