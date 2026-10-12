@@ -13870,3 +13870,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PROCESS1a — the commit rule** (driver/cli). `commits`/`workspaceCommits` in `driver.json`: `mode` `as-you-go` (default) | `ask` | `at-end`, an optional bounded `convention`; resolved as review is (a repository's whole rule replaces its workspace's), a shared JSON table both twins hold, `daoris driver commits`. D164's amendment point 1.
 
 **Outcome** 2026-10-12: built as the row says: `CommitRules` and its CLI twin `commits.ts` on the shared table `commit-rules.json`; a convention is one paragraph of at most 400 characters; `daoris driver commits … [--mode …] [--convention "…"|--no-convention] | --clear`. Nothing reads it yet: the Setup rows are PROCESS1c's, what sessions are told PROCESS1d's. Detail: D164's PROCESS1a note.
+
+## ACCTWALK3 — among accounts all near, the one with more room first (2026-10-12, D130)
+
+- [x] **ACCTWALK3 — among accounts all near, the one with more room first** (driver). Seen 2026-10-12 on the install: a conversation opened on an account at 99% of its weekly limit, passing one at 60% that was only ahead of its week's pace. The walk followed D130 (near goes last): both were near, the 60% one by its agent's own warning word read the evening before, so near tied and pace chose. Among accounts that are all near, rank by how much of the near window is used, lower first, before fewest running, the lapsing week and pace (`AccountRotation.Rank`, AccountRotation.cs:485-489; `AccountRotation.Next` follows). A D130 amendment; a walk table case from that reading (AccountRotationWalkTests' Choices).
+
+**Outcome** 2026-10-12: built as the row says: `WalkStep.Room` in `Rank` under `goal`, ranking by the account's most used window (no number after any below 100%, reached or 100% last); the start's note gains the reason `room` with its page twin. Detail: D130's ACCTWALK3 note.

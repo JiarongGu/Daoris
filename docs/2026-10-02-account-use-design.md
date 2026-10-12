@@ -816,7 +816,9 @@ handed where it has no reason to change it:
 1. **Keep.** A driven start drops the kept account. A conversation or Ask Daoris takes it last, or first where it is
    also the scope's default (§4.6).
 2. **Near last.** An account whose agent said it is near any window's limit, or drawing on usage credits, goes to the
-   end (§6). On by default.
+   end (§6). On by default. *Among near accounts (ACCTWALK3, D130's note), the one that has used less of its most used
+   window goes first, before step 3; a near account with no number ranks after any with a number below 100%, and one
+   whose limit was reached stays last; equal, or neither said, steps 3 on decide.*
 3. **Fewest running.** Fewest of Daoris's sessions running on it now, counting this look's starts (§4.2, §7).
 4. **Its week lapsing first.** An account whose weekly reset is known and falls within the next day, sooner first.
    Known from the agent's field, or from a weekly limit it already met. A reset a limit told is carried forward a week
