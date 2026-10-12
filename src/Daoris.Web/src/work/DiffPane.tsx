@@ -244,7 +244,9 @@ export function DiffPane({
   const known = own
     ? reviewKnown(own, { title, ownTree: hasTree })
     : { title, repository: null, branch: null, base: null, commits: null, machine: null };
-  const head = <ReviewHead {...known} base={diff.data?.base || known.base} refreshing={refreshing ? since : null} />;
+  const head = (
+    <ReviewHead {...known} base={diff.data?.base || known.base} refreshing={refreshing ? since : null} behind={diff.data?.behind} />
+  );
 
   // Git is reading: the frame, then what is read and for how long over the skeleton. Nothing acts on a tree whose
   // state the answer has not said yet.
@@ -438,6 +440,9 @@ export function DiffPane({
   // The acts are about the TREE, not the diff — so a session that landed NOTHING still gets them.
   // Its tree is real, it is holding a slot, and discarding it is exactly what a person wants next.
   if (files.length === 0 && uncommitted.length === 0) {
+    // A tree whose HEAD the line holds whole (REVIEWBASE1): its work merged and the line checked out, or nothing done yet.
+    // "Nothing landed" would be false where its work did land, so it says what is true either way.
+    const even = diff.data?.behind?.ahead === 0 ? diff.data.behind : null;
     return (
       <section className="flex min-h-0 flex-col">
         {head}
@@ -447,8 +452,8 @@ export function DiffPane({
             <div className="min-h-0 flex-1">
               <EmptyState
                 icon="check"
-                headline={t('work.review.empty.headline')}
-                body={t('work.review.empty.body')}
+                headline={even ? t('work.review.even.headline') : t('work.review.empty.headline')}
+                body={even ? t('work.review.even.body', { line: even.line }) : t('work.review.empty.body')}
               />
             </div>
           </>,

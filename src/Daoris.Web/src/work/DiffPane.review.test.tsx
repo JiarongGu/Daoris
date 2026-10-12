@@ -222,3 +222,54 @@ describe('the review of a tree holding uncommitted work', () => {
     expect(screen.queryByText(/Not committed yet/)).toBeNull();
   });
 });
+
+/**
+ * REVIEWBASE1 (D164's note): the review measures from the newest commit the work shares with the line, and says in its head how
+ * far the latest line the host knows is past the work. A tree that holds nothing beyond the line says so, never "Nothing landed".
+ */
+describe('the review against the latest line', () => {
+  afterEach(() => { invoke.mockReset(); });
+
+  function drive(diff: Record<string, unknown>) {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_DIFF') return { ...DIFF, ...diff };
+      if (type === 'HANDOFF_PLAN') return { session: 's1a2b3c4', branch: null };
+      if (type === 'LANDING') return PLAN;
+      return {};
+    });
+  }
+
+  it('says in its head that the line holds commits the work does not', async () => {
+    drive({ behind: { line: 'main', commits: 3, ahead: 1 } });
+    pane();
+
+    expect(await screen.findByText(/has 3 commits this work does not: it is not based on the latest/)).toBeInTheDocument();
+    expect(screen.getByText('src/report/compare.ts')).toBeInTheDocument();
+  });
+
+  it('says nothing of the line where the work is based on its latest', async () => {
+    drive({ behind: { line: 'main', commits: 0, ahead: 1 } });
+    pane();
+
+    expect(await screen.findByText('src/report/compare.ts')).toBeInTheDocument();
+    expect(screen.queryByText(/not based on the latest/)).toBeNull();
+  });
+
+  it('says a tree that holds nothing beyond the line holds nothing beyond it, never "Nothing landed"', async () => {
+    drive({ files: [], behind: { line: 'main', commits: 0, ahead: 0 } });
+    pane();
+
+    expect(await screen.findByText('Nothing beyond the line')).toBeInTheDocument();
+    expect(screen.getByText(/holds nothing/)).toHaveTextContent('Its tree holds nothing main does not, so there is no diff to read.');
+    expect(screen.queryByText('Nothing landed')).toBeNull();
+  });
+
+  it('says "Nothing landed" as before where the tree holds commits beyond the line and none of its own', async () => {
+    // A chain's step that made no commit yet: measured from its parent's tip, past the line.
+    drive({ files: [], behind: { line: 'main', commits: 0, ahead: 2 } });
+    pane();
+
+    expect(await screen.findByText('Nothing landed')).toBeInTheDocument();
+    expect(screen.queryByText('Nothing beyond the line')).toBeNull();
+  });
+});

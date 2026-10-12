@@ -47,6 +47,43 @@ describe('ReviewHead', () => {
 
     expect(screen.getByRole('status').textContent).toBe('reading again… 12s');
   });
+
+  /** REVIEWBASE1 (D164's note): the latest line the host knows holds commits this work does not, so the work is not based on it. */
+  it('says the line has commits this work does not, and where to bring it up to date', () => {
+    const { container } = render(<ReviewHead {...KNOWN} behind={{ line: 'main', commits: 3, ahead: 1 }} />);
+
+    expect(container.textContent).toContain(
+      'main has 3 commits this work does not: it is not based on the latest main. '
+      + "Updates, on its workspace's Branches, says whether it can be brought up to date.",
+    );
+    // The line's name is code, as a branch is named.
+    expect(container.querySelectorAll('code')).toHaveLength(2);
+  });
+
+  it('says one commit as one', () => {
+    const { container } = render(<ReviewHead {...KNOWN} behind={{ line: 'main', commits: 1, ahead: 0 }} />);
+
+    expect(container.textContent).toContain('main has 1 commit this work does not');
+  });
+
+  it('says nothing of the line where it holds nothing this work does not, or was not read', () => {
+    const { container: even } = render(<ReviewHead {...KNOWN} behind={{ line: 'main', commits: 0, ahead: 2 }} />);
+    const { container: unread } = render(<ReviewHead {...KNOWN} behind={null} />);
+
+    expect(even.textContent).not.toContain('not based on the latest');
+    expect(unread.textContent).not.toContain('not based on the latest');
+  });
+
+  it('says it in 中文', () => {
+    const { container } = render(
+      <I18nextProvider i18n={i18n.cloneInstance({ lng: 'zh' })}>
+        <ReviewHead {...KNOWN} behind={{ line: 'main', commits: 3, ahead: 1 }} />
+      </I18nextProvider>,
+    );
+
+    expect(container.textContent).toContain('main 有 3 个提交是这份工作没有的：它不是基于最新的 main。');
+    expect(container.textContent).toContain('「更新」会说明它能否更新到最新。');
+  });
 });
 
 describe('ReviewReading', () => {

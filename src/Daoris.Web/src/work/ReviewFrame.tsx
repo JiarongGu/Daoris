@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence, span } from '../format';
 import { cn } from '../lib/cn';
-import { Button, EmptyState, type IconName, Segmented } from '../ui';
-import { type DiffFile, REVIEW_BOUND_MINUTES, type ReviewKnown } from './diff';
+import { Button, EmptyState, type IconName, Inline, Segmented } from '../ui';
+import { type DiffFile, type LineBehind, REVIEW_BOUND_MINUTES, type ReviewKnown } from './diff';
 import { DiffFileRow } from './DiffFileRow';
 import type { DiffLayout } from './PatchView';
 
@@ -58,10 +58,16 @@ function Reading({ words, since, className }: { words: string; since?: number | 
  *
  * **A newer read in flight is said here**, beside the facts, while the last answer below it is held dimmed (D41's
  * loading rule): the head is the one line every loaded state shares.
+ *
+ * **Work not based on the latest line is said here** (REVIEWBASE1, D164's note): where the latest line the host knows has commits
+ * the work does not, one line names the line, how many, and *Updates*, the door that says whether the tree can be brought up to
+ * date (WSR6). Nothing is said where it has none, or the line was not read.
  */
-export function ReviewHead({ title, repository, branch, base, commits, refreshing }: ReviewKnown & {
+export function ReviewHead({ title, repository, branch, base, commits, refreshing, behind }: ReviewKnown & {
   /** When a newer read began, while one is on its way and the last answer is still shown. */
   refreshing?: number | null;
+  /** How the tree stands against its line, from the review's answer: absent before it answers, null where not read. */
+  behind?: LineBehind | null;
 }) {
   const { t } = useTranslation();
   const facts = [
@@ -71,7 +77,8 @@ export function ReviewHead({ title, repository, branch, base, commits, refreshin
     commits ? <span key="commits" className="tabular-nums">{t('work.review.commits', { count: commits })}</span> : null,
   ].filter((fact) => fact !== null);
   const reading = refreshing !== null && refreshing !== undefined;
-  if (!title && facts.length === 0 && !reading) return null;
+  const past = behind && behind.commits > 0 ? behind : null;
+  if (!title && facts.length === 0 && !reading && !past) return null;
 
   return (
     <header className="grid shrink-0 gap-0.5 border-b border-line px-3 py-2">
@@ -83,6 +90,11 @@ export function ReviewHead({ title, repository, branch, base, commits, refreshin
             ? [fact]
             : [<span key={`between-${index}`} aria-hidden>·</span>, fact]))}
           {reading && <Reading words={t('work.review.readingAgain')} since={refreshing} className="ml-auto" />}
+        </p>
+      )}
+      {past && (
+        <p className="m-0 mt-1 border-l-[3px] border-warn pl-2 text-meta text-ink-soft">
+          <Inline text={t('work.review.behind', { line: past.line, count: past.commits })} />
         </p>
       )}
     </header>

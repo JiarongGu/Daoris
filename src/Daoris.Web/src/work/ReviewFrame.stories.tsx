@@ -1,9 +1,11 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { type ReactNode, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../storyLanguage';
-import type { DiffFile, ReviewKnown } from './diff';
+import { EmptyState } from '../ui';
+import type { DiffFile, LineBehind, ReviewKnown } from './diff';
 import type { DiffLayout } from './PatchView';
 import { ReviewFailed, ReviewFiles, ReviewHead, ReviewReading } from './ReviewFrame';
 
@@ -40,13 +42,13 @@ function Pane({ children }: { children: ReactNode }) {
 }
 
 /** The loaded review with the reader's marks held as the pane holds them; the first file open on its patch. */
-function Loaded({ refreshing = null }: { refreshing?: number | null }) {
+function Loaded({ refreshing = null, behind = null }: { refreshing?: number | null; behind?: LineBehind | null }) {
   const [open, setOpen] = useState<Record<string, boolean>>({ [FILES[0]!.path]: true });
   const [viewed, setViewed] = useState<Record<string, boolean>>({});
   const [layout, setLayout] = useState<DiffLayout>('unified');
   return (
     <Pane>
-      <ReviewHead {...KNOWN} refreshing={refreshing} />
+      <ReviewHead {...KNOWN} refreshing={refreshing} behind={behind} />
       <div aria-busy={refreshing !== null || undefined} className={cn('flex min-h-0 flex-1 flex-col', refreshing !== null && 'opacity-60')}>
         <ReviewFiles
           files={FILES}
@@ -217,3 +219,32 @@ export const ReadingAgain: Story = { render: () => <Loaded refreshing={Date.now(
 
 /** Reading again, in dark. */
 export const ReadingAgainDark: Story = { ...ReadingAgain, decorators: [dark] };
+
+/**
+ * Work not based on the latest line (REVIEWBASE1): the line the host knows has 7 commits this work does not, said under the facts
+ * with *Updates*, the door that says whether the tree can be brought up to date.
+ */
+export const BehindTheLine: Story = { render: () => <Loaded behind={{ line: 'main', commits: 7, ahead: 4 }} /> };
+
+/** Behind the line, in dark. */
+export const BehindTheLineDark: Story = { ...BehindTheLine, decorators: [dark] };
+
+/** Behind the line, in 中文. */
+export const BehindTheLineChinese: Story = { ...BehindTheLine, decorators: [chinese] };
+
+/** A tree whose HEAD the line holds whole, as the review's pane says it: its work merged, then the line checked out. */
+function NothingBeyond() {
+  const { t } = useTranslation();
+  return (
+    <Pane>
+      <ReviewHead {...KNOWN} base="9c41e07d2b5a8f13" commits={null} />
+      <EmptyState icon="check" headline={t('work.review.even.headline')} body={t('work.review.even.body', { line: 'main' })} />
+    </Pane>
+  );
+}
+
+/** Nothing beyond the line (REVIEWBASE1), where "Nothing landed" would be false. */
+export const NothingBeyondTheLine: Story = { render: () => <NothingBeyond /> };
+
+/** Nothing beyond the line, in 中文. */
+export const NothingBeyondTheLineChinese: Story = { ...NothingBeyondTheLine, decorators: [chinese] };
