@@ -1118,14 +1118,16 @@ test('`agent list` says the next start\'s steps beneath each list, and where the
   });
 
   assert.match(out, new RegExp('rotation\\s+account-1, then account-2, then account-3\\n(?:.*\\n)*?'
-    + '\\s+next start: the ready account its agent did not say is near; then the one running the fewest of Daoris\'s sessions; '
-    + 'then one whose week resets within a day; then the one furthest behind its week\'s pace; then the one Daoris started on '
-    + 'least recently; then this list\'s order, from `account-1`\\n'
+    + '\\s+next start: the ready account running the fewest of Daoris\'s sessions; then one whose week resets within a day; '
+    + 'then the one with the most room under its curve; then the one Daoris started on least recently; then this list\'s '
+    + 'order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over its curve goes '
+    + 'last, the least over first\\n'
     + '\\s+no account has said what it has left yet: Daoris spreads starts across them by its own sessions, and learns each '
     + 'account\'s weekly reset from the limits it meets\\n'
     + `\\s+${POINTER}\\n`));
   assert.match(out, new RegExp('rotation in work account-2, then account-1\\n(?:.*\\n)*?'
-    + '\\s+next start: the first ready account of this list, from `account-2`; one its agent said is near goes last\\n'
+    + '\\s+next start: the first ready account of this list, from `account-2`; one whose limit is reached, that draws on usage '
+    + 'credits or whose use is over its curve goes last\\n'
     + `\\s+${POINTER}\\n`));
   // Never a guessed account: nothing is held, and no line names the account a step would choose.
   assert.doesNotMatch(out, /held now|waits until|next start takes|next start runs on/);
@@ -1186,6 +1188,7 @@ test('`agent list` says the machine\'s next start where it has no list: its defa
  * CODEXUSE1b: the driver reads a Codex account's windows from Codex's own app server and keeps them as a door's frame is
  * kept (CODEXUSE1, `docs/2026-10-07-codex-usage-evidence.md`), so `agent list` printed the reading beneath the account and
  * still said, beneath its list, that Codex's sessions do not say how near their limits are, and walked without near and pace.
+ * Since SWITCH1b-iii the walk's words are the curve's: what passes an account, and the most room under its curve.
  */
 test('`agent list` reads a Codex account\'s kept reading as one that speaks: its use and next-start lines weigh its week (CODEXUSE1b)', () => {
   const fx = makeFixture('harness-list-codex');
@@ -1206,12 +1209,14 @@ test('`agent list` reads a Codex account\'s kept reading as one that speaks: its
 
   assert.match(codex, /account-1[^\n]*\n\s+said 20 min ago: 1% of its session limit used, resetting [^;]+; 15% of its weekly limit used, resetting [^\n]+\n/);
   assert.match(codex, new RegExp('rotation\\s+account-1, then account-2\\n(?:.*\\n)*?'
-    + '\\s+switch before the limit: smart, at 90% — a start passes an account Codex says is near its limit, or that has used 90% of a window\\n'
-    + '\\s+next start: the ready account its agent did not say is near; then the one running the fewest of Daoris\'s sessions; '
-    + 'then one whose week resets within a day; then the one furthest behind its week\'s pace; then the one Daoris started on '
-    + 'least recently; then this list\'s order, from `account-1`\\n'
+    + '\\s+switch before the limit: smart — a start passes an account whose limit is reached, that draws on usage credits, or '
+    + 'whose use is over Daoris\'s smart curve\\n'
+    + '\\s+next start: the ready account running the fewest of Daoris\'s sessions; then one whose week resets within a day; '
+    + 'then the one with the most room under its curve; then the one Daoris started on least recently; then this list\'s '
+    + 'order, from `account-1`; one whose limit is reached, that draws on usage credits or whose use is over its curve goes '
+    + 'last, the least over first\\n'
     + `\\s+${POINTER}\\n`));
-  assert.doesNotMatch(codex, /do not say how near their limits are|no account has said what it has left yet/);
+  assert.doesNotMatch(codex, /do not say how much of each window is used|no account has said what it has left yet/);
   fx.cleanup();
 });
 

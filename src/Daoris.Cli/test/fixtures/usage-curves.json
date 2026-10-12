@@ -1,0 +1,38 @@
+{
+  "about": "The usage curve (D165 point 2; the switch design §2, §3 and §5; SWITCH1b-iii): how much of each window an account may have used by now, and whether what its agent said is over that. The table both twins hold, the CLI's usagecurves.ts and the driver's UsageCurves.cs, row for row: `usagecurves.test.ts` and `UsageCurvesTwinTests.cs`. Every row is read at `now`. A scope is its switch and its curve, the curve's JSON as `harnesses.json` holds it, null for none. A `value` row is a window and its reset, and the curve's value there now in percent, null where this build has no curve for the window; compared to six places. A `tightest` row is what an account's agent said, each window as [name, used from 0 to 1 or null, reset], then the window with the least room under its curve now, the curve's value there and that room, null where no window it said is measured; then the clause the said line adds where that room is below zero, the curve's value as a whole percent, a half away from zero, and null where it is not over.",
+  "now": "2026-10-13T12:00:00Z",
+  "value": [
+    ["the smart five-hour window is flat at 90", "smart", null, "session", "2026-10-13T13:00:00Z", 90],
+    ["the smart five-hour window at its reset is still 90", "smart", null, "session", "2026-10-13T12:00:00Z", 90],
+    ["the smart week begins at 20", "smart", null, "weekly", "2026-10-20T12:00:00Z", 20],
+    ["the smart week is its pace plus 20: half gone, 70", "smart", null, "weekly", "2026-10-17T00:00:00Z", 70],
+    ["the smart week with 43% gone is 63", "smart", null, "weekly", "2026-10-17T11:45:36Z", 63],
+    ["the smart week reaches 95 at three-quarters gone", "smart", null, "weekly", "2026-10-15T06:00:00Z", 95],
+    ["the smart week never goes above 95", "smart", null, "weekly", "2026-10-14T04:48:00Z", 95],
+    ["a reset further off than the window reads as a window just begun", "smart", null, "weekly", "2026-10-22T12:00:00Z", 20],
+    ["a reset passed reads as the window's end", "smart", null, "session", "2026-10-13T11:00:00Z", 90],
+    ["under curve, the person's points joined by straight lines", "curve", {"session": [[0, 50], [100, 95]]}, "session", "2026-10-13T14:30:00Z", 72.5],
+    ["under curve, a middle point of three", "curve", {"weekly": [[0, 30], [50, 70], [100, 100]]}, "weekly", "2026-10-15T06:00:00Z", 85],
+    ["under curve, flat before the first point", "curve", {"weekly": [[20, 10], [60, 50]]}, "weekly", "2026-10-19T19:12:00Z", 10],
+    ["under curve, flat after the last point", "curve", {"weekly": [[20, 10], [60, 50]]}, "weekly", "2026-10-14T04:48:00Z", 50],
+    ["under curve, one point is a flat line", "curve", {"session": [[0, 40]]}, "session", "2026-10-13T14:30:00Z", 40],
+    ["under curve, a window the person left out takes the smart curve", "curve", {"weekly": [[0, 30], [100, 60]]}, "session", "2026-10-13T13:00:00Z", 90],
+    ["under smart, the person's kept points are not read", "smart", {"session": [[0, 40]]}, "session", "2026-10-13T13:00:00Z", 90],
+    ["under off, the smart curve, since a start still passes an account over it", "off", {"weekly": [[0, 10]]}, "weekly", "2026-10-17T00:00:00Z", 70],
+    ["a window this build has no curve for has no value", "smart", null, "60-minute", "2026-10-13T12:30:00Z", null],
+    ["a window's name is read exactly: another case has no curve", "smart", null, "Session", "2026-10-13T13:00:00Z", null]
+  ],
+  "tightest": [
+    ["the window with the least room is the tightest, and room left is not over", "smart", null, [["session", 0.4, "2026-10-13T13:00:00Z"], ["weekly", 0.8, "2026-10-15T06:00:00Z"]], {"window": "weekly", "curve": 95, "room": 15}, null],
+    ["over its weekly curve, said with the curve's value now", "smart", null, [["session", 0.2, "2026-10-13T13:00:00Z"], ["weekly", 0.7, "2026-10-17T11:45:36Z"]], {"window": "weekly", "curve": 63, "room": -7}, "over its weekly curve's 63%"],
+    ["exactly on its curve is not over it", "smart", null, [["session", 0.9, "2026-10-13T13:00:00Z"]], {"window": "session", "curve": 90, "room": 0}, null],
+    ["one point over its curve is over it", "smart", null, [["session", 0.91, "2026-10-13T13:00:00Z"]], {"window": "session", "curve": 90, "room": -1}, "over its session curve's 90%"],
+    ["a window with no number is not measured", "smart", null, [["session", null, "2026-10-13T13:00:00Z"], ["weekly", 0.1, "2026-10-17T00:00:00Z"]], {"window": "weekly", "curve": 70, "room": 60}, null],
+    ["no number at all is no tightest window", "smart", null, [["session", null, "2026-10-13T13:00:00Z"]], null, null],
+    ["a window this build has no curve for is not measured, so its number passes nothing", "smart", null, [["60-minute", 0.99, "2026-10-13T12:30:00Z"]], null, null],
+    ["under curve, the person's points", "curve", {"session": [[0, 50]]}, [["session", 0.6, "2026-10-13T13:00:00Z"]], {"window": "session", "curve": 50, "room": -10}, "over its session curve's 50%"],
+    ["under off, the smart curve and not the person's points", "off", {"session": [[0, 50]]}, [["session", 0.6, "2026-10-13T13:00:00Z"]], {"window": "session", "curve": 90, "room": 30}, null],
+    ["a tie keeps the window said first", "smart", null, [["session", 0.8, "2026-10-13T13:00:00Z"], ["weekly", 0.6, "2026-10-17T00:00:00Z"]], {"window": "session", "curve": 90, "room": 10}, null],
+    ["the curve's value is said as a whole percent, a half away from zero", "curve", {"session": [[0, 0], [100, 1]]}, [["session", 0.01, "2026-10-13T14:30:00Z"]], {"window": "session", "curve": 0.5, "room": -0.5}, "over its session curve's 1%"]
+  ]
+}

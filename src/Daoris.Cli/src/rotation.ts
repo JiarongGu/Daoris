@@ -55,10 +55,11 @@
 //      driven work another — the first problem said. Nothing counts accounts: no list is refused for its length. A curve
 //      that breaks its rules is refused in `curveProblem`'s sentence, the driver's word for word.
 //
-// The driver's walk reads them (TOOL6b, TOOL6c): `use` and `keep` choose a start's account; until SWITCH1b moves the walk
-// to the curve, it passes an account its agent said is near by `early` and `near`, derived from the switch and the curve
-// (`RotationUse`), where the agent's door carries that word or its own server is asked it (`windows.json`, the
-// toolchain's `windows`; CODEXUSE1).
+// The driver's walk reads them (TOOL6b, TOOL6c): `use` and `keep` choose a start's account, and since SWITCH1b-ii the switch
+// and the curve pass an account over its curve, where the agent's door carries its windows or its own server is asked them
+// (`windows.json`, the toolchain's `windows`; CODEXUSE1). The curve is measured by `usagecurves.ts`, the driver's
+// `UsageCurves`' twin, which `profile use`'s said line reads (SWITCH1b-iii). `early` and `near` stay derived, as the
+// driver's `RotationUse` keeps them for the doors that still speak them, and nothing here reads them.
 
 import { atName, byName, findName, foldName } from './casefold.ts';
 import { shellWord } from './shellword.ts';
@@ -310,16 +311,19 @@ export interface RotationUse {
   switch: Switch;
   /** The person's curve, its windows in `CURVE_WINDOWS`' order; none is `{}`. */
   curve: Curve;
-  /** Derived, as the walk reads it until SWITCH1b (D165 §6): *switch before the limit*, the switch not `off`. */
+  /**
+   * Derived, as the old name reads (D165 §6): *switch before the limit*, the switch not `off`. The walk reads the switch
+   * since SWITCH1b-ii; the twin table keeps this for the doors that still speak it.
+   */
   early: boolean;
   /**
-   * Derived, as the walk reads it until SWITCH1b: where an account is near, as a percent of a window, where its agent gives
-   * only a number — the session window's one point under `curve`, else the smart curve's 90.
+   * Derived, as the old name reads: the session window's one point under `curve`, else the smart curve's 90. The walk reads
+   * the curve since SWITCH1b-ii (`usagecurves.ts`); the twin table keeps this for the doors that still speak it.
    */
   near: number;
 }
 
-/** The settings as chosen, the walk's two read beside them (D165 §6). */
+/** The settings as chosen, the old names' two derived beside them (D165 §6). */
 function useOf(chosen: Pick<RotationUse, UseField>): RotationUse {
   const session = chosen.curve.session;
   return {
