@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- Review measures a session's work from the newest commit it shares with its line, so work merged on the line since the
+  session began is no longer shown as the session's, and a tree that holds nothing beyond the line says so; where the line
+  has commits the work does not, the review's head says it is not based on the latest line, in both languages.
 - `daoris agent profile use` takes when to switch accounts, `--switch smart|curve|off`, and your own curve per window,
   `--curve session=0:85` or `--curve weekly=0:30,50:70,100:100` (`--no-curve` takes it out), and prints both; a curve that
   breaks its rules is refused saying which window, which point and why. `--early` and `--near` still work as the old names,

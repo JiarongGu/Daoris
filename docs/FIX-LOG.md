@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-13 — Review showed the line's own changes as a session's work once its tree took in the line (REVIEWBASE1)
+
+- **Symptom:** on the install, a conversation whose work two pull requests had merged, its tree then switched to the latest line
+  (`git switch --detach origin/<line>`), so its HEAD held nothing of its own: Review listed 26 files (+719/−75), everything merged
+  on the line since the session began, as the session's work.
+- **Root cause:** `SessionTrees.ReviewBaseAsync` returned the record's base commit whenever it was still in HEAD's history, and
+  fell back only where it was not (WSR6's replay). A tree that took in newer line commits (merged them, rebased onto them, or
+  checked the line out) still held its old grow point, so the review measured from there.
+- **Fix:** the base is the newest commit the work shares with the line: among `merge-base HEAD <line>`, `merge-base HEAD
+  origin/<line>` and the record's base (or the grown ledger's, as before), the one the others reach, chosen by
+  `merge-base --independent` and `ReviewBase.Newest`. `SESSION_DIFF` gains `behind` (the latest known line's commits the tree does
+  not hold, and the tree's beyond it), and the review's head says when the work is not based on the latest line. D164's
+  REVIEWBASE1 note.
+- **Verify:** `ReviewBaseChoiceTests` (driver, fast half), `DriverModuleTreesTests`' `behind` cases, the page's `ReviewFrame` and
+  `DiffPane.review` tests; `ReviewBaseTests` (driver, Process half: merged, rebased, detached at the line, fast-forwarded, behind
+  with its own commits, base gone) for the merge to run.
+
 ## 2026-10-12 — a landing branch was named from a web address in the title (LANDNAME2, built by PROCESS1b-i)
 
 - **Symptom:** *Accept* would have put a report's work on `feature/https-…-browse-a267d192`: the session's title was its

@@ -95,7 +95,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 95 | 1729 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionEvents.cs` | 42 | 907 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionGroups.cs` | 60 | 1081 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.Sync.cs` | 69 | 1158 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.Sync.cs` | 74 | 1234 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.cs` | 92 | 1568 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionsCommand.cs` | 63 | 1239 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/StagedBuild.cs` | 46 | 959 |
@@ -111,7 +111,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs` | 51 | 921 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs` | 65 | 1189 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Help.cs` | 55 | 949 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Trees.cs` | 43 | 771 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Trees.cs` | 43 | 776 |
 
 ### Service (`service`)
 

@@ -363,7 +363,7 @@
         "quests.empty.headlineAll", "quests.empty.headlineFor", "quests.gone.headline", "quests.none.headline",
         "search.emptyHeadline", "search.gone.headline", "search.none.headline", "search.nothingHeadline",
         "work.archived.none", "work.attended.none.headline", "work.detached.gone.headline",
-        "work.monitor.empty.headline", "work.rail.empty.headline", "work.review.empty.headline",
+        "work.monitor.empty.headline", "work.rail.empty.headline", "work.review.empty.headline", "work.review.even.headline",
         "work.review.failed.headline.*", "work.review.none.headline", "work.start.prompt"
       ]
     },

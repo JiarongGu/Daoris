@@ -95,7 +95,10 @@ export type LandedWork = {
 
 export type SessionDiff = {
   session: string;
-  /** The commit the range is measured from — recorded at spawn, so it is a fact. Empty where no range was read. */
+  /**
+   * The commit the range is measured from: the newest the work shares with its line, or the one its record says it began at where
+   * that is newer (REVIEWBASE1). Empty where no range was read.
+   */
   base: string;
   /** What the bound dropped, in the host's own words, or null when nothing was. */
   truncated: string | null;
@@ -113,4 +116,13 @@ export type SessionDiff = {
    * Absent or null where nothing is uncommitted or the files were read from a branch; a host older than REVIEWDIRTY1 names none.
    */
   uncommitted?: { files: DiffFile[]; truncated: boolean } | null;
+  /**
+   * How the session's own tree stands against the latest its line is known on this machine, the branch and its copy on origin
+   * together, as the last fetch left them (REVIEWBASE1, D164's note). Absent or null where the files were read from a branch or the
+   * line could not be read; a host older than REVIEWBASE1 names none.
+   */
+  behind?: LineBehind | null;
 };
+
+/** The line's name, the commits it has that the tree does not, and the commits the tree has beyond it (REVIEWBASE1). */
+export type LineBehind = { line: string; commits: number; ahead: number };
