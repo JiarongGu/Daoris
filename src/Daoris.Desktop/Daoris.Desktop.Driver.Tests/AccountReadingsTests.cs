@@ -50,7 +50,7 @@ public sealed class AccountReadingsTests
             Assert.Contains(frames, frame => frame.TryGetProperty("unifiedWindows", out var windows) && windows.TryGetProperty(window, out _));
         }
 
-        foreach (var word in Claude.Clear.Concat(Claude.Near).Concat(Claude.Refused))
+        foreach (var word in Claude.Clear.Concat(Claude.Warned).Concat(Claude.Refused))
         {
             Assert.Contains(frames, frame => Status(frame) == word);
         }
@@ -97,8 +97,9 @@ public sealed class AccountReadingsTests
     {
         // { status, the window it names, standing }
         { "allowed", "five_hour", "clear" },
-        { "allowed_warning", "five_hour", "near" },
-        { "allowed_warning", "seven_day", "near" },
+        // Claude Code's own pace warning (USAGEREAD3a, design §1.3): kept as the agent's warning, never as near.
+        { "allowed_warning", "five_hour", "warned" },
+        { "allowed_warning", "seven_day", "warned" },
         { "rejected", "seven_day", "refused" },
         // A word the table does not read says no standing; the numbers still stand.
         { "allowed_soon", "five_hour", null },
@@ -159,9 +160,11 @@ public sealed class AccountReadingsTests
             Read(frame));
     }
 
-    // ——— Near (§6 as the evidence corrects it): the agent's word, drawing on usage credits, or a window's use at or over
-    // the scope's *near*. Claude Code's `allowed` came at 88% with two hours left (evidence §1.3), so its word alone would
-    // pass nothing a number says; the number, which comes on every frame, is the agent's word too.
+    // ——— Near (§6 as the evidence corrects it): the agent's word that a limit was reached, drawing on usage credits, or a
+    // window's use at or over the scope's *near*. Claude Code's `allowed` came at 88% with two hours left (evidence §1.3), so
+    // its word alone would pass nothing a number says; the number, which comes on every frame, is the agent's word too. Its
+    // `allowed_warning` is its own pace warning, use ahead of the time gone in a window (USAGEREAD3a, account-switch design
+    // §1.3): kept as `warned`, and never near alone, as an account at 60% of a week 22% gone was passed by it on the install.
 
     private static AccountSaid Said(params WindowSaid[] windows) => new(windows);
 
@@ -175,12 +178,15 @@ public sealed class AccountReadingsTests
         { "session 0.88 clear", 85, true },
         { "session 0.90 clear", 90, true },
         { "session 0.30 clear, weekly 0.95", 90, true },
-        // By the agent's word, whatever the number.
-        { "session 0.10 near", 90, true },
+        // By the agent's word that a limit was reached, whatever the number; by credits.
         { "weekly 0.40 refused", 90, true },
         { "session 0.10 clear credits", 90, true },
-        { "session - near", 99, true },
         { "session 0.10 clear, weekly 0.20", 50, false },
+        // Its pace warning is not near alone (USAGEREAD3a): the number decides, as it does for a clear word.
+        { "session 0.10 warned", 90, false },
+        { "session - warned", 99, false },
+        { "weekly 0.60 warned", 90, false },
+        { "session 0.95 warned", 90, true },
     };
 
     [Theory]
@@ -188,6 +194,19 @@ public sealed class AccountReadingsTests
     public void Near_by_the_agent_s_word_by_credits_and_by_percent(string written, int near, bool expected)
     {
         Assert.Equal(expected, AccountReadings.Near(Parse(written), near));
+    }
+
+    /// <summary>
+    /// USAGEREAD3a: a near account is near by a limit reached, by credits or by its number, and never by a warning word, so
+    /// the page's <c>near[].by</c> and the start's reason name no word.
+    /// </summary>
+    [Fact]
+    public void Near_is_by_a_limit_reached_by_credits_or_by_the_number_and_never_by_a_warning()
+    {
+        Assert.Equal(["Refused", "Credits", "Number"], Enum.GetNames<NearBy>());
+        Assert.Equal(
+            (AccountWindows.Weekly, NearBy.Number),
+            AccountReadings.NearWindow(Parse("session 0.10 warned, weekly 0.95"), 90) is { } near ? (near.Window.Window, near.By) : default);
     }
 
     [Fact]
@@ -201,10 +220,12 @@ public sealed class AccountReadingsTests
     [Theory]
     [InlineData("session 0.88 clear", 90, "clear")]
     [InlineData("session 0.88 clear", 85, "near")]
-    [InlineData("session 0.10 near", 90, "near")]
     [InlineData("session 0.10 clear credits", 90, "near")]
     [InlineData("weekly 0.40 refused", 90, "refused")]
-    public void Its_standing_for_the_log_is_refused_near_or_clear(string written, int near, string standing)
+    // Warned and not near is its own word in the log (USAGEREAD3a); warned and near by its number is near.
+    [InlineData("session 0.10 warned", 90, "warned")]
+    [InlineData("session 0.95 warned", 90, "near")]
+    public void Its_standing_for_the_log_is_refused_near_warned_or_clear(string written, int near, string standing)
     {
         Assert.Equal(standing, AccountReadings.Standing(Parse(written), near));
     }
@@ -232,7 +253,7 @@ public sealed class AccountReadingsTests
     public void A_week_whose_use_was_not_said_has_no_pace()
     {
         Assert.Null(AccountReadings.Behind(Said(Window("session", 0.3)), Now));
-        Assert.Null(AccountReadings.Behind(Said(Window("weekly", null, standing: "near")), Now));
+        Assert.Null(AccountReadings.Behind(Said(Window("weekly", null, standing: "warned")), Now));
     }
 
     /// <summary><c>session 0.88 clear, weekly 0.95</c>; <c>-</c> for no use said; <c>credits</c> drawing on usage credits.</summary>
@@ -241,7 +262,7 @@ public sealed class AccountReadingsTests
         {
             var words = part.Split(' ');
             var used = words[1] == "-" ? (double?)null : double.Parse(words[1], CultureInfo.InvariantCulture);
-            var standing = words.Length > 2 && words[2] is "clear" or "near" or "refused" ? words[2] : null;
+            var standing = words.Length > 2 && words[2] is "clear" or "warned" or "refused" ? words[2] : null;
             return Window(words[0], used, standing, credits: words.Contains("credits"));
         })]);
 }

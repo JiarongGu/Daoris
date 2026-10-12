@@ -157,6 +157,29 @@ describe('noteLines', () => {
       ].map((text) => ({ kind: 'said', text })));
     });
 
+    /**
+     * USAGEREAD3a: the agent's pace warning is its own line, never near; a line written before, `opening.said-near`, and the
+     * step it named, `near-word`, keep being worded as they were.
+     */
+    it('words the agent’s pace warning as its own line, and keeps a near line written before, in either language', () => {
+      const warned = [
+        coded('opening.said-at', '`account-1` 10 min ago', { account: 'account-1', seen }),
+        coded('opening.said-warned', 'ahead of its pace on its weekly window, by its own word', { window: 'weekly' }),
+      ];
+      const before = [
+        coded('opening.opened', 'opened on `account-2`: …', { account: 'account-2', why: 'near-word', over: 'account-1', window: 'session' }),
+        coded('opening.said-near', 'near its session limit, by its own word', { window: 'session' }),
+      ];
+
+      expect(noteLines(t, { parts: warned }, 'en')[1]).toEqual({ kind: 'said', text: 'It said it is ahead of its pace on its weekly window.' });
+      expect(noteLines(zh, { parts: warned }, 'zh')[1]).toEqual({ kind: 'said', text: '它说每周的用量超前于节奏。' });
+      expect(noteLines(t, { parts: before }, 'en').map((line) => line.text)).toEqual([
+        'Opened on `account-2`: `account-1` said it is near its five-hour limit.',
+        'It said it is near its five-hour limit.',
+      ]);
+      expect(noteLines(zh, { parts: before }, 'zh')[1]).toEqual({ kind: 'said', text: '它说接近5 小时上限。' });
+    });
+
     it('words a passed account’s cool-off with its reset and its own reason, and a workspace’s list by name', () => {
       const cooling = coded('opening.opened', 'opened on `account-2`: …', {
         account: 'account-2', why: 'cooling', agent: 'claude-code', over: 'account-1', until: '2026-10-03T18:00:00Z', cooling: 'stated',

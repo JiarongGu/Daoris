@@ -17,6 +17,8 @@
 //   3. A window whose `reset` is not after now is gone: a reading is a floor as of when it was said, and lasts to its reset.
 //   4. Names compare without case as the driver's `OrdinalIgnoreCase` does (`casefold.ts`, CASEFOLD1), so `straße` is not
 //      `STRASSE`, and are said as written; windows keep the file's order.
+//   5. A standing is `clear`, `warned` (the agent's own pace warning, never near: USAGEREAD3a) or `refused`. A `near` the
+//      driver wrote before USAGEREAD3a was only ever that warning, so it reads as `warned`, compared exactly.
 //
 // It holds no words of the agent's, no key and nobody's name. No HTTP route reaches it (D47 §4), and this module opens no
 // socket and spawns nothing.
@@ -41,7 +43,7 @@ export interface WindowSaid {
   /** How much of it is used, from 0 to 1; null where the agent gave no number. */
   used: number | null;
   reset: Date;
-  /** `clear`, `near` or `refused`, on the window the frame named; null otherwise. */
+  /** `clear`, `warned` or `refused`, on the window the frame named (rule 5); null otherwise. */
   standing: string | null;
   credits: boolean;
   seen: Date;
@@ -69,7 +71,8 @@ export function saidOf(home: string, agent: string, account: string, now: Date):
 
     const raw = entry['used'];
     const used = typeof raw === 'number' && Number.isFinite(raw) && raw >= 0 ? raw : null;
-    const standing = text(entry['standing']);
+    const written = text(entry['standing']);
+    const standing = written === 'near' ? 'warned' : written;
     const credits = entry['credits'] === true;
     if (used === null && standing === null && !credits) continue;
     windows.push({ window, used, reset, standing, credits, seen, session: text(entry['session']) });
@@ -80,19 +83,21 @@ export function saidOf(home: string, agent: string, account: string, now: Date):
 /**
  * What an account last said, as one line a person reads (TOOL6c, D130 §3.2, §9): how long ago, its own word where it gave
  * one, credits, each window's use and reset in the machine's zone, and — where a scope's *near* is given — whether a window
- * reached it. Never a judgement the agent did not make beyond that number.
+ * reached it. Never a judgement the agent did not make beyond that number. Its pace warning is said in its own words, the
+ * driver's start line's (`RotationWords`, `opening.said-warned`), and never as near (USAGEREAD3a): a warned window at or
+ * over *near* is near by its number.
  */
 export function saidLine(windows: WindowSaid[], now: Date, zone: string, near: number | null = null): string {
   const parts: string[] = [];
   const reached = windows.find((each) => each.standing === 'refused');
-  const warned = windows.find((each) => each.standing === 'near');
+  const warned = windows.find((each) => each.standing === 'warned');
   if (reached) parts.push(`its ${reached.window} limit reached, by its own word`);
-  else if (warned) parts.push(`near its ${warned.window} limit, by its own word`);
+  else if (warned) parts.push(`ahead of its pace on its ${warned.window} window, by its own word`);
   if (windows.some((each) => each.credits)) parts.push('drawing on usage credits');
   for (const each of ordered(windows)) {
     if (each.used !== null) parts.push(`${percent(each.used)} of its ${each.window} limit used, resetting ${coolingWhen(each.reset, zone)}`);
   }
-  if (near !== null && !reached && !warned && !windows.some((each) => each.credits)
+  if (near !== null && !reached && !windows.some((each) => each.credits)
     && windows.some((each) => each.used !== null && each.used * 100 >= near - 1e-9)) {
     parts.push(`near at ${near}%`);
   }

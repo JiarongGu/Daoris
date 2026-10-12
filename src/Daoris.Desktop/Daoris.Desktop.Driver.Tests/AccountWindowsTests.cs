@@ -150,11 +150,11 @@ public sealed class AccountWindowsTests : IDisposable
     public void The_newest_reading_of_a_window_replaces_the_older_and_a_window_it_leaves_out_stands()
     {
         AccountWindows.Said(_home, "claude-code", "account-1", Frame(0.40, 0.10), Said, "s1");
-        AccountWindows.Said(_home, "claude-code", "account-1", [new WindowReading("session", 0.95, Said.AddHours(2), "near", Credits: true)], Said.AddMinutes(30), "s2");
+        AccountWindows.Said(_home, "claude-code", "account-1", [new WindowReading("session", 0.95, Said.AddHours(2), "warned", Credits: true)], Said.AddMinutes(30), "s2");
 
         var read = AccountWindows.SaidOf(_home, "claude-code", "account-1", Said.AddMinutes(31))!;
 
-        Assert.Equal(new WindowSaid("session", 0.95, Said.AddHours(2), "near", true, Said.AddMinutes(30), "s2"), read.Of("session"));
+        Assert.Equal(new WindowSaid("session", 0.95, Said.AddHours(2), "warned", true, Said.AddMinutes(30), "s2"), read.Of("session"));
         Assert.Equal(new WindowSaid("weekly", 0.10, Said.AddHours(105), null, false, Said, "s1"), read.Of("weekly"));
     }
 

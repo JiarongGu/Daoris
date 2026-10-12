@@ -187,6 +187,42 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// USAGEREAD3a (the account-switch design §1.3): Claude Code's pace warning is kept as <c>warned</c> and passed through on
+    /// the account's reading, and never makes it near alone; a <c>near</c> written before is read as <c>warned</c>, since the
+    /// warning alone ever wrote it. Near is by a limit reached, credits or the number, so <c>by</c> never names a word.
+    /// </summary>
+    [Fact]
+    public async Task The_agent_s_pace_warning_is_passed_as_warned_and_is_never_near_alone()
+    {
+        Accounts("claude-code", "account-1", "account-2", "account-3");
+        Wiring("""{ "rotation": { "claude-code": ["account-1", "account-2", "account-3"] } }""");
+        // At 60% of a week a fifth gone, warned; at 40%, warned as the file held it before (`near`); at 99%, warned and near.
+        static string Stamp(DateTimeOffset at) => at.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture);
+        System.Text.Json.Nodes.JsonObject Week(double used, string standing) => new()
+        {
+            ["weekly"] = new System.Text.Json.Nodes.JsonObject
+            {
+                ["reset"] = Stamp(Now.AddDays(5)), ["used"] = used, ["standing"] = standing, ["seen"] = Stamp(Now),
+            },
+        };
+        System.IO.File.WriteAllText(AccountWindows.PathOf(Home), new System.Text.Json.Nodes.JsonObject
+        {
+            ["claude-code"] = new System.Text.Json.Nodes.JsonObject
+            {
+                ["account-1"] = Week(0.60, "warned"), ["account-2"] = Week(0.40, "near"), ["account-3"] = Week(0.99, "warned"),
+            },
+        }.ToJsonString());
+
+        var claude = Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code");
+
+        string? Standing(string account) =>
+            Account(claude, account).GetProperty("said").GetProperty("windows").EnumerateArray().Single().GetProperty("standing").GetString();
+        Assert.Equal(["warned", "warned", "warned"], new[] { "account-1", "account-2", "account-3" }.Select(Standing));
+        var near = Assert.Single(Scope(claude, null).GetProperty("near").EnumerateArray().ToList());
+        Assert.Equal(("account-3", "weekly", "number"), (near.GetProperty("account").GetString(), near.GetProperty("window").GetString(), near.GetProperty("by").GetString()));
+    }
+
+    /// <summary>
     /// TOOL6e (D130 §3–§4): each scope answers which account its next start would take, the step that chose it and the
     /// account it was weighed against, and what holds each other account of the agent's — a cool-off until when, an account
     /// the scope does not use — read from the walk's own pieces, with nothing probed.

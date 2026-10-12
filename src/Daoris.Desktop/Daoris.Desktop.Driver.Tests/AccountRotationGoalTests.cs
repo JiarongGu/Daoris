@@ -559,7 +559,7 @@ public sealed class AccountRotationGoalTests : IDisposable
     }
 
     [Fact]
-    public async Task Near_by_the_agent_s_word_by_credits_and_at_the_scope_s_own_near()
+    public async Task Near_by_credits_and_at_the_scope_s_own_near_and_never_by_the_pace_warning_alone()
     {
         Accounts("account-1", "account-2");
         Wire(s => s.WithRotation("fake", ["account-1", "account-2"]).WithUse("fake", new UseChange(Near: 85)));
@@ -569,8 +569,9 @@ public sealed class AccountRotationGoalTests : IDisposable
             ("account-2", "`account-1` has used 88% of its session limit, at or over the 85% that counts as near"),
             await Ran());
 
-        Said("account-1", 0.10, standing: "near");
-        Assert.Equal(("account-2", "`account-1` said it is near its session limit"), await Ran());
+        // Its pace warning passes nothing alone (USAGEREAD3a): the start stays where its list begins.
+        Said("account-1", 0.10, standing: "warned");
+        Assert.Equal("account-1", (await Ran()).Item1);
 
         AccountWindows.Said(_home, "fake", "account-1", [new WindowReading("session", 0.10, _now.AddHours(2), "clear", Credits: true)], _now, "s0");
         Assert.Equal(("account-2", "`account-1` said it is drawing on usage credits"), await Ran());

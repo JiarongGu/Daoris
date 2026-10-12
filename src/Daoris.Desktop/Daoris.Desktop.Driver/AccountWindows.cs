@@ -170,7 +170,8 @@ public static class AccountWindows
 
             var used = entry["used"] is JsonValue value && value.TryGetValue<double>(out var number) && double.IsFinite(number) && number >= 0
                 ? number : (double?)null;
-            var standing = Text(entry, "standing");
+            // A `near` written before USAGEREAD3a was only ever the agent's pace warning, so it reads as `warned`.
+            var standing = Text(entry, "standing") is var word && word == AccountReadings.NearWord ? AccountReadings.WarnedWord : word;
             if (used is null && standing is null && !Flag(entry, "credits")) continue;
             var source = Text(entry, "source") == SourceRead ? SourceRead : SourceSaid;
             windows.Add(new WindowSaid(name, used, reset, standing, Flag(entry, "credits"), seen, Text(entry, "session"), source));

@@ -562,7 +562,10 @@ public static class NoteCodes
     public static readonly NoteCode OpeningSaidAt = new("opening.said-at", ["account", "seen"]);
     public static readonly NoteCode OpeningSaidNothing = new("opening.said-nothing", ["account"]);
     public static readonly NoteCode OpeningSaidReached = new("opening.said-reached", ["window"]);
+    // The agent's own pace warning, never near (USAGEREAD3a): `opening.said-warned` since; a note written before it keeps
+    // `opening.said-near`, which nothing writes now.
     public static readonly NoteCode OpeningSaidNear = new("opening.said-near", ["window"]);
+    public static readonly NoteCode OpeningSaidWarned = new("opening.said-warned", ["window"]);
     public static readonly NoteCode OpeningSaidCredits = new("opening.said-credits", []);
     public static readonly NoteCode OpeningSaidUsed = new("opening.said-used", ["used", "window"]);
     public static readonly NoteCode OpeningSaidNearAt = new("opening.said-near-at", ["near"]);
@@ -987,7 +990,10 @@ public static class OpeningWhy
     /// <summary>The account passed said a limit is reached.</summary>
     public const string NearReached = "near-reached";
 
-    /// <summary>The account passed said it is near a limit.</summary>
+    /// <summary>
+    /// The account passed said it is near a limit: its pace warning, which is no longer near (USAGEREAD3a), so nothing
+    /// writes it now; a note written before keeps it.
+    /// </summary>
     public const string NearWord = "near-word";
 
     /// <summary>The account passed said it is drawing on usage credits.</summary>
