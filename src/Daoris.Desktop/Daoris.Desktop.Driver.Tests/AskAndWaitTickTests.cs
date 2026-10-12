@@ -212,6 +212,15 @@ public sealed class AskAndWaitTickTests : IDisposable
         /// </summary>
         public JsonArray? Words { get; set; }
 
+        /// <summary>
+        /// Whether a session's record keeps the adapter it opened on, as the service does (MIXAGENT1a-ii's hand-over reads it): off,
+        /// as before, so the tests that never named one read as they did.
+        /// </summary>
+        public bool KeepsAdapter { get; set; }
+
+        /// <summary>What a quest's claim door answers (D68 §4), or null where the stand-in has none, as before.</summary>
+        public string? Claim { get; set; }
+
         public int SessionCount { get { lock (_sessions) return _sessions.Count; } }
 
         public JsonObject Session(string id)
@@ -303,9 +312,13 @@ public sealed class AskAndWaitTickTests : IDisposable
                             ["profile"] = body["profile"]?.GetValue<string>(),
                             ["created"] = DateTimeOffset.UtcNow.AddMinutes(_sessions.Count).ToString("O"),
                         };
+                        if (KeepsAdapter) session["adapter"] = body["adapter"]?.GetValue<string>();
                         _sessions.Add(session);
                         return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "opened" }.ToJsonString());
                     }
+
+                    case ("GET", _) when Claim is not null && path.StartsWith("/api/quests/", StringComparison.Ordinal) && path.EndsWith("/claim", StringComparison.Ordinal):
+                        return (200, new JsonObject { ["claim"] = Claim }.ToJsonString());
 
                     case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/state", StringComparison.Ordinal):
                     {

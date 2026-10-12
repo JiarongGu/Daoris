@@ -385,6 +385,18 @@ public sealed class WordsNotesTests
         Assert.Equal(("claude-code", "ab12cd34", "limit"), (took.Parts[0].Value("agent"), took.Parts[0].Value("session"), took.Parts[0].Value("why")));
         NoteAssert.Holds(took);
     }
+
+    /// <summary>MIXAGENT1a-ii: a quest's session handed over ends with a line of its own, the agent it went to, and no account or path.</summary>
+    [Fact]
+    public void A_quest_s_session_handed_over_says_where_it_went_by_code_with_facts_only()
+    {
+        var went = HandOverNotes.QuestHandedOver("codex-acp");
+
+        Assert.Equal("Handed over to codex-acp: its quest goes on with it, in the same tree.", went.Note);
+        Assert.Equal(["ended.handed-over"], NoteAssert.Codes(went.Parts));
+        Assert.Equal("codex-acp", went.Parts[0].Value("agent"));
+        NoteAssert.Holds(went);
+    }
 }
 
 /// <summary>CONVNOTE2f: a session's own background work (BGWAIT1), by code; the English as it was written.</summary>

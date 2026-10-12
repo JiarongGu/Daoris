@@ -136,11 +136,11 @@ public sealed partial class Driver
     /// on another adapter, whose conversation cannot go on here whichever account runs (D131 §2's <c>adapter</c>), so its words
     /// are carried on by the walk's pick as before.
     /// </summary>
-    private PriorSession? ResumesOwn(Consideration start)
+    private PriorSession? ResumesOwn(Consideration start, string agent)
     {
         if (!start.GoesOn || start.Resumes is not { WordsWaiting: true } words || start.Quest.Awaits is { Length: > 0 }) return null;
         var ranOn = words.Adapter ?? _conversations.Read(words.Session)?.Adapter;
-        return ranOn is not { Length: > 0 } || string.Equals(ranOn, config.Adapter, StringComparison.OrdinalIgnoreCase) ? words : null;
+        return ranOn is not { Length: > 0 } || string.Equals(ranOn, agent, StringComparison.OrdinalIgnoreCase) ? words : null;
     }
 
     /// <summary>
@@ -194,11 +194,13 @@ public sealed partial class Driver
     /// </param>
     private async Task<(StartRun? Run, ContinueReason? FellBack, bool AnswerKept)> ContinueAsync(
         Consideration start, PriorSession park, HarnessSelection selection, IReadOnlyList<RepoView> registry,
-        TreeLock? starting, Action onOpened, CancellationToken ct, ContinueReason? account = null)
+        TreeLock? starting, Action onOpened, CancellationToken ct, string agent, ContinueReason? account = null)
     {
         var quest = start.Quest;
         ISessionAdapter? adapter = null;
-        try { adapter = _adapters.Resolve(config.Adapter); } catch (DriverException) { }
+        // The agent this start runs on: the machine's, or the one a hand-over named for the quest (MIXAGENT1a-ii), passed in since
+        // starts run side by side and a field would be every start's.
+        try { adapter = _adapters.Resolve(agent); } catch (DriverException) { }
 
         // The person wrote to a record that had ended, so it stays in view whatever comes of it (D137 §2.3): its archive mark
         // goes, and a mark of words it could not take before is past, since these are taken up now.
@@ -215,7 +217,7 @@ public sealed partial class Driver
         if (why is not null || adapter is null || kept is null)
         {
             var reason = why ?? ContinueWhy.Of(ContinueWhy.Refused);
-            if (await EndParkAsync(park, reason, ct).ConfigureAwait(false) is { } refused)
+            if (await EndParkAsync(park, reason, agent, ct).ConfigureAwait(false) is { } refused)
             {
                 return (new StartRun($"held  #{quest.Id} → {quest.To}: {refused}", false, null, refused), null, false);
             }
@@ -331,14 +333,14 @@ public sealed partial class Driver
                 return (new StartRun(
                     $"{closed.State}  session {sessionId} (#{quest.Id} → {quest.To}) [resumed its conversation]: {closed.Note}",
                     true,
-                    new SessionEnded(sessionId, quest.To, closed.State, ByPerson: first.ByPerson, closed.Note, Quest: quest.Id, Adapter: config.Adapter)),
+                    new SessionEnded(sessionId, quest.To, closed.State, ByPerson: first.ByPerson, closed.Note, Quest: quest.Id, Adapter: agent)),
                     null, resume.Spoken);
             }
 
             return (new StartRun(
                 $"stopped  session {sessionId} (#{quest.Id} → {quest.To}): the driver was stopped.",
                 true,
-                new SessionEnded(sessionId, quest.To, "stopped", ByPerson: true, Quest: quest.Id, Adapter: config.Adapter)), null, resume.Spoken);
+                new SessionEnded(sessionId, quest.To, "stopped", ByPerson: true, Quest: quest.Id, Adapter: agent)), null, resume.Spoken);
         }
         catch (Exception error)
         {
@@ -351,7 +353,7 @@ public sealed partial class Driver
             catch (DriverException)
             {
                 var reason = ContinueWhy.Of(ContinueWhy.Refused);
-                if (await EndParkAsync(park, reason, CancellationToken.None).ConfigureAwait(false) is null)
+                if (await EndParkAsync(park, reason, agent, CancellationToken.None).ConfigureAwait(false) is null)
                 {
                     return (null, reason, resume.Spoken);
                 }
@@ -364,7 +366,7 @@ public sealed partial class Driver
             return (new StartRun(
                 $"failed  session {sessionId} (#{quest.Id} → {quest.To}): {error.Message}",
                 true,
-                new SessionEnded(sessionId, quest.To, "failed", ByPerson: false, error.Message, Quest: quest.Id, Adapter: config.Adapter)), null, resume.Spoken);
+                new SessionEnded(sessionId, quest.To, "failed", ByPerson: false, error.Message, Quest: quest.Id, Adapter: agent)), null, resume.Spoken);
         }
         finally
         {
@@ -527,7 +529,7 @@ public sealed partial class Driver
     /// that had already ended moves no further: its words wait on it until they are handed on (MSG1b). Null when done; else
     /// the service's refusal.
     /// </summary>
-    private async Task<string?> EndParkAsync(PriorSession park, ContinueReason why, CancellationToken ct)
+    private async Task<string?> EndParkAsync(PriorSession park, ContinueReason why, string agent, CancellationToken ct)
     {
         if (park.AnsweredPark)
         {
@@ -542,7 +544,7 @@ public sealed partial class Driver
             }
         }
 
-        service.AccountSaid(Took(park, config.Adapter, why));
+        service.AccountSaid(Took(park, agent, why));
         return null;
     }
 

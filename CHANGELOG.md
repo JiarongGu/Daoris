@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A quest's session can go on with another agent from the terminal (`daoris-driver sessions hand-over <id> --agent <adapter>
+  [--account <name>]`): the driver stops it, then carries the quest on in the same tree on the agent you name, told it was
+  handed over from the first agent's session, and it stays on that agent until the quest closes or leaves this machine.
+  Both sessions say where it went and where it came from, in both languages.
 - A working session can ask another agent for help, and you can too (`daoris-driver sessions helper <id> "<question>"
   [--agent <name>]`): a read-only session on that agent reads a copy of the session's work at its last commit and answers the
   one question, and its answer comes back to the asking session as its next turn, marked as the helper's and never as your

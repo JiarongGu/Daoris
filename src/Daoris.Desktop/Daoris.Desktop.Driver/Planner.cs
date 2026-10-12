@@ -507,6 +507,14 @@ public sealed record Snapshot(
     /// </summary>
     public IReadOnlyDictionary<string, string> Opinions { get; init; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The quests held on another agent (MIXAGENT1a-ii, D163 point 1), by quest id, read from <see cref="HandedQuests"/> at each look.
+    /// The stop of the session a store names is its own release: the planner reads it as released, so the quest is carried on with
+    /// no strike and no write to driver.json's <c>released</c>. Absent is none.
+    /// </summary>
+    public IReadOnlyDictionary<string, HandedQuest> Handed { get; init; } =
+        new Dictionary<string, HandedQuest>(StringComparer.OrdinalIgnoreCase);
 }
 
 public enum StartVerdict
@@ -766,7 +774,9 @@ public static class Planner
             if (quest.Status is "Open" or "Taken"
                 && snapshot.LastRun.TryGetValue(quest.Id, out var last)
                 && last.PersonStopped
-                && !config.Releases(quest.Id, last.Session))
+                && !config.Releases(quest.Id, last.Session)
+                // The stop that handed the quest to another agent is its own release (MIXAGENT1a-ii): the person asked for it.
+                && !HandedFrom(quest, last))
             {
                 considerations.Add(Stopped(quest, last));
                 continue;
@@ -813,6 +823,10 @@ public static class Planner
                     || string.Equals(run.State, "failed", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(run.State, "stopped", StringComparison.OrdinalIgnoreCase)
                     || run is { State: "completed", Answer: not null }));
+
+        // Whether the quest was handed to another agent from this session (MIXAGENT1a-ii): the store names the session whose stop it is.
+        bool HandedFrom(QuestView quest, PriorSession stop) =>
+            snapshot.Handed.TryGetValue(quest.Id, out var handed) && string.Equals(handed.From, stop.Session, StringComparison.Ordinal);
 
         // Whether the person's words wait on this quest's last session here (MSG1b, D137 §2.2), parked or ended, and are not
         // all words a reopen already found it could not take (MSG1a's open point). A quest waiting on a question waits with
@@ -881,6 +895,8 @@ public static class Planner
                 {
                     Reason = cutOff.Answer is { } answer
                         ? $"carrying on in `{quest.To}` — you answered session `{cutOff.Session}`: {answer}"
+                        : cutOff.PersonStopped && snapshot.Handed.TryGetValue(quest.Id, out var handed) && HandedFrom(quest, cutOff)
+                            ? $"carrying on in `{quest.To}` — session `{cutOff.Session}` was handed over to {handed.Agent}."
                         : cutOff.PersonStopped
                             ? $"carrying on in `{quest.To}` — you stopped session `{cutOff.Session}`, and released it."
                             : $"carrying on in `{quest.To}` — session `{cutOff.Session}` was cut off: "
@@ -1135,6 +1151,15 @@ public static class Planner
         || last.PersonStopped
         // The person answered a session that parked to ask them (STANDDOWN2).
         || last is { State: "completed", Answer: not null };
+
+    /// <summary>
+    /// Whether a taken quest's take is not this machine's, as <c>TakenElsewhere</c> reads it (CARRY2b) and the hand-over's judge
+    /// asks it before a quest's session goes on with another agent (MIXAGENT1a-ii): another's by the claim, or made here after
+    /// <paramref name="last"/> ended by a chat or work outside Daoris that no record marks.
+    /// </summary>
+    internal static bool TakenAway(QuestView quest, PriorSession last, QuestTake take) =>
+        !take.Here
+        || (!take.Took && quest.Updated is { } taken && last.Updated is { } ended && taken > ended);
 
     /// <summary>Two tree paths are one tree — separators and case aside, as Windows sees them.</summary>
     private static bool SameTree(string? a, string? b) =>

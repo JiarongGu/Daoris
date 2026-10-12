@@ -1071,6 +1071,60 @@ public sealed class PlannerTests
         Assert.Equal("carrying on in `Game` — you stopped session `s1`, and released it.", only.Reason);
     }
 
+    private static Snapshot HandedOver(Snapshot snapshot, string from = "s1") => snapshot with
+    {
+        Handed = new Dictionary<string, HandedQuest>
+        {
+            ["q1"] = new("codex-acp", "work", from, HandOverWhy.Near, HandOverBy.Person, new DateTimeOffset(2026, 10, 12, 9, 0, 0, TimeSpan.Zero)),
+        },
+    };
+
+    /// <summary>
+    /// 🔴 MIXAGENT1a-ii (D163 point 1): the stop that handed a quest over is its own release. The store names the session, the planner
+    /// reads that stop as released, so the quest is carried on in its tree with a sentence that says it was handed over, never that the
+    /// person released it; driver.json's <c>released</c> is not written.
+    /// </summary>
+    [Fact]
+    public void A_stop_that_handed_the_quest_over_is_released_by_the_hand_over_itself()
+    {
+        var only = Assert.Single(Planner.Plan(HandedOver(Ran([Quest(status: "Taken")], ("q1", PersonStop))), Config()));
+
+        Assert.Equal(StartVerdict.Start, only.Verdict);
+        Assert.Equal(PersonStop, only.Resumes);
+        Assert.Null(only.HeldBy);
+        Assert.Equal("carrying on in `Game` — session `s1` was handed over to codex-acp.", only.Reason);
+    }
+
+    /// <summary>The release is that session's alone: a later stop of the person's, on the new agent, holds the quest again.</summary>
+    [Fact]
+    public void A_later_stop_after_the_hand_over_holds_the_quest_again()
+    {
+        var again = PersonStop with { Session = "s2" };
+
+        var only = Assert.Single(Planner.Plan(HandedOver(Ran([Quest(status: "Taken")], ("q1", again))), Config()));
+
+        Assert.Equal(StartVerdict.Stopped, only.Verdict);
+        Assert.Contains("session `s2`", only.Reason);
+    }
+
+    /// <summary>A hand-over is no strike: the records count the person's stop as none, so a quest with a failure under the limit goes on.</summary>
+    [Fact]
+    public void A_hand_over_counts_no_strike()
+    {
+        const string records = """
+            [{ "id": "s0", "quest": "q1", "repository": "Game", "state": "failed", "created": "2026-10-02T09:00:00Z" },
+             { "id": "s1", "quest": "q1", "repository": "Game", "state": "stopped", "note": "handed over.",
+               "tree": "D:/trees/s1", "created": "2026-10-02T09:20:00Z" }]
+            """;
+        var snapshot = HandedOver(new Snapshot([Quest(status: "Taken")], [Repo()], [], ServiceClient.ReadStrikes(records))
+        {
+            LastRun = ServiceClient.ReadLastRun(records),
+        });
+
+        Assert.Equal(1, snapshot.Strikes["q1"]);
+        Assert.Equal(StartVerdict.Start, Assert.Single(Planner.Plan(snapshot, Config() with { Strikes = 2 })).Verdict);
+    }
+
     /// <summary>Released, an open quest is planned as a first start: its stopped session never took it, so there is no tree to go back into.</summary>
     [Fact]
     public void A_released_stop_of_an_open_quest_is_planned_as_a_first_start()

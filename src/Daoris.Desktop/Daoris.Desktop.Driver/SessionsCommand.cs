@@ -99,6 +99,12 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     /// the agent and the account, or null for the roster's pick. Null where nothing here can hold a conversation.
     /// </summary>
     public Func<string, string, string?, CancellationToken, Task<int>>? HandOver { get; init; }
+
+    /// <summary>
+    /// The agents a quest's session may go on with (MIXAGENT1a-ii, D163 point 1): each one's accounts and door, as the loop's
+    /// roster reads them for a start. Null reads this build's adapters and the home's plugins.
+    /// </summary>
+    public Func<string, HandOverAgent?>? Drives { get; init; }
 }
 
 /// <summary>
@@ -1105,10 +1111,32 @@ public static class SessionsCommand
     /// </summary>
     private static async Task<int> HandOverAsync(SessionsWorld world, SessionsAsk ask, TextWriter output, CancellationToken ct)
     {
+        // A quest's own session (MIXAGENT1a-ii, D163 point 1) is no conversation: it opens none here. Judged and kept as a box the
+        // driver's next look takes, which stops it and carries its quest on in the same tree with the agent named.
+        var record = (await world.Service.SessionRecordsAsync(ct).ConfigureAwait(false))
+            .FirstOrDefault(each => string.Equals(each.Id, ask.Ids[0], StringComparison.Ordinal));
+        if (record is not null && QuestHandOver.IsQuestSession(record))
+        {
+            var roster = world.Drives ?? DrivesBy(world.Home);
+            var answer = await QuestHandOver.AskAsync(
+                world.Service, world.Home, roster, ask.Ids[0], ask.Agent!, ask.Account, HandOverWhy.Press, HandOverBy.Person,
+                DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
+            output.WriteLine($"sessions: {answer.Message}");
+            if (answer.Kept && !world.LoopRuns()) output.WriteLine("sessions: no driver is running on this home now: its look takes it when one does.");
+            return answer.Kept ? 0 : 1;
+        }
+
         if (world.HandOver is { } open) return await open(ask.Ids[0], ask.Agent!, ask.Account, ct).ConfigureAwait(false);
 
         output.WriteLine($"sessions: nothing here can hand a conversation over; run `daoris-driver sessions hand-over {ask.Ids[0]} --agent {ask.Agent}` at a terminal.");
         return 2;
+    }
+
+    /// <summary>This build's adapters with the home's plugins, as the loop lays them for a look (D64): what a terminal with no roster of its own judges by.</summary>
+    private static Func<string, HandOverAgent?> DrivesBy(string home)
+    {
+        var built = AdapterSet.Built();
+        return QuestHandOver.Roster(built.WithPlugins(PluginCatalog.Load(home, built.Names)), home);
     }
 
     /// <summary>

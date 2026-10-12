@@ -268,6 +268,16 @@ public sealed class NoteSitesTests
             "carries `#q1` on: you stopped session `s0`, and released it, on another account, in the tree it worked in.",
             "started.released", "started.other-account", "started.same-tree");
 
+        // MIXAGENT1a-ii (D163 point 1): handed over, not released by the person; the agent it came from, never an account's name.
+        var handed = released with { Adapter = "claude-code" };
+        var carriedOver = Daoris.Driver.Driver.StartingNote(null, Quest(), null, "/t", true, handed, null, false, null, handedOver: true)!;
+        Line(carriedOver, "carries `#q1` on: session `s0` was handed over from claude-code, in the tree it worked in.",
+            "started.handed-over", "started.same-tree");
+        Assert.Equal(("q1", "s0", "claude-code"), ((string?)carriedOver.Parts[0].Value("quest"), (string?)carriedOver.Parts[0].Value("session"), (string?)carriedOver.Parts[0].Value("agent")));
+        Line(Daoris.Driver.Driver.StartingNote(null, Quest(), null, "/t", true, handed, null, false, null, handedOver: true, walked: true)!,
+            "carries `#q1` on: session `s0` was handed over from claude-code, the account it named could not run it, so another of its agent's did, in the tree it worked in.",
+            "started.handed-over", "started.handed-walked", "started.same-tree");
+
         var answered = new PriorSession("s0", "/t", "completed", Answer: "use main") { Adapter = "claude-code" };
         var fellBack = Daoris.Driver.Driver.StartingNote(
             null, Quest(), null, "/t", true, answered, answered with { State = "awaiting-person" }, false, ContinueWhy.Of(ContinueWhy.Elsewhere))!;

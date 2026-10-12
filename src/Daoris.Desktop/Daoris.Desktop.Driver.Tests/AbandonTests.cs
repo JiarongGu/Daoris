@@ -177,12 +177,17 @@ public sealed class AbandonTests : IDisposable
                 .WithReleased("q2", "old00000")
                 .WithReleased("q5", "x0000000") with { Forgiven = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase) { ["q3"] = 2 } })
             .Save(ConfigPath);
+        // MIXAGENT1a-ii: a quest the abandon closes goes back to the machine's agent; one it leaves taken stays held.
+        var at = new DateTimeOffset(2026, 10, 12, 9, 0, 0, TimeSpan.Zero);
+        new HandedQuests(_home).Write("q2", new HandedQuest("codex-acp", null, "old00000", HandOverWhy.Press, HandOverBy.Person, at));
+        new HandedQuests(_home).Write("q5", new HandedQuest("codex-acp", null, "x0000000", HandOverWhy.Press, HandOverBy.Person, at));
         using var service = ledger.Client();
 
         var outcome = await WorkAbandoning.AbandonAsync(
             World(service, Trees(events), events), WorkScope.Ask, "a1", Reason, pieces: null, PluginEvents.Terminal);
 
         Assert.Equal(AbandonVerdict.Abandoned, outcome.Verdict);
+        Assert.Equal(["q5"], new HandedQuests(_home).All().Keys);
         Assert.True(pausedWhenStopped, "the pause was written before the first stop");
         Assert.Equal(
             [

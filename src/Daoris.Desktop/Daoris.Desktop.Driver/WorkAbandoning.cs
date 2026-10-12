@@ -511,7 +511,14 @@ public static class WorkAbandoning
 
         var stillPaused = failed.Count > 0 || joined.Count > 0;
         var tidy = DriverConfig.Load(world.ConfigPath);
-        foreach (var quest in closedNow) tidy = tidy.WithoutQuest(quest);
+        var handed = new HandedQuests(world.Home);
+        foreach (var quest in closedNow)
+        {
+            tidy = tidy.WithoutQuest(quest);
+            // A quest held on another agent (MIXAGENT1a-ii) goes back to the machine's when it closes.
+            handed.Clear(quest);
+        }
+
         if (!stillPaused) tidy = WorkPausing.WithPause(tidy, scope, named, null);
         tidy.Save(world.ConfigPath);
 

@@ -221,6 +221,26 @@ internal sealed class StandInLedger : HttpMessageHandler
     }
 
     /// <summary>
+    /// A driven session of this machine's on <paramref name="quest"/>, which it took (MIXAGENT1a-ii): working, or in whatever state
+    /// it ended, in its own tree, on the adapter and account it ran as.
+    /// </summary>
+    public void Driven(string session, string quest, string tree, string state = "working", string adapter = "stub", string? profile = null)
+    {
+        lock (_gate)
+        {
+            var served = _quests.Single(q => q["id"]!.GetValue<string>() == quest);
+            served["status"] = "Taken";
+            _clock = _clock.AddSeconds(1);
+            _sessions.Add(new JsonObject
+            {
+                ["id"] = session, ["quest"] = quest, ["repository"] = served["to"]!.GetValue<string>(), ["state"] = state,
+                ["kind"] = "driven", ["adapter"] = adapter, ["profile"] = profile, ["tree"] = tree, ["created"] = _clock.ToString("O"),
+                ["updated"] = _clock.ToString("O"), ["took"] = true, ["said"] = new JsonArray(),
+            });
+        }
+    }
+
+    /// <summary>
     /// A session of this machine's in <paramref name="tree"/> with no quest (AUTOTIDY1): a conversation, as the ledger keeps one,
     /// which the active list answers while it is working, and the whole list once it ended.
     /// </summary>

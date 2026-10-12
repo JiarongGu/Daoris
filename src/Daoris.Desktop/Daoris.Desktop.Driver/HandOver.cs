@@ -179,14 +179,30 @@ public sealed record HandOverAnswer(bool Kept, string? Why, string Message);
 /// anything is kept, and keeps the <see cref="HandOverBox"/> the shell's chat runner takes.
 /// </summary>
 /// <remarks>
-/// <b>Conversations only.</b> A quest's session goes with MIXAGENT1a-ii, and says so in plain words. Ask Daoris's own
+/// <b>Conversations only here.</b> A quest's session is <see cref="QuestHandOver"/>'s (MIXAGENT1a-ii); asked of this judge it is
+/// refused <see cref="NotConversation"/>, saying where its door is. Ask Daoris's own
 /// conversations and intakes never go on elsewhere (D137 §2.2), and the conversation cannot be handed to the agent and account it
 /// runs on, nor while another hand-over waits, nor from a tree that is gone.
 /// </remarks>
 public static class HandOver
 {
-    /// <summary>A quest's session, which its own door hands over (MIXAGENT1a-ii).</summary>
+    /// <summary>A quest's session where no driven roster is handed in (the shell's page press, a later row), or a conversation about a quest.</summary>
     public const string NotConversation = "not-conversation";
+
+    /// <summary>A quest's session whose quest is not open or taken any more (MIXAGENT1a-ii): no work is left to hand over.</summary>
+    public const string QuestClosed = "quest-closed";
+
+    /// <summary>A quest's session whose quest is not this machine's to carry on: taken elsewhere, or the session stood down.</summary>
+    public const string QuestElsewhere = "quest-elsewhere";
+
+    /// <summary>A quest's session that is not the quest's last run on this machine, which a later session here carries.</summary>
+    public const string NotLastRun = "not-last-run";
+
+    /// <summary>A quest's session parked on the person, who answers it instead.</summary>
+    public const string Parked = "parked";
+
+    /// <summary>The named agent's door cannot drive the quest's repository: a pipe-door agent where Daoris is not adopted.</summary>
+    public const string NoDoor = "no-door";
 
     /// <summary>The roster has no such agent.</summary>
     public const string UnknownAgent = "unknown-agent";
@@ -249,20 +265,13 @@ public static class HandOver
         var record = SessionRecords.Parse(json).FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
         if (record is null) return (Refused(WordsNever.NotFound, $"no session here is {id}."), null);
 
-        switch (WordsNever.Judge(record, WordsNever.LastHere(json, record.Quest)) ?? (WordsNever.IsHelp(record) ? WordsNever.Help : null))
-        {
-            case WordsNever.Teammate:
-                return (Refused(WordsNever.Teammate, $"{id} ran on {id[..id.IndexOf('/')]}, where its conversation is; nothing said here reaches it."), null);
-            case WordsNever.Help:
-                return (Refused(WordsNever.Help,
-                    $"{id} is Ask Daoris's own conversation, which stays on its own agent: Ask Daoris's history starts a new conversation from it."), null);
-            case WordsNever.Intake:
-                return (Refused(WordsNever.Intake, $"{id} is an intake; answer its ask #{record.Ask} instead: publish it or close it."), null);
-        }
+        if (Never(record, id, WordsNever.LastHere(json, record.Quest)) is { } never) return (never, null);
 
         if (record.Kind != "chat" || record.Quest is not null)
         {
-            return (Refused(NotConversation, $"{id} is a quest's session: handing a quest's session over comes with MIXAGENT1a-ii, not yet."), null);
+            return (Refused(NotConversation, record.Kind == "chat"
+                ? $"{id} is a conversation about a quest, not its session: hand over the quest's own session instead."
+                : $"{id} is a quest's session: it is handed over from a terminal, `daoris-driver sessions hand-over {id} --agent <adapter>`; its page's press comes later."), null);
         }
 
         var accounts = accountsOf(agent);
@@ -289,7 +298,24 @@ public static class HandOver
         return (null, prior);
     }
 
-    private static HandOverAnswer Refused(string why, string message) => new(false, why, message);
+    /// <summary>What never goes on elsewhere, whichever kind of session asks: a teammate's record, Ask Daoris's own conversation and an intake.</summary>
+    internal static HandOverAnswer? Never(SessionRecord record, string id, string? last)
+    {
+        switch (WordsNever.Judge(record, last) ?? (WordsNever.IsHelp(record) ? WordsNever.Help : null))
+        {
+            case WordsNever.Teammate:
+                return Refused(WordsNever.Teammate, $"{id} ran on {id[..id.IndexOf('/')]}, where its conversation is; nothing said here reaches it.");
+            case WordsNever.Help:
+                return Refused(WordsNever.Help,
+                    $"{id} is Ask Daoris's own conversation, which stays on its own agent: Ask Daoris's history starts a new conversation from it.");
+            case WordsNever.Intake:
+                return Refused(WordsNever.Intake, $"{id} is an intake; answer its ask #{record.Ask} instead: publish it or close it.");
+            default:
+                return null;
+        }
+    }
+
+    internal static HandOverAnswer Refused(string why, string message) => new(false, why, message);
 }
 
 /// <summary>
@@ -440,6 +466,10 @@ public static class HandOverNotes
         Noted.Of(
             NoteCodes.ChatHandedOver, $"The conversation went on with {agent}, in conversation {session}.",
             ("agent", agent), ("session", session));
+
+    /// <summary>A quest's session end, stopped so its quest goes on with another agent (MIXAGENT1a-ii): which agent. Never an account's name or a path.</summary>
+    public static Noted QuestHandedOver(string agent) =>
+        Noted.Of(NoteCodes.EndedHandedOver, $"Handed over to {agent}: its quest goes on with it, in the same tree.", ("agent", agent));
 
     /// <summary>The new conversation's line where Daoris's briefing did not reach its agent.</summary>
     public static Noted Unsaid() =>

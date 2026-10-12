@@ -73,6 +73,29 @@ public sealed class CarryOnHandedTests : IDisposable
         Assert.DoesNotContain("account-", prompt);
     }
 
+    /// <summary>
+    /// 🔴 MIXAGENT1a-ii (D163 point 1): a carry-on of a handed quest is told it was handed over from another agent's session and
+    /// carries on from that session's plan and words, never that the person released it; and the accounting says the fact.
+    /// </summary>
+    [Fact]
+    public void A_handed_over_carry_on_says_it_was_handed_over_from_the_agent_and_never_that_it_was_released()
+    {
+        var handed = Target() with { CutOff = "Handed over to codex-acp: its quest goes on with it, in the same tree.", Released = true, HandedOver = "claude-code", LastPlan = Plan, LastWords = "The column is in." };
+
+        var prompt = System.Text.RegularExpressions.Regex.Replace(TargetPrompt.Compose(handed), @"\s+", " ");
+
+        Assert.Contains(
+            "An earlier session on this quest, run by claude-code, was stopped so that the quest could go on with you: it was handed over, "
+            + "and you carry on from its plan and last words below. Its record reads: Handed over to codex-acp",
+            prompt);
+        Assert.DoesNotContain("released", prompt);
+        Assert.DoesNotContain("cut off before it closed it", prompt);
+        Assert.Contains("Its plan, as its record last kept it:", prompt);
+        var counted = Assert.Single(TargetPrompt.Composed(handed).Account.Sections, section => section.Name == "carry-on");
+        Assert.Contains("that it was handed over from another agent", counted.Said);
+        Assert.DoesNotContain("released", counted.Said);
+    }
+
     [Fact]
     public void With_nothing_kept_the_carry_on_reads_as_it_did()
     {

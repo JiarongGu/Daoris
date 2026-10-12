@@ -331,6 +331,9 @@ public sealed partial class Driver(
         snapshot = await PausedWork.LookAsync(service, config, snapshot, ct).ConfigureAwait(false);
         // The words a record could not go on with, read again at each look (MSG1b): the planner leaves them waiting.
         snapshot = snapshot with { Unable = _marks.For(snapshot.LastRun.Values) };
+        // The quests handed to another agent (MIXAGENT1a-ii, D163 point 1): the boxes taken, the quests that left dropped, and what
+        // stands read for the planner, which reads the stop that handed one over as released.
+        snapshot = await HandOversAsync(snapshot, events, ct).ConfigureAwait(false);
         _harnesses.Look(snapshot.Started, mark);
 
         // The set-ups waiting for the person here, and each set-up step's tab let go once they answered it (REVIEWENV1d, design
@@ -438,7 +441,9 @@ public sealed partial class Driver(
         var run = Runner ?? ((start, opened, token) => RunAsync(start, snapshot.Repositories, untrusted, opened, token));
         var begun = await Task.WhenAll(
                 claimed.Select(start => BeginAsync(
-                        new Begun(start.Quest.Id, null, start.Quest.To, start.Workspace, config.Adapter), opened => ClaimedAsync(start, opened)))
+                        // The agent it runs on: a handed quest's own (MIXAGENT1a-ii), which the held-wait report names its cooling by.
+                        new Begun(start.Quest.Id, null, start.Quest.To, start.Workspace, new HandedQuests(home).Read(start.Quest.Id)?.Agent ?? config.Adapter),
+                        opened => ClaimedAsync(start, opened)))
                     .Concat(intakes.Select(ask => BeginAsync(
                         new Begun(null, ask.Id, $"ask #{ask.Id}", ask.Workspace, config.IntakeAdapter!),
                         opened => RunIntakeAsync(ask, untrusted, opened, ct)))))
@@ -942,6 +947,15 @@ public sealed partial class Driver(
         var isolated = config.OpensOwnTree(quest.To);
         StartRun Hold(string why) => new($"held  #{quest.Id} → {quest.To}: {why}", false, null, why);
 
+        // The agent this start runs on (MIXAGENT1a-ii, D163 point 1): the one a hand-over named for the quest, held until the quest
+        // leaves this machine, else the machine's. A local, and a parameter wherever it is passed on: starts run side by side.
+        var handedQuest = new HandedQuests(home).Read(quest.Id);
+        var agent = handedQuest?.Agent ?? config.Adapter;
+        // Whether this start carries on from the very session the quest was handed over from: the one whose instruction and note say so.
+        var handedFrom = handedQuest is not null && start.Resumes is { } earlier
+                         && string.Equals(earlier.Session, handedQuest.From, StringComparison.Ordinal);
+        string? passedAccount = null;
+
         // Clean tree, or nothing: uncommitted changes are somebody's work in flight (D46 §3). No
         // session record exists yet, so a hold here costs nothing and destroys nothing. VACUOUS for a
         // repository opted into session trees (D51 rule 5) — a fresh tree is clean by construction,
@@ -968,20 +982,21 @@ public sealed partial class Driver(
         ResumeChoice? resume = null;
         try
         {
-            if (ResumesOwn(start) is { } words)
+            if (ResumesOwn(start, agent) is { } words)
             {
                 // A resume asks for its record's own account (MSG1g, D137 §2.2): its conversation lives in that account's
                 // configuration home (D131 §1), so the walk that chooses a start's account never chooses a resume's.
                 resume = await _harnesses
-                    .ResumeAsync(config.Adapter, config, start.Workspace, words.Profile, StartKind.Driven, _newSessions.Covers(words), ct: ct)
+                    .ResumeAsync(agent, config, start.Workspace, words.Profile, StartKind.Driven, _newSessions.Covers(words), ct: ct)
                     .ConfigureAwait(false);
                 selection = resume.Selection;
             }
             else
             {
-                // A carry-on and a first start take the walk as any start does (D130 §16.2): no context stays with an account.
-                selection = await _harnesses
-                    .SelectAsync(config.Adapter, config, start.Workspace, chosen: null, StartKind.Driven, ct)
+                // A carry-on and a first start take the walk as any start does (D130 §16.2): no context stays with an account. A
+                // handed quest asks for the account its hand-over named first, and the walk goes on within the named agent's.
+                (selection, passedAccount) = await _harnesses
+                    .SelectHandedAsync(agent, config, start.Workspace, handedQuest?.Account, StartKind.Driven, ct)
                     .ConfigureAwait(false);
             }
         }
@@ -1101,7 +1116,7 @@ public sealed partial class Driver(
         // a session handed the `connector` default takes and closes its quest whoever trusted what,
         // and trust then decides only whether the repository's OWN allow-list counts.
         ISessionAdapter? preflight = null;
-        try { preflight = _adapters.Resolve(config.Adapter); } catch (DriverException) { }
+        try { preflight = _adapters.Resolve(agent); } catch (DriverException) { }
 
         if (preflight is { Toolchain.TrustFile: { Length: > 0 } trustFile }
             && !HandedConnector(preflight, start.Workspace, quest.To, "quest_respond"))
@@ -1130,7 +1145,7 @@ public sealed partial class Driver(
         {
             // Where its own account could not carry the words, the walk's pick did, and the reason says why (MSG1g).
             (var continued, fellBack, answerKept) = await ContinueAsync(
-                    start, park, selection, registry, starting, onOpened, ct, account: resume?.Elsewhere)
+                    start, park, selection, registry, starting, onOpened, ct, agent, account: resume?.Elsewhere)
                 .ConfigureAwait(false);
             if (continued is not null) return continued;
 
@@ -1166,7 +1181,7 @@ public sealed partial class Driver(
             // registered root otherwise. Stated rather than left to the service to infer, because
             // this side is the one that knows where it is about to run a process.
             .OpenSessionAsync(
-                quest.Id, config.Adapter, selection.Version, selection.Profile, workTree, before, ct,
+                quest.Id, agent, selection.Version, selection.Profile, workTree, before, ct,
                 // Whether this is a set-up, for the machine log alone, so a set-up's cost can be read back (WSSETUP11).
                 setup: SetupQuests.IsSetup(quest.Title))
             .ConfigureAwait(false);
@@ -1193,7 +1208,7 @@ public sealed partial class Driver(
         // scope begins is `account.rotated` in the log.
         var prior = carryingOn ? start.Resumes : null;
         RotatedOpening.Say(
-            service, _events, sessionId, config.Adapter, selection,
+            service, _events, sessionId, agent, selection,
             prior is null
                 ? null
                 : new RotatedOpening.Carried(
@@ -1210,7 +1225,7 @@ public sealed partial class Driver(
             // session's conversation, where the person wrote them.
             if (fellBack is not null) await HandedOnAsync(written!, sessionId, fellBack, ct).ConfigureAwait(false);
 
-            var adapter = _adapters.Resolve(config.Adapter);
+            var adapter = _adapters.Resolve(agent);
             // What it may read and write outside its tree (D107): the rules it is handed, and the sentence
             // every harness's instruction carries.
             var across = AcrossRules.Reach(config, registry, quest.To, start.Workspace);
@@ -1258,10 +1273,13 @@ public sealed partial class Driver(
                 // The person's answer, when the session before parked to ask them (STANDDOWN2).
                 PersonSaid = carryingOn ? start.Resumes!.Answer : null,
                 // The person's stop, which they released with Try again (SESSUX1b): told so, never that it was cut off.
-                Released = carryingOn && start.Resumes!.PersonStopped,
+                Released = carryingOn && start.Resumes!.PersonStopped && !handedFrom,
+                // The quest was handed over from that session (MIXAGENT1a-ii): told so, with the agent it ran on.
+                HandedOver = carryingOn && handedFrom ? start.Resumes!.Adapter ?? "another agent" : null,
                 LastPlan = lastPlan,
                 LastWords = lastWords,
-                AccountChanged = elsewhere && prior!.Limit && _harnesses.CoolingOf(config.Adapter, prior.Profile) is not null,
+                // Another agent's accounts are not this agent's: a hand-over says no account was cooling for it to be told of.
+                AccountChanged = elsewhere && !handedFrom && prior!.Limit && _harnesses.CoolingOf(agent, prior.Profile) is not null,
                 // A set-up step is told its environment as the rule declares it now (REVIEWENV1c, design §2.2), and its account
                 // says where that rule was set (REVIEWENV1c2).
                 SetUp = setUp,
@@ -1271,7 +1289,9 @@ public sealed partial class Driver(
 
             // The creating sentence, on the record while the session runs (D51 rule 4): where it grew from and what a fresh
             // tree does not hold. The conclusion's note replaces it — by then the record's Tree field and the evidence say the rest.
-            var startingNote = StartingNote(opened, quest, answered, resumedIn, carryingOn, start.Resumes, written, elsewhere, fellBack);
+            var startingNote = StartingNote(
+                opened, quest, answered, resumedIn, carryingOn, start.Resumes, written, elsewhere, fellBack,
+                handedOver: carryingOn && handedFrom, walked: carryingOn && handedFrom && passedAccount is not null);
             await service.AdvanceAsync(sessionId, "starting", note: startingNote?.Note, ct: ct, parts: startingNote?.Parts).ConfigureAwait(false);
 
             // The answer beneath the question it answers (STANDDOWN2): the session that asked ends with
@@ -1415,7 +1435,7 @@ public sealed partial class Driver(
                 return new StartRun(
                     $"{closed.State}  session {sessionId} (#{quest.Id} → {quest.To}): {closed.Note}",
                     true,
-                    new SessionEnded(sessionId, quest.To, closed.State, ByPerson: first.ByPerson, closed.Note, Quest: quest.Id, Adapter: config.Adapter));
+                    new SessionEnded(sessionId, quest.To, closed.State, ByPerson: first.ByPerson, closed.Note, Quest: quest.Id, Adapter: agent));
             }
 
             // The person is closing the driver, so this ending is theirs — no interruption is owed
@@ -1423,7 +1443,7 @@ public sealed partial class Driver(
             return new StartRun(
                 $"stopped  session {sessionId} (#{quest.Id} → {quest.To}): the driver was stopped.",
                 true,
-                new SessionEnded(sessionId, quest.To, "stopped", ByPerson: true, Quest: quest.Id, Adapter: config.Adapter));
+                new SessionEnded(sessionId, quest.To, "stopped", ByPerson: true, Quest: quest.Id, Adapter: agent));
         }
         catch (Exception error)
         {
@@ -1446,7 +1466,7 @@ public sealed partial class Driver(
             return new StartRun(
                 $"failed  session {sessionId} (#{quest.Id} → {quest.To}): {error.Message}",
                 true,
-                new SessionEnded(sessionId, quest.To, "failed", ByPerson: false, error.Message, Quest: quest.Id, Adapter: config.Adapter));
+                new SessionEnded(sessionId, quest.To, "failed", ByPerson: false, error.Message, Quest: quest.Id, Adapter: agent));
         }
         finally
         {
@@ -1835,9 +1855,11 @@ public sealed partial class Driver(
     /// <param name="resumes">The record it carries on or resumes after, or null.</param>
     /// <param name="written">The record the person's words were written to, as the look read it, or null.</param>
     /// <param name="elsewhere">Whether it runs on another account than the record it carries on.</param>
+    /// <param name="handedOver">The quest was handed over from <paramref name="resumes"/> (MIXAGENT1a-ii): said by the agent it came from.</param>
+    /// <param name="walked">The account the hand-over named could not run it, and another account of the named agent did.</param>
     internal static Noted? StartingNote(
         TreeOpened? opened, QuestView quest, QuestView? answered, string? resumedIn, bool carryingOn,
-        PriorSession? resumes, PriorSession? written, bool elsewhere, ContinueReason? fellBack)
+        PriorSession? resumes, PriorSession? written, bool elsewhere, ContinueReason? fellBack, bool handedOver = false, bool walked = false)
     {
         if (opened is not null) return opened.Opening ?? Noted.From(opened.Sentence, null);
 
@@ -1863,13 +1885,26 @@ public sealed partial class Driver(
                     ? Noted.Of(NoteCodes.StartedWordsOpen, $"starts `#{quest.Id}` with your words to session `{session}`", facts)
                     : Noted.Of(NoteCodes.StartedWordsTaken, $"carries `#{quest.Id}` on with your words to session `{session}`", facts)
                 : Noted.Of(NoteCodes.StartedAnswer, $"carries `#{quest.Id}` on with your answer to session `{session}`", facts))
+            : handedOver
+                // The agent it came from, as its record names it; never an account's name or a path (the note travels).
+                ? Noted.Of(
+                    NoteCodes.StartedHandedOver,
+                    $"carries `#{quest.Id}` on: session `{session}` was handed over from {resumes.Adapter ?? "its agent"}",
+                    [.. facts, ("agent", resumes.Adapter ?? "its agent")])
             : resumes.PersonStopped
                 ? Noted.Of(NoteCodes.StartedReleased, $"carries `#{quest.Id}` on: you stopped session `{session}`, and released it", facts)
                 : Noted.Of(NoteCodes.StartedCutOff, $"carries `#{quest.Id}` on after session `{session}` was cut off", facts);
 
         // 🔴 Which account, never (TOOL4f, D125 §3.6): the note travels, and its scrubber elides only the record's own
         // account, so another account's name here would reach a teammate.
-        if (elsewhere) carried = carried.Then(", ", Noted.Of(NoteCodes.StartedOtherAccount, "on another account"));
+        if (handedOver && walked)
+        {
+            carried = carried.Then(", ", Noted.Of(NoteCodes.StartedHandedWalked, "the account it named could not run it, so another of its agent's did"));
+        }
+        else if (elsewhere && !handedOver)
+        {
+            carried = carried.Then(", ", Noted.Of(NoteCodes.StartedOtherAccount, "on another account"));
+        }
         carried = resumedIn is null ? carried.Then(".") : carried.Then(", ", Noted.Of(NoteCodes.StartedSameTree, "in the tree it worked in."));
 
         // Why the answer did not go on in its own conversation (ANSWER1a, D131 §2).
