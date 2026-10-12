@@ -13954,3 +13954,21 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PROCESS1d-i — a driven session is told its process** (driver; after 1b-i). The instruction's landing section (`Adapters.cs` `Landing`/`Lands`, in every form the `Tail` carries) says the resolved commit rule (`CommitRules.Resolve`: as-you-go, ask or at-end, the convention quoted as a block), its source, and the branch the pull request comes from by name; in every mode no branch is created, switched or pushed; under auto-accept with `ask`, the yes and the commit come before the quest closes done. Only in a tree of the session's own; never an intake (no repository), nor a run resumed in its own conversation. A merge-form repository is told its commit rule too. Pure `ProcessWords` (Trees), a golden pair. Replaces SESSCOMMIT2. D164's amendment point 4.
 
 **Outcome** 2026-10-13: a driven session in a tree of its own is told its resolved commit rule (mode, source, convention quoted) and the pull request's branch in the instruction's landing section, in all three forms; `ProcessWords` (Trees/Domain) builds it, `SessionTarget.Commits` is set under the `Holds` guard, a merge-form repository is told its rule too, and the `own-tree` golden pair pins it. Its Process cases passed on the merge. Detail: D164's PROCESS1d-i note.
+
+## USAGEREAD2b — the terminal says where a reading came from (2026-10-13, D165)
+
+> - [ ] **USAGEREAD2b — the terminal says where a reading came from** (cli; after 2a). `daoris agent list` prints each reading's source and age (`read 2 min ago` or `said 3 h ago`), both twins' tables in step (`windows.ts`, `WindowsTwinTests`). Design §5.
+
+**Outcome** 2026-10-13: built as the row says: the CLI reads `source` as the driver does, and `saidLine` leads with the newest reading's source and age, a window from the other source naming its own in its clause; the twin table carries the source cell. Detail: D165's USAGEREAD2b note.
+
+## USAGEREAD3b — the page says the pace warning in its own words (2026-10-13, D165)
+
+> - [ ] **USAGEREAD3b — the page says the pace warning in its own words** (web; after 3a). Account rows, the agents list and the use settings show `warned` as the agent's pace warning, not *near its limit*; the hand-over offer's words. Both languages.
+
+**Outcome** 2026-10-13: the Agents page's window cells and the accounts' said line say a `warned` window as *ahead of its pace, by its own word* in both languages, the bar's warning tint kept; `NearBy` loses `word`, and the near pill and the hand-over offer come only from a limit, credits or the number. Detail: D165's USAGEREAD3b note.
+
+## MIXAGENT1a-iii — the record's `from` link (2026-10-13, D163)
+
+> - [ ] **MIXAGENT1a-iii — the record's `from` link** (service/driver; after 1a-ii). A session that continues another says so on its own record, with who asked and why (the `opinion` column's pattern), for a conversation handed over and a quest's session carried on, so the head and the rail can say it (MIXAGENT3a). D163's MIXAGENT1a-ii note; design §4.
+
+**Outcome** 2026-10-13: a session that continues another names it on its own record (`from`, `fromWhy`, `fromBy`; the column `from_session`, as FROM is SQL's), loopback only and never on the wire; the driver sets it for a conversation handed over, a quest carried on after a hand-over, and one moved to another account after a limit; `curve` joins `HandOverWhy` for SWITCH1c. Its Process cases passed on the merge. Detail: D163's MIXAGENT1a-iii note; SESSFIELD1 writes the field chain down.

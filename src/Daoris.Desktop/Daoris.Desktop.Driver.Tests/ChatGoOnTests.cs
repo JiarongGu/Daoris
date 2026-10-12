@@ -665,6 +665,8 @@ internal sealed class ChatLedger : HttpMessageHandler
                         ["harnessVersion"] = asked["harnessVersion"]?.GetValue<string>(), ["profile"] = asked["profile"]?.GetValue<string>(),
                         ["tree"] = asked["tree"]?.GetValue<string>(), ["created"] = "2026-10-03T08:00:00Z", ["said"] = new JsonArray(),
                     };
+                    // The conversation it continues, why and who asked (MIXAGENT1a-iii), as the service answers them on loopback.
+                    StandInLedger.Continues(session, asked.AsObject());
                     _sessions.Add(session);
                     return (HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "opened" }.ToJsonString());
                 }

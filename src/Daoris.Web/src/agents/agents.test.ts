@@ -454,7 +454,7 @@ describe('what an account’s agent last said, a cell a window', () => {
     seen: SEEN,
     windows: [
       { window: 'weekly', used: 0.15, reset: WEEK, credits: false, seen: EARLIER },
-      { window: 'session', used: 0.88, reset: RESET, standing: 'near', credits: false, seen: SEEN },
+      { window: 'session', used: 0.88, reset: RESET, standing: 'warned', credits: false, seen: SEEN },
     ],
   };
   const signedIn = accountState({ login: 'in', read: TEN }, null, true);
@@ -467,7 +467,7 @@ describe('what an account’s agent last said, a cell a window', () => {
     expect(usage.cells).toEqual([
       {
         window: 'session', name: 'five-hour', known: true, used: 0.88, warned: true,
-        reading: '88% used, near its limit, by its own word', times: [`resets ${clockOf(RESET, NOW)}`, `said ${ago(SEEN)}`],
+        reading: '88% used, ahead of its pace, by its own word', times: [`resets ${clockOf(RESET, NOW)}`, `said ${ago(SEEN)}`],
       },
       {
         window: 'weekly', name: 'weekly', known: true, used: 0.15, warned: false,
@@ -520,7 +520,7 @@ describe('what an account’s agent last said, a cell a window', () => {
   it('says it in 中文', () => {
     i18n.changeLanguage('zh');
     expect(usageCells({ said }, signedIn, { now: NOW })!.cells.map((cell) => [cell.name, cell.reading, ...cell.times])).toEqual([
-      ['5 小时', '已用 88%，它自己说接近上限', `${clockOf(RESET, NOW)} 重置`, `${ago(SEEN)}报告`],
+      ['5 小时', '已用 88%，它自己说用量超前于节奏', `${clockOf(RESET, NOW)} 重置`, `${ago(SEEN)}报告`],
       ['每周', '已用 15%', `${clockOf(WEEK, NOW)} 重置`, `${ago(EARLIER)}报告`],
     ]);
     expect(usageCells({}, signedIn, { fixed: true, now: NOW })!.cells[0]!.reading).toBe('未知');
@@ -539,7 +539,7 @@ describe('what an account’s agent last said, a cell a window', () => {
 
     expect(ownSaid(use({ said }))).toEqual(said);
     expect(usageCells({ said: ownSaid(use({ said })) }, ownState(codex, use({ said })), { now: NOW })!.cells
-      .map((cell) => cell.reading)).toEqual(['88% used, near its limit, by its own word', '15% used']);
+      .map((cell) => cell.reading)).toEqual(['88% used, ahead of its pace, by its own word', '15% used']);
     expect(ownSaid(use({}))).toBeNull();
     expect(ownSaid(use({ said: null }))).toBeNull();
     expect(ownSaid(use({ said: { seen: SEEN } }))).toBeNull();

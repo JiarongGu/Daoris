@@ -302,6 +302,18 @@ internal sealed class StandInLedger : HttpMessageHandler
         lock (_gate) return (JsonObject)_sessions.Single(s => s["id"]!.GetValue<string>() == id).DeepClone();
     }
 
+    /// <summary>
+    /// The session an open says the new record continues, why and who asked (MIXAGENT1a-iii), kept as the service answers them on
+    /// loopback: each only where the open named it.
+    /// </summary>
+    internal static void Continues(JsonObject session, JsonObject open)
+    {
+        foreach (var name in new[] { "from", "fromWhy", "fromBy" })
+        {
+            if (open[name]?.GetValue<string>() is { } value) session[name] = value;
+        }
+    }
+
     /// <summary>Every record, oldest first.</summary>
     public IReadOnlyList<JsonObject> Sessions
     {
@@ -388,6 +400,7 @@ internal sealed class StandInLedger : HttpMessageHandler
                         // The account it runs on, as the service answers it on loopback (TOOL4f reads it back).
                         ["profile"] = body["profile"]?.GetValue<string>(),
                     };
+                    Continues(session, body);
                     _sessions.Add(session);
                     return Answer(HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "queued" });
                 }

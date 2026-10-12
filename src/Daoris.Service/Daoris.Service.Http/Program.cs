@@ -1381,7 +1381,7 @@ app.MapPost("/api/sessions", async (
     // there. It records what it is told and judges none of it.
     var outcome = await s.Ledger.OpenAsync(
         body.Quest, body.Adapter, DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, body.Tree,
-        body.BaseCommit, ct);
+        body.BaseCommit, ct, body.From, body.FromWhy, body.FromBy);
 
     return outcome.Refusal switch
     {
@@ -1411,7 +1411,9 @@ app.MapPost("/api/sessions/chat", async (
         body.Repository,
         // The adapter is the harness, never a model (D24). Silence takes the supported one.
         string.IsNullOrWhiteSpace(body.Adapter) ? "claude-code" : body.Adapter,
-        DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, body.Tree, body.BaseCommit, ct);
+        DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, body.Tree, body.BaseCommit, ct,
+        // The conversation a hand-over goes on from (MIXAGENT1a-iii), as the driver says it.
+        body.From, body.FromWhy, body.FromBy);
 
     return outcome.Refusal switch
     {
@@ -2112,7 +2114,11 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     // The second opinion a reviewer's record reads for (XAGENT1c): this machine's, like the opinion, so answered to it only.
     Opinion: loopback ? s.Opinion : null,
     // The session a helper's record answers (MIXAGENT2a-i): this machine's, like the opinion, so answered to it only.
-    Serves: loopback ? s.Serves : null);
+    Serves: loopback ? s.Serves : null,
+    // The session this one continues, why and who asked (MIXAGENT1a-iii): this machine's, like the opinion, so answered to it only.
+    From: loopback ? s.From : null,
+    FromWhy: loopback ? s.FromWhy : null,
+    FromBy: loopback ? s.FromBy : null);
 
 // A word with whose it is (XAGENT1c): `by` names the second opinion whose findings these are, and is absent for the person's.
 static SaidWordResponse ToSaid(SaidWord word) => new(word.Id, word.Text, word.At, word.Files, word.Reopens, word.By, word.Helper);

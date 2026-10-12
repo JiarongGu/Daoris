@@ -20,6 +20,9 @@
 //   5. A standing is `clear`, `warned` (the agent's own pace warning, never near: USAGEREAD3a) or `refused`. A `near` the
 //      driver wrote before USAGEREAD3a was only ever that warning, so it reads as `warned`, compared exactly.
 //
+//   6. An entry's `source` is `read` where Daoris's own no-prompt read wrote it, and anything else, or none, is `said`
+//      (USAGEREAD2a); the line leads `read <age>:` or `said <age>:` (USAGEREAD2b).
+//
 // It holds no words of the agent's, no key and nobody's name. No HTTP route reaches it (D47 §4), and this module opens no
 // socket and spawns nothing.
 
@@ -48,6 +51,8 @@ export interface WindowSaid {
   credits: boolean;
   seen: Date;
   session: string | null;
+  /** `read` where Daoris's own no-prompt read of the plan's usage wrote it; `said` for a session's frame (USAGEREAD2b). */
+  source: 'read' | 'said';
 }
 
 /** Where the file is: beside `cooling.json`, under the home. */
@@ -75,7 +80,9 @@ export function saidOf(home: string, agent: string, account: string, now: Date):
     const standing = written === 'near' ? 'warned' : written;
     const credits = entry['credits'] === true;
     if (used === null && standing === null && !credits) continue;
-    windows.push({ window, used, reset, standing, credits, seen, session: text(entry['session']) });
+    // Absent, or anything but exactly `read`, is a session's word, as the driver's `SaidOf` reads it (USAGEREAD2a).
+    const source = entry['source'] === 'read' ? 'read' : 'said';
+    windows.push({ window, used, reset, standing, credits, seen, session: text(entry['session']), source });
   }
   return windows.length === 0 ? null : windows;
 }
@@ -94,8 +101,14 @@ export function saidLine(windows: WindowSaid[], now: Date, zone: string, near: n
   if (reached) parts.push(`its ${reached.window} limit reached, by its own word`);
   else if (warned) parts.push(`ahead of its pace on its ${warned.window} window, by its own word`);
   if (windows.some((each) => each.credits)) parts.push('drawing on usage credits');
+  // The lead is the newest reading's source, a read winning a tie as the driver keeps it; a window from the other source
+  // says so, with its own age (USAGEREAD2b).
+  const newest = windows.reduce((best, each) => (
+    each.seen.getTime() > best.seen.getTime() || (each.seen.getTime() === best.seen.getTime() && each.source === 'read') ? each : best));
   for (const each of ordered(windows)) {
-    if (each.used !== null) parts.push(`${percent(each.used)} of its ${each.window} limit used, resetting ${coolingWhen(each.reset, zone)}`);
+    if (each.used === null) continue;
+    const own = each.source === newest.source ? '' : ` (${each.source} ${age(each.seen, now)})`;
+    parts.push(`${percent(each.used)} of its ${each.window} limit used${own}, resetting ${coolingWhen(each.reset, zone)}`);
   }
   if (near !== null && !reached && !windows.some((each) => each.credits)
     && windows.some((each) => each.used !== null && each.used * 100 >= near - 1e-9)) {
@@ -103,8 +116,7 @@ export function saidLine(windows: WindowSaid[], now: Date, zone: string, near: n
   }
   // A reading with no number, no warning and no credits is its agent's clear word alone.
   if (parts.length === 0) parts.push('clear, by its own word');
-  const seen = new Date(Math.max(...windows.map((each) => each.seen.getTime())));
-  return `said ${age(seen, now)}: ${parts.join('; ')}`;
+  return `${newest.source} ${age(newest.seen, now)}: ${parts.join('; ')}`;
 }
 
 /** How long ago, as the driver's start line says it: `just now`, `20 min ago`, `3 h ago`, `2 d ago`. */

@@ -95,6 +95,26 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Contains(outcome.Session.Id, outcome.Message);
     }
 
+    /// <summary>
+    /// MIXAGENT1a-iii (D163 point 4): both opens record the session the new one continues, why and who asked, as the driver says
+    /// them; an open that says none records none.
+    /// </summary>
+    [Fact]
+    public async Task Both_opens_record_the_session_a_new_one_continues()
+    {
+        var quest = await Publish();
+
+        var carried = await _ledger.OpenAsync(quest.Id, "stub", Now, from: "s0", fromWhy: "limit", fromBy: "daoris");
+        var chat = await _ledger.OpenChatAsync("Owner", "codex-acp", Now, tree: "/trees/owner-handed", from: "c0nv0001", fromWhy: "press", fromBy: "person");
+        var plain = await _ledger.OpenChatAsync("Owner", "stub", Now, tree: "/trees/owner-plain");
+
+        Assert.Equal(("s0", "limit", "daoris"), Link((await _sessions.FindAsync(carried.Session!.Id))!));
+        Assert.Equal(("c0nv0001", "press", "person"), Link((await _sessions.FindAsync(chat.Session!.Id))!));
+        Assert.Equal(((string?)null, (string?)null, (string?)null), Link((await _sessions.FindAsync(plain.Session!.Id))!));
+
+        static (string?, string?, string?) Link(Session session) => (session.From, session.FromWhy, session.FromBy);
+    }
+
     [Fact]
     public async Task An_unknown_quest_is_refused()
     {

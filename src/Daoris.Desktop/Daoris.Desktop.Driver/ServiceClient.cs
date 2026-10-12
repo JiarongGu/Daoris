@@ -440,9 +440,11 @@ public sealed partial class ServiceClient : IDisposable
     /// That the quest is a set-up (<see cref="SetupQuests"/>), for the watchers alone (WSSETUP11): the
     /// ledger is not told, and the machine log marks the session's start.
     /// </param>
+    /// <param name="from">The session this one carries on, why and who asked (MIXAGENT1a-iii), for its record; null for none.</param>
     public async Task<(string? SessionId, string Message)> OpenSessionAsync(
         string questId, string adapter, string? harnessVersion = null, string? profile = null,
-        string? tree = null, string? baseCommit = null, CancellationToken ct = default, bool setup = false)
+        string? tree = null, string? baseCommit = null, CancellationToken ct = default, bool setup = false,
+        ContinuedFrom? from = null)
     {
         var body = WriteJson(writer =>
         {
@@ -459,6 +461,7 @@ public sealed partial class ServiceClient : IDisposable
             // Where that tree stood before the process ran (SURF6) — the range the review is measured
             // from. Observed here for the same reason as the two above: only this side has a checkout.
             if (baseCommit is not null) writer.WriteString("baseCommit", baseCommit);
+            WriteFrom(writer, from);
             writer.WriteEndObject();
         });
 
@@ -466,13 +469,26 @@ public sealed partial class ServiceClient : IDisposable
     }
 
     /// <summary>
+    /// The session a new record continues, why and who asked (MIXAGENT1a-iii, D163 point 4): known on this side alone, which ran
+    /// the hand-over or the carry-on. Omitted for none, as every optional field of an open is.
+    /// </summary>
+    private static void WriteFrom(Utf8JsonWriter writer, ContinuedFrom? from)
+    {
+        if (from is null) return;
+        writer.WriteString("from", from.Session);
+        writer.WriteString("fromWhy", from.Why);
+        writer.WriteString("fromBy", from.By);
+    }
+
+    /// <summary>
     /// Ask the ledger to open a CHAT in a repository (D49 §3) — a person's session, serving no quest
     /// yet. A refusal is an answer, not an exception: the usual one is that the repository is busy,
     /// and the sentence names what holds it.
     /// </summary>
+    /// <param name="from">The conversation this one continues, handed over (MIXAGENT1a-iii), for its record; null for none.</param>
     public async Task<(string? SessionId, string Message)> OpenChatAsync(
         string repository, string adapter, string? harnessVersion = null, string? profile = null,
-        string? tree = null, string? baseCommit = null, CancellationToken ct = default)
+        string? tree = null, string? baseCommit = null, CancellationToken ct = default, ContinuedFrom? from = null)
     {
         var body = WriteJson(writer =>
         {
@@ -483,6 +499,7 @@ public sealed partial class ServiceClient : IDisposable
             if (profile is not null) writer.WriteString("profile", profile);
             if (tree is not null) writer.WriteString("tree", tree);
             if (baseCommit is not null) writer.WriteString("baseCommit", baseCommit);
+            WriteFrom(writer, from);
             writer.WriteEndObject();
         });
 
@@ -1467,6 +1484,10 @@ public sealed partial class ServiceClient : IDisposable
             // What a helper may be asked of, and where its rule resolves (MIXAGENT2a-ii): served on loopback with the record.
             Serves = Text(session, "serves"),
             Opinion = Text(session, "opinion"),
+            // The session it continues, why and who asked (MIXAGENT1a-iii): served on loopback with the record, for the head to say.
+            From = Text(session, "from"),
+            FromWhy = Text(session, "fromWhy"),
+            FromBy = Text(session, "fromBy"),
             Workspace = Text(session, "workspace"),
             // A chat goes on through the chat runner, never the planner (MSG1c).
             Kind = Text(session, "kind") ?? "driven",

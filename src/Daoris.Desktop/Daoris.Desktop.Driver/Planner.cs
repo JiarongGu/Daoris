@@ -257,6 +257,18 @@ public sealed record PriorSession(
     /// <summary>The second opinion this one reads for, when it is a reviewer's record; null for every other.</summary>
     public string? Opinion { get; init; }
 
+    /// <summary>
+    /// The session this one continues (MIXAGENT1a-iii's <c>from</c>): a conversation handed over, or a quest's session carried on
+    /// after a hand-over or onto another account after a limit; null for every other, and from a host from before.
+    /// </summary>
+    public string? From { get; init; }
+
+    /// <summary>Why it continues <see cref="From"/>, by <see cref="HandOverWhy"/>'s codes; null with it.</summary>
+    public string? FromWhy { get; init; }
+
+    /// <summary>Who asked for it to continue <see cref="From"/>, by <see cref="HandOverBy"/>'s codes; null with it.</summary>
+    public string? FromBy { get; init; }
+
     /// <summary>The workspace the record belongs to, as it names it: where a rule is resolved for it.</summary>
     public string? Workspace { get; init; }
 }
