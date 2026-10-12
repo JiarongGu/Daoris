@@ -180,6 +180,146 @@ public sealed class HandOverTests : IDisposable
         Assert.Contains("… and 30 more", long_);
     }
 
+    // ——— Taking the box (D163 §3): end the old conversation, start the new in its tree, brief it, say where it went.
+
+    private SessionEvents Events => new(Path.Combine(_home, "sessions"));
+
+    private sealed class Taken
+    {
+        public List<string> Calls { get; } = [];
+
+        public ChatMessage? Said { get; set; }
+
+        public bool Reached { get; set; } = true;
+
+        public ChatStart Started { get; set; } = new("n3w00001", "opened");
+    }
+
+    private Task<HandedOver> TakeAsync(Room room, Taken taken, HandOverRequest ask, string id = "c0nv0001")
+    {
+        new HandOverBox(_home).Write(id, ask);
+        return HandOverTake.RunAsync(
+            room.Client(), _home, Events, output: null, id, ask, Roster,
+            end: session =>
+            {
+                taken.Calls.Add($"end {session}");
+                return Task.CompletedTask;
+            },
+            start: (prior, request, _) =>
+            {
+                taken.Calls.Add($"start {Path.GetFileName(prior.Tree)} {prior.Repository} {request.Agent} {request.Account}");
+                return Task.FromResult(taken.Started);
+            },
+            say: (session, message) =>
+            {
+                taken.Calls.Add($"say {session}");
+                taken.Said = message;
+                return taken.Reached;
+            });
+    }
+
+    private static HandOverRequest Ask(string agent = "codex-acp", string? account = "work") =>
+        new(agent, account, HandOverWhy.Limit, HandOverBy.Daoris, T0);
+
+    /// <summary>
+    /// 🔴 The old conversation ends first (its tree is held by one session at a time), the new starts in the same tree on the named
+    /// agent and account, and is told Daoris's briefing, never the person's words; both records say where it went and where it
+    /// came from, by code, and the box is gone.
+    /// </summary>
+    [Fact]
+    public async Task Taking_the_box_ends_the_old_starts_the_new_in_its_tree_and_briefs_it()
+    {
+        var events = Events;
+        events.Append("c0nv0001", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Make the port configurable.\nAnd log it." });
+        var taken = new Taken();
+
+        var handed = await TakeAsync(new Room([Chat("c0nv0001")]), taken, Ask());
+
+        Assert.Equal(["end c0nv0001", "start tree engine codex-acp work", "say n3w00001"], taken.Calls);
+        Assert.Equal(("n3w00001", true, (string?)null), (handed.SessionId, handed.Kept, handed.Why));
+        Assert.Equal("conversation `n3w00001` goes on from `c0nv0001` with codex-acp.", handed.Message);
+        var message = taken.Said!;
+        Assert.Equal("", message.Text);
+        Assert.StartsWith("You continue the claude-code conversation `c0nv0001`, handed over because the account it ran on reached its limit.", message.Briefing);
+        Assert.Contains("> Make the port configurable.\n> And log it.", message.Briefing);
+        Assert.Equal(["chat.taken-over"], NoteAssert.Codes(message.TakenOver!.Parts));
+        Assert.Equal(("claude-code", "c0nv0001", "limit"), (message.TakenOver.Parts[0].Value("agent"), message.TakenOver.Parts[0].Value("session"), message.TakenOver.Parts[0].Value("why")));
+        var old = Assert.Single(events.Page("c0nv0001", limit: SessionEvents.MaxPage).Events, e => e.Kind == SessionEventKind.Note);
+        Assert.Equal(["chat.handed-over"], NoteAssert.Codes(old.Parts!));
+        Assert.Equal(("codex-acp", "n3w00001"), (old.Parts![0].Value("agent"), old.Parts[0].Value("session")));
+        Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
+    }
+
+    /// <summary>A box judged again as it is taken: a tree gone while it waited ends nothing and starts nothing, and the box is gone.</summary>
+    [Fact]
+    public async Task A_box_that_no_longer_holds_is_refused_with_nothing_ended_or_started()
+    {
+        var taken = new Taken();
+
+        var handed = await TakeAsync(new Room([Chat("tr33g0n3", tree: Path.Combine(_home, "gone"))]), taken, Ask(), "tr33g0n3");
+
+        Assert.Empty(taken.Calls);
+        Assert.Equal(((string?)null, false, HandOver.TreeGone), (handed.SessionId, handed.Kept, handed.Why));
+        Assert.Null(new HandOverBox(_home).Read("tr33g0n3"));
+    }
+
+    /// <summary>A start the roster refuses is said with its own sentence, the old conversation already ended, and the box does not stay to be tried at every come-up.</summary>
+    [Fact]
+    public async Task A_start_that_is_refused_says_why_and_leaves_no_box()
+    {
+        var taken = new Taken { Started = new ChatStart(null, "every account of codex-acp is cooling.") };
+
+        var handed = await TakeAsync(new Room([Chat("c0nv0001")]), taken, Ask());
+
+        Assert.Equal(["end c0nv0001", "start tree engine codex-acp work"], taken.Calls);
+        Assert.Equal((null, false, (string?)null), (handed.SessionId, handed.Kept, handed.Why));
+        Assert.Equal(
+            "c0nv0001 ended, but the conversation with codex-acp did not start: every account of codex-acp is cooling. Its tree is as it was.",
+            handed.Message);
+        Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
+    }
+
+    /// <summary>A new conversation whose briefing did not reach it is still the new conversation: said, so the person writes to it.</summary>
+    [Fact]
+    public async Task A_briefing_that_did_not_reach_the_new_conversation_is_said()
+    {
+        var taken = new Taken { Reached = false };
+
+        var handed = await TakeAsync(new Room([Chat("c0nv0001")]), taken, Ask());
+
+        Assert.Equal(("n3w00001", true), (handed.SessionId, handed.Kept));
+        Assert.Equal(
+            "conversation `n3w00001` opened with codex-acp, but what Daoris kept of `c0nv0001` did not reach it: tell it where you were.",
+            handed.Message);
+    }
+
+    /// <summary>The request is the person's first message, whole; a driven session's composed target is none.</summary>
+    [Fact]
+    public void The_request_is_the_first_message_the_person_wrote_whole()
+    {
+        var events = Events;
+        events.Append("c0nv0001", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "First.\nSecond line." });
+        events.Append("c0nv0001", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Later." });
+        events.Append("c0nv0002", new SessionEvent { Kind = SessionEventKind.User, Origin = "daoris", Text = "A composed target." });
+
+        Assert.Equal("First.\nSecond line.", events.FirstAsked("c0nv0001"));
+        Assert.Null(events.FirstAsked("c0nv0002"));
+        Assert.Null(events.FirstAsked("nothing0"));
+    }
+
+    /// <summary>A conversation handed over opens with one note in the record, never a message of the person's and never the browser's line.</summary>
+    [Fact]
+    public void A_handed_over_conversation_records_its_note_in_place_of_a_person_s_message()
+    {
+        var message = new ChatMessage("", []) { Briefing = "You continue…", TakenOver = HandOverNotes.TakenOver("claude-code", "c0nv0001", HandOverWhy.Near) };
+
+        var recorded = ChatRunner.Recorded(message).ToList();
+
+        var only = Assert.Single(recorded);
+        Assert.Equal((SessionEventKind.Note, "chat.taken-over"), (only.Kind, only.Parts![0].Code));
+        Assert.Equal([SessionEventKind.User], ChatRunner.Recorded(new ChatMessage("hello", [])).Select(e => e.Kind));
+    }
+
     // ——— The terminal's door (D50): `daoris-driver sessions hand-over <id> --agent <adapter> [--account <name>]`.
 
     [Fact]

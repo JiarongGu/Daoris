@@ -343,6 +343,81 @@ public static class HandOverBriefing
     private static string More(int count) => count > ListLimit ? $"\n    … and {count - ListLimit} more" : "";
 }
 
+/// <summary>
+/// Taking a hand-over's box (MIXAGENT1a-i, D163 §3): judged again, then the old conversation ends, the new starts in its tree on
+/// the agent and account asked for and is told Daoris's briefing, and both records say where it went and where it came from.
+/// Pure of the runner's own parts, which are handed in, so the sequence is held in-process.
+/// </summary>
+/// <remarks>
+/// <b>The old ends before the new starts</b>: a tree is held by one session at a time (D51). <b>The box is gone however it came
+/// out</b>, so a refused start is not tried again at every shell's come-up; the asker is told, and asks again.
+/// </remarks>
+public static class HandOverTake
+{
+    /// <summary>Judge, end, start, brief and say where it went.</summary>
+    /// <param name="end">Ends the old conversation by the runner's own end, and returns once its record has ended.</param>
+    /// <param name="start">Opens the new conversation in the old one's tree on the box's agent and account.</param>
+    /// <param name="say">Hands the new conversation its first message; false where nothing took it.</param>
+    public static async Task<HandedOver> RunAsync(
+        ServiceClient service, string home, SessionEvents events, SessionOutput? output, string id, HandOverRequest ask,
+        Func<string, IReadOnlyList<string>?> accountsOf, Func<string, Task> end,
+        Func<PriorSession, HandOverRequest, CancellationToken, Task<ChatStart>> start, Func<string, ChatMessage, bool> say,
+        CancellationToken ct = default)
+    {
+        var box = new HandOverBox(home);
+        try
+        {
+            var (refused, prior) = await HandOver.JudgeAsync(service, accountsOf, id, ask.Agent, ask.Account, ct).ConfigureAwait(false);
+            if (refused is not null) return new HandedOver(null, false, refused.Why, refused.Message);
+
+            var from = prior!.Adapter ?? "its agent";
+            var uncommitted = await UncommittedAsync(prior.Tree!, ct).ConfigureAwait(false);
+            var (plan, words) = Driver.CarriedFrom(events, home, id);
+            var briefing = HandOverBriefing.Compose(from, id, ask.Why, events.FirstAsked(id), plan, words, uncommitted);
+
+            await end(id).ConfigureAwait(false);
+
+            var started = await start(prior, ask, ct).ConfigureAwait(false);
+            if (started.SessionId is not { } to)
+            {
+                return new HandedOver(
+                    null, false, null,
+                    $"{id} ended, but the conversation with {ask.Agent} did not start: {started.Message} Its tree is as it was.");
+            }
+
+            var taken = say(to, new ChatMessage("", []) { Briefing = briefing, TakenOver = HandOverNotes.TakenOver(from, id, ask.Why) });
+
+            // Where it went, where the person wrote it: the old conversation's last line, after its own end.
+            var went = HandOverNotes.HandedOver(ask.Agent, to);
+            output?.Append(id, went.Note);
+            events.Keep(id, new SessionEvent { Kind = SessionEventKind.Note, Text = went.Note, Parts = went.Parts }, say: null);
+
+            return new HandedOver(
+                to, true, null,
+                taken
+                    ? $"conversation `{to}` goes on from `{id}` with {ask.Agent}."
+                    : $"conversation `{to}` opened with {ask.Agent}, but what Daoris kept of `{id}` did not reach it: tell it where you were.");
+        }
+        finally
+        {
+            box.Clear(id);
+        }
+    }
+
+    /// <summary>What the tree holds uncommitted, as git says it; none where git cannot say.</summary>
+    private static async Task<IReadOnlyList<string>> UncommittedAsync(string tree, CancellationToken ct)
+    {
+        try
+        {
+            return await WorkingTree.UncommittedAsync(tree, HandOverBriefing.ListLimit, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or IOException or System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            return [];
+        }
+    }
+}
+
 /// <summary>The two lines a hand-over writes into conversations' records (MIXAGENT1a-i), each by its code with facts only.</summary>
 public static class HandOverNotes
 {

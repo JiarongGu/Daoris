@@ -480,6 +480,17 @@ public sealed class SessionEvents(string directory)
     }
 
     /// <summary>
+    /// What the person first said in a session, whole (MIXAGENT1a-i): the request a conversation handed to another agent is told
+    /// of. Null where the person said none (a driven session's composed target is not them), no record, or an id that is not one.
+    /// </summary>
+    public string? FirstAsked(string sessionId)
+    {
+        if (!IsId(sessionId)) return null;
+        var asked = Lines(Path.Combine(directory, $"{sessionId}.events.jsonl")).FirstOrDefault(e => e.Kind == SessionEventKind.User && e.Reaches is null);
+        return asked?.Origin == "person" ? asked.Text : null;
+    }
+
+    /// <summary>
     /// The door the first of these words was said at (MSG1d, D137 §3.3), read from the event that showed it waiting: what the
     /// machine log's <c>session.reopened</c> names. Null where no such event names one: words said before doors were kept,
     /// a door that wrote no record, no record, or an id that is not one.
