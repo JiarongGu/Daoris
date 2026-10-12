@@ -31,6 +31,10 @@ The adapters are the stub, `acp-stub` (the protocol door with no model in it), `
 protocol door's configurations `claude-code-acp`, `codex-acp` and `dsh`. A session's record is
 concluded from its exit code and its quest, never from what it said.
 
+An account's use is measured against a curve by `Accounts/Domain/UsageCurves.cs` (D165, SWITCH1b-i): the share of a window
+passed at a given moment, the person's or the smart curve's value there, and each account's room in points on its tightest
+window (none where no window is read). It is pure, the first file in an onion layer folder; the walk's use of it is SWITCH1b-ii.
+
 ## What the page can ask this machine
 
 | Module | What it carries |

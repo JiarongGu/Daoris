@@ -6,7 +6,7 @@ public static class GitBranchKind
     /// <summary>The repository's line (D86), the local branch of that name.</summary>
     public const string Line = "line";
 
-    /// <summary>A session's branch: the <c>daoris/</c> namespace Daoris's proofs read as its own sessions' (D88).</summary>
+    /// <summary>A session's branch: the <c>daoris/</c> namespace Daoris's proofs read as its own sessions' (D88), or the branch its tree was moved onto (TREEFOLLOWREPO1).</summary>
     public const string Session = "session";
 
     /// <summary>A branch a landing made that <c>landings.json</c> still records (D102), while it holds the commit it was made at.</summary>
@@ -471,6 +471,11 @@ public static class GitBranches
             .Where(each => Same(each.Repository, ask.Repository))
             .GroupBy(each => each.Branch, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => group.Last(), StringComparer.Ordinal);
+        // The branches the trees moved onto, by name, the newest entry of a name winning: only a session's own daoris/ branch is a folder's name.
+        var movedOnto = ask.Grown
+            .Where(each => Same(each.Repository, ask.Repository) && each.Now is { Length: > 0 } && each.Branch.StartsWith("daoris/", StringComparison.Ordinal))
+            .GroupBy(each => each.Now!, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.Last(), StringComparer.Ordinal);
         var sessions = (ask.Sessions ?? [])
             .Where(each => !each.Teammate && each.Tree is { Length: > 0 } && Same(each.Repository, ask.Repository))
             .GroupBy(each => TreeName(each.Tree!), StringComparer.Ordinal)
@@ -523,10 +528,15 @@ public static class GitBranches
             };
 
             if (each == local) return branch with { Kind = GitBranchKind.Line };
-            if (each.Short.StartsWith("daoris/", StringComparison.Ordinal))
+            // A branch the session's agent moved its tree onto is that session's while the tree is on it (TREEFOLLOWREPO1, D164):
+            // the ledger's entry names it in Now, and its own daoris/ branch, though it may be gone, names the tree's folder.
+            var own = each.Short.StartsWith("daoris/", StringComparison.Ordinal);
+            var moved = !own && movedOnto.TryGetValue(each.Short, out var followed) ? followed : null;
+            if (own || moved is not null)
             {
-                var record = sessions.GetValueOrDefault(each.Short["daoris/".Length..]);
-                var start = grown.GetValueOrDefault(each.Short);
+                var start = moved ?? grown.GetValueOrDefault(each.Short);
+                var folder = own ? each.Short["daoris/".Length..] : moved!.Branch["daoris/".Length..];
+                var record = sessions.GetValueOrDefault(folder);
                 return branch with
                 {
                     Kind = GitBranchKind.Session,
