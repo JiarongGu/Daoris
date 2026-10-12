@@ -585,6 +585,32 @@ public sealed class SessionStoreTests : IAsyncLifetime
         Assert.Null((await _sessions.FindAsync("alice-laptop/" + reviewer.Id))!.Opinion);
     }
 
+    /// <summary>
+    /// MIXAGENT1a-iii (D163 point 4): a session that continues another names it on its own record, with why and who asked; a
+    /// record that continues none names none, and a why or an asker with no session is no link. This machine's own, as the
+    /// opinion is: the mirror writes none.
+    /// </summary>
+    [Fact]
+    public async Task A_record_that_continues_another_names_it_with_why_and_who_asked()
+    {
+        var handed = await _sessions.CreateAsync(
+            null, "Owner", "codex-acp", Now, kind: SessionKind.Chat, from: "c0nv0001", fromWhy: "near", fromBy: "daoris");
+
+        var read = (await _sessions.FindAsync(handed.Id))!;
+        Assert.Equal(("c0nv0001", "near", "daoris"), (read.From, read.FromWhy, read.FromBy));
+
+        var plain = (await _sessions.FindAsync((await Create()).Id))!;
+        Assert.Equal(((string?)null, (string?)null, (string?)null), (plain.From, plain.FromWhy, plain.FromBy));
+
+        var loose = await _sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat, from: " ", fromWhy: "near", fromBy: "daoris");
+        var unlinked = (await _sessions.FindAsync(loose.Id))!;
+        Assert.Equal(((string?)null, (string?)null, (string?)null), (unlinked.From, unlinked.FromWhy, unlinked.FromBy));
+
+        await _sessions.MirrorAsync(handed with { Id = "alice-laptop/" + handed.Id, Origin = "alice-laptop" });
+        var mirrored = (await _sessions.FindAsync("alice-laptop/" + handed.Id))!;
+        Assert.Equal(((string?)null, (string?)null, (string?)null), (mirrored.From, mirrored.FromWhy, mirrored.FromBy));
+    }
+
     /// <summary>A chat is the same row with no quest in it (D49 §3).</summary>
     [Fact]
     public async Task A_chat_round_trips_with_no_quest()
@@ -666,6 +692,8 @@ public sealed class SessionSchemaUpgradeTests : IAsyncLifetime
         Assert.False(elder.Limit);
         // …and it names no second opinion (XAGENT1c): the old reading, a session that read nobody's work for one.
         Assert.Null(elder.Opinion);
+        // …nor a session it continues (MIXAGENT1a-iii): the old reading, a session that went on from none.
+        Assert.Equal(((string?)null, (string?)null, (string?)null), (elder.From, elder.FromWhy, elder.FromBy));
 
         var chat = await sessions.CreateAsync(
             null, "Elder", "stub", Now, workspace: null, kind: SessionKind.Chat);
