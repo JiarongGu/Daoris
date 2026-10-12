@@ -112,8 +112,9 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
 
     /// <summary>
     /// Hand a helper's answer to the session it serves: a word on its record naming the helper as <see cref="SaidWord.Helper"/>,
-    /// which reopens it at the driver's next look (D137). Once, and only to a record of this machine's that ended and takes words:
-    /// a running turn takes it at its end, never into a step in flight, so the driver hands it then.
+    /// which reopens it at the driver's next look (D137). Once, and only to a record of this machine's that ended and takes words,
+    /// or to an open conversation between turns (MIXAGENT2a-iii), which says it as its next turn: a running quest takes it at its
+    /// end, never into a step in flight, so the driver hands it then.
     /// </summary>
     /// <param name="text">The words as Daoris composed them around the helper's claim.</param>
     public async Task<HelperOutcome> HandAsync(string helperId, string text, DateTimeOffset now, CancellationToken ct = default)
@@ -139,6 +140,9 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
                 { State: SessionState.StoodDown } => $"Session `{asker.Id}` stood down, so it has nothing to go on with",
                 { State: SessionState.AwaitingPerson } =>
                     $"Session `{asker.Id}` waits on the person's answer: a helper's answer reaches it at a turn's end, once it is answered",
+                // An open conversation between turns (MIXAGENT2a-iii) is working: the chat runner says the word as its next turn,
+                // or at its turn's end, which it alone knows. One still being started is not open yet.
+                { Kind: SessionKind.Chat, State: SessionState.Working } => null,
                 { Active: true } =>
                     $"Session `{asker.Id}` is {Session.Spell(asker.State)}: a helper's answer reaches a running session at its turn's end, never into a step in flight",
                 _ => null,

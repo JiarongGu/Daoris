@@ -106,6 +106,37 @@ public sealed class HelperHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(404, (await host.PostAsync($"/api/helpers/{asker.Id}/hand", new { text = "x" })).Status);
     }
 
+    /// <summary>
+    /// MIXAGENT2a-iii: a conversation that asked is handed the answer while it is open (working, between turns), since the chat
+    /// runner says it as the conversation's next turn; a conversation still being started, an intake, a helper and a stood-down
+    /// record keep their refusals.
+    /// </summary>
+    [Fact]
+    public async Task The_hand_door_keeps_the_answer_on_an_open_conversation_and_still_refuses_a_conversation_not_yet_open()
+    {
+        var sessions = host.Composed.Sessions;
+        var chat = await sessions.CreateAsync(null, "Keeper", "stub", DateTimeOffset.UtcNow, kind: Daoris.Knowledge.SessionKind.Chat);
+        var helper = await sessions.CreateAsync(null, "Keeper", "codex-acp", DateTimeOffset.UtcNow, kind: Daoris.Knowledge.SessionKind.Chat, serves: chat.Id);
+
+        var starting = await host.PostAsync($"/api/helpers/{helper.Id}/hand", new { text = "Helper says five." });
+        Assert.Equal(409, starting.Status);
+
+        await sessions.SetStateAsync(chat.Id, Daoris.Knowledge.SessionState.Working, null, null, null, DateTimeOffset.UtcNow);
+        var handed = await host.PostAsync($"/api/helpers/{helper.Id}/hand", new { text = "Helper says five." });
+
+        Assert.Equal(200, handed.Status);
+        var kept = (await sessions.FindAsync(chat.Id))!;
+        Assert.Equal((helper.Id, false, true), (kept.Said[0].Helper, kept.Said[0].Persons, kept.Said[0].Reopens));
+
+        var twice = await host.PostAsync($"/api/helpers/{helper.Id}/hand", new { text = "Helper says five." });
+        Assert.Equal(409, twice.Status);
+
+        var driven = await sessions.CreateAsync(null, "Keeper", "stub", DateTimeOffset.UtcNow, kind: Daoris.Knowledge.SessionKind.Driven, tree: "trees/default/Keeper/s-abababab");
+        var drivenHelper = await sessions.CreateAsync(null, "Keeper", "codex-acp", DateTimeOffset.UtcNow, kind: Daoris.Knowledge.SessionKind.Chat, serves: driven.Id);
+        await sessions.SetStateAsync(driven.Id, Daoris.Knowledge.SessionState.Working, null, null, null, DateTimeOffset.UtcNow);
+        Assert.Equal(409, (await host.PostAsync($"/api/helpers/{drivenHelper.Id}/hand", new { text = "x" })).Status);
+    }
+
     /// <summary>🔴 A helper takes no words and is never resumed: the say door refuses it by its own word, `helper`.</summary>
     [Fact]
     public async Task The_say_door_refuses_a_helpers_record_as_a_helper()
