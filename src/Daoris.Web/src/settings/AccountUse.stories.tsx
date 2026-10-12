@@ -1,13 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { chinese } from '../storyLanguage';
 import { USE_DEFAULTS } from './accounts';
 import {
-  CHOICES, MACHINE_NEAR, OFFERED_AGAIN, OWN_COOLING, scopeOf, SILENT, SIX_AGENT, SIX_CHOICES, THREE,
+  AHEAD, CHOICES, MACHINE_NEAR, OFFERED_AGAIN, OWN_COOLING, scopeOf, SILENT, SIX_AGENT, SIX_CHOICES, THREE,
 } from './accountsFixtures';
 import { AccountFactsLines, OwnSignInLine, type ScopeActs, ScopeEditor, TermsLine, WorkspaceScope } from './AccountUse';
 
 // How an agent's accounts are used (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9, §16.6), in every state Settings → Agents
 // shows: an account cooling until a stated reset, by Daoris's default, or in this machine's zone; what an agent last said;
-// nothing said yet; the tool's own sign-in shared with the person; the terms; a scope with three accounts, one near and one
+// its pace warning, in English and 中文 (USAGEREAD3b); nothing said yet; the tool's own sign-in shared with the person; the terms; a scope with three accounts, one near and one
 // kept; six accounts and nothing said; no list yet; a default outside the list; one by one; an agent that says nothing of
 // its limits; a workspace on this machine's accounts and on its own; a 中文 account; and which account the next start takes
 // and why (TOOL6e): offered again after a cool-off, waiting, and waiting on the tool's own sign-in.
@@ -97,6 +98,14 @@ export const AccountCoolingInThisZone: Story = {
 export const AccountSaid: Story = {
   render: () => <AccountFactsLines facts={THREE.accounts[1]!} label="home@example.invalid" onTryNow={nothing} />,
 };
+
+/** Its agent's pace warning on its week, in the agent's own words and never as near (USAGEREAD3b, D165 point 2). */
+export const AccountAheadOfPace: Story = {
+  render: () => <AccountFactsLines facts={AHEAD} label="home@example.invalid" onTryNow={nothing} />,
+};
+
+/** The same in 中文. */
+export const AccountAheadOfPaceChinese: Story = { ...AccountAheadOfPace, decorators: [chinese] };
 
 /** Nothing said yet, and a count of the sessions running on it. */
 export const AccountNothingSaid: Story = {

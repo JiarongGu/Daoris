@@ -283,6 +283,25 @@ export const READINGS_USE: AgentAccounts = {
   })],
 };
 
+/**
+ * The same, with Claude Code's pace warning on the account the next start takes (USAGEREAD3b, D165 point 2), as the install
+ * read it: 60% of a week not a quarter gone, ahead of its pace by the agent's own thresholds. Its bar keeps the warning's hue,
+ * its words are the agent's, and it is not near, so the next start still takes it.
+ */
+export const AHEAD_USE: AgentAccounts = {
+  ...READINGS_USE,
+  accounts: READINGS_USE.accounts.map((account) => (account.name !== 'Gmail' ? account : {
+    ...account,
+    said: {
+      seen: READ,
+      windows: [
+        { window: 'session', used: 0.12, reset: minutesFrom(3 * 60 + 10), credits: false, seen: READ },
+        { window: 'weekly', used: 0.6, reset: minutesFrom(5 * 24 * 60 + 6 * 60), standing: 'warned', credits: false, seen: READ },
+      ],
+    },
+  })),
+};
+
 /** Daoris's four defaults on, one rule of the person's for every session, one proposal waiting. */
 export const RULES: AgentRulesState = {
   path: 'C:/somewhere/data/permissions.json',
