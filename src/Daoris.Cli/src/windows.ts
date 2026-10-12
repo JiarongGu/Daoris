@@ -30,6 +30,8 @@ import { join } from 'node:path';
 import { findName } from './casefold.ts';
 import { coolingWhen, isoMoment } from './cooling.ts';
 import { readJsonObject } from './fsx.ts';
+import { tightestSaid, wholePoints } from './usagecurves.ts';
+import type { CurveScope } from './usagecurves.ts';
 
 export const WINDOWS_FILE = 'windows.json';
 
@@ -89,12 +91,13 @@ export function saidOf(home: string, agent: string, account: string, now: Date):
 
 /**
  * What an account last said, as one line a person reads (TOOL6c, D130 §3.2, §9): how long ago, its own word where it gave
- * one, credits, each window's use and reset in the machine's zone, and — where a scope's *near* is given — whether a window
- * reached it. Never a judgement the agent did not make beyond that number. Its pace warning is said in its own words, the
- * driver's start line's (`RotationWords`, `opening.said-warned`), and never as near (USAGEREAD3a): a warned window at or
- * over *near* is near by its number.
+ * one, credits, each window's use and reset in the machine's zone, and — where a scope is given — its tightest window over
+ * the scope's curve, with the curve's value there now, as the driver's start line says it (`RotationWords`,
+ * `opening.said-over`; SWITCH1b-iii). Never a judgement the agent did not make beyond that number. Its pace warning is said
+ * in its own words, the start line's (`opening.said-warned`), and never as near (USAGEREAD3a): a warned window over its
+ * curve is over it by its number.
  */
-export function saidLine(windows: WindowSaid[], now: Date, zone: string, near: number | null = null): string {
+export function saidLine(windows: WindowSaid[], now: Date, zone: string, use: CurveScope | null = null): string {
   const parts: string[] = [];
   const reached = windows.find((each) => each.standing === 'refused');
   const warned = windows.find((each) => each.standing === 'warned');
@@ -110,10 +113,10 @@ export function saidLine(windows: WindowSaid[], now: Date, zone: string, near: n
     const own = each.source === newest.source ? '' : ` (${each.source} ${age(each.seen, now)})`;
     parts.push(`${percent(each.used)} of its ${each.window} limit used${own}, resetting ${coolingWhen(each.reset, zone)}`);
   }
-  if (near !== null && !reached && !windows.some((each) => each.credits)
-    && windows.some((each) => each.used !== null && each.used * 100 >= near - 1e-9)) {
-    parts.push(`near at ${near}%`);
-  }
+  // Over its curve on its tightest window, as the start's line adds it beside a limit reached or credits; on its curve is
+  // not over it. `near at N%`, by the scope's one number, said it before (SWITCH1b-iii).
+  const over = use === null ? null : tightestSaid(use, windows, now);
+  if (over !== null && over.room < 0) parts.push(`over its ${over.window.window} curve's ${wholePoints(over.curve)}%`);
   // A reading with no number, no warning and no credits is its agent's clear word alone.
   if (parts.length === 0) parts.push('clear, by its own word');
   return `${newest.source} ${age(newest.seen, now)}: ${parts.join('; ')}`;

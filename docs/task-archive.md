@@ -13996,3 +13996,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **DOORS1a — Ask Daoris proposes the helpers and commit rules, and the landing's key and squash** (service/driver). The `setting` card's `helpers` and `commits` kinds, modelled on `opinion`'s (`HelpSettingProposals.cs`, `HelpProposalBox.Setting.cs`, the MCP tool's words), each judged by its rule's `Apply` and naming its terminal twin; the landing proposal's `--key` and `--squash`; the help room's doors rows; the coverage rows for `helpers` and `commits` become `Door`s. Absorbs MIXAGENT2c's card and PROCESS1c's proposals. D163; D164's amendment points 3 and 5; D110.
 
 **Outcome** 2026-10-13: the `setting` card's `helpers` and `commits` doors on the driver and service twins and in the MCP tool's words, judged by `HelperRules.Apply`/`CommitRules.Apply`; the landing door's `--key`/`--no-key` and `--squash`/`--no-squash`, keeping a key and squash it is not told to change; the room's doors rows; the coverage rows as doors. Detail: D164's DOORS1a note.
+
+## SWITCH1b-iii — what passes an account, said (2026-10-13, D165)
+
+> - [ ] **SWITCH1b-iii — what passes an account, said** (cli/web). The help and the page's words for switching (`toolchain.ts`'s *switch before the limit* sentence and its walk prose, `harness.use.early.why`, `harness.next.*`) say its limit reached, usage credits, or its use over its curve, in both languages; the terminal's said line marks a window over its curve with the curve's value, as the start's line does (CURVECLI1). Design §1.3, §5.
+
+**Outcome** 2026-10-13: the terminal and the page say what passes an account (its limit reached, usage credits, or its use over its curve) and the walk's steps by the curve; `profile use`'s said line marks a window over its curve with the curve's value now, through the CLI's twin of `UsageCurves` held by `usage-curves.json`. Closes CURVECLI1. Detail: D165's SWITCH1b-iii note.

@@ -367,7 +367,7 @@ export function nextStartSaid(
   const passed = next.reason !== 'waits' && next.account && scope.begins && next.account !== scope.begins
     && next.over !== scope.begins;
   const head = { ...next, others: next.others.filter((held) => held.account === scope.begins) };
-  return { takes: nextLine(next, scope, labelOf, isKey), held: passed ? heldLine(head, labelOf, isKey) : null };
+  return { takes: nextLine(next, scope, labelOf, isKey), held: passed ? heldLine(head, labelOf, isKey, scope.near) : null };
 }
 
 /**

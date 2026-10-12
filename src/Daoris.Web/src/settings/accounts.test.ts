@@ -160,8 +160,21 @@ describe('what is said', () => {
       .toBe('The next start takes account-3: it comes before account-2 in the list.');
     expect(nextLine(next({ account: 'account-2', reason: 'fewest', over: 'account-1' }), list, labelOf))
       .toBe('The next start takes account-2: it runs fewer of Daoris\'s sessions than work@example.invalid.');
+    // What passes an account (SWITCH1b-iii, D165 point 2): its own near entry says which, else all three are named.
     expect(nextLine(next({ account: 'account-2', reason: 'near', over: 'account-1' }), list, labelOf))
-      .toBe('The next start takes account-2: work@example.invalid is near its limit, so it goes last.');
+      .toBe('The next start takes account-2: work@example.invalid has reached its limit, draws on usage credits or is over its curve, so it goes last.');
+    const near = (by: 'refused' | 'credits' | 'number', window = 'weekly') => scope({ ...list, near: [{ account: 'account-1', window, by }] });
+    expect(nextLine(next({ account: 'account-2', reason: 'near', over: 'account-1' }), near('number'), labelOf))
+      .toBe('The next start takes account-2: work@example.invalid is over its curve on its weekly window, so it goes last.');
+    expect(nextLine(next({ account: 'account-2', reason: 'near', over: 'account-1' }), near('refused', 'session'), labelOf))
+      .toBe('The next start takes account-2: work@example.invalid has reached its five-hour limit, so it goes last.');
+    expect(nextLine(next({ account: 'account-2', reason: 'near', over: 'account-1' }), near('credits'), labelOf))
+      .toBe('The next start takes account-2: work@example.invalid is drawing on usage credits, so it goes last.');
+    // Step 5 is the most room under the curve, and the week's pace only with the switch off (the switch design §3).
+    expect(nextLine(next({ account: 'account-2', reason: 'pace', over: 'account-1' }), list, labelOf))
+      .toBe('The next start takes account-2: it has more room under its curve than work@example.invalid.');
+    expect(nextLine(next({ account: 'account-2', reason: 'pace', over: 'account-1' }), scope({ ...list, use: { ...USE_DEFAULTS, early: false } }), labelOf))
+      .toBe('The next start takes account-2: it is further behind its week\'s pace than work@example.invalid.');
     expect(nextLine(next({ reason: 'lapsing', when: '2026-10-04T10:00:00Z' }), list, labelOf))
       .toMatch(/^The next start takes work@example\.invalid: its week resets first, .+\.$/);
     expect(nextLine(next({ account: 'account-3', reason: 'notStarted' }), list, labelOf))
@@ -180,6 +193,12 @@ describe('what is said', () => {
     await i18n.changeLanguage('zh');
     expect(nextLine(next({ reason: 'leastRecent' }), list, labelOf))
       .toBe('下一次启动使用 work@example.invalid：Daoris 在它上面启动的时间比 account-2 更早。');
+    expect(nextLine(next({ account: 'account-2', reason: 'near', over: 'account-1' }), near('number'), labelOf))
+      .toBe('下一次启动使用 account-2：work@example.invalid 的每周用量超出其曲线，所以排到最后。');
+    expect(nextLine(next({ account: 'account-2', reason: 'near', over: 'account-1' }), list, labelOf))
+      .toBe('下一次启动使用 account-2：work@example.invalid 已达上限、正在使用用量额度或用量超出曲线，所以排到最后。');
+    expect(nextLine(next({ account: 'account-2', reason: 'pace', over: 'account-1' }), list, labelOf))
+      .toBe('下一次启动使用 account-2：它在曲线下的余量比 work@example.invalid 多。');
     expect(nextLine(next({ account: null, reason: 'own', over: null }), scope(), labelOf))
       .toBe('下一次启动运行在你自己的登录上：这里没有指定任何账户。');
   });
@@ -253,8 +272,17 @@ describe('what is said', () => {
     };
 
     expect(heldLine(next, labelOf)).toMatch(new RegExp(
-      '^account-1 is cooling until .+; account-4 is near its limit; account-5 was refused by its provider; '
-      + 'account-6 is kept for conversations; account-7 is not on this machine\\. Not used here: account-8, account-9\\.$'));
+      '^account-1 is cooling until .+; account-4 has reached its limit, draws on usage credits or is over its curve; '
+      + 'account-5 was refused by its provider; account-6 is kept for conversations; account-7 is not on this machine\\. '
+      + 'Not used here: account-8, account-9\\.$'));
+    // The scope's near entry says which of the three holds it (SWITCH1b-iii).
+    const only = (hold: NextStart['others'][number]) => ({ ...next, others: [hold] });
+    expect(heldLine(only({ account: 'account-4', hold: 'near' }), labelOf, undefined, [{ account: 'account-4', window: 'weekly', by: 'number' }]))
+      .toBe('account-4 is over its curve on its weekly window.');
+    expect(heldLine(only({ account: 'account-4', hold: 'near' }), labelOf, undefined, [{ account: 'account-4', window: 'session', by: 'refused' }]))
+      .toBe('account-4 has reached its five-hour limit.');
+    expect(heldLine(only({ account: 'account-4', hold: 'near' }), labelOf, undefined, [{ account: 'account-4', window: 'weekly', by: 'credits' }]))
+      .toBe('account-4 is drawing on usage credits.');
     expect(heldLine({ ...next, others: [{ account: 'account-3', hold: 'ready' }] }, labelOf)).toBeNull();
     expect(heldLine({ ...next, others: [{ account: null, hold: 'cooling', until: '2026-10-03T16:02:00Z' }] }, labelOf))
       .toMatch(/^the tool's own sign-in is cooling until .+\.$/);
@@ -262,6 +290,9 @@ describe('what is said', () => {
     await i18n.changeLanguage('zh');
     expect(heldLine({ ...next, others: [{ account: 'account-5', hold: 'signedOut' }, { account: 'account-8', hold: 'outside' }, { account: 'account-9', hold: 'outside' }] }, labelOf))
       .toBe('account-5 未登录。这里不使用：account-8、account-9。');
+    expect(heldLine(only({ account: 'account-4', hold: 'near' }), labelOf, undefined, [{ account: 'account-4', window: 'session', by: 'number' }]))
+      .toBe('account-4 的5 小时用量超出其曲线。');
+    expect(heldLine(only({ account: 'account-4', hold: 'near' }), labelOf)).toBe('account-4 已达上限、正在使用用量额度或用量超出曲线。');
   });
 
   /** TOOL6e: when a cool-off ended, the account offered again since then. */

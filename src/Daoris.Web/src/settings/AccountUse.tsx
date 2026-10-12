@@ -135,12 +135,14 @@ export function NextStartRow({ agent, product, scope, labelOf, isKey, workspace 
   const listed = scope.list.length > 0;
   const facts = next.account ? agent.accounts.find((account) => account.name === next.account) : null;
   const offered = facts?.offered && !facts.cooling ? t('harness.next.offeredSentence', { when: moment(facts.offered) }) : null;
-  const held = heldLine(next, labelOf, isKey);
+  const held = heldLine(next, labelOf, isKey, scope.near);
+  // The goal's step 5 is the most room under the curve, and the week's pace with the switch off (SWITCH1b-iii).
+  const walk = scope.use.use === 'order' ? 'harness.next.whyOrder' : scope.use.early ? 'harness.next.whyGoal' : 'harness.next.whyGoalOff';
   return (
     <SettingRow
       label={t('harness.next.label')}
       hint={listed ? t('harness.next.hint', { agent: agent.agent, scoped: scopedFlag(workspace) }) : undefined}
-      why={listed ? t(scope.use.use === 'order' ? 'harness.next.whyOrder' : 'harness.next.whyGoal') : undefined}
+      why={listed ? t(walk) : undefined}
     >
       <p className="m-0 text-small text-ink">
         {[nextLine(next, scope, labelOf, isKey), offered].filter(Boolean).join(t('harness.said.sentences'))}

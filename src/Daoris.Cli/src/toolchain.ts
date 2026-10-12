@@ -1236,9 +1236,11 @@ function endLines(
  *
  * @remarks
  * 🔴 It states each setting as chosen, and claims nothing about the walk that reads it: *make the most of them* is §16.3's
- * walk, the driver's, whose steps `profile use` names (`nextStartLines`). *Switch before the limit* passes an account its
- * agent said is near only where the agent says how much of each window is used, on its door or asked of its own server
- * (`windows`, TOOL6c, CODEXUSE1b); for any other agent it passes none, and that is said.
+ * walk, the driver's, whose steps `profile use` names (`nextStartLines`). *Switch before the limit* says what passes an
+ * account at a start (D165 point 2, the switch design §3, SWITCH1b-iii): its limit reached, usage credits, or its use over
+ * its curve, the scope's own under `curve` and Daoris's smart curve otherwise, `off` included. Only where the agent says how
+ * much of each window is used, on its door or asked of its own server (`windows`, TOOL6c, CODEXUSE1b); for any other agent
+ * it passes none, and that is said.
  *
  * @param says Whether the agent says how much of each window is used (the toolchain's `windows`).
  */
@@ -1250,13 +1252,12 @@ export function useLines(
   const rows: [string, string][] = [
     ['use accounts', `${mode.name}${mode.cost ? ` — ${mode.cost}` : ''}`],
     ['kept for conversations', use.keep === null ? 'none' : shown(use.keep)],
-    // Until SWITCH1b moves the walk to the curve, a start passes an account near by `near`, derived from the switch and
-    // the curve (D165 §6): the words say what the walk does today.
-    ['switch before the limit', !use.early
-      ? use.switch
-      : says
-        ? `${use.switch}, at ${use.near}% — a start passes an account ${product} says is near its limit, or that has used ${use.near}% of a window`
-        : `${use.switch}, at ${use.near}% — ${product}'s sessions here do not say how near their limits are`],
+    // What passes an account at a start since SWITCH1b-ii's walk (the switch design §3): the words say what it does today,
+    // never the agent's own pace warning (USAGEREAD3a) or one fixed percentage.
+    ['switch before the limit', !says
+      ? `${use.switch} — ${product}'s sessions here do not say how much of each window is used, so a start passes no account by its use`
+      : `${use.switch} — a start ${use.switch === 'off' ? 'still ' : ''}passes an account whose limit is reached, that draws on usage `
+        + `credits, or whose use is over ${use.switch === 'curve' ? 'your curve, Daoris\'s smart curve on a window yours leaves out' : 'Daoris\'s smart curve'}`],
   ];
   const curve = curveLine(use);
   if (curve !== null) rows.push(['curve', curve]);
@@ -1296,8 +1297,11 @@ function curveLine(use: RotationUse): string | null {
 /**
  * The step the next start of a scope would follow (TOOL6b, TOOL6c; D130 §16.3, §16.4, §16.6), in the terminal's words: the
  * goal's steps as the driver's walk takes them, or the list's order under `order`, and the kept account driven work passes.
- * Where the agent says how much of each window is used (`windows`), a near account goes last (with *switch before the
- * limit* on) and pace orders the goal's walk; with the goal and no account of the list having said anything, it says so.
+ * Where the agent says how much of each window is used (`windows`), the curve's steps (D165 point 2, the switch design §3,
+ * SWITCH1b-iii): an account whose limit is reached, that draws on usage credits or whose use is over its curve goes last,
+ * under every switch and either use, the least over first under the goal; the goal's step 5 is the most room under its
+ * curve, and under `off`, which reads the smart curve for the first, D130's pace. With the goal and no account of the list
+ * having said anything, it says so.
  *
  * @remarks
  * Prose about the driver's walk (`AccountRotation.Order`), not a twin of a file: this command is offline and reads no
@@ -1317,16 +1321,19 @@ export function nextStartLines(
   const passes = keep !== null && scopeProblem({ default: null, list: scope.list, keep }) === null
     ? `; driven work passes \`${shown(keep)}\`, kept for conversations`
     : '';
-  const near = says && scope.use.early;
+  const off = scope.use.switch === 'off';
+  const last = says
+    ? `; one whose limit is reached, that draws on usage credits or whose use is over ${off ? 'Daoris\'s smart curve' : 'its curve'} goes last`
+    : '';
   if (scope.use.use !== 'goal') {
-    return { row: `the first ready account of this list, ${from}${passes}${near ? '; one its agent said is near goes last' : ''}`, note: null };
+    return { row: `the first ready account of this list, ${from}${passes}${last}`, note: null };
   }
 
+  const room = !says ? '' : off ? 'then the one furthest behind its week\'s pace; ' : 'then the one with the most room under its curve; ';
   return {
-    row: `${near ? 'the ready account its agent did not say is near; then the one' : 'the ready account'} running the fewest of `
-      + 'Daoris\'s sessions; then one whose week resets within a day; '
-      + `${says ? 'then the one furthest behind its week\'s pace; ' : ''}then the one Daoris started on least recently; then this `
-      + `list's order, ${from}${passes}`,
+    row: 'the ready account running the fewest of Daoris\'s sessions; then one whose week resets within a day; '
+      + `${room}then the one Daoris started on least recently; then this list's order, ${from}${passes}`
+      + `${last}${says ? ', the least over first' : ''}`,
     note: anySaid
       ? null
       : 'no account has said what it has left yet: Daoris spreads starts across them by its own sessions, and learns '
@@ -2311,7 +2318,8 @@ export function commandHarness(
         const percent = /^\d+$/.test(near) ? Number(near) : Number.NaN;
         if (!(percent >= NEAR_LOWEST && percent <= NEAR_HIGHEST)) {
           throw new DaorisError(`\`--near\` is a whole percent from ${NEAR_LOWEST} to ${NEAR_HIGHEST} — e.g. \`--near 85\`: `
-            + 'where an agent gives only how much of a window is used, an account at or over it is near its limit.');
+            + 'the old name of your curve\'s five-hour window, flat at that share; a start passes an account whose use of that '
+            + 'window is over it.');
         }
         change.near = percent;
       }
@@ -2417,7 +2425,8 @@ export function commandHarness(
       write(`  ${'next start'.padEnd(24)} ${next.row}`);
       if (next.note) write(`  ${next.note}`);
 
-      // Each account's cool-off, else its last reading and its age (TOOL6c), else that it has said nothing: unknown.
+      // Each account's cool-off, else its last reading and its age (TOOL6c), else that it has said nothing: unknown. A
+      // reading over the scope's curve says so, as the start's line does (SWITCH1b-iii).
       write('  what each account last said:');
       for (const account of scope.list) {
         const cooled = coolingOf(home, name, account, now);
@@ -2425,7 +2434,7 @@ export function commandHarness(
         write(`    ${shown(account).padEnd(14)} ${cooled
           ? coolingLine(cooled, now, zone)
           : reading
-            ? saidLine(reading, now, zone, scope.use.early ? scope.use.near : null)
+            ? saidLine(reading, now, zone, scope.use)
             : 'nothing said about what it has left'}`);
       }
       return 0;

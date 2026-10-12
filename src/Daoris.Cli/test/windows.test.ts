@@ -6,6 +6,7 @@ import { TOOLCHAINS, accountLines } from '../src/toolchain.ts';
 import type { HarnessReport, HarnessSettings } from '../src/toolchain.ts';
 import { OWN_WINDOWS, WINDOWS_FILE, age, saidLine, saidOf } from '../src/windows.ts';
 import type { WindowSaid } from '../src/windows.ts';
+import type { CurveScope } from '../src/usagecurves.ts';
 import { driverRows as csharpRows, driverFile, driverTestFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 
@@ -70,8 +71,8 @@ test('an account\'s windows read as the driver reads them (the twin\'s table)', 
 });
 
 // ——— What a person reads (D130 §3.2, §9): the reading and its age; a limit reached where the agent said it, its pace
-// warning in its own words and never as near (USAGEREAD3a), and near where a scope's own *near* is given and a window
-// reached it.
+// warning in its own words and never as near (USAGEREAD3a), and, where a scope is given, its tightest window over its curve
+// with the curve's value now, as the start's line says it (SWITCH1b-iii; `usagecurves.test.ts` holds the curve's rows).
 
 const NOW = moment('2026-10-02T12:00:00Z');
 
@@ -82,19 +83,25 @@ function window(name: string, used: number | null, extra: Partial<WindowSaid> = 
   };
 }
 
-test('a reading is said with its age, each window\'s use and reset in the machine\'s zone, and near only as said', () => {
+test('a reading is said with its age, each window\'s use and reset in the machine\'s zone, and over its curve only as measured', () => {
   const clear = [window('session', 0.88, { standing: 'clear' }), window('weekly', 0.14)];
+  const smart: CurveScope = { switch: 'smart', curve: {} };
+  const own = (session: number): CurveScope => ({ switch: 'curve', curve: { session: [[0, session]] } });
 
   assert.equal(
     saidLine(clear, NOW, 'UTC'),
     'said 20 min ago: 88% of its session limit used, resetting Oct 2, 14:00 (UTC); 14% of its weekly limit used, resetting Oct 6, 21:18 (UTC)');
-  assert.match(saidLine(clear, NOW, 'UTC', 85), /; near at 85%$/);
-  assert.doesNotMatch(saidLine(clear, NOW, 'UTC', 90), /near/);
-  assert.match(saidLine([window('session', 0.1, { standing: 'warned' })], NOW, 'UTC', 90), /^said 20 min ago: ahead of its pace on its session window, by its own word; 10% of its session limit used, resetting [^;]*$/);
-  assert.match(saidLine([window('weekly', 0.95, { standing: 'warned' })], NOW, 'UTC', 90), /^said 20 min ago: ahead of its pace on its weekly window, by its own word; 95% .*; near at 90%$/);
-  assert.match(saidLine([window('weekly', null, { standing: 'refused' })], NOW, 'UTC'), /^said 20 min ago: its weekly limit reached, by its own word$/);
-  assert.match(saidLine([window('session', 0.2, { credits: true })], NOW, 'UTC', 50), /^said 20 min ago: drawing on usage credits; 20% of its session limit used, resetting .*\(UTC\)$/);
-  assert.equal(saidLine([window('session', null, { standing: 'clear' })], NOW, 'UTC'), 'said 20 min ago: clear, by its own word');
+  // The scope's own curve, its five-hour window flat at 85: 88% is over it; the smart curve's 90 is not.
+  assert.match(saidLine(clear, NOW, 'UTC', own(85)), /; over its session curve's 85%$/);
+  assert.doesNotMatch(saidLine(clear, NOW, 'UTC', smart), /over its|near/);
+  assert.match(saidLine([window('session', 0.1, { standing: 'warned' })], NOW, 'UTC', smart), /^said 20 min ago: ahead of its pace on its session window, by its own word; 10% of its session limit used, resetting [^;]*$/);
+  // A week 37% gone: the smart curve allows 57% now, so a warned 95% is over it by its number.
+  assert.match(saidLine([window('weekly', 0.95, { standing: 'warned' })], NOW, 'UTC', smart), /^said 20 min ago: ahead of its pace on its weekly window, by its own word; 95% .*; over its weekly curve's 57%$/);
+  assert.match(saidLine([window('weekly', null, { standing: 'refused' })], NOW, 'UTC', smart), /^said 20 min ago: its weekly limit reached, by its own word$/);
+  assert.match(saidLine([window('session', 0.2, { credits: true })], NOW, 'UTC', own(50)), /^said 20 min ago: drawing on usage credits; 20% of its session limit used, resetting .*\(UTC\)$/);
+  // Credits and a window over its curve are each said, as the start's line says both.
+  assert.match(saidLine([window('session', 0.95, { credits: true })], NOW, 'UTC', smart), /^said 20 min ago: drawing on usage credits; 95% of its session limit used, resetting [^;]*; over its session curve's 90%$/);
+  assert.equal(saidLine([window('session', null, { standing: 'clear' })], NOW, 'UTC', smart), 'said 20 min ago: clear, by its own word');
 });
 
 test('a line leads with where the reading came from: read for Daoris\'s own, said for a frame (USAGEREAD2b)', () => {
