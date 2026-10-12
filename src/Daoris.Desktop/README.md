@@ -33,7 +33,10 @@ concluded from its exit code and its quest, never from what it said.
 
 An account's use is measured against a curve by `Accounts/Domain/UsageCurves.cs` (D165, SWITCH1b-i): the share of a window
 passed at a given moment, the person's or the smart curve's value there, and each account's room in points on its tightest
-window (none where no window is read). It is pure, the first file in an onion layer folder; the walk's use of it is SWITCH1b-ii.
+window (none where no window is read). It is pure, the first file in an onion layer folder. A start's walk ranks by it
+(SWITCH1b-ii): an account over its curve goes last, the least over first, and among the rest the most room first; `off`
+passes by the smart curve and ranks by D130's week pace. The start's reasons say the window, its use and the curve's value
+(`over-curve`, `most-room`, `opening.said-over`), and the Accounts answer's `near` list reads the same judgement.
 
 ## What the page can ask this machine
 

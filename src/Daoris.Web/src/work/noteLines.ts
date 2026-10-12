@@ -155,7 +155,9 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'opening.said-warned': { values: ['window'] },
   'opening.said-credits': { values: [] },
   'opening.said-used': { values: ['used', 'window'] },
+  // The scope's one number, no longer written (SWITCH1b-ii); a line written before keeps it. Over its curve since.
   'opening.said-near-at': { values: ['near'] },
+  'opening.said-over': { values: ['window', 'curve'] },
   'opening.said-clear': { values: [] },
   // A resumed conversation's first line (CONVNOTE2a): the adapter and whose words, a version that moved riding inside it.
   'resumed.opening': { values: ['adapter', 'why'], why: 'resumed' },
@@ -351,11 +353,15 @@ export const OPENING_REASONS: Readonly<Record<string, { key: string; values: rea
   // No longer written (USAGEREAD3a: the pace warning is not near); a line written before keeps it.
   'near-word': { key: 'note.opening.why.near-word', values: ['over', 'window'] },
   'near-credits': { key: 'note.opening.why.near-credits', values: ['over'] },
+  // No longer written (SWITCH1b-ii: near is the curve, and both near are said by the other's reason); a line written before keeps them.
   'near-used': { key: 'note.opening.why.near-used', values: ['over', 'used', 'window', 'near'] },
+  'over-curve': { key: 'note.opening.why.over-curve', values: ['over', 'window', 'used', 'curve'] },
   near: { key: 'note.opening.why.near', values: ['over'] },
   room: { key: 'note.opening.why.room', values: ['over', 'used', 'against'] },
   fewest: { key: 'note.opening.why.fewest', values: [] },
   lapsing: { key: 'note.opening.why.lapsing', values: ['at'] },
+  'most-room': { key: 'note.opening.why.most-room', values: ['room', 'window'] },
+  // The week's pace, written under `switch: off` only since the curve (SWITCH1b-ii).
   behind: { key: 'note.opening.why.behind', values: ['used', 'gone'] },
   ahead: { key: 'note.opening.why.ahead', values: ['over', 'used', 'gone'] },
   'not-started': { key: 'note.opening.why.not-started', values: [] },
@@ -385,8 +391,11 @@ export const NOTE_VALUES: Readonly<
   option: 'text', chosen: 'text', work: 'text', state: 'bgstate', repository: 'text',
   until: 'moment', at: 'moment', seen: 'moment',
   exit: 'number', minutes: 'number', paths: 'number', turn: 'number',
+  // An account's room under its usage curve, in whole percent points (SWITCH1b-ii).
+  room: 'number',
   tokens: 'count', count: 'count',
-  used: 'percent', near: 'percent', gone: 'percent', against: 'percent',
+  // A curve's value now is a whole percent, as a window's use is (SWITCH1b-ii).
+  used: 'percent', near: 'percent', gone: 'percent', against: 'percent', curve: 'percent',
   adapter: 'text', now: 'text', then: 'text',
   // An account id is worded by the name the person gave it where the page knows it (NOTENAME1); `owner` is the agent.
   account: 'account', over: 'account', first: 'account',
