@@ -412,6 +412,8 @@ describe('the real glossary and catalogues', () => {
       'help.setup:en', 'help.setup:zh',
       'scope.every:en', 'scope.every:zh',
       'signin.titleNew:en', 'signin.titleNew:zh',
+      // MIXAGENT1b-i: the owner's own name for the act, a menu row that wraps in the ⋯ rather than clipping.
+      'work.act.handOver:en',
       'work.group.noCheckout:en',
     ]);
   });
