@@ -47,7 +47,7 @@
   "work.handed.source.written": "your words to that session",
   "work.handed.source.record": "the earlier session's record and its tree",
   "work.handed.source.tree": "the session's tree",
-  "work.handed.source.landing": "this machine's landing rule",
+  "work.handed.source.landing": "this machine's landing and commit rules",
   "work.handed.source.checkouts": "the checkouts you declared",
   "work.handed.source.driver": "the driver's own words",
   "work.handed.source.permissions": "this machine's permission rules",
