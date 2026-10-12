@@ -178,10 +178,17 @@ public sealed record SessionTarget(
 
     /// <summary>
     /// How this session's work will land, when it runs in a tree of its own (WSR1, D87) — so a session
-    /// whose work goes through review knows not to merge or push it. Null, or a merge, says nothing,
-    /// and the instruction reads as it always has.
+    /// whose work goes through review knows not to merge or push it. Null says nothing of it; a merge says
+    /// where it goes only beside <see cref="Commits"/> (PROCESS1d-i).
     /// </summary>
     public LandingPlan? LandsOn { get; init; }
+
+    /// <summary>
+    /// The commit rule standing for this session's repository and where it was set (PROCESS1d-i, D164's amendment point 4), set
+    /// beside <see cref="LandsOn"/> only for a session in a tree of its own: <see cref="ProcessWords"/> says it, with the landing,
+    /// in the instruction's landing section on every form. Null says nothing of it, and the instruction reads as it did.
+    /// </summary>
+    public ResolvedCommits? Commits { get; init; }
 
     /// <summary>
     /// The other checkouts this session may read (D107), the declared write targets among them. Empty — as
@@ -851,39 +858,12 @@ public static class TargetPrompt
     }
 
     /// <summary>
-    /// How the work lands, said only where it goes onto a branch: the branch the person will push and
-    /// open a pull request from, and that the session makes neither move itself (D87). Under a rule that
-    /// accepts automatically (LAND2b), that its quest's done lands it, so its work must be committed by then.
+    /// How the work lands and is committed (D87, PROCESS1d-i): the branch the pull request comes from and that the session makes
+    /// no move of its own on it, then the commit rule standing for its repository, said only for a tree of its own
+    /// (<see cref="ProcessWords"/>). Under a rule that accepts automatically (LAND2b), that its quest's done lands it, so its work
+    /// is committed by then.
     /// </summary>
-    private static string Landing(SessionTarget target) => target.LandsOn switch
-    {
-        { Form: LandingForm.Branch, AutoAccept: true } plan => $"""
-
-            This work is accepted automatically. {Lands(plan)} Commit all of your work on this branch
-            before you close the quest done — uncommitted work does not land — and do not merge it, push
-            it, or open a pull request yourself.
-
-            """,
-        { Form: LandingForm.Branch } plan => $"""
-
-            This work goes through review. {Lands(plan)} Commit your work on this branch as you go —
-            do not merge it, push it, or open a pull request yourself.
-
-            """,
-        _ => "",
-    };
-
-    /// <summary>
-    /// Who takes the branch on from there: the person, or the plugin the rule names (D100) once the person accepts it; or, under
-    /// a rule that accepts automatically (LAND2b, D145), the quest's done, with no press.
-    /// </summary>
-    private static string Lands(LandingPlan plan) => (plan.AutoAccept, plan.Plugin) switch
-    {
-        (true, null) => $"When you close the quest done, this tree's branch is put on `{plan.Target}`, for the person to push and open a pull request from.",
-        (true, _) => $"When you close the quest done, this tree's branch is put on `{plan.Target}`, pushed, and a pull request opened from it, where the work is judged.",
-        (false, null) => $"When it is done, the person puts this tree's branch on `{plan.Target}` and opens a pull request from it.",
-        _ => $"When it is done and the person accepts it, this tree's branch is put on `{plan.Target}`, pushed, and a pull request opened from it.",
-    };
+    private static string Landing(SessionTarget target) => ProcessWords.Said(target.Commits, target.LandsOn) ?? "";
 
     /// <summary>
     /// What the asker gave beside their words, said plainly — each link, each file where it lies, and a
