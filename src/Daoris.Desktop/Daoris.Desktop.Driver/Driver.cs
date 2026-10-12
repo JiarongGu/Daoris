@@ -331,6 +331,9 @@ public sealed partial class Driver(
         snapshot = await PausedWork.LookAsync(service, config, snapshot, ct).ConfigureAwait(false);
         // The words a record could not go on with, read again at each look (MSG1b): the planner leaves them waiting.
         snapshot = snapshot with { Unable = _marks.For(snapshot.LastRun.Values) };
+        // The quests handed to another agent (MIXAGENT1a-ii, D163 point 1): the boxes taken, the quests that left dropped, and what
+        // stands read for the planner, which reads the stop that handed one over as released.
+        snapshot = await HandOversAsync(snapshot, events, ct).ConfigureAwait(false);
         _harnesses.Look(snapshot.Started, mark);
 
         // The set-ups waiting for the person here, and each set-up step's tab let go once they answered it (REVIEWENV1d, design
