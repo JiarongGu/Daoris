@@ -44,6 +44,9 @@ internal sealed class OpinionStandIn : HttpMessageHandler
     /// <summary>Each hand asked, by opinion id, in order, whether it was taken or refused.</summary>
     public List<string> Hands { get; } = [];
 
+    /// <summary>Each helper's answer handed, by the helper's session, with the words as the driver composed them (MIXAGENT2a-ii).</summary>
+    public List<(string Helper, string Text)> HelperHands { get; } = [];
+
     /// <summary>A client over this host, as a driver is handed one.</summary>
     public ServiceClient Client() => new(Url, null, new HttpClient(this, disposeHandler: false));
 
@@ -152,7 +155,7 @@ internal sealed class OpinionStandIn : HttpMessageHandler
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
     {
         var path = request.RequestUri!.AbsolutePath;
-        if (request.Content is not null) await request.Content.ReadAsStringAsync(ct);
+        var body = request.Content is null ? null : await request.Content.ReadAsStringAsync(ct);
         lock (_gate)
         {
             switch (request.Method.Method, path)
@@ -202,6 +205,31 @@ internal sealed class OpinionStandIn : HttpMessageHandler
                     {
                         ["opinion"] = opinion.DeepClone(), ["message"] = "Handed.", ["session"] = working.DeepClone(), ["said"] = word.DeepClone(),
                     });
+                }
+
+                // MIXAGENT2a-ii: a helper's answer, handed to the session its record serves as a word marked `helper`, once, and refused
+                // as the desk refuses it where the asker is gone, stood down, parked or running.
+                case ("POST", _) when path.StartsWith("/api/helpers/", StringComparison.Ordinal) && path.EndsWith("/hand", StringComparison.Ordinal):
+                {
+                    var id = Uri.UnescapeDataString(path["/api/helpers/".Length..^"/hand".Length]);
+                    var helper = Find(id);
+                    if (helper?["serves"]?.GetValue<string>() is not { } served) return Refuse(HttpStatusCode.NotFound, $"There is no helper session `{id}`");
+                    var asker = Find(served);
+                    var state = asker?["state"]!.GetValue<string>();
+                    if (asker is null) return Refuse(HttpStatusCode.Conflict, "there is no such session to hand the answer to");
+                    if (state == "stood-down") return Refuse(HttpStatusCode.Conflict, "it stood down");
+                    if (state == "awaiting-person") return Refuse(HttpStatusCode.Conflict, "it waits on the person's answer");
+                    if (Running.Contains(state!)) return Refuse(HttpStatusCode.Conflict, "a helper's answer reaches a running session at its turn's end");
+                    if (asker["said"]!.AsArray().Any(each => each!["helper"]?.GetValue<string>() == id)) return Refuse(HttpStatusCode.Conflict, "it goes once");
+
+                    var text = JsonNode.Parse(body!)!["text"]!.GetValue<string>();
+                    var word = new JsonObject
+                    {
+                        ["id"] = $"hp-w{++_words}", ["text"] = text, ["at"] = "2026-10-12T10:15:00Z", ["files"] = new JsonArray(), ["reopens"] = true, ["helper"] = id,
+                    };
+                    asker["said"]!.AsArray().Add(word);
+                    HelperHands.Add((id, text));
+                    return Answer(HttpStatusCode.OK, new JsonObject { ["message"] = "Handed.", ["session"] = asker.DeepClone(), ["said"] = word.DeepClone() });
                 }
 
                 default:

@@ -70,10 +70,11 @@ public static class HelperChoice
     /// <summary>The names the walk is asked over: never a name the person's list does not allow, and never the asker's own family by default.</summary>
     public static IReadOnlyList<string> Candidates(HelperAsk ask, HelperRule rule, AdapterSet adapters, string? askerAdapter)
     {
-        if (ask.Agent is { Length: > 0 } named
-            && (rule.Agents.Count == 0 || rule.Agents.Any(allowed => string.Equals(allowed, named, StringComparison.OrdinalIgnoreCase))))
+        if (ask.Agent is { Length: > 0 } named)
         {
-            return [named];
+            // Allowed where the person's list is empty or names it, in the spelling the list gives it.
+            if (rule.Agents.Count == 0) return [named];
+            if (rule.Agents.FirstOrDefault(allowed => string.Equals(allowed, named, StringComparison.OrdinalIgnoreCase)) is { } listed) return [listed];
         }
 
         if (rule.Agents.Count > 0) return rule.Agents;

@@ -1,0 +1,476 @@
+using System.Text.Json;
+
+namespace Daoris.Driver;
+
+/// <summary>
+/// The helper session (MIXAGENT2a-ii, D163 point 2; the mixed agents design §3 and §5): a working session's <c>helper_ask</c> (or the
+/// person's terminal verb) is answered by a read-only session on another agent, whose answer returns as the asker's next turn,
+/// marked as the helper's. The look reads the asks the connector and the person's door wrote, judges each (the person's rule, two
+/// at once per asker, the cap), chooses the agent, runs one turn in a clone of its own on the reviewer's machinery, and takes the
+/// answer the helper's tool wrote, or its last words, to the asker.
+/// </summary>
+/// <remarks>
+/// <para><b>The state file is the driver's alone</b> (<see cref="HelperFiles"/>): <c>waiting</c> (for the person's yes, or for the
+/// cap or an agent), <c>started</c> naming the helper's session BEFORE its turn (<c>helper_answer</c> finds its ask by that),
+/// <c>answered</c> and <c>refused</c> with a code the asker reads. A restart reads a <c>started</c> ask whose helper ended, and
+/// settles it.</para>
+///
+/// <para><b>Delivery is the opinion's door</b> (<see cref="DeliverHelperAsync"/>): a word on the asker's record, through the local
+/// host, marked as the helper's; an asker that is running or parked takes it at its turn's end, never into a step in flight,
+/// and one that never goes on (a conversation, a teammate's, stood down) is refused with its code.</para>
+/// </remarks>
+public sealed partial class Driver
+{
+    /// <summary>
+    /// How a helper's pass is run: <see cref="HelperPassAsync"/>, unless a test hands in a stand-in, since a real pass spawns git
+    /// and an agent, which the suite's fast half may not (MOD8).
+    /// </summary>
+    internal Func<HelperPassAsk, ReviewerChoice, CancellationToken, Task<HelperPassRun>>? HelperPasses { get; init; }
+
+    /// <summary>
+    /// The asks for a helper on this machine, at a look (MIXAGENT2a-ii): each judged and started, settled or delivered as the facts
+    /// let it go, beside the look. Returns how many helpers this look starts, which take slots under the cap before any quest's
+    /// first start, as a second opinion's pass does (D130). Nothing is read where no ask is on file.
+    /// </summary>
+    /// <param name="taken">The slots this look's second opinions already took.</param>
+    internal async Task<int> HelpersAsync(Snapshot snapshot, int taken, List<string> events, CancellationToken ct)
+    {
+        var files = new HelperFiles(home);
+        var asks = files.Asks();
+        if (asks.Count == 0) return 0;
+
+        var states = asks.ToDictionary(ask => ask.Id, ask => files.ReadState(ask.Id), StringComparer.Ordinal);
+        var begun = 0;
+        var begunFor = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var ask in asks)
+        {
+            var state = states[ask.Id];
+            try
+            {
+                switch (state?.State)
+                {
+                    case HelperStates.Refused:
+                        continue;
+                    case HelperStates.Answered:
+                        if (state.Handed is null && _runs.TryOpinion(HelperClaim(ask.Id)))
+                        {
+                            try { if (await DeliverHelperAsync(ask, state, files, ct).ConfigureAwait(false) is { } line) events.Add(line); }
+                            finally { _runs.OpinionDone(HelperClaim(ask.Id)); }
+                        }
+
+                        continue;
+                    case HelperStates.Started:
+                        if (_runs.TryOpinion(HelperClaim(ask.Id)))
+                        {
+                            try { if (await SettleStartedAsync(ask, state, files, ct).ConfigureAwait(false) is { } line) events.Add(line); }
+                            finally { _runs.OpinionDone(HelperClaim(ask.Id)); }
+                        }
+
+                        continue;
+                }
+
+                var record = await service.RecordAsync(ask.Asker, ct).ConfigureAwait(false);
+                var rule = record is { Repository: { } repository }
+                    ? HelperRules.Resolve(config, repository, record.Workspace).Rule
+                    : HelperRule.Default;
+                var startedFor = asks.Count(other => other.Id != ask.Id && string.Equals(other.Asker, ask.Asker, StringComparison.OrdinalIgnoreCase)
+                                                     && states[other.Id] is { State: HelperStates.Started })
+                                 + begunFor.GetValueOrDefault(ask.Asker);
+                var slot = config.Cap - snapshot.Active.Count - taken - begun > 0;
+                var verdict = HelperJudge.Judge(ask, state, record, rule, startedFor, slot);
+                switch (verdict.Kind)
+                {
+                    case HelperVerdict.RefuseKind:
+                        events.Add(await RefuseAsync(ask, verdict.Code!, null, files, ct).ConfigureAwait(false));
+                        break;
+                    case HelperVerdict.WaitKind:
+                        Wait(files, ask, state, verdict.Code);
+                        break;
+                    case HelperVerdict.GoKind when _runs.TryOpinion(HelperClaim(ask.Id)):
+                        begun++;
+                        begunFor[ask.Asker] = begunFor.GetValueOrDefault(ask.Asker) + 1;
+                        HelperBeside(ask.Id, token => RunHelperAsync(ask, record!, rule, files, token), ct);
+                        break;
+                }
+            }
+            catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or IOException
+                                              or UnauthorizedAccessException
+                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
+            {
+                events.Add($"helper  the ask for a helper `{ask.Id}` could not be looked at this look, and is looked at again at the next: {error.Message}");
+            }
+        }
+
+        return begun;
+    }
+
+    /// <summary>
+    /// How an asker's tree is read, its last commit and its repository's registered checkout: git, unless a test hands in a
+    /// stand-in, since a real read spawns git, which the suite's fast half may not (MOD8).
+    /// </summary>
+    internal Func<string, CancellationToken, Task<(string? Tip, string? Root)>>? HelperTrees { get; init; }
+
+    /// <summary>
+    /// How a helper's agent is chosen: <see cref="HelperChoice.ChooseAsync"/>, whose account walk reads this machine's installs and
+    /// sign-ins, unless a test hands in a choice (the walk itself is <see cref="ReviewerChoice"/>'s, held by its own suite).
+    /// </summary>
+    internal Func<HelperAsk, HelperRule, PriorSession, CancellationToken, Task<ReviewerChoice>>? HelperChoices { get; init; }
+
+    private async Task<(string? Tip, string? Root)> ReadTreeAsync(string tree, CancellationToken ct) =>
+        HelperTrees is { } read
+            ? await read(tree, ct).ConfigureAwait(false)
+            : (await ReviewGate.HeadAsync(tree, ct).ConfigureAwait(false), await SessionTrees.CheckoutOfTreeAsync(tree, ct).ConfigureAwait(false));
+
+    private static string HelperClaim(string ask) => $"helper:{ask}";
+
+    /// <summary>A pass beside the look, as a second opinion's is: told opened at once, its line joining a later look's report.</summary>
+    private void HelperBeside(string ask, Func<CancellationToken, Task<string>> work, CancellationToken ct) =>
+        _ = _runs.StartAsync(async opened =>
+        {
+            opened();
+            try
+            {
+                return new StartRun(await work(ct).ConfigureAwait(false), Opened: true);
+            }
+            catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or IOException
+                                              or UnauthorizedAccessException
+                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
+            {
+                return new StartRun($"helper  the helper for ask `{ask}` stopped, and is looked at again at the next look: {error.Message}", Opened: true);
+            }
+            finally
+            {
+                _runs.OpinionDone(HelperClaim(ask));
+            }
+        });
+
+    /// <summary>An ask held: <c>waiting</c>, with why it waits where it waits for something but the person's yes. Written when it changes.</summary>
+    private void Wait(HelperFiles files, HelperAsk ask, HelperState? state, string? code)
+    {
+        if (state is { State: HelperStates.Waiting } kept && kept.Code == code) return;
+        files.WriteState(new HelperState(ask.Id, HelperStates.Waiting, code, null, DateTimeOffset.UtcNow));
+    }
+
+    /// <summary>
+    /// An ask refused: its state <c>refused</c> with the code, and a coded line on the asker's record saying the agent (where one
+    /// was chosen) and why. Never an account's name or a path.
+    /// </summary>
+    private Task<string> RefuseAsync(HelperAsk ask, string code, string? agent, HelperFiles files, CancellationToken ct)
+    {
+        var kept = files.ReadState(ask.Id);
+        files.WriteState(new HelperState(ask.Id, HelperStates.Refused, code, kept?.Helper, DateTimeOffset.UtcNow) { Agent = agent ?? kept?.Agent });
+        var note = HelperNotes.Refused(code, agent ?? kept?.Agent);
+        if (code != HelperWhy.AskerGone)
+        {
+            output?.Append(ask.Asker, $"— {note.Note}");
+            _events.Keep(ask.Asker, new SessionEvent { Kind = SessionEventKind.Note, Text = note.Note, Parts = note.Parts }, say: null);
+        }
+
+        return Task.FromResult($"helper  ask `{ask.Id}` refused ({code}): {HelperWhy.Said(code)}.");
+    }
+
+    /// <summary>One ask taken up: its agent chosen, its pass run, and what the helper said settled and delivered.</summary>
+    private async Task<string> RunHelperAsync(HelperAsk ask, PriorSession asker, HelperRule rule, HelperFiles files, CancellationToken ct)
+    {
+        string? tip = null, root = null;
+        if (asker.Tree is { Length: > 0 } tree) (tip, root) = await ReadTreeAsync(tree, ct).ConfigureAwait(false);
+        if (tip is null || root is null)
+        {
+            return await RefuseAsync(ask, HelperWhy.Unreadable, null, files, ct).ConfigureAwait(false);
+        }
+
+        var choice = HelperChoices is { } choose
+            ? await choose(ask, rule, asker, ct).ConfigureAwait(false)
+            : await HelperChoice.ChooseAsync(_harnesses, ask, rule, asker.Adapter, config, asker.Workspace, ct).ConfigureAwait(false);
+        if (!choice.Chosen)
+        {
+            // No agent ready: it waits, and the state says why (a cool-off, a sign-in, no other maker), tried again at a later look.
+            Wait(files, ask, files.ReadState(ask.Id), choice.Code ?? ReviewerUnavailable.Refused);
+            return $"helper  ask `{ask.Id}` waits: {choice.Sentence}";
+        }
+
+        var agent = choice.Reviewer!;
+        var passAsk = new HelperPassAsk(ask, asker.Repository ?? "", root, tip)
+        {
+            Workspace = asker.Workspace,
+            Opened = helper =>
+            {
+                // 🔴 Started, naming the helper, BEFORE its turn: `helper_answer` finds its ask by this state.
+                files.WriteState(new HelperState(ask.Id, HelperStates.Started, null, helper, DateTimeOffset.UtcNow) { Agent = agent });
+                var asked = HelperNotes.Asked(agent, helper);
+                output?.Append(ask.Asker, $"— {asked.Note}");
+                _events.Keep(ask.Asker, new SessionEvent { Kind = SessionEventKind.Note, Text = asked.Note, Parts = asked.Parts }, say: null);
+                var helping = HelperNotes.Helping(ask.Asker);
+                output?.Append(helper, $"— {helping.Note}");
+                _events.Keep(helper, new SessionEvent { Kind = SessionEventKind.Note, Text = helping.Note, Parts = helping.Parts }, say: null);
+            },
+        };
+        var run = await (HelperPasses ?? HelperPassAsync)(passAsk, choice, ct).ConfigureAwait(false);
+        if (run.Session is null)
+        {
+            return await RefuseAsync(ask, run.Code ?? HelperWhy.NotStarted, agent, files, ct).ConfigureAwait(false);
+        }
+
+        return await SettleHelperAsync(ask, files, run.State, run.LastWords, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// What the helper said, settled once its turn ended: the answer <c>helper_answer</c> wrote, else its last words bounded as a
+    /// parked session's are (only where the turn completed), else <c>refused</c> with <c>no-answer</c>; then delivered.
+    /// </summary>
+    private async Task<string> SettleHelperAsync(HelperAsk ask, HelperFiles files, string? ended, string? lastWords, CancellationToken ct)
+    {
+        var state = files.ReadState(ask.Id);
+        if (state is not { State: HelperStates.Started, Helper: { } helper }) return $"helper  ask `{ask.Id}` is not started: nothing to settle.";
+
+        if (files.ReadAnswer(ask.Id) is { } answer && string.Equals(answer.Helper, helper, StringComparison.Ordinal))
+        {
+            state = state with { State = HelperStates.Answered, At = DateTimeOffset.UtcNow };
+        }
+        else if (ended == "completed" && lastWords is { Length: > 0 } words)
+        {
+            state = state with { State = HelperStates.Answered, At = DateTimeOffset.UtcNow, LastWords = true, Words = words };
+        }
+        else
+        {
+            return await RefuseAsync(ask, HelperWhy.NoAnswer, state.Agent, files, ct).ConfigureAwait(false);
+        }
+
+        files.WriteState(state);
+        return await DeliverHelperAsync(ask, state, files, ct).ConfigureAwait(false)
+               ?? $"helper  ask `{ask.Id}` is answered; the answer reaches session {ask.Asker} at its turn's end, never into a step in flight.";
+    }
+
+    /// <summary>
+    /// A <c>started</c> ask nothing in this process runs (a restart ended its pass): its helper's record read, and if that ended the
+    /// ask is settled from what the helper kept, its last words read from its transcript. A helper still running is left.
+    /// </summary>
+    private async Task<string?> SettleStartedAsync(HelperAsk ask, HelperState state, HelperFiles files, CancellationToken ct)
+    {
+        if (state.Helper is not { } helper) return null;
+        var record = await service.RecordAsync(helper, ct).ConfigureAwait(false);
+        if (record is { Running: true }) return null;
+
+        var lastWords = record is { State: "completed" }
+            ? ParkedWords(_events, helper, Path.Combine(home, "sessions", $"{helper}.log"))
+            : null;
+        return await SettleHelperAsync(ask, files, record?.State, lastWords, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Hand an answered ask's answer to the asker (design §3), once, through the local host's door, as the opinion's findings are:
+    /// a word marked as the helper's, Daoris's words around the claim. A running or parked asker takes it at its turn's end, never
+    /// into a step in flight, so it waits; one that never goes on is refused with its code.
+    /// </summary>
+    private async Task<string?> DeliverHelperAsync(HelperAsk ask, HelperState state, HelperFiles files, CancellationToken ct)
+    {
+        var record = await service.RecordAsync(ask.Asker, ct).ConfigureAwait(false);
+        var never = record switch
+        {
+            null => HelperWhy.AskerGone,
+            { Serves: not null } or { Opinion: not null } or { Ask.Length: > 0 } => HelperWhy.AskerUnfit,
+            { Kind: "chat" } => HelperWhy.Conversation,
+            _ when string.Equals(record.State, "stood-down", StringComparison.OrdinalIgnoreCase) => HelperWhy.CannotTake,
+            _ => null,
+        };
+        if (never is not null) return await RefuseAsync(ask, never, state.Agent, files, ct).ConfigureAwait(false);
+
+        // Never into a step in flight (D136): a running turn takes another agent's claim at its end, and a park after the person's
+        // answer. Said nowhere: each look would say it again, and the next look after the record ended hands it.
+        if (record!.Running || record.Parked) return null;
+
+        var text = state.LastWords
+            ? state.Words ?? ""
+            : files.ReadAnswer(ask.Id)?.Answer ?? "";
+        var agent = state.Agent ?? "another agent";
+        var (handed, message, word) = await service.HandHelperAsync(
+                state.Helper!, HelperWords.Compose(agent, state.Helper!, ask.Question, text, state.LastWords), ct)
+            .ConfigureAwait(false);
+        if (!handed) return $"helper  ask `{ask.Id}` is answered, and waits to be handed to session {ask.Asker}: {message}";
+
+        files.WriteState(state with { Handed = word ?? "handed" });
+        var noted = HelperNotes.Answered(agent, state.Helper!, state.LastWords);
+        output?.Append(ask.Asker, $"— {noted.Note}");
+        _events.Keep(ask.Asker, new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts }, say: null);
+        return $"helper  ask `{ask.Id}` answered by {agent}: its answer is session {ask.Asker}'s next turn, marked as the helper's, at the driver's next look.";
+    }
+
+    /// <summary>
+    /// The helper's pass (MIXAGENT2a-ii; the reviewer's machinery, <see cref="PassAsync"/>): a read-only clone of the asker's
+    /// repository at its tree's last commit, its record a chat that serves the asker, one turn under the reviewer's read-only rules
+    /// with its one tool <c>helper_answer</c>, and the clone removed however it ended. A choice with no agent starts nothing.
+    /// </summary>
+    internal async Task<HelperPassRun> HelperPassAsync(HelperPassAsk ask, ReviewerChoice choice, CancellationToken ct = default)
+    {
+        if (choice is not { Chosen: true, Selection: { Allowed: true } selection, Reviewer: { } helper })
+        {
+            return new HelperPassRun(null, $"held  helper for ask `{ask.Ask.Id}`: {choice.Sentence}") { Code = HelperWhy.NotStarted };
+        }
+
+        ISessionAdapter adapter;
+        try
+        {
+            adapter = _adapters.Resolve(helper);
+        }
+        catch (DriverException error)
+        {
+            return new HelperPassRun(null, $"held  helper for ask `{ask.Ask.Id}`: {error.Message}") { Code = HelperWhy.NotStarted };
+        }
+
+        OpinionTreeOpened copy;
+        try
+        {
+            copy = await OpinionTree.OpenAsync(home, ask.Root, ask.Repository, ask.Workspace, ask.Tip, ct).ConfigureAwait(false);
+        }
+        catch (DriverException error)
+        {
+            return new HelperPassRun(null, $"held  helper for ask `{ask.Ask.Id}`: {error.Message}") { Code = HelperWhy.Unreadable };
+        }
+
+        HelperPassRun run;
+        string? left;
+        try
+        {
+            run = await ReadHelperInCopyAsync(ask, adapter, selection, helper, copy, ct).ConfigureAwait(false);
+        }
+        finally
+        {
+            // Removed however the run ended, the person's stop and the driver's own included: nothing in it is read back.
+            left = await OpinionTree.RemoveAsync(home, copy.Path).ConfigureAwait(false);
+        }
+
+        return left is null ? run : run with { Line = $"{run.Line} {left}" };
+    }
+
+    /// <summary>The helper's turn from its record's open to its record's end, in its copy.</summary>
+    private async Task<HelperPassRun> ReadHelperInCopyAsync(
+        HelperPassAsk ask, ISessionAdapter adapter, HarnessSelection selection, string agent, OpinionTreeOpened copy, CancellationToken ct)
+    {
+        var named = $"ask `{ask.Ask.Id}`";
+        var opened = await service.OpenHelperAsync(ask.Ask.Asker, agent, copy.Path, selection.Profile, selection.Version, ask.Tip, ct).ConfigureAwait(false);
+        if (!opened.Opened)
+        {
+            return new HelperPassRun(null, $"refused  helper for {named}: {opened.Message}") { Code = HelperWhy.NotStarted };
+        }
+
+        var sessionId = opened.Session!;
+        // The state names the helper now, before its turn (helper_answer finds its ask by it).
+        ask.Opened?.Invoke(sessionId);
+        HelperPassRun Ended(string state, string note, string? lastWords = null) =>
+            new(sessionId, $"{state}  helper {sessionId} ({named}): {note}") { State = state, LastWords = lastWords };
+        // The record says who asked: an opening's line, then the helper's own on another account of the order, as a quest's start does.
+        RotatedOpening.Say(service, _events, sessionId, agent, selection, carried: null);
+        var bound = HelperPass.Bound(config);
+        var posture = OpinionPosture.Of(adapter);
+
+        try
+        {
+            var packet = new HelperPacket(ask.Ask.Asker, ask.Repository, ask.Tip, ask.Ask.Question, bound);
+            var target = new SessionTarget(
+                QuestId: "", $"Helper for session {ask.Ask.Asker}", "", "Daoris", ask.Repository, copy.Path, service.BaseUrl)
+            {
+                Helper = ask.Ask.Id,
+                Session = sessionId,
+                Prompt = HelperInstruction.Compose(packet),
+            };
+            var (info, harnessNotice) = Prepare(adapter, target, selection);
+            await service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
+
+            var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
+            Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
+
+            // Its connector and nothing else, as a reviewer's is: no plugin's server, which could write where a helper may not.
+            string? handed = null;
+            string? preamble = null;
+            if (adapter.Wire == SessionWire.Pipe)
+            {
+                var connector = Connector(sessionId, scope: null);
+                if (connector is null) preamble = HelperPass.NoConnector;
+                handed = SpawnServers.Hand(adapter, info, home, sessionId, connector is null ? [] : [connector]);
+            }
+
+            // What it may do: the person's composition under the reviewer's read-only shape with `helper_answer`, held to its copy
+            // by the tree guard.
+            var handedRules = HandRules(adapter, info, sessionId, ask.Workspace, ask.Repository, tree: copy.Path, kept: null, opinion: true, helper: true);
+            var opening = HelperPass.Opening(ask.Repository, ask.Tip, posture);
+
+            return await HoldAsync(
+                adapter, info, target, sessionId, transcript, copy.Path, JoinNotices(harnessNotice, opening), handedRules, handed,
+                // One turn, and no words: nobody talks to a helper while it reads, on either door.
+                refusesInput: HelperPass.TakesNoWords(ask.Ask.Id),
+                ct: ct,
+                preamble: JoinNotices(preamble, opening),
+                handedServers: [],
+                said: Said(adapter, selection, sessionId),
+                minutes: bound,
+                noConnector: HelperPass.NoConnector,
+                conclude: async (exitCode, used, turnFailed, ended) =>
+                {
+                    if (used is not null)
+                    {
+                        usage?.Record(new UsageEntry(
+                            sessionId, ask.Repository, adapter.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
+                    }
+
+                    var byPerson = _processes.WasStopRequested(sessionId);
+                    var conclusion = byPerson
+                        ? SessionConclusion.Of("stopped", _processes.StopNote(sessionId) ?? Observation.Stopped)
+                        : exitCode is int code
+                            ? ReadHelper(ask.Ask.Asker, code, turnFailed)
+                            : SessionConclusion.Of("failed", Observation.TimedOut(bound));
+                    conclusion = AccountRefused(conclusion, adapter, selection, ended);
+                    conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed);
+                    (conclusion, var limited) = AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
+
+                    await service.AdvanceAsync(
+                        sessionId, conclusion.State, note: conclusion.Note, ct: ct, limit: limited, parts: conclusion.Parts).ConfigureAwait(false);
+                    // Its last words stand as the answer only where its turn completed and it used no tool (design §3).
+                    var lastWords = conclusion.State == "completed" ? ParkedWords(_events, sessionId, transcript) : null;
+                    return Ended(conclusion.State, conclusion.Note, lastWords);
+                }).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // The person is closing the driver; the record says so rather than sit at "working".
+            try
+            {
+                await service.AdvanceAsync(sessionId, "stopped", Observation.DriverClosed, ct: CancellationToken.None).ConfigureAwait(false);
+            }
+            catch
+            {
+                // Best-effort by construction: the host may already be gone on the same shutdown.
+            }
+
+            return Ended("stopped", "the driver was stopped.");
+        }
+        catch (Exception error)
+        {
+            // Everything but the shutdown above, a client timeout included, as a reviewer's twin.
+            try
+            {
+                await service.AdvanceAsync(sessionId, "failed", Observation.Failure(error.Message), ct: CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // The terminal write is best-effort by construction: the first failure is the report.
+            }
+
+            return Ended("failed", error.Message);
+        }
+        finally
+        {
+            output?.Close(sessionId);
+        }
+    }
+
+    /// <summary>
+    /// How a helper's turn ended, from its exit and its door (D46 §4): a clean exit is <c>completed</c>, whatever it said; a refused
+    /// turn or another exit is <c>failed</c>. Whether it answered is the answer file's, which the settling reads.
+    /// </summary>
+    internal static SessionConclusion ReadHelper(string asker, int exitCode, string? turnFailed) =>
+        turnFailed is { Length: > 0 } failed
+            ? SessionConclusion.Of("failed", Observation.Failure(failed))
+            : exitCode != 0
+                ? SessionConclusion.Of("failed", Noted.Of(NoteCodes.EndedExit, $"it exited with code {exitCode}.", ("exit", exitCode)))
+                : SessionConclusion.Of("completed", HelperNotes.Helping(asker));
+}

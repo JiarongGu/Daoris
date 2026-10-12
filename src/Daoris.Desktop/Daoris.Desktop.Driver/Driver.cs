@@ -354,6 +354,10 @@ public sealed partial class Driver(
         var (opinionSits, passes) = await OpinionsAsync(snapshot, events, ct, judgedOpinions).ConfigureAwait(false);
         snapshot = snapshot with { Opinions = opinionSits };
 
+        // The helpers asked for (MIXAGENT2a-ii, D163 point 2): read, judged and started beside the look, each taking a slot under
+        // the cap as a pass does, and each answer handed to the session that asked.
+        passes += await HelpersAsync(snapshot, passes, events, ct).ConfigureAwait(false);
+
         // Whether this loop carries Daoris's browser decides whether a local set-up step can be shown here (REVIEWENV1c).
         var plan = Planner.Plan(snapshot, passes > 0 ? config with { Cap = Math.Max(0, config.Cap - passes) } : config, Door(), window: browser is not null);
         var progressed = false;
