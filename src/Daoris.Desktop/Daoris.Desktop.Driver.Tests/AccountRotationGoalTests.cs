@@ -545,11 +545,11 @@ public sealed class AccountRotationGoalTests : IDisposable
 
         Assert.Equal("account-2", selection.Profile);
         Assert.Equal(
-            new AccountChoice(WalkStep.Near, "`account-1` has used 95% of its session limit, at or over the 90% that counts as near"),
+            new AccountChoice(WalkStep.Near, "`account-1` has used 95% of its session limit, over its curve's 90%"),
             selection.Choice);
         Assert.Equal(
-            "opened on `account-2`: `account-1` has used 95% of its session limit, at or over the 90% that counts as near. What each "
-            + "account said: `account-1` 20 min ago, 95% of its session limit and 30% of its weekly limit used, near at 90%; "
+            "opened on `account-2`: `account-1` has used 95% of its session limit, over its curve's 90%. What each "
+            + "account said: `account-1` 20 min ago, 95% of its session limit and 30% of its weekly limit used, over its session curve's 90%; "
             + "`account-2` nothing yet; `account-3` nothing yet.",
             Assert.Single(events.After("s1", 0).Events).Text);
         var rotated = Assert.Single(lines);
@@ -559,14 +559,14 @@ public sealed class AccountRotationGoalTests : IDisposable
     }
 
     [Fact]
-    public async Task Near_by_credits_and_at_the_scope_s_own_near_and_never_by_the_pace_warning_alone()
+    public async Task Near_by_credits_and_over_the_person_s_own_curve_and_never_by_the_pace_warning_alone()
     {
         Accounts("account-1", "account-2");
-        Wire(s => s.WithRotation("fake", ["account-1", "account-2"]).WithUse("fake", new UseChange(Near: 85)));
+        Wire(s => s.WithRotation("fake", ["account-1", "account-2"]).WithUse("fake", new UseChange(Switch: "curve", Curve: UseCurve.Flat("session", 85))));
 
         Said("account-1", 0.88);
         Assert.Equal(
-            ("account-2", "`account-1` has used 88% of its session limit, at or over the 85% that counts as near"),
+            ("account-2", "`account-1` has used 88% of its session limit, over its curve's 85%"),
             await Ran());
 
         // Its pace warning passes nothing alone (USAGEREAD3a): the start stays where its list begins.
@@ -584,7 +584,7 @@ public sealed class AccountRotationGoalTests : IDisposable
     }
 
     [Fact]
-    public async Task Near_is_a_pass_never_a_wait_and_the_switch_off_passes_nothing()
+    public async Task Near_is_a_pass_never_a_wait_and_the_switch_off_still_passes_an_account_over_the_smart_curve()
     {
         Accounts("account-1", "account-2");
         Wire(s => s.WithRotation("fake", ["account-1", "account-2"]));
@@ -595,9 +595,14 @@ public sealed class AccountRotationGoalTests : IDisposable
         Assert.True(both.Allowed, both.Refusal);
         Assert.Equal("account-1", both.Profile);
 
-        Wire(s => s.WithRotation("fake", ["account-1", "account-2"]).WithUse("fake", new UseChange(Early: false)));
+        // `off` stops no session switching while it runs; a start still passes an account over the smart curve (the switch
+        // design §2–§3, SWITCH1b-ii), where D130's switch off passed nothing.
+        Wire(s => s.WithRotation("fake", ["account-1", "account-2"]).WithUse("fake", new UseChange(Switch: "off")));
         AccountWindows.Said(_home, "fake", "account-2", [new WindowReading("session", 0.1, _now.AddHours(2), "clear")], _now, "s0");
-        Assert.Equal("account-1", (await Present().SelectAsync("fake", Config, null, null)).Profile);
+        var off = await Present().SelectAsync("fake", Config, null, null);
+        Assert.Equal(
+            ("account-2", "`account-1` has used 95% of its session limit, over its curve's 90%"),
+            (off.Profile, off.Choice?.Clause));
     }
 
     [Fact]
@@ -611,9 +616,9 @@ public sealed class AccountRotationGoalTests : IDisposable
 
         Assert.Equal(("account-2", (AccountChoice?)null), (selection.Profile, selection.Choice));
         Assert.Equal(
-            ("account-1", WalkStep.Near, "`account-1` has used 95% of its session limit, at or over the 90% that counts as near"),
+            ("account-1", WalkStep.Near, "`account-1` has used 95% of its session limit, over its curve's 90%"),
             (selection.Rotated!.From, selection.Rotated.Step, selection.Rotated.Why));
-        Assert.Equal("What each account said: `account-1` 20 min ago, 95% of its session limit used, near at 90%; `account-2` nothing yet.", selection.SaidLine);
+        Assert.Equal("What each account said: `account-1` 20 min ago, 95% of its session limit used, over its session curve's 90%; `account-2` nothing yet.", selection.SaidLine);
     }
 
     /// <summary>
@@ -634,26 +639,56 @@ public sealed class AccountRotationGoalTests : IDisposable
 
         var opened = Assert.Single(events.After("s1", 0).Events);
         Assert.Equal(
-            "opened on `account-2`: `account-1` has used 95% of its session limit, at or over the 90% that counts as near. What each "
-            + "account said: `account-1` 20 min ago, 95% of its session limit used, near at 90%; `account-2` nothing yet.",
+            "opened on `account-2`: `account-1` has used 95% of its session limit, over its curve's 90%. What each "
+            + "account said: `account-1` 20 min ago, 95% of its session limit used, over its session curve's 90%; `account-2` nothing yet.",
             opened.Text);
         Assert.Equal(
-            ["opening.opened", "opening.said-at", "opening.said-used", "opening.said-near-at", "opening.said-nothing"],
+            ["opening.opened", "opening.said-at", "opening.said-used", "opening.said-over", "opening.said-nothing"],
             NoteAssert.Codes(opened.Parts));
         NoteAssert.Holds(opened.Text, opened.Parts);
         Assert.Equal(
             // Read back from the record, a number is a whole number as JSON keeps it.
-            new object?[] { "account-2", OpeningWhy.NearUsed, "account-1", 95L, "session", 90L },
-            new[] { "account", "why", "over", "used", "window", "near" }.Select(name => opened.Parts![0].Value(name)));
+            new object?[] { "account-2", OpeningWhy.OverCurve, "account-1", "session", 95L, 90L },
+            new[] { "account", "why", "over", "window", "used", "curve" }.Select(name => opened.Parts![0].Value(name)));
     }
 
+    /// <summary>
+    /// SWITCH1b-ii (the switch design §3): step 5 is the most room under its curve first, on its tightest window, and an
+    /// account with room ranks ahead of one that said nothing.
+    /// </summary>
     [Fact]
-    public async Task The_account_furthest_behind_its_week_s_pace_goes_first_and_one_that_said_nothing_sits_between()
+    public async Task The_account_with_the_most_room_under_its_curve_goes_first()
     {
         Accounts("account-1", "account-2", "account-3");
         Wire(s => s.WithRotation("fake", ["account-1", "account-2", "account-3"]));
-        // Four days to each reset: three sevenths of the week are gone.
-        Said("account-1", 0.20, weekly: 0.80);
+        // Four days to each reset: three sevenths of the week are gone, and the smart curve stands at 63% of it.
+        Said("account-1", 0.20, weekly: 0.50);
+        Said("account-3", 0.20, weekly: 0.10);
+        var roster = Present();
+
+        var first = await roster.SelectAsync("fake", Config, null, null);
+        var second = await roster.SelectAsync("fake", Config, null, null);
+
+        Assert.Equal("account-3", first.Profile);
+        Assert.Equal(
+            new AccountChoice(WalkStep.Pace, "it has the most room under its curve, 53 points on its weekly window"),
+            first.Choice);
+        // The second start: account-3 runs one now; of the two that run none, the one with thirteen points of room goes ahead
+        // of the one that said nothing.
+        Assert.Equal("account-1", second.Profile);
+        Assert.Equal(
+            new AccountChoice(WalkStep.Pace, "it has the most room under its curve, 13 points on its weekly window"),
+            second.Choice);
+    }
+
+    /// <summary>Under <c>switch: off</c> step 5 stands as D130 wrote it (the switch design §3): furthest behind its week's pace first.</summary>
+    [Fact]
+    public async Task Under_off_the_account_furthest_behind_its_week_s_pace_goes_first_and_one_that_said_nothing_sits_between()
+    {
+        Accounts("account-1", "account-2", "account-3");
+        Wire(s => s.WithRotation("fake", ["account-1", "account-2", "account-3"]).WithUse("fake", new UseChange(Switch: "off")));
+        // Four days to each reset: three sevenths of the week are gone. account-1 is ahead of its pace, under the smart curve.
+        Said("account-1", 0.20, weekly: 0.50);
         Said("account-3", 0.20, weekly: 0.10);
         var roster = Present();
 
@@ -668,7 +703,7 @@ public sealed class AccountRotationGoalTests : IDisposable
         // ahead of its pace, and says why by that account's word.
         Assert.Equal("account-2", second.Profile);
         Assert.Equal(
-            new AccountChoice(WalkStep.Pace, "`account-1` is ahead of its week's pace, 80% of its weekly limit used with 43% of its week gone"),
+            new AccountChoice(WalkStep.Pace, "`account-1` is ahead of its week's pace, 50% of its weekly limit used with 43% of its week gone"),
             second.Choice);
     }
 

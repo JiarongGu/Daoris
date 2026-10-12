@@ -81,7 +81,8 @@ public sealed record AccountSaid(IReadOnlyList<WindowSaid> Windows)
 
 /// <summary>
 /// The one reader of what an agent says about an account's windows (TOOL6c, D130 §5.2, §6, §16.3), and the two judgements
-/// the walk makes of it: near, and how far behind its week's pace. Pure: the frame, the table and the moment are arguments.
+/// the walk makes of it: near, by its curve (SWITCH1b-ii), and how far behind its week's pace, which <c>switch: off</c> still
+/// ranks by. Pure: the frame, the table, the scope's settings and the moment are arguments.
 /// </summary>
 /// <remarks>
 /// <para><b>It reads the frame the door carried apart from the agent's words</b>, as the limit reader reads the door's
@@ -141,31 +142,32 @@ public static class AccountReadings
     }
 
     /// <summary>
-    /// Whether an account is near a limit (D130 §6 as the evidence corrects it): its agent's word that a limit was reached,
-    /// its word that it is drawing on usage credits, or any window's use at or over <paramref name="near"/> percent. Nothing
-    /// said is never near, and its agent's pace warning (<c>warned</c>) is never near alone.
+    /// Whether an account is near a limit, which a start passes (D130 §6 as the evidence corrects it, D165 point 2): its
+    /// agent's word that a limit was reached, its word that it is drawing on usage credits, or a window's use over the
+    /// scope's curve now (<see cref="UsageCurves"/>, SWITCH1b-ii). Nothing said is never near, and its agent's pace warning
+    /// (<c>warned</c>) is never near alone.
     /// </summary>
     /// <remarks>
     /// <para>§6 had the agent's word win over the number, where Claude Code's word was thought to come without one. The
     /// evidence found a number on every frame, and the word still <c>allowed</c> at 88% with two hours left (§1.3): read
-    /// alone, the word would pass nothing the person's own <i>near</i> says. So either passes.</para>
+    /// alone, the word would pass nothing the person's curve says. So either passes.</para>
     /// <para>Its <c>allowed_warning</c> passes nothing alone (USAGEREAD3a, D165 point 2, the account-switch design §1.3): it
     /// says a window's use is ahead of the time gone in it, not that the window is near its limit.</para>
+    /// <para>The curve is read under every switch: <c>off</c> reads the smart curve, since a start still passes an account
+    /// over it (the switch design §3). A window this build has no curve for is not measured, so its number passes nothing.</para>
     /// </remarks>
-    public static bool Near(AccountSaid? said, int near) => NearWindow(said, near) is not null;
+    public static bool Near(AccountSaid? said, RotationUse use, DateTimeOffset now) => NearWindow(said, use, now) is not null;
 
     /// <summary>
-    /// The window that makes an account near, and why: a limit reached by its word first, then credits, then the most used
-    /// window at or over <paramref name="near"/>; null where none does.
+    /// The window that makes an account near, and why: a limit reached by its word first, then credits, then the window with
+    /// the least room under its curve, where that room is below zero; null where none does.
     /// </summary>
-    public static (WindowSaid Window, NearBy By)? NearWindow(AccountSaid? said, int near)
+    public static (WindowSaid Window, NearBy By)? NearWindow(AccountSaid? said, RotationUse use, DateTimeOffset now)
     {
         if (said is null) return null;
         if (said.Windows.FirstOrDefault(each => each.Standing == RefusedWord) is { } refused) return (refused, NearBy.Refused);
         if (said.Windows.FirstOrDefault(each => each.Credits) is { } drawing) return (drawing, NearBy.Credits);
-        return said.Windows.Where(each => each.Used is { } used && used * 100 >= near - 1e-9).MaxBy(each => each.Used) is { } full
-            ? (full, NearBy.Number)
-            : null;
+        return UsageCurves.TightestSaid(use, said, now) is { Room: < 0 } over ? (over.Window, NearBy.Number) : null;
     }
 
     /// <summary>The share of its limit used in the window it said the most of, as a fraction; null where it said no number (ACCTWALK3).</summary>
@@ -173,10 +175,10 @@ public static class AccountReadings
 
     /// <summary>
     /// An account's standing for the log (D94 §4's names only): <c>refused</c> by its word, <c>near</c> as
-    /// <see cref="Near"/> reads it, <c>warned</c> where its agent's pace warning stands and it is not near (USAGEREAD3a),
-    /// <c>clear</c> where it said and is none of those, and null where it said nothing.
+    /// <see cref="Near"/> reads it (over its curve among them, SWITCH1b-ii), <c>warned</c> where its agent's pace warning
+    /// stands and it is not near (USAGEREAD3a), <c>clear</c> where it said and is none of those, and null where it said nothing.
     /// </summary>
-    public static string? Standing(AccountSaid? said, int near) => NearWindow(said, near) switch
+    public static string? Standing(AccountSaid? said, RotationUse use, DateTimeOffset now) => NearWindow(said, use, now) switch
     {
         null when said is null => null,
         null => said.Windows.Any(each => each.Standing == WarnedWord) ? WarnedWord : ClearWord,
@@ -248,7 +250,7 @@ public enum NearBy
     /// <summary>Its agent said it is drawing on usage credits.</summary>
     Credits,
 
-    /// <summary>A window's use at or over the scope's <i>near</i>.</summary>
+    /// <summary>A window's use over the scope's curve now (SWITCH1b-ii; the scope's <i>near</i> before it).</summary>
     Number,
 }
 

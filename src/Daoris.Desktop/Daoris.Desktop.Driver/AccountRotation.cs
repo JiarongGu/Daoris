@@ -266,11 +266,13 @@ public static class AccountRotation
     /// conversation takes it last, or first where it is also the scope's default, and under <c>order</c> leaves it in its
     /// place.</para>
     /// <para>Under <c>goal</c> each step after keep is stable, so the order handed on stands where a step has no reason to
-    /// change it: an account its agent said is near goes last (with <i>switch before the limit</i> on), then fewest of
-    /// Daoris's sessions running, a week resetting within <see cref="LastDay"/> (sooner first), furthest behind its week's
-    /// pace (one that said nothing between behind and ahead), least recently started (never first, a start this look chose
-    /// last), then the sequence. Under <c>order</c> the sequence is the walk, as D125 built it, with a near account last
-    /// unless the switch is off (§16.6), and a conversation's kept account in its place.</para>
+    /// change it: an account near (its limit reached, credits, or over its curve, D165 point 2) goes last, the least over
+    /// first; then fewest of Daoris's sessions running, a week resetting within <see cref="LastDay"/> (sooner first), the most
+    /// room under its curve on its tightest window (one that said no number between those with room and those over; under
+    /// <c>switch: off</c> furthest behind its week's pace, as D130 §16.3 wrote it), least recently started (never first, a
+    /// start this look chose last), then the sequence. Under <c>order</c> the sequence is the walk, as D125 built it, with a
+    /// near account last, and a conversation's kept account in its place. Near is read under every switch: <c>off</c> reads
+    /// the smart curve, since a start still passes an account over it (the switch design §2–§3, SWITCH1b-ii).</para>
     /// </remarks>
     /// <param name="present">The agent's accounts on this machine.</param>
     public static IReadOnlyList<string> Order(
@@ -294,9 +296,8 @@ public static class AccountRotation
         }
 
         var position = sequence.Select((name, index) => (name, index)).ToDictionary(pair => pair.name, pair => pair.index, StringComparer.OrdinalIgnoreCase);
-        IEnumerable<string> walked = goal || scope.Use.Early
-            ? sequence.OrderBy(name => name, Comparer<string>.Create((a, b) => Rank(a, b, facts, now, scope.Use) is var (_, order) && order != 0 ? order : position[a].CompareTo(position[b])))
-            : sequence;
+        IEnumerable<string> walked =
+            sequence.OrderBy(name => name, Comparer<string>.Create((a, b) => Rank(a, b, facts, now, scope.Use) is var (_, order) && order != 0 ? order : position[a].CompareTo(position[b])));
 
         return [.. (first is null ? [] : new[] { first }), .. walked, .. (last is null ? [] : new[] { last })];
     }
@@ -444,7 +445,7 @@ public static class AccountRotation
             AccountReadiness.Refused => new(state.Account, NextHold.Refused),
             AccountReadiness.SignedOut => new(state.Account, NextHold.SignedOut),
             _ => new(state.Account,
-                listed && scope.Use.Early && state.Account is { } name && AccountReadings.Near(facts.GetValueOrDefault(name)?.Said, scope.Use.Near)
+                listed && state.Account is { } name && AccountReadings.Near(facts.GetValueOrDefault(name)?.Said, scope.Use, now)
                     ? NextHold.Near
                     : NextHold.Ready),
         };
@@ -485,16 +486,15 @@ public static class AccountRotation
     {
         var (x, y) = (facts.GetValueOrDefault(a) ?? new AccountFacts(), facts.GetValueOrDefault(b) ?? new AccountFacts());
 
-        if (use.Early)
-        {
-            var (nearX, nearY) = (AccountReadings.Near(x.Said, use.Near), AccountReadings.Near(y.Said, use.Near));
-            if (nearX != nearY) return (WalkStep.Near, nearX ? 1 : -1);
+        // Step 2, over its curve last (D165 point 2, the switch design §3, SWITCH1b-ii), with a limit reached and credits as
+        // before: read under every switch, `off` reading the smart curve, since a start still passes an account over it.
+        var (nearX, nearY) = (AccountReadings.Near(x.Said, use, now), AccountReadings.Near(y.Said, use, now));
+        if (nearX != nearY) return (WalkStep.Near, nearX ? 1 : -1);
 
-            // Both near under the goal: the one with more room first, as a start left on a 99% account would otherwise
-            // pass one at 60% (ACCTWALK3, D130 §3 point 3). Equal, or neither known, the later steps decide.
-            if (nearX && use.Use == "goal"
-                && Room(x.Said, use.Near).CompareTo(Room(y.Said, use.Near)) is var room and not 0) return (WalkStep.Room, room);
-        }
+        // Both near under the goal: the one least over its curve first, as a start left on a 99% account would otherwise
+        // pass one at 60% (ACCTWALK3, D130 §3 point 3). Equal, or neither known, the later steps decide.
+        if (nearX && use.Use == "goal"
+            && Room(x.Said, use, now).CompareTo(Room(y.Said, use, now)) is var room and not 0) return (WalkStep.Room, room);
 
         if (use.Use != "goal") return (WalkStep.List, 0);
 
@@ -503,9 +503,12 @@ public static class AccountRotation
         var (lapsesX, lapsesY) = (Lapses(x, now), Lapses(y, now));
         if (lapsesX != lapsesY) return (WalkStep.Lapsing, lapsesX.CompareTo(lapsesY));
 
-        // An account that said nothing about its week is neither behind nor ahead (§16.3 step 5): it ranks as on pace.
-        var (behindX, behindY) = (AccountReadings.Behind(x.Said, now) ?? 0, AccountReadings.Behind(y.Said, now) ?? 0);
-        if (behindX != behindY) return (WalkStep.Pace, behindY.CompareTo(behindX));
+        // Step 5. An account that said no number ranks as one on its curve, between those with room and those over, and as
+        // on pace under `off` (absent is never zero, D57).
+        var (spareX, spareY) = use.Switch == "off"
+            ? (AccountReadings.Behind(x.Said, now) ?? 0, AccountReadings.Behind(y.Said, now) ?? 0)
+            : (UsageCurves.TightestSaid(use, x.Said, now)?.Room ?? 0, UsageCurves.TightestSaid(use, y.Said, now)?.Room ?? 0);
+        if (spareX != spareY) return (WalkStep.Pace, spareY.CompareTo(spareX));
 
         var (startedX, startedY) = (Started(x), Started(y));
         if (startedX != startedY) return (WalkStep.LeastRecent, startedX.CompareTo(startedY));
@@ -514,12 +517,13 @@ public static class AccountRotation
     }
 
     /// <summary>
-    /// How much of its limit a near account has used, as the walk ranks it (ACCTWALK3): a number below 100% by that number,
-    /// then one that said none (credits only), then one its word says reached or at 100%, which stays last.
+    /// How far over its curve a near account is, as the walk ranks it (ACCTWALK3, measured against the curve by SWITCH1b-ii):
+    /// one with a number below 100% by the points over its curve on its tightest window, the least over first, then one that
+    /// said none (credits only), then one its word says reached or at 100%, which stays last whatever room its number leaves.
     /// </summary>
-    private static (int Tier, double Used) Room(AccountSaid? said, int near) =>
-        AccountReadings.NearWindow(said, near) is { By: NearBy.Refused } ? (2, 0)
-        : AccountReadings.MostUsed(said) is { } used ? (used < 1 ? (0, used) : (2, 0))
+    private static (int Tier, double Over) Room(AccountSaid? said, RotationUse use, DateTimeOffset now) =>
+        AccountReadings.NearWindow(said, use, now) is { By: NearBy.Refused } || AccountReadings.MostUsed(said) >= 1 ? (2, 0)
+        : UsageCurves.TightestSaid(use, said, now) is { } tightest ? (0, -tightest.Room)
         : (1, 0);
 
     /// <summary>When its week resets, where that is within the last day; else the end of time, which ranks nothing.</summary>
@@ -869,7 +873,13 @@ public static class RotationWords
                 NoteCodes.OpeningSaidUsed, $"{Percent(each.Used!.Value)} of its {each.Window} limit", ("used", Whole(each.Used!.Value)), ("window", each.Window)))
             .ToList();
         if (used.Count > 0) parts.Add(Joined(used, " and ").Then(" used"));
-        if (AccountReadings.NearWindow(said, use.Near) is { By: NearBy.Number }) parts.Add(Noted.Of(NoteCodes.OpeningSaidNearAt, $"near at {use.Near}%", ("near", use.Near)));
+        // Over its curve on its tightest window, and the curve's value there now (SWITCH1b-ii): `opening.said-near-at`,
+        // *near at 90%*, said it by the scope's one number before.
+        if (UsageCurves.TightestSaid(use, said, now) is { Room: < 0 } over)
+        {
+            parts.Add(Noted.Of(
+                NoteCodes.OpeningSaidOver, $"over its {over.Window.Window} curve's {Points(over.Curve)}%", ("window", over.Window.Window), ("curve", Points(over.Curve))));
+        }
         // A reading with no number, no warning and no credits is its agent's clear word alone.
         if (parts.Count == 0) parts.Add(Noted.Of(NoteCodes.OpeningSaidClear, "clear, by its own word"));
         var who = Noted.Of(NoteCodes.OpeningSaidAt, $"`{name}` {Age(said.Seen, now)}", ("account", name), ("seen", NoteCodes.Moment(said.Seen)));
@@ -889,6 +899,9 @@ public static class RotationWords
 
     /// <summary>A share as the whole percent <see cref="Percent"/> says, as a value a part carries (UX7d-1): <i>88</i>.</summary>
     internal static int Whole(double share) => (int)Math.Round(share * 100, MidpointRounding.AwayFromZero);
+
+    /// <summary>A curve's value or a room, already in percent points, as a whole number a part carries (SWITCH1b-ii): <i>63</i>.</summary>
+    internal static int Points(double points) => (int)Math.Round(points, MidpointRounding.AwayFromZero);
 
     /// <summary>How long ago something was said: <i>just now</i>, <i>20 min ago</i>, <i>3 h ago</i>, <i>2 d ago</i>.</summary>
     internal static string Age(DateTimeOffset seen, DateTimeOffset now)
@@ -943,12 +956,13 @@ public static class RotationWords
             WalkStep.Kept when kind == StartKind.Conversation =>
                 Reason($"`{scope.Begins}` is kept for conversations, which take it last", OpeningWhy.KeptLast, ("over", scope.Begins)),
             WalkStep.Kept => Reason($"`{scope.Begins}` is kept for conversations", OpeningWhy.Kept, ("over", scope.Begins)),
-            WalkStep.Near => Near(over!, facts.GetValueOrDefault(over!)?.Said, scope.Use),
-            WalkStep.Room => MoreRoom(own.Said, over!, facts.GetValueOrDefault(over!)?.Said, scope.Use),
+            // Both near, it the least over (ACCTWALK3): the other's own reason for going last, its numbers against its curve.
+            WalkStep.Near or WalkStep.Room => Near(over!, facts.GetValueOrDefault(over!)?.Said, scope.Use, now),
             WalkStep.Fewest => Reason("it runs the fewest of Daoris's sessions", OpeningWhy.Fewest),
             WalkStep.Lapsing => Reason(
                 $"its week resets first, at {CoolingWords.When(own.WeekResets!.Value, zone)}", OpeningWhy.Lapsing, ("at", NoteCodes.Moment(own.WeekResets.Value))),
-            WalkStep.Pace => Pace(own.Said, over!, facts.GetValueOrDefault(over!)?.Said, now),
+            WalkStep.Pace when scope.Use.Switch == "off" => Pace(own.Said, over!, facts.GetValueOrDefault(over!)?.Said, now),
+            WalkStep.Pace => MostRoom(own.Said, over!, facts.GetValueOrDefault(over!)?.Said, scope.Use, now),
             WalkStep.LeastRecent => own is { Chosen: null, LastStarted: null }
                 ? Reason("Daoris has not started on it yet", OpeningWhy.NotStarted)
                 : Reason("Daoris started on it least recently", OpeningWhy.LeastRecent),
@@ -978,35 +992,39 @@ public static class RotationWords
     }
 
     /// <summary>
-    /// Why an account went last (§6): its agent's word that a limit was reached, its credits, or a window's use at or over
-    /// <i>near</i>; never its pace warning, which is not near (USAGEREAD3a), so <see cref="OpeningWhy.NearWord"/> is no longer
-    /// written.
+    /// Why an account went last (§6, D165 point 2): its agent's word that a limit was reached, its credits, or its use over
+    /// its curve on its tightest window, said with the curve's value there now (SWITCH1b-ii); never its pace warning, which
+    /// is not near (USAGEREAD3a). <see cref="OpeningWhy.NearWord"/> and <see cref="OpeningWhy.NearUsed"/> are no longer written.
     /// </summary>
-    private static StepSaid Near(string account, AccountSaid? said, RotationUse use) => AccountReadings.NearWindow(said, use.Near) switch
+    private static StepSaid Near(string account, AccountSaid? said, RotationUse use, DateTimeOffset now) => AccountReadings.NearWindow(said, use, now) switch
     {
         { By: NearBy.Refused } reached => Reason(
             $"`{account}` said its {reached.Window.Window} limit is reached", OpeningWhy.NearReached, ("over", account), ("window", reached.Window.Window)),
         { By: NearBy.Credits } => Reason($"`{account}` said it is drawing on usage credits", OpeningWhy.NearCredits, ("over", account)),
-        { } full => Reason(
-            $"`{account}` has used {Percent(full.Window.Used!.Value)} of its {full.Window.Window} limit, at or over the {use.Near}% that counts as near",
-            OpeningWhy.NearUsed, ("over", account), ("used", Whole(full.Window.Used!.Value)), ("window", full.Window.Window), ("near", use.Near)),
+        { } => OverCurve(account, UsageCurves.TightestSaid(use, said, now)!.Value),
         null => Reason($"`{account}` is near its limit", OpeningWhy.Near, ("over", account)),
     };
 
-    /// <summary>
-    /// Why the account it ran on went ahead of another near account (ACCTWALK3): it has more room, said by the two numbers;
-    /// where one said none (the other's limit reached, or credits alone), the other's own reason for going last is said.
-    /// </summary>
-    private static StepSaid MoreRoom(AccountSaid? own, string over, AccountSaid? other, RotationUse use) =>
-        AccountReadings.MostUsed(own) is { } mine && AccountReadings.MostUsed(other) is { } theirs
-            ? Reason(
-                $"both are near; it has more room, {Percent(mine)} used against `{over}`'s {Percent(theirs)}",
-                OpeningWhy.Room, ("over", over), ("used", Whole(mine)), ("against", Whole(theirs)))
-            : Near(over, other, use);
+    /// <summary>An account over its curve, said by its tightest window: what it used there and the curve's value there now.</summary>
+    private static StepSaid OverCurve(string account, (WindowSaid Window, double Curve, double Room) over) => Reason(
+        $"`{account}` has used {Percent(over.Window.Used!.Value)} of its {over.Window.Window} limit, over its curve's {Points(over.Curve)}%",
+        OpeningWhy.OverCurve, ("over", account), ("window", over.Window.Window), ("used", Whole(over.Window.Used!.Value)), ("curve", Points(over.Curve)));
 
     /// <summary>
-    /// Why the account it ran on ranked ahead by its week's pace (§16.3 step 5): it is behind, where it said so; otherwise
-    /// the account it was weighed against is ahead.
+    /// Why the account it ran on ranked ahead by its room (step 5 under <c>smart</c> and <c>curve</c>, the switch design §3):
+    /// the most room under its curve on its tightest window, where it has room to say; otherwise the account it was weighed
+    /// against is over its curve, or near by its word, and that is said.
+    /// </summary>
+    private static StepSaid MostRoom(AccountSaid? own, string over, AccountSaid? other, RotationUse use, DateTimeOffset now) =>
+        UsageCurves.TightestSaid(use, own, now) is { Room: > 0 } mine
+            ? Reason(
+                $"it has the most room under its curve, {Points(mine.Room)} points on its {mine.Window.Window} window",
+                OpeningWhy.MostRoom, ("room", Points(mine.Room)), ("window", mine.Window.Window))
+            : Near(over, other, use, now);
+
+    /// <summary>
+    /// Why the account it ran on ranked ahead by its week's pace (§16.3 step 5, under <c>switch: off</c>): it is behind, where
+    /// it said so; otherwise the account it was weighed against is ahead.
     /// </summary>
     private static StepSaid Pace(AccountSaid? own, string over, AccountSaid? other, DateTimeOffset now) =>
         AccountReadings.Behind(own, now) is > 0

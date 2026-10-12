@@ -132,4 +132,38 @@ public sealed class UsageCurvesTests
 
     [Fact]
     public void The_switch_margin_is_ten_points() => Assert.Equal(10, UsageCurves.SwitchMargin);
+
+    // ——— What an account's agent said, measured (SWITCH1b-ii): the walk ranks by its tightest window, and its reasons say
+    // that window, its use and the curve's value there now.
+
+    private static WindowSaid Said(string window, double? used, int minutesToReset) =>
+        new(window, used, Now.AddMinutes(minutesToReset), Standing: null, Credits: false, Seen: Now.AddMinutes(-5), Session: "s0");
+
+    [Fact]
+    public void The_curve_now_on_a_window_is_its_value_at_the_share_gone()
+    {
+        Assert.Equal(70, UsageCurves.Value(Use("smart"), "weekly", Now.AddMinutes(7 * 12 * 60), Now)!.Value, 6);
+        Assert.Equal(RotationUse.SmartSession, UsageCurves.Value(Use("smart"), "session", Now.AddMinutes(60), Now)!.Value, 6);
+        Assert.Equal(40, UsageCurves.Value(Use("curve", UseCurve.Flat("session", 40)), "session", Now.AddMinutes(60), Now)!.Value, 6);
+        Assert.Null(UsageCurves.Value(Use("smart"), "monthly", Now.AddMinutes(60), Now));
+    }
+
+    [Fact]
+    public void An_account_s_tightest_window_is_the_one_with_least_room_with_its_curve_now()
+    {
+        // session 40% used of 90 -> 50; weekly at 75% elapsed 80% used of 95 -> 15.
+        var said = new AccountSaid([Said("session", 0.40, 60), Said("weekly", 0.80, 7 * 24 * 60 / 4)]);
+
+        var tightest = UsageCurves.TightestSaid(Use("smart"), said, Now)!.Value;
+
+        Assert.Equal(("weekly", 95.0, 15.0), (tightest.Window.Window, Math.Round(tightest.Curve, 6), Math.Round(tightest.Room, 6)));
+    }
+
+    [Fact]
+    public void An_account_that_said_no_number_or_nothing_has_no_tightest_window()
+    {
+        Assert.Null(UsageCurves.TightestSaid(Use("smart"), null, Now));
+        Assert.Null(UsageCurves.TightestSaid(Use("smart"), new AccountSaid([Said("session", null, 60)]), Now));
+        Assert.Null(UsageCurves.TightestSaid(Use("smart"), new AccountSaid([Said("monthly", 0.99, 60)]), Now));
+    }
 }
