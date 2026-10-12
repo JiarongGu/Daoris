@@ -307,6 +307,13 @@ public sealed class TreeDiffSplitTests
         Assert.Single(git.Calls);
     }
 
+    /// <summary>The plan's count asks only a tree this home opened: a folder it did not make (a person's checkout) is not counted (D49 §3).</summary>
+    [Fact]
+    public async Task The_plan_s_uncommitted_count_is_not_asked_of_a_folder_this_home_did_not_open()
+    {
+        Assert.Null(await new SessionTrees(Root).UncommittedAsync(Root));
+    }
+
     /// <summary>git that answers each kind of ask its own way, as the uncommitted read makes three of them (REVIEWDIRTY1-a).</summary>
     private static WorkingTree.GitRead Dirty(string range, string status, Func<string, (int Code, string Text)> noIndex, List<IReadOnlyList<string>>? calls = null) =>
         (root, arguments, take, ct) =>
@@ -351,13 +358,13 @@ public sealed class TreeDiffSplitTests
         var diff = await WorkingTree.UncommittedDiffAsync(Root, git, CancellationToken.None);
 
         var fresh = diff!.Files.Single(file => file.Path == "fresh.txt");
-        Assert.Equal("A", fresh.Status);
+        Assert.Equal("added", fresh.Status);
         Assert.Equal(2, fresh.Added);
         Assert.Equal(0, fresh.Removed);
         Assert.Equal(patch, fresh.Patch);
         // Binary: listed, with no patch and no count.
         var blob = diff.Files.Single(file => file.Path == "dir/blob.bin");
-        Assert.Equal("A", blob.Status);
+        Assert.Equal("added", blob.Status);
         Assert.Null(blob.Patch);
         Assert.Null(blob.Added);
     }
@@ -377,7 +384,7 @@ public sealed class TreeDiffSplitTests
             var diff = await WorkingTree.UncommittedDiffAsync(Root, git, CancellationToken.None);
 
             var file = Assert.Single(diff!.Files);
-            Assert.Equal(("A", null), (file.Status, file.Patch));
+            Assert.Equal(("added", null), (file.Status, file.Patch));
             Assert.Empty(asked);
         }
         finally

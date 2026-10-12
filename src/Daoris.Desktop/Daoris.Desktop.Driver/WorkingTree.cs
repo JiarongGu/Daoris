@@ -352,13 +352,14 @@ public static class WorkingTree
             if (spent >= PatchBudget)
             {
                 dropped++;
-                files.Add(new DiffFile(path, "A", null, null, null));
+                files.Add(new DiffFile(path, "added", null, null, null));
                 continue;
             }
 
             var (patch, added) = await UntrackedPatchAsync(root, path, git, ct).ConfigureAwait(false);
             spent += patch?.Length ?? 0;
-            files.Add(new DiffFile(path, "A", added, added is null ? null : 0, patch));
+            // The word the committed list uses for an addition, so the page renders both alike.
+            files.Add(new DiffFile(path, "added", added, added is null ? null : 0, patch));
         }
 
         var truncated = tracked.Truncated ?? (dropped == 0
