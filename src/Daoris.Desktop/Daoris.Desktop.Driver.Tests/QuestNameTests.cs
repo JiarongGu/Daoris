@@ -148,14 +148,21 @@ public sealed class QuestNameTests
 
     /// <summary>
     /// The key's shape (PROCESS1b-i): a regular expression both readers of a rule take the same way, at most 64 characters, no
-    /// <c>(?</c> group and no back-reference; only on a branch rule whose pattern says <c>{ticket}</c>. The CLI's
-    /// <c>driverconfig.test.ts</c> holds these cases, answer for answer (<c>KEY_SHAPES</c>).
+    /// <c>(?</c> group, no back-reference, a letter escaped only as one of the classes and controls both engines share, and no
+    /// empty class; only on a branch rule whose pattern says <c>{ticket}</c>. The CLI's <c>driverconfig.test.ts</c> holds these
+    /// cases, answer for answer (<c>KEY_SHAPES</c>).
     /// </summary>
     [Theory]
     [InlineData("branch", "feature/{ticket}-{slug}", null, null)]
     [InlineData("branch", "feature/{ticket}-{slug}", @"[A-Z]+-\d+", null)]
     [InlineData("branch", "feature/{ticket}", @"\d{4,}", null)]
     [InlineData("branch", "feature/{ticket}", @"TK\\1", null)]
+    [InlineData("branch", "feature/{ticket}-{slug}", @"TK\-\d+", null)]
+    [InlineData("branch", "feature/{ticket}-{slug}", @"[A-Z]{2,5}-\d+", null)]
+    [InlineData("branch", "feature/{ticket}-{slug}", @"TK\_\d+", "may escape only")]
+    [InlineData("branch", "feature/{ticket}-{slug}", @"\x", "may escape only")]
+    [InlineData("branch", "feature/{ticket}-{slug}", "[^]", "empty class")]
+    [InlineData("branch", "feature/{ticket}-{slug}", "[]", "empty class")]
     [InlineData("branch", "feature/{quest}-{slug}", @"[A-Z]+-\d+", "only for `{ticket}`")]
     [InlineData("merge", null, @"[A-Z]+-\d+", "only a branch rule reads a ticket's key")]
     [InlineData("branch", "feature/{ticket}-{slug}", "  ", "needs a shape")]
@@ -175,7 +182,7 @@ public sealed class QuestNameTests
         else Assert.Contains(problem, said);
     }
 
-    /// <summary>The key rides the rule in <c>driver.json</c>, after its pattern, as the CLI writes it; a rule with a key refused is not read.</summary>
+    /// <summary>The key rides the rule in <c>driver.json</c>, after its pattern, as the CLI writes it; an empty one is none.</summary>
     [Fact]
     public void A_tickets_key_is_kept_in_driver_json_after_the_pattern()
     {
@@ -188,9 +195,38 @@ public sealed class QuestNameTests
         Assert.Throws<DriverException>(() => DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Merge, Key: @"[A-Z]+-\d+")));
 
         var read = DriverConfig.Parse("""
-            {"landings":{"engine":{"form":"branch","pattern":"feature/{ticket}","key":"(?i)tk-\\d+"},"game":{"form":"branch","pattern":"feature/{ticket}","key":""}}}
+            {"landings":{"game":{"form":"branch","pattern":"feature/{ticket}","key":""}}}
             """);
-        Assert.False(read.Landings.ContainsKey("engine"));
-        Assert.Null(read.Landings["game"].Key);
+        Assert.Equal(new LandingRule(LandingForm.Branch, "feature/{ticket}"), read.Landings["game"]);
+    }
+
+    /// <summary>
+    /// A key the driver refuses in the file is ignored, and the rest of its rule stands (PROCESS1b-i): a key written by a reader
+    /// that takes more never drops the rule, so the repository never lands by its workspace's rule or a merge unasked. A door that
+    /// sets one still refuses it. The CLI's <c>driverconfig.test.ts</c> reads the same file the same way.
+    /// </summary>
+    [Fact]
+    public void A_rule_whose_key_is_refused_is_read_without_it()
+    {
+        var read = DriverConfig.Parse("""
+            {"landings":{
+              "engine":{"form":"branch","pattern":"feature/{ticket}","key":"(?i)tk-\\d+","plugin":"example.github-pull-request","tidy":true,"autoAccept":true},
+              "parity":{"form":"branch","pattern":"feature/{ticket}-{slug}","key":"TK\\_\\d+"},
+              "unasked":{"form":"branch","pattern":"feature/{quest}","key":"[A-Z]+-\\d+"},
+              "line":{"form":"merge","key":"[A-Z]+-\\d+"},
+              "bad":{"form":"branch","pattern":"fixed","key":"[A-Z]+-\\d+"}}}
+            """);
+
+        Assert.Equal(new LandingRule(LandingForm.Branch, "feature/{ticket}", Tidy: true, Plugin: "example.github-pull-request", AutoAccept: true),
+            read.Landings["engine"]);
+        Assert.Equal(new LandingRule(LandingForm.Branch, "feature/{ticket}-{slug}"), read.Landings["parity"]);
+        Assert.Equal(new LandingRule(LandingForm.Branch, "feature/{quest}"), read.Landings["unasked"]);
+        Assert.Equal(LandingRule.Merge, read.Landings["line"]);
+        // A rule that could not land work without its key is still not read.
+        Assert.False(read.Landings.ContainsKey("bad"));
+        // The door that sets one still refuses it, in the CLI's words.
+        Assert.Contains(
+            @"may escape only a punctuation mark or one of `\d \D \w \W \s \S \b \B \n \r \t \f \v`, which the driver and the CLI read alike, and `\_` is neither.",
+            Assert.Throws<DriverException>(() => DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{ticket}", Key: @"TK\_\d+"))).Message);
     }
 }

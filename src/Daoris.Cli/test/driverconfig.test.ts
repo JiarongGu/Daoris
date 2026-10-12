@@ -532,14 +532,21 @@ test('landing refuses a merge that accepts automatically, and both switches at o
 
 /**
  * PROCESS1b-i (D164's amendment point 2): a branch rule whose pattern says `{ticket}` may name the shape of its repository's
- * ticket keys, a regular expression both readers take alike: at most 64 characters, no `(?` group, no back-reference. 🔴 A
- * TWIN with the driver's `LandingRules.Problem`: `QuestNameTests.cs` holds these cases, answer for answer.
+ * ticket keys, a regular expression both readers take alike: at most 64 characters, no `(?` group, no back-reference, a letter
+ * escaped only as a class or control both engines share, no empty class. 🔴 A TWIN with the driver's `LandingRules.Problem`:
+ * `QuestNameTests.cs` holds these cases, answer for answer.
  */
 const KEY_SHAPES: [form: string, pattern: string | null, key: string | null, problem: string | null][] = [
   ['branch', 'feature/{ticket}-{slug}', null, null],
   ['branch', 'feature/{ticket}-{slug}', '[A-Z]+-\\d+', null],
   ['branch', 'feature/{ticket}', '\\d{4,}', null],
   ['branch', 'feature/{ticket}', 'TK\\\\1', null],
+  ['branch', 'feature/{ticket}-{slug}', 'TK\\-\\d+', null],
+  ['branch', 'feature/{ticket}-{slug}', '[A-Z]{2,5}-\\d+', null],
+  ['branch', 'feature/{ticket}-{slug}', 'TK\\_\\d+', 'may escape only'],
+  ['branch', 'feature/{ticket}-{slug}', '\\x', 'may escape only'],
+  ['branch', 'feature/{ticket}-{slug}', '[^]', 'empty class'],
+  ['branch', 'feature/{ticket}-{slug}', '[]', 'empty class'],
   ['branch', 'feature/{quest}-{slug}', '[A-Z]+-\\d+', 'only for `{ticket}`'],
   ['merge', null, '[A-Z]+-\\d+', 'only a branch rule reads a ticket\'s key'],
   ['branch', 'feature/{ticket}-{slug}', '  ', 'needs a shape'],
@@ -600,20 +607,38 @@ test('landing refuses a key on a merge, a key with no {ticket}, a key with no sh
   fx.cleanup();
 });
 
-test('a ticket\'s key is read as the driver reads it: an empty one is none, and a rule with one refused is not read', () => {
+/**
+ * A ticket's key is read as the driver reads it: an empty one is none, and one refused is ignored with the rest of its rule
+ * standing, so another reader's key never drops the rule. `QuestNameTests.A_rule_whose_key_is_refused_is_read_without_it`
+ * reads the same file.
+ */
+test('a ticket\'s key is read as the driver reads it: an empty one is none, and one refused is ignored, the rule standing', () => {
   const fx = makeFixture('driver-landing-key-read');
   writeFileSync(at(fx), JSON.stringify({
     landings: {
-      engine: { form: 'branch', pattern: 'feature/{ticket}', key: '(?i)tk-\\d+' },
+      engine: {
+        form: 'branch', pattern: 'feature/{ticket}', key: '(?i)tk-\\d+', plugin: 'example.github-pull-request', tidy: true, autoAccept: true,
+      },
+      parity: { form: 'branch', pattern: 'feature/{ticket}-{slug}', key: 'TK\\_\\d+' },
+      unasked: { form: 'branch', pattern: 'feature/{quest}', key: '[A-Z]+-\\d+' },
+      line: { form: 'merge', key: '[A-Z]+-\\d+' },
+      bad: { form: 'branch', pattern: 'fixed', key: '[A-Z]+-\\d+' },
       game: { form: 'branch', pattern: 'feature/{ticket}', key: '' },
       web: { form: 'branch', pattern: 'feature/{ticket}', key: '\\d{4,}' },
     },
   }));
 
   assert.deepEqual(readDriverChoices(at(fx)).landings, {
+    engine: { form: 'branch', pattern: 'feature/{ticket}', plugin: 'example.github-pull-request', tidy: true, autoAccept: true },
+    parity: { form: 'branch', pattern: 'feature/{ticket}-{slug}' },
+    unasked: { form: 'branch', pattern: 'feature/{quest}' },
+    line: { form: 'merge' },
     game: { form: 'branch', pattern: 'feature/{ticket}' },
     web: { form: 'branch', pattern: 'feature/{ticket}', key: '\\d{4,}' },
   });
+  // The door that sets one still refuses it.
+  assert.match(captureError(() => run(['landing', 'engine', 'branch', 'feature/{ticket}', '--key', 'TK\\_\\d+'], at(fx))).message,
+    /may escape only a punctuation mark or one of `\\d \\D \\w \\W \\s \\S \\b \\B \\n \\r \\t \\f \\v`, which the driver and the CLI read alike, and `\\_` is neither/);
   fx.cleanup();
 });
 

@@ -874,8 +874,9 @@ public sealed record DriverConfig(
 
     /// <summary>
     /// A map of names to landing rules; one that could not land work — an unknown form, a pattern that
-    /// names no branch, a merge naming a plugin or accepting automatically, a ticket's key refused — is skipped. A plugin not
-    /// installed here is still read: the press says so, and the file stays what the person wrote. An empty key is none.
+    /// names no branch, a merge naming a plugin or accepting automatically — is skipped. A ticket's key it refuses is ignored, the
+    /// rest of the rule standing. A plugin not installed here is still read: the press says so, and the file stays what the
+    /// person wrote. An empty key is none.
     /// </summary>
     private static IReadOnlyDictionary<string, LandingRule> RuleMap(JsonElement root, string name)
     {
@@ -893,6 +894,9 @@ public sealed record DriverConfig(
                     String(property.Value, "plugin"),
                     property.Value.TryGetProperty("autoAccept", out var auto) && auto.ValueKind == JsonValueKind.True,
                     String(property.Value, "key"));
+                // A key refused here is ignored and the rest of the rule stands (PROCESS1b-i): a key another reader took never
+                // drops the rule, which would land the repository's work by its workspace's rule or a merge unasked.
+                if (rule.Key is not null && LandingRules.Problem(rule) is not null) rule = rule with { Key = null };
                 if (LandingRules.Problem(rule) is null) map[property.Name] = Kept(rule);
             }
         }

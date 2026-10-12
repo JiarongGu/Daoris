@@ -286,24 +286,48 @@ export const DEFAULT_KEY = '[A-Z][A-Z0-9]+-\\d+';
 const KEY_LIMIT = 64;
 
 /**
+ * The letters a key may escape (PROCESS1b-i): the classes and controls .NET and JavaScript read alike — the driver's
+ * `LandingRules.SharedEscapes`. `\x`, `\u`, `\c`, `\p` and the rest differ, or are refused by one engine.
+ */
+const SHARED_ESCAPES = 'dDwWsSbBnrtfv';
+
+/**
  * What is wrong with a ticket's key, in a sentence, or null where both readers of a rule take it the same way (PROCESS1b-i):
- * the driver matches it in .NET and this checks it in JavaScript, so it is held to what the two engines read alike. The
- * driver's `LandingRules.KeyProblem` is the twin, sentence for sentence.
+ * the driver matches it in .NET and this checks it in JavaScript, so it is held to what the two engines read alike — no `(?`
+ * group, no back-reference, a letter escaped only as one of `SHARED_ESCAPES` (a punctuation mark may be escaped), no empty
+ * class — and each engine's own compile is the last word. The driver's `LandingRules.KeyProblem` is the twin, sentence for
+ * sentence. 🔴 KEYPARITY: a key only JavaScript takes (`TK\_\d+`, `\x`, `[^]`) was written here and not read by the driver.
  */
 export function keyProblem(key: string): string | null {
   if (key.trim().length === 0) return `a ticket's key needs a shape — e.g. \`${DEFAULT_KEY}\`, the one read where a rule names none.`;
   if (key.length > KEY_LIMIT) return `a ticket's key is at most ${KEY_LIMIT} characters, and this one is ${key.length}.`;
 
-  for (let at = 0; at < key.length - 1; at += 1) {
-    if (key[at] === '(' && key[at + 1] === '?') {
+  let inClass = false;
+  for (let at = 0; at < key.length; at += 1) {
+    const next = key[at + 1] ?? '';
+    if (key[at] === '\\') {
+      if (/^[k1-9]$/.test(next)) {
+        return 'a ticket\'s key may not refer back to a group (`\\k` or `\\1` to `\\9`), which the driver and the CLI read differently.';
+      }
+      // A punctuation mark or symbol escaped is itself in both; `_`, a digit, a space and any other letter are not read alike.
+      const punctuation = /^[!-/:-@[-^`{-~]$/.test(next);
+      if (next !== '' && !SHARED_ESCAPES.includes(next) && !punctuation) {
+        return `a ticket's key may escape only a punctuation mark or one of \`${[...SHARED_ESCAPES].map((c) => `\\${c}`).join(' ')}\`, `
+          + `which the driver and the CLI read alike, and \`\\${next}\` is neither.`;
+      }
+      at += 1; // the escaped character is the escape's own: `\\1` is a backslash and a one, `\(?` a bracket made optional
+    } else if (inClass) {
+      if (key[at] === ']') inClass = false;
+    } else if (key[at] === '(' && next === '?') {
       return 'a ticket\'s key may not use `(?` — a lookaround, a named group or an inline option, which the driver and the '
         + 'CLI read differently.';
+    } else if (key[at] === '[') {
+      // `[]` and `[^]` are an empty class in JavaScript, and a class holding `]` in .NET.
+      if (next === ']' || (next === '^' && key[at + 2] === ']')) {
+        return 'a ticket\'s key may not hold an empty class, `[]` or `[^]`, which the driver and the CLI read differently.';
+      }
+      inClass = true;
     }
-    if (key[at] !== '\\') continue;
-    if (/^[k1-9]$/.test(key[at + 1]!)) {
-      return 'a ticket\'s key may not refer back to a group (`\\k` or `\\1` to `\\9`), which the driver and the CLI read differently.';
-    }
-    at += 1; // the escaped character is the escape's own: `\\1` is a backslash and a one, `\(?` a bracket made optional
   }
 
   try {
@@ -1990,7 +2014,10 @@ function targetMap(value: unknown): Record<string, string[]> {
   return held;
 }
 
-/** A map of names to landing rules; one that could not land work is skipped, as the driver skips it. */
+/**
+ * A map of names to landing rules; one that could not land work is skipped, as the driver skips it, and a ticket's key it
+ * refuses is ignored, the rest of the rule standing.
+ */
 function ruleMap(value: unknown): Record<string, LandingRule> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   const held: Record<string, LandingRule> = {};
@@ -2008,6 +2035,9 @@ function ruleMap(value: unknown): Record<string, LandingRule> {
       // Only JSON `true` (LAND2a): `"true"` or 1 is not the person's say-so for a push with no press.
       ...(autoAccept === true ? { autoAccept: true } : {}),
     };
+    // A key refused here is ignored and the rest of the rule stands (PROCESS1b-i), as the driver reads it: a key another reader
+    // took never drops the rule, which would land the repository's work by its workspace's rule or a merge unasked.
+    if (read.key !== undefined && landingProblem(read) !== null) delete read.key;
     if (landingProblem(read) === null) held[name] = kept(read);
   }
 

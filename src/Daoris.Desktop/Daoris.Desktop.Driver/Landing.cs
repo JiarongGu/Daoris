@@ -391,6 +391,12 @@ public static class LandingRules
     /// <summary>How long a key may be: a shape, not a program. The CLI's twin holds the same bound.</summary>
     public const int KeyLimit = 64;
 
+    /// <summary>
+    /// The letters a key may escape (PROCESS1b-i): the classes and controls .NET and JavaScript read alike. <c>\x</c>, <c>\u</c>,
+    /// <c>\c</c>, <c>\p</c> and the rest differ, or are refused by one engine. The CLI's <c>SHARED_ESCAPES</c> is the same list.
+    /// </summary>
+    public const string SharedEscapes = "dDwWsSbBnrtfv";
+
     /// <summary>How long one search for a key may run before its words are passed over: a key is the person's, and need not be quick.</summary>
     private static readonly TimeSpan KeyTimeout = TimeSpan.FromMilliseconds(100);
 
@@ -543,9 +549,14 @@ public static class LandingRules
     /// <summary>
     /// What is wrong with a ticket's key, in a sentence, or null where both readers of a rule take it the same way (PROCESS1b-i):
     /// the driver matches it in .NET and the CLI checks it in JavaScript, so it is held to what the two engines read alike — at
-    /// most <see cref="KeyLimit"/> characters, no <c>(?</c> group (lookaround, named group, inline option) and no back-reference.
-    /// The CLI's <c>keyProblem</c> is the twin, sentence for sentence.
+    /// most <see cref="KeyLimit"/> characters, no <c>(?</c> group (lookaround, named group, inline option), no back-reference,
+    /// a letter escaped only as one of <see cref="SharedEscapes"/> (a punctuation mark may be escaped), and no empty class. Each
+    /// engine's own compile is the last word. The CLI's <c>keyProblem</c> is the twin, sentence for sentence.
     /// </summary>
+    /// <remarks>
+    /// 🔴 KEYPARITY: a key one engine takes and the other refuses was written by the CLI and then not read by the driver
+    /// (<c>TK\_\d+</c>, <c>\x</c> with no digits, <c>[^]</c>); <c>[]a]</c> compiles in both and means two things.
+    /// </remarks>
     public static string? KeyProblem(string key)
     {
         if (string.IsNullOrWhiteSpace(key))
@@ -555,21 +566,46 @@ public static class LandingRules
 
         if (key.Length > KeyLimit) return $"a ticket's key is at most {KeyLimit} characters, and this one is {key.Length}.";
 
-        for (var at = 0; at < key.Length - 1; at++)
+        var inClass = false;
+        for (var at = 0; at < key.Length; at++)
         {
-            if (key[at] == '(' && key[at + 1] == '?')
+            var next = at + 1 < key.Length ? key[at + 1] : '\0';
+            if (key[at] == '\\')
+            {
+                if (next is 'k' or (>= '1' and <= '9'))
+                {
+                    return "a ticket's key may not refer back to a group (`\\k` or `\\1` to `\\9`), which the driver and the CLI read differently.";
+                }
+
+                // A punctuation mark or symbol escaped is itself in both; `_`, a digit, a space and any other letter are not read alike.
+                var punctuation = next is > ' ' and < '\x7f' && !char.IsAsciiLetterOrDigit(next) && next != '_';
+                if (next != '\0' && !SharedEscapes.Contains(next) && !punctuation)
+                {
+                    return $"a ticket's key may escape only a punctuation mark or one of `{string.Join(' ', SharedEscapes.Select(c => $"\\{c}"))}`, "
+                        + $"which the driver and the CLI read alike, and `\\{next}` is neither.";
+                }
+
+                at++; // the escaped character is the escape's own: `\\1` is a backslash and a one, `\(?` a bracket made optional
+            }
+            else if (inClass)
+            {
+                if (key[at] == ']') inClass = false;
+            }
+            else if (key[at] == '(' && next == '?')
             {
                 return "a ticket's key may not use `(?` — a lookaround, a named group or an inline option, which the driver and the "
                     + "CLI read differently.";
             }
-
-            if (key[at] != '\\') continue;
-            if (key[at + 1] is 'k' or (>= '1' and <= '9'))
+            else if (key[at] == '[')
             {
-                return "a ticket's key may not refer back to a group (`\\k` or `\\1` to `\\9`), which the driver and the CLI read differently.";
-            }
+                // `[]` and `[^]` are an empty class in JavaScript, and a class holding `]` in .NET.
+                if (next == ']' || (next == '^' && at + 2 < key.Length && key[at + 2] == ']'))
+                {
+                    return "a ticket's key may not hold an empty class, `[]` or `[^]`, which the driver and the CLI read differently.";
+                }
 
-            at++; // the escaped character is the escape's own: `\\1` is a backslash and a one, `\(?` a bracket made optional
+                inClass = true;
+            }
         }
 
         try
