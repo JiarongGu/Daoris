@@ -77,7 +77,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/ToolInstallTests.cs` | 41 | 726 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/ToolResourcesTests.cs` | 40 | 559 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/TraceTests.cs` | 41 | 691 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/AccountRotation.cs` | 64 | 1064 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/AccountRotation.cs` | 66 | 1091 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Acp.cs` | 91 | 1854 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 113 | 2023 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 86 | 1622 |
@@ -87,7 +87,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 205 | 3775 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 40 | 708 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/NoteCodes.cs` | 63 | 1050 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/NoteCodes.cs` | 63 | 1054 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 68 | 1169 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 94 | 1708 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionEvents.cs` | 42 | 907 |
@@ -187,7 +187,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-01-self-development-design.md` | 50 | 651 |
 | `docs/2026-10-01-tools-design.md` | 60 | 856 |
 | `docs/2026-10-01-workspace-setup-design.md` | 58 | 744 |
-| `docs/2026-10-02-account-use-design.md` | 86 | 981 |
+| `docs/2026-10-02-account-use-design.md` | 87 | 983 |
 | `docs/2026-10-02-knowledge-design-review.md` | 43 | 542 |
 | `docs/2026-10-02-pause-and-clean-up-design.md` | 49 | 670 |
 | `docs/2026-10-02-session-management-design.md` | 69 | 856 |

@@ -155,6 +155,9 @@ public static class AccountReadings
             : null;
     }
 
+    /// <summary>The share of its limit used in the window it said the most of, as a fraction; null where it said no number (ACCTWALK3).</summary>
+    public static double? MostUsed(AccountSaid? said) => said?.Windows.Max(each => each.Used);
+
     /// <summary>
     /// An account's standing for the log (D94 §4's names only): <c>refused</c> by its word, <c>near</c> as
     /// <see cref="Near"/> reads it, <c>clear</c> where it said and is neither, and null where it said nothing.

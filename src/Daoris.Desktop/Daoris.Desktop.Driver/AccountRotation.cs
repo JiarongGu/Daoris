@@ -53,7 +53,7 @@ public enum StartKind
 /// The step of the walk that chose a start's account (TOOL6b, D130 §13 as §16 amends it): the log's <c>why</c>. <c>Near</c>
 /// and <c>Pace</c> read the agent's own word about its windows (TOOL6c).
 /// </summary>
-public enum WalkStep { Cooling, Refused, SignedOut, Kept, Near, Fewest, Lapsing, Pace, LeastRecent, List }
+public enum WalkStep { Cooling, Refused, SignedOut, Kept, Near, Room, Fewest, Lapsing, Pace, LeastRecent, List }
 
 /// <summary>
 /// What Daoris knows of one account (TOOL6b, D130 §16.4), and what its agent last said about its windows, where it said
@@ -348,7 +348,7 @@ public static class AccountRotation
 
         // The step that puts it ahead of another, naming that account where the step is about what its agent said.
         WalkChoice Ahead(string a, string b) => Rank(a, b, facts, now, scope.Use) is { Order: < 0 } ranked
-            ? new WalkChoice(ranked.Step) { Over = ranked.Step is WalkStep.Near or WalkStep.Pace ? b : null }
+            ? new WalkChoice(ranked.Step) { Over = ranked.Step is WalkStep.Near or WalkStep.Room or WalkStep.Pace ? b : null }
             : new WalkChoice(WalkStep.List);
     }
 
@@ -422,7 +422,8 @@ public static class AccountRotation
         var reason = Rank(runs, against, facts, now, scope.Use) switch
         {
             { Order: >= 0 } => NextReason.List,
-            { Step: WalkStep.Near } => NextReason.Near,
+            // Between two near accounts the one with less room goes last: the page says the same of it as of any near account (ACCTWALK3).
+            { Step: WalkStep.Near or WalkStep.Room } => NextReason.Near,
             { Step: WalkStep.Fewest } => NextReason.Fewest,
             { Step: WalkStep.Lapsing } => NextReason.Lapsing,
             { Step: WalkStep.Pace } => NextReason.Pace,
@@ -486,6 +487,11 @@ public static class AccountRotation
         {
             var (nearX, nearY) = (AccountReadings.Near(x.Said, use.Near), AccountReadings.Near(y.Said, use.Near));
             if (nearX != nearY) return (WalkStep.Near, nearX ? 1 : -1);
+
+            // Both near under the goal: the one with more room first, as a start left on a 99% account would otherwise
+            // pass one at 60% (ACCTWALK3, D130 §3 point 3). Equal, or neither known, the later steps decide.
+            if (nearX && use.Use == "goal"
+                && Room(x.Said, use.Near).CompareTo(Room(y.Said, use.Near)) is var room and not 0) return (WalkStep.Room, room);
         }
 
         if (use.Use != "goal") return (WalkStep.List, 0);
@@ -504,6 +510,15 @@ public static class AccountRotation
 
         return (WalkStep.List, 0);
     }
+
+    /// <summary>
+    /// How much of its limit a near account has used, as the walk ranks it (ACCTWALK3): a number below 100% by that number,
+    /// then one that said none (a word or credits only), then one its word says reached or at 100%, which stays last.
+    /// </summary>
+    private static (int Tier, double Used) Room(AccountSaid? said, int near) =>
+        AccountReadings.NearWindow(said, near) is { By: NearBy.Refused } ? (2, 0)
+        : AccountReadings.MostUsed(said) is { } used ? (used < 1 ? (0, used) : (2, 0))
+        : (1, 0);
 
     /// <summary>When its week resets, where that is within the last day; else the end of time, which ranks nothing.</summary>
     private static DateTimeOffset Lapses(AccountFacts facts, DateTimeOffset now) =>
@@ -925,6 +940,7 @@ public static class RotationWords
                 Reason($"`{scope.Begins}` is kept for conversations, which take it last", OpeningWhy.KeptLast, ("over", scope.Begins)),
             WalkStep.Kept => Reason($"`{scope.Begins}` is kept for conversations", OpeningWhy.Kept, ("over", scope.Begins)),
             WalkStep.Near => Near(over!, facts.GetValueOrDefault(over!)?.Said, scope.Use),
+            WalkStep.Room => MoreRoom(own.Said, over!, facts.GetValueOrDefault(over!)?.Said, scope.Use),
             WalkStep.Fewest => Reason("it runs the fewest of Daoris's sessions", OpeningWhy.Fewest),
             WalkStep.Lapsing => Reason(
                 $"its week resets first, at {CoolingWords.When(own.WeekResets!.Value, zone)}", OpeningWhy.Lapsing, ("at", NoteCodes.Moment(own.WeekResets.Value))),
@@ -970,6 +986,17 @@ public static class RotationWords
             OpeningWhy.NearUsed, ("over", account), ("used", Whole(full.Window.Used!.Value)), ("window", full.Window.Window), ("near", use.Near)),
         null => Reason($"`{account}` is near its limit", OpeningWhy.Near, ("over", account)),
     };
+
+    /// <summary>
+    /// Why the account it ran on went ahead of another near account (ACCTWALK3): it has more room, said by the two numbers;
+    /// where one said none (the other's limit reached, or a word alone), the other's own reason for going last is said.
+    /// </summary>
+    private static StepSaid MoreRoom(AccountSaid? own, string over, AccountSaid? other, RotationUse use) =>
+        AccountReadings.MostUsed(own) is { } mine && AccountReadings.MostUsed(other) is { } theirs
+            ? Reason(
+                $"both are near; it has more room, {Percent(mine)} used against `{over}`'s {Percent(theirs)}",
+                OpeningWhy.Room, ("over", over), ("used", Whole(mine)), ("against", Whole(theirs)))
+            : Near(over, other, use);
 
     /// <summary>
     /// Why the account it ran on ranked ahead by its week's pace (§16.3 step 5): it is behind, where it said so; otherwise
