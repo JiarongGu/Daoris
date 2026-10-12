@@ -1608,7 +1608,10 @@ REVIEW3, REVIEW4 and MSG1g** (2026-10-04): the modules'
 caught by the merge tool as a FLAKE, with one branch building beside it. **And merging TOOL6g, TESTGIT1 and
 PLUGHOOK1a** (2026-10-04): the modules' `HarnessProfileTests.Signing_in_to_another_account_keeps_it_and_the_end_names_who`
 failed in the full run and passed alone, with three branches building. It signs in through the path TOOL6g's probe
-lock now guards; a second sighting reads that lock first.
+lock now guards; a second sighting reads that lock first. **And the full set on a03d386** (2026-10-13), with no branch
+building beside it: `HelpChatTests.Only_Ask_Daoris_loads_its_tools_up_front_and_only_where_the_harness_says_how` again,
+failed in the driver's Process half (37 minutes) and passed alone in the merge tool's rerun: its second sighting, and the
+first with no load beside the run, so load is not the whole of it.
 
 ## TEST1 (open): a Node process on Windows aborts with 0xC0000409 (since 2026-09-21)
 
