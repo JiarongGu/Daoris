@@ -13942,3 +13942,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **TREEFOLLOWREPO1 — Repositories pairs a session's own branch with it** (driver). `GitBranches` pairs a branch with its session only for `daoris/…` names (`GitBranches.cs:526-528`), so `feature/x` shows as a plain branch with a worktree: pair it through the ledger's `now`. D164's TREEFOLLOW1 note.
 
 **Outcome** 2026-10-13: `GitBranches.Sort` reads the ledger's `now` backwards and returns a branch a tree moved onto as the session's (Kind `session`), before the landed test, the newest entry winning, and still after the session's own `daoris/` branch is gone; the page shows its title with no change. Detail: D164's TREEFOLLOWREPO1 note.
+
+## SWITCH1b-i — the curve, measured (2026-10-13, D165)
+
+> - [ ] **SWITCH1b-i — the curve, measured** (driver). A pure evaluator in `Accounts/Domain/` (the first file in a layer folder, held by the structure gate's purity rule): a window's elapsed share from its reset and length (five hours, a week), the curve's value there (straight lines, flat before the first point and after the last), the smart curve's constants (session flat 90; weekly its pace plus 20, never above 95), and an account's room in points on each window and on its tightest. Design §2.
+
+**Outcome** 2026-10-13: built as the row says: `Accounts/Domain/UsageCurves.cs`, the first file in an onion layer folder, measures elapsed, a curve's value, the smart curves (`weekly` [(0,20),(75,95),(100,95)]), room, the tightest window and `Over`, with `SwitchMargin` for SWITCH1c; 38 table cases. Detail: D165's SWITCH1b-i note.
