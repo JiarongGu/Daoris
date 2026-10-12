@@ -164,7 +164,7 @@ public sealed class AccountReadingsTests
     // window's use at or over the scope's *near*. Claude Code's `allowed` came at 88% with two hours left (evidence §1.3), so
     // its word alone would pass nothing a number says; the number, which comes on every frame, is the agent's word too. Its
     // `allowed_warning` is its own pace warning, use ahead of the time gone in a window (USAGEREAD3a, account-switch design
-    // §1.3): kept as `warned`, and never near alone, as an account at 60% of a week 22% gone was passed by it on the install.
+    // §1.3): kept as `warned`, and never near alone.
 
     private static AccountSaid Said(params WindowSaid[] windows) => new(windows);
 

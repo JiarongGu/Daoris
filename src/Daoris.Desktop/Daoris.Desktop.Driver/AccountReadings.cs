@@ -149,9 +149,8 @@ public static class AccountReadings
     /// <para>§6 had the agent's word win over the number, where Claude Code's word was thought to come without one. The
     /// evidence found a number on every frame, and the word still <c>allowed</c> at 88% with two hours left (§1.3): read
     /// alone, the word would pass nothing the person's own <i>near</i> says. So either passes.</para>
-    /// <para>Its <c>allowed_warning</c> no longer does (USAGEREAD3a, D165 point 2, the account-switch design §1.3): it says a
-    /// window's use is ahead of the time gone in it, and on the install it passed an account at 60% of a week 22% gone
-    /// while one at 99% ran.</para>
+    /// <para>Its <c>allowed_warning</c> passes nothing alone (USAGEREAD3a, D165 point 2, the account-switch design §1.3): it
+    /// says a window's use is ahead of the time gone in it, not that the window is near its limit.</para>
     /// </remarks>
     public static bool Near(AccountSaid? said, int near) => NearWindow(said, near) is not null;
 

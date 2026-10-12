@@ -136,7 +136,9 @@ public enum NextReason
     /// <summary>A conversation: the kept account first where it is the default, or the kept account taken last.</summary>
     Kept,
 
-    /// <summary>The account it was weighed against said it is near its limit, so went last (§16.3 step 2).</summary>
+    /// <summary>
+    /// The account it was weighed against is near its limit (<see cref="AccountReadings.Near"/>), so went last (§16.3 step 2).
+    /// </summary>
     Near,
 
     /// <summary>It runs fewer of Daoris's sessions (step 3).</summary>
@@ -167,7 +169,7 @@ public enum NextHold
     /// <summary>Ready, and ranked after the account the next start takes.</summary>
     Ready,
 
-    /// <summary>Ready, and its agent said it is near its limit, so it goes last (D130 §6).</summary>
+    /// <summary>Ready, and near its limit by what its agent said (<see cref="AccountReadings.Near"/>), so it goes last (D130 §6).</summary>
     Near,
 
     /// <summary>Its cool-off has not passed (D125 §2): it waits for a time.</summary>
