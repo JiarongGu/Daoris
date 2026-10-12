@@ -478,6 +478,23 @@ describe('ConversationView', () => {
     expect(onSession).toHaveBeenCalledWith('n3wn3w00');
   });
 
+  /** MIXAGENT1b-i: a conversation's last line, where it went on with another agent, presses through to the new conversation. */
+  it('gives the handed-over line a press to the conversation it went on in, where one can be opened', async () => {
+    const onSession = vi.fn();
+    const handed = ev({
+      kind: 'note', text: 'The conversation went on with codex-acp, in conversation ab12cd34.',
+      parts: [{ code: 'chat.handed-over', values: { agent: 'codex-acp', session: 'ab12cd34' }, text: 'The conversation went on with codex-acp, in conversation ab12cd34.' }],
+    });
+    const { unmount } = view([ev({ kind: 'user', origin: 'person', text: 'go' }), handed], { onSession });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Open conversation ab12cd34' }));
+    expect(onSession).toHaveBeenCalledWith('ab12cd34');
+    unmount();
+
+    view([ev({ kind: 'user', origin: 'person', text: 'go' }), handed]);
+    expect(screen.queryByRole('button', { name: /Open conversation/ })).toBeNull();
+  });
+
   it('names the session as text where nothing here can open it, and lets the driver’s line stand for a reason it cannot word', () => {
     const { unmount } = view([
       ev({ kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'also cap it' }),

@@ -407,6 +407,28 @@ function WentLine({ block }: { block: Block }) {
   );
 }
 
+/** The conversation a `chat.handed-over` line names (MIXAGENT1b-i), or null for any other note. */
+const handedTo = (block: Block): string | null => {
+  const part = block.parts?.find((each) => each.code === 'chat.handed-over');
+  const session = part && 'values' in part ? part.values?.session : undefined;
+  return typeof session === 'string' && session ? session : null;
+};
+
+/**
+ * A conversation that went on with another agent (MIXAGENT1b-i, D163): its own last line, worded by its parts, and where this
+ * page can open a session, one press to the conversation it went on in, as a started session is a door in *went*.
+ */
+function HandedLine({ block, to }: { block: Block; to: string }) {
+  const { t } = useTranslation();
+  const { onSession } = useContext(SaidDoors);
+  return (
+    <div className="grid justify-items-start gap-1.5">
+      <NoteLine text={block.text ?? ''} parts={block.parts} />
+      {onSession && <Button onClick={() => onSession(to)}>{t('work.handOver.open', { session: to })}</Button>}
+    </div>
+  );
+}
+
 /**
  * The person's words cannot go on in this session (MSG1f, D137 §2.2): why, in the page's words, and one press that starts
  * a conversation with them — the person's, since a new conversation has none of this one's context. The press only where
@@ -487,6 +509,8 @@ function BlockView({ block, tree }: { block: Block; tree?: string | null }) {
       // A note about the person's words (MSG1f): where they went, or why they cannot go on here.
       if (block.to) return <WentLine block={block} />;
       if (block.why) return <CannotLine block={block} />;
+      // A conversation's end, where it went on with another agent (MIXAGENT1b-i): the line, and a press to the new one.
+      if (handedTo(block)) return <HandedLine block={block} to={handedTo(block)!} />;
       // A note worded by its parts (CONVNOTE1), or the driver's English where it has none.
       return <NoteLine text={block.text ?? ''} parts={block.parts} />;
     case 'held':

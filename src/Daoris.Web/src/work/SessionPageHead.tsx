@@ -21,7 +21,7 @@ import { PageHead } from './ViewMain';
  *   *Details*.
  * - **On the right**: the primary act where the state has one (*Try again*, *Review*), then *Stop…* while it is live,
  *   then ⋯ with the rest in §3.1's order. *Answer…* is not here: the card under the header keeps the answer.
- * - **What asks under it** (the stop's ask, §3.3; the delete's, §5.4) is pinned with it, since the ask is about the acts
+ * - **What asks under it** (the stop's ask, §3.3; the delete's, §5.4; the hand-over's, MIXAGENT1b-i) is pinned with it, since the ask is about the acts
  *   beside it.
  * - **It is `PageHead`'s** (HEAD2c, D162; the entry-and-heads design §2): the title takes one line and the acts hold still,
  *   a column of their own above 640 px of the main area and a right-aligned row under the facts at or below it, by the
@@ -31,7 +31,7 @@ import { PageHead } from './ViewMain';
  * **It says how tall it is** to the main area it is pinned in (`--session-head`), so the long run's toolbar (SESS1 S9)
  * pins beneath it rather than under it.
  */
-export function SessionPageHead({ title, shown, facts = [], acts, primary = null, busy = false, onAct, asking }: {
+export function SessionPageHead({ session, title, shown, facts = [], acts, primary = null, busy = false, onAct, asking }: {
   /** The session it heads, as the frame holds it; its acts and its facts are worked out from it by the frame. */
   session: Session;
   /**
@@ -108,7 +108,7 @@ export function SessionPageHead({ title, shown, facts = [], acts, primary = null
                   </Button>
                 </Menu.Trigger>
                 <Menu.Content side="bottom" align="end" className="min-w-48">
-                  <Menu.Acts acts={actMenu(rest, t, (act) => onAct?.(act))} />
+                  <Menu.Acts acts={actMenu(rest, t, (act) => onAct?.(act), false, session)} />
                 </Menu.Content>
               </Menu.Root>
             )}
