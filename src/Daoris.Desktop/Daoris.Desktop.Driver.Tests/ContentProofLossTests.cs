@@ -209,6 +209,31 @@ public sealed class ContentProofLossTests : LandedFixture
         Assert.Contains(tree.Branch, await GitAsync(root, "branch", "--list", "daoris/*"));
     }
 
+    /// <summary>TREEKEEP1: a scratch file the checkout holds at the same path but differently is the session's edit, and keeps the tree.</summary>
+    [Fact]
+    public async Task A_scratch_file_the_checkout_holds_differently_keeps_the_tree_named()
+    {
+        var root = await RepositoryAsync("engine");
+        await CommitAsync(root, ".gitignore", ".tmp/\n", "ignore scratch");
+        Directory.CreateDirectory(Path.Combine(root, ".tmp"));
+        await File.WriteAllTextAsync(Path.Combine(root, ".tmp", "notes.txt"), "the checkout's version\n");
+        var trees = new SessionTrees(Home);
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(tree.Path, "work.txt", "the work\n", "the work");
+        await SquashAsync(root, tree.Branch);
+        Directory.CreateDirectory(Path.Combine(tree.Path, ".tmp"));
+        var edited = Path.Combine(tree.Path, ".tmp", "notes.txt");
+        await File.WriteAllTextAsync(edited, "the session's version, edited\n");
+        File.SetLastWriteTimeUtc(edited, DateTime.UtcNow.AddMinutes(1));
+
+        var removal = await trees.RemoveAsync(tree.Path);
+
+        Assert.False(removal.Removed, removal.Message);
+        Assert.Contains(".tmp/notes.txt", removal.Message);
+        Assert.Contains("does not hold as written", removal.Message);
+        Assert.True(File.Exists(edited));
+    }
+
     /// <summary>TREEKEEP1: a dependency folder is what an install writes and re-makes, so a file under one still goes with the tree.</summary>
     [Fact]
     public async Task A_file_written_under_node_modules_the_checkout_also_has_still_goes_with_the_tree()

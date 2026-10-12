@@ -22,8 +22,8 @@ public sealed partial class SessionTrees
         path.Split(['/', '\\'], StringSplitOptions.RemoveEmptyEntries).Any(BuildFolders.Contains);
 
     /// <summary>
-    /// The files under a shared ignored folder of a tree that were written after the tree opened and that the checkout's copy
-    /// of the folder does not hold (TREEKEEP1): what the session made there, which no build re-makes. At most
+    /// The files under a shared ignored folder of a tree that were written after the tree opened and that the checkout
+    /// does not hold as written, absent or different (TREEKEEP1): what the session made or changed there, which no build re-makes. At most
     /// <see cref="ScratchWalkLimit"/> files are looked at; a folder with more is <paramref name="tooLarge"/>, and counts as the
     /// tree's own, since never removing it unasked is the conservative answer.
     /// </summary>
@@ -47,9 +47,37 @@ public sealed partial class SessionTrees
 
             if (File.GetLastWriteTimeUtc(file) <= opened) continue;
             var relative = Path.GetRelativePath(treeRoot, file).Replace('\\', '/');
-            if (!File.Exists(Path.Combine(checkoutRoot, relative))) found.Add(relative);
+            if (!SameBytes(file, Path.Combine(checkoutRoot, relative))) found.Add(relative);
         }
 
         return found;
+    }
+
+    /// <summary>
+    /// Whether the checkout holds a file at the path with the same length and the same bytes: only then is the tree's file
+    /// no work lost. Lengths are compared first and bytes only where they match, streamed through a small buffer.
+    /// </summary>
+    private static bool SameBytes(string tree, string checkout)
+    {
+        try
+        {
+            if (!File.Exists(checkout) || new FileInfo(tree).Length != new FileInfo(checkout).Length) return false;
+            using var a = new FileStream(tree, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var b = new FileStream(checkout, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            var left = new byte[8192];
+            var right = new byte[8192];
+            while (true)
+            {
+                var n = a.ReadAtLeast(left, left.Length, throwOnEndOfStream: false);
+                var m = b.ReadAtLeast(right, right.Length, throwOnEndOfStream: false);
+                if (n != m || !left.AsSpan(0, n).SequenceEqual(right.AsSpan(0, m))) return false;
+                if (n < left.Length) return true;
+            }
+        }
+        catch (IOException)
+        {
+            // A file that cannot be read cannot be shown the same: it counts as the tree's own, which keeps the tree.
+            return false;
+        }
     }
 }

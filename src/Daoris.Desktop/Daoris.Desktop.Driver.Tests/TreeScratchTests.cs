@@ -17,11 +17,11 @@ public sealed class TreeScratchTests : IDisposable
 
     public void Dispose() => Directory.Delete(_scratch, recursive: true);
 
-    private void Write(string root, string relative, DateTime at)
+    private void Write(string root, string relative, DateTime at, string content = "x\n")
     {
         var path = Path.Combine(root, relative);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, "x\n");
+        File.WriteAllText(path, content);
         File.SetLastWriteTimeUtc(path, at);
     }
 
@@ -69,13 +69,27 @@ public sealed class TreeScratchTests : IDisposable
     }
 
     [Fact]
-    public void A_file_the_checkout_holds_at_the_same_path_is_not_the_trees_own()
+    public void A_file_the_checkout_holds_identically_is_not_the_trees_own()
     {
         var opened = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
         Write(Tree, "devtools/.tmp/cache.json", opened.AddHours(1));
         Write(Checkout, "devtools/.tmp/cache.json", opened.AddHours(-5));
 
         Assert.Empty(SessionTrees.WrittenSince(Tree, Checkout, "devtools/.tmp/", opened, out _));
+    }
+
+    [Theory]
+    [InlineData("y\n")]
+    [InlineData("a longer copy\n")]
+    public void A_file_the_checkout_holds_differently_is_the_trees_own(string checkoutBytes)
+    {
+        var opened = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
+        Write(Tree, "devtools/.tmp/cache.json", opened.AddHours(1));
+        Write(Checkout, "devtools/.tmp/cache.json", opened.AddHours(-5), checkoutBytes);
+
+        var found = SessionTrees.WrittenSince(Tree, Checkout, "devtools/.tmp/", opened, out _);
+
+        Assert.Equal(["devtools/.tmp/cache.json"], found);
     }
 
     [Fact]
@@ -97,7 +111,7 @@ public sealed class TreeScratchTests : IDisposable
         var holds = new SessionTrees.TreeHolds([], [], [], ["a/1", "a/2", "a/3", "a/4"], []);
 
         Assert.Equal(
-            "4 file(s) written in the tree after it opened, which your checkout's copy of the folder does not hold: a/1, a/2, a/3 and 1 more",
+            "4 file(s) written in the tree after it opened, which your checkout does not hold as written: a/1, a/2, a/3 and 1 more",
             holds.WrittenSaid);
         Assert.Equal(holds.WrittenSaid, holds.OwnSaid);
     }

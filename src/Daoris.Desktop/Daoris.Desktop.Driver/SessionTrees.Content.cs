@@ -222,7 +222,7 @@ public sealed partial class SessionTrees
     /// tree holds (a local database, an export) was made there alone, and nothing says it can be made again, so it keeps the
     /// tree, named. Null is git unable to say, which keeps the tree too. 🔴 <b>Except a session's own scratch in such a folder</b>
     /// (TREEKEEP1): under a build folder (<see cref="BuildFolders"/>) the path goes as ever; under any other, each file the tree
-    /// wrote after it opened that the checkout's copy lacks is the tree's own, as an ignored path only it holds is.
+    /// wrote after it opened that the checkout does not hold as written (absent, or different bytes) is the tree's own, as an ignored path only it holds is.
     /// </remarks>
     private static async Task<TreeHolds?> HoldsAsync(string tree, string root, CancellationToken ct)
     {
@@ -251,7 +251,7 @@ public sealed partial class SessionTrees
                 }
                 else if (path.EndsWith('/') && !UnderBuildFolder(path))
                 {
-                    // Not a build's folder: what the session wrote in it is its own (TREEKEEP1), which the checkout's copy lacks.
+                    // Not a build's folder: what the session wrote in it is its own (TREEKEEP1), unless the checkout holds it as written.
                     var mine = WrittenSince(tree, root, path, opened, out var large);
                     if (large) tooLarge.Add(path);
                     else if (mine.Count > 0) written.AddRange(mine);
@@ -279,7 +279,7 @@ public sealed partial class SessionTrees
     /// </summary>
     /// <remarks>
     /// <paramref name="Written"/> and <paramref name="TooLarge"/> are a shared ignored folder's own part (TREEKEEP1): files the
-    /// session wrote there after the tree opened that the checkout's copy lacks, and folders too large to look through. They
+    /// session wrote there after the tree opened that the checkout does not hold as written, and folders too large to look through. They
     /// are no longer in <paramref name="Shared"/>: they keep the tree like <paramref name="Ignored"/> does, which is
     /// <see cref="OwnSaid"/>.
     /// </remarks>
@@ -299,7 +299,7 @@ public sealed partial class SessionTrees
                 var said = new List<string>();
                 if (Written.Count > 0)
                 {
-                    said.Add($"{Written.Count} file(s) written in the tree after it opened, which your checkout's copy of the folder does not hold: "
+                    said.Add($"{Written.Count} file(s) written in the tree after it opened, which your checkout does not hold as written: "
                         + string.Join(", ", Written.Take(3)) + (Written.Count > 3 ? $" and {Written.Count - 3} more" : ""));
                 }
 
