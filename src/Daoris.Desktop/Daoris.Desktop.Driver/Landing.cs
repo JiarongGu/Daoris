@@ -310,6 +310,13 @@ public sealed record SweepItem(
     /// place, which words to it go on in (D137), so the look's own tidy leaves its tree for the press.
     /// </summary>
     public bool Worked { get; init; }
+
+    /// <summary>
+    /// The branch the session's tree moved onto (TREEFOLLOW1): its agent checked out a branch of its own there, as its repository's
+    /// rules ask, so no tree has this session branch out any more and the work is on that branch. Null where the tree is on this
+    /// one, or gone. The tree is that branch's: it is never taken with this one.
+    /// </summary>
+    public string? TreeOn { get; init; }
 }
 
 /// <summary>What the clean-up did with one branch, in the driver's words.</summary>

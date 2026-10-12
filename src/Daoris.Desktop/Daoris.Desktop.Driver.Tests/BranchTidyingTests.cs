@@ -78,6 +78,50 @@ public sealed class BranchTidyingTests : IDisposable
         Assert.Equal(goes, new SessionTrees(_home).GoesByItself(item));
     }
 
+    /// <summary>
+    /// TREEFOLLOW1: an agent that moved its tree onto a branch of its own leaves the session branch behind, which no tree has out.
+    /// Empty it goes (the tree stays, on its branch), and the report says where the work is; holding anything of its own it stays.
+    /// </summary>
+    [Theory]
+    [InlineData(SweepKind.Empty, true)]
+    [InlineData(SweepKind.Landed, false)]
+    [InlineData(SweepKind.Unlanded, false)]
+    public void A_session_branch_whose_tree_moved_on_goes_only_while_it_holds_nothing(string kind, bool goes)
+    {
+        var item = new SweepItem("engine", "default", "daoris/s-1a2b3c4d", null, kind, 0, "main", null) { TreeOn = "feature/x" };
+
+        Assert.Equal(goes, new SessionTrees(_home).GoesByItself(item));
+    }
+
+    [Fact]
+    public void A_removed_branch_whose_tree_moved_on_says_where_the_session_s_work_is()
+    {
+        using var log = new MachineLog(_home, "driver", () => _now);
+        var tidying = new BranchTidying(_home);
+        var moved = Item("daoris/s-1a2b3c4d") with { TreeOn = "feature/x" };
+
+        var said = tidying.Said([Pass("engine", new SweepResult(moved, true, "removed"))], log);
+
+        Assert.Equal(["tidy  engine: removed `daoris/s-1a2b3c4d`, which held nothing beyond `main`; the session's work is on `feature/x`."], said);
+        Assert.Contains("\"on\":\"feature/x\"", Assert.Single(LogLines()), StringComparison.Ordinal);
+    }
+
+    /// <summary>TREEFOLLOW1: the tree's current branch is an additive field of the ledger's entry, kept as written and absent when unset.</summary>
+    [Fact]
+    public void The_ledger_keeps_the_branch_a_tree_moved_onto_beside_where_the_session_branch_grew_from()
+    {
+        var ledger = new SessionBranches(_home);
+        var grown = new GrownBranch("engine", "default", "daoris/s-1a2b3c4d", "main", "abc123", null, _now);
+        ledger.Record(grown);
+        Assert.Null(Assert.Single(ledger.All()).Now);
+        Assert.DoesNotContain("\"now\"", File.ReadAllText(ledger.FilePath), StringComparison.Ordinal);
+
+        ledger.Record(grown with { Now = "feature/x" });
+
+        Assert.Equal("feature/x", ledger.Of("engine", "daoris/s-1a2b3c4d")!.Now);
+        Assert.Contains("\"now\": \"feature/x\"", File.ReadAllText(ledger.FilePath), StringComparison.Ordinal);
+    }
+
     /// <summary>A squash merge's carried branch stays a press, however it was proven (SQUASHTIDY1b's offer, PLUGHOOK1a's carriers).</summary>
     [Fact]
     public void A_branch_landed_by_content_stays_a_press()

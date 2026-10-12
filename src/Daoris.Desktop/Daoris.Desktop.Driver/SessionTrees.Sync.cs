@@ -999,7 +999,7 @@ public sealed partial class SessionTrees
         try
         {
             if (item.Landed) Recorded.Moved(repository, item.Branch, now, onto);
-            else Grown.Record(new GrownBranch(repository, workspace, item.Branch, line, onto, null, DateTimeOffset.UtcNow));
+            else Grown.Record(new GrownBranch(repository, workspace, item.Branch, line, onto, null, DateTimeOffset.UtcNow, Grown.Of(repository, item.Branch)?.Now));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

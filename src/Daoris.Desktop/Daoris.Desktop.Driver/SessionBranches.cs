@@ -11,8 +11,12 @@ namespace Daoris.Driver;
 /// <param name="Line">The repository's line when the tree was opened (D86), or null where git named none.</param>
 /// <param name="From">The commit the branch started at: the line's tip, or the step before's tip. A branch whose history does not hold it is not this record's.</param>
 /// <param name="GrewFrom">The step before's branch it grew from, or null where it grew from the line.</param>
+/// <param name="Now">
+/// The branch the session's tree is on now where its agent moved it off this one (TREEFOLLOW1), learned at each look so it is known
+/// after the tree goes; null where the tree never left this branch. Additive: an entry written before it reads as null.
+/// </param>
 public sealed record GrownBranch(
-    string Repository, string Workspace, string Branch, string? Line, string From, string? GrewFrom, DateTimeOffset At);
+    string Repository, string Workspace, string Branch, string? Line, string From, string? GrewFrom, DateTimeOffset At, string? Now = null);
 
 /// <summary>
 /// Where this machine's session branches grew from (WSR6): <c>&lt;home&gt;/session-branches.json</c>. Written
@@ -99,6 +103,7 @@ public sealed class SessionBranches(string home)
                 writer.WriteString("from", entry.From);
                 if (entry.GrewFrom is not null) writer.WriteString("grewFrom", entry.GrewFrom);
                 writer.WriteString("at", entry.At.ToString("O", CultureInfo.InvariantCulture));
+                if (entry.Now is not null) writer.WriteString("now", entry.Now);
                 writer.WriteEndObject();
             }
 
@@ -121,7 +126,7 @@ public sealed class SessionBranches(string home)
             ? when
             : DateTimeOffset.MinValue;
         return new GrownBranch(repository, Text(element, "workspace") ?? "default", branch, Text(element, "line"), from,
-            Text(element, "grewFrom"), at);
+            Text(element, "grewFrom"), at, Text(element, "now"));
     }
 
     private static string? Text(JsonElement element, string name) =>
