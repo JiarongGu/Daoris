@@ -128,8 +128,8 @@ export function DiffPane({
   // Work the line holds by content (SQUASHTIDY1f): the landing door refuses it, so its discard stands where Accept would.
   const held = treeHere && !asLanded && discards ? discards : null;
   const heldPress = held && heldDiscardable(held, onDiscardTree) ? onDiscardTree! : null;
-  // A tree that holds nothing beyond its line, committed or not (REVIEWBASE4, D164's note): there is nothing to land, so no plan is
-  // asked, neither *Accept* nor *Send back…* is offered, and *Discard tree* leads. Where the line was not read, as before.
+  // A tree holding nothing beyond its line, committed or not, has nothing to land (REVIEWBASE4), so no plan is asked. Where the line
+  // was not read, as before.
   const answered = diff.data;
   const nothingBeyond = treeHere && !held && answered?.behind?.ahead === 0 && answered.files.length === 0
     && !answered.uncommitted?.files.length

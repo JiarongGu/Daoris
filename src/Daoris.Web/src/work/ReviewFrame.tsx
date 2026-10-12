@@ -112,11 +112,7 @@ export function ReviewHead({ title, repository, branch, base, commits, refreshin
   );
 }
 
-/**
- * Where *Accept* would be, for a tree that holds nothing beyond its line (REVIEWBASE4, D164's note): nothing committed past it and
- * nothing uncommitted, so there is nothing to land, and what the tree holds is on the line already. The pane offers no *Accept*,
- * whose own refusal would only say the same, and leads with *Discard tree*.
- */
+/** What the review's foot says where *Accept* would be, for a tree holding nothing beyond its line (REVIEWBASE4, D164's note). */
 export function NothingToLand({ line }: { line: string }) {
   const { t } = useTranslation();
   return (
