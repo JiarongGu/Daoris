@@ -408,6 +408,8 @@ public static class NoteCodes
     public static readonly NoteCode EndedTimeout = new("ended.timeout", ["minutes"]);
     public static readonly NoteCode EndedStopped = new("ended.stopped", []);
     public static readonly NoteCode EndedLostClaim = new("ended.lost-claim", []);
+    // A quest's session stopped to go on with another agent (MIXAGENT1a-ii): the agent it went to, never an account or a path.
+    public static readonly NoteCode EndedHandedOver = new("ended.handed-over", ["agent"]);
     public static readonly NoteCode EndedDriverClosed = new("ended.driver-closed", []);
 
     // ——— An account's line, appended to a failure. A limit's cooling line names whose accounts they are, never which, and the
@@ -449,6 +451,10 @@ public static class NoteCodes
     public static readonly NoteCode StartedAnswer = new("started.answer", ["quest", "session"]);
     public static readonly NoteCode StartedReleased = new("started.released", ["quest", "session"]);
     public static readonly NoteCode StartedCutOff = new("started.cut-off", ["quest", "session"]);
+    // A quest handed to another agent (MIXAGENT1a-ii, D163 point 1): the carry-on's first line says which agent it came from, and
+    // where the account the hand-over named could not run it, that another of the named agent's did. Facts only, no account's name.
+    public static readonly NoteCode StartedHandedOver = new("started.handed-over", ["quest", "session", "agent"]);
+    public static readonly NoteCode StartedHandedWalked = new("started.handed-walked", []);
     public static readonly NoteCode StartedOtherAccount = new("started.other-account", []);
     public static readonly NoteCode StartedSameTree = new("started.same-tree", []);
     public static readonly NoteCode StartedFellBack = new("started.fell-back", ["why"]) { Why = Continue };

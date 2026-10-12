@@ -466,6 +466,10 @@ public static class HandOverNotes
             NoteCodes.ChatHandedOver, $"The conversation went on with {agent}, in conversation {session}.",
             ("agent", agent), ("session", session));
 
+    /// <summary>A quest's session end, stopped so its quest goes on with another agent (MIXAGENT1a-ii): which agent. Never an account's name or a path.</summary>
+    public static Noted QuestHandedOver(string agent) =>
+        Noted.Of(NoteCodes.EndedHandedOver, $"Handed over to {agent}: its quest goes on with it, in the same tree.", ("agent", agent));
+
     /// <summary>The new conversation's line where Daoris's briefing did not reach its agent.</summary>
     public static Noted Unsaid() =>
         Noted.Of(NoteCodes.ChatBriefingUnsaid, "What Daoris kept of the earlier conversation did not reach the agent: tell it where you were.");

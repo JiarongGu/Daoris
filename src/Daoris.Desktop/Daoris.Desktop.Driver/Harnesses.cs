@@ -2512,6 +2512,25 @@ public sealed partial class HarnessRoster(AdapterSet adapters, string? settingsP
         ChooseAsync(adapter, config, workspace, chosen, kind, counts: true, ct);
 
     /// <summary>
+    /// A handed quest's start (MIXAGENT1a-ii, D163 point 1): the account the hand-over named is asked for first, as a person's pick
+    /// is. Where it cannot run (cooling, refused, signed out, gone), the walk goes on within the SAME agent's accounts, as for any
+    /// start, and never back to the agent the quest was handed from; the answer says which account it passed, so the start's note can.
+    /// </summary>
+    /// <param name="account">The account the hand-over named, or null for the walk alone.</param>
+    /// <returns>The selection, and the account named that could not run it, or null where it did or none was named.</returns>
+    public async Task<(HarnessSelection Selection, string? Passed)> SelectHandedAsync(
+        string adapter, DriverConfig config, string? workspace, string? account, StartKind kind, CancellationToken ct = default)
+    {
+        var named = string.IsNullOrWhiteSpace(account) ? null : account.Trim();
+        if (named is null) return (await SelectAsync(adapter, config, workspace, chosen: null, kind, ct).ConfigureAwait(false), null);
+
+        var asked = await SelectAsync(adapter, config, workspace, chosen: named, kind, ct).ConfigureAwait(false);
+        if (asked.Allowed) return (asked, null);
+
+        return (await SelectAsync(adapter, config, workspace, chosen: null, kind, ct).ConfigureAwait(false), named);
+    }
+
+    /// <summary>
     /// The account a resume runs on (MSG1g, D137 §2.2's account paragraph): its record's own, asked for by name as a chat's
     /// picker names one, since its conversation lives in that account's configuration home (D131 §1); never the walk's choice
     /// for a start. Judged by <see cref="ResumeAccount.Judge"/> with what this roster knows of the account before any probe.

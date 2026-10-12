@@ -428,6 +428,32 @@ public sealed class AccountCoolingTests : IDisposable
         Assert.Equal(Entry(agent: "fake"), picked.Cooling);
     }
 
+    /// <summary>
+    /// 🔴 MIXAGENT1a-ii (D163 point 1): a quest handed over names an account, tried first as a pick is; where it cannot run, the walk
+    /// goes on within the NAMED agent's accounts, never back to the old agent, and the answer says which account it passed.
+    /// </summary>
+    [Fact]
+    public async Task A_handed_quest_s_named_account_is_tried_first_and_the_walk_goes_on_within_the_named_agent()
+    {
+        new HarnessSettings().WithDefault("fake", "account-1").Save(Settings);
+        var roster = Roster(new Adapter("fake", Present()));
+        AccountCooling.Cool(_home, Entry(agent: "fake", account: "account-1"), _now);
+        AccountCooling.Cool(_home, Entry(agent: "fake", account: "account-2"), _now);
+
+        var (selection, passed) = await roster.SelectHandedAsync("fake", Config, null, "account-2", StartKind.Driven);
+
+        // The pick, account-2, is cooling: the walk it falls to begins at the agent's default, account-1, and holds there.
+        Assert.Equal("account-2", passed);
+        Assert.False(selection.Allowed);
+        Assert.Equal("account-1", selection.Cooling!.Account);
+        Assert.Equal("fake", selection.Cooling.Agent);
+
+        // No account named is the walk, and passed none.
+        var (plain, none) = await roster.SelectHandedAsync("fake", Config, null, null, StartKind.Driven);
+        Assert.Null(none);
+        Assert.Equal("account-1", plain.Cooling!.Account);
+    }
+
     [Fact]
     public async Task A_cool_off_ends_at_its_reset_with_nothing_said()
     {

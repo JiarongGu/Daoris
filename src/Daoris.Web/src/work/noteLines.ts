@@ -48,6 +48,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'ended.timeout': { values: ['minutes'] },
   'ended.stopped': { values: [] },
   'ended.lost-claim': { values: [] },
+  'ended.handed-over': { values: ['agent'] },
   'ended.driver-closed': { values: [] },
   // An account's line. `account.cooling` is the shape notes from before AGT3d carry; since, a limit's line names whose
   // accounts and the window its reset named, or has a line of its own where it named none.
@@ -75,6 +76,9 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'started.answer': { values: ['quest', 'session'] },
   'started.released': { values: ['quest', 'session'] },
   'started.cut-off': { values: ['quest', 'session'] },
+  // A quest handed to another agent (MIXAGENT1a-ii): where it came from, and the account it named passed.
+  'started.handed-over': { values: ['quest', 'session', 'agent'] },
+  'started.handed-walked': { values: [] },
   'started.other-account': { values: [] },
   'started.same-tree': { values: [] },
   'started.fell-back': { values: ['why'], why: 'continue' },

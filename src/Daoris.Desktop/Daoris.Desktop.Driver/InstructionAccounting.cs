@@ -338,6 +338,7 @@ internal static class InstructionAccounting
     {
         var facts = new List<string> { "its record's end" };
         if (target.PersonSaid is not null) facts.Add("the person's answer");
+        else if (target.HandedOver is not null) facts.Add("that it was handed over from another agent");
         else if (target.Released) facts.Add("that the person released it");
         facts.Add(target.InFlight.Count == 0 ? "nothing uncommitted" : Plural(target.InFlight.Count, "uncommitted change"));
         var plan = target.LastPlan.Count;

@@ -146,6 +146,13 @@ public sealed record SessionTarget(
     public bool Released { get; init; }
 
     /// <summary>
+    /// The agent the session before ran on, where the quest was handed over from it to this one (MIXAGENT1a-ii, D163 point 1): the
+    /// carry-on is told it was handed over and carries on from that session's plan and words, never that the person released it.
+    /// Null for every other start, and the instruction reads as it did.
+    /// </summary>
+    public string? HandedOver { get; init; }
+
+    /// <summary>
     /// For a carry-on (D80): the cut-off session's plan as its record last kept it, the harness's own to-do list (TOOL4f,
     /// D125 §3.5). Empty where the record kept none, and the instruction reads as it did.
     /// </summary>
@@ -426,6 +433,9 @@ public static class TargetPrompt
               + $"their words above.\n\nIts record reads: {record}"
             : $"An earlier session on this quest stopped to ask the person, and they answered:\n\n> "
               + said.ReplaceLineEndings("\n> ") + $"\n\nIts record reads: {record}")
+        : target.HandedOver is { } agent
+            ? $"An earlier session on this quest, run by {agent}, was stopped so that the quest could go on with you: it was handed "
+              + $"over, and you carry on from its plan and last words below. Its record reads: {record}"
         : target.Released
             ? "An earlier session on this quest was stopped by the person before it closed it, and they have since released "
               + $"the quest for you to carry on. Its record reads: {record}"
