@@ -158,6 +158,49 @@ public sealed class AccountWindowsTests : IDisposable
         Assert.Equal(new WindowSaid("weekly", 0.10, Said.AddHours(105), null, false, Said, "s1"), read.Of("weekly"));
     }
 
+    // ——— USAGEREAD2a: a window's source, and the newer reading winning.
+
+    [Fact]
+    public void A_read_s_source_is_kept_and_read_back_and_a_frame_s_is_absent_and_reads_as_said()
+    {
+        AccountWindows.Said(_home, "claude-code", "account-1", Frame(0.40, 0.10), Said, "s1");
+        AccountWindows.Said(
+            _home, "claude-code", "account-2", [new WindowReading("session", 0.20, Said.AddHours(2))], Said, session: null,
+            source: AccountWindows.SourceRead);
+
+        Assert.Equal("said", AccountWindows.SaidOf(_home, "claude-code", "account-1", Said)!.Of("session")!.Source);
+        Assert.Equal("read", AccountWindows.SaidOf(_home, "claude-code", "account-2", Said)!.Of("session")!.Source);
+        var root = JsonNode.Parse(System.IO.File.ReadAllText(File))!["claude-code"]!;
+        Assert.Equal("read", (string?)root["account-2"]!["session"]!["source"]);
+        Assert.Null(root["account-1"]!["session"]!["source"]);
+    }
+
+    [Fact]
+    public void An_older_reading_does_not_replace_a_newer_and_a_read_wins_a_tie()
+    {
+        AccountWindows.Said(_home, "claude-code", "account-1", [new WindowReading("session", 0.50, Said.AddHours(2))], Said, "s1");
+
+        // Older by `seen`: the entry stands.
+        AccountWindows.Said(_home, "claude-code", "account-1", [new WindowReading("session", 0.10, Said.AddHours(2))], Said.AddMinutes(-5), "s2");
+        Assert.Equal(0.50, AccountWindows.SaidOf(_home, "claude-code", "account-1", Said)!.Of("session")!.Used);
+
+        // A tie: a read replaces a frame ...
+        AccountWindows.Said(
+            _home, "claude-code", "account-1", [new WindowReading("session", 0.60, Said.AddHours(2))], Said, session: null,
+            source: AccountWindows.SourceRead);
+        Assert.Equal(0.60, AccountWindows.SaidOf(_home, "claude-code", "account-1", Said)!.Of("session")!.Used);
+
+        // ... and a frame does not replace a read.
+        AccountWindows.Said(_home, "claude-code", "account-1", [new WindowReading("session", 0.70, Said.AddHours(2))], Said, "s3");
+        Assert.Equal(0.60, AccountWindows.SaidOf(_home, "claude-code", "account-1", Said)!.Of("session")!.Used);
+
+        // Newer wins whatever its source.
+        AccountWindows.Said(_home, "claude-code", "account-1", [new WindowReading("session", 0.80, Said.AddHours(2))], Said.AddMinutes(1), "s4");
+        var kept = AccountWindows.SaidOf(_home, "claude-code", "account-1", Said.AddMinutes(2))!.Of("session")!;
+        Assert.Equal(0.80, kept.Used);
+        Assert.Equal("said", kept.Source);
+    }
+
     [Fact]
     public void A_reading_is_gone_at_its_reset_and_the_account_is_unknown_for_that_window()
     {

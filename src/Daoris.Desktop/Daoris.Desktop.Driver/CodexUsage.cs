@@ -17,7 +17,26 @@ namespace Daoris.Driver;
 /// </param>
 /// <param name="Command">The binary and the arguments that start the server.</param>
 /// <param name="Recorded">The answers the reader was written against: an entry grows only with a recorded answer.</param>
-public sealed record UsageQuestion(string Harness, IReadOnlyList<string> Command, IReadOnlyList<RecordedFrame> Recorded);
+/// <param name="Kind">Which protocol the command speaks (USAGEREAD2a): Codex's JSON-RPC by default.</param>
+public sealed record UsageQuestion(
+    string Harness, IReadOnlyList<string> Command, IReadOnlyList<RecordedFrame> Recorded, UsageKind Kind = UsageKind.Codex)
+{
+    /// <summary>
+    /// How long a reading stands before a start asks the account again: Codex's five minutes, and Claude's minute, a floor
+    /// beside it (USAGEREAD2a) because its read is its only whole-account reading and a walk ranks on it.
+    /// </summary>
+    public TimeSpan Fresh => Kind == UsageKind.Claude ? ClaudeUsage.Floor : CodexUsage.Fresh;
+}
+
+/// <summary>The protocol a <see cref="UsageQuestion"/>'s command speaks (USAGEREAD2a).</summary>
+public enum UsageKind
+{
+    /// <summary><c>codex app-server</c>: JSON-RPC 2.0 over stdio (<see cref="CodexUsage"/>).</summary>
+    Codex,
+
+    /// <summary>The native <c>claude</c>'s stream-json control requests (<see cref="ClaudeUsage"/>).</summary>
+    Claude,
+}
 
 /// <summary>
 /// Codex's windows, asked of its own app server (CODEXUSE1; the Codex usage evidence): <c>codex app-server</c> speaks
@@ -199,12 +218,15 @@ public static class CodexUsage
     /// </summary>
     /// <param name="profileHome">The account's configuration home, or null for the tool's own, the variable then unset.</param>
     /// <param name="managed">The managed binary the command's first word resolved to, or null for the command as named.</param>
+    /// <param name="workingDirectory">Where the process runs, or null for the caller's (Claude's read runs in an empty folder).</param>
     internal static ProcessStartInfo Prepare(
-        IReadOnlyList<string> command, HarnessToolchain toolchain, string? profileHome, string? managed = null)
+        IReadOnlyList<string> command, HarnessToolchain toolchain, string? profileHome, string? managed = null,
+        string? workingDirectory = null)
     {
         var info = new ProcessStartInfo
         {
             FileName = command[0],
+            WorkingDirectory = workingDirectory ?? "",
             RedirectStandardInput = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -224,7 +246,12 @@ public static class CodexUsage
     /// Start the server, read, and stop it (CODEXUSE1): the readings, or null where none could be had. The server does not
     /// end by itself, so it is stopped, its whole tree, once the answer or the patience is spent.
     /// </summary>
-    internal static async Task<IReadOnlyList<WindowReading>?> ReadAsync(ProcessStartInfo info, TimeSpan patience, CancellationToken ct)
+    /// <param name="ask">
+    /// The protocol over the process's streams (USAGEREAD2a); null is Codex's own, <see cref="AskWithinAsync"/>.
+    /// </param>
+    internal static async Task<IReadOnlyList<WindowReading>?> ReadAsync(
+        ProcessStartInfo info, TimeSpan patience, CancellationToken ct,
+        Func<TextReader, TextWriter, TimeSpan, CancellationToken, Task<IReadOnlyList<WindowReading>?>>? ask = null)
     {
         Process? process;
         try
@@ -244,7 +271,7 @@ public static class CodexUsage
             var stderr = process.StandardError.ReadToEndAsync(CancellationToken.None);
             try
             {
-                return await AskWithinAsync(process.StandardOutput, process.StandardInput, patience, ct).ConfigureAwait(false);
+                return await (ask ?? AskWithinAsync)(process.StandardOutput, process.StandardInput, patience, ct).ConfigureAwait(false);
             }
             finally
             {
