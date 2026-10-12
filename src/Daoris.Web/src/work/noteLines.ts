@@ -150,7 +150,9 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'opening.said-at': { values: ['account', 'seen'] },
   'opening.said-nothing': { values: ['account'] },
   'opening.said-reached': { values: ['window'] },
+  // The agent's pace warning, never near (USAGEREAD3a); a line written before says `opening.said-near`, worded as it was.
   'opening.said-near': { values: ['window'] },
+  'opening.said-warned': { values: ['window'] },
   'opening.said-credits': { values: [] },
   'opening.said-used': { values: ['used', 'window'] },
   'opening.said-near-at': { values: ['near'] },
@@ -346,6 +348,7 @@ export const OPENING_REASONS: Readonly<Record<string, { key: string; values: rea
   'kept-last': { key: 'note.opening.why.kept-last', values: ['over'] },
   kept: { key: 'note.opening.why.kept', values: ['over'] },
   'near-reached': { key: 'note.opening.why.near-reached', values: ['over', 'window'] },
+  // No longer written (USAGEREAD3a: the pace warning is not near); a line written before keeps it.
   'near-word': { key: 'note.opening.why.near-word', values: ['over', 'window'] },
   'near-credits': { key: 'note.opening.why.near-credits', values: ['over'] },
   'near-used': { key: 'note.opening.why.near-used', values: ['over', 'used', 'window', 'near'] },

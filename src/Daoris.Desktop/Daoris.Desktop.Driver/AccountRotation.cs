@@ -109,8 +109,8 @@ public sealed record RotatedStart(string From, CoolingEntry? Cooling, string Why
     public string? Scope { get; init; }
 
     /// <summary>
-    /// What the account it was moved off last said, as the log names it (TOOL6c): <c>refused</c>, <c>near</c> or
-    /// <c>clear</c>, or null where it said nothing (<see cref="AccountReadings.Standing"/>).
+    /// What the account it was moved off last said, as the log names it (TOOL6c): <c>refused</c>, <c>near</c>,
+    /// <c>warned</c> or <c>clear</c>, or null where it said nothing (<see cref="AccountReadings.Standing"/>).
     /// </summary>
     public string? FromSaid { get; init; }
 
@@ -136,7 +136,9 @@ public enum NextReason
     /// <summary>A conversation: the kept account first where it is the default, or the kept account taken last.</summary>
     Kept,
 
-    /// <summary>The account it was weighed against said it is near its limit, so went last (§16.3 step 2).</summary>
+    /// <summary>
+    /// The account it was weighed against is near its limit (<see cref="AccountReadings.Near"/>), so went last (§16.3 step 2).
+    /// </summary>
     Near,
 
     /// <summary>It runs fewer of Daoris's sessions (step 3).</summary>
@@ -167,7 +169,7 @@ public enum NextHold
     /// <summary>Ready, and ranked after the account the next start takes.</summary>
     Ready,
 
-    /// <summary>Ready, and its agent said it is near its limit, so it goes last (D130 §6).</summary>
+    /// <summary>Ready, and near its limit by what its agent said (<see cref="AccountReadings.Near"/>), so it goes last (D130 §6).</summary>
     Near,
 
     /// <summary>Its cool-off has not passed (D125 §2): it waits for a time.</summary>
@@ -513,7 +515,7 @@ public static class AccountRotation
 
     /// <summary>
     /// How much of its limit a near account has used, as the walk ranks it (ACCTWALK3): a number below 100% by that number,
-    /// then one that said none (a word or credits only), then one its word says reached or at 100%, which stays last.
+    /// then one that said none (credits only), then one its word says reached or at 100%, which stays last.
     /// </summary>
     private static (int Tier, double Used) Room(AccountSaid? said, int near) =>
         AccountReadings.NearWindow(said, near) is { By: NearBy.Refused } ? (2, 0)
@@ -854,9 +856,11 @@ public static class RotationWords
         {
             parts.Add(Noted.Of(NoteCodes.OpeningSaidReached, $"its {reached.Window} limit reached, by its own word", ("window", reached.Window)));
         }
-        else if (said.Windows.FirstOrDefault(each => each.Standing == AccountReadings.NearWord) is { } warned)
+        else if (said.Windows.FirstOrDefault(each => each.Standing == AccountReadings.WarnedWord) is { } warned)
         {
-            parts.Add(Noted.Of(NoteCodes.OpeningSaidNear, $"near its {warned.Window} limit, by its own word", ("window", warned.Window)));
+            // Its own pace warning, in its own words, never near (USAGEREAD3a): `opening.said-near` said it so before.
+            parts.Add(Noted.Of(
+                NoteCodes.OpeningSaidWarned, $"ahead of its pace on its {warned.Window} window, by its own word", ("window", warned.Window)));
         }
 
         if (said.Windows.Any(each => each.Credits)) parts.Add(Noted.Of(NoteCodes.OpeningSaidCredits, "drawing on usage credits"));
@@ -973,13 +977,15 @@ public static class RotationWords
         };
     }
 
-    /// <summary>Why an account went last (§6): its agent's word, its credits, or a window's use at or over <i>near</i>.</summary>
+    /// <summary>
+    /// Why an account went last (§6): its agent's word that a limit was reached, its credits, or a window's use at or over
+    /// <i>near</i>; never its pace warning, which is not near (USAGEREAD3a), so <see cref="OpeningWhy.NearWord"/> is no longer
+    /// written.
+    /// </summary>
     private static StepSaid Near(string account, AccountSaid? said, RotationUse use) => AccountReadings.NearWindow(said, use.Near) switch
     {
         { By: NearBy.Refused } reached => Reason(
             $"`{account}` said its {reached.Window.Window} limit is reached", OpeningWhy.NearReached, ("over", account), ("window", reached.Window.Window)),
-        { By: NearBy.Word } warned => Reason(
-            $"`{account}` said it is near its {warned.Window.Window} limit", OpeningWhy.NearWord, ("over", account), ("window", warned.Window.Window)),
         { By: NearBy.Credits } => Reason($"`{account}` said it is drawing on usage credits", OpeningWhy.NearCredits, ("over", account)),
         { } full => Reason(
             $"`{account}` has used {Percent(full.Window.Used!.Value)} of its {full.Window.Window} limit, at or over the {use.Near}% that counts as near",
@@ -989,7 +995,7 @@ public static class RotationWords
 
     /// <summary>
     /// Why the account it ran on went ahead of another near account (ACCTWALK3): it has more room, said by the two numbers;
-    /// where one said none (the other's limit reached, or a word alone), the other's own reason for going last is said.
+    /// where one said none (the other's limit reached, or credits alone), the other's own reason for going last is said.
     /// </summary>
     private static StepSaid MoreRoom(AccountSaid? own, string over, AccountSaid? other, RotationUse use) =>
         AccountReadings.MostUsed(own) is { } mine && AccountReadings.MostUsed(other) is { } theirs

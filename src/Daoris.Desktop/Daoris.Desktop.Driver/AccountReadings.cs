@@ -30,7 +30,11 @@ public sealed record RecordedFrame(string Frame, string Seen, string Channel, st
 /// </remarks>
 /// <param name="Windows">The agent's name for each window it reads → Daoris's: <c>session</c> (five hours) or <c>weekly</c>.</param>
 /// <param name="Clear">The status words that mean the account may run.</param>
-/// <param name="Near">The status words that mean it is near a limit: the agent's own warning.</param>
+/// <param name="Warned">
+/// The status words of the agent's own warning, kept as <c>warned</c> (USAGEREAD3a, the account-switch design §1.3): Claude
+/// Code's says a window's use is ahead of the time gone in it, by thresholds of its own, not that it is near its limit, so it
+/// never makes an account near alone.
+/// </param>
 /// <param name="Refused">The status words that mean a limit was reached.</param>
 /// <param name="Scale">What a full window reads as on this agent's scale: 1 for a fraction.</param>
 /// <param name="Credits">The field that says the request drew on usage credits, which are billed (C5, C6).</param>
@@ -38,7 +42,7 @@ public sealed record RecordedFrame(string Frame, string Seen, string Channel, st
 public sealed record WindowWords(
     IReadOnlyDictionary<string, string> Windows,
     IReadOnlyList<string> Clear,
-    IReadOnlyList<string> Near,
+    IReadOnlyList<string> Warned,
     IReadOnlyList<string> Refused,
     double Scale,
     string Credits,
@@ -48,7 +52,7 @@ public sealed record WindowWords(
 /// <param name="Window">Daoris's name for it: <c>session</c> or <c>weekly</c>.</param>
 /// <param name="Used">How much of it is used, from 0 to 1, or null where the frame gave no number.</param>
 /// <param name="Reset">When it turns over, which is when this reading is dropped.</param>
-/// <param name="Standing"><c>clear</c>, <c>near</c> or <c>refused</c>, on the window the frame names; else null.</param>
+/// <param name="Standing"><c>clear</c>, <c>warned</c> or <c>refused</c>, on the window the frame names; else null.</param>
 /// <param name="Credits">Whether the frame said the request drew on usage credits, on the window it names.</param>
 public sealed record WindowReading(string Window, double? Used, DateTimeOffset Reset, string? Standing = null, bool Credits = false);
 
@@ -88,8 +92,11 @@ public sealed record AccountSaid(IReadOnlyList<WindowSaid> Windows)
 /// </remarks>
 public static class AccountReadings
 {
-    /// <summary>The standings, in Daoris's words.</summary>
-    public const string ClearWord = "clear", NearWord = "near", RefusedWord = "refused";
+    /// <summary>
+    /// The standings, in Daoris's words: what a window's frame said (<c>clear</c>, <c>warned</c>, <c>refused</c>), and
+    /// <c>near</c>, which only the log writes, for an account <see cref="Near"/> judges near.
+    /// </summary>
+    public const string ClearWord = "clear", WarnedWord = "warned", NearWord = "near", RefusedWord = "refused";
 
     /// <summary>
     /// What <paramref name="info"/> says, read by <paramref name="words"/>: each window the table names that has a reset, its
@@ -134,26 +141,27 @@ public static class AccountReadings
     }
 
     /// <summary>
-    /// Whether an account is near a limit (D130 §6 as the evidence corrects it): its agent's warning word or its word that a
-    /// limit was reached, its word that it is drawing on usage credits, or any window's use at or over
-    /// <paramref name="near"/> percent. Nothing said is never near.
+    /// Whether an account is near a limit (D130 §6 as the evidence corrects it): its agent's word that a limit was reached,
+    /// its word that it is drawing on usage credits, or any window's use at or over <paramref name="near"/> percent. Nothing
+    /// said is never near, and its agent's pace warning (<c>warned</c>) is never near alone.
     /// </summary>
     /// <remarks>
-    /// §6 had the agent's word win over the number, where Claude Code's word was thought to come without one. The evidence
-    /// found a number on every frame, and the word still <c>allowed</c> at 88% with two hours left (§1.3): read alone, the
-    /// word would pass nothing the person's own <i>near</i> says. So either passes.
+    /// <para>§6 had the agent's word win over the number, where Claude Code's word was thought to come without one. The
+    /// evidence found a number on every frame, and the word still <c>allowed</c> at 88% with two hours left (§1.3): read
+    /// alone, the word would pass nothing the person's own <i>near</i> says. So either passes.</para>
+    /// <para>Its <c>allowed_warning</c> passes nothing alone (USAGEREAD3a, D165 point 2, the account-switch design §1.3): it
+    /// says a window's use is ahead of the time gone in it, not that the window is near its limit.</para>
     /// </remarks>
     public static bool Near(AccountSaid? said, int near) => NearWindow(said, near) is not null;
 
     /// <summary>
-    /// The window that makes an account near, and why: a limit reached by its word first, then its warning word, then
-    /// credits, then the most used window at or over <paramref name="near"/>; null where none does.
+    /// The window that makes an account near, and why: a limit reached by its word first, then credits, then the most used
+    /// window at or over <paramref name="near"/>; null where none does.
     /// </summary>
     public static (WindowSaid Window, NearBy By)? NearWindow(AccountSaid? said, int near)
     {
         if (said is null) return null;
         if (said.Windows.FirstOrDefault(each => each.Standing == RefusedWord) is { } refused) return (refused, NearBy.Refused);
-        if (said.Windows.FirstOrDefault(each => each.Standing == NearWord) is { } warned) return (warned, NearBy.Word);
         if (said.Windows.FirstOrDefault(each => each.Credits) is { } drawing) return (drawing, NearBy.Credits);
         return said.Windows.Where(each => each.Used is { } used && used * 100 >= near - 1e-9).MaxBy(each => each.Used) is { } full
             ? (full, NearBy.Number)
@@ -165,11 +173,13 @@ public static class AccountReadings
 
     /// <summary>
     /// An account's standing for the log (D94 §4's names only): <c>refused</c> by its word, <c>near</c> as
-    /// <see cref="Near"/> reads it, <c>clear</c> where it said and is neither, and null where it said nothing.
+    /// <see cref="Near"/> reads it, <c>warned</c> where its agent's pace warning stands and it is not near (USAGEREAD3a),
+    /// <c>clear</c> where it said and is none of those, and null where it said nothing.
     /// </summary>
     public static string? Standing(AccountSaid? said, int near) => NearWindow(said, near) switch
     {
-        null => said is null ? null : ClearWord,
+        null when said is null => null,
+        null => said.Windows.Any(each => each.Standing == WarnedWord) ? WarnedWord : ClearWord,
         { By: NearBy.Refused } => RefusedWord,
         _ => NearWord,
     };
@@ -192,7 +202,7 @@ public static class AccountReadings
 
     private static string? StandingOf(string status, WindowWords words) =>
         words.Refused.Contains(status, StringComparer.Ordinal) ? RefusedWord
-        : words.Near.Contains(status, StringComparer.Ordinal) ? NearWord
+        : words.Warned.Contains(status, StringComparer.Ordinal) ? WarnedWord
         : words.Clear.Contains(status, StringComparer.Ordinal) ? ClearWord
         : null;
 
@@ -226,14 +236,14 @@ public static class AccountReadings
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 }
 
-/// <summary>Why an account is near (TOOL6c, D130 §6): what a start's first line says of it.</summary>
+/// <summary>
+/// Why an account is near (TOOL6c, D130 §6): what a start's first line says of it. Never its agent's pace warning, which is
+/// not near (USAGEREAD3a); the page reads these names as <c>near[].by</c>.
+/// </summary>
 public enum NearBy
 {
     /// <summary>Its agent said a limit was reached.</summary>
     Refused,
-
-    /// <summary>Its agent's own warning word.</summary>
-    Word,
 
     /// <summary>Its agent said it is drawing on usage credits.</summary>
     Credits,
@@ -254,7 +264,7 @@ public static class ClaudeWindows
     public static WindowWords Words { get; } = new(
         Windows: new Dictionary<string, string>(StringComparer.Ordinal) { ["five_hour"] = "session", ["seven_day"] = AccountWindows.Weekly },
         Clear: ["allowed"],
-        Near: ["allowed_warning"],
+        Warned: ["allowed_warning"],
         Refused: ["rejected"],
         Scale: 1,
         Credits: "isUsingOverage",

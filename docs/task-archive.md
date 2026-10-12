@@ -13924,3 +13924,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PROCESS1b-i — the landing rule names the branch as the repository does** (driver/cli). `{ticket}` in the pattern, found by the rule's `key` (default `[A-Z][A-Z0-9]+-\d+`; a bounded subset both engines read) in the title, then the request, then its links, else the session's id; `{ticket}` names a branch as `{quest}` or `{session}` does; `{slug}` never from a web address, an empty one taking its separator with it; both twins and the pattern table. Absorbs LANDNAME2's naming. D164's amendment point 2.
 
 **Outcome** 2026-10-13: `{ticket}` and the landing rule's `key` built on both twins, the key held to what both engines read and ignored, never rule-dropping, where the file holds one refused; `{slug}` is never made from a web address, an empty one taking its separator with it. Detail: D164's PROCESS1b-i note; the fix log (LANDNAME2); KEYPARITY2 holds a class subtraction the twins read apart.
+
+## USAGEREAD3a — the pace warning is not near (2026-10-13, D165)
+
+> - [ ] **USAGEREAD3a — the pace warning is not near** (driver/modules/cli/web note lines). Claude Code's `allowed_warning` recorded as `warned`, never near alone (`NearBy.Word` gone); an old stored `near` read as `warned`; the log writes `warned`; the start's note says *ahead of its pace, by its own word* with its page twin. Design §1.3.
+
+**Outcome** 2026-10-13: built as the row says: `allowed_warning` is the standing `warned` and never near on its own; an old `near` reads as `warned` in both twins; the log writes `warned`; the start's line is `opening.said-warned`, the old codes kept declared for records already written. The page's rows are USAGEREAD3b's. Detail: D165's USAGEREAD3a note; the fix log.

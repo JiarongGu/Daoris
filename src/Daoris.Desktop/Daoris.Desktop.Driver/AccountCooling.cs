@@ -411,8 +411,9 @@ public sealed record AccountLine(string Event, IReadOnlyList<(string Key, object
     /// carries the agent's word about its windows kept it (TOOL6c).
     /// </param>
     /// <param name="fromSaid">
-    /// What <paramref name="from"/> last said, by Daoris's word only (TOOL6c): <c>refused</c>, <c>near</c> or <c>clear</c>,
-    /// or null where it said nothing. Never a number or the agent's words.
+    /// What <paramref name="from"/> last said, by Daoris's word only (TOOL6c): <c>refused</c>, <c>near</c>, <c>warned</c>
+    /// (its agent's pace warning, and not near: USAGEREAD3a) or <c>clear</c>, or null where it said nothing. Never a number
+    /// or the agent's words.
     /// </param>
     /// <param name="toSaid">What <paramref name="to"/> last said, as <paramref name="fromSaid"/> names it.</param>
     public static AccountLine Rotated(
@@ -424,9 +425,9 @@ public sealed record AccountLine(string Event, IReadOnlyList<(string Key, object
             ("why", Word(why)), ("scope", Profile(scope)), ("said", said), ("fromSaid", Standing(fromSaid)), ("toSaid", Standing(toSaid)),
         ]);
 
-    /// <summary>A standing in a line: one of Daoris's three words, or null.</summary>
+    /// <summary>A standing in a line: one of Daoris's four words, or null.</summary>
     private static string? Standing(string? word) =>
-        word is AccountReadings.ClearWord or AccountReadings.NearWord or AccountReadings.RefusedWord ? word : null;
+        word is AccountReadings.ClearWord or AccountReadings.WarnedWord or AccountReadings.NearWord or AccountReadings.RefusedWord ? word : null;
 
     /// <summary>A step by its word in a line: <c>signedOut</c>, <c>leastRecent</c>.</summary>
     private static string Word(WalkStep step) => System.Text.Json.JsonNamingPolicy.CamelCase.ConvertName(step.ToString());

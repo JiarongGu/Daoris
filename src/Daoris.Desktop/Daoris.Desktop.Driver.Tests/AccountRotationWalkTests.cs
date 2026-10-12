@@ -71,7 +71,7 @@ public sealed class AccountRotationWalkTests
                         windows.Add(Window("weekly", Percent(used), Now + Offset(reset)));
                         break;
                     case 'N':
-                        Stand("session", "near");
+                        Stand("session", "warned");
                         break;
                     case 'X':
                         Stand("weekly", "refused");
@@ -193,10 +193,11 @@ public sealed class AccountRotationWalkTests
         Assert.Equal(order, Order(scope, facts));
     }
 
-    // ——— Step 2, near last (TOOL6c; §6, §16.3 as the evidence corrects them): an account its agent said is near any
-    // window's limit — by its word, by drawing on usage credits, or by a window's use at or over the scope's *near* — goes
+    // ——— Step 2, near last (TOOL6c; §6, §16.3 as the evidence corrects them): an account near any window's limit — by its
+    // word that a limit was reached, by drawing on usage credits, or by a window's use at or over the scope's *near* — goes
     // to the end: passed while another account is ready, run when none is. `S<n>` is the session window's use in percent,
-    // `W<n>@<offset>` the week's and its reset, `N` its warning word, `X` its word that a limit was reached, `C` credits.
+    // `W<n>@<offset>` the week's and its reset, `N` its pace warning (`warned`), `X` its word that a limit was reached, `C`
+    // credits. The pace warning is never near alone (USAGEREAD3a, the account-switch design §1.3).
 
     [Theory]
     [InlineData("account-1 account-2 account-3", "account-1:S95", "account-2 account-3 account-1")]
@@ -204,29 +205,33 @@ public sealed class AccountRotationWalkTests
     [InlineData("account-1 account-2 account-3", "account-1:S90", "account-2 account-3 account-1")]
     [InlineData("account-1 account-2 account-3 near=85", "account-1:S88", "account-2 account-3 account-1")]
     [InlineData("account-1 account-2 account-3", "account-1:S30,W95@+3d", "account-2 account-3 account-1")]
-    // By its word, whatever the number; by credits; by a limit its word says was reached.
-    [InlineData("account-1 account-2 account-3", "account-1:S10,N", "account-2 account-3 account-1")]
+    // By credits; by a limit its word says was reached, whatever the number.
     [InlineData("account-1 account-2 account-3", "account-1:S10,C", "account-2 account-3 account-1")]
     [InlineData("account-1 account-2 account-3", "account-2:W40@+2d,X", "account-1 account-3 account-2")]
+    // Its pace warning passes nothing alone; the number beside it still does.
+    [InlineData("account-1 account-2 account-3", "account-1:S10,N", "account-1 account-2 account-3")]
+    [InlineData("account-1 account-2 account-3", "account-1:S95,N", "account-2 account-3 account-1")]
     // It outranks fewest running: a near account is passed whatever runs on the others.
     [InlineData("account-1 account-2 account-3", "account-1:S95 account-2:r2 account-3:r1", "account-3 account-2 account-1")]
     // Every account near: the steps after it order them, and a start still runs. A pass, never a wait.
     [InlineData("account-1 account-2", "account-1:S95 account-2:S96", "account-1 account-2")]
     [InlineData("account-1 account-2", "account-1:S95,r1 account-2:S95", "account-2 account-1")]
     // ACCTWALK3: among near accounts the one with more room goes first, before fewest running and the rest; equal use, or
-    // no number said, leaves the later steps as they were; a word without a number ranks after any number below 100%;
+    // no number said, leaves the later steps as they were; credits without a number rank after any number below 100%;
     // an account whose limit its word says was reached stays last.
     [InlineData("account-1 account-2", "account-1:S95,r1 account-2:S96", "account-1 account-2")]
     [InlineData("account-1 account-2", "account-1:S96 account-2:S95", "account-2 account-1")]
     [InlineData("account-1 account-2 account-3", "account-1:S99 account-2:S95 account-3:S97", "account-2 account-3 account-1")]
-    [InlineData("account-1 account-2", "account-1:N account-2:C", "account-1 account-2")]
-    [InlineData("account-1 account-2", "account-1:N,r1 account-2:C", "account-2 account-1")]
-    [InlineData("account-1 account-2", "account-1:N account-2:S96", "account-2 account-1")]
-    [InlineData("account-1 account-2", "account-1:X account-2:N", "account-2 account-1")]
+    [InlineData("account-1 account-2", "account-1:C account-2:C", "account-1 account-2")]
+    [InlineData("account-1 account-2", "account-1:C,r1 account-2:C", "account-2 account-1")]
+    [InlineData("account-1 account-2", "account-1:C account-2:S96", "account-2 account-1")]
+    [InlineData("account-1 account-2", "account-1:X account-2:C", "account-2 account-1")]
     [InlineData("account-1 account-2", "account-1:X account-2:S99", "account-2 account-1")]
     [InlineData("account-1 account-2 order", "account-1:S96 account-2:S95", "account-1 account-2")]
-    // The install: a conversation opened on the account at 99% of its weekly limit, passing one at 60% that was near by its word.
+    // The install: a conversation opened on the account at 99% of its weekly limit, passing one at 60% of its week that
+    // its pace warning had made near. That account is not near (USAGEREAD3a), so it goes first, ahead of both near ones.
     [InlineData("gmail account-1 account-3", "gmail:W99@+4d account-1:W60@+4d,N account-3:X", "account-1 gmail account-3")]
+    [InlineData("account-1 account-2", "account-1:N account-2:S96", "account-1 account-2")]
     // The switch off passes nothing; under `order` a near account goes last too, unless the switch is off.
     [InlineData("account-1 account-2 account-3 early=off", "account-1:S95", "account-1 account-2 account-3")]
     [InlineData("account-1 account-2 account-3 order", "account-1:S95", "account-2 account-3 account-1")]
@@ -251,8 +256,8 @@ public sealed class AccountRotationWalkTests
     [Theory]
     [InlineData("account-1 account-2 account-3", "account-1:W40@+4d account-2:W10@+4d account-3:W20@+4d", "account-2 account-3 account-1")]
     [InlineData("account-1 account-2 account-3", "account-1:W80@+4d account-3:W10@+4d", "account-3 account-2 account-1")]
-    // Unknown sits between clear and near: said clear and behind, said nothing, said near.
-    [InlineData("account-1 account-2 account-3", "account-1:S10,N account-3:W10@+4d", "account-3 account-2 account-1")]
+    // Unknown sits between clear and near: said clear and behind, said nothing, near.
+    [InlineData("account-1 account-2 account-3", "account-1:S95 account-3:W10@+4d", "account-3 account-2 account-1")]
     // Below a week lapsing within the day; above least recently started.
     [InlineData("account-1 account-2 account-3", "account-1:W89@+20h,w+20h account-2:W10@+4d", "account-1 account-2 account-3")]
     [InlineData("account-1 account-2", "account-1:W10@+4d,s-1m account-2:s-5h", "account-1 account-2")]
@@ -396,7 +401,7 @@ public sealed class AccountRotationWalkTests
 
         Assert.Equal(
             "What each account said: `account-1` 10 min ago, 95% of its session limit and 30% of its weekly limit used, near at 90%; "
-            + "`account-2` nothing yet; `account-3` 10 min ago, near its session limit, by its own word, drawing on usage credits; "
+            + "`account-2` nothing yet; `account-3` 10 min ago, ahead of its pace on its session window, by its own word, drawing on usage credits; "
             + "`account-4` 3 h ago, clear, by its own word.",
             RotationWords.Said(["account-1", "account-2", "account-3", "account-4"], facts, RotationUse.Default, Now));
         Assert.Null(RotationWords.Said(["account-1", "account-2"], Facts("account-1:r2"), RotationUse.Default, Now));
@@ -417,7 +422,8 @@ public sealed class AccountRotationWalkTests
         { "account-1 account-2 account-3 early=off", "account-1:S95", "", "account-1", WalkStep.List, null, null, null },
         // ACCTWALK3: both near, the one with more room ran, naming the account it was weighed against.
         { "account-1 account-2", "account-1:S99 account-2:S92", "", "account-2", WalkStep.Room, "account-1", null, null },
-        { "gmail account-1 account-3", "gmail:W99@+4d account-1:W60@+4d,N account-3:X", "", "account-1", WalkStep.Room, "gmail", null, null },
+        // The install (USAGEREAD3a): the account its pace warning had made near is not, so it ran ahead of the near one.
+        { "gmail account-1 account-3", "gmail:W99@+4d account-1:W60@+4d,N account-3:X", "", "account-1", WalkStep.Near, "gmail", null, null },
     };
 
     [Theory]

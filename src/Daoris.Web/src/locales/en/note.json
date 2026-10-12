@@ -97,6 +97,7 @@
   "note.opening.said-nothing": "`{{account}}` has said nothing yet.",
   "note.opening.said-reached": "It said its {{window}} limit is reached.",
   "note.opening.said-near": "It said it is near its {{window}} limit.",
+  "note.opening.said-warned": "It said it is ahead of its pace on its {{window}} window.",
   "note.opening.said-credits": "It said it is drawing on usage credits.",
   "note.opening.said-used": "It had used {{used}} of its {{window}} limit.",
   "note.opening.said-near-at": "That is at or over the {{near}} that counts as near.",

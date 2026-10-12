@@ -37,7 +37,8 @@ public sealed class OpeningNoteTests : IDisposable
         // { ran on, step, over, workspace, facts, why, values }
         { "account-2", WalkStep.Fewest, null, "work", "", OpeningWhy.Fewest, "" },
         { "account-2", WalkStep.Near, "account-1", "work", "account-1:S95", OpeningWhy.NearUsed, "over=account-1 used=95 window=session near=90" },
-        { "account-2", WalkStep.Near, "account-1", "work", "account-1:N", OpeningWhy.NearWord, "over=account-1 window=session" },
+        // Its pace warning alone is no reason to pass it (USAGEREAD3a): a step that names it says only that it is near.
+        { "account-2", WalkStep.Near, "account-1", "work", "account-1:N", OpeningWhy.Near, "over=account-1" },
         { "account-2", WalkStep.Near, "account-1", "work", "account-1:X", OpeningWhy.NearReached, "over=account-1 window=weekly" },
         { "account-2", WalkStep.Near, "account-1", "work", "account-1:C", OpeningWhy.NearCredits, "over=account-1" },
         { "account-2", WalkStep.Near, "account-1", "work", "", OpeningWhy.Near, "over=account-1" },
@@ -123,7 +124,7 @@ public sealed class OpeningNoteTests : IDisposable
             [
                 "opening.said-at", "opening.said-used", "opening.said-used", "opening.said-near-at",
                 "opening.said-nothing",
-                "opening.said-at", "opening.said-near", "opening.said-credits",
+                "opening.said-at", "opening.said-warned", "opening.said-credits",
                 "opening.said-at", "opening.said-clear",
             ],
             NoteAssert.Codes(said.Parts));
@@ -135,6 +136,31 @@ public sealed class OpeningNoteTests : IDisposable
         Assert.Equal("account-2", said.Parts[4].Value("account"));
         Assert.Equal("session", said.Parts[6].Value("window"));
         Assert.Null(RotationWords.AccountsSaid(["account-1", "account-2"], AccountRotationWalkTests.Facts("account-1:r2"), RotationUse.Default, Now));
+    }
+
+    /// <summary>
+    /// USAGEREAD3a: the agent's pace warning is said as its own line, never as near; a warned account near by its number says
+    /// both. The line and the reason a note written before said it by (<c>opening.said-near</c>, <c>near-word</c>) stay
+    /// declared, so a record already on a machine keeps being worded, and nothing writes them now.
+    /// </summary>
+    [Fact]
+    public void The_pace_warning_is_its_own_line_and_the_old_near_line_is_kept_for_records_written_before()
+    {
+        var facts = AccountRotationWalkTests.Facts("account-1:S95,N account-2:N");
+
+        var said = RotationWords.AccountsSaid(["account-1", "account-2"], facts, RotationUse.Default, Now)!;
+
+        Assert.Equal(
+            "What each account said: `account-1` 10 min ago, ahead of its pace on its session window, by its own word, 95% of its "
+            + "session limit used, near at 90%; `account-2` 10 min ago, ahead of its pace on its session window, by its own word.",
+            said.Note);
+        Assert.Equal(
+            ["opening.said-at", "opening.said-warned", "opening.said-used", "opening.said-near-at", "opening.said-at", "opening.said-warned"],
+            NoteAssert.Codes(said.Parts));
+        NoteAssert.Holds(said);
+        Assert.Equal("opening.said-near", NoteCodes.OpeningSaidNear.Code);
+        Assert.Equal(["window"], NoteCodes.OpeningSaidNear.Values);
+        Assert.Contains(NoteCodes.Opening.All, reason => reason.Code == OpeningWhy.NearWord);
     }
 
     private static HarnessSelection Chosen(string to, WalkChoice choice, AccountState? passed, Dictionary<string, AccountFacts> facts, bool rotated)

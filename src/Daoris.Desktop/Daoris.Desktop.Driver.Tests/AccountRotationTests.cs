@@ -684,7 +684,9 @@ public sealed class AccountRotationTests : IDisposable
     [Theory]
     [InlineData("near", "clear", "near", "clear")]
     [InlineData("refused", null, "refused", null)]
-    // Only Daoris's three words: never a number or the agent's own.
+    // The agent's pace warning, warned and not near, is Daoris's fourth word (USAGEREAD3a).
+    [InlineData("warned", "near", "warned", "near")]
+    // Only Daoris's four words: never a number or the agent's own.
     [InlineData("88%", "allowed_warning", null, null)]
     public void Account_rotated_says_what_each_account_said_by_Daoris_s_word_alone(string? from, string? to, string? fromSaid, string? toSaid)
     {

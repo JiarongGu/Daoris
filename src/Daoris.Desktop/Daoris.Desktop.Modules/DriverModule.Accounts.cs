@@ -144,7 +144,9 @@ public sealed partial class DriverModule
         Problem = ScopeProblem.Of(scope.Default, scope.List, keep) is { } problem
             ? new { Kind = JsonNamingPolicy.CamelCase.ConvertName(problem.Kind.ToString()), problem.Account }
             : null,
-        // Near by the scope's own *near* (D130 §6 as TOOL6c reads it): its agent's word, credits, or a window at or over it.
+        // Near by the scope's own *near* (D130 §6 as TOOL6c reads it): its agent's word that a limit was reached, credits, or a
+        // window at or over it; `by` is `refused`, `credits` or `number`. Its agent's pace warning is never near alone, and
+        // rides on the account's reading as its standing, `warned` (USAGEREAD3a).
         Near = scope.List
             .Select(account => (Account: account, Near: AccountReadings.NearWindow(said.GetValueOrDefault(account), scope.Use.Near)))
             .Where(each => each.Near is not null)
