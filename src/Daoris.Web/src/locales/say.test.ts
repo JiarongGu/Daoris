@@ -53,7 +53,8 @@ describe('the refusal codes the driver declares, held to the page’s tables', (
     expect(codesOf('SessionSay.cs', 'WordsNever').sort()).toEqual(['help', 'intake', 'not-found', 'stood-down', 'superseded', 'teammate']);
     expect(codesOf('ChatRunner.StartFrom.cs', 'StartFrom').sort()).toEqual(['carried', 'no-words', 'running']);
     expect(codesOf('HandOver.cs', 'HandOver').sort()).toEqual([
-      'not-conversation', 'not-its-account', 'running', 'same-agent', 'tree-gone', 'unbriefed', 'unknown-agent', 'waiting',
+      'no-door', 'not-conversation', 'not-its-account', 'not-last-run', 'parked', 'quest-closed', 'quest-elsewhere', 'running',
+      'same-agent', 'tree-gone', 'unbriefed', 'unknown-agent', 'waiting',
     ]);
   });
 

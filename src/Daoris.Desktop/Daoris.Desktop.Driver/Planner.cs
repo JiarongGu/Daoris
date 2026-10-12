@@ -1136,6 +1136,15 @@ public static class Planner
         // The person answered a session that parked to ask them (STANDDOWN2).
         || last is { State: "completed", Answer: not null };
 
+    /// <summary>
+    /// Whether a taken quest's take is not this machine's, as <c>TakenElsewhere</c> reads it (CARRY2b) and the hand-over's judge
+    /// asks it before a quest's session goes on with another agent (MIXAGENT1a-ii): another's by the claim, or made here after
+    /// <paramref name="last"/> ended by a chat or work outside Daoris that no record marks.
+    /// </summary>
+    internal static bool TakenAway(QuestView quest, PriorSession last, QuestTake take) =>
+        !take.Here
+        || (!take.Took && quest.Updated is { } taken && last.Updated is { } ended && taken > ended);
+
     /// <summary>Two tree paths are one tree — separators and case aside, as Windows sees them.</summary>
     private static bool SameTree(string? a, string? b) =>
         a is { Length: > 0 } && b is { Length: > 0 }
