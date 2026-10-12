@@ -1,6 +1,5 @@
 import { type KeyboardEvent, useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { accountName, accountWho } from '../agents/agents';
 import { MAX_FILE_BYTES, MAX_FILES } from '../attachments';
 import { type Carry, NO_CARRY, useCarry, useFileChooser } from '../compose/carry';
 import { size } from '../format';
@@ -8,6 +7,7 @@ import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import type { Account } from '../tools';
 import { Button, Icon, Inline, Menu, Tip } from '../ui';
+import { type AgentChoice, AgentChip } from './AgentChip';
 import { CHIP, RepositoryPicker, type StartRepository } from './RepositoryPicker';
 
 export type { StartRepository } from './RepositoryPicker';
@@ -28,9 +28,6 @@ export type NewStart = {
   /** Absent is the driver's choice; false the checkout, whatever the repository's opt-in; true a tree of its own. */
   ownTree?: boolean;
 };
-
-/** "Leave it to the driver", as a radio row's value: a row's value is never empty, and a default stays choosable. */
-const DEFAULT = '*';
 
 /**
  * What the checkout's branch read answered: `read` is the answer once there is one (null `branch` is a detached HEAD), and
@@ -228,8 +225,7 @@ export function NewConversation({
   const chooser = useFileChooser(attach.attach, t('carry.choose'));
   const [chosen, setChosen] = useState<string | null>(null);
   const [tree, setTree] = useState<TreeChoice>(openingTree);
-  const [adapter, setAdapter] = useState('');
-  const [profile, setProfile] = useState('');
+  const [choice, setChoice] = useState<AgentChoice>({ adapter: '', profile: '' });
 
   useEffect(() => {
     if (focus <= 0) return;
@@ -258,20 +254,7 @@ export function NewConversation({
   const holder = repository ? busy[repository] : undefined;
   const held = Boolean(holder) && tree !== 'own';
 
-  const agent = adapter || defaultHarness;
-  const named = (id: string) => labels[id] ?? names[id] ?? id;
-  const profiles = accounts[agent] ?? [];
-  const account = profiles.find((choice) => choice.name === profile) ?? null;
-  // The scope's accounts first, in its list's order, then every other under *not in its list* (D130 §3.2).
-  const scope = repository && agent ? scopeOf?.(repository, agent) ?? null : null;
-  const listed = scope && scope.list.length > 0 ? scope.list : null;
-  const ordered = listed
-    ? [
-      ...listed.map((name) => profiles.find((choice) => choice.name === name)).filter((choice) => choice !== undefined),
-      ...profiles.filter((choice) => !listed.includes(choice.name)),
-    ]
-    : profiles;
-  const outside = scope?.workspace ? t('work.start.outside', { workspace: scope.workspace }) : t('work.start.outsideMachine');
+  const { adapter, profile } = choice;
 
   const words = text.trim();
   const ready = Boolean(words && repository && !pending);
@@ -296,17 +279,6 @@ export function NewConversation({
       go();
     }
   };
-
-  const chooseAgent = (next: string) => {
-    const harness = next === DEFAULT ? '' : next;
-    setAdapter(harness);
-    // An account is an agent's own: one this agent does not have means nothing here.
-    if (!(accounts[harness || defaultHarness] ?? []).some((choice) => choice.name === profile)) setProfile('');
-  };
-
-  const chip = (field: string, value: string) => t('work.start.chip', { field, value });
-  const agentName = agent ? names[agent] ?? labels[agent] ?? agent : t('work.start.harness');
-  const accountShown = account ? accountName(account) : t('work.start.accountDriver');
 
   return (
     <form
@@ -395,59 +367,17 @@ export function NewConversation({
           readCheckout={readCheckout}
         />
 
-        <Menu.Root>
-          <Menu.Trigger asChild>
-            <button type="button" aria-label={chip(t('work.start.agentAccount'), `${agentName} · ${accountShown}`)} className={CHIP}>
-              <Icon name="stepWork" size={13} className="shrink-0 text-ink-faint" />
-              <span className="min-w-0 truncate">{`${agentName} · ${accountShown}`}</span>
-              <Icon name="chevronDown" size={12} className="shrink-0 text-ink-faint" />
-            </button>
-          </Menu.Trigger>
-          <Menu.Content align="start" className="w-80 max-w-[calc(100vw-2rem)]">
-            {harnesses.length > 1 && (
-              <>
-                <Menu.Label>{t('work.start.harness')}</Menu.Label>
-                <Menu.RadioGroup aria-label={t('work.start.harness')} value={adapter || DEFAULT} onValueChange={chooseAgent}>
-                  {/* Which it is, where the machine has one (UX5 U67): *this machine's default* said nothing of what a start
-                      would run on. */}
-                  <Menu.RadioItem value={DEFAULT}>
-                    {defaultHarness
-                      ? t('work.start.harnessDefaultNamed', { name: named(defaultHarness) })
-                      : t('work.start.harnessDefault')}
-                  </Menu.RadioItem>
-                  {harnesses.map((harness) => <Menu.RadioItem key={harness} value={harness}>{named(harness)}</Menu.RadioItem>)}
-                </Menu.RadioGroup>
-              </>
-            )}
-            {harnesses.length > 1 && profiles.length > 0 && <Menu.Separator />}
-            {profiles.length > 0 && (
-              <>
-                <Menu.Label>{t('work.start.profile')}</Menu.Label>
-                <Menu.RadioGroup aria-label={t('work.start.profile')} value={profile || DEFAULT} onValueChange={(next) => setProfile(next === DEFAULT ? '' : next)}>
-                  <Menu.RadioItem value={DEFAULT}>{t('work.start.profileDefault')}</Menu.RadioItem>
-                  {ordered.map((choice, index) => {
-                    // Named as its row on the agent's page leads with it (ACCTNAME1, D152 §4.2); a signed-out one is offered
-                    // and labelled, since the spawn's refusal names the sign-in, and a refused key is repaired by a new key.
-                    const who = accountWho(choice);
-                    const name = who ? `${accountName(choice)} · ${who}` : accountName(choice);
-                    const first = listed && !listed.includes(choice.name) && (index === 0 || listed.includes(ordered[index - 1]!.name));
-                    return (
-                      <div key={choice.name}>
-                        {first && <Menu.Label className="pt-2">{outside}</Menu.Label>}
-                        <Menu.RadioItem value={choice.name}>
-                          {choice.login === 'out' ? t(choice.key ? 'harness.profileRefused' : 'harness.profileOut', { name }) : name}
-                        </Menu.RadioItem>
-                      </div>
-                    );
-                  })}
-                </Menu.RadioGroup>
-              </>
-            )}
-            {harnesses.length <= 1 && profiles.length === 0 && (
-              <Menu.Label>{t('work.start.harnessDefaultNamed', { name: agentName })}</Menu.Label>
-            )}
-          </Menu.Content>
-        </Menu.Root>
+        <AgentChip
+          value={choice}
+          onChange={setChoice}
+          harnesses={harnesses}
+          labels={labels}
+          names={names}
+          defaultHarness={defaultHarness}
+          accounts={accounts}
+          repository={repository}
+          scopeOf={scopeOf}
+        />
 
         <Tip content={t('work.composer.attachTip')}>
           <Button variant="ghost" aria-label={t('work.composer.attach')} onClick={chooser.open} className="h-7 w-7 justify-center px-0">
